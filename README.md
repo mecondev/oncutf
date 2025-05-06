@@ -1,5 +1,9 @@
 # ReNExif
 
+![Docstring Coverage](https://img.shields.io/badge/docstrings-100%25-brightgreen)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+
 ReNExif is a modular batch file renaming application designed for photographers, videographers, and digital archivists. It combines a clean, intuitive PyQt5 GUI with powerful rename modules that can be composed dynamically to rename large sets of files based on metadata, custom patterns, or static text.
 
 ---
@@ -22,11 +26,11 @@ ReNExif is a modular batch file renaming application designed for photographers,
 
 Each rename module is independently configurable:
 
-| Module             | Description |
-|--------------------|-------------|
-| `CounterModule`     | Adds an incrementing number |
-| `SpecifiedTextModule` | Inserts custom static text |
-| `MetadataModule`    | Uses file or EXIF metadata |
+| Module               | Description                       |
+|----------------------|-----------------------------------|
+| `CounterModule`      | Adds an incrementing number       |
+| `SpecifiedTextModule`| Inserts custom static text        |
+| `MetadataModule`     | Uses file or EXIF metadata        |
 
 More modules can be added by extending the `modules/` directory.
 
@@ -73,10 +77,8 @@ python main.py
 
 ## 🗂️ Project Structure
 
-See the detailed structure and module docstrings here:
-
-- [📁 Project Structure (Markdown)](reports/project_structure.md)
-- [📄 Module Docstrings](ReNExif_module_docstrings.md)
+- 📁 [Project Structure with Docstrings](reports/project_structure.md)
+- 📄 [Module-Level Docstrings](ReNExif_module_docstrings.md)
 
 ---
 
