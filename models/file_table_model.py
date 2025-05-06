@@ -1,0 +1,128 @@
+# file_table_model.py
+# Author: Michael Economou
+# Date: 2025-05-01
+# Description: A table model for displaying and managing file entries
+
+from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QVariant, pyqtSignal
+from models.file_item import FileItem
+from typing import Optional
+
+class FileTableModel(QAbstractTableModel):
+    """
+    Table model for displaying and managing a list of FileItem objects
+    in a QTableView. Supports checkboxes, sorting, and preview updates.
+    """
+    sort_changed = pyqtSignal()  # Emitted when sort() is called
+
+    def __init__(self, parent_window=None):
+        super().__init__()
+        self.files: list[FileItem] = []  # List of file entries
+        self.parent_window = parent_window  # Needed for triggering updates
+
+    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
+        """
+        Returns the number of rows (i.e. number of files).
+        """
+        return len(self.files)
+
+    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
+        """
+        Returns the number of columns (Checkbox, Filename, Filetype, Date).
+        """
+        return 4
+
+    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> QVariant:
+        """
+        Returns the data for a given index and role.
+        """
+        if not index.isValid():
+            return QVariant()
+
+        row = index.row()
+        col = index.column()
+        file = self.files[row]
+
+        if role == Qt.DisplayRole:
+            if col == 1:
+                return file.filename
+            elif col == 2:
+                return file.filetype
+            elif col == 3:
+                return file.date
+
+        elif role == Qt.CheckStateRole and col == 0:
+            return Qt.Checked if file.checked else Qt.Unchecked
+
+        elif role == Qt.TextAlignmentRole:
+            if col == 0:
+                return Qt.AlignCenter
+            return Qt.AlignLeft
+
+        return QVariant()
+
+    def setData(self, index: QModelIndex, value, role: int = Qt.EditRole) -> bool:
+        """
+        Called when the user interacts with a checkbox (column 0).
+        Updates the `checked` state and triggers UI updates.
+        """
+        if not index.isValid():
+            return False
+
+        row = index.row()
+        col = index.column()
+        file = self.files[row]
+
+        if role == Qt.CheckStateRole and col == 0:
+            file.checked = (value == Qt.Checked)
+            self.dataChanged.emit(index, index, [Qt.CheckStateRole])
+
+            # Trigger preview & header checkbox state update
+            if self.parent_window:
+                self.parent_window.header.update_state(self.files)
+                self.parent_window.update_files_label()
+                self.parent_window.generate_preview_names()
+
+            return True
+
+        return False
+
+    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+        """
+        Defines interactivity per column.
+        """
+        if not index.isValid():
+            return Qt.NoItemFlags
+
+        if index.column() == 0:
+            return Qt.ItemIsEnabled | Qt.ItemIsUserCheckable | Qt.ItemIsSelectable
+        else:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+
+    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole):
+        """
+        Returns header text for each column.
+        """
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            headers = ["", "Filename", "Type", "Modified"]
+            if 0 <= section < len(headers):
+                return headers[section]
+
+        return super().headerData(section, orientation, role)
+
+    def sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None:
+        """
+        Sorts the file list by the specified column.
+        Also triggers preview update.
+        """
+        reverse = (order == Qt.DescendingOrder)
+
+        if column == 1:
+            self.files.sort(key=lambda f: f.filename.lower(), reverse=reverse)
+        elif column == 2:
+            self.files.sort(key=lambda f: f.filetype.lower(), reverse=reverse)
+        elif column == 3:
+            self.files.sort(key=lambda f: f.date, reverse=reverse)
+
+        self.layoutChanged.emit()
+        self.sort_changed.emit()  # Let the MainWindow refresh preview
+

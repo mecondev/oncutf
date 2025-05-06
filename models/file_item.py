@@ -1,0 +1,20 @@
+# FileItem class
+# Author: Michael Economou
+# Date: 2025-05-01
+# Description:
+
+class FileItem:
+    """
+    Represents a single file item in the table.
+
+    Attributes:
+        filename (str): The name of the file without the path.
+        filetype (str): The extension/type of the file (e.g., jpg, png, mp4).
+        date (str): The file's last modification date as a string.
+        checked (bool): Whether the file is selected for renaming.
+    """
+    def __init__(self, filename: str, filetype: str, date: str, checked: bool=True) -> None:
+        self.filename = filename    # The name of the file
+        self.filetype = filetype    # The extension/type of the file
+        self.date = date            # The last modification date
+        self.checked = checked      # Default state is checked

@@ -1,0 +1,28 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# VS Code settings
+.vscode/
+
+# Logs and reports
+logs/
+*.log
+.cache/
+reports/*.md
+*.report.md
+
+# Ignore your structure + docstrings output files
+full_structure.txt
+"file structure map.txt"
+
+# Ignore test and temp
+*.tmp
+*.bak
+*.swp
+temp.*
+
+# Ignore system files
+.DS_Store
+Thumbs.db
