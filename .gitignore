@@ -10,8 +10,8 @@ __pycache__/
 logs/
 *.log
 .cache/
-reports/*.md
 *.report.md
+!reports/project_structure.md
 
 # Ignore your structure + docstrings output files
 full_structure.txt
