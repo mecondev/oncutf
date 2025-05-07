@@ -1,7 +1,16 @@
-# modules/specified_text_module.py
-# Author: Michael Economou
-# Date: 2025-05-02
-# Description: Module for inserting specified text in filenames.
+"""
+Module: specified_text_module.py
+
+Author: Michael Economou
+Date: 2025-05-02
+
+This module defines a rename module that inserts user-specified text
+into filenames. It allows users to prepend, append, or inject static
+text at a defined position within the filename.
+
+Used in the ReNExif application as one of the modular renaming components.
+"""
+
 
 from typing import Optional
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit
@@ -37,6 +46,16 @@ class SpecifiedTextModule(QWidget):
         # self.setFixedHeight(90)
 
     def validate_input(self, text):
+        """
+        Validates the user input text against allowed filename characters.
+
+        Args:
+            text (str): The text entered by the user.
+
+        Emits:
+            updated: Signal to indicate that the validation status has changed.
+        """
+
         if re.match(ALLOWED_FILENAME_CHARS, text):
             self.text_input.setStyleSheet("")
         else:
@@ -44,6 +63,12 @@ class SpecifiedTextModule(QWidget):
         self.updated.emit()
 
     def get_data(self) -> dict:
+        """
+        Retrieves the current configuration of the specified text module.
+
+        :return: A dictionary containing the type and the user-specified text.
+        """
+
         return {
             "type": "specified_text",
             "text": self.text_input.text().strip()

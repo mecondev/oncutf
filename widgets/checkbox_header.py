@@ -1,8 +1,22 @@
-# widgets/checkbox_header.py
-# Author: Michael Economou
-# Date: 2025-05-01
-# Description: A custom QHeaderView with a checkbox in the first column header
-#              to control check/uncheck of all rows in a QTableView.
+"""
+Module: checkbox_header.py
+
+Author: Michael Economou
+Date: 2025-05-01
+
+This module defines a custom QHeaderView subclass that adds a checkbox
+to the first column header of a QTableView. The checkbox allows users
+to select or deselect all rows in the table with a single click.
+
+Used in the ReNExif UI to streamline batch actions and improve usability
+when working with large file lists.
+
+Features:
+- Syncs header checkbox state with row checkboxes
+- Emits signals when selection state changes
+- Visually updates based on user interaction
+"""
+
 
 import logging
 from typing import Optional

@@ -1,7 +1,17 @@
-# metadata_reader.py
-# Author: Michael Economou
-# Date: 2025-05-01
-# Description: Utility class to extract metadata from files using exiftool
+"""
+Module: metadata_reader.py
+
+Author: Michael Economou
+Date: 2025-05-01
+
+This utility module defines a class responsible for extracting file metadata
+using exiftool. It serves as an interface between the ReNExif application and
+the underlying metadata extraction process.
+
+Supports reading creation date, modification date, camera info, and other
+EXIF tags from image and video files.
+"""
+
 
 import subprocess
 import json

@@ -1,7 +1,23 @@
-# widgets/rename_module_widget.py
-# Author: Michael Economou
-# Date: 2025-05-01
-# Description: A widget for managing rename modules (add/remove/edit), used in batch renaming.
+"""
+Module: rename_module_widget.py
+
+Author: Michael Economou
+Date: 2025-05-01
+
+This module defines a custom widget for managing rename modules within
+the ReNExif application. It allows users to add, configure, remove, and
+reorder individual rename modules that collectively define the batch
+renaming logic.
+
+The widget provides a visual, modular interface for customizing the
+renaming workflow interactively.
+
+Features:
+- Dynamic UI creation for each module type
+- Dropdown-based module type selection
+- Add/Remove buttons and layout management
+"""
+
 
 from typing import Optional
 from PyQt5.QtWidgets import (
@@ -13,6 +29,7 @@ from PyQt5.QtCore import pyqtSignal
 from modules.specified_text_module import SpecifiedTextModule
 from modules.counter_module import CounterModule
 from modules.metadata_module import MetadataModule
+from widgets.custom_msgdialog import CustomMessageDialog
 
 
 class RenameModuleWidget(QWidget):

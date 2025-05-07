@@ -1,7 +1,18 @@
-# FileItem class
-# Author: Michael Economou
-# Date: 2025-05-01
-# Description:
+"""
+file_item.py
+
+This module defines the FileItem class, which represents a single file entry
+with attributes such as filename, filetype, last modification date, and a checked
+state indicating whether the file is selected for renaming. The class is used
+within the FileTableModel to manage file entries in a table view.
+
+Classes:
+    FileItem: Represents a single file item in the table.
+
+Author: Michael Economou
+Date: 2025-05-01
+"""
+# ... existing code ...
 
 class FileItem:
     """

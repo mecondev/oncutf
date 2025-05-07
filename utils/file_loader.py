@@ -1,7 +1,16 @@
-# utils/file_loader.py
-# Author: Michael Economou
-# Date: 2025-05-01
-# Description: Logic for selecting and loading files from folders into the model.
+"""
+Module: file_loader.py
+
+Author: Michael Economou
+Date: 2025-05-01
+
+This utility module handles the logic for selecting and loading files
+from one or more folders into the application's data model.
+
+It supports recursive directory scanning, file type filtering, and
+preparation of file data for use in the ReNExif renaming system.
+"""
+
 
 import os
 import glob

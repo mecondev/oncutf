@@ -1,7 +1,22 @@
-# utils/preview_generator.py
-# Author: Michael Economou
-# Date: 2025-05-02
-# Description: Logic to generate new filenames based on rename modules, with validation.
+"""
+Module: preview_generator.py
+
+Author: Michael Economou
+Date: 2025-05-02
+
+This module implements the core logic for generating preview filenames
+based on the active rename modules. It orchestrates the execution of
+each module in sequence and validates the resulting names.
+
+Used by ReNExif to display accurate previews before performing batch
+renaming operations.
+
+Supports:
+- Modular rename pipeline execution
+- Duplicate and invalid filename detection
+- Conflict resolution and visual feedback
+"""
+
 
 from typing import List, Tuple
 from models.file_item import FileItem
@@ -25,7 +40,7 @@ def generate_preview_names(
         Tuple[
             List[Tuple[str, str]],  # List of (old_name, new_name)
             bool,                   # has_error: whether any validation failed
-            str                    # tooltip message describing result or error
+            str                     # tooltip message describing result or error
         ]
     """
     new_names: List[Tuple[str, str]] = []

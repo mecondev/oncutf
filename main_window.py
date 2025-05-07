@@ -1,7 +1,29 @@
-# main_window.py
-# Author: Firstname Lastname
-# Date: 2025-05-01
-# Description: The main window of the application
+"""
+Module: main_window.py
+
+Author: Michael Economou
+Date: 2025-05-01
+
+This module defines the MainWindow class, which implements the primary user interface
+for the ReNExif application. The MainWindow provides a comprehensive
+interface for browsing folders, selecting files, configuring rename operations through
+modular components, previewing name changes, and executing batch file renaming.
+
+The interface is divided into several key areas:
+- A folder tree view for navigating the file system
+- A file table for selecting and displaying files to be renamed
+- An information panel showing metadata for selected files
+- A module area where rename operations can be configured
+- A preview area showing original and new filenames with validation indicators
+- Controls for executing rename operations
+
+Classes:
+    MainWindow: The main application window and interface controller.
+
+Usage:
+    from main_window import MainWindow
+"""
+
 
 import os
 import glob
@@ -9,10 +31,10 @@ import datetime
 import platform
 from typing import TYPE_CHECKING, List, Tuple, Dict
 from PyQt5.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+    QMainWindow, QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QSplitter, QFrame, QScrollArea, QTableWidget, QTableView, QTreeView,
-    QFileSystemModel, QAbstractItemView, QAbstractScrollArea, QSizePolicy, QProgressBar, QHeaderView,
-    QTableWidgetItem, QDesktopWidget
+    QFileSystemModel, QAbstractItemView, QAbstractScrollArea, QSizePolicy, QProgressBar,
+    QHeaderView, QTableWidgetItem, QDesktopWidget, QMessageBox
 )
 from PyQt5.QtCore import Qt, QDir, QRect, QThread, pyqtSignal, QTimer
 from PyQt5.QtGui import (
@@ -23,6 +45,7 @@ from models.file_table_model import FileTableModel
 from models.file_item import FileItem
 from widgets.checkbox_header import CheckBoxHeader
 from widgets.rename_module_widget import RenameModuleWidget
+from widgets.custom_msgdialog import CustomMessageDialog
 from utils.file_loader import FileLoaderMixin
 from utils.filename_validator import FilenameValidator
 from utils.preview_generator import generate_preview_names as generate_preview_logic
@@ -148,13 +171,21 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         self.right_frame = QFrame()
         right_layout = QVBoxLayout(self.right_frame)
         right_layout.addWidget(QLabel("Information"))
+
+        # --- Metadata Table Setup
         self.metadata_table_view = QTableView()
         self.metadata_table_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.metadata_table_view.setSelectionMode(QAbstractItemView.NoSelection)
         self.metadata_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.metadata_table_view.verticalHeader().setVisible(False)
+        self.metadata_model = QStandardItemModel(self)
+        self.metadata_model.setColumnCount(2)
+        self.metadata_model.setHorizontalHeaderLabels(["Key", "Value"])
+        self.metadata_table_view.horizontalHeader().setStretchLastSection(True)
+        self.metadata_table_view.setModel(self.metadata_model)
         right_layout.addWidget(self.metadata_table_view)
 
+        # --- Splitter sizes ---
         self.splitter.addWidget(self.left_frame)
         self.splitter.addWidget(self.center_frame)
         self.splitter.addWidget(self.right_frame)
@@ -290,65 +321,99 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         self.add_rename_module()
 
     def rename_files(self) -> None:
+
+        """
+        Rename files according to the preview table.
+
+        Shows a progress bar and counts the number of files that were actually renamed.
+        If a file with the new name already exists, asks the user about overwrite behavior.
+        Shows a wait cursor during the operation.
+        """
         if not self.current_folder_path:
             self.status_label.setText("No folder selected.")
             return
 
-        total_files = sum(file.checked for file in self.model.files)
-        if total_files == 0:
-            self.status_label.setText("No files selected for renaming.")
-            return
-
-        choice = QMessageBox.question(
+        # Ask overwrite behavior once
+        overwrite_existing = CustomMessageDialog.question(
             self,
             "Overwrite Behavior",
-            "If a file with the new name already exists, what should we do?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+            "A file with the new name already exists. Overwrite?",
+            yes_text="Overwrite",
+            no_text="Skip"
         )
 
-        overwrite_existing = (choice == QMessageBox.StandardButton.Yes)
+        # Set wait cursor
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        try:
+            # Count selected files
+            total_files = sum(file.checked for file in self.model.files)
+            if total_files == 0:
+                self.status_label.setText("No files selected for renaming.")
+                return
 
-        self.rename_progress.setVisible(True)
-        self.rename_progress.setRange(0, total_files)
-        self.rename_progress.setValue(0)
-        self.status_label.setText("Renaming files...")
+            # Setup progress bar
+            self.rename_progress.setVisible(True)
+            self.rename_progress.setRange(0, total_files)
+            self.rename_progress.setValue(0)
+            self.status_label.setText("Renaming files...")
 
-        renamed_count = 0
-        for index, file in enumerate(self.model.files):
-            if not file.checked:
-                continue
-
-            preview_pairs = [(self.old_name_table.item(r, 0).text(), self.new_name_table.item(r, 0).text())
-                            for r in range(self.old_name_table.rowCount())]
+            renamed_count = 0
+            preview_pairs = [
+                (self.old_name_table.item(r, 0).text(),
+                 self.new_name_table.item(r, 0).text())
+                for r in range(self.old_name_table.rowCount())
+            ]
             preview_dict = dict(preview_pairs)
-            new_name = preview_dict.get(file.filename, file.filename)
 
-            old_path = os.path.join(self.current_folder_path, file.filename)
-            new_path = os.path.join(self.current_folder_path, new_name)
+            for file in self.model.files:
+                if not file.checked:
+                    continue
 
-            try:
-                if os.path.exists(new_path):
-                    if not overwrite_existing:
-                        self.status_label.setText(f"Skipped (exists): {new_name}")
-                        continue
+                old_name = file.filename
+                new_name = preview_dict.get(old_name, old_name)
+                old_path = os.path.join(self.current_folder_path, old_name)
+                new_path = os.path.join(self.current_folder_path, new_name)
 
-                os.rename(old_path, new_path)
-                renamed_count += 1
+                # Skip if exists and user chose to skip
+                if os.path.exists(new_path) and not overwrite_existing:
+                    self.status_label.setText(f"Skipped (exists): {new_name}")
+                    continue
 
-            except Exception as e:
-                logger.error(f"Failed to rename '{file.filename}' → '{new_name}': {e}")
-                self.status_label.setText(f"Error: {file.filename} → {new_name}")
-                continue
+                try:
+                    os.rename(old_path, new_path)
+                    renamed_count += 1
+                except Exception as e:
+                    logger.error(f"Failed to rename '{old_name}' → '{new_name}': {e}")
+                    CustomMessageDialog.information(
+                        self,
+                        "Rename Failed",
+                        f"Failed to rename '{old_name}' → '{new_name}': {e}"
+                    )
+                    continue
 
-            self.rename_progress.setValue(renamed_count)
+                self.rename_progress.setValue(renamed_count)
 
-        self.rename_progress.setVisible(False)
-        self.status_label.setText(f"Renamed {renamed_count} file(s).")
+            # Reload file list at the end
+            self.load_files_from_folder(self.current_folder_path)
+        finally:
+            # Restore cursor and finalize UI
+            QApplication.restoreOverrideCursor()
+            self.rename_progress.setVisible(False)
+            self.status_label.setText(f"Renamed {renamed_count} file(s).")
 
-        self.load_files_from_folder(self.current_folder_path)
+    # TODO: For large batches, consider offloading this method to a QThread or
+    # using QRunnable+QThreadPool to keep the UI responsive during renaming.
 
     def setup_signals(self) -> None:
+        """
+        Sets up signal connections for the UI components.
+
+        Connects button clicks to their respective handlers for selecting and browsing folders,
+        selecting files, generating preview names, and renaming files. Synchronizes the vertical
+        scroll bars of the old and new name tables, as well as the icon table, to maintain
+        consistent scrolling behavior across these views.
+        """
+
         self.select_folder_button.clicked.connect(self.handle_select)
         self.browse_folder_button.clicked.connect(self.handle_browse)
         self.table_view.clicked.connect(self.on_file_selected)
@@ -367,6 +432,18 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         )
 
     def add_rename_module(self) -> None:
+        """
+        Adds a new rename module widget to the scroll area.
+
+        Connects the module's add button to the add_rename_module method, and
+        the remove button to the remove_rename_module method. Also connects
+        the module's updated signal to the generate_preview_names method.
+
+        Adds the module to the scroll layout, and calls update_module_dividers
+        to ensure that the dividers are correctly placed. Finally, calls
+        generate_preview_names to update the preview names.
+
+        """
         module = RenameModuleWidget()
         self.rename_modules.append(module)
 
@@ -381,6 +458,17 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         self.generate_preview_names()
 
     def remove_rename_module(self, module_widget) -> None:
+        """
+        Removes the given rename module widget from the scroll area.
+
+        If the given module is present in the list of rename modules, it is removed.
+        The module is then removed from the scroll layout, and its parent is set to
+        None. The module is then deleted. Finally, the dividers are updated and the
+        preview names are regenerated.
+
+        :param module_widget: The rename module widget to remove.
+        :type module_widget: RenameModuleWidget
+        """
         if len(self.rename_modules) <= 1:
             self.status_label.setText("At least one module must remain.")
             return
@@ -396,11 +484,25 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         self.generate_preview_names()
 
     def update_module_dividers(self) -> None:
+        """
+        Updates the visibility of the divider widgets between rename modules.
+
+        The divider between two rename modules is only visible if the module
+        above it is not the first module in the list.
+
+        """
         for index, module in enumerate(self.rename_modules):
             if hasattr(module, "divider"):
                 module.divider.setVisible(index > 0)
 
     def load_files_from_folder(self, folder_path: str) -> None:
+        """
+        Loads files from the given folder into the model.
+
+        Args:
+            folder_path (str): The path of the folder to load.
+
+        """
         self.current_folder_path = folder_path
         all_files = glob.glob(os.path.join(folder_path, "*"))
         logger.info("current file path: %s", self.current_folder_path)
@@ -421,6 +523,14 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         self.generate_preview_names()
 
     def handle_header_toggle(self, checked: bool) -> None:
+        """
+        Called when the checkbox in the header is toggled.
+
+        Sets all files to the given checked state and triggers UI updates.
+
+        :param checked: The checked state to set for all files.
+        :type checked: bool
+        """
         for file in self.model.files:
             file.checked = checked
 
@@ -430,6 +540,15 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         self.generate_preview_names()
 
     def generate_preview_names(self) -> None:
+        """
+        Updates the preview tables by generating new filenames based on the
+        active rename modules and the currently selected files.
+
+        Called when the user toggles the checkbox in the header, selects a
+        different folder, or adds/removes a rename module.
+
+        :return: None
+        """
         modules_data = [m.get_data() for m in self.rename_modules]
 
         selected_files = [f for f in self.model.files if f.checked]
@@ -450,16 +569,45 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         self.rename_button.setToolTip(tooltip_msg)
 
     def compute_max_filename_width(self, file_list: list[FileItem]) -> int:
+        """
+        Computes the maximum width (in pixels) needed to display the longest filename in
+        the given list of FileItem objects.
+
+        The width is computed as 8 times the length of the longest filename, but capped
+        between 250 and 1000 pixels.
+
+        :param file_list: A list of FileItem objects.
+        :return: The maximum width needed to display the longest filename.
+        :rtype: int
+        """
         max_len = max((len(file.filename) for file in file_list), default=0)
         return min(max(8 * max_len, 250), 1000)
 
     def center_window(self) -> None:
+        """
+        Centers the main window on the screen.
+
+        Computes the geometry of the window and its center point, then moves
+        the window to the center of the screen by setting its top-left corner
+        to the screen center point minus half of the window's width and height.
+
+        :return: None
+        """
         window_geometry = self.frameGeometry()
         screen_center = QDesktopWidget().availableGeometry().center()
         window_geometry.moveCenter(screen_center)
         self.move(window_geometry.topLeft())
 
     def update_files_label(self) -> None:
+        """
+        Updates the label displaying the number of selected files.
+
+        Updates the label text according to the current selection state of the files.
+        If there are no files, the label shows "Files". If there are files, the label
+        shows how many of them are selected from the total number of files.
+
+        :return: None
+        """
         total = len(self.model.files)
         selected = sum(1 for file in self.model.files if file.checked)
 
@@ -469,6 +617,10 @@ class MainWindow(QMainWindow, FileLoaderMixin):
             self.files_label.setText(f"Files {selected} selected from {total}")
 
     def get_identity_name_pairs(self) -> list[tuple[str, str]]:
+        """
+        Returns a list of (original, new) filename pairs, where each 'new' filename is the same as the 'original' filename.
+        This is used to populate the preview tables when the user has not yet configured any rename modules.
+        """
         return [
             (file.filename, file.filename)
             for file in self.model.files
@@ -490,7 +642,7 @@ class MainWindow(QMainWindow, FileLoaderMixin):
 
         all_names = [name for pair in name_pairs for name in pair]
         max_width = max([self.fontMetrics().horizontalAdvance(name) for name in all_names], default=250)
-        adjusted_width = max(250, max_width) + 20
+        adjusted_width = max(250, max_width) + 100
         self.old_name_table.setColumnWidth(0, adjusted_width)
         self.new_name_table.setColumnWidth(0, adjusted_width)
 
@@ -566,33 +718,99 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         self.status_label.setText(status_msg)
 
     def on_file_selected(self, index):
+        """
+        Handles the selection of a file in the file list.
+
+        When a file is selected, this method retrieves the corresponding
+        file item and its metadata from the current folder path. It then
+        logs the file selection and populates the metadata table with the
+        specific fields read from the file.
+
+        :param index: The QModelIndex representing the selected file in the list.
+        """
         logger.info("File selected")
+
+        # Αγνόησε κλικ στο column 0 (το checkbox)
+        if index.column() == 0:
+            return
+
+        logger.info("File selected (col %d)", index.column())
         row = index.row()
         file_item = self.model.files[row]
-        file_path = self.current_folder_path
 
-        metadata = self.metadata_reader.read_specific_fields(file_path, [
-            "FileName", "FileSize", "CreateDate", "ModifyDate", "Duration", "MIMEType"
-        ])
-        logger.info("file_item: %s", file_item)
+        # Αν το file_item έχει attribute .filename:
+        filename = file_item.filename
+        # Ορθή διαδρομή:
+        file_path = os.path.join(self.current_folder_path, filename)
+
+        # Eναλλακτικά, αν file_item έχει .path:
+        # file_path = file_item.path
+
+        logger.info("file_item.path: %r", file_item)
         logger.info("file_path: %s", file_path)
+
+        metadata = self.metadata_reader.read_specific_fields(
+            file_path,
+            ["FileName", "FileSize", "CreateDate", "ModifyDate", "Duration", "MIMEType"]
+        )
         self.populate_metadata_table(metadata)
 
-    def populate_metadata_table(self, metadata: dict):
-        logger.info("Populating metadata table")
-        model = QStandardItemModel()
-        model.setHorizontalHeaderLabels(["Key", "Value"])
 
-        for key, value in metadata.items():
-            model.appendRow([
-                QStandardItem(str(key)),
-                QStandardItem(str(value))
-            ])
+        # QApplication.setOverrideCursor(Qt.WaitCursor)
+        # try:
+        #     metadata = self.metadata_reader.read_specific_fields(
+        #         file_path,
+        #         ["FileName", "FileSize", "CreateDate", "ModifyDate", "Duration", "MIMEType"]
+        #     )
+        # finally:
+        #     # αποκαθιστάς τον κανονικό δείκτη
+        #     QApplication.restoreOverrideCursor()
 
-        self.metadata_table_view.setModel(model)
-        self.metadata_table_view.resizeColumnsToContents()
+
+    # def populate_metadata_table(self, metadata: dict):
+    #     """
+    #     Populates the metadata table view with key-value pairs.
+
+    #     Args:
+    #         metadata (dict): A dictionary containing metadata fields as keys and their
+    #                         corresponding values to be displayed in the table.
+
+    #     The method initializes a QStandardItemModel, sets up headers for the table,
+    #     and appends each metadata key-value pair as rows in the model. The model is
+    #     then set to the metadata table view, and columns are resized to fit contents.
+    #     """
+
+    #     # logger.info("Populating metadata table")
+    #     model = QStandardItemModel()
+    #     model.setHorizontalHeaderLabels(["Key", "Value"])
+
+    #     for key, value in metadata.items():
+    #         model.appendRow([
+    #             QStandardItem(str(key)),
+    #             QStandardItem(str(value))
+    #         ])
+
+    #     self.metadata_table_view.setModel(model)
+    #     self.metadata_table_view.resizeColumnsToContents()
 
     def load_metadata_in_thread(self, file_path: str):
+        """
+        Loads file metadata in a separate thread.
+
+        Args:
+            file_path (str): Path to the file whose metadata should be loaded.
+
+        This method creates a QThread and a MetadataWorker instance, moves the worker
+        to the thread, and connects the signals. It then starts the thread, which
+        triggers the worker to read the metadata in the thread. The metadata is
+        received in the main thread via the on_metadata_ready slot.
+
+        The method also performs clean-up by deleting the worker and thread when
+        finished.
+        """
+
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+
         self.thread = QThread()
         self.worker = MetadataWorker(file_path)
         self.worker.moveToThread(self.thread)
@@ -609,6 +827,19 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         self.thread.start()
 
     def on_metadata_ready(self, metadata: dict):
+        """
+        Slot to receive metadata from the MetadataWorker thread.
+
+        This method is triggered when the MetadataWorker emits its finished signal,
+        indicating that the metadata has been read from the file. It clears the
+        metadata table view, and populates it with the received metadata.
+
+        :param metadata: A dictionary containing the key-value pairs of the metadata
+                         read from the file.
+        """
+
+        QApplication.restoreOverrideCursor()
+
         self.metadata_table_view.setRowCount(0)
         self.metadata_table_view.setColumnCount(2)
         self.metadata_table_view.setHorizontalHeaderLabels(["Tag", "Value"])
@@ -618,5 +849,55 @@ class MainWindow(QMainWindow, FileLoaderMixin):
             self.metadata_table_view.setItem(row, 0, QTableWidgetItem(str(key)))
             self.metadata_table_view.setItem(row, 1, QTableWidgetItem(str(value)))
 
+    # def on_metadata_error(self, message: str):
+    #     """
+    #     Slot to receive error messages from the MetadataWorker thread.
+
+    #     This method is triggered when the MetadataWorker emits its error signal,
+    #     indicating that an error occurred while reading the metadata from the file.
+    #     It displays a critical message box with the error message.
+
+    #     :param message: The error message to be displayed.
+    #     """
+
+    #     QApplication.restoreOverrideCursor()
+
+    #     # QMessageBox.critical(self, "Metadata Error", f"Failed to read metadata:\n{message}")
+    #     CustomMessageDialog.information(self, "Metadata Error", f"Failed to read metadata:\n{message}")
+
+    def populate_metadata_table(self, metadata: dict):
+        """
+        Populate the existing metadata model with new rows.
+
+        Args:
+            metadata (dict): mapping of metadata tag → value
+        """
+        # Restore normal cursor if you set it to waiting before
+        QApplication.restoreOverrideCursor()
+
+        # 1. Clear all previous rows
+        row_count = self.metadata_model.rowCount()
+        if row_count:
+            self.metadata_model.removeRows(0, row_count)
+
+        # 2. Append each key/value pair as a new row
+        for key, value in metadata.items():
+            items = [
+                QStandardItem(str(key)),
+                QStandardItem(str(value))
+            ]
+            self.metadata_model.appendRow(items)
+
+        # 3. Resize columns to fit their contents
+        self.metadata_table_view.resizeColumnsToContents()
+
     def on_metadata_error(self, message: str):
-        QMessageBox.critical(self, "Metadata Error", f"Failed to read metadata:\n{message}")
+        """
+        Handle errors from the metadata worker.
+        """
+        QApplication.restoreOverrideCursor()
+        CustomMessageDialog.information(
+            self,
+            "Metadata Error",
+            f"Failed to read metadata:\n{message}"
+        )

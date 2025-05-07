@@ -1,8 +1,22 @@
 
-# Icons.py
-# Author: Michael Economou
-# Date: 2025-05-01
-# Description: Utility functions for creating icons
+"""
+Module: icons.py
+
+Author: Michael Economou
+Date: 2025-05-01
+
+This utility module provides functions for creating and preparing icons,
+typically using QIcon or related PyQt components. It may also include
+logic for assigning icons based on file status or other contextual rules.
+
+Used by ReNExif to generate or modify visual indicators in the user interface.
+
+Supports:
+- Dynamic icon generation based on input conditions
+- Theming or state-aware icon selection
+- Compatibility with ReNExif UI components
+"""
+
 
 from PyQt5.QtGui import QPixmap, QPainter, QColor, QPen
 from PyQt5.QtCore import Qt

@@ -1,7 +1,18 @@
-# file_table_model.py
-# Author: Michael Economou
-# Date: 2025-05-01
-# Description: A table model for displaying and managing file entries
+"""
+file_table_model.py
+
+This module defines the FileTableModel class, which is a PyQt5 QAbstractTableModel
+for managing and displaying a list of FileItem objects in a QTableView. The model
+supports functionalities such as checkboxes for selection, sorting by different
+columns, and updating previews based on user interactions. It emits signals to
+notify changes in sorting and interacts with a parent window for UI updates.
+
+Classes:
+    FileTableModel: A table model for displaying and managing file entries.
+
+Author: Michael Economou
+Date: 2025-05-01
+"""
 
 from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QVariant, pyqtSignal
 from models.file_item import FileItem
@@ -94,7 +105,7 @@ class FileTableModel(QAbstractTableModel):
             return Qt.NoItemFlags
 
         if index.column() == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsUserCheckable | Qt.ItemIsSelectable
+            return Qt.ItemIsEnabled | Qt.ItemIsUserCheckable
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 

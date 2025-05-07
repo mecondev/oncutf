@@ -1,7 +1,18 @@
-# main.py
-# Author: Michael Economou
-# Date: 2025-05-01
-# Description: Entry point for the Batch File Renamer application.
+
+"""
+Module: main.py
+
+Author: Michael Economou
+Date: 2025-05-01
+
+This module serves as the entry point for the ReNExif application.
+It sets up logging, initializes the Qt application with a stylesheet, creates
+and displays the main window, and starts the application's main event loop.
+
+Functions:
+    main: Initializes and runs the Batch File Renamer application.
+"""
+
 
 import sys
 from PyQt5.QtWidgets import QApplication

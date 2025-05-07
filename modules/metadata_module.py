@@ -1,7 +1,17 @@
-# widgets/metadata_module.py
-# Author: Michael Economou
-# Date: 2025-05-04
-# Description: A module that allows selecting a metadata field (e.g. file date) to use in filenames.
+"""
+Module: metadata_module.py
+
+Author: Michael Economou
+Date: 2025-05-04
+
+This module provides a widget-based rename module that allows selecting
+a metadata field (such as creation date, modification date, or EXIF tag)
+to include in the renamed filename.
+
+It is used in the ReNExif tool to dynamically extract and apply file
+metadata during batch renaming.
+"""
+
 
 from typing import Optional
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QComboBox

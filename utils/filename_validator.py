@@ -1,7 +1,16 @@
-# filename_validator.py
-# Author: Micheal Economou
-# Date: 2025-05-01
-# Description: Utility for validating file names across platforms
+"""
+Module: filename_validator.py
+
+Author: Michael Economou
+Date: 2025-05-01
+
+This utility module provides logic for validating filenames across
+different operating systems. It checks for invalid characters, reserved
+names, and other constraints to ensure safe and portable file naming.
+
+Used by ReNExif to prevent errors during batch renaming.
+"""
+
 
 import os
 import re

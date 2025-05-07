@@ -1,7 +1,20 @@
-# theme.py
-# Author: Michael Economou
-# Date: 2025-05-01
-# Description: Utility to load the application stylesheet from file.
+"""
+Module: theme.py
+
+Author: Michael Economou
+Date: 2025-05-01
+
+This utility module is responsible for loading the application's stylesheet
+from external `.qss` files. It provides helper functions to apply consistent
+theming across all UI components of ReNExif.
+
+Typically used during application startup to apply a dark or light theme.
+
+Supports:
+- Loading QSS from file path or resource
+- Applying styles to QApplication instance
+"""
+
 
 import os
 

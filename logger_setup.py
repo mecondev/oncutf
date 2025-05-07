@@ -1,7 +1,18 @@
-# logger_setup.py
-# Author: Michael Economou
-# Date: 2025-05-01
-# Description: Logging setup for console and file output with customizable configuration.
+"""
+logger_setup.py
+
+This module provides the ConfigureLogger class for setting up logging in the application.
+It allows for flexible configuration of logging settings, including log levels, output
+destinations, and formatting. The logger is configured to log INFO and higher levels to
+the console, and ERROR and higher levels to a rotating file.
+
+Classes:
+    ConfigureLogger: Configures application-wide logging with console and file handlers.
+
+Author: Michael Economou
+Date: 2025-05-01
+"""
+
 
 import logging
 import os
