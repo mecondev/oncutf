@@ -5,7 +5,7 @@ Module: main.py
 Author: Michael Economou
 Date: 2025-05-01
 
-This module serves as the entry point for the ReNExif application.
+This module serves as the entry point for the oncutf application.
 It sets up logging, initializes the Qt application with a stylesheet, creates
 and displays the main window, and starts the application's main event loop.
 

@@ -5,7 +5,7 @@ Author: Michael Economou
 Date: 2025-05-01
 
 This module defines global configuration constants and settings used
-throughout the ReNExif application. It centralizes UI defaults, file
+throughout the oncutf application. It centralizes UI defaults, file
 filters, path definitions, and other shared parameters.
 
 Intended to be imported wherever consistent application-wide settings

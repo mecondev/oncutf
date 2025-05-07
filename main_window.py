@@ -5,7 +5,7 @@ Author: Michael Economou
 Date: 2025-05-01
 
 This module defines the MainWindow class, which implements the primary user interface
-for the ReNExif application. The MainWindow provides a comprehensive
+for the oncutf application. The MainWindow provides a comprehensive
 interface for browsing folders, selecting files, configuring rename operations through
 modular components, previewing name changes, and executing batch file renaming.
 

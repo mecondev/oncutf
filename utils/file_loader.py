@@ -8,7 +8,7 @@ This utility module handles the logic for selecting and loading files
 from one or more folders into the application's data model.
 
 It supports recursive directory scanning, file type filtering, and
-preparation of file data for use in the ReNExif renaming system.
+preparation of file data for use in the oncutf renaming system.
 """
 
 

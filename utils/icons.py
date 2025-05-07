@@ -9,12 +9,12 @@ This utility module provides functions for creating and preparing icons,
 typically using QIcon or related PyQt components. It may also include
 logic for assigning icons based on file status or other contextual rules.
 
-Used by ReNExif to generate or modify visual indicators in the user interface.
+Used by oncutf to generate or modify visual indicators in the user interface.
 
 Supports:
 - Dynamic icon generation based on input conditions
 - Theming or state-aware icon selection
-- Compatibility with ReNExif UI components
+- Compatibility with oncutf UI components
 """
 
 

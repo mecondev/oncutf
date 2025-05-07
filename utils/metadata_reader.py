@@ -5,7 +5,7 @@ Author: Michael Economou
 Date: 2025-05-01
 
 This utility module defines a class responsible for extracting file metadata
-using exiftool. It serves as an interface between the ReNExif application and
+using exiftool. It serves as an interface between the oncutf application and
 the underlying metadata extraction process.
 
 Supports reading creation date, modification date, camera info, and other

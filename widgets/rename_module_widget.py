@@ -5,7 +5,7 @@ Author: Michael Economou
 Date: 2025-05-01
 
 This module defines a custom widget for managing rename modules within
-the ReNExif application. It allows users to add, configure, remove, and
+the oncutf application. It allows users to add, configure, remove, and
 reorder individual rename modules that collectively define the batch
 renaming logic.
 

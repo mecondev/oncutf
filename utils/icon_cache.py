@@ -7,7 +7,7 @@ Date: 2025-05-01
 This utility module provides functions for caching QIcons or other
 visual assets to avoid redundant loading and improve GUI performance.
 
-Used by ReNExif to store and reuse icons across different widgets
+Used by oncutf to store and reuse icons across different widgets
 without unnecessary overhead.
 
 Supports:

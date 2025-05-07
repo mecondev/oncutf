@@ -8,7 +8,7 @@ This module provides a widget-based rename module that allows selecting
 a metadata field (such as creation date, modification date, or EXIF tag)
 to include in the renamed filename.
 
-It is used in the ReNExif tool to dynamically extract and apply file
+It is used in the oncutf tool to dynamically extract and apply file
 metadata during batch renaming.
 """
 

@@ -8,7 +8,7 @@ This module defines a custom QHeaderView subclass that adds a checkbox
 to the first column header of a QTableView. The checkbox allows users
 to select or deselect all rows in the table with a single click.
 
-Used in the ReNExif UI to streamline batch actions and improve usability
+Used in the oncutf UI to streamline batch actions and improve usability
 when working with large file lists.
 
 Features:

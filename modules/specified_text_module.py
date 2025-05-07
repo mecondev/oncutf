@@ -8,7 +8,7 @@ This module defines a rename module that inserts user-specified text
 into filenames. It allows users to prepend, append, or inject static
 text at a defined position within the filename.
 
-Used in the ReNExif application as one of the modular renaming components.
+Used in the oncutf application as one of the modular renaming components.
 """
 
 

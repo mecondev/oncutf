@@ -8,7 +8,7 @@ This utility module provides logic for validating filenames across
 different operating systems. It checks for invalid characters, reserved
 names, and other constraints to ensure safe and portable file naming.
 
-Used by ReNExif to prevent errors during batch renaming.
+Used by oncutf to prevent errors during batch renaming.
 """
 
 

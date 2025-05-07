@@ -8,7 +8,7 @@ This module implements the core logic for generating preview filenames
 based on the active rename modules. It orchestrates the execution of
 each module in sequence and validates the resulting names.
 
-Used by ReNExif to display accurate previews before performing batch
+Used by oncutf to display accurate previews before performing batch
 renaming operations.
 
 Supports:

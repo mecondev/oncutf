@@ -6,7 +6,7 @@ Date: 2025-05-01
 
 This utility module is responsible for loading the application's stylesheet
 from external `.qss` files. It provides helper functions to apply consistent
-theming across all UI components of ReNExif.
+theming across all UI components of oncutf.
 
 Typically used during application startup to apply a dark or light theme.
 
