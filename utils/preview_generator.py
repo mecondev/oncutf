@@ -17,10 +17,13 @@ Supports:
 - Conflict resolution and visual feedback
 """
 
-
 from typing import List, Tuple
 from models.file_item import FileItem
 from utils.filename_validator import FilenameValidator
+
+# Initialize Logger
+from logger_helper import get_logger
+logger = get_logger(__name__)
 
 
 def generate_preview_names(

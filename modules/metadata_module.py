@@ -12,10 +12,13 @@ It is used in the oncutf tool to dynamically extract and apply file
 metadata during batch renaming.
 """
 
-
 from typing import Optional
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QComboBox
 from PyQt5.QtCore import pyqtSignal
+
+# initialize logger
+from logger_helper import get_logger
+logger = get_logger(__name__)
 
 
 class MetadataModule(QWidget):

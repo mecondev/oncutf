@@ -11,10 +11,14 @@ names, and other constraints to ensure safe and portable file naming.
 Used by oncutf to prevent errors during batch renaming.
 """
 
-
 import os
 import re
 import platform
+
+# Initialize Logger
+from logger_helper import get_logger
+logger = get_logger(__name__)
+
 
 class FilenameValidator:
     """

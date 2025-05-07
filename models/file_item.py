@@ -12,7 +12,11 @@ Classes:
 Author: Michael Economou
 Date: 2025-05-01
 """
-# ... existing code ...
+
+# Initialize Logger
+from logger_helper import get_logger
+logger = get_logger(__name__)
+
 
 class FileItem:
     """

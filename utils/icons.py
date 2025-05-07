@@ -17,12 +17,12 @@ Supports:
 - Compatibility with oncutf UI components
 """
 
-
 from PyQt5.QtGui import QPixmap, QPainter, QColor, QPen
 from PyQt5.QtCore import Qt
-import logging
 
-logger = logging.getLogger(__name__)
+# Initialize Logger
+from logger_helper import get_logger
+logger = get_logger(__name__)
 
 def create_colored_icon(
     fill_color: str,

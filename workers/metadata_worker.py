@@ -17,21 +17,49 @@ Features:
 - Error handling and progress updates
 """
 
-
 from PyQt5.QtCore import QObject, pyqtSignal, QThread
 from utils.metadata_reader import MetadataReader
 
+# initialize logger
+from logger_helper import get_logger
+logger = get_logger(__name__)
+
+
 class MetadataWorker(QObject):
-    finished = pyqtSignal(dict)
-    error = pyqtSignal(str)
+    finished = pyqtSignal(dict)  # emits {filename: metadata}
+    progress = pyqtSignal(int, int)
 
-    def __init__(self, file_path: str):
-        super().__init__()
-        self.file_path = file_path
+    def load_batch(self, files):
+        """
+        Initializes the batch loading of metadata for the provided list of files.
 
-    def run(self):
-        try:
-            metadata = MetadataReader.read_metadata(self.file_path)
-            self.finished.emit(metadata)
-        except Exception as e:
-            self.error.emit(str(e))
+        Args:
+            files (list): A list of file paths for which metadata should be retrieved.
+        """
+        logger.debug("Reading metadata for: %s", path)
+
+        self.files = files
+        QTimer.singleShot(0, self.run_batch)
+
+    def run_batch(self):
+        """
+        Runs the batch metadata extraction in the background.
+
+        This method is executed in its own thread and emits signals
+        to the main thread to report progress and signal completion.
+
+        :return: None
+        """
+        result = {}
+        total = len(self.files)
+
+        for i, path in enumerate(self.files):
+            try:
+                metadata = MetadataReader.read_metadata(path)
+                result[os.path.basename(path)] = metadata
+            except Exception:
+                result[os.path.basename(path)] = {}
+
+            self.progress.emit(i + 1, total)
+
+        self.finished.emit(result)

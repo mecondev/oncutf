@@ -15,8 +15,11 @@ Supports:
 - Applying styles to QApplication instance
 """
 
-
 import os
+
+# Initialize Logger
+from logger_helper import get_logger
+logger = get_logger(__name__)
 
 def load_stylesheet() -> str:
     """

@@ -12,10 +12,13 @@ Supports reading creation date, modification date, camera info, and other
 EXIF tags from image and video files.
 """
 
-
 import subprocess
 import json
 from typing import Optional, Dict
+
+# Initialize Logger
+from logger_helper import get_logger
+logger = get_logger(__name__)
 
 
 class MetadataReader:

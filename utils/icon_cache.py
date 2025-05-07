@@ -16,10 +16,14 @@ Supports:
 - Integration with GUI elements via shared cache
 """
 
-
 import os
 from config import PREVIEW_COLORS, PREVIEW_INDICATOR_SHAPE, PREVIEW_INDICATOR_SIZE
 from utils.icons import create_colored_icon
+
+# Initialize Logger
+from logger_helper import get_logger
+logger = get_logger(__name__)
+
 
 ICON_NAMES = ["valid", "unchanged", "invalid", "duplicate"]
 

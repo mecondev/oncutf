@@ -14,9 +14,14 @@ Author: Michael Economou
 Date: 2025-05-01
 """
 
+from typing import Optional
 from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QVariant, pyqtSignal
 from models.file_item import FileItem
-from typing import Optional
+
+# initialize logger
+from logger_helper import get_logger
+logger = get_logger(__name__)
+
 
 class FileTableModel(QAbstractTableModel):
     """

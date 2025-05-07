@@ -17,15 +17,15 @@ Features:
 - Visually updates based on user interaction
 """
 
-
-import logging
 from typing import Optional
 from PyQt5.QtWidgets import QHeaderView, QStyleOptionButton, QStyle
 from PyQt5.QtCore import Qt, QRect, QModelIndex
 from PyQt5.QtGui import QPainter
 
 # Initialize Logger
-logger = logging.getLogger(__name__)
+from logger_helper import get_logger
+logger = get_logger(__name__)
+
 
 class CheckBoxHeader(QHeaderView):
     """

@@ -9,11 +9,15 @@ into filenames. It is used within the oncutf application to generate
 sequential file names based on configurable start value, step, and padding.
 """
 
-
 from typing import Optional
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtCore import pyqtSignal, Qt
+
+# initialize logger
+from logger_helper import get_logger
+logger = get_logger(__name__)
+
 
 class CounterModule(QWidget):
     """

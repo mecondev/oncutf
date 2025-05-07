@@ -11,7 +11,6 @@ It supports recursive directory scanning, file type filtering, and
 preparation of file data for use in the oncutf renaming system.
 """
 
-
 import os
 import glob
 import datetime
@@ -25,6 +24,10 @@ if TYPE_CHECKING:
     from PyQt5.QtWidgets import QTreeView, QFileSystemModel
     from PyQt5.QtCore import QModelIndex
     from widgets.main_window import MainWindow  # forward reference
+
+# Initialize Logger
+from logger_helper import get_logger
+logger = get_logger(__name__)
 
 
 class FileLoaderMixin:
@@ -53,8 +56,11 @@ class FileLoaderMixin:
         folder_path = QFileDialog.getExistingDirectory(self, "Select Folder", "/")
 
         if folder_path:
+            alt_pressed = QApplication.keyboardModifiers() & Qt.AltModifier
+            logger.info("ALT pressed: %s", bool(alt_pressed))
+
             self.current_folder_path = folder_path
-            self.load_files_from_folder(folder_path)
+            self.load_files_from_folder(folder_path, skip_metadata=alt_pressed)
 
             index = self.dir_model.index(folder_path)
             if index.isValid():
@@ -85,8 +91,29 @@ class FileLoaderMixin:
 
         self.model.endResetModel()
 
+        logger.info("Loaded %d supported files from %s", len(self.model.files), folder_path)
+
         # Sync state
         self.header.update_state(self.model.files)
         self.update_files_label()
         self.generate_preview_names()
+
+        # Skip metadata if ALT was pressed
+        if skip_metadata:
+            logger.info("Skipping metadata scan (ALT was pressed).")
+            return
+
+        # Otherwise, continue with metadata loading
+        self.table_view.setEnabled(False)
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        self.loading_dialog = CustomMessageDialog.show_waiting(
+            self, "Analyzing files..."
+        )
+
+        file_paths = [os.path.join(folder_path, file.filename) for file in self.model.files]
+        self.metadata_worker.load_batch(file_paths)
+
+
+
 

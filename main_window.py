@@ -53,10 +53,11 @@ from utils.icons import create_colored_icon
 from utils.icon_cache import prepare_status_icons
 from utils.metadata_reader import MetadataReader
 from workers.metadata_worker import MetadataWorker
-
 from config import *
-import logging
-logger = logging.getLogger(__name__)
+
+# Initialize Logger
+from logger_helper import get_logger
+logger = get_logger(__name__)
 
 
 class MainWindow(QMainWindow, FileLoaderMixin):
@@ -91,6 +92,7 @@ class MainWindow(QMainWindow, FileLoaderMixin):
 
         :return: None
         """
+
         super().__init__()
 
         # --- Window setup ---
@@ -103,6 +105,7 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         self.create_colored_icon = create_colored_icon
         self.icon_paths = prepare_status_icons()
         self.metadata_reader = MetadataReader()
+        self.metadata_cache = {}  # filename → metadata dict
 
 
         # --- Central layout ---
@@ -280,11 +283,6 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         self.status_label.setTextFormat(Qt.RichText)
         controls_layout.addWidget(self.status_label, stretch=1)
 
-        self.rename_progress = QProgressBar()
-        self.rename_progress.setFixedWidth(120)
-        self.rename_progress.setVisible(False)
-        controls_layout.addWidget(self.rename_progress)
-
         self.rename_button = QPushButton("Rename")
         self.rename_button.setEnabled(False)
         self.rename_button.setFixedWidth(120)
@@ -416,7 +414,9 @@ class MainWindow(QMainWindow, FileLoaderMixin):
 
         self.select_folder_button.clicked.connect(self.handle_select)
         self.browse_folder_button.clicked.connect(self.handle_browse)
-        self.table_view.clicked.connect(self.on_file_selected)
+
+        self.table_view.clicked.connect(self.on_table_row_clicked)
+
         self.model.sort_changed.connect(self.generate_preview_names)
 
         self.rename_button.clicked.connect(self.rename_files)
@@ -518,9 +518,16 @@ class MainWindow(QMainWindow, FileLoaderMixin):
 
         self.model.endResetModel()
 
+        logger.info("Folder selected: %s", folder_path)
+        logger.info("Loaded %d supported files", len(self.model.files))
+
+        # UI sync
         self.header.update_state(self.model.files)
         self.update_files_label()
         self.generate_preview_names()
+
+        # Start metadata analysis
+        self.load_metadata_in_thread()
 
     def handle_header_toggle(self, checked: bool) -> None:
         """
@@ -616,7 +623,7 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         else:
             self.files_label.setText(f"Files {selected} selected from {total}")
 
-    def get_identity_name_pairs(self) -> list[tuple[str, str]]:
+    def get_identity_name_pairs(self) -> list[tuple[str, str]] -> None:
         """
         Returns a list of (original, new) filename pairs, where each 'new' filename is the same as the 'original' filename.
         This is used to populate the preview tables when the user has not yet configured any rename modules.
@@ -717,83 +724,7 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         )
         self.status_label.setText(status_msg)
 
-    def on_file_selected(self, index):
-        """
-        Handles the selection of a file in the file list.
-
-        When a file is selected, this method retrieves the corresponding
-        file item and its metadata from the current folder path. It then
-        logs the file selection and populates the metadata table with the
-        specific fields read from the file.
-
-        :param index: The QModelIndex representing the selected file in the list.
-        """
-        logger.info("File selected")
-
-        # Αγνόησε κλικ στο column 0 (το checkbox)
-        if index.column() == 0:
-            return
-
-        logger.info("File selected (col %d)", index.column())
-        row = index.row()
-        file_item = self.model.files[row]
-
-        # Αν το file_item έχει attribute .filename:
-        filename = file_item.filename
-        # Ορθή διαδρομή:
-        file_path = os.path.join(self.current_folder_path, filename)
-
-        # Eναλλακτικά, αν file_item έχει .path:
-        # file_path = file_item.path
-
-        logger.info("file_item.path: %r", file_item)
-        logger.info("file_path: %s", file_path)
-
-        metadata = self.metadata_reader.read_specific_fields(
-            file_path,
-            ["FileName", "FileSize", "CreateDate", "ModifyDate", "Duration", "MIMEType"]
-        )
-        self.populate_metadata_table(metadata)
-
-
-        # QApplication.setOverrideCursor(Qt.WaitCursor)
-        # try:
-        #     metadata = self.metadata_reader.read_specific_fields(
-        #         file_path,
-        #         ["FileName", "FileSize", "CreateDate", "ModifyDate", "Duration", "MIMEType"]
-        #     )
-        # finally:
-        #     # αποκαθιστάς τον κανονικό δείκτη
-        #     QApplication.restoreOverrideCursor()
-
-
-    # def populate_metadata_table(self, metadata: dict):
-    #     """
-    #     Populates the metadata table view with key-value pairs.
-
-    #     Args:
-    #         metadata (dict): A dictionary containing metadata fields as keys and their
-    #                         corresponding values to be displayed in the table.
-
-    #     The method initializes a QStandardItemModel, sets up headers for the table,
-    #     and appends each metadata key-value pair as rows in the model. The model is
-    #     then set to the metadata table view, and columns are resized to fit contents.
-    #     """
-
-    #     # logger.info("Populating metadata table")
-    #     model = QStandardItemModel()
-    #     model.setHorizontalHeaderLabels(["Key", "Value"])
-
-    #     for key, value in metadata.items():
-    #         model.appendRow([
-    #             QStandardItem(str(key)),
-    #             QStandardItem(str(value))
-    #         ])
-
-    #     self.metadata_table_view.setModel(model)
-    #     self.metadata_table_view.resizeColumnsToContents()
-
-    def load_metadata_in_thread(self, file_path: str):
+    def load_metadata_in_thread(self) -> None:
         """
         Loads file metadata in a separate thread.
 
@@ -811,61 +742,93 @@ class MainWindow(QMainWindow, FileLoaderMixin):
 
         QApplication.setOverrideCursor(Qt.WaitCursor)
 
-        self.thread = QThread()
-        self.worker = MetadataWorker(file_path)
-        self.worker.moveToThread(self.thread)
+        file_paths = [
+            os.path.join(self.current_folder_path, file.filename)
+            for file in self.model.files
+        ]
 
-        self.thread.started.connect(self.worker.run)
-        self.worker.finished.connect(self.on_metadata_ready)
-        self.worker.error.connect(self.on_metadata_error)
+        self.metadata_thread = QThread()
+        self.metadata_worker = MetadataWorker(file_paths)
+        self.metadata_worker.moveToThread(self.metadata_thread)
 
-        # Clean-up
-        self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
+        # Connect signals — κάνε τα εδώ
+        self.metadata_worker.progress.connect(self.on_metadata_progress)
+        self.metadata_worker.finished.connect(self.on_metadata_batch_ready)
+        self.metadata_worker.finished.connect(self.metadata_thread.quit)
+        self.metadata_worker.finished.connect(self.metadata_worker.deleteLater)
+        self.metadata_thread.finished.connect(self.metadata_thread.deleteLater)
 
-        self.thread.start()
+        self.metadata_thread.started.connect(self.metadata_worker.run_batch)
 
-    def on_metadata_ready(self, metadata: dict):
+        logger.info("Starting metadata analysis for %d files", len(file_paths))
+
+        self.metadata_thread.start()
+
+    def on_metadata_progress(self, current: int, total: int) -> None:
         """
-        Slot to receive metadata from the MetadataWorker thread.
+        Slot connected to the progress signal of the metadata worker.
 
-        This method is triggered when the MetadataWorker emits its finished signal,
-        indicating that the metadata has been read from the file. It clears the
-        metadata table view, and populates it with the received metadata.
+        Updates the progress dialog with the current and total number of files being analyzed.
 
-        :param metadata: A dictionary containing the key-value pairs of the metadata
-                         read from the file.
+        Args:
+            current (int): Number of files analyzed so far.
+            total (int): Total number of files to be analyzed.
         """
+        logger.debug("Progress: %d / %d", current, total)
+
+        if hasattr(self, "loading_dialog"):
+            self.loading_dialog.set_progress(current, total)
+            self.loading_dialog.set_message(f"Analyzing file {current} of {total}...")
+
+    def on_metadata_batch_ready(self, metadata_dict: dict) -> None:
+        # Restore UI cursor
+        """
+        Slot connected to the finished signal of the metadata worker.
+
+        Restores the UI cursor, closes and deletes the progress dialog,
+        saves the metadata to the cache, and enables interaction with the file table.
+
+        Args:
+            metadata_dict (dict): Mapping of file names to their metadata.
+        """
+        logger.info("Metadata batch analysis complete. %d entries loaded.", len(metadata_dict))
 
         QApplication.restoreOverrideCursor()
 
-        self.metadata_table_view.setRowCount(0)
-        self.metadata_table_view.setColumnCount(2)
-        self.metadata_table_view.setHorizontalHeaderLabels(["Tag", "Value"])
+        # Close and delete progress dialog
+        if hasattr(self, "loading_dialog"):
+            self.loading_dialog.close()
+            self.loading_dialog.deleteLater()
+            del self.loading_dialog
 
-        for row, (key, value) in enumerate(metadata.items()):
-            self.metadata_table_view.insertRow(row)
-            self.metadata_table_view.setItem(row, 0, QTableWidgetItem(str(key)))
-            self.metadata_table_view.setItem(row, 1, QTableWidgetItem(str(value)))
+        # Save metadata to cache
+        self.metadata_cache = metadata_dict
 
-    # def on_metadata_error(self, message: str):
-    #     """
-    #     Slot to receive error messages from the MetadataWorker thread.
+        # Enable table interaction
+        self.table_view.setEnabled(True)
 
-    #     This method is triggered when the MetadataWorker emits its error signal,
-    #     indicating that an error occurred while reading the metadata from the file.
-    #     It displays a critical message box with the error message.
+    def on_metadata_error(self, message: str) -> None:
+        """
+        Slot connected to the error signal of the metadata worker.
 
-    #     :param message: The error message to be displayed.
-    #     """
+        Restores the UI cursor, closes and deletes the progress dialog,
+        and displays an error message with the given message.
 
-    #     QApplication.restoreOverrideCursor()
+        Args:
+            message (str): The error message from the metadata worker.
+        """
+        logger.error("Metadata worker error: %s", message)
 
-    #     # QMessageBox.critical(self, "Metadata Error", f"Failed to read metadata:\n{message}")
-    #     CustomMessageDialog.information(self, "Metadata Error", f"Failed to read metadata:\n{message}")
+        QApplication.restoreOverrideCursor()
 
-    def populate_metadata_table(self, metadata: dict):
+        if hasattr(self, "loading_dialog"):
+            self.loading_dialog.close()
+            self.loading_dialog.deleteLater()
+            del self.loading_dialog
+
+        CustomMessageDialog.information(self, "Metadata Error", f"Failed to read metadata:\n{message}")
+
+    def populate_metadata_table(self, metadata: dict) -> None:
         """
         Populate the existing metadata model with new rows.
 
@@ -891,13 +854,26 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         # 3. Resize columns to fit their contents
         self.metadata_table_view.resizeColumnsToContents()
 
-    def on_metadata_error(self, message: str):
+    def on_table_row_clicked(self, index) -> None:
         """
-        Handle errors from the metadata worker.
+        Slot connected to the itemSelectionChanged signal of the table view.
+
+        Populates the metadata table with the metadata of the clicked row.
+
+        Args:
+            index (QModelIndex): The index of the clicked row.
         """
-        QApplication.restoreOverrideCursor()
-        CustomMessageDialog.information(
-            self,
-            "Metadata Error",
-            f"Failed to read metadata:\n{message}"
-        )
+        if index.column() == 0:
+            return
+
+        filename = self.model.files[index.row()].filename
+        metadata = self.metadata_cache.get(filename, {})
+
+        logger.debug("Row clicked: %s", filename)
+        if metadata:
+            logger.debug("Metadata found for %s", filename)
+        else:
+            logger.warning("No metadata found for %s", filename)
+
+
+        self.populate_metadata_table(metadata)

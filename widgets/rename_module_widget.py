@@ -18,19 +18,20 @@ Features:
 - Add/Remove buttons and layout management
 """
 
-
 from typing import Optional
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
     QPushButton, QFrame
 )
 from PyQt5.QtCore import pyqtSignal
-
 from modules.specified_text_module import SpecifiedTextModule
 from modules.counter_module import CounterModule
 from modules.metadata_module import MetadataModule
 from widgets.custom_msgdialog import CustomMessageDialog
 
+# Initialize Logger
+from logger_helper import get_logger
+logger = get_logger(__name__)
 
 class RenameModuleWidget(QWidget):
     """

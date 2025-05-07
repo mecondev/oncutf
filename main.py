@@ -19,8 +19,19 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 
 from main_window import MainWindow
-from logger_setup import ConfigureLogger
 from utils.theme import load_stylesheet
+
+from logger_setup import ConfigureLogger
+from logger_helper import get_logger
+
+# Initialize logging system
+ConfigureLogger(log_name="oncutf")
+
+# Logger for this module
+logger = get_logger(__name__)
+
+logger.info("Application started")
+
 
 def main() -> None:
     # Setup logging
@@ -30,11 +41,6 @@ def main() -> None:
     Initializes logging, creates a Qt application and stylesheet, creates a
     MainWindow and shows it, and enters the application's main loop.
     """
-    ConfigureLogger(log_name="batch_renamer")
-
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.info("Logger initialized")
 
     # Create application
     app = QApplication(sys.argv)

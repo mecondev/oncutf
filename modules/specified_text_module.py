@@ -11,12 +11,15 @@ text at a defined position within the filename.
 Used in the oncutf application as one of the modular renaming components.
 """
 
-
 from typing import Optional
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit
 from PyQt5.QtCore import pyqtSignal
 import re
 from config import ALLOWED_FILENAME_CHARS
+
+# initialize logger
+from logger_helper import get_logger
+logger = get_logger(__name__)
 
 
 class SpecifiedTextModule(QWidget):

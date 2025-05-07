@@ -1,18 +1,39 @@
-# custom_msgdialog.py
-# Author: Firstname Lastname
-# Date: 2025-05-01
-# Description: Custom message dialog widget
+"""
+custom_msgdialog.py
 
+Author: Michael Economou
+Date: 2025-05-01
 
+This module defines the CustomMessageDialog class, a flexible and styled alternative
+to QMessageBox for use in the oncutf application.
+
+It provides support for various types of dialogs including:
+- Question dialogs with custom button labels
+- Informational dialogs with an OK button
+- Non-blocking waiting dialogs with optional progress bar
+- Conflict resolution dialogs for rename operations (e.g., Skip, Overwrite)
+
+This dialog is intended for consistent and modern user feedback across the application,
+and is used instead of standard QMessageBox to allow greater control over layout,
+behavior, and styling.
+"""
+
+from typing import Optional
 from PyQt5.QtWidgets import QDialog, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QWidget
 from PyQt5.QtCore import Qt
+
+# Initialize Logger
+from logger_helper import get_logger
+logger = get_logger(__name__)
+
 
 class CustomMessageDialog(QDialog):
     """
     A custom-styled message dialog to replace QMessageBox.
     Supports question dialogs and information dialogs.
     """
-    def __init__(self, title: str, message: str, buttons: list[str], parent: QWidget = None):
+    def __init__(self, title: str, message: str, buttons: list[str],
+                 parent: Optional[QWidget] = None, show_progress: bool = False):
         """
         Initialize a CustomMessageDialog.
 
@@ -38,14 +59,19 @@ class CustomMessageDialog(QDialog):
         self.setModal(True)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
+        self.progress_bar = None
+        if show_progress:
+            self.progress_bar = QProgressBar(self)
+            self.progress_bar.setRange(0, 0)  # indeterminate mode αρχικά
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(10)
 
         # Message label
-        label = QLabel(message)
-        label.setWordWrap(True)
-        layout.addWidget(label)
+        self.label = QLabel(message)
+        self.label.setWordWrap(True)
+        layout.addWidget(self.label)
 
         # Buttons
         btn_layout = QHBoxLayout()
@@ -128,6 +154,79 @@ class CustomMessageDialog(QDialog):
         dlg = CustomMessageDialog(title, message, [ok_text], parent)
         dlg.exec_()
 
+    @staticmethod
+    def rename_conflict_dialog(parent: QWidget, filename: str) -> str:
+        """
+        Shows a dialog with options for renaming conflict resolution.
 
+        Parameters
+        ----------
+        parent : QWidget
+            The parent widget.
+        filename : str
+            The filename that is causing the conflict.
+
+        Returns
+        -------
+        str
+            One of "Skip", "Skip All", "Cancel", "Overwrite"
+        """
+        message = f"The file '{filename}' already exists.\nWhat would you like to do?"
+        options = ["Skip", "Skip All", "Cancel", "Overwrite"]
+        dlg = CustomMessageDialog("File Conflict", message, buttons=options, parent=parent)
+        dlg.exec_()
+        return dlg.selected
+
+    def set_progress(self, value: int, total: int = None):
+        """
+        Updates the progress bar with the current progress value.
+
+        Parameters
+        ----------
+        value : int
+            The current progress value to set on the progress bar.
+        total : int, optional
+            The total value for the progress bar range. If provided,
+            updates the progress bar range to (0, total).
+        """
+
+        if self.progress_bar:
+            if total is not None:
+                self.progress_bar.setRange(0, total)
+            self.progress_bar.setValue(value)
+
+    def set_message(self, msg: str):
+        """
+        Updates the dialog's label with the given message.
+
+        Parameters
+        ----------
+        msg : str
+            The new message to display in the dialog.
+        """
+        self.label.setText(msg)
+
+    @staticmethod
+    def show_waiting(parent, message="Please wait..."):
+        """
+        Shows a non-modal waiting dialog with a progress bar.
+
+        Parameters
+        ----------
+        parent : QWidget
+            The parent widget.
+        message : str, optional
+            The message to display in the dialog.
+
+        Returns
+        -------
+        CustomMessageDialog
+            The waiting dialog.
+        """
+        dlg = CustomMessageDialog("Please Wait", message, buttons=None, parent=parent, show_progress=True)
+        dlg.setModal(False)
+        dlg.setWindowModality(Qt.ApplicationModal)
+        dlg.show()
+        return dlg
 
 
