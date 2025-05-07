@@ -1,87 +1,96 @@
-# ReNExif
 
-![Docstring Coverage](https://img.shields.io/badge/docstrings-100%25-brightgreen)
-![License](https://img.shields.io/badge/license-MIT-blue)
-![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+# oncutf
 
-ReNExif is a modular batch file renaming application designed for photographers, videographers, and digital archivists. It combines a clean, intuitive PyQt5 GUI with powerful rename modules that can be composed dynamically to rename large sets of files based on metadata, custom patterns, or static text.
+**oncutf** is a personal open-source tool for renaming files based on EXIF metadata.  
+It combines the flexibility of [ExifTool](https://exiftool.org/) with the convenience of a PyQt5 GUI.
 
----
+Built for creators, photographers, and archivists who want their filenames to reflect real metadata — like capture date, duration, or any embedded tag.
 
-## 🎯 Key Features
-
-- ✅ Modular rename system: combine multiple rename operations in sequence
-- 📸 EXIF & file metadata support via ExifTool
-- 🔢 Auto-incrementing counters with configurable padding, start, and step
-- 🔤 Insert specified static text in filenames
-- 📅 Insert file date or custom metadata field
-- 👀 Real-time preview of filename changes
-- 🧼 Filename validation for cross-platform compatibility
-- 🌙 Dark and light themes (QSS-based)
-- 🪟 PyQt5 interface, responsive and customizable
+<p align="center">
+  <img src="assets/oncut-logo-2024-CIRCLE-(1100X1100)-dark-w-white-BG.png" alt="oncut logo" width="200"/>
+</p>
 
 ---
 
-## 🧩 Rename Modules
+## ✨ Features
 
-Each rename module is independently configurable:
-
-| Module               | Description                       |
-|----------------------|-----------------------------------|
-| `CounterModule`      | Adds an incrementing number       |
-| `SpecifiedTextModule`| Inserts custom static text        |
-| `MetadataModule`     | Uses file or EXIF metadata        |
-
-More modules can be added by extending the `modules/` directory.
+- Rename files using EXIF tags (e.g. `CreateDate`, `Duration`, etc.)
+- Modular rename system (add prefix, counter, EXIF fields, etc.)
+- Clean PyQt5-based GUI
+- Live preview before renaming
+- Overwrite / Skip / Cancel logic
+- EXIF reading via subprocess (ExifTool)
+- Multi-platform ready (Windows, Linux, macOS)
 
 ---
 
-## 🖼️ GUI Overview
+## 🛠 Requirements
 
-The interface is divided into several sections:
+- Python 3.9+
+- [ExifTool](https://exiftool.org/) — must be installed and available in system path
+- PyQt5
 
-- 📁 Folder browser tree
-- 📄 File list with checkboxes and validation icons
-- 🧠 Metadata info panel
-- 🧩 Rename module stack (add/remove/edit modules)
-- 🔍 Preview area for original and new filenames
-- 🟢 Action buttons for Rename / Reset
-
----
-
-## 🚀 Getting Started
-
-### Requirements
-
-- Python 3.10+
-- `PyQt5`
-- `exiftool` installed and available in PATH
-
-### Installation
+Install dependencies:
 
 ```bash
-git clone https://github.com/mecondev/ReNExif.git
-cd ReNExif
 pip install -r requirements.txt
 ```
 
-> You may need to install `exiftool` from https://exiftool.org/
+---
 
-### Run
+## 🚀 Usage
 
 ```bash
 python main.py
 ```
 
+1. Select a folder with media files.
+2. Choose which files to rename.
+3. Configure rename modules (e.g. prefix, counter, EXIF tag).
+4. Preview the result.
+5. Click **Rename**.
+
 ---
 
-## 🗂️ Project Structure
+## 📁 Project Structure
 
-- 📁 [Project Structure with Docstrings](reports/project_structure.md)
-- 📄 [Module-Level Docstrings](ReNExif_module_docstrings.md)
+```
+oncutf/
+├── assets/              # Logos, favicon, screenshots
+├── main.py              # Entry point for the application
+├── models/              # File data structures
+├── modules/             # Rename logic (e.g. counter, EXIF field, etc.)
+├── utils/               # Helper tools (e.g. metadata parser)
+├── widgets/             # PyQt UI components
+└── README.md
+```
 
 ---
 
-## 📖 License
+## 🌐 Project & Creator
 
-MIT License © 2025 Michael Economou
+**oncutf** is created by [Michael Economou](https://oncut.gr),  
+as a personal non-commercial tool to support creative video & photo workflows.
+
+### 🔗 Links
+
+- 🌍 Website: [oncut.gr](https://oncut.gr)
+- 📷 Instagram: [@oncut.gr](https://instagram.com/oncut.gr)
+- 📘 Facebook: [Oncut](https://facebook.com/oncut.gr)
+
+> This is a hobbyist project. Not affiliated with or endorsed by ExifTool or PyQt5.
+
+---
+
+## 🪪 License
+
+This project is licensed under the MIT License.  
+See the [LICENSE](LICENSE) file for full details.
+
+---
+
+## 🙏 Acknowledgments
+
+- [ExifTool](https://exiftool.org/) by Phil Harvey
+- PyQt5 by Riverbank Computing
+- The open-source community
