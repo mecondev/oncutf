@@ -17,7 +17,10 @@ Features:
 - Error handling and progress updates
 """
 
-from PyQt5.QtCore import QObject, pyqtSignal, QThread
+import time
+import os
+from typing import Optional
+from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 from utils.metadata_reader import MetadataReader
 
 # initialize logger
@@ -29,19 +32,24 @@ class MetadataWorker(QObject):
     finished = pyqtSignal(dict)  # emits {filename: metadata}
     progress = pyqtSignal(int, int)
 
-    def load_batch(self, files):
+    def __init__(self, reader: MetadataReader, parent: Optional[QObject] = None):
+        super().__init__(parent)
+        self.reader = reader
+        self.files = []
+
+    def load_batch(self, files) -> None:
         """
         Initializes the batch loading of metadata for the provided list of files.
 
         Args:
             files (list): A list of file paths for which metadata should be retrieved.
         """
-        logger.debug("Reading metadata for: %s", path)
+        logger.debug("Batch loaded: %d files", len(files))
 
         self.files = files
         QTimer.singleShot(0, self.run_batch)
 
-    def run_batch(self):
+    def run_batch(self) -> None:
         """
         Runs the batch metadata extraction in the background.
 
@@ -50,16 +58,27 @@ class MetadataWorker(QObject):
 
         :return: None
         """
+
+        start_time = time.time()
+
+        logger.info("Metadata batch run started for %d files", len(self.files))
+
         result = {}
         total = len(self.files)
 
         for i, path in enumerate(self.files):
+            logger.debug("Reading metadata for: %s", path)
+
             try:
-                metadata = MetadataReader.read_metadata(path)
+                metadata = self.reader.read_metadata(path)
                 result[os.path.basename(path)] = metadata
-            except Exception:
+            except Exception as e:
+                logger.warning("Failed to read metadata for %s: %s", path, e)
                 result[os.path.basename(path)] = {}
 
             self.progress.emit(i + 1, total)
+
+        duration = time.time() - start_time
+        logger.info("Metadata batch completed in %.2f seconds", duration)
 
         self.finished.emit(result)

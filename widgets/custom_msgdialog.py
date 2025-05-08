@@ -19,7 +19,7 @@ behavior, and styling.
 """
 
 from typing import Optional
-from PyQt5.QtWidgets import QDialog, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QWidget
+from PyQt5.QtWidgets import QDialog, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QWidget, QProgressBar
 from PyQt5.QtCore import Qt
 
 # Initialize Logger
@@ -32,8 +32,9 @@ class CustomMessageDialog(QDialog):
     A custom-styled message dialog to replace QMessageBox.
     Supports question dialogs and information dialogs.
     """
-    def __init__(self, title: str, message: str, buttons: list[str],
-                 parent: Optional[QWidget] = None, show_progress: bool = False):
+
+    def __init__(self, title: str, message: str, buttons: Optional[list[str]] = None,
+                parent: Optional[QWidget] = None, show_progress: bool = False):
         """
         Initialize a CustomMessageDialog.
 
@@ -62,7 +63,7 @@ class CustomMessageDialog(QDialog):
         self.progress_bar = None
         if show_progress:
             self.progress_bar = QProgressBar(self)
-            self.progress_bar.setRange(0, 0)  # indeterminate mode αρχικά
+            self.progress_bar.setRange(0, 0)  # indeterminate mode
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
@@ -77,12 +78,14 @@ class CustomMessageDialog(QDialog):
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
         self._buttons = {}
-        for btn_text in buttons:
-            btn = QPushButton(btn_text)
-            btn.setFixedWidth(100)
-            btn.clicked.connect(lambda _, b=btn_text: self._on_button(b))
-            btn_layout.addWidget(btn)
-            self._buttons[btn_text] = btn
+        if buttons:
+            for btn_text in buttons:
+                btn = QPushButton(btn_text)
+                btn.setFixedWidth(100)
+                btn.clicked.connect(lambda _, b=btn_text: self._on_button(b))
+                btn_layout.addWidget(btn)
+                self._buttons[btn_text] = btn
+
         layout.addLayout(btn_layout)
 
         self.selected = None
@@ -195,7 +198,7 @@ class CustomMessageDialog(QDialog):
                 self.progress_bar.setRange(0, total)
             self.progress_bar.setValue(value)
 
-    def set_message(self, msg: str):
+    def set_message(self, msg: str) -> None:
         """
         Updates the dialog's label with the given message.
 
@@ -207,7 +210,7 @@ class CustomMessageDialog(QDialog):
         self.label.setText(msg)
 
     @staticmethod
-    def show_waiting(parent, message="Please wait..."):
+    def show_waiting(parent: QWidget, message: str = "Please wait...") -> "CustomMessageDialog":
         """
         Shows a non-modal waiting dialog with a progress bar.
 
@@ -229,4 +232,11 @@ class CustomMessageDialog(QDialog):
         dlg.show()
         return dlg
 
+    def set_progress_range(self, total: int) -> None:
+        """
+        Sets the progress bar range to (0, total).
+        """
+        if self.progress_bar:
+            self.progress_bar.setRange(0, total)
+            self.progress_bar.setValue(0)
 

@@ -46,7 +46,6 @@ from models.file_item import FileItem
 from widgets.checkbox_header import CheckBoxHeader
 from widgets.rename_module_widget import RenameModuleWidget
 from widgets.custom_msgdialog import CustomMessageDialog
-from utils.file_loader import FileLoaderMixin
 from utils.filename_validator import FilenameValidator
 from utils.preview_generator import generate_preview_names as generate_preview_logic
 from utils.icons import create_colored_icon
@@ -60,7 +59,7 @@ from logger_helper import get_logger
 logger = get_logger(__name__)
 
 
-class MainWindow(QMainWindow, FileLoaderMixin):
+class MainWindow(QMainWindow):
 
     def __init__(self) -> None:
         """
@@ -300,7 +299,7 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         footer_widget = QWidget()
         footer_layout = QHBoxLayout(footer_widget)
         footer_layout.setContentsMargins(10, 4, 10, 4)
-        self.version_label = QLabel("Batch File Renamer v1.0")
+        self.version_label = QLabel("oncutf v1.0")
         self.version_label.setObjectName("versionLabel")
         self.version_label.setAlignment(Qt.AlignLeft)
         footer_layout.addWidget(self.version_label)
@@ -495,39 +494,60 @@ class MainWindow(QMainWindow, FileLoaderMixin):
             if hasattr(module, "divider"):
                 module.divider.setVisible(index > 0)
 
-    def load_files_from_folder(self, folder_path: str) -> None:
+    def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False) -> None:
         """
-        Loads files from the given folder into the model.
+        Loads supported files from the given folder into the model and optionally
+        launches metadata extraction in a separate thread.
 
         Args:
-            folder_path (str): The path of the folder to load.
-
+            folder_path (str): The path of the folder to scan.
+            skip_metadata (bool): If True, metadata analysis is skipped.
         """
+        logger.info(">>> load_files_from_folder CALLED for: %s", folder_path)
+
         self.current_folder_path = folder_path
         all_files = glob.glob(os.path.join(folder_path, "*"))
-        logger.info("current file path: %s", self.current_folder_path)
+
         self.model.beginResetModel()
         self.model.files.clear()
+        self.model.folder_path = folder_path
 
         for file_path in sorted(all_files):
             ext = os.path.splitext(file_path)[1][1:].lower()
             if ext in ALLOWED_EXTENSIONS:
                 filename = os.path.basename(file_path)
-                date = datetime.datetime.fromtimestamp(os.path.getmtime(file_path)).strftime("%Y-%m-%d %H:%M:%S")
-                self.model.files.append(FileItem(filename, ext, date))
+                modified = datetime.datetime.fromtimestamp(os.path.getmtime(file_path)).strftime("%Y-%m-%d %H:%M:%S")
+                self.model.files.append(FileItem(filename, ext, modified))
 
         self.model.endResetModel()
 
-        logger.info("Folder selected: %s", folder_path)
-        logger.info("Loaded %d supported files", len(self.model.files))
+        logger.info("Loaded %d supported files from %s", len(self.model.files), folder_path)
 
-        # UI sync
+        # Sync state
         self.header.update_state(self.model.files)
         self.update_files_label()
         self.generate_preview_names()
 
-        # Start metadata analysis
-        self.load_metadata_in_thread()
+        if skip_metadata:
+            logger.info("Skipping metadata scan (Ctrl was pressed).")
+            return
+
+        # Otherwise, begin metadata loading
+        self.table_view.setEnabled(False)
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        logger.info("Creating loading dialog...")
+        self.loading_dialog = CustomMessageDialog.show_waiting(self, "Analyzing files...")
+        QApplication.processEvents()
+        logger.info("Dialog shown. Proceeding with metadata worker.")
+        
+        # Set the total count early — BEFORE worker starts
+        self.loading_dialog.set_progress_range(len(file_paths))
+        file_paths = [os.path.join(folder_path, file.filename) for file in self.model.files]
+
+        logger.info("Loading metadata for %d files", len(file_paths))
+
+        self.load_metadata_in_thread(file_paths)
 
     def handle_header_toggle(self, checked: bool) -> None:
         """
@@ -605,6 +625,61 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         window_geometry.moveCenter(screen_center)
         self.move(window_geometry.topLeft())
 
+    def handle_browse(self: 'MainWindow') -> None:
+        """
+        Opens a folder selection dialog and loads files from the selected folder.
+
+        If Ctrl is held, metadata scan is skipped.
+        ALT key is commented out due to Linux window manager conflicts.
+
+        Also updates the tree view to reflect the selected folder.
+        """
+        folder_path = QFileDialog.getExistingDirectory(self, "Select Folder", "/")
+
+        if folder_path:
+            # Detect keyboard modifiers
+            modifiers = QApplication.keyboardModifiers()
+            skip_metadata = modifiers & Qt.ControlModifier
+
+            # ALT key support disabled for now
+            # skip_metadata = modifiers & Qt.AltModifier
+
+            logger.info("Folder selected: %s", folder_path)
+            logger.info("Ctrl pressed? %s", bool(skip_metadata))
+
+            self.load_files_from_folder(folder_path, skip_metadata=skip_metadata)
+
+            # Update tree view to reflect selected folder
+            if hasattr(self, "dir_model") and hasattr(self, "tree_view"):
+                index = self.dir_model.index(folder_path)
+                if index.isValid():
+                    self.tree_view.setCurrentIndex(index)
+                    self.tree_view.scrollTo(index)
+
+    def handle_select(self) -> None:
+        """
+        Loads files from the folder currently selected in the tree view.
+
+        If Ctrl is held while clicking, metadata scan is skipped.
+        """
+        index = self.tree_view.currentIndex()
+        if not index.isValid():
+            logger.warning("No folder selected in tree view.")
+            return
+
+        folder_path = self.dir_model.filePath(index)
+
+        modifiers = QApplication.keyboardModifiers()
+        skip_metadata = modifiers & Qt.ControlModifier
+
+        # ALT is commented out due to window manager conflict
+        # skip_metadata = modifiers & Qt.AltModifier
+
+        logger.info("Folder selected via tree: %s", folder_path)
+        logger.info("Ctrl pressed? %s", bool(skip_metadata))
+
+        self.load_files_from_folder(folder_path, skip_metadata=skip_metadata)
+
     def update_files_label(self) -> None:
         """
         Updates the label displaying the number of selected files.
@@ -623,7 +698,7 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         else:
             self.files_label.setText(f"Files {selected} selected from {total}")
 
-    def get_identity_name_pairs(self) -> list[tuple[str, str]] -> None:
+    def get_identity_name_pairs(self) -> list[tuple[str, str]]:
         """
         Returns a list of (original, new) filename pairs, where each 'new' filename is the same as the 'original' filename.
         This is used to populate the preview tables when the user has not yet configured any rename modules.
@@ -724,7 +799,7 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         )
         self.status_label.setText(status_msg)
 
-    def load_metadata_in_thread(self) -> None:
+    def load_metadata_in_thread(self, file_paths: list[str]) -> None:
         """
         Loads file metadata in a separate thread.
 
@@ -748,7 +823,7 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         ]
 
         self.metadata_thread = QThread()
-        self.metadata_worker = MetadataWorker(file_paths)
+        self.metadata_worker = MetadataWorker(self.metadata_reader)
         self.metadata_worker.moveToThread(self.metadata_thread)
 
         # Connect signals — κάνε τα εδώ
@@ -757,7 +832,7 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         self.metadata_worker.finished.connect(self.metadata_thread.quit)
         self.metadata_worker.finished.connect(self.metadata_worker.deleteLater)
         self.metadata_thread.finished.connect(self.metadata_thread.deleteLater)
-
+        self.metadata_worker.load_batch(file_paths)
         self.metadata_thread.started.connect(self.metadata_worker.run_batch)
 
         logger.info("Starting metadata analysis for %d files", len(file_paths))
@@ -777,8 +852,12 @@ class MainWindow(QMainWindow, FileLoaderMixin):
         logger.debug("Progress: %d / %d", current, total)
 
         if hasattr(self, "loading_dialog"):
-            self.loading_dialog.set_progress(current, total)
-            self.loading_dialog.set_message(f"Analyzing file {current} of {total}...")
+            if self.loading_dialog is not None:
+                self.loading_dialog.set_progress(current, total)
+                self.loading_dialog.set_message(f"Analyzing file {current} of {total}...")
+
+            else:
+                logger.warning("Progress update received but loading_dialog is None")
 
     def on_metadata_batch_ready(self, metadata_dict: dict) -> None:
         # Restore UI cursor
@@ -795,17 +874,17 @@ class MainWindow(QMainWindow, FileLoaderMixin):
 
         QApplication.restoreOverrideCursor()
 
-        # Close and delete progress dialog
-        if hasattr(self, "loading_dialog"):
+        # Close loading dialog if it exists
+        if hasattr(self, "loading_dialog") and self.loading_dialog:
             self.loading_dialog.close()
-            self.loading_dialog.deleteLater()
-            del self.loading_dialog
+            self.loading_dialog = None
+            logger.debug("Loading dialog closed.")
 
-        # Save metadata to cache
+        # Store metadata (e.g., in a dict with filename as key)
         self.metadata_cache = metadata_dict
 
-        # Enable table interaction
-        self.table_view.setEnabled(True)
+        # Optionally update preview or selection if needed
+        self.status_label.setText(f"Metadata loaded for {len(metadata_dict)} files.")
 
     def on_metadata_error(self, message: str) -> None:
         """
