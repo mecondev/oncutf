@@ -32,7 +32,7 @@ import platform
 from typing import TYPE_CHECKING, List, Tuple, Dict
 from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QSplitter, QFrame, QScrollArea, QTableWidget, QTableView, QTreeView,
+    QSplitter, QFrame, QScrollArea, QTableWidget, QTableView, QTreeView, QFileDialog,
     QFileSystemModel, QAbstractItemView, QAbstractScrollArea, QSizePolicy, QProgressBar,
     QHeaderView, QTableWidgetItem, QDesktopWidget, QMessageBox
 )
@@ -51,7 +51,7 @@ from utils.preview_generator import generate_preview_names as generate_preview_l
 from utils.icons import create_colored_icon
 from utils.icon_cache import prepare_status_icons
 from utils.metadata_reader import MetadataReader
-from workers.metadata_worker import MetadataWorker
+from widgets.metadata_worker import MetadataWorker
 from config import *
 
 # Initialize Logger
@@ -509,6 +509,11 @@ class MainWindow(QMainWindow):
             folder_path (str): The path of the folder to scan.
             skip_metadata (bool): If True, metadata analysis is skipped.
         """
+        # BLOCK if another scan is active
+        if self.metadata_thread and self.metadata_thread.isRunning():
+            logger.warning("Metadata scan already running — folder change blocked.")
+            CustomMessageDialog.information(self, "Busy", "Metadata is still being scanned. Please cancel or wait.")
+            return
         logger.info(">>> load_files_from_folder CALLED for: %s", folder_path)
 
         self.current_folder_path = folder_path
@@ -874,6 +879,10 @@ class MainWindow(QMainWindow):
             current (int): Number of files analyzed so far.
             total (int): Total number of files to be analyzed.
         """
+        if self.metadata_worker is None:
+            logger.warning("Progress signal received after cleanup — ignoring")
+            return
+
         logger.debug("Progress: %d / %d", current, total)
 
         if getattr(self, "loading_dialog", None):
@@ -888,7 +897,11 @@ class MainWindow(QMainWindow):
         Update UI, close dialog, then restore cursor _after_ the event loop
         has had την ευκαιρία να επεξεργαστεί το override cursor.
         """
-        logger.info("Done loading metadata.")
+        if self.metadata_worker is None:
+            logger.warning("Batch-ready signal received after cleanup — ignoring")
+            return
+
+        logger.info("Done loading metadata. %d entries loaded.", len(metadata_dict))
 
         # 1) Save results & update status
         self.metadata_cache = metadata_dict

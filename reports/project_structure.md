@@ -1,6 +1,6 @@
 # Project Structure with Docstring Snippets
 
-**Docstring Coverage:** 23 / 30 files documented (76.7%)
+**Docstring Coverage:** 23 / 31 files documented (74.2%)
 
 📄 README.md
 📁 assets/
@@ -10,6 +10,7 @@
 📄 config.py — *Module: config.py  Author: Michael Economou Date: 2025-05-01  This module defines global configuration constants and settings used throughout the oncutf application. It centralizes UI defaults, file filters, path definitions, and other shared parameters.  Intended to be imported wherever consistent application-wide settings are required.  Contains: - Default UI settings - File extension filters - Paths to resources and stylesheets*
 📁 docs/
     📄 oncutf_module_docstrings.md
+📄 docstrings_report.txt
 📄 logger_helper.py — *Returns a logger with the given name, or the module name if None.  Args: name (str): Optional name for the logger (defaults to caller's module)  Returns: logging.Logger: Configured logger instance*
 📄 logger_setup.py — *logger_setup.py  This module provides the ConfigureLogger class for setting up logging in the application. It allows for flexible configuration of logging settings, including log levels, output destinations, and formatting. The logger is configured to log INFO and higher levels to the console, and ERROR and higher levels to a rotating file.  Classes: ConfigureLogger: Configures application-wide logging with console and file handlers.  Author: Michael Economou Date: 2025-05-01*
 📁 logs/
@@ -26,7 +27,7 @@
     📄 metadata_module.py — *Module: metadata_module.py  Author: Michael Economou Date: 2025-05-04  This module provides a widget-based rename module that allows selecting a metadata field (such as creation date, modification date, or EXIF tag) to include in the renamed filename.  It is used in the oncutf tool to dynamically extract and apply file metadata during batch renaming.*
     📄 specified_text_module.py — *Module: specified_text_module.py  Author: Michael Economou Date: 2025-05-02  This module defines a rename module that inserts user-specified text into filenames. It allows users to prepend, append, or inject static text at a defined position within the filename.  Used in the oncutf application as one of the modular renaming components.*
 📁 reports/
-    📄 structure.md
+    📄 project_structure.md
 📄 requirements.txt
 📁 resources/
     📁 icons/
@@ -39,6 +40,7 @@
     📄 conftest.py
     📄 test_custom_msgdialog.py — *Module: test_custom_msgdialog.py Author: Michael Economou Date: 2025-05-09  This module contains unit tests for the CustomMessageDialog class used in the oncutf application.  CustomMessageDialog is a styled and flexible alternative to the standard QMessageBox, supporting: - Modal and non-modal dialogs - Progress bar display for long-running operations - Cancel via Escape key - Custom question and conflict dialogs  Tests in this module cover: - Dialog creation and visibility - Escape key cancellation behavior - Progress bar value updates - Static dialogs for questions and information - File conflict resolution options - Application modality settings - Callback triggering (e.g., accept on cancel)  These tests ensure consistent and reliable user interaction in dialog-based flows within the application.*
     📄 test_loading_dialog.py — *Module: test_loading_dialog.py Author: Michael Economou Date: 2025-05-09  This module contains tests for the loading dialog behavior used in the oncutf application, specifically for the non-blocking progress dialog implemented via CustomMessageDialog.show_waiting().  The tests validate: - Correct initialization and visibility of the dialog - Dynamic updates of progress bar values and ranges - Signal-based integration with background workers (e.g., FakeWorker) - Proper closure of the dialog upon completion - Modal behavior and safe event handling  These tests ensure that the loading dialog provides responsive and reliable user feedback during asynchronous operations like metadata scanning.*
+    📄 test_metadata_worker.py
 📁 utils/
     📄 __init__.py
     📄 dark_theme.qss
@@ -53,10 +55,10 @@
     📄 __init__.py
     📄 checkbox_header.py — *Module: checkbox_header.py  Author: Michael Economou Date: 2025-05-01  This module defines a custom QHeaderView subclass that adds a checkbox to the first column header of a QTableView. The checkbox allows users to select or deselect all rows in the table with a single click.  Used in the oncutf UI to streamline batch actions and improve usability when working with large file lists.  Features: - Syncs header checkbox state with row checkboxes - Emits signals when selection state changes - Visually updates based on user interaction*
     📄 custom_msgdialog.py — *custom_msgdialog.py  Author: Michael Economou Date: 2025-05-01  This module defines the CustomMessageDialog class, a flexible and styled alternative to QMessageBox for use in the oncutf application.  It provides support for various types of dialogs including: - Question dialogs with custom button labels - Informational dialogs with an OK button - Non-blocking waiting dialogs with optional progress bar - Conflict resolution dialogs for rename operations (e.g., Skip, Overwrite)  This dialog is intended for consistent and modern user feedback across the application, and is used instead of standard QMessageBox to allow greater control over layout, behavior, and styling.*
+    📄 metadata_worker.py — *Module: metadata_worker.py  Author: Michael Economou Date: 2025-05-01  This module defines a worker thread or task responsible for retrieving metadata from files asynchronously. It decouples metadata extraction from the UI thread to keep the application responsive.  Typically used in the oncutf application to run exiftool or similar metadata extractors in the background and emit signals when data is ready.  Features: - Threaded metadata reading - Signal-based communication with UI - Error handling and progress updates - Graceful cancellation support*
     📄 rename_module_widget.py — *Module: rename_module_widget.py  Author: Michael Economou Date: 2025-05-01  This module defines a custom widget for managing rename modules within the oncutf application. It allows users to add, configure, remove, and reorder individual rename modules that collectively define the batch renaming logic.  The widget provides a visual, modular interface for customizing the renaming workflow interactively.  Features: - Dynamic UI creation for each module type - Dropdown-based module type selection - Add/Remove buttons and layout management*
 📁 workers/
     📄 __init__.py
-    📄 metadata_worker.py — *Module: metadata_worker.py  Author: Michael Economou Date: 2025-05-01  This module defines a worker thread or task responsible for retrieving metadata from files asynchronously. It decouples metadata extraction from the UI thread to keep the application responsive.  Typically used in the oncutf application to run exiftool or similar metadata extractors in the background and emit signals when data is ready.  Features: - Threaded metadata reading - Signal-based communication with UI - Error handling and progress updates*
 
 ---
 
@@ -66,6 +68,7 @@
 - __init__.py
 - __init__.py
 - conftest.py
+- test_metadata_worker.py
 - __init__.py
 - __init__.py
 - __init__.py
