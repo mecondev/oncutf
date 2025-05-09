@@ -28,6 +28,13 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Run tests with pytest in virtual X11 environment
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y xvfb
+        xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' pytest -v
+
+
     - name: Run tests with pytest
       run: |
         PYTHONPATH=. pytest -v
