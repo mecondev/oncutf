@@ -539,7 +539,6 @@ class MainWindow(QMainWindow):
             return
 
         # Otherwise, begin metadata loading
-        self.table_view.setEnabled(False)
         QApplication.setOverrideCursor(Qt.WaitCursor)
 
         file_paths = [os.path.join(folder_path, file.filename) for file in self.model.files]
@@ -904,8 +903,6 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(0, self._restore_cursor)
 
         # 4) Finally, clean up thread/worker signals
-        logger.debug("Re-enabling table view after metadata loading")
-        self.table_view.setEnabled(True)
         self.cleanup_metadata_worker()
 
     def _restore_cursor(self):
@@ -934,9 +931,7 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(1000, self.loading_dialog.accept)
             # Clear reference after it’s closed
             QTimer.singleShot(1000, lambda: setattr(self, "loading_dialog", None))
-            logger.debug("Re-enabling table view after metadata loading")
-            QTimer.singleShot(1000, lambda: self.table_view.setEnabled(True))
-        # Finally, tear down thread/worker
+            # Finally, tear down thread/worker
         self.cleanup_metadata_worker()
 
     def cleanup_metadata_worker(self):

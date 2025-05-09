@@ -1,3 +1,26 @@
+
+#!/usr/bin/python3
+# coding: utf-8
+
+"""
+Module: test_loading_dialog.py
+Author: Michael Economou
+Date: 2025-05-09
+
+This module contains tests for the loading dialog behavior used in the oncutf application,
+specifically for the non-blocking progress dialog implemented via CustomMessageDialog.show_waiting().
+
+The tests validate:
+- Correct initialization and visibility of the dialog
+- Dynamic updates of progress bar values and ranges
+- Signal-based integration with background workers (e.g., FakeWorker)
+- Proper closure of the dialog upon completion
+- Modal behavior and safe event handling
+
+These tests ensure that the loading dialog provides responsive and reliable user feedback
+during asynchronous operations like metadata scanning.
+"""
+
 import pytest
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QWidget

@@ -19,7 +19,12 @@ behavior, and styling.
 """
 
 from typing import Optional
-from PyQt5.QtWidgets import QDialog, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QWidget, QProgressBar
+from PyQt5.QtWidgets import (
+    QDialog, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QWidget,
+    QProgressBar, QApplication
+)
+
+
 from PyQt5.QtCore import Qt
 
 # Initialize Logger
@@ -250,7 +255,7 @@ class CustomMessageDialog(QDialog):
         if event.key() == Qt.Key_Escape:
             self.set_message("Canceling metadata scan...")
             self.accept()  # or just close()
-            QAplication.processEvents()
+            QApplication.processEvents()
         else:
             super().keyPressEvent(event)
 
