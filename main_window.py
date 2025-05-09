@@ -93,6 +93,12 @@ class MainWindow(QMainWindow):
         """
 
         super().__init__()
+        self.metadata_thread = None
+        self.metadata_worker = None
+        self.loading_dialog = None
+        self.metadata_cache = {}
+        self._metadata_worker_cancel_requested = False
+
 
         # --- Window setup ---
         self.setWindowTitle("Batch File Renamer")
@@ -348,11 +354,11 @@ class MainWindow(QMainWindow):
                 self.status_label.setText("No files selected for renaming.")
                 return
 
-            # Setup progress bar
-            self.rename_progress.setVisible(True)
-            self.rename_progress.setRange(0, total_files)
-            self.rename_progress.setValue(0)
-            self.status_label.setText("Renaming files...")
+            # # Setup progress bar
+            # self.rename_progress.setVisible(True)
+            # self.rename_progress.setRange(0, total_files)
+            # self.rename_progress.setValue(0)
+            # self.status_label.setText("Renaming files...")
 
             renamed_count = 0
             preview_pairs = [
@@ -536,18 +542,23 @@ class MainWindow(QMainWindow):
         self.table_view.setEnabled(False)
         QApplication.setOverrideCursor(Qt.WaitCursor)
 
-        logger.info("Creating loading dialog...")
-        self.loading_dialog = CustomMessageDialog.show_waiting(self, "Analyzing files...")
-        QApplication.processEvents()
-        logger.info("Dialog shown. Proceeding with metadata worker.")
-        
-        # Set the total count early — BEFORE worker starts
-        self.loading_dialog.set_progress_range(len(file_paths))
         file_paths = [os.path.join(folder_path, file.filename) for file in self.model.files]
 
-        logger.info("Loading metadata for %d files", len(file_paths))
+        logger.info("Creating loading dialog...")
+        QApplication.processEvents()
+        self.loading_dialog = CustomMessageDialog.show_waiting(self, "Analyzing files...")
+        logger.info("Dialog shown. Proceeding with metadata worker.")
 
-        self.load_metadata_in_thread(file_paths)
+        # Check if progress bar exists
+        if not self.loading_dialog.progress_bar:
+            logger.warning("Loading dialog has no progress bar.")
+
+        # Set the total count early — BEFORE worker starts
+        self.loading_dialog.set_progress_range(len(file_paths))
+
+        logger.info("Loading metadata for %d files", len(file_paths))
+        # Delay for testing
+        QTimer.singleShot(200, lambda: self.load_metadata_in_thread(file_paths))
 
     def handle_header_toggle(self, checked: bool) -> None:
         """
@@ -801,42 +812,57 @@ class MainWindow(QMainWindow):
 
     def load_metadata_in_thread(self, file_paths: list[str]) -> None:
         """
-        Loads file metadata in a separate thread.
+        Launch metadata loading in a background QThread.
 
-        Args:
-            file_path (str): Path to the file whose metadata should be loaded.
-
-        This method creates a QThread and a MetadataWorker instance, moves the worker
-        to the thread, and connects the signals. It then starts the thread, which
-        triggers the worker to read the metadata in the thread. The metadata is
-        received in the main thread via the on_metadata_ready slot.
-
-        The method also performs clean-up by deleting the worker and thread when
-        finished.
+        Steps:
+        1. Tear down any existing worker/thread.
+        2. Guard against concurrent runs.
+        3. Switch cursor to busy.
+        4. Prepare full file paths.
+        5. Create QThread + worker, move worker to thread.
+        6. Wire up all signals (progress, finish, cleanup).
+        7. Start thread, which will invoke load_batch().
         """
 
+        # 1) Clean up any in-flight task (without touching UI cursor/dialog)
+        self.cleanup_metadata_worker()
+
+        # 2) Prevent multiple simultaneous runs
+        if self.is_running_metadata_task():
+            logger.warning("Worker already running — skipping new metadata scan.")
+            return
+
+        # 3) Show busy cursor
         QApplication.setOverrideCursor(Qt.WaitCursor)
 
-        file_paths = [
-            os.path.join(self.current_folder_path, file.filename)
-            for file in self.model.files
+        # 4) Build absolute paths list from the model
+        files = [
+            os.path.join(self.current_folder_path, f.filename)
+            for f in self.model.files
         ]
 
-        self.metadata_thread = QThread()
+        # 5) Instantiate thread and worker, and move worker into the new thread
+        self.metadata_thread = QThread(self)
         self.metadata_worker = MetadataWorker(self.metadata_reader)
         self.metadata_worker.moveToThread(self.metadata_thread)
 
-        # Connect signals — κάνε τα εδώ
+        # 6) Connect signals
+
+        #   a) Update progress bar in the main GUI
         self.metadata_worker.progress.connect(self.on_metadata_progress)
-        self.metadata_worker.finished.connect(self.on_metadata_batch_ready)
+
+        #   b) On successful finish, restore cursor, close dialog, update UI
+        self.metadata_worker.finished.connect(self.finish_metadata_loading)
+
+        #   c) Thread teardown: quit & delete both thread and worker when done
         self.metadata_worker.finished.connect(self.metadata_thread.quit)
         self.metadata_worker.finished.connect(self.metadata_worker.deleteLater)
         self.metadata_thread.finished.connect(self.metadata_thread.deleteLater)
-        self.metadata_worker.load_batch(file_paths)
-        self.metadata_thread.started.connect(self.metadata_worker.run_batch)
 
-        logger.info("Starting metadata analysis for %d files", len(file_paths))
+        # 7) When the thread starts, kick off the actual loading job
+        self.metadata_thread.started.connect(lambda: self.metadata_worker.load_batch(files))
 
+        logger.info(f"Starting metadata analysis for {len(files)} files")
         self.metadata_thread.start()
 
     def on_metadata_progress(self, current: int, total: int) -> None:
@@ -851,40 +877,85 @@ class MainWindow(QMainWindow):
         """
         logger.debug("Progress: %d / %d", current, total)
 
-        if hasattr(self, "loading_dialog"):
-            if self.loading_dialog is not None:
-                self.loading_dialog.set_progress(current, total)
-                self.loading_dialog.set_message(f"Analyzing file {current} of {total}...")
+        if getattr(self, "loading_dialog", None):
+            self.loading_dialog.set_progress(current, total)
+            self.loading_dialog.set_message(f"Analyzing file {current} of {total}...")
+        else:
+            logger.warning("Progress update received but loading_dialog is None")
 
-            else:
-                logger.warning("Progress update received but loading_dialog is None")
-
-    def on_metadata_batch_ready(self, metadata_dict: dict) -> None:
-        # Restore UI cursor
+    def finish_metadata_loading(self, metadata_dict):
         """
-        Slot connected to the finished signal of the metadata worker.
-
-        Restores the UI cursor, closes and deletes the progress dialog,
-        saves the metadata to the cache, and enables interaction with the file table.
-
-        Args:
-            metadata_dict (dict): Mapping of file names to their metadata.
+        Called when metadata_worker emits finished successfully.
+        Update UI, close dialog, then restore cursor _after_ the event loop
+        has had την ευκαιρία να επεξεργαστεί το override cursor.
         """
-        logger.info("Metadata batch analysis complete. %d entries loaded.", len(metadata_dict))
+        logger.info("Done loading metadata.")
 
-        QApplication.restoreOverrideCursor()
-
-        # Close loading dialog if it exists
-        if hasattr(self, "loading_dialog") and self.loading_dialog:
-            self.loading_dialog.close()
-            self.loading_dialog = None
-            logger.debug("Loading dialog closed.")
-
-        # Store metadata (e.g., in a dict with filename as key)
+        # 1) Save results & update status
         self.metadata_cache = metadata_dict
-
-        # Optionally update preview or selection if needed
         self.status_label.setText(f"Metadata loaded for {len(metadata_dict)} files.")
+
+        # 2) Close the progress dialog immediately
+        if self.loading_dialog:
+            self.loading_dialog.accept()
+            self.loading_dialog = None
+
+        # 3) Schedule cursor restore on the next event loop iteration
+        QTimer.singleShot(0, self._restore_cursor)
+
+        # 4) Finally, clean up thread/worker signals
+        self.cleanup_metadata_worker()
+
+    def _restore_cursor(self):
+        """
+        Pop the override-cursor stack and force immediate repaint.
+        """
+        QApplication.restoreOverrideCursor()
+        QApplication.processEvents()
+
+    def cancel_metadata_loading(self):
+        """
+        User-requested cancel: signal worker, restore cursor, show 'Canceling…',
+        then close dialog after a short delay and clean up.
+        """
+        logger.info("User cancelled metadata scan.")
+        # Signal the worker to cancel its task
+        if self.metadata_worker:
+            self.metadata_worker.cancel()
+
+        # Restore cursor and inform the user
+        QApplication.restoreOverrideCursor()
+        if self.loading_dialog:
+            self.loading_dialog.set_message("Canceling metadata scan…")
+            # Close dialog after delay, to let message be read
+            QTimer.singleShot(1000, self.loading_dialog.accept)
+            # Clear reference after it’s closed
+            QTimer.singleShot(1000, lambda: setattr(self, "loading_dialog", None))
+
+        # Finally, tear down thread/worker
+        self.cleanup_metadata_worker()
+
+    def cleanup_metadata_worker(self):
+        """
+        Tear down any in-flight metadata worker and thread.
+        Only handles background teardown, no UI cursor or dialog logic here.
+        """
+        # Disconnect progress signal if still connected
+        if getattr(self, "metadata_worker", None):
+            try:
+                self.metadata_worker.progress.disconnect(self.on_metadata_progress)
+                logger.debug("Disconnected metadata_worker.progress signal.")
+            except (RuntimeError, TypeError):
+                logger.debug("No active connection to disconnect.")
+            finally:
+                self.metadata_worker = None
+
+        # Quit and delete the QThread
+        if getattr(self, "metadata_thread", None):
+            logger.debug("Stopping metadata thread.")
+            self.metadata_thread.quit()
+            self.metadata_thread.wait()
+            self.metadata_thread = None
 
     def on_metadata_error(self, message: str) -> None:
         """
@@ -896,16 +967,47 @@ class MainWindow(QMainWindow):
         Args:
             message (str): The error message from the metadata worker.
         """
-        logger.error("Metadata worker error: %s", message)
+        logger.error("Metadata error: %s", message)
 
         QApplication.restoreOverrideCursor()
 
-        if hasattr(self, "loading_dialog"):
+        if hasattr(self, "loading_dialog") and self.loading_dialog:
             self.loading_dialog.close()
-            self.loading_dialog.deleteLater()
-            del self.loading_dialog
+            self.loading_dialog = None
+            logger.info("Loading dialog closed after error.")
 
-        CustomMessageDialog.information(self, "Metadata Error", f"Failed to read metadata:\n{message}")
+        # here we stop the worker and thread
+        try:
+            if self.metadata_worker:
+                self.metadata_worker.cancel()
+                self.metadata_worker.progress.disconnect(self.on_metadata_progress)
+        except Exception as e:
+            logger.debug("Could not disconnect progress: %s", e)
+
+        if self.metadata_thread:
+            self.metadata_thread.quit()
+            self.metadata_thread.wait()
+            self.metadata_thread = None
+
+        QMessageBox.critical(self, "Metadata Error", f"Failed to read metadata:\n{message}")
+
+    def closeEvent(self, event):
+        self.cleanup_metadata_worker()
+        super().closeEvent(event)
+
+    def is_running_metadata_task(self) -> bool:
+        """
+        Checks whether the metadata worker and thread are currently running.
+
+        Returns
+        -------
+        bool
+            True if the worker and thread are alive and active, False otherwise.
+        """
+        return (
+            getattr(self, "metadata_thread", None) is not None
+            and self.metadata_thread.isRunning()
+        )
 
     def populate_metadata_table(self, metadata: dict) -> None:
         """

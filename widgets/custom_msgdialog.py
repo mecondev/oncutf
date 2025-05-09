@@ -60,14 +60,18 @@ class CustomMessageDialog(QDialog):
         self.setModal(True)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
-        self.progress_bar = None
-        if show_progress:
-            self.progress_bar = QProgressBar(self)
-            self.progress_bar.setRange(0, 0)  # indeterminate mode
-
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(10)
+
+        # Progress bar
+        self.progress_bar = None
+        if show_progress:
+            self.progress_bar = QProgressBar(self)
+            self.progress_bar.setRange(0, 0)  # Indeterminate
+            layout.addWidget(self.progress_bar)
+        else:
+            self.progress_bar = None
 
         # Message label
         self.label = QLabel(message)
@@ -226,6 +230,8 @@ class CustomMessageDialog(QDialog):
         CustomMessageDialog
             The waiting dialog.
         """
+        logger.debug("CustomMessageDialog.show_waiting: creating dialog")
+
         dlg = CustomMessageDialog("Please Wait", message, buttons=None, parent=parent, show_progress=True)
         dlg.setModal(False)
         dlg.setWindowModality(Qt.ApplicationModal)
@@ -239,4 +245,12 @@ class CustomMessageDialog(QDialog):
         if self.progress_bar:
             self.progress_bar.setRange(0, total)
             self.progress_bar.setValue(0)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Escape:
+            self.set_message("Canceling metadata scan...")
+            self.accept()  # or just close()
+            QAplication.processEvents()
+        else:
+            super().keyPressEvent(event)
 

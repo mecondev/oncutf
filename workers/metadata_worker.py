@@ -19,6 +19,7 @@ Features:
 
 import time
 import os
+import traceback
 from typing import Optional
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 from utils.metadata_reader import MetadataReader
@@ -35,50 +36,54 @@ class MetadataWorker(QObject):
     def __init__(self, reader: MetadataReader, parent: Optional[QObject] = None):
         super().__init__(parent)
         self.reader = reader
-        self.files = []
+        self.file_path = []
+        self._cancelled = False
 
-    def load_batch(self, files) -> None:
+    def load_batch(self, file_path) -> None:
         """
         Initializes the batch loading of metadata for the provided list of files.
 
         Args:
             files (list): A list of file paths for which metadata should be retrieved.
         """
-        logger.debug("Batch loaded: %d files", len(files))
+        logger.debug("Batch loaded: %d files", len(file_path))
+        self.file_path = file_path
 
-        self.files = files
+        logger.info("load_batch() called with %d files", len(file_path))
         QTimer.singleShot(0, self.run_batch)
 
     def run_batch(self) -> None:
-        """
-        Runs the batch metadata extraction in the background.
-
-        This method is executed in its own thread and emits signals
-        to the main thread to report progress and signal completion.
-
-        :return: None
-        """
-
         start_time = time.time()
-
-        logger.info("Metadata batch run started for %d files", len(self.files))
-
         result = {}
-        total = len(self.files)
+        total = len(self.file_path)
 
-        for i, path in enumerate(self.files):
-            logger.debug("Reading metadata for: %s", path)
+        logger.info("Metadata batch run started for %d files", total)
+
+        for index, path in enumerate(self.file_path):
+            if self._cancelled:
+                logger.warning("Metadata batch was cancelled at index %d", index)
+                break
 
             try:
                 metadata = self.reader.read_metadata(path)
-                result[os.path.basename(path)] = metadata
+                if metadata:
+                    result[os.path.basename(path)] = metadata
+                else:
+                    logger.warning("No metadata found for %s", os.path.basename(path))
             except Exception as e:
-                logger.warning("Failed to read metadata for %s: %s", path, e)
+                logger.warning("Failed to read metadata for %s: %s", path, str(e))
                 result[os.path.basename(path)] = {}
 
-            self.progress.emit(i + 1, total)
+            self.progress.emit(index + 1, total)
 
         duration = time.time() - start_time
         logger.info("Metadata batch completed in %.2f seconds", duration)
 
         self.finished.emit(result)
+
+
+    def cancel(self) -> None:
+        logger.warning("MetadataWorker.cancel() CALLED!")
+        logger.debug("Call stack:\n%s", ''.join(traceback.format_stack()))
+        self._cancelled = True
+
