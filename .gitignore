@@ -119,6 +119,9 @@ docstrings_report.txt
 reports/structure.md
 scripts/*.sh
 
+# vscode extensions
+.continue/
+
 # System files
 .DS_Store
 Thumbs.db
