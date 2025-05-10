@@ -1,4 +1,3 @@
-
 """
 Module: main.py
 
@@ -12,7 +11,6 @@ and displays the main window, and starts the application's main event loop.
 Functions:
     main: Initializes and runs the Batch File Renamer application.
 """
-
 
 import sys
 from PyQt5.QtWidgets import QApplication
@@ -53,7 +51,6 @@ def main() -> None:
 
     # Run the app
     sys.exit(app.exec_())
-
 
 if __name__ == "__main__":
     main()

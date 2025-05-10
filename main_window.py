@@ -1,29 +1,12 @@
 """
-Module: main_window.py
-
+main_window.py
 Author: Michael Economou
 Date: 2025-05-01
 
 This module defines the MainWindow class, which implements the primary user interface
-for the oncutf application. The MainWindow provides a comprehensive
-interface for browsing folders, selecting files, configuring rename operations through
-modular components, previewing name changes, and executing batch file renaming.
-
-The interface is divided into several key areas:
-- A folder tree view for navigating the file system
-- A file table for selecting and displaying files to be renamed
-- An information panel showing metadata for selected files
-- A module area where rename operations can be configured
-- A preview area showing original and new filenames with validation indicators
-- Controls for executing rename operations
-
-Classes:
-    MainWindow: The main application window and interface controller.
-
-Usage:
-    from main_window import MainWindow
+for the oncutf application. It includes logic for loading files from folders, launching
+metadata extraction in the background, and managing user interaction such as rename previews.
 """
-
 
 import os
 import glob
@@ -41,6 +24,7 @@ from PyQt5.QtGui import (
     QPalette, QFont, QBrush, QColor, QIcon, QPixmap, QPainter,
     QStandardItemModel, QStandardItem
 )
+
 from models.file_table_model import FileTableModel
 from models.file_item import FileItem
 from widgets.checkbox_header import CheckBoxHeader
@@ -51,6 +35,7 @@ from utils.preview_generator import generate_preview_names as generate_preview_l
 from utils.icons import create_colored_icon
 from utils.icon_cache import prepare_status_icons
 from utils.metadata_reader import MetadataReader
+from utils.build_metadata_tree_model import build_metadata_tree_model
 from widgets.metadata_worker import MetadataWorker
 from config import *
 
@@ -60,45 +45,17 @@ logger = get_logger(__name__)
 
 
 class MainWindow(QMainWindow):
-
     def __init__(self) -> None:
         """
         Initializes the main window and sets up the layout.
-
-        The main window is the central element of the application, hosting the folder tree,
-        file list, metadata, and rename module areas.
-
-        The layout is divided into two parts: the vertical splitter and the footer. The vertical
-        splitter contains the folder tree, file list, and metadata areas. The footer contains
-        the application version label and a separator.
-
-        The window is set up with a central widget and a layout. The layout is divided into
-        three parts: the vertical splitter, the bottom frame, and the footer. The vertical
-        splitter contains the folder tree, file list, and metadata areas. The bottom frame
-        contains the rename module and preview areas. The footer contains the application
-        version label and a separator.
-
-        The window is set up with a size of 1200x900 and a minimum size of 800x500. The window
-        is centered on the screen and a filename validator is created.
-
-        The color scheme is set up using the create_colored_icon function and the icons are
-        prepared using the prepare_status_icons function.
-
-        The signals are set up using the setup_signals method.
-
-        The current folder path is initialized to None and the add_rename_module method is
-        called to add the first rename module.
-
-        :return: None
         """
-
         super().__init__()
+
         self.metadata_thread = None
         self.metadata_worker = None
         self.loading_dialog = None
         self.metadata_cache = {}
         self._metadata_worker_cancel_requested = False
-
 
         # --- Window setup ---
         self.setWindowTitle("Batch File Renamer")
@@ -112,28 +69,29 @@ class MainWindow(QMainWindow):
         self.metadata_reader = MetadataReader()
         self.metadata_cache = {}  # filename → metadata dict
 
-
-        # --- Central layout ---
+        # Central widget and main layout
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         layout = QVBoxLayout(self.central_widget)
 
-        # --- Vertical splitter ---
+        # Main vertical splitter
         self.vertical_splitter = QSplitter(Qt.Vertical)
         layout.addWidget(self.vertical_splitter)
 
-        # --- Top splitter (tree + files + info) ---
+        # Top horizontal splitter: tree view | file table | metadata
         self.splitter = QSplitter(Qt.Horizontal)
         self.vertical_splitter.addWidget(self.splitter)
 
-        # --- Left: Tree view ---
+        # Left panel: Tree View
         self.left_frame = QFrame()
         left_layout = QVBoxLayout(self.left_frame)
         left_layout.addWidget(QLabel("Folders"))
+
         self.tree_view = QTreeView()
         self.tree_view.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.tree_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         left_layout.addWidget(self.tree_view)
+
         btn_layout = QHBoxLayout()
         self.select_folder_button = QPushButton("Select Folder")
         self.browse_folder_button = QPushButton("Browse Folders")
@@ -147,14 +105,16 @@ class MainWindow(QMainWindow):
         self.tree_view.setModel(self.dir_model)
         for i in range(1, 4):
             self.tree_view.hideColumn(i)
+
         root = "" if platform.system() == "Windows" else "/"
         self.tree_view.setRootIndex(self.dir_model.index(root))
 
-        # --- Center: File list ---
+        # Center panel: Table view for file listing
         self.center_frame = QFrame()
         center_layout = QVBoxLayout(self.center_frame)
         self.files_label = QLabel("Files")
         center_layout.addWidget(self.files_label)
+
         self.table_view = QTableView()
         self.header = CheckBoxHeader(Qt.Horizontal, self.table_view, parent_window=self)
         self.model = FileTableModel(parent_window=self)
@@ -175,43 +135,37 @@ class MainWindow(QMainWindow):
         self.table_view.setColumnWidth(3, 135)
         center_layout.addWidget(self.table_view)
 
-        # --- Right: Metadata ---
+        # Right panel and more will continue in the next chunk...
+        # Right panel: Metadata viewer
         self.right_frame = QFrame()
         right_layout = QVBoxLayout(self.right_frame)
         right_layout.addWidget(QLabel("Information"))
 
-        # --- Metadata Table Setup
-        self.metadata_table_view = QTableView()
-        self.metadata_table_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.metadata_table_view.setSelectionMode(QAbstractItemView.NoSelection)
-        self.metadata_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.metadata_table_view.verticalHeader().setVisible(False)
-        self.metadata_model = QStandardItemModel(self)
-        self.metadata_model.setColumnCount(2)
-        self.metadata_model.setHorizontalHeaderLabels(["Key", "Value"])
-        self.metadata_table_view.horizontalHeader().setStretchLastSection(True)
-        self.metadata_table_view.setModel(self.metadata_model)
-        right_layout.addWidget(self.metadata_table_view)
+        self.metadata_tree_view = QTreeView()
+        self.metadata_tree_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.metadata_tree_view.setSelectionMode(QAbstractItemView.NoSelection)
+        self.metadata_tree_view.setHeaderHidden(False)
+        self.metadata_tree_view.setExpandsOnDoubleClick(True)
+        self.metadata_tree_view.setUniformRowHeights(True)
+        self.metadata_tree_view.setAnimated(True)
+        right_layout.addWidget(self.metadata_tree_view)
 
-        # --- Splitter sizes ---
         self.splitter.addWidget(self.left_frame)
         self.splitter.addWidget(self.center_frame)
         self.splitter.addWidget(self.right_frame)
         self.splitter.setSizes([250, 600, 150])
 
-        # --- Bottom frame: modules + preview ---
+        # --- Bottom Frame: Rename Modules + Preview ---
         self.bottom_frame = QFrame()
         self.bottom_layout = QVBoxLayout(self.bottom_frame)
         self.bottom_layout.setSpacing(0)
         self.bottom_layout.setContentsMargins(0, 0, 0, 0)
 
-        # --- Horizontal layout inside bottom frame ---
         content_layout = QHBoxLayout()
 
-        # === MODULE AREA (LEFT) ===
+        # === Left: Rename modules ===
         self.module_frame = QFrame()
         module_layout = QVBoxLayout(self.module_frame)
-
         self.module_scroll_area = QScrollArea()
         self.module_scroll_area.setWidgetResizable(True)
         self.module_scroll_widget = QWidget()
@@ -221,42 +175,31 @@ class MainWindow(QMainWindow):
         self.module_scroll_layout.setAlignment(Qt.AlignTop)
         self.module_scroll_area.setWidget(self.module_scroll_widget)
         self.rename_modules = []
-
         module_layout.addWidget(self.module_scroll_area)
 
-        # === PREVIEW AREA (RIGHT) ===
+        # === Right: Rename preview ===
         self.preview_frame = QFrame()
         preview_layout = QVBoxLayout(self.preview_frame)
-
         self.old_label = QLabel("Old file(s) name(s)")
         self.new_label = QLabel("New file(s) name(s)")
 
         self.old_name_table = QTableWidget(0, 1)
-        self.old_name_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.old_name_table.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
-        self.old_name_table.setWordWrap(False)
-        self.old_name_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.old_name_table.setSelectionMode(QAbstractItemView.NoSelection)
-        self.old_name_table.verticalHeader().setVisible(False)
-        self.old_name_table.setVerticalHeader(None)
-        self.old_name_table.horizontalHeader().setVisible(False)
-        self.old_name_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
-
         self.new_name_table = QTableWidget(0, 1)
-        self.new_name_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.new_name_table.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
-        self.new_name_table.setWordWrap(False)
-        self.new_name_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.new_name_table.setSelectionMode(QAbstractItemView.NoSelection)
-        self.new_name_table.verticalHeader().setVisible(False)
-        self.new_name_table.setVerticalHeader(None)
-        self.new_name_table.horizontalHeader().setVisible(False)
-        self.new_name_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
-
         self.icon_table = QTableWidget(0, 1)
-        self.icon_table.setObjectName("iconTable")  # Σημαντικό για το QSS!
+
+        for table in [self.old_name_table, self.new_name_table]:
+            table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            table.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
+            table.setWordWrap(False)
+            table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+            table.setSelectionMode(QAbstractItemView.NoSelection)
+            table.verticalHeader().setVisible(False)
+            table.setVerticalHeader(None)
+            table.horizontalHeader().setVisible(False)
+            table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
+
+        self.icon_table.setObjectName("iconTable")
         self.icon_table.setFixedWidth(24)
-        # self.icon_table.setColumnWidth(0, 40)
         self.icon_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.icon_table.setSelectionMode(QAbstractItemView.NoSelection)
         self.icon_table.verticalHeader().setVisible(False)
@@ -272,12 +215,14 @@ class MainWindow(QMainWindow):
         old_layout = QVBoxLayout()
         new_layout = QVBoxLayout()
         icon_layout = QVBoxLayout()
+
         old_layout.addWidget(self.old_label)
         old_layout.addWidget(self.old_name_table)
         new_layout.addWidget(self.new_label)
         new_layout.addWidget(self.new_name_table)
         icon_layout.addWidget(QLabel(" "))
         icon_layout.addWidget(self.icon_table)
+
         table_pair_layout.addLayout(old_layout)
         table_pair_layout.addLayout(new_layout)
         table_pair_layout.addLayout(icon_layout)
@@ -298,6 +243,7 @@ class MainWindow(QMainWindow):
         content_layout.addWidget(self.preview_frame, stretch=3)
         self.bottom_layout.addLayout(content_layout)
 
+        # --- Footer ---
         footer_separator = QFrame()
         footer_separator.setFrameShape(QFrame.HLine)
         footer_separator.setFrameShadow(QFrame.Sunken)
@@ -305,7 +251,8 @@ class MainWindow(QMainWindow):
         footer_widget = QWidget()
         footer_layout = QHBoxLayout(footer_widget)
         footer_layout.setContentsMargins(10, 4, 10, 4)
-        self.version_label = QLabel("oncutf v1.0")
+        self.version_label = QLabel()
+        self.version_label.setText(f"{APP_NAME} v{APP_VERSION}")
         self.version_label.setObjectName("versionLabel")
         self.version_label.setAlignment(Qt.AlignLeft)
         footer_layout.addWidget(self.version_label)
@@ -322,21 +269,15 @@ class MainWindow(QMainWindow):
         self.setup_signals()
         self.current_folder_path = None
         self.add_rename_module()
-
     def rename_files(self) -> None:
-
         """
-        Rename files according to the preview table.
-
-        Shows a progress bar and counts the number of files that were actually renamed.
-        If a file with the new name already exists, asks the user about overwrite behavior.
-        Shows a wait cursor during the operation.
+        Rename files based on the rename preview table.
+        Asks the user for overwrite confirmation. Updates status label accordingly.
         """
         if not self.current_folder_path:
             self.status_label.setText("No folder selected.")
             return
 
-        # Ask overwrite behavior once
         overwrite_existing = CustomMessageDialog.question(
             self,
             "Overwrite Behavior",
@@ -345,20 +286,12 @@ class MainWindow(QMainWindow):
             no_text="Skip"
         )
 
-        # Set wait cursor
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
-            # Count selected files
             total_files = sum(file.checked for file in self.model.files)
             if total_files == 0:
                 self.status_label.setText("No files selected for renaming.")
                 return
-
-            # # Setup progress bar
-            # self.rename_progress.setVisible(True)
-            # self.rename_progress.setRange(0, total_files)
-            # self.rename_progress.setValue(0)
-            # self.status_label.setText("Renaming files...")
 
             renamed_count = 0
             preview_pairs = [
@@ -377,7 +310,6 @@ class MainWindow(QMainWindow):
                 old_path = os.path.join(self.current_folder_path, old_name)
                 new_path = os.path.join(self.current_folder_path, new_name)
 
-                # Skip if exists and user chose to skip
                 if os.path.exists(new_path) and not overwrite_existing:
                     self.status_label.setText(f"Skipped (exists): {new_name}")
                     continue
@@ -394,36 +326,19 @@ class MainWindow(QMainWindow):
                     )
                     continue
 
-                self.rename_progress.setValue(renamed_count)
-
-            # Reload file list at the end
             self.load_files_from_folder(self.current_folder_path)
         finally:
-            # Restore cursor and finalize UI
             QApplication.restoreOverrideCursor()
-            self.rename_progress.setVisible(False)
             self.status_label.setText(f"Renamed {renamed_count} file(s).")
-
-    # TODO: For large batches, consider offloading this method to a QThread or
-    # using QRunnable+QThreadPool to keep the UI responsive during renaming.
 
     def setup_signals(self) -> None:
         """
-        Sets up signal connections for the UI components.
-
-        Connects button clicks to their respective handlers for selecting and browsing folders,
-        selecting files, generating preview names, and renaming files. Synchronizes the vertical
-        scroll bars of the old and new name tables, as well as the icon table, to maintain
-        consistent scrolling behavior across these views.
+        Connects UI elements to their corresponding event handlers.
         """
-
         self.select_folder_button.clicked.connect(self.handle_select)
         self.browse_folder_button.clicked.connect(self.handle_browse)
-
         self.table_view.clicked.connect(self.on_table_row_clicked)
-
         self.model.sort_changed.connect(self.generate_preview_names)
-
         self.rename_button.clicked.connect(self.rename_files)
 
         self.old_name_table.verticalScrollBar().valueChanged.connect(
@@ -439,19 +354,9 @@ class MainWindow(QMainWindow):
     def add_rename_module(self) -> None:
         """
         Adds a new rename module widget to the scroll area.
-
-        Connects the module's add button to the add_rename_module method, and
-        the remove button to the remove_rename_module method. Also connects
-        the module's updated signal to the generate_preview_names method.
-
-        Adds the module to the scroll layout, and calls update_module_dividers
-        to ensure that the dividers are correctly placed. Finally, calls
-        generate_preview_names to update the preview names.
-
         """
         module = RenameModuleWidget()
         self.rename_modules.append(module)
-
         module.add_button.clicked.connect(self.add_rename_module)
         module.remove_requested.connect(lambda m=module: self.remove_rename_module(m))
 
@@ -464,15 +369,7 @@ class MainWindow(QMainWindow):
 
     def remove_rename_module(self, module_widget) -> None:
         """
-        Removes the given rename module widget from the scroll area.
-
-        If the given module is present in the list of rename modules, it is removed.
-        The module is then removed from the scroll layout, and its parent is set to
-        None. The module is then deleted. Finally, the dividers are updated and the
-        preview names are regenerated.
-
-        :param module_widget: The rename module widget to remove.
-        :type module_widget: RenameModuleWidget
+        Removes a rename module from the scroll area.
         """
         if len(self.rename_modules) <= 1:
             self.status_label.setText("At least one module must remain.")
@@ -490,11 +387,7 @@ class MainWindow(QMainWindow):
 
     def update_module_dividers(self) -> None:
         """
-        Updates the visibility of the divider widgets between rename modules.
-
-        The divider between two rename modules is only visible if the module
-        above it is not the first module in the list.
-
+        Updates the divider visibility between rename modules.
         """
         for index, module in enumerate(self.rename_modules):
             if hasattr(module, "divider"):
@@ -502,20 +395,26 @@ class MainWindow(QMainWindow):
 
     def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False) -> None:
         """
-        Loads supported files from the given folder into the model and optionally
-        launches metadata extraction in a separate thread.
+        Loads supported files from the given folder into the table model.
+        Optionally launches metadata scanning in a background thread (unless Ctrl is held).
 
         Args:
-            folder_path (str): The path of the folder to scan.
-            skip_metadata (bool): If True, metadata analysis is skipped.
+            folder_path (str): Absolute path to the folder.
+            skip_metadata (bool): If True, metadata scan is skipped (e.g. Ctrl key pressed).
         """
-        # BLOCK if another scan is active
+        # Prevent loading if a scan is already in progress
         if self.metadata_thread and self.metadata_thread.isRunning():
             logger.warning("Metadata scan already running — folder change blocked.")
-            CustomMessageDialog.information(self, "Busy", "Metadata is still being scanned. Please cancel or wait.")
+            CustomMessageDialog.information(
+                self,
+                "Busy",
+                "Metadata is still being scanned. Please cancel or wait."
+            )
             return
+
         logger.info(">>> load_files_from_folder CALLED for: %s", folder_path)
 
+        # --- File discovery ---
         self.current_folder_path = folder_path
         all_files = glob.glob(os.path.join(folder_path, "*"))
 
@@ -529,12 +428,11 @@ class MainWindow(QMainWindow):
                 filename = os.path.basename(file_path)
                 modified = datetime.datetime.fromtimestamp(os.path.getmtime(file_path)).strftime("%Y-%m-%d %H:%M:%S")
                 self.model.files.append(FileItem(filename, ext, modified))
-
         self.model.endResetModel()
 
         logger.info("Loaded %d supported files from %s", len(self.model.files), folder_path)
 
-        # Sync state
+        # --- UI sync ---
         self.header.update_state(self.model.files)
         self.update_files_label()
         self.generate_preview_names()
@@ -543,39 +441,48 @@ class MainWindow(QMainWindow):
             logger.info("Skipping metadata scan (Ctrl was pressed).")
             return
 
-        # Otherwise, begin metadata loading
+        # --- Start metadata scan ---
+        file_paths = [
+            os.path.join(folder_path, file.filename)
+            for file in self.model.files
+        ]
+
+        logger.info("Preparing metadata loading for %d files", len(file_paths))
+
+        # Set wait cursor to indicate work
         QApplication.setOverrideCursor(Qt.WaitCursor)
-
-        file_paths = [os.path.join(folder_path, file.filename) for file in self.model.files]
-
-        logger.info("Creating loading dialog...")
         QApplication.processEvents()
-        self.loading_dialog = CustomMessageDialog.show_waiting(self, "Analyzing files...")
-        logger.info("Dialog shown. Proceeding with metadata worker.")
 
-        # Check if progress bar exists
+        # Show custom dialog
+        self.loading_dialog = CustomMessageDialog.show_waiting(self, "Analyzing files...")
+        logger.info("Loading dialog shown.")
+
         if not self.loading_dialog.progress_bar:
             logger.warning("Loading dialog has no progress bar.")
 
-        # Set the total count early — BEFORE worker starts
+        # Set progress range before starting worker
         self.loading_dialog.set_progress_range(len(file_paths))
 
-        logger.info("Loading metadata for %d files", len(file_paths))
-        # Delay for testing
+        # Use a slight delay to allow GUI to render first
         QTimer.singleShot(200, lambda: self.load_metadata_in_thread(file_paths))
 
     def handle_header_toggle(self, checked: bool) -> None:
         """
-        Called when the checkbox in the header is toggled.
+        Triggered when the 'select all' checkbox in the table header is toggled.
 
-        Sets all files to the given checked state and triggers UI updates.
+        Applies the checked state to all files in the model, refreshes the UI,
+        and regenerates the filename preview.
 
-        :param checked: The checked state to set for all files.
-        :type checked: bool
+        Args:
+            checked (bool): True if checkbox is checked, False if unchecked.
         """
+        logger.debug("Header checkbox toggled: %s", checked)
+
+        # Apply checked state to all files
         for file in self.model.files:
             file.checked = checked
 
+        # Refresh table and preview
         self.table_view.viewport().update()
         self.header.update_state(self.model.files)
         self.update_files_label()
@@ -583,99 +490,148 @@ class MainWindow(QMainWindow):
 
     def generate_preview_names(self) -> None:
         """
-        Updates the preview tables by generating new filenames based on the
-        active rename modules and the currently selected files.
+        Generates and updates the preview name tables based on:
+        - The current selection of files
+        - The active rename modules
 
-        Called when the user toggles the checkbox in the header, selects a
-        different folder, or adds/removes a rename module.
-
-        :return: None
+        It performs validation, detects duplicates or errors,
+        and enables/disables the Rename button accordingly.
         """
-        modules_data = [m.get_data() for m in self.rename_modules]
+        # Collect rename instructions from all active modules
+        modules_data = [module.get_data() for module in self.rename_modules]
 
-        selected_files = [f for f in self.model.files if f.checked]
+        # Filter selected files from the model
+        selected_files = [file for file in self.model.files if file.checked]
+
         if not selected_files:
+            logger.debug("No files selected — disabling Rename button and clearing preview.")
             self.rename_button.setEnabled(False)
             self.rename_button.setToolTip("No files selected")
             self.update_preview_tables_from_pairs([])
             return
 
+        logger.debug("Generating preview names for %d selected files using %d modules.",
+                    len(selected_files), len(modules_data))
+
+        # Run the preview generation logic
         new_names, has_error, tooltip_msg = generate_preview_logic(
             files=selected_files,
             modules_data=modules_data,
             validator=self.filename_validator
         )
 
+        # Update preview tables with the result
         self.update_preview_tables_from_pairs(new_names)
+
+        # Update Rename button state and tooltip
         self.rename_button.setEnabled(not has_error)
         self.rename_button.setToolTip(tooltip_msg)
 
     def compute_max_filename_width(self, file_list: list[FileItem]) -> int:
         """
-        Computes the maximum width (in pixels) needed to display the longest filename in
-        the given list of FileItem objects.
+        Calculates the ideal column width in pixels based on the longest filename.
 
-        The width is computed as 8 times the length of the longest filename, but capped
-        between 250 and 1000 pixels.
+        The width is estimated as: 8 * length of longest filename,
+        clamped between 250 and 1000 pixels. This ensures a readable but bounded width
+        for the filename column in the preview table.
 
-        :param file_list: A list of FileItem objects.
-        :return: The maximum width needed to display the longest filename.
-        :rtype: int
+        Args:
+            file_list (list[FileItem]): A list of FileItem instances to analyze.
+
+        Returns:
+            int: Pixel width suitable for displaying the longest filename.
         """
+        # Get the length of the longest filename (in characters)
         max_len = max((len(file.filename) for file in file_list), default=0)
-        return min(max(8 * max_len, 250), 1000)
+
+        # Convert length to pixels (roughly 8 px per character), then clamp
+        pixel_width = 8 * max_len
+        clamped_width = min(max(pixel_width, 250), 1000)
+
+        logger.debug("Longest filename length: %d chars → width: %d px (clamped)", max_len, clamped_width)
+        return clamped_width
 
     def center_window(self) -> None:
         """
-        Centers the main window on the screen.
+        Centers the application window on the user's screen.
 
-        Computes the geometry of the window and its center point, then moves
-        the window to the center of the screen by setting its top-left corner
-        to the screen center point minus half of the window's width and height.
+        It calculates the screen's center point and moves the window
+        so its center aligns with that. This improves the initial UX
+        by avoiding awkward off-center placement.
 
-        :return: None
+        Returns:
+            None
         """
+        # Get current geometry of the window
         window_geometry = self.frameGeometry()
+
+        # Get the center point of the available screen
         screen_center = QDesktopWidget().availableGeometry().center()
+
+        # Move the window geometry so that its center aligns with screen center
         window_geometry.moveCenter(screen_center)
+
+        # Reposition the window's top-left corner to match the new centered geometry
         self.move(window_geometry.topLeft())
+
+        logger.debug("Main window centered on screen.")
 
     def handle_browse(self: 'MainWindow') -> None:
         """
-        Opens a folder selection dialog and loads files from the selected folder.
+        Triggered when the user clicks the 'Browse Folder' button.
+        Opens a folder selection dialog, checks file count, prompts
+        user if the folder is large, and optionally skips metadata scan.
 
-        If Ctrl is held, metadata scan is skipped.
-        ALT key is commented out due to Linux window manager conflicts.
-
-        Also updates the tree view to reflect the selected folder.
+        Also updates the folder tree selection to reflect the newly selected folder.
         """
         folder_path = QFileDialog.getExistingDirectory(self, "Select Folder", "/")
+        if not folder_path:
+            logger.info("Folder selection canceled by user.")
+            return
 
-        if folder_path:
-            # Detect keyboard modifiers
-            modifiers = QApplication.keyboardModifiers()
-            skip_metadata = modifiers & Qt.ControlModifier
+        # Count supported files in the selected folder
+        all_files = glob.glob(os.path.join(folder_path, "*"))
+        valid_files = [f for f in all_files if os.path.splitext(f)[1][1:].lower() in ALLOWED_EXTENSIONS]
 
-            # ALT key support disabled for now
-            # skip_metadata = modifiers & Qt.AltModifier
+        if len(valid_files) > LARGE_FOLDER_WARNING_THRESHOLD:
+            proceed = CustomMessageDialog.question(
+                self,
+                "Large Folder",
+                f"This folder contains {len(valid_files)} supported files.\n"
+                "Scanning may take time. Continue?",
+                yes_text="Proceed",
+                no_text="Cancel"
+            )
+            if not proceed:
+                logger.info("User canceled loading large folder: %s", folder_path)
+                return
 
-            logger.info("Folder selected: %s", folder_path)
-            logger.info("Ctrl pressed? %s", bool(skip_metadata))
+        # Detect keyboard modifiers
+        modifiers = QApplication.keyboardModifiers()
+        skip_metadata = modifiers & Qt.ControlModifier
+        logger.info("Folder selected: %s", folder_path)
+        logger.info("Ctrl pressed (skip_metadata)? %s", bool(skip_metadata))
 
-            self.load_files_from_folder(folder_path, skip_metadata=skip_metadata)
+        self.load_files_from_folder(folder_path, skip_metadata=skip_metadata)
 
-            # Update tree view to reflect selected folder
-            if hasattr(self, "dir_model") and hasattr(self, "tree_view"):
-                index = self.dir_model.index(folder_path)
-                if index.isValid():
-                    self.tree_view.setCurrentIndex(index)
-                    self.tree_view.scrollTo(index)
+        # Update folder tree to reflect selection
+        if hasattr(self, "dir_model") and hasattr(self, "tree_view"):
+            index = self.dir_model.index(folder_path)
+            if index.isValid():
+                self.tree_view.setCurrentIndex(index)
+                self.tree_view.scrollTo(index)
 
     def handle_select(self) -> None:
         """
-        Loads files from the folder currently selected in the tree view.
+        Triggered when the user clicks the 'Select Folder' button.
 
-        If Ctrl is held while clicking, metadata scan is skipped.
+        It loads files from the folder currently selected in the folder tree.
+        If the Ctrl key is held, metadata scanning is skipped.
+
+        This function:
+        - Validates the selected folder index.
+        - Reads keyboard modifiers.
+        - Delegates file loading to load_files_from_folder().
         """
         index = self.tree_view.currentIndex()
         if not index.isValid():
@@ -684,34 +640,30 @@ class MainWindow(QMainWindow):
 
         folder_path = self.dir_model.filePath(index)
 
+        # Check if Ctrl is held to optionally skip metadata scan
         modifiers = QApplication.keyboardModifiers()
         skip_metadata = modifiers & Qt.ControlModifier
 
-        # ALT is commented out due to window manager conflict
-        # skip_metadata = modifiers & Qt.AltModifier
-
         logger.info("Folder selected via tree: %s", folder_path)
-        logger.info("Ctrl pressed? %s", bool(skip_metadata))
+        logger.debug("Ctrl modifier pressed? %s", bool(skip_metadata))
 
         self.load_files_from_folder(folder_path, skip_metadata=skip_metadata)
 
     def update_files_label(self) -> None:
         """
-        Updates the label displaying the number of selected files.
+        Updates the UI label that displays the count of selected files.
 
-        Updates the label text according to the current selection state of the files.
-        If there are no files, the label shows "Files". If there are files, the label
-        shows how many of them are selected from the total number of files.
-
-        :return: None
+        If no files are loaded, the label shows a default "Files".
+        Otherwise, it shows how many files are currently selected
+        out of the total number loaded.
         """
-        total = len(self.model.files)
-        selected = sum(1 for file in self.model.files if file.checked)
+        total_files = len(self.model.files)
+        selected_files = sum(file.checked for file in self.model.files)
 
-        if total == 0:
+        if total_files == 0:
             self.files_label.setText("Files")
         else:
-            self.files_label.setText(f"Files {selected} selected from {total}")
+            self.files_label.setText(f"Files {selected_files} selected from {total_files}")
 
     def get_identity_name_pairs(self) -> list[tuple[str, str]]:
         """
@@ -726,31 +678,33 @@ class MainWindow(QMainWindow):
 
     def update_preview_tables_from_pairs(self, name_pairs: list[tuple[str, str]]) -> None:
         """
-        Updates preview tables with color-coded icons and tooltips based on filename validity.
+        Updates the preview tables with original and new filenames,
+        applying color-coded icons and tooltips to indicate status
+        (valid, unchanged, invalid, duplicate).
 
         Args:
             name_pairs (list[tuple[str, str]]): List of (original, new) filename pairs.
         """
-        # logger.info("Updating preview tables with %d name pairs", len(name_pairs))
-
         self.old_name_table.setRowCount(0)
         self.new_name_table.setRowCount(0)
         self.icon_table.setRowCount(0)
 
+        # Dynamically calculate column width based on filename lengths
         all_names = [name for pair in name_pairs for name in pair]
-        max_width = max([self.fontMetrics().horizontalAdvance(name) for name in all_names], default=250)
+        max_width = max((self.fontMetrics().horizontalAdvance(name) for name in all_names), default=250)
         adjusted_width = max(250, max_width) + 100
         self.old_name_table.setColumnWidth(0, adjusted_width)
         self.new_name_table.setColumnWidth(0, adjusted_width)
 
-        seen = set()
-        duplicates = set()
+        # Detect duplicates among new names
+        seen, duplicates = set(), set()
         for _, new in name_pairs:
             if new in seen:
                 duplicates.add(new)
             else:
                 seen.add(new)
 
+        # Track preview status counts
         stats = {"unchanged": 0, "invalid": 0, "duplicate": 0, "valid": 0}
 
         for row, (old_name, new_name) in enumerate(name_pairs):
@@ -761,9 +715,7 @@ class MainWindow(QMainWindow):
             old_item = QTableWidgetItem(old_name)
             new_item = QTableWidgetItem(new_name)
 
-            status = "valid"
-            tooltip = "Ready to rename"
-
+            # Determine status for this filename pair
             if old_name == new_name:
                 status = "unchanged"
                 tooltip = "Unchanged filename"
@@ -775,10 +727,13 @@ class MainWindow(QMainWindow):
                 elif new_name in duplicates:
                     status = "duplicate"
                     tooltip = "Duplicate name"
+                else:
+                    status = "valid"
+                    tooltip = "Ready to rename"
 
             stats[status] += 1
 
-            # Create icon
+            # Icon with shape/color per status
             icon_pixmap = self.create_colored_icon(
                 fill_color=PREVIEW_COLORS[status],
                 shape=PREVIEW_INDICATOR_SHAPE,
@@ -787,21 +742,24 @@ class MainWindow(QMainWindow):
                 border_color="#222222",
                 border_thickness=1
             )
+
             icon_item = QTableWidgetItem()
             icon_item.setIcon(QIcon(icon_pixmap))
             icon_item.setToolTip(tooltip)
 
+            # Optionally color background
             if USE_PREVIEW_BACKGROUND:
                 bg = QBrush(QColor(PREVIEW_COLORS[status]))
                 old_item.setBackground(bg)
                 new_item.setBackground(bg)
                 icon_item.setBackground(bg)
 
+            # Add row items
             self.old_name_table.setItem(row, 0, old_item)
             self.new_name_table.setItem(row, 0, new_item)
             self.icon_table.setItem(row, 0, icon_item)
-            # logger.info(status)
-        # Update status bar
+
+        # Compose and update status summary
         status_msg = (
             f"<img src='{self.icon_paths['valid']}' width='14' height='14'/> "
             f"<span style='color:#ccc;'>Valid: {stats['valid']}</span>&nbsp;&nbsp;&nbsp;"
@@ -816,242 +774,286 @@ class MainWindow(QMainWindow):
 
     def load_metadata_in_thread(self, file_paths: list[str]) -> None:
         """
-        Launch metadata loading in a background QThread.
+        Starts metadata analysis in a background thread using MetadataWorker.
 
-        Steps:
-        1. Tear down any existing worker/thread.
-        2. Guard against concurrent runs.
-        3. Switch cursor to busy.
-        4. Prepare full file paths.
-        5. Create QThread + worker, move worker to thread.
-        6. Wire up all signals (progress, finish, cleanup).
-        7. Start thread, which will invoke load_batch().
+        This method ensures the UI remains responsive by offloading file metadata
+        extraction to a separate QThread. It performs the following steps:
+
+        1. Clean up any previous metadata task.
+        2. Prevent re-entry if a task is already running.
+        3. Show the busy cursor to indicate a background operation.
+        4. Prepare absolute paths to all selected files.
+        5. Set up the QThread and assign the MetadataWorker to it.
+        6. Connect signals for progress reporting and proper cleanup.
+        7. Start the thread, which triggers the metadata loading asynchronously.
         """
-
-        # 1) Clean up any in-flight task (without touching UI cursor/dialog)
+        # Step 1: Clean up any previous task (if user switched folders quickly)
         self.cleanup_metadata_worker()
 
-        # 2) Prevent multiple simultaneous runs
+        # Step 2: Protect against concurrent execution
         if self.is_running_metadata_task():
             logger.warning("Worker already running — skipping new metadata scan.")
             return
 
-        # 3) Show busy cursor
+        # Step 3: Indicate background work with a wait cursor
         QApplication.setOverrideCursor(Qt.WaitCursor)
 
-        # 4) Build absolute paths list from the model
+        # Step 4: Resolve full paths from current model
         files = [
             os.path.join(self.current_folder_path, f.filename)
             for f in self.model.files
         ]
 
-        # 5) Instantiate thread and worker, and move worker into the new thread
+        # Step 5: Create the thread and move worker into it
         self.metadata_thread = QThread(self)
         self.metadata_worker = MetadataWorker(self.metadata_reader)
         self.metadata_worker.moveToThread(self.metadata_thread)
 
-        # 6) Connect signals
+        # Step 6: Connect signals
 
-        #   a) Update progress bar in the main GUI
+        # a) Metadata progress updates
         self.metadata_worker.progress.connect(self.on_metadata_progress)
 
-        #   b) On successful finish, restore cursor, close dialog, update UI
+        # b) When done, update UI and clean up
         self.metadata_worker.finished.connect(self.finish_metadata_loading)
 
-        #   c) Thread teardown: quit & delete both thread and worker when done
+        # c) Ensure proper teardown when work completes
         self.metadata_worker.finished.connect(self.metadata_thread.quit)
         self.metadata_worker.finished.connect(self.metadata_worker.deleteLater)
         self.metadata_thread.finished.connect(self.metadata_thread.deleteLater)
 
-        # 7) When the thread starts, kick off the actual loading job
+        # Step 7: Start processing as soon as thread begins
         self.metadata_thread.started.connect(lambda: self.metadata_worker.load_batch(files))
 
-        logger.info(f"Starting metadata analysis for {len(files)} files")
+        logger.info("Starting metadata analysis for %d files", len(files))
         self.metadata_thread.start()
 
     def on_metadata_progress(self, current: int, total: int) -> None:
         """
-        Slot connected to the progress signal of the metadata worker.
+        Slot connected to the `progress` signal of the MetadataWorker.
 
-        Updates the progress dialog with the current and total number of files being analyzed.
+        This method updates the loading dialog's progress bar and message label
+        as metadata files are being processed in the background.
 
         Args:
             current (int): Number of files analyzed so far.
-            total (int): Total number of files to be analyzed.
+            total (int): Total number of files to analyze.
         """
         if self.metadata_worker is None:
-            logger.warning("Progress signal received after cleanup — ignoring")
+            logger.warning("Progress signal received after worker was already cleaned up — ignoring.")
             return
 
-        logger.debug("Progress: %d / %d", current, total)
+        logger.debug("Metadata progress update: %d of %d", current, total)
 
         if getattr(self, "loading_dialog", None):
             self.loading_dialog.set_progress(current, total)
             self.loading_dialog.set_message(f"Analyzing file {current} of {total}...")
         else:
-            logger.warning("Progress update received but loading_dialog is None")
+            logger.warning("Loading dialog not available during progress update — skipping UI update.")
 
-    def finish_metadata_loading(self, metadata_dict):
+    def finish_metadata_loading(self, metadata_dict: dict) -> None:
         """
-        Called when metadata_worker emits finished successfully.
-        Update UI, close dialog, then restore cursor _after_ the event loop
-        has had την ευκαιρία να επεξεργαστεί το override cursor.
+        Slot called when the metadata worker completes successfully.
+
+        Finalizes the metadata scan by updating the internal cache and UI,
+        closing the progress dialog, and restoring the cursor. Teardown of
+        the background worker and thread is performed last.
+
+        Args:
+            metadata_dict (dict): Dictionary containing filename → metadata.
         """
         if self.metadata_worker is None:
-            logger.warning("Batch-ready signal received after cleanup — ignoring")
+            logger.warning("Received 'finished' signal after cleanup — ignoring.")
             return
 
-        logger.info("Done loading metadata. %d entries loaded.", len(metadata_dict))
+        logger.info("Metadata loading complete. Loaded metadata for %d files.", len(metadata_dict))
 
-        # 1) Save results & update status
+        # 1) Save metadata results and update the UI status label
         self.metadata_cache = metadata_dict
         self.status_label.setText(f"Metadata loaded for {len(metadata_dict)} files.")
 
-        # 2) Close the progress dialog immediately
+        # 2) Immediately close the loading dialog if it's still showing
         if self.loading_dialog:
             self.loading_dialog.accept()
             self.loading_dialog = None
+        else:
+            logger.debug("Loading dialog already closed before finish handler.")
 
-        # 3) Schedule cursor restore on the next event loop iteration
+        # 3) Defer cursor restoration to next event loop cycle
         QTimer.singleShot(0, self._restore_cursor)
 
-        # 4) Finally, clean up thread/worker signals
+        # 4) Teardown background resources (signals, thread, worker)
         self.cleanup_metadata_worker()
 
-    def _restore_cursor(self):
+    def _restore_cursor(self) -> None:
         """
-        Pop the override-cursor stack and force immediate repaint.
+        Restores the cursor to its default appearance.
+
+        This method is used after a metadata scan or any long-running operation
+        that sets the cursor to a busy state. Because override cursors are pushed
+        onto a stack, we must pop all of them off to fully restore the default.
+
+        After restoring the cursor, we manually process events to ensure that
+        the cursor is visually updated immediately.
         """
         while QApplication.overrideCursor():
             QApplication.restoreOverrideCursor()
+
+        # Ensure the change is reflected immediately
         QApplication.processEvents()
 
-    def cancel_metadata_loading(self):
+    def cancel_metadata_loading(self) -> None:
         """
-        User-requested cancel: signal worker, restore cursor, show 'Canceling…',
-        then close dialog after a short delay and clean up.
-        """
-        logger.info("User cancelled metadata scan.")
-        # Signal the worker to cancel its task
-        if self.metadata_worker:
-            self.metadata_worker.cancel()
+        Triggered when the user clicks 'Cancel' during metadata scanning.
 
-        # Restore cursor and inform the user
+        Steps:
+        1. Restore the cursor immediately for better UX.
+        2. Update the progress dialog to inform the user that cancellation is in progress.
+        3. Close the dialog after a short delay (for readability).
+        4. Signal the metadata worker to stop (if it's active).
+        """
+        logger.info("User requested cancellation of metadata scan.")
+
+        # 1. Restore cursor immediately
         QApplication.restoreOverrideCursor()
+
+        # 2. Inform user via dialog (if shown)
         if self.loading_dialog:
             self.loading_dialog.set_message("Canceling metadata scan…")
-            # Close dialog after delay, to let message be read
-            QTimer.singleShot(1000, self.loading_dialog.accept)
-            # Clear reference after it’s closed
-            QTimer.singleShot(1000, lambda: setattr(self, "loading_dialog", None))
-            # Finally, tear down thread/worker
-        self.cleanup_metadata_worker()
 
-    def cleanup_metadata_worker(self):
+            # Let user read the message briefly, then close
+            QTimer.singleShot(1000, self.loading_dialog.accept)
+            QTimer.singleShot(1000, lambda: setattr(self, "loading_dialog", None))
+        else:
+            logger.warning("Cancel requested but loading dialog was not active.")
+
+        # 3. Signal cancellation to the worker
+        if self.metadata_worker:
+            if not self.metadata_worker._cancelled:
+                logger.debug("Calling metadata_worker.cancel()")
+                self.metadata_worker.cancel()
+            else:
+                logger.info("Worker was already cancelled — no need to signal again.")
+        else:
+            logger.warning("Cancel requested but metadata_worker is None.")
+
+    def cleanup_metadata_worker(self) -> None:
         """
-        Tear down any in-flight metadata worker and thread.
-        Only handles background teardown, no UI cursor or dialog logic here.
+        Safely disconnect and tear down the metadata worker and its thread.
+
+        This method is strictly for background cleanup and does NOT touch:
+        - the progress/loading dialog
+        - the override cursor
         """
-        # Disconnect progress signal if still connected
+        # 1. Disconnect progress signal from worker
         if getattr(self, "metadata_worker", None):
             try:
                 self.metadata_worker.progress.disconnect(self.on_metadata_progress)
                 logger.debug("Disconnected metadata_worker.progress signal.")
             except (RuntimeError, TypeError):
-                logger.debug("No active connection to disconnect.")
+                logger.debug("Signal was already disconnected or worker not connected.")
             finally:
                 self.metadata_worker = None
+        else:
+            logger.debug("No metadata_worker to disconnect.")
 
-        # Quit and delete the QThread
+        # 2. Stop and delete the metadata thread
         if getattr(self, "metadata_thread", None):
-            logger.debug("Stopping metadata thread.")
-            self.metadata_thread.quit()
-            self.metadata_thread.wait()
+            if self.metadata_thread.isRunning():
+                logger.debug("Quitting metadata thread...")
+                self.metadata_thread.quit()
+                self.metadata_thread.wait()
+                logger.debug("Metadata thread has been stopped.")
             self.metadata_thread = None
 
     def on_metadata_error(self, message: str) -> None:
         """
-        Slot connected to the error signal of the metadata worker.
+        Handles unexpected errors during metadata loading.
 
-        Restores the UI cursor, closes and deletes the progress dialog,
-        and displays an error message with the given message.
+        - Restores the UI cursor
+        - Closes the progress dialog
+        - Cleans up worker and thread
+        - Shows an error message to the user
 
         Args:
-            message (str): The error message from the metadata worker.
+            message (str): The error message to display.
         """
         logger.error("Metadata error: %s", message)
 
-        QApplication.restoreOverrideCursor()
+        # 1. Restore busy cursor
+        self._restore_cursor()
 
-        if hasattr(self, "loading_dialog") and self.loading_dialog:
+        # 2. Close the loading dialog
+        if getattr(self, "loading_dialog", None):
+            logger.info("Closing loading dialog due to error.")
             self.loading_dialog.close()
             self.loading_dialog = None
-            logger.info("Loading dialog closed after error.")
+        else:
+            logger.warning("No loading dialog found during error handling.")
 
-        # here we stop the worker and thread
-        try:
-            if self.metadata_worker:
-                self.metadata_worker.cancel()
-                self.metadata_worker.progress.disconnect(self.on_metadata_progress)
-        except Exception as e:
-            logger.debug("Could not disconnect progress: %s", e)
+        # 3. Clean up worker and thread
+        self.cleanup_metadata_worker()
 
-        if self.metadata_thread:
-            self.metadata_thread.quit()
-            self.metadata_thread.wait()
-            self.metadata_thread = None
-
-        QMessageBox.critical(self, "Metadata Error", f"Failed to read metadata:\n{message}")
+        # 4. Notify user
+        QMessageBox.critical(self, "Metadata Error", f"Failed to read metadata:\n\n{message}")
 
     def closeEvent(self, event):
+        """
+        Called when the main window is about to close.
+
+        Ensures any background metadata threads are cleaned up
+        properly before the application exits.
+        """
+        logger.info("Main window closing. Cleaning up metadata worker.")
         self.cleanup_metadata_worker()
         super().closeEvent(event)
 
     def is_running_metadata_task(self) -> bool:
         """
-        Checks whether the metadata worker and thread are currently running.
+        Returns True if a metadata thread is currently active.
+
+        This helps prevent overlapping metadata scans by checking if
+        a previous background task is still running.
 
         Returns
         -------
         bool
-            True if the worker and thread are alive and active, False otherwise.
+            True if metadata_thread exists and is running, False otherwise.
         """
-        return (
+        running = (
             getattr(self, "metadata_thread", None) is not None
             and self.metadata_thread.isRunning()
         )
+        logger.debug("Metadata task running? %s", running)
+        return running
 
     def populate_metadata_table(self, metadata: dict) -> None:
         """
-        Populate the existing metadata model with new rows.
+        Populates the metadata table view with key-value pairs.
+
+        This function clears any existing rows and inserts the provided metadata.
+        Each dictionary item is added as a row in the model, with the key in the
+        first column and the corresponding value in the second.
 
         Args:
-            metadata (dict): mapping of metadata tag → value
+            metadata (dict): A dictionary where keys are metadata tags and
+                            values are their associated data.
         """
-        # Restore normal cursor if you set it to waiting before
+        # Ensure cursor is restored in case it was left in busy mode
         QApplication.restoreOverrideCursor()
 
-        # 1. Clear all previous rows
-        row_count = self.metadata_model.rowCount()
-        if row_count:
-            self.metadata_model.removeRows(0, row_count)
-
-        # 2. Append each key/value pair as a new row
-        for key, value in metadata.items():
-            items = [
-                QStandardItem(str(key)),
-                QStandardItem(str(value))
-            ]
-            self.metadata_model.appendRow(items)
-
-        # 3. Resize columns to fit their contents
-        self.metadata_table_view.resizeColumnsToContents()
+        model = build_metadata_tree_model(metadata)
+        self.metadata_tree_view.setModel(model)
+        self.metadata_tree_view.expandToDepth(1)
+        self.metadata_tree_view.resizeColumnToContents(0)
+        logger.debug("Metadata table populated with %d entries.", len(metadata))
 
     def on_table_row_clicked(self, index) -> None:
         """
         Slot connected to the itemSelectionChanged signal of the table view.
 
-        Populates the metadata table with the metadata of the clicked row.
+        Populates the metadata tree view with the metadata of the clicked row.
+        Supports nested dictionaries and lists via expandable tree structure.
 
         Args:
             index (QModelIndex): The index of the clicked row.
@@ -1068,5 +1070,7 @@ class MainWindow(QMainWindow):
         else:
             logger.warning("No metadata found for %s", filename)
 
+        tree_model = build_metadata_tree_model(metadata)
+        self.metadata_tree_view.setModel(tree_model)
+        self.metadata_tree_view.expandAll()
 
-        self.populate_metadata_table(metadata)

@@ -16,6 +16,8 @@ Contains:
 - File extension filters
 - Paths to resources and stylesheets
 """
+APP_NAME = "oncutf"
+APP_VERSION = "1.1"
 
 
 # Window
@@ -74,4 +76,6 @@ PREVIEW_INDICATOR_BORDER = {
 }
 
 USE_PREVIEW_BACKGROUND = False  # Whether to apply background color in tables
+
+LARGE_FOLDER_WARNING_THRESHOLD = 150 # Number when to prompt QuestionDialog to load large folder
 
