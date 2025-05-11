@@ -21,7 +21,7 @@ behavior, and styling.
 from typing import Optional
 from PyQt5.QtWidgets import (
     QDialog, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QWidget,
-    QProgressBar, QApplication
+    QProgressBar, QApplication, QCheckBox
 )
 
 
@@ -37,9 +37,9 @@ class CustomMessageDialog(QDialog):
     A custom-styled message dialog to replace QMessageBox.
     Supports question dialogs and information dialogs.
     """
-
     def __init__(self, title: str, message: str, buttons: Optional[list[str]] = None,
-                parent: Optional[QWidget] = None, show_progress: bool = False):
+                parent: Optional[QWidget] = None, show_progress: bool = False,
+                show_checkbox: bool = False):
         """
         Initialize a CustomMessageDialog.
 
@@ -53,6 +53,10 @@ class CustomMessageDialog(QDialog):
             List of button texts
         parent : QWidget, optional
             Parent widget
+        show_progress : bool, optional
+            Whether to include a progress bar
+        show_checkbox : bool, optional
+            Whether to show an 'Apply to all' style checkbox
 
         Notes
         -----
@@ -69,21 +73,22 @@ class CustomMessageDialog(QDialog):
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(10)
 
-        # Progress bar
         self.progress_bar = None
         if show_progress:
             self.progress_bar = QProgressBar(self)
             self.progress_bar.setRange(0, 0)  # Indeterminate
             layout.addWidget(self.progress_bar)
-        else:
-            self.progress_bar = None
 
-        # Message label
         self.label = QLabel(message)
         self.label.setWordWrap(True)
         layout.addWidget(self.label)
 
-        # Buttons
+        # Optional checkbox
+        self.checkbox = None
+        if show_checkbox:
+            self.checkbox = QCheckBox("Apply this choice to all remaining conflicts")
+            layout.addWidget(self.checkbox)
+
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
         self._buttons = {}
@@ -96,7 +101,6 @@ class CustomMessageDialog(QDialog):
                 self._buttons[btn_text] = btn
 
         layout.addLayout(btn_layout)
-
         self.selected = None
 
     def _on_button(self, btn_text: str):
@@ -112,6 +116,9 @@ class CustomMessageDialog(QDialog):
 
         self.selected = btn_text
         self.accept()
+
+    def is_checkbox_checked(self) -> bool:
+        return self.checkbox is not None and self.checkbox.isChecked()
 
     @staticmethod
     def question(parent: QWidget, title: str, message: str,
@@ -140,7 +147,7 @@ class CustomMessageDialog(QDialog):
         """
         dlg = CustomMessageDialog(title, message, [yes_text, no_text], parent)
         dlg.exec_()
-        return dlg.selected == yes_text
+        return dlg.selected == yes_text if dlg.selected else False
 
     @staticmethod
     def information(parent: QWidget, title: str, message: str, ok_text: str = "OK") -> None:
@@ -187,7 +194,7 @@ class CustomMessageDialog(QDialog):
         options = ["Skip", "Skip All", "Cancel", "Overwrite"]
         dlg = CustomMessageDialog("File Conflict", message, buttons=options, parent=parent)
         dlg.exec_()
-        return dlg.selected
+        return dlg.selected == yes_text if dlg.selected else False
 
     def set_progress(self, value: int, total: int = None):
         """
@@ -260,3 +267,32 @@ class CustomMessageDialog(QDialog):
         else:
             super().keyPressEvent(event)
 
+    @staticmethod
+    def choice_with_apply_all(
+        parent: QWidget,
+        title: str,
+        message: str,
+        buttons: dict[str, str]
+        ) -> tuple[str, bool]:
+        """
+        Show a custom dialog using CustomMessageDialog with a checkbox.
+        Returns (selected_key, apply_to_all)
+        """
+        dlg = CustomMessageDialog(
+            title=title,
+            message=message,
+            buttons=list(buttons.keys()),
+            parent=parent,
+            show_checkbox=True
+        )
+        dlg.exec_()
+        selected = dlg.selected or "Cancel"
+        apply_to_all = dlg.is_checkbox_checked()
+        return buttons.get(selected, "cancel"), apply_to_all
+
+    def closeEvent(self, event):
+        """
+        Handles window close (X) button by treating it as 'Cancel'.
+        """
+        self.selected = "Cancel"
+        event.accept()

@@ -13,6 +13,7 @@ Functions:
 """
 
 import sys
+import datetime
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 
@@ -28,7 +29,9 @@ ConfigureLogger(log_name="oncutf")
 # Logger for this module
 logger = get_logger(__name__)
 
-logger.info("Application started")
+# Log application start with current date/time
+now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+logger.info("Application started at %s", now)
 
 
 def main() -> None:

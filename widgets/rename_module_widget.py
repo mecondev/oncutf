@@ -141,3 +141,32 @@ class RenameModuleWidget(QWidget):
         if self.current_module_widget and hasattr(self.current_module_widget, "get_data"):
             return self.current_module_widget.get_data()
         return {}
+
+    def to_dict(self, preview: bool = False) -> dict:
+        """
+        Returns the configuration of this rename module as a dictionary.
+        Delegates to the active submodule and adds type.
+        In preview mode, skips ineffective modules.
+        """
+        module_type = self.type_combo.currentText()
+        data = self.get_data()
+        data["type"] = module_type.lower().replace(" ", "_")
+
+        if preview and not self.is_effective(data):
+            data["type"] = "noop"
+
+        return data
+
+    def is_effective(self, data: dict) -> bool:
+        """
+        Determines if this module is expected to affect the output filename.
+        Used to filter out empty/disabled modules during preview.
+        """
+        t = data.get("type")
+        if t == "specified_text":
+            return bool(data.get("text", "").strip())
+        if t == "counter":
+            return True
+        if t == "metadata":
+            return data.get("field") == "date"
+        return False

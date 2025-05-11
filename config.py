@@ -16,9 +16,14 @@ Contains:
 - File extension filters
 - Paths to resources and stylesheets
 """
+from PyQt5.QtCore import Qt
+
+# Which key skips the metadata scan when held down
+SKIP_METADATA_MODIFIER = Qt.ControlModifier
+
+# App info
 APP_NAME = "oncutf"
 APP_VERSION = "1.1"
-
 
 # Window
 WINDOW_TITLE = "Batch File Renamer"
@@ -55,7 +60,7 @@ ALLOWED_EXTENSIONS = {
 ALLOWED_FILENAME_CHARS = r"^[^\\/:*?\"<>|]+$"
 
 # Theme
-DARK_THEME = "dark_theme.qss"
+DARK_THEME = "black_theme.qss"
 LIGHT_THEME = "light_theme.qss"
 
 # ----------------------------

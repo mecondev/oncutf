@@ -202,7 +202,7 @@ QToolTip {
 
 /* ===============================
    CHECKBOXES
-   =============================== */
+
 QCheckBox {
     spacing: 6px;
 }
@@ -219,3 +219,5 @@ QCheckBox::indicator:checked {
 QCheckBox::indicator:unchecked {
     image: url(:/icons/checkbox_unchecked.png);
 }
+
+   =============================== */
