@@ -14,8 +14,7 @@ Used in the oncutf application as one of the modular renaming components.
 from typing import Optional
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit
 from PyQt5.QtCore import pyqtSignal
-import re
-from config import ALLOWED_FILENAME_CHARS
+from utils.validation import is_valid_filename_text
 
 # initialize logger
 from logger_helper import get_logger
@@ -26,7 +25,7 @@ class SpecifiedTextModule(QWidget):
     """
     A module for inserting user-defined text in filenames.
     """
-    updated = pyqtSignal()
+    updated = pyqtSignal(object)
 
     def __init__(self, parent: Optional[QWidget]=None) -> None:
         super().__init__(parent)
@@ -48,22 +47,21 @@ class SpecifiedTextModule(QWidget):
 
         # self.setFixedHeight(90)
 
-    def validate_input(self, text):
+    def validate_input(self, text: str) -> None:
         """
-        Validates the user input text against allowed filename characters.
+        Validates the user input text and updates visual feedback.
+        Emits `updated` signal to notify changes.
 
         Args:
             text (str): The text entered by the user.
-
-        Emits:
-            updated: Signal to indicate that the validation status has changed.
         """
-
-        if re.match(ALLOWED_FILENAME_CHARS, text):
+        if is_valid_filename_text(text):
             self.text_input.setStyleSheet("")
         else:
             self.text_input.setStyleSheet("border: 1px solid red;")
-        self.updated.emit()
+
+        logger.info("[SpecifiedTextModule] Emitting 'updated' signal.")
+        self.updated.emit(self)
 
     def get_data(self) -> dict:
         """
@@ -76,3 +74,7 @@ class SpecifiedTextModule(QWidget):
             "type": "specified_text",
             "text": self.text_input.text().strip()
         }
+
+    def reset(self) -> None:
+        self.text_input.clear()
+        self.text_input.setStyleSheet("")

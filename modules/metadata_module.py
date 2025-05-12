@@ -14,7 +14,8 @@ metadata during batch renaming.
 
 from typing import Optional
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QComboBox
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QTimer
+from models.file_item import FileItem
 
 # initialize logger
 from logger_helper import get_logger
@@ -27,7 +28,7 @@ class MetadataModule(QWidget):
     Currently supports basic fields like file modification date.
     """
 
-    updated = pyqtSignal()  # Emitted when selection changes
+    updated = pyqtSignal(object)  # Emitted when selection changes
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         """
@@ -44,12 +45,15 @@ class MetadataModule(QWidget):
 
         # Supported metadata fields
         self.combo.addItem("Modification Date", userData="date")
-        # Future: self.combo.addItem("EXIF Creation Date", userData="exif_create_date")
-
-        self.combo.currentIndexChanged.connect(self.updated.emit)
 
         layout.addWidget(label)
         layout.addWidget(self.combo)
+
+        self.combo.currentIndexChanged.connect(lambda _: self.updated.emit(self))
+
+        QTimer.singleShot(0, lambda: self.updated.emit(self))
+        logger.info(f"[MetadataModule] Emitting initial update with field: {self.combo.currentData()}")
+
 
     def get_data(self) -> dict:
         """
@@ -57,7 +61,32 @@ class MetadataModule(QWidget):
 
         :return: Dict with metadata field type
         """
+        field = self.combo.currentData()
+        if not field:
+            field = "date"
+
         return {
             "type": "metadata",
             "field": self.combo.currentData()
         }
+
+    def apply(self, file_item) -> str:
+        """
+        Applies the metadata module by extracting the selected field
+        from the given FileItem.
+
+        Args:
+            file_item (FileItem): The file item to rename.
+
+        Returns:
+            str: The extracted metadata value or 'unknown' if not found.
+        """
+        data = self.get_data()
+        field = data.get("field")
+
+        # For now we only support 'date' (i.e., last modified date)
+        if field == "date" and hasattr(file_item, "date"):
+            return file_item.date
+
+        logger.warning("[MetadataModule] Unknown or unsupported field: %s", field)
+        return "unknown"

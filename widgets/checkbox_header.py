@@ -45,11 +45,18 @@ class CheckBoxHeader(QHeaderView):
         based on how many files are selected.
         """
         total_files = len(files)
+
+        if total_files == 0:
+            self.check_state = Qt.Unchecked
+            self.updateSection(0)
+            logger.debug("No files — checkbox state reset to Unchecked.")
+            return  # do not call generate_preview_names
+
         checked_count = sum(1 for file in files if file.checked is True or file.checked == Qt.Checked)
 
         logger.info(f"Checked count: {checked_count} out of {total_files} files.")
 
-        if checked_count == total_files and total_files:
+        if checked_count == total_files:
             self.check_state = Qt.Checked
         elif checked_count == 0:
             self.check_state = Qt.Unchecked
@@ -57,6 +64,8 @@ class CheckBoxHeader(QHeaderView):
             self.check_state = Qt.PartiallyChecked
 
         self.updateSection(0)
+
+        # only trigger preview when files exist
         if self.parent_window:
             self.parent_window.generate_preview_names()
 

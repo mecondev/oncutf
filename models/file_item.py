@@ -33,3 +33,7 @@ class FileItem:
         self.filetype = filetype    # The extension/type of the file
         self.date = date            # The last modification date
         self.checked = checked      # Default state is checked
+
+    @property
+    def name(self) -> str:
+        return self.filename

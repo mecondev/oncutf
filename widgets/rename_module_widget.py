@@ -23,7 +23,7 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
     QPushButton, QFrame
 )
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QTimer
 from modules.specified_text_module import SpecifiedTextModule
 from modules.counter_module import CounterModule
 from modules.metadata_module import MetadataModule
@@ -39,6 +39,7 @@ class RenameModuleWidget(QWidget):
     with a combo box for selecting module type and add/remove buttons.
     """
     remove_requested = pyqtSignal(QWidget)
+    updated = pyqtSignal(QWidget)
 
     def __init__(self, parent: QWidget = None, parent_window: Optional[QWidget] = None) -> None:
         super().__init__(parent)
@@ -110,7 +111,18 @@ class RenameModuleWidget(QWidget):
         self.main_layout.addLayout(button_layout)
 
         # Load default module
-        self.update_module_content(self.type_combo.currentText())
+        QTimer.singleShot(0, lambda: self.update_module_content(self.type_combo.currentText()))
+
+    def connect_signals_for_module(self, module_widget: QWidget) -> None:
+        if self.parent_window and hasattr(module_widget, "updated"):
+            try:
+                module_widget.updated.connect(lambda w: self.parent_window.generate_preview_names())
+                logger.info("[RenameModuleWidget] Connected updated → generate_preview_names (with module ref)")
+            except Exception as e:
+                logger.warning(f"[RenameModuleWidget] Signal connection failed: {e}")
+        else:
+            logger.warning("[RenameModuleWidget] Could not connect signal. parent_window: %s, has updated: %s",
+                        self.parent_window, hasattr(module_widget, "updated"))
 
     def update_module_content(self, module_name: str) -> None:
         """
@@ -131,8 +143,7 @@ class RenameModuleWidget(QWidget):
             self.content_container_widget.setFixedHeight(height)
 
             # Optional signal connection
-            if self.parent_window and hasattr(self.current_module_widget, "updated"):
-                self.current_module_widget.updated.connect(self.parent_window.generate_preview_names)
+            self.connect_signals_for_module(self.current_module_widget)
 
     def get_data(self) -> dict:
         """

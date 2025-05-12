@@ -8,46 +8,74 @@ Provides a utility function for converting nested metadata
 (dicts/lists) into a QStandardItemModel suitable for display in a QTreeView.
 """
 
-from PyQt5.QtGui import QStandardItemModel, QStandardItem
+import re
+from PyQt5.QtGui import QStandardItemModel, QStandardItem, QFont
+from PyQt5.QtCore import Qt
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def format_key(key: str) -> str:
+    """Convert 'ImageSensorType' → 'Image Sensor Type'."""
+    return re.sub(r'(?<!^)(?=[A-Z])', ' ', key)
+
+
+def classify_key(key: str) -> str:
+    """Classify a metadata key into a group label."""
+    key_lower = key.lower()
+
+    if key_lower.startswith("file"):
+        return "File Info"
+    elif key_lower.startswith("audio") or key_lower in {"samplerate", "channelmode", "bitrate"}:
+        return "Audio Info"
+    elif key_lower in {"title", "album", "artist", "composer", "genre"}:
+        return "ID3 Tags"
+    elif key_lower.startswith("image") or "sensor" in key_lower:
+        return "Image Info"
+    else:
+        return "Other"
+
+
+def create_item(text: str, alignment: Qt.AlignmentFlag = Qt.AlignLeft) -> QStandardItem:
+    """Create a QStandardItem with given text and alignment."""
+    item = QStandardItem(text)
+    item.setTextAlignment(Qt.Alignment(alignment))
+    return item
+
 
 def build_metadata_tree_model(metadata: dict) -> QStandardItemModel:
-    """
-    Recursively builds a QStandardItemModel from nested metadata (dicts, lists, primitives).
+    logger.debug(">>> build_metadata_tree_model called")
+    logger.debug(f"metadata type: {type(metadata)} | keys: {list(metadata.keys()) if isinstance(metadata, dict) else 'N/A'}")
 
-    Args:
-        metadata (dict): The metadata dictionary to visualize.
-
-    Returns:
-        QStandardItemModel: A hierarchical model suitable for QTreeView.
-    """
     model = QStandardItemModel()
     model.setHorizontalHeaderLabels(["Key", "Value"])
+    root_item = model.invisibleRootItem()
 
-    def add_items(parent, data):
-        if isinstance(data, dict):
-            for key, value in data.items():
-                key_item = QStandardItem(str(key))
-                if isinstance(value, (dict, list)):
-                    value_item = QStandardItem("")
-                    key_item.setEditable(False)
-                    value_item.setEditable(False)
-                    add_items(key_item, value)
-                else:
-                    value_item = QStandardItem(str(value))
-                parent.appendRow([key_item, value_item])
-        elif isinstance(data, list):
-            for index, value in enumerate(data):
-                key_item = QStandardItem(f"[{index}]")
-                if isinstance(value, (dict, list)):
-                    value_item = QStandardItem("")
-                    add_items(key_item, value)
-                else:
-                    value_item = QStandardItem(str(value))
-                parent.appendRow([key_item, value_item])
-        else:
-            parent.appendRow([QStandardItem("value"), QStandardItem(str(data))])
+    grouped = {}
 
-    add_items(model.invisibleRootItem(), metadata)
+    for key, value in metadata.items():
+        group = classify_key(key)
+        grouped.setdefault(group, []).append((key, value))
+
+    ordered_groups = sorted(grouped.keys(), key=lambda x: (x == "Other", x.lower()))
+
+    for group_name in ordered_groups:
+        items = grouped[group_name]
+        logger.debug(f"Creating group: {group_name} with {len(items)} items")
+        group_item = QStandardItem(group_name)
+        group_item.setEditable(False)
+        group_item.setSelectable(False)
+        group_item.setFont(QFont("", weight=QFont.Bold))
+
+        dummy_value_item = QStandardItem("")  # empty second column
+        dummy_value_item.setSelectable(False)
+
+        for key, value in items:
+            key_item = create_item(format_key(key))
+            value_item = create_item(str(value))
+            group_item.appendRow([key_item, value_item])
+
+        root_item.appendRow([group_item, dummy_value_item])
+
     return model
-
-

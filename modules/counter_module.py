@@ -12,7 +12,7 @@ sequential file names based on configurable start value, step, and padding.
 from typing import Optional
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout
 from PyQt5.QtGui import QIntValidator
-from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtCore import pyqtSignal, Qt, QTimer
 
 # initialize logger
 from logger_helper import get_logger
@@ -25,7 +25,7 @@ class CounterModule(QWidget):
     Displays each row as: [Label (fixed width, right-aligned)] [input field] [btn_minus] [btn_plus]
     """
 
-    updated = pyqtSignal()
+    updated = pyqtSignal(object)
 
     LABEL_WIDTH = 120  # pixels
 
@@ -54,6 +54,12 @@ class CounterModule(QWidget):
             "Increment By", initial_value=1, min_val=1
         )
         layout.addLayout(row3)
+
+        QTimer.singleShot(0, self._emit_initial_update)
+
+    def _emit_initial_update(self):
+        logger.info(f"[CounterModule] Emitting initial update with data: {self.get_data()}")
+        self.updated.emit(self)
 
     def _create_row(
         self,
@@ -94,14 +100,13 @@ class CounterModule(QWidget):
 
             :param delta: The amount to adjust the current value by.
             """
-
             try:
                 val = int(input_field.text())
             except ValueError:
                 val = min_val
             val = max(min_val, min(val + delta, max_val))
             input_field.setText(str(val))
-            self.updated.emit()
+            self.updated.emit(self)
 
         # Connect signals
         btn_minus.clicked.connect(lambda: adjust(-1))

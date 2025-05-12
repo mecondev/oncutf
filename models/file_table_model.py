@@ -37,9 +37,9 @@ class FileTableModel(QAbstractTableModel):
 
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         """
-        Returns the number of rows (i.e. number of files).
+        Returns the number of rows. Shows 1 row if empty to display a placeholder.
         """
-        return len(self.files)
+        return len(self.files) if self.files else 1
 
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
         """
@@ -50,12 +50,21 @@ class FileTableModel(QAbstractTableModel):
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> QVariant:
         """
         Returns the data for a given index and role.
+        Displays placeholder text if file list is empty.
         """
         if not index.isValid():
             return QVariant()
 
         row = index.row()
         col = index.column()
+
+        if not self.files:
+            if role == Qt.DisplayRole and col == 1:
+                return "No files loaded"
+            if role == Qt.TextAlignmentRole:
+                return Qt.AlignCenter
+            return QVariant()
+
         file = self.files[row]
 
         if role == Qt.DisplayRole:
@@ -81,7 +90,7 @@ class FileTableModel(QAbstractTableModel):
         Called when the user interacts with a checkbox (column 0).
         Updates the `checked` state and triggers UI updates.
         """
-        if not index.isValid():
+        if not index.isValid() or not self.files:
             return False
 
         row = index.row()
@@ -105,8 +114,12 @@ class FileTableModel(QAbstractTableModel):
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
         """
         Defines interactivity per column.
+        Placeholder row is not selectable or editable.
         """
         if not index.isValid():
+            return Qt.NoItemFlags
+
+        if not self.files:
             return Qt.NoItemFlags
 
         if index.column() == 0:
@@ -130,6 +143,9 @@ class FileTableModel(QAbstractTableModel):
         Sorts the file list by the specified column.
         Also triggers preview update.
         """
+        if not self.files:
+            return
+
         reverse = (order == Qt.DescendingOrder)
 
         if column == 1:
@@ -142,3 +158,18 @@ class FileTableModel(QAbstractTableModel):
         self.layoutChanged.emit()
         self.sort_changed.emit()  # Let the MainWindow refresh preview
 
+    def clear(self):
+        """
+        Clears the file list and refreshes the table.
+        """
+        self.beginResetModel()
+        self.files = []
+        self.endResetModel()
+
+    def set_files(self, files: list[FileItem]) -> None:
+        """
+        Replaces the file list and refreshes the table.
+        """
+        self.beginResetModel()
+        self.files = files
+        self.endResetModel()

@@ -28,8 +28,8 @@ class ConfigureLogger:
         self,
         log_name: str = "app",
         log_dir: str = "logs",
-        console_level: int = logging.INFO,
-        file_level: int = logging.ERROR,
+        console_level: int = logging.DEBUG,
+        file_level: int = logging.DEBUG,
         max_bytes: int = 1_000_000,
         backup_count: int = 3
     ):

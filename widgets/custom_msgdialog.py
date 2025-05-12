@@ -173,29 +173,6 @@ class CustomMessageDialog(QDialog):
         dlg = CustomMessageDialog(title, message, [ok_text], parent)
         dlg.exec_()
 
-    @staticmethod
-    def rename_conflict_dialog(parent: QWidget, filename: str) -> str:
-        """
-        Shows a dialog with options for renaming conflict resolution.
-
-        Parameters
-        ----------
-        parent : QWidget
-            The parent widget.
-        filename : str
-            The filename that is causing the conflict.
-
-        Returns
-        -------
-        str
-            One of "Skip", "Skip All", "Cancel", "Overwrite"
-        """
-        message = f"The file '{filename}' already exists.\nWhat would you like to do?"
-        options = ["Skip", "Skip All", "Cancel", "Overwrite"]
-        dlg = CustomMessageDialog("File Conflict", message, buttons=options, parent=parent)
-        dlg.exec_()
-        return dlg.selected == yes_text if dlg.selected else False
-
     def set_progress(self, value: int, total: int = None):
         """
         Updates the progress bar with the current progress value.
@@ -213,6 +190,38 @@ class CustomMessageDialog(QDialog):
             if total is not None:
                 self.progress_bar.setRange(0, total)
             self.progress_bar.setValue(value)
+
+    @staticmethod
+    def rename_conflict_dialog(parent: QWidget, filename: str) -> str:
+        """
+        Shows a dialog with options for renaming conflict resolution.
+
+        Parameters
+        ----------
+        parent : QWidget
+            The parent widget.
+        filename : str
+            The filename that is causing the conflict.
+
+        Returns
+        -------
+        str
+            One of: 'overwrite', 'skip', 'skip_all', 'cancel'
+        """
+        message = f"The file '{filename}' already exists.\nWhat would you like to do?"
+        buttons = ["Overwrite", "Skip", "Skip All", "Cancel"]
+
+        dlg = CustomMessageDialog("File Conflict", message, buttons=buttons, parent=parent)
+        dlg.exec_()
+
+        label_map = {
+            "Overwrite": "overwrite",
+            "Skip": "skip",
+            "Skip All": "skip_all",
+            "Cancel": "cancel"
+        }
+
+        return label_map.get(dlg.selected, "cancel")  # fallback = cancel
 
     def set_message(self, msg: str) -> None:
         """
