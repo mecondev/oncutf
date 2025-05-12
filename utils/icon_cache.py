@@ -21,7 +21,7 @@ from config import PREVIEW_COLORS, PREVIEW_INDICATOR_SHAPE, PREVIEW_INDICATOR_SI
 from utils.icons import create_colored_icon
 
 # Initialize Logger
-from logger_helper import get_logger
+from utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
 

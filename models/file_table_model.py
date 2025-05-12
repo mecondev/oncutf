@@ -19,7 +19,7 @@ from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QVariant, pyqtSig
 from models.file_item import FileItem
 
 # initialize logger
-from logger_helper import get_logger
+from utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
 

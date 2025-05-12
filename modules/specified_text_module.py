@@ -17,7 +17,7 @@ from PyQt5.QtCore import pyqtSignal
 from utils.validation import is_valid_filename_text
 
 # initialize logger
-from logger_helper import get_logger
+from utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
 
@@ -78,3 +78,34 @@ class SpecifiedTextModule(QWidget):
     def reset(self) -> None:
         self.text_input.clear()
         self.text_input.setStyleSheet("")
+
+    def apply(self, file_item) -> str:
+        return self.apply_from_data(self.get_data(), file_item)
+
+    @staticmethod
+    def apply_from_data(data: dict, file_item, index: int = 0) -> str:
+        """
+        Applies the specified text transformation to the filename.
+
+        Parameters
+        ----------
+        data : dict
+            A dictionary with keys:
+                - 'type': should be 'specified_text'
+                - 'text': the user-defined static text to insert
+        file_item : FileItem
+            The file item being renamed (unused in this module).
+        index : int, optional
+            Index of the file in the batch (not used here).
+
+        Returns
+        -------
+        str
+            The static text to prepend/append in the filename.
+        """
+        text = data.get("text", "").strip()
+        if not is_valid_filename_text(text):
+            logger.warning("[SpecifiedTextModule] Invalid filename text: '%s'", text)
+            return "invalid"
+
+        return text

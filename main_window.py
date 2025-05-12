@@ -41,7 +41,7 @@ from widgets.metadata_worker import MetadataWorker
 from config import *
 
 # Initialize Logger
-from logger_helper import get_logger
+from utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
 
@@ -404,7 +404,8 @@ class MainWindow(QMainWindow):
         )
 
         if has_error:
-            CustomMessageDialog.warning(self, "Rename Aborted", tooltip)
+            dlg = CustomMessageDialog(title="Rename Aborted", message=tooltip, parent=self)
+            dlg.exec_()
             return
 
         # 4. Build rename plan

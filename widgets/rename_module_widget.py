@@ -30,7 +30,7 @@ from modules.metadata_module import MetadataModule
 from widgets.custom_msgdialog import CustomMessageDialog
 
 # Initialize Logger
-from logger_helper import get_logger
+from utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
 class RenameModuleWidget(QWidget):

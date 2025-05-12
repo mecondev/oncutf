@@ -22,7 +22,7 @@ from models.file_item import FileItem
 from utils.filename_validator import FilenameValidator
 
 # Initialize Logger
-from logger_helper import get_logger
+from utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
 

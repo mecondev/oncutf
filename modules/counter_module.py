@@ -15,7 +15,7 @@ from PyQt5.QtGui import QIntValidator
 from PyQt5.QtCore import pyqtSignal, Qt, QTimer
 
 # initialize logger
-from logger_helper import get_logger
+from utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
 
@@ -137,3 +137,45 @@ class CounterModule(QWidget):
             "padding": int(self.padding_input.text() or "0"),
             "step": int(self.increment_input.text() or "0")
         }
+
+    def apply(self, file_item) -> str:
+        """
+        Applies the counter logic using current widget state.
+        """
+        return self.apply_from_data(self.get_data(), file_item)
+
+    @staticmethod
+    def apply_from_data(data: dict, file_item, index: int = 0) -> str:
+        """
+        Applies a counter-based transformation using the given config and index.
+
+        Parameters
+        ----------
+        data : dict
+            Configuration dictionary with keys:
+                - 'type': 'counter'
+                - 'start': int, the starting number
+                - 'padding': int, number of digits (e.g. 4 → 0001)
+                - 'step': int, increment step
+        file_item : FileItem
+            The file to rename (not used by counter).
+        index : int, optional
+            The position of the file in the list (used for offsetting).
+
+        Returns
+        -------
+        str
+            The stringified counter value with proper padding.
+        """
+        try:
+            start = int(data.get("start", 1))
+            step = int(data.get("step", 1))
+            padding = int(data.get("padding", 4))
+
+            value = start + index * step
+            result = f"{value:0{padding}d}"
+            logger.debug(f"[CounterModule] index: {index}, value: {value}, padded: {result}")
+            return result
+        except Exception as e:
+            logger.exception(f"[CounterModule] Failed to apply counter logic: {e}")
+            return "####"

@@ -26,7 +26,7 @@ from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 from utils.metadata_reader import MetadataReader
 
 # initialize logger
-from logger_helper import get_logger
+from utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
 

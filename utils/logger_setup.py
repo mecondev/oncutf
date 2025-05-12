@@ -6,17 +6,37 @@ It allows for flexible configuration of logging settings, including log levels, 
 destinations, and formatting. The logger is configured to log INFO and higher levels to
 the console, and ERROR and higher levels to a rotating file.
 
-Classes:
-    ConfigureLogger: Configures application-wide logging with console and file handlers.
-
 Author: Michael Economou
 Date: 2025-05-01
 """
 
-
 import logging
 import os
+import sys
+import re
 from logging.handlers import RotatingFileHandler
+
+def safe_text(text: str) -> str:
+    """
+    Replaces unsupported Unicode characters with ASCII-safe alternatives.
+    """
+    replacements = {
+        '\u2192': '->',  # → Right arrow
+        '\u2014': '--',  # — em dash
+        '\u2013': '-',   # – en dash
+        '\u2026': '...', # … ellipsis
+    }
+    pattern = re.compile('|'.join(map(re.escape, replacements.keys())))
+    return pattern.sub(lambda m: replacements[m.group(0)], text)
+
+def safe_log(logger_func, message: str):
+    """
+    Wrapper for logger functions that catches encoding issues and falls back to ASCII.
+    """
+    try:
+        logger_func(message)
+    except UnicodeEncodeError:
+        logger_func(safe_text(message))
 
 class ConfigureLogger:
     """
@@ -28,8 +48,8 @@ class ConfigureLogger:
         self,
         log_name: str = "app",
         log_dir: str = "logs",
-        console_level: int = logging.DEBUG,
-        file_level: int = logging.DEBUG,
+        console_level: int = logging.INFO,
+        file_level: int = logging.ERROR,
         max_bytes: int = 1_000_000,
         backup_count: int = 3
     ):
@@ -47,16 +67,23 @@ class ConfigureLogger:
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)  # Accept all logs; handlers will filter
 
-        # Create log directory if needed
-        os.makedirs(log_dir, exist_ok=True)
-        log_file_path = os.path.join(log_dir, f"{log_name}.log")
+        if not self.logger.hasHandlers():
+            os.makedirs(log_dir, exist_ok=True)
+            log_file_path = os.path.join(log_dir, f"{log_name}.log")
 
-        self._setup_console_handler(console_level)
-        self._setup_file_handler(log_file_path, file_level, max_bytes, backup_count)
+            self._setup_console_handler(console_level)
+            self._setup_file_handler(log_file_path, file_level, max_bytes, backup_count)
 
     def _setup_console_handler(self, level: int):
-        """Sets up console handler with simple formatting."""
-        console_handler = logging.StreamHandler()
+        """Sets up console handler with UTF-8-safe formatting."""
+        console_handler = logging.StreamHandler(sys.stdout)
+
+        # Try to enforce UTF-8 encoding for Windows terminals
+        try:
+            console_handler.stream.reconfigure(encoding='utf-8')
+        except Exception:
+            pass
+
         console_handler.setLevel(level)
         formatter = logging.Formatter("[%(levelname)s] %(message)s")
         console_handler.setFormatter(formatter)

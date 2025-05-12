@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from widgets.main_window import MainWindow  # forward reference
 
 # Initialize Logger
-from logger_helper import get_logger
+from utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
 

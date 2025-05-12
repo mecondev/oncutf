@@ -23,7 +23,7 @@ from PyQt5.QtCore import Qt, QRect, QModelIndex
 from PyQt5.QtGui import QPainter
 
 # Initialize Logger
-from logger_helper import get_logger
+from utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
 

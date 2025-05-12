@@ -20,15 +20,10 @@ from PyQt5.QtCore import Qt
 from main_window import MainWindow
 from utils.theme import load_stylesheet
 
-from logger_setup import ConfigureLogger
-from logger_helper import get_logger
+from utils.init_logging import init_logging
 
 # Initialize logging system
-ConfigureLogger(log_name="oncutf")
-
-# Logger for this module
-logger = get_logger(__name__)
-
+logger = init_logging("oncutf")
 # Log application start with current date/time
 now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info("Application started at %s", now)
