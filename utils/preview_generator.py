@@ -95,14 +95,17 @@ def generate_preview_names(
 
                 elif mod_type == "metadata" and mod.get("field") == "date":
                     # Format file date safely for filenames
-                    date_str = file.date.replace(":", "-").replace(" ", "_")
+                    if file.date:
+                        date_str = file.date.replace(":", "-").replace(" ", "_")
+                    else:
+                        date_str = "unknown_date"  # ή κάποια default τιμή
                     name_parts.append(date_str)
 
             # Combine name parts or fallback
             if not any(part.strip() for part in name_parts):
                 new_filename = file.filename
             else:
-                new_filename = "_".join(name_parts) + "." + file.filetype
+                new_filename = "_".join(name_parts) + "." + file.extension
 
             # Validate the filename
             is_valid, error_msg = validator.is_valid_filename(new_filename)

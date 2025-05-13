@@ -39,6 +39,7 @@ class MetadataReader:
         Returns:
             dict or None: A dictionary of metadata fields and values, or None on failure.
         """
+        logger.debug(f"[MetadataReader] Reading metadata for: {filepath}")
         try:
             result = subprocess.run(
                 [self.exiftool_path, "-json", filepath],
@@ -49,10 +50,12 @@ class MetadataReader:
             )
             metadata_list = json.loads(result.stdout)
             if metadata_list:
+                logger.debug(f"[MetadataReader] Result for {filepath}: {result}")
                 return metadata_list[0]
         except (subprocess.CalledProcessError, json.JSONDecodeError) as e:
             print(f"Error reading metadata: {e}")
-        return None
+            logger.warning(f"[MetadataReader] Failed to read metadata for {filepath}: {e}")
+        return []
 
     def read_specific_fields(self, filepath: str, fields: list[str]) -> Dict[str, str]:
         """

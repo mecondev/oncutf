@@ -17,8 +17,9 @@ from datetime import datetime
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QComboBox
 from PyQt5.QtCore import pyqtSignal, QTimer
 from models.file_item import FileItem
-from utils.logger_helper import get_logger
 
+# initialize logger
+from utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
 
@@ -66,38 +67,63 @@ class MetadataModule(QWidget):
             "field": field
         }
 
-    def apply(self, file_item) -> str:
-        return self.apply_from_data(self.get_data(), file_item)
+    def apply(self, file_item, index=0, metadata_cache=None) -> str:
+        return self.apply_from_data(self.get_data(), file_item, index, metadata_cache)
 
     @staticmethod
-    def apply_from_data(data: dict, file_item, index: int = 0) -> str:
+    def apply_from_data(
+        data: dict,
+        file_item,
+        index: int = 0,
+        metadata_cache: Optional[dict] = None
+    ) -> str:
         """
-        Static method to extract metadata field from file_item based on selected config.
+        Extracts a metadata-based value from the file, using the specified field.
 
-        :param data: Dict with field type
-        :param file_item: FileItem with .date or .metadata attributes
-        :param index: Unused, placeholder for future batch awareness
-        :return: A string to use in the filename
+        Parameters
+        ----------
+        data : dict
+            Dictionary with keys:
+                - 'type': 'metadata'
+                - 'field': the metadata field to extract (currently supports 'date')
+        file_item : FileItem
+            The file item (used for filename, direct .date, or embedded metadata).
+        index : int, optional
+            Index of the file in the list (not used here).
+        metadata_cache : dict, optional
+            Optional cache mapping file path → metadata dict.
+
+        Returns
+        -------
+        str
+            A stringified metadata value suitable for filenames (e.g., a formatted date).
         """
-        field = data.get("field", "date")
+
+        field = data.get("field")
+        path = getattr(file_item, "full_path", None) or file_item.filename
+        date_str = None
+
+        # Use cached metadata if available
+        if metadata_cache and path in metadata_cache:
+            metadata = metadata_cache[path]
+            logger.debug(f"[MetadataModule] Using cached metadata for {path}")
+        else:
+            metadata = getattr(file_item, "metadata", {})
+            logger.debug(f"[MetadataModule] Using direct metadata for {path}")
 
         if field == "date":
-            date_str = None
-
             if hasattr(file_item, "date") and file_item.date:
                 date_str = file_item.date
-            elif hasattr(file_item, "metadata"):
-                metadata = getattr(file_item, "metadata", {})
-                logger.debug(f"[MetadataModule] Metadata keys: {list(metadata.keys())}")
+            elif metadata:
                 for key in ["FileModifyDate", "FileAccessDate", "DateTimeOriginal"]:
                     if key in metadata:
                         date_str = metadata[key]
                         logger.debug(f"[MetadataModule] Found date '{date_str}' from key '{key}'")
                         break
 
-            logger.debug(f"[MetadataModule] file: {getattr(file_item, 'filename', 'N/A')}")
+            logger.debug(f"[MetadataModule] file: {path}")
             logger.debug(f"[MetadataModule] .date: {getattr(file_item, 'date', None)}")
-            logger.debug(f"[MetadataModule] metadata keys: {list(getattr(file_item, 'metadata', {}).keys())}")
+            logger.debug(f"[MetadataModule] metadata keys: {list(metadata.keys())}")
             logger.debug(f"[MetadataModule] selected field: {field}")
 
             if date_str:

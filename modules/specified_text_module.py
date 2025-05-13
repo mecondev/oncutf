@@ -79,11 +79,16 @@ class SpecifiedTextModule(QWidget):
         self.text_input.clear()
         self.text_input.setStyleSheet("")
 
-    def apply(self, file_item) -> str:
-        return self.apply_from_data(self.get_data(), file_item)
+    def apply(self, file_item, index=0, metadata_cache=None) -> str:
+        return self.apply_from_data(self.get_data(), file_item, index, metadata_cache)
 
     @staticmethod
-    def apply_from_data(data: dict, file_item, index: int = 0) -> str:
+    def apply_from_data(
+        data: dict,
+        file_item,
+        index: int = 0,
+        metadata_cache: Optional[dict] = None
+    ) -> str:
         """
         Applies the specified text transformation to the filename.
 
@@ -97,15 +102,21 @@ class SpecifiedTextModule(QWidget):
             The file item being renamed (unused in this module).
         index : int, optional
             Index of the file in the batch (not used here).
+        metadata_cache : dict, optional
+            Not used in this module but accepted for API compatibility.
 
         Returns
         -------
         str
             The static text to prepend/append in the filename.
         """
+        logger.debug(f"[SpecifiedTextModule] Called with data={data}, index={index}")
+
         text = data.get("text", "").strip()
         if not is_valid_filename_text(text):
             logger.warning("[SpecifiedTextModule] Invalid filename text: '%s'", text)
             return "invalid"
+
+        logger.debug(f"[SpecifiedTextModule] index={index}, text='{text}' → return='{text if is_valid_filename_text(text) else 'invalid'}'")
 
         return text

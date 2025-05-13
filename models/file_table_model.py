@@ -71,7 +71,7 @@ class FileTableModel(QAbstractTableModel):
             if col == 1:
                 return file.filename
             elif col == 2:
-                return file.filetype
+                return file.extension
             elif col == 3:
                 return file.date
 

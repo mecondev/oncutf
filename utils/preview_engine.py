@@ -18,7 +18,7 @@ Date: 2025-05-12
 
 import os
 from typing import List
-
+from typing import Optional
 from modules.specified_text_module import SpecifiedTextModule
 from modules.counter_module import CounterModule
 from modules.metadata_module import MetadataModule
@@ -35,19 +35,26 @@ MODULE_TYPE_MAP = {
     # "original_name": OriginalNameModule,  # για μελλοντική επέκταση
 }
 
-
-def apply_rename_modules(modules_data: List[dict], index: int, file_item: FileItem) -> str:
+def apply_rename_modules(
+    modules_data: List[dict],
+    index: int,
+    file_item: FileItem,
+    metadata_cache: Optional[dict] = None
+) -> str:
     """
     Applies all rename modules in sequence to generate the final filename.
 
     Parameters
     ----------
     modules_data : list of dict
-        A list of configuration dictionaries for each rename module, typically from `module.to_dict()`.
+        A list of configuration dictionaries for each rename module, typically from `module.get_data()`.
     index : int
         The index of the current file in the list. Useful for modules like counters.
     file_item : FileItem
         The file item object containing filename, metadata, and other file-related info.
+    metadata_cache : dict, optional
+        Optional metadata cache, indexed by full file path. Used by modules like MetadataModule
+        to avoid re-parsing metadata.
 
     Returns
     -------
@@ -71,13 +78,18 @@ def apply_rename_modules(modules_data: List[dict], index: int, file_item: FileIt
 
         try:
             logger.debug(f"[apply_rename_modules] Applying {module_cls.__name__} to {file_item.filename}")
-            part = module_cls.apply_from_data(data, file_item, index)
+            part = module_cls.apply_from_data(data, file_item, index, metadata_cache)
             logger.debug(f"[apply_rename_modules] Result from {module_cls.__name__}: '{part}'")
         except Exception as e:
             logger.exception(f"[apply_rename_modules] Error in module {module_cls.__name__} for {file_item.filename}: {e}")
             part = "unknown"
 
         new_name += part
+
+    # Append file extension if it exists
+    _, ext = os.path.splitext(file_item.filename)
+    if ext:
+        new_name += ext
 
     logger.debug(f"[apply_rename_modules] {file_item.filename} → {new_name}")
     return new_name

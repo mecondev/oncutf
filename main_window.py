@@ -38,6 +38,7 @@ from utils.rename_logic import build_rename_plan, execute_rename_plan, resolve_r
 from utils.metadata_reader import MetadataReader
 from utils.build_metadata_tree_model import build_metadata_tree_model
 from widgets.metadata_worker import MetadataWorker
+from utils.metadata_cache import MetadataCache
 from config import *
 
 # Initialize Logger
@@ -54,7 +55,7 @@ class MainWindow(QMainWindow):
         self.metadata_thread = None
         self.metadata_worker = None
         self.loading_dialog = None
-        self.metadata_cache = {}
+        self.metadata_cache = MetadataCache()
         self._metadata_worker_cancel_requested = False
 
         self.create_colored_icon = create_colored_icon
@@ -66,6 +67,7 @@ class MainWindow(QMainWindow):
         self.filename_validator = FilenameValidator()
         self.last_action = None  # Could be: 'folder_select', 'browse', 'rename', etc.
         self.current_folder_path = None
+        self.files = []
         self.rename_modules = []
         self.preview_map = {}  # preview_filename → FileItem
 
@@ -525,7 +527,7 @@ class MainWindow(QMainWindow):
             if ext in ALLOWED_EXTENSIONS:
                 filename = os.path.basename(file_path)
                 modified = datetime.datetime.fromtimestamp(os.path.getmtime(file_path)).strftime("%Y-%m-%d %H:%M:%S")
-                file_items.append(FileItem(filename, ext, modified))
+                file_items.append(FileItem(filename, ext, modified, full_path=file_path))  # ✅ προσθήκη full_path
 
         if not file_items:
             logger.info("No supported files found.")
@@ -541,8 +543,7 @@ class MainWindow(QMainWindow):
         self.file_table_view.setModel(self.model)
         self.model.set_files(file_items)
         self.model.folder_path = folder_path
-        self.file_items = file_items
-
+        self.files = file_items
 
         logger.info("Loaded %d supported files from %s", len(file_items), folder_path)
 
@@ -660,7 +661,7 @@ class MainWindow(QMainWindow):
             name_pairs = []
             for idx, file in enumerate(selected_files):
                 try:
-                    new_name = apply_rename_modules(modules_data, idx, file)
+                    new_name = apply_rename_modules(modules_data, idx, file, self.metadata_cache)
                     logger.debug(f"[Preview] {file.filename} → {new_name}")
                     name_pairs.append((file.filename, new_name))
                 except Exception as e:
@@ -1065,7 +1066,7 @@ class MainWindow(QMainWindow):
 
         # Create the thread and move worker into it
         self.metadata_thread = QThread(self)
-        self.metadata_worker = MetadataWorker(self.metadata_reader)
+        self.metadata_worker = MetadataWorker(self.metadata_reader, metadata_cache=self.metadata_cache)
         self.metadata_worker.moveToThread(self.metadata_thread)
 
         # Connect signals
@@ -1133,7 +1134,7 @@ class MainWindow(QMainWindow):
         self.set_status(f"Metadata loaded for {count} file{'s' if count != 1 else ''}.", color="green", auto_reset=True)
 
         # Inject metadata into FileItems
-        for file_item in self.file_items:
+        for file_item in self.files:
             filename = file_item.filename
             metadata = metadata_dict.get(filename)
             if isinstance(metadata, dict):
@@ -1362,7 +1363,19 @@ class MainWindow(QMainWindow):
             return
 
         filename = self.model.files[row].filename
-        metadata = self.metadata_cache.get(filename, {})
+
+        file_item = next((f for f in self.model.files if f.filename == filename), None)
+
+        if file_item:
+            path = file_item.full_path if file_item and file_item.full_path else os.path.join(self.current_folder_path, filename)
+            metadata = self.metadata_cache.get(path)
+            if metadata is None:
+                metadata = {}
+        else:
+            logger.warning("FileItem not found for row click: %s", filename)
+            path = os.path.join(self.current_folder_path, filename)
+            metadata = self.metadata_cache.get(path, {})
+
 
         logger.debug("Row clicked: %s", filename)
         if metadata:

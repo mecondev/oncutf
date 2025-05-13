@@ -12,6 +12,7 @@ Classes:
 Author: Michael Economou
 Date: 2025-05-01
 """
+from typing import Optional
 
 # Initialize Logger
 from utils.logger_helper import get_logger
@@ -28,11 +29,16 @@ class FileItem:
         date (str): The file's last modification date as a string.
         checked (bool): Whether the file is selected for renaming.
     """
-    def __init__(self, filename: str, filetype: str, date: str, checked: bool=True) -> None:
-        self.filename = filename    # The name of the file
-        self.filetype = filetype    # The extension/type of the file
-        self.date = date            # The last modification date
-        self.checked = checked      # Default state is checked
+
+class FileItem:
+    def __init__(self, filename: str, extension: str, modified: str, full_path: Optional[str] = None):
+        self.filename = filename
+        self.extension = extension
+        self.modified = modified
+        self.full_path = full_path  # ✅ νέο πεδίο
+        self.checked = True
+        self.date = None
+        self.metadata = {}
 
     @property
     def name(self) -> str:

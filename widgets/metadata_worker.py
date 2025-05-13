@@ -24,6 +24,8 @@ import traceback
 from typing import Optional
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 from utils.metadata_reader import MetadataReader
+from utils.metadata_cache import MetadataCache
+
 
 # initialize logger
 from utils.logger_helper import get_logger
@@ -34,10 +36,11 @@ class MetadataWorker(QObject):
     finished = pyqtSignal(dict)  # emits {filename: metadata}
     progress = pyqtSignal(int, int)
 
-    def __init__(self, reader: MetadataReader, parent: Optional[QObject] = None):
+    def __init__(self, reader: MetadataReader, metadata_cache: MetadataCache, parent: Optional[QObject] = None):
         super().__init__(parent)
         self.reader = reader
         self.file_path = []
+        self.metadata_cache = metadata_cache
         self._cancelled = False
 
     def load_batch(self, file_path) -> None:
@@ -54,6 +57,14 @@ class MetadataWorker(QObject):
         QTimer.singleShot(0, self.run_batch)
 
     def run_batch(self) -> None:
+        """
+        Processes metadata for all provided file paths and emits the result.
+        Results are cached if a metadata_cache is available.
+
+        Emits:
+            progress (int, int): Current index and total count
+            finished (dict): Final metadata results per file
+        """
         start_time = time.time()
         result = {}
         total = len(self.file_path)
@@ -65,16 +76,21 @@ class MetadataWorker(QObject):
                 logger.warning("Metadata batch was cancelled at index %d", index)
                 self.finished.emit(result)
                 return
-
             try:
                 metadata = self.reader.read_metadata(path)
-                if metadata:
-                    result[os.path.basename(path)] = metadata
+                filename = os.path.basename(path)
+
+                if isinstance(metadata, dict) and metadata:
+                    result[path] = metadata
+                    if self.metadata_cache:
+                        self.metadata_cache.set(path, metadata)
                 else:
-                    logger.warning("No metadata found for %s", os.path.basename(path))
+                    logger.warning("No metadata found for %s", filename)
+                    result[path] = {}
+
             except Exception as e:
                 logger.warning("Failed to read metadata for %s: %s", path, str(e))
-                result[os.path.basename(path)] = {}
+                result[path] = {}
 
             self.progress.emit(index + 1, total)
 

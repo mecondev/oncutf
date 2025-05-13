@@ -138,14 +138,16 @@ class CounterModule(QWidget):
             "step": int(self.increment_input.text() or "0")
         }
 
-    def apply(self, file_item) -> str:
-        """
-        Applies the counter logic using current widget state.
-        """
-        return self.apply_from_data(self.get_data(), file_item)
+    def apply(self, file_item, index=0, metadata_cache=None) -> str:
+        return self.apply_from_data(self.get_data(), file_item, index, metadata_cache)
 
     @staticmethod
-    def apply_from_data(data: dict, file_item, index: int = 0) -> str:
+    def apply_from_data(
+        data: dict,
+        file_item,
+        index: int = 0,
+        metadata_cache: Optional[dict] = None
+    ) -> str:
         """
         Applies a counter-based transformation using the given config and index.
 
@@ -161,6 +163,8 @@ class CounterModule(QWidget):
             The file to rename (not used by counter).
         index : int, optional
             The position of the file in the list (used for offsetting).
+        metadata_cache : dict, optional
+            Not used in this module but accepted for API compatibility.
 
         Returns
         -------
