@@ -53,6 +53,11 @@ class MetadataWorker(QObject):
         logger.debug("Batch loaded: %d files", len(file_path))
         self.file_path = file_path
 
+        logger.debug("MetadataWorker: received file_paths:")
+        for path in file_path:
+            logger.debug(f"   {path}")
+
+
         logger.info("load_batch() called with %d files", len(file_path))
         QTimer.singleShot(0, self.run_batch)
 
@@ -95,7 +100,9 @@ class MetadataWorker(QObject):
             self.progress.emit(index + 1, total)
 
         duration = time.time() - start_time
-        logger.info("Metadata batch completed in %.2f seconds", duration)
+        avg_time = duration / total if total else 0
+        logger.info(f"Metadata batch completed in {duration:.2f} seconds ({total} files, avg {avg_time:.3f}s/file)")
+
 
         self.finished.emit(result)
 

@@ -20,6 +20,7 @@ from PyQt5.QtCore import Qt
 
 # Which key skips the metadata scan when held down
 SKIP_METADATA_MODIFIER = Qt.ControlModifier
+DEFAULT_SKIP_METADATA = True
 
 # App info
 APP_NAME = "oncutf"

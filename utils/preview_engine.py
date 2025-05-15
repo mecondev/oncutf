@@ -76,6 +76,11 @@ def apply_rename_modules(
             logger.warning(f"[apply_rename_modules] Unknown module type '{module_type}' — skipping.")
             continue
 
+        if module_type == "metadata":
+            meta = metadata_cache.get(file_item.full_path) if metadata_cache else {}
+            if not meta:
+                logger.debug(f"[Preview] No metadata found for {file_item.filename} (skip_metadata_mode={self.skip_metadata_mode})")
+
         try:
             logger.debug(f"[apply_rename_modules] Applying {module_cls.__name__} to {file_item.filename}")
             part = module_cls.apply_from_data(data, file_item, index, metadata_cache)

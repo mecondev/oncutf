@@ -85,11 +85,11 @@ class MetadataModule(QWidget):
         data : dict
             Dictionary with keys:
                 - 'type': 'metadata'
-                - 'field': the metadata field to extract (currently supports 'date')
+                - 'field': the metadata field to extract (e.g., 'date', 'Model')
         file_item : FileItem
             The file item (used for filename, direct .date, or embedded metadata).
         index : int, optional
-            Index of the file in the list (not used here).
+            Index of the file in the list.
         metadata_cache : dict, optional
             Optional cache mapping file path → metadata dict.
 
@@ -101,30 +101,31 @@ class MetadataModule(QWidget):
 
         field = data.get("field")
         path = getattr(file_item, "full_path", None) or file_item.filename
-        date_str = None
+        metadata = {}
 
-        # Use cached metadata if available
+        # Try to get metadata from cache first
         if metadata_cache and path in metadata_cache:
             metadata = metadata_cache[path]
             logger.debug(f"[MetadataModule] Using cached metadata for {path}")
+        elif hasattr(file_item, "metadata") and isinstance(file_item.metadata, dict):
+            metadata = file_item.metadata
+            logger.debug(f"[MetadataModule] Using file_item.metadata for {path}")
         else:
-            metadata = getattr(file_item, "metadata", {})
-            logger.debug(f"[MetadataModule] Using direct metadata for {path}")
+            logger.warning(f"[MetadataModule] No metadata found for {path}")
+            return "unknown"
 
+        # === Special case: formatted date field ===
         if field == "date":
-            if hasattr(file_item, "date") and file_item.date:
-                date_str = file_item.date
-            elif metadata:
+            # Try direct .date if available
+            date_str = getattr(file_item, "date", None)
+
+            # Otherwise, fallback to metadata keys
+            if not date_str and metadata:
                 for key in ["FileModifyDate", "FileAccessDate", "DateTimeOriginal"]:
                     if key in metadata:
                         date_str = metadata[key]
                         logger.debug(f"[MetadataModule] Found date '{date_str}' from key '{key}'")
                         break
-
-            logger.debug(f"[MetadataModule] file: {path}")
-            logger.debug(f"[MetadataModule] .date: {getattr(file_item, 'date', None)}")
-            logger.debug(f"[MetadataModule] metadata keys: {list(metadata.keys())}")
-            logger.debug(f"[MetadataModule] selected field: {field}")
 
             if date_str:
                 cleaned = date_str.split("+")[0].strip()
@@ -132,7 +133,7 @@ class MetadataModule(QWidget):
                     try:
                         dt = datetime.strptime(cleaned, fmt)
                         result = dt.strftime("%Y%m%d")
-                        logger.debug(f"[MetadataModule] final result: {result}")
+                        logger.debug(f"[MetadataModule] Final date result: {result}")
                         return result
                     except ValueError:
                         continue
@@ -140,5 +141,13 @@ class MetadataModule(QWidget):
                 logger.warning(f"[MetadataModule] Failed to parse date: {date_str}")
                 return "invalid_date"
 
-        logger.warning("[MetadataModule] Unknown or unsupported field: %s", field)
+            logger.warning(f"[MetadataModule] No date value found for {path}")
+            return "unknown"
+
+        # === Generic metadata field ===
+        value = metadata.get(field)
+        if value:
+            return str(value).strip()
+
+        logger.warning(f"[MetadataModule] Field '{field}' not found in metadata for {path}")
         return "unknown"

@@ -73,7 +73,7 @@ class FileTableModel(QAbstractTableModel):
             elif col == 2:
                 return file.extension
             elif col == 3:
-                return file.date
+                return file.modified
 
         elif role == Qt.CheckStateRole and col == 0:
             return Qt.Checked if file.checked else Qt.Unchecked

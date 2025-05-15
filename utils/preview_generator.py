@@ -1,130 +1,80 @@
 """
-Module: preview_generator.py
+preview_generator.py
+
+This module provides functions to generate preview names for file renaming
+based on user-defined modules. It supports modular rename logic and allows
+integration with metadata.
 
 Author: Michael Economou
-Date: 2025-05-02
-
-This module implements the core logic for generating preview filenames
-based on the active rename modules. It orchestrates the execution of
-each module in sequence and validates the resulting names.
-
-Used by oncutf to display accurate previews before performing batch
-renaming operations.
-
-Supports:
-- Modular rename pipeline execution
-- Duplicate and invalid filename detection
-- Conflict resolution and visual feedback
+Date: 2025-05-13
 """
 
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Optional, Any
 from models.file_item import FileItem
-from utils.filename_validator import FilenameValidator
-
-# Initialize Logger
-from utils.logger_helper import get_logger
-logger = get_logger(__name__)
+from utils.validation import is_valid_filename_text
 
 
 def generate_preview_names(
     files: List[FileItem],
-    modules_data: List[dict],
-    validator: FilenameValidator
+    modules_data: List[Dict[str, Any]],
+    metadata_cache: Optional[Dict[str, Dict[str, Any]]] = None
 ) -> Tuple[List[Tuple[str, str]], bool, str]:
     """
-    Generates new filenames based on provided module configurations.
+    Generate new filenames based on rename modules for a list of files.
 
-    Args:
-        files (List[FileItem]): The list of files to process.
-        modules_data (List[dict]): Rename module configuration dictionaries.
-        validator (FilenameValidator): Validation utility for filenames.
+    Parameters
+    ----------
+    files : List[FileItem]
+        The list of files to rename.
+    modules_data : List[Dict[str, Any]]
+        The list of rename modules in serialized form.
+    metadata : Optional[Dict[str, Dict[str, Any]]]
+        Cached metadata for the files (optional).
 
-    Returns:
-        Tuple[
-            List[Tuple[str, str]],  # List of (old_name, new_name)
-            bool,                   # has_error: whether any validation failed
-            str                     # tooltip message describing result or error
-        ]
+    Returns
+    -------
+    Tuple[List[Tuple[str, str]], bool, str]
+        A tuple containing:
+        - List of (old_name, new_name) preview pairs
+        - Bool indicating if any error occurred
+        - Tooltip message if an error occurred
     """
-    new_names: List[Tuple[str, str]] = []
-    new_filenames_only: List[str] = []
-    tooltip_msg = "Rename selected files"
+    preview_pairs = []
     has_error = False
-    counter_value = 1
+    tooltip = ""
 
-    # Check if any module has an actual effect
-    modules_have_effect = any(
-        mod.get("type") == "counter"
-        or mod.get("type") == "metadata"
-        or (mod.get("type") == "specified_text" and mod.get("text", "").strip())
-        for mod in modules_data
-    )
+    for index, file in enumerate(files):
+        name_parts = []
+        for module in modules_data:
+            module_type = module.get("type")
 
-    # No modules active: fallback to original names
-    if not modules_have_effect:
-        for file in files:
-            if file.checked:
-                new_names.append((file.filename, file.filename))
-                new_filenames_only.append(file.filename)
-    else:
-        for file in files:
-            if not file.checked:
-                continue
+            if module_type == "specified_text":
+                text = module.get("text", "")
+                name_parts.append(text)
 
-            name_parts: List[str] = []
+            elif module_type == "counter":
+                start = module.get("start", 1)
+                padding = module.get("padding", 4)
+                step = module.get("step", 1)
+                value = start + (index * step)
+                name_parts.append(str(value).zfill(padding))
 
-            for mod in modules_data:
-                mod_type = mod.get("type")
+            elif module_type == "metadata_cache":
+                key = module.get("field")
+                meta = (metadata_cache or {}).get(file.full_path, {})
+                value = meta.get(key)
+                name_parts.append(value if value else "unknown")
 
-                if mod_type == "specified_text":
-                    name_parts.append(mod.get("text", "").strip())
-
-                elif mod_type == "counter":
-                    # Fetch start, padding, step (increment by)
-                    start = mod.get("start", 1)
-                    padding = mod.get("padding", 4)
-                    step = mod.get("step", 1)
-
-                    # Ensure counter starts correctly
-                    if counter_value < start:
-                        counter_value = start
-
-                    padded = str(counter_value).zfill(padding)
-                    name_parts.append(padded)
-                    counter_value += step
-
-                elif mod_type == "metadata" and mod.get("field") == "date":
-                    # Format file date safely for filenames
-                    if file.date:
-                        date_str = file.date.replace(":", "-").replace(" ", "_")
-                    else:
-                        date_str = "unknown_date"  # ή κάποια default τιμή
-                    name_parts.append(date_str)
-
-            # Combine name parts or fallback
-            if not any(part.strip() for part in name_parts):
-                new_filename = file.filename
             else:
-                new_filename = "_".join(name_parts) + "." + file.extension
+                name_parts.append("invalid")
 
-            # Validate the filename
-            is_valid, error_msg = validator.is_valid_filename(new_filename)
-            if not is_valid:
-                has_error = True
-                tooltip_msg = f"Invalid filename: {error_msg}"
+        new_name = "".join(name_parts)
 
-            new_names.append((file.filename, new_filename))
-            new_filenames_only.append(new_filename)
+        if not is_valid_filename_text(new_name):
+            has_error = True
+            tooltip = f"Invalid characters in filename: {new_name}"
+            break
 
-    # Detect duplicate names
-    has_dupes, dup_msg = validator.has_duplicates(new_filenames_only)
-    if has_dupes:
-        has_error = True
-        tooltip_msg = f"Duplicate names detected: {dup_msg}"
+        preview_pairs.append((file.filename, f"{new_name}.{file.extension}"))
 
-    # Detect "no change"
-    if all(old == new for old, new in new_names):
-        has_error = True
-        tooltip_msg = "No changes to apply — all filenames are unchanged."
-
-    return new_names, has_error, tooltip_msg
+    return preview_pairs, has_error, tooltip

@@ -26,8 +26,7 @@ from utils.init_logging import init_logging
 logger = init_logging("oncutf")
 # Log application start with current date/time
 now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-logger.info("Application started at %s", now)
-
+logger.info(f"Application started at {now}")
 
 def main() -> None:
     # Setup logging
