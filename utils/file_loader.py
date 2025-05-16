@@ -64,8 +64,8 @@ class FileLoaderMixin:
             # Optionally support ALT in the future
             # skip_metadata = modifiers & Qt.AltModifier
 
-            logger.info("Folder selected: %s", folder_path)
-            logger.info("Ctrl pressed? %s", bool(skip_metadata))
+            logger.info(f"Folder selected: {folder_path}")
+            logger.info(f"Ctrl pressed? {bool(skip_metadata)}")
 
             # Update folder path and load files
             self.load_files_from_folder(folder_path, skip_metadata=skip_metadata)

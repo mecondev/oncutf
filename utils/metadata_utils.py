@@ -28,17 +28,14 @@ def resolve_skip_metadata(
     parent_window: QWidget,
     default_skip: bool = True,
     threshold: int = 150
-) -> bool:
+) -> tuple[bool, bool]:
     """
-    Determines whether to skip metadata scan.
-
-    Rules:
-    - skip = default_skip XOR ctrl_override
-    - if skip → never ask
-    - if not skip (i.e. we will scan), then ask only if folder is large
+    Returns:
+        skip_metadata (bool): Whether to skip metadata
+        user_wants_scan (bool): True if user explicitly chose 'Scan' in dialog
     """
-    # Λογικό XOR — αν ctrl αλλάζει τη συμπεριφορά του default
     skip_metadata = default_skip ^ ctrl_override
+    user_wants_scan = None  # unknown
 
     if not skip_metadata and total_files > threshold:
         from widgets.custom_msgdialog import CustomMessageDialog
@@ -51,5 +48,9 @@ def resolve_skip_metadata(
             no_text="Skip Metadata"
         )
         skip_metadata = not wants_scan
+        user_wants_scan = wants_scan
+    else:
+        # infer what user "would want" if no dialog shown
+        user_wants_scan = not skip_metadata
 
-    return skip_metadata
+    return skip_metadata, user_wants_scan

@@ -46,5 +46,16 @@ class MetadataCache:
     def clear(self):
         self._cache.clear()
 
+    def update(self, other: dict):
+        self._cache.update(other)
+
+    def retain_only(self, paths: list[str]) -> None:
+        """
+        Keeps only the metadata entries for the given list of file paths.
+        All other metadata entries are removed.
+        """
+        self._cache = {path: meta for path, meta in self._cache.items() if path in paths}
+
+
 # Global instance
 metadata_cache = MetadataCache()

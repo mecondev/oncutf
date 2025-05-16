@@ -50,7 +50,7 @@ class MetadataReader:
             )
             metadata_list = json.loads(result.stdout)
             if metadata_list:
-                logger.debug(f"[MetadataReader] Result for {filepath}: {result}")
+                logger.debug(f"[MetadataReader] Result for {filepath}: {result}", extra={"dev_only": True})
                 return metadata_list[0]
         except (subprocess.CalledProcessError, json.JSONDecodeError) as e:
             print(f"Error reading metadata: {e}")

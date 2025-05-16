@@ -48,7 +48,7 @@ def create_item(text: str, alignment: Qt.AlignmentFlag = Qt.AlignLeft) -> QStand
 
 def build_metadata_tree_model(metadata: dict) -> QStandardItemModel:
     logger.debug(">>> build_metadata_tree_model called")
-    logger.debug(f"metadata type: {type(metadata)} | keys: {list(metadata.keys()) if isinstance(metadata, dict) else 'N/A'}")
+    logger.debug(f"metadata type: {type(metadata)} | keys: {list(metadata.keys()) if isinstance(metadata, dict) else 'N/A'}", extra={"dev_only": True})
 
     model = QStandardItemModel()
     model.setHorizontalHeaderLabels(["Key", "Value"])

@@ -114,7 +114,7 @@ class SpecifiedTextModule(QWidget):
 
         text = data.get("text", "").strip()
         if not is_valid_filename_text(text):
-            logger.warning("[SpecifiedTextModule] Invalid filename text: '%s'", text)
+            logger.warning(f"[SpecifiedTextModule] Invalid filename text: '{text}'")
             return "invalid"
 
         logger.debug(f"[SpecifiedTextModule] index={index}, text='{text}' → return='{text if is_valid_filename_text(text) else 'invalid'}'")

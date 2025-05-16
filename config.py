@@ -18,6 +18,9 @@ Contains:
 """
 from PyQt5.QtCore import Qt
 
+# Debugging
+SHOW_DEV_ONLY_IN_CONSOLE = False
+
 # Which key skips the metadata scan when held down
 SKIP_METADATA_MODIFIER = Qt.ControlModifier
 DEFAULT_SKIP_METADATA = True

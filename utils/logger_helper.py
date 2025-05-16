@@ -10,6 +10,10 @@ Functions:
     safe_text(text): Replaces problematic Unicode characters with ASCII equivalents.
     safe_log(logger_func, message): Logs a message safely, falling back to ASCII if needed.
 
+DevOnlyFilter:
+    A logging filter that hides dev-only debug messages from the console,
+    while still allowing them to be stored in file logs.
+
 Author: Michael Economou
 Date: 2025-05-12
 """
@@ -18,6 +22,7 @@ import logging
 import sys
 import re
 from functools import partial
+from config import SHOW_DEV_ONLY_IN_CONSOLE
 
 def safe_text(text: str) -> str:
     """
@@ -78,6 +83,7 @@ def get_logger(name: str = None) -> logging.Logger:
 
     if not logger.hasHandlers():
         handler = logging.StreamHandler(sys.stdout)
+        handler.addFilter(DevOnlyFilter())
         formatter = logging.Formatter("[%(levelname)s] %(message)s")
         handler.setFormatter(formatter)
 
@@ -93,3 +99,9 @@ def get_logger(name: str = None) -> logging.Logger:
         logger._patched_for_safe_log = True
 
     return logger
+
+class DevOnlyFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        if SHOW_DEV_ONLY_IN_CONSOLE:
+            return True
+        return not getattr(record, "dev_only", False)

@@ -252,7 +252,7 @@ class CustomMessageDialog(QDialog):
         CustomMessageDialog
             The waiting dialog.
         """
-        logger.debug("CustomMessageDialog.show_waiting: creating dialog")
+        logger.debug(f"Dialog message updated: {message}")
 
         dlg = CustomMessageDialog("Please Wait", message, buttons=None, parent=parent, show_progress=True)
         dlg.setModal(False)

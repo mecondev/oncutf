@@ -12,6 +12,7 @@ import os
 import glob
 import datetime
 import platform
+import json
 from typing import TYPE_CHECKING, List, Tuple, Dict
 from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
@@ -385,8 +386,9 @@ class MainWindow(QMainWindow):
 
     def rename_files(self) -> None:
         """
-        Executes the file renaming process using active modules and updates metadata cache.
-        Displays custom dialogs for conflicts or issues.
+        Executes the file renaming process using active rename modules.
+        Handles validation, conflict resolution, and updates FileItem attributes
+        without touching the metadata cache (no remap).
         """
         if not self.current_folder_path:
             self.set_status("No folder selected.", color="orange")
@@ -410,11 +412,11 @@ class MainWindow(QMainWindow):
 
         logger.info(f"Starting rename process for {len(selected_files)} files...")
 
-        # === Rename ===
+        # Instantiate the renamer logic
         renamer = Renamer(
             files=selected_files,
             modules_data=modules_data,
-            metadata_cache=self.metadata_cache,
+            metadata_cache=self.metadata_cache,  # remains unchanged
             parent=self,
             conflict_callback=CustomMessageDialog.rename_conflict_dialog,
             validator=self.filename_validator
@@ -422,14 +424,24 @@ class MainWindow(QMainWindow):
 
         results = renamer.rename()
 
-        # === Uncheck all to avoid confusion ===
-        self.handle_header_toggle(checked=False)
+        # # Uncheck all files to avoid confusion
+        # self.handle_header_toggle(checked=False)
+        # # Explicitly trigger header and view refresh
+        # self.header.update_state(self.model.files)
+        # self.file_table_view.viewport().update()
+
+        # Save current checked files before rename
+        checked_paths = {f.full_path for f in self.model.files if f.checked}
 
         renamed_count = 0
         for result in results:
             if result.success:
-                logger.info(f"Renamed: {result.old_path} → {result.new_path}")
                 renamed_count += 1
+                # Update FileItem filename and path to reflect rename
+                item = next((f for f in self.files if f.full_path == result.old_path), None)
+                if item:
+                    item.filename = os.path.basename(result.new_path)
+                    item.full_path = result.new_path
             elif result.skip_reason:
                 logger.info(f"Skipped: {result.old_path} — Reason: {result.skip_reason}")
             elif result.error:
@@ -438,11 +450,19 @@ class MainWindow(QMainWindow):
         self.set_status(f"Renamed {renamed_count} file(s).", color="green", auto_reset=True)
         logger.info(f"Rename process completed: {renamed_count} renamed, {len(results)} total")
 
-        # === Reload folder but skip metadata (για να κρατήσουμε τα παλιά με cached meta) ===
+        # Reload folder, skipping metadata scan to reuse existing cache
         self.last_action = "rename"
         self.load_files_from_folder(self.current_folder_path, skip_metadata=True)
 
-        # === Ask user if they want to open folder ===
+        # Restore checked state after reload
+        for file in self.model.files:
+            file.checked = file.full_path in checked_paths
+
+        self.header.update_state(self.model.files)
+        self.file_table_view.viewport().update()
+        logger.debug(f"[Rename] Restored {sum(f.checked for f in self.model.files)} checked out of {len(self.model.files)} files")
+
+        # Ask user if they want to open the folder
         if renamed_count > 0:
             if CustomMessageDialog.question(
                 self,
@@ -452,6 +472,72 @@ class MainWindow(QMainWindow):
                 no_text="Close"
             ):
                 QDesktopServices.openUrl(QUrl.fromLocalFile(self.current_folder_path))
+
+    def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False) -> None:
+        """
+        Loads supported files from the given folder and populates the file table.
+        Metadata scanning can be skipped depending on user choice or rename context.
+
+        Parameters:
+            folder_path (str): Absolute path to folder.
+            skip_metadata (bool): If True, skips metadata scanning.
+        """
+        logger.info(f"Loading files from folder: {folder_path} (skip_metadata={skip_metadata})")
+
+        # Optionally clear cache unless skipping after rename
+        if not (skip_metadata and self.last_action == "rename"):
+            self.metadata_cache.clear()
+
+        self.current_folder_path = folder_path
+        all_files = glob.glob(os.path.join(folder_path, "*"))
+        file_items = []
+
+        for file_path in sorted(all_files):
+            ext = os.path.splitext(file_path)[1][1:].lower()
+            if ext in ALLOWED_EXTENSIONS:
+                filename = os.path.basename(file_path)
+                modified = datetime.datetime.fromtimestamp(os.path.getmtime(file_path)).strftime("%Y-%m-%d %H:%M:%S")
+                file_items.append(FileItem(filename, ext, modified, full_path=file_path))
+
+        if not file_items:
+            short_name = os.path.basename(folder_path.rstrip("/\\"))
+            self.show_file_table_placeholder(f"No supported files in '{short_name}'")
+            self.clear_metadata_view()
+            self.header.setEnabled(False)
+            self.header.update_state([])
+            self.set_status("No supported files found.", color="orange", auto_reset=True)
+            return
+
+        # Sync model with file items
+        self.file_table_view.setModel(self.model)
+        self.model.set_files(file_items)
+        self.model.folder_path = folder_path
+        self.files = file_items
+
+        # Map new preview names
+        self.preview_map = {os.path.basename(f.full_path): f for f in file_items}
+
+        logger.info(f"Loaded {len(file_items)} supported files.")
+
+        self.header.setEnabled(True)
+        self.header.update_state(file_items)
+        self.update_files_label()
+        self.generate_preview_names()
+
+        if skip_metadata:
+            self.set_status("Metadata scan skipped.", color="gray", auto_reset=True)
+            return
+
+        # Start metadata worker in background
+        file_paths = [f.full_path for f in file_items if f.full_path]
+        self.set_status(f"Loading metadata for {len(file_paths)} files...", color="blue")
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.processEvents()
+
+        self.loading_dialog = CustomMessageDialog.show_waiting(self, "Analyzing files...")
+        self.loading_dialog.set_progress_range(len(file_paths))
+
+        self.load_metadata_in_thread(file_paths)
 
     def reload_current_folder(self):
         # Optional: adjust if flags need to be preserved
@@ -502,7 +588,7 @@ class MainWindow(QMainWindow):
         try:
             self.rename_modules.remove(module_widget)
 
-            # Αν υπάρχει φορτωμένο module μέσα στο wrapper:
+            # If there is a loaded module inside the wrapper:
             module_type = getattr(module_widget.current_module_widget, '__class__', type(None)).__name__
             logger.info(f"[MainWindow] Removed module of type: {module_type}")
         except ValueError:
@@ -519,98 +605,6 @@ class MainWindow(QMainWindow):
         self.generate_preview_names()
         logger.debug("[MainWindow] Preview names regenerated after module removal.")
 
-    def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False) -> None:
-        """
-        Loads supported files from the given folder into the table model.
-        Optionally launches metadata scanning in a background thread (unless Ctrl is held).
-        """
-        logger.warning(f"-> ENTERED load_files_from_folder with skip_metadata = {skip_metadata}")
-
-        if self.metadata_thread and self.metadata_thread.isRunning():
-            logger.warning("Metadata scan already running — folder change blocked.")
-            CustomMessageDialog.information(
-                self,
-                "Busy",
-                "Metadata is still being scanned. Please cancel or wait."
-            )
-            return
-        self.metadata_cache.clear()
-        logger.debug("Metadata cache cleared before new folder load.")
-
-        logger.info(f">>> load_files_from_folder CALLED for: {folder_path}")
-        self.current_folder_path = folder_path
-
-        all_files = glob.glob(os.path.join(folder_path, "*"))
-        file_items = []
-
-        for file_path in sorted(all_files):
-            ext = os.path.splitext(file_path)[1][1:].lower()
-            if ext in ALLOWED_EXTENSIONS:
-                filename = os.path.basename(file_path)
-                modified = datetime.datetime.fromtimestamp(os.path.getmtime(file_path)).strftime("%Y-%m-%d %H:%M:%S")
-                file_items.append(FileItem(filename, ext, modified, full_path=file_path))  # ✅ προσθήκη full_path
-
-        if not file_items:
-            logger.info("No supported files found.")
-            short_name = os.path.basename(folder_path.rstrip("/\\"))
-            self.show_file_table_placeholder(f"No supported files in '{short_name}'")
-            self.clear_metadata_view()
-            self.header.setEnabled(False)
-            self.header.update_state([])
-            self.set_status("No supported files found.", color="orange", auto_reset=True)
-            return
-
-        # Apply model and sync UI
-        self.file_table_view.setModel(self.model)
-        self.model.set_files(file_items)
-        self.model.folder_path = folder_path
-        self.files = file_items
-
-        logger.info("Loaded %d supported files from %s", len(file_items), folder_path)
-
-        self.header.setEnabled(True)
-        self.header.update_state(file_items)
-        self.update_files_label()
-        self.generate_preview_names()
-
-        logger.warning(f"[CHECK] skip_metadata arg type: {type(skip_metadata)} → value: {skip_metadata!r}")
-        if skip_metadata:
-            reason = {
-                "folder_select": "Ctrl held or large folder skip",
-                "browse": "Ctrl held or large folder skip",
-                "rename": "metadata already scanned, skip post-rename",
-                None: "unknown context"
-            }.get(self.last_action, self.last_action)
-
-            logger.info("Skipping metadata scan: %s", reason)
-            self.set_status("Metadata scan skipped.", color="gray", auto_reset=True)
-            return
-
-        # Prepare list of full file paths for metadata thread
-        # file_paths = [os.path.join(folder_path, f.filename) for f in file_items]
-        file_paths = [f.full_path for f in file_items if f.full_path]
-
-
-        logger.info("Preparing metadata loading for %d files", len(file_paths))
-        self.set_status(f"Loading metadata for {len(file_paths)} files...", color="blue")
-
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        QApplication.processEvents()
-
-        self.loading_dialog = CustomMessageDialog.show_waiting(self, "Analyzing files...")
-        logger.info("Loading dialog shown.")
-
-        if not self.loading_dialog.progress_bar:
-            logger.warning("Loading dialog has no progress bar.")
-
-        self.loading_dialog.set_progress_range(len(file_paths))
-        logger.debug("Metadata scan paths:")
-        for p in file_paths:
-            logger.debug(f" → {p}")
-
-        logger.debug("Calling load_metadata_in_thread immediately.")
-        self.load_metadata_in_thread(file_paths)
-
     def handle_header_toggle(self, checked: bool) -> None:
         """
         Triggered when the 'select all' checkbox in the table header is toggled.
@@ -621,7 +615,7 @@ class MainWindow(QMainWindow):
         Args:
             checked (bool): True if checkbox is checked, False if unchecked.
         """
-        logger.debug("Header checkbox toggled: %s", checked)
+        logger.debug(f'Header checkbox toggled: {checked}')
 
         # Apply checked state to all files
         for file in self.model.files:
@@ -642,8 +636,8 @@ class MainWindow(QMainWindow):
         It performs validation, detects duplicates or errors,
         and enables/disables the Rename button accordingly.
         """
-        logger.info("[MainWindow] generate_preview_names triggered by: %s", source_widget.__class__.__name__ if source_widget else "Unknown")
-        logger.debug("[Preview] Skip metadata mode is: %s", self.skip_metadata_mode)
+        logger.info(f'[MainWindow] generate_preview_names triggered by: {source_widget.__class__.__name__ if source_widget else "Unknown"}')
+        logger.debug(f'[Preview] Skip metadata mode is: {self.skip_metadata_mode}')
 
         # Collect rename instructions from all active modules
         modules_data = []
@@ -683,12 +677,17 @@ class MainWindow(QMainWindow):
 
         has_active_modules = any(is_module_active(mod) for mod in modules_data)
 
+        # === Clear and reset preview_map to current files ===
+        self.preview_map.clear()
+        self.preview_map = {file.filename: file for file in selected_files}
+
+        name_pairs = []
+
         if not has_active_modules:
             # No module affects output: use original name
             name_pairs = [(file.filename, file.filename) for file in selected_files]
             logger.debug("[Preview] Using original filenames as preview (no active modules).")
         else:
-            name_pairs = []
             for idx, file in enumerate(selected_files):
                 try:
                     new_name = apply_rename_modules(modules_data, idx, file, self.metadata_cache)
@@ -698,7 +697,15 @@ class MainWindow(QMainWindow):
                     logger.warning(f"Failed to generate preview for {file.filename}: {e}")
                     name_pairs.append((file.filename, file.filename))
 
-        # Update the tables and button states
+        # === Map new_name → FileItem only when name changed ===
+        for old_name, new_name in name_pairs:
+            if old_name != new_name:
+                file_item = self.preview_map.get(old_name)
+                if file_item:
+                    self.preview_map[new_name] = file_item
+                    logger.debug(f"[Preview] preview_map updated: {old_name} → {new_name}")
+
+        # === Update the tables and button states ===
         self.update_preview_tables_from_pairs(name_pairs)
 
         valid_pairs = [p for p in name_pairs if p[0] != p[1]]
@@ -727,7 +734,7 @@ class MainWindow(QMainWindow):
         pixel_width = 8 * max_len
         clamped_width = min(max(pixel_width, 250), 1000)
 
-        logger.debug("Longest filename length: %d chars -> width: %d px (clamped)", max_len, clamped_width)
+        logger.debug(f'Longest filename length: {max_len} chars -> width: {clamped_width} px (clamped)')
         return clamped_width
 
     def center_window(self) -> None:
@@ -809,7 +816,7 @@ class MainWindow(QMainWindow):
         # Ask user whether to scan metadata for large folders
         ctrl_override = bool(QApplication.keyboardModifiers() & SKIP_METADATA_MODIFIER)
 
-        skip_metadata = resolve_skip_metadata(
+        skip_metadata, user_wants_scan = resolve_skip_metadata(
             ctrl_override=ctrl_override,
             total_files=len(valid_files),
             folder_path=folder_path,
@@ -821,18 +828,18 @@ class MainWindow(QMainWindow):
         self.skip_metadata_mode = skip_metadata
 
         logger.info(
-            "Tree-selected folder: %s, skip_metadata=%s (ctrl=%s, default=%s)",
-            folder_path, skip_metadata, ctrl_override, DEFAULT_SKIP_METADATA
+            f'Tree-selected folder: {folder_path}], skip_metadata={skip_metadata} \
+            (ctrl={ctrl_override}, default={DEFAULT_SKIP_METADATA})'
         )
 
         self.skip_metadata_mode = skip_metadata
 
         is_large = len(valid_files) > LARGE_FOLDER_WARNING_THRESHOLD
-        # logger.info(
-        #     f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata} "
-        #     f"(ctrl={ctrl_override}, large={is_large}, wants_scan={user_wants_scan}, default={DEFAULT_SKIP_METADATA})"
-        # )
-        logger.warning("-> skip_metadata passed to loader: %s", skip_metadata)
+        logger.info(
+            f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata} "
+            f"(ctrl={ctrl_override}, large={is_large}, wants_scan={user_wants_scan}, default={DEFAULT_SKIP_METADATA})"
+        )
+        logger.warning(f'-> skip_metadata passed to loader: {skip_metadata}')
         # Always load the file list with skip_metadata flag
         self.load_files_from_folder(folder_path, skip_metadata=skip_metadata)
 
@@ -864,7 +871,7 @@ class MainWindow(QMainWindow):
         # Ask user whether to scan metadata for large folders
         ctrl_override = bool(QApplication.keyboardModifiers() & SKIP_METADATA_MODIFIER)
 
-        skip_metadata = resolve_skip_metadata(
+        skip_metadata, user_wants_scan = resolve_skip_metadata(
             ctrl_override=ctrl_override,
             total_files=len(valid_files),
             folder_path=folder_path,
@@ -876,13 +883,13 @@ class MainWindow(QMainWindow):
         self.skip_metadata_mode = skip_metadata
 
         is_large = len(valid_files) > LARGE_FOLDER_WARNING_THRESHOLD
-        # logger.info(
-        #     f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata} "
-        #     f"(ctrl={ctrl_override}, large={is_large}, wants_scan={user_wants_scan}, default={DEFAULT_SKIP_METADATA})"
-        # )
+        logger.info(
+            f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata} "
+            f"(ctrl={ctrl_override}, large={is_large}, wants_scan={user_wants_scan}, default={DEFAULT_SKIP_METADATA})"
+        )
 
         # Always load the file list with skip_metadata flag
-        logger.warning("-> skip_metadata passed to loader: %s", skip_metadata)
+        logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
         self.load_files_from_folder(folder_path, skip_metadata=skip_metadata)
 
         # Update tree view selection to reflect chosen folder
@@ -1021,7 +1028,11 @@ class MainWindow(QMainWindow):
             # Look up metadata for the file using preview_map
             metadata_str = ""
             missing_metadata = False
+
             file_item = self.preview_map.get(new_name)
+            if not file_item:
+                logger.warning(f"[Preview] Missing file item for name: {new_name}")
+                continue  # skip safely
 
             if file_item and hasattr(file_item, "metadata"):
                 meta = file_item.metadata
@@ -1141,7 +1152,7 @@ class MainWindow(QMainWindow):
         # Start processing as soon as thread begins
         self.metadata_thread.started.connect(lambda: self.metadata_worker.load_batch(files))
 
-        logger.info("Starting metadata analysis for %d files", len(files))
+        logger.info(f"Starting metadata analysis for {len(files)} files")
         self.metadata_thread.start()
 
     def on_metadata_progress(self, current: int, total: int) -> None:
@@ -1159,7 +1170,7 @@ class MainWindow(QMainWindow):
             logger.warning("Progress signal received after worker was already cleaned up — ignoring.")
             return
 
-        logger.debug("Metadata progress update: %d of %d", current, total)
+        logger.debug(f"Metadata progress update: {current} of {total}")
 
         if getattr(self, "loading_dialog", None):
             self.loading_dialog.set_progress(current, total)
@@ -1182,10 +1193,12 @@ class MainWindow(QMainWindow):
             logger.warning("Received 'finished' signal after cleanup — ignoring.")
             return
 
-        logger.info("Metadata loading complete. Loaded metadata for %d files.", len(metadata_dict))
+        logger.info(f"Metadata loading complete. Loaded metadata for {len(metadata_dict)} files.")
 
         # Save metadata results and update the UI status label
-        self.metadata_cache = metadata_dict
+        self.metadata_cache.clear()
+        self.metadata_cache.update(metadata_dict)
+
         count = len(metadata_dict)
         self.set_status(f"Metadata loaded for {count} file{'s' if count != 1 else ''}.", color="green", auto_reset=True)
 
@@ -1196,7 +1209,7 @@ class MainWindow(QMainWindow):
             if isinstance(metadata, dict):
                 file_item.metadata = metadata.copy()
             else:
-                logger.warning("No valid metadata for %s — defaulting to empty dict.", filename)
+                logger.warning(f"No valid metadata for {filename} — defaulting to empty dict.")
                 file_item.metadata = {}
 
         # Immediately close the loading dialog if it's still showing
@@ -1294,7 +1307,7 @@ class MainWindow(QMainWindow):
                 self.metadata_thread.wait()
                 logger.debug("Metadata thread has been stopped.")
 
-            self.metadata_thread = None  # ✅ ΣΗΜΑΝΤΙΚΟ: καθαρίζουμε οριστικά
+            self.metadata_thread = None  # IMPORTANT: we clear (the reference) for good
 
     def on_metadata_error(self, message: str) -> None:
         """
@@ -1308,7 +1321,7 @@ class MainWindow(QMainWindow):
         Args:
             message (str): The error message to display.
         """
-        logger.error("Metadata error: %s", message)
+        logger.error(f"Metadata error: {message}")
 
         # 1. Restore busy cursor
         self._restore_cursor()
@@ -1325,7 +1338,7 @@ class MainWindow(QMainWindow):
         self.cleanup_metadata_worker()
 
         # 4. Notify user
-        QMessageBox.critical(self, "Metadata Error", f"Failed to read metadata:\n\n{message}")
+        CustomMessageDialog.show_warning(self, "Metadata Error", f"Failed to read metadata:\n\n{message}")
 
     def closeEvent(self, event):
         """
@@ -1354,7 +1367,7 @@ class MainWindow(QMainWindow):
             getattr(self, "metadata_thread", None) is not None
             and self.metadata_thread.isRunning()
         )
-        logger.debug("Metadata task running? %s", running)
+        logger.debug(f"Metadata task running? {running}")
 
         return (
             self.metadata_thread is not None and
@@ -1392,7 +1405,7 @@ class MainWindow(QMainWindow):
         self.metadata_tree_view.header().setSectionResizeMode(1, QHeaderView.Stretch)
 
 
-        logger.debug("Metadata table populated with %d entries.", len(metadata))
+        logger.debug(f"Metadata table populated with {len(metadata)} entries.")
 
         """
         Slot connected to the itemSelectionChanged signal of the table view.
@@ -1405,50 +1418,46 @@ class MainWindow(QMainWindow):
         """
 
     def on_table_row_clicked(self, index: QModelIndex) -> None:
-
-        # Block clicks when there are no files
+        """
+        Triggered when a user clicks on a file row in the table.
+        Displays the metadata for the selected file in the right panel.
+        """
         if not self.model.files:
             logger.info("No files in model — click ignored.")
             return
 
         row = index.row()
-
-        # Defensive: avoid out-of-range index
         if row < 0 or row >= len(self.model.files):
             logger.warning("Invalid row clicked (out of range). Ignored.")
             return
 
-        # Ignore clicks on checkbox column
+        # Ignore checkbox column clicks
         if index.column() == 0:
             return
 
-        filename = self.model.files[row].filename
+        file_item = self.model.files[row]
+        logger.debug(f"Row clicked: {file_item.filename}")
 
-        file_item = next((f for f in self.model.files if f.filename == filename), None)
+        # Prefer metadata from FileItem
+        metadata = getattr(file_item, "metadata", None)
 
-        if file_item:
-            path = file_item.full_path if file_item and file_item.full_path else os.path.join(self.current_folder_path, filename)
-            metadata = self.metadata_cache.get(path)
-            if metadata is None:
-                metadata = {}
-        else:
-            logger.warning("FileItem not found for row click: %s", filename)
-            path = os.path.join(self.current_folder_path, filename)
-            metadata = self.metadata_cache.get(path, {})
+        if not metadata and file_item.full_path:
+            # Fallback to cache if no metadata assigned
+            metadata = self.metadata_cache.get(file_item.full_path)
 
+        if isinstance(metadata, dict):
+            # Update the filename in metadata display only
+            display_metadata = dict(metadata)
+            display_metadata["FileName"] = file_item.filename
 
-        logger.debug("Row clicked: %s", filename)
-        if metadata:
-            logger.debug("Metadata found for %s", filename)
-            tree_model = build_metadata_tree_model(metadata)
+            logger.debug(f"Metadata found for {file_item.filename}, displaying {len(display_metadata)} entries.")
+            tree_model = build_metadata_tree_model(display_metadata)
             self.metadata_tree_view.setModel(tree_model)
             self.metadata_tree_view.expandAll()
-
-            # sync toggle button state
             self.toggle_expand_button.setChecked(True)
             self.toggle_expand_button.setText("Collapse All")
         else:
-            logger.warning("No metadata found for %s", filename)
+            logger.warning(f"No metadata found for {file_item.filename}")
             self.show_empty_metadata_tree("No information available")
 
     def prompt_file_conflict(self, target_path: str) -> str:

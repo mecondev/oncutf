@@ -50,7 +50,7 @@ class MetadataWorker(QObject):
         Args:
             file_path (list): A list of file paths for which metadata should be retrieved.
         """
-        logger.debug("Batch loaded: %d files", len(file_path))
+        logger.debug(f"Batch loaded: {len(file_path)} files")
         self.file_path = file_path
 
         logger.debug("MetadataWorker: received file_paths:")
@@ -58,7 +58,7 @@ class MetadataWorker(QObject):
             logger.debug(f"   {path}")
 
 
-        logger.info("load_batch() called with %d files", len(file_path))
+        logger.info(f"load_batch() called with {len(file_path)} files")
         QTimer.singleShot(0, self.run_batch)
 
     def run_batch(self) -> None:
@@ -74,11 +74,11 @@ class MetadataWorker(QObject):
         result = {}
         total = len(self.file_path)
 
-        logger.info("Metadata batch run started for %d files", total)
+        logger.info(f"Metadata batch run started for {total} files")
 
         for index, path in enumerate(self.file_path):
             if self._cancelled:
-                logger.warning("Metadata batch was cancelled at index %d", index)
+                logger.warning(f"Metadata batch was cancelled at index {index}")
                 self.finished.emit(result)
                 return
             try:
@@ -90,11 +90,11 @@ class MetadataWorker(QObject):
                     if self.metadata_cache:
                         self.metadata_cache.set(path, metadata)
                 else:
-                    logger.warning("No metadata found for %s", filename)
+                    logger.warning(f"No metadata found for {filename}")
                     result[path] = {}
 
             except Exception as e:
-                logger.warning("Failed to read metadata for %s: %s", path, str(e))
+                logger.warning(f"Failed to read metadata for {path}: {str(e)}")
                 result[path] = {}
 
             self.progress.emit(index + 1, total)
@@ -111,5 +111,5 @@ class MetadataWorker(QObject):
         Requests cancellation of the current batch process.
         """
         logger.warning("MetadataWorker.cancel() called — cancel flag set.")
-        logger.debug("Call stack:\n%s", ''.join(traceback.format_stack()))
+        logger.debug(f"Call stack:\n{''.join(traceback.format_stack())}")
         self._cancelled = True
