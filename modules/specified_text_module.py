@@ -10,7 +10,7 @@ text at a defined position within the filename.
 
 Used in the oncutf application as one of the modular renaming components.
 """
-
+import os
 from typing import Optional
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit
 from PyQt5.QtCore import pyqtSignal
@@ -83,40 +83,25 @@ class SpecifiedTextModule(QWidget):
         return self.apply_from_data(self.get_data(), file_item, index, metadata_cache)
 
     @staticmethod
-    def apply_from_data(
-        data: dict,
-        file_item,
-        index: int = 0,
-        metadata_cache: Optional[dict] = None
-    ) -> str:
-        """
-        Applies the specified text transformation to the filename.
-
-        Parameters
-        ----------
-        data : dict
-            A dictionary with keys:
-                - 'type': should be 'specified_text'
-                - 'text': the user-defined static text to insert
-        file_item : FileItem
-            The file item being renamed (unused in this module).
-        index : int, optional
-            Index of the file in the batch (not used here).
-        metadata_cache : dict, optional
-            Not used in this module but accepted for API compatibility.
-
-        Returns
-        -------
-        str
-            The static text to prepend/append in the filename.
-        """
+    def apply_from_data(data: dict, file_item, index: int = 0, metadata_cache: Optional[dict] = None) -> str:
         logger.debug(f"[SpecifiedTextModule] Called with data={data}, index={index}")
-
         text = data.get("text", "").strip()
+
+        if not text:
+            logger.debug("[SpecifiedTextModule] Empty text input, returning original filename.")
+            return os.path.splitext(file_item.filename)[0]
+
         if not is_valid_filename_text(text):
             logger.warning(f"[SpecifiedTextModule] Invalid filename text: '{text}'")
             return "invalid"
 
-        logger.debug(f"[SpecifiedTextModule] index={index}, text='{text}' → return='{text if is_valid_filename_text(text) else 'invalid'}'")
-
         return text
+
+
+    @staticmethod
+    def is_effective(data: dict) -> bool:
+        return bool(data.get('text', '').strip())
+
+
+
+

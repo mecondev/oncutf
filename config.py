@@ -57,7 +57,7 @@ CONTENT_MARGINS = {
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {
     "jpg", "jpeg", "png", "mp3", "mp4", "mov", "mts", "nef", "raw", "arw", "cr2",
-    "txt", "csv", "xml", "pdf", "doc", "docx", "xls", "xlsx"
+    "wav", "txt", "csv", "xml", "pdf", "doc", "docx", "xls", "xlsx"
 }
 
 # Regex pattern for Windows-safe names

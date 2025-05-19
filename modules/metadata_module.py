@@ -17,6 +17,7 @@ from datetime import datetime
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QComboBox
 from PyQt5.QtCore import pyqtSignal, QTimer
 from models.file_item import FileItem
+import os
 
 # initialize logger
 from utils.logger_helper import get_logger
@@ -45,7 +46,8 @@ class MetadataModule(QWidget):
         self.combo = QComboBox()
 
         # Supported metadata fields
-        self.combo.addItem("Modification Date", userData="date")
+        self.combo.addItem("Last Modified (file system)", userData="last_modified")
+        self.combo.addItem("Metadata: Modification Date", userData="date")
 
         layout.addWidget(label)
         layout.addWidget(self.combo)
@@ -61,7 +63,7 @@ class MetadataModule(QWidget):
 
         :return: Dict with metadata field type
         """
-        field = self.combo.currentData() or "date"
+        field = self.combo.currentData() or "last_modified"
         return {
             "type": "metadata",
             "field": field
@@ -71,83 +73,65 @@ class MetadataModule(QWidget):
         return self.apply_from_data(self.get_data(), file_item, index, metadata_cache)
 
     @staticmethod
-    def apply_from_data(
-        data: dict,
-        file_item,
-        index: int = 0,
-        metadata_cache: Optional[dict] = None
-    ) -> str:
+    def apply_from_data(data: dict,
+            file_item,
+            index: int = 0,
+            metadata_cache: dict = None
+        ) -> str:
         """
-        Extracts a metadata-based value from the file, using the specified field.
+        Extracts a metadata value from the cache for use in filename.
 
-        Parameters
-        ----------
-        data : dict
-            Dictionary with keys:
-                - 'type': 'metadata'
-                - 'field': the metadata field to extract (e.g., 'date', 'Model')
-        file_item : FileItem
-            The file item (used for filename, direct .date, or embedded metadata).
-        index : int, optional
-            Index of the file in the list.
-        metadata_cache : dict, optional
-            Optional cache mapping file path → metadata dict.
+        Args:
+            data (dict): Must contain the 'field' key
+            file_item (FileItem): The file to rename
+            index (int): Unused
+            metadata_cache (dict): full_path → metadata dict
 
-        Returns
-        -------
-        str
-            A stringified metadata value suitable for filenames (e.g., a formatted date).
+        Returns:
+            str: The stringified metadata value or a fallback ("unknown", "invalid")
         """
-
         field = data.get("field")
-        path = getattr(file_item, "full_path", None) or file_item.filename
-        metadata = {}
+        if not field:
+            logger.warning("[MetadataModule] Missing 'field' in data config.")
+            return "invalid"
 
-        # Try to get metadata from cache first
-        if metadata_cache and path in metadata_cache:
-            metadata = metadata_cache[path]
-            logger.debug(f"[MetadataModule] Using cached metadata for {path}")
-        elif hasattr(file_item, "metadata") and isinstance(file_item.metadata, dict):
-            metadata = file_item.metadata
-            logger.debug(f"[MetadataModule] Using file_item.metadata for {path}")
-        else:
-            logger.warning(f"[MetadataModule] No metadata found for {path}")
-            return "unknown"
+        path = file_item.full_path
+        metadata = metadata_cache.get(path) if metadata_cache else {}
 
-        # === Special case: formatted date field ===
+        if not isinstance(metadata, dict):
+            logger.warning(f"[MetadataModule] No metadata dict found for {path}")
+            metadata = {}  # fallback to empty
+
+        logger.debug(f"[MetadataModule] apply_from_data for {file_item.filename} with field='{field}'")
+
+        if field == "last_modified":
+            try:
+                ts = os.path.getmtime(path)
+                return datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
+            except Exception as e:
+                logger.warning(f"[MetadataModule] Failed to read last modified time: {e}")
+                return "invalid"
+
         if field == "date":
-            # Try direct .date if available
-            date_str = getattr(file_item, "date", None)
-
-            # Otherwise, fallback to metadata keys
-            if not date_str and metadata:
-                for key in ["FileModifyDate", "FileAccessDate", "DateTimeOriginal"]:
-                    if key in metadata:
-                        date_str = metadata[key]
-                        logger.debug(f"[MetadataModule] Found date '{date_str}' from key '{key}'")
-                        break
-
-            if date_str:
-                cleaned = date_str.split("+")[0].strip()
-                for fmt in ("%Y-%m-%d %H:%M:%S", "%Y:%m:%d %H:%M:%S"):
-                    try:
-                        dt = datetime.strptime(cleaned, fmt)
-                        result = dt.strftime("%Y%m%d")
-                        logger.debug(f"[MetadataModule] Final date result: {result}")
-                        return result
-                    except ValueError:
-                        continue
-
-                logger.warning(f"[MetadataModule] Failed to parse date: {date_str}")
-                return "invalid_date"
-
-            logger.warning(f"[MetadataModule] No date value found for {path}")
-            return "unknown"
+            value = metadata.get("date")
+            if not value:
+                logger.info(f"[MetadataModule] No 'date' field in metadata for {file_item.filename}")
+                return "unknown"
+            return str(value)
 
         # === Generic metadata field ===
         value = metadata.get(field)
-        if value:
-            return str(value).strip()
+        if value is None:
+            logger.warning(f"[MetadataModule] Field '{field}' not found in metadata for {path}")
+            return "unknown"
 
-        logger.warning(f"[MetadataModule] Field '{field}' not found in metadata for {path}")
-        return "unknown"
+        try:
+            return str(value).strip()
+        except Exception as e:
+            logger.warning(f"[MetadataModule] Failed to stringify metadata value: {e}")
+            return "invalid"
+
+    @staticmethod
+    def is_effective(data: dict) -> bool:
+        return data.get('field') != 'last_modified'
+

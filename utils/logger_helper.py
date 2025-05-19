@@ -35,7 +35,7 @@ def safe_text(text: str) -> str:
         str: A version of the text with replacements for problematic characters.
     """
     replacements = {
-        '\u2192': '->',  # → Right arrow
+        '\u2192': '->',  # -> Right arrow
         '\u2014': '--',  # — em dash
         '\u2013': '-',   # – en dash
         '\u2026': '...', # … ellipsis

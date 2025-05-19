@@ -59,11 +59,17 @@ def generate_preview_names(
                 value = start + (index * step)
                 name_parts.append(str(value).zfill(padding))
 
-            elif module_type == "metadata_cache":
+            elif module_type == "metadata":
                 key = module.get("field")
-                meta = (metadata_cache or {}).get(file.full_path, {})
+                meta = (metadata_cache or {}).get(file.full_path)
+
+                if not isinstance(meta, dict):
+                    logger.warning(f"[Preview] No metadata found for {file.filename}")
+                    name_parts.append("unknown")
+                    continue
+
                 value = meta.get(key)
-                name_parts.append(value if value else "unknown")
+                name_parts.append(str(value) if value else "unknown")
 
             else:
                 name_parts.append("invalid")
@@ -71,9 +77,11 @@ def generate_preview_names(
         new_name = "".join(name_parts)
 
         if not is_valid_filename_text(new_name):
+            logger.warning(f"[Preview] Invalid name generated: {new_name}")
             has_error = True
-            tooltip = f"Invalid characters in filename: {new_name}"
+            tooltip = f"Invalid filename: {new_name}"
             break
+
 
         preview_pairs.append((file.filename, f"{new_name}.{file.extension}"))
 

@@ -34,14 +34,22 @@ def build_rename_plan(
     Returns:
         List[Dict]: A list of rename instructions with conflict info and undecided action
     """
+
+    def is_case_only_change(old: str, new: str) -> bool:
+        return old.lower() == new.lower() and old != new
+
     plan = []
 
     for (old_name, new_name) in preview_pairs:
         src_path = os.path.join(folder_path, old_name)
         dst_path = os.path.join(folder_path, new_name)
 
-        # Conflict if the destination exists and it's not a self-rename
-        conflict = os.path.exists(dst_path) and dst_path != src_path
+        # Ignore conflict if the only change is in letter case
+        conflict = (
+            os.path.exists(dst_path)
+            and not is_case_only_change(old_name, new_name)
+            and os.path.abspath(dst_path) != os.path.abspath(src_path)
+        )
 
         plan.append({
             "src": old_name,

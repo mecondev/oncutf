@@ -2,83 +2,132 @@
 Module: metadata_reader.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-05-01 (refactored)
 
-This utility module defines a class responsible for extracting file metadata
-using exiftool. It serves as an interface between the oncutf application and
-the underlying metadata extraction process.
+This module defines the MetadataReader class, responsible for extracting metadata
+from media files using the external tool `exiftool`. It is designed to be cancellable
+during long-running operations and integrates with threaded workflows.
 
-Supports reading creation date, modification date, camera info, and other
-EXIF tags from image and video files.
+Features:
+- Subprocess-based metadata reading using exiftool.
+- Cancellation support via thread-safe flag.
+- Timeout handling and fallback termination (terminate + kill).
 """
 
 import subprocess
 import json
+import threading
+import time
 from typing import Optional, Dict
 
-# Initialize Logger
 from utils.logger_helper import get_logger
-logger = get_logger(__name__)
 
+logger = get_logger(__name__)
 
 class MetadataReader:
     """
-    A helper class that uses exiftool to extract metadata from files.
+    Reads metadata from a file using exiftool via subprocess.
+
+    Supports cancellation during metadata reading to allow graceful interruption
+    when used in threaded applications (e.g., batch processing with GUI).
+
+    Attributes:
+        exiftool_path (str): The path to the exiftool executable.
     """
 
     def __init__(self, exiftool_path: str = "exiftool") -> None:
-        self.exiftool_path = exiftool_path
-
-    def read_metadata(self, filepath: str) -> Optional[Dict[str, str]]:
         """
-        Extracts metadata from a file using exiftool.
+        Initializes the MetadataReader.
 
         Args:
-            filepath (str): The full path to the file.
+            exiftool_path (str): Path to the exiftool executable (default: "exiftool").
+        """
+        self.exiftool_path = exiftool_path
+        self._active_proc: Optional[subprocess.Popen] = None
+        self._cancel_requested = threading.Event()
+        self._lock = threading.Lock()
+
+    def cancel_active(self) -> None:
+        """
+        Signals cancellation of the currently active metadata reading process.
+
+        This sets the cancel flag and attempts to terminate the subprocess if running.
+        """
+        logger.warning("[MetadataReader] cancel_active() CALLED")
+        self._cancel_requested.set()
+        with self._lock:
+            if self._active_proc and self._active_proc.poll() is None:
+                try:
+                    self._active_proc.terminate()
+                    logger.warning("[MetadataReader] Terminated active exiftool subprocess.")
+                except Exception as e:
+                    logger.warning(f"[MetadataReader] Failed to terminate exiftool: {e}")
+
+    def read_metadata(self, filepath: str, timeout: int = 10) -> Optional[Dict[str, str]]:
+        """
+        Reads metadata for a single file using exiftool.
+
+        This function launches exiftool as a subprocess and parses the output.
+        It can be cancelled gracefully via `cancel_active()`.
+
+        Args:
+            filepath (str): Absolute path to the file to analyze.
+            timeout (int): Maximum time (in seconds) to allow the exiftool process to run.
 
         Returns:
-            dict or None: A dictionary of metadata fields and values, or None on failure.
+            Optional[Dict[str, str]]: Metadata dictionary if successful, otherwise empty or None.
         """
-        logger.debug(f"[MetadataReader] Reading metadata for: {filepath}")
+        self._cancel_requested.clear()
+        result: Dict[str, str] = {}
+
         try:
-            result = subprocess.run(
+            logger.warning(f"[Reader] START for: {filepath}")
+            proc = subprocess.Popen(
                 [self.exiftool_path, "-json", filepath],
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                check=True
+                stderr=subprocess.DEVNULL,
+                text=True
             )
-            metadata_list = json.loads(result.stdout)
+
+            with self._lock:
+                self._active_proc = proc
+
+            # Poll the process until it finishes or cancellation/timeout occurs
+            start_time = time.time()
+            while proc.poll() is None:
+                if self._cancel_requested.is_set():
+                    proc.terminate()
+                    logger.warning("[Reader] Cancelled via flag.")
+                    return {}
+                if time.time() - start_time > timeout:
+                    proc.terminate()
+                    logger.warning("[Reader] Timeout reached, terminating process.")
+                    break
+                time.sleep(0.1)
+
+            logger.debug(f"[Reader] Calling communicate() for: {filepath}")
+            try:
+                output, _ = proc.communicate(timeout=2)
+            except subprocess.TimeoutExpired:
+                logger.warning(f"[Reader] Timeout on communicate() for: {filepath}")
+                try:
+                    proc.kill()
+                    output, _ = proc.communicate(timeout=1)
+                    logger.warning(f"[Reader] Forced kill + communicate() recovered for: {filepath}")
+                except Exception as e:
+                    logger.error(f"[Reader] Failed to kill/cleanup after timeout: {e}")
+                    return {}
+
+            # Parse JSON output
+            metadata_list = json.loads(output)
             if metadata_list:
-                logger.debug(f"[MetadataReader] Result for {filepath}: {result}", extra={"dev_only": True})
-                return metadata_list[0]
-        except (subprocess.CalledProcessError, json.JSONDecodeError) as e:
-            print(f"Error reading metadata: {e}")
-            logger.warning(f"[MetadataReader] Failed to read metadata for {filepath}: {e}")
-        return []
+                result.update(metadata_list[0])
+                logger.warning(f"[Reader] FINISHED for: {filepath}")
 
-    def read_specific_fields(self, filepath: str, fields: list[str]) -> Dict[str, str]:
-        """
-        Extracts only specific metadata fields from a file.
-
-        Args:
-            filepath (str): Path to the file.
-            fields (list): List of exiftool tags to retrieve.
-
-        Returns:
-            dict: Dictionary with requested fields.
-        """
-        command = [self.exiftool_path, "-json"] + [f"-{field}" for field in fields] + [filepath]
-        try:
-            result = subprocess.run(
-                command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                check=True
-            )
-            metadata_list = json.loads(result.stdout)
-            return metadata_list[0] if metadata_list else {}
         except Exception as e:
-            print(f"Error reading fields {fields}: {e}")
-            return {}
+            logger.warning(f"[MetadataReader] Failed to read metadata: {e}")
+        finally:
+            with self._lock:
+                self._active_proc = None
+
+        return result

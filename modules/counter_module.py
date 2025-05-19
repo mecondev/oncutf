@@ -157,7 +157,7 @@ class CounterModule(QWidget):
             Configuration dictionary with keys:
                 - 'type': 'counter'
                 - 'start': int, the starting number
-                - 'padding': int, number of digits (e.g. 4 → 0001)
+                - 'padding': int, number of digits (e.g. 4 -> 0001)
                 - 'step': int, increment step
         file_item : FileItem
             The file to rename (not used by counter).
@@ -183,3 +183,7 @@ class CounterModule(QWidget):
         except Exception as e:
             logger.exception(f"[CounterModule] Failed to apply counter logic: {e}")
             return "####"
+
+    @staticmethod
+    def is_effective(data: dict) -> bool:
+        return True

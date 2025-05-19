@@ -20,7 +20,9 @@ from PyQt5.QtWidgets import (
     QFileSystemModel, QAbstractItemView,  QSizePolicy, QHeaderView, QTableWidgetItem,
     QDesktopWidget, QMessageBox, QGraphicsOpacityEffect
 )
-from PyQt5.QtCore import Qt, QDir, QUrl, QThread, QTimer, QModelIndex, QPropertyAnimation
+from PyQt5.QtCore import (
+    Qt, QDir, QUrl, QThread, QTimer, QModelIndex, QPropertyAnimation, QMetaObject
+)
 from PyQt5.QtGui import (
     QPainter, QBrush, QColor, QIcon, QDesktopServices, QStandardItem, QStandardItemModel
 )
@@ -424,12 +426,6 @@ class MainWindow(QMainWindow):
 
         results = renamer.rename()
 
-        # # Uncheck all files to avoid confusion
-        # self.handle_header_toggle(checked=False)
-        # # Explicitly trigger header and view refresh
-        # self.header.update_state(self.model.files)
-        # self.file_table_view.viewport().update()
-
         # Save current checked files before rename
         checked_paths = {f.full_path for f in self.model.files if f.checked}
 
@@ -534,10 +530,62 @@ class MainWindow(QMainWindow):
         QApplication.setOverrideCursor(Qt.WaitCursor)
         QApplication.processEvents()
 
+        # Delay start to ensure UI is ready
+        QTimer.singleShot(100, lambda: self.start_metadata_scan(file_paths))
+
+    def start_metadata_scan(self, file_paths: list[str]) -> None:
+        """
+        Called slightly delayed to ensure UI is ready before metadata thread starts.
+        """
+        logger.warning("[DEBUG] start_metadata_scan CALLED")
         self.loading_dialog = CustomMessageDialog.show_waiting(self, "Analyzing files...")
+        logger.warning("[DEBUG] show_waiting returned dialog")
+        self.loading_dialog.activateWindow()
+        self.loading_dialog.rejected.connect(self.cancel_metadata_loading)
         self.loading_dialog.set_progress_range(len(file_paths))
 
         self.load_metadata_in_thread(file_paths)
+
+    def load_metadata_in_thread(self, file_paths: list[str]) -> None:
+        logger.warning("[DEBUG] load_metadata_in_thread CALLED")
+        self.cleanup_metadata_worker()
+
+        if self.is_running_metadata_task():
+            logger.warning("Worker already running — skipping new metadata scan.")
+            return
+
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+        files = [
+            os.path.join(self.current_folder_path, f.filename)
+            for f in self.model.files
+        ]
+
+        self.metadata_thread = QThread(self)
+        self.metadata_worker = MetadataWorker(
+            reader=self.metadata_reader,
+            metadata_cache=self.metadata_cache,
+            parent=None  # must be None to avoid parent thread interference
+        )
+        logger.warning(f"[DEBUG] MetadataWorker CREATED → {self.metadata_worker}")
+        self.metadata_worker.moveToThread(self.metadata_thread)
+
+        self.metadata_worker.progress.connect(self.on_metadata_progress)
+        self.metadata_worker.finished.connect(self.finish_metadata_loading)
+        self.metadata_worker.finished.connect(self.metadata_thread.quit)
+        self.metadata_worker.finished.connect(self.metadata_worker.deleteLater)
+        self.metadata_thread.finished.connect(self.metadata_thread.deleteLater)
+
+        self.metadata_worker.file_path = files
+
+        # Safest possible launch: invoke run_batch directly inside thread
+        self.metadata_thread.started.connect(lambda: QMetaObject.invokeMethod(
+            self.metadata_worker,
+            "run_batch",
+            Qt.QueuedConnection
+        ))
+
+        logger.info(f"Starting metadata analysis for {len(files)} files")
+        self.metadata_thread.start()
 
     def reload_current_folder(self):
         # Optional: adjust if flags need to be preserved
@@ -556,19 +604,12 @@ class MainWindow(QMainWindow):
         module = RenameModuleWidget(parent_window=self)
         self.rename_modules.append(module)
 
-        # if isinstance(module.current_module_widget, MetadataModule):
-        #     fields = self.get_common_metadata_fields()
-        #     if fields:
-        #         module.current_module_widget.set_fields_from_list(fields)
-
-
         module.add_button.clicked.connect(self.add_rename_module)
         module.remove_requested.connect(lambda m=module: self.remove_rename_module(m))
 
         self.module_scroll_layout.addWidget(module)
 
         # --- Logging ---
-        mod_type = getattr(module.current_module_widget, '__class__', type(None)).__name__
         QTimer.singleShot(0, lambda: logger.info(
             f"[MainWindow] Added module of type: {getattr(module.current_module_widget, '__class__', type(None)).__name__}"
         ))
@@ -627,87 +668,39 @@ class MainWindow(QMainWindow):
         self.update_files_label()
         self.generate_preview_names()
 
-    def generate_preview_names(self, source_widget=None) -> None:
+    def generate_preview_names(self) -> None:
         """
-        Generates and updates the preview name tables based on:
-        - The current selection of files
-        - The active rename modules
-
-        It performs validation, detects duplicates or errors,
-        and enables/disables the Rename button accordingly.
+        Generate new preview names for all selected files using current rename modules.
+        Updates the preview map and UI elements accordingly.
         """
-        logger.info(f'[MainWindow] generate_preview_names triggered by: {source_widget.__class__.__name__ if source_widget else "Unknown"}')
-        logger.debug(f'[Preview] Skip metadata mode is: {self.skip_metadata_mode}')
+        selected_files = [f for f in self.model.files if f.checked]
+        modules_data = [mod.to_dict(preview=True) for mod in self.rename_modules]
 
-        # Collect rename instructions from all active modules
-        modules_data = []
-        for i, module in enumerate(self.rename_modules):
-            mod = module.current_module_widget
-            if mod:
-                try:
-                    data = mod.get_data()
-                    logger.debug(f"[Preview] Module {i} ({mod.__class__.__name__}) -> {data}")
-                    modules_data.append(data)
-                except Exception as e:
-                    logger.warning(f"Error getting data from module {i}: {e}")
-                    modules_data.append({})
-
-        # Filter selected files from the model
-        selected_files = [file for file in self.model.files if file.checked]
-
-        if not selected_files:
-            logger.debug("No files selected — disabling Rename button and clearing preview.")
-            self.rename_button.setEnabled(False)
-            self.rename_button.setToolTip("No files selected")
-            self.update_preview_tables_from_pairs([])
-            return
-
-        logger.debug("Generating preview names for %d selected files using %d modules.",
-                    len(selected_files), len(modules_data))
-
-        # Determine if modules are effectively "inactive"
-        def is_module_active(mod: dict) -> bool:
-            if mod["type"] == "specified_text":
-                return bool(mod.get("text"))
-            elif mod["type"] == "counter":
-                return True
-            elif mod["type"] == "metadata":
-                return bool(mod.get("field"))
-            return False
-
-        has_active_modules = any(is_module_active(mod) for mod in modules_data)
-
-        # === Clear and reset preview_map to current files ===
         self.preview_map.clear()
         self.preview_map = {file.filename: file for file in selected_files}
 
         name_pairs = []
 
-        if not has_active_modules:
-            # No module affects output: use original name
-            name_pairs = [(file.filename, file.filename) for file in selected_files]
-            logger.debug("[Preview] Using original filenames as preview (no active modules).")
-        else:
-            for idx, file in enumerate(selected_files):
-                try:
-                    new_name = apply_rename_modules(modules_data, idx, file, self.metadata_cache)
-                    logger.debug(f"[Preview] {file.filename} -> {new_name}")
-                    name_pairs.append((file.filename, new_name))
-                except Exception as e:
-                    logger.warning(f"Failed to generate preview for {file.filename}: {e}")
-                    name_pairs.append((file.filename, file.filename))
+        for idx, file in enumerate(selected_files):
+            try:
+                new_name = apply_rename_modules(modules_data, idx, file, self.metadata_cache)
+                logger.debug(f"[Preview] {file.filename} -> {new_name}")
+                name_pairs.append((file.filename, new_name))
+            except Exception as e:
+                logger.warning(f"Failed to generate preview for {file.filename}: {e}")
+                name_pairs.append((file.filename, file.filename))
 
-        # === Map new_name → FileItem only when name changed ===
+        # Map new name → FileItem only when name changed
         for old_name, new_name in name_pairs:
             if old_name != new_name:
                 file_item = self.preview_map.get(old_name)
                 if file_item:
                     self.preview_map[new_name] = file_item
-                    logger.debug(f"[Preview] preview_map updated: {old_name} → {new_name}")
+                    logger.debug(f"[Preview] preview_map updated: {old_name} -> {new_name}")
 
-        # === Update the tables and button states ===
         self.update_preview_tables_from_pairs(name_pairs)
 
+        # Enable rename button if any name has changed
         valid_pairs = [p for p in name_pairs if p[0] != p[1]]
         self.rename_button.setEnabled(bool(valid_pairs))
         tooltip_msg = f"{len(valid_pairs)} files will be renamed." if valid_pairs else "No changes to apply"
@@ -1091,70 +1084,6 @@ class MainWindow(QMainWindow):
         )
         self.status_label.setText(status_msg)
 
-    def load_metadata_in_thread(self, file_paths: list[str]) -> None:
-        """
-        Starts metadata analysis in a background thread using MetadataWorker.
-
-        This method ensures the UI remains responsive by offloading file metadata
-        extraction to a separate QThread. It performs the following steps:
-
-        1. Clean up any previous metadata task.
-        2. Prevent re-entry if a task is already running.
-        3. Show the busy cursor to indicate a background operation.
-        4. Prepare absolute paths to all selected files.
-        5. Set up the QThread and assign the MetadataWorker to it.
-        6. Connect signals for progress reporting and proper cleanup.
-        7. Start the thread, which triggers the metadata loading asynchronously.
-        """
-        # Clean up any previous task (if user switched folders quickly)
-        self.cleanup_metadata_worker()
-
-        # Protect against concurrent execution
-        if self.is_running_metadata_task():
-            logger.warning("Worker already running — skipping new metadata scan.")
-            return
-
-        # Indicate background work with a wait cursor
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-
-        # Resolve full paths from current model
-        files = [
-            os.path.join(self.current_folder_path, f.filename)
-            for f in self.model.files
-        ]
-
-        logger.debug("load_metadata_in_thread: Will process paths:")
-        for f in self.model.files:
-            logger.debug(f" - {f.filename} | full: {f.full_path}")
-
-        logger.debug("Will scan metadata for paths:")
-        for p in file_paths:
-            logger.debug(f"  - {p}")
-
-        # Create the thread and move worker into it
-        self.metadata_thread = QThread(self)
-        self.metadata_worker = MetadataWorker(self.metadata_reader, metadata_cache=self.metadata_cache)
-        self.metadata_worker.moveToThread(self.metadata_thread)
-
-        # Connect signals
-
-        # Metadata progress updates
-        self.metadata_worker.progress.connect(self.on_metadata_progress)
-
-        # When done, update UI and clean up
-        self.metadata_worker.finished.connect(self.finish_metadata_loading)
-
-        # Ensure proper teardown when work completes
-        self.metadata_worker.finished.connect(self.metadata_thread.quit)
-        self.metadata_worker.finished.connect(self.metadata_worker.deleteLater)
-        self.metadata_thread.finished.connect(self.metadata_thread.deleteLater)
-
-        # Start processing as soon as thread begins
-        self.metadata_thread.started.connect(lambda: self.metadata_worker.load_batch(files))
-
-        logger.info(f"Starting metadata analysis for {len(files)} files")
-        self.metadata_thread.start()
-
     def on_metadata_progress(self, current: int, total: int) -> None:
         """
         Slot connected to the `progress` signal of the MetadataWorker.
@@ -1245,15 +1174,10 @@ class MainWindow(QMainWindow):
         # Ensure the change is reflected immediately
         QApplication.processEvents()
 
-    def cancel_metadata_loading(self) -> None:
+    def cancel_metadata_loading(self, retry_count: int = 0) -> None:
         """
-        Triggered when the user clicks 'Cancel' during metadata scanning.
-
-        Steps:
-        1. Restore the cursor immediately for better UX.
-        2. Update the progress dialog to inform the user that cancellation is in progress.
-        3. Close the dialog after a short delay (for readability).
-        4. Signal the metadata worker to stop (if it's active).
+        Called when the user presses ESC or closes the dialog during metadata scan.
+        Retries once or twice if the worker isn't ready yet.
         """
         logger.info("User requested cancellation of metadata scan.")
 
@@ -1263,22 +1187,24 @@ class MainWindow(QMainWindow):
         # 2. Inform user via dialog (if shown)
         if self.loading_dialog:
             self.loading_dialog.set_message("Canceling metadata scan…")
-
-            # Let user read the message briefly, then close
             QTimer.singleShot(1000, self.loading_dialog.accept)
             QTimer.singleShot(1000, lambda: setattr(self, "loading_dialog", None))
         else:
-            logger.warning("Cancel requested but loading dialog was not active.")
+            logger.debug("Cancel requested but loading dialog was not active.")
 
-        # 3. Signal cancellation to the worker
+        # 3. Try to cancel worker if exists
         if self.metadata_worker:
             if not self.metadata_worker._cancelled:
                 logger.debug("Calling metadata_worker.cancel()")
                 self.metadata_worker.cancel()
             else:
-                logger.info("Worker was already cancelled — no need to signal again.")
+                logger.info("Worker already marked as cancelled.")
         else:
-            logger.warning("Cancel requested but metadata_worker is None.")
+            if retry_count < 3:
+                logger.warning(f"metadata_worker is None — will retry cancel in 150ms (attempt {retry_count + 1})")
+                QTimer.singleShot(150, lambda: self.cancel_metadata_loading(retry_count + 1))
+            else:
+                logger.error("Cancel failed: metadata_worker was never created.")
 
     def cleanup_metadata_worker(self) -> None:
         """
@@ -1373,49 +1299,6 @@ class MainWindow(QMainWindow):
             self.metadata_thread is not None and
             self.metadata_thread.isRunning()
         )
-
-    def populate_metadata_table(self, metadata: dict) -> None:
-        """
-        Populates the metadata table view with key-value pairs.
-
-        This function clears any existing rows and inserts the provided metadata.
-        Each dictionary item is added as a row in the model, with the key in the
-        first column and the corresponding value in the second.
-
-        Args:
-            metadata (dict): A dictionary where keys are metadata tags and
-                            values are their associated data.
-        """
-        logger.debug(">>> populate_metadata_table called")
-
-        # Ensure cursor is restored in case it was left in busy mode
-        QApplication.restoreOverrideCursor()
-
-        if not metadata:
-            logger.info("No metadata available for selected file.")
-            self.show_empty_metadata_tree("No information available")
-            return
-
-        model = build_metadata_tree_model(metadata)
-        self.metadata_tree_view.setModel(model)
-        self.metadata_tree_view.expandToDepth(1)
-        self.metadata_tree_view.resizeColumnToContents(0)
-        self.metadata_tree_view.header().setStretchLastSection(True)
-        self.metadata_tree_view.header().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        self.metadata_tree_view.header().setSectionResizeMode(1, QHeaderView.Stretch)
-
-
-        logger.debug(f"Metadata table populated with {len(metadata)} entries.")
-
-        """
-        Slot connected to the itemSelectionChanged signal of the table view.
-
-        Populates the metadata tree view with the metadata of the clicked row.
-        Supports nested dictionaries and lists via expandable tree structure.
-
-        Args:
-            index (QModelIndex): The index of the clicked row.
-        """
 
     def on_table_row_clicked(self, index: QModelIndex) -> None:
         """

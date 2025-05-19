@@ -24,9 +24,12 @@ from PyQt5.QtWidgets import (
     QPushButton, QFrame
 )
 from PyQt5.QtCore import pyqtSignal, QTimer
+
 from modules.specified_text_module import SpecifiedTextModule
 from modules.counter_module import CounterModule
 from modules.metadata_module import MetadataModule
+from widgets.original_name_widget import OriginalNameWidget
+
 from widgets.custom_msgdialog import CustomMessageDialog
 
 # Initialize Logger
@@ -53,13 +56,15 @@ class RenameModuleWidget(QWidget):
         self.module_instances = {
             "Specified Text": SpecifiedTextModule,
             "Counter": CounterModule,
-            "Metadata": MetadataModule
+            "Metadata": MetadataModule,
+            "Original Name": OriginalNameWidget
         }
 
         self.module_heights = {
             "Specified Text": 90,
             "Counter": 130,
-            "Metadata": 100  # adjust if needed
+            "Metadata": 100,
+            "Original Name": 120
         }
 
         self.current_module_widget = None
@@ -116,10 +121,13 @@ class RenameModuleWidget(QWidget):
     def connect_signals_for_module(self, module_widget: QWidget) -> None:
         if self.parent_window and hasattr(module_widget, "updated"):
             try:
-                module_widget.updated.connect(lambda w: self.parent_window.generate_preview_names())
-                logger.info("[RenameModuleWidget] Connected updated → generate_preview_names (with module ref)")
+                self.updated.connect(self.parent_window.generate_preview_names)
+                module_widget.updated.connect(self.updated.emit)
+                logger.info("[RenameModuleWidget] Connected updated -> generate_preview_names (with module ref)")
+
             except Exception as e:
                 logger.warning(f"[RenameModuleWidget] Signal connection failed: {e}")
+
         else:
             logger.warning("[RenameModuleWidget] Could not connect signal. parent_window: %s, has updated: %s",
                         self.parent_window, hasattr(module_widget, "updated"))
@@ -157,27 +165,8 @@ class RenameModuleWidget(QWidget):
         """
         Returns the configuration of this rename module as a dictionary.
         Delegates to the active submodule and adds type.
-        In preview mode, skips ineffective modules.
         """
         module_type = self.type_combo.currentText()
         data = self.get_data()
         data["type"] = module_type.lower().replace(" ", "_")
-
-        if preview and not self.is_effective(data):
-            data["type"] = "noop"
-
         return data
-
-    def is_effective(self, data: dict) -> bool:
-        """
-        Determines if this module is expected to affect the output filename.
-        Used to filter out empty/disabled modules during preview.
-        """
-        t = data.get("type")
-        if t == "specified_text":
-            return bool(data.get("text", "").strip())
-        if t == "counter":
-            return True
-        if t == "metadata":
-            return data.get("field") == "date"
-        return False

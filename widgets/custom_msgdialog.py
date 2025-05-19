@@ -269,9 +269,10 @@ class CustomMessageDialog(QDialog):
             self.progress_bar.setValue(0)
 
     def keyPressEvent(self, event):
+        logger.warning(f"[CustomMessageDialog] keyPressEvent: {event.key()}")
         if event.key() == Qt.Key_Escape:
             self.set_message("Canceling metadata scan...")
-            self.accept()  # or just close()
+            self.reject()
             QApplication.processEvents()
         else:
             super().keyPressEvent(event)
@@ -305,3 +306,9 @@ class CustomMessageDialog(QDialog):
         """
         self.selected = "Cancel"
         event.accept()
+
+    def reject(self):
+        logger.warning("[CustomMessageDialog] reject() CALLED via ESC or close")
+        super().reject()
+        self.close()
+
