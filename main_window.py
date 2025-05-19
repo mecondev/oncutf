@@ -18,7 +18,7 @@ from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QSplitter, QFrame, QScrollArea, QTableWidget, QTableView, QTreeView, QFileDialog,
     QFileSystemModel, QAbstractItemView,  QSizePolicy, QHeaderView, QTableWidgetItem,
-    QDesktopWidget, QMessageBox, QGraphicsOpacityEffect
+    QDesktopWidget, QGraphicsOpacityEffect, QMenu
 )
 from PyQt5.QtCore import (
     Qt, QDir, QUrl, QThread, QTimer, QModelIndex, QPropertyAnimation, QMetaObject
@@ -29,9 +29,6 @@ from PyQt5.QtGui import (
 
 from models.file_table_model import FileTableModel
 from models.file_item import FileItem
-from widgets.checkbox_header import CheckBoxHeader
-from widgets.rename_module_widget import RenameModuleWidget
-from widgets.custom_msgdialog import CustomMessageDialog
 from utils.filename_validator import FilenameValidator
 from utils.preview_generator import generate_preview_names as generate_preview_logic
 from utils.icons import create_colored_icon
@@ -39,10 +36,14 @@ from utils.icon_cache import prepare_status_icons
 from utils.preview_engine import apply_rename_modules
 from utils.metadata_reader import MetadataReader
 from utils.build_metadata_tree_model import build_metadata_tree_model
-from widgets.metadata_worker import MetadataWorker
 from utils.metadata_cache import MetadataCache
 from utils.metadata_utils import resolve_skip_metadata
 from utils.renamer import Renamer
+from utils.text_helpers import elide_text
+from widgets.metadata_worker import MetadataWorker
+from widgets.checkbox_header import CheckBoxHeader
+from widgets.rename_module_widget import RenameModuleWidget
+from widgets.custom_msgdialog import CustomMessageDialog
 
 from config import *
 
@@ -386,6 +387,9 @@ class MainWindow(QMainWindow):
 
         self.rename_button.clicked.connect(self.rename_files)
 
+        self.file_table_view.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.file_table_view.customContextMenuRequested.connect(self.handle_table_context_menu)
+
     def rename_files(self) -> None:
         """
         Executes the file renaming process using active rename modules.
@@ -546,7 +550,7 @@ class MainWindow(QMainWindow):
 
         self.load_metadata_in_thread(file_paths)
 
-    def load_metadata_in_thread(self, file_paths: list[str]) -> None:
+    def load_metadata_in_thread(self, file_paths: list[str] = None) -> None:
         logger.warning("[DEBUG] load_metadata_in_thread CALLED")
         self.cleanup_metadata_worker()
 
@@ -555,10 +559,13 @@ class MainWindow(QMainWindow):
             return
 
         QApplication.setOverrideCursor(Qt.WaitCursor)
-        files = [
-            os.path.join(self.current_folder_path, f.filename)
-            for f in self.model.files
-        ]
+
+        # --- ΝΕΟ: fallback σε όλα τα αρχεία αν δεν δοθεί λίστα ---
+        if file_paths is None:
+            file_paths = [
+                os.path.join(self.current_folder_path, f.filename)
+                for f in self.model.files
+            ]
 
         self.metadata_thread = QThread(self)
         self.metadata_worker = MetadataWorker(
@@ -575,7 +582,7 @@ class MainWindow(QMainWindow):
         self.metadata_worker.finished.connect(self.metadata_worker.deleteLater)
         self.metadata_thread.finished.connect(self.metadata_thread.deleteLater)
 
-        self.metadata_worker.file_path = files
+        self.metadata_worker.file_path = file_paths
 
         # Safest possible launch: invoke run_batch directly inside thread
         self.metadata_thread.started.connect(lambda: QMetaObject.invokeMethod(
@@ -584,8 +591,66 @@ class MainWindow(QMainWindow):
             Qt.QueuedConnection
         ))
 
-        logger.info(f"Starting metadata analysis for {len(files)} files")
+        logger.info(f"Starting metadata analysis for {len(file_paths)} files")
         self.metadata_thread.start()
+
+    def start_metadata_scan_for_items(self, items: list[FileItem]) -> None:
+        """
+        Initiates threaded metadata scanning for a specific list of FileItems.
+
+        This is a wrapper around the existing start_metadata_scan() method, converting
+        FileItem objects into file paths. It is used when metadata should be loaded for
+        a subset of files (e.g. from right-click menu).
+
+        Parameters:
+            items (list[FileItem]): List of files to scan metadata for.
+        """
+        file_paths = [item.full_path for item in items if item.full_path]
+        if not file_paths:
+            self.set_status("No valid files to scan.", color="gray", auto_reset=True)
+            return
+
+        self.set_status(f"Loading metadata for {len(file_paths)} file(s)...", color="blue")
+        QTimer.singleShot(100, lambda: self.start_metadata_scan(file_paths))
+
+    def load_metadata_for_files(self, file_items: list[FileItem]) -> None:
+        """
+        Loads metadata for one or more FileItem objects, typically triggered via context menu.
+
+        Behavior:
+        - If one file is given, metadata is read immediately using exiftool in the main thread.
+        - If multiple files are given, metadata is loaded in a background thread using the
+        existing MetadataWorker system with progress dialog and cancellation support.
+
+        Updates the file item's `metadata` attribute and the shared metadata cache.
+        Also refreshes the rename preview after completion.
+
+        Parameters:
+            file_items (list[FileItem]): List of files for which metadata should be loaded.
+        """
+        if not file_items:
+            self.set_status("No files to process.", color="gray", auto_reset=True)
+            return
+
+        if len(file_items) == 1:
+            # --- Single file: immediate read ---
+            item = file_items[0]
+            self.set_status(f"Loading metadata for {item.filename}...", color="blue")
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            QApplication.processEvents()
+
+            metadata = self.metadata_reader.read(item.full_path)
+            if metadata:
+                item.metadata = metadata
+                self.metadata_cache.update({item.full_path: metadata})  # ✅ Εδώ η αλλαγή
+                self.set_status("Metadata loaded.", color="green", auto_reset=True)
+            else:
+                self.set_status("Failed to load metadata.", color="red", auto_reset=True)
+
+            QApplication.restoreOverrideCursor()
+            self.generate_preview_names()
+        else:
+            self.start_metadata_scan_for_items(file_items)
 
     def reload_current_folder(self):
         # Optional: adjust if flags need to be preserved
@@ -1476,3 +1541,51 @@ class MainWindow(QMainWindow):
 
         # Trigger signal to refresh preview
         self.updated.emit(self)
+
+    def handle_table_context_menu(self, position):
+        """
+        Handles the right-click context menu event for the file table.
+
+        Context:
+        - If the user right-clicks on a valid row, the menu includes:
+            - "Load metadata for '<filename>'" (with tooltip for full name)
+            - "Load metadata for selected files"
+            - "Load metadata for all files"
+        - If the user right-clicks on empty space or outside a row:
+            - Only "Load metadata for selected files" and "Load metadata for all files" are shown.
+
+        Behavior:
+        - If one file is chosen, metadata is loaded immediately (in main thread).
+        - If multiple files are chosen, metadata is loaded using the background worker system.
+        - Uses self.load_metadata_for_files(...) to handle all logic.
+
+        Parameters:
+            position (QPoint): The position within the table where the right-click occurred.
+        """
+        index = self.file_table_view.indexAt(position)
+        menu = QMenu(self)
+
+        file_item = None
+        action_one = None
+
+        if index.isValid() and 0 <= index.row() < len(self.model.files):
+            file_item = self.model.files[index.row()]
+
+            short_name = elide_text(file_item.filename, MAX_LABEL_LENGTH)
+
+            action_one = menu.addAction(f"Load metadata for '{short_name}'")
+            action_one.setToolTip(f"<b>Full name:</b><br>{file_item.filename}")
+            menu.addSeparator()
+
+        action_selected = menu.addAction("Load metadata for selected files")
+        action_all = menu.addAction("Load metadata for all files")
+
+        action = menu.exec_(self.file_table_view.viewport().mapToGlobal(position))
+
+        if action == action_one and file_item:
+            self.load_metadata_for_files([file_item])
+        elif action == action_selected:
+            selected = [f for f in self.model.files if f.checked]
+            self.load_metadata_for_files(selected)
+        elif action == action_all:
+            self.load_metadata_for_files(self.model.files)

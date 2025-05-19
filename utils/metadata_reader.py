@@ -131,3 +131,11 @@ class MetadataReader:
                 self._active_proc = None
 
         return result
+
+    def read(self, filepath: str) -> Dict[str, str]:
+        """
+        Convenience wrapper for read_metadata used in single-file preview (e.g. right-click).
+        Returns a metadata dictionary or empty dict on failure.
+        """
+        return self.read_metadata(filepath) or {}
+

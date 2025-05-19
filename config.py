@@ -88,3 +88,7 @@ USE_PREVIEW_BACKGROUND = False  # Whether to apply background color in tables
 
 LARGE_FOLDER_WARNING_THRESHOLD = 150 # Number when to prompt QuestionDialog to load large folder
 
+# ----------------------------
+# File Table Settings
+# ----------------------------
+MAX_LABEL_LENGTH = 30
