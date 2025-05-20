@@ -28,7 +28,7 @@ def load_stylesheet() -> str:
     Returns:
         str: The contents of the stylesheet, or empty string if not found.
     """
-    qss_path = os.path.join(os.path.dirname(__file__), "dark_theme.qss")
+    qss_path = os.path.join(os.path.dirname(__file__), "dark_theme_2.qss")
 
     if os.path.exists(qss_path):
         with open(qss_path, "r", encoding="utf-8") as file:

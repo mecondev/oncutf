@@ -16,6 +16,7 @@ Date: 2025-05-01
 
 from typing import Optional
 from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QVariant, pyqtSignal
+from PyQt5.QtGui import QColor
 from models.file_item import FileItem
 
 # initialize logger
@@ -67,6 +68,11 @@ class FileTableModel(QAbstractTableModel):
 
         file = self.files[row]
 
+        if role == Qt.BackgroundRole:
+            file = self.files[index.row()]
+            if file.full_path in self.parent_window.metadata_loaded_paths:
+                return QColor("#112233")  # ή κάποια απόχρωση όπως #1f3a57
+
         if role == Qt.DisplayRole:
             if col == 1:
                 return file.filename
@@ -74,6 +80,23 @@ class FileTableModel(QAbstractTableModel):
                 return file.extension
             elif col == 3:
                 return file.modified
+
+        if role == Qt.ToolTipRole and index.column() == 1:
+            file = self.files[index.row()]
+            if file.full_path in self.parent_window.metadata_loaded_paths:
+                return "Metadata loaded for this file"
+            else:
+                return "Metadata not loaded"
+
+        if index.column() == 0:
+            if role == Qt.UserRole:
+                file = self.files[index.row()]
+                if hasattr(file, "metadata"):
+                    if file.metadata:
+                        return 'loaded'
+                    else:
+                        return 'missing'
+                return 'missing'
 
         elif role == Qt.CheckStateRole and col == 0:
             return Qt.Checked if file.checked else Qt.Unchecked

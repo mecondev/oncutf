@@ -151,7 +151,7 @@ QLineEdit[disabled], QSpinBox[disabled], QComboBox[disabled] {
     color: #555555;
     background-color: #1e1e1e;
 }
-/*
+
 QWidget[module="True"] {
     border: 2px solid red;
     border-radius: 6px;
@@ -163,8 +163,6 @@ RenameModuleWidget[module="True"] {
     background-color: #ff0000;
     border: 2px solid yellow;
 }
-*/
-
 
 /* ===============================
    SCROLL BARS
@@ -321,4 +319,198 @@ QMenu::item:disabled {
 /* === QPushButton Hover === */
 QPushButton:hover {
     background-color: #3c78d8;
+}
+
+
+/* === QComboBox Styling === */
+QComboBox {
+    background-color: #2e2e2e;
+    color: white;
+    border: 1px solid #444;
+    padding: 4px 6px;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 18px;
+    border-left: 1px solid #444;
+}
+
+QComboBox::down-arrow {
+    width: 10px;
+    height: 10px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #2e2e2e;
+    color: white;
+    selection-background-color: #007acc;
+    selection-color: white;
+}
+
+QComboBox QAbstractItemView::item:disabled {
+    color: #666666;
+    background-color: #1c1c1c;
+}
+
+
+/* === QComboBox Styling === */
+QComboBox {
+    background-color: #2e2e2e;
+    color: white;
+    border: 1px solid #444;
+    padding: 4px 6px;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 18px;
+    border-left: 1px solid #444;
+}
+
+QComboBox::down-arrow {
+    width: 10px;
+    height: 10px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #2e2e2e;
+    color: white;
+    selection-background-color: #007acc;
+    selection-color: white;
+}
+
+QComboBox QAbstractItemView::item:disabled {
+    color: #666666;
+    background-color: #1c1c1c;
+}
+
+
+
+QPushButton:pressed {
+    background-color: #005999;
+}
+
+
+/* === QScrollBar === */
+QScrollBar:vertical {
+    border: none;
+    background: #121212;
+    width: 10px;
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:vertical {
+    background: #007acc;
+    min-height: 20px;
+    border-radius: 5px;
+}
+QScrollBar::handle:vertical:hover {
+    background: #5fa8d3;
+}
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    border: none;
+    background: #121212;
+    height: 10px;
+    margin: 0px 0px 0px 0px;
+}
+QScrollBar::handle:horizontal {
+    background: #007acc;
+    min-width: 20px;
+    border-radius: 5px;
+}
+QScrollBar::handle:horizontal:hover {
+    background: #5fa8d3;
+}
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+
+/* === QTableView Alternating Rows === */
+QTableView {
+    background-color: #121212;
+    alternate-background-color: #1e2a36;
+    gridline-color: #444;
+    selection-background-color: #007acc;
+    selection-color: white;
+}
+
+/* === QTreeView Styling === */
+QTreeView {
+    background-color: #121212;
+    color: white;
+    alternate-background-color: #1a1f24;
+    selection-background-color: #007acc;
+    selection-color: white;
+}
+
+/* === QTabBar === */
+QTabBar::tab {
+    background: #121212;
+    color: white;
+    padding: 6px 12px;
+    border: 1px solid #444;
+    border-bottom: none;
+}
+QTabBar::tab:selected {
+    background: #007acc;
+    color: white;
+}
+QTabBar::tab:hover {
+    background: #5fa8d3;
+    color: white;
+}
+
+/* === QPushButton Hover & Press === */
+QPushButton:hover {
+    background-color: #5fa8d3;
+}
+QPushButton:pressed {
+    background-color: #005999;
+}
+
+
+/* === QComboBox Styling (PyQt5 compatible) === */
+QComboBox {
+    background-color: #121212;
+    color: white;
+    border: 1px solid #444;
+    padding: 4px 6px;
+}
+
+QComboBox:hover {
+    background-color: #5fa8d3;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 18px;
+    border-left: 1px solid #444;
+    background-color: #121212;
+}
+
+QComboBox::down-arrow {
+    width: 10px;
+    height: 10px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #121212;
+    color: white;
+    selection-background-color: #007acc;
+    selection-color: white;
+    outline: none;
+}
+
+QComboBox QAbstractItemView::item:disabled {
+    color: #666666;
+    background-color: #1c1c1c;
 }

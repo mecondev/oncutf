@@ -26,8 +26,8 @@ logger = get_logger(__name__)
 
 
 ICON_NAMES = ["valid", "unchanged", "invalid", "duplicate"]
-
 ICON_PATHS = {}
+
 
 def prepare_status_icons(base_dir: str = "resources/icons") -> dict[str, str]:
     """
