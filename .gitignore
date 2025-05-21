@@ -45,7 +45,7 @@ desktop.ini
 # ========================
 logs/*.log
 logs/*.tmp
-logs/*.json 
+logs/*.json
 
 # Allow milestone logs and folder itself
 !logs/*.md
@@ -60,3 +60,12 @@ logs/*.json
 .cache/
 reports/
 test_output/
+
+# Backup and temporary files from editing QSS or UI files
+*.qss~        # Temporary QSS backups
+*.bak         # General backup files
+*.ui~         # Temporary Qt Designer backups
+
+# Generated files from Qt resource compiler
+*.qrc.py      # Compiled QRC files (e.g. pyrcc5)
+*.qss.py      # Compiled QSS files (if using custom converter)
