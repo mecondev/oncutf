@@ -1,0 +1,38 @@
+QPushButton {
+    background-color: #2d2d30;
+    border: 1px solid #444444;
+    padding: 6px 12px;
+    border-radius: 4px;
+}
+
+QPushButton:hover {
+    background-color: #3c3c3f;
+}
+
+QPushButton:pressed {
+    background-color: #505052;
+}
+
+QPushButton:disabled {
+    background-color: #2a2a2a;
+    color: #555555;
+    border: 1px solid #333333;
+}
+
+QPushButton Hover === */
+QPushButton:hover {
+    background-color: #3c78d8;
+}
+
+QPushButton:pressed {
+    background-color: #005999;
+}
+
+QPushButton Hover & Press === */
+QPushButton:hover {
+    background-color: #5fa8d3;
+}
+
+QPushButton:pressed {
+    background-color: #005999;
+}

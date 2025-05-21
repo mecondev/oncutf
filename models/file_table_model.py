@@ -71,7 +71,7 @@ class FileTableModel(QAbstractTableModel):
         if role == Qt.BackgroundRole:
             file = self.files[index.row()]
             if file.full_path in self.parent_window.metadata_loaded_paths:
-                return QColor("#112233")  # ή κάποια απόχρωση όπως #1f3a57
+                return QColor("#112233")  # or 1f3a57
 
         if role == Qt.DisplayRole:
             if col == 1:
@@ -88,18 +88,14 @@ class FileTableModel(QAbstractTableModel):
             else:
                 return "Metadata not loaded"
 
-        if index.column() == 0:
-            if role == Qt.UserRole:
-                file = self.files[index.row()]
-                if hasattr(file, "metadata"):
-                    if file.metadata:
-                        return 'loaded'
-                    else:
-                        return 'missing'
-                return 'missing'
+        if index.column() == 0 and role == Qt.UserRole:
+            file = self.files[index.row()]
+            if isinstance(file.metadata, dict) and file.metadata:
+                return 'loaded'
+            return None
 
         elif role == Qt.CheckStateRole and col == 0:
-            return Qt.Checked if file.checked else Qt.Unchecked
+            return  QVariant()
 
         elif role == Qt.TextAlignmentRole:
             if col == 0:
@@ -145,10 +141,7 @@ class FileTableModel(QAbstractTableModel):
         if not self.files:
             return Qt.NoItemFlags
 
-        if index.column() == 0:
-            return Qt.ItemIsEnabled | Qt.ItemIsUserCheckable
-        else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole):
         """

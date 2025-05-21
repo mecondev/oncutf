@@ -56,7 +56,7 @@ CONTENT_MARGINS = {
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {
-    "jpg", "jpeg", "png", "mp3", "mp4", "mov", "mts", "nef", "raw", "arw", "cr2",
+    "jpg", "jpeg", "png", "mp3", "mp4", "mov", "mts", "nef", "raw", "arw", "cr2", "cr3",
     "wav", "txt", "csv", "xml", "pdf", "doc", "docx", "xls", "xlsx"
 }
 
@@ -64,8 +64,8 @@ ALLOWED_EXTENSIONS = {
 ALLOWED_FILENAME_CHARS = r"^[^\\/:*?\"<>|]+$"
 
 # Theme
-DARK_THEME = "black_theme.qss"
-LIGHT_THEME = "light_theme.qss"
+THEME_NAME = "dark"
+
 
 # ----------------------------
 # Preview Indicator Settings

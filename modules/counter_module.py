@@ -111,7 +111,7 @@ class CounterModule(QWidget):
         # Connect signals
         btn_minus.clicked.connect(lambda: adjust(-1))
         btn_plus.clicked.connect(lambda: adjust(1))
-        input_field.textChanged.connect(self.updated.emit)
+        input_field.textChanged.connect(lambda _: self.updated.emit(self))
 
         # Build row layout
         row_layout = QHBoxLayout()

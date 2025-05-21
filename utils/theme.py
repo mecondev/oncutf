@@ -1,36 +1,37 @@
 """
-Module: theme.py
+theme.py
+
+Loads and combines modular QSS files for the selected application theme.
+Supports expansion for light/dark themes and separates widget styles.
+
+Current implementation loads the 'dark' theme from style/dark_theme/.
 
 Author: Michael Economou
-Date: 2025-05-01
-
-This utility module is responsible for loading the application's stylesheet
-from external `.qss` files. It provides helper functions to apply consistent
-theming across all UI components of oncutf.
-
-Typically used during application startup to apply a dark or light theme.
-
-Supports:
-- Loading QSS from file path or resource
-- Applying styles to QApplication instance
+Date: 2025-05-21
 """
 
 import os
-
-# Initialize Logger
-from utils.logger_helper import get_logger
-logger = get_logger(__name__)
+from config import THEME_NAME
 
 def load_stylesheet() -> str:
     """
-    Loads the global QSS stylesheet from file.
-
-    Returns:
-        str: The contents of the stylesheet, or empty string if not found.
+    Loads the stylesheet based on THEME_NAME defined in config.py.
     """
-    qss_path = os.path.join(os.path.dirname(__file__), "dark_theme_2.qss")
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "style", f"{THEME_NAME}_theme"))
+    qss_files = [
+        "base.qss",
+        "table_view.qss",
+        "tree_view.qss",
+        "combo_box.qss",
+        "buttons.qss",
+        "scrollbars.qss"
+    ]
 
-    if os.path.exists(qss_path):
-        with open(qss_path, "r", encoding="utf-8") as file:
-            return file.read()
-    return ""
+    full_style = ""
+    for filename in qss_files:
+        path = os.path.join(base_dir, filename)
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                full_style += f.read() + "\n"
+
+    return full_style

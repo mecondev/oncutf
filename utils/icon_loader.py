@@ -18,8 +18,8 @@ from PyQt5.QtGui import QPixmap
 
 def load_metadata_icons(base_dir: str = "resources/icons") -> dict[str, QPixmap]:
     return {
-        'loaded': QPixmap(f"{base_dir}/info.png"),
-        'missing': QPixmap(f"{base_dir}/info.png"),
-        'partial': QPixmap(f"{base_dir}/info.png"),
-        'invalid': QPixmap(f"{base_dir}/info.png"),
+        'loaded': QPixmap(f"{base_dir}/info_green.png"),
+        'extended': QPixmap(f"{base_dir}/info_orange.png"),
+        'partial': QPixmap(f"{base_dir}/info_gray.png"),
+        'invalid': QPixmap(f"{base_dir}/info_red.png"),
     }

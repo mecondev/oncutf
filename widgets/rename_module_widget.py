@@ -122,7 +122,7 @@ class RenameModuleWidget(QWidget):
         if self.parent_window and hasattr(module_widget, "updated"):
             try:
                 self.updated.connect(self.parent_window.generate_preview_names)
-                module_widget.updated.connect(self.updated.emit)
+                module_widget.updated.connect(lambda _: self.updated.emit(self))
                 logger.info("[RenameModuleWidget] Connected updated -> generate_preview_names (with module ref)")
 
             except Exception as e:

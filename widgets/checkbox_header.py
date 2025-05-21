@@ -69,35 +69,6 @@ class CheckBoxHeader(QHeaderView):
         if self.parent_window:
             self.parent_window.generate_preview_names()
 
-    def paintSection(self, painter: QPainter, rect: QRect, logicalIndex: int) -> None:
-        """
-        Paints the checkbox in the header cell of column 0.
-        """
-        if logicalIndex != 0:
-            super().paintSection(painter, rect, logicalIndex)
-            return
-
-        painter.save()
-
-        checkbox_rect = QRect(
-            rect.left() + 6,
-            rect.top() + (rect.height() - 13) // 2,
-            13, 13
-        )
-
-        option = QStyleOptionButton()
-        option.rect = checkbox_rect
-        option.state = QStyle.State_Enabled
-        if self.check_state == Qt.Checked:
-            option.state |= QStyle.State_On
-        elif self.check_state == Qt.PartiallyChecked:
-            option.state |= QStyle.State_NoChange
-        else:
-            option.state |= QStyle.State_Off
-
-        self.style().drawControl(QStyle.CE_CheckBox, option, painter)
-        painter.restore()
-
     def mousePressEvent(self, event) -> None:
         """
         Detect click on header and toggle all row checkboxes.

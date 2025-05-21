@@ -16,7 +16,7 @@ import json
 from typing import TYPE_CHECKING, List, Tuple, Dict
 from PyQt5.QtWidgets import (
     QMainWindow, QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QSplitter, QFrame, QScrollArea, QTableWidget, QTableView, QTreeView, QFileDialog,
+    QSplitter, QFrame, QScrollArea, QTableWidget, QTreeView, QFileDialog,
     QFileSystemModel, QAbstractItemView,  QSizePolicy, QHeaderView, QTableWidgetItem,
     QDesktopWidget, QGraphicsOpacityEffect, QMenu, QShortcut
 )
@@ -48,6 +48,8 @@ from widgets.checkbox_header import CheckBoxHeader
 from widgets.rename_module_widget import RenameModuleWidget
 from widgets.custom_msgdialog import CustomMessageDialog
 from widgets.metadata_icon_delegate import MetadataIconDelegate
+from widgets.custom_table_view import CustomTableView
+from widgets.metadata_tree_view import MetadataTreeView
 
 from config import *
 
@@ -105,20 +107,20 @@ class MainWindow(QMainWindow):
         self.setup_signals()
 
     # --- Method definitions ---
-    def setup_main_window(self):
+    def setup_main_window(self) -> None:
         """Configure main window properties."""
         self.setWindowTitle("oncutf - Batch File Renamer and More")
         self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
         self.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
         self.center_window()
 
-    def setup_main_layout(self):
+    def setup_main_layout(self) -> None:
         """Setup central widget and main layout."""
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.main_layout = QVBoxLayout(self.central_widget)
 
-    def setup_splitters(self):
+    def setup_splitters(self) -> None:
         """Setup vertical and horizontal splitters."""
         self.vertical_splitter = QSplitter(Qt.Vertical)
         self.main_layout.addWidget(self.vertical_splitter)
@@ -127,7 +129,7 @@ class MainWindow(QMainWindow):
         self.vertical_splitter.addWidget(self.horizontal_splitter)
         self.vertical_splitter.setSizes([485, 235])
 
-    def setup_left_panel(self):
+    def setup_left_panel(self) -> None:
         """Setup left panel (folder tree)."""
         self.left_frame = QFrame()
         left_layout = QVBoxLayout(self.left_frame)
@@ -157,7 +159,7 @@ class MainWindow(QMainWindow):
 
         self.horizontal_splitter.addWidget(self.left_frame)
 
-    def setup_center_panel(self):
+    def setup_center_panel(self) -> None:
         """Setup center panel (file table view)."""
         self.center_frame = QFrame()
         center_layout = QVBoxLayout(self.center_frame)
@@ -165,15 +167,13 @@ class MainWindow(QMainWindow):
         self.files_label = QLabel("Files")
         center_layout.addWidget(self.files_label)
 
-        self.file_table_view = QTableView()
+        self.file_table_view = CustomTableView()
         self.file_table_view.verticalHeader().setVisible(False)
         self.file_table_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.file_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.header = CheckBoxHeader(Qt.Horizontal, self.file_table_view, parent_window=self)
         self.model = FileTableModel(parent_window=self)
         self.show_file_table_placeholder("No folder selected")
-        self.metadata_delegate = MetadataIconDelegate(icon_map=self.icon_paths)
-        self.file_table_view.setItemDelegateForColumn(0, self.metadata_delegate)
 
         # Table View column adjustments
         self.file_table_view.setHorizontalHeader(self.header)
@@ -203,7 +203,7 @@ class MainWindow(QMainWindow):
         center_layout.addWidget(self.file_table_view)
         self.horizontal_splitter.addWidget(self.center_frame)
 
-    def setup_right_panel(self):
+    def setup_right_panel(self) -> None:
         """Setup right panel (metadata tree view)."""
         self.right_frame = QFrame()
         right_layout = QVBoxLayout(self.right_frame)
@@ -221,12 +221,17 @@ class MainWindow(QMainWindow):
         right_layout.addLayout(button_layout)
 
         # Metadata Tree View
-        self.metadata_tree_view = QTreeView()
+        self.metadata_tree_view = MetadataTreeView()
+        self.metadata_tree_view.files_dropped.connect(self.handle_dropped_files)
         self.metadata_tree_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.metadata_tree_view.setSelectionMode(QAbstractItemView.NoSelection)
         self.metadata_tree_view.setUniformRowHeights(True)
         self.metadata_tree_view.expandToDepth(1)
         self.metadata_tree_view.setRootIsDecorated(False)
+        self.metadata_tree_view.setAcceptDrops(True)
+        self.metadata_tree_view.viewport().setAcceptDrops(True)
+        self.metadata_tree_view.setDragDropMode(QAbstractItemView.DropOnly)
+
         right_layout.addWidget(self.metadata_tree_view)
 
         # Dummy initial model
@@ -247,7 +252,7 @@ class MainWindow(QMainWindow):
         self.horizontal_splitter.addWidget(self.right_frame)
         self.horizontal_splitter.setSizes([250, 550, 200])
 
-    def setup_bottom_layout(self):
+    def setup_bottom_layout(self) -> None:
         """Setup bottom layout for rename modules and preview."""
         # --- Bottom Frame: Rename Modules + Preview ---
         self.bottom_frame = QFrame()
@@ -351,7 +356,7 @@ class MainWindow(QMainWindow):
         # Add default rename module
         self.add_rename_module()
 
-    def setup_footer(self):
+    def setup_footer(self) -> None:
         """Setup footer with version label."""
         footer_separator = QFrame()
         footer_separator.setFrameShape(QFrame.HLine)
@@ -403,13 +408,20 @@ class MainWindow(QMainWindow):
         self.file_table_view.setContextMenuPolicy(Qt.CustomContextMenu)
         self.file_table_view.customContextMenuRequested.connect(self.handle_table_context_menu)
 
+        self.file_table_view.doubleClicked.connect(self.handle_file_double_click)
+
         # --- Shortcuts ---
         QShortcut(QKeySequence("Ctrl+R"), self, activated=self.force_reload)
         QShortcut(QKeySequence("Ctrl+Shift+A"), self, activated=self.clear_all_selection)
         QShortcut(QKeySequence("Ctrl+I"), self, activated=self.invert_selection)
         QShortcut(QKeySequence("Ctrl+O"), self, activated=self.handle_browse)
 
-    def force_reload(self):
+    def force_reload(self) -> None:
+        """
+        Triggered by Ctrl+R.
+        If Ctrl is held, metadata scan is skipped (like Select/Browse).
+        Otherwise, full reload with scan.
+        """
         if not self.current_folder_path:
             self.set_status("No folder loaded.", color="gray", auto_reset=True)
             return
@@ -417,19 +429,54 @@ class MainWindow(QMainWindow):
         if not CustomMessageDialog.question(self, "Reload Folder", "Reload current folder?", yes_text="Reload", no_text="Cancel"):
             return
 
-        self.load_files_from_folder(self.current_folder_path, skip_metadata=False)
+        ctrl_override = bool(QApplication.keyboardModifiers() & SKIP_METADATA_MODIFIER)
 
-    def clear_all_selection(self):
+        skip_metadata, user_wants_scan = resolve_skip_metadata(
+            ctrl_override=ctrl_override,
+            total_files=len(self.files),
+            folder_path=self.current_folder_path,
+            parent_window=self,
+            default_skip=DEFAULT_SKIP_METADATA,
+            threshold=LARGE_FOLDER_WARNING_THRESHOLD
+        )
+
+        self.skip_metadata_mode = skip_metadata
+
+        logger.info(
+            f"[ForceReload] Reloading {self.current_folder_path}, skip_metadata={skip_metadata} "
+            f"(ctrl={ctrl_override}, wants_scan={user_wants_scan}, default={DEFAULT_SKIP_METADATA})"
+        )
+
+        self.load_files_from_folder(self.current_folder_path, skip_metadata=skip_metadata, force=True)
+
+    def clear_all_selection(self) -> None:
         self.file_table_view.clearSelection()
 
-    def invert_selection(self):
-        current_selection = self.file_table_view.selectionModel().selectedRows()
-        all_rows = range(self.model.rowCount())
+    def invert_selection(self) -> None:
+        selection_model = self.file_table_view.selectionModel()
+        all_rows = self.model.rowCount()
 
-        to_select = [self.model.index(row, 1) for row in all_rows if self.model.index(row, 1) not in current_selection]
-        self.file_table_view.clearSelection()
-        for index in to_select:
-            self.file_table_view.selectionModel().select(index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+        new_selection = QItemSelection()
+
+        for row in range(all_rows):
+            is_selected = selection_model.isRowSelected(row, QModelIndex())
+            file = self.model.files[row]
+
+            if is_selected:
+                # Αφαίρεση από επιλογή και αποεπιλογή checkbox
+                file.checked = False
+            else:
+                # Add to selection and set checked = True
+                top_left = self.model.index(row, 0)
+                bottom_right = self.model.index(row, self.model.columnCount() - 1)
+                selection_range = QItemSelectionRange(top_left, bottom_right)
+                new_selection.append(selection_range)
+                file.checked = True
+
+        # Ενημέρωση του πίνακα
+        selection_model.clearSelection()
+        selection_model.select(new_selection, QItemSelectionModel.Select)
+        self.after_check_change()
 
     def rename_files(self) -> None:
         """
@@ -560,7 +607,9 @@ class MainWindow(QMainWindow):
         folder_path = self.dir_model.filePath(index)
 
         if self.should_skip_folder_reload(folder_path):
-            return
+            return  # skip if user pressed Cancel
+        else:
+            force_reload = True  # user pressed Reload
 
         self.clear_file_table("No folder selected")
         self.clear_metadata_view()
@@ -591,7 +640,7 @@ class MainWindow(QMainWindow):
             f"(ctrl={ctrl_override}, large={is_large}, wants_scan={user_wants_scan}, default={DEFAULT_SKIP_METADATA})"
         )
         logger.warning(f'-> skip_metadata passed to loader: {skip_metadata}')
-        self.load_files_from_folder(folder_path, skip_metadata=skip_metadata)
+        self.load_files_from_folder(folder_path, skip_metadata=skip_metadata, force=force_reload)
 
     def handle_browse(self) -> None:
         """
@@ -609,7 +658,9 @@ class MainWindow(QMainWindow):
             return
 
         if self.should_skip_folder_reload(folder_path):
-            return
+            return  # skip if user pressed Cancel
+        else:
+            force_reload = True  # user pressed Reload
 
         self.clear_file_table("No folder selected")
         self.clear_metadata_view()
@@ -640,7 +691,7 @@ class MainWindow(QMainWindow):
         )
 
         logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
-        self.load_files_from_folder(folder_path, skip_metadata=skip_metadata)
+        self.load_files_from_folder(folder_path, skip_metadata=skip_metadata, force=force_reload)
 
         if hasattr(self, "dir_model") and hasattr(self, "tree_view"):
             index = self.dir_model.index(folder_path)
@@ -648,40 +699,54 @@ class MainWindow(QMainWindow):
                 self.tree_view.setCurrentIndex(index)
                 self.tree_view.scrollTo(index)
 
-    def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False) -> None:
-        """
-        Loads supported files from the given folder and populates the file table.
-        Metadata scanning can be skipped depending on user choice or rename context.
+    def get_file_items_from_folder(self, folder_path: str) -> list[FileItem]:
+        all_files = glob.glob(os.path.join(folder_path, "*"))
+        file_items = []
+        for file_path in sorted(all_files):
+            ext = os.path.splitext(file_path)[1][1:].lower()
+            if ext in ALLOWED_EXTENSIONS:
+                filename = os.path.basename(file_path)
+                modified = datetime.datetime.fromtimestamp(
+                    os.path.getmtime(file_path)).strftime("%Y-%m-%d %H:%M:%S")
+                file_items.append(FileItem(filename, ext, modified, full_path=file_path))
+        return file_items
 
-        Parameters:
-            folder_path (str): Absolute path to folder.
-            skip_metadata (bool): If True, skips metadata scanning.
-        """
+    def prepare_file_table(self, file_items: list[FileItem]) -> None:
+        self.file_table_view.setModel(self.model)
+        for f in file_items:
+            f.checked = False
+        self.model.set_files(file_items)
+        self.files = file_items
+        self.model.folder_path = self.current_folder_path
+        self.preview_map.clear()
+        self.preview_map = {f.filename: f for f in file_items}
+
+        self.header.setEnabled(True)
+        self.header.update_state(file_items)
+        self.update_files_label()
+        self.update_preview_tables_from_pairs([])
+        self.rename_button.setEnabled(False)
+        self.file_table_view.viewport().update()
+
+    def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False, force: bool = False):
+
         normalized_new = os.path.abspath(os.path.normpath(folder_path))
         normalized_current = os.path.abspath(os.path.normpath(self.current_folder_path or ""))
 
-        if normalized_new == normalized_current:
+        if normalized_new == normalized_current and not force:
             logger.info(f"[FolderLoad] Ignored reload of already loaded folder: {normalized_new}")
             self.set_status("Folder already loaded.", color="gray", auto_reset=True)
             return
 
         logger.info(f"Loading files from folder: {folder_path} (skip_metadata={skip_metadata})")
 
-        # Optionally clear cache unless skipping after rename
         if not (skip_metadata and self.last_action == "rename"):
             self.metadata_cache.clear()
 
         self.current_folder_path = folder_path
-        all_files = glob.glob(os.path.join(folder_path, "*"))
-        file_items = []
         self.metadata_loaded_paths.clear()
 
-        for file_path in sorted(all_files):
-            ext = os.path.splitext(file_path)[1][1:].lower()
-            if ext in ALLOWED_EXTENSIONS:
-                filename = os.path.basename(file_path)
-                modified = datetime.datetime.fromtimestamp(os.path.getmtime(file_path)).strftime("%Y-%m-%d %H:%M:%S")
-                file_items.append(FileItem(filename, ext, modified, full_path=file_path))
+        file_items = self.get_file_items_from_folder(folder_path)
 
         if not file_items:
             short_name = os.path.basename(folder_path.rstrip("/\\"))
@@ -692,34 +757,14 @@ class MainWindow(QMainWindow):
             self.set_status("No supported files found.", color="orange", auto_reset=True)
             return
 
-        # Sync model with file items
-        self.file_table_view.setModel(self.model)
-        self.model.set_files(file_items)
-        self.model.folder_path = folder_path
-        self.files = file_items
-
-        # Map new preview names
-        self.preview_map = {os.path.basename(f.full_path): f for f in file_items}
-
-        logger.info(f"Loaded {len(file_items)} supported files.")
-
-        self.header.setEnabled(True)
-        self.header.update_state(file_items)
-        self.update_files_label()
-        self.generate_preview_names()
+        self.prepare_file_table(file_items)
 
         if skip_metadata:
             self.set_status("Metadata scan skipped.", color="gray", auto_reset=True)
             return
 
-        # Start metadata worker in background
-        file_paths = [f.full_path for f in file_items if f.full_path]
-        self.set_status(f"Loading metadata for {len(file_paths)} files...", color="blue")
-        QApplication.setOverrideCursor(Qt.WaitCursor)
-        QApplication.processEvents()
-
-        # Delay start to ensure UI is ready
-        QTimer.singleShot(100, lambda: self.start_metadata_scan(file_paths))
+        self.set_status(f"Loading metadata for {len(file_items)} files...", color="blue")
+        QTimer.singleShot(100, lambda: self.start_metadata_scan([f.full_path for f in file_items if f.full_path]))
 
     def start_metadata_scan(self, file_paths: list[str]) -> None:
         """
@@ -744,7 +789,7 @@ class MainWindow(QMainWindow):
 
         QApplication.setOverrideCursor(Qt.WaitCursor)
 
-        # --- ΝΕΟ: fallback σε όλα τα αρχεία αν δεν δοθεί λίστα ---
+        # Fallback: use all files if no specific file list is provided
         if file_paths is None:
             file_paths = [
                 os.path.join(self.current_folder_path, f.filename)
@@ -797,47 +842,41 @@ class MainWindow(QMainWindow):
         self.set_status(f"Loading metadata for {len(file_paths)} file(s)...", color="blue")
         QTimer.singleShot(100, lambda: self.start_metadata_scan(file_paths))
 
-    def load_metadata_for_files(self, file_items: list[FileItem]) -> None:
+    def load_metadata_for_files(self, file_items: list[FileItem], force: bool = False) -> None:
         """
-        Loads metadata for one or more FileItem objects, typically triggered via context menu.
+        Loads metadata for the given list of FileItem objects.
 
-        Behavior:
-        - If one file is given, metadata is read immediately using exiftool in the main thread.
-        - If multiple files are given, metadata is loaded in a background thread using the
-        existing MetadataWorker system with progress dialog and cancellation support.
+        If the list contains a single file, metadata is loaded directly using the reader.
+        For multiple files, a scan is initiated unless metadata already exists.
 
-        Updates the file item's `metadata` attribute and the shared metadata cache.
-        Also refreshes the rename preview after completion.
-
-        Parameters:
-            file_items (list[FileItem]): List of files for which metadata should be loaded.
+        Args:
+            file_items (list[FileItem]): The files to process.
+            force (bool): If True, load metadata even if already cached.
         """
         if not file_items:
-            self.set_status("No files to process.", color="gray", auto_reset=True)
             return
 
         if len(file_items) == 1:
-            # --- Single file: immediate read ---
             item = file_items[0]
-            self.set_status(f"Loading metadata for {item.filename}...", color="blue")
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            QApplication.processEvents()
+            if not item or not item.full_path:
+                return
 
             metadata = self.metadata_reader.read(item.full_path)
             if metadata:
-                item.metadata = metadata
-                self.metadata_cache.update({item.full_path: metadata})
-                self.set_status("Metadata loaded.", color="green", auto_reset=True)
-                self.metadata_loaded_paths.add(item.full_path)
-            else:
-                self.set_status("Failed to load metadata.", color="red", auto_reset=True)
+                if force or item.metadata is None:
+                    item.metadata = metadata
+                    self.metadata_cache.set(item.full_path, metadata)
+                    self.metadata_loaded_paths.add(item.full_path)
+                    self.finish_metadata_loading({item.full_path: metadata})
+            return
 
-            QApplication.restoreOverrideCursor()
-            self.generate_preview_names()
-        else:
+        if not force:
+            file_items = [f for f in file_items if f.metadata is None]
+
+        if file_items:
             self.start_metadata_scan_for_items(file_items)
 
-    def reload_current_folder(self):
+    def reload_current_folder(self) -> None:
         # Optional: adjust if flags need to be preserved
         if self.current_folder_path:
             self.load_files_from_folder(self.current_folder_path, skip_metadata=False)
@@ -1043,7 +1082,7 @@ class MainWindow(QMainWindow):
         else:
             self.files_label.setText(f"Files ({total} loaded, {selected} selected)")
 
-    def fade_status_to_ready(self):
+    def fade_status_to_ready(self) -> None:
         """
         Fades out the current status, then shows 'Ready' without fading.
         """
@@ -1060,7 +1099,7 @@ class MainWindow(QMainWindow):
 
         QTimer.singleShot(self.status_fade_anim.duration(), show_ready_clean)
 
-    def set_status(self, text: str, color: str = "", auto_reset: bool = False, reset_delay: int = 3000):
+    def set_status(self, text: str, color: str = "", auto_reset: bool = False, reset_delay: int = 3000) -> None:
         """
         Sets the status label text and optional color. Supports auto-reset with fade effect.
         """
@@ -1094,130 +1133,6 @@ class MainWindow(QMainWindow):
             for file in self.model.files
             if file.checked
         ]
-
-    # def update_preview_tables_from_pairs(self, name_pairs: list[tuple[str, str]]) -> None:
-    #     """
-    #     Updates the preview tables with original and new filenames,
-    #     applying color-coded icons and tooltips to indicate status
-    #     (valid, unchanged, invalid, duplicate).
-
-    #     Args:
-    #         name_pairs (list[tuple[str, str]]): List of (original, new) filename pairs.
-    #     """
-    #     self.preview_old_name_table.setRowCount(0)
-    #     self.preview_new_name_table.setRowCount(0)
-    #     self.preview_icon_table.setRowCount(0)
-
-    #     if not name_pairs:
-    #         self.status_label.setText("No files selected.")
-    #         return
-
-    #     # Adjust column width
-    #     all_names = [name for pair in name_pairs for name in pair]
-    #     max_width = max((self.fontMetrics().horizontalAdvance(name) for name in all_names), default=250)
-    #     adjusted_width = max(250, max_width) + 100
-    #     self.preview_old_name_table.setColumnWidth(0, adjusted_width)
-    #     self.preview_new_name_table.setColumnWidth(0, adjusted_width)
-
-    #     # Detect duplicates
-    #     seen, duplicates = set(), set()
-    #     for _, new in name_pairs:
-    #         if new in seen:
-    #             duplicates.add(new)
-    #         else:
-    #             seen.add(new)
-
-    #     stats = {"unchanged": 0, "invalid": 0, "duplicate": 0, "valid": 0}
-
-    #     for row, (old_name, new_name) in enumerate(name_pairs):
-    #         self.preview_old_name_table.insertRow(row)
-    #         self.preview_new_name_table.insertRow(row)
-    #         self.preview_icon_table.insertRow(row)
-
-    #         old_item = QTableWidgetItem(old_name)
-    #         new_item = QTableWidgetItem(new_name)
-
-    #         # Base status logic
-    #         if old_name == new_name:
-    #             status = "unchanged"
-    #             tooltip = "Unchanged filename"
-    #         else:
-    #             is_valid, _ = self.filename_validator.is_valid_filename(new_name)
-    #             if not is_valid:
-    #                 status = "invalid"
-    #                 tooltip = "Invalid filename"
-    #             elif new_name in duplicates:
-    #                 status = "duplicate"
-    #                 tooltip = "Duplicate name"
-    #             else:
-    #                 status = "valid"
-    #                 tooltip = "Ready to rename"
-
-    #         # Look up metadata for the file using preview_map
-    #         metadata_str = ""
-    #         missing_metadata = False
-
-    #         file_item = self.preview_map.get(new_name)
-    #         if not file_item:
-    #             logger.warning(f"[Preview] Missing file item for name: {new_name}")
-    #             continue  # skip safely
-
-    #         if file_item and hasattr(file_item, "metadata"):
-    #             meta = file_item.metadata
-    #             if isinstance(meta, dict):
-    #                 mod_date = meta.get("ModificationDate") or meta.get("DateTimeOriginal")
-    #                 if mod_date:
-    #                     metadata_str = f" (mod date: {mod_date})"
-    #                 else:
-    #                     missing_metadata = True
-    #             else:
-    #                 missing_metadata = True
-    #         else:
-    #             missing_metadata = True
-
-    #         if missing_metadata:
-    #             metadata_str += " [No metadata available]"
-
-    #         tooltip += metadata_str
-    #         stats[status] += 1
-
-    #         # Create icon
-    #         icon_pixmap = self.create_colored_icon(
-    #             fill_color=PREVIEW_COLORS[status],
-    #             shape=PREVIEW_INDICATOR_SHAPE,
-    #             size_x=16,
-    #             size_y=16,
-    #             border_color="#222222",
-    #             border_thickness=1
-    #         )
-
-    #         icon_item = QTableWidgetItem()
-    #         icon_item.setIcon(QIcon(icon_pixmap))
-    #         icon_item.setToolTip(tooltip)
-
-    #         # Optional background
-    #         if USE_PREVIEW_BACKGROUND:
-    #             bg = QBrush(QColor(PREVIEW_COLORS[status]))
-    #             old_item.setBackground(bg)
-    #             new_item.setBackground(bg)
-    #             icon_item.setBackground(bg)
-
-    #         self.preview_old_name_table.setItem(row, 0, old_item)
-    #         self.preview_new_name_table.setItem(row, 0, new_item)
-    #         self.preview_icon_table.setItem(row, 0, icon_item)
-
-    #     # Compose and set status bar message
-    #     status_msg = (
-    #         f"<img src='{self.icon_paths['valid']}' width='14' height='14' style='vertical-align: middle;'/>"
-    #         f"<span style='color:#ccc;'>Valid: {stats['valid']}</span>&nbsp;&nbsp;&nbsp;"
-    #         f"<img src='{self.icon_paths['unchanged']}' width='14' height='14' style='vertical-align: middle;'/>"
-    #         f"<span style='color:#ccc;'>Unchanged: {stats['unchanged']}</span>&nbsp;&nbsp;&nbsp;"
-    #         f"<img src='{self.icon_paths['invalid']}' width='14' height='14' style='vertical-align: middle;'/>"
-    #         f"<span style='color:#ccc;'>Invalid: {stats['invalid']}</span>&nbsp;&nbsp;&nbsp;"
-    #         f"<img src='{self.icon_paths['duplicate']}' width='14' height='14'/ style='vertical-align: middle;'>"
-    #         f"<span style='color:#ccc;'>Duplicates: {stats['duplicate']}</span>"
-    #     )
-    #     self.status_label.setText(status_msg)
 
     def update_preview_tables_from_pairs(self, name_pairs: list[tuple[str, str]]) -> None:
         self.preview_old_name_table.setRowCount(0)
@@ -1375,6 +1290,12 @@ class MainWindow(QMainWindow):
         for path in metadata_dict:
             self.metadata_loaded_paths.add(path)
 
+        # Notify UI that metadata has changed
+        self.model.dataChanged.emit(
+            self.model.index(0, 0),
+            self.model.index(len(self.model.files) - 1, 0),
+            [Qt.UserRole]
+)
     def _restore_cursor(self) -> None:
         """
         Restores the cursor to its default appearance.
@@ -1484,7 +1405,7 @@ class MainWindow(QMainWindow):
         # 4. Notify user
         CustomMessageDialog.show_warning(self, "Metadata Error", f"Failed to read metadata:\n\n{message}")
 
-    def closeEvent(self, event):
+    def closeEvent(self, event) -> None:
         """
         Called when the main window is about to close.
 
@@ -1586,7 +1507,7 @@ class MainWindow(QMainWindow):
             self.metadata_tree_view.collapseAll()
             self.toggle_expand_button.setText("Expand All")
 
-    def clear_file_table(self, message: str = "No folder selected"):
+    def clear_file_table(self, message: str = "No folder selected") -> None:
         """
         Clears the file table and shows a placeholder message.
         """
@@ -1597,15 +1518,7 @@ class MainWindow(QMainWindow):
 
         self.update_files_label()
 
-    def set_files(self, files: list[FileItem]) -> None:
-        """
-        Replaces the file list and refreshes the table.
-        """
-        self.beginResetModel()
-        self.files = files
-        self.endResetModel()
-
-    def show_file_table_placeholder(self, message: str = "No files loaded"):
+    def show_file_table_placeholder(self, message: str = "No files loaded") -> None:
         """
         Displays a placeholder row in the file table with a message.
         """
@@ -1632,7 +1545,7 @@ class MainWindow(QMainWindow):
         placeholder_model.appendRow(row)
         self.file_table_view.setModel(placeholder_model)
 
-    def show_empty_metadata_tree(self, message: str = "No file selected"):
+    def show_empty_metadata_tree(self, message: str = "No file selected") -> None:
         """
         Displays a placeholder message in the metadata tree view.
         """
@@ -1656,7 +1569,7 @@ class MainWindow(QMainWindow):
         self.toggle_expand_button.setChecked(False)
         self.toggle_expand_button.setText("Expand All")
 
-    def clear_metadata_view(self):
+    def clear_metadata_view(self) -> None:
         """
         Clears the metadata tree view and shows a placeholder message.
         """
@@ -1695,31 +1608,15 @@ class MainWindow(QMainWindow):
         # Trigger signal to refresh preview
         self.updated.emit(self)
 
-    def handle_table_context_menu(self, position):
+    def handle_table_context_menu(self, position) -> None:
         """
-        Handles the right-click context menu event for the file table.
-
-        Context:
-        - If the user right-clicks on a valid row, the menu includes:
-            - "Load metadata for '<filename>'" (with tooltip for full name)
-            - "Load metadata for selected files"
-            - "Load metadata for all files"
-            - "✔️ Check selected", "✖️ Uncheck selected", "🔁 Invert selected"
-        - If the user right-clicks on empty space or outside a row:
-            - Only actions for selected/all files and check/uncheck are shown.
-
-        Behavior:
-        - Metadata loading uses self.load_metadata_for_files(...)
-        - Check/uncheck actions sync the checked state of FileItem
-
-        Parameters:
-            position (QPoint): The position within the table where the right-click occurred.
+        Handles the right-click context menu for the file table.
+        Only shows actions relevant to metadata and selection logic.
         """
         index = self.file_table_view.indexAt(position)
         menu = QMenu(self)
 
         file_item = None
-        action_one = None
 
         if not self.model.files:
             action_none = menu.addAction("No files available")
@@ -1733,84 +1630,103 @@ class MainWindow(QMainWindow):
             action_one = menu.addAction(f"Load metadata for '{short_name}'")
             action_one.setToolTip(f"<b>Full name:</b><br>{file_item.filename}")
             menu.addSeparator()
+        else:
+            action_one = None
 
         action_selected = menu.addAction("Load metadata for selected files")
         action_all = menu.addAction("Load metadata for all files")
-
-        # Check/Uncheck/Invert logic
         menu.addSeparator()
-        action_check = menu.addAction("✔️ Check selected")
-        action_uncheck = menu.addAction("✖️ Uncheck selected")
-        action_invert = menu.addAction("🔁 Invert selected")
 
-        action_force_reload = menu.addAction("🔁 Reload folder")
-        action_force_reload.triggered.connect(lambda: self.load_files_from_folder(self.current_folder_path, skip_metadata=False))
+        action_invert = menu.addAction("🔁 Invert selection (Ctrl+I)")
+        action_force_reload = menu.addAction("🔁 Reload folder (Ctrl+R)")
 
-        # Get selection
-        selection_model = self.file_table_view.selectionModel()
-        has_selection = selection_model.hasSelection()
-
-        # Disable if nothing selected
-        if not has_selection:
-            action_check.setEnabled(False)
-            action_uncheck.setEnabled(False)
-            action_invert.setEnabled(False)
-
+        # Execute menu
         action = menu.exec_(self.file_table_view.viewport().mapToGlobal(position))
 
         if action == action_one and file_item:
             self.load_metadata_for_files([file_item])
-
         elif action == action_selected:
-            selected = [f for f in self.model.files if f.checked]
+            selected_indexes = self.file_table_view.selectionModel().selectedRows()
+            selected = [self.model.files[i.row()] for i in selected_indexes if 0 <= i.row() < len(self.model.files)]
             self.load_metadata_for_files(selected)
-
         elif action == action_all:
             self.load_metadata_for_files(self.model.files)
-
-        elif action == action_check:
-            selected_indexes = self.file_table_view.selectionModel().selectedRows()
-            for idx in selected_indexes:
-                if 0 <= idx.row() < len(self.model.files):
-                    self.model.files[idx.row()].checked = True
-            self.after_check_change()
-
-        elif action == action_uncheck:
-            selected_indexes = self.file_table_view.selectionModel().selectedRows()
-            for idx in selected_indexes:
-                if 0 <= idx.row() < len(self.model.files):
-                    self.model.files[idx.row()].checked = False
-            self.after_check_change()
-
         elif action == action_invert:
-            selected_indexes = self.file_table_view.selectionModel().selectedRows()
-            for idx in selected_indexes:
-                if 0 <= idx.row() < len(self.model.files):
-                    file = self.model.files[idx.row()]
-                    file.checked = not file.checked
-            self.after_check_change()
+            self.invert_selection()
+        elif action == action_force_reload:
+            self.load_files_from_folder(self.current_folder_path, skip_metadata=False)
 
-    def after_check_change(self):
+    def after_check_change(self) -> None:
+        """
+        Called after the checked state of any file is modified.
+
+        Triggers UI refresh for the file table, updates the header state and label,
+        and regenerates the filename preview.
+        """
         self.file_table_view.viewport().update()
         self.header.update_state(self.model.files)
         self.update_files_label()
         self.generate_preview_names()
 
-    def sync_selection_to_checked(self, selected, deselected):
-        for index in selected.indexes():
-            if index.column() == 1:  # filename column
-                row = index.row()
-                if 0 <= row < len(self.model.files):
-                    self.model.files[row].checked = True
+    def sync_selection_to_checked(self, selected: QItemSelection, deselected: QItemSelection) -> None:
+        """
+        Syncs visual row selection with the internal .checked state,
+        and updates preview if selection changed.
+        """
+        selection_model = self.file_table_view.selectionModel()
+        selected_rows = set(idx.row() for idx in selection_model.selectedRows())
+        changed = False
 
-        for index in deselected.indexes():
-            if index.column() == 1:
-                row = index.row()
-                if 0 <= row < len(self.model.files):
-                    self.model.files[row].checked = False
+        for row, file in enumerate(self.model.files):
+            is_selected = row in selected_rows
+            if file.checked != is_selected:
+                file.checked = is_selected
+                changed = True
 
-        self.file_table_view.viewport().update()
-        self.header.update_state(self.model.files)
-        self.update_files_label()
-        self.generate_preview_names()
+        if changed:
+            self.file_table_view.viewport().update()
+            self.header.update_state(self.model.files)
+            self.update_files_label()
+            self.generate_preview_names()
+
+    def handle_file_double_click(self, index: QModelIndex) -> None:
+        """
+        Loads metadata for the file (even if already loaded), on double-click.
+        """
+        row = index.row()
+        if 0 <= row < len(self.model.files):
+            file = self.model.files[row]
+            logger.info(f"[DoubleClick] Requested metadata reload for: {file.filename}")
+            self.load_metadata_for_files([file], force=True)
+
+    def handle_dropped_files(self, paths: list[str]) -> None:
+        """
+        Called when user drops files onto metadata tree.
+        Maps filenames to FileItem objects and triggers forced metadata loading.
+        """
+        file_items = []
+        for path in paths:
+            filename = os.path.basename(path)
+            file = next((f for f in self.model.files if f.filename == filename), None)
+            if file:
+                file_items.append(file)
+
+        if not file_items:
+            logger.info("[Drop] No matching files found in table.")
+            return
+
+        if len(file_items) > LARGE_FOLDER_WARNING_THRESHOLD:
+            if not CustomMessageDialog.question(
+                self,
+                "Load metadata",
+                f"Load metadata for {len(file_items)} files?",
+                yes_text="Yes",
+                no_text="Cancel"
+            ):
+                logger.info(f"[Drop] User cancelled metadata loading for {len(file_items)} files.")
+                return
+
+        logger.info(f"[Drop] Triggering metadata load for {len(file_items)} file(s)...")
+        self.load_metadata_for_files(file_items, force=True)
+
 

@@ -1,0 +1,40 @@
+QWidget {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+}
+
+QMainWindow {
+    background-color: #1e1e1e;
+}
+
+QDialog, QFrame, QSplitter {
+    background-color: #1e1e1e;
+}
+
+QScrollBar:vertical {
+    border: none;
+    background: #2c2c2c;
+    width: 12px;
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: #555;
+    min-height: 20px;
+}
+
+QScrollBar:horizontal {
+    border: none;
+    background: #2c2c2c;
+    height: 12px;
+    margin: 0px;
+}
+
+QScrollBar::handle:horizontal {
+    background: #555;
+    min-width: 20px;
+}
+
+QSplitter::handle {
+    background-color: #444;
+}

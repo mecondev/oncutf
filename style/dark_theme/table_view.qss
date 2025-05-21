@@ -1,0 +1,34 @@
+QTableView {
+    selection-background-color: #4a90e2;
+    selection-color: white;
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+    gridline-color: #444;
+    alternate-background-color: #2a2a2a;
+    show-grid: false;
+    border: none;
+}
+
+QTableView::item {
+    border: none;
+}
+
+QTableView::item:hover {
+    background-color: #2e3b4e;
+}
+
+QTableView::item:selected {
+    background-color: #4a90e2;
+    color: white;
+}
+
+QHeaderView::section {
+    background-color: #2c2c2c;
+    color: white;
+    padding: 4px;
+    border: 1px solid #444;
+}
+
+QHeaderView::section:hover {
+    background-color: #3e3e3e;
+}
