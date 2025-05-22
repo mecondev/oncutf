@@ -1,38 +1,29 @@
+/* =============================
+   QPushButton Styling (Dark Theme)
+   Compatible with PyQt5
+   ============================= */
+
 QPushButton {
-    background-color: #2d2d30;
-    border: 1px solid #444444;
-    padding: 6px 12px;
-    border-radius: 4px;
+    background-color: #2d2d30;        /* Dark grey background */
+    border: 1px solid #444444;        /* Thin border */
+    padding: 6px 12px;                /* Padding for click area */
+    border-radius: 4px;               /* Rounded corners */
+    color: #dddddd;                   /* Light text color */
 }
 
+/* Hover state */
 QPushButton:hover {
-    background-color: #3c3c3f;
+    background-color: #3c78d8;        /* Blue-ish hover */
 }
 
+/* Pressed (active click) state */
 QPushButton:pressed {
-    background-color: #505052;
+    background-color: #005999;        /* Darker blue for pressed state */
 }
 
+/* Disabled buttons */
 QPushButton:disabled {
     background-color: #2a2a2a;
     color: #555555;
     border: 1px solid #333333;
-}
-
-QPushButton Hover === */
-QPushButton:hover {
-    background-color: #3c78d8;
-}
-
-QPushButton:pressed {
-    background-color: #005999;
-}
-
-QPushButton Hover & Press === */
-QPushButton:hover {
-    background-color: #5fa8d3;
-}
-
-QPushButton:pressed {
-    background-color: #005999;
 }

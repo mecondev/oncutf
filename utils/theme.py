@@ -13,6 +13,10 @@ Date: 2025-05-21
 import os
 from config import THEME_NAME
 
+# Initialize Logger
+from utils.logger_helper import get_logger
+logger = get_logger(__name__)
+
 def load_stylesheet() -> str:
     """
     Loads the stylesheet based on THEME_NAME defined in config.py.
@@ -20,11 +24,11 @@ def load_stylesheet() -> str:
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "style", f"{THEME_NAME}_theme"))
     qss_files = [
         "base.qss",
-        "table_view.qss",
-        "tree_view.qss",
-        "combo_box.qss",
         "buttons.qss",
-        "scrollbars.qss"
+        #"combo_box.qss",
+        "scrollbars.qss",
+        "table_view.qss",
+        "tree_view.qss"
     ]
 
     full_style = ""
@@ -32,6 +36,10 @@ def load_stylesheet() -> str:
         path = os.path.join(base_dir, filename)
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as f:
-                full_style += f.read() + "\n"
+                qss = f.read()
+                full_style += qss + "\n"
+                logger.debug(f"[DEBUG] Loaded {filename} ({len(qss)} characters)")
+        else:
+            logger.warning(f"[WARNING] QSS file not found: {filename}")
 
     return full_style

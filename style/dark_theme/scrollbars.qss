@@ -1,68 +1,62 @@
+/* =============================
+   QScrollBar Styling (Dark Theme)
+   Compatible with PyQt5
+   ============================= */
+
+/* Common background for both vertical and horizontal scrollbars */
 QScrollBar:vertical, QScrollBar:horizontal {
-    background: #2d2d2d;
-    margin: 1px;
+    background: #1e1e1e;   /* Dark grey background */
+    border: none;          /* No border to keep it clean */
+    margin: 0px;           /* Remove outer margin */
 }
 
+/* === Scrollbar Handle (Thumb) === */
+/* The draggable part of the scrollbar */
 QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
-    background: #555555;
-    border-radius: 6px;
-    min-height: 20px;
-    min-width: 20px;
+    background: #007acc;   /* Bright blue color (like Adobe / VS Code) */
+    border-radius: 6px;    /* Rounded corners for modern look */
+    min-height: 20px;      /* Minimum height for vertical handle */
+    min-width: 20px;       /* Minimum width for horizontal handle */
 }
 
-QScrollBar::sub-line, QScrollBar::add-line {
-    background:none;
+/* === Hover effect for scrollbar handle === */
+QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
+    background: #5fa8d3;   /* Lighter blue on hover */
+}
+
+/* === Remove scrollbar arrows (step buttons) === */
+/* These are the buttons at the ends of scrollbars — we hide them */
+QScrollBar::sub-line,
+QScrollBar::add-line,
+QScrollBar::sub-line:vertical,
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:horizontal,
+QScrollBar::add-line:horizontal {
+    background: none;
     border: none;
     width: 0px;
     height: 0px;
 }
 
-QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
-QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+/* === Remove page step background === */
+/* This disables styling for the blank space before/after the handle */
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical,
+QScrollBar::add-page:horizontal,
+QScrollBar::sub-page:horizontal {
     background: none;
 }
 
-QScrollBar === */
+/* === Specific settings for vertical scrollbars === */
 QScrollBar:vertical {
-    border: none;
-    background: #121212;
-    width: 10px;
-    margin: 0px 0px 0px 0px;
+    width: 10px;           /* Thickness of vertical scrollbar */
+    background: #1e1e1e;
+    margin: 0px;
 }
 
-QScrollBar::handle:vertical {
-    background: #007acc;
-    min-height: 20px;
-    border-radius: 5px;
-}
-
-QScrollBar::handle:vertical:hover {
-    background: #5fa8d3;
-}
-
-QScrollBar::add-line:vertical,
-QScrollBar::sub-line:vertical {
-    height: 0px;
-}
-
+/* === Specific settings for horizontal scrollbars === */
 QScrollBar:horizontal {
-    border: none;
-    background: #121212;
-    height: 10px;
-    margin: 0px 0px 0px 0px;
-}
-
-QScrollBar::handle:horizontal {
-    background: #007acc;
-    min-width: 20px;
-    border-radius: 5px;
-}
-
-QScrollBar::handle:horizontal:hover {
-    background: #5fa8d3;
-}
-
-QScrollBar::add-line:horizontal,
-QScrollBar::sub-line:horizontal {
-    width: 0px;
+    height: 10px;          /* Thickness of horizontal scrollbar */
+    background: #1e1e1e;
+    margin: 0px;
 }

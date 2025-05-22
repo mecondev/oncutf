@@ -15,7 +15,10 @@ Date: 2025-05-01
 """
 
 from typing import Optional
-from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QVariant, pyqtSignal
+from PyQt5.QtCore import (
+    Qt, QAbstractTableModel, QModelIndex, QVariant, pyqtSignal,
+    QItemSelection, QItemSelectionRange, QItemSelectionModel
+)
 from PyQt5.QtGui import QColor
 from models.file_item import FileItem
 
@@ -70,10 +73,23 @@ class FileTableModel(QAbstractTableModel):
 
         if role == Qt.BackgroundRole:
             file = self.files[index.row()]
-            if file.full_path in self.parent_window.metadata_loaded_paths:
-                return QColor("#112233")  # or 1f3a57
+
+            # Future extension: status-based row coloring
+            status = getattr(file, "status", None)  # Optional attribute
+
+            if status == "conflict":
+                return QColor("#662222")
+            elif status == "duplicate":
+                return QColor("#444400")
+            elif status == "valid":
+                return QColor("#223344")
+
+            # Default: respect QSS alternating background
+            return QVariant()
 
         if role == Qt.DisplayRole:
+            if col == 0:
+                return " "
             if col == 1:
                 return file.filename
             elif col == 2:
@@ -99,8 +115,8 @@ class FileTableModel(QAbstractTableModel):
 
         elif role == Qt.TextAlignmentRole:
             if col == 0:
-                return Qt.AlignCenter
-            return Qt.AlignLeft
+                return Qt.AligVCenter | Qt.AlignCenter
+            return Qt.AlignVCenter | Qt.AlignLeft
 
         return QVariant()
 
@@ -156,23 +172,42 @@ class FileTableModel(QAbstractTableModel):
 
     def sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None:
         """
-        Sorts the file list by the specified column.
-        Also triggers preview update.
+        Sorts the file list by the specified column and re-selects previously
+        selected FileItems to preserve selection across sorting.
         """
         if not self.files:
             return
+
+        # --- Preserve selection by object reference ---
+        selection_model = self.parent_window.file_table_view.selectionModel()
+        selected_items = [self.files[i.row()] for i in selection_model.selectedRows()]
 
         reverse = (order == Qt.DescendingOrder)
 
         if column == 1:
             self.files.sort(key=lambda f: f.filename.lower(), reverse=reverse)
         elif column == 2:
-            self.files.sort(key=lambda f: f.filetype.lower(), reverse=reverse)
+            self.files.sort(key=lambda f: f.extension.lower(), reverse=reverse)
         elif column == 3:
-            self.files.sort(key=lambda f: f.date, reverse=reverse)
+            self.files.sort(key=lambda f: f.modified, reverse=reverse)
 
         self.layoutChanged.emit()
-        self.sort_changed.emit()  # Let the MainWindow refresh preview
+        self.sort_changed.emit()
+
+        # --- Restore selection after sort ---
+        selection_model.clearSelection()
+        selection = QItemSelection()
+
+        for row, file in enumerate(self.files):
+            if file in selected_items:
+                top_left = self.index(row, 0)
+                bottom_right = self.index(row, self.columnCount() - 1)
+                selection_range = QItemSelectionRange(top_left, bottom_right)
+                selection.append(selection_range)
+
+        selection_model.select(selection, QItemSelectionModel.Select)
+
+        self.parent_window.check_selection_and_show_metadata()
 
     def clear(self):
         """

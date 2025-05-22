@@ -1,27 +1,35 @@
+/* =============================
+   QTableView Styling (Dark Theme)
+   ============================= */
+
 QTableView {
-    selection-background-color: #4a90e2;
-    selection-color: white;
     background-color: #1e1e1e;
     color: #e0e0e0;
-    gridline-color: #444;
     alternate-background-color: #2a2a2a;
-    show-grid: false;
+    gridline-color: #444;
     border: none;
+    selection-background-color: #4a90e2;
+    selection-color: white;
 }
 
 QTableView::item {
     border: none;
+    background-color: transparent; /* base row background */
+    padding: 2px 4px;
 }
 
+/* Hover effect per cell (styled to simulate full row visually) */
 QTableView::item:hover {
     background-color: #2e3b4e;
 }
 
+/* Selected cell (uses selection-background-color) */
 QTableView::item:selected {
     background-color: #4a90e2;
     color: white;
 }
 
+/* Header styling */
 QHeaderView::section {
     background-color: #2c2c2c;
     color: white;
