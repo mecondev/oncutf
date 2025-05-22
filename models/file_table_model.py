@@ -107,8 +107,10 @@ class FileTableModel(QAbstractTableModel):
         if index.column() == 0 and role == Qt.UserRole:
             file = self.files[index.row()]
             if isinstance(file.metadata, dict) and file.metadata:
+                if file.metadata.get("__extended__") is True:
+                    return 'extended'
                 return 'loaded'
-            return None
+            return 'missing'
 
         elif role == Qt.CheckStateRole and col == 0:
             return  QVariant()

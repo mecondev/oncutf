@@ -80,13 +80,15 @@ class MetadataIconDelegate(QStyledItemDelegate):
         if event.type() == QEvent.ToolTip:
             status = index.data(Qt.UserRole)
             if status == 'loaded':
-                QToolTip.showText(event.globalPos(), "Metadata loaded (full)")
+                QToolTip.showText(event.globalPos(), "Metadata loaded")
             elif status == 'partial':
                 QToolTip.showText(event.globalPos(), "Partial metadata available")
             elif status == 'missing':
                 QToolTip.showText(event.globalPos(), "No metadata found")
             elif status == 'invalid':
                 QToolTip.showText(event.globalPos(), "Invalid file or corrupted metadata")
+            elif status == 'extended':
+                QToolTip.showText(event.globalPos(), "Extended Metadata Loaded")
             else:
                 QToolTip.showText(event.globalPos(), "Unknown metadata status")
             return True

@@ -21,7 +21,7 @@ import os
 import traceback
 from typing import Optional
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
-from utils.metadata_reader import MetadataReader
+from utils.metadata_loader import MetadataLoader
 from utils.metadata_cache import MetadataCache
 
 # Initialize Logger
@@ -34,13 +34,14 @@ class MetadataWorker(QObject):
     finished = pyqtSignal(dict)
     progress = pyqtSignal(int, int)
 
-    def __init__(self, *, reader: MetadataReader, metadata_cache: MetadataCache, parent: Optional[QObject] = None):
+    def __init__(self, *, reader: MetadataLoader, metadata_cache: MetadataCache, parent: Optional[QObject] = None):
         super().__init__(parent)
         logger.warning("[DEBUG] MetadataWorker __init__ CALLED")
         self.reader = reader
         self.file_path = []
         self.metadata_cache = metadata_cache
         self._cancelled = False
+        self.use_extended = False
 
     def load_batch(self, file_path) -> None:
         logger.warning(f"[DEBUG] load_batch() CALLED with {len(file_path)} files")
@@ -56,7 +57,7 @@ class MetadataWorker(QObject):
 
         for index, path in enumerate(self.file_path):
             try:
-                metadata = self.reader.read_metadata(path)
+                metadata = self.reader.read_metadata(path, use_extended=self.use_extended)
                 filename = os.path.basename(path)
 
                 if isinstance(metadata, dict) and metadata:

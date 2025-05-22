@@ -37,7 +37,6 @@ from utils.preview_generator import generate_preview_names as generate_preview_l
 from utils.icons import create_colored_icon
 from utils.icon_cache import prepare_status_icons
 from utils.preview_engine import apply_rename_modules
-from utils.metadata_reader import MetadataReader
 from utils.build_metadata_tree_model import build_metadata_tree_model
 from utils.metadata_cache import MetadataCache
 from utils.metadata_utils import resolve_skip_metadata
@@ -73,7 +72,7 @@ class MainWindow(QMainWindow):
         self._metadata_worker_cancel_requested = False
         self.metadata_loaded_paths = set()  # full paths with metadata
         self.metadata_icon_map = load_metadata_icons()
-        self.metadata_reader = MetadataReader()
+        self.force_extended_metadata = False
         self.skip_metadata_mode = DEFAULT_SKIP_METADATA # Keeps state across folder reloads
         self.metadata_loader = MetadataLoader(self)
 
@@ -427,6 +426,7 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+I"), self, activated=self.invert_selection)
         QShortcut(QKeySequence("Ctrl+O"), self, activated=self.handle_browse)
         QShortcut(QKeySequence("Ctrl+M"), self, activated=self.shortcut_load_metadata)
+        QShortcut(QKeySequence("Ctrl+E"), self, activated=self.shortcut_load_extended_metadata)
 
     def force_reload(self) -> None:
         """
@@ -791,7 +791,10 @@ class MainWindow(QMainWindow):
 
         logger.info(f"Loading files from folder: {folder_path} (skip_metadata={skip_metadata})")
 
-        if not (skip_metadata and self.last_action == "rename"):
+        # Only skip clearing metadata cache immediately after rename action,
+        # and only if metadata scan is explicitly skipped (default fast path).
+        # In all other cases, always clear cache to reflect current OS state.
+        if not (self.last_action == "rename" and skip_metadata):
             self.metadata_cache.clear()
 
         self.current_folder_path = folder_path
@@ -850,10 +853,12 @@ class MainWindow(QMainWindow):
 
         self.metadata_thread = QThread(self)
         self.metadata_worker = MetadataWorker(
-            reader=self.metadata_reader,
+            reader=self.metadata_loader,
             metadata_cache=self.metadata_cache,
             parent=None  # must be None to avoid parent thread interference
         )
+        self.metadata_worker.use_extended = self.force_extended_metadata  # ✨
+
         logger.warning(f"[DEBUG] MetadataWorker CREATED → {self.metadata_worker}")
         self.metadata_worker.moveToThread(self.metadata_thread)
 
@@ -873,6 +878,8 @@ class MainWindow(QMainWindow):
         ))
 
         logger.info(f"Starting metadata analysis for {len(file_paths)} files")
+        self.metadata_worker.use_extended = self.force_extended_metadata
+
         self.metadata_thread.start()
 
     def start_metadata_scan_for_items(self, items: list[FileItem]) -> None:
@@ -898,6 +905,16 @@ class MainWindow(QMainWindow):
         selected_indexes = self.file_table_view.selectionModel().selectedRows()
         selected = [self.model.files[i.row()] for i in selected_indexes if 0 <= i.row() < len(self.model.files)]
         self.metadata_loader.load(selected, force=False)
+
+    def shortcut_load_extended_metadata(self) -> None:
+        selected_indexes = self.file_table_view.selectionModel().selectedRows()
+        selected = [self.model.files[i.row()] for i in selected_indexes if 0 <= i.row() < len(self.model.files)]
+
+        if selected:
+            self.force_extended_metadata = True
+            self.start_metadata_scan_for_items(selected)  # ✅ thread-aware
+        else:
+            self.set_status("No files selected.", color="gray", auto_reset=True)
 
     def display_metadata(self, metadata: dict) -> None:
         """
@@ -1371,6 +1388,14 @@ class MainWindow(QMainWindow):
                 except ValueError:
                     continue
 
+        # Mark extended metadata visually
+        for path in metadata_dict:
+            file = self.find_fileitem_by_path(path)
+            if file:
+                if any("Track" in key or "Frame" in key for key in metadata_dict[path].keys()):
+                    file.metadata["__extended__"] = True
+        self.force_extended_metadata = False  # reset after scan is complete
+
         # Show metadata of current or last file
         index = self.file_table_view.currentIndex()
         file_item = None
@@ -1512,17 +1537,6 @@ class MainWindow(QMainWindow):
 
         # 4. Notify user
         CustomMessageDialog.show_warning(self, "Metadata Error", f"Failed to read metadata:\n\n{message}")
-
-    def closeEvent(self, event) -> None:
-        """
-        Called when the main window is about to close.
-
-        Ensures any background metadata threads are cleaned up
-        properly before the application exits.
-        """
-        logger.info("Main window closing. Cleaning up metadata worker.")
-        self.cleanup_metadata_worker()
-        super().closeEvent(event)
 
     def is_running_metadata_task(self) -> bool:
         """
@@ -1755,9 +1769,8 @@ class MainWindow(QMainWindow):
         # Determine if click is on a file row or not
         if index.isValid() and 0 <= index.row() < len(self.model.files):
             file_item = self.model.files[index.row()]
-            short_name = elide_text(file_item.filename, MAX_LABEL_LENGTH)
-            action_one = menu.addAction(f"Load metadata for '{short_name}'")
-            action_one.setToolTip(f"<b>Full name:</b><br>{file_item.filename}")
+            action_extended = menu.addAction("Load extended metadata for selected files")
+            action_extended.setToolTip(f"<b>Full name:</b><br>{file_item.filename}")
             menu.addSeparator()
         else:
             action_one = None
@@ -1771,10 +1784,7 @@ class MainWindow(QMainWindow):
 
         action = menu.exec_(self.file_table_view.viewport().mapToGlobal(position))
 
-        if action == action_one and file_item:
-            self.metadata_loader.load([file_item], force=False)
-
-        elif action == action_selected:
+        if action == action_selected:
             selected_indexes = self.file_table_view.selectionModel().selectedRows()
             selected = [self.model.files[i.row()] for i in selected_indexes if 0 <= i.row() < len(self.model.files)]
 
@@ -1789,6 +1799,13 @@ class MainWindow(QMainWindow):
 
         elif action == action_force_reload:
             self.force_reload()
+
+        elif action == action_extended:
+            selected_indexes = self.file_table_view.selectionModel().selectedRows()
+            selected = [self.model.files[i.row()] for i in selected_indexes if 0 <= i.row() < len(self.model.files)]
+            if selected:
+                self.force_extended_metadata = True
+                self.start_metadata_scan_for_items(selected)
 
     def handle_file_double_click(self, index: QModelIndex) -> None:
         """
@@ -1841,5 +1858,18 @@ class MainWindow(QMainWindow):
             if isinstance(metadata, dict):
                 self.display_metadata(metadata)
 
+    def closeEvent(self, event) -> None:
+        """
+        Called when the main window is about to close.
 
+        Ensures any background metadata threads are cleaned up
+        properly before the application exits.
+        """
+        logger.info("Main window closing. Cleaning up metadata worker.")
+        self.cleanup_metadata_worker()
+
+        if hasattr(self.metadata_loader, "close"):
+            self.metadata_loader.close()  # ✨ new line
+
+        super().closeEvent(event)
 
