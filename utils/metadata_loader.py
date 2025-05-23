@@ -56,27 +56,62 @@ class MetadataLoader:
         self._lock = threading.Lock()
         self.exiftool = ExifToolWrapper()
 
-    def load(self, files: list[FileItem], force: bool = False, use_extended: bool = False, cache: Optional[MetadataCache] = None) -> None:
+    def load(
+        self,
+        files: list[FileItem],
+        force: bool = False,
+        use_extended: bool = False,
+        cache: Optional[MetadataCache] = None
+    ) -> None:
         """
         Loads metadata for a list of FileItems and updates their .metadata attribute.
 
+        Smart loading rules:
+        - If metadata is already extended, skip.
+        - If metadata is fast and user requests extended, reload.
+        - If metadata is fast and user requests fast:
+            - Skip if force=False
+            - Reload if force=True
+        - If no metadata exists, always load.
+
         Args:
-            files (list[FileItem]): List of FileItem objects.
-            force (bool): If True, reload even if cached.
-            use_extended (bool): If True, use `-ee` for deep metadata.
-            cache (MetadataCache): Optional metadata cache to update.
+            files (list[FileItem]): Files to process.
+            force (bool): If True, always reload unless already extended.
+            use_extended (bool): If True, request extended metadata via `-ee`.
+            cache (MetadataCache): Optional cache to update with loaded results.
         """
+        updated_count = 0
+
         for file in files:
-            if not force and file.metadata:
+            already_has_metadata = bool(file.metadata)
+            already_extended = file.metadata.get("__extended__") if already_has_metadata else False
+
+            if use_extended and already_extended:
+                logger.debug(f"[MetadataLoader] Skipping (already extended): {file.filename}")
                 continue
 
+            if not use_extended and already_has_metadata and not force:
+                logger.debug(f"[MetadataLoader] Skipping (already fast): {file.filename}")
+                continue
+
+            # Load metadata now (upgrade or forced or new)
             data = self.read(file.full_path, use_extended=use_extended)
             file.metadata = data
+
+            # Ensure flag is preserved in file object
+            if use_extended and isinstance(file.metadata, dict):
+                file.metadata["__extended__"] = True
+
+            updated_count += 1
 
             if cache is not None:
                 cache.set(file.full_path, data)
 
-        logger.info(f"[MetadataLoader] Loaded metadata for {len(files)} file(s), extended={use_extended}, force={force}")
+            logger.debug(f"[MetadataLoader] Metadata loaded for: {file.filename} | extended={use_extended}")
+
+        logger.info(
+            f"[MetadataLoader] Loaded metadata for {updated_count} out of {len(files)} file(s), extended={use_extended}, force={force}"
+        )
 
     def read_metadata(
         self,
@@ -97,7 +132,12 @@ class MetadataLoader:
         """
         if use_extended:
             logger.warning(f"[Reader] Extended metadata requested for: {filepath}")
-            return self._get_metadata_extended(filepath, timeout)
+
+            result = self.exiftool.get_metadata(filepath, use_extended=True)
+            if result is not None and isinstance(result, dict):
+                result["__extended__"] = True
+
+            return result
 
         logger.debug(f"[Reader] Fast metadata read for: {filepath}")
         return self.exiftool.get_metadata(filepath)
@@ -141,55 +181,3 @@ class MetadataLoader:
         if self.exiftool:
             self.exiftool.close()
             logger.info("[MetadataReader] ExifToolWrapper closed.")
-
-    def _get_metadata_extended(self, filepath: str, timeout: int = 10) -> Optional[Dict[str, str]]:
-        """
-        Performs an extended metadata scan using `exiftool -ee -j`.
-
-        Args:
-            filepath (str): Full file path.
-            timeout (int): Timeout for the process.
-
-        Returns:
-            dict or None: Metadata dictionary or None on failure.
-        """
-        self._cancel_requested.clear()
-        result: Dict[str, str] = {}
-
-        try:
-            logger.warning(f"[Reader] SUBPROCESS -ee START for: {filepath}")
-            proc = subprocess.Popen(
-                [self.exiftool_path, "-j", "-ee", filepath],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                text=True
-            )
-
-            with self._lock:
-                self._active_proc = proc
-
-            start_time = time.time()
-            while proc.poll() is None:
-                if self._cancel_requested.is_set():
-                    proc.terminate()
-                    logger.warning("[Reader] Cancelled during -ee scan.")
-                    return {}
-                if time.time() - start_time > timeout:
-                    proc.terminate()
-                    logger.warning("[Reader] Timeout during -ee, terminated.")
-                    break
-                time.sleep(0.1)
-
-            output, _ = proc.communicate(timeout=2)
-            data = json.loads(output)
-            if data:
-                result.update(data[0])
-                logger.warning(f"[Reader] -ee scan completed for: {filepath}")
-
-        except Exception as e:
-            logger.warning(f"[Reader] Extended metadata read failed: {e}")
-        finally:
-            with self._lock:
-                self._active_proc = None
-
-        return result if result else None

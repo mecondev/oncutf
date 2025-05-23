@@ -141,6 +141,9 @@ class ExifToolWrapper:
                         result_dict[new_key] = value
                 logger.debug(f"[ExtendedReader] Merged {len(data) - 1} embedded segments into result.")
 
+            result_dict["__extended__"] = True
+            logger.debug(f"[ExtendedReader] Marked as extended: {file_path}")
+
             return result_dict
 
         except Exception as e:
