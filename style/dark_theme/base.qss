@@ -19,7 +19,7 @@ QScrollBar:vertical {
 }
 
 QScrollBar::handle:vertical {
-    background: #555;
+    background: #555555;
     min-height: 20px;
 }
 
@@ -31,10 +31,10 @@ QScrollBar:horizontal {
 }
 
 QScrollBar::handle:horizontal {
-    background: #555;
+    background: #555555;
     min-width: 20px;
 }
 
 QSplitter::handle {
-    background-color: #444;
+    background-color: #444444;
 }

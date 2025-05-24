@@ -1,3 +1,28 @@
+"""
+Module: compact_waiting_widget.py
+
+Author: Michael Economou
+Date: 2025-05-24
+
+This module defines the CompactWaitingWidget class, a minimal visual component
+used to display a lightweight waiting UI with a label and a horizontal progress bar.
+It is designed to be embedded within modal dialogs such as metadata loading popups.
+
+Features:
+- Static or dynamic message display.
+- Progress bar with optional chunk color override.
+- Compact vertical layout suitable for tight dialog space.
+
+Typical Usage:
+    widget = CompactWaitingWidget(parent=some_dialog, bar_color="#f5a623")
+    widget.setMessage("Reading extended metadata...")
+    widget.updateProgress(current=3, total=10)
+
+This widget is used in the Batch File Renamer GUI application within the
+MetadataWaitingDialog to indicate progress during metadata loading (basic or extended).
+"""
+
+from typing import Optional
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QProgressBar, QSizePolicy, QHBoxLayout
 from PyQt5.QtCore import Qt
 
@@ -13,7 +38,7 @@ class CompactWaitingWidget(QWidget):
     - Third row: right-aligned percentage, left-aligned file name (with word wrap)
     """
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, bar_color: Optional[str] = None):
         super().__init__(parent)
 
         self.setFixedWidth(250)
@@ -23,14 +48,32 @@ class CompactWaitingWidget(QWidget):
         layout.setSpacing(6)
 
         # First row: status label
-        self.status_label = QLabel("Reading metadata", self)
-        self.status_label.setAlignment(Qt.AlignLeft)
-        layout.addWidget(self.status_label)
+        status_row = QHBoxLayout()
+        status_row.setContentsMargins(0, 0, 0, 0)
+
+        self.status_label = QLabel("Reading metadata...", self)
+        self.status_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+
+        self.count_label = QLabel("", self)
+        self.count_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.count_label.setFixedWidth(60)  # enough for "1234/1234"
+
+        status_row.addWidget(self.status_label)
+        status_row.addWidget(self.count_label)
+
+        layout.addLayout(status_row)
 
         # Second row: progress bar
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setTextVisible(False)  # Hide percentage inside bar
         self.progress_bar.setFixedHeight(10)
+
+        # Apply optional color override for extended metadata scans
+        if bar_color:
+            self.progress_bar.setStyleSheet(
+                f"QProgressBar::chunk {{ background-color: {bar_color}; }}"
+            )
+
         layout.addWidget(self.progress_bar)
 
         # Third row: horizontal layout
@@ -52,14 +95,18 @@ class CompactWaitingWidget(QWidget):
 
         layout.addLayout(bottom_row)
 
-    def set_progress(self, value: int, total: int):
+    def set_progress(self, value: int, total: int) -> None:
+        self.set_count(value, total)
         self.progress_bar.setMaximum(total)
         self.progress_bar.setValue(value)
         percent = int(100 * value / total) if total else 0
         self.percentage_label.setText(f"{percent}%")
 
-    def set_filename(self, filename: str):
+    def set_filename(self, filename: str) -> None:
         self.filename_label.setText(filename)
 
-    def set_status(self, text: str):
+    def set_status(self, text: str) -> None:
         self.status_label.setText(text)
+
+    def set_count(self, current: int, total: int) -> None:
+        self.count_label.setText(f"{current} of {total}")

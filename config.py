@@ -53,7 +53,6 @@ CONTENT_MARGINS = {
     "right": 8,
 }
 
-
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {
     "jpg", "jpeg", "png", "mp3", "mp4", "mov", "mts", "nef", "raw", "arw", "cr2", "cr3",
@@ -65,7 +64,6 @@ ALLOWED_FILENAME_CHARS = r"^[^\\/:*?\"<>|]+$"
 
 # Theme
 THEME_NAME = "dark"
-
 
 # ----------------------------
 # Preview Indicator Settings
@@ -84,9 +82,18 @@ PREVIEW_INDICATOR_BORDER = {
     "thickness": 1
 }
 
+# ----------------------------
+# File Handling Settings
+# ----------------------------
 USE_PREVIEW_BACKGROUND = False  # Whether to apply background color in tables
-
 LARGE_FOLDER_WARNING_THRESHOLD = 150 # Number when to prompt QuestionDialog to load large folder
+EXTENDED_METADATA_SIZE_LIMIT_MB = 500  # Over this size, warn user before attempting extended scan
+
+# ----------------------------
+# Metadata Settings
+# ----------------------------
+EXTENDED_METADATA_COLOR = "#e67e22"  # orange (same as extended info icon)
+
 
 # ----------------------------
 # File Table Settings

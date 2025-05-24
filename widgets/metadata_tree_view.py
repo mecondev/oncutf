@@ -27,7 +27,7 @@ class MetadataTreeView(QTreeView):
     Tree view that accepts file drag & drop to trigger metadata loading.
     Emits a signal with filenames to be processed.
     """
-    files_dropped = pyqtSignal(list)  # Emits list of local file paths
+    files_dropped = pyqtSignal(list, Qt.KeyboardModifiers)  # Emits list of local file paths
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -47,4 +47,7 @@ class MetadataTreeView(QTreeView):
         urls = event.mimeData().urls()
         files = [url.toLocalFile() for url in urls if url.isLocalFile()]
         if files:
-            self.files_dropped.emit(files)
+            self.files_dropped.emit(files, event.keyboardModifiers())
+            event.acceptProposedAction()
+            print("[DEBUG] Drop event triggered. Modifiers:", event.keyboardModifiers())
+

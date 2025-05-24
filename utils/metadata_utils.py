@@ -29,6 +29,9 @@ def resolve_skip_metadata(
     default_skip: bool = True,
     threshold: int = 150
 ) -> tuple[bool, bool]:
+
+    raise NotImplementedError("Deprecated in favor of determine_metadata_mode()")
+
     """
     Returns:
         skip_metadata (bool): Whether to skip metadata

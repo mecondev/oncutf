@@ -172,7 +172,8 @@ class MainWindow(QMainWindow):
         self.files_label = QLabel("Files")
         center_layout.addWidget(self.files_label)
 
-        self.file_table_view = CustomTableView()
+        self.file_table_view = CustomTableView(parent=self)
+        self.file_table_view.parent_window = self
         self.file_table_view.verticalHeader().setVisible(False)
         self.file_table_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.file_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -403,6 +404,9 @@ class MainWindow(QMainWindow):
         self.file_table_view.clicked.connect(self.on_table_row_clicked)
         self.file_table_view.selectionModel().selectionChanged.connect(self.sync_selection_to_checked)
         self.model.sort_changed.connect(self.generate_preview_names)
+        self.file_table_view.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.file_table_view.customContextMenuRequested.connect(self.handle_table_context_menu)
+        # self.file_table_view.doubleClicked.connect(self.handle_file_double_click)
 
         self.toggle_expand_button.toggled.connect(self.toggle_metadata_expand)
 
@@ -418,10 +422,6 @@ class MainWindow(QMainWindow):
 
         self.rename_button.clicked.connect(self.rename_files)
 
-        self.file_table_view.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.file_table_view.customContextMenuRequested.connect(self.handle_table_context_menu)
-
-        self.file_table_view.doubleClicked.connect(self.handle_file_double_click)
 
         # --- Shortcuts ---
         QShortcut(QKeySequence("Ctrl+A"), self.file_table_view, activated=self.select_all_rows)
@@ -717,23 +717,15 @@ class MainWindow(QMainWindow):
             if os.path.splitext(f)[1][1:].lower() in ALLOWED_EXTENSIONS
         ]
 
-        ctrl_override = bool(QApplication.keyboardModifiers() & SKIP_METADATA_MODIFIER)
-
-        skip_metadata, user_wants_scan = resolve_skip_metadata(
-            ctrl_override=ctrl_override,
-            total_files=len(valid_files),
-            folder_path=folder_path,
-            parent_window=self,
-            default_skip=DEFAULT_SKIP_METADATA,
-            threshold=LARGE_FOLDER_WARNING_THRESHOLD
-        )
-
+        skip_metadata, use_extended = self.determine_metadata_mode()
+        logger.debug(f"[Modifiers] skip_metadata={skip_metadata}, use_extended={use_extended}")
+        self.force_extended_metadata = use_extended
         self.skip_metadata_mode = skip_metadata
 
         is_large = len(valid_files) > LARGE_FOLDER_WARNING_THRESHOLD
         logger.info(
-            f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata} "
-            f"(ctrl={ctrl_override}, large={is_large}, wants_scan={user_wants_scan}, default={DEFAULT_SKIP_METADATA})"
+            f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata}, extended={use_extended}, "
+            f"(large={is_large}, default={DEFAULT_SKIP_METADATA})"
         )
         logger.warning(f'-> skip_metadata passed to loader: {skip_metadata}')
         self.load_files_from_folder(folder_path, skip_metadata=skip_metadata, force=force_reload)
@@ -767,23 +759,16 @@ class MainWindow(QMainWindow):
             if os.path.splitext(f)[1][1:].lower() in ALLOWED_EXTENSIONS
         ]
 
-        ctrl_override = bool(QApplication.keyboardModifiers() & SKIP_METADATA_MODIFIER)
-
-        skip_metadata, user_wants_scan = resolve_skip_metadata(
-            ctrl_override=ctrl_override,
-            total_files=len(valid_files),
-            folder_path=folder_path,
-            parent_window=self,
-            default_skip=DEFAULT_SKIP_METADATA,
-            threshold=LARGE_FOLDER_WARNING_THRESHOLD
-        )
-
+        skip_metadata, use_extended = self.determine_metadata_mode()
+        logger.debug(f"[Modifiers] skip_metadata={skip_metadata}, use_extended={use_extended}")
+        self.force_extended_metadata = use_extended
         self.skip_metadata_mode = skip_metadata
 
         is_large = len(valid_files) > LARGE_FOLDER_WARNING_THRESHOLD
+        logger.debug("-" * 60)
         logger.info(
-            f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata} "
-            f"(ctrl={ctrl_override}, large={is_large}, wants_scan={user_wants_scan}, default={DEFAULT_SKIP_METADATA})"
+            f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata}, extended={use_extended}, "
+            f"(large={is_large}, default={DEFAULT_SKIP_METADATA})"
         )
 
         logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
@@ -889,6 +874,7 @@ class MainWindow(QMainWindow):
         self.loading_dialog.rejected.connect(self.cancel_metadata_loading)
 
         self.loading_dialog.show()
+        QApplication.processEvents()
 
         self.load_metadata_in_thread(file_paths)
 
@@ -956,7 +942,7 @@ class MainWindow(QMainWindow):
             return
 
         self.set_status(f"Loading metadata for {len(file_paths)} file(s)...", color="blue")
-        QTimer.singleShot(100, lambda: self.start_metadata_scan(file_paths))
+        QTimer.singleShot(200, lambda: self.start_metadata_scan(file_paths))
 
     def shortcut_load_metadata(self) -> None:
         selected_indexes = self.file_table_view.selectionModel().selectedRows()
@@ -1280,6 +1266,46 @@ class MainWindow(QMainWindow):
                 folder_path
             )
             return proceed
+        return True
+
+    def check_large_files(self, files: list[FileItem]) -> list[FileItem]:
+        """
+        Returns a list of files over the configured size threshold (in MB).
+        """
+        limit_bytes = EXTENDED_METADATA_SIZE_LIMIT_MB * 1024 * 1024
+        large_files = []
+        for f in files:
+            try:
+                if os.path.getsize(f.full_path) > limit_bytes:
+                    large_files.append(f)
+            except Exception as e:
+                logger.warning(f"[SizeCheck] Could not get size for {f.filename}: {e}")
+        return large_files
+
+    def confirm_large_files(self, files: list[FileItem]) -> bool:
+        """
+        Checks for large files and asks the user whether to proceed.
+        Returns False if user cancels. True if OK.
+        """
+        large_files = self.check_large_files(files)
+        if not large_files:
+            return True
+
+        names = "\n".join(f.filename for f in large_files[:5])
+        if len(large_files) > 5:
+            names += "\n..."
+
+        if not CustomMessageDialog.question(
+            self,
+            "Warning: Large Files",
+            f"{len(large_files)} of the selected files are larger than {EXTENDED_METADATA_SIZE_LIMIT_MB} MB.\n\n"
+            f"{names}\n\n"
+            "Extended metadata scan may be slow or fail. Do you want to continue?",
+            yes_text="Continue",
+            no_text="Cancel"
+        ):
+            return False
+
         return True
 
     def update_files_label(self) -> None:
@@ -1854,6 +1880,54 @@ class MainWindow(QMainWindow):
         self.update_files_label()
         self.generate_preview_names()
 
+    def get_modifier_flags(self) -> tuple[bool, bool]:
+        """
+        Checks which keyboard modifiers are currently held down.
+
+        Returns:
+            tuple: (skip_metadata: bool, use_extended: bool)
+                - skip_metadata: True if Ctrl is pressed
+                - use_extended: True if Shift is pressed
+        """
+        modifiers = QApplication.keyboardModifiers()
+        skip_metadata = modifiers & Qt.ControlModifier
+        use_extended = modifiers & Qt.ShiftModifier
+
+        # [DEBUG] Modifiers: Ctrl=%s, Shift=%s", skip_metadata, use_extended
+        return bool(skip_metadata), bool(use_extended)
+
+    def determine_metadata_mode(self) -> tuple[bool, bool]:
+        """
+        Returns:
+            tuple: (skip_metadata, use_extended)
+
+            - skip_metadata = True  ➜ no metadata at all (default)
+            - skip_metadata = False & use_extended = False ➜ fast
+            - skip_metadata = False & use_extended = True ➜ extended
+
+        Rules:
+            - If Ctrl is pressed → fast
+            - If Ctrl+Shift → extended
+            - Else (no modifiers) → skip
+        """
+        modifiers = QApplication.keyboardModifiers()
+
+        if modifiers & Qt.ControlModifier:
+            use_extended = modifiers & Qt.ShiftModifier
+            return False, bool(use_extended)
+
+        return True, False
+
+    def should_use_extended_metadata(self) -> bool:
+        """
+        Returns True if Shift (or Ctrl+Shift) is held,
+        used in cases where metadata is always loaded (double click, drag & drop).
+
+        This assumes that metadata will be loaded — we only decide if it's fast or extended.
+        """
+        modifiers = QApplication.keyboardModifiers()
+        return bool(modifiers & Qt.ShiftModifier)
+
     def sync_selection_to_checked(self, selected: QItemSelection, deselected: QItemSelection) -> None:
         """
         Syncs visual row selection with the internal .checked state,
@@ -1892,81 +1966,144 @@ class MainWindow(QMainWindow):
             position: The QPoint where the context menu was triggered.
         """
         index = self.file_table_view.indexAt(position)
+        selected_indexes = self.file_table_view.selectionModel().selectedRows()
+        total_files = len(self.model.files)
+        selected_files = [self.model.files[i.row()] for i in selected_indexes if 0 <= i.row() < total_files]
+
         menu = QMenu(self)
 
-        file_item: Optional[FileItem] = None
+        # --- Metadata actions ---
+        action_load_sel = menu.addAction("📄 Load metadata for selected file(s)")
+        action_load_all = menu.addAction("📁 Load metadata for all files")
+        action_load_ext_sel = menu.addAction("📄 Load extended metadata for selected file(s)")
+        action_load_ext_all = menu.addAction("📁 Load extended metadata for all files")
 
-        if not self.model.files:
-            action_none = menu.addAction("No files available")
-            action_none.setEnabled(False)
-            menu.exec_(self.file_table_view.viewport().mapToGlobal(position))
-            return
-
-        action_selected = menu.addAction("Load metadata for selected files")
-        action_all = menu.addAction("Load metadata for all files")
         menu.addSeparator()
 
-        # Determine if click is on a file row or not
-        if index.isValid() and 0 <= index.row() < len(self.model.files):
-            file_item = self.model.files[index.row()]
-            action_extended = menu.addAction("Load extended metadata for selected files")
-            action_extended.setToolTip(f"<b>Full name:</b><br>{file_item.filename}")
-            menu.addSeparator()
-
+        # --- Selection actions ---
         action_invert = menu.addAction("🔁 Invert selection (Ctrl+I)")
-        action_force_reload = menu.addAction("🔁 Reload folder (Ctrl+R)")
+        action_select_all = menu.addAction("✅ Select all (Ctrl+A)")
+
+        menu.addSeparator()
+
+        # --- Other actions ---
+        action_reload = menu.addAction("🔄 Reload folder (Ctrl+R)")
+
+        menu.addSeparator()
+
+        # --- Disabled future options ---
+        action_save_sel = menu.addAction("💾 Save metadata for selected file(s)")
+        action_save_all = menu.addAction("💾 Save metadata for all files")
+        action_save_sel.setEnabled(False)
+        action_save_all.setEnabled(False)
+
+        # --- Enable/disable logic ---
+        if not selected_files:
+            action_load_sel.setEnabled(False)
+            action_load_ext_sel.setEnabled(False)
+            action_invert.setEnabled(total_files > 0)
+        else:
+            action_load_sel.setEnabled(True)
+            action_load_ext_sel.setEnabled(True)
+
+        action_load_all.setEnabled(total_files > 0)
+        action_load_ext_all.setEnabled(total_files > 0)
+        action_select_all.setEnabled(total_files > 0)
+        action_reload.setEnabled(total_files > 0)
 
         action = menu.exec_(self.file_table_view.viewport().mapToGlobal(position))
 
-        if action == action_selected:
-            selected_indexes = self.file_table_view.selectionModel().selectedRows()
-            selected = [self.model.files[i.row()] for i in selected_indexes if 0 <= i.row() < len(self.model.files)]
-
-            if selected:
-                self.metadata_loader.load(selected, force=False, cache=self.metadata_cache)
-                file_item = selected[-1]
-                metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
-                if isinstance(metadata, dict) and metadata:
+        # === Handlers ===
+        if action == action_load_sel:
+            self.force_extended_metadata = False
+            self.metadata_loader.load(selected_files, force=False, cache=self.metadata_cache)
+            if selected_files:
+                last = selected_files[-1]
+                metadata = last.metadata or self.metadata_cache.get(last.full_path)
+                if isinstance(metadata, dict):
                     self.display_metadata(metadata, context="context_menu_selected")
+
+        elif action == action_load_ext_sel:
+            files_to_load = [f for f in selected_files if not self.metadata_loader.has_extended(f.full_path, self.metadata_cache)]
+            if files_to_load and not self.confirm_large_files(files_to_load):
+                return
+            if files_to_load:
+                self.force_extended_metadata = True
+                if len(files_to_load) > 1:
+                    self.start_metadata_scan_for_items(files_to_load)
                 else:
-                    logger.warning(f"[ContextMenu] No valid metadata to display for {file_item.filename}")
+                    QApplication.setOverrideCursor(Qt.WaitCursor)
+                    self.metadata_loader.load(files_to_load, force=False, cache=self.metadata_cache, use_extended=True)
+                    self._restore_cursor()
+                    last = files_to_load[-1]
+                    metadata = last.metadata or self.metadata_cache.get(last.full_path)
+                    if isinstance(metadata, dict):
+                        self.display_metadata(metadata, context="context_menu_extended_1file")
 
-                for file in selected:
-                    row = self.model.files.index(file)
-                    for col in range(self.model.columnCount()):
-                        idx = self.model.index(row, col)
-                        self.file_table_view.viewport().update(self.file_table_view.visualRect(idx))
-
-        elif action == action_all:
+        elif action == action_load_all:
+            self.force_extended_metadata = False
             self.select_all_rows()
             self.metadata_loader.load(self.model.files, force=False, cache=self.metadata_cache)
+
+        elif action == action_load_ext_all:
+            if not self.confirm_large_files(self.model.files):
+                return
+            self.force_extended_metadata = True
+            self.start_metadata_scan_for_items(self.model.files)
 
         elif action == action_invert:
             self.invert_selection()
 
-        elif action == action_force_reload:
+        elif action == action_select_all:
+            self.select_all_rows()
+
+        elif action == action_reload:
             self.force_reload()
 
-        elif 'action_extended' in locals() and action == action_extended:
-            selected_indexes = self.file_table_view.selectionModel().selectedRows()
-            selected = [self.model.files[i.row()] for i in selected_indexes if 0 <= i.row() < len(self.model.files)]
-            if selected:
-                files_to_load = [f for f in selected if not self.metadata_loader.has_extended(f.full_path, self.metadata_cache)]
-                if files_to_load:
-                    self.force_extended_metadata = True
-                    self.start_metadata_scan_for_items(files_to_load)
-
-    def handle_file_double_click(self, index: QModelIndex) -> None:
+    def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
         Loads metadata for the file (even if already loaded), on double-click.
+        Shows wait cursor for 1 file or dialog for multiple selected.
         """
         row = index.row()
         if 0 <= row < len(self.model.files):
             file = self.model.files[row]
             logger.info(f"[DoubleClick] Requested metadata reload for: {file.filename}")
 
-            self.force_extended_metadata = False  # Avoid unexpected extended trigger
-            self.metadata_loader.load([file], force=False, cache=self.metadata_cache)
+            self.force_extended_metadata = bool(int(modifiers) & int(Qt.ShiftModifier))
+            logger.debug(f"[Modifiers] Shift held → use_extended={self.force_extended_metadata}")
+
+            selected_indexes = self.file_table_view.selectionModel().selectedRows()
+            selected_files = [self.model.files[i.row()] for i in selected_indexes if 0 <= i.row() < len(self.model.files)]
+
+            # Check if Shift was held during double click
+            keyboard_mods = modifiers
+            if keyboard_mods & Qt.ShiftModifier:
+                # If Qt has selected a large range (likely unintended), reset to only the clicked file
+                # This avoids accidental multi-file extended scan due to Shift+Click behavior
+                if file in selected_files and len(selected_files) > 1:
+                    logger.debug(f"[ShiftFix] Qt range selection detected on Shift+DoubleClick — keeping only clicked file: {file.filename}")
+                    selected_files = [file]
+
+            if self.force_extended_metadata and not self.confirm_large_files(selected_files):
+                return
+
+            if self.force_extended_metadata and len(selected_files) > 1:
+                self.start_metadata_scan_for_items(selected_files)
+                return
+
+            if self.force_extended_metadata:
+                QApplication.setOverrideCursor(Qt.WaitCursor)
+
+            self.metadata_loader.load(
+                [file],
+                force=False,
+                cache=self.metadata_cache,
+                use_extended=self.force_extended_metadata
+            )
+
+            if self.force_extended_metadata:
+                self._restore_cursor()
 
             metadata = file.metadata or self.metadata_cache.get(file.full_path)
             if isinstance(metadata, dict) and metadata:
@@ -1979,12 +2116,7 @@ class MainWindow(QMainWindow):
                 idx = self.model.index(row, col)
                 self.file_table_view.viewport().update(self.file_table_view.visualRect(idx))
 
-        row = self.model.files.index(file)
-        for col in range(self.model.columnCount()):
-            idx = self.model.index(row, col)
-            self.file_table_view.viewport().update(self.file_table_view.visualRect(idx))
-
-    def handle_dropped_files(self, paths: list[str]) -> None:
+    def handle_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
         Called when user drops files onto metadata tree.
         Maps filenames to FileItem objects and triggers forced metadata loading.
@@ -2000,26 +2132,37 @@ class MainWindow(QMainWindow):
             logger.info("[Drop] No matching files found in table.")
             return
 
-        if len(file_items) > LARGE_FOLDER_WARNING_THRESHOLD:
-            if not CustomMessageDialog.question(
-                self,
-                "Load metadata",
-                f"Load metadata for {len(file_items)} files?",
-                yes_text="Yes",
-                no_text="Cancel"
-            ):
-                logger.info(f"[Drop] User cancelled metadata loading for {len(file_items)} files.")
-                return
+        self.force_extended_metadata = bool(int(modifiers) & int(Qt.ShiftModifier))
+        logger.debug(f"[Modifiers] Shift held → use_extended={self.force_extended_metadata}")
 
-        logger.info(f"[Drop] Triggering metadata load for {len(file_items)} file(s)...")
-        self.force_extended_metadata = False  # Prevent -ee mode unless explicitly requested
-        self.metadata_loader.load(file_items, force=False, cache=self.metadata_cache)
+        if self.force_extended_metadata and not self.confirm_large_files(file_items):
+            return
+
+        # Special case: use waiting dialog if many files
+        if self.force_extended_metadata and len(file_items) > 1:
+            self.start_metadata_scan_for_items(file_items)
+            return
+
+        if self.force_extended_metadata:
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        self.metadata_loader.load(
+            file_items,
+            force=False,
+            cache=self.metadata_cache,
+            use_extended=self.force_extended_metadata
+        )
+
+        if self.force_extended_metadata:
+            self._restore_cursor()
 
         if file_items:
             last = file_items[-1]
             metadata = self.metadata_cache.get(last.full_path)
             if isinstance(metadata, dict):
                 self.display_metadata(metadata, context="handle_dropped_files")
+
+            self.file_table_view.viewport().update()
 
     def closeEvent(self, event) -> None:
         """

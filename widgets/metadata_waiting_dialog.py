@@ -1,6 +1,8 @@
 from PyQt5.QtWidgets import QDialog, QVBoxLayout
 from widgets.compact_waiting_widget import CompactWaitingWidget
 from PyQt5.QtCore import Qt
+from config import EXTENDED_METADATA_COLOR
+
 
 class MetadataWaitingDialog(QDialog):
     """
@@ -23,7 +25,11 @@ class MetadataWaitingDialog(QDialog):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        self.waiting_widget = CompactWaitingWidget(self)
+        # CompactWaitingWidget
+        is_extended = getattr(parent, "force_extended_metadata", False)
+        bar_color = EXTENDED_METADATA_COLOR if is_extended else None
+        self.waiting_widget = CompactWaitingWidget(self, bar_color=bar_color)
+
         layout.addWidget(self.waiting_widget)
 
         self.setLayout(layout)

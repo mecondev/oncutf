@@ -123,3 +123,16 @@ class CustomTableView(QTableView):
         drag = QDrag(self)
         drag.setMimeData(mime_data)
         drag.exec_(Qt.CopyAction)
+
+    def mouseDoubleClickEvent(self, event):
+        """
+        Overridden to capture keyboard modifiers during double-click.
+        Passes modifiers to MainWindow for accurate detection of Shift.
+        """
+        index = self.indexAt(event.pos())
+        if index.isValid() and self.parent_window:
+            self.parent_window.handle_file_double_click(index, event.modifiers())
+        else:
+            super().mouseDoubleClickEvent(event)
+
+
