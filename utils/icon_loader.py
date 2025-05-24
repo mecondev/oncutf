@@ -15,11 +15,25 @@ Usage:
 """
 
 from PyQt5.QtGui import QPixmap
+import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 def load_metadata_icons(base_dir: str = "resources/icons") -> dict[str, QPixmap]:
-    return {
-        'loaded': QPixmap(f"{base_dir}/info_green.png"),
-        'extended': QPixmap(f"{base_dir}/info_orange.png"),
-        'partial': QPixmap(f"{base_dir}/info_gray.png"),
-        'invalid': QPixmap(f"{base_dir}/info_red.png"),
+    icon_files = {
+        'loaded': "info_green.png",
+        'extended': "info_orange.png",
+        'partial': "info_gray.png",
+        'invalid': "info_red.png",
     }
+
+    icon_map = {}
+    for status, filename in icon_files.items():
+        path = os.path.join(base_dir, filename)
+        pixmap = QPixmap(path)
+        if pixmap.isNull():
+            logger.warning(f"[IconLoader] Failed to load icon for '{status}' from {path}")
+        icon_map[status] = pixmap
+
+    return icon_map

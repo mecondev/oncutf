@@ -2,88 +2,129 @@
 Module: metadata_worker.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Updated: 2025-05-23
 
-This module defines a worker thread or task responsible for retrieving metadata from files asynchronously. It decouples metadata extraction from the UI thread to keep the application responsive.
-
-Typically used in the oncutf application to run exiftool or similar metadata extractors in the background and emit signals when data is ready.
+This module defines a background worker that loads metadata from files using a MetadataLoader.
+It is executed inside a thread to keep the GUI responsive during batch metadata extraction.
 
 Features:
-
-* Threaded metadata reading
-* Signal-based communication with UI
-* Error handling and progress updates
-* Graceful cancellation support
+- Threaded metadata loading
+- Signal-based progress reporting
+- Safe cancellation during processing
+- Optional support for extended metadata
+- Integrated caching with skip logic
 """
 
-import time
 import os
-import traceback
+import time
 from typing import Optional
+import threading
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 from utils.metadata_loader import MetadataLoader
 from utils.metadata_cache import MetadataCache
 
-# Initialize Logger
+# Logger setup
 from utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
 
-
 class MetadataWorker(QObject):
-    finished = pyqtSignal(dict)
+    """
+    Worker class for threaded metadata extraction.
+    Emits progress and result signals and supports graceful cancellation.
+
+    Attributes:
+        reader (MetadataLoader): The metadata reader instance.
+        metadata_cache (MetadataCache): Cache for storing and checking metadata.
+        file_path (list[str]): List of file paths to process.
+        use_extended (bool): Whether to request extended metadata.
+    """
+
+    finished = pyqtSignal()
     progress = pyqtSignal(int, int)
 
     def __init__(self, *, reader: MetadataLoader, metadata_cache: MetadataCache, parent: Optional[QObject] = None):
         super().__init__(parent)
-        logger.warning("[DEBUG] MetadataWorker __init__ CALLED")
+        logger.debug("[Worker] __init__ called")
+        self.main_window = parent
         self.reader = reader
         self.file_path = []
         self.metadata_cache = metadata_cache
         self._cancelled = False
         self.use_extended = False
 
-    def load_batch(self, file_path) -> None:
-        logger.warning(f"[DEBUG] load_batch() CALLED with {len(file_path)} files")
-        self.file_path = file_path
-        self.run_batch()
-
     @pyqtSlot()
     def run_batch(self) -> None:
-        logger.warning(f"[DEBUG] run_batch() STARTED with {len(self.file_path)} files")
-        start_time = time.time()
-        result = {}
-        total = len(self.file_path)
+        """
+        Executes a batch metadata extraction process in a separate thread with timing logs.
 
-        for index, path in enumerate(self.file_path):
-            try:
-                metadata = self.reader.read_metadata(path, use_extended=self.use_extended)
-                filename = os.path.basename(path)
+        This method:
+        - Iterates over a list of file paths
+        - Extracts metadata using the MetadataLoader
+        - Logs time per file and total time
+        - Updates the cache and progress bar
+        - Emits finished signal at the end
+        """
+        logger.info(f"[Worker] run_batch() started — use_extended = {self.use_extended}")
+        logger.warning(f"[Worker] run_batch() running in thread: {threading.current_thread().name}")
 
-                if isinstance(metadata, dict) and metadata:
-                    result[path] = metadata
-                    if self.metadata_cache:
-                        self.metadata_cache.set(path, metadata)
-                else:
-                    logger.warning(f"[Worker] No metadata found for {filename}")
-                    result[path] = {}
+        start_total = time.time()
 
-            except Exception as e:
-                logger.warning(f"[Worker] Failed to read metadata for {path}: {str(e)}")
-                result[path] = {}
+        try:
+            total = len(self.file_path)
+            for index, path in enumerate(self.file_path):
+                if self._cancelled:
+                    logger.warning(f"[Worker] Canceled before processing: {path}")
+                    break
 
-            logger.debug(f"[Worker] progress.emit({index + 1}, {total})")
-            self.progress.emit(index + 1, total)
+                file_size_mb = os.path.getsize(path) / (1024 * 1024)
+                start_file = time.time()
+                logger.debug(f"[Worker] Processing file {index + 1}/{total}: {path} ({file_size_mb:.2f} MB)")
 
-            if self._cancelled:
-                logger.warning(f"[Worker] Cancel detected after index {index + 1} — exiting batch early.")
-                break
+                try:
+                    metadata = self.reader.read_metadata(
+                        filepath=path,
+                        use_extended=self.use_extended
+                    )
 
-        duration = time.time() - start_time
-        avg_time = duration / (index + 1) if index + 1 else 0
-        logger.info(f"[Worker] Metadata batch completed in {duration:.2f}s — avg {avg_time:.2f}s/file")
-        self.finished.emit(result)
+                    previous_entry = self.metadata_cache.get_entry(path)
+                    is_extended_flag = previous_entry.is_extended if previous_entry else False
+                    if isinstance(metadata, dict):
+                        is_extended_flag = is_extended_flag or metadata.get("__extended__") is True
+
+                    logger.debug(f"[Worker] Saving metadata for {path}, extended = {is_extended_flag}")
+                    self.metadata_cache.set(path, metadata, is_extended=is_extended_flag)
+
+                except Exception as e:
+                    logger.exception(f"[Worker] Exception while reading metadata for {path}: {e}")
+                    metadata = {}
+
+                if isinstance(metadata, dict) and hasattr(self.main_window, "model"):
+                    for file_item in self.main_window.model.files:
+                        if file_item.full_path == path:
+                            file_item.metadata = metadata
+                            logger.debug(f"[Worker] Assigned metadata to FileItem: {file_item.filename}")
+                            break
+
+                elapsed_file = time.time() - start_file
+                logger.debug(f"[Worker] File processed in {elapsed_file:.2f} sec")
+
+                self.progress.emit(index + 1, total)
+
+                # Optional: check again in case cancel happened during emit delay
+                if self._cancelled:
+                    logger.warning(f"[Worker] Canceled after emit at file: {path}")
+                    break
+
+        finally:
+            elapsed_total = time.time() - start_total
+            logger.info(f"[Worker] Total time for batch: {elapsed_total:.2f} sec")
+            logger.warning("[Worker] FINALLY → emitting finished signal")
+            self.finished.emit()
 
     def cancel(self) -> None:
-        logger.warning("[MetadataWorker] cancel() CALLED — will cancel after current file")
+        """
+        Cancels the batch processing. Safe flag that is checked per file.
+        """
+        logger.info("[Worker] cancel() requested — will cancel after current file")
         self._cancelled = True

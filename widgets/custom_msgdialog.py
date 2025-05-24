@@ -185,11 +185,17 @@ class CustomMessageDialog(QDialog):
             The total value for the progress bar range. If provided,
             updates the progress bar range to (0, total).
         """
+        logger.debug(f"[Dialog] set_progress called with value={value}, total={total}")
+        if not self.progress_bar:
+            logger.warning("[Dialog] Progress bar is missing!")
+            return
 
-        if self.progress_bar:
-            if total is not None:
-                self.progress_bar.setRange(0, total)
-            self.progress_bar.setValue(value)
+        if total is not None:
+            logger.debug(f"[Dialog] Progress bar range set to 0–{total}")
+            self.progress_bar.setRange(0, total)
+
+        self.progress_bar.setValue(value)
+        logger.debug(f"[Dialog] Progress bar value set to {value}")
 
     @staticmethod
     def rename_conflict_dialog(parent: QWidget, filename: str) -> str:
@@ -235,30 +241,32 @@ class CustomMessageDialog(QDialog):
         logger.debug("Dialog message updated: %s", msg)
         self.label.setText(msg)
 
-    @staticmethod
-    def show_waiting(parent: QWidget, message: str = "Please wait...") -> "CustomMessageDialog":
-        """
-        Shows a non-modal waiting dialog with a progress bar.
+    # @staticmethod
+    # def show_waiting(parent: QWidget, message: str = "Please wait...") -> "CustomMessageDialog":
+    #     """
+    #     Shows a modal waiting dialog with a progress bar.
 
-        Parameters
-        ----------
-        parent : QWidget
-            The parent widget.
-        message : str, optional
-            The message to display in the dialog.
+    #     Parameters
+    #     ----------
+    #     parent : QWidget
+    #         The parent widget.
+    #     message : str, optional
+    #         The message to display in the dialog.
 
-        Returns
-        -------
-        CustomMessageDialog
-            The waiting dialog.
-        """
-        logger.debug(f"Dialog message updated: {message}")
+    #     Returns
+    #     -------
+    #     CustomMessageDialog
+    #         The waiting dialog.
+    #     """
+    #     logger.debug(f"Creating waiting dialog: {message}")
 
-        dlg = CustomMessageDialog("Please Wait", message, buttons=None, parent=parent, show_progress=True)
-        dlg.setModal(False)
-        dlg.setWindowModality(Qt.ApplicationModal)
-        dlg.show()
-        return dlg
+    #     dlg = CustomMessageDialog("Please Wait", message, buttons=None, parent=parent, show_progress=True)
+    #     # dlg.setModal(True)
+    #     dlg.show()
+    #     dlg.raise_()
+    #     dlg.activateWindow()
+    #     QApplication.processEvents()
+    #     return dlg
 
     def set_progress_range(self, total: int) -> None:
         """

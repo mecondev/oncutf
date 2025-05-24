@@ -39,18 +39,29 @@ class ExifToolWrapper:
 
     def get_metadata(self, file_path: str, use_extended: bool = False) -> Optional[dict]:
         """
-        Retrieves metadata for a file.
+        Executes an ExifTool query for a single file.
 
         Args:
-            file_path (str): Full path to file.
-            use_extended (bool): If True, uses subprocess with -ee.
+            file_path (str): Full path to the media file.
+            use_extended (bool): Whether to include -ee for embedded streams.
 
         Returns:
-            dict or None: Parsed metadata, or None on failure.
+            Optional[dict]: Metadata dictionary or None if parsing fails.
         """
+        logger.debug(f"[ExifToolWrapper] get_metadata() CALLED for: {file_path}, extended={use_extended}")
+
         if use_extended:
-            return self._get_metadata_extended(file_path)
-        return self._get_metadata_fast(file_path)
+            result = self._get_metadata_extended(file_path)
+        else:
+            result = self._get_metadata_fast(file_path)
+
+        if isinstance(result, dict):
+            logger.debug(f"[ExifToolWrapper] Result for {file_path} has {len(result)} keys")
+            logger.debug(f"[ExifToolWrapper] FIRST KEYS: {list(result.keys())[:10]}")
+        else:
+            logger.warning(f"[ExifToolWrapper] Failed or non-dict result for {file_path}: {type(result)}")
+
+        return result
 
     def _get_metadata_fast(self, file_path: str) -> Optional[dict]:
         """
@@ -94,7 +105,7 @@ class ExifToolWrapper:
                         return None
 
                     stripped = line.strip()
-                    logger.debug(f"[ExifToolWrapper] STDOUT: {stripped}")
+                    logger.debug(f"[ExifToolWrapper] STDOUT: {stripped}", extra={"dev_only": True})
                     if stripped == marker:
                         logger.debug(f"[ExifToolWrapper] Received marker: {marker}")
                         break
@@ -106,11 +117,14 @@ class ExifToolWrapper:
                 return data[0] if data else None
 
             except Exception as e:
-                logger.error(f"[ExifToolWrapper] Exception during metadata read: {e}")
+                logger.error(f"[ExifToolWrapper] Exception during metadata read: {e}", exc_info=True)
                 return None
 
     def _get_metadata_extended(self, file_path: str) -> Optional[dict]:
-        """Uses a one-shot subprocess call with -ee for extended metadata."""
+        """
+        Uses a one-shot subprocess call with -ee for extended metadata.
+        Parses and merges embedded entries, marks result as extended.
+        """
         if not os.path.isfile(file_path):
             logger.warning(f"[ExtendedReader] File does not exist: {file_path}")
             return None
@@ -130,9 +144,8 @@ class ExifToolWrapper:
                 return None
 
             logger.debug(f"[ExtendedReader] JSON object count: {len(data)}")
-            logger.debug(f"[ExtendedReader] Top-level keys: {list(data[0].keys())}")
+            logger.debug(f"[ExtendedReader] Top-level keys: {list(data[0].keys())[:10]}")
 
-            # Merge embedded entries into main result with segment markers
             result_dict = data[0]
             if len(data) > 1:
                 for i, extra in enumerate(data[1:], start=1):
@@ -143,11 +156,14 @@ class ExifToolWrapper:
 
             result_dict["__extended__"] = True
             logger.debug(f"[ExtendedReader] Marked as extended: {file_path}")
+            logger.debug(f"[ExtendedReader] Final keys: {list(result_dict.keys())[:10]}")
+            logger.debug(f"[ExtendedReader] __extended__ present? {'__extended__' in result_dict}")
+            logger.debug(f"[ExtendedReader] Returning result for {file_path}")
 
             return result_dict
 
         except Exception as e:
-            logger.warning(f"[ExtendedReader] Failed to read extended metadata: {e}")
+            logger.error(f"[ExtendedReader] Failed to read extended metadata: {e}", exc_info=True)
             return None
 
     def close(self) -> None:

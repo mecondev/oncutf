@@ -2,75 +2,135 @@
 Module: metadata_cache.py
 
 Author: Michael Economou
-Date: 2025-05-12
+Updated: 2025-05-23
 
-This module defines a simple in-memory metadata cache system used during
-batch renaming operations in the oncutf tool. It stores metadata for files
-indexed by their normalized absolute paths, in order to avoid redundant
-metadata extraction after file renaming or during preview regeneration.
-
-Usage:
-    - Cache metadata by calling `metadata_cache.set(path, metadata)`
-    - Retrieve cached metadata using `metadata_cache.get(path)`
-    - Check presence with `metadata_cache.has(path)`
-    - Clear the cache with `metadata_cache.clear()`
+This module defines an in-memory metadata cache system used by the oncutf application.
+It stores metadata per file path, wraps each record in a MetadataEntry structure,
+and avoids redundant metadata reads. Includes normalized path management and support
+for cache querying by extended state.
 """
 
 import os
+import time
+from typing import Optional, Dict
+
+# Setup Logger
+from utils.logger_helper import get_logger
+logger = get_logger(__name__)
+
+
+class MetadataEntry:
+    """
+    Structured container for metadata.
+
+    Attributes:
+        data (dict): Raw metadata dictionary
+        is_extended (bool): Whether extended metadata (via -ee) was used
+        timestamp (float): UNIX timestamp when this entry was stored
+    """
+
+    def __init__(self, data: dict, is_extended: bool = False, timestamp: Optional[float] = None):
+        self.data = data
+        self.is_extended = is_extended
+        self.timestamp = timestamp or time.time()
+
+    def to_dict(self) -> dict:
+        """Returns a copy of the raw metadata dictionary."""
+        return self.data.copy()
+
+    def __repr__(self):
+        return f"<MetadataEntry(extended={self.is_extended}, keys={len(self.data)})>"
 
 
 class MetadataCache:
     """
-    A simple in-memory cache for storing metadata of files
-    to avoid re-reading after rename operations.
+    An in-memory cache for storing metadata entries by normalized file path.
+    Each entry is a MetadataEntry object.
     """
 
     def __init__(self):
-        self._cache = {}
+        self._cache: Dict[str, MetadataEntry] = {}
 
     def _normalize_path(self, file_path: str) -> str:
+        """Returns a normalized absolute version of the path."""
         return os.path.abspath(os.path.normpath(file_path))
 
-    def set(self, file_path: str, metadata: dict):
+    def set(self, file_path: str, metadata: dict, is_extended: bool = False):
+        """
+        Sets or replaces metadata for a file.
+        If previous entry is already marked as extended, retain that flag.
+        """
         norm_path = self._normalize_path(file_path)
-        self._cache[norm_path] = metadata
+        prev = self._cache.get(norm_path)
 
-    def add(self, file_path: str, metadata: dict):
+        if isinstance(prev, MetadataEntry):
+            is_extended = is_extended or prev.is_extended  # preserve previous extended state
+
+        logger.debug(f"[Cache] SET: {file_path} → extended={is_extended}")
+        self._cache[norm_path] = MetadataEntry(metadata, is_extended=is_extended)
+
+    def add(self, file_path: str, metadata: dict, is_extended: bool = False):
+        """Adds new metadata entry, raises error if path already exists."""
         norm_path = self._normalize_path(file_path)
         if norm_path in self._cache:
             raise KeyError(f"Metadata for '{file_path}' already exists.")
-        self._cache[norm_path] = metadata
+        self._cache[norm_path] = MetadataEntry(metadata, is_extended=is_extended)
 
     def get(self, file_path: str) -> dict:
+        """Returns the raw metadata dict or empty dict if not found."""
         norm_path = self._normalize_path(file_path)
-        return self._cache.get(norm_path, {})
+        entry = self._cache.get(norm_path)
+        return entry.to_dict() if entry else {}
+
+    def get_entry(self, file_path: str) -> Optional[MetadataEntry]:
+        """Returns the MetadataEntry for a file if available."""
+        norm_path = self._normalize_path(file_path)
+        return self._cache.get(norm_path)
 
     def __getitem__(self, file_path: str) -> dict:
         return self.get(file_path)
 
     def has(self, file_path: str) -> bool:
+        """Returns True if metadata exists for the file."""
         norm_path = self._normalize_path(file_path)
         return norm_path in self._cache
 
     def clear(self):
+        """Clears the entire metadata cache."""
         self._cache.clear()
 
     def update(self, other: dict):
-        normalized = {
-            self._normalize_path(k): v for k, v in other.items()
-        }
-        self._cache.update(normalized)
+        """Merges another dict into this cache, wrapping in MetadataEntry if needed."""
+        for k, v in other.items():
+            norm_path = self._normalize_path(k)
+            if isinstance(v, MetadataEntry):
+                self._cache[norm_path] = v
+            else:
+                self._cache[norm_path] = MetadataEntry(v)
 
     def retain_only(self, paths: list[str]) -> None:
         """
         Keeps only the metadata entries for the given list of file paths.
-        All other metadata entries are removed.
+        All other entries are removed.
         """
         norm_paths = {self._normalize_path(p) for p in paths}
         self._cache = {
             path: meta for path, meta in self._cache.items() if path in norm_paths
         }
 
+    def is_extended(self, file_path: str) -> bool:
+        """
+        Returns True if the metadata entry for the given file path is marked as extended.
 
-# Global instance
+        Args:
+            file_path (str): The full path to the file.
+
+        Returns:
+            bool: True if the metadata has __extended__ flag set to True.
+        """
+        entry = self.get_entry(file_path)
+        return isinstance(entry, MetadataEntry) and entry.is_extended
+
+
+# Global singleton
 metadata_cache = MetadataCache()

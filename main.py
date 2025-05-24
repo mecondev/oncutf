@@ -28,6 +28,9 @@ logger = init_logging("oncutf")
 now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"Application started at {now}")
 
+logger_effective_level =logger.getEffectiveLevel()
+logger.info(f"Effective logging level: {logger_effective_level}")
+
 def main() -> None:
     # Setup logging
     """

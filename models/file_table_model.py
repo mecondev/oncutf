@@ -21,6 +21,8 @@ from PyQt5.QtCore import (
 )
 from PyQt5.QtGui import QColor
 from models.file_item import FileItem
+from utils.metadata_cache import MetadataEntry
+
 
 # initialize logger
 from utils.logger_helper import get_logger
@@ -106,10 +108,9 @@ class FileTableModel(QAbstractTableModel):
 
         if index.column() == 0 and role == Qt.UserRole:
             file = self.files[index.row()]
-            if isinstance(file.metadata, dict) and file.metadata:
-                if file.metadata.get("__extended__") is True:
-                    return 'extended'
-                return 'loaded'
+            entry = self.parent_window.metadata_cache.get_entry(file.full_path) if self.parent_window else None
+            if isinstance(entry, MetadataEntry):
+                return 'extended' if entry.is_extended else 'loaded'
             return 'missing'
 
         elif role == Qt.CheckStateRole and col == 0:
