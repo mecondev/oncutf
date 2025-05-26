@@ -90,6 +90,9 @@ def apply_transform(name: str, transform: str) -> str:
     if transform == "UPPER":
         return safe_upper(name)
 
+    if transform == "capitalize":
+        return ' '.join(w.capitalize() for w in name.split())
+
     if transform == "snake_case":
         name = re.sub(r"[^\w\s_-]", "", name, flags=re.UNICODE)
         name = re.sub(r"[\s\-]+", "_", name)

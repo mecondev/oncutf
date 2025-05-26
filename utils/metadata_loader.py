@@ -40,6 +40,7 @@ class MetadataLoader:
         self._cancel_requested = threading.Event()
         self._lock = threading.Lock()
         self.exiftool = ExifToolWrapper()
+        self.model = None
 
     def load(
         self,
@@ -69,6 +70,13 @@ class MetadataLoader:
             metadata = self.read(file.full_path, use_extended=use_extended)
             file.metadata = metadata
             updated_count += 1
+            if self.model:
+                try:
+                    row = self.model.files.index(file)
+                    index = self.model.index(row, 0)
+                    self.model.dataChanged.emit(index, index, [Qt.DecorationRole])
+                except Exception as e:
+                    logger.warning(f"[Loader] Failed to emit dataChanged for {file.filename}: {e}")
 
             if cache:
                 cache.set(file.full_path, metadata, is_extended=use_extended)

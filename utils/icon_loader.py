@@ -22,11 +22,13 @@ logger = logging.getLogger(__name__)
 
 def load_metadata_icons(base_dir: str = "resources/icons") -> dict[str, QPixmap]:
     icon_files = {
-        'loaded': "info_green.png",
-        'extended': "info_orange.png",
-        'partial': "info_gray.png",
-        'invalid': "info_red.png",
+        'loaded': "info_loaded.png",
+        'extended': "info_extended.png",
+        'partial': "info_partial.png",
+        'invalid': "info_invalid.png",
     }
+
+    logger.debug("[IconLoader] Loading metadata icons")
 
     icon_map = {}
     for status, filename in icon_files.items():

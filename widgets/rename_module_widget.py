@@ -14,14 +14,15 @@ renaming workflow interactively.
 
 Features:
 - Dynamic UI creation for each module type
-- Dropdown-based module type selection
-- Add/Remove buttons and layout management
+- Unified add/remove buttons at bottom right
+- Fixed post-processing area (e.g., NameTransform)
+- Responsive layout with visual separation between module logic and final formatting
 """
 
 from typing import Optional
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
-    QPushButton, QFrame
+    QPushButton, QFrame, QSpacerItem, QSizePolicy
 )
 from PyQt5.QtCore import pyqtSignal, QTimer
 
@@ -38,8 +39,8 @@ logger = get_logger(__name__)
 
 class RenameModuleWidget(QWidget):
     """
-    A wrapper widget that hosts a dynamically loaded rename module,
-    with a combo box for selecting module type and add/remove buttons.
+    Container widget that hosts all rename modules and a fixed post-processing section.
+    Provides a structured area for inserting, configuring, and removing rename logic modules.
     """
     remove_requested = pyqtSignal(QWidget)
     updated = pyqtSignal(QWidget)
@@ -72,15 +73,9 @@ class RenameModuleWidget(QWidget):
         # --- Layout setup ---
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(4, 4, 4, 4)
-        self.main_layout.setSpacing(0)
+        self.main_layout.setSpacing(6)
 
-        # Optional divider
-        self.divider = QFrame()
-        self.divider.setFrameShape(QFrame.HLine)
-        self.divider.setFixedHeight(2)
-        self.divider.setStyleSheet("background-color: #aaa; border: none; margin: 4px 0px;")
-        self.divider.setVisible(False)
-        self.main_layout.addWidget(self.divider)
+        # --- Top layout (type selection + module area) ---
 
         # Row for "Type" label and combo box
         type_row = QHBoxLayout()
@@ -96,24 +91,12 @@ class RenameModuleWidget(QWidget):
         type_row.addStretch()
         self.main_layout.addLayout(type_row)
 
-        # Fixed height container layout for modules
+        # Module content container
         self.content_container_widget = QWidget()
         self.content_container_layout = QVBoxLayout(self.content_container_widget)
         self.content_container_layout.setContentsMargins(4, 4, 4, 4)
         self.content_container_layout.setSpacing(2)
         self.main_layout.addWidget(self.content_container_widget)
-
-        # Add/remove buttons
-        button_layout = QHBoxLayout()
-        self.add_button = QPushButton("+")
-        self.add_button.setFixedSize(24, 24)
-        self.remove_button = QPushButton("-")
-        self.remove_button.setFixedSize(24, 24)
-        self.remove_button.clicked.connect(lambda: self.remove_requested.emit(self))
-        button_layout.addStretch()
-        button_layout.addWidget(self.add_button)
-        button_layout.addWidget(self.remove_button)
-        self.main_layout.addLayout(button_layout)
 
         # Load default module
         QTimer.singleShot(0, lambda: self.update_module_content(self.type_combo.currentText()))
@@ -158,8 +141,11 @@ class RenameModuleWidget(QWidget):
         Return the current module data.
         """
         if self.current_module_widget and hasattr(self.current_module_widget, "get_data"):
-            return self.current_module_widget.get_data()
-        return {}
+            data = self.current_module_widget.get_data()
+        else:
+            data = {}
+
+        return data
 
     def to_dict(self, preview: bool = False) -> dict:
         """

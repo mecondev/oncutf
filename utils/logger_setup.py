@@ -4,10 +4,7 @@ logger_setup.py
 This module provides the ConfigureLogger class for setting up logging in the application.
 It allows for flexible configuration of logging settings, including log levels, output
 destinations, and formatting. The logger is configured to log INFO and higher levels to
-the console, and ERROR and higher levels to a rotating file.
-
-Author: Michael Economou
-Date: 2025-05-01
+the console, ERROR and higher to app.log, and DEBUG+ to app_debug.log (optional).
 """
 
 import logging
@@ -15,6 +12,9 @@ import os
 import sys
 import re
 from logging.handlers import RotatingFileHandler
+from config import ENABLE_DEBUG_LOG_FILE
+from utils.logger_file_helper import add_file_handler
+
 
 def safe_text(text: str) -> str:
     """
@@ -41,7 +41,8 @@ def safe_log(logger_func, message: str):
 class ConfigureLogger:
     """
     Configures application-wide logging.
-    Logs INFO and higher to the console, and ERROR and higher to a rotating file.
+    Logs INFO and higher to the console, ERROR and higher to app.log,
+    and DEBUG and higher to app_debug.log.
     """
 
     def __init__(
@@ -65,20 +66,28 @@ class ConfigureLogger:
             backup_count (int): Number of backup log files to keep.
         """
         self.logger = logging.getLogger()
-        self.logger.setLevel(logging.DEBUG)  # Accept all logs; handlers will filter
+        self.logger.setLevel(logging.DEBUG)  # Accept everything; handlers filter levels
 
         if not self.logger.hasHandlers():
             os.makedirs(log_dir, exist_ok=True)
             log_file_path = os.path.join(log_dir, f"{log_name}.log")
+            debug_file_path = os.path.join(log_dir, f"{log_name}_debug.log")
 
             self._setup_console_handler(console_level)
             self._setup_file_handler(log_file_path, file_level, max_bytes, backup_count)
+
+            # Extra handler for DEBUG level (e.g., dev-only logs)
+            if ENABLE_DEBUG_LOG_FILE:
+                add_file_handler(
+                    logger=self.logger,
+                    log_path=debug_file_path,
+                    level=logging.DEBUG
+                )
 
     def _setup_console_handler(self, level: int):
         """Sets up console handler with UTF-8-safe formatting."""
         console_handler = logging.StreamHandler(sys.stdout)
 
-        # Try to enforce UTF-8 encoding for Windows terminals
         try:
             console_handler.stream.reconfigure(encoding='utf-8')
         except Exception:

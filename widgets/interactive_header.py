@@ -10,17 +10,19 @@ adds interactive behavior to table headers in the oncutf application.
 Features:
 - Toggles selection of all rows when clicking on column 0
 - Performs manual sort handling for sortable columns (excluding column 0)
+- Prevents accidental sort when resizing (Explorer-like behavior)
 """
 
 from typing import Optional
-from PyQt5.QtWidgets import QHeaderView
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QHeaderView, QMenu, QAction
+from PyQt5.QtCore import Qt, QPoint
 
 
 class InteractiveHeader(QHeaderView):
     """
     A custom QHeaderView that toggles selection on column 0 click,
-    and performs manual sorting for other columns.
+    and performs manual sorting for other columns. Prevents accidental sort
+    when user clicks near the edge to resize.
     """
 
     def __init__(self, orientation, parent=None, parent_window: Optional[object] = None):
@@ -29,21 +31,59 @@ class InteractiveHeader(QHeaderView):
         self.setSectionsClickable(True)
         self.setHighlightSections(True)
         self.setSortIndicatorShown(True)
+        self._press_pos: QPoint = QPoint()
+        self._pressed_index: int = -1
 
     def mousePressEvent(self, event) -> None:
-        """
-        Handle header click events:
-        - Column 0 → toggles all selection via parent_window
-        - Other columns → perform manual sort toggle via parent_window
-        """
-        index = self.logicalIndexAt(event.pos())
+        self._press_pos = event.pos()
+        self._pressed_index = self.logicalIndexAt(event.pos())
+        super().mousePressEvent(event)
 
-        if index == 0:
-            # Column 0 click toggles check state
+    def mouseReleaseEvent(self, event) -> None:
+        released_index = self.logicalIndexAt(event.pos())
+
+        if released_index != self._pressed_index:
+            super().mouseReleaseEvent(event)
+            return
+
+        if (event.pos() - self._press_pos).manhattanLength() > 4:
+            super().mouseReleaseEvent(event)
+            return
+
+        # Section was clicked without drag or resize intent
+        if released_index == 0:
             if self.parent_window:
-                self.parent_window.handle_header_toggle(Qt.Checked)  # uses checked as toggle flag
+                self.parent_window.handle_header_toggle(Qt.Checked)
         else:
             if self.parent_window:
-                self.parent_window.sort_by_column(index)
+                self.parent_window.sort_by_column(released_index)
 
-        super().mousePressEvent(event)
+        super().mouseReleaseEvent(event)
+
+    def contextMenuEvent(self, event):
+        """
+        Show right-click context menu for sorting at header column.
+        """
+        logical_index = self.logicalIndexAt(event.pos())
+        if logical_index <= 0:
+            return  # skip column 0 (toggle column)
+
+        menu = QMenu(self)
+
+        sort_asc = QAction("Sort Ascending", self)
+        sort_desc = QAction("Sort Descending", self)
+
+        sort_asc.triggered.connect(lambda: self._sort(logical_index, Qt.AscendingOrder))
+        sort_desc.triggered.connect(lambda: self._sort(logical_index, Qt.DescendingOrder))
+
+        menu.addAction(sort_asc)
+        menu.addAction(sort_desc)
+
+        menu.exec_(event.globalPos())
+
+    def _sort(self, index: int, order: Qt.SortOrder):
+        """
+        Calls sort_by_column on parent with specified order.
+        """
+        if self.parent_window:
+            self.parent_window.sort_by_column(index, order)

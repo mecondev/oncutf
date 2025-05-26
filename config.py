@@ -18,8 +18,9 @@ Contains:
 """
 from PyQt5.QtCore import Qt
 
-# Debugging
+# Debugging Set to False to disable debug.log output
 SHOW_DEV_ONLY_IN_CONSOLE = False
+ENABLE_DEBUG_LOG_FILE = True
 
 # Which key skips the metadata scan when held down
 SKIP_METADATA_MODIFIER = Qt.ControlModifier
