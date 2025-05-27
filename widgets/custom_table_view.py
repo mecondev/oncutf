@@ -112,9 +112,7 @@ class CustomTableView(QTableView):
         """
         Custom mouse press handler for row selection.
         Implements Ctrl, Shift, and Ctrl+Shift logic for reliable selection.
-
-        Args:
-            event (QMouseEvent): The mouse event.
+        Implements explorer-style: single click always selects only the row, Ctrl+click toggles selection.
         """
         index: QModelIndex = self.indexAt(event.pos())
         if not index.isValid() or self.is_empty():
@@ -128,7 +126,6 @@ class CustomTableView(QTableView):
 
         # Right click inside selection: do nothing, just repaint
         if event.button() == Qt.RightButton and row in self.selected_rows:
-            # Only repaint, do not change selection
             self.viewport().update()
             self.selection_changed.emit(list(self.selected_rows))
             event.accept()
@@ -141,12 +138,6 @@ class CustomTableView(QTableView):
             self.anchor_row = row
             self.viewport().update()
             self.selection_changed.emit(list(self.selected_rows))
-            event.accept()
-            return
-
-        # Left click on already selected row: do not change selection, allow drag of all selected
-        if event.button() == Qt.LeftButton and row in self.selected_rows:
-            self._drag_start_pos = event.pos()
             event.accept()
             return
 
@@ -168,14 +159,14 @@ class CustomTableView(QTableView):
             for r in range(range_start, range_end + 1):
                 self.selected_rows.add(r)
         elif ctrl:
-            # Only Ctrl → toggle selection of this row
+            # Only Ctrl → toggle selection of this row (explorer style)
             if row in self.selected_rows:
                 self.selected_rows.remove(row)
             else:
                 self.selected_rows.add(row)
             self.anchor_row = row
         else:
-            # No modifier → select only this row
+            # No modifier (plain click) → always select only this row (explorer style)
             self.selected_rows.clear()
             self.selected_rows.add(row)
             self.anchor_row = row
@@ -185,7 +176,7 @@ class CustomTableView(QTableView):
         self.selection_changed.emit(list(self.selected_rows))
         event.accept()
 
-        # ΝΕΟ: Καθάρισε το context_focused_row αν δεν είναι δεξί κλικ
+        # Clear context_focused_row if not right click
         if event.button() != Qt.RightButton and self.context_focused_row is not None:
             self.context_focused_row = None
             self.viewport().update()
@@ -314,8 +305,6 @@ class CustomTableView(QTableView):
 
     def selectionChanged(self, selected, deselected) -> None:
         super().selectionChanged(selected, deselected)
-        # Debug print for selection state
-        print(f"[TABLE selectionChanged] selected_rows: {self.selected_rows}")
         # Sync custom selected_rows with the actual selection model
         self.selected_rows = set(index.row() for index in self.selectionModel().selectedRows())
         logger.debug(f"[SelectionChanged] Current selected rows: {self.selected_rows}")

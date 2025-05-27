@@ -60,7 +60,7 @@ class Renamer:
         Returns:
             List[RenameResult]: Outcome of each rename attempt.
         """
-        logger.info(f"Starting rename process for {len(self.files)} files...")
+        logger.debug(f"Starting rename process for {len(self.files)} files...", extra={"dev_only": True})
 
         # Step 1: Generate preview names from modules
         preview_pairs, has_error, tooltip = generate_preview_names(

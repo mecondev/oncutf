@@ -56,8 +56,8 @@ class ExifToolWrapper:
             result = self._get_metadata_fast(file_path)
 
         if isinstance(result, dict):
-            logger.debug(f"[ExifToolWrapper] Result for {file_path} has {len(result)} keys")
-            logger.debug(f"[ExifToolWrapper] FIRST KEYS: {list(result.keys())[:10]}")
+            logger.debug(f"[ExifToolWrapper] Result for {file_path} has {len(result)} keys", extra={"dev_only": True})
+            logger.debug(f"[ExifToolWrapper] FIRST KEYS: {list(result.keys())[:10]}", extra={"dev_only": True})
         else:
             logger.warning(f"[ExifToolWrapper] Failed or non-dict result for {file_path}: {type(result)}")
 
@@ -107,7 +107,7 @@ class ExifToolWrapper:
                     stripped = line.strip()
                     logger.debug(f"[ExifToolWrapper] STDOUT: {stripped}", extra={"dev_only": True})
                     if stripped == marker:
-                        logger.debug(f"[ExifToolWrapper] Received marker: {marker}")
+                        logger.debug(f"[ExifToolWrapper] Received marker: {marker}", extra={"dev_only": True})
                         break
 
                     output_lines.append(line)
@@ -143,8 +143,8 @@ class ExifToolWrapper:
                 logger.warning("[ExtendedReader] No metadata returned.")
                 return None
 
-            logger.debug(f"[ExtendedReader] JSON object count: {len(data)}")
-            logger.debug(f"[ExtendedReader] Top-level keys: {list(data[0].keys())[:10]}")
+            logger.debug(f"[ExtendedReader] JSON object count: {len(data)}", extra={"dev_only": True})
+            logger.debug(f"[ExtendedReader] Top-level keys: {list(data[0].keys())[:10]}", extra={"dev_only": True})
 
             result_dict = data[0]
             if len(data) > 1:
@@ -152,13 +152,13 @@ class ExifToolWrapper:
                     for key, value in extra.items():
                         new_key = f"[Segment {i}] {key}"
                         result_dict[new_key] = value
-                logger.debug(f"[ExtendedReader] Merged {len(data) - 1} embedded segments into result.")
+                logger.debug(f"[ExtendedReader] Merged {len(data) - 1} embedded segments into result.", extra={"dev_only": True})
 
             result_dict["__extended__"] = True
-            logger.debug(f"[ExtendedReader] Marked as extended: {file_path}")
-            logger.debug(f"[ExtendedReader] Final keys: {list(result_dict.keys())[:10]}")
-            logger.debug(f"[ExtendedReader] __extended__ present? {'__extended__' in result_dict}")
-            logger.debug(f"[ExtendedReader] Returning result for {file_path}")
+            logger.debug(f"[ExtendedReader] Marked as extended: {file_path}", extra={"dev_only": True})
+            logger.debug(f"[ExtendedReader] Final keys: {list(result_dict.keys())[:10]}", extra={"dev_only": True})
+            logger.debug(f"[ExtendedReader] __extended__ present? {'__extended__' in result_dict}", extra={"dev_only": True})
+            logger.debug(f"[ExtendedReader] Returning result for {file_path}", extra={"dev_only": True})
 
             return result_dict
 
@@ -174,6 +174,7 @@ class ExifToolWrapper:
                 self.process.stdin.flush()
                 self.process.communicate(timeout=5)
         except Exception as e:
-            print(f"[ExifToolWrapper] Shutdown error: {e}")
+            # print(f"[ExifToolWrapper] Shutdown error: {e}")
+            pass
         finally:
             self.process = None

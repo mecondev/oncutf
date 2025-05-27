@@ -49,4 +49,3 @@ def run_tests():
 if __name__ == "__main__":
     clean_logs()
     run_tests()
-    print("✅ Logging test complete. Check logs/ directory.")

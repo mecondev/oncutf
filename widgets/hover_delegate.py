@@ -54,11 +54,6 @@ class HoverItemDelegate(QStyledItemDelegate):
         is_selected = hasattr(table, "selected_rows") and row in table.selected_rows
         is_hovered = row == self.hovered_row
 
-        if is_selected:
-            print(f"[DELEGATE PAINT] SELECTED ROW: {row} (selected_rows={getattr(table, 'selected_rows', None)})")
-        if is_hovered:
-            print(f"[DELEGATE PAINT] HOVERED ROW: {row}")
-
         # Set background fill color
         background_color = None
         if is_selected:

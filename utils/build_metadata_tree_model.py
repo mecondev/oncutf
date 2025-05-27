@@ -64,7 +64,7 @@ def build_metadata_tree_model(metadata: dict) -> QStandardItemModel:
 
     for group_name in ordered_groups:
         items = grouped[group_name]
-        logger.debug(f"Creating group: {group_name} with {len(items)} items")
+        logger.debug(f"Creating group: {group_name} with {len(items)} items", extra={"dev_only": True})
         group_item = QStandardItem(group_name)
         group_item.setEditable(False)
         group_item.setSelectable(False)

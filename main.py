@@ -32,7 +32,7 @@ now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 logger.info(f"Application started at {now}")
 
 logger_effective_level =logger.getEffectiveLevel()
-logger.info(f"Effective logging level: {logger_effective_level}")
+logger.debug(f"Effective logging level: {logger_effective_level}", extra={"dev_only": True})
 
 def main() -> None:
     # Setup logging
@@ -57,3 +57,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

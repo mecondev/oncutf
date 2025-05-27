@@ -49,5 +49,4 @@ class MetadataTreeView(QTreeView):
         if files:
             self.files_dropped.emit(files, event.keyboardModifiers())
             event.acceptProposedAction()
-            print("[DEBUG] Drop event triggered. Modifiers:", event.keyboardModifiers())
 

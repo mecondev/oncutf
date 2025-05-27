@@ -119,7 +119,7 @@ def execute_rename_plan(plan: List[Dict]) -> int:
             os.rename(entry["src_path"], entry["dst_path"])
             success_count += 1
         except Exception as e:
-            print(f"Failed to rename {entry['src']} -> {entry['dst']}: {e}")
+            # print(f"Failed to rename {entry['src']} -> {entry['dst']}: {e}")
 
     return success_count
 

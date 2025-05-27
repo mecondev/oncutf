@@ -81,9 +81,9 @@ class MetadataLoader:
             if cache:
                 cache.set(file.full_path, metadata, is_extended=use_extended)
 
-            logger.info(f"[Loader] Read metadata for: {file.filename} | extended={use_extended}")
+            logger.debug(f"[Loader] Read metadata for: {file.filename} | extended={use_extended}", extra={"dev_only": True})
 
-        logger.info(f"[Loader] Total updated: {updated_count} / {len(files)}")
+        logger.debug(f"[Loader] Total updated: {updated_count} / {len(files)}", extra={"dev_only": True})
 
     def read_metadata(
         self,

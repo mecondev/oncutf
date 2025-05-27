@@ -65,7 +65,7 @@ class MetadataWorker(QObject):
         - Updates the cache and progress bar
         - Emits finished signal at the end
         """
-        logger.info(f"[Worker] run_batch() started — use_extended = {self.use_extended}")
+        logger.debug(f"[Worker] run_batch() started — use_extended = {self.use_extended}", extra={"dev_only": True})
         logger.warning(f"[Worker] run_batch() running in thread: {threading.current_thread().name}")
 
         start_total = time.time()
@@ -118,7 +118,7 @@ class MetadataWorker(QObject):
 
         finally:
             elapsed_total = time.time() - start_total
-            logger.info(f"[Worker] Total time for batch: {elapsed_total:.2f} sec")
+            logger.debug(f"[Worker] Total time for batch: {elapsed_total:.2f} sec", extra={"dev_only": True})
             logger.warning("[Worker] FINALLY → emitting finished signal")
             self.finished.emit()
 

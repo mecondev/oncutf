@@ -458,43 +458,39 @@ class MainWindow(QMainWindow):
         self.load_files_from_folder(self.current_folder_path, skip_metadata=skip_metadata, force=True)
 
     def select_all_rows(self) -> None:
-        """
-        Selects all rows using the custom selection model.
-        Also marks all files as checked and updates preview/metadata panel.
-        """
         if not self.model.files:
+            return
+
+        # Αν όλα τα αρχεία είναι ήδη checked, δεν κάνουμε τίποτα
+        if all(f.checked for f in self.model.files):
             return
 
         total = len(self.model.files)
         self.file_table_view.selected_rows = set(range(total))
-
         for file in self.model.files:
             file.checked = True
-
-        self.file_table_view.anchor_row = 0  # optional, for shift-click
+        self.file_table_view.anchor_row = 0
         self.file_table_view.viewport().update()
         self.update_files_label()
 
-        # --- Sync Qt selection model with custom selected_rows ---
+        # Sync Qt selection model: πάντα επιλέγουμε όλες τις γραμμές
         selection_model = self.file_table_view.selectionModel()
         selection_model.clearSelection()
-        for row in self.file_table_view.selected_rows:
+        for row in range(total):
             index = self.model.index(row, 0)
             selection_model.select(index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
 
-        # Defer heavy operations slightly to avoid UI lag
         QTimer.singleShot(10, self.generate_preview_names)
 
-        # Show metadata for last file only (not every file!)
+        # Εμφάνιση metadata για το τελευταίο αρχείο
         if total > 0:
             def show_metadata_later():
                 last = self.model.files[-1]
-                metadata = last.metadata or self.metadata_cache.get(last.full_path)
-                if isinstance(metadata, dict):
+                metadata = getattr(last, 'metadata', None)
+                if isinstance(metadata, dict) and metadata:
                     self.display_metadata(metadata, context="select_all_rows")
                 else:
                     self.clear_metadata_view()
-
             QTimer.singleShot(20, show_metadata_later)
 
     def clear_all_selection(self) -> None:
@@ -763,7 +759,8 @@ class MainWindow(QMainWindow):
         is_large = len(valid_files) > LARGE_FOLDER_WARNING_THRESHOLD
         logger.info(
             f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata}, extended={use_extended}, "
-            f"(large={is_large}, default={DEFAULT_SKIP_METADATA})"
+            f"(large={is_large}, default={DEFAULT_SKIP_METADATA})",
+            extra={"dev_only": True}
         )
         logger.warning(f'-> skip_metadata passed to loader: {skip_metadata}')
         self.load_files_from_folder(folder_path, skip_metadata=skip_metadata, force=force_reload)
@@ -806,7 +803,8 @@ class MainWindow(QMainWindow):
         logger.debug("-" * 60)
         logger.info(
             f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata}, extended={use_extended}, "
-            f"(large={is_large}, default={DEFAULT_SKIP_METADATA})"
+            f"(large={is_large}, default={DEFAULT_SKIP_METADATA})",
+            extra={"dev_only": True}
         )
 
         logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
@@ -1526,7 +1524,7 @@ class MainWindow(QMainWindow):
         - Cleans up metadata worker and thread
         """
         logger.warning(f"[MainWindow] handle_metadata_finished() in thread: {threading.current_thread().name}")
-        logger.info("[MainWindow] Metadata loading finished.")
+        logger.debug("[MainWindow] Metadata loading finished.", extra={"dev_only": True})
 
         # --- 1. Close loading dialog if visible
         if getattr(self, "loading_dialog", None):
