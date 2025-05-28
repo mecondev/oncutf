@@ -67,46 +67,58 @@ class CustomTableView(QTableView):
             modifiers (Qt.KeyboardModifiers): Active keyboard modifiers.
         """
         sm = self.selectionModel()
+        model = self.model()
+        if sm is None or model is None:
+            return
 
-        if modifiers & Qt.ShiftModifier:
+        if hasattr(Qt, 'ShiftModifier') and modifiers & Qt.ShiftModifier:
             if self._manual_anchor_index is None:
                 self._manual_anchor_index = index
                 logger.debug(f"[Anchor] Initialized at row {index.row()} (no previous anchor)")
             else:
-                selection = QItemSelection(self._manual_anchor_index, index)
-                sm.select(selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
-                sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
-                logger.debug(f"[Anchor] Shift-select from {self._manual_anchor_index.row()} to {index.row()}")
+                if hasattr(QItemSelectionModel, 'ClearAndSelect') and hasattr(QItemSelectionModel, 'Rows'):
+                    selection = QItemSelection(self._manual_anchor_index, index)
+                    sm.select(selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+                    if hasattr(QItemSelectionModel, 'NoUpdate'):
+                        sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
+                    logger.debug(f"[Anchor] Shift-select from {self._manual_anchor_index.row()} to {index.row()}")
 
-        elif modifiers & Qt.ControlModifier:
+        elif hasattr(Qt, 'ControlModifier') and modifiers & Qt.ControlModifier:
             self._manual_anchor_index = index
-            sm = self.selectionModel()
             row = index.row()
             selection = QItemSelection(index, index)
 
-            sm.blockSignals(True)  # We are temporarily blocking the signals.
+            if hasattr(sm, 'blockSignals'):
+                sm.blockSignals(True)
 
-            if sm.isSelected(index):
-                sm.select(selection, QItemSelectionModel.Deselect | QItemSelectionModel.Rows)
-                logger.debug(f"[Anchor] Ctrl-toggle OFF at row {row}")
+            if hasattr(sm, 'isSelected') and sm.isSelected(index):
+                if hasattr(QItemSelectionModel, 'Deselect') and hasattr(QItemSelectionModel, 'Rows'):
+                    sm.select(selection, QItemSelectionModel.Deselect | QItemSelectionModel.Rows)
+                    logger.debug(f"[Anchor] Ctrl-toggle OFF at row {row}")
             else:
-                sm.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
-                logger.debug(f"[Anchor] Ctrl-toggle ON at row {row}")
+                if hasattr(QItemSelectionModel, 'Select') and hasattr(QItemSelectionModel, 'Rows'):
+                    sm.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+                    logger.debug(f"[Anchor] Ctrl-toggle ON at row {row}")
 
-            sm.blockSignals(False)  # We are reactivating the signals.
+            if hasattr(sm, 'blockSignals'):
+                sm.blockSignals(False)
 
-            sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
+            if hasattr(QItemSelectionModel, 'NoUpdate'):
+                sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
 
             # Επιβάλε ανανέωση γραμμής.
-            left = self.model().index(row, 0)
-            right = self.model().index(row, self.model().columnCount() - 1)
-            self.viewport().update(self.visualRect(left).united(self.visualRect(right)))
+            if hasattr(model, 'index') and hasattr(model, 'columnCount') and hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
+                left = model.index(row, 0)
+                right = model.index(row, model.columnCount() - 1)
+                self.viewport().update(self.visualRect(left).united(self.visualRect(right)))
 
         else:
             self._manual_anchor_index = index
-            sm.select(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
-            sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
-            logger.debug(f"[Anchor] Single click select at row {index.row()}")
+            if hasattr(QItemSelectionModel, 'ClearAndSelect') and hasattr(QItemSelectionModel, 'Rows'):
+                sm.select(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+                if hasattr(QItemSelectionModel, 'NoUpdate'):
+                    sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
+                logger.debug(f"[Anchor] Single click select at row {index.row()}")
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """
@@ -125,56 +137,12 @@ class CustomTableView(QTableView):
         shift = modifiers & Qt.ShiftModifier
 
         # Right click inside selection: do nothing, just repaint
-        if event.button() == Qt.RightButton and row in self.selected_rows:
-            self.viewport().update()
-            self.selection_changed.emit(list(self.selected_rows))
-            event.accept()
-            return
-
-        # Right click outside selection: select only this row
         if event.button() == Qt.RightButton:
-            self.selected_rows.clear()
-            self.selected_rows.add(row)
-            self.anchor_row = row
-            self.viewport().update()
-            self.selection_changed.emit(list(self.selected_rows))
-            event.accept()
+            super().mousePressEvent(event)
             return
 
         # Left click logic (range, ctrl, shift, κλπ)
-        if self.anchor_row is None or not shift:
-            self.anchor_row = row
-
-        if ctrl and shift:
-            # Ctrl + Shift → extend selection range and keep previous
-            range_start = min(self.anchor_row, row)
-            range_end = max(self.anchor_row, row)
-            for r in range(range_start, range_end + 1):
-                self.selected_rows.add(r)
-        elif shift:
-            # Only Shift → range selection (clear previous)
-            self.selected_rows.clear()
-            range_start = min(self.anchor_row, row)
-            range_end = max(self.anchor_row, row)
-            for r in range(range_start, range_end + 1):
-                self.selected_rows.add(r)
-        elif ctrl:
-            # Only Ctrl → toggle selection of this row (explorer style)
-            if row in self.selected_rows:
-                self.selected_rows.remove(row)
-            else:
-                self.selected_rows.add(row)
-            self.anchor_row = row
-        else:
-            # No modifier (plain click) → always select only this row (explorer style)
-            self.selected_rows.clear()
-            self.selected_rows.add(row)
-            self.anchor_row = row
-
-        # Repaint view to show new selection
-        self.viewport().update()
-        self.selection_changed.emit(list(self.selected_rows))
-        event.accept()
+        super().mousePressEvent(event)
 
         # Clear context_focused_row if not right click
         if event.button() != Qt.RightButton and self.context_focused_row is not None:
@@ -306,11 +274,14 @@ class CustomTableView(QTableView):
     def selectionChanged(self, selected, deselected) -> None:
         super().selectionChanged(selected, deselected)
         # Sync custom selected_rows with the actual selection model
-        self.selected_rows = set(index.row() for index in self.selectionModel().selectedRows())
-        logger.debug(f"[SelectionChanged] Current selected rows: {self.selected_rows}")
+        selection_model = self.selectionModel()
+        if selection_model is not None:
+            self.selected_rows = set(index.row() for index in selection_model.selectedRows())
+            self.selection_changed.emit(list(self.selected_rows))
         # Always clear context_focused_row on selection change to avoid stale focus highlight
         if self.context_focused_row is not None:
             self.context_focused_row = None
+        if hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
             self.viewport().update()
 
     def is_empty(self) -> bool:
@@ -355,3 +326,25 @@ class CustomTableView(QTableView):
                         right = self.model().index(r, self.model().columnCount() - 1)
                         row_rect = self.visualRect(left).united(self.visualRect(right))
                         self.viewport().update(row_rect)
+
+    def select_rows_range(self, start_row, end_row):
+        """Selects a range of rows efficiently (block selection)."""
+        self.blockSignals(True)
+        selection_model = self.selectionModel()
+        model = self.model()
+        if selection_model is None or model is None:
+            self.blockSignals(False)
+            return
+        selection_model.clearSelection()
+        if hasattr(model, 'index') and hasattr(model, 'columnCount'):
+            top_left = model.index(start_row, 0)
+            bottom_right = model.index(end_row, model.columnCount() - 1)
+            selection = QItemSelection(top_left, bottom_right)
+            selection_model.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+        self.blockSignals(False)
+        if hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
+            self.viewport().update()
+        # Update custom selected_rows and emit selection_changed for preview sync
+        if model is not None:
+            self.selected_rows = set(range(start_row, end_row + 1))
+            self.selection_changed.emit(list(self.selected_rows))

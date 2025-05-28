@@ -61,6 +61,10 @@ logs/*.json
 reports/
 test_output/
 
+# Project backups
+backups/
+backup_oncutf.sh
+
 # Backup and temporary files from editing QSS or UI files
 *.qss~        # Temporary QSS backups
 *.bak         # General backup files

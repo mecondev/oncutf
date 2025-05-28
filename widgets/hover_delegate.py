@@ -51,7 +51,8 @@ class HoverItemDelegate(QStyledItemDelegate):
             option.state &= ~QStyle.State_HasFocus
 
         # Determine states
-        is_selected = hasattr(table, "selected_rows") and row in table.selected_rows
+        selection_model = table.selectionModel() if table else None
+        is_selected = selection_model is not None and selection_model.isSelected(index)
         is_hovered = row == self.hovered_row
 
         # Set background fill color
@@ -60,7 +61,7 @@ class HoverItemDelegate(QStyledItemDelegate):
             background_color = option.palette.color(QPalette.Highlight)
             if is_hovered:
                 background_color = background_color.lighter(115)
-        elif is_hovered and not is_selected:
+        elif is_hovered:
             background_color = self.hover_color
 
         # Paint background if needed
@@ -91,6 +92,4 @@ class HoverItemDelegate(QStyledItemDelegate):
 
         # Finally, paint cell content (text, icon, etc.)
         # Remove Qt selection and mouse-over state so QSS does not apply selection or hover background
-        option.state &= ~QStyle.State_Selected
-        option.state &= ~QStyle.State_MouseOver
         super().paint(painter, option, index)

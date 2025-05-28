@@ -458,95 +458,69 @@ class MainWindow(QMainWindow):
         self.load_files_from_folder(self.current_folder_path, skip_metadata=skip_metadata, force=True)
 
     def select_all_rows(self) -> None:
+        import time
+        start = time.perf_counter()
         if not self.model.files:
             return
 
-        # Αν όλα τα αρχεία είναι ήδη checked, δεν κάνουμε τίποτα
-        if all(f.checked for f in self.model.files):
+        total = len(self.model.files)
+        if total == 0:
             return
 
-        total = len(self.model.files)
-        self.file_table_view.selected_rows = set(range(total))
-        for file in self.model.files:
-            file.checked = True
-        self.file_table_view.anchor_row = 0
-        self.file_table_view.viewport().update()
-        self.update_files_label()
-
-        # Sync Qt selection model: πάντα επιλέγουμε όλες τις γραμμές
+        cursor_set = self.show_wait_cursor_if_many_files(total, threshold=100)
         selection_model = self.file_table_view.selectionModel()
+        model = self.model
         selection_model.clearSelection()
-        for row in range(total):
-            index = self.model.index(row, 0)
-            selection_model.select(index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+        if hasattr(model, 'index') and hasattr(model, 'columnCount'):
+            top_left = model.index(0, 0)
+            bottom_right = model.index(total - 1, model.columnCount() - 1)
+            selection = QItemSelection(top_left, bottom_right)
+            selection_model.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+        self.file_table_view.anchor_row = 0
+        QTimer.singleShot(20, self.update_files_label)
 
-        QTimer.singleShot(10, self.generate_preview_names)
+        if cursor_set:
+            QTimer.singleShot(100, self.restore_cursor)
 
-        # Εμφάνιση metadata για το τελευταίο αρχείο
-        if total > 0:
-            def show_metadata_later():
-                last = self.model.files[-1]
-                metadata = getattr(last, 'metadata', None)
-                if isinstance(metadata, dict) and metadata:
-                    self.display_metadata(metadata, context="select_all_rows")
-                else:
-                    self.clear_metadata_view()
-            QTimer.singleShot(20, show_metadata_later)
+        elapsed = time.perf_counter() - start
+        import logging
+        logging.info(f"[PROFILE] select_all_rows: {elapsed:.4f} sec")
 
     def clear_all_selection(self) -> None:
-        self.file_table_view.selected_rows.clear()
-
+        selection_model = self.file_table_view.selectionModel()
+        selection_model.clearSelection()
         for file in self.model.files:
             file.checked = False
-
         self.file_table_view.viewport().update()
         self.update_files_label()
         self.generate_preview_names()
         self.clear_metadata_view()
 
-        # --- Sync Qt selection model with custom selected_rows ---
-        selection_model = self.file_table_view.selectionModel()
-        selection_model.clearSelection()
-
     def invert_selection(self) -> None:
-        """
-        Inverts the current selection.
-        If nothing is selected, behaves like Ctrl+A.
-        Deferred preview & metadata update to avoid UI lag.
-        """
         if not self.model.files:
             self.set_status("No files to invert selection.", color="gray", auto_reset=True)
             return
 
-        current = self.file_table_view.selected_rows
-
-        # If nothing selected yet → behave like Ctrl+A
-        if not current:
-            self.select_all_rows()
-            return
-
+        selection_model = self.file_table_view.selectionModel()
+        current_selected = set(idx.row() for idx in selection_model.selectedRows())
+        total = len(self.model.files)
         new_selection = set()
         for row, file in enumerate(self.model.files):
-            if row in current:
+            if row in current_selected:
                 file.checked = False
             else:
                 new_selection.add(row)
                 file.checked = True
-
-        self.file_table_view.selected_rows = new_selection
+        selection_model.clearSelection()
+        model = self.model
+        if hasattr(model, 'index') and hasattr(model, 'columnCount'):
+            for row in new_selection:
+                index = model.index(row, 0)
+                selection_model.select(index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
         self.file_table_view.anchor_row = 0
         self.file_table_view.viewport().update()
         self.update_files_label()
-
-        # --- Sync Qt selection model with custom selected_rows ---
-        selection_model = self.file_table_view.selectionModel()
-        selection_model.clearSelection()
-        for row in self.file_table_view.selected_rows:
-            index = self.model.index(row, 0)
-            selection_model.select(index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
-
         QTimer.singleShot(10, self.generate_preview_names)
-
         if new_selection:
             def show_metadata_later():
                 last_row = max(new_selection)
@@ -556,7 +530,6 @@ class MainWindow(QMainWindow):
                     self.display_metadata(metadata, context="invert_selection")
                 else:
                     self.clear_metadata_view()
-
             QTimer.singleShot(20, show_metadata_later)
         else:
             self.clear_metadata_view()
@@ -887,6 +860,7 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(100, lambda: self.start_metadata_scan([f.full_path for f in file_items if f.full_path]))
 
     def start_metadata_scan(self, file_paths: list[str]) -> None:
+        cursor_set = self.show_wait_cursor_if_many_files(len(file_paths), threshold=100)
         """
         Starts the metadata scan and shows the waiting dialog.
 
@@ -913,6 +887,9 @@ class MainWindow(QMainWindow):
         QApplication.processEvents()
 
         self.load_metadata_in_thread(file_paths)
+
+        if cursor_set:
+            QTimer.singleShot(100, self.restore_cursor)
 
     def load_metadata_in_thread(self, file_paths: list[str]) -> None:
         """
@@ -962,6 +939,7 @@ class MainWindow(QMainWindow):
         self.metadata_thread.start()
 
     def start_metadata_scan_for_items(self, items: list[FileItem]) -> None:
+        cursor_set = self.show_wait_cursor_if_many_files(len(items), threshold=100)
         """
         Initiates threaded metadata scanning for a specific list of FileItems.
 
@@ -979,6 +957,9 @@ class MainWindow(QMainWindow):
 
         self.set_status(f"Loading metadata for {len(file_paths)} file(s)...", color="blue")
         QTimer.singleShot(200, lambda: self.start_metadata_scan(file_paths))
+
+        if cursor_set:
+            QTimer.singleShot(100, self.restore_cursor)
 
     def shortcut_load_metadata(self) -> None:
         """
@@ -1178,8 +1159,31 @@ class MainWindow(QMainWindow):
         modules_data = rename_data.get("modules", [])
         post_transform = rename_data.get("post_transform", {})
 
+        logger.debug(f"[Preview] modules_data: {modules_data}")
+        logger.debug(f"[Preview] post_transform: {post_transform}")
+
+        # Fast path: if all modules are no-op (e.g. Specified Text is empty and no post_transform)
+        is_noop = (
+            not modules_data or
+            all(
+                m.get("type") == "Specified Text" and not m.get("text")
+                for m in modules_data
+            ) and not post_transform
+        )
+
         self.preview_map.clear()
         self.preview_map = {file.filename: file for file in selected_files}
+
+        if is_noop:
+            logger.debug("[Preview] Fast path: no-op modules, skipping preview/validation.")
+            # No preview/validation needed, just identity mapping
+            name_pairs = [(f.filename, f.filename) for f in selected_files]
+            self.update_preview_tables_from_pairs(name_pairs)
+            self.rename_button.setEnabled(False)
+            self.rename_button.setToolTip("No changes to apply")
+            return
+
+        logger.debug("[Preview] Running full preview/validation for selected files.")
 
         name_pairs = []
 
@@ -2216,4 +2220,16 @@ class MainWindow(QMainWindow):
             self.metadata_loader.close()  # ✨ new line
 
         super().closeEvent(event)
+
+    def show_wait_cursor_if_many_files(self, count, threshold=100):
+        if count >= threshold:
+            from PyQt5.QtWidgets import QApplication
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            QApplication.processEvents()
+            return True
+        return False
+
+    def restore_cursor(self):
+        from PyQt5.QtWidgets import QApplication
+        QApplication.restoreOverrideCursor()
 
