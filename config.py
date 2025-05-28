@@ -94,7 +94,9 @@ EXTENDED_METADATA_SIZE_LIMIT_MB = 500  # Over this size, warn user before attemp
 # Metadata Settings
 # ----------------------------
 EXTENDED_METADATA_COLOR = "#e67e22"  # orange (same as extended info icon)
-
+EXTENDED_METADATA_BG_COLOR = "#4a2a00"  # dark orange for progress bar bg
+FAST_METADATA_COLOR = "#4a90e2"  # blue (ίδιο με selection-background-color στο QSS)
+FAST_METADATA_BG_COLOR = "#102040"  # dark blue for progress bar bg
 
 # ----------------------------
 # File Table Settings

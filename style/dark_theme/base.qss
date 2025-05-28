@@ -1,14 +1,14 @@
 QWidget {
-    background-color: #1e1e1e;
-    color: #e0e0e0;
+    background-color: #23242a;
+    color: #f0ebd8;
 }
 
 QMainWindow {
-    background-color: #1e1e1e;
+    background-color: #0d1321;
 }
 
-QDialog, QFrame, QSplitter {
-    background-color: #1e1e1e;
+QDialog, QFrame, QSplitter, QTabWidget::pane, QMenu, QLineEdit, QComboBox, QListWidget, QTreeView, QTableView, QProgressBar {
+    background-color: #1f2024;
 }
 
 QScrollBar:vertical {
@@ -37,4 +37,104 @@ QScrollBar::handle:horizontal {
 
 QSplitter::handle {
     background-color: #444444;
+}
+
+QMenu {
+    background-color: #1d2d44;
+    color: #f0ebd8;
+    border: 1px solid #3e5c76;
+}
+
+QMenu::item {
+    background-color: transparent;
+    color: #f0ebd8;
+    padding: 6px 24px 6px 24px;
+}
+
+QMenu::item:selected {
+    background-color: #3e5c76;
+    color: #f0ebd8;
+}
+
+QToolTip {
+    background-color: #1d2d44;
+    color: #f0ebd8;
+    border: 1px solid #3e5c76;
+}
+
+QProgressBar {
+    background-color: #3e5c76;
+    color: #0d1321;
+    border: 1px solid #3e5c76;
+    border-radius: 4px;
+    text-align: center;
+}
+QProgressBar::chunk {
+    background-color: #748cab;
+    border-radius: 4px;
+}
+
+QCheckBox {
+    color: #f0ebd8;
+}
+QCheckBox::indicator:checked {
+    background-color: #748cab;
+    border: 1px solid #3e5c76;
+}
+QCheckBox::indicator:unchecked {
+    background-color: #1d2d44;
+    border: 1px solid #3e5c76;
+}
+
+QRadioButton {
+    color: #f0ebd8;
+}
+QRadioButton::indicator:checked {
+    background-color: #748cab;
+    border: 1px solid #3e5c76;
+}
+QRadioButton::indicator:unchecked {
+    background-color: #1d2d44;
+    border: 1px solid #3e5c76;
+}
+
+QLineEdit {
+    background-color: #1d2d44;
+    color: #f0ebd8;
+    border: 1px solid #3e5c76;
+    selection-background-color: #748cab;
+    selection-color: #0d1321;
+}
+
+QListWidget {
+    background-color: #0d1321;
+    color: #f0ebd8;
+    border: 1px solid #3e5c76;
+}
+QListWidget::item:selected {
+    background-color: #748cab;
+    color: #0d1321;
+}
+QListWidget::item:hover {
+    background-color: #3e5c76;
+}
+
+QTabWidget::pane {
+    background: #1d2d44;
+    border: 1px solid #3e5c76;
+}
+QTabBar::tab {
+    background: #1d2d44;
+    color: #f0ebd8;
+    border: 1px solid #3e5c76;
+    padding: 6px 16px;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+QTabBar::tab:selected {
+    background: #748cab;
+    color: #0d1321;
+}
+QTabBar::tab:hover {
+    background: #3e5c76;
 }

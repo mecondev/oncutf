@@ -327,15 +327,14 @@ class CustomTableView(QTableView):
                         row_rect = self.visualRect(left).united(self.visualRect(right))
                         self.viewport().update(row_rect)
 
-    def select_rows_range(self, start_row, end_row):
-        """Selects a range of rows efficiently (block selection)."""
+    def select_rows_range(self, start_row: int, end_row: int) -> None:
+        """Selects a range of rows efficiently (block selection). Does NOT clear previous selection."""
         self.blockSignals(True)
         selection_model = self.selectionModel()
         model = self.model()
         if selection_model is None or model is None:
             self.blockSignals(False)
             return
-        selection_model.clearSelection()
         if hasattr(model, 'index') and hasattr(model, 'columnCount'):
             top_left = model.index(start_row, 0)
             bottom_right = model.index(end_row, model.columnCount() - 1)

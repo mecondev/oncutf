@@ -25,7 +25,7 @@ class InteractiveHeader(QHeaderView):
     when user clicks near the edge to resize.
     """
 
-    def __init__(self, orientation, parent=None, parent_window: Optional[object] = None):
+    def __init__(self, orientation, parent=None, parent_window=None):
         super().__init__(orientation, parent)
         self.parent_window = parent_window
         self.setSectionsClickable(True)
@@ -52,10 +52,12 @@ class InteractiveHeader(QHeaderView):
 
         # Section was clicked without drag or resize intent
         if released_index == 0:
-            if self.parent_window:
-                self.parent_window.handle_header_toggle(Qt.Checked)
+            if self.parent_window and hasattr(self.parent_window, 'handle_header_toggle'):
+                # Qt.Checked μπορεί να μην υπάρχει πάντα ως attribute
+                checked = getattr(Qt, 'Checked', 2)
+                self.parent_window.handle_header_toggle(checked)
         else:
-            if self.parent_window:
+            if self.parent_window and hasattr(self.parent_window, 'sort_by_column'):
                 self.parent_window.sort_by_column(released_index)
 
         super().mouseReleaseEvent(event)
@@ -73,17 +75,25 @@ class InteractiveHeader(QHeaderView):
         sort_asc = QAction("Sort Ascending", self)
         sort_desc = QAction("Sort Descending", self)
 
-        sort_asc.triggered.connect(lambda: self._sort(logical_index, Qt.AscendingOrder))
-        sort_desc.triggered.connect(lambda: self._sort(logical_index, Qt.DescendingOrder))
+        asc = getattr(Qt, 'AscendingOrder', 0)
+        desc = getattr(Qt, 'DescendingOrder', 1)
+        sort_asc.triggered.connect(lambda: self._sort(logical_index, asc))
+        sort_desc.triggered.connect(lambda: self._sort(logical_index, desc))
 
         menu.addAction(sort_asc)
         menu.addAction(sort_desc)
 
         menu.exec_(event.globalPos())
 
-    def _sort(self, index: int, order: Qt.SortOrder):
+    def _sort(self, index: int, order):
         """
         Calls sort_by_column on parent with specified order.
         """
-        if self.parent_window:
+        if self.parent_window and hasattr(self.parent_window, 'sort_by_column'):
             self.parent_window.sort_by_column(index, order)
+
+    def setSectionMinimumSize(self, logicalIndex: int, size: int) -> None:
+        super().setSectionMinimumSize(logicalIndex, size)
+
+    def setSectionMaximumSize(self, logicalIndex: int, size: int) -> None:
+        super().setSectionMaximumSize(logicalIndex, size)

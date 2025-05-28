@@ -64,6 +64,15 @@ from config import *
 from utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
+import contextlib
+
+@contextlib.contextmanager
+def wait_cursor():
+    QApplication.setOverrideCursor(Qt.WaitCursor)
+    try:
+        yield
+    finally:
+        QApplication.restoreOverrideCursor()
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
@@ -187,6 +196,9 @@ class MainWindow(QMainWindow):
         # Header setup
         self.header = InteractiveHeader(Qt.Horizontal, self.file_table_view, parent_window=self)
         self.file_table_view.setHorizontalHeader(self.header)
+        # Align all headers to the left (if supported)
+        if hasattr(self.header, 'setDefaultAlignment'):
+            self.header.setDefaultAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.header.setSortIndicatorShown(True)
         self.header.setSectionsClickable(True)
         self.header.setHighlightSections(True)
@@ -199,24 +211,29 @@ class MainWindow(QMainWindow):
         self.file_table_view.setWordWrap(False)
 
         # Column 0: Info icon column (fixed small width)
-        self.file_table_view.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
+        header = self.file_table_view.horizontalHeader()
+        header.setMinimumSectionSize(23)  # PyQt5: only global min width supported
+        header.setSectionResizeMode(0, QHeaderView.Fixed)
         self.file_table_view.setColumnWidth(0, 23)
 
         # Column 1: Filename (wide, interactive)
-        self.file_table_view.horizontalHeader().setSectionResizeMode(1, QHeaderView.Interactive)
-        self.file_table_view.horizontalHeader().resizeSection(1, 380)
+        header.setSectionResizeMode(1, QHeaderView.Interactive)
+        header.resizeSection(1, 290)
+        self.file_table_view.setColumnWidth(1, 290)
 
         # Column 2: Filesize (new column)
-        self.file_table_view.horizontalHeader().setSectionResizeMode(2, QHeaderView.Interactive)
-        self.file_table_view.setColumnWidth(2, self.fontMetrics().horizontalAdvance("999 GB") + 50)
+        col2_min = self.fontMetrics().horizontalAdvance("999 GB") + 50
+        header.setSectionResizeMode(2, QHeaderView.Interactive)
+        self.file_table_view.setColumnWidth(2, col2_min)
 
         # Column 3: Extension (type column)
-        self.file_table_view.horizontalHeader().setSectionResizeMode(3, QHeaderView.Interactive)
+        header.setSectionResizeMode(3, QHeaderView.Interactive)
         self.file_table_view.setColumnWidth(3, 60)
 
         # Column 4: Modified date
-        self.file_table_view.horizontalHeader().setSectionResizeMode(4, QHeaderView.Interactive)
+        header.setSectionResizeMode(4, QHeaderView.Stretch)
         self.file_table_view.setColumnWidth(4, 140)
+        # Δεν υποστηρίζεται per-section min/max width σε PyQt5
 
         center_layout.addWidget(self.file_table_view)
         self.horizontal_splitter.addWidget(self.center_frame)
@@ -457,82 +474,103 @@ class MainWindow(QMainWindow):
 
         self.load_files_from_folder(self.current_folder_path, skip_metadata=skip_metadata, force=True)
 
+    def _find_consecutive_ranges(self, indices: list[int]) -> list[tuple[int, int]]:
+        """
+        Given a sorted list of indices, returns a list of (start, end) tuples for consecutive ranges.
+        Example: [1,2,3,7,8,10] -> [(1,3), (7,8), (10,10)]
+        """
+        if not indices:
+            return []
+        ranges = []
+        start = prev = indices[0]
+        for idx in indices[1:]:
+            if idx == prev + 1:
+                prev = idx
+            else:
+                ranges.append((start, prev))
+                start = prev = idx
+        ranges.append((start, prev))
+        return ranges
+
     def select_all_rows(self) -> None:
-        import time
-        start = time.perf_counter()
+        """
+        Selects all rows in the file table efficiently using select_rows_range helper.
+        Shows wait cursor during the operation.
+        """
         if not self.model.files:
             return
-
         total = len(self.model.files)
         if total == 0:
             return
-
-        cursor_set = self.show_wait_cursor_if_many_files(total, threshold=100)
         selection_model = self.file_table_view.selectionModel()
-        model = self.model
-        selection_model.clearSelection()
-        if hasattr(model, 'index') and hasattr(model, 'columnCount'):
-            top_left = model.index(0, 0)
-            bottom_right = model.index(total - 1, model.columnCount() - 1)
-            selection = QItemSelection(top_left, bottom_right)
-            selection_model.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
-        self.file_table_view.anchor_row = 0
-        QTimer.singleShot(20, self.update_files_label)
-
-        if cursor_set:
-            QTimer.singleShot(100, self.restore_cursor)
-
-        elapsed = time.perf_counter() - start
-        import logging
-        logging.info(f"[PROFILE] select_all_rows: {elapsed:.4f} sec")
+        all_checked = all(f.checked for f in self.model.files)
+        all_selected = False
+        if selection_model is not None:
+            selected_rows = set(idx.row() for idx in selection_model.selectedRows())
+            all_selected = (len(selected_rows) == total)
+        if all_checked and all_selected:
+            logger.debug("[SelectAll] All files already selected in both checked and selection model. No action taken.")
+            return
+        with wait_cursor():
+            logger.info(f"[SelectAll] Selecting all {total} rows.")
+            self.file_table_view.select_rows_range(0, total - 1)
+            self.file_table_view.anchor_row = 0
+            QTimer.singleShot(20, self.update_files_label)
 
     def clear_all_selection(self) -> None:
-        selection_model = self.file_table_view.selectionModel()
-        selection_model.clearSelection()
-        for file in self.model.files:
-            file.checked = False
-        self.file_table_view.viewport().update()
-        self.update_files_label()
-        self.generate_preview_names()
-        self.clear_metadata_view()
+        # Αν όλα είναι ήδη αποεπιλεγμένα, μην κάνεις τίποτα
+        if not self.model.files or all(not f.checked for f in self.model.files):
+            logger.info("[ClearAll] All files already unselected. No action taken.")
+            return
+        with wait_cursor():
+            selection_model = self.file_table_view.selectionModel()
+            selection_model.clearSelection()
+            for file in self.model.files:
+                file.checked = False
+            self.file_table_view.viewport().update()
+            self.update_files_label()
+            self.generate_preview_names()
+            self.clear_metadata_view()
 
     def invert_selection(self) -> None:
+        """
+        Inverts the selection in the file table efficiently using select_rows_range helper.
+        Shows wait cursor during the operation.
+        """
         if not self.model.files:
             self.set_status("No files to invert selection.", color="gray", auto_reset=True)
             return
-
-        selection_model = self.file_table_view.selectionModel()
-        current_selected = set(idx.row() for idx in selection_model.selectedRows())
-        total = len(self.model.files)
-        new_selection = set()
-        for row, file in enumerate(self.model.files):
-            if row in current_selected:
-                file.checked = False
+        with wait_cursor():
+            selection_model = self.file_table_view.selectionModel()
+            current_selected = set(idx.row() for idx in selection_model.selectedRows())
+            total = len(self.model.files)
+            # Uncheck all selected, check all unselected
+            for row, file in enumerate(self.model.files):
+                file.checked = row not in current_selected
+            # Find all checked rows (i.e. those that were previously unselected)
+            checked_rows = [row for row, file in enumerate(self.model.files) if file.checked]
+            checked_rows.sort()
+            ranges = self._find_consecutive_ranges(checked_rows)
+            selection_model.clearSelection()
+            logger.info(f"[InvertSelection] Selecting {len(checked_rows)} rows in {len(ranges)} ranges.")
+            for start, end in ranges:
+                self.file_table_view.select_rows_range(start, end)
+            self.file_table_view.anchor_row = checked_rows[0] if checked_rows else 0
+            self.file_table_view.viewport().update()
+            self.update_files_label()
+            QTimer.singleShot(10, self.generate_preview_names)
+            if checked_rows:
+                def show_metadata_later():
+                    last_row = checked_rows[-1]
+                    file_item = self.model.files[last_row]
+                    metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
+                    if isinstance(metadata, dict):
+                        self.display_metadata(metadata, context="invert_selection")
+                    else:
+                        self.clear_metadata_view()
+                QTimer.singleShot(20, show_metadata_later)
             else:
-                new_selection.add(row)
-                file.checked = True
-        selection_model.clearSelection()
-        model = self.model
-        if hasattr(model, 'index') and hasattr(model, 'columnCount'):
-            for row in new_selection:
-                index = model.index(row, 0)
-                selection_model.select(index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
-        self.file_table_view.anchor_row = 0
-        self.file_table_view.viewport().update()
-        self.update_files_label()
-        QTimer.singleShot(10, self.generate_preview_names)
-        if new_selection:
-            def show_metadata_later():
-                last_row = max(new_selection)
-                file_item = self.model.files[last_row]
-                metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
-                if isinstance(metadata, dict):
-                    self.display_metadata(metadata, context="invert_selection")
-                else:
-                    self.clear_metadata_view()
-            QTimer.singleShot(20, show_metadata_later)
-        else:
-            self.clear_metadata_view()
+                self.clear_metadata_view()
 
     def sort_by_column(self, column: int, order: Qt.SortOrder = None) -> None:
         """
@@ -875,7 +913,8 @@ class MainWindow(QMainWindow):
 
         QApplication.setOverrideCursor(Qt.WaitCursor)
 
-        self.loading_dialog = MetadataWaitingDialog(self)
+        is_extended = self.force_extended_metadata
+        self.loading_dialog = MetadataWaitingDialog(self, is_extended=is_extended)
         self.loading_dialog.set_status("Reading metadata...")
         self.loading_dialog.set_filename("")
         self.loading_dialog.set_progress(0, len(file_paths))
@@ -971,7 +1010,8 @@ class MainWindow(QMainWindow):
         selected = [self.model.files[r] for r in selected_rows if 0 <= r < len(self.model.files)]
 
         self.force_extended_metadata = False
-        self.metadata_loader.load(selected, force=False, cache=self.metadata_cache)
+        with wait_cursor():
+            self.metadata_loader.load(selected, force=False, cache=self.metadata_cache)
 
         if selected:
             last = selected[-1]
@@ -1017,9 +1057,8 @@ class MainWindow(QMainWindow):
                 self.start_metadata_scan_for_items(files_to_load)
                 return
             else:
-                QApplication.setOverrideCursor(Qt.WaitCursor)
-                self.metadata_loader.load(files_to_load, force=False, cache=self.metadata_cache, use_extended=True)
-                self._restore_cursor()
+                with wait_cursor():
+                    self.metadata_loader.load(files_to_load, force=False, cache=self.metadata_cache, use_extended=True)
 
         last = selected[-1]
         metadata = last.metadata or self.metadata_cache.get(last.full_path)
@@ -2053,7 +2092,8 @@ class MainWindow(QMainWindow):
         # === Handlers ===
         if action == action_load_sel:
             self.force_extended_metadata = False
-            self.metadata_loader.load(selected_files, force=False, cache=self.metadata_cache)
+            with wait_cursor():
+                self.metadata_loader.load(selected_files, force=False, cache=self.metadata_cache)
             if selected_files:
                 last = selected_files[-1]
                 metadata = last.metadata or self.metadata_cache.get(last.full_path)
@@ -2073,19 +2113,18 @@ class MainWindow(QMainWindow):
                 if len(files_to_load) > 1:
                     self.start_metadata_scan_for_items(files_to_load)
                 else:
-                    QApplication.setOverrideCursor(Qt.WaitCursor)
-                    self.metadata_loader.load(files_to_load, force=False, cache=self.metadata_cache, use_extended=True)
-                    self._restore_cursor()
-
-                    last = files_to_load[-1]
-                    metadata = last.metadata or self.metadata_cache.get(last.full_path)
-                    if isinstance(metadata, dict):
-                        self.display_metadata(metadata, context="context_menu_extended_1file")
+                    with wait_cursor():
+                        self.metadata_loader.load(files_to_load, force=False, cache=self.metadata_cache, use_extended=True)
+                        last = files_to_load[-1]
+                        metadata = last.metadata or self.metadata_cache.get(last.full_path)
+                        if isinstance(metadata, dict):
+                            self.display_metadata(metadata, context="context_menu_extended_1file")
 
         elif action == action_load_all:
             self.force_extended_metadata = False
             self.select_all_rows()
-            self.metadata_loader.load(self.model.files, force=False, cache=self.metadata_cache)
+            with wait_cursor():
+                self.metadata_loader.load(self.model.files, force=False, cache=self.metadata_cache)
 
         elif action == action_load_ext_all:
             if not self.confirm_large_files(self.model.files):
@@ -2135,7 +2174,8 @@ class MainWindow(QMainWindow):
                 return
 
             if self.force_extended_metadata:
-                QApplication.setOverrideCursor(Qt.WaitCursor)
+                wait_cursor_cm = wait_cursor()
+                wait_cursor_cm.__enter__()
 
             self.metadata_loader.load(
                 [file],
@@ -2145,7 +2185,7 @@ class MainWindow(QMainWindow):
             )
 
             if self.force_extended_metadata:
-                self._restore_cursor()
+                wait_cursor_cm.__exit__(None, None, None)
 
             metadata = file.metadata or self.metadata_cache.get(file.full_path)
             if isinstance(metadata, dict) and metadata:
@@ -2186,7 +2226,8 @@ class MainWindow(QMainWindow):
             return
 
         if self.force_extended_metadata:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
+            wait_cursor_cm = wait_cursor()
+            wait_cursor_cm.__enter__()
 
         self.metadata_loader.load(
             file_items,
@@ -2196,7 +2237,7 @@ class MainWindow(QMainWindow):
         )
 
         if self.force_extended_metadata:
-            self._restore_cursor()
+            wait_cursor_cm.__exit__(None, None, None)
 
         if file_items:
             last = file_items[-1]

@@ -1,14 +1,14 @@
 QTreeView {
-    background-color: #1e1e1e;
-    color: #e0e0e0;
-    alternate-background-color: #2a2a2a;
+    background-color: #0d1321;
+    color: #f0ebd8;
+    alternate-background-color: #1d2d44;
 }
 
 QTreeView::item:hover {
-    background-color: #37474f;
+    background-color: #3e5c76;
 }
 
 QTreeView::item:selected {
-    background-color: #455a64;
-    color: white;
+    background-color: #748cab;
+    color: #0d1321;
 }

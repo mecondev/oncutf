@@ -9,7 +9,7 @@ Author: Michael Economou
 Date: 2025-05-21
 """
 
-from PyQt5.QtWidgets import QStyledItemDelegate, QStyle, QStyleOptionViewItem
+from PyQt5.QtWidgets import QStyledItemDelegate, QStyle, QStyleOptionViewItem, QTableView
 from PyQt5.QtGui import QPainter, QColor, QPen, QPalette
 from PyQt5.QtCore import QModelIndex
 
@@ -43,6 +43,9 @@ class HoverItemDelegate(QStyledItemDelegate):
         - Avoids drawing full row manually — lets each cell draw its own background safely.
         """
         table = self.parent()
+        if not isinstance(table, QTableView):
+            super().paint(painter, option, index)
+            return
         model = table.model()
         row = index.row()
 
@@ -50,46 +53,46 @@ class HoverItemDelegate(QStyledItemDelegate):
         if option.state & QStyle.State_HasFocus:
             option.state &= ~QStyle.State_HasFocus
 
-        # Determine states
         selection_model = table.selectionModel() if table else None
         is_selected = selection_model is not None and selection_model.isSelected(index)
         is_hovered = row == self.hovered_row
 
-        # Set background fill color
-        background_color = None
-        if is_selected:
+        # Hover πάνω από selection
+        if is_selected and is_hovered:
+            background_color = option.palette.color(QPalette.Highlight).lighter(120)
+        elif is_selected:
             background_color = option.palette.color(QPalette.Highlight)
-            if is_hovered:
-                background_color = background_color.lighter(115)
         elif is_hovered:
             background_color = self.hover_color
+        else:
+            background_color = None
 
         # Paint background if needed
         if background_color:
-            painter.save()
-            painter.fillRect(option.rect, background_color)
-            painter.restore()
+            painter.save()  # type: ignore
+            painter.fillRect(option.rect, background_color)  # type: ignore
+            painter.restore()  # type: ignore
 
         # Optional: draw border for selected row (only on column 0)
-        if is_selected and index.column() == table.horizontalHeader().logicalIndex(table.model().columnCount() - 1):
-            painter.save()
+        if is_selected and index.column() == table.horizontalHeader().logicalIndex(model.columnCount() - 1):  # type: ignore
+            painter.save()  # type: ignore
             border_color = option.palette.color(QPalette.Highlight).darker(120)
             pen = QPen(border_color)
             pen.setWidth(1)
-            painter.setPen(pen)
+            painter.setPen(pen)  # type: ignore
 
             # Draw full row rect border
             col_start = 0
-            col_end = model.columnCount() - 1
-            rect_start = table.visualRect(model.index(row, col_start))
-            rect_end = table.visualRect(model.index(row, col_end))
+            col_end = model.columnCount() - 1  # type: ignore
+            rect_start = table.visualRect(model.index(row, col_start))  # type: ignore
+            rect_end = table.visualRect(model.index(row, col_end))  # type: ignore
             full_rect = rect_start.united(rect_end)
 
-            painter.drawRect(full_rect.adjusted(0, 0, -1, -1))
-            painter.restore()
+            painter.drawRect(full_rect.adjusted(0, 0, -1, -1))  # type: ignore
+            painter.restore()  # type: ignore
 
-        # (context-focused row dash border feature removed)
-
-        # Finally, paint cell content (text, icon, etc.)
-        # Remove Qt selection and mouse-over state so QSS does not apply selection or hover background
-        super().paint(painter, option, index)
+        # Καθαρίζουμε τα state flags για να μην ξαναγεμίσει το background
+        option2 = QStyleOptionViewItem(option)
+        option2.state &= ~QStyle.State_Selected
+        option2.state &= ~QStyle.State_MouseOver
+        super().paint(painter, option2, index)

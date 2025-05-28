@@ -4,26 +4,27 @@
    ============================= */
 
 QPushButton {
-    background-color: #2d2d30;        /* Dark grey background */
-    border: 1px solid #444444;        /* Thin border */
+    background-color: #1d2d44;        /* Dark grey background */
+    border: 1px solid #3e5c76;        /* Thin border */
     padding: 6px 12px;                /* Padding for click area */
     border-radius: 4px;               /* Rounded corners */
-    color: #dddddd;                   /* Light text color */
+    color: #f0ebd8;                   /* Light text color */
 }
 
 /* Hover state */
 QPushButton:hover {
-    background-color: #3c78d8;        /* Blue-ish hover */
+    background-color: #3e5c76;        /* Blue-ish hover */
 }
 
 /* Pressed (active click) state */
 QPushButton:pressed {
-    background-color: #005999;        /* Darker blue for pressed state */
+    background-color: #748cab;        /* Darker blue for pressed state */
+    color: #0d1321;
 }
 
 /* Disabled buttons */
 QPushButton:disabled {
-    background-color: #2a2a2a;
-    color: #555555;
-    border: 1px solid #333333;
+    background-color: #1d2d44;
+    color: #3e5c76;
+    border: 1px solid #3e5c76;
 }

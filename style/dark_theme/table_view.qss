@@ -3,13 +3,13 @@
    ============================= */
 
 QTableView {
-    background-color: #1e1e1e;
-    color: #e0e0e0;
-    alternate-background-color: #2a2a2a;
-    gridline-color: #444444;
+    background-color: #0d1321;
+    color: #f0ebd8;
+    alternate-background-color: #1d2d44;
+    gridline-color: #3e5c76;
     border: none;
-    selection-background-color: #4a90e2;
-    selection-color: white;
+    selection-background-color: #748cab;
+    selection-color: #0d1321;
 }
 
 QTableView::item {
@@ -20,28 +20,23 @@ QTableView::item {
 
 /* Hover effect per cell (styled to simulate full row visually) */
 QTableView::item:hover {
-    background-color: #2e3b4e;
+    background-color: #3e5c76;
 }
 
 /* Selected cell (uses selection-background-color) */
 QTableView::item:selected {
-    background-color: #4a90e2;
-    color: white;
+    background-color: #748cab;
+    color: #0d1321;
 }
 
 /* Header styling */
 QHeaderView::section {
-    background-color: #2c2c2c;
-    color: white;
+    background-color: #1d2d44;
+    color: #f0ebd8;
     padding: 4px;
-    border: 1px solid #444444;
+    border: 1px solid #3e5c76;
 }
 
 QHeaderView::section:hover {
-    background-color: #3e3e3e;
-}
-
-QTableView::item:selected {
-    background-color: #2e6fa1;
-    color: white;
+    background-color: #3e5c76;
 }

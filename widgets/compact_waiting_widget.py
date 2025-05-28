@@ -38,7 +38,7 @@ class CompactWaitingWidget(QWidget):
     - Third row: right-aligned percentage, left-aligned file name (with word wrap)
     """
 
-    def __init__(self, parent=None, bar_color: Optional[str] = None):
+    def __init__(self, parent=None, bar_color: Optional[str] = None, bar_bg_color: Optional[str] = None):
         super().__init__(parent)
 
         self.setFixedWidth(250)
@@ -69,7 +69,12 @@ class CompactWaitingWidget(QWidget):
         self.progress_bar.setFixedHeight(10)
 
         # Apply optional color override for extended metadata scans
-        if bar_color:
+        if bar_color and bar_bg_color:
+            self.progress_bar.setStyleSheet(
+                f"QProgressBar {{ background-color: {bar_bg_color}; border-radius: 4px; }} "
+                f"QProgressBar::chunk {{ background-color: {bar_color}; border-radius: 4px; }}"
+            )
+        elif bar_color:
             self.progress_bar.setStyleSheet(
                 f"QProgressBar::chunk {{ background-color: {bar_color}; }}"
             )
