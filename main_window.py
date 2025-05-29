@@ -235,6 +235,8 @@ class MainWindow(QMainWindow):
         self.file_table_view.setColumnWidth(4, 140)
         # Δεν υποστηρίζεται per-section min/max width σε PyQt5
 
+        # Εμφάνιση placeholder αφού ολοκληρωθεί το setup
+        self.show_file_table_placeholder("No folder selected")
         center_layout.addWidget(self.file_table_view)
         self.horizontal_splitter.addWidget(self.center_frame)
 
@@ -849,7 +851,12 @@ class MainWindow(QMainWindow):
         self.preview_map.clear()
         self.preview_map = {f.filename: f for f in file_items}
 
-        self.header.setEnabled(True)
+        if hasattr(self, "header") and self.header is not None:
+            self.header.setEnabled(True)  # Enable file table header
+        # Ενεργοποίησε hover delegate αν υπάρχει
+        if hasattr(self.file_table_view, 'hover_delegate'):
+            self.file_table_view.setItemDelegate(self.file_table_view.hover_delegate)
+            self.file_table_view.hover_delegate.hovered_row = -1
         self.update_files_label()
         self.update_preview_tables_from_pairs([])
         self.rename_button.setEnabled(False)
@@ -1079,6 +1086,12 @@ class MainWindow(QMainWindow):
             return
 
         self._render_metadata_view(metadata)
+        self.toggle_expand_button.setEnabled(True)  # Enable expand/collapse button
+        # Αν έχει header το metadata_tree_view, κάνε το enabled
+        if hasattr(self.metadata_tree_view, 'header') and callable(self.metadata_tree_view.header):
+            header = self.metadata_tree_view.header()
+            if header:
+                header.setEnabled(True)
 
     def _render_metadata_view(self, metadata: dict) -> None:
         """
@@ -1158,35 +1171,32 @@ class MainWindow(QMainWindow):
     def handle_header_toggle(self, _) -> None:
         """
         Triggered when column 0 header is clicked.
-        Toggles selection and checked state of all files.
+        Toggles selection and checked state of all files (efficient, like Ctrl+A).
         """
         if not self.model.files:
             return
 
-        # Determine if we are currently fully selected
+        total = len(self.model.files)
         all_selected = all(file.checked for file in self.model.files)
         selection_model = self.file_table_view.selectionModel()
-        selection_model.clearSelection()
 
-        new_selection = QItemSelection()
+        with wait_cursor():
+            if all_selected:
+                # Unselect all
+                selection_model.clearSelection()
+                for file in self.model.files:
+                    file.checked = False
+            else:
+                # Select all efficiently
+                self.file_table_view.select_rows_range(0, total - 1)
+                for file in self.model.files:
+                    file.checked = True
+                self.file_table_view.anchor_row = 0
 
-        for row, file in enumerate(self.model.files):
-            file.checked = not all_selected  # toggle state
-
-            if not all_selected:
-                # visually select all cells in the row
-                top_left = self.model.index(row, 0)
-                bottom_right = self.model.index(row, self.model.columnCount() - 1)
-                selection_range = QItemSelectionRange(top_left, bottom_right)
-                new_selection.append(selection_range)
-
-        if not all_selected:
-            selection_model.select(new_selection, QItemSelectionModel.Select)
-
-        self.file_table_view.viewport().update()
-        self.update_files_label()
-        self.generate_preview_names()
-        self.check_selection_and_show_metadata()
+            self.file_table_view.viewport().update()
+            self.update_files_label()
+            self.generate_preview_names()
+            self.check_selection_and_show_metadata()
 
     def generate_preview_names(self) -> None:
         """
@@ -1858,7 +1868,7 @@ class MainWindow(QMainWindow):
             item.setFont(font)
 
             item.setForeground(Qt.gray)
-            item.setEnabled(True)
+            item.setEnabled(False)  # Disable placeholder items
             item.setSelectable(False)
 
             # Optional: center align only the message column
@@ -1869,6 +1879,12 @@ class MainWindow(QMainWindow):
 
         placeholder_model.appendRow(row)
         self.file_table_view.setModel(placeholder_model)
+        if hasattr(self, "header") and self.header is not None:
+            self.header.setEnabled(False)  # Disable file table header
+        # Disable hover delegate (αν υπάρχει)
+        if hasattr(self.file_table_view, 'hover_delegate'):
+            self.file_table_view.hover_delegate.hovered_row = -1
+            self.file_table_view.setItemDelegate(None)
 
     def show_empty_metadata_tree(self, message: str = "No file selected") -> None:
         """
@@ -1893,6 +1909,12 @@ class MainWindow(QMainWindow):
 
         self.toggle_expand_button.setChecked(False)
         self.toggle_expand_button.setText("Expand All")
+        self.toggle_expand_button.setEnabled(False)  # Disable expand/collapse button
+        # Αν έχει header το metadata_tree_view, κάνε το disabled
+        if hasattr(self.metadata_tree_view, 'header') and callable(self.metadata_tree_view.header):
+            header = self.metadata_tree_view.header()
+            if header:
+                header.setEnabled(False)
 
     def clear_metadata_view(self) -> None:
         """
