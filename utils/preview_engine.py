@@ -38,8 +38,12 @@ MODULE_TYPE_MAP = {
 }
 
 def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
+    """
+    Applies the rename modules to the basename only. The extension (with the dot) is always appended at the end, unchanged.
+    """
     new_name_parts = []
     original_base_name, ext = os.path.splitext(file_item.filename)
+    # All modules operate only on the basename. The extension is not affected by any module.
 
     for i, data in enumerate(modules_data):
         module_type = data.get("type")
@@ -57,38 +61,39 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
         if hasattr(module_cls, 'is_effective'):
             is_effective = module_cls.is_effective(data)
 
-        # Λογική για SpecifiedTextModule
+        # SpecifiedTextModule logic
         if module_type == "specified_text":
             text = data.get("text", "").strip()
             if not text:
-                # Αν προηγείται άλλο module, αγνοούμε το specified text τελείως (δεν προσθέτουμε τίποτα)
+                # If another module precedes, skip specified text entirely (add nothing)
                 if new_name_parts:
                     continue
                 else:
-                    # Αν είναι πρώτο module και άδειο, μόνο τότε βάζουμε το αρχικό όνομα
+                    # If it's the first module and empty, only then add the original basename
                     new_name_parts.append(original_base_name)
                     continue
             else:
-                # Υπάρχει κείμενο, πρόσθεσέ το
+                # There is text, add it
                 part = module_cls.apply_from_data(data, file_item, index, metadata_cache)
                 new_name_parts.append(part)
                 continue
 
-        # Λογική για OriginalNameModule
+        # OriginalNameModule logic
         if module_type == "original_name" and not is_effective:
-            # Αν δεν έχει ήδη προστεθεί το αρχικό όνομα, το προσθέτουμε
+            # If the original name hasn't already been added, add it
             if not new_name_parts:
                 new_name_parts.append(original_base_name)
             continue
 
-        # Γενική περίπτωση (effective module)
+        # General case (effective module)
         if is_effective:
             part = module_cls.apply_from_data(data, file_item, index, metadata_cache)
             new_name_parts.append(part)
 
-    # Αν δεν υπάρχει κανένα part, τότε αφήνουμε μόνο την επέκταση
-    final_name = ''.join(new_name_parts) if new_name_parts else ''
-    final_name += ext
+    # If there are no parts, leave only the extension
+    final_basename = ''.join(new_name_parts) if new_name_parts else ''
+    # Always append the extension (with the dot) at the end
+    final_name = final_basename + ext
 
     logger.debug(f"[apply_rename_modules] Final name: {file_item.filename} → {final_name}")
     return final_name

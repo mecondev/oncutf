@@ -233,9 +233,9 @@ class MainWindow(QMainWindow):
         # Column 4: Modified date
         header.setSectionResizeMode(4, QHeaderView.Stretch)
         self.file_table_view.setColumnWidth(4, 140)
-        # Δεν υποστηρίζεται per-section min/max width σε PyQt5
+        # Per-section min/max width is not supported in PyQt5
 
-        # Εμφάνιση placeholder αφού ολοκληρωθεί το setup
+        # Show placeholder after setup is complete
         self.show_file_table_placeholder("No folder selected")
         center_layout.addWidget(self.file_table_view)
         self.horizontal_splitter.addWidget(self.center_frame)
@@ -431,6 +431,8 @@ class MainWindow(QMainWindow):
 
         self.rename_button.clicked.connect(self.rename_files)
 
+        # --- Connect the updated signal of RenameModulesArea to generate_preview_names ---
+        self.rename_modules_area.updated.connect(self.generate_preview_names)
 
         # --- Shortcuts ---
         QShortcut(QKeySequence("Ctrl+A"), self.file_table_view, activated=self.select_all_rows)
@@ -520,7 +522,7 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(20, self.update_files_label)
 
     def clear_all_selection(self) -> None:
-        # Αν όλα είναι ήδη αποεπιλεγμένα, μην κάνεις τίποτα
+        # If everything is already deselected, do nothing
         if not self.model.files or all(not f.checked for f in self.model.files):
             logger.info("[ClearAll] All files already unselected. No action taken.")
             return
@@ -853,7 +855,7 @@ class MainWindow(QMainWindow):
 
         if hasattr(self, "header") and self.header is not None:
             self.header.setEnabled(True)  # Enable file table header
-        # Ενεργοποίησε hover delegate αν υπάρχει
+        # Enable hover delegate if it exists
         if hasattr(self.file_table_view, 'hover_delegate'):
             self.file_table_view.setItemDelegate(self.file_table_view.hover_delegate)
             self.file_table_view.hover_delegate.hovered_row = -1
@@ -1087,7 +1089,7 @@ class MainWindow(QMainWindow):
 
         self._render_metadata_view(metadata)
         self.toggle_expand_button.setEnabled(True)  # Enable expand/collapse button
-        # Αν έχει header το metadata_tree_view, κάνε το enabled
+        # If metadata_tree_view has a header, enable it
         if hasattr(self.metadata_tree_view, 'header') and callable(self.metadata_tree_view.header):
             header = self.metadata_tree_view.header()
             if header:
@@ -1238,14 +1240,41 @@ class MainWindow(QMainWindow):
 
         for idx, file in enumerate(selected_files):
             try:
-                new_name = apply_rename_modules(modules_data, idx, file, self.metadata_cache)
+                # Split filename into basename and extension
+                import os
+                basename, extension = os.path.splitext(file.filename)
+
+                # Apply modules to basename only
+                new_basename = apply_rename_modules(modules_data, idx, file, self.metadata_cache)
 
                 logger.debug(f"Modules: {modules_data}")
-                logger.debug(f"Output from modules: {new_name}")
+                logger.debug(f"Output from modules: {new_basename}")
 
+                # Apply name transform (case, separator) to basename only
                 if NameTransformModule.is_effective(post_transform):
-                    new_name = NameTransformModule.apply_from_data(post_transform, new_name)
-                    logger.debug(f"Transform applied: {new_name}")
+                    new_basename = NameTransformModule.apply_from_data(post_transform, new_basename)
+                    logger.debug(f"Transform applied: {new_basename}")
+                # --- Post-processing for trailing space and separator (basename only) ---
+                separator = post_transform.get("separator", "as-is")
+                if new_basename.endswith(" "):
+                    if separator == "snake_case":
+                        new_basename = new_basename.rstrip(" ") + "_"
+                    elif separator == "kebab-case":
+                        new_basename = new_basename.rstrip(" ") + "-"
+                    else:  # "space" or "as-is"
+                        new_basename = new_basename.rstrip(" ")
+                # ---
+                # Validate only the basename
+                from utils.validation import is_valid_filename_text
+                if not is_valid_filename_text(new_basename):
+                    logger.warning(f"Invalid basename generated: {new_basename}")
+                    name_pairs.append((file.filename, file.filename))
+                    continue
+                # Add extension (with dot) only at the end
+                if extension:
+                    new_name = f"{new_basename}{extension}"
+                else:
+                    new_name = new_basename
                 logger.debug(f"[Preview] {file.filename} -> {new_name}")
                 name_pairs.append((file.filename, new_name))
                 logger.debug(f"[Preview] Generating for {[f.filename for f in selected_files]}", extra={"dev_only": True})
@@ -1881,7 +1910,7 @@ class MainWindow(QMainWindow):
         self.file_table_view.setModel(placeholder_model)
         if hasattr(self, "header") and self.header is not None:
             self.header.setEnabled(False)  # Disable file table header
-        # Disable hover delegate (αν υπάρχει)
+        # Disable hover delegate (if it exists)
         if hasattr(self.file_table_view, 'hover_delegate'):
             self.file_table_view.hover_delegate.hovered_row = -1
             self.file_table_view.setItemDelegate(None)
@@ -1910,7 +1939,7 @@ class MainWindow(QMainWindow):
         self.toggle_expand_button.setChecked(False)
         self.toggle_expand_button.setText("Expand All")
         self.toggle_expand_button.setEnabled(False)  # Disable expand/collapse button
-        # Αν έχει header το metadata_tree_view, κάνε το disabled
+        # If metadata_tree_view has a header, disable it
         if hasattr(self.metadata_tree_view, 'header') and callable(self.metadata_tree_view.header):
             header = self.metadata_tree_view.header()
             if header:
@@ -2075,6 +2104,8 @@ class MainWindow(QMainWindow):
         # --- Selection actions ---
         action_invert = menu.addAction("🔁 Invert selection (Ctrl+I)")
         action_select_all = menu.addAction("✅ Select all (Ctrl+A)")
+        action_deselect_all = menu.addAction("❌ Deselect all")
+        action_deselect_all.setEnabled(total_files > 0)
 
         menu.addSeparator()
 
@@ -2114,13 +2145,7 @@ class MainWindow(QMainWindow):
         # === Handlers ===
         if action == action_load_sel:
             self.force_extended_metadata = False
-            with wait_cursor():
-                self.metadata_loader.load(selected_files, force=False, cache=self.metadata_cache)
-            if selected_files:
-                last = selected_files[-1]
-                metadata = last.metadata or self.metadata_cache.get(last.full_path)
-                if isinstance(metadata, dict):
-                    self.display_metadata(metadata, context="context_menu_selected")
+            self.start_metadata_scan_for_items(selected_files)
 
         elif action == action_load_ext_sel:
             files_to_load = [
@@ -2145,8 +2170,7 @@ class MainWindow(QMainWindow):
         elif action == action_load_all:
             self.force_extended_metadata = False
             self.select_all_rows()
-            with wait_cursor():
-                self.metadata_loader.load(self.model.files, force=False, cache=self.metadata_cache)
+            self.start_metadata_scan_for_items(self.model.files)
 
         elif action == action_load_ext_all:
             if not self.confirm_large_files(self.model.files):
@@ -2162,6 +2186,9 @@ class MainWindow(QMainWindow):
 
         elif action == action_reload:
             self.force_reload()
+
+        elif action == action_deselect_all:
+            self.clear_all_selection()
 
     def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
@@ -2239,27 +2266,18 @@ class MainWindow(QMainWindow):
         self.force_extended_metadata = bool(int(modifiers) & int(Qt.ShiftModifier))
         logger.debug(f"[Modifiers] Shift held → use_extended={self.force_extended_metadata}")
 
-        if self.force_extended_metadata and not self.confirm_large_files(file_items):
-            return
-
-        # Special case: use waiting dialog if many files
-        if self.force_extended_metadata and len(file_items) > 1:
+        if len(file_items) > 1:
             self.start_metadata_scan_for_items(file_items)
             return
 
-        if self.force_extended_metadata:
-            wait_cursor_cm = wait_cursor()
-            wait_cursor_cm.__enter__()
-
-        self.metadata_loader.load(
-            file_items,
-            force=False,
-            cache=self.metadata_cache,
-            use_extended=self.force_extended_metadata
-        )
-
-        if self.force_extended_metadata:
-            wait_cursor_cm.__exit__(None, None, None)
+        # For a single file (either fast or extended)
+        with wait_cursor():
+            self.metadata_loader.load(
+                file_items,
+                force=False,
+                cache=self.metadata_cache,
+                use_extended=self.force_extended_metadata
+            )
 
         if file_items:
             last = file_items[-1]

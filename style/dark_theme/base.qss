@@ -65,6 +65,10 @@ QMenu::item:pressed {
     color: #0d1321;
 }
 
+QMenu::item:disabled {
+    color: #555555;
+}
+
 QToolTip {
     background-color: #23242a;
     color: #f0ebd8;

@@ -12,6 +12,9 @@ Date: 2025-05-13
 from typing import List, Tuple, Dict, Optional, Any
 from models.file_item import FileItem
 from utils.validation import is_valid_filename_text
+from utils.logger_helper import get_logger
+
+logger = get_logger(__name__)
 
 
 def generate_preview_names(
@@ -68,13 +71,47 @@ def generate_preview_names(
                     name_parts.append("unknown")
                     continue
 
-                value = meta.get(key)
+                try:
+                    value = meta.get(key) if isinstance(key, str) and key else None
+                except Exception as e:
+                    logger.warning(f"[Preview] Exception while getting metadata key '{key}' for {file.filename}: {e}")
+                    value = None
                 name_parts.append(str(value) if value else "unknown")
 
             else:
                 name_parts.append("invalid")
 
-        new_name = "".join(name_parts)
+        # --- Work only on the basename, extension is handled separately ---
+        new_basename = "".join(name_parts)
+        extension = file.extension or ""
+        if extension and not extension.startswith("."):
+            extension = "." + extension
+
+        # --- Post-processing for trailing space and separator (basename only) ---
+        separator = None
+        for module in modules_data:
+            if module.get("type") in ("original_name", "specified_text"):
+                sep = module.get("separator")
+                if sep:
+                    separator = sep
+        if not separator:
+            separator = "as-is"
+        if new_basename.endswith(" "):
+            if separator == "snake_case":
+                new_basename = new_basename.rstrip(" ") + "_"
+            elif separator == "kebab-case":
+                new_basename = new_basename.rstrip(" ") + "-"
+            else:  # "space" or "as-is"
+                new_basename = new_basename.rstrip(" ")
+        # ---
+
+        # Always join basename + extension (with dot)
+        if extension:
+            if not extension.startswith("."):
+                extension = "." + extension
+            new_name = f"{new_basename}{extension}"
+        else:
+            new_name = new_basename
 
         if not is_valid_filename_text(new_name):
             logger.warning(f"[Preview] Invalid name generated: {new_name}")
@@ -82,7 +119,6 @@ def generate_preview_names(
             tooltip = f"Invalid filename: {new_name}"
             break
 
-
-        preview_pairs.append((file.filename, f"{new_name}.{file.extension}"))
+        preview_pairs.append((file.filename, new_name))
 
     return preview_pairs, has_error, tooltip

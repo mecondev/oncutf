@@ -72,7 +72,7 @@ class SpecifiedTextModule(QWidget):
 
         return {
             "type": "specified_text",
-            "text": self.text_input.text().strip()
+            "text": self.text_input.text()
         }
 
     def reset(self) -> None:
@@ -85,7 +85,7 @@ class SpecifiedTextModule(QWidget):
     @staticmethod
     def apply_from_data(data: dict, file_item, index: int = 0, metadata_cache: Optional[dict] = None) -> str:
         logger.debug(f"[SpecifiedTextModule] Called with data={data}, index={index}")
-        text = data.get("text", "").strip()
+        text = data.get("text", "")
 
         if not text:
             logger.debug("[SpecifiedTextModule] Empty text input, returning original filename.")
@@ -95,12 +95,12 @@ class SpecifiedTextModule(QWidget):
             logger.warning(f"[SpecifiedTextModule] Invalid filename text: '{text}'")
             return "invalid"
 
-        return text
-
+        # Always return only the basename (remove extension if user typed it)
+        return os.path.splitext(text)[0]
 
     @staticmethod
     def is_effective(data: dict) -> bool:
-        return bool(data.get('text', '').strip())
+        return bool(data.get('text', ''))
 
 
 

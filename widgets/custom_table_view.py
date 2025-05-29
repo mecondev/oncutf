@@ -53,8 +53,11 @@ class CustomTableView(QTableView):
         # Used for right-click visual indication
         self.context_focused_row: int | None = None
 
+        self.placeholder_message = ""
         self.placeholder_icon = QPixmap("assets/File_Folder_Drag_Drop.png")
-        self.placeholder_message = "Drag & Drop a folder here to start"
+        if self.placeholder_icon.isNull():
+            logger.warning("Placeholder icon could not be loaded. Displaying text only.")
+            self.placeholder_message = "Drag & Drop files or folder here to start"
 
     def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
         """
@@ -282,16 +285,6 @@ class CustomTableView(QTableView):
             self.context_focused_row = None
             self.viewport().update()
 
-    def contextMenuEvent(self, event) -> None:
-        """
-        Clear context_focused_row after context menu closes
-        to avoid stale highlight.
-        """
-        super().contextMenuEvent(event)
-        if self.context_focused_row is not None:
-            self.context_focused_row = None
-            self.viewport().update()
-
     def focusInEvent(self, event) -> None:
         super().focusInEvent(event)
         # Sync custom selected_rows with the actual selection model on focus in
@@ -354,16 +347,17 @@ class CustomTableView(QTableView):
         if show_placeholder:
             painter = QPainter(self.viewport())
             rect = self.viewport().rect()
-            # Κέντρο του πίνακα
-            center_x = rect.center().x()
-            center_y = rect.center().y()
+            center_x = rect.width() // 2
+            center_y = rect.height() // 2
+
             # Εικόνα
             icon_size = 160
             if not self.placeholder_icon.isNull():
                 icon = self.placeholder_icon.scaled(icon_size, icon_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 icon_x = center_x - icon.width() // 2
-                icon_y = center_y - icon.height() // 2 - 40
+                icon_y = center_y - icon.height() // 2
                 painter.drawPixmap(icon_x, icon_y, icon)
+
             # Μήνυμα
             font = QFont(self.font())
             font.setPointSize(14)
@@ -373,6 +367,6 @@ class CustomTableView(QTableView):
             text = self.placeholder_message
             text_width = metrics.horizontalAdvance(text)
             text_x = center_x - text_width // 2
-            text_y = center_y + icon_size // 2 - 10
+            text_y = center_y + icon_size // 2 - 80
             painter.drawText(text_x, text_y, text)
             painter.end()
