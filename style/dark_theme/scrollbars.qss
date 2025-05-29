@@ -5,22 +5,28 @@
 
 /* Common background for both vertical and horizontal scrollbars */
 QScrollBar:vertical, QScrollBar:horizontal {
-    background: #1d2d44;
-    border: none;
+    background: #23242a;
+    border: 1px solid #3a3b40;
     margin: 0px;
+    border-radius: 8px;
 }
 
 /* === Scrollbar Handle (Thumb) === */
 /* The draggable part of the scrollbar */
 QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
-    background: #3e5c76;
-    border-radius: 6px;
+    background: #3a3b40;
+    border-radius: 8px;
     min-height: 20px;
     min-width: 20px;
 }
 
 /* === Hover effect for scrollbar handle === */
 QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
+    background: #3e5c76;
+}
+
+/* === Pressed effect for scrollbar handle === */
+QScrollBar::handle:vertical:pressed, QScrollBar::handle:horizontal:pressed {
     background: #748cab;
 }
 
@@ -50,13 +56,13 @@ QScrollBar::sub-page:horizontal {
 /* === Specific settings for vertical scrollbars === */
 QScrollBar:vertical {
     width: 10px;           /* Thickness of vertical scrollbar */
-    background: #1d2d44;
+    background: #23242a;
     margin: 0px;
 }
 
 /* === Specific settings for horizontal scrollbars === */
 QScrollBar:horizontal {
     height: 10px;          /* Thickness of horizontal scrollbar */
-    background: #1d2d44;
+    background: #23242a;
     margin: 0px;
 }

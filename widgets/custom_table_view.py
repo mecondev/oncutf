@@ -18,7 +18,7 @@ Key features:
 
 from PyQt5.QtWidgets import QAbstractItemView, QTableView, QApplication
 from PyQt5.QtCore import QMimeData, QUrl, QItemSelectionModel, QItemSelection, Qt, QPoint, QModelIndex
-from PyQt5.QtGui import QKeySequence, QDrag, QMouseEvent, QCursor
+from PyQt5.QtGui import QKeySequence, QDrag, QMouseEvent, QCursor, QPixmap, QPainter, QFont, QColor
 from widgets.hover_delegate import HoverItemDelegate
 from PyQt5.QtCore import pyqtSignal
 from utils.logger_helper import get_logger
@@ -53,6 +53,9 @@ class CustomTableView(QTableView):
         # Used for right-click visual indication
         self.context_focused_row: int | None = None
 
+        self.placeholder_icon = QPixmap("assets/File_Folder_Drag_Drop.png")
+        self.placeholder_message = "Drag & Drop a folder here to start"
+
     def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
         """
         Handles custom selection logic with anchor and modifier support.
@@ -71,54 +74,39 @@ class CustomTableView(QTableView):
         if sm is None or model is None:
             return
 
-        if hasattr(Qt, 'ShiftModifier') and modifiers & Qt.ShiftModifier:
+        if modifiers & Qt.ShiftModifier:  # type: ignore
             if self._manual_anchor_index is None:
                 self._manual_anchor_index = index
                 logger.debug(f"[Anchor] Initialized at row {index.row()} (no previous anchor)")
             else:
-                if hasattr(QItemSelectionModel, 'ClearAndSelect') and hasattr(QItemSelectionModel, 'Rows'):
-                    selection = QItemSelection(self._manual_anchor_index, index)
-                    sm.select(selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
-                    if hasattr(QItemSelectionModel, 'NoUpdate'):
-                        sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
-                    logger.debug(f"[Anchor] Shift-select from {self._manual_anchor_index.row()} to {index.row()}")
+                selection = QItemSelection(self._manual_anchor_index, index)
+                sm.select(selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)  # type: ignore
+                sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)  # type: ignore
+                logger.debug(f"[Anchor] Shift-select from {self._manual_anchor_index.row()} to {index.row()}")
 
-        elif hasattr(Qt, 'ControlModifier') and modifiers & Qt.ControlModifier:
+        elif modifiers & Qt.ControlModifier:  # type: ignore
             self._manual_anchor_index = index
             row = index.row()
             selection = QItemSelection(index, index)
-
-            if hasattr(sm, 'blockSignals'):
-                sm.blockSignals(True)
-
-            if hasattr(sm, 'isSelected') and sm.isSelected(index):
-                if hasattr(QItemSelectionModel, 'Deselect') and hasattr(QItemSelectionModel, 'Rows'):
-                    sm.select(selection, QItemSelectionModel.Deselect | QItemSelectionModel.Rows)
-                    logger.debug(f"[Anchor] Ctrl-toggle OFF at row {row}")
+            sm.blockSignals(True)
+            if sm.isSelected(index):
+                sm.select(selection, QItemSelectionModel.Deselect | QItemSelectionModel.Rows)  # type: ignore
+                logger.debug(f"[Anchor] Ctrl-toggle OFF at row {row}")
             else:
-                if hasattr(QItemSelectionModel, 'Select') and hasattr(QItemSelectionModel, 'Rows'):
-                    sm.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
-                    logger.debug(f"[Anchor] Ctrl-toggle ON at row {row}")
-
-            if hasattr(sm, 'blockSignals'):
-                sm.blockSignals(False)
-
-            if hasattr(QItemSelectionModel, 'NoUpdate'):
-                sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
-
+                sm.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)  # type: ignore
+                logger.debug(f"[Anchor] Ctrl-toggle ON at row {row}")
+            sm.blockSignals(False)
+            sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)  # type: ignore
             # Επιβάλε ανανέωση γραμμής.
-            if hasattr(model, 'index') and hasattr(model, 'columnCount') and hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
-                left = model.index(row, 0)
-                right = model.index(row, model.columnCount() - 1)
-                self.viewport().update(self.visualRect(left).united(self.visualRect(right)))
+            left = model.index(row, 0)
+            right = model.index(row, model.columnCount() - 1)
+            self.viewport().update(self.visualRect(left).united(self.visualRect(right)))
 
         else:
             self._manual_anchor_index = index
-            if hasattr(QItemSelectionModel, 'ClearAndSelect') and hasattr(QItemSelectionModel, 'Rows'):
-                sm.select(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
-                if hasattr(QItemSelectionModel, 'NoUpdate'):
-                    sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
-                logger.debug(f"[Anchor] Single click select at row {index.row()}")
+            sm.select(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)  # type: ignore
+            sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)  # type: ignore
+            logger.debug(f"[Anchor] Single click select at row {index.row()}")
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """
@@ -347,3 +335,44 @@ class CustomTableView(QTableView):
         if model is not None:
             self.selected_rows = set(range(start_row, end_row + 1))
             self.selection_changed.emit(list(self.selected_rows))
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        model = self.model()
+        # Εμφάνισε placeholder αν δεν υπάρχουν αρχεία ή το μοντέλο είναι άδειο
+        show_placeholder = False
+        if model is None:
+            show_placeholder = True
+        elif hasattr(model, "files"):
+            # FileTableModel
+            show_placeholder = not getattr(model, "files", None)
+        elif model.rowCount() == 0:
+            show_placeholder = True
+        elif model.rowCount() == 1 and all(model.data(model.index(0, c)) in (None, "", "No files loaded", "No folder selected") for c in range(model.columnCount())):
+            show_placeholder = True
+
+        if show_placeholder:
+            painter = QPainter(self.viewport())
+            rect = self.viewport().rect()
+            # Κέντρο του πίνακα
+            center_x = rect.center().x()
+            center_y = rect.center().y()
+            # Εικόνα
+            icon_size = 160
+            if not self.placeholder_icon.isNull():
+                icon = self.placeholder_icon.scaled(icon_size, icon_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                icon_x = center_x - icon.width() // 2
+                icon_y = center_y - icon.height() // 2 - 40
+                painter.drawPixmap(icon_x, icon_y, icon)
+            # Μήνυμα
+            font = QFont(self.font())
+            font.setPointSize(14)
+            painter.setFont(font)
+            painter.setPen(QColor("#888888"))
+            metrics = painter.fontMetrics()
+            text = self.placeholder_message
+            text_width = metrics.horizontalAdvance(text)
+            text_x = center_x - text_width // 2
+            text_y = center_y + icon_size // 2 - 10
+            painter.drawText(text_x, text_y, text)
+            painter.end()

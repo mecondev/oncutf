@@ -4,10 +4,10 @@
    ============================= */
 
 QPushButton {
-    background-color: #1d2d44;        /* Dark grey background */
-    border: 1px solid #3e5c76;        /* Thin border */
+    background-color: #26272c;        /* Dark grey background */
+    border: 1px solid #3a3b40;        /* Thin border */
     padding: 6px 12px;                /* Padding for click area */
-    border-radius: 4px;               /* Rounded corners */
+    border-radius: 8px;               /* Rounded corners */
     color: #f0ebd8;                   /* Light text color */
 }
 
@@ -24,7 +24,7 @@ QPushButton:pressed {
 
 /* Disabled buttons */
 QPushButton:disabled {
-    background-color: #1d2d44;
-    color: #3e5c76;
-    border: 1px solid #3e5c76;
+    background-color: #23242a;
+    color: #3a3b40;
+    border: 1px solid #3a3b40;
 }

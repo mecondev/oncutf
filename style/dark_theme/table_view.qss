@@ -3,11 +3,12 @@
    ============================= */
 
 QTableView {
-    background-color: #0d1321;
+    background-color: #23242a;
     color: #f0ebd8;
-    alternate-background-color: #1d2d44;
-    gridline-color: #3e5c76;
-    border: none;
+    alternate-background-color: #26272c;
+    gridline-color: #3a3b40;
+    border: 1px solid #3a3b40;
+    border-radius: 8px;
     selection-background-color: #748cab;
     selection-color: #0d1321;
 }
@@ -16,6 +17,7 @@ QTableView::item {
     border: none;
     background-color: transparent; /* base row background */
     padding: 2px 4px;
+    border-radius: 6px;
 }
 
 /* Hover effect per cell (styled to simulate full row visually) */
@@ -31,10 +33,11 @@ QTableView::item:selected {
 
 /* Header styling */
 QHeaderView::section {
-    background-color: #1d2d44;
+    background-color: #26272c;
     color: #f0ebd8;
     padding: 4px;
-    border: 1px solid #3e5c76;
+    border: 1px solid #3a3b40;
+    border-radius: 8px;
 }
 
 QHeaderView::section:hover {
