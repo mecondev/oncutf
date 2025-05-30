@@ -9,6 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     strategy:
       matrix:
@@ -33,10 +34,30 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run tests with PyQt5 (using xvfb)
+    - name: Start Xvfb display server
+      run: |
+        sudo /usr/bin/Xvfb :99 -screen 0 1920x1080x24 -ac +extension GLX &
+        sleep 3
+
+    - name: Test PyQt5 setup
+      env:
+        DISPLAY: :99
+        QT_QPA_PLATFORM: offscreen
+      run: |
+        python -c "from PyQt5.QtWidgets import QApplication; app = QApplication([]); print('PyQt5 OK')"
+
+    - name: Run tests (basic first)
       env:
         CI: true
         QT_QPA_PLATFORM: offscreen
         DISPLAY: :99
       run: |
-        xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24 -ac +extension GLX' pytest -v --cov=widgets --cov=modules --cov=utils --cov=main_window tests/
+        timeout 10m pytest tests/ -v -x --tb=short
+
+    - name: Run tests with coverage
+      env:
+        CI: true
+        QT_QPA_PLATFORM: offscreen
+        DISPLAY: :99
+      run: |
+        timeout 5m pytest tests/ -v --cov=widgets --cov=modules --cov=utils --cov=main_window --cov-report=term-missing
