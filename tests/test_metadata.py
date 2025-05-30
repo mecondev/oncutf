@@ -1,17 +1,16 @@
 from modules.metadata_module import MetadataModule
-
-class DummyFile:
-    def __init__(self, date=None, metadata=None):
-        self.date = date
-        self.metadata = metadata or {}
-        self.filename = "test.jpg"
+from tests.mocks import MockFileItem
 
 def test_metadata_from_date_attr():
-    file = DummyFile(date="2024-05-12 14:23:10")
-    data = {"type": "metadata", "field": "date"}
-    assert MetadataModule.apply_from_data(data, file) == "20240512"
+    data = {"type": "metadata", "field": "date", "category": "metadata_keys"}
+    file_item = MockFileItem()
+    metadata_cache = {"/mock/path/mockfile.mp3": {"date": "2024-05-12 14:23:10"}}
+    result = MetadataModule.apply_from_data(data, file_item, metadata_cache=metadata_cache)
+    assert result == "2024-05-12 14:23:10"
 
 def test_metadata_from_metadata_field():
-    file = DummyFile(metadata={"FileModifyDate": "2024:05:12 14:23:10+03:00"})
-    data = {"type": "metadata", "field": "date"}
-    assert MetadataModule.apply_from_data(data, file) == "20240512"
+    data = {"type": "metadata", "field": "FileModifyDate", "category": "metadata_keys"}
+    file_item = MockFileItem()
+    metadata_cache = {"/mock/path/mockfile.mp3": {"FileModifyDate": "2024:05:12 14:23:10+03:00"}}
+    result = MetadataModule.apply_from_data(data, file_item, metadata_cache=metadata_cache)
+    assert result == "2024:05:12 14:23:10+03:00"

@@ -11,6 +11,7 @@ Date: 2025-05-13
 
 from typing import List, Tuple, Dict, Optional, Any
 from models.file_item import FileItem
+from modules.metadata_module import MetadataModule
 from utils.validation import is_valid_filename_text
 from utils.logger_helper import get_logger
 
@@ -48,11 +49,14 @@ def generate_preview_names(
 
     for index, file in enumerate(files):
         name_parts = []
+        logger.debug(f"[PreviewGen] Start: file='{file.filename}', extension='{file.extension}'")
         for module in modules_data:
             module_type = module.get("type")
+            logger.debug(f"[PreviewGen] Module: {module_type} | data={module}")
 
             if module_type == "specified_text":
                 text = module.get("text", "")
+                logger.debug(f"[PreviewGen] SpecifiedText: '{text}'")
                 name_parts.append(text)
 
             elif module_type == "counter":
@@ -60,58 +64,41 @@ def generate_preview_names(
                 padding = module.get("padding", 4)
                 step = module.get("step", 1)
                 value = start + (index * step)
+                logger.debug(f"[PreviewGen] Counter: value={value}, padding={padding}")
                 name_parts.append(str(value).zfill(padding))
 
             elif module_type == "metadata":
-                key = module.get("field")
-                meta = (metadata_cache or {}).get(file.full_path)
-
-                if not isinstance(meta, dict):
-                    logger.warning(f"[Preview] No metadata found for {file.filename}")
-                    name_parts.append("unknown")
-                    continue
-
+                # Use MetadataModule for consistency with preview engine
                 try:
-                    value = meta.get(key) if isinstance(key, str) and key else None
+                    result = MetadataModule.apply_from_data(module, file, index, metadata_cache)
+                    logger.debug(f"[PreviewGen] Metadata result: '{result}'")
+                    name_parts.append(result)
                 except Exception as e:
-                    logger.warning(f"[Preview] Exception while getting metadata key '{key}' for {file.filename}: {e}")
-                    value = None
-                name_parts.append(str(value) if value else "unknown")
+                    logger.warning(f"[PreviewGen] Exception in MetadataModule for {file.filename}: {e}")
+                    name_parts.append("unknown")
 
             else:
+                logger.debug(f"[PreviewGen] Invalid module type: {module_type}")
                 name_parts.append("invalid")
 
-        # --- Work only on the basename, extension is handled separately ---
+        logger.debug(f"[PreviewGen] All parts before join: {name_parts}")
         new_basename = "".join(name_parts)
+        logger.debug(f"[PreviewGen] Basename before extension: '{new_basename}'")
         extension = file.extension or ""
         if extension and not extension.startswith("."):
             extension = "." + extension
+        logger.debug(f"[PreviewGen] Extension to use: '{extension}'")
 
-        # --- Post-processing for trailing space and separator (basename only) ---
-        separator = None
-        for module in modules_data:
-            if module.get("type") in ("original_name", "specified_text"):
-                sep = module.get("separator")
-                if sep:
-                    separator = sep
-        if not separator:
-            separator = "as-is"
-        if new_basename.endswith(" "):
-            if separator == "snake_case":
-                new_basename = new_basename.rstrip(" ") + "_"
-            elif separator == "kebab-case":
-                new_basename = new_basename.rstrip(" ") + "-"
-            else:  # "space" or "as-is"
-                new_basename = new_basename.rstrip(" ")
-        # ---
+        # Note: Separator transformations are handled by NameTransformModule in main_window.py
+        # This preview generator only creates the base name from modules
 
-        # Always join basename + extension (with dot)
         if extension:
             if not extension.startswith("."):
                 extension = "." + extension
             new_name = f"{new_basename}{extension}"
         else:
             new_name = new_basename
+        logger.debug(f"[PreviewGen] Final name: '{new_name}'")
 
         if not is_valid_filename_text(new_name):
             logger.warning(f"[Preview] Invalid name generated: {new_name}")

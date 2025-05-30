@@ -6,7 +6,12 @@ Date: 2025-05-01
 This module defines the MainWindow class, which implements the primary user interface
 for the oncutf application. It includes logic for loading files from folders, launching
 metadata extraction in the background, and managing user interaction such as rename previews.
+
+Note: PyQt5 type hints are not fully supported by static type checkers.
+Many of the linter warnings are false positives and can be safely ignored.
 """
+
+# type: ignore (PyQt5 attributes not recognized by linter)
 
 import os
 import glob
@@ -65,10 +70,11 @@ from utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
 import contextlib
+import re
 
 @contextlib.contextmanager
 def wait_cursor():
-    QApplication.setOverrideCursor(Qt.WaitCursor)
+    QApplication.setOverrideCursor(Qt.WaitCursor)  # type: ignore
     try:
         yield
     finally:
@@ -139,10 +145,10 @@ class MainWindow(QMainWindow):
 
     def setup_splitters(self) -> None:
         """Setup vertical and horizontal splitters."""
-        self.vertical_splitter = QSplitter(Qt.Vertical)
+        self.vertical_splitter = QSplitter(Qt.Vertical)  # type: ignore
         self.main_layout.addWidget(self.vertical_splitter)
 
-        self.horizontal_splitter = QSplitter(Qt.Horizontal)
+        self.horizontal_splitter = QSplitter(Qt.Horizontal)  # type: ignore
         self.vertical_splitter.addWidget(self.horizontal_splitter)
         self.vertical_splitter.setSizes(TOP_BOTTOM_SPLIT_RATIO)
 
@@ -335,6 +341,7 @@ class MainWindow(QMainWindow):
         self.preview_icon_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.preview_icon_table.setShowGrid(False)
         self.preview_icon_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
+        self.preview_icon_table.setStyleSheet("background-color: #212121;")
 
         table_pair_layout = QHBoxLayout()
         old_layout = QVBoxLayout()
@@ -397,7 +404,7 @@ class MainWindow(QMainWindow):
 
         self.vertical_splitter.addWidget(self.horizontal_splitter)
         self.vertical_splitter.addWidget(self.bottom_frame)
-        self.vertical_splitter.setSizes([485, 235])
+        self.vertical_splitter.setSizes([500, 300])
 
         self.main_layout.addWidget(footer_separator)
         self.main_layout.addWidget(footer_widget)
@@ -646,6 +653,7 @@ class MainWindow(QMainWindow):
             files=selected_files,
             modules_data=modules_data,
             metadata_cache=self.metadata_cache,
+            post_transform=post_transform,
             parent=self,
             conflict_callback=CustomMessageDialog.rename_conflict_dialog,
             validator=self.filename_validator
@@ -684,6 +692,11 @@ class MainWindow(QMainWindow):
 
         # Restore metadata from cache (to FileItem.metadata)
         self.restore_fileitem_metadata_from_cache()
+
+        # After restoring checked state, regenerate preview with new filenames
+        if self.last_action == "rename":
+            logger.debug("[PostRename] Regenerating preview with new filenames and restored checked state")
+            self.generate_preview_names()
 
         # Force update info icons in column 0
         for row in range(self.model.rowCount()):
@@ -864,6 +877,11 @@ class MainWindow(QMainWindow):
         self.rename_button.setEnabled(False)
         self.file_table_view.viewport().update()
 
+        # If we're coming from a rename operation and have active modules, regenerate preview
+        if self.last_action == "rename":
+            logger.debug("[PrepareTable] Post-rename detected, preview will be updated after checked state restore")
+            # Don't generate preview here - will be done after checked state is restored
+
     def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False, force: bool = False):
 
         normalized_new = os.path.abspath(os.path.normpath(folder_path))
@@ -920,7 +938,7 @@ class MainWindow(QMainWindow):
         logger.warning("[DEBUG] start_metadata_scan CALLED")
         logger.debug(f"[MetadataScan] Launch with force_extended = {self.force_extended_metadata}")
 
-        QApplication.setOverrideCursor(Qt.WaitCursor)
+        QApplication.setOverrideCursor(Qt.WaitCursor)  # type: ignore
 
         is_extended = self.force_extended_metadata
         self.loading_dialog = MetadataWaitingDialog(self, is_extended=is_extended)
@@ -1245,7 +1263,12 @@ class MainWindow(QMainWindow):
                 basename, extension = os.path.splitext(file.filename)
 
                 # Apply modules to basename only
-                new_basename = apply_rename_modules(modules_data, idx, file, self.metadata_cache)
+                new_fullname = apply_rename_modules(modules_data, idx, file, self.metadata_cache)
+                # Αφαίρεσε το extension αν υπάρχει ήδη (ώστε να δουλεύει μόνο με το basename)
+                if extension and new_fullname.lower().endswith(extension.lower()):
+                    new_basename = new_fullname[:-(len(extension))]
+                else:
+                    new_basename = new_fullname
 
                 logger.debug(f"Modules: {modules_data}")
                 logger.debug(f"Output from modules: {new_basename}")
@@ -1254,16 +1277,7 @@ class MainWindow(QMainWindow):
                 if NameTransformModule.is_effective(post_transform):
                     new_basename = NameTransformModule.apply_from_data(post_transform, new_basename)
                     logger.debug(f"Transform applied: {new_basename}")
-                # --- Post-processing for trailing space and separator (basename only) ---
-                separator = post_transform.get("separator", "as-is")
-                if new_basename.endswith(" "):
-                    if separator == "snake_case":
-                        new_basename = new_basename.rstrip(" ") + "_"
-                    elif separator == "kebab-case":
-                        new_basename = new_basename.rstrip(" ") + "-"
-                    else:  # "space" or "as-is"
-                        new_basename = new_basename.rstrip(" ")
-                # ---
+
                 # Validate only the basename
                 from utils.validation import is_valid_filename_text
                 if not is_valid_filename_text(new_basename):
@@ -1490,7 +1504,7 @@ class MainWindow(QMainWindow):
 
         all_names = [name for pair in name_pairs for name in pair]
         max_width = max((self.fontMetrics().horizontalAdvance(name) for name in all_names), default=250)
-        adjusted_width = max(250, max_width) + 100
+        adjusted_width = max(310, max_width) + 100
         self.preview_old_name_table.setColumnWidth(0, adjusted_width)
         self.preview_new_name_table.setColumnWidth(0, adjusted_width)
 

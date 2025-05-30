@@ -72,7 +72,8 @@ def apply_transform(name: str, transform: str) -> str:
 
     Args:
         name (str): Input name (base filename, no extension)
-        transform (str): One of 'original', 'lower', 'UPPER',
+        transform (str): One of 'original', 'lower', 'UPPER', 'Capitalize',
+                         'camelCase', 'PascalCase', 'Title Case',
                          'snake_case', 'kebab-case', 'space', 'greeklish'
 
     Returns:
@@ -82,7 +83,8 @@ def apply_transform(name: str, transform: str) -> str:
         return ''
 
     if transform == "original":
-        return name
+        # Remove leading/trailing spaces, preserve everything else
+        return name.strip()
 
     if transform == "lower":
         return name.lower()
@@ -90,22 +92,77 @@ def apply_transform(name: str, transform: str) -> str:
     if transform == "UPPER":
         return safe_upper(name)
 
-    if transform == "capitalize":
+    if transform == "Capitalize":
         return ' '.join(w.capitalize() for w in name.split())
 
-    if transform == "snake_case":
-        name = re.sub(r"[^\w\s_-]", "", name, flags=re.UNICODE)
-        name = re.sub(r"[\s\-]+", "_", name)
-        return name.strip("_")
+    if transform == "camelCase":
+        words = name.split()
+        if not words:
+            return ''
+        # First word lowercase, rest capitalized
+        return words[0].lower() + ''.join(w.capitalize() for w in words[1:])
 
-    if transform == "kebab-case":
-        name = re.sub(r"[^\w\s_-]", "", name, flags=re.UNICODE)
-        name = re.sub(r"[\s_]+", "-", name)
-        return name.strip("-")
+    if transform == "PascalCase":
+        words = name.split()
+        if not words:
+            return ''
+        # All words capitalized, no spaces
+        return ''.join(w.capitalize() for w in words)
+
+    if transform == "Title Case":
+        # Similar to Capitalize but handles articles/prepositions better
+        return name.title()
+
+    if transform in ("snake_case", "kebab-case"):
+        # Correct 3-step process:
+        # Step 1: Convert ALL spaces to separators (including leading/trailing)
+        # Step 2: Remove duplicate separators
+        # Step 3: Strip any remaining leading/trailing spaces
+
+        sep_char = "_" if transform == "snake_case" else "-"
+
+        # Step 1: Convert all spaces to separators
+        if transform == "snake_case":
+            result = re.sub(r"\s+", "_", name)
+        else:  # kebab-case
+            result = re.sub(r"\s+", "-", name)
+
+        # Step 2: Remove duplicate separators
+        # Remove duplicate underscores and dashes
+        result = re.sub(r"_+", "_", result)  # Multiple _ → single _
+        result = re.sub(r"-+", "-", result)  # Multiple - → single -
+
+        # Step 3: Strip any remaining leading/trailing spaces (shouldn't be any, but safety)
+        result = result.strip()
+
+        return result
 
     if transform == "space":
-        # Replace underscores and dashes with space
-        return re.sub(r"[_\-]+", " ", name)
+        # Find first and last non-space character
+        m_first = re.search(r'[^\s]', name)
+        if not m_first:
+            return ''  # All spaces, return empty
+        first = m_first.start()
+        m_last = re.search(r'[^\s](?!.*[^\s])', name)
+        if not m_last:
+            return ''  # No valid content found
+        last = m_last.start()
+
+        # Extract leading/trailing separators and body content
+        leading_part = name[:first]  # Only separators before first non-space
+        trailing_part = name[last+1:]  # Only separators after last non-space
+        body = name[first:last+1]  # Content without leading/trailing spaces
+
+        # In leading/trailing: keep separators, remove spaces
+        leading_result = re.sub(r'[_\-]+', ' ', leading_part).strip()
+        trailing_result = re.sub(r'[_\-]+', ' ', trailing_part).strip()
+
+        # In body: convert separators to spaces
+        body_result = re.sub(r"[_\-]+", " ", body)
+
+        # Combine
+        result = f"{leading_result}{body_result}{trailing_result}".strip()
+        return result
 
     if transform == "greeklish":
         return to_greeklish(name)

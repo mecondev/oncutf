@@ -4,12 +4,17 @@ from utils.transform_utils import apply_transform
 @pytest.mark.parametrize("name, transform, expected", [
     ("My File Name", "original", "My File Name"),
     ("My File Name", "lower", "my file name"),
-    ("My File Name", "upper", "MY FILE NAME"),
-    ("My File Name", "snake_case", "my_file_name"),
-    ("My File Name", "kebab_case", "my-file-name"),
+    ("My File Name", "UPPER", "MY FILE NAME"),
+    ("My File Name", "Capitalize", "My File Name"),
+    ("my file name", "Capitalize", "My File Name"),
+    ("my file name", "camelCase", "myFileName"),
+    ("my file name", "PascalCase", "MyFileName"),
+    ("my file name", "Title Case", "My File Name"),
+    ("My File Name", "snake_case", "My_File_Name"),
+    ("My File Name", "kebab-case", "My-File-Name"),
     ("", "snake_case", ""),
-    ("Test--Name__Mix", "snake_case", "test_name_mix"),
-    ("Symbols@!$%", "kebab_case", "symbols")
+    ("Test--Name__Mix", "snake_case", "Test-Name_Mix"),
+    ("Symbols@!$%", "kebab-case", "Symbols@!$%")
 ])
 def test_apply_transform_basic(name, transform, expected):
     assert apply_transform(name, transform) == expected

@@ -45,8 +45,6 @@ class SpecifiedTextModule(QWidget):
         layout.addWidget(self.text_label)
         layout.addWidget(self.text_input)
 
-        # self.setFixedHeight(90)
-
     def validate_input(self, text: str) -> None:
         """
         Validates the user input text and updates visual feedback.

@@ -120,6 +120,7 @@ def execute_rename_plan(plan: List[Dict]) -> int:
             success_count += 1
         except Exception as e:
             # print(f"Failed to rename {entry['src']} -> {entry['dst']}: {e}")
+            pass  # Silent fail - could be logged in the future
 
     return success_count
 

@@ -1,9 +1,15 @@
 QTreeView {
-    background-color: #23242a;
+    background-color: #181818;
     color: #f0ebd8;
-    alternate-background-color: #26272c;
-    border: 1px solid #3a3b40;
+    alternate-background-color: #232323;
+    border: none;
     border-radius: 8px;
+    show-decoration-selected: 1;
+}
+
+/* Alternative row styling */
+QTreeView::item:alternate {
+    background-color: #232323;
 }
 
 QTreeView::item:hover {

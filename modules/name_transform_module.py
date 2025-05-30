@@ -1,4 +1,3 @@
-
 """
 modules/name_transform_module.py
 
@@ -37,7 +36,7 @@ class NameTransformModule:
 
         logger.debug(f"[NameTransformModule] Input: {base_name} | case: {case} | sep: {sep}")
 
-        if case in ("lower", "UPPER", "capitalize"):
+        if case in ("lower", "UPPER", "Capitalize", "camelCase", "PascalCase", "Title Case"):
             base_name = apply_transform(base_name, case)
 
         if sep in ("snake_case", "kebab-case", "space"):

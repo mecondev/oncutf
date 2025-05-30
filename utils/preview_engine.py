@@ -43,6 +43,7 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
     """
     new_name_parts = []
     original_base_name, ext = os.path.splitext(file_item.filename)
+    logger.debug(f"[apply_rename_modules] Start: original filename='{file_item.filename}', base='{original_base_name}', ext='{ext}'")
     # All modules operate only on the basename. The extension is not affected by any module.
 
     for i, data in enumerate(modules_data):
@@ -65,35 +66,33 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
         if module_type == "specified_text":
             text = data.get("text", "").strip()
             if not text:
-                # If another module precedes, skip specified text entirely (add nothing)
                 if new_name_parts:
                     continue
                 else:
-                    # If it's the first module and empty, only then add the original basename
                     new_name_parts.append(original_base_name)
+                    logger.debug(f"[apply_rename_modules] SpecifiedText empty, using original base: {original_base_name}")
                     continue
             else:
-                # There is text, add it
                 part = module_cls.apply_from_data(data, file_item, index, metadata_cache)
+                logger.debug(f"[apply_rename_modules] SpecifiedText part: '{part}' (from text='{text}')")
                 new_name_parts.append(part)
                 continue
 
-        # OriginalNameModule logic
         if module_type == "original_name" and not is_effective:
-            # If the original name hasn't already been added, add it
             if not new_name_parts:
                 new_name_parts.append(original_base_name)
+                logger.debug(f"[apply_rename_modules] OriginalName fallback, using original base: {original_base_name}")
             continue
 
-        # General case (effective module)
         if is_effective:
             part = module_cls.apply_from_data(data, file_item, index, metadata_cache)
+            logger.debug(f"[apply_rename_modules] Module {module_type} part: '{part}'")
             new_name_parts.append(part)
 
-    # If there are no parts, leave only the extension
+    logger.debug(f"[apply_rename_modules] All parts before join: {new_name_parts}")
     final_basename = ''.join(new_name_parts) if new_name_parts else ''
-    # Always append the extension (with the dot) at the end
+    logger.debug(f"[apply_rename_modules] Final basename before extension: '{final_basename}'")
     final_name = final_basename + ext
-
+    logger.debug(f"[apply_rename_modules] Final name with extension: '{final_name}'")
     logger.debug(f"[apply_rename_modules] Final name: {file_item.filename} → {final_name}")
     return final_name

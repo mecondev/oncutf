@@ -5,8 +5,8 @@
 
 /* Common background for both vertical and horizontal scrollbars */
 QScrollBar:vertical, QScrollBar:horizontal {
-    background: #23242a;
-    border: 1px solid #3a3b40;
+    background: #181818;
+    border: none;
     margin: 0px;
     border-radius: 8px;
 }
@@ -56,13 +56,13 @@ QScrollBar::sub-page:horizontal {
 /* === Specific settings for vertical scrollbars === */
 QScrollBar:vertical {
     width: 10px;           /* Thickness of vertical scrollbar */
-    background: #23242a;
+    background: #181818;
     margin: 0px;
 }
 
 /* === Specific settings for horizontal scrollbars === */
 QScrollBar:horizontal {
     height: 10px;          /* Thickness of horizontal scrollbar */
-    background: #23242a;
+    background: #181818;
     margin: 0px;
 }

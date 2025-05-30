@@ -31,7 +31,7 @@ class NameTransformWidget(QWidget):
         case_layout = QHBoxLayout()
         case_label = QLabel("Case:")
         self.case_combo = QComboBox()
-        self.case_combo.addItems(["original", "lower", "UPPER", "capitalize"])
+        self.case_combo.addItems(["original", "lower", "UPPER", "Capitalize"])
         self.case_combo.currentTextChanged.connect(lambda _: self.updated.emit(self))
         case_layout.addWidget(case_label)
         case_layout.addWidget(self.case_combo)

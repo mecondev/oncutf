@@ -27,6 +27,7 @@ These tests ensure consistent and reliable user interaction in dialog-based flow
 """
 
 
+import os
 import pytest
 from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal
 from PyQt5.QtWidgets import QWidget
@@ -83,13 +84,13 @@ def test_information_dialog_sets_message(qtbot, monkeypatch) -> None:
 def test_conflict_dialog_selection_skip(qtbot, monkeypatch) -> None:
     monkeypatch.setattr(CustomMessageDialog, "exec_", lambda self: setattr(self, "selected", "Skip"))
     result = CustomMessageDialog.rename_conflict_dialog(QWidget(), "example.txt")
-    assert result == "Skip"
+    assert result == "skip"
 
 
 def test_conflict_dialog_selection_overwrite(qtbot, monkeypatch) -> None:
     monkeypatch.setattr(CustomMessageDialog, "exec_", lambda self: setattr(self, "selected", "Overwrite"))
     result = CustomMessageDialog.rename_conflict_dialog(QWidget(), "example.txt")
-    assert result == "Overwrite"
+    assert result == "overwrite"
 
 
 def test_waiting_dialog_is_application_modal(qtbot) -> None:
@@ -105,17 +106,17 @@ def test_escape_triggers_callback_and_close(qtbot) -> None:
     dlg = CustomMessageDialog.show_waiting(None, "Reading...")
     qtbot.addWidget(dlg)
 
-    # Track whether accept() was called (close via Esc)
-    accepted = {"called": False}
+    # Track whether reject() was called (close via Esc)
+    rejected = {"called": False}
 
-    def fake_accept():
-        accepted["called"] = True
+    def fake_reject():
+        rejected["called"] = True
         dlg.close()
 
-    dlg.accept = fake_accept
+    dlg.reject = fake_reject
 
     qtbot.keyPress(dlg, Qt.Key_Escape)
     qtbot.wait(1200)
 
-    assert accepted["called"], "Dialog should call accept() when Esc is pressed"
+    assert rejected["called"], "Dialog should call reject() when Esc is pressed"
     assert not dlg.isVisible(), "Dialog should close after Esc"

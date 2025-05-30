@@ -28,7 +28,7 @@ from PyQt5.QtCore import pyqtSignal, QTimer
 
 from modules.specified_text_module import SpecifiedTextModule
 from modules.counter_module import CounterModule
-from modules.metadata_module import MetadataModule
+from widgets.metadata_widget import MetadataWidget
 from widgets.original_name_widget import OriginalNameWidget
 
 from widgets.custom_msgdialog import CustomMessageDialog
@@ -57,15 +57,15 @@ class RenameModuleWidget(QWidget):
         self.module_instances = {
             "Specified Text": SpecifiedTextModule,
             "Counter": CounterModule,
-            "Metadata": MetadataModule,
+            "Metadata": MetadataWidget,
             "Original Name": OriginalNameWidget
         }
 
         self.module_heights = {
             "Specified Text": 90,
             "Counter": 130,
-            "Metadata": 100,
-            "Original Name": 120
+            "Metadata": 120,
+            "Original Name": 50
         }
 
         self.current_module_widget = None
@@ -126,7 +126,12 @@ class RenameModuleWidget(QWidget):
 
         module_class = self.module_instances.get(module_name)
         if module_class:
-            self.current_module_widget = module_class()
+            # Special handling for MetadataWidget which needs parent_window reference
+            if module_name == "Metadata":
+                self.current_module_widget = module_class(parent_window=self.parent_window)
+            else:
+                self.current_module_widget = module_class()
+
             self.content_container_layout.addWidget(self.current_module_widget)
 
             # Force fixed height for container depending on module type

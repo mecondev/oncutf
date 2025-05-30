@@ -1,8 +1,10 @@
 import os
+import re
 from typing import List, Callable, Optional
 from PyQt5.QtWidgets import QWidget
 from models.file_item import FileItem
 from utils.preview_generator import generate_preview_names
+from modules.name_transform_module import NameTransformModule
 from utils.validation import is_valid_filename_text
 from widgets.custom_msgdialog import CustomMessageDialog
 
@@ -28,6 +30,7 @@ class Renamer:
         files: List[FileItem],
         modules_data: List[dict],
         metadata_cache: dict,
+        post_transform: Optional[dict] = None,
         parent: Optional[QWidget] = None,
         conflict_callback: Optional[Callable[[QWidget, str], str]] = None,
         validator: Optional[object] = None
@@ -39,6 +42,7 @@ class Renamer:
             files (List[FileItem]): List of FileItem objects selected for rename.
             modules_data (List[dict]): Serialized rename module data.
             metadata_cache (dict): Metadata dictionary (full_path → metadata dict).
+            post_transform (dict, optional): Transformation options (case, separator).
             parent (QWidget, optional): Parent UI component.
             conflict_callback (Callable, optional): Function to handle filename conflicts.
             validator (object): Object to validate filename text.
@@ -46,6 +50,7 @@ class Renamer:
         self.files = files
         self.modules_data = modules_data
         self.metadata_cache = metadata_cache
+        self.post_transform = post_transform or {}
         self.parent = parent
         self.conflict_callback = conflict_callback
         self.validator = validator
@@ -74,10 +79,26 @@ class Renamer:
             return [RenameResult(f.full_path, "", success=False, error=tooltip) for f in self.files]
 
         # Step 2: Map old path to new name
-        old_to_new = {
-            f.full_path: new_name
-            for f, (_, new_name) in zip(self.files, preview_pairs)
-        }
+        old_to_new = {}
+        for f, (_, new_name) in zip(self.files, preview_pairs):
+            # Remove extension if already present (work with basename only)
+            basename, extension = os.path.splitext(f.filename)
+            if extension and new_name.lower().endswith(extension.lower()):
+                new_basename = new_name[:-(len(extension))]
+            else:
+                new_basename = new_name
+
+            # Apply name transform (case, separator) to basename only - same logic as preview
+            if NameTransformModule.is_effective(self.post_transform):
+                new_basename = NameTransformModule.apply_from_data(self.post_transform, new_basename)
+                logger.debug(f"Transform applied: {new_basename}")
+
+            # Final cleanup: strip any remaining leading/trailing spaces from basename
+            new_basename = new_basename.strip()
+
+            # Combine with extension
+            final_name = f"{new_basename}{extension}" if extension else new_basename
+            old_to_new[f.full_path] = final_name
 
         results = []
         skip_all = False
@@ -85,6 +106,11 @@ class Renamer:
         # Step 3: Apply rename for each file
         for file in self.files:
             src = file.full_path
+            if src is None:
+                logger.error(f"File {file.filename} has no full_path")
+                results.append(RenameResult("", "", success=False, error="No full path"))
+                continue
+
             dst = os.path.join(os.path.dirname(src), old_to_new[src])
             new_filename = os.path.basename(dst)
 

@@ -1,7 +1,6 @@
-
 # oncutf
 
-**oncutf** is a personal open-source tool for renaming files based on EXIF metadata.  
+**oncutf** is a personal open-source tool for renaming files based on EXIF metadata.
 It combines the flexibility of [ExifTool](https://exiftool.org/) with the convenience of a PyQt5 GUI.
 
 Built for creators, photographers, and archivists who want their filenames to reflect real metadata — like capture date, duration, or any embedded tag.
@@ -69,7 +68,7 @@ oncutf/
 
 ## 🌐 Project & Creator
 
-**oncutf** is created by [Michael Economou](https://oncut.gr),  
+**oncutf** is created by [Michael Economou](https://oncut.gr),
 as a personal non-commercial tool to support creative video & photo workflows.
 
 ### 🔗 Links
@@ -84,7 +83,7 @@ as a personal non-commercial tool to support creative video & photo workflows.
 
 ## 🪪 License
 
-This project is licensed under the MIT License.  
+This project is licensed under the MIT License.
 See the [LICENSE](LICENSE) file for full details.
 
 ---

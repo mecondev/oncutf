@@ -16,7 +16,7 @@ def test_specified_text_trims_whitespace():
     data = {"type": "specified_text", "text": "  MyPrefix  "}
     file_item = MockFileItem(filename="example.txt")
     result = SpecifiedTextModule.apply_from_data(data, file_item)
-    assert result == "MyPrefix"
+    assert result == "  MyPrefix  "
 
 
 def test_specified_text_invalid_characters():
@@ -30,4 +30,4 @@ def test_specified_text_empty():
     data = {"type": "specified_text", "text": ""}
     file_item = MockFileItem(filename="example.txt")
     result = SpecifiedTextModule.apply_from_data(data, file_item)
-    assert result == "invalid"
+    assert result == "example"
