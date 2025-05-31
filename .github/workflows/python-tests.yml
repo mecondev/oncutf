@@ -61,3 +61,7 @@ jobs:
         DISPLAY: :99
       run: |
         timeout 5m pytest tests/ -v --cov=widgets --cov=modules --cov=utils --cov=main_window --cov-report=term-missing
+
+    # Note: We skip linting for PyQt5 projects due to numerous false positives
+    # with type hints and Qt attribute resolution. The pyproject.toml contains
+    # appropriate configurations if manual linting is needed locally.

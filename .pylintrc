@@ -1,0 +1,50 @@
+[MAIN]
+load-plugins=pylint.extensions.docparams
+extension-pkg-whitelist=PyQt5
+
+[MESSAGES CONTROL]
+# Disable PyQt5-related false positives and style warnings
+disable=missing-module-docstring,
+        missing-class-docstring,
+        missing-function-docstring,
+        too-many-arguments,
+        too-many-locals,
+        too-many-instance-attributes,
+        too-many-statements,
+        too-many-branches,
+        too-many-public-methods,
+        too-few-public-methods,
+        invalid-name,
+        attribute-defined-outside-init,
+        no-member,
+        c-extension-no-member,
+        import-error,
+        no-name-in-module,
+        unused-argument,
+        broad-except,
+        bare-except,
+        consider-using-f-string
+
+[TYPECHECK]
+# Ignore PyQt5 generated members that pylint can't see
+generated-members=PyQt5.*,Qt.*,QApplication.*,QWidget.*,QMainWindow.*,QTableWidget.*,QTreeView.*,QHeaderView.*,QAbstractItemView.*
+
+[FORMAT]
+max-line-length=120
+max-module-lines=3000
+
+[DESIGN]
+max-args=10
+max-locals=20
+max-returns=8
+max-branches=15
+max-statements=80
+max-parents=10
+max-attributes=15
+max-public-methods=25
+
+[SIMILARITIES]
+min-similarity-lines=10
+ignore-comments=yes
+ignore-docstrings=yes
+ignore-imports=yes

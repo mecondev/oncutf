@@ -51,6 +51,44 @@ python main.py
 
 ---
 
+## 🧪 Development
+
+### Running Tests
+
+The project includes comprehensive test coverage for core functionality:
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run tests with coverage
+pytest tests/ --cov=widgets --cov=modules --cov=utils --cov=main_window --cov-report=term-missing
+
+# Run specific test modules
+pytest tests/test_custom_msgdialog.py -v
+```
+
+### Code Quality
+
+The project uses `pyproject.toml` for configuration. Note that **linting is disabled for PyQt5 projects** in CI due to numerous false positives with type hints and Qt attribute resolution.
+
+For local development, you can run:
+
+```bash
+# Install development dependencies
+pip install -e .[dev]
+
+# Run pylint (configured to ignore PyQt5 false positives)
+pylint main_window.py --rcfile=.pylintrc
+
+# Run mypy (configured in pyproject.toml)
+mypy main_window.py
+```
+
+**Note**: PyQt5 generates many false positive warnings with static analysis tools. The configurations in `pyproject.toml` and `.pylintrc` are specifically tuned to ignore these known issues while maintaining useful code quality checks.
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -61,6 +99,8 @@ oncutf/
 ├── modules/             # Rename logic (e.g. counter, EXIF field, etc.)
 ├── utils/               # Helper tools (e.g. metadata parser)
 ├── widgets/             # PyQt UI components
+├── tests/               # Test suite
+├── pyproject.toml       # Project configuration
 └── README.md
 ```
 

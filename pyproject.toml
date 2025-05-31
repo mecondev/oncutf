@@ -1,0 +1,125 @@
+[project]
+name = "oncutf"
+version = "0.1.0"
+description = "Batch File Renamer with EXIF Metadata Support"
+authors = [
+    {name = "Michael Economou", email = "info@oncut.gr"}
+]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "PyQt5>=5.15.0",
+    "Pillow>=9.0.0",
+    "charset-normalizer>=3.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-qt>=4.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0"
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = false
+disallow_untyped_decorators = false
+no_implicit_optional = false
+warn_redundant_casts = true
+warn_unused_ignores = false
+warn_no_return = false
+warn_unreachable = false
+strict_equality = false
+ignore_missing_imports = true
+
+# PyQt5 specific ignores
+[[tool.mypy.overrides]]
+module = [
+    "PyQt5.*",
+    "*.PyQt5.*",
+    "main_window",
+    "widgets.*",
+    "models.*"
+]
+ignore_errors = true
+ignore_missing_imports = true
+
+[tool.pylint.main]
+load-plugins = ["pylint.extensions.docparams"]
+extension-pkg-whitelist = ["PyQt5"]
+
+[tool.pylint.messages_control]
+disable = [
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "too-many-arguments",
+    "too-many-locals",
+    "too-many-instance-attributes",
+    "too-many-statements",
+    "too-many-branches",
+    "too-many-public-methods",
+    "too-few-public-methods",
+    "invalid-name",
+    "attribute-defined-outside-init",
+    "no-member",  # PyQt5 false positives
+    "c-extension-no-member",  # PyQt5 false positives
+    "import-error",
+    "no-name-in-module",  # PyQt5 false positives
+    "unused-argument",
+    "broad-except",
+    "bare-except"
+]
+
+[tool.pylint.typecheck]
+# Ignore PyQt5 generated members
+generated-members = [
+    "PyQt5.*",
+    "Qt.*",
+    "QApplication.*",
+    "QWidget.*",
+    "QMainWindow.*",
+    "QTableWidget.*",
+    "QTreeView.*",
+    "QHeaderView.*",
+    "QAbstractItemView.*"
+]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --tb=short"
+testpaths = ["tests"]
+qt_api = "pyqt5"
+
+[tool.coverage.run]
+source = [".", "widgets", "models", "modules", "utils"]
+omit = [
+    "tests/*",
+    "venv/*",
+    "*/site-packages/*",
+    "setup.py",
+    "conftest.py"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod"
+]
