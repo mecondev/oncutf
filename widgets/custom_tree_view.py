@@ -147,6 +147,12 @@ class CustomTreeView(QTreeView):
         # Process any pending events to ensure UI is updated
         QApplication.processEvents()
 
+        # Force fake mouse release to break Qt drag session (cross-platform) με μικρή καθυστέρηση για να τελειώσει το animation
+        def send_fake_release():
+            fake_event = QMouseEvent(QEvent.MouseButtonRelease, QPoint(-1, -1), Qt.LeftButton, Qt.NoButton, Qt.NoModifier)
+            QApplication.postEvent(self, fake_event)
+        QTimer.singleShot(100, send_fake_release)
+
     def startInternalDrag(self, position):
         """
         Start a drag operation that works within the application.
@@ -207,6 +213,9 @@ class CustomTreeView(QTreeView):
             # Support all actions to ensure proper termination regardless of target
             result = drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
             logger.debug(f"Drag completed with result: {result}")
+            if result == 0:
+                logger.debug("Drag was not accepted by any target, forcing cleanup.")
+                self._complete_drag_cleanup()
         except Exception as e:
             logger.error(f"Drag operation failed: {e}")
         finally:
@@ -248,6 +257,12 @@ class CustomTreeView(QTreeView):
         self.viewport().update()
         QApplication.processEvents()
 
+        # Force fake mouse release to break Qt drag session (cross-platform) με μικρή καθυστέρηση για να τελειώσει το animation
+        def send_fake_release():
+            fake_event = QMouseEvent(QEvent.MouseButtonRelease, QPoint(-1, -1), Qt.LeftButton, Qt.NoButton, Qt.NoModifier)
+            QApplication.postEvent(self, fake_event)
+        QTimer.singleShot(100, send_fake_release)
+
     def dragEnterEvent(self, event):
         """
         Override to reject all drag enter events. No drops are allowed on the tree view.
@@ -264,4 +279,9 @@ class CustomTreeView(QTreeView):
         """
         Override to reject all drop events. No drops are allowed on the tree view.
         """
+        event.ignore()
+
+    def dragLeaveEvent(self, event):
+        logger.debug("[DragDrop] dragLeaveEvent on tree view, forcing cleanup.")
+        self._complete_drag_cleanup()
         event.ignore()
