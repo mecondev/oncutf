@@ -61,6 +61,7 @@ from widgets.custom_table_view import CustomTableView
 from widgets.metadata_tree_view import MetadataTreeView
 from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 from widgets.rename_modules_area import RenameModulesArea
+from widgets.custom_tree_view import CustomTreeView
 
 
 from config import *
@@ -158,7 +159,7 @@ class MainWindow(QMainWindow):
         left_layout = QVBoxLayout(self.left_frame)
         left_layout.addWidget(QLabel("Folders"))
 
-        self.tree_view = QTreeView()
+        self.tree_view = CustomTreeView()
         self.tree_view.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.tree_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         left_layout.addWidget(self.tree_view)
@@ -265,7 +266,7 @@ class MainWindow(QMainWindow):
 
         # Metadata Tree View
         self.metadata_tree_view = MetadataTreeView()
-        self.metadata_tree_view.files_dropped.connect(self.handle_dropped_files)
+        self.metadata_tree_view.files_dropped.connect(self.load_metadata_from_dropped_files)
         self.metadata_tree_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.metadata_tree_view.setUniformRowHeights(True)
         self.metadata_tree_view.expandToDepth(1)
@@ -418,8 +419,12 @@ class MainWindow(QMainWindow):
         self.select_folder_button.clicked.connect(self.handle_folder_select)
         self.browse_folder_button.clicked.connect(self.handle_browse)
 
+        # Connect tree_view for drag & drop operations
+        self.tree_view.files_dropped.connect(self.load_files_from_dropped_items)
+
         self.file_table_view.clicked.connect(self.on_table_row_clicked)
         self.file_table_view.selection_changed.connect(self.update_preview_from_selection)
+        self.file_table_view.files_dropped.connect(self.load_files_from_dropped_items)
         self.model.sort_changed.connect(self.generate_preview_names)
         self.file_table_view.setContextMenuPolicy(Qt.CustomContextMenu)
         self.file_table_view.customContextMenuRequested.connect(self.handle_table_context_menu)
@@ -2261,7 +2266,38 @@ class MainWindow(QMainWindow):
                 idx = self.model.index(row, col)
                 self.file_table_view.viewport().update(self.file_table_view.visualRect(idx))
 
-    def handle_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
+                self.display_metadata(metadata, context="handle_dropped_files")
+
+            self.file_table_view.viewport().update()
+
+    def closeEvent(self, event) -> None:
+        """
+        Called when the main window is about to close.
+
+        Ensures any background metadata threads are cleaned up
+        properly before the application exits.
+        """
+        logger.info("Main window closing. Cleaning up metadata worker.")
+        self.cleanup_metadata_worker()
+
+        if hasattr(self.metadata_loader, "close"):
+            self.metadata_loader.close()  # ✨ new line
+
+        super().closeEvent(event)
+
+    def show_wait_cursor_if_many_files(self, count, threshold=100):
+        if count >= threshold:
+            from PyQt5.QtWidgets import QApplication
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            QApplication.processEvents()
+            return True
+        return False
+
+    def restore_cursor(self):
+        from PyQt5.QtWidgets import QApplication
+        QApplication.restoreOverrideCursor()
+
+    def load_metadata_from_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
         Called when user drops files onto metadata tree.
         Maps filenames to FileItem objects and triggers forced metadata loading.
@@ -2297,34 +2333,83 @@ class MainWindow(QMainWindow):
             last = file_items[-1]
             metadata = self.metadata_cache.get(last.full_path)
             if isinstance(metadata, dict):
-                self.display_metadata(metadata, context="handle_dropped_files")
+                self.display_metadata(metadata, context="load_metadata_from_dropped_files")
 
             self.file_table_view.viewport().update()
 
-    def closeEvent(self, event) -> None:
+    def load_files_from_dropped_items(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
-        Called when the main window is about to close.
+        Called when user drops files or folders onto file table view.
+        Imports the dropped files into the current view.
 
-        Ensures any background metadata threads are cleaned up
-        properly before the application exits.
+        Args:
+            paths (list[str]): List of file/folder paths dropped
+            modifiers (Qt.KeyboardModifiers): Keyboard modifiers held during drop
         """
-        logger.info("Main window closing. Cleaning up metadata worker.")
-        self.cleanup_metadata_worker()
+        if not paths:
+            logger.info("[Drop] No files dropped in table.")
+            return
 
-        if hasattr(self.metadata_loader, "close"):
-            self.metadata_loader.close()  # ✨ new line
+        logger.info(f"[Drop] {len(paths)} file(s)/folder(s) dropped in table view")
 
-        super().closeEvent(event)
+        # If a folder is dropped, set it as the current folder
+        if len(paths) == 1 and os.path.isdir(paths[0]):
+            folder_path = paths[0]
+            logger.info(f"[Drop] Setting folder from drop: {folder_path}")
 
-    def show_wait_cursor_if_many_files(self, count, threshold=100):
-        if count >= threshold:
-            from PyQt5.QtWidgets import QApplication
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            QApplication.processEvents()
-            return True
-        return False
+            # Update folder tree selection
+            if hasattr(self.dir_model, "index"):
+                index = self.dir_model.index(folder_path)
+                self.tree_view.setCurrentIndex(index)
 
-    def restore_cursor(self):
-        from PyQt5.QtWidgets import QApplication
-        QApplication.restoreOverrideCursor()
+            # Load the folder contents
+            skip_metadata, _ = self.determine_metadata_mode()
+            self.load_files_from_folder(folder_path, skip_metadata=skip_metadata)
+            return
+
+        # Otherwise, add the files to the current view if possible
+        file_items = []
+        current_filenames = {f.filename for f in self.model.files} if hasattr(self.model, "files") else set()
+
+        # Filter only files, not directories
+        file_paths = [p for p in paths if os.path.isfile(p)]
+
+        for path in file_paths:
+            filename = os.path.basename(path)
+            # Only add if not already in the table
+            if filename not in current_filenames:
+                # Extract extension
+                _, ext = os.path.splitext(filename)
+                extension = ext[1:].lower() if ext.startswith('.') else ext.lower()
+
+                # Get modification time
+                try:
+                    modified = datetime.datetime.fromtimestamp(os.path.getmtime(path)).strftime("%Y-%m-%d %H:%M:%S")
+                except Exception as e:
+                    logger.warning(f"[Drop] Failed to get modification time for {path}: {e}")
+                    modified = "Unknown"
+
+                file_item = FileItem(filename, extension, modified, full_path=path)
+                file_items.append(file_item)
+
+        if not file_items:
+            logger.info("[Drop] No new files to add to table.")
+            return
+
+        # Add new files to the model
+        if hasattr(self.model, "add_files"):
+            logger.info(f"[Drop] Adding {len(file_items)} new file(s) to table")
+            self.model.add_files(file_items)
+
+            # Optionally load metadata based on modifiers
+            self.force_extended_metadata = bool(int(modifiers) & int(Qt.ShiftModifier))
+            logger.debug(f"[Modifiers] Shift held → use_extended={self.force_extended_metadata}")
+
+            if self.force_extended_metadata:
+                self.start_metadata_scan_for_items(file_items)
+
+            # Update UI
+            self.file_table_view.viewport().update()
+            self.update_files_label()
+            self.generate_preview_names()
 

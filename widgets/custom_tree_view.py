@@ -9,10 +9,12 @@ to prevent drag-out to external applications while preserving
 internal drag & drop functionality.
 '''
 
-from PyQt5.QtWidgets import QTreeView, QAbstractItemView, QApplication
+import os
+from PyQt5.QtWidgets import QTreeView, QAbstractItemView, QApplication, QFileSystemModel
 from PyQt5.QtCore import Qt, QMimeData, QEvent, QPoint, QUrl, pyqtSignal
 from PyQt5.QtGui import QDrag
 from utils.logger_helper import get_logger
+from config import ALLOWED_EXTENSIONS
 
 logger = get_logger(__name__)
 
@@ -61,8 +63,8 @@ class CustomTreeView(QTreeView):
 
     def startInternalDrag(self, position):
         """
-        Start a drag operation that only works within the application.
-        This prevents files from being dragged out to external applications.
+        Start a drag operation that works within the application.
+        Allow dragging folders and files from tree view to other components like file table.
         """
         index = self.indexAt(position)
         if not index.isValid():
@@ -70,34 +72,46 @@ class CustomTreeView(QTreeView):
             if not index.isValid():
                 return
 
-        # Get model and file path of the selected folder
+        # Get model and file path of the selected item
         model = self.model()
-        if hasattr(model, 'filePath'):
-            path = model.filePath(index)
-            if not path:
+        if not hasattr(model, 'filePath'):
+            logger.warning("Model does not support filePath method")
+            return
+
+        path = model.filePath(index)
+        if not path:
+            return
+
+        # Check if it's a directory or file
+        is_dir = os.path.isdir(path)
+
+        # For files, check if it has an allowed extension
+        if not is_dir:
+            _, ext = os.path.splitext(path)
+            if ext.startswith('.'):
+                ext = ext[1:].lower()
+            if ext not in ALLOWED_EXTENSIONS:
+                logger.debug(f"Skipping drag for non-allowed file extension: {ext}")
                 return
 
-            # Create drag object with custom MIME data
-            drag = QDrag(self)
-            mimeData = QMimeData()
+        # Create drag object with MIME data
+        drag = QDrag(self)
+        mimeData = QMimeData()
 
-            # Use ONLY our internal custom MIME type, NOT standard formats
-            # This is the key to preventing drag-out to external applications
-            mimeData.setData("application/x-oncutf-internal", path.encode())
+        # Always include our internal custom MIME type
+        mimeData.setData("application/x-oncutf-internal", path.encode())
 
-            # REMOVE these lines that allow external drag operations
-            # mimeData.setText(path)
-            # mimeData.setUrls([QUrl.fromLocalFile(path)])
+        # Also include standard formats for internal drops to file table
+        # Unlike before, we DO want to allow drag to other internal components
+        mimeData.setText(path)
+        mimeData.setUrls([QUrl.fromLocalFile(path)])
 
-            # Set the MIME data to the drag object
-            drag.setMimeData(mimeData)
+        # Set the MIME data to the drag object
+        drag.setMimeData(mimeData)
 
-            # Execute the drag ONLY with internal CopyAction, not MoveAction
-            # which would allow external drag operations
-            result = drag.exec_(Qt.CopyAction, Qt.CopyAction)
-            logger.debug(f"Internal drag completed with result: {result}")
-        else:
-            logger.warning("Model does not support filePath method")
+        # Execute the drag with CopyAction
+        result = drag.exec_(Qt.CopyAction)
+        logger.debug(f"Drag completed with result: {result}")
 
     def dragEnterEvent(self, event):
         """

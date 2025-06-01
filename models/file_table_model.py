@@ -192,3 +192,30 @@ class FileTableModel(QAbstractTableModel):
         self.beginResetModel()
         self.files = files
         self.endResetModel()
+
+    def add_files(self, new_files: list[FileItem]) -> None:
+        """
+        Adds new files to the existing file list and updates the model.
+
+        Args:
+            new_files (list[FileItem]): List of new FileItem objects to add
+        """
+        if not new_files:
+            return
+
+        # Start row insertion
+        start_row = len(self.files)
+        self.beginInsertRows(QModelIndex(), start_row, start_row + len(new_files) - 1)
+
+        # Add the new files to our list
+        self.files.extend(new_files)
+
+        # End row insertion
+        self.endInsertRows()
+
+        # Emit signal to update any views
+        self.layoutChanged.emit()
+
+        # Optionally notify parent window
+        if self.parent_window:
+            self.parent_window.update_files_label()
