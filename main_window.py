@@ -82,24 +82,6 @@ def wait_cursor():
     finally:
         QApplication.restoreOverrideCursor()
 
-# Define Qt constants for compatibility
-ALIGN_LEFT = 0x0001  # Qt.AlignLeft
-ALIGN_RIGHT = 0x0002  # Qt.AlignRight
-ALIGN_CENTER = 0x0004  # Qt.AlignHCenter
-ALIGN_VCENTER = 0x0080  # Qt.AlignVCenter
-RICH_TEXT = 0x2  # Qt.RichText
-CUSTOM_CONTEXT_MENU = 0x10  # Qt.CustomContextMenu
-SCROLLBAR_AS_NEEDED = 0x0  # Qt.ScrollBarAsNeeded
-SCROLLBAR_ALWAYS_OFF = 0x1  # Qt.ScrollBarAlwaysOff
-SCROLLBAR_ALWAYS_ON = 0x2  # Qt.ScrollBarAlwaysOn
-ASCENDING_ORDER = 0x0  # Qt.AscendingOrder
-DESCENDING_ORDER = 0x1  # Qt.DescendingOrder
-QT_GRAY = 0x7  # Qt.gray
-QT_KEEP_ASPECT_RATIO = 0x1  # Qt.KeepAspectRatio
-QT_SMOOTH_TRANSFORMATION = 0x2  # Qt.SmoothTransformation
-QT_VERTICAL = 0x2  # Qt.Vertical
-QT_HORIZONTAL = 0x1  # Qt.Horizontal
-
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         """
