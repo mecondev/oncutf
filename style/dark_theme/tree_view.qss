@@ -13,7 +13,7 @@ QTreeView::item:alternate {
 }
 
 QTreeView::item:hover {
-    background-color: #3e5c76;
+    background-color: #4a6fa5;
     border-radius: 6px;
 }
 

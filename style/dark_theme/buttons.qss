@@ -8,12 +8,12 @@ QPushButton {
     color: #f0ebd8;
     border: none;
     border-radius: 8px;
-    padding: 6px 16px;
+    padding: 4px 12px;
 }
 
 /* Hover state */
 QPushButton:hover {
-    background-color: #3e5c76;
+    background-color: #4a6fa5;
     color: #f0ebd8;
     border: none;
 }

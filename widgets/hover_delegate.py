@@ -10,8 +10,8 @@ Date: 2025-05-21
 """
 
 from PyQt5.QtWidgets import QStyledItemDelegate, QStyle, QStyleOptionViewItem, QTableView
-from PyQt5.QtGui import QPainter, QColor, QPen, QPalette
-from PyQt5.QtCore import QModelIndex
+from PyQt5.QtGui import QPainter, QColor, QPen, QPalette, QIcon
+from PyQt5.QtCore import QModelIndex, Qt
 
 
 class HoverItemDelegate(QStyledItemDelegate):
@@ -35,19 +35,22 @@ class HoverItemDelegate(QStyledItemDelegate):
 
     def paint(self, painter, option, index):
         """
-        Custom painting for full-row hover and custom selection, respecting QSS.
+        Custom painting for full-row hover and selection with proper icon handling.
 
-        - Uses self.hovered_row for hover feedback.
-        - Uses table.selected_rows (custom selection) for full-row selection.
-        - Applies QSS-defined highlight color from QPalette.
-        - Avoids drawing full row manually — lets each cell draw its own background safely.
+        - Always paints background for hover/selection to override alternate colors
+        - Icons in column 0 paint over the background
+        - Adds borders for selected rows
+        - Proper text colors for selection state
+        - Handles alternate row colors internally
         """
         table = self.parent()
         if not isinstance(table, QTableView):
             super().paint(painter, option, index)
             return
+
         model = table.model()
         row = index.row()
+        column = index.column()
 
         # Remove ugly focus border (dotted)
         if option.state & QStyle.State_HasFocus:
@@ -57,42 +60,67 @@ class HoverItemDelegate(QStyledItemDelegate):
         is_selected = selection_model is not None and selection_model.isSelected(index)
         is_hovered = row == self.hovered_row
 
-        # Hover πάνω από selection
+        # Determine background color in priority order:
+        # 1. Selection + Hover
+        # 2. Selection
+        # 3. Hover
+        # 4. Alternate row color
+        # 5. Default background
+
+        background_color = None
         if is_selected and is_hovered:
-            background_color = option.palette.color(QPalette.Highlight).lighter(120)
+            # Selected + hovered: slightly lighter than normal selection
+            background_color = QColor("#8a9bb4")
         elif is_selected:
-            background_color = option.palette.color(QPalette.Highlight)
+            # Normal selection color
+            background_color = QColor("#748cab")
         elif is_hovered:
+            # Hover color - paint over alternate background
             background_color = self.hover_color
-        else:
-            background_color = None
+        elif row % 2 == 1:
+            # Alternate row color for odd rows (only if not selected/hovered)
+            background_color = QColor("#232323")
+        # For even rows, use default background (no painting needed)
 
-        # Paint background if needed
         if background_color:
-            painter.save()  # type: ignore
-            painter.fillRect(option.rect, background_color)  # type: ignore
-            painter.restore()  # type: ignore
+            painter.save()
+            painter.fillRect(option.rect, background_color)
+            painter.restore()
 
-        # Optional: draw border for selected row (only on column 0)
-        if is_selected and index.column() == table.horizontalHeader().logicalIndex(model.columnCount() - 1):  # type: ignore
-            painter.save()  # type: ignore
-            border_color = option.palette.color(QPalette.Highlight).darker(120)
-            pen = QPen(border_color)
-            pen.setWidth(1)
-            painter.setPen(pen)  # type: ignore
+        # Draw border for selected rows (only on the last column to avoid overlaps)
+        if is_selected and model and column == model.columnCount() - 1:
+            painter.save()
+            border_color = QColor("#748cab").darker(130)
+            painter.setPen(QPen(border_color, 1))
 
-            # Draw full row rect border
+            # Calculate full row rect
             col_start = 0
-            col_end = model.columnCount() - 1  # type: ignore
-            rect_start = table.visualRect(model.index(row, col_start))  # type: ignore
-            rect_end = table.visualRect(model.index(row, col_end))  # type: ignore
+            col_end = model.columnCount() - 1
+            rect_start = table.visualRect(model.index(row, col_start))
+            rect_end = table.visualRect(model.index(row, col_end))
             full_rect = rect_start.united(rect_end)
 
-            painter.drawRect(full_rect.adjusted(0, 0, -1, -1))  # type: ignore
-            painter.restore()  # type: ignore
+            painter.drawRect(full_rect.adjusted(0, 0, -1, -1))
+            painter.restore()
 
-        # Καθαρίζουμε τα state flags για να μην ξαναγεμίσει το background
-        option2 = QStyleOptionViewItem(option)
-        option2.state &= ~QStyle.State_Selected
-        option2.state &= ~QStyle.State_MouseOver
-        super().paint(painter, option2, index)
+        # For column 0 (icons), use custom painting to ensure icons appear over background
+        if column == 0:
+            # Get the icon from the model's DecorationRole
+            icon_data = model.data(index, Qt.DecorationRole)
+            if icon_data and isinstance(icon_data, QIcon):
+                # Paint icon centered in the cell
+                icon_rect = option.rect.adjusted(2, 2, -2, -2)  # Small padding
+                icon_data.paint(painter, icon_rect, Qt.AlignCenter)
+
+            # Don't call super().paint() for column 0 since we handled the icon ourselves
+            return
+
+        # For all other columns, set appropriate text color and let default painting handle the rest
+        text_option = QStyleOptionViewItem(option)
+        if is_selected:
+            text_option.palette.setColor(QPalette.Text, QColor("#0d1321"))
+        else:
+            text_option.palette.setColor(QPalette.Text, QColor("#f0ebd8"))
+
+        # Let default painting handle text (will paint over our background)
+        super().paint(painter, text_option, index)

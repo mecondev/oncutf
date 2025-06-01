@@ -75,3 +75,8 @@ backup_oncutf.sh
 # Generated files from Qt resource compiler
 *.qrc.py      # Compiled QRC files (e.g. pyrcc5)
 *.qss.py      # Compiled QSS files (if using custom converter)
+
+# ========================
+# AI and development aids
+# ========================
+.ai/          # AI conversation history and prompts

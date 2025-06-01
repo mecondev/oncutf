@@ -16,7 +16,8 @@ import glob
 import datetime
 from typing import TYPE_CHECKING
 
-from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QFileDialog, QApplication
+from PyQt5.QtCore import Qt
 from models.file_item import FileItem
 from config import ALLOWED_EXTENSIONS
 
@@ -40,7 +41,7 @@ class FileLoaderMixin:
         """
         Loads files from the folder currently selected in the tree view.
         """
-        index = self.tree_view.currentIndex()
+        index = self.folder_tree.currentIndex()
         if not index.isValid():
             return
 
@@ -73,5 +74,5 @@ class FileLoaderMixin:
             # Sync with tree view if valid
             index = self.dir_model.index(folder_path)
             if index.isValid():
-                self.tree_view.setCurrentIndex(index)
-                self.tree_view.scrollTo(index)
+                self.folder_tree.setCurrentIndex(index)
+                self.folder_tree.scrollTo(index)

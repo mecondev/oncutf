@@ -25,7 +25,7 @@ def load_stylesheet() -> str:
     qss_files = [
         "base.qss",
         "buttons.qss",
-        "combo_box.qss",  # enabled for consistent combobox styling
+        "combo_box.qss",
         "scrollbars.qss",
         "table_view.qss",
         "tree_view.qss"

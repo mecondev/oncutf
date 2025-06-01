@@ -119,8 +119,6 @@ def apply_transform(name: str, transform: str) -> str:
         # Step 2: Remove duplicate separators
         # Step 3: Strip any remaining leading/trailing spaces
 
-        sep_char = "_" if transform == "snake_case" else "-"
-
         # Step 1: Convert all spaces to separators
         if transform == "snake_case":
             result = re.sub(r"\s+", "_", name)

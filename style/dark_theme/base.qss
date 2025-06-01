@@ -67,7 +67,7 @@ QSplitter::handle {
 QMenu {
     background-color: #232323;
     color: #f0ebd8;
-    border: none;
+    border: 1px solid #4a6fa5;
     border-radius: 8px;
 }
 
@@ -76,20 +76,30 @@ QMenu::item {
     color: #f0ebd8;
     padding: 6px 24px 6px 24px;
     border-radius: 6px;
+    margin: 1px;
+}
+
+QMenu::item:hover {
+    background-color: #4a6fa5;
+    color: #ffffff;
+    border-radius: 6px;
 }
 
 QMenu::item:selected {
-    background-color: #3e5c76;
-    color: #f0ebd8;
+    background-color: #748cab;
+    color: #0d1321;
+    border-radius: 6px;
 }
 
 QMenu::item:pressed {
     background-color: #748cab;
     color: #0d1321;
+    border-radius: 6px;
 }
 
 QMenu::item:disabled {
     color: #555555;
+    background-color: transparent;
 }
 
 QToolTip {
@@ -135,7 +145,7 @@ QListWidget::item:selected {
     border-radius: 6px;
 }
 QListWidget::item:hover {
-    background-color: #3e5c76;
+    background-color: #4a6fa5;
     border-radius: 6px;
 }
 
@@ -157,7 +167,7 @@ QTabBar::tab:selected {
     color: #0d1321;
 }
 QTabBar::tab:hover {
-    background: #3e5c76;
+    background: #4a6fa5;
 }
 
 QHeaderView::section {
@@ -176,3 +186,4 @@ QLineEdit {
     selection-background-color: #748cab;
     selection-color: #0d1321;
 }
+

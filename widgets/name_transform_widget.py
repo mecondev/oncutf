@@ -33,6 +33,7 @@ class NameTransformWidget(QWidget):
         self.case_combo = QComboBox()
         self.case_combo.addItems(["original", "lower", "UPPER", "Capitalize"])
         self.case_combo.currentTextChanged.connect(lambda _: self.updated.emit(self))
+
         case_layout.addWidget(case_label)
         case_layout.addWidget(self.case_combo)
         layout.addLayout(case_layout)
@@ -43,6 +44,7 @@ class NameTransformWidget(QWidget):
         self.sep_combo = QComboBox()
         self.sep_combo.addItems(["as-is", "snake_case", "kebab-case", "space"])
         self.sep_combo.currentTextChanged.connect(lambda _: self.updated.emit(self))
+
         sep_layout.addWidget(sep_label)
         sep_layout.addWidget(self.sep_combo)
         layout.addLayout(sep_layout)

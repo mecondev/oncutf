@@ -11,30 +11,52 @@ QTableView, QTableWidget {
     border-radius: 8px;
     selection-background-color: #748cab;
     selection-color: #0d1321;
-    show-decoration-selected: 1;
+    show-decoration-selected: 0;
+    outline: none;
 }
 
 QTableView::item, QTableWidget::item {
     border: none;
-    background-color: transparent; /* base row background */
+    background-color: transparent;
     padding: 2px 4px;
     border-radius: 6px;
+    min-height: 16px;
 }
 
-/* Alternative row styling - φτιάχνω τις alternative lines */
-QTableView::item:alternate, QTableWidget::item:alternate {
+/* Alternative row styling for QTableWidget (preview tables) */
+QTableWidget::item:alternate {
     background-color: #232323;
 }
 
-/* Hover effect per cell (styled to simulate full row visually) */
+/* Hover effect per cell - let delegate handle this for QTableView, but enable for QTableWidget */
 QTableView::item:hover, QTableWidget::item:hover {
-    background-color: #3e5c76;
+    background-color: transparent;
+    color: #f0ebd8;
 }
 
-/* Selected cell (uses selection-background-color) */
+/* Selected cell - let delegate handle this for QTableView, but enable for QTableWidget */
 QTableView::item:selected, QTableWidget::item:selected {
-    background-color: #748cab;
+    background-color: transparent;
     color: #0d1321;
+    border: none;
+}
+
+/* Selected hover - let delegate handle this for QTableView, but enable for QTableWidget */
+QTableView::item:selected:hover, QTableWidget::item:selected:hover {
+    background-color: transparent;
+    color: #0d1321;
+}
+
+/* Focused selected item - let delegate handle this for QTableView, but enable for QTableWidget */
+QTableView::item:selected:focus, QTableWidget::item:selected:focus {
+    background-color: transparent;
+    color: #0d1321;
+    outline: none;
+}
+
+/* Enable proper alternate colors for QTableWidget */
+QTableWidget {
+    alternate-background-color: #232323;
 }
 
 /* Header styling */
@@ -47,6 +69,6 @@ QHeaderView::section {
 }
 
 QHeaderView::section:hover {
-    background-color: #3e5c76;
+    background-color: #4a6fa5;
     border: none;
 }

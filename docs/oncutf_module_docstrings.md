@@ -1,6 +1,6 @@
 # oncutf Module Docstrings
 
-**Author:** Michael Economou  
+**Author:** Michael Economou
 **Date:** 2025-05-06
 
 This document contains the module-level docstrings for the main Python files
@@ -83,4 +83,79 @@ from the UI thread to keep the application responsive.
 
 Typically used in the oncutf application to run exiftool or similar
 metadata extractors in the background and emit signals when data is ready.
+
+## `main.py`
+Module: main.py
+
+Author: Michael Economou
+Date: 2025-05-01
+
+This module serves as the entry point for the oncutf application.
+It sets up logging, initializes the Qt application with a stylesheet, creates
+and displays the main window, and starts the application's main event loop.
+
+## `main_window.py`
+Module: main_window.py
+
+Author: Michael Economou
+Date: 2025-05-01
+
+This module defines the MainWindow class, which implements the primary user interface
+for the oncutf application. It includes logic for loading files from folders, launching
+metadata extraction in the background, and managing user interaction such as rename previews.
+
+## `models/file_item.py`
+Module: file_item.py
+
+Author: Michael Economou
+Date: 2025-05-01
+
+This module defines the FileItem class which represents an individual file
+in the application. It stores file properties including path, name, metadata,
+and status information, serving as the core data structure for file handling
+throughout the oncutf application.
+
+## `models/file_table_model.py`
+Module: file_table_model.py
+
+Author: Michael Economou
+Date: 2025-05-01
+
+This module implements a custom table model (FileTableModel) that manages
+the presentation and interaction of file data in the main file table view.
+It handles sorting, filtering, and display of file attributes, as well as
+interacting with the underlying collection of FileItem objects.
+
+## `widgets/custom_table_view.py`
+Module: custom_table_view.py
+
+Author: Michael Economou
+Date: 2025-05-02
+
+This module provides a customized QTableView implementation with enhanced
+features such as drag-and-drop support, custom selection behavior, and
+visual indicators. It serves as the primary UI component for displaying
+and interacting with files in the oncutf application.
+
+## `widgets/metadata_widget.py`
+Module: metadata_widget.py
+
+Author: Michael Economou
+Date: 2025-05-03
+
+This module implements a widget for displaying file metadata in a
+user-friendly format. It supports multiple view modes, collapsible
+sections, and filtering capabilities to help users easily navigate
+complex metadata structures extracted from files.
+
+## `widgets/rename_module_widget.py`
+Module: rename_module_widget.py
+
+Author: Michael Economou
+Date: 2025-05-02
+
+This module defines the base class for all rename module widgets in the
+oncutf application. It provides the common interface and functionality
+that all specific rename modules inherit from, including configuration
+UI, validation, and preview generation capabilities.
 

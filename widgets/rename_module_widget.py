@@ -83,7 +83,7 @@ class RenameModuleWidget(QWidget):
         self.type_combo = QComboBox()
         self.type_combo.addItems(self.module_instances.keys())
         self.type_combo.setMaximumWidth(140)
-        self.type_combo.setFixedHeight(24)
+        self.type_combo.setFixedHeight(20)
         self.type_combo.currentTextChanged.connect(self.update_module_content)
 
         type_row.addWidget(type_label)

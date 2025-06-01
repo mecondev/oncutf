@@ -19,34 +19,15 @@ Key features:
 from PyQt5.QtWidgets import QAbstractItemView, QTableView, QApplication
 from PyQt5.QtCore import QMimeData, QUrl, QItemSelectionModel, QItemSelection, Qt, QPoint, QModelIndex
 from PyQt5.QtGui import QKeySequence, QDrag, QMouseEvent, QCursor, QPixmap, QPainter, QFont, QColor
-
-# Fix import to use relative import instead of absolute
-try:
-    # When imported normally from main application
-    from .hover_delegate import HoverItemDelegate
-except ImportError:
-    # When run directly (for testing/debugging)
-    import sys, os
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    try:
-        from widgets.hover_delegate import HoverItemDelegate
-    except ImportError:
-        # Fallback when run directly from the widgets directory
-        from hover_delegate import HoverItemDelegate
-
+from widgets.hover_delegate import HoverItemDelegate
 from PyQt5.QtCore import pyqtSignal
 from utils.logger_helper import get_logger
-from utils.file_drop_helper import analyze_drop, filter_allowed_files, ask_recursive_dialog, show_rejected_dialog
 
 logger = get_logger(__name__)
 
-# Add a guard for direct execution
-if __name__ == "__main__":
-    logger.info("This module is not meant to be run directly. Please run main.py instead.")
-
 class CustomTableView(QTableView):
     selection_changed = pyqtSignal(list)  # Emitted with list[int] of selected rows
-    files_dropped = pyqtSignal(list, object)  # Emitted with list of dropped paths and keyboard modifiers
+    files_dropped = pyqtSignal(list)  # Emitted with list of dropped file/folder paths
 
     def __init__(self, parent=None) -> None:
         """
@@ -62,7 +43,7 @@ class CustomTableView(QTableView):
         self.setMouseTracking(True)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setAcceptDrops(True)
-        self.viewport().setAcceptDrops(True)  # Very important for drop functionality!
+        self.viewport().setAcceptDrops(True)  # Πολύ σημαντικό για το drop!
 
         # Selection state (custom selection model)
         self.selected_rows: set[int] = set()  # Keeps track of currently selected rows
@@ -122,7 +103,7 @@ class CustomTableView(QTableView):
                 logger.debug(f"[Anchor] Ctrl-toggle ON at row {row}")
             sm.blockSignals(False)
             sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)  # type: ignore
-            # Force row update
+            # Επιβάλε ανανέωση γραμμής.
             left = model.index(row, 0)
             right = model.index(row, model.columnCount() - 1)
             self.viewport().update(self.visualRect(left).united(self.visualRect(right)))
@@ -154,7 +135,7 @@ class CustomTableView(QTableView):
             super().mousePressEvent(event)
             return
 
-        # Left click logic (range, ctrl, shift, etc.)
+        # Left click logic (range, ctrl, shift, κλπ)
         super().mousePressEvent(event)
 
         # Clear context_focused_row if not right click
@@ -354,7 +335,7 @@ class CustomTableView(QTableView):
     def paintEvent(self, event):
         super().paintEvent(event)
         model = self.model()
-        # Display placeholder if there are no files or the model is empty
+        # Εμφάνισε placeholder αν δεν υπάρχουν αρχεία ή το μοντέλο είναι άδειο
         show_placeholder = False
         if model is None:
             show_placeholder = True
@@ -372,7 +353,7 @@ class CustomTableView(QTableView):
             center_x = rect.width() // 2
             center_y = rect.height() // 2
 
-            # Icon
+            # Εικόνα
             icon_size = 160
             if not self.placeholder_icon.isNull():
                 icon = self.placeholder_icon.scaled(icon_size, icon_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -380,7 +361,7 @@ class CustomTableView(QTableView):
                 icon_y = center_y - icon.height() // 2
                 painter.drawPixmap(icon_x, icon_y, icon)
 
-            # Message
+            # Μήνυμα
             font = QFont(self.font())
             font.setPointSize(14)
             painter.setFont(font)
@@ -394,89 +375,14 @@ class CustomTableView(QTableView):
             painter.end()
 
     def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+    def dragEnterEvent(self, event):
         logger.debug(f"[DragDrop] dragEnterEvent! formats={event.mimeData().formats()}")
         if event.mimeData().hasUrls() or event.mimeData().hasFormat("application/x-oncutf-internal"):
             event.acceptProposedAction()
-        else:
-            super().dragEnterEvent(event)
-
+        logger.debug("[DragDrop] dropEvent called!")
     def dragMoveEvent(self, event):
+        logger.debug("[DragDrop] dragMoveEvent!")
         if event.mimeData().hasUrls() or event.mimeData().hasFormat("application/x-oncutf-internal"):
             event.acceptProposedAction()
         else:
-            super().dragMoveEvent(event)
-
-    def dropEvent(self, event):
-        """
-        Handles drag & drop events for the file table using modular logic from file_drop_helper.
-        Only allowed files are loaded, and custom dialogs are shown for recursive and rejected cases.
-        """
-        logger.debug("[DragDrop] dropEvent called!")
-
-        paths = []
-        if event.mimeData().hasUrls():
-            paths = [url.toLocalFile() for url in event.mimeData().urls()]
-        elif event.mimeData().hasFormat("application/x-oncutf-internal"):
-            path_data = event.mimeData().data("application/x-oncutf-internal")
-            try:
-                path = bytes(path_data).decode()
-                if path:
-                    paths = [path]
-            except Exception as e:
-                logger.error(f"[DragDrop] Error decoding internal path: {e}")
-                event.ignore()
-                return
-        else:
-            super().dropEvent(event)
-            return
-
-        # Remove empty paths
-        valid_paths = [p for p in paths if p]
-        if not valid_paths:
-            logger.warning("[DragDrop] No valid paths found in drop event")
-            event.ignore()
-            return
-
-        drop_info = analyze_drop(valid_paths)
-        drop_type = drop_info["type"]
-        folders = drop_info["folders"]
-        files = drop_info["files"]
-        rejected = drop_info["rejected"]
-
-        accepted_files = []
-
-        if drop_type == "single_folder":
-            # Ask for recursive
-            recursive = ask_recursive_dialog(folders[0])
-            # Scan for files
-            import glob
-            import os
-            pattern = "**/*" if recursive else "*"
-            all_files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(folders[0]) for f in filenames] if recursive else [os.path.join(folders[0], f) for f in os.listdir(folders[0]) if os.path.isfile(os.path.join(folders[0], f))]
-            allowed, rejected_files = filter_allowed_files(all_files)
-            accepted_files.extend(allowed)
-            if rejected_files:
-                show_rejected_dialog(rejected_files)
-        elif drop_type == "files":
-            allowed, rejected_files = filter_allowed_files(files)
-            accepted_files.extend(allowed)
-            if rejected_files:
-                show_rejected_dialog(rejected_files)
-        elif drop_type in ("multiple_folders", "mixed"):
-            show_rejected_dialog(folders + files)
-        else:
-            logger.warning(f"[DragDrop] Unknown or unsupported drop type: {drop_type}")
-            event.ignore()
-            return
-
-        if not accepted_files:
-            logger.info("[DragDrop] No accepted files to load after filtering.")
-            event.ignore()
-            return
-
-        # Accept the event BEFORE emitting the signal
-        event.accept()
-        self.setFocus()
-        # Emit signal with accepted files and modifiers
-        modifiers = QApplication.keyboardModifiers()
-        self.files_dropped.emit(accepted_files, modifiers)
