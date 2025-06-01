@@ -162,6 +162,7 @@ class MainWindow(QMainWindow):
         self.tree_view = CustomTreeView()
         self.tree_view.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.tree_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.tree_view.setAlternatingRowColors(True)  # Enable alternating row colors
         left_layout.addWidget(self.tree_view)
 
         btn_layout = QHBoxLayout()
@@ -274,7 +275,7 @@ class MainWindow(QMainWindow):
         self.metadata_tree_view.setAcceptDrops(True)
         self.metadata_tree_view.viewport().setAcceptDrops(True)
         self.metadata_tree_view.setDragDropMode(QAbstractItemView.DropOnly)
-
+        self.metadata_tree_view.setAlternatingRowColors(True)  # Enable alternating row colors
         right_layout.addWidget(self.metadata_tree_view)
 
         # Dummy initial model
