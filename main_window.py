@@ -198,9 +198,9 @@ class MainWindow(QMainWindow):
 
     def setup_splitters(self) -> None:
         """Setup vertical and horizontal splitters."""
-        self.vertical_splitter = QSplitter(QT_VERTICAL)
+        self.vertical_splitter = QSplitter(Qt.Vertical)
         self.main_layout.addWidget(self.vertical_splitter)
-        self.horizontal_splitter = QSplitter(QT_HORIZONTAL)
+        self.horizontal_splitter = QSplitter(Qt.Horizontal)
         self.vertical_splitter.addWidget(self.horizontal_splitter)
         self.vertical_splitter.setSizes(TOP_BOTTOM_SPLIT_RATIO)
 
@@ -211,10 +211,10 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(QLabel("Folders"))
 
         self.folder_tree = CustomTreeView()
-        self.folder_tree.setVerticalScrollBarPolicy(QAbstractScrollArea.ScrollBarAsNeeded)
-        self.folder_tree.setHorizontalScrollBarPolicy(QAbstractScrollArea.ScrollBarAsNeeded)
-        self.folder_tree.setAlternatingRowColors(True)  # Enable alternating row colors
-        left_layout.addWidget(self.folder_tree)
+        self.tree_view = CustomTreeView()
+        self.tree_view.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.tree_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        left_layout.addWidget(self.tree_view)
 
         # Expand/collapse mode (single ή double click)
         if TREE_EXPAND_MODE == "single":
@@ -267,12 +267,6 @@ class MainWindow(QMainWindow):
         self.file_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.model = FileTableModel(parent_window=self)
 
-        # Add proper scrollbar policies
-        self.file_table_view.setHorizontalScrollBarPolicy(QAbstractScrollArea.ScrollBarAsNeeded)
-        self.file_table_view.setVerticalScrollBarPolicy(QAbstractScrollArea.ScrollBarAsNeeded)
-        self.file_table_view.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
-        self.file_table_view.setVerticalScrollMode(QAbstractItemView.ScrollPerPixel)
-
         self.show_file_table_placeholder("No folder selected")
 
         # Setup drag-drop connection
@@ -285,11 +279,11 @@ class MainWindow(QMainWindow):
         # Δεν θέτω setDefaultDropAction γιατί το Qt.IgnoreAction δεν υπάρχει στην PyQt5 και το default είναι CopyAction
 
         # Header setup
-        self.header = InteractiveHeader(QHeaderView.Horizontal, self.file_table_view, parent_window=self)
+        self.header = InteractiveHeader(Qt.Horizontal, self.file_table_view, parent_window=self)
         self.file_table_view.setHorizontalHeader(self.header)
         # Align all headers to the left (if supported)
         if hasattr(self.header, 'setDefaultAlignment'):
-            self.header.setDefaultAlignment(ALIGN_LEFT | ALIGN_VCENTER)
+            self.header.setDefaultAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.header.setSortIndicatorShown(True)
         self.header.setSectionsClickable(True)
         self.header.setHighlightSections(True)
@@ -377,7 +371,7 @@ class MainWindow(QMainWindow):
         placeholder_model = QStandardItemModel()
         placeholder_model.setHorizontalHeaderLabels(["Key", "Value"])
         placeholder_item = QStandardItem("No file selected")
-        placeholder_item.setTextAlignment(ALIGN_LEFT | ALIGN_VCENTER)
+        placeholder_item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         placeholder_value = QStandardItem("-")
         placeholder_model.appendRow([placeholder_item, placeholder_value])
 
@@ -441,8 +435,8 @@ class MainWindow(QMainWindow):
         self.preview_icon_table.setShowGrid(False)
         self.preview_icon_table.horizontalHeader().setVisible(False)
         self.preview_icon_table.setHorizontalHeader(None)
-        self.preview_icon_table.setHorizontalScrollBarPolicy(SCROLLBAR_ALWAYS_OFF)
-        self.preview_icon_table.setVerticalScrollBarPolicy(SCROLLBAR_ALWAYS_OFF)
+        self.preview_icon_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.preview_icon_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.preview_icon_table.setShowGrid(False)
         self.preview_icon_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
         self.preview_icon_table.setStyleSheet("background-color: #212121;")
@@ -467,7 +461,7 @@ class MainWindow(QMainWindow):
 
         controls_layout = QHBoxLayout()
         self.status_label = QLabel("")
-        self.status_label.setTextFormat(RICH_TEXT)
+        self.status_label.setTextFormat(Qt.RichText)
 
         # Status label fade effect setup
         self.status_opacity_effect = QGraphicsOpacityEffect()
@@ -503,7 +497,7 @@ class MainWindow(QMainWindow):
         self.version_label = QLabel()
         self.version_label.setText(f"{APP_NAME} v{APP_VERSION}")
         self.version_label.setObjectName("versionLabel")
-        self.version_label.setAlignment(ALIGN_LEFT)
+        self.version_label.setAlignment(Qt.AlignLeft)
         footer_layout.addWidget(self.version_label)
         footer_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
@@ -535,11 +529,11 @@ class MainWindow(QMainWindow):
             self.model.sort_changed.connect(self.generate_preview_names)
 
         # Setup context menu safely
-        self.file_table_view.setContextMenuPolicy(CUSTOM_CONTEXT_MENU)
+        self.file_table_view.setContextMenuPolicy(Qt.CustomContextMenu)
         if hasattr(self.file_table_view, 'customContextMenuRequested'):
             self.file_table_view.customContextMenuRequested.connect(self.handle_table_context_menu)
 
-        self.folder_tree.setContextMenuPolicy(CUSTOM_CONTEXT_MENU)
+        self.folder_tree.setContextMenuPolicy(Qt.CustomContextMenu)
         if hasattr(self.folder_tree, 'customContextMenuRequested'):
             self.folder_tree.customContextMenuRequested.connect(self.handle_tree_context_menu)
 
@@ -745,9 +739,9 @@ class MainWindow(QMainWindow):
             current_order = header.sortIndicatorOrder()
 
             if column == current_column:
-                new_order = DESCENDING_ORDER if current_order == ASCENDING_ORDER else ASCENDING_ORDER
+                new_order = Qt.DescendingOrder if current_order == Qt.AscendingOrder else Qt.AscendingOrder
             else:
-                new_order = ASCENDING_ORDER
+                new_order = Qt.AscendingOrder
 
             self.model.sort(column, new_order)
             header.setSortIndicator(column, new_order)
@@ -2217,15 +2211,15 @@ class MainWindow(QMainWindow):
             font.setItalic(True)
             item.setFont(font)
 
-            item.setForeground(QColor(Qt.gray))
+            item.setForeground(QColor("#888888"))  # Χρήση χρώματος αντί για Qt.gray
             item.setEnabled(False)  # Disable placeholder items
             item.setSelectable(False)
 
             # Optional: center align only the message column
             if i == 1:
-                item.setTextAlignment(ALIGN_LEFT | ALIGN_VCENTER)
+                item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
             else:
-                item.setTextAlignment(ALIGN_CENTER)
+                item.setTextAlignment(Qt.AlignCenter)
 
         placeholder_model.appendRow(row)
 
