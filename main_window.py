@@ -2395,6 +2395,7 @@ class MainWindow(QMainWindow):
             self.current_folder_path = folder_path
             file_items = self.get_file_items_from_folder(folder_path)
             self.prepare_file_table(file_items)
+            self.file_table_view.viewport().update()  # Force repaint to hide placeholder if files exist
             self.clear_metadata_view()
             self.update_files_label()
             return
