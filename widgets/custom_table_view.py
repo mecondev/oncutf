@@ -17,7 +17,7 @@ Key features:
 '''
 
 from PyQt5.QtWidgets import QAbstractItemView, QTableView, QApplication
-from PyQt5.QtCore import QMimeData, QUrl, QItemSelectionModel, QItemSelection, Qt, QPoint, QModelIndex
+from PyQt5.QtCore import QMimeData, QUrl, QItemSelectionModel, QItemSelection, Qt, QPoint, QModelIndex, QTimer
 from PyQt5.QtGui import QKeySequence, QDrag, QMouseEvent, QCursor, QPixmap, QPainter, QFont, QColor
 
 # Fix import to use relative import instead of absolute
@@ -277,6 +277,12 @@ class CustomTableView(QTableView):
         if not file_paths:
             return
 
+        # Get the global drag cancel filter
+        from widgets.custom_tree_view import _drag_cancel_filter
+
+        # Activate the filter to catch events that should terminate drag
+        _drag_cancel_filter.activate()
+
         # Create MIME data with custom marker
         mime_data = QMimeData()
 
@@ -293,12 +299,45 @@ class CustomTableView(QTableView):
         drag.setMimeData(mime_data)
 
         try:
+            # Use exec() instead of exec_ (which is Python 2 compatible name)
             # Execute drag with all possible actions to ensure proper termination
-            result = drag.exec_(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
+            result = drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
             logger.debug(f"Drag completed with result: {result}")
+        except Exception as e:
+            logger.error(f"Drag operation failed: {e}")
         finally:
-            # Make sure to clean up any lingering drag state
+            # Force complete cleanup of any lingering drag state
+            while QApplication.overrideCursor():
+                QApplication.restoreOverrideCursor()
+
+            # Deactivate the filter
+            _drag_cancel_filter.deactivate()
+
+            # Force repaint to clear any visual artifacts
+            if hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
+                self.viewport().update()
+            # Force immediate processing of all pending events
+            QApplication.processEvents()
+
+        # Create a zero-delay timer to ensure complete cleanup after event loop returns
+        QTimer.singleShot(0, self._complete_drag_cleanup)
+
+    def _complete_drag_cleanup(self):
+        """
+        Additional cleanup method called after drag operation to ensure
+        all drag state is completely reset.
+        """
+        # Get the global drag cancel filter to ensure it's deactivated
+        from widgets.custom_tree_view import _drag_cancel_filter
+        _drag_cancel_filter.deactivate()
+
+        # Restore cursor if needed
+        while QApplication.overrideCursor():
             QApplication.restoreOverrideCursor()
+
+        if hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
+            self.viewport().update()
+        QApplication.processEvents()
 
     def selectionChanged(self, selected, deselected) -> None:
         super().selectionChanged(selected, deselected)

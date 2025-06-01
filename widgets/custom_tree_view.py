@@ -11,12 +11,69 @@ internal drag & drop functionality.
 
 import os
 from PyQt5.QtWidgets import QTreeView, QAbstractItemView, QApplication, QFileSystemModel
-from PyQt5.QtCore import Qt, QMimeData, QEvent, QPoint, QUrl, pyqtSignal
-from PyQt5.QtGui import QDrag
+from PyQt5.QtCore import Qt, QMimeData, QEvent, QPoint, QUrl, pyqtSignal, QTimer, QObject
+from PyQt5.QtGui import QDrag, QMouseEvent, QKeyEvent
 from utils.logger_helper import get_logger
 from config import ALLOWED_EXTENSIONS
 
 logger = get_logger(__name__)
+
+class DragCancelFilter(QObject):
+    """
+    Global event filter to forcefully cancel any lingering drag operations.
+    This is installed on QApplication to catch events like Escape key presses
+    and mouse clicks that should terminate drag operations.
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._active = False
+
+    def activate(self):
+        """Activate this filter to start monitoring for drag termination events"""
+        self._active = True
+        logger.debug("[DragFilter] Activated")
+
+    def deactivate(self):
+        """Deactivate this filter when drag has properly terminated"""
+        self._active = False
+        logger.debug("[DragFilter] Deactivated")
+
+    def eventFilter(self, obj, event):
+        """Filter events to catch drag termination signals"""
+        if not self._active:
+            return False
+
+        # Mouse press or release should terminate drag
+        if event.type() in (QEvent.MouseButtonPress, QEvent.MouseButtonRelease):
+            logger.debug("[DragFilter] Caught mouse event, forcing drag cleanup")
+            self._cleanup_drag()
+            return False  # Don't consume the event
+
+        # Escape key should terminate drag
+        if event.type() == QEvent.KeyPress:
+            key_event = event  # type: QKeyEvent
+            if key_event.key() == Qt.Key_Escape:
+                logger.debug("[DragFilter] Caught Escape key, forcing drag cleanup")
+                self._cleanup_drag()
+                return True  # Consume the escape key event
+
+        return False  # Don't consume other events
+
+    def _cleanup_drag(self):
+        """Force cleanup of any drag operation"""
+        # Restore cursor
+        while QApplication.overrideCursor():
+            QApplication.restoreOverrideCursor()
+
+        # Immediately process events to update UI
+        QApplication.processEvents()
+
+        # Deactivate filter
+        self.deactivate()
+
+# Create a single global instance
+_drag_cancel_filter = DragCancelFilter()
 
 class CustomTreeView(QTreeView):
     """
@@ -35,6 +92,12 @@ class CustomTreeView(QTreeView):
         self.setDropIndicatorShown(True)
         self._drag_start_position = None
         self._dragging = False
+
+        # Install drag cancel filter on application if not already
+        app = QApplication.instance()
+        if app:
+            # Install the global event filter to catch all mouse/key events
+            app.installEventFilter(_drag_cancel_filter)
 
     def mousePressEvent(self, event):
         """Store initial position for drag detection"""
@@ -58,8 +121,31 @@ class CustomTreeView(QTreeView):
         # Ξεκινάμε custom drag αντί για το προεπιλεγμένο
         self._dragging = True
         self.startInternalDrag(event.pos())
+
+        # Explicitly reset drag state and start position
         self._dragging = False
-        return
+        self._drag_start_position = None
+
+        # Let the parent class handle any remaining mouse move behavior
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        """
+        Handle mouse release events to ensure drag state is properly reset.
+        This provides an additional safety measure to prevent lingering drag operations.
+        """
+        # Reset drag state variables on any mouse release
+        self._dragging = False
+        self._drag_start_position = None
+
+        # Force UI refresh
+        self.viewport().update()
+
+        # Process the event normally
+        super().mouseReleaseEvent(event)
+
+        # Process any pending events to ensure UI is updated
+        QApplication.processEvents()
 
     def startInternalDrag(self, position):
         """
@@ -94,6 +180,9 @@ class CustomTreeView(QTreeView):
                 logger.debug(f"Skipping drag for non-allowed file extension: {ext}")
                 return
 
+        # Activate the global drag cancel filter
+        _drag_cancel_filter.activate()
+
         # Create drag object with MIME data
         drag = QDrag(self)
         mimeData = QMimeData()
@@ -109,14 +198,55 @@ class CustomTreeView(QTreeView):
         # Set the MIME data to the drag object
         drag.setMimeData(mimeData)
 
+        # Reset drag state flag before execution to prevent nested drags
+        self._dragging = False
+
         # Execute the drag with all possible actions to ensure proper termination
         try:
+            # Use exec() instead of exec_ (which is Python 2 compatible name)
             # Support all actions to ensure proper termination regardless of target
-            result = drag.exec_(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
+            result = drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
             logger.debug(f"Drag completed with result: {result}")
+        except Exception as e:
+            logger.error(f"Drag operation failed: {e}")
         finally:
-            # Make sure to clean up any lingering drag state
+            # Force complete cleanup of any drag state
+            while QApplication.overrideCursor():
+                QApplication.restoreOverrideCursor()
+
+            # Ensure filter is deactivated
+            _drag_cancel_filter.deactivate()
+
+            # Make sure the dragging flag is reset
+            self._dragging = False
+            self._drag_start_position = None
+
+            # Force repaint to clear any visual artifacts
+            self.viewport().update()
+
+            # Force immediate processing of all pending events
+            QApplication.processEvents()
+
+        # Create a zero-delay timer to ensure complete cleanup after event loop returns
+        QTimer.singleShot(0, self._complete_drag_cleanup)
+
+    def _complete_drag_cleanup(self):
+        """
+        Additional cleanup method called after drag operation to ensure
+        all drag state is completely reset.
+        """
+        self._dragging = False
+        self._drag_start_position = None
+
+        # Restore cursor if needed
+        while QApplication.overrideCursor():
             QApplication.restoreOverrideCursor()
+
+        # Ensure filter is deactivated
+        _drag_cancel_filter.deactivate()
+
+        self.viewport().update()
+        QApplication.processEvents()
 
     def dragEnterEvent(self, event):
         """
