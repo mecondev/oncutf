@@ -109,9 +109,14 @@ class CustomTreeView(QTreeView):
         # Set the MIME data to the drag object
         drag.setMimeData(mimeData)
 
-        # Execute the drag with CopyAction
-        result = drag.exec_(Qt.CopyAction)
-        logger.debug(f"Drag completed with result: {result}")
+        # Execute the drag with all possible actions to ensure proper termination
+        try:
+            # Support all actions to ensure proper termination regardless of target
+            result = drag.exec_(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
+            logger.debug(f"Drag completed with result: {result}")
+        finally:
+            # Make sure to clean up any lingering drag state
+            QApplication.restoreOverrideCursor()
 
     def dragEnterEvent(self, event):
         """

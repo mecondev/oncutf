@@ -265,6 +265,7 @@ class CustomTableView(QTableView):
     def startDrag(self, supportedActions: Qt.DropActions) -> None:
         """
         Initiates a drag operation for selected file paths.
+        Adds custom MIME type marker to identify drags originating from our file table.
         """
         rows = sorted(self.selected_rows)
         if not rows:
@@ -276,13 +277,28 @@ class CustomTableView(QTableView):
         if not file_paths:
             return
 
+        # Create MIME data with custom marker
         mime_data = QMimeData()
+
+        # Add our custom MIME type to identify this drag as coming from the file table
+        # This is used by the metadata tree view to only accept drags from our application
+        mime_data.setData("application/x-oncutf-filetable", b"1")
+
+        # Add standard URL format for file paths
         urls = [QUrl.fromLocalFile(p) for p in file_paths]
         mime_data.setUrls(urls)
 
+        # Create and execute the drag operation
         drag = QDrag(self)
         drag.setMimeData(mime_data)
-        drag.exec_(Qt.CopyAction)
+
+        try:
+            # Execute drag with all possible actions to ensure proper termination
+            result = drag.exec_(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
+            logger.debug(f"Drag completed with result: {result}")
+        finally:
+            # Make sure to clean up any lingering drag state
+            QApplication.restoreOverrideCursor()
 
     def selectionChanged(self, selected, deselected) -> None:
         super().selectionChanged(selected, deselected)
