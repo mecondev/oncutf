@@ -502,7 +502,8 @@ class CustomTableView(QTableView):
 
         if drop_type == "single_folder":
             # Ask for recursive
-            recursive = ask_recursive_dialog(folders[0])
+            # recursive = ask_recursive_dialog(folders[0])
+            recursive = False  # Απενεργοποιήθηκε προσωρινά το dialog για δοκιμή
             # Scan for files
             import glob
             import os
@@ -510,15 +511,16 @@ class CustomTableView(QTableView):
             all_files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(folders[0]) for f in filenames] if recursive else [os.path.join(folders[0], f) for f in os.listdir(folders[0]) if os.path.isfile(os.path.join(folders[0], f))]
             allowed, rejected_files = filter_allowed_files(all_files)
             accepted_files.extend(allowed)
-            if rejected_files:
-                show_rejected_dialog(rejected_files)
+            # if rejected_files:
+            #     show_rejected_dialog(rejected_files)
         elif drop_type == "files":
             allowed, rejected_files = filter_allowed_files(files)
             accepted_files.extend(allowed)
-            if rejected_files:
-                show_rejected_dialog(rejected_files)
+            # if rejected_files:
+            #     show_rejected_dialog(rejected_files)
         elif drop_type in ("multiple_folders", "mixed"):
-            show_rejected_dialog(folders + files)
+            # show_rejected_dialog(folders + files)
+            pass
         else:
             logger.warning(f"[DragDrop] Unknown or unsupported drop type: {drop_type}")
             event.ignore()
