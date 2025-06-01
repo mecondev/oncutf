@@ -159,11 +159,17 @@ class MainWindow(QMainWindow):
         left_layout = QVBoxLayout(self.left_frame)
         left_layout.addWidget(QLabel("Folders"))
 
-        self.tree_view = CustomTreeView()
-        self.tree_view.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.tree_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.tree_view.setAlternatingRowColors(True)  # Enable alternating row colors
-        left_layout.addWidget(self.tree_view)
+        self.folder_tree = CustomTreeView()
+        self.folder_tree.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.folder_tree.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.folder_tree.setAlternatingRowColors(True)  # Enable alternating row colors
+        left_layout.addWidget(self.folder_tree)
+
+        # Expand/collapse mode (single or double click)
+        if TREE_EXPAND_MODE == "single":
+            self.folder_tree.setExpandsOnDoubleClick(False)  # Single click expand
+        else:
+            self.folder_tree.setExpandsOnDoubleClick(True)   # Double click expand
 
         btn_layout = QHBoxLayout()
         self.select_folder_button = QPushButton("Select Folder")
@@ -174,13 +180,21 @@ class MainWindow(QMainWindow):
 
         self.dir_model = QFileSystemModel()
         self.dir_model.setRootPath('')
-        self.dir_model.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs)
-        self.tree_view.setModel(self.dir_model)
+        self.dir_model.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs | QDir.Files)
+
+        # Προσθήκη φίλτρου για τις επιτρεπόμενες επεκτάσεις αρχείων
+        name_filters = []
+        for ext in ALLOWED_EXTENSIONS:
+            name_filters.append(f"*.{ext}")
+        self.dir_model.setNameFilters(name_filters)
+        self.dir_model.setNameFilterDisables(False)  # Αυτό κρύβει τα αρχεία που δεν ταιριάζουν αντί να τα απενεργοποιεί
+
+        self.folder_tree.setModel(self.dir_model)
         for i in range(1, 4):
-            self.tree_view.hideColumn(i)
+            self.folder_tree.hideColumn(i)
 
         root = "" if platform.system() == "Windows" else "/"
-        self.tree_view.setRootIndex(self.dir_model.index(root))
+        self.folder_tree.setRootIndex(self.dir_model.index(root))
 
         self.horizontal_splitter.addWidget(self.left_frame)
 
@@ -217,9 +231,12 @@ class MainWindow(QMainWindow):
         self.file_table_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.file_table_view.setSortingEnabled(False)  # Manual sorting logic
         self.file_table_view.setWordWrap(False)
+        # Row height will be controlled via CSS min-height in table_view.qss
 
-        # Column 0: Info icon column (fixed small width)
+        # Initialize header and set default row height
         header = self.file_table_view.horizontalHeader()
+        self.file_table_view.verticalHeader().setDefaultSectionSize(22)  # Compact row height
+
         header.setMinimumSectionSize(23)  # PyQt5: only global min width supported
         header.setSectionResizeMode(0, QHeaderView.Fixed)
         self.file_table_view.setColumnWidth(0, 23)
@@ -329,6 +346,12 @@ class MainWindow(QMainWindow):
             table.setVerticalHeader(None)
             table.horizontalHeader().setVisible(False)
             table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
+            table.setAlternatingRowColors(True)  # Enable alternating row colors
+            table.verticalHeader().setDefaultSectionSize(22)  # Compact row height - same as icon table
+            # Disable drag & drop functionality
+            table.setDragEnabled(False)
+            table.setAcceptDrops(False)
+            table.setDragDropMode(QAbstractItemView.NoDragDrop)
 
         self.preview_icon_table.setObjectName("iconTable")
         self.preview_icon_table.setFixedWidth(24)
@@ -344,6 +367,7 @@ class MainWindow(QMainWindow):
         self.preview_icon_table.setShowGrid(False)
         self.preview_icon_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
         self.preview_icon_table.setStyleSheet("background-color: #212121;")
+        self.preview_icon_table.verticalHeader().setDefaultSectionSize(22)  # Compact row height
 
         table_pair_layout = QHBoxLayout()
         old_layout = QVBoxLayout()
@@ -420,8 +444,8 @@ class MainWindow(QMainWindow):
         self.select_folder_button.clicked.connect(self.handle_folder_select)
         self.browse_folder_button.clicked.connect(self.handle_browse)
 
-        # Connect tree_view for drag & drop operations
-        self.tree_view.files_dropped.connect(self.load_files_from_dropped_items)
+        # Connect folder_tree for drag & drop operations
+        self.folder_tree.files_dropped.connect(self.load_files_from_dropped_items)
 
         self.file_table_view.clicked.connect(self.on_table_row_clicked)
         self.file_table_view.selection_changed.connect(self.update_preview_from_selection)
@@ -763,9 +787,9 @@ class MainWindow(QMainWindow):
         """
         self.last_action = "folder_select"
 
-        index = self.tree_view.currentIndex()
+        index = self.folder_tree.currentIndex()
         if not index.isValid():
-            logger.warning("No folder selected in tree view.")
+            logger.warning("No folder selected in folder tree.")
             return
 
         folder_path = self.dir_model.filePath(index)
@@ -844,11 +868,11 @@ class MainWindow(QMainWindow):
         logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
         self.load_files_from_folder(folder_path, skip_metadata=skip_metadata, force=force_reload)
 
-        if hasattr(self, "dir_model") and hasattr(self, "tree_view"):
+        if hasattr(self, "dir_model") and hasattr(self, "folder_tree"):
             index = self.dir_model.index(folder_path)
             if index.isValid():
-                self.tree_view.setCurrentIndex(index)
-                self.tree_view.scrollTo(index)
+                self.folder_tree.setCurrentIndex(index)
+                self.folder_tree.scrollTo(index)
 
     def get_file_items_from_folder(self, folder_path: str) -> list[FileItem]:
         all_files = glob.glob(os.path.join(folder_path, "*"))
@@ -1510,7 +1534,7 @@ class MainWindow(QMainWindow):
 
         all_names = [name for pair in name_pairs for name in pair]
         max_width = max((self.fontMetrics().horizontalAdvance(name) for name in all_names), default=250)
-        adjusted_width = max(310, max_width) + 100
+        adjusted_width = max(326, max_width) + 100
         self.preview_old_name_table.setColumnWidth(0, adjusted_width)
         self.preview_new_name_table.setColumnWidth(0, adjusted_width)
 
@@ -2361,7 +2385,7 @@ class MainWindow(QMainWindow):
             # Update folder tree selection
             if hasattr(self.dir_model, "index"):
                 index = self.dir_model.index(folder_path)
-                self.tree_view.setCurrentIndex(index)
+                self.folder_tree.setCurrentIndex(index)
 
             # Load the folder contents
             skip_metadata, _ = self.determine_metadata_mode()
