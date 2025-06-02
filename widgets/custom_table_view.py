@@ -63,12 +63,18 @@ class CustomTableView(QTableView):
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True)  # Very important for drop functionality!
 
+        from pathlib import Path
+        app_dir = Path(__file__).parent.parent
+        icon_path = app_dir / "assets/File_Folder_Drag_Drop.png"
+        self.placeholder_icon = QPixmap(str(icon_path))
+
+
+
         self.placeholder_label = QLabel(self)
         self.placeholder_label.setAlignment(Qt.AlignCenter)
         self.placeholder_label.setWordWrap(True)
-        # self.placeholder_label.setStyleSheet("color: #777; font-size: 14px;")
-        # self.placeholder_label.setPixmap(QPixmap("/assets/File_Folder_Drag_Drop.png").scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        # self.placeholder_label.setText("\nDrag & Drop\nfiles or folder\nhere to start")
+        self.placeholder_label.setStyleSheet("color: #777; font-size: 14px;")
+        self.placeholder_label.setText("\nDrag & Drop\nfiles or folder\nhere to start")
         self.placeholder_label.setTextInteractionFlags(Qt.NoTextInteraction)
         self.placeholder_label.setVisible(False)
 
@@ -84,10 +90,13 @@ class CustomTableView(QTableView):
         self.context_focused_row: int | None = None
 
         self.placeholder_message = ""
-        self.placeholder_icon = QPixmap("assets/File_Folder_Drag_Drop.png")
-        # if self.placeholder_icon.isNull():
-        logger.warning("Placeholder icon could not be loaded. Displaying text only.")
-        # self.placeholder_message = "Drag & Drop files or folder here to start"
+        if self.placeholder_icon.isNull():
+            logger.warning(f"Placeholder icon could not be loaded from {icon_path}. Displaying text only.")
+            self.placeholder_message = "Drag & Drop files or folder here to start"
+        else:
+            self.placeholder_label.setPixmap(self.placeholder_icon.scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            logger.debug(f"Successfully loaded placeholder icon from {icon_path}")
+
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -95,7 +104,7 @@ class CustomTableView(QTableView):
             self.placeholder_label.resize(self.viewport().size())
             self.placeholder_label.move(0, 0)
 
-    def set_placeholder_visible(self, visible: bool, text: str = None) -> None:
+    def set_placeholder_visible(self, visible: bool, text: str = "") -> None:
         if visible:
             if text:
                 self.placeholder_label.setText(text)
