@@ -15,33 +15,18 @@ Key features:
 - Seamless integration with parent MainWindow for preview/metadata sync
 - Proper visual updates on hover/selection using manual viewport repaint
 '''
-
+import sys, os
+from pathlib import Path
 from PyQt5.QtWidgets import QAbstractItemView, QTableView, QApplication, QLabel
-from PyQt5.QtCore import QMimeData, QUrl, QItemSelectionModel, QItemSelection, Qt, QPoint, QModelIndex, QTimer
+from PyQt5.QtCore import QMimeData, QUrl, QItemSelectionModel, QItemSelection, Qt, QPoint, QModelIndex, QTimer, pyqtSignal
 from PyQt5.QtGui import QKeySequence, QDrag, QMouseEvent, QCursor, QPixmap, QPainter, QFont, QColor
-
-# Fix import to use relative import instead of absolute
-try:
-    # When imported normally from main application
-    from .hover_delegate import HoverItemDelegate
-    print(1)
-except ImportError:
-    # When run directly (for testing/debugging)
-    import sys, os
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    try:
-        from widgets.hover_delegate import HoverItemDelegate
-        print(2)
-    except ImportError:
-        # Fallback when run directly from the widgets directory
-        from hover_delegate import HoverItemDelegate
-        print(3)
-
-from PyQt5.QtCore import pyqtSignal
-from utils.logger_helper import get_logger
 from utils.file_drop_helper import analyze_drop, filter_allowed_files, ask_recursive_dialog, show_rejected_dialog
+from .hover_delegate import HoverItemDelegate
+
+from utils.logger_helper import get_logger
 
 logger = get_logger(__name__)
+
 
 class CustomTableView(QTableView):
     selection_changed = pyqtSignal(list)  # Emitted with list[int] of selected rows
@@ -63,13 +48,6 @@ class CustomTableView(QTableView):
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True)  # Very important for drop functionality!
 
-        from pathlib import Path
-        app_dir = Path(__file__).parent.parent
-        icon_path = app_dir / "assets/File_Folder_Drag_Drop.png"
-        self.placeholder_icon = QPixmap(str(icon_path))
-
-
-
         self.placeholder_label = QLabel(self)
         self.placeholder_label.setAlignment(Qt.AlignCenter)
         self.placeholder_label.setWordWrap(True)
@@ -77,6 +55,18 @@ class CustomTableView(QTableView):
         self.placeholder_label.setText("\nDrag & Drop\nfiles or folder\nhere to start")
         self.placeholder_label.setTextInteractionFlags(Qt.NoTextInteraction)
         self.placeholder_label.setVisible(False)
+
+        app_dir = Path(__file__).parent.parent
+        icon_path = app_dir / "assets/File_Folder_Drag_Drop.png"
+        self.placeholder_icon = QPixmap(str(icon_path))
+        self.placeholder_message = ""
+
+        if self.placeholder_icon.isNull():
+            logger.warning(f"Placeholder icon could not be loaded from {icon_path}. Displaying text only.")
+            self.placeholder_message = "Drag & Drop files or folder here to start"
+        else:
+            self.placeholder_label.setPixmap(self.placeholder_icon.scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            logger.debug(f"Successfully loaded placeholder icon from {icon_path}")
 
         # Selection state (custom selection model)
         self.selected_rows: set[int] = set()  # Keeps track of currently selected rows
@@ -89,28 +79,19 @@ class CustomTableView(QTableView):
         # Used for right-click visual indication
         self.context_focused_row: int | None = None
 
-        self.placeholder_message = ""
-        if self.placeholder_icon.isNull():
-            logger.warning(f"Placeholder icon could not be loaded from {icon_path}. Displaying text only.")
-            self.placeholder_message = "Drag & Drop files or folder here to start"
-        else:
-            self.placeholder_label.setPixmap(self.placeholder_icon.scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-            logger.debug(f"Successfully loaded placeholder icon from {icon_path}")
+    # def resizeEvent(self, event):
+    #     super().resizeEvent(event)
+    #     if self.placeholder_label:
+    #         self.placeholder_label.resize(self.viewport().size())
+    #         self.placeholder_label.move(0, 0)
 
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        if self.placeholder_label:
-            self.placeholder_label.resize(self.viewport().size())
-            self.placeholder_label.move(0, 0)
-
-    def set_placeholder_visible(self, visible: bool, text: str = "") -> None:
-        if visible:
-            if text:
-                self.placeholder_label.setText(text)
-            self.placeholder_label.show()
-        else:
-            self.placeholder_label.hide()
+    # def set_placeholder_visible(self, visible: bool, text: str = None) -> None:
+    #     if visible:
+    #         if text:
+    #             self.placeholder_label.setText(text)
+    #         self.placeholder_label.show()
+    #     else:
+    #         self.placeholder_label.hide()
 
     def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
         """
