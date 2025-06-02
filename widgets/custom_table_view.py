@@ -16,7 +16,7 @@ Key features:
 - Proper visual updates on hover/selection using manual viewport repaint
 '''
 
-from PyQt5.QtWidgets import QAbstractItemView, QTableView, QApplication
+from PyQt5.QtWidgets import QAbstractItemView, QTableView, QApplication, QLabel
 from PyQt5.QtCore import QMimeData, QUrl, QItemSelectionModel, QItemSelection, Qt, QPoint, QModelIndex, QTimer
 from PyQt5.QtGui import QKeySequence, QDrag, QMouseEvent, QCursor, QPixmap, QPainter, QFont, QColor
 
@@ -39,10 +39,6 @@ from utils.logger_helper import get_logger
 from utils.file_drop_helper import analyze_drop, filter_allowed_files, ask_recursive_dialog, show_rejected_dialog
 
 logger = get_logger(__name__)
-
-# Add a guard for direct execution
-if __name__ == "__main__":
-    logger.info("This module is not meant to be run directly. Please run main.py instead.")
 
 class CustomTableView(QTableView):
     selection_changed = pyqtSignal(list)  # Emitted with list[int] of selected rows
@@ -67,9 +63,9 @@ class CustomTableView(QTableView):
         self.placeholder_label = QLabel(self)
         self.placeholder_label.setAlignment(Qt.AlignCenter)
         self.placeholder_label.setWordWrap(True)
-        self.placeholder_label.setStyleSheet("color: #777; font-size: 14px;")
-        self.placeholder_label.setPixmap(QPixmap(":/assets/File_Folder_Drag_Drop.png").scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        self.placeholder_label.setText("\nDrag & Drop\nfiles or folder\nhere to start")
+        # self.placeholder_label.setStyleSheet("color: #777; font-size: 14px;")
+        # self.placeholder_label.setPixmap(QPixmap("/assets/File_Folder_Drag_Drop.png").scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        # self.placeholder_label.setText("\nDrag & Drop\nfiles or folder\nhere to start")
         self.placeholder_label.setTextInteractionFlags(Qt.NoTextInteraction)
         self.placeholder_label.setVisible(False)
 
@@ -86,9 +82,9 @@ class CustomTableView(QTableView):
 
         self.placeholder_message = ""
         self.placeholder_icon = QPixmap("assets/File_Folder_Drag_Drop.png")
-        if self.placeholder_icon.isNull():
-            logger.warning("Placeholder icon could not be loaded. Displaying text only.")
-            self.placeholder_message = "Drag & Drop files or folder here to start"
+        # if self.placeholder_icon.isNull():
+        logger.warning("Placeholder icon could not be loaded. Displaying text only.")
+        # self.placeholder_message = "Drag & Drop files or folder here to start"
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
