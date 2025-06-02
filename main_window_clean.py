@@ -912,7 +912,7 @@ class MainWindow(QMainWindow):
             logger.debug("[PrepareTable] Post-rename detected, preview will be updated after checked state restore")
             # Don't generate preview here - will be done after checked state is restored
 
-    def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False, force: bool = False):
+    # [DEPRECATED] def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False, force: bool = False):
 
         normalized_new = os.path.abspath(os.path.normpath(folder_path))
         normalized_current = os.path.abspath(os.path.normpath(self.current_folder_path or ""))
@@ -1915,7 +1915,7 @@ class MainWindow(QMainWindow):
             self.metadata_tree_view.collapseAll()
             self.toggle_expand_button.setText("Expand All")
 
-    # def show_file_table_placeholder(self, message: str = "No files loaded") -> None:
+    # # [DEPRECATED] def show_file_table_placeholder(self, message: str = "No files loaded") -> None:
     #     """
     #     Displays a placeholder row in the file table with a message.
     #     """

@@ -779,6 +779,10 @@ class MainWindow(QMainWindow):
         return False
 
     # def handle_folder_select(self) -> None:
+        """
+        Triggered when selecting a folder from the folder tree.
+        It loads all valid files from the selected folder.
+        """
     #     """
     #     It loads files from the folder currently selected in the folder tree.
     #     If the Ctrl key is held, metadata scanning is skipped.
@@ -824,6 +828,10 @@ class MainWindow(QMainWindow):
     #     self.load_files_from_folder(folder_path, skip_metadata=skip_metadata, force=force_reload)
 
     # def handle_browse(self) -> None:
+        """
+        Opens a directory dialog for the user to select a folder.
+        It loads all valid files from the chosen directory.
+        """
     #     """
     #     Triggered when the user clicks the 'Browse Folder' button.
     #     Opens a folder selection dialog, checks file count, prompts
@@ -912,7 +920,7 @@ class MainWindow(QMainWindow):
             logger.debug("[PrepareTable] Post-rename detected, preview will be updated after checked state restore")
             # Don't generate preview here - will be done after checked state is restored
 
-    def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False, force: bool = False):
+    # [DEPRECATED] def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False, force: bool = False):
 
         normalized_new = os.path.abspath(os.path.normpath(folder_path))
         normalized_current = os.path.abspath(os.path.normpath(self.current_folder_path or ""))
@@ -1915,7 +1923,7 @@ class MainWindow(QMainWindow):
             self.metadata_tree_view.collapseAll()
             self.toggle_expand_button.setText("Expand All")
 
-    # def show_file_table_placeholder(self, message: str = "No files loaded") -> None:
+    # # [DEPRECATED] def show_file_table_placeholder(self, message: str = "No files loaded") -> None:
     #     """
     #     Displays a placeholder row in the file table with a message.
     #     """
@@ -2437,6 +2445,15 @@ class MainWindow(QMainWindow):
             self.generate_preview_names()
 
     def load_files(self, file_paths: list[str], append: bool = False) -> None:
+        """
+        Load files into the application's file table, managing placeholders, 
+        validating file extensions, optionally appending files, 
+        updating metadata and preview sections.
+        
+        Args:
+            file_paths (list[str]): The file paths to load into the table.
+            append (bool): Whether to append these files to existing ones.
+        """
         """
         Loads files into the table view, handles placeholder visibility,
         validates file extensions, and optionally appends to existing files.
