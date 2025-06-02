@@ -160,8 +160,11 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(QLabel("Folders"))
 
         self.folder_tree = CustomTreeView()
-        self.folder_tree.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.folder_tree.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        # Διόρθωση των σταθερών Qt
+        self.folder_tree.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded
+                                                   if hasattr(Qt, "ScrollBarPolicy") else Qt.ScrollBarAsNeeded)
+        self.folder_tree.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded
+                                                     if hasattr(Qt, "ScrollBarPolicy") else Qt.ScrollBarAsNeeded)
         self.folder_tree.setAlternatingRowColors(True)  # Enable alternating row colors
         left_layout.addWidget(self.folder_tree)
 
@@ -208,17 +211,25 @@ class MainWindow(QMainWindow):
 
         self.file_table_view = CustomTableView(parent=self)
         self.file_table_view.parent_window = self
-        self.file_table_view.verticalHeader().setVisible(False)
+        if self.file_table_view.verticalHeader():
+            self.file_table_view.verticalHeader().setVisible(False)
         self.file_table_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.file_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.model = FileTableModel(parent_window=self)
 
         # Header setup
-        self.header = InteractiveHeader(Qt.Horizontal, self.file_table_view, parent_window=self)
+        # Διόρθωση σταθερών Qt.Orientation
+        horizontal_orientation = Qt.Orientation.Horizontal if hasattr(Qt, "Orientation") else Qt.Horizontal
+        self.header = InteractiveHeader(horizontal_orientation, self.file_table_view, parent_window=self)
         self.file_table_view.setHorizontalHeader(self.header)
+
         # Align all headers to the left (if supported)
         if hasattr(self.header, 'setDefaultAlignment'):
-            self.header.setDefaultAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            # Διόρθωση σταθερών Qt.Alignment
+            align_left = Qt.AlignmentFlag.AlignLeft if hasattr(Qt, "AlignmentFlag") else Qt.AlignLeft
+            align_vcenter = Qt.AlignmentFlag.AlignVCenter if hasattr(Qt, "AlignmentFlag") else Qt.AlignVCenter
+            self.header.setDefaultAlignment(align_left | align_vcenter)
+
         self.header.setSortIndicatorShown(True)
         self.header.setSectionsClickable(True)
         self.header.setHighlightSections(True)
@@ -233,8 +244,18 @@ class MainWindow(QMainWindow):
 
         # Initialize header and set default row height
         header = self.file_table_view.horizontalHeader()
-        self.file_table_view.verticalHeader().setDefaultSectionSize(22)  # Compact row height
+        if self.file_table_view.verticalHeader():
+            self.file_table_view.verticalHeader().setDefaultSectionSize(22)  # Compact row height
 
+        if header:
+            header.setMinimumSectionSize(23)  # PyQt5: only global min width supported
+            header.setSectionResizeMode(0, QHeaderView.Fixed)
+            self.file_table_view.setColumnWidth(0, 23)
+
+            # Column 1: Filename (wide, interactive)
+            header.setSectionResizeMode(1, QHeaderView.Interactive)
+            header.resizeSection(1, 290)
+            self.file_table_view.setColumnWidth(1, 290)
         header.setMinimumSectionSize(23)  # PyQt5: only global min width supported
         header.setSectionResizeMode(0, QHeaderView.Fixed)
         self.file_table_view.setColumnWidth(0, 23)
@@ -2453,6 +2474,9 @@ class MainWindow(QMainWindow):
 
         if not valid_files:
             self.model.clear()
+            if hasattr(self.file_table_view, 'set_placeholder_visible'):
+                self.file_table_view.set_placeholder_visible(True)
+
             # self.file_table_view.set_placeholder_visible(True, "No valid files found.")
             self.set_status("No valid files loaded.", color="orange", auto_reset=True)
             return
@@ -2461,20 +2485,32 @@ class MainWindow(QMainWindow):
             self.model.clear()
         file_items = self.model.files.copy() if append else []
 
-        new_items = [FileItem.from_path(path) for path in valid_files]
-        for item in new_items:
-            item.checked = False
+        try:
+            new_items = []
+            for path in valid_files:
+                # Χειροκίνητη δημιουργία αντικειμένων FileItem
+                filename = os.path.basename(path)
+                ext = os.path.splitext(filename)[1][1:].lower()
+                modified = datetime.datetime.fromtimestamp(
+                    os.path.getmtime(path)).strftime("%Y-%m-%d %H:%M:%S")
+                new_items.append(FileItem(filename, ext, modified, full_path=path))
 
-        file_items.extend(new_items)
-        self.prepare_file_table(file_items)
+            for item in new_items:
+                item.checked = False
 
-        if not self.skip_metadata_mode:
-            self.start_metadata_scan([item.full_path for item in new_items])
+            file_items.extend(new_items)
+            self.prepare_file_table(file_items)
 
-        self.update_files_label()
-        self.generate_preview_names()
-        self.clear_metadata_view()
-        self.set_status(f"{len(new_items)} files {'added' if append else 'loaded'} successfully.", color="green", auto_reset=True)
+            if not self.skip_metadata_mode:
+                self.start_metadata_scan([item.full_path for item in new_items if item.full_path])
+
+            self.update_files_label()
+            self.generate_preview_names()
+            self.clear_metadata_view()
+            self.set_status(f"{len(new_items)} files {'added' if append else 'loaded'} successfully.", color="green", auto_reset=True)
+        except Exception as e:
+            logger.error(f"Error loading files: {e}")
+            self.set_status(f"Error loading files: {str(e)}", color="red", auto_reset=True)
 
     # Handlers (example usage)
 

@@ -90,6 +90,13 @@ class CustomTableView(QTableView):
     #     else:
     #         self.placeholder_label.hide()
 
+    def set_placeholder_visible(self, visible: bool) -> None:
+        """
+        Dummy method to avoid AttributeError if still called externally.
+        Κρατάμε αυτήν τη μέθοδο για backward συμβατότητα, αλλά δεν κάνει τίποτα.
+        """
+        pass
+
     def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
         """
         Handles custom selection logic with anchor and modifier support.
