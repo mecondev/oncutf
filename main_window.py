@@ -778,101 +778,101 @@ class MainWindow(QMainWindow):
 
         return False
 
-    def handle_folder_select(self) -> None:
-        """
-        It loads files from the folder currently selected in the folder tree.
-        If the Ctrl key is held, metadata scanning is skipped.
+    # def handle_folder_select(self) -> None:
+    #     """
+    #     It loads files from the folder currently selected in the folder tree.
+    #     If the Ctrl key is held, metadata scanning is skipped.
 
-        Triggered when the user clicks the 'Select Folder' button.
-        """
-        self.last_action = "folder_select"
+    #     Triggered when the user clicks the 'Select Folder' button.
+    #     """
+    #     self.last_action = "folder_select"
 
-        index = self.folder_tree.currentIndex()
-        if not index.isValid():
-            logger.warning("No folder selected in folder tree.")
-            return
+    #     index = self.folder_tree.currentIndex()
+    #     if not index.isValid():
+    #         logger.warning("No folder selected in folder tree.")
+    #         return
 
-        folder_path = self.dir_model.filePath(index)
+    #     folder_path = self.dir_model.filePath(index)
 
-        if self.should_skip_folder_reload(folder_path):
-            return  # skip if user pressed Cancel
-        else:
-            force_reload = True  # user pressed Reload
+    #     if self.should_skip_folder_reload(folder_path):
+    #         return  # skip if user pressed Cancel
+    #     else:
+    #         force_reload = True  # user pressed Reload
 
-        self.clear_file_table("No folder selected")
-        self.clear_metadata_view()
+    #     self.clear_file_table("No folder selected")
+    #     self.clear_metadata_view()
 
-        # Load the full directory listing
-        all_files = glob.glob(os.path.join(folder_path, "*"))
-        valid_files = [
-            f for f in all_files
-            if os.path.splitext(f)[1][1:].lower() in ALLOWED_EXTENSIONS
-        ]
+    #     # Load the full directory listing
+    #     all_files = glob.glob(os.path.join(folder_path, "*"))
+    #     valid_files = [
+    #         f for f in all_files
+    #         if os.path.splitext(f)[1][1:].lower() in ALLOWED_EXTENSIONS
+    #     ]
 
-        skip_metadata, use_extended = self.determine_metadata_mode()
-        logger.debug(f"[Modifiers] skip_metadata={skip_metadata}, use_extended={use_extended}")
-        self.force_extended_metadata = use_extended
-        self.skip_metadata_mode = skip_metadata
+    #     skip_metadata, use_extended = self.determine_metadata_mode()
+    #     logger.debug(f"[Modifiers] skip_metadata={skip_metadata}, use_extended={use_extended}")
+    #     self.force_extended_metadata = use_extended
+    #     self.skip_metadata_mode = skip_metadata
 
-        is_large = len(valid_files) > LARGE_FOLDER_WARNING_THRESHOLD
-        logger.info(
-            f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata}, extended={use_extended}, "
-            f"(large={is_large}, default={DEFAULT_SKIP_METADATA})",
-            extra={"dev_only": True}
-        )
-        logger.warning(f'-> skip_metadata passed to loader: {skip_metadata}')
-        self.load_files_from_folder(folder_path, skip_metadata=skip_metadata, force=force_reload)
+    #     is_large = len(valid_files) > LARGE_FOLDER_WARNING_THRESHOLD
+    #     logger.info(
+    #         f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata}, extended={use_extended}, "
+    #         f"(large={is_large}, default={DEFAULT_SKIP_METADATA})",
+    #         extra={"dev_only": True}
+    #     )
+    #     logger.warning(f'-> skip_metadata passed to loader: {skip_metadata}')
+    #     self.load_files_from_folder(folder_path, skip_metadata=skip_metadata, force=force_reload)
 
-    def handle_browse(self) -> None:
-        """
-        Triggered when the user clicks the 'Browse Folder' button.
-        Opens a folder selection dialog, checks file count, prompts
-        user if the folder is large, and optionally skips metadata scan.
+    # def handle_browse(self) -> None:
+    #     """
+    #     Triggered when the user clicks the 'Browse Folder' button.
+    #     Opens a folder selection dialog, checks file count, prompts
+    #     user if the folder is large, and optionally skips metadata scan.
 
-        Also updates the folder tree selection to reflect the newly selected folder.
-        """
-        self.last_action = "browse"
+    #     Also updates the folder tree selection to reflect the newly selected folder.
+    #     """
+    #     self.last_action = "browse"
 
-        folder_path = QFileDialog.getExistingDirectory(self, "Select Folder", "/")
-        if not folder_path:
-            logger.info("Folder selection canceled by user.")
-            return
+    #     folder_path = QFileDialog.getExistingDirectory(self, "Select Folder", "/")
+    #     if not folder_path:
+    #         logger.info("Folder selection canceled by user.")
+    #         return
 
-        if self.should_skip_folder_reload(folder_path):
-            return  # skip if user pressed Cancel
-        else:
-            force_reload = True  # user pressed Reload
+    #     if self.should_skip_folder_reload(folder_path):
+    #         return  # skip if user pressed Cancel
+    #     else:
+    #         force_reload = True  # user pressed Reload
 
-        self.clear_file_table("No folder selected")
-        self.clear_metadata_view()
+    #     self.clear_file_table("No folder selected")
+    #     self.clear_metadata_view()
 
-        all_files = glob.glob(os.path.join(folder_path, "*"))
-        valid_files = [
-            f for f in all_files
-            if os.path.splitext(f)[1][1:].lower() in ALLOWED_EXTENSIONS
-        ]
+    #     all_files = glob.glob(os.path.join(folder_path, "*"))
+    #     valid_files = [
+    #         f for f in all_files
+    #         if os.path.splitext(f)[1][1:].lower() in ALLOWED_EXTENSIONS
+    #     ]
 
-        skip_metadata, use_extended = self.determine_metadata_mode()
-        logger.debug(f"[Modifiers] skip_metadata={skip_metadata}, use_extended={use_extended}")
-        self.force_extended_metadata = use_extended
-        self.skip_metadata_mode = skip_metadata
+    #     skip_metadata, use_extended = self.determine_metadata_mode()
+    #     logger.debug(f"[Modifiers] skip_metadata={skip_metadata}, use_extended={use_extended}")
+    #     self.force_extended_metadata = use_extended
+    #     self.skip_metadata_mode = skip_metadata
 
-        is_large = len(valid_files) > LARGE_FOLDER_WARNING_THRESHOLD
-        logger.debug("-" * 60)
-        logger.info(
-            f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata}, extended={use_extended}, "
-            f"(large={is_large}, default={DEFAULT_SKIP_METADATA})",
-            extra={"dev_only": True}
-        )
+    #     is_large = len(valid_files) > LARGE_FOLDER_WARNING_THRESHOLD
+    #     logger.debug("-" * 60)
+    #     logger.info(
+    #         f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata}, extended={use_extended}, "
+    #         f"(large={is_large}, default={DEFAULT_SKIP_METADATA})",
+    #         extra={"dev_only": True}
+    #     )
 
-        logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
-        self.load_files_from_folder(folder_path, skip_metadata=skip_metadata, force=force_reload)
+    #     logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
+    #     self.load_files_from_folder(folder_path, skip_metadata=skip_metadata, force=force_reload)
 
-        if hasattr(self, "dir_model") and hasattr(self, "folder_tree"):
-            index = self.dir_model.index(folder_path)
-            if index.isValid():
-                self.folder_tree.setCurrentIndex(index)
-                self.folder_tree.scrollTo(index)
+    #     if hasattr(self, "dir_model") and hasattr(self, "folder_tree"):
+    #         index = self.dir_model.index(folder_path)
+    #         if index.isValid():
+    #             self.folder_tree.setCurrentIndex(index)
+    #             self.folder_tree.scrollTo(index)
 
     def get_file_items_from_folder(self, folder_path: str) -> list[FileItem]:
         all_files = glob.glob(os.path.join(folder_path, "*"))
@@ -1915,16 +1915,16 @@ class MainWindow(QMainWindow):
             self.metadata_tree_view.collapseAll()
             self.toggle_expand_button.setText("Expand All")
 
-    def clear_file_table(self, message: str = "No folder selected") -> None:
-        """
-        Clears the file table and shows a placeholder message.
-        """
-        self.clear_metadata_view()
-        self.model.set_files([])  # reset model with empty list
-        self.show_file_table_placeholder(message)
-        self.header.setEnabled(False) # disable header
+    # def clear_file_table(self, message: str = "No folder selected") -> None:
+    #     """
+    #     Clears the file table and shows a placeholder message.
+    #     """
+    #     self.clear_metadata_view()
+    #     self.model.set_files([])  # reset model with empty list
+    #     self.show_file_table_placeholder(message)
+    #     self.header.setEnabled(False) # disable header
 
-        self.update_files_label()
+    #     self.update_files_label()
 
     def show_file_table_placeholder(self, message: str = "No files loaded") -> None:
         """
@@ -2447,3 +2447,125 @@ class MainWindow(QMainWindow):
             self.update_files_label()
             self.generate_preview_names()
 
+
+    """
+    new section
+    """
+    def load_files(self, file_paths: list[str], append: bool = False) -> None:
+        """
+        Loads files into the table view, handles placeholder visibility,
+        validates file extensions, and optionally appends to existing files.
+
+        Args:
+            file_paths (list[str]): List of paths to load.
+            append (bool): Whether to append to existing files or replace them.
+        """
+        # Filter files by allowed extensions
+        valid_files = [
+            f for f in file_paths
+            if os.path.splitext(f)[1][1:].lower() in ALLOWED_EXTENSIONS
+        ]
+
+        if not valid_files:
+            if not append:
+                self.clear_file_table(show_placeholder=True, placeholder_text="No valid files found.")
+            self.set_status("No valid files loaded.", color="orange", auto_reset=True)
+            return
+
+        if not append:
+            self.clear_file_table(show_placeholder=False)
+            file_items = []
+        else:
+            file_items = self.model.files.copy()
+
+        # Create new file items
+        new_items = [FileItem.from_path(path) for path in valid_files]
+
+        # Ensure all items are unchecked initially
+        for item in new_items:
+            item.checked = False
+
+        # Merge new items
+        file_items.extend(new_items)
+
+        # Update model and UI
+        self.prepare_file_table(file_items)
+
+        if not self.skip_metadata_mode:
+            self.start_metadata_scan([item.full_path for item in new_items])
+
+        self.update_files_label()
+        self.generate_preview_names()
+        self.clear_metadata_view()
+        self.set_status(f"{len(new_items)} files {'added' if append else 'loaded'} successfully.", color="green", auto_reset=True)
+
+    def handle_folder_select(self):
+        index = self.folder_tree.currentIndex()
+        if not index.isValid():
+            return
+
+        folder_path = self.dir_model.filePath(index)
+        file_paths = glob.glob(os.path.join(folder_path, "*"))
+        self.load_files(file_paths, append=False)
+
+    def handle_browse(self):
+        folder_path = QFileDialog.getExistingDirectory(self, "Select Folder", "/")
+        if not folder_path:
+            return
+
+        file_paths = glob.glob(os.path.join(folder_path, "*"))
+        self.load_files(file_paths, append=False)
+
+    # def _handle_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers):
+    #     all_file_paths = []
+    #     for path in paths:
+    #         if os.path.isdir(path):
+    #             if modifiers & Qt.AltModifier:
+    #                 for root, dirs, files in os.walk(path):
+    #                     all_file_paths.extend(os.path.join(root, file) for file in files)
+    #             else:
+    #                 all_file_paths.extend(glob.glob(os.path.join(path, "*")))
+    #         else:
+    #             all_file_paths.append(path)
+
+    #     # Προετοιμασία για μελλοντική ερώτηση μέσω CustomMessageDialog
+    #     # Προς το παρόν πάντα κάνουμε replace.
+    #     append = False
+
+    #     # Μελλοντική προοπτική:
+    #     # append = CustomMessageDialog.question(
+    #     #     self, "Add Files", "Do you want to add these files to existing ones?",
+    #     #     yes_text="Add", no_text="Replace"
+    #     # )
+
+        self.load_files(all_file_paths, append=append)
+
+    def clear_file_table(self, show_placeholder: bool = True, placeholder_text: str = "Drag & Drop files or folder here to start") -> None:
+        """
+        Clears the file table completely and optionally shows placeholder.
+        """
+        self.model.clear()
+        if show_placeholder:
+            self.show_file_table_placeholder(placeholder_text)
+        else:
+            self.remove_file_table_placeholder()
+
+    def _handle_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers):
+        all_file_paths = []
+        for path in paths:
+            if os.path.isdir(path):
+                if modifiers & Qt.AltModifier:
+                    for root, dirs, files in os.walk(path):
+                        all_file_paths.extend(os.path.join(root, file) for file in files)
+                else:
+                    all_file_paths.extend(glob.glob(os.path.join(path, "*")))
+            else:
+                all_file_paths.append(path)
+
+        # Πλέον χρησιμοποιείς τον διάλογο:
+        append = CustomMessageDialog.question(
+            self, "Add Files", "Do you want to add these files to existing ones?",
+            yes_text="Add", no_text="Replace"
+        )
+
+        self.load_files(all_file_paths, append=append)
