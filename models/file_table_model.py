@@ -57,7 +57,7 @@ class FileTableModel(QAbstractTableModel):
 
         if not self.files:
             if role == Qt.DisplayRole and col == 1:
-                return "No files loaded"
+                return ""
             if role == Qt.TextAlignmentRole:
                 return Qt.AlignCenter
             return QVariant()

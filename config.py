@@ -56,7 +56,7 @@ CONTENT_MARGINS = {
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {
-    "jpg", "jpeg", "png", "mp3", "mp4", "mov", "mts", "nef", "raw", "arw", "cr2", "cr3",
+    "jpg", "jpeg", "png", "mp3", "mp4", "mov", "mts", "nef", "raw", "rw2", "thm", "arw", "cr2", "cr3",
     "wav", "txt", "csv", "xml", "pdf", "doc", "docx", "xls", "xlsx"
 }
 

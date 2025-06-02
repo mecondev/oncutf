@@ -85,6 +85,8 @@ class CustomTableView(QTableView):
         """
         Shows or hides the placeholder icon over the table (only image, no text).
         """
+        assert self.model() is not None, "Cannot show placeholder: model has not been set on CustomTableView"
+        
         if visible and not self.placeholder_icon.isNull():
             self.placeholder_label.show()
         else:

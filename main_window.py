@@ -1921,41 +1921,8 @@ class MainWindow(QMainWindow):
         self.model.set_files([])  # reset model with empty list
         self.file_table_view.set_placeholder_visible(False)
         self.header.setEnabled(False) # disable header
-
+        self.status_label.setText(message)
         self.update_files_label()
-
-    # def show_file_table_placeholder(self, message: str = "No files loaded") -> None:
-    #     """
-    #     Displays a placeholder row in the file table with a message.
-    #     """
-    #     placeholder_model = QStandardItemModel()
-    #     placeholder_model.setHorizontalHeaderLabels(["", "Filename","Size", "Type", "Modified"])
-
-    #     row = [QStandardItem(), QStandardItem(message), QStandardItem(), QStandardItem()]
-
-    #     for i, item in enumerate(row):
-    #         font = item.font()
-    #         font.setItalic(True)
-    #         item.setFont(font)
-
-    #         item.setForeground(Qt.gray)
-    #         item.setEnabled(False)  # Disable placeholder items
-    #         item.setSelectable(False)
-
-    #         # Optional: center align only the message column
-    #         if i == 1:
-    #             item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-    #         else:
-    #             item.setTextAlignment(Qt.AlignCenter)
-
-    #     placeholder_model.appendRow(row)
-    #     self.file_table_view.setModel(placeholder_model)
-    #     if hasattr(self, "header") and self.header is not None:
-    #         self.header.setEnabled(False)  # Disable file table header
-    #     # Disable hover delegate (if it exists)
-    #     if hasattr(self.file_table_view, 'hover_delegate'):
-    #         self.file_table_view.hover_delegate.hovered_row = -1
-    #         self.file_table_view.setItemDelegate(None)
 
     def show_empty_metadata_tree(self, message: str = "No file selected") -> None:
         """
