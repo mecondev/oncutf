@@ -262,6 +262,13 @@ class CustomTableView(QTableView):
             logger.debug(f"[DEBUG] _sync_selection_safely → selected_rows: {selected_rows}")
             parent.sync_selection_to_checked(selection, QItemSelection())
 
+    def set_placeholder_visible(self, visible: bool, text: str = "Drag & Drop files or folder here to start") -> None:
+        if visible:
+            self.placeholder_label.setText(text)
+            self.placeholder_label.show()
+        else:
+            self.placeholder_label.hide()
+
     def startDrag(self, supportedActions: Qt.DropActions) -> None:
         """
         Initiates a drag operation for selected file paths.

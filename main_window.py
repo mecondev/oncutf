@@ -2448,9 +2448,6 @@ class MainWindow(QMainWindow):
             self.generate_preview_names()
 
 
-    """
-    new section
-    """
     def load_files(self, file_paths: list[str], append: bool = False) -> None:
         """
         Loads files into the table view, handles placeholder visibility,
@@ -2538,17 +2535,23 @@ class MainWindow(QMainWindow):
     #     #     yes_text="Add", no_text="Replace"
     #     # )
 
-        self.load_files(all_file_paths, append=append)
+    #     self.load_files(all_file_paths, append=append)
 
     def clear_file_table(self, show_placeholder: bool = True, placeholder_text: str = "Drag & Drop files or folder here to start") -> None:
         """
-        Clears the file table completely and optionally shows placeholder.
+        Clears all file entries from the table and optionally shows or hides the placeholder.
+
+        Args:
+            show_placeholder (bool): Whether to show the placeholder after clearing.
+            placeholder_text (str): Optional custom text for the placeholder.
         """
         self.model.clear()
-        if show_placeholder:
-            self.show_file_table_placeholder(placeholder_text)
-        else:
-            self.remove_file_table_placeholder()
+
+        if hasattr(self.file_table_view, "set_placeholder_visible"):
+            if show_placeholder:
+                self.file_table_view.set_placeholder_visible(True, placeholder_text)
+            else:
+                self.file_table_view.set_placeholder_visible(False)
 
     def _handle_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers):
         all_file_paths = []
