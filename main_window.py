@@ -212,7 +212,7 @@ class MainWindow(QMainWindow):
         self.file_table_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.file_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.model = FileTableModel(parent_window=self)
-        self.show_file_table_placeholder("No folder selected")
+        # self.show_file_table_placeholder("No folder selected")
 
 
         # Header setup
@@ -261,7 +261,7 @@ class MainWindow(QMainWindow):
         # Per-section min/max width is not supported in PyQt5
 
         # Show placeholder after setup is complete
-        self.show_file_table_placeholder("No folder selected")
+        # self.show_file_table_placeholder("No folder selected")
         center_layout.addWidget(self.file_table_view)
         self.horizontal_splitter.addWidget(self.center_frame)
 
@@ -937,7 +937,7 @@ class MainWindow(QMainWindow):
 
         if not file_items:
             short_name = os.path.basename(folder_path.rstrip("/\\"))
-            self.show_file_table_placeholder(f"No supported files in '{short_name}'")
+            # self.show_file_table_placeholder(f"No supported files in '{short_name}'")
             self.clear_metadata_view()
             self.header.setEnabled(False)
             self.set_status("No supported files found.", color="orange", auto_reset=True)
@@ -1915,38 +1915,38 @@ class MainWindow(QMainWindow):
             self.metadata_tree_view.collapseAll()
             self.toggle_expand_button.setText("Expand All")
 
-    def show_file_table_placeholder(self, message: str = "No files loaded") -> None:
-        """
-        Displays a placeholder row in the file table with a message.
-        """
-        placeholder_model = QStandardItemModel()
-        placeholder_model.setHorizontalHeaderLabels(["", "Filename","Size", "Type", "Modified"])
+    # def show_file_table_placeholder(self, message: str = "No files loaded") -> None:
+    #     """
+    #     Displays a placeholder row in the file table with a message.
+    #     """
+    #     placeholder_model = QStandardItemModel()
+    #     placeholder_model.setHorizontalHeaderLabels(["", "Filename","Size", "Type", "Modified"])
 
-        row = [QStandardItem(), QStandardItem(message), QStandardItem(), QStandardItem()]
+    #     row = [QStandardItem(), QStandardItem(message), QStandardItem(), QStandardItem()]
 
-        for i, item in enumerate(row):
-            font = item.font()
-            font.setItalic(True)
-            item.setFont(font)
+    #     for i, item in enumerate(row):
+    #         font = item.font()
+    #         font.setItalic(True)
+    #         item.setFont(font)
 
-            item.setForeground(Qt.gray)
-            item.setEnabled(False)  # Disable placeholder items
-            item.setSelectable(False)
+    #         item.setForeground(Qt.gray)
+    #         item.setEnabled(False)  # Disable placeholder items
+    #         item.setSelectable(False)
 
-            # Optional: center align only the message column
-            if i == 1:
-                item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-            else:
-                item.setTextAlignment(Qt.AlignCenter)
+    #         # Optional: center align only the message column
+    #         if i == 1:
+    #             item.setTextAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+    #         else:
+    #             item.setTextAlignment(Qt.AlignCenter)
 
-        placeholder_model.appendRow(row)
-        self.file_table_view.setModel(placeholder_model)
-        if hasattr(self, "header") and self.header is not None:
-            self.header.setEnabled(False)  # Disable file table header
-        # Disable hover delegate (if it exists)
-        if hasattr(self.file_table_view, 'hover_delegate'):
-            self.file_table_view.hover_delegate.hovered_row = -1
-            self.file_table_view.setItemDelegate(None)
+    #     placeholder_model.appendRow(row)
+    #     self.file_table_view.setModel(placeholder_model)
+    #     if hasattr(self, "header") and self.header is not None:
+    #         self.header.setEnabled(False)  # Disable file table header
+    #     # Disable hover delegate (if it exists)
+    #     if hasattr(self.file_table_view, 'hover_delegate'):
+    #         self.file_table_view.hover_delegate.hovered_row = -1
+    #         self.file_table_view.setItemDelegate(None)
 
     def show_empty_metadata_tree(self, message: str = "No file selected") -> None:
         """
@@ -2372,7 +2372,7 @@ class MainWindow(QMainWindow):
             logger.info(f"[Drop] Setting folder from drop: {folder_path}")
 
             # Added for consistency with Select Folder
-            self.clear_file_table("No folder selected")
+            # self.clear_file_table("No folder selected")
             self.clear_metadata_view()
             self.file_items = []  # Reset file items list completely
 
@@ -2436,7 +2436,6 @@ class MainWindow(QMainWindow):
             self.update_files_label()
             self.generate_preview_names()
 
-
     def load_files(self, file_paths: list[str], append: bool = False) -> None:
         """
         Loads files into the table view, handles placeholder visibility,
@@ -2446,35 +2445,29 @@ class MainWindow(QMainWindow):
             file_paths (list[str]): List of paths to load.
             append (bool): Whether to append to existing files or replace them.
         """
-        # Filter files by allowed extensions
+        from models.file_item import FileItem  # if not already imported
+        import os
+
         valid_files = [
             f for f in file_paths
             if os.path.splitext(f)[1][1:].lower() in ALLOWED_EXTENSIONS
         ]
 
         if not valid_files:
-            if not append:
-                self.clear_file_table(show_placeholder=True, placeholder_text="No valid files found.")
+            self.model.clear()
+            self.file_table_view.set_placeholder_visible(True, "No valid files found.")
             self.set_status("No valid files loaded.", color="orange", auto_reset=True)
             return
 
         if not append:
-            self.clear_file_table(show_placeholder=False)
-            file_items = []
-        else:
-            file_items = self.model.files.copy()
+            self.model.clear()
+        file_items = self.model.files.copy() if append else []
 
-        # Create new file items
         new_items = [FileItem.from_path(path) for path in valid_files]
-
-        # Ensure all items are unchecked initially
         for item in new_items:
             item.checked = False
 
-        # Merge new items
         file_items.extend(new_items)
-
-        # Update model and UI
         self.prepare_file_table(file_items)
 
         if not self.skip_metadata_mode:
@@ -2485,6 +2478,8 @@ class MainWindow(QMainWindow):
         self.clear_metadata_view()
         self.set_status(f"{len(new_items)} files {'added' if append else 'loaded'} successfully.", color="green", auto_reset=True)
 
+    # Handlers (example usage)
+
     def handle_folder_select(self):
         index = self.folder_tree.currentIndex()
         if not index.isValid():
@@ -2492,7 +2487,8 @@ class MainWindow(QMainWindow):
 
         folder_path = self.dir_model.filePath(index)
         file_paths = glob.glob(os.path.join(folder_path, "*"))
-        self.load_files(file_paths, append=False)
+        with wait_cursor():
+            self.load_files(file_paths, append=False)
 
     def handle_browse(self):
         folder_path = QFileDialog.getExistingDirectory(self, "Select Folder", "/")
@@ -2500,47 +2496,8 @@ class MainWindow(QMainWindow):
             return
 
         file_paths = glob.glob(os.path.join(folder_path, "*"))
-        self.load_files(file_paths, append=False)
-
-    # def _handle_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers):
-    #     all_file_paths = []
-    #     for path in paths:
-    #         if os.path.isdir(path):
-    #             if modifiers & Qt.AltModifier:
-    #                 for root, dirs, files in os.walk(path):
-    #                     all_file_paths.extend(os.path.join(root, file) for file in files)
-    #             else:
-    #                 all_file_paths.extend(glob.glob(os.path.join(path, "*")))
-    #         else:
-    #             all_file_paths.append(path)
-
-    #     # Προετοιμασία για μελλοντική ερώτηση μέσω CustomMessageDialog
-    #     # Προς το παρόν πάντα κάνουμε replace.
-    #     append = False
-
-    #     # Μελλοντική προοπτική:
-    #     # append = CustomMessageDialog.question(
-    #     #     self, "Add Files", "Do you want to add these files to existing ones?",
-    #     #     yes_text="Add", no_text="Replace"
-    #     # )
-
-    #     self.load_files(all_file_paths, append=append)
-
-    def clear_file_table(self, show_placeholder: bool = True, placeholder_text: str = "Drag & Drop files or folder here to start") -> None:
-        """
-        Clears all file entries from the table and optionally shows or hides the placeholder.
-
-        Args:
-            show_placeholder (bool): Whether to show the placeholder after clearing.
-            placeholder_text (str): Optional custom text for the placeholder.
-        """
-        self.model.clear()
-
-        if hasattr(self.file_table_view, "set_placeholder_visible"):
-            if show_placeholder:
-                self.file_table_view.set_placeholder_visible(True, placeholder_text)
-            else:
-                self.file_table_view.set_placeholder_visible(False)
+        with wait_cursor():
+            self.load_files(file_paths, append=False)
 
     def _handle_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers):
         all_file_paths = []
@@ -2554,10 +2511,12 @@ class MainWindow(QMainWindow):
             else:
                 all_file_paths.append(path)
 
-        # Πλέον χρησιμοποιείς τον διάλογο:
-        append = CustomMessageDialog.question(
-            self, "Add Files", "Do you want to add these files to existing ones?",
-            yes_text="Add", no_text="Replace"
-        )
+        append = bool(self.model.files)
+        with wait_cursor():
+            self.load_files(all_file_paths, append=append)
 
-        self.load_files(all_file_paths, append=append)
+    # Removed methods (deprecated or replaced by above):
+    # - clear_file_table
+    # - show_file_table_placeholder
+    # - remove_file_table_placeholder
+    # - load_files_from_folder
