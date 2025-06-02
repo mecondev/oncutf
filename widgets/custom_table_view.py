@@ -24,15 +24,18 @@ from PyQt5.QtGui import QKeySequence, QDrag, QMouseEvent, QCursor, QPixmap, QPai
 try:
     # When imported normally from main application
     from .hover_delegate import HoverItemDelegate
+    print(1)
 except ImportError:
     # When run directly (for testing/debugging)
     import sys, os
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
     try:
         from widgets.hover_delegate import HoverItemDelegate
+        print(2)
     except ImportError:
         # Fallback when run directly from the widgets directory
         from hover_delegate import HoverItemDelegate
+        print(3)
 
 from PyQt5.QtCore import pyqtSignal
 from utils.logger_helper import get_logger
