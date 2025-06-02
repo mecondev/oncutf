@@ -2382,16 +2382,17 @@ class MainWindow(QMainWindow):
             folder_path = paths[0]
             logger.info(f"[Drop] Setting folder from drop: {folder_path}")
 
-            # Προσθήκη για ομοιομορφία με Select Folder
+            # Added for consistency with Select Folder
             self.clear_file_table("No folder selected")
             self.clear_metadata_view()
+            self.file_items = []  # Reset file items list completely
 
             # Update folder tree selection
             if hasattr(self.dir_model, "index"):
                 index = self.dir_model.index(folder_path)
                 self.folder_tree.setCurrentIndex(index)
 
-            # Ομοιομορφία με select folder
+            # Consistency with select folder
             self.current_folder_path = folder_path
             file_items = self.get_file_items_from_folder(folder_path)
             self.prepare_file_table(file_items)
