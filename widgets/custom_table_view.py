@@ -64,6 +64,15 @@ class CustomTableView(QTableView):
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True)  # Very important for drop functionality!
 
+        self.placeholder_label = QLabel(self)
+        self.placeholder_label.setAlignment(Qt.AlignCenter)
+        self.placeholder_label.setWordWrap(True)
+        self.placeholder_label.setStyleSheet("color: #777; font-size: 14px;")
+        self.placeholder_label.setPixmap(QPixmap(":/assets/File_Folder_Drag_Drop.png").scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.placeholder_label.setText("\nDrag & Drop\nfiles or folder\nhere to start")
+        self.placeholder_label.setTextInteractionFlags(Qt.NoTextInteraction)
+        self.placeholder_label.setVisible(False)
+
         # Selection state (custom selection model)
         self.selected_rows: set[int] = set()  # Keeps track of currently selected rows
         self.anchor_row: int | None = None    # Used for shift-click range selection
@@ -80,6 +89,20 @@ class CustomTableView(QTableView):
         if self.placeholder_icon.isNull():
             logger.warning("Placeholder icon could not be loaded. Displaying text only.")
             self.placeholder_message = "Drag & Drop files or folder here to start"
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if self.placeholder_label:
+            self.placeholder_label.resize(self.viewport().size())
+            self.placeholder_label.move(0, 0)
+
+    def set_placeholder_visible(self, visible: bool, text: str = None) -> None:
+        if visible:
+            if text:
+                self.placeholder_label.setText(text)
+            self.placeholder_label.show()
+        else:
+            self.placeholder_label.hide()
 
     def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
         """

@@ -1915,17 +1915,6 @@ class MainWindow(QMainWindow):
             self.metadata_tree_view.collapseAll()
             self.toggle_expand_button.setText("Expand All")
 
-    # def clear_file_table(self, message: str = "No folder selected") -> None:
-    #     """
-    #     Clears the file table and shows a placeholder message.
-    #     """
-    #     self.clear_metadata_view()
-    #     self.model.set_files([])  # reset model with empty list
-    #     self.show_file_table_placeholder(message)
-    #     self.header.setEnabled(False) # disable header
-
-    #     self.update_files_label()
-
     def show_file_table_placeholder(self, message: str = "No files loaded") -> None:
         """
         Displays a placeholder row in the file table with a message.
