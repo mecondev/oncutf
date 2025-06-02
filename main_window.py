@@ -2453,7 +2453,7 @@ class MainWindow(QMainWindow):
 
         if not valid_files:
             self.model.clear()
-            self.file_table_view.set_placeholder_visible(True, "No valid files found.")
+            # self.file_table_view.set_placeholder_visible(True, "No valid files found.")
             self.set_status("No valid files loaded.", color="orange", auto_reset=True)
             return
 
