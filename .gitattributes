@@ -1,0 +1,5 @@
+README linguist-documentation
+LICENSE linguist-documentation
+*.txt linguist-documentation
+*.md linguist-documentation
+*.py linguist-language=Python

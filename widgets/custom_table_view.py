@@ -48,21 +48,21 @@ class CustomTableView(QTableView):
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True)  # Very important for drop functionality!
 
-        # self.placeholder_label = QLabel(self.viewport())
-        # self.placeholder_label.setAlignment(Qt.AlignCenter)
-        # self.placeholder_label.setVisible(False)
+        self.placeholder_label = QLabel(self.viewport())
+        self.placeholder_label.setAlignment(Qt.AlignCenter)
+        self.placeholder_label.setVisible(False)
 
-        # # Load the placeholder icon
-        # icon_path = Path(__file__).parent.parent / "assets/File_Folder_Drag_Drop.png"
-        # self.placeholder_icon = QPixmap(str(icon_path))
+        # Load the placeholder icon
+        icon_path = Path(__file__).parent.parent / "assets/File_Folder_Drag_Drop.png"
+        self.placeholder_icon = QPixmap(str(icon_path))
 
-        # # Safe usage only if it's OK
-        # if not self.placeholder_icon.isNull():
-        #     scaled = self.placeholder_icon.scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        #     self.placeholder_label.setPixmap(scaled)
-        #     logger.debug(f"Successfully loaded placeholder icon from {icon_path}")
-        # else:
-        #     logger.warning("Placeholder icon could not be loaded.")
+        # Safe usage only if it's OK
+        if not self.placeholder_icon.isNull():
+            scaled = self.placeholder_icon.scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.placeholder_label.setPixmap(scaled)
+            logger.debug(f"Successfully loaded placeholder icon from {icon_path}")
+        else:
+            logger.warning("Placeholder icon could not be loaded.")
 
         # Selection state (custom selection model)
         self.selected_rows: set[int] = set()  # Keeps track of currently selected rows
@@ -77,25 +77,18 @@ class CustomTableView(QTableView):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        # if self.placeholder_label:
-        #     self.placeholder_label.resize(self.viewport().size())
-        #     self.placeholder_label.move(0, 0)
-
-    # def set_placeholder_visible(self, visible: bool) -> None:
-    #     """
-    #     Shows or hides the placeholder icon over the table (only image, no text).
-    #     """
-    #     if visible and not self.placeholder_icon.isNull():
-    #         self.placeholder_label.show()
-    #     else:
-    #         self.placeholder_label.hide()
+        if self.placeholder_label:
+            self.placeholder_label.resize(self.viewport().size())
+            self.placeholder_label.move(0, 0)
 
     def set_placeholder_visible(self, visible: bool) -> None:
         """
-        Dummy method to avoid AttributeError if still called externally.
-        Κρατάμε αυτήν τη μέθοδο για backward συμβατότητα, αλλά δεν κάνει τίποτα.
+        Shows or hides the placeholder icon over the table (only image, no text).
         """
-        pass
+        if visible and not self.placeholder_icon.isNull():
+            self.placeholder_label.show()
+        else:
+            self.placeholder_label.hide()
 
     def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
         """
