@@ -50,9 +50,7 @@ class CustomTableView(QTableView):
 
         self.placeholder_label = QLabel(self)
         self.placeholder_label.setAlignment(Qt.AlignCenter)
-        self.placeholder_label.setWordWrap(True)
         self.placeholder_label.setStyleSheet("color: #777; font-size: 14px;")
-        self.placeholder_label.setText("\nDrag & Drop\nfiles or folder\nhere to start")
         self.placeholder_label.setTextInteractionFlags(Qt.NoTextInteraction)
         self.placeholder_label.setVisible(False)
 
@@ -79,19 +77,23 @@ class CustomTableView(QTableView):
         # Used for right-click visual indication
         self.context_focused_row: int | None = None
 
-    # def resizeEvent(self, event):
-    #     super().resizeEvent(event)
-    #     if self.placeholder_label:
-    #         self.placeholder_label.resize(self.viewport().size())
-    #         self.placeholder_label.move(0, 0)
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if self.placeholder_label:
+            self.placeholder_label.resize(self.viewport().size())
+            self.placeholder_label.move(0, 0)
 
-    # def set_placeholder_visible(self, visible: bool, text: str = None) -> None:
-    #     if visible:
-    #         if text:
-    #             self.placeholder_label.setText(text)
-    #         self.placeholder_label.show()
-    #     else:
-    #         self.placeholder_label.hide()
+    def set_placeholder_visible(self, visible: bool) -> None:
+        """
+        Shows or hides the placeholder icon over the table (only image, no text).
+        """
+        if visible and not self.placeholder_icon.isNull():
+            self.placeholder_label.clear()
+            scaled = self.placeholder_icon.scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.placeholder_label.setPixmap(scaled)
+            self.placeholder_label.show()
+        else:
+            self.placeholder_label.hide()
 
     def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
         """
@@ -417,48 +419,6 @@ class CustomTableView(QTableView):
         if model is not None:
             self.selected_rows = set(range(start_row, end_row + 1))
             self.selection_changed.emit(list(self.selected_rows))
-
-    def paintEvent(self, event):
-        super().paintEvent(event)
-        model = self.model()
-        # Display placeholder if there are no files or the model is empty
-        show_placeholder = False
-        if model is None:
-            show_placeholder = True
-        elif hasattr(model, "files"):
-            # FileTableModel
-            show_placeholder = not getattr(model, "files", None)
-        elif model.rowCount() == 0:
-            show_placeholder = True
-        elif model.rowCount() == 1 and all(model.data(model.index(0, c)) in (None, "", "No files loaded", "No folder selected") for c in range(model.columnCount())):
-            show_placeholder = True
-
-        if show_placeholder:
-            painter = QPainter(self.viewport())
-            rect = self.viewport().rect()
-            center_x = rect.width() // 2
-            center_y = rect.height() // 2
-
-            # Icon
-            icon_size = 160
-            if not self.placeholder_icon.isNull():
-                icon = self.placeholder_icon.scaled(icon_size, icon_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                icon_x = center_x - icon.width() // 2
-                icon_y = center_y - icon.height() // 2
-                painter.drawPixmap(icon_x, icon_y, icon)
-
-            # Message
-            font = QFont(self.font())
-            font.setPointSize(14)
-            painter.setFont(font)
-            painter.setPen(QColor("#888888"))
-            metrics = painter.fontMetrics()
-            text = self.placeholder_message
-            text_width = metrics.horizontalAdvance(text)
-            text_x = center_x - text_width // 2
-            text_y = center_y + icon_size // 2 - 80
-            painter.drawText(text_x, text_y, text)
-            painter.end()
 
     def dragEnterEvent(self, event):
         logger.debug(f"[DragDrop] dragEnterEvent! formats={event.mimeData().formats()}")

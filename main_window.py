@@ -212,8 +212,6 @@ class MainWindow(QMainWindow):
         self.file_table_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.file_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.model = FileTableModel(parent_window=self)
-        # self.show_file_table_placeholder("No folder selected")
-
 
         # Header setup
         self.header = InteractiveHeader(Qt.Horizontal, self.file_table_view, parent_window=self)
@@ -2515,8 +2513,3 @@ class MainWindow(QMainWindow):
         with wait_cursor():
             self.load_files(all_file_paths, append=append)
 
-    # Removed methods (deprecated or replaced by above):
-    # - clear_file_table
-    # - show_file_table_placeholder
-    # - remove_file_table_placeholder
-    # - load_files_from_folder
