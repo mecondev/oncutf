@@ -444,6 +444,7 @@ class MainWindow(QMainWindow):
 
         # Connect folder_tree for drag & drop operations
         self.folder_tree.files_dropped.connect(self.load_files_from_dropped_items)
+        self.folder_tree.activated.connect(self.handle_folder_select)
 
         self.file_table_view.clicked.connect(self.on_table_row_clicked)
         self.file_table_view.selection_changed.connect(self.update_preview_from_selection)
@@ -1427,54 +1428,103 @@ class MainWindow(QMainWindow):
 
     def update_preview_tables_from_pairs(self, name_pairs: list[tuple[str, str]]) -> None:
         """
-        Updates the UI preview tables (original names, new names, status icons)
-        using the provided list of (old_name, new_name) tuples.
+        Updates all three preview tables:
+        - Old name table (left)
+        - New name table (center)
+        - Status icon table (right)
 
-        This method assumes that the preview_map has already been updated and
-        only reflects the changes in the visual table views.
+        It also computes the status of each rename (unchanged, invalid, duplicate, valid),
+        updates the preview_map where needed, and renders the status label at the bottom.
 
         Args:
-            name_pairs (list[tuple[str, str]]): List of tuples containing the
-                original name and the newly computed preview name.
+            name_pairs (list[tuple[str, str]]): List of (old_name, new_name) pairs
+                generated during preview generation.
         """
-        self.preview_table.blockSignals(True)
-        self.preview_table.setUpdatesEnabled(False)
+        # Clear all preview tables before updating
+        self.preview_old_name_table.setRowCount(0)
+        self.preview_new_name_table.setRowCount(0)
+        self.preview_icon_table.setRowCount(0)
 
-        self.preview_table.setRowCount(len(name_pairs))
+        if not name_pairs:
+            self.status_label.setText("No files selected.")
+            return
 
-        icon_check = QIcon(self.checked_pixmap)
-        icon_warn = QIcon(self.warning_pixmap)
+        # Calculate appropriate width for consistent column size
+        all_names = [name for pair in name_pairs for name in pair]
+        max_width = max((self.fontMetrics().horizontalAdvance(name) for name in all_names), default=250)
+        adjusted_width = max(326, max_width) + 100
+        self.preview_old_name_table.setColumnWidth(0, adjusted_width)
+        self.preview_new_name_table.setColumnWidth(0, adjusted_width)
+
+        # Precompute duplicates
+        seen, duplicates = set(), set()
+        for _, new_name in name_pairs:
+            if new_name in seen:
+                duplicates.add(new_name)
+            else:
+                seen.add(new_name)
+
+        # Initialize status counters
+        stats = {"unchanged": 0, "invalid": 0, "duplicate": 0, "valid": 0}
 
         for row, (old_name, new_name) in enumerate(name_pairs):
-            # Original name (Column 0)
-            item_old = QTableWidgetItem(old_name)
-            item_old.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
-            self.preview_table.setItem(row, 0, item_old)
+            self.preview_old_name_table.insertRow(row)
+            self.preview_new_name_table.insertRow(row)
+            self.preview_icon_table.insertRow(row)
 
-            # New name (Column 1)
-            item_new = QTableWidgetItem(new_name)
-            item_new.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
-            self.preview_table.setItem(row, 1, item_new)
+            # Create table items
+            old_item = QTableWidgetItem(old_name)
+            new_item = QTableWidgetItem(new_name)
 
-            # Status icon (Column 2)
-            if not new_name or old_name == new_name:
-                # No change, empty or ineffective
-                icon = icon_warn
-                tooltip = "No rename will be applied"
+            # Determine rename status
+            if old_name == new_name:
+                status = "unchanged"
+                tooltip = "Unchanged filename"
             else:
-                icon = icon_check
-                tooltip = "Rename will be applied"
+                is_valid, _ = self.filename_validator.is_valid_filename(new_name)
+                if not is_valid:
+                    status = "invalid"
+                    tooltip = "Invalid filename"
+                elif new_name in duplicates:
+                    status = "duplicate"
+                    tooltip = "Duplicate name"
+                else:
+                    status = "valid"
+                    tooltip = "Ready to rename"
 
-            item_icon = QTableWidgetItem()
-            item_icon.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
-            item_icon.setIcon(icon)
-            item_icon.setToolTip(tooltip)
-            self.preview_table.setItem(row, 2, item_icon)
+            # Fetch file item and enrich tooltip if metadata is missing
+            file_item = self.preview_map.get(new_name)
+            if file_item and not getattr(file_item, "metadata", None):
+                tooltip += " [No metadata available]"
 
-        self.preview_table.setUpdatesEnabled(True)
-        self.preview_table.blockSignals(False)
+            # Update status counts
+            stats[status] += 1
 
+            # Prepare status icon
+            icon_item = QTableWidgetItem()
+            icon_path = self.icon_paths.get(status)
+            if icon_path:
+                icon = QIcon(QPixmap(icon_path).scaled(14, 14, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                icon_item.setIcon(icon)
+            icon_item.setToolTip(tooltip)
 
+            # Insert items into corresponding tables
+            self.preview_old_name_table.setItem(row, 0, old_item)
+            self.preview_new_name_table.setItem(row, 0, new_item)
+            self.preview_icon_table.setItem(row, 0, icon_item)
+
+        # Render bottom status summary (valid, unchanged, invalid, duplicate)
+        status_msg = (
+            f"<img src='{self.icon_paths['valid']}' width='14' height='14' style='vertical-align: middle';/>"
+            f"<span style='color:#ccc;'> Valid: {stats['valid']}</span>&nbsp;&nbsp;&nbsp;"
+            f"<img src='{self.icon_paths['unchanged']}' width='14' height='14' style='vertical-align: middle';/>"
+            f"<span style='color:#ccc;'> Unchanged: {stats['unchanged']}</span>&nbsp;&nbsp;&nbsp;"
+            f"<img src='{self.icon_paths['invalid']}' width='14' height='14' style='vertical-align: middle';/>"
+            f"<span style='color:#ccc;'> Invalid: {stats['invalid']}</span>&nbsp;&nbsp;&nbsp;"
+            f"<img src='{self.icon_paths['duplicate']}' width='14' height='14' style='vertical-align: middle';/>"
+            f"<span style='color:#ccc;'> Duplicates: {stats['duplicate']}</span>"
+        )
+        self.status_label.setText(status_msg)
 
     def on_metadata_progress(self, current: int, total: int) -> None:
         """
