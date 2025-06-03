@@ -776,52 +776,6 @@ class MainWindow(QMainWindow):
 
         return False
 
-    def handle_folder_select(self) -> None:
-        """
-        It loads files from the folder currently selected in the folder tree.
-        If the Ctrl key is held, metadata scanning is skipped.
-
-        Triggered when the user clicks the 'Select Folder' button.
-        """
-        self.last_action = "folder_select"
-
-        index = self.folder_tree.currentIndex()
-        if not index.isValid():
-            logger.warning("No folder selected in folder tree.")
-            return
-
-        folder_path = self.dir_model.filePath(index)
-
-        if self.should_skip_folder_reload(folder_path):
-            return  # skip if user pressed Cancel
-        else:
-            force_reload = True  # user pressed Reload
-
-        self.clear_file_table("No folder selected")
-        self.clear_metadata_view()
-
-        # Load the full directory listing
-        all_files = glob.glob(os.path.join(folder_path, "*"))
-        valid_files = [
-            f for f in all_files
-            if os.path.splitext(f)[1][1:].lower() in ALLOWED_EXTENSIONS
-        ]
-
-        skip_metadata, use_extended = self.determine_metadata_mode()
-        logger.debug(f"[Modifiers] skip_metadata={skip_metadata}, use_extended={use_extended}")
-        self.force_extended_metadata = use_extended
-        self.skip_metadata_mode = skip_metadata
-
-        is_large = len(valid_files) > LARGE_FOLDER_WARNING_THRESHOLD
-        logger.info(
-            f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata}, extended={use_extended}, "
-            f"(large={is_large}, default={DEFAULT_SKIP_METADATA})",
-            extra={"dev_only": True}
-        )
-        logger.warning(f'-> skip_metadata passed to loader: {skip_metadata}')
-        self.load_files_from_folder(folder_path, skip_metadata=skip_metadata, force=force_reload)
-
-
     def get_file_items_from_folder(self, folder_path: str) -> list[FileItem]:
         all_files = glob.glob(os.path.join(folder_path, "*"))
         file_items = []
@@ -2395,3 +2349,45 @@ class MainWindow(QMainWindow):
                 self.folder_tree.setCurrentIndex(index)
                 self.folder_tree.scrollTo(index)
 
+    def handle_folder_select(self) -> None:
+        """
+        It loads files from the folder currently selected in the folder tree.
+        If the Ctrl key is held, metadata scanning is skipped.
+
+        Triggered when the user clicks the 'Select Folder' button.
+        """
+        self.last_action = "folder_select"
+
+        index = self.folder_tree.currentIndex()
+        if not index.isValid():
+            logger.warning("No folder selected in folder tree.")
+            return
+
+        folder_path = self.dir_model.filePath(index)
+
+        if self.should_skip_folder_reload(folder_path):
+            return
+        else:
+            force_reload = True
+
+        self.clear_file_table("No folder selected")
+        self.clear_metadata_view()
+
+        file_items = self.get_file_items_from_folder(folder_path)
+        is_large = len(file_items) > LARGE_FOLDER_WARNING_THRESHOLD
+
+        skip_metadata, use_extended = self.determine_metadata_mode()
+        logger.debug(f"[Modifiers] skip_metadata={skip_metadata}, use_extended={use_extended}")
+        self.force_extended_metadata = use_extended
+        self.skip_metadata_mode = skip_metadata
+
+        logger.info(
+            f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata}, extended={use_extended}, "
+            f"(large={is_large}, default={DEFAULT_SKIP_METADATA})",
+            extra={"dev_only": True}
+        )
+        logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
+
+        self.current_folder_path = folder_path
+        paths = [item.full_path for item in file_items]
+        self.load_files_from_paths(paths, clear=True)
