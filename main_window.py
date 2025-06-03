@@ -2191,6 +2191,32 @@ class MainWindow(QMainWindow):
         from PyQt5.QtWidgets import QApplication
         QApplication.restoreOverrideCursor()
 
+    def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
+        """
+        Prepares the application state and loads files from the specified folder
+        into the file table.
+
+        This helper consolidates common logic used in folder-based file loading
+        (e.g., from folder select, browse, or dropped folder).
+
+        Args:
+            folder_path (str): Absolute path to the folder to load files from.
+            clear (bool): Whether to clear the file table before loading. Defaults to True.
+
+        Returns:
+            list[str]: A list of file paths (full paths) that were successfully loaded.
+        """
+        self.clear_file_table("No folder selected")
+        self.clear_metadata_view()
+
+        file_items = self.get_file_items_from_folder(folder_path)
+        self.current_folder_path = folder_path
+
+        paths = [item.full_path for item in file_items]
+        self.load_files_from_paths(paths, clear=clear)
+
+        return paths
+
     def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> None:
         """
         Loads a mix of files and folders into the file table.
@@ -2280,21 +2306,19 @@ class MainWindow(QMainWindow):
             folder_path = paths[0]
             logger.info(f"[Drop] Setting folder from drop: {folder_path}")
 
-            self.clear_file_table("No folder selected")
-            self.clear_metadata_view()
+            # 🔁 Centralized loading logic
+            self.prepare_folder_load(folder_path)
 
+            # ✅ Update folder tree selection (UI logic)
             if hasattr(self.dir_model, "index"):
                 index = self.dir_model.index(folder_path)
                 self.folder_tree.setCurrentIndex(index)
 
-            self.current_folder_path = folder_path
-            file_items = self.get_file_items_from_folder(folder_path)
-            self.prepare_file_table(file_items)
+            # ✅ Trigger label update and ensure repaint
             self.file_table_view.viewport().update()
-            self.clear_metadata_view()
             self.update_files_label()
         else:
-            # ➕ Χρησιμοποιούμε την κοινή ροή για απλά dropped αρχεία
+            # Load directly dropped files
             self.load_files_from_paths(paths, clear=True)
 
     def handle_browse(self) -> None:
@@ -2317,13 +2341,13 @@ class MainWindow(QMainWindow):
         else:
             force_reload = True  # user pressed Reload
 
-        self.clear_file_table("No folder selected")
-        self.clear_metadata_view()
+        # -- Prepare + load files using helper
+        paths = self.prepare_folder_load(folder_path)
 
-        # --- ✅ Χρήση της get_file_items_from_folder για count και πληροφορίες
-        file_items = self.get_file_items_from_folder(folder_path)
-        is_large = len(file_items) > LARGE_FOLDER_WARNING_THRESHOLD
+        # -- Large folder warning check
+        is_large = len(paths) > LARGE_FOLDER_WARNING_THRESHOLD
 
+        # -- Metadata scan flags
         skip_metadata, use_extended = self.determine_metadata_mode()
         logger.debug(f"[Modifiers] skip_metadata={skip_metadata}, use_extended={use_extended}")
         self.force_extended_metadata = use_extended
@@ -2335,14 +2359,9 @@ class MainWindow(QMainWindow):
             f"(large={is_large}, default={DEFAULT_SKIP_METADATA})",
             extra={"dev_only": True}
         )
-
         logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
 
-        # --- ✅ Ενοποιημένη λογική εισαγωγής αρχείων
-        self.current_folder_path = folder_path
-        paths = [item.file_path for item in file_items]
-        self.load_files_from_paths(paths, clear=True)
-
+        # -- Update tree selection (optional)
         if hasattr(self, "dir_model") and hasattr(self, "folder_tree"):
             index = self.dir_model.index(folder_path)
             if index.isValid():
@@ -2370,12 +2389,13 @@ class MainWindow(QMainWindow):
         else:
             force_reload = True
 
-        self.clear_file_table("No folder selected")
-        self.clear_metadata_view()
+        # -- Prepare + load files using helper
+        paths = self.prepare_folder_load(folder_path)
 
-        file_items = self.get_file_items_from_folder(folder_path)
-        is_large = len(file_items) > LARGE_FOLDER_WARNING_THRESHOLD
+        # -- Large folder warning check
+        is_large = len(paths) > LARGE_FOLDER_WARNING_THRESHOLD
 
+        # -- Metadata scan flags
         skip_metadata, use_extended = self.determine_metadata_mode()
         logger.debug(f"[Modifiers] skip_metadata={skip_metadata}, use_extended={use_extended}")
         self.force_extended_metadata = use_extended
@@ -2387,7 +2407,3 @@ class MainWindow(QMainWindow):
             extra={"dev_only": True}
         )
         logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
-
-        self.current_folder_path = folder_path
-        paths = [item.full_path for item in file_items]
-        self.load_files_from_paths(paths, clear=True)
