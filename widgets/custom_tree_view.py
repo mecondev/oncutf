@@ -81,7 +81,8 @@ class CustomTreeView(QTreeView):
     while preserving internal drag & drop functionality.
     """
     # Signal emitted when files are dropped onto the tree view
-    files_dropped = pyqtSignal(list, object)  # list of paths and keyboard modifiers
+    folder_dropped = pyqtSignal(list, object) # list of paths and keyboard modifiers
+    folder_selected = pyqtSignal() # Signal emitted when Return/Enter is pressed
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -292,8 +293,5 @@ class CustomTreeView(QTreeView):
         Pressing Enter or Return triggers the folder load action (like Select Folder).
         """
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
-            if hasattr(self.parent(), "handle_folder_select"):
-                self.parent().handle_folder_select()
-                return
-        super().keyPressEvent(event)
-
+            logger.debug("[TreeView] Enter/Return key pressed, triggering folder_Selected.")
+            self.folder_selected.emit()
