@@ -2331,10 +2331,6 @@ class MainWindow(QMainWindow):
         """
         Called when user drops files or folders onto file table view.
         Imports the dropped files into the current view.
-
-        Args:
-            paths (list[str]): List of file/folder paths dropped
-            modifiers (Qt.KeyboardModifiers): Keyboard modifiers held during drop
         """
         if not paths:
             logger.info("[Drop] No files dropped in table.")
@@ -2342,72 +2338,46 @@ class MainWindow(QMainWindow):
 
         logger.info(f"[Drop] {len(paths)} file(s)/folder(s) dropped in table view")
 
-        # If a folder is dropped, set it as the current folder
         if len(paths) == 1 and os.path.isdir(paths[0]):
             folder_path = paths[0]
             logger.info(f"[Drop] Setting folder from drop: {folder_path}")
 
-            # Προσθήκη για ομοιομορφία με Select Folder
             self.clear_file_table("No folder selected")
             self.clear_metadata_view()
 
-            # Update folder tree selection
             if hasattr(self.dir_model, "index"):
                 index = self.dir_model.index(folder_path)
                 self.folder_tree.setCurrentIndex(index)
 
-            # Ομοιομορφία με select folder
             self.current_folder_path = folder_path
             file_items = self.get_file_items_from_folder(folder_path)
             self.prepare_file_table(file_items)
-            self.file_table_view.viewport().update()  # Force repaint to hide placeholder if files exist
+            self.file_table_view.viewport().update()
             self.clear_metadata_view()
             self.update_files_label()
+        else:
+            # ➕ Χρησιμοποιούμε την κοινή ροή για απλά dropped αρχεία
+            self.load_files_from_paths(paths, clear=True)
+
+    def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> None:
+        """
+        Loads the given list of file paths into the file table.
+
+        Args:
+            file_paths: List of absolute file paths.
+            clear: Whether to clear the existing table before loading.
+        """
+        if clear:
+            self.model.clear()
+
+        if not file_paths:
+            self.file_table_view.set_placeholder_visible(True)
             return
 
-        # Otherwise, add the files to the current view if possible
-        file_items = []
-        current_filenames = {f.filename for f in self.model.files} if hasattr(self.model, "files") else set()
+        file_items = [FileItem(path) for path in file_paths if is_allowed_file(path)]
 
-        # Filter only files, not directories
-        file_paths = [p for p in paths if os.path.isfile(p)]
-
-        for path in file_paths:
-            filename = os.path.basename(path)
-            # Only add if not already in the table
-            if filename not in current_filenames:
-                # Extract extension
-                _, ext = os.path.splitext(filename)
-                extension = ext[1:].lower() if ext.startswith('.') else ext.lower()
-
-                # Get modification time
-                try:
-                    modified = datetime.datetime.fromtimestamp(os.path.getmtime(path)).strftime("%Y-%m-%d %H:%M:%S")
-                except Exception as e:
-                    logger.warning(f"[Drop] Failed to get modification time for {path}: {e}")
-                    modified = "Unknown"
-
-                file_item = FileItem(filename, extension, modified, full_path=path)
-                file_items.append(file_item)
-
-        if not file_items:
-            logger.info("[Drop] No new files to add to table.")
-            return
-
-        # Add new files to the model
-        if hasattr(self.model, "add_files"):
-            logger.info(f"[Drop] Adding {len(file_items)} new file(s) to table")
-            self.model.add_files(file_items)
-
-            # Optionally load metadata based on modifiers
-            self.force_extended_metadata = bool(int(modifiers) & int(Qt.ShiftModifier))
-            logger.debug(f"[Modifiers] Shift held → use_extended={self.force_extended_metadata}")
-
-            if self.force_extended_metadata:
-                self.start_metadata_scan_for_items(file_items)
-
-            # Update UI
-            self.file_table_view.viewport().update()
-            self.update_files_label()
-            self.generate_preview_names()
+        self.model.files = file_items
+        self.model.layoutChanged.emit()
+        self.file_table_view.set_placeholder_visible(False)
+        self.file_table_view.scrollToTop()
 
