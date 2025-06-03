@@ -858,7 +858,6 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(100, lambda: self.start_metadata_scan([f.full_path for f in file_items if f.full_path]))
 
     def start_metadata_scan(self, file_paths: list[str]) -> None:
-        cursor_set = self.show_wait_cursor_if_many_files(len(file_paths), threshold=100)
         """
         Starts the metadata scan and shows the waiting dialog.
 
@@ -871,24 +870,20 @@ class MainWindow(QMainWindow):
         logger.warning("[DEBUG] start_metadata_scan CALLED")
         logger.debug(f"[MetadataScan] Launch with force_extended = {self.force_extended_metadata}")
 
-        QApplication.setOverrideCursor(Qt.WaitCursor)  # type: ignore
+        with wait_cursor():
+            is_extended = self.force_extended_metadata
+            self.loading_dialog = MetadataWaitingDialog(self, is_extended=is_extended)
+            self.loading_dialog.set_status("Reading metadata...")
+            self.loading_dialog.set_filename("")
+            self.loading_dialog.set_progress(0, len(file_paths))
 
-        is_extended = self.force_extended_metadata
-        self.loading_dialog = MetadataWaitingDialog(self, is_extended=is_extended)
-        self.loading_dialog.set_status("Reading metadata...")
-        self.loading_dialog.set_filename("")
-        self.loading_dialog.set_progress(0, len(file_paths))
+            # Connect cancel (ESC or manual close) to cancel logic
+            self.loading_dialog.rejected.connect(self.cancel_metadata_loading)
 
-        # Connect cancel (ESC or manual close) to cancel logic
-        self.loading_dialog.rejected.connect(self.cancel_metadata_loading)
+            self.loading_dialog.show()
+            QApplication.processEvents()
 
-        self.loading_dialog.show()
-        QApplication.processEvents()
-
-        self.load_metadata_in_thread(file_paths)
-
-        if cursor_set:
-            QTimer.singleShot(100, self.restore_cursor)
+            self.load_metadata_in_thread(file_paths)
 
     def load_metadata_in_thread(self, file_paths: list[str]) -> None:
         """
@@ -938,16 +933,9 @@ class MainWindow(QMainWindow):
         self.metadata_thread.start()
 
     def start_metadata_scan_for_items(self, items: list[FileItem]) -> None:
-        cursor_set = self.show_wait_cursor_if_many_files(len(items), threshold=100)
         """
-        Initiates threaded metadata scanning for a specific list of FileItems.
-
-        This is a wrapper around the existing start_metadata_scan() method, converting
-        FileItem objects into file paths. It is used when metadata should be loaded for
-        a subset of files (e.g. from right-click menu).
-
-        Parameters:
-            items (list[FileItem]): List of files to scan metadata for.
+        Initiates threaded metadata scanning for μια συγκεκριμένη λίστα από FileItems.
+        Χρησιμοποιεί το context manager wait_cursor() αντί για show_wait_cursor_if_many_files και restore_cursor.
         """
         file_paths = [item.full_path for item in items if item.full_path]
         if not file_paths:
@@ -955,10 +943,8 @@ class MainWindow(QMainWindow):
             return
 
         self.set_status(f"Loading metadata for {len(file_paths)} file(s)...", color="blue")
-        QTimer.singleShot(200, lambda: self.start_metadata_scan(file_paths))
-
-        if cursor_set:
-            QTimer.singleShot(100, self.restore_cursor)
+        with wait_cursor():
+            QTimer.singleShot(200, lambda: self.start_metadata_scan(file_paths))
 
     def shortcut_load_metadata(self) -> None:
         """
@@ -2429,3 +2415,4 @@ class MainWindow(QMainWindow):
             extra={"dev_only": True}
         )
         logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
+
