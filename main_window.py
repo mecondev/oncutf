@@ -444,7 +444,6 @@ class MainWindow(QMainWindow):
 
         # Connect folder_tree for drag & drop operations
         self.folder_tree.files_dropped.connect(self.load_files_from_dropped_items)
-        self.folder_tree.activated.connect(self.handle_folder_select)
 
         self.file_table_view.clicked.connect(self.on_table_row_clicked)
         self.file_table_view.selection_changed.connect(self.update_preview_from_selection)

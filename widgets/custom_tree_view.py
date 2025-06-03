@@ -285,3 +285,15 @@ class CustomTreeView(QTreeView):
         logger.debug("[DragDrop] dragLeaveEvent on tree view, forcing cleanup.")
         self._complete_drag_cleanup()
         event.ignore()
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        """
+        Handles key press events in the tree view.
+        Pressing Enter or Return triggers the folder load action (like Select Folder).
+        """
+        if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            if hasattr(self.parent(), "handle_folder_select"):
+                self.parent().handle_folder_select()
+                return
+        super().keyPressEvent(event)
+
