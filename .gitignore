@@ -80,3 +80,19 @@ backup_oncutf.sh
 # AI and development aids
 # ========================
 .ai/          # AI conversation history and prompts
+
+# Προσθήκες για το oncutf project
+.cursorignore
+*.sh
+/ai
+/continue
+# Προσθήκη κοινών φακέλων/αρχείων που δεν θέλουμε στο git
+__pycache__/
+*.pyc
+.DS_Store
+.env
+.idea/
+.vscode/
+*.bak
+*.swp
+# Τέλος προσθηκών
