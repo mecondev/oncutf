@@ -94,9 +94,11 @@ class CustomTableView(QTableView):
         assert self.model() is not None, "Cannot show placeholder: model has not been set on CustomTableView"
 
         if visible and not self.placeholder_icon.isNull():
+            self.placeholder_label.raise_()
             self.placeholder_label.show()
         else:
             self.placeholder_label.hide()
+            self.viewport().update()
 
     def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
         """

@@ -2254,9 +2254,17 @@ class MainWindow(QMainWindow):
         self.model.files = file_items
         self.model.layoutChanged.emit()
         print("[DEBUG] Header class after model set:", type(self.file_table_view.horizontalHeader()))
+        self.file_table_view.setHorizontalHeader(self.header)
 
         self.file_table_view.set_placeholder_visible(len(file_items) == 0)
         self.file_table_view.scrollToTop()
+        self.file_table_view.setSortingEnabled(True)
+        self.file_table_view.horizontalHeader().setEnabled(True)
+        self.header.setSectionsClickable(True)
+        self.header.setSortIndicatorShown(True)
+        self.file_table_view.sortByColumn(1, Qt.AscendingOrder)
+        self.file_table_view.clearSelection()
+
 
     def load_metadata_from_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
