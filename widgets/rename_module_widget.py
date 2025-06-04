@@ -104,7 +104,7 @@ class RenameModuleWidget(QWidget):
     def connect_signals_for_module(self, module_widget: QWidget) -> None:
         if self.parent_window and hasattr(module_widget, "updated"):
             try:
-                self.updated.connect(self.parent_window.generate_preview_names)
+                self.updated.connect(lambda *_: self.parent_window.request_preview_update())
                 module_widget.updated.connect(lambda _: self.updated.emit(self))
                 logger.info("[RenameModuleWidget] Connected updated -> generate_preview_names (with module ref)")
 

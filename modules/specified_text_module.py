@@ -14,6 +14,7 @@ import os
 from typing import Optional
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit
 from PyQt5.QtCore import pyqtSignal
+from modules.base_module import BaseRenameModule
 from utils.validation import is_valid_filename_text
 
 # initialize logger
@@ -21,7 +22,7 @@ from utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
 
-class SpecifiedTextModule(QWidget):
+class SpecifiedTextModule(BaseRenameModule):
     """
     A module for inserting user-defined text in filenames.
     """
@@ -40,26 +41,35 @@ class SpecifiedTextModule(QWidget):
         self.text_input.setPlaceholderText("Enter custom text")
         self.text_input.setMaxLength(128)
         self.text_input.setMaximumHeight(24)
+        self._last_text = ""
         self.text_input.textChanged.connect(self.validate_input)
 
         layout.addWidget(self.text_label)
         layout.addWidget(self.text_input)
 
+
     def validate_input(self, text: str) -> None:
-        """
-        Validates the user input text and updates visual feedback.
-        Emits `updated` signal to notify changes.
+        """Validate and emit only on changes.
 
         Args:
             text (str): The text entered by the user.
         """
-        if is_valid_filename_text(text):
-            self.text_input.setStyleSheet("")
-        else:
-            self.text_input.setStyleSheet("border: 1px solid red;")
+        if self._is_validating:
+            return
 
-        logger.info("[SpecifiedTextModule] Emitting 'updated' signal.")
-        self.updated.emit(self)
+        self._is_validating = True
+
+        def apply_style():
+            if is_valid_filename_text(text):
+                self.text_input.setStyleSheet("")
+            else:
+                self.text_input.setStyleSheet("border: 1px solid red;")
+
+        self.block_signals_while(self.text_input, apply_style)
+        self.emit_if_changed(text)
+
+        self._is_validating = False
+
 
     def get_data(self) -> dict:
         """

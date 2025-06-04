@@ -13,13 +13,14 @@ from typing import Optional
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtCore import pyqtSignal, Qt, QTimer
+from modules.base_module import BaseRenameModule
 
 # initialize logger
 from utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
 
-class CounterModule(QWidget):
+class CounterModule(BaseRenameModule):
     """
     A widget for inserting an incrementing counter in filenames.
     Displays each row as: [Label (fixed width, right-aligned)] [input field] [btn_minus] [btn_plus]
@@ -27,7 +28,7 @@ class CounterModule(QWidget):
 
     updated = pyqtSignal(object)
 
-    LABEL_WIDTH = 120  # pixels
+    LABEL_WIDTH = 100  # pixels
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
@@ -54,12 +55,23 @@ class CounterModule(QWidget):
             "Increment By", initial_value=1, min_val=1
         )
         layout.addLayout(row3)
+        # Connect inputs to update signal (debounced)
+        self.start_input.textChanged.connect(self._on_value_change)
+        self.padding_input.textChanged.connect(self._on_value_change)
+        self.increment_input.textChanged.connect(self._on_value_change)
 
         QTimer.singleShot(0, self._emit_initial_update)
 
     def _emit_initial_update(self):
         logger.info(f"[CounterModule] Emitting initial update with data: {self.get_data()}")
         self.updated.emit(self)
+
+    def _on_value_change(self) -> None:
+        """
+        Triggered when any of the spinboxes change.
+        Emits update only if data has truly changed.
+        """
+        self.emit_if_changed(str(self.get_data()))
 
     def _create_row(
         self,
