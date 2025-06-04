@@ -2187,18 +2187,6 @@ class MainWindow(QMainWindow):
 
         super().closeEvent(event)
 
-    def show_wait_cursor_if_many_files(self, count, threshold=100):
-        if count >= threshold:
-            from PyQt5.QtWidgets import QApplication
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            QApplication.processEvents()
-            return True
-        return False
-
-    def restore_cursor(self):
-        from PyQt5.QtWidgets import QApplication
-        QApplication.restoreOverrideCursor()
-
     def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
         """
         Prepares the application state and loads files from the specified folder
