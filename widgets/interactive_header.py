@@ -31,7 +31,9 @@ class InteractiveHeader(QHeaderView):
         self.setSectionsClickable(True)
         self.setHighlightSections(True)
         self.setSortIndicatorShown(True)
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        # self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.contextMenuEvent)
+
         self.header_enabled = True
 
         self._press_pos: QPoint = QPoint()
