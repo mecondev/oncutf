@@ -95,6 +95,7 @@ class MainWindow(QMainWindow):
         self._metadata_worker_cancel_requested = False
         self.metadata_loaded_paths = set()  # full paths with metadata
         self.metadata_icon_map = load_metadata_icons()
+        self.preview_icons = load_preview_status_icons()
         self.force_extended_metadata = False
         self.skip_metadata_mode = DEFAULT_SKIP_METADATA # Keeps state across folder reloads
         self.metadata_loader = MetadataLoader()
