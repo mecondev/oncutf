@@ -1,99 +1,151 @@
-# ========================
-# Python artifacts
-# ========================
+# =======================================
+# 🚀 General Python Files
+# =======================================
+
+# Byte-compiled Python files
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
-*.so
 *.egg-info/
-build/
-dist/
 
-# ========================
-# Virtual environments
-# ========================
+# Backup or temp Python files
+*.bak
+*.backup
+*.tmp
+
+# Compiled shared objects (Linux extensions)
+*.so
+
+# =======================================
+# 📦 Virtual Environments & Dependencies
+# =======================================
+
+# Local virtualenv folders
 .venv/
 venv/
 env/
-ENV/
 
-# ========================
-# OS-specific junk
-# ========================
-.DS_Store
-Thumbs.db
-ehthumbs.db
-desktop.ini
+# Python environment variables (secrets, tokens)
+.env
+.env.*
 
-# ========================
-# Editor / IDE configs
-# ========================
+# Pipenv and poetry files
+Pipfile.lock
+poetry.lock
+
+# =======================================
+# 🔧 Build, dist and packaging
+# =======================================
+
+build/
+dist/
+*.egg-info/
+.eggs/
+*.spec
+
+# Archives & tarballs
+*.tar.gz
+*.zip
+*.tar
+*.rar
+
+# Backup tarballs
+backups/
+*.backup.*
+*.bak.tar.gz
+
+# =======================================
+# 🧪 Test-related folders and outputs
+# =======================================
+
+test/__pycache__/
+test/output/
+test/logs/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# =======================================
+# 📋 Scripts
+# =======================================
+
+# Shell and auxiliary scripts
+*.sh
+*.command
+
+# AI-related or generated assets
+*.ai
+.ai/
+*.ipynb
+.ipynb_checkpoints/
+
+# =======================================
+# 🖥️ IDEs / Editor folders
+# =======================================
+
+# VSCode
 .vscode/
+
+# JetBrains / PyCharm
 .idea/
-.cursorignore
-*.sublime-project
+*.iml
+
+# Sublime
 *.sublime-workspace
+*.sublime-project
 
-# ========================
-# Logs and runtime
-# ========================
+# cursor
+.cursorignore
+
+# Emacs / Vim
+*~
+*.swp
+*.swo
+
+# =======================================
+# 🪵 Logs
+# =======================================
+
 *.log
-*.tmp
+debug.log
+logs/
 
-# ========================
-# Logs folder (fine control)
-# ========================
-logs/*.log
-logs/*.tmp
-logs/*.json
+# =======================================
+# 🖼️ GUI-related files (PyQt5, resources)
+# =======================================
 
-# Allow milestone logs and folder itself
-!logs/*.md
-!logs/
+*.qrc
+*.ui.py
+resources_rc.py
+*.qmlc
+*.qmlcache
+__pycache__/resources_rc.py
 
-# Optional placeholder to keep folder tracked even when empty
-!logs/.gitkeep
+# =======================================
+# 📂 User project-specific
+# =======================================
 
-# ========================
-# Misc
-# ========================
+# Output folders
+output/
+dump/
+temp/
+examples/
+
+# User working files
+notes/
+*.notes.txt
+*.draft.*
 .cache/
 reports/
-test_output/
 .continue
 
-# Project backups
-backups/
-backup_oncutf.sh
+# =======================================
+# ⚙️ System Files (Windows/macOS)
+# =======================================
 
-# Backup and temporary files from editing QSS or UI files
-*.qss~        # Temporary QSS backups
-*.bak         # General backup files
-*.ui~         # Temporary Qt Designer backups
-
-# Generated files from Qt resource compiler
-*.qrc.py      # Compiled QRC files (e.g. pyrcc5)
-*.qss.py      # Compiled QSS files (if using custom converter)
-
-# ========================
-# AI and development aids
-# ========================
-.ai/          # AI conversation history and prompts
-
-# Additions for the oncutf project
-.cursorignore
-*.sh
-/ai
-/continue
-# Add common folders/files that we don't want in git
-__pycache__/
-*.pyc
 .DS_Store
-.env
-.idea/
-.vscode/
-*.bak
-*.backup
-*.swp
-
+Thumbs.db
+desktop.ini
+ehthumbs.db
