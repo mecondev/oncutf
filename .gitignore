@@ -86,7 +86,7 @@ backup_oncutf.sh
 *.sh
 /ai
 /continue
-# Προσθήκη κοινών φακέλων/αρχείων που δεν θέλουμε στο git
+# Add common folders/files that we don't want in git
 __pycache__/
 *.pyc
 .DS_Store
@@ -94,5 +94,6 @@ __pycache__/
 .idea/
 .vscode/
 *.bak
+*.backup
 *.swp
-# Τέλος προσθηκών
+

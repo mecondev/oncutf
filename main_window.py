@@ -95,7 +95,6 @@ class MainWindow(QMainWindow):
         self._metadata_worker_cancel_requested = False
         self.metadata_loaded_paths = set()  # full paths with metadata
         self.metadata_icon_map = load_metadata_icons()
-        self.preview_icons = load_preview_status_icons()
         self.force_extended_metadata = False
         self.skip_metadata_mode = DEFAULT_SKIP_METADATA # Keeps state across folder reloads
         self.metadata_loader = MetadataLoader()
@@ -113,12 +112,6 @@ class MainWindow(QMainWindow):
         self.files = []
         self.preview_map = {}  # preview_filename -> FileItem
         self._selection_sync_mode = "normal"  # values: "normal", "toggle"
-
-        self.preview_update_timer = QTimer(self)
-        self.preview_update_timer.setSingleShot(True)
-        self.preview_update_timer.setInterval(250)  # milliseconds
-        self.preview_update_timer.timeout.connect(self.generate_preview_names)
-
 
         # --- Setup window and central widget ---
         self.setup_main_window()
@@ -138,6 +131,12 @@ class MainWindow(QMainWindow):
 
         # --- Signal connections ---
         self.setup_signals()
+
+        # --- Preview update debouncing timer ---
+        self.preview_update_timer = QTimer(self)
+        self.preview_update_timer.setSingleShot(True)
+        self.preview_update_timer.setInterval(250)  # milliseconds
+        self.preview_update_timer.timeout.connect(self.generate_preview_names)
 
     # --- Method definitions ---
     def setup_main_window(self) -> None:
@@ -458,7 +457,7 @@ class MainWindow(QMainWindow):
         self.file_table_view.clicked.connect(self.on_table_row_clicked)
         self.file_table_view.selection_changed.connect(self.update_preview_from_selection)
         self.file_table_view.files_dropped.connect(self.load_files_from_dropped_items)
-        self.model.sort_changed.connect(self.generate_preview_names)
+        self.model.sort_changed.connect(self.schedule_preview_update)
         self.file_table_view.setContextMenuPolicy(Qt.CustomContextMenu)
         self.file_table_view.customContextMenuRequested.connect(self.handle_table_context_menu)
 
@@ -477,7 +476,7 @@ class MainWindow(QMainWindow):
         self.rename_button.clicked.connect(self.rename_files)
 
         # --- Connect the updated signal of RenameModulesArea to generate_preview_names ---
-        self.rename_modules_area.updated.connect(self.generate_preview_names)
+        self.rename_modules_area.updated.connect(self.schedule_preview_update)
 
         # --- Shortcuts ---
         QShortcut(QKeySequence("Ctrl+A"), self.file_table_view, activated=self.select_all_rows)
@@ -2422,4 +2421,13 @@ class MainWindow(QMainWindow):
             extra={"dev_only": True}
         )
         logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
+
+    def schedule_preview_update(self) -> None:
+        """
+        Προγραμματίζει μια καθυστερημένη ενημέρωση των προεπισκοπήσεων ονομάτων.
+        Αντί να καλείται απευθείας η generate_preview_names κάθε φορά που αλλάζει κάτι,
+        επανεκκινείται ο timer ώστε η πραγματική ενημέρωση να γίνεται μόνο όταν
+        σταματήσουν οι αλλαγές για το διάστημα που έχει οριστεί (250ms).
+        """
+        self.preview_update_timer.start()
 
