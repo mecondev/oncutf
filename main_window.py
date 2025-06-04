@@ -860,7 +860,7 @@ class MainWindow(QMainWindow):
             return
 
         self.prepare_file_table(file_items)
-        self.file_table_view.horizontalHeader().setSortIndicator(1, Qt.AscendingOrder)
+        self.sort_by_column(1, Qt.AscendingOrder)
         self.clear_metadata_view()
 
         if skip_metadata:
@@ -1114,6 +1114,8 @@ class MainWindow(QMainWindow):
         # Optional: adjust if flags need to be preserved
         if self.current_folder_path:
             self.load_files_from_folder(self.current_folder_path, skip_metadata=False)
+            self.sort_by_column(1, Qt.AscendingOrder)
+
 
     def update_module_dividers(self) -> None:
         for index, module in enumerate(self.rename_modules):
@@ -1679,23 +1681,6 @@ class MainWindow(QMainWindow):
             if file_item.full_path == path:
                 return file_item
         return None
-
-    def _restore_cursor(self) -> None:
-        """
-        Restores the cursor to its default appearance.
-
-        This method is used after a metadata scan or any long-running operation
-        that sets the cursor to a busy state. Because override cursors are pushed
-        onto a stack, we must pop all of them off to fully restore the default.
-
-        After restoring the cursor, we manually process events to ensure that
-        the cursor is visually updated immediately.
-        """
-        while QApplication.overrideCursor():
-            QApplication.restoreOverrideCursor()
-
-        # Ensure the change is reflected immediately
-        QApplication.processEvents()
 
     def cancel_metadata_loading(self, retry_count: int = 0) -> None:
         """

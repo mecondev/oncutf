@@ -9,16 +9,14 @@ It detects the drop type (folder, files, mixed), checks allowed file types,
 triggers custom dialogs (recursive, rejected files), and returns results for the UI.
 """
 
-from typing import List, Tuple, Dict, Literal
 import os
+from typing import List, Tuple, Dict, Literal
+from PyQt5.QtCore import QMimeData
+from config import ALLOWED_EXTENSIONS
 
 # Custom dialogs will be imported when connected
 # from widgets.custommsg_dialog import show_recursive_dialog, show_rejected_dialog
 
-try:
-    from config import ALLOWED_EXTENSIONS
-except ImportError:
-    ALLOWED_EXTENSIONS = []
 
 DropType = Literal["single_folder", "multiple_folders", "files", "mixed", "unknown"]
 
@@ -107,3 +105,10 @@ def show_rejected_dialog(rejected: list[str], imported_count: int = 0, parent=No
         ok_btn.clicked.connect(dialog.accept)
         layout.addWidget(ok_btn)
         dialog.exec_()
+
+def extract_file_paths(mime_data: QMimeData) -> List[str]:
+    """
+    Extracts local file paths from a QMimeData object.
+    Only includes local files, ignores other types like text.
+    """
+    return [url.toLocalFile() for url in mime_data.urls() if url.isLocalFile()]

@@ -23,8 +23,11 @@ from PyQt5.QtCore import (
       Qt, QPoint, QModelIndex, QTimer, pyqtSignal
 )
 from PyQt5.QtGui import QKeySequence, QDrag, QMouseEvent, QCursor, QPixmap, QPainter, QFont, QColor, QDropEvent
-from utils.file_drop_helper import analyze_drop, filter_allowed_files, ask_recursive_dialog, show_rejected_dialog
+from utils.file_drop_helper import (
+      analyze_drop, filter_allowed_files, ask_recursive_dialog, show_rejected_dialog, extract_file_paths
+)
 from .hover_delegate import HoverItemDelegate
+
 
 from utils.logger_helper import get_logger
 
@@ -450,7 +453,7 @@ class CustomTableView(QTableView):
 
         # 2. Extract paths from mime data (uses helper)
         modifiers = event.keyboardModifiers()
-        dropped_paths = FileDropHelper.extract_file_paths(mime_data)
+        dropped_paths = extract_file_paths(mime_data)
 
         if not dropped_paths:
             logger.debug("[Drop] No valid file paths extracted")
