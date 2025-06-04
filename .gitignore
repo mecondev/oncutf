@@ -111,7 +111,7 @@ scripts/
 
 *.log
 debug.log
-logs/
+logs/*.log*
 
 # =======================================
 # 🖼️ GUI-related files (PyQt5, resources)

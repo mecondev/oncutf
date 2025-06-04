@@ -6,7 +6,7 @@ It combines the flexibility of [ExifTool](https://exiftool.org/) with the conven
 Built for creators, photographers, and archivists who want their filenames to reflect real metadata — like capture date, duration, or any embedded tag.
 
 <p align="center">
-  <img src="assets/oncut-logo-2024-CIRCLE-(1100X1100)-dark-w-white-BG.png" alt="oncut logo" width="200"/>
+  <img src="assets/oncut_logo_white_w_dark_BG.png" alt="oncut logo" width="150"/>
 </p>
 
 ---
