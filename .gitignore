@@ -108,10 +108,11 @@ scripts/
 # =======================================
 # 🪵 Logs
 # =======================================
-
+# Keep only the logs/ folder structure
+logs/*.log*
+!logs/.gitkeep
 *.log
 debug.log
-logs/*.log*
 
 # =======================================
 # 🖼️ GUI-related files (PyQt5, resources)
