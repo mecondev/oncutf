@@ -237,7 +237,7 @@ class MainWindow(QMainWindow):
         self.file_table_view.setAlternatingRowColors(True)
         self.file_table_view.setShowGrid(False)
         self.file_table_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.file_table_view.setSortingEnabled(False)  # Manual sorting logic
+        self.file_table_view.setSortingEnabled(True)  # Manual sorting logic
         self.file_table_view.setWordWrap(False)
 
         # Initialize header and set default row height
@@ -2253,6 +2253,7 @@ class MainWindow(QMainWindow):
 
         self.model.files = file_items
         self.model.layoutChanged.emit()
+        print("[DEBUG] Header class after model set:", type(self.file_table_view.horizontalHeader()))
 
         self.file_table_view.set_placeholder_visible(len(file_items) == 0)
         self.file_table_view.scrollToTop()

@@ -31,10 +31,13 @@ class InteractiveHeader(QHeaderView):
         self.setSectionsClickable(True)
         self.setHighlightSections(True)
         self.setSortIndicatorShown(True)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+
         self._press_pos: QPoint = QPoint()
         self._pressed_index: int = -1
 
     def mousePressEvent(self, event) -> None:
+        print(f"[DEBUG] Header: mouse press {event.pos()}, button={event.button()}")
         self._press_pos = event.pos()
         self._pressed_index = self.logicalIndexAt(event.pos())
         super().mousePressEvent(event)
@@ -66,6 +69,8 @@ class InteractiveHeader(QHeaderView):
         """
         Show right-click context menu for sorting at header column.
         """
+        print("[DEBUG] Header: context menu event triggered")
+
         logical_index = self.logicalIndexAt(event.pos())
         if logical_index <= 0:
             return  # skip column 0 (toggle column)
