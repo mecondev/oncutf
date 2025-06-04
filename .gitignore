@@ -81,7 +81,7 @@ backup_oncutf.sh
 # ========================
 .ai/          # AI conversation history and prompts
 
-# Προσθήκες για το oncutf project
+# Additions for the oncutf project
 .cursorignore
 *.sh
 /ai

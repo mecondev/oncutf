@@ -28,7 +28,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import (
     Qt, QDir, QUrl, QThread, QTimer, QModelIndex, QPropertyAnimation, QMetaObject,
-    QItemSelection, QItemSelectionRange, QItemSelectionModel
+    QItemSelection, QItemSelectionRange, QItemSelectionModel, QElapsedTimer
 )
 from PyQt5.QtGui import (
     QPixmap, QBrush, QColor, QIcon, QDesktopServices, QStandardItem, QStandardItemModel,
@@ -113,6 +113,12 @@ class MainWindow(QMainWindow):
         self.files = []
         self.preview_map = {}  # preview_filename -> FileItem
         self._selection_sync_mode = "normal"  # values: "normal", "toggle"
+
+        self.preview_update_timer = QTimer(self)
+        self.preview_update_timer.setSingleShot(True)
+        self.preview_update_timer.setInterval(250)  # milliseconds
+        self.preview_update_timer.timeout.connect(self.generate_preview_names)
+
 
         # --- Setup window and central widget ---
         self.setup_main_window()
@@ -1145,6 +1151,9 @@ class MainWindow(QMainWindow):
         Generate new preview names for all selected files using current rename modules.
         Updates the preview map and UI elements accordingly.
         """
+        timer = QElapsedTimer()
+        timer.start()
+
         selected_files = [f for f in self.model.files if f.checked]
         rename_data = self.rename_modules_area.get_all_data()
         modules_data = rename_data.get("modules", [])
@@ -1235,6 +1244,9 @@ class MainWindow(QMainWindow):
         tooltip_msg = f"{len(valid_pairs)} files will be renamed." if valid_pairs else "No changes to apply"
         self.rename_button.setToolTip(tooltip_msg)
         logger.debug(f"[PreviewMap] Keys: {list(self.preview_map.keys())}", extra={"dev_only": True})
+
+        elapsed = timer.elapsed()
+        logger.debug(f"[Performance] generate_preview_names took {elapsed} ms")
 
     def compute_max_filename_width(self, file_list: list[FileItem]) -> int:
         """
@@ -1975,6 +1987,8 @@ class MainWindow(QMainWindow):
             selected_rows (list[int]): The indices of selected rows (from custom selection).
         """
         logger.debug(f"[Sync] update_preview_from_selection: {selected_rows}")
+        timer = QElapsedTimer()
+        timer.start()
 
         for row, file in enumerate(self.model.files):
             file.checked = row in selected_rows
@@ -1994,6 +2008,9 @@ class MainWindow(QMainWindow):
                     self.clear_metadata_view()
         else:
             self.clear_metadata_view()
+
+        elapsed = timer.elapsed()
+        logger.debug(f"[Performance] Full preview update took {elapsed} ms")
 
     def handle_table_context_menu(self, position) -> None:
         """
