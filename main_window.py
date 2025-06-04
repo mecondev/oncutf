@@ -490,6 +490,9 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+M"), self.file_table_view, activated=self.shortcut_load_metadata)
         QShortcut(QKeySequence("Ctrl+E"), self.file_table_view, activated=self.shortcut_load_extended_metadata)
 
+    def request_preview_update(self):
+        self.preview_update_timer.start()
+
     def force_reload(self) -> None:
         """
         Triggered by Ctrl+R.
@@ -578,7 +581,7 @@ class MainWindow(QMainWindow):
                 file.checked = False
             self.file_table_view.viewport().update()
             self.update_files_label()
-            self.generate_preview_names()
+            self.request_preview_update()
             self.clear_metadata_view()
 
     def invert_selection(self) -> None:
@@ -607,7 +610,8 @@ class MainWindow(QMainWindow):
             self.file_table_view.anchor_row = checked_rows[0] if checked_rows else 0
             self.file_table_view.viewport().update()
             self.update_files_label()
-            QTimer.singleShot(10, self.generate_preview_names)
+            self.request_preview_update()
+
             if checked_rows:
                 def show_metadata_later():
                     last_row = checked_rows[-1]
@@ -734,7 +738,7 @@ class MainWindow(QMainWindow):
         # After restoring checked state, regenerate preview with new filenames
         if self.last_action == "rename":
             logger.debug("[PostRename] Regenerating preview with new filenames and restored checked state")
-            self.generate_preview_names()
+            self.request_preview_update()
 
         # Force update info icons in column 0
         for row in range(self.model.rowCount()):
@@ -1143,7 +1147,7 @@ class MainWindow(QMainWindow):
 
             self.file_table_view.viewport().update()
             self.update_files_label()
-            self.generate_preview_names()
+            self.request_preview_update()
             self.check_selection_and_show_metadata()
 
     def generate_preview_names(self) -> None:
@@ -1607,7 +1611,8 @@ class MainWindow(QMainWindow):
                 update_info_icon(self.file_table_view, self.model, file_item.full_path)
 
         # --- 5. Regenerate preview names
-        self.generate_preview_names()
+        self.request_preview_update()
+
 
         # --- 6. Show metadata for single file selection
         selected_files = self.get_selected_files()
@@ -1928,7 +1933,8 @@ class MainWindow(QMainWindow):
         """
         self.file_table_view.viewport().update()
         self.update_files_label()
-        self.generate_preview_names()
+        self.request_preview_update()
+
 
     def get_modifier_flags(self) -> tuple[bool, bool]:
         """
@@ -1994,7 +2000,7 @@ class MainWindow(QMainWindow):
             file.checked = row in selected_rows
 
         self.update_files_label()
-        self.generate_preview_names()
+        self.request_preview_update()
 
         # Show metadata for last selected file
         if selected_rows:

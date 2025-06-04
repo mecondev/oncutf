@@ -131,7 +131,8 @@ class FileTableModel(QAbstractTableModel):
             if self.parent_window:
                 self.parent_window.header.update_state(self.files)
                 self.parent_window.update_files_label()
-                self.parent_window.generate_preview_names()
+                self.parent_window.request_preview_update()
+
             return True
 
         return False
