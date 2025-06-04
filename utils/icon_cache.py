@@ -17,6 +17,8 @@ Supports:
 """
 
 import os
+from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtCore import Qt
 from config import PREVIEW_COLORS, PREVIEW_INDICATOR_SHAPE, PREVIEW_INDICATOR_SIZE
 from utils.icons import create_colored_icon
 
@@ -58,3 +60,22 @@ def prepare_status_icons(base_dir: str = "resources/icons") -> dict[str, str]:
             pixmap.save(path)
 
     return ICON_PATHS
+
+def load_preview_status_icons(size: tuple[int, int] = (14, 14)) -> dict[str, QIcon]:
+    """
+    Loads and scales preview status icons (valid, invalid, etc.) for use in the UI.
+
+    Args:
+        size (tuple[int, int]): Size to scale icons to. Default is (14, 14).
+
+    Returns:
+        dict[str, QIcon]: Mapping from status to QIcon.
+    """
+    paths = prepare_status_icons()  # ensures icons exist
+    icon_map = {}
+
+    for status, path in paths.items():
+        pixmap = QPixmap(path).scaled(size[0], size[1], Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        icon_map[status] = QIcon(pixmap)
+
+    return icon_map

@@ -44,6 +44,8 @@ from utils.filename_validator import FilenameValidator
 from utils.preview_generator import generate_preview_names as generate_preview_logic
 from utils.icons import create_colored_icon
 from utils.icon_cache import prepare_status_icons
+from utils.icon_cache import load_preview_status_icons
+
 from utils.preview_engine import apply_rename_modules
 from utils.build_metadata_tree_model import build_metadata_tree_model
 from utils.metadata_cache import MetadataCache
@@ -93,6 +95,7 @@ class MainWindow(QMainWindow):
         self._metadata_worker_cancel_requested = False
         self.metadata_loaded_paths = set()  # full paths with metadata
         self.metadata_icon_map = load_metadata_icons()
+        self.preview_icons = load_preview_status_icons()
         self.force_extended_metadata = False
         self.skip_metadata_mode = DEFAULT_SKIP_METADATA # Keeps state across folder reloads
         self.metadata_loader = MetadataLoader()
@@ -1488,9 +1491,8 @@ class MainWindow(QMainWindow):
 
             # Prepare status icon
             icon_item = QTableWidgetItem()
-            icon_path = self.icon_paths.get(status)
-            if icon_path:
-                icon = QIcon(QPixmap(icon_path).scaled(14, 14, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            icon = self.preview_icons.get(status)
+            if icon:
                 icon_item.setIcon(icon)
             icon_item.setToolTip(tooltip)
 
