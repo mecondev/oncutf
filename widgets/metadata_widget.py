@@ -83,7 +83,7 @@ class MetadataWidget(QWidget):
         file_date_options = [
             ("Last Modified (YYMMDD)", "last_modified_yymmdd"),
             ("Last Modified (YYYY-MM-DD)", "last_modified_iso"),
-            ("Last Modified (DD/MM/YYYY)", "last_modified_eu"),
+            ("Last Modified (DD-MM-YYYY)", "last_modified_eu"),
             ("Last Modified (MM-DD-YYYY)", "last_modified_us"),
             ("Last Modified (YYYY)", "last_modified_year"),
             ("Last Modified (YYYY-MM)", "last_modified_month"),

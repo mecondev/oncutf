@@ -18,8 +18,11 @@ Key features:
 import sys, os
 from pathlib import Path
 from PyQt5.QtWidgets import QAbstractItemView, QTableView, QApplication, QLabel
-from PyQt5.QtCore import QMimeData, QUrl, QItemSelectionModel, QItemSelection, Qt, QPoint, QModelIndex, QTimer, pyqtSignal
-from PyQt5.QtGui import QKeySequence, QDrag, QMouseEvent, QCursor, QPixmap, QPainter, QFont, QColor
+from PyQt5.QtCore import (
+      QMimeData, QUrl, QItemSelectionModel, QItemSelection,
+      Qt, QPoint, QModelIndex, QTimer, pyqtSignal
+)
+from PyQt5.QtGui import QKeySequence, QDrag, QMouseEvent, QCursor, QPixmap, QPainter, QFont, QColor, QDropEvent
 from utils.file_drop_helper import analyze_drop, filter_allowed_files, ask_recursive_dialog, show_rejected_dialog
 from .hover_delegate import HoverItemDelegate
 
@@ -86,7 +89,7 @@ class CustomTableView(QTableView):
         Shows or hides the placeholder icon over the table (only image, no text).
         """
         assert self.model() is not None, "Cannot show placeholder: model has not been set on CustomTableView"
-        
+
         if visible and not self.placeholder_icon.isNull():
             self.placeholder_label.show()
         else:
@@ -430,79 +433,44 @@ class CustomTableView(QTableView):
         else:
             super().dragMoveEvent(event)
 
-    def dropEvent(self, event):
+    def dropEvent(self, event: QDropEvent) -> None:
         """
-        Handles drag & drop events for the file table using modular logic from file_drop_helper.
-        Only allowed files are loaded, and custom dialogs are shown for recursive and rejected cases.
-        """
-        logger.debug("[DragDrop] dropEvent called!")
+        Handles drop events for files/folders into the file table.
 
-        paths = []
-        if event.mimeData().hasUrls():
-            paths = [url.toLocalFile() for url in event.mimeData().urls()]
-        elif event.mimeData().hasFormat("application/x-oncutf-internal"):
-            path_data = event.mimeData().data("application/x-oncutf-internal")
-            try:
-                path = bytes(path_data).decode()
-                if path:
-                    paths = [path]
-            except Exception as e:
-                logger.error(f"[DragDrop] Error decoding internal path: {e}")
-                event.ignore()
+        - Ignores internal drags (from this same QTableView).
+        - Filters out files that are already present in the model.
+        - Emits signal with unique new files to be loaded.
+        """
+        mime_data = event.mimeData()
+
+        # 1. Ignore internal drag-drop from this same view
+        if mime_data.hasFormat("application/x-oncutf-filetable"):
+            logger.debug("[Drop] Ignoring internal drag-drop from file table")
+            return
+
+        # 2. Extract paths from mime data (uses helper)
+        modifiers = event.keyboardModifiers()
+        dropped_paths = FileDropHelper.extract_file_paths(mime_data)
+
+        if not dropped_paths:
+            logger.debug("[Drop] No valid file paths extracted")
+            return
+
+        logger.info(f"[Drop] {len(dropped_paths)} file(s)/folder(s) dropped in table view")
+
+        # 3. Remove duplicates (already loaded files)
+        if self.model() and hasattr(self.model(), "files"):
+            existing_paths = {f.full_path for f in self.model().files}
+            new_paths = [p for p in dropped_paths if p not in existing_paths]
+            if not new_paths:
+                logger.debug("[Drop] All dropped files already exist in table. Ignored.")
                 return
         else:
-            super().dropEvent(event)
-            return
+            new_paths = dropped_paths
 
-        # Remove empty paths
-        valid_paths = [p for p in paths if p]
-        if not valid_paths:
-            logger.warning("[DragDrop] No valid paths found in drop event")
-            event.ignore()
-            return
+        # 4. Emit signal with unique new files
+        self.files_dropped.emit(new_paths, modifiers)
 
-        drop_info = analyze_drop(valid_paths)
-        drop_type = drop_info["type"]
-        folders = drop_info["folders"]
-        files = drop_info["files"]
-        rejected = drop_info["rejected"]
-
-        accepted_files = []
-
-        if drop_type == "single_folder":
-            # Ask for recursive
-            # recursive = ask_recursive_dialog(folders[0])
-            recursive = False  # Απενεργοποιήθηκε προσωρινά το dialog για δοκιμή
-            # Scan for files
-            import glob
-            import os
-            pattern = "**/*" if recursive else "*"
-            all_files = [os.path.join(dp, f) for dp, dn, filenames in os.walk(folders[0]) for f in filenames] if recursive else [os.path.join(folders[0], f) for f in os.listdir(folders[0]) if os.path.isfile(os.path.join(folders[0], f))]
-            allowed, rejected_files = filter_allowed_files(all_files)
-            accepted_files.extend(allowed)
-            # if rejected_files:
-            #     show_rejected_dialog(rejected_files)
-        elif drop_type == "files":
-            allowed, rejected_files = filter_allowed_files(files)
-            accepted_files.extend(allowed)
-            # if rejected_files:
-            #     show_rejected_dialog(rejected_files)
-        elif drop_type in ("multiple_folders", "mixed"):
-            # show_rejected_dialog(folders + files)
-            pass
-        else:
-            logger.warning(f"[DragDrop] Unknown or unsupported drop type: {drop_type}")
-            event.ignore()
-            return
-
-        if not accepted_files:
-            logger.info("[DragDrop] No accepted files to load after filtering.")
-            event.ignore()
-            return
-
-        # Accept the event BEFORE emitting the signal
-        event.accept()
-        self.setFocus()
-        # Emit signal with accepted files and modifiers
-        modifiers = QApplication.keyboardModifiers()
-        self.files_dropped.emit(accepted_files, modifiers)
+        # 5. Finalize
+        event.acceptProposedAction()
+        logger.debug("Drag completed with result: %s", event.dropAction())
