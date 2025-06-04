@@ -55,11 +55,13 @@ class CounterModule(BaseRenameModule):
             "Increment By", initial_value=1, min_val=1
         )
         layout.addLayout(row3)
+
         # Connect inputs to update signal (debounced)
         self.start_input.textChanged.connect(self._on_value_change)
         self.padding_input.textChanged.connect(self._on_value_change)
         self.increment_input.textChanged.connect(self._on_value_change)
 
+        # Emit once at startup
         QTimer.singleShot(0, self._emit_initial_update)
 
     def _emit_initial_update(self):
