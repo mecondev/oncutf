@@ -229,15 +229,15 @@ class MainWindow(QMainWindow):
         # Align all headers to the left (if supported)
         if hasattr(self.header, 'setDefaultAlignment'):
             self.header.setDefaultAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        self.header.setSortIndicatorShown(True)
-        self.header.setSectionsClickable(True)
-        self.header.setHighlightSections(True)
+        self.header.setSortIndicatorShown(False)
+        self.header.setSectionsClickable(False)
+        self.header.setHighlightSections(False)
 
         self.file_table_view.setHorizontalHeader(self.header)
         self.file_table_view.setAlternatingRowColors(True)
         self.file_table_view.setShowGrid(False)
         self.file_table_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.file_table_view.setSortingEnabled(True)  # Manual sorting logic
+        self.file_table_view.setSortingEnabled(False)  # Manual sorting logic
         self.file_table_view.setWordWrap(False)
 
         # Initialize header and set default row height
@@ -1977,6 +1977,10 @@ class MainWindow(QMainWindow):
         Args:
             selected_rows (list[int]): The indices of selected rows (from custom selection).
         """
+        if not self.selected_rows:
+            logger.debug("[Sync] Skipping preview update — no selection")
+            return
+
         logger.debug(f"[Sync] update_preview_from_selection: {selected_rows}")
         timer = QElapsedTimer()
         timer.start()
@@ -2253,17 +2257,24 @@ class MainWindow(QMainWindow):
 
         self.model.files = file_items
         self.model.layoutChanged.emit()
-        print("[DEBUG] Header class after model set:", type(self.file_table_view.horizontalHeader()))
+
+        # Re-set header (αν το αντικαθιστάς)
         self.file_table_view.setHorizontalHeader(self.header)
 
-        self.file_table_view.set_placeholder_visible(len(file_items) == 0)
-        self.file_table_view.scrollToTop()
+        # ⛳️ Συνδέσεις sorting — ΠΡΕΠΕΙ να μπουν μετά το emit
         self.file_table_view.setSortingEnabled(True)
-        self.file_table_view.horizontalHeader().setEnabled(True)
         self.header.setSectionsClickable(True)
         self.header.setSortIndicatorShown(True)
+        self.header.setEnabled(True)  # <- απαραίτητο για δεξί κλικ!
         self.file_table_view.sortByColumn(1, Qt.AscendingOrder)
+
+        # ⛳️ Clear highlight & preview
         self.file_table_view.clearSelection()
+        self.file_table_view.selected_rows.clear()  # <-- Αυτό το πρόσθεσες εσύ, σωστά;
+
+        # Placeholder & θέση
+        self.file_table_view.set_placeholder_visible(len(file_items) == 0)
+        self.file_table_view.scrollToTop()
 
 
     def load_metadata_from_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
