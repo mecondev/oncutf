@@ -806,9 +806,19 @@ class MainWindow(QMainWindow):
         return file_items
 
     def prepare_file_table(self, file_items: list[FileItem]) -> None:
+
         self.file_table_view.setModel(self.model)
         for f in file_items:
             f.checked = False
+
+            # Ensure no file is visually selected
+        self.file_table_view.clearSelection()
+        self.file_table_view.selected_rows.clear()
+
+        # Force preview section to be cleared explicitly
+        self.update_preview_tables_from_pairs([])
+        self.rename_button.setEnabled(False)
+
         self.model.set_files(file_items)
         self.files = file_items
         self.model.folder_path = self.current_folder_path
@@ -1164,6 +1174,13 @@ class MainWindow(QMainWindow):
         timer.start()
 
         selected_files = [f for f in self.model.files if f.checked]
+
+        if not selected_files:
+            logger.debug("[Preview] No selected files — skipping preview generation.")
+            self.update_preview_tables_from_pairs([])
+            self.rename_button.setEnabled(False)
+            return
+
         rename_data = self.rename_modules_area.get_all_data()
         modules_data = rename_data.get("modules", [])
         post_transform = rename_data.get("post_transform", {})
