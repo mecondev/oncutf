@@ -45,25 +45,23 @@ class RenameModuleWidget(QWidget):
     remove_requested = pyqtSignal(QWidget)
     updated = pyqtSignal(QWidget)
 
-    def __init__(self, parent: QWidget = None, parent_window: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None, parent_window: Optional[QWidget] = None) -> None:
         super().__init__(parent)
 
         self.parent_window = parent_window  # MainWindow
         self.setObjectName("RenameModuleWidget")
         self.setProperty("module", True)
-        self.style().unpolish(self)
-        self.style().polish(self)
 
         self.module_instances = {
-            "Specified Text": SpecifiedTextModule,
             "Original Name": OriginalNameWidget,
+            "Specified Text": SpecifiedTextModule,
             "Counter": CounterModule,
             "Metadata": MetadataWidget
         }
 
         self.module_heights = {
-            "Specified Text": 90,
             "Original Name": 50,
+            "Specified Text": 90,
             "Counter": 130,
             "Metadata": 120
         }
@@ -85,6 +83,7 @@ class RenameModuleWidget(QWidget):
         self.type_combo.setMaximumWidth(140)
         self.type_combo.setFixedHeight(20)
         self.type_combo.currentTextChanged.connect(self.update_module_content)
+        self.type_combo.setCurrentText('Specified Text')
 
         type_row.addWidget(type_label)
         type_row.addWidget(self.type_combo)

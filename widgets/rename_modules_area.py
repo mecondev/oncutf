@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QPushButton,
     QSpacerItem, QSizePolicy, QLabel, QFrame
 )
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, Qt, QTimer
 
 from modules.base_module import BaseRenameModule
 from widgets.rename_module_widget import RenameModuleWidget
@@ -48,7 +48,7 @@ class RenameModulesArea(QWidget):
         # Scrollable module container
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setHorizontalScrollBarPolicy(False)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         self.scroll_content = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_content)
@@ -98,10 +98,22 @@ class RenameModulesArea(QWidget):
 
         self.add_module()  # Start with one by default
 
+        # Update timer for debouncing
+        self._update_timer = QTimer()
+        self._update_timer.setSingleShot(True)
+        self._update_timer.setInterval(100)  # 100ms debounce
+        self._update_timer.timeout.connect(lambda: self.updated.emit())
+
+    def _on_module_updated(self):
+        """Handle module updates with debouncing to prevent duplicates."""
+        logger.debug("[RenameModulesArea] Module updated, restarting timer")
+        self._update_timer.stop()
+        self._update_timer.start()
+
     def add_module(self):
         module = RenameModuleWidget(parent=self, parent_window=self.parent_window)
         module.remove_requested.connect(lambda m=module: self.remove_module(m))
-        module.updated.connect(self.updated.emit)
+        module.updated.connect(lambda: self._on_module_updated())
         self.module_widgets.append(module)
         self.scroll_layout.addWidget(module)
         self.updated.emit()

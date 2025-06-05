@@ -47,28 +47,21 @@ class SpecifiedTextModule(BaseRenameModule):
         layout.addWidget(self.text_label)
         layout.addWidget(self.text_input)
 
-
     def validate_input(self, text: str) -> None:
-        """Validate and emit only on changes.
+        """Validate and emit signal when text changes.
 
         Args:
             text (str): The text entered by the user.
         """
-        if self._is_validating:
-            return
+        # Apply validation styling
+        if is_valid_filename_text(text):
+            self.text_input.setStyleSheet("")
+        else:
+            self.text_input.setStyleSheet("border: 1px solid red;")
 
-        self._is_validating = True
-
-        def apply_style():
-            if is_valid_filename_text(text):
-                self.text_input.setStyleSheet("")
-            else:
-                self.text_input.setStyleSheet("border: 1px solid red;")
-
-        self.block_signals_while(self.text_input, apply_style)
-        self.emit_if_changed(text)
-
-        self._is_validating = False
+        # Always emit the signal (like CounterModule does)
+        logger.debug(f"[SpecifiedText] Text changed to: '{text}', emitting signal")
+        self.updated.emit(self)
 
 
     def get_data(self) -> dict:
@@ -96,8 +89,8 @@ class SpecifiedTextModule(BaseRenameModule):
         text = data.get("text", "")
 
         if not text:
-            logger.debug("[SpecifiedTextModule] Empty text input, returning original filename.")
-            return os.path.splitext(file_item.filename)[0]
+            logger.debug("[SpecifiedTextModule] Empty text input, returning empty string.")
+            return ""
 
         if not is_valid_filename_text(text):
             logger.warning(f"[SpecifiedTextModule] Invalid filename text: '{text}'")
