@@ -815,14 +815,9 @@ class MainWindow(QMainWindow):
         self.file_table_view.clearSelection()
         self.file_table_view.selected_rows.clear()
 
-        # Force preview section to be cleared explicitly
-        self.update_preview_tables_from_pairs([])
-        self.rename_button.setEnabled(False)
-
         self.model.set_files(file_items)
         self.files = file_items
         self.model.folder_path = self.current_folder_path
-        self.preview_map.clear()
         self.preview_map = {f.filename: f for f in file_items}
 
         if hasattr(self, "header") and self.header is not None:
@@ -839,7 +834,6 @@ class MainWindow(QMainWindow):
         # If we're coming from a rename operation and have active modules, regenerate preview
         if self.last_action == "rename":
             logger.debug("[PrepareTable] Post-rename detected, preview will be updated after checked state restore")
-            # Don't generate preview here - will be done after checked state is restored
 
     def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False, force: bool = False):
 
