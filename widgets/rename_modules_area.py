@@ -22,6 +22,10 @@ from modules.base_module import BaseRenameModule
 from widgets.rename_module_widget import RenameModuleWidget
 from widgets.name_transform_widget import NameTransformWidget
 
+from utils.logger_helper import get_logger
+
+logger = get_logger(__name__)
+
 
 class RenameModulesArea(QWidget):
     """
@@ -128,4 +132,7 @@ class RenameModulesArea(QWidget):
         Returns all current rename module widget instances.
         Useful for checking is_effective() per module.
         """
+        logger.debug("[Preview] Modules: %s", self.module_widgets)
+        logger.debug("[Preview] Effective check: %s", [m.is_effective() for m in self.module_widgets])
+
         return self.module_widgets

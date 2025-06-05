@@ -140,3 +140,11 @@ class MetadataWidget(QWidget):
             logger.debug(f"[MetadataWidget] Emitting updated with data: {new_data}")
             self._last_data = new_data
             self.updated.emit(self)
+
+    @staticmethod
+    def is_effective(data: dict) -> bool:
+        """
+        The metadata module is always effective because it always produces output
+        (either file dates or metadata values).
+        """
+        return True

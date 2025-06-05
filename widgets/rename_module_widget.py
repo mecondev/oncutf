@@ -55,17 +55,17 @@ class RenameModuleWidget(QWidget):
         self.style().polish(self)
 
         self.module_instances = {
+            "Original Name": OriginalNameWidget,
             "Specified Text": SpecifiedTextModule,
             "Counter": CounterModule,
-            "Metadata": MetadataWidget,
-            "Original Name": OriginalNameWidget
+            "Metadata": MetadataWidget
         }
 
         self.module_heights = {
+            "Original Name": 50,
             "Specified Text": 90,
             "Counter": 130,
-            "Metadata": 120,
-            "Original Name": 50
+            "Metadata": 120
         }
 
         self.current_module_widget = None
@@ -168,6 +168,7 @@ class RenameModuleWidget(QWidget):
         Determines if this module is effectively doing something, by checking its data.
         """
         if not self.current_module_widget:
+            logger.warning("[ModuleWidget] No module loaded for widget!")
             return False  # No module loaded
 
         data = self.get_data()
@@ -176,6 +177,8 @@ class RenameModuleWidget(QWidget):
         module_class = type(self.current_module_widget)
         if hasattr(module_class, "is_effective"):
             return module_class.is_effective(data)  # type: ignore[attr-defined]
+            # return self.module.is_effective(self.get_data())
         return False
+
 
 

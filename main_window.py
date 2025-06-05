@@ -497,9 +497,6 @@ class MainWindow(QMainWindow):
         the timer is restarted so that the actual update occurs only when
         changes stop for the specified duration (250ms).
         """
-        if not any(f.checked for f in self.model.files):
-            logger.debug("[Preview] No files checked — skipping preview request.")
-            return
         if self.preview_update_timer.isActive():
             self.preview_update_timer.stop()
         self.preview_update_timer.start()
@@ -1184,7 +1181,6 @@ class MainWindow(QMainWindow):
         timer = QElapsedTimer()
         timer.start()
 
-
         selected_files = [f for f in self.model.files if f.checked]
         logger.debug("[Preview] Triggered! Selected rows: %s", [f.filename for f in selected_files])
 
@@ -1198,25 +1194,29 @@ class MainWindow(QMainWindow):
         modules_data = rename_data.get("modules", [])
         post_transform = rename_data.get("post_transform", {})
 
-        # Check if there are any active modules
-        all_modules = self.rename_modules_area.get_all_module_instances()
-        if not any(m.is_effective() for m in all_modules):
-            logger.debug("[Preview] No active modules — skipping preview generation.")
-            self.update_preview_tables_from_pairs([])
-            self.rename_button.setEnabled(False)
-            return
-
         logger.debug(f"[Preview] modules_data: {modules_data}")
         logger.debug(f"[Preview] post_transform: {post_transform}")
 
-        # Fast path: if all modules are no-op (e.g. Specified Text is empty and no post_transform)
-        is_noop = (
-            not modules_data or
-            all(
-                m.get("type") == "Specified Text" and not m.get("text")
-                for m in modules_data
-            ) and not post_transform
-        )
+        # Fast path: if all modules are no-op and no post_transform
+        is_noop = True
+
+        # Check if any module is effective
+        all_modules = self.rename_modules_area.get_all_module_instances()
+        logger.debug(f"[Preview] Checking {len(all_modules)} modules for effectiveness")
+        for module_widget in all_modules:
+            if module_widget.is_effective():
+                logger.debug(f"[Preview] Module {module_widget.type_combo.currentText()} is effective!")
+                is_noop = False
+                break
+            else:
+                logger.debug(f"[Preview] Module {module_widget.type_combo.currentText()} is NOT effective")
+
+        # Check if post_transform is effective
+        if NameTransformModule.is_effective(post_transform):
+            logger.debug(f"[Preview] Post transform is effective: {post_transform}")
+            is_noop = False
+        else:
+            logger.debug(f"[Preview] Post transform is NOT effective: {post_transform}")
 
         self.preview_map = {file.filename: file for file in selected_files}
 

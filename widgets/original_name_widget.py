@@ -65,3 +65,10 @@ class OriginalNameWidget(BaseRenameModule):
     def set_data(self, data: dict) -> None:
         self.checkbox.setChecked(data.get("greeklish", False))
         self._last_value = str(self.get_data())  # update debounce state
+
+    @staticmethod
+    def is_effective(data: dict) -> bool:
+        """
+        The original name module is always effective because it produces output.
+        """
+        return True
