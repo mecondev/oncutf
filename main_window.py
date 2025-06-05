@@ -910,9 +910,7 @@ class MainWindow(QMainWindow):
         self.loading_dialog.show()
         QApplication.processEvents()
 
-        wait_cursor()
         self.load_metadata_in_thread(file_paths)
-        wait_cursor()
 
     def load_metadata_in_thread(self, file_paths: list[str]) -> None:
         """
@@ -958,9 +956,8 @@ class MainWindow(QMainWindow):
         # Signal when finished
         self.metadata_worker.finished.connect(self.handle_metadata_finished)
 
-        wait_cursor()  # Set wait cursor before starting the thread
+        # Start thread execution
         self.metadata_thread.start()
-        wait_cursor()  # Restore cursor after the thread has started
 
     def start_metadata_scan_for_items(self, items: list[FileItem]) -> None:
         """
@@ -1607,67 +1604,19 @@ class MainWindow(QMainWindow):
 
     def handle_metadata_finished(self) -> None:
         """
-        Slot called when the MetadataWorker finishes processing.
+        Slot to handle the completion of metadata loading.
 
-        This method:
         - Closes the loading dialog
-        - Updates file info icons based on metadata availability and type (fast/extended)
-        - Regenerates preview names
-        - Displays metadata for selected file (if exactly one is selected)
-        - Cleans up metadata worker and thread
+        - Restores the cursor to default
+        - Updates the UI as needed
         """
-        logger.warning(f"[MainWindow] handle_metadata_finished() in thread: {threading.current_thread().name}")
-        logger.debug("[MainWindow] Metadata loading finished.", extra={"dev_only": True})
+        logger.info("[MainWindow] Metadata loading finished")
 
-        # --- 1. Close loading dialog if visible
-        if getattr(self, "loading_dialog", None):
-            logger.debug("[MainWindow] Closing loading dialog.")
-            self.loading_dialog.deleteLater()
-            self.loading_dialog = None
+        if self.loading_dialog:
+            self.loading_dialog.close()
 
-        # --- 2. Cancel cursor and internal flags
-        self.force_extended_metadata = False
+        QApplication.restoreOverrideCursor()  # Restore cursor here after loading is complete
 
-        # --- 3. Validate file model before proceeding
-        if not hasattr(self, "model") or not getattr(self.model, "files", None):
-            logger.warning("[MainWindow] File model is not initialized or empty.")
-            return
-
-        # --- 4. Update icons based on metadata status
-        from widgets.view_helpers import update_info_icon  # move to top if static
-        for row in range(self.model.rowCount()):
-            file_item = self.model.files[row]
-            if self.metadata_cache.has(file_item.full_path):
-                try:
-                    is_extended = self.metadata_cache.is_extended(file_item.full_path)
-                    logger.debug(f"[MainWindow] {file_item.filename}: is_extended = {is_extended}")
-                    status = "extended" if is_extended else "loaded"
-                except Exception as e:
-                    logger.warning(f"[MainWindow] Failed to determine metadata type for {file_item.filename}: {e}")
-                    status = "loaded"
-
-                update_info_icon(self.file_table_view, self.model, file_item.full_path)
-
-        # --- 5. Regenerate preview names
-        self.request_preview_update()
-
-
-        # --- 6. Show metadata for single file selection
-        selected_files = self.get_selected_files()
-        if len(selected_files) == 1:
-            file_item = selected_files[0]
-            metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
-
-            if isinstance(metadata, dict) and metadata:
-                logger.debug(f"[MainWindow] Displaying metadata for {file_item.full_path}")
-                self.display_metadata(metadata, context="handle_metadata_finished")
-            else:
-                logger.warning(f"[MainWindow] No valid metadata to display for {file_item.filename}")
-        else:
-            logger.debug("[MainWindow] Metadata view not updated — selection is empty or multiple.")
-
-        # --- 7. Cleanup thread and worker
-        self.cleanup_metadata_worker()
 
     def cleanup_metadata_worker(self) -> None:
         """
@@ -1718,53 +1667,21 @@ class MainWindow(QMainWindow):
                 return file_item
         return None
 
-    def cancel_metadata_loading(self, retry_count: int = 0) -> None:
+    def cancel_metadata_loading(self) -> None:
         """
-        Called when the user presses ESC or closes the metadata dialog during scan.
-
-        This method:
-        - Restores the mouse cursor immediately
-        - Updates the UI to inform user that cancellation is in progress
-        - Attempts to cancel the active MetadataWorker
-        - Retries cancel up to 3 times if worker has not yet been created
-
-        Parameters
-        ----------
-        retry_count : int, optional
-            Internal counter for retry attempts if the worker is not yet available.
+        Cancels the metadata loading process and ensures the thread is properly terminated.
         """
-        logger.info("[MainWindow] User requested cancellation of metadata scan.")
+        logger.info("[MainWindow] Cancelling metadata loading")
 
-        # --- 1. Restore wait cursor immediately
-        QApplication.restoreOverrideCursor()
+        if hasattr(self, 'metadata_thread') and self.metadata_thread.isRunning():
+            self.metadata_worker.cancel()  # Use cancel method to stop the worker
+            self.metadata_thread.quit()
+            self.metadata_thread.wait()
 
-        # --- 2. Inform user via dialog, if visible
-        dialog = getattr(self, "loading_dialog", None)
-        if dialog:
-            dialog.set_status("Canceling metadata scan…")
-            dialog.set_filename("")  # Optional: clear filename during cancel
+        if self.loading_dialog:
+            self.loading_dialog.close()
 
-            # Schedule dialog close after 1 sec
-            QTimer.singleShot(1000, dialog.deleteLater)
-            QTimer.singleShot(1000, lambda: setattr(self, "loading_dialog", None))
-        else:
-            logger.debug("[MainWindow] Cancel requested but loading dialog not found.")
-
-        # --- 3. Attempt to cancel the metadata worker
-        worker = getattr(self, "metadata_worker", None)
-        if worker:
-            if not getattr(worker, "_cancelled", False):
-                logger.debug("[MainWindow] Calling metadata_worker.cancel()")
-                worker.cancel()
-            else:
-                logger.info("[MainWindow] MetadataWorker already marked as cancelled.")
-        else:
-            # --- Retry if the worker hasn't been created yet
-            if retry_count < 3:
-                logger.warning(f"[MainWindow] metadata_worker is None — retrying cancel in 150ms (attempt {retry_count + 1})")
-                QTimer.singleShot(150, lambda: self.cancel_metadata_loading(retry_count + 1))
-            else:
-                logger.error("[MainWindow] Cancel failed: metadata_worker was never created after multiple attempts.")
+        QApplication.restoreOverrideCursor()  # Restore cursor after cancellation
 
     def on_metadata_error(self, message: str) -> None:
         """
