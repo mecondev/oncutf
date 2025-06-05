@@ -490,7 +490,18 @@ class MainWindow(QMainWindow):
         QShortcut(QKeySequence("Ctrl+M"), self.file_table_view, activated=self.shortcut_load_metadata)
         QShortcut(QKeySequence("Ctrl+E"), self.file_table_view, activated=self.shortcut_load_extended_metadata)
 
-    def request_preview_update(self):
+    def request_preview_update(self) -> None:
+        """
+        Schedules a delayed update of the name previews.
+        Instead of calling generate_preview_names directly every time something changes,
+        the timer is restarted so that the actual update occurs only when
+        changes stop for the specified duration (250ms).
+        """
+        if not any(f.checked for f in self.model.files):
+            logger.debug("[Preview] No files checked — skipping preview request.")
+            return
+        if self.preview_update_timer.isActive():
+            self.preview_update_timer.stop()
         self.preview_update_timer.start()
 
     def force_reload(self) -> None:
@@ -1191,7 +1202,6 @@ class MainWindow(QMainWindow):
             ) and not post_transform
         )
 
-        self.preview_map.clear()
         self.preview_map = {file.filename: file for file in selected_files}
 
         if is_noop:
@@ -2346,15 +2356,15 @@ class MainWindow(QMainWindow):
             folder_path = paths[0]
             logger.info(f"[Drop] Setting folder from drop: {folder_path}")
 
-            # 🔁 Centralized loading logic
+            # Centralized loading logic
             self.prepare_folder_load(folder_path)
 
-            # ✅ Update folder tree selection (UI logic)
+            # Update folder tree selection (UI logic)
             if hasattr(self.dir_model, "index"):
                 index = self.dir_model.index(folder_path)
                 self.folder_tree.setCurrentIndex(index)
 
-            # ✅ Trigger label update and ensure repaint
+            # Trigger label update and ensure repaint
             self.file_table_view.viewport().update()
             self.update_files_label()
         else:
@@ -2450,10 +2460,10 @@ class MainWindow(QMainWindow):
 
     def schedule_preview_update(self) -> None:
         """
-        Προγραμματίζει μια καθυστερημένη ενημέρωση των προεπισκοπήσεων ονομάτων.
-        Αντί να καλείται απευθείας η generate_preview_names κάθε φορά που αλλάζει κάτι,
-        επανεκκινείται ο timer ώστε η πραγματική ενημέρωση να γίνεται μόνο όταν
-        σταματήσουν οι αλλαγές για το διάστημα που έχει οριστεί (250ms).
+        Schedules a delayed update of the name previews.
+        Instead of calling generate_preview_names directly every time something changes,
+        the timer is restarted so that the actual update occurs only when
+        changes stop for the specified duration (250ms).
         """
         self.preview_update_timer.start()
 
