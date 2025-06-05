@@ -458,7 +458,7 @@ class MainWindow(QMainWindow):
         self.file_table_view.clicked.connect(self.on_table_row_clicked)
         self.file_table_view.selection_changed.connect(self.update_preview_from_selection)
         self.file_table_view.files_dropped.connect(self.load_files_from_dropped_items)
-        self.model.sort_changed.connect(self.schedule_preview_update)
+        self.model.sort_changed.connect(self.request_preview_update)
         self.file_table_view.setContextMenuPolicy(Qt.CustomContextMenu)
         self.file_table_view.customContextMenuRequested.connect(self.handle_table_context_menu)
 
@@ -477,7 +477,7 @@ class MainWindow(QMainWindow):
         self.rename_button.clicked.connect(self.rename_files)
 
         # --- Connect the updated signal of RenameModulesArea to generate_preview_names ---
-        self.rename_modules_area.updated.connect(self.schedule_preview_update)
+        self.rename_modules_area.updated.connect(self.request_preview_update)
 
         # --- Shortcuts ---
         QShortcut(QKeySequence("Ctrl+A"), self.file_table_view, activated=self.select_all_rows)
@@ -2018,7 +2018,13 @@ class MainWindow(QMainWindow):
             selected_rows (list[int]): The indices of selected rows (from custom selection).
         """
         if not selected_rows:
-            logger.debug("[Sync] Skipping preview update — no selection")
+            logger.debug("[Sync] No selection - clearing preview")
+            # Clear all checked states
+            for file in self.model.files:
+                file.checked = False
+            self.update_files_label()
+            self.update_preview_tables_from_pairs([])
+            self.clear_metadata_view()
             return
 
         logger.debug(f"[Sync] update_preview_from_selection: {selected_rows}")
@@ -2316,6 +2322,9 @@ class MainWindow(QMainWindow):
         self.file_table_view.set_placeholder_visible(len(file_items) == 0)
         self.file_table_view.scrollToTop()
 
+        # Clear preview since no files are selected
+        self.update_preview_tables_from_pairs([])
+
 
     def load_metadata_from_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
@@ -2474,12 +2483,5 @@ class MainWindow(QMainWindow):
         )
         logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
 
-    def schedule_preview_update(self) -> None:
-        """
-        Schedules a delayed update of the name previews.
-        Instead of calling generate_preview_names directly every time something changes,
-        the timer is restarted so that the actual update occurs only when
-        changes stop for the specified duration (250ms).
-        """
-        self.preview_update_timer.start()
+
 

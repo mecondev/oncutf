@@ -48,6 +48,9 @@ class OriginalNameWidget(BaseRenameModule):
         layout.addLayout(row)
         layout.addStretch()
 
+        # Initialize _last_value to prevent first empty emit
+        self._last_value = str(self.get_data())
+
     def _on_checkbox_toggled(self, checked: bool) -> None:
         """
         Emits signal only if state has changed from last known.

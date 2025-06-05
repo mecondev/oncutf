@@ -28,6 +28,7 @@ class BaseRenameModule(QWidget):
 
         if not hasattr(self, "_last_value"):
             self._last_value = value
+            self.updated.emit(self)  # Emit on first value too
             return
 
         if value == self._last_value or self._is_validating:

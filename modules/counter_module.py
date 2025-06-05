@@ -61,12 +61,10 @@ class CounterModule(BaseRenameModule):
         self.padding_input.textChanged.connect(self._on_value_change)
         self.increment_input.textChanged.connect(self._on_value_change)
 
-        # Emit once at startup
-        QTimer.singleShot(0, self._emit_initial_update)
+        # Initialize _last_value to prevent duplicate signals
+        self._last_value = str(self.get_data())
 
-    def _emit_initial_update(self):
-        logger.info(f"[CounterModule] Emitting initial update with data: {self.get_data()}")
-        self.updated.emit(self)
+
 
     def _on_value_change(self) -> None:
         """

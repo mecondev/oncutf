@@ -39,7 +39,7 @@ class FileItem:
         self.extension = extension
         self.modified = modified
         self.full_path = full_path
-        self.checked = True
+        self.checked = False  # Files start unselected
         self.date = None
         self.metadata = {}
         self.size = self._detect_size()

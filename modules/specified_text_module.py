@@ -41,7 +41,7 @@ class SpecifiedTextModule(BaseRenameModule):
         self.text_input.setPlaceholderText("Enter custom text")
         self.text_input.setMaxLength(128)
         self.text_input.setMaximumHeight(24)
-        self._last_text = ""
+        self._last_value = ""  # Initialize to prevent first empty emit
         self.text_input.textChanged.connect(self.validate_input)
 
         layout.addWidget(self.text_label)

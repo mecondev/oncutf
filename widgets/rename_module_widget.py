@@ -55,15 +55,15 @@ class RenameModuleWidget(QWidget):
         self.style().polish(self)
 
         self.module_instances = {
-            "Original Name": OriginalNameWidget,
             "Specified Text": SpecifiedTextModule,
+            "Original Name": OriginalNameWidget,
             "Counter": CounterModule,
             "Metadata": MetadataWidget
         }
 
         self.module_heights = {
-            "Original Name": 50,
             "Specified Text": 90,
+            "Original Name": 50,
             "Counter": 130,
             "Metadata": 120
         }
@@ -104,9 +104,9 @@ class RenameModuleWidget(QWidget):
     def connect_signals_for_module(self, module_widget: QWidget) -> None:
         if self.parent_window and hasattr(module_widget, "updated"):
             try:
-                self.updated.connect(lambda *_: self.parent_window.request_preview_update())
+                # Connect the module's updated signal to emit our updated signal
                 module_widget.updated.connect(lambda _: self.updated.emit(self))
-                logger.info("[RenameModuleWidget] Connected updated -> generate_preview_names (with module ref)")
+                logger.info("[RenameModuleWidget] Connected module.updated -> self.updated")
 
             except Exception as e:
                 logger.warning(f"[RenameModuleWidget] Signal connection failed: {e}")
