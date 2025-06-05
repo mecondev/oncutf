@@ -2279,7 +2279,7 @@ class MainWindow(QMainWindow):
         self.model.layoutChanged.emit()
 
         # Re-set header (if replacing it)
-        self.file_table_view.setHorizontalHeader(self.header)
+        # self.file_table_view.setHorizontalHeader(self.header)
 
         # Sorting connections — must be after emit
         self.file_table_view.setSortingEnabled(True)
