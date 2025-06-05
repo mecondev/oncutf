@@ -21,8 +21,15 @@ class BaseRenameModule(QWidget):
         """
         Emits the updated signal only if the value differs from the last known.
         """
+        logger.debug(f"[Signal] {self.__class__.__name__} emit_if_changed: old={getattr(self, '_last_value', None)!r} new={value!r}")
+
+        if not hasattr(self, "_last_value"):
+            self._last_value = value
+            return
+
         if value == self._last_value or self._is_validating:
             return
+
         self._last_value = value
         self.updated.emit(self)
 
@@ -35,3 +42,10 @@ class BaseRenameModule(QWidget):
             func()
         finally:
             widget.blockSignals(False)
+
+    def is_effective(self) -> bool:
+        """
+        Returns True if this module should affect the output filename.
+        By default, delegates to the staticmethod is_effective(data).
+        """
+        return self.__class__.is_effective(self.get_data())

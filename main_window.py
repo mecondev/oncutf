@@ -817,7 +817,13 @@ class MainWindow(QMainWindow):
         return file_items
 
     def prepare_file_table(self, file_items: list[FileItem]) -> None:
+        """
+        Prepares the file table view with the given file items, clearing selection
+        and setting up the model, delegates, and UI elements appropriately.
 
+        Args:
+            file_items (list[FileItem]): List of FileItem objects to display in the table
+        """
         self.file_table_view.setModel(self.model)
         for f in file_items:
             f.checked = False
@@ -1189,6 +1195,14 @@ class MainWindow(QMainWindow):
         rename_data = self.rename_modules_area.get_all_data()
         modules_data = rename_data.get("modules", [])
         post_transform = rename_data.get("post_transform", {})
+
+        # Check if there are any active modules
+        all_modules = self.rename_modules_area.get_all_module_instances()
+        if not any(m.is_effective() for m in all_modules):
+            logger.debug("[Preview] No active modules — skipping preview generation.")
+            self.update_preview_tables_from_pairs([])
+            self.rename_button.setEnabled(False)
+            return
 
         logger.debug(f"[Preview] modules_data: {modules_data}")
         logger.debug(f"[Preview] post_transform: {post_transform}")

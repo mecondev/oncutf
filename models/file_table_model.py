@@ -136,7 +136,7 @@ class FileTableModel(QAbstractTableModel):
                 self.parent_window.header.update_state(self.files)
                 self.parent_window.update_files_label()
                 self.parent_window.request_preview_update()
-                
+
             return True
 
         return False
@@ -197,6 +197,9 @@ class FileTableModel(QAbstractTableModel):
         self.beginResetModel()
         self.files = files
         self.endResetModel()
+
+        for f in files:
+            f.checked = False  # force clear
 
     def add_files(self, new_files: list[FileItem]) -> None:
         """
