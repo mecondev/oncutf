@@ -83,7 +83,6 @@ class RenameModuleWidget(QWidget):
         self.type_combo.setMaximumWidth(140)
         self.type_combo.setFixedHeight(20)
         self.type_combo.currentTextChanged.connect(self.update_module_content)
-        self.type_combo.setCurrentText('Specified Text')
 
         type_row.addWidget(type_label)
         type_row.addWidget(self.type_combo)
@@ -97,8 +96,14 @@ class RenameModuleWidget(QWidget):
         self.content_container_layout.setSpacing(2)
         self.main_layout.addWidget(self.content_container_widget)
 
+        # Set default module AFTER layout initialization
+        self.type_combo.setCurrentText('Specified Text')
+
         # Load default module
+        logger.debug(f"[RenameModuleWidget] Before QTimer.singleShot: content_container_layout is {'initialized' if hasattr(self, 'content_container_layout') else 'not initialized'}")
         QTimer.singleShot(0, lambda: self.update_module_content(self.type_combo.currentText()))
+
+        logger.debug(f"[RenameModuleWidget] Before update_module_content: content_container_layout is {'initialized' if hasattr(self, 'content_container_layout') else 'not initialized'}")
 
     def connect_signals_for_module(self, module_widget: QWidget) -> None:
         if self.parent_window and hasattr(module_widget, "updated"):
@@ -140,6 +145,9 @@ class RenameModuleWidget(QWidget):
 
             # Optional signal connection
             self.connect_signals_for_module(self.current_module_widget)
+
+        # Emit updated signal to refresh preview
+        self.updated.emit(self)
 
     def get_data(self) -> dict:
         """
