@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import pyqtSignal
 
+from modules.base_module import BaseRenameModule
 from widgets.rename_module_widget import RenameModuleWidget
 from widgets.name_transform_widget import NameTransformWidget
 
@@ -121,3 +122,10 @@ class RenameModulesArea(QWidget):
             "modules": [m.to_dict() for m in self.module_widgets],
             "post_transform": self.name_transform_widget.get_data()
         }
+
+    def get_all_module_instances(self) -> list[BaseRenameModule]:
+        """
+        Returns all current rename module widget instances.
+        Useful for checking is_effective() per module.
+        """
+        return self.module_widgets

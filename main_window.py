@@ -1184,7 +1184,9 @@ class MainWindow(QMainWindow):
         timer = QElapsedTimer()
         timer.start()
 
+
         selected_files = [f for f in self.model.files if f.checked]
+        logger.debug("[Preview] Triggered! Selected rows: %s", [f.filename for f in selected_files])
 
         if not selected_files:
             logger.debug("[Preview] No selected files — skipping preview generation.")

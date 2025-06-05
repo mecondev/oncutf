@@ -132,6 +132,7 @@ class RenameModuleWidget(QWidget):
             else:
                 self.current_module_widget = module_class()
 
+            self.module = self.current_module_widget  # Define the module
             self.content_container_layout.addWidget(self.current_module_widget)
 
             # Force fixed height for container depending on module type
@@ -161,3 +162,20 @@ class RenameModuleWidget(QWidget):
         data = self.get_data()
         data["type"] = module_type.lower().replace(" ", "_")
         return data
+
+    def is_effective(self) -> bool:
+        """
+        Determines if this module is effectively doing something, by checking its data.
+        """
+        if not self.current_module_widget:
+            return False  # No module loaded
+
+        data = self.get_data()
+
+        # Try to access the class method `is_effective(data)` safely
+        module_class = type(self.current_module_widget)
+        if hasattr(module_class, "is_effective"):
+            return module_class.is_effective(data)  # type: ignore[attr-defined]
+        return False
+
+
