@@ -126,13 +126,17 @@ class FileTableModel(QAbstractTableModel):
         file = self.files[row]
 
         if role == Qt.CheckStateRole and col == 0:
-            file.checked = (value == Qt.Checked)
+            new_checked = (value == Qt.Checked)
+            if file.checked == new_checked:
+                return False  # Don't do anything if it didn't change
+            file.checked = new_checked
+
             self.dataChanged.emit(index, index, [Qt.CheckStateRole])
             if self.parent_window:
                 self.parent_window.header.update_state(self.files)
                 self.parent_window.update_files_label()
                 self.parent_window.request_preview_update()
-
+                
             return True
 
         return False

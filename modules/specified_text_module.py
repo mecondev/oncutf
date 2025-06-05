@@ -43,6 +43,7 @@ class SpecifiedTextModule(BaseRenameModule):
         self.text_input.setMaximumHeight(24)
         self._last_text = ""
         self.text_input.textChanged.connect(self.validate_input)
+        self.block_signals_while(self.line_edit, lambda: self.line_edit.setText(""))
 
         layout.addWidget(self.text_label)
         layout.addWidget(self.text_input)
