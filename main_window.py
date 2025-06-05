@@ -1977,7 +1977,7 @@ class MainWindow(QMainWindow):
         Args:
             selected_rows (list[int]): The indices of selected rows (from custom selection).
         """
-        if not self.selected_rows:
+        if not selected_rows:
             logger.debug("[Sync] Skipping preview update — no selection")
             return
 
@@ -2258,21 +2258,21 @@ class MainWindow(QMainWindow):
         self.model.files = file_items
         self.model.layoutChanged.emit()
 
-        # Re-set header (αν το αντικαθιστάς)
+        # Re-set header (if replacing it)
         self.file_table_view.setHorizontalHeader(self.header)
 
-        # ⛳️ Συνδέσεις sorting — ΠΡΕΠΕΙ να μπουν μετά το emit
+        # Sorting connections — must be after emit
         self.file_table_view.setSortingEnabled(True)
         self.header.setSectionsClickable(True)
         self.header.setSortIndicatorShown(True)
-        self.header.setEnabled(True)  # <- απαραίτητο για δεξί κλικ!
+        self.header.setEnabled(True)  # <- required for right-click!
         self.file_table_view.sortByColumn(1, Qt.AscendingOrder)
 
-        # ⛳️ Clear highlight & preview
+        # Clear highlight & preview
         self.file_table_view.clearSelection()
-        self.file_table_view.selected_rows.clear()  # <-- Αυτό το πρόσθεσες εσύ, σωστά;
+        self.file_table_view.selected_rows.clear()
 
-        # Placeholder & θέση
+        # Placeholder & position
         self.file_table_view.set_placeholder_visible(len(file_items) == 0)
         self.file_table_view.scrollToTop()
 
