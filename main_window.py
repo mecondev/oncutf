@@ -891,31 +891,28 @@ class MainWindow(QMainWindow):
 
     def start_metadata_scan(self, file_paths: list[str]) -> None:
         """
-        Starts the metadata scan and shows the waiting dialog.
+        Initiates the metadata scan process for the given file paths.
 
-        This method:
-        - Displays the custom metadata dialog with progress
-        - Connects ESC/cancel event to worker cancellation
-        - Enables wait cursor during scan
         - Delegates actual work to load_metadata_in_thread()
         """
         logger.warning("[DEBUG] start_metadata_scan CALLED")
         logger.debug(f"[MetadataScan] Launch with force_extended = {self.force_extended_metadata}")
 
-        with wait_cursor():
-            is_extended = self.force_extended_metadata
-            self.loading_dialog = MetadataWaitingDialog(self, is_extended=is_extended)
-            self.loading_dialog.set_status("Reading metadata...")
-            self.loading_dialog.set_filename("")
-            self.loading_dialog.set_progress(0, len(file_paths))
+        is_extended = self.force_extended_metadata
+        self.loading_dialog = MetadataWaitingDialog(self, is_extended=is_extended)
+        self.loading_dialog.set_status("Reading metadata...")
+        self.loading_dialog.set_filename("")
+        self.loading_dialog.set_progress(0, len(file_paths))
 
-            # Connect cancel (ESC or manual close) to cancel logic
-            self.loading_dialog.rejected.connect(self.cancel_metadata_loading)
+        # Connect cancel (ESC or manual close) to cancel logic
+        self.loading_dialog.rejected.connect(self.cancel_metadata_loading)
 
-            self.loading_dialog.show()
-            QApplication.processEvents()
+        self.loading_dialog.show()
+        QApplication.processEvents()
 
-            self.load_metadata_in_thread(file_paths)
+        wait_cursor()
+        self.load_metadata_in_thread(file_paths)
+        wait_cursor()
 
     def load_metadata_in_thread(self, file_paths: list[str]) -> None:
         """
@@ -961,8 +958,9 @@ class MainWindow(QMainWindow):
         # Signal when finished
         self.metadata_worker.finished.connect(self.handle_metadata_finished)
 
-        # Start thread execution
+        wait_cursor()  # Set wait cursor before starting the thread
         self.metadata_thread.start()
+        wait_cursor()  # Restore cursor after the thread has started
 
     def start_metadata_scan_for_items(self, items: list[FileItem]) -> None:
         """
