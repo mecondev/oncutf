@@ -71,8 +71,6 @@ class InteractiveHeader(QHeaderView):
         """
         Show right-click context menu for sorting at header column.
         """
-        print("[DEBUG] Header: context menu event triggered")
-
         logical_index = self.logicalIndexAt(event.pos())
         if logical_index <= 0:
             return  # skip column 0 (toggle column)

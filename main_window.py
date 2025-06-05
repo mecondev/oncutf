@@ -110,7 +110,6 @@ class MainWindow(QMainWindow):
         self.filename_validator = FilenameValidator()
         self.last_action = None  # Could be: 'folder_select', 'browse', 'rename', etc.
         self.current_folder_path = None
-        self.selected_rows: set[int] = set()
         self.files = []
         self.preview_map = {}  # preview_filename -> FileItem
         self._selection_sync_mode = "normal"  # values: "normal", "toggle"
@@ -558,9 +557,11 @@ class MainWindow(QMainWindow):
         selection_model = self.file_table_view.selectionModel()
         all_checked = all(f.checked for f in self.model.files)
         all_selected = False
+
+        selected_rows = self.file_table_view.selected_rows
         if selection_model is not None:
-            self.selected_rows = set(idx.row() for idx in selection_model.selectedRows())
-            all_selected = (len(self.selected_rows) == total)
+            selected_rows = set(idx.row() for idx in selection_model.selectedRows())
+            all_selected = (len(selected_rows) == total)
         if all_checked and all_selected:
             logger.debug("[SelectAll] All files already selected in both checked and selection model. No action taken.")
             return
@@ -966,7 +967,6 @@ class MainWindow(QMainWindow):
 
         Uses the custom selected_rows from the file_table_view, not Qt's selectionModel().
         """
-        # Local copy from file_table_view (do not use self.selected_rows here)
         selected_rows = self.file_table_view.selected_rows
         selected = [self.model.files[r] for r in selected_rows if 0 <= r < len(self.model.files)]
 
@@ -996,7 +996,6 @@ class MainWindow(QMainWindow):
             logger.warning("[Shortcut] Metadata scan already running — shortcut ignored.")
             return
 
-        # Local copy from file_table_view (do not use self.selected_rows here)
         selected_rows = self.file_table_view.selected_rows
         selected = [self.model.files[r] for r in selected_rows if 0 <= r < len(self.model.files)]
 
@@ -1081,7 +1080,6 @@ class MainWindow(QMainWindow):
         Displays metadata of the currently selected (focused) file in the table view.
         If no selection or no metadata exists, clears the metadata tree.
         """
-        # Local copy from file_table_view (do not use self.selected_rows here)
         selection_model = self.file_table_view.selectionModel()
         selected_rows = selection_model.selectedRows()
 
