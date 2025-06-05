@@ -627,11 +627,10 @@ class MainWindow(QMainWindow):
             else:
                 self.clear_metadata_view()
 
-    def sort_by_column(self, column: int, order: Qt.SortOrder = None) -> None:
+    def sort_by_column(self, column: int, order: Qt.SortOrder = None, force_order: Qt.SortOrder = None) -> None:
         """
-        Triggered when a header section is clicked.
-        Sorts the file table immediately on first click,
-        toggles sort order if the same column is clicked again.
+        Sorts the file table based on clicked header column or context menu.
+        Toggle logic unless a force_order is explicitly provided.
         """
         if column == 0:
             return  # Do not sort the status/info column
@@ -640,7 +639,9 @@ class MainWindow(QMainWindow):
         current_column = header.sortIndicatorSection()
         current_order = header.sortIndicatorOrder()
 
-        if column == current_column:
+        if force_order is not None:
+            new_order = force_order
+        elif column == current_column:
             new_order = Qt.DescendingOrder if current_order == Qt.AscendingOrder else Qt.AscendingOrder
         else:
             new_order = Qt.AscendingOrder

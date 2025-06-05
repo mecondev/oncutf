@@ -90,12 +90,12 @@ class InteractiveHeader(QHeaderView):
 
         menu.exec_(event.globalPos())
 
-    def _sort(self, index: int, order):
+    def _sort(self, column: int, order: Qt.SortOrder) -> None:
         """
-        Calls sort_by_column on parent with specified order.
+        Calls MainWindow.sort_by_column() with forced order from context menu.
         """
         if self.parent_window and hasattr(self.parent_window, 'sort_by_column'):
-            self.parent_window.sort_by_column(index, order)
+            self.parent_window.sort_by_column(column, force_order=order)
 
     def setSectionMinimumSize(self, logicalIndex: int, size: int) -> None:
         super().setSectionMinimumSize(logicalIndex, size)
