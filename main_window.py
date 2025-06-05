@@ -555,7 +555,6 @@ class MainWindow(QMainWindow):
     def select_all_rows(self) -> None:
         """
         Selects all rows in the file table efficiently using select_rows_range helper.
-        Shows wait cursor during the operation.
         """
         if not self.model.files:
             return
@@ -573,11 +572,10 @@ class MainWindow(QMainWindow):
         if all_checked and all_selected:
             logger.debug("[SelectAll] All files already selected in both checked and selection model. No action taken.")
             return
-        with wait_cursor():
-            logger.info(f"[SelectAll] Selecting all {total} rows.")
-            self.file_table_view.select_rows_range(0, total - 1)
-            self.file_table_view.anchor_row = 0
-            QTimer.singleShot(20, self.update_files_label)
+        logger.info(f"[SelectAll] Selecting all {total} rows.")
+        self.file_table_view.select_rows_range(0, total - 1)
+        self.file_table_view.anchor_row = 0
+        QTimer.singleShot(20, self.update_files_label)
 
     def clear_all_selection(self) -> None:
         # If everything is already deselected, do nothing
@@ -1178,121 +1176,122 @@ class MainWindow(QMainWindow):
         Generate new preview names for all selected files using current rename modules.
         Updates the preview map and UI elements accordingly.
         """
-        timer = QElapsedTimer()
-        timer.start()
+        with wait_cursor():
+            timer = QElapsedTimer()
+            timer.start()
 
-        selected_files = [f for f in self.model.files if f.checked]
-        logger.debug("[Preview] Triggered! Selected rows: %s", [f.filename for f in selected_files])
+            selected_files = [f for f in self.model.files if f.checked]
+            logger.debug("[Preview] Triggered! Selected rows: %s", [f.filename for f in selected_files])
 
-        if not selected_files:
-            logger.debug("[Preview] No selected files — skipping preview generation.")
-            self.update_preview_tables_from_pairs([])
-            self.rename_button.setEnabled(False)
-            return
+            if not selected_files:
+                logger.debug("[Preview] No selected files — skipping preview generation.")
+                self.update_preview_tables_from_pairs([])
+                self.rename_button.setEnabled(False)
+                return
 
-        rename_data = self.rename_modules_area.get_all_data()
-        modules_data = rename_data.get("modules", [])
-        post_transform = rename_data.get("post_transform", {})
+            rename_data = self.rename_modules_area.get_all_data()
+            modules_data = rename_data.get("modules", [])
+            post_transform = rename_data.get("post_transform", {})
 
-        logger.debug(f"[Preview] modules_data: {modules_data}")
-        logger.debug(f"[Preview] post_transform: {post_transform}")
+            logger.debug(f"[Preview] modules_data: {modules_data}")
+            logger.debug(f"[Preview] post_transform: {post_transform}")
 
-        # Fast path: if all modules are no-op and no post_transform
-        is_noop = True
+            # Fast path: if all modules are no-op and no post_transform
+            is_noop = True
 
-        # Check if any module is effective
-        all_modules = self.rename_modules_area.get_all_module_instances()
-        logger.debug(f"[Preview] Checking {len(all_modules)} modules for effectiveness")
-        for module_widget in all_modules:
-            if module_widget.is_effective():
-                logger.debug(f"[Preview] Module {module_widget.type_combo.currentText()} is effective!")
+            # Check if any module is effective
+            all_modules = self.rename_modules_area.get_all_module_instances()
+            logger.debug(f"[Preview] Checking {len(all_modules)} modules for effectiveness")
+            for module_widget in all_modules:
+                if module_widget.is_effective():
+                    logger.debug(f"[Preview] Module {module_widget.type_combo.currentText()} is effective!")
+                    is_noop = False
+                    break
+                else:
+                    logger.debug(f"[Preview] Module {module_widget.type_combo.currentText()} is NOT effective")
+
+            # Check if post_transform is effective
+            if NameTransformModule.is_effective(post_transform):
+                logger.debug(f"[Preview] Post transform is effective: {post_transform}")
                 is_noop = False
-                break
             else:
-                logger.debug(f"[Preview] Module {module_widget.type_combo.currentText()} is NOT effective")
+                logger.debug(f"[Preview] Post transform is NOT effective: {post_transform}")
 
-        # Check if post_transform is effective
-        if NameTransformModule.is_effective(post_transform):
-            logger.debug(f"[Preview] Post transform is effective: {post_transform}")
-            is_noop = False
-        else:
-            logger.debug(f"[Preview] Post transform is NOT effective: {post_transform}")
+            self.preview_map = {file.filename: file for file in selected_files}
 
-        self.preview_map = {file.filename: file for file in selected_files}
+            if is_noop:
+                logger.debug("[Preview] Fast path: no-op modules, skipping preview/validation.")
+                # No preview/validation needed, just identity mapping
+                name_pairs = [(f.filename, f.filename) for f in selected_files]
+                self.update_preview_tables_from_pairs(name_pairs)
+                self.rename_button.setEnabled(False)
+                self.rename_button.setToolTip("No changes to apply")
+                return
 
-        if is_noop:
-            logger.debug("[Preview] Fast path: no-op modules, skipping preview/validation.")
-            # No preview/validation needed, just identity mapping
-            name_pairs = [(f.filename, f.filename) for f in selected_files]
-            self.update_preview_tables_from_pairs(name_pairs)
-            self.rename_button.setEnabled(False)
-            self.rename_button.setToolTip("No changes to apply")
-            return
+            logger.debug("[Preview] Running full preview/validation for selected files.")
 
-        logger.debug("[Preview] Running full preview/validation for selected files.")
+            name_pairs = []
 
-        name_pairs = []
+            for idx, file in enumerate(selected_files):
+                try:
+                    # Split filename into basename and extension
+                    import os
+                    basename, extension = os.path.splitext(file.filename)
 
-        for idx, file in enumerate(selected_files):
-            try:
-                # Split filename into basename and extension
-                import os
-                basename, extension = os.path.splitext(file.filename)
+                    # Apply modules to basename only
+                    new_fullname = apply_rename_modules(modules_data, idx, file, self.metadata_cache)
+                    # Αφαίρεσε το extension αν υπάρχει ήδη (ώστε να δουλεύει μόνο με το basename)
+                    if extension and new_fullname.lower().endswith(extension.lower()):
+                        new_basename = new_fullname[:-(len(extension))]
+                    else:
+                        new_basename = new_fullname
 
-                # Apply modules to basename only
-                new_fullname = apply_rename_modules(modules_data, idx, file, self.metadata_cache)
-                # Αφαίρεσε το extension αν υπάρχει ήδη (ώστε να δουλεύει μόνο με το basename)
-                if extension and new_fullname.lower().endswith(extension.lower()):
-                    new_basename = new_fullname[:-(len(extension))]
-                else:
-                    new_basename = new_fullname
+                    logger.debug(f"Modules: {modules_data}")
+                    logger.debug(f"Output from modules: {new_basename}")
 
-                logger.debug(f"Modules: {modules_data}")
-                logger.debug(f"Output from modules: {new_basename}")
+                    # Apply name transform (case, separator) to basename only
+                    if NameTransformModule.is_effective(post_transform):
+                        new_basename = NameTransformModule.apply_from_data(post_transform, new_basename)
+                        logger.debug(f"Transform applied: {new_basename}")
 
-                # Apply name transform (case, separator) to basename only
-                if NameTransformModule.is_effective(post_transform):
-                    new_basename = NameTransformModule.apply_from_data(post_transform, new_basename)
-                    logger.debug(f"Transform applied: {new_basename}")
+                    # Validate only the basename
+                    from utils.validation import is_valid_filename_text
+                    if not is_valid_filename_text(new_basename):
+                        logger.warning(f"Invalid basename generated: {new_basename}")
+                        name_pairs.append((file.filename, file.filename))
+                        continue
+                    # Add extension (with dot) only at the end
+                    if extension:
+                        new_name = f"{new_basename}{extension}"
+                    else:
+                        new_name = new_basename
+                    logger.debug(f"[Preview] {file.filename} -> {new_name}")
+                    name_pairs.append((file.filename, new_name))
+                    logger.debug(f"[Preview] Generating for {[f.filename for f in selected_files]}", extra={"dev_only": True})
 
-                # Validate only the basename
-                from utils.validation import is_valid_filename_text
-                if not is_valid_filename_text(new_basename):
-                    logger.warning(f"Invalid basename generated: {new_basename}")
+                except Exception as e:
+                    logger.warning(f"Failed to generate preview for {file.filename}: {e}")
                     name_pairs.append((file.filename, file.filename))
-                    continue
-                # Add extension (with dot) only at the end
-                if extension:
-                    new_name = f"{new_basename}{extension}"
-                else:
-                    new_name = new_basename
-                logger.debug(f"[Preview] {file.filename} -> {new_name}")
-                name_pairs.append((file.filename, new_name))
-                logger.debug(f"[Preview] Generating for {[f.filename for f in selected_files]}", extra={"dev_only": True})
 
-            except Exception as e:
-                logger.warning(f"Failed to generate preview for {file.filename}: {e}")
-                name_pairs.append((file.filename, file.filename))
+            # Map new name → FileItem only when name changed
+            for old_name, new_name in name_pairs:
+                if old_name != new_name:
+                    file_item = self.preview_map.get(old_name)
+                    if file_item:
+                        self.preview_map[new_name] = file_item
+                        logger.debug(f"[Preview] preview_map updated: {old_name} -> {new_name}")
 
-        # Map new name → FileItem only when name changed
-        for old_name, new_name in name_pairs:
-            if old_name != new_name:
-                file_item = self.preview_map.get(old_name)
-                if file_item:
-                    self.preview_map[new_name] = file_item
-                    logger.debug(f"[Preview] preview_map updated: {old_name} -> {new_name}")
+            self.update_preview_tables_from_pairs(name_pairs)
 
-        self.update_preview_tables_from_pairs(name_pairs)
+            # Enable rename button if any name has changed
+            valid_pairs = [p for p in name_pairs if p[0] != p[1]]
+            self.rename_button.setEnabled(bool(valid_pairs))
+            tooltip_msg = f"{len(valid_pairs)} files will be renamed." if valid_pairs else "No changes to apply"
+            self.rename_button.setToolTip(tooltip_msg)
+            logger.debug(f"[PreviewMap] Keys: {list(self.preview_map.keys())}", extra={"dev_only": True})
 
-        # Enable rename button if any name has changed
-        valid_pairs = [p for p in name_pairs if p[0] != p[1]]
-        self.rename_button.setEnabled(bool(valid_pairs))
-        tooltip_msg = f"{len(valid_pairs)} files will be renamed." if valid_pairs else "No changes to apply"
-        self.rename_button.setToolTip(tooltip_msg)
-        logger.debug(f"[PreviewMap] Keys: {list(self.preview_map.keys())}", extra={"dev_only": True})
-
-        elapsed = timer.elapsed()
-        logger.debug(f"[Performance] generate_preview_names took {elapsed} ms")
+            elapsed = timer.elapsed()
+            logger.debug(f"[Performance] generate_preview_names took {elapsed} ms")
 
     def compute_max_filename_width(self, file_list: list[FileItem]) -> int:
         """
@@ -1630,7 +1629,6 @@ class MainWindow(QMainWindow):
 
         # --- 2. Cancel cursor and internal flags
         self.force_extended_metadata = False
-        self._restore_cursor()
 
         # --- 3. Validate file model before proceeding
         if not hasattr(self, "model") or not getattr(self.model, "files", None):
