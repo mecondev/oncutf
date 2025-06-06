@@ -68,6 +68,18 @@ class MetadataLoader:
                 continue
 
             metadata = self.read(file.full_path, use_extended=use_extended)
+
+            # Check if metadata has the extended flag
+            metadata_has_extended = isinstance(metadata, dict) and metadata.get("__extended__") is True
+
+            # Determine effective extended status
+            effective_extended = use_extended or metadata_has_extended
+
+            logger.debug(f"[Loader] Metadata for {file.filename}:")
+            logger.debug(f"[Loader] - use_extended parameter: {use_extended}")
+            logger.debug(f"[Loader] - metadata has __extended__ flag: {metadata_has_extended}")
+            logger.debug(f"[Loader] - effective extended status: {effective_extended}")
+
             file.metadata = metadata
             updated_count += 1
             if self.model:
@@ -79,9 +91,9 @@ class MetadataLoader:
                     logger.warning(f"[Loader] Failed to emit dataChanged for {file.filename}: {e}")
 
             if cache:
-                cache.set(file.full_path, metadata, is_extended=use_extended)
+                cache.set(file.full_path, metadata, is_extended=effective_extended)
 
-            logger.debug(f"[Loader] Read metadata for: {file.filename} | extended={use_extended}", extra={"dev_only": True})
+            logger.debug(f"[Loader] Read metadata for: {file.filename} | extended={effective_extended}", extra={"dev_only": True})
 
         logger.debug(f"[Loader] Total updated: {updated_count} / {len(files)}", extra={"dev_only": True})
 

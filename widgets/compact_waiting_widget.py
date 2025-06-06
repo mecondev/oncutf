@@ -118,7 +118,6 @@ class CompactWaitingWidget(QWidget):
     def set_status(self, text: str) -> None:
         logger.debug(f"[Waiting Dialog] Set status. Called from: {text.strip()}")
         self.status_label.setText(text)
-        logger.debug("[Waiting Dialog] Cursor restored.")
 
     def set_count(self, current: int, total: int) -> None:
         self.count_label.setText(f"{current} of {total}")

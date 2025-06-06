@@ -77,17 +77,21 @@ import contextlib
 import re
 
 @contextlib.contextmanager
-def wait_cursor():
+def wait_cursor(restore_after=True):
     """
     Context manager that sets the cursor to wait and restores it after.
     Logs the file, line number, and function from where it was called.
     The logged path is shortened to start from 'oncutf/' for clarity.
+
+    Parameters:
+        restore_after: If True, the cursor will be restored after the context block.
+                       If False, the cursor will remain as wait cursor.
     """
     import traceback
     from PyQt5.QtWidgets import QApplication
     from PyQt5.QtCore import Qt
 
-    QApplication.setOverrideCursor(Qt.WaitCursor)
+    QApplication.setOverrideCursor(Qt.WaitCursor) # type: ignore
 
     # Get full stack and reverse it (top frame is last)
     stack = traceback.extract_stack()
@@ -109,8 +113,11 @@ def wait_cursor():
     try:
         yield
     finally:
-        QApplication.restoreOverrideCursor()
-        logger.debug("[Cursor] Wait cursor restored.")
+        if restore_after:
+            QApplication.restoreOverrideCursor()
+            logger.debug("[Cursor] Wait cursor restored.")
+        else:
+            logger.debug("[Cursor] Wait cursor NOT restored (as requested).")
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
@@ -998,7 +1005,8 @@ class MainWindow(QMainWindow):
 
         file_paths = [item.full_path for item in items]
 
-        with wait_cursor():
+        # Use wait_cursor without restoring it, so cursor remains as wait during dialog display
+        with wait_cursor(restore_after=False):
             self.start_metadata_scan(file_paths)
 
     def shortcut_load_metadata(self) -> None:
@@ -1604,6 +1612,10 @@ class MainWindow(QMainWindow):
         if self.loading_dialog:
             self.loading_dialog.close()
 
+        # Always restore the cursor when metadata loading is finished
+        QApplication.restoreOverrideCursor()
+        logger.debug("[MainWindow] Cursor explicitly restored after metadata task.")
+
     def cleanup_metadata_worker(self) -> None:
         """
         Safely shuts down and deletes the metadata worker and its thread.
@@ -1667,7 +1679,11 @@ class MainWindow(QMainWindow):
         if self.loading_dialog:
             self.loading_dialog.close()
 
-        QApplication.restoreOverrideCursor()  # Restore cursor after cancellation
+        # Ensure cursor is restored, even if there were multiple setOverrideCursor calls
+        while QApplication.overrideCursor():
+            QApplication.restoreOverrideCursor()
+
+        logger.debug("[MainWindow] Cursor fully restored after metadata cancellation.")
 
     def on_metadata_error(self, message: str) -> None:
         """
@@ -1684,7 +1700,9 @@ class MainWindow(QMainWindow):
         logger.error(f"Metadata error: {message}")
 
         # 1. Restore busy cursor
-        self._restore_cursor()
+        while QApplication.overrideCursor():
+            QApplication.restoreOverrideCursor()
+        logger.debug("[MainWindow] Cursor fully restored after metadata error.")
 
         # 2. Close the loading dialog
         if getattr(self, "loading_dialog", None):
@@ -2331,40 +2349,74 @@ class MainWindow(QMainWindow):
             logger.warning(f"[{source}] Metadata scan already running — ignoring request.")
             return
 
+        # Check if metadata is already loaded and of the right type
+        needs_loading = []
+        for item in items:
+            # Get the cached entry (which includes extended status)
+            entry = self.metadata_cache.get_entry(item.full_path)
+
+            # Add file to loading list if:
+            # 1. No cached entry exists
+            # 2. Extended metadata is requested but entry is not extended
+            if not entry:
+                logger.debug(f"[{source}] {item.filename} needs loading (no cache entry)")
+                needs_loading.append(item)
+            elif use_extended and not entry.is_extended:
+                logger.debug(f"[{source}] {item.filename} needs loading (extended requested but only basic loaded)")
+                needs_loading.append(item)
+            else:
+                logger.debug(f"[{source}] {item.filename} already has {'extended' if entry.is_extended else 'basic'} metadata")
+
+        # If all files already have appropriate metadata, just show it
+        if not needs_loading:
+            if len(items) == 1:
+                # Display the existing metadata for single file selection
+                file_item = items[0]
+                metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
+                if isinstance(metadata, dict):
+                    self.display_metadata(metadata, context=f"existing_metadata_from_{source}")
+                    self.set_status(f"Metadata already loaded for {file_item.filename}.", color="green", auto_reset=True)
+                    return
+            else:
+                self.set_status(f"Metadata already loaded for {len(items)} files.", color="green", auto_reset=True)
+                return
+
         # Check for large files if extended metadata was requested
-        if use_extended and not self.confirm_large_files(items):
+        if use_extended and not self.confirm_large_files(needs_loading):
             return
 
         # Set extended metadata flag
         self.force_extended_metadata = use_extended
 
-        # Decide whether to show dialog or simple wait_cursor
-        if len(items) > 1:
-            # Load with dialog (CompactWaitingWidget) for multiple files
-            logger.info(f"[{source}] Loading metadata for {len(items)} files with dialog (extended={use_extended})")
-            self.start_metadata_scan_for_items(items)
-        else:
-            # Simple loading with wait_cursor for a single file
-            logger.info(f"[{source}] Loading metadata for single file with wait_cursor (extended={use_extended})")
-            with wait_cursor():
-                self.metadata_loader.load(
-                    items,
-                    force=False,
-                    cache=self.metadata_cache,
-                    use_extended=use_extended
-                )
+        # If we need to load data, proceed with actual loading
+        if needs_loading:
+            # Decide whether to show dialog or simple wait_cursor
+            if len(needs_loading) > 1:
+                # Load with dialog (CompactWaitingWidget) for multiple files
+                logger.info(f"[{source}] Loading metadata for {len(needs_loading)} files with dialog (extended={use_extended})")
+                self.start_metadata_scan_for_items(needs_loading)
+            else:
+                # Simple loading with wait_cursor for a single file
+                logger.info(f"[{source}] Loading metadata for single file with wait_cursor (extended={use_extended})")
+                with wait_cursor():
+                    self.metadata_loader.load(
+                        needs_loading,
+                        force=False,
+                        cache=self.metadata_cache,
+                        use_extended=use_extended
+                    )
 
-            # Display metadata if successfully loaded
-            last = items[-1]
-            metadata = last.metadata or self.metadata_cache.get(last.full_path)
-            if isinstance(metadata, dict):
-                self.display_metadata(metadata, context=f"load_metadata_from_{source}")
+                # Display metadata if successfully loaded
+                last = needs_loading[-1]
+                metadata = last.metadata or self.metadata_cache.get(last.full_path)
+                if isinstance(metadata, dict):
+                    self.display_metadata(metadata, context=f"load_metadata_from_{source}")
 
-            # Update UI for the specific file
-            row = self.model.files.index(last)
-            for col in range(self.model.columnCount()):
-                idx = self.model.index(row, col)
-                self.file_table_view.viewport().update(self.file_table_view.visualRect(idx))
+                # Update UI for the specific file
+                row = self.model.files.index(last)
+                for col in range(self.model.columnCount()):
+                    idx = self.model.index(row, col)
+                    self.file_table_view.viewport().update(self.file_table_view.visualRect(idx))
 
 
 

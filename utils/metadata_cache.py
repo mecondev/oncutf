@@ -62,12 +62,27 @@ class MetadataCache:
         """
         norm_path = self._normalize_path(file_path)
         prev = self._cache.get(norm_path)
+        prev_extended = False
 
         if isinstance(prev, MetadataEntry):
-            is_extended = is_extended or prev.is_extended  # preserve previous extended state
+            prev_extended = prev.is_extended
+            # Only preserve the extended flag if it was previously true
+            is_extended = is_extended or prev.is_extended
 
-        logger.debug(f"[Cache] SET: {file_path} → extended={is_extended}")
-        self._cache[norm_path] = MetadataEntry(metadata, is_extended=is_extended)
+        # Check if metadata itself has the __extended__ flag
+        metadata_has_extended_flag = isinstance(metadata, dict) and metadata.get("__extended__") is True
+
+        # Final extended status
+        final_extended = is_extended or metadata_has_extended_flag
+
+        # More detailed logging
+        logger.debug(f"[Cache] SET: {file_path}")
+        logger.debug(f"[Cache] Previous entry extended: {prev_extended}")
+        logger.debug(f"[Cache] Input is_extended parameter: {is_extended}")
+        logger.debug(f"[Cache] Metadata has __extended__ flag: {metadata_has_extended_flag}")
+        logger.debug(f"[Cache] Final extended status: {final_extended}")
+
+        self._cache[norm_path] = MetadataEntry(metadata, is_extended=final_extended)
 
     def add(self, file_path: str, metadata: dict, is_extended: bool = False):
         """Adds new metadata entry, raises error if path already exists."""

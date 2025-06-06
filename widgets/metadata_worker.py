@@ -88,9 +88,19 @@ class MetadataWorker(QObject):
                     )
 
                     previous_entry = self.metadata_cache.get_entry(path)
-                    is_extended_flag = previous_entry.is_extended if previous_entry else False
-                    if isinstance(metadata, dict):
-                        is_extended_flag = is_extended_flag or metadata.get("__extended__") is True
+                    previous_extended = previous_entry.is_extended if previous_entry else False
+
+                    # Check if metadata has the extended flag directly
+                    metadata_has_extended = isinstance(metadata, dict) and metadata.get("__extended__") is True
+
+                    # Determine final extended status from all sources
+                    is_extended_flag = previous_extended or self.use_extended or metadata_has_extended
+
+                    logger.debug(f"[Worker] Extended metadata flags for {path}:")
+                    logger.debug(f"[Worker] - Previous entry extended: {previous_extended}")
+                    logger.debug(f"[Worker] - use_extended parameter: {self.use_extended}")
+                    logger.debug(f"[Worker] - metadata has __extended__ flag: {metadata_has_extended}")
+                    logger.debug(f"[Worker] - final extended status: {is_extended_flag}")
 
                     logger.debug(f"[Worker] Saving metadata for {path}, extended = {is_extended_flag}")
                     self.metadata_cache.set(path, metadata, is_extended=is_extended_flag)
