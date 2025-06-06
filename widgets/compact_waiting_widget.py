@@ -105,6 +105,7 @@ class CompactWaitingWidget(QWidget):
         layout.addLayout(bottom_row)
 
     def set_progress(self, value: int, total: int) -> None:
+        logger.debug(f"[Waiting Dialog] Set progress. Called from: {value} of {total}")
         self.set_count(value, total)
         self.progress_bar.setMaximum(total)
         self.progress_bar.setValue(value)
@@ -115,10 +116,11 @@ class CompactWaitingWidget(QWidget):
         self.filename_label.setText(filename)
 
     def set_status(self, text: str) -> None:
-
+        logger.debug(f"[Waiting Dialog] Set status. Called from: {text.strip()}")
         QApplication.setOverrideCursor(Qt.WaitCursor)
         self.status_label.setText(text)
         QApplication.restoreOverrideCursor()
+        logger.debug("[Waiting Dialog] Cursor restored.")
 
     def set_count(self, current: int, total: int) -> None:
         self.count_label.setText(f"{current} of {total}")
