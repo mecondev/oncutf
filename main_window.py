@@ -64,7 +64,7 @@ from widgets.custom_table_view import CustomTableView
 from widgets.metadata_tree_view import MetadataTreeView
 from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 from widgets.rename_modules_area import RenameModulesArea
-from widgets.custom_tree_view import FileTreeView
+from widgets.file_tree_view import FileTreeView
 
 
 from config import *

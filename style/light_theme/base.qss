@@ -43,3 +43,83 @@ QPushButton:hover {
 QPushButton:pressed {
     background-color: #90caf9;
 }
+
+/* Tree View Styles */
+QTreeView {
+    background-color: #ffffff;
+    color: #212121;
+    alternate-background-color: #f8f8f8;
+    border: 1px solid #cccccc;
+    border-radius: 8px;
+    show-decoration-selected: 1;
+}
+
+QTreeView::item:alternate {
+    background-color: #f8f8f8;
+}
+
+QTreeView::item:hover {
+    background-color: #e3f2fd;
+    border-radius: 6px;
+}
+
+QTreeView::item:selected {
+    background-color: #1976d2;
+    color: #ffffff;
+    border-radius: 6px;
+}
+
+/* MetadataTreeView normal content styles */
+MetadataTreeView {
+    color: #212121;  /* Dark color for normal content */
+}
+
+/* MetadataTreeView placeholder styles */
+MetadataTreeView[placeholder="true"]::item {
+    color: gray;
+    selection-background-color: transparent;
+    background-color: transparent;
+}
+
+MetadataTreeView[placeholder="true"]::item:hover {
+    background-color: transparent !important;
+    color: gray !important;
+    border: none !important;
+}
+
+MetadataTreeView[placeholder="true"]::item:selected {
+    background-color: transparent !important;
+    color: gray !important;
+    border: none !important;
+}
+
+/* Tree view branch styling - remove OS selection colors */
+QTreeView::branch {
+    background-color: transparent !important;
+    color: transparent !important;
+    border: none !important;
+}
+
+QTreeView::branch:selected {
+    background-color: transparent !important;
+    color: transparent !important;
+    border: none !important;
+}
+
+QTreeView::branch:hover {
+    background-color: transparent !important;
+    border: none !important;
+}
+
+/* Branch indicators (τα σύμβολα +/- του δέντρου) */
+QTreeView::branch:has-children:!has-siblings:closed,
+QTreeView::branch:closed:has-children:has-siblings {
+    border-image: none;
+    image: url(:/tree-closed.png);
+}
+
+QTreeView::branch:open:has-children:!has-siblings,
+QTreeView::branch:open:has-children:has-siblings {
+    border-image: none;
+    image: url(:/tree-open.png);
+}

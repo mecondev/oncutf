@@ -78,7 +78,7 @@ class MetadataTreeView(QTreeView):
         logger.debug("[DragDrop] dropEvent called!")
 
         # Get the global drag cancel filter
-        from widgets.custom_tree_view import _drag_cancel_filter
+        from widgets.file_tree_view import _drag_cancel_filter
 
         # Only process drops from our file table
         if event.mimeData().hasFormat("application/x-oncutf-filetable"):
@@ -116,7 +116,7 @@ class MetadataTreeView(QTreeView):
         all drag state is completely reset.
         """
         # Get the global drag cancel filter to ensure it's deactivated
-        from widgets.custom_tree_view import _drag_cancel_filter
+        from widgets.file_tree_view import _drag_cancel_filter
         _drag_cancel_filter.deactivate()
 
         # Restore cursor if needed
@@ -166,6 +166,12 @@ class MetadataTreeView(QTreeView):
                 self.setSelectionMode(QAbstractItemView.NoSelection)
                 # Add a property for QSS targeting
                 self.setProperty("placeholder", True)
+                # Disable hover completely
+                self.setAttribute(Qt.WA_NoMousePropagation, True)
+
+                # Force style update
+                self.style().unpolish(self)
+                self.style().polish(self)
             else:
                 # Normal content mode: Resizable columns, selection enabled, hover enabled
                 # Key column: min 80px, initial 120px, max 300px
@@ -185,4 +191,10 @@ class MetadataTreeView(QTreeView):
                 # Enable normal selection and clear placeholder property
                 self.setSelectionMode(QAbstractItemView.SingleSelection)
                 self.setProperty("placeholder", False)
+                # Enable hover
+                self.setAttribute(Qt.WA_NoMousePropagation, False)
+
+                # Force style update
+                self.style().unpolish(self)
+                self.style().polish(self)
 

@@ -1,5 +1,5 @@
 '''
-custom_tree_view.py
+file_tree_view.py
 
 Author: Michael Economou
 Date: 2025-06-05

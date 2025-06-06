@@ -3,7 +3,6 @@ QTreeView {
     color: #f0ebd8;
     alternate-background-color: #232323;
     border: none;
-    border-radius: 8px;
     show-decoration-selected: 1;
 }
 
@@ -14,11 +13,66 @@ QTreeView::item:alternate {
 
 QTreeView::item:hover {
     background-color: #4a6fa5;
-    border-radius: 6px;
+    border: none;
 }
 
 QTreeView::item:selected {
     background-color: #748cab;
     color: #0d1321;
-    border-radius: 6px;
+    border: none;
+}
+
+/* MetadataTreeView normal content styles */
+MetadataTreeView {
+    color: #f0ebd8;  /* Light color for normal content */
+}
+
+/* MetadataTreeView placeholder styles */
+MetadataTreeView[placeholder="true"]::item {
+    color: gray;
+    selection-background-color: transparent;
+    background-color: transparent;
+}
+
+MetadataTreeView[placeholder="true"]::item:hover {
+    background-color: transparent !important;
+    color: gray !important;
+    border: none !important;
+}
+
+MetadataTreeView[placeholder="true"]::item:selected {
+    background-color: transparent !important;
+    color: gray !important;
+    border: none !important;
+}
+
+/* Tree view branch styling - remove OS selection colors */
+QTreeView::branch {
+    background-color: transparent !important;
+    color: transparent !important;
+    border: none !important;
+}
+
+QTreeView::branch:selected {
+    background-color: transparent !important;
+    color: transparent !important;
+    border: none !important;
+}
+
+QTreeView::branch:hover {
+    background-color: transparent !important;
+    border: none !important;
+}
+
+/* Branch indicators (τα σύμβολα +/- του δέντρου) */
+QTreeView::branch:has-children:!has-siblings:closed,
+QTreeView::branch:closed:has-children:has-siblings {
+    border-image: none;
+    image: url(:/tree-closed.png);
+}
+
+QTreeView::branch:open:has-children:!has-siblings,
+QTreeView::branch:open:has-children:has-siblings {
+    border-image: none;
+    image: url(:/tree-open.png);
 }
