@@ -91,6 +91,8 @@ class CustomTreeView(QTreeView):
         # Επιτρέπουμε εσωτερικό drag & drop, όχι μόνο DragOnly
         self.setDragDropMode(QAbstractItemView.InternalMove)
         self.setDropIndicatorShown(True)
+        # Ενεργοποίηση οριζόντιου scrollbar
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self._drag_start_position = None
         self._dragging = False
 

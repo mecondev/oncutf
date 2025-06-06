@@ -37,6 +37,8 @@ class MetadataTreeView(QTreeView):
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True)
         self.setDragDropMode(QAbstractItemView.DropOnly)
+        # Ενεργοποίηση οριζόντιου scrollbar
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """
