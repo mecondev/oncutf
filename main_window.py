@@ -64,7 +64,7 @@ from widgets.custom_table_view import CustomTableView
 from widgets.metadata_tree_view import MetadataTreeView
 from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 from widgets.rename_modules_area import RenameModulesArea
-from widgets.custom_tree_view import CustomTreeView
+from widgets.custom_tree_view import FileTreeView
 
 
 from config import *
@@ -204,7 +204,7 @@ class MainWindow(QMainWindow):
         left_layout = QVBoxLayout(self.left_frame)
         left_layout.addWidget(QLabel("Folders"))
 
-        self.folder_tree = CustomTreeView()
+        self.folder_tree = FileTreeView()
         self.folder_tree.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.folder_tree.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.folder_tree.setAlternatingRowColors(True)  # Enable alternating row colors
@@ -1819,17 +1819,7 @@ class MainWindow(QMainWindow):
 
         model.appendRow([key_item, value_item])
 
-        # Disable selection completely before setting model
-        self.metadata_tree_view.setSelectionMode(QAbstractItemView.NoSelection)
-
-        # Disable hover effect for placeholder by applying a stylesheet
-        self.metadata_tree_view.setStyleSheet("""
-            QTreeView::item:hover {
-                background-color: transparent;
-                color: inherit;
-            }
-        """)
-
+        # Model will handle selection mode and styling through setModel method
         self.metadata_tree_view.setModel(model)
 
         self.toggle_expand_button.setChecked(False)

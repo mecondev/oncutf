@@ -75,7 +75,7 @@ class DragCancelFilter(QObject):
 # Create a single global instance
 _drag_cancel_filter = DragCancelFilter()
 
-class CustomTreeView(QTreeView):
+class FileTreeView(QTreeView):
     """
     Custom tree view that prevents drag-out to external applications
     while preserving internal drag & drop functionality.

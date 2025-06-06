@@ -136,56 +136,53 @@ class MetadataTreeView(QTreeView):
 
         # Then set column sizes if we have a header and model
         if model and self.header():
-            # Set minimum/maximum width for all columns
-            # Column 0 (Key): Initial width 200px, Column 1 (Value): Initial width 500px
-            self.header().setMinimumSectionSize(80)  # Global minimum size for all columns
-            self.header().setMaximumSectionSize(800)  # Global maximum size for all columns
-
-            # Resize mode for the first column (Key) - will adapt to content within limits
-            self.header().setSectionResizeMode(0, QHeaderView.Interactive)
-            self.header().setDefaultSectionSize(50)  # Default size for Key column (increased from 120)
-
-            # Explicitly set Key column width to ensure it's applied
-            self.header().resizeSection(0, 120)  # Force Key column width to 200px
-            self.header().resizeSection(1, 500)
-
-            # Resize mode for the second column (Value) - will stretch to fill available space
-            self.header().setSectionResizeMode(1, QHeaderView.Stretch)
-
-            # Initial column width adaptation based on content
-            self.header().resizeSections(QHeaderView.ResizeToContents)
-
-            # Set explicit initial width for Value column if needed
-            if self.header().count() > 1:
-                self.header().resizeSection(1, 500)  # Set Value column width
-                # Reset Key column again after content resize to ensure it's applied
-
             # Check if this is a placeholder model (has only one item)
+            is_placeholder = False
             if model.rowCount() == 1:
                 root = model.invisibleRootItem()
                 # Check if the first item has text "No file selected" or similar placeholder
                 if root.rowCount() == 1:
                     item = root.child(0, 0)
                     if item and "No file" in item.text():
-                        # Make the placeholder non-selectable
-                        item.setSelectable(False)
-                        value_item = root.child(0, 1)
-                        if value_item:
-                            value_item.setSelectable(False)
+                        is_placeholder = True
 
-                        # Disable selection in the tree view while in placeholder mode
-                        self.setSelectionMode(QAbstractItemView.NoSelection)
+            if is_placeholder:
+                # Placeholder mode: Fixed columns, no selection, no hover
+                self.header().setSectionResizeMode(0, QHeaderView.Fixed)
+                self.header().setSectionResizeMode(1, QHeaderView.Fixed)
+                self.header().resizeSection(0, 120)  # Key column fixed size
+                self.header().resizeSection(1, 250)  # Value column fixed size
 
-                        # Disable hover effect for placeholder by applying a stylesheet
-                        self.setStyleSheet("""
-                            QTreeView::item:hover {
-                                background-color: transparent;
-                                color: inherit;
-                            }
-                        """)
-                        return
+                # Make placeholder items non-selectable
+                root = model.invisibleRootItem()
+                item = root.child(0, 0)
+                if item:
+                    item.setSelectable(False)
+                value_item = root.child(0, 1)
+                if value_item:
+                    value_item.setSelectable(False)
 
-            # If we're not in placeholder mode, ensure normal selection is enabled and clear stylesheet
-            self.setSelectionMode(QAbstractItemView.SingleSelection)
-            self.setStyleSheet("")  # Reset any previously applied stylesheet
+                # Disable selection - styling will be handled by QSS
+                self.setSelectionMode(QAbstractItemView.NoSelection)
+                # Add a property for QSS targeting
+                self.setProperty("placeholder", True)
+            else:
+                # Normal content mode: Resizable columns, selection enabled, hover enabled
+                # Key column: min 80px, initial 120px, max 300px
+                self.header().setSectionResizeMode(0, QHeaderView.Interactive)
+                self.header().setMinimumSectionSize(80)
+                self.header().resizeSection(0, 120)  # Initial size for Key column
+
+                # Value column: min 250px, max 800px, stretches to fill space
+                self.header().setSectionResizeMode(1, QHeaderView.Stretch)
+                self.header().resizeSection(1, 250)  # Minimum size for Value column
+
+                # Set specific min/max sizes per column
+                header = self.header()
+                header.setMinimumSectionSize(80)   # Key column minimum
+                header.setMaximumSectionSize(300)  # Key column maximum (applies to section 0)
+
+                # Enable normal selection and clear placeholder property
+                self.setSelectionMode(QAbstractItemView.SingleSelection)
+                self.setProperty("placeholder", False)
 
