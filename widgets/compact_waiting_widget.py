@@ -26,6 +26,10 @@ from typing import Optional
 from PyQt5.QtWidgets import QApplication ,QWidget, QVBoxLayout, QLabel, QProgressBar, QSizePolicy, QHBoxLayout
 from PyQt5.QtCore import Qt
 
+# Setup Logger
+from utils.logger_helper import get_logger
+logger = get_logger(__name__)
+
 class CompactWaitingWidget(QWidget):
     """
     A compact widget-based progress display to be embedded in dialogs or floating containers.
@@ -111,6 +115,7 @@ class CompactWaitingWidget(QWidget):
         self.filename_label.setText(filename)
 
     def set_status(self, text: str) -> None:
+
         QApplication.setOverrideCursor(Qt.WaitCursor)
         self.status_label.setText(text)
         QApplication.restoreOverrideCursor()

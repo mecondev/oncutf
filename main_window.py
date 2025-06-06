@@ -83,17 +83,28 @@ def wait_cursor():
     Logs the file, line number, and function from where it was called.
     The logged path is shortened to start from 'oncutf/' for clarity.
     """
-    QApplication.setOverrideCursor(Qt.WaitCursor)  # type: ignore
+    import traceback
+    from PyQt5.QtWidgets import QApplication
+    from PyQt5.QtCore import Qt
 
-    # Grab the second-to-last frame in the stack (caller of 'with wait_cursor():')
-    caller = traceback.extract_stack(limit=3)[-2]
-    path = caller.filename
+    QApplication.setOverrideCursor(Qt.WaitCursor)
 
-    # Keep only the part of the path starting from 'oncutf/'
-    cut_index = path.find("oncutf/")
-    short_path = path[cut_index:] if cut_index != -1 else path
+    # Get full stack and reverse it (top frame is last)
+    stack = traceback.extract_stack()
+    # Remove the last frame (inside wait_cursor itself)
+    trimmed_stack = stack[:-1]
 
-    logger.debug(f"[Cursor] Wait cursor activated. Called from: {short_path}, line {caller.lineno}, in {caller.name}()")
+    # Find last frame inside our project path ("oncutf/")
+    caller_line = next((f for f in reversed(trimmed_stack) if "oncutf/" in f.filename), None)
+
+    if caller_line:
+        short_path = caller_line.filename[caller_line.filename.find("oncutf/"):]
+        logger.debug(
+            f"[Cursor] Wait cursor activated. Called from: {short_path}, "
+            f"line {caller_line.lineno}, in {caller_line.name}()"
+        )
+    else:
+        logger.debug("[Cursor] Wait cursor activated. Caller path not in oncutf/")
 
     try:
         yield
