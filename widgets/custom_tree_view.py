@@ -10,7 +10,7 @@ internal drag & drop functionality.
 '''
 
 import os
-from PyQt5.QtWidgets import QTreeView, QAbstractItemView, QApplication, QFileSystemModel
+from PyQt5.QtWidgets import QTreeView, QAbstractItemView, QApplication, QFileSystemModel, QHeaderView
 from PyQt5.QtCore import Qt, QMimeData, QEvent, QPoint, QUrl, pyqtSignal, QTimer, QObject
 from PyQt5.QtGui import QDrag, QMouseEvent, QKeyEvent
 from utils.logger_helper import get_logger
@@ -93,6 +93,8 @@ class CustomTreeView(QTreeView):
         self.setDropIndicatorShown(True)
         # Ενεργοποίηση οριζόντιου scrollbar
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        # Απενεργοποίηση wordwrap
+        self.setTextElideMode(Qt.ElideRight)
         self._drag_start_position = None
         self._dragging = False
 

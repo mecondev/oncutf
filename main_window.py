@@ -1811,9 +1811,11 @@ class MainWindow(QMainWindow):
         font.setItalic(True)
         key_item.setFont(font)
         key_item.setForeground(Qt.gray)
+        key_item.setSelectable(False)  # Κάνε το placeholder μη επιλέξιμο
 
         value_item = QStandardItem("-")
         value_item.setForeground(Qt.gray)
+        value_item.setSelectable(False)  # Κάνε το placeholder μη επιλέξιμο
 
         model.appendRow([key_item, value_item])
         self.metadata_tree_view.setModel(model)

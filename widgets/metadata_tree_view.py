@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 metadata_tree_view.py
 
@@ -17,7 +19,10 @@ Expected usage:
 
 Designed for integration with MainWindow and MetadataReader.
 """
-from PyQt5.QtWidgets import QTreeView, QAbstractItemView, QApplication
+import json
+from typing import Optional, Dict, Any, List, Union
+
+from PyQt5.QtWidgets import QTreeView, QAbstractItemView, QApplication, QHeaderView
 from PyQt5.QtCore import QUrl, Qt, QMimeData, pyqtSignal, QTimer
 from PyQt5.QtGui import QDropEvent, QDragEnterEvent, QDragMoveEvent
 from utils.logger_helper import get_logger
@@ -39,6 +44,8 @@ class MetadataTreeView(QTreeView):
         self.setDragDropMode(QAbstractItemView.DropOnly)
         # Ενεργοποίηση οριζόντιου scrollbar
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        # Απενεργοποίηση wordwrap
+        self.setTextElideMode(Qt.ElideRight)
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """
@@ -119,4 +126,45 @@ class MetadataTreeView(QTreeView):
         QApplication.processEvents()
         if hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
             self.viewport().update()
+
+    def setModel(self, model):
+        """
+        Override the setModel method to set minimum column widths after the model is set.
+        """
+        # First call the parent implementation
+        super().setModel(model)
+
+        # Then set column sizes if we have a header and model
+        if model and self.header():
+            # Set minimum/maximum width for all columns
+            # Column 0 (Key): Initial width 180px, Column 1 (Value): Initial width 250px
+            self.header().setMinimumSectionSize(120)  # Global minimum size for all columns
+            self.header().setMaximumSectionSize(500)  # Global maximum size for all columns
+
+            # Resize mode for the first column (Key) - will adapt to content within limits
+            self.header().setSectionResizeMode(0, QHeaderView.Interactive)
+            self.header().setDefaultSectionSize(180)  # Default size for Key column
+
+            # Resize mode for the second column (Value) - will stretch to fill available space
+            self.header().setSectionResizeMode(1, QHeaderView.Stretch)
+
+            # Initial column width adaptation based on content
+            self.header().resizeSections(QHeaderView.ResizeToContents)
+
+            # Set explicit initial width for Value column if needed
+            if self.header().count() > 1:
+                self.header().resizeSection(1, 250)  # Set Value column width
+
+            # Check if this is a placeholder model (has only one item)
+            if model.rowCount() == 1:
+                root = model.invisibleRootItem()
+                # Check if the first item has text "No file selected" or similar placeholder
+                if root.rowCount() == 1:
+                    item = root.child(0, 0)
+                    if item and "No file" in item.text():
+                        # Make the placeholder non-selectable
+                        item.setSelectable(False)
+                        value_item = root.child(0, 1)
+                        if value_item:
+                            value_item.setSelectable(False)
 
