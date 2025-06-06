@@ -137,13 +137,17 @@ class MetadataTreeView(QTreeView):
         # Then set column sizes if we have a header and model
         if model and self.header():
             # Set minimum/maximum width for all columns
-            # Column 0 (Key): Initial width 180px, Column 1 (Value): Initial width 250px
-            self.header().setMinimumSectionSize(120)  # Global minimum size for all columns
-            self.header().setMaximumSectionSize(500)  # Global maximum size for all columns
+            # Column 0 (Key): Initial width 200px, Column 1 (Value): Initial width 500px
+            self.header().setMinimumSectionSize(80)  # Global minimum size for all columns
+            self.header().setMaximumSectionSize(800)  # Global maximum size for all columns
 
             # Resize mode for the first column (Key) - will adapt to content within limits
             self.header().setSectionResizeMode(0, QHeaderView.Interactive)
-            self.header().setDefaultSectionSize(180)  # Default size for Key column
+            self.header().setDefaultSectionSize(50)  # Default size for Key column (increased from 120)
+
+            # Explicitly set Key column width to ensure it's applied
+            self.header().resizeSection(0, 120)  # Force Key column width to 200px
+            self.header().resizeSection(1, 500)
 
             # Resize mode for the second column (Value) - will stretch to fill available space
             self.header().setSectionResizeMode(1, QHeaderView.Stretch)
@@ -153,7 +157,8 @@ class MetadataTreeView(QTreeView):
 
             # Set explicit initial width for Value column if needed
             if self.header().count() > 1:
-                self.header().resizeSection(1, 250)  # Set Value column width
+                self.header().resizeSection(1, 500)  # Set Value column width
+                # Reset Key column again after content resize to ensure it's applied
 
             # Check if this is a placeholder model (has only one item)
             if model.rowCount() == 1:
@@ -167,4 +172,20 @@ class MetadataTreeView(QTreeView):
                         value_item = root.child(0, 1)
                         if value_item:
                             value_item.setSelectable(False)
+
+                        # Disable selection in the tree view while in placeholder mode
+                        self.setSelectionMode(QAbstractItemView.NoSelection)
+
+                        # Disable hover effect for placeholder by applying a stylesheet
+                        self.setStyleSheet("""
+                            QTreeView::item:hover {
+                                background-color: transparent;
+                                color: inherit;
+                            }
+                        """)
+                        return
+
+            # If we're not in placeholder mode, ensure normal selection is enabled and clear stylesheet
+            self.setSelectionMode(QAbstractItemView.SingleSelection)
+            self.setStyleSheet("")  # Reset any previously applied stylesheet
 

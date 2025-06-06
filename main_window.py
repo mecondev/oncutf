@@ -1811,13 +1811,25 @@ class MainWindow(QMainWindow):
         font.setItalic(True)
         key_item.setFont(font)
         key_item.setForeground(Qt.gray)
-        key_item.setSelectable(False)  # Κάνε το placeholder μη επιλέξιμο
+        key_item.setSelectable(False)  # Make placeholder non-selectable
 
         value_item = QStandardItem("-")
         value_item.setForeground(Qt.gray)
-        value_item.setSelectable(False)  # Κάνε το placeholder μη επιλέξιμο
+        value_item.setSelectable(False)  # Make placeholder non-selectable
 
         model.appendRow([key_item, value_item])
+
+        # Disable selection completely before setting model
+        self.metadata_tree_view.setSelectionMode(QAbstractItemView.NoSelection)
+
+        # Disable hover effect for placeholder by applying a stylesheet
+        self.metadata_tree_view.setStyleSheet("""
+            QTreeView::item:hover {
+                background-color: transparent;
+                color: inherit;
+            }
+        """)
+
         self.metadata_tree_view.setModel(model)
 
         self.toggle_expand_button.setChecked(False)
