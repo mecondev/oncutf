@@ -23,9 +23,8 @@ MetadataWaitingDialog to indicate progress during metadata loading (basic or ext
 """
 
 from typing import Optional
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QProgressBar, QSizePolicy, QHBoxLayout
+from PyQt5.QtWidgets import QApplication ,QWidget, QVBoxLayout, QLabel, QProgressBar, QSizePolicy, QHBoxLayout
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication
 
 class CompactWaitingWidget(QWidget):
     """
@@ -102,13 +101,11 @@ class CompactWaitingWidget(QWidget):
         layout.addLayout(bottom_row)
 
     def set_progress(self, value: int, total: int) -> None:
-        QApplication.setOverrideCursor(Qt.WaitCursor)
         self.set_count(value, total)
         self.progress_bar.setMaximum(total)
         self.progress_bar.setValue(value)
         percent = int(100 * value / total) if total else 0
         self.percentage_label.setText(f"{percent}%")
-        QApplication.restoreOverrideCursor()
 
     def set_filename(self, filename: str) -> None:
         self.filename_label.setText(filename)

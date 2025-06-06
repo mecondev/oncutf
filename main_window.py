@@ -961,17 +961,16 @@ class MainWindow(QMainWindow):
 
     def start_metadata_scan_for_items(self, items: list[FileItem]) -> None:
         """
-        Initiates threaded metadata scanning for μια συγκεκριμένη λίστα από FileItems.
-        Χρησιμοποιεί το context manager wait_cursor() αντί για show_wait_cursor_if_many_files και restore_cursor.
-        """
-        file_paths = [item.full_path for item in items if item.full_path]
-        if not file_paths:
-            self.set_status("No valid files to scan.", color="gray", auto_reset=True)
-            return
+        Initiates the metadata scan process for the given FileItem objects.
 
-        self.set_status(f"Loading metadata for {len(file_paths)} file(s)...", color="blue")
+        - Delegates actual work to load_metadata_in_thread()
+        """
+        logger.info(f"[MainWindow] Starting metadata scan for {len(items)} items")
+
+        file_paths = [item.full_path for item in items]
+
         with wait_cursor():
-            QTimer.singleShot(200, lambda: self.start_metadata_scan(file_paths))
+            self.start_metadata_scan(file_paths)
 
     def shortcut_load_metadata(self) -> None:
         """
@@ -1614,9 +1613,6 @@ class MainWindow(QMainWindow):
 
         if self.loading_dialog:
             self.loading_dialog.close()
-
-        QApplication.restoreOverrideCursor()  # Restore cursor here after loading is complete
-
 
     def cleanup_metadata_worker(self) -> None:
         """
