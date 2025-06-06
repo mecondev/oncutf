@@ -18,6 +18,7 @@ import glob
 import datetime
 import platform
 import json
+import traceback
 from typing import Optional
 import threading
 from PyQt5.QtWidgets import (
@@ -77,11 +78,28 @@ import re
 
 @contextlib.contextmanager
 def wait_cursor():
+    """
+    Context manager that sets the cursor to wait and restores it after.
+    Logs the file, line number, and function from where it was called.
+    The logged path is shortened to start from 'oncutf/' for clarity.
+    """
     QApplication.setOverrideCursor(Qt.WaitCursor)  # type: ignore
+
+    # Grab the second-to-last frame in the stack (caller of 'with wait_cursor():')
+    caller = traceback.extract_stack(limit=3)[-2]
+    path = caller.filename
+
+    # Keep only the part of the path starting from 'oncutf/'
+    cut_index = path.find("oncutf/")
+    short_path = path[cut_index:] if cut_index != -1 else path
+
+    logger.debug(f"[Cursor] Wait cursor activated. Called from: {short_path}, line {caller.lineno}, in {caller.name}()")
+
     try:
         yield
     finally:
         QApplication.restoreOverrideCursor()
+        logger.debug("[Cursor] Wait cursor restored.")
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
