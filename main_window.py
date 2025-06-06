@@ -1010,21 +1010,7 @@ class MainWindow(QMainWindow):
         selected_rows = self.file_table_view.selected_rows
         selected = [self.model.files[r] for r in selected_rows if 0 <= r < len(self.model.files)]
 
-        self.force_extended_metadata = False
-        with wait_cursor():
-            self.metadata_loader.load(selected, force=False, cache=self.metadata_cache)
-
-        if selected:
-            last = selected[-1]
-            metadata = last.metadata or self.metadata_cache.get(last.full_path)
-            if isinstance(metadata, dict):
-                self.display_metadata(metadata, context="shortcut_load_metadata")
-
-        for file in selected:
-            row = self.model.files.index(file)
-            for col in range(self.model.columnCount()):
-                idx = self.model.index(row, col)
-                self.file_table_view.viewport().update(self.file_table_view.visualRect(idx))
+        self.load_metadata_for_items(selected, use_extended=False, source="shortcut")
 
     def shortcut_load_extended_metadata(self) -> None:
         """
@@ -1039,32 +1025,7 @@ class MainWindow(QMainWindow):
         selected_rows = self.file_table_view.selected_rows
         selected = [self.model.files[r] for r in selected_rows if 0 <= r < len(self.model.files)]
 
-        if not selected:
-            self.set_status("No files selected.", color="gray", auto_reset=True)
-            return
-
-        files_to_load = [
-            f for f in selected
-            if not self.metadata_loader.has_extended(f.full_path, self.metadata_cache)
-        ]
-
-        if files_to_load and not self.confirm_large_files(files_to_load):
-            return
-
-        self.force_extended_metadata = True
-
-        if files_to_load:
-            if len(files_to_load) > 1:
-                self.start_metadata_scan_for_items(files_to_load)
-                return
-            else:
-                with wait_cursor():
-                    self.metadata_loader.load(files_to_load, force=False, cache=self.metadata_cache, use_extended=True)
-
-        last = selected[-1]
-        metadata = last.metadata or self.metadata_cache.get(last.full_path)
-        if isinstance(metadata, dict) and metadata:
-            self.display_metadata(metadata, context="shortcut_load_extended_metadata")
+        self.load_metadata_for_items(selected, use_extended=True, source="shortcut_extended")
 
     def display_metadata(self, metadata: Optional[dict], context: str = "") -> None:
         """
@@ -2063,39 +2024,16 @@ class MainWindow(QMainWindow):
 
         # === Handlers ===
         if action == action_load_sel:
-            self.force_extended_metadata = False
-            self.start_metadata_scan_for_items(selected_files)
+            self.load_metadata_for_items(selected_files, use_extended=False, source="context_menu")
 
         elif action == action_load_ext_sel:
-            files_to_load = [
-                f for f in selected_files
-                if not self.metadata_loader.has_extended(f.full_path, self.metadata_cache)
-            ]
-            if files_to_load and not self.confirm_large_files(files_to_load):
-                return
-
-            if files_to_load:
-                self.force_extended_metadata = True
-                if len(files_to_load) > 1:
-                    self.start_metadata_scan_for_items(files_to_load)
-                else:
-                    with wait_cursor():
-                        self.metadata_loader.load(files_to_load, force=False, cache=self.metadata_cache, use_extended=True)
-                        last = files_to_load[-1]
-                        metadata = last.metadata or self.metadata_cache.get(last.full_path)
-                        if isinstance(metadata, dict):
-                            self.display_metadata(metadata, context="context_menu_extended_1file")
+            self.load_metadata_for_items(selected_files, use_extended=True, source="context_menu")
 
         elif action == action_load_all:
-            self.force_extended_metadata = False
-            self.select_all_rows()
-            self.start_metadata_scan_for_items(self.model.files)
+            self.load_metadata_for_items(self.model.files, use_extended=False, source="context_menu_all")
 
         elif action == action_load_ext_all:
-            if not self.confirm_large_files(self.model.files):
-                return
-            self.force_extended_metadata = True
-            self.start_metadata_scan_for_items(self.model.files)
+            self.load_metadata_for_items(self.model.files, use_extended=True, source="context_menu_all")
 
         elif action == action_invert:
             self.invert_selection()
@@ -2119,56 +2057,21 @@ class MainWindow(QMainWindow):
             file = self.model.files[row]
             logger.info(f"[DoubleClick] Requested metadata reload for: {file.filename}")
 
-            self.force_extended_metadata = bool(int(modifiers) & int(Qt.ShiftModifier))
-            logger.debug(f"[Modifiers] Shift held → use_extended={self.force_extended_metadata}")
+            # Check if Shift was pressed for extended metadata
+            use_extended = bool(int(modifiers) & int(Qt.ShiftModifier))
+            logger.debug(f"[Modifiers] Shift held → use_extended={use_extended}")
 
             selected_indexes = self.file_table_view.selectionModel().selectedRows()
             selected_files = [self.model.files[i.row()] for i in selected_indexes if 0 <= i.row() < len(self.model.files)]
 
-            # Check if Shift was held during double click
-            keyboard_mods = modifiers
-            if keyboard_mods & Qt.ShiftModifier:
-                # If Qt has selected a large range (likely unintended), reset to only the clicked file
-                # This avoids accidental multi-file extended scan due to Shift+Click behavior
-                if file in selected_files and len(selected_files) > 1:
-                    logger.debug(f"[ShiftFix] Qt range selection detected on Shift+DoubleClick — keeping only clicked file: {file.filename}")
-                    selected_files = [file]
+            # If user pressed Shift (for extended) and has multiple files selected,
+            # limit to only the file that was double-clicked to avoid mistakes
+            if use_extended and len(selected_files) > 1:
+                logger.debug(f"[ShiftFix] Qt range selection detected on Shift+DoubleClick — keeping only clicked file: {file.filename}")
+                selected_files = [file]
 
-            if self.force_extended_metadata and not self.confirm_large_files(selected_files):
-                return
-
-            if self.force_extended_metadata and len(selected_files) > 1:
-                self.start_metadata_scan_for_items(selected_files)
-                return
-
-            if self.force_extended_metadata:
-                wait_cursor_cm = wait_cursor()
-                wait_cursor_cm.__enter__()
-
-            self.metadata_loader.load(
-                [file],
-                force=False,
-                cache=self.metadata_cache,
-                use_extended=self.force_extended_metadata
-            )
-
-            if self.force_extended_metadata:
-                wait_cursor_cm.__exit__(None, None, None)
-
-            metadata = file.metadata or self.metadata_cache.get(file.full_path)
-            if isinstance(metadata, dict) and metadata:
-                self.display_metadata(metadata, context="handle_file_double_click")
-            else:
-                logger.warning(f"[DoubleClick] No valid metadata to display for {file.filename}")
-
-            row = self.model.files.index(file)
-            for col in range(self.model.columnCount()):
-                idx = self.model.index(row, col)
-                self.file_table_view.viewport().update(self.file_table_view.visualRect(idx))
-
-                self.display_metadata(metadata, context="handle_dropped_files")
-
-            self.file_table_view.viewport().update()
+            # Use the unified method
+            self.load_metadata_for_items(selected_files, use_extended=use_extended, source="double_click")
 
     def closeEvent(self, event) -> None:
         """
@@ -2280,29 +2183,11 @@ class MainWindow(QMainWindow):
             logger.info("[Drop] No matching files found in table.")
             return
 
-        self.force_extended_metadata = bool(int(modifiers) & int(Qt.ShiftModifier))
-        logger.debug(f"[Modifiers] Shift held → use_extended={self.force_extended_metadata}")
+        use_extended = bool(int(modifiers) & int(Qt.ShiftModifier))
+        logger.debug(f"[Modifiers] Shift held → use_extended={use_extended}")
 
-        if len(file_items) > 1:
-            self.start_metadata_scan_for_items(file_items)
-            return
-
-        # For a single file (either fast or extended)
-        with wait_cursor():
-            self.metadata_loader.load(
-                file_items,
-                force=False,
-                cache=self.metadata_cache,
-                use_extended=self.force_extended_metadata
-            )
-
-        if file_items:
-            last = file_items[-1]
-            metadata = self.metadata_cache.get(last.full_path)
-            if isinstance(metadata, dict):
-                self.display_metadata(metadata, context="load_metadata_from_dropped_files")
-
-            self.file_table_view.viewport().update()
+        # Use the unified method
+        self.load_metadata_for_items(file_items, use_extended=use_extended, source="dropped_files")
 
     def load_files_from_dropped_items(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
@@ -2420,6 +2305,66 @@ class MainWindow(QMainWindow):
             extra={"dev_only": True}
         )
         logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
+
+    def load_metadata_for_items(
+        self,
+        items: list[FileItem],
+        use_extended: bool = False,
+        source: str = "unknown"
+    ) -> None:
+        """
+        Unified method for loading metadata from all access points.
+
+        Uses wait_cursor for a single file and CompactWaitingWidget for multiple files.
+        For extended metadata, first checks for large files.
+
+        Parameters:
+            items: List of FileItem objects to load metadata for
+            use_extended: Whether to load extended metadata
+            source: Source of the call (for logging)
+        """
+        if not items:
+            self.set_status("No files selected.", color="gray", auto_reset=True)
+            return
+
+        if self.is_running_metadata_task():
+            logger.warning(f"[{source}] Metadata scan already running — ignoring request.")
+            return
+
+        # Check for large files if extended metadata was requested
+        if use_extended and not self.confirm_large_files(items):
+            return
+
+        # Set extended metadata flag
+        self.force_extended_metadata = use_extended
+
+        # Decide whether to show dialog or simple wait_cursor
+        if len(items) > 1:
+            # Load with dialog (CompactWaitingWidget) for multiple files
+            logger.info(f"[{source}] Loading metadata for {len(items)} files with dialog (extended={use_extended})")
+            self.start_metadata_scan_for_items(items)
+        else:
+            # Simple loading with wait_cursor for a single file
+            logger.info(f"[{source}] Loading metadata for single file with wait_cursor (extended={use_extended})")
+            with wait_cursor():
+                self.metadata_loader.load(
+                    items,
+                    force=False,
+                    cache=self.metadata_cache,
+                    use_extended=use_extended
+                )
+
+            # Display metadata if successfully loaded
+            last = items[-1]
+            metadata = last.metadata or self.metadata_cache.get(last.full_path)
+            if isinstance(metadata, dict):
+                self.display_metadata(metadata, context=f"load_metadata_from_{source}")
+
+            # Update UI for the specific file
+            row = self.model.files.index(last)
+            for col in range(self.model.columnCount()):
+                idx = self.model.index(row, col)
+                self.file_table_view.viewport().update(self.file_table_view.visualRect(idx))
 
 
 
