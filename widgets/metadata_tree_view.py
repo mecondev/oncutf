@@ -22,10 +22,13 @@ Designed for integration with MainWindow and MetadataReader.
 import json
 from typing import Optional, Dict, Any, List, Union
 
-from PyQt5.QtWidgets import QTreeView, QAbstractItemView, QApplication, QHeaderView
+from PyQt5.QtWidgets import QTreeView, QAbstractItemView, QApplication, QHeaderView, QMenu, QAction
 from PyQt5.QtCore import QUrl, Qt, QMimeData, pyqtSignal, QTimer
-from PyQt5.QtGui import QDropEvent, QDragEnterEvent, QDragMoveEvent
+from PyQt5.QtGui import QDropEvent, QDragEnterEvent, QDragMoveEvent, QIcon, QColor
 from utils.logger_helper import get_logger
+
+from widgets.metadata_tree_delegate import MetadataTreeDelegate
+from config import EXTENDED_METADATA_COLOR
 
 logger = get_logger(__name__)
 
@@ -37,6 +40,11 @@ class MetadataTreeView(QTreeView):
     """
     files_dropped = pyqtSignal(list, Qt.KeyboardModifiers)  # Emits list of local file paths
 
+    # Σήματα για τις λειτουργίες metadata
+    value_copied = pyqtSignal(str)  # Εκπέμπεται όταν αντιγράφεται μια τιμή
+    value_edited = pyqtSignal(str, str, str)  # Εκπέμπεται με (key_path, old_value, new_value)
+    value_reset = pyqtSignal(str)  # Εκπέμπεται με το key_path που έγινε reset
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.setAcceptDrops(True)
@@ -46,6 +54,17 @@ class MetadataTreeView(QTreeView):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         # Απενεργοποίηση wordwrap
         self.setTextElideMode(Qt.ElideRight)
+
+                # Modified metadata items
+        self.modified_items = set()  # Σύνολο με τα paths των τροποποιημένων στοιχείων
+
+        # Εφαρμογή του custom delegate
+        self.tree_delegate = MetadataTreeDelegate(self, modified_color=QColor(EXTENDED_METADATA_COLOR))
+        self.setItemDelegate(self.tree_delegate)
+
+        # Context menu setup
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """
@@ -197,4 +216,135 @@ class MetadataTreeView(QTreeView):
                 # Force style update
                 self.style().unpolish(self)
                 self.style().polish(self)
+
+    def show_context_menu(self, position):
+        """
+        Εμφανίζει το context menu με τις διαθέσιμες επιλογές ανάλογα με το επιλεγμένο στοιχείο.
+        """
+        # Έλεγχος αν είμαστε σε placeholder mode - δεν εμφανίζουμε menu
+        if self.property("placeholder"):
+            return
+
+        # Παίρνουμε το στοιχείο στη θέση του κλικ
+        index = self.indexAt(position)
+        if not index.isValid():
+            return
+
+        # Παίρνουμε το key path (π.χ. "EXIF/DateTimeOriginal")
+        key_path = self.get_key_path(index)
+
+        # Παίρνουμε την τιμή του στοιχείου
+        value = index.sibling(index.row(), 1).data()
+
+        # Δημιουργούμε το menu
+        menu = QMenu(self)
+
+        # Ενέργεια αντιγραφής τιμής
+        copy_action = QAction("Αντιγραφή τιμής", self)
+        copy_action.triggered.connect(lambda: self.copy_value(value))
+        menu.addAction(copy_action)
+
+        # Ενέργεια επεξεργασίας τιμής (disabled προς το παρόν)
+        edit_action = QAction("Επεξεργασία τιμής", self)
+        edit_action.triggered.connect(lambda: self.edit_value(key_path, value))
+        edit_action.setEnabled(False)  # Απενεργοποιημένο προς το παρόν
+        menu.addAction(edit_action)
+
+        # Ενέργεια επαναφοράς τιμής (enabled για row rotation)
+        reset_action = QAction("Επαναφορά τιμής", self)
+        reset_action.triggered.connect(lambda: self.reset_value(key_path))
+        # Ενεργοποιούμε μόνο για row rotation προς το παρόν
+        reset_action.setEnabled("Rotation" in key_path)
+        menu.addAction(reset_action)
+
+        # Εμφάνιση του menu
+        menu.exec_(self.viewport().mapToGlobal(position))
+
+    def get_key_path(self, index):
+        """
+        Επιστρέφει το πλήρες μονοπάτι του κλειδιού (key path) για το δεδομένο index.
+        Για παράδειγμα: "EXIF/DateTimeOriginal" ή "XMP/Creator"
+        """
+        if not index.isValid():
+            return ""
+
+        # Αν είναι στη στήλη Value, πάρε το αντίστοιχο κλειδί
+        if index.column() == 1:
+            index = index.sibling(index.row(), 0)
+
+        # Παίρνουμε το κείμενο του τρέχοντος στοιχείου
+        item_text = index.data()
+
+        # Βρίσκουμε το parent group
+        parent_index = index.parent()
+        if parent_index.isValid():
+            parent_text = parent_index.data()
+            return f"{parent_text}/{item_text}"
+
+        return item_text
+
+    def copy_value(self, value):
+        """
+        Αντιγράφει την τιμή στο clipboard και εκπέμπει το value_copied σήμα.
+        """
+        if not value:
+            return
+
+        # Αντιγραφή στο clipboard
+        clipboard = QApplication.clipboard()
+        clipboard.setText(str(value))
+
+        # Εκπομπή σήματος
+        self.value_copied.emit(str(value))
+        logger.debug(f"[MetadataTree] Αντιγράφηκε η τιμή: {value}")
+
+    def edit_value(self, key_path, current_value):
+        """
+        Θα υλοποιηθεί αργότερα - θα ανοίγει ένα dialog για επεξεργασία της τιμής.
+        """
+        # TODO: Υλοποίηση επεξεργασίας τιμής
+        logger.debug(f"[MetadataTree] Επεξεργασία της τιμής για το κλειδί: {key_path}")
+
+        # Προσθήκη στα τροποποιημένα στοιχεία
+        self.modified_items.add(key_path)
+
+        # Ενημέρωση του delegate
+        self.tree_delegate.set_modified_items(self.modified_items)
+
+        # Ανανέωση της προβολής
+        self.viewport().update()
+
+        # Εκπομπή σήματος με τη νέα τιμή (προς το παρόν ίδια)
+        self.value_edited.emit(key_path, current_value, current_value)
+
+    def reset_value(self, key_path):
+        """
+        Επαναφέρει την τιμή στην αρχική της κατάσταση.
+        """
+        logger.debug(f"[MetadataTree] Επαναφορά της τιμής για το κλειδί: {key_path}")
+
+        # Αφαίρεση από τα τροποποιημένα στοιχεία
+        if key_path in self.modified_items:
+            self.modified_items.remove(key_path)
+
+            # Ενημέρωση του delegate
+            self.tree_delegate.set_modified_items(self.modified_items)
+
+            # Ανανέωση της προβολής
+            self.viewport().update()
+
+        # Εκπομπή σήματος
+        self.value_reset.emit(key_path)
+
+    def mark_as_modified(self, key_path):
+        """
+        Σημειώνει ένα στοιχείο ως τροποποιημένο.
+        """
+        self.modified_items.add(key_path)
+
+        # Ενημέρωση του delegate
+        self.tree_delegate.set_modified_items(self.modified_items)
+
+        # Ανανέωση της προβολής
+        self.viewport().update()
 

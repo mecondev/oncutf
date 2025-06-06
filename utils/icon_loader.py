@@ -26,6 +26,7 @@ def load_metadata_icons(base_dir: str = "resources/icons") -> dict[str, QPixmap]
         'extended': "info_extended.png",
         'partial': "info_partial.png",
         'invalid': "info_invalid.png",
+        'modified': "info_modified.png",
     }
 
     logger.debug("[IconLoader] Loading metadata icons")
