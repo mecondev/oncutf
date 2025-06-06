@@ -297,7 +297,7 @@ class CustomTableView(QTableView):
             return
 
         # Get the global drag cancel filter
-        from widgets.custom_tree_view import _drag_cancel_filter
+        from widgets.file_tree_view import _drag_cancel_filter
 
         # Activate the filter to catch events that should terminate drag
         _drag_cancel_filter.activate()
@@ -347,7 +347,7 @@ class CustomTableView(QTableView):
         all drag state is completely reset.
         """
         # Get the global drag cancel filter to ensure it's deactivated
-        from widgets.custom_tree_view import _drag_cancel_filter
+        from widgets.file_tree_view import _drag_cancel_filter
         _drag_cancel_filter.deactivate()
 
         # Restore cursor if needed

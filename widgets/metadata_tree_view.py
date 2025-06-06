@@ -26,9 +26,7 @@ from PyQt5.QtWidgets import QTreeView, QAbstractItemView, QApplication, QHeaderV
 from PyQt5.QtCore import QUrl, Qt, QMimeData, pyqtSignal, QTimer
 from PyQt5.QtGui import QDropEvent, QDragEnterEvent, QDragMoveEvent, QIcon, QColor
 from utils.logger_helper import get_logger
-
-from widgets.metadata_tree_delegate import MetadataTreeDelegate
-from config import EXTENDED_METADATA_COLOR
+from utils.icon_loader import load_metadata_icons
 
 logger = get_logger(__name__)
 
@@ -55,12 +53,8 @@ class MetadataTreeView(QTreeView):
         # Απενεργοποίηση wordwrap
         self.setTextElideMode(Qt.ElideRight)
 
-                # Modified metadata items
+        # Modified metadata items
         self.modified_items = set()  # Σύνολο με τα paths των τροποποιημένων στοιχείων
-
-        # Εφαρμογή του custom delegate
-        self.tree_delegate = MetadataTreeDelegate(self, modified_color=QColor(EXTENDED_METADATA_COLOR))
-        self.setItemDelegate(self.tree_delegate)
 
         # Context menu setup
         self.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -219,45 +213,45 @@ class MetadataTreeView(QTreeView):
 
     def show_context_menu(self, position):
         """
-        Εμφανίζει το context menu με τις διαθέσιμες επιλογές ανάλογα με το επιλεγμένο στοιχείο.
+        Displays context menu with available options depending on the selected item.
         """
-        # Έλεγχος αν είμαστε σε placeholder mode - δεν εμφανίζουμε menu
+        # Check if we're in placeholder mode - don't show menu
         if self.property("placeholder"):
             return
 
-        # Παίρνουμε το στοιχείο στη θέση του κλικ
+        # Get the item at the click position
         index = self.indexAt(position)
         if not index.isValid():
             return
 
-        # Παίρνουμε το key path (π.χ. "EXIF/DateTimeOriginal")
+        # Get the key path (e.g. "EXIF/DateTimeOriginal")
         key_path = self.get_key_path(index)
 
-        # Παίρνουμε την τιμή του στοιχείου
+        # Get the value of the item
         value = index.sibling(index.row(), 1).data()
 
-        # Δημιουργούμε το menu
+        # Create menu
         menu = QMenu(self)
 
-        # Ενέργεια αντιγραφής τιμής
-        copy_action = QAction("Αντιγραφή τιμής", self)
+        # Copy value action
+        copy_action = QAction("Copy Value", self)
         copy_action.triggered.connect(lambda: self.copy_value(value))
         menu.addAction(copy_action)
 
-        # Ενέργεια επεξεργασίας τιμής (disabled προς το παρόν)
-        edit_action = QAction("Επεξεργασία τιμής", self)
+        # Edit value action (disabled for now)
+        edit_action = QAction("Edit Value", self)
         edit_action.triggered.connect(lambda: self.edit_value(key_path, value))
-        edit_action.setEnabled(False)  # Απενεργοποιημένο προς το παρόν
+        edit_action.setEnabled(False)  # Disabled for now
         menu.addAction(edit_action)
 
-        # Ενέργεια επαναφοράς τιμής (enabled για row rotation)
-        reset_action = QAction("Επαναφορά τιμής", self)
+        # Reset value action (enabled for rotation)
+        reset_action = QAction("Reset Value", self)
         reset_action.triggered.connect(lambda: self.reset_value(key_path))
-        # Ενεργοποιούμε μόνο για row rotation προς το παρόν
+        # Enable only for rotation for now
         reset_action.setEnabled("Rotation" in key_path)
         menu.addAction(reset_action)
 
-        # Εμφάνιση του menu
+        # Show menu
         menu.exec_(self.viewport().mapToGlobal(position))
 
     def get_key_path(self, index):
@@ -285,66 +279,114 @@ class MetadataTreeView(QTreeView):
 
     def copy_value(self, value):
         """
-        Αντιγράφει την τιμή στο clipboard και εκπέμπει το value_copied σήμα.
+        Copies the value to clipboard and emits the value_copied signal.
         """
         if not value:
             return
 
-        # Αντιγραφή στο clipboard
+        # Copy to clipboard
         clipboard = QApplication.clipboard()
         clipboard.setText(str(value))
 
-        # Εκπομπή σήματος
+        # Emit signal
         self.value_copied.emit(str(value))
-        logger.debug(f"[MetadataTree] Αντιγράφηκε η τιμή: {value}")
+        logger.debug(f"[MetadataTree] Copied value: {value}")
 
     def edit_value(self, key_path, current_value):
         """
-        Θα υλοποιηθεί αργότερα - θα ανοίγει ένα dialog για επεξεργασία της τιμής.
+        Will be implemented later - opens a dialog to edit the value.
         """
-        # TODO: Υλοποίηση επεξεργασίας τιμής
-        logger.debug(f"[MetadataTree] Επεξεργασία της τιμής για το κλειδί: {key_path}")
+        # TODO: Implement value editing
+        logger.debug(f"[MetadataTree] Editing value for key: {key_path}")
 
-        # Προσθήκη στα τροποποιημένα στοιχεία
+        # Add to modified items
         self.modified_items.add(key_path)
 
-        # Ενημέρωση του delegate
-        self.tree_delegate.set_modified_items(self.modified_items)
+        # Update the file icon in the file table to show it's modified
+        self._update_file_icon_status()
 
-        # Ανανέωση της προβολής
+        # Update the view
         self.viewport().update()
 
-        # Εκπομπή σήματος με τη νέα τιμή (προς το παρόν ίδια)
+        # Emit signal with the new value (same for now)
         self.value_edited.emit(key_path, current_value, current_value)
 
     def reset_value(self, key_path):
         """
-        Επαναφέρει την τιμή στην αρχική της κατάσταση.
+        Resets the value to its original state.
         """
-        logger.debug(f"[MetadataTree] Επαναφορά της τιμής για το κλειδί: {key_path}")
+        logger.debug(f"[MetadataTree] Resetting value for key: {key_path}")
 
-        # Αφαίρεση από τα τροποποιημένα στοιχεία
+        # Remove from modified items
         if key_path in self.modified_items:
             self.modified_items.remove(key_path)
 
-            # Ενημέρωση του delegate
-            self.tree_delegate.set_modified_items(self.modified_items)
+        # Update the file icon in the file table
+        self._update_file_icon_status()
 
-            # Ανανέωση της προβολής
-            self.viewport().update()
+        # Update the view
+        self.viewport().update()
 
-        # Εκπομπή σήματος
+        # Emit signal
         self.value_reset.emit(key_path)
 
     def mark_as_modified(self, key_path):
         """
-        Σημειώνει ένα στοιχείο ως τροποποιημένο.
+        Marks an item as modified.
         """
         self.modified_items.add(key_path)
 
-        # Ενημέρωση του delegate
-        self.tree_delegate.set_modified_items(self.modified_items)
+        # Update the file icon in the file table
+        self._update_file_icon_status()
 
-        # Ανανέωση της προβολής
+        # Update the view
         self.viewport().update()
+
+    def _update_file_icon_status(self):
+        """
+        Updates the file icon in the file table to reflect modified status.
+        """
+        # Get parent window (MainWindow)
+        parent_window = self.parent()
+        while parent_window and not hasattr(parent_window, 'file_table_view'):
+            parent_window = parent_window.parent()
+
+        if not parent_window or not hasattr(parent_window, 'file_table_view'):
+            logger.warning("[MetadataTree] Cannot find parent window with file_table_view")
+            return
+
+        # Get the current selected file
+        selection = parent_window.file_table_view.selectionModel()
+        if not selection or not selection.hasSelection():
+            return
+
+        selected_rows = selection.selectedRows()
+        if not selected_rows:
+            return
+
+        # Get the file model
+        file_model = parent_window.model
+        if not file_model:
+            return
+
+        # For each selected file, update its icon
+        for index in selected_rows:
+            row = index.row()
+            if 0 <= row < len(file_model.files):
+                file_item = file_model.files[row]
+
+                # Update icon based on whether we have modified items
+                if self.modified_items:
+                    # Set modified icon
+                    file_item.metadata_status = "modified"
+                else:
+                    # Set normal loaded icon
+                    file_item.metadata_status = "loaded"
+
+                # Notify model the icon has changed
+                file_model.dataChanged.emit(
+                    file_model.index(row, 0),
+                    file_model.index(row, 0),
+                    [Qt.DecorationRole]
+                )
 
