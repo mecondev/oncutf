@@ -45,7 +45,8 @@ def main() -> None:
 
     # Create application
     app = QApplication(sys.argv)
-    app.setAttribute(Qt.AA_UseHighDpiPixmaps)
+    # Qt.AA_UseHighDpiPixmaps is defined in PyQt5, but linter may not resolve C++-level attributes
+    app.setAttribute(Qt.AA_UseHighDpiPixmaps) # type: ignore[attr-defined]
     app.setStyleSheet(load_stylesheet())
 
     # Create and show main window
