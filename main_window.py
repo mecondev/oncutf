@@ -59,7 +59,6 @@ from utils.metadata_loader import MetadataLoader
 from widgets.metadata_worker import MetadataWorker
 from widgets.interactive_header import InteractiveHeader
 from widgets.custom_msgdialog import CustomMessageDialog
-from widgets.metadata_icon_delegate import MetadataIconDelegate
 from widgets.custom_table_view import CustomTableView
 from widgets.metadata_tree_view import MetadataTreeView
 from widgets.metadata_waiting_dialog import MetadataWaitingDialog

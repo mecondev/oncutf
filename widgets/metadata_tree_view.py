@@ -26,7 +26,8 @@ from PyQt5.QtWidgets import QTreeView, QAbstractItemView, QApplication, QHeaderV
 from PyQt5.QtCore import QUrl, Qt, QMimeData, pyqtSignal, QTimer
 from PyQt5.QtGui import QDropEvent, QDragEnterEvent, QDragMoveEvent, QIcon, QColor
 from utils.logger_helper import get_logger
-from utils.icon_loader import load_metadata_icons
+from utils.metadata_validators import get_validator_for_key
+from widgets.metadata_edit_dialog import MetadataEditDialog
 
 logger = get_logger(__name__)
 
@@ -48,17 +49,24 @@ class MetadataTreeView(QTreeView):
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True)
         self.setDragDropMode(QAbstractItemView.DropOnly)
-        # Ενεργοποίηση οριζόντιου scrollbar
+        # Enable horizontal scrollbar
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        # Απενεργοποίηση wordwrap
+        # Disable wordwrap
         self.setTextElideMode(Qt.ElideRight)
 
         # Modified metadata items
-        self.modified_items = set()  # Σύνολο με τα paths των τροποποιημένων στοιχείων
+        self.modified_items = set()  # Set of paths for modified items
 
         # Context menu setup
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
+
+    def fix_horizontal_scroll(self):
+        """
+        Fixes the horizontal scrollbar to stay at the left position when selecting a new item.
+        """
+        # Reset horizontal scrollbar to beginning
+        QTimer.singleShot(0, lambda: self.horizontalScrollBar().setValue(0))
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """
@@ -147,6 +155,10 @@ class MetadataTreeView(QTreeView):
         # First call the parent implementation
         super().setModel(model)
 
+        # Connect selection changed signal to fix horizontal scroll
+        if self.selectionModel():
+            self.selectionModel().selectionChanged.connect(self.fix_horizontal_scroll)
+
         # Then set column sizes if we have a header and model
         if model and self.header():
             # Check if this is a placeholder model (has only one item)
@@ -211,6 +223,9 @@ class MetadataTreeView(QTreeView):
                 self.style().unpolish(self)
                 self.style().polish(self)
 
+                # Ensure horizontal scrollbar is at the start
+                QTimer.singleShot(100, lambda: self.horizontalScrollBar().setValue(0))
+
     def show_context_menu(self, position):
         """
         Displays context menu with available options depending on the selected item.
@@ -238,10 +253,10 @@ class MetadataTreeView(QTreeView):
         copy_action.triggered.connect(lambda: self.copy_value(value))
         menu.addAction(copy_action)
 
-        # Edit value action (disabled for now)
+        # Edit value action (enabled for Rotation only for now)
         edit_action = QAction("Edit Value", self)
         edit_action.triggered.connect(lambda: self.edit_value(key_path, value))
-        edit_action.setEnabled(False)  # Disabled for now
+        edit_action.setEnabled("Rotation" in key_path)  # Enable only for rotation fields
         menu.addAction(edit_action)
 
         # Reset value action (enabled for rotation)
@@ -256,20 +271,20 @@ class MetadataTreeView(QTreeView):
 
     def get_key_path(self, index):
         """
-        Επιστρέφει το πλήρες μονοπάτι του κλειδιού (key path) για το δεδομένο index.
-        Για παράδειγμα: "EXIF/DateTimeOriginal" ή "XMP/Creator"
+        Returns the full key path for the given index.
+        For example: "EXIF/DateTimeOriginal" or "XMP/Creator"
         """
         if not index.isValid():
             return ""
 
-        # Αν είναι στη στήλη Value, πάρε το αντίστοιχο κλειδί
+        # If on Value column, get the corresponding Key
         if index.column() == 1:
             index = index.sibling(index.row(), 0)
 
-        # Παίρνουμε το κείμενο του τρέχοντος στοιχείου
+        # Get the text of the current item
         item_text = index.data()
 
-        # Βρίσκουμε το parent group
+        # Find the parent group
         parent_index = index.parent()
         if parent_index.isValid():
             parent_text = parent_index.data()
@@ -294,22 +309,70 @@ class MetadataTreeView(QTreeView):
 
     def edit_value(self, key_path, current_value):
         """
-        Will be implemented later - opens a dialog to edit the value.
+        Opens a dialog to edit the value of a metadata field.
         """
-        # TODO: Implement value editing
         logger.debug(f"[MetadataTree] Editing value for key: {key_path}")
 
-        # Add to modified items
-        self.modified_items.add(key_path)
+        accepted, new_value = MetadataEditDialog.get_value(
+            parent=self,
+            key_path=key_path,
+            current_value=str(current_value)
+        )
 
-        # Update the file icon in the file table to show it's modified
-        self._update_file_icon_status()
+        if accepted and new_value != str(current_value):
+            # Add to modified items
+            self.modified_items.add(key_path)
 
-        # Update the view
-        self.viewport().update()
+            # Update the file icon in the file table to show it's modified
+            self._update_file_icon_status()
 
-        # Emit signal with the new value (same for now)
-        self.value_edited.emit(key_path, current_value, current_value)
+            # Update the view
+            self.viewport().update()
+
+            # Update metadata in cache
+            self._update_metadata_in_cache(key_path, new_value)
+
+            # Emit signal with the new value
+            logger.debug(f"[MetadataTree] Value changed from '{current_value}' to '{new_value}'")
+            self.value_edited.emit(key_path, str(current_value), new_value)
+
+            # Find the item in the tree and update its value
+            self._update_tree_item_value(key_path, new_value)
+
+    def _update_tree_item_value(self, key_path, new_value):
+        """
+        Updates the value of an item in the tree view.
+        """
+        model = self.model()
+        if not model:
+            return
+
+        # Split the key path into parent and child
+        parts = key_path.split('/')
+
+        # Handle top-level item
+        if len(parts) == 1:
+            for row in range(model.rowCount()):
+                index = model.index(row, 0)
+                if index.data() == key_path:
+                    value_index = model.index(row, 1)
+                    model.setData(value_index, new_value)
+                    return
+        # Handle child item
+        elif len(parts) == 2:
+            parent_name, child_name = parts
+
+            # Find parent item
+            for parent_row in range(model.rowCount()):
+                parent_index = model.index(parent_row, 0)
+                if parent_index.data() == parent_name:
+                    # Find child item
+                    for child_row in range(model.rowCount(parent_index)):
+                        child_index = model.index(child_row, 0, parent_index)
+                        if child_index.data() == child_name:
+                            value_index = model.index(child_row, 1, parent_index)
+                            model.setData(value_index, new_value)
+                            return
 
     def reset_value(self, key_path):
         """
@@ -327,8 +390,76 @@ class MetadataTreeView(QTreeView):
         # Update the view
         self.viewport().update()
 
+        # Reset value in cache
+        self._reset_metadata_in_cache(key_path)
+
         # Emit signal
         self.value_reset.emit(key_path)
+
+    def _reset_metadata_in_cache(self, key_path):
+        """
+        Resets the metadata value in the cache to its original state.
+        """
+        # Get parent window (MainWindow)
+        parent_window = self.parent()
+        while parent_window and not hasattr(parent_window, 'file_table_view'):
+            parent_window = parent_window.parent()
+
+        if not parent_window or not hasattr(parent_window, 'file_table_view'):
+            logger.warning("[MetadataTree] Cannot find parent window with file_table_view")
+            return
+
+        # Get the current selected file
+        selection = parent_window.file_table_view.selectionModel()
+        if not selection or not selection.hasSelection():
+            return
+
+        selected_rows = selection.selectedRows()
+        if not selected_rows:
+            return
+
+        # Get the file model
+        file_model = parent_window.model
+        if not file_model:
+            return
+
+        # For each selected file, reset its metadata in cache
+        for index in selected_rows:
+            row = index.row()
+            if 0 <= row < len(file_model.files):
+                file_item = file_model.files[row]
+                full_path = file_item.full_path
+
+                # Check if we have the metadata cache
+                if not hasattr(parent_window, 'metadata_cache'):
+                    logger.warning("[MetadataTree] Cannot find metadata_cache in parent window")
+                    return
+
+                # Update the metadata in cache
+                metadata_entry = parent_window.metadata_cache.get_entry(full_path)
+                if metadata_entry and metadata_entry.data:
+                    # Parse key path (e.g. "EXIF/Rotation" -> ["EXIF", "Rotation"])
+                    parts = key_path.split('/')
+
+                    # Reset the value in the metadata by removing it
+                    if len(parts) == 1:
+                        # Top-level key
+                        if parts[0] in metadata_entry.data:
+                            metadata_entry.data.pop(parts[0], None)
+                    elif len(parts) == 2:
+                        # Nested key (group/key)
+                        group, key = parts
+                        if group in metadata_entry.data and isinstance(metadata_entry.data[group], dict):
+                            if key in metadata_entry.data[group]:
+                                metadata_entry.data[group].pop(key, None)
+
+                    logger.debug(f"[MetadataTree] Reset metadata in cache for {full_path}: {key_path}")
+
+                    # Update file icon status based on remaining modified items
+                    if not self.modified_items:
+                        file_item.metadata_status = "loaded"
+                    else:
+                        file_item.metadata_status = "modified"
 
     def mark_as_modified(self, key_path):
         """
@@ -389,4 +520,75 @@ class MetadataTreeView(QTreeView):
                     file_model.index(row, 0),
                     [Qt.DecorationRole]
                 )
+
+    def currentChanged(self, current, previous):
+        """
+        Override to fix scrollbar position when changing selection.
+        """
+        super().currentChanged(current, previous)
+        # Reset horizontal scrollbar to beginning
+        self.horizontalScrollBar().setValue(0)
+
+    def _update_metadata_in_cache(self, key_path, new_value):
+        """
+        Updates the metadata value in the cache to persist changes.
+        """
+        # Get parent window (MainWindow)
+        parent_window = self.parent()
+        while parent_window and not hasattr(parent_window, 'file_table_view'):
+            parent_window = parent_window.parent()
+
+        if not parent_window or not hasattr(parent_window, 'file_table_view'):
+            logger.warning("[MetadataTree] Cannot find parent window with file_table_view")
+            return
+
+        # Get the current selected file
+        selection = parent_window.file_table_view.selectionModel()
+        if not selection or not selection.hasSelection():
+            return
+
+        selected_rows = selection.selectedRows()
+        if not selected_rows:
+            return
+
+        # Get the file model
+        file_model = parent_window.model
+        if not file_model:
+            return
+
+        # For each selected file, update its metadata in cache
+        for index in selected_rows:
+            row = index.row()
+            if 0 <= row < len(file_model.files):
+                file_item = file_model.files[row]
+                full_path = file_item.full_path
+
+                # Get metadata from cache
+                if not hasattr(parent_window, 'metadata_cache'):
+                    logger.warning("[MetadataTree] Cannot find metadata_cache in parent window")
+                    return
+
+                # Update the metadata in cache
+                metadata_entry = parent_window.metadata_cache.get_entry(full_path)
+                if metadata_entry and hasattr(metadata_entry, 'data'):
+                    # Parse key path (e.g. "EXIF/Rotation" -> ["EXIF", "Rotation"])
+                    parts = key_path.split('/')
+
+                    # Update the value in the metadata
+                    if len(parts) == 1:
+                        # Top-level key
+                        metadata_entry.data[parts[0]] = new_value
+                    elif len(parts) == 2:
+                        # Nested key (group/key)
+                        group, key = parts
+                        if group not in metadata_entry.data:
+                            metadata_entry.data[group] = {}
+                        if not isinstance(metadata_entry.data[group], dict):
+                            metadata_entry.data[group] = {}
+                        metadata_entry.data[group][key] = new_value
+
+                    logger.debug(f"[MetadataTree] Updated metadata in cache for {full_path}: {key_path}={new_value}")
+
+                    # Mark metadata as modified
+                    file_item.metadata_status = "modified"
 

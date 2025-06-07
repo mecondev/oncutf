@@ -88,12 +88,12 @@ class FileTreeView(QTreeView):
         super().__init__(parent)
         self.setDragEnabled(True)
         self.setAcceptDrops(True)
-        # Επιτρέπουμε εσωτερικό drag & drop, όχι μόνο DragOnly
+        # Allow internal drag & drop, not just DragOnly
         self.setDragDropMode(QAbstractItemView.InternalMove)
         self.setDropIndicatorShown(True)
-        # Ενεργοποίηση οριζόντιου scrollbar
+        # Enable horizontal scrollbar
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        # Απενεργοποίηση wordwrap
+        # Disable wordwrap
         self.setTextElideMode(Qt.ElideRight)
         self._drag_start_position = None
         self._dragging = False
@@ -115,15 +115,15 @@ class FileTreeView(QTreeView):
         if not (event.buttons() & Qt.LeftButton) or not self._drag_start_position:
             return super().mouseMoveEvent(event)
 
-        # Αν δεν έχουμε κινηθεί αρκετά, δεν ξεκινάμε drag
+        # If we haven't moved enough, don't start drag
         if (event.pos() - self._drag_start_position).manhattanLength() < QApplication.startDragDistance():
             return super().mouseMoveEvent(event)
 
-        # Αποτρέπουμε πολλαπλά drag events
+        # Prevent multiple drag events
         if self._dragging:
             return
 
-        # Ξεκινάμε custom drag αντί για το προεπιλεγμένο
+        # Start custom drag instead of default
         self._dragging = True
         self.startInternalDrag(event.pos())
 
@@ -152,7 +152,7 @@ class FileTreeView(QTreeView):
         # Process any pending events to ensure UI is updated
         QApplication.processEvents()
 
-        # Force fake mouse release to break Qt drag session (cross-platform) με μικρή καθυστέρηση για να τελειώσει το animation
+        # Force fake mouse release to break Qt drag session (cross-platform) with small delay to finish animation
         def send_fake_release():
             fake_event = QMouseEvent(QEvent.MouseButtonRelease, QPoint(-1, -1), Qt.LeftButton, Qt.NoButton, Qt.NoModifier)
             QApplication.postEvent(self, fake_event)
@@ -262,7 +262,7 @@ class FileTreeView(QTreeView):
         self.viewport().update()
         QApplication.processEvents()
 
-        # Force fake mouse release to break Qt drag session (cross-platform) με μικρή καθυστέρηση για να τελειώσει το animation
+        # Force fake mouse release to break Qt drag session (cross-platform) with small delay to finish animation
         def send_fake_release():
             fake_event = QMouseEvent(QEvent.MouseButtonRelease, QPoint(-1, -1), Qt.LeftButton, Qt.NoButton, Qt.NoModifier)
             QApplication.postEvent(self, fake_event)
