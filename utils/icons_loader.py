@@ -17,12 +17,13 @@ Usage:
     menu_icon = get_menu_icon("file")
 """
 
-from PyQt5.QtGui import QPixmap, QIcon, QPainter, QColor
-from PyQt5.QtCore import Qt
 import os
 from typing import Dict, Optional
 
+from PyQt5.QtGui import QIcon, QPixmap
+
 from utils.logger_helper import get_logger
+
 logger = get_logger(__name__)
 
 

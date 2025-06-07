@@ -1,5 +1,7 @@
 import pytest
+
 from utils.transform_utils import apply_transform
+
 
 @pytest.mark.parametrize("name, transform, expected", [
     ("My File Name", "original", "My File Name"),

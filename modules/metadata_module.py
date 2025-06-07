@@ -11,13 +11,15 @@ It is used in the oncutf tool to dynamically extract and apply file
 metadata during batch renaming.
 """
 
-from typing import Optional
-from datetime import datetime
-from models.file_item import FileItem
 import os
+from datetime import datetime
+from typing import Optional
+
+from models.file_item import FileItem
 
 # initialize logger
 from utils.logger_helper import get_logger
+
 logger = get_logger(__name__)
 
 

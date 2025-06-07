@@ -7,8 +7,8 @@ Author: Michael Economou
 Date: 2025-06-04
 """
 
-from PyQt5.QtWidgets import QVBoxLayout, QLabel, QCheckBox, QHBoxLayout
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QCheckBox, QHBoxLayout, QVBoxLayout
+
 from modules.base_module import BaseRenameModule  # NEW
 from utils.logger_helper import get_logger
 

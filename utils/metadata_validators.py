@@ -8,7 +8,8 @@ This module provides validation functions for metadata values.
 Each validator checks if a given value is valid for a specific metadata field.
 """
 
-from typing import Tuple, List, Any, Optional
+from typing import Optional, Tuple
+
 from utils.logger_helper import get_logger
 
 logger = get_logger(__name__)

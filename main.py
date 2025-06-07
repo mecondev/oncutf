@@ -12,19 +12,22 @@ Functions:
     main: Initializes and runs the Batch File Renamer application.
 """
 
-import sys
 import datetime
-from PyQt5.QtWidgets import QApplication
+import sys
+
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication
 
 from main_window import MainWindow
-from utils.theme import load_stylesheet
 
 # Initialize logging system
 from utils.logger_setup import ConfigureLogger
+from utils.theme import load_stylesheet
+
 ConfigureLogger(log_name="oncutf")
 
 import logging
+
 logger = logging.getLogger()
 
 # Log application start with current date/time

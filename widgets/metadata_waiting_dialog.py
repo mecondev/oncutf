@@ -1,7 +1,13 @@
-from PyQt5.QtWidgets import QDialog, QVBoxLayout
-from widgets.compact_waiting_widget import CompactWaitingWidget
 from PyQt5.QtCore import Qt
-from config import EXTENDED_METADATA_COLOR, EXTENDED_METADATA_BG_COLOR, FAST_METADATA_COLOR, FAST_METADATA_BG_COLOR
+from PyQt5.QtWidgets import QDialog, QVBoxLayout
+
+from config import (
+    EXTENDED_METADATA_BG_COLOR,
+    EXTENDED_METADATA_COLOR,
+    FAST_METADATA_BG_COLOR,
+    FAST_METADATA_COLOR,
+)
+from widgets.compact_waiting_widget import CompactWaitingWidget
 
 
 class MetadataWaitingDialog(QDialog):

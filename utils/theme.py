@@ -11,10 +11,12 @@ Date: 2025-05-21
 """
 
 import os
+
 from config import THEME_NAME
 
 # Initialize Logger
 from utils.logger_helper import get_logger
+
 logger = get_logger(__name__)
 
 def load_stylesheet() -> str:

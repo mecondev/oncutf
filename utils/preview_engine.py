@@ -18,16 +18,15 @@ Date: 2025-05-12
 """
 
 import os
-from typing import List, Optional
 
-from modules.specified_text_module import SpecifiedTextModule
 from modules.counter_module import CounterModule
 from modules.metadata_module import MetadataModule
 from modules.original_name_module import OriginalNameModule
-from models.file_item import FileItem
+from modules.specified_text_module import SpecifiedTextModule
 
 # Initialize Logger
 from utils.logger_helper import get_logger
+
 logger = get_logger(__name__)
 
 MODULE_TYPE_MAP = {

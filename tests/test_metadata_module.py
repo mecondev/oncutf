@@ -1,4 +1,3 @@
-import pytest
 from modules.metadata_module import MetadataModule
 from tests.mocks import MockFileItem
 

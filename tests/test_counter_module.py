@@ -1,4 +1,3 @@
-import pytest
 from modules.counter_module import CounterModule
 from tests.mocks import MockFileItem
 

@@ -18,13 +18,13 @@ Features:
 
 import subprocess
 import threading
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 from models.file_item import FileItem
-from utils.metadata_cache import MetadataCache
 from utils.exiftool_wrapper import ExifToolWrapper
-
 from utils.logger_helper import get_logger
+from utils.metadata_cache import MetadataCache
+
 logger = get_logger(__name__)
 
 

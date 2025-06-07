@@ -20,21 +20,24 @@ Features:
 """
 
 from typing import Optional
+
+from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
-    QPushButton, QFrame, QSpacerItem, QSizePolicy
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QVBoxLayout,
+    QWidget,
 )
-from PyQt5.QtCore import pyqtSignal, QTimer
 
-from modules.specified_text_module import SpecifiedTextModule
 from modules.counter_module import CounterModule
-from widgets.metadata_widget import MetadataWidget
-from widgets.original_name_widget import OriginalNameWidget
-
-from widgets.custom_msgdialog import CustomMessageDialog
+from modules.specified_text_module import SpecifiedTextModule
 
 # Initialize Logger
 from utils.logger_helper import get_logger
+from widgets.metadata_widget import MetadataWidget
+from widgets.original_name_widget import OriginalNameWidget
+
 logger = get_logger(__name__)
 
 class RenameModuleWidget(QWidget):

@@ -19,14 +19,12 @@ Expected usage:
 
 Designed for integration with MainWindow and MetadataReader.
 """
-import json
-from typing import Optional, Dict, Any, List, Union
 
-from PyQt5.QtWidgets import QTreeView, QAbstractItemView, QApplication, QHeaderView, QMenu, QAction
-from PyQt5.QtCore import QUrl, Qt, QMimeData, pyqtSignal, QTimer
-from PyQt5.QtGui import QDropEvent, QDragEnterEvent, QDragMoveEvent, QIcon, QColor
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
+from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
+from PyQt5.QtWidgets import QAbstractItemView, QAction, QApplication, QHeaderView, QMenu, QTreeView
+
 from utils.logger_helper import get_logger
-from utils.metadata_validators import get_validator_for_key
 from widgets.metadata_edit_dialog import MetadataEditDialog
 
 logger = get_logger(__name__)
@@ -628,10 +626,10 @@ class MetadataTreeView(QTreeView):
                         # If so, remove the other entry to avoid duplication
                         if group == "EXIF" and key == "Rotation" and "Other" in metadata and isinstance(metadata["Other"], dict) and "Rotation" in metadata["Other"]:
                             del metadata["Other"]["Rotation"]
-                            logger.debug(f"[MetadataTree] Removed duplicate Other/Rotation entry")
+                            logger.debug("[MetadataTree] Removed duplicate Other/Rotation entry")
                         elif group == "Other" and key == "Rotation" and "EXIF" in metadata and isinstance(metadata["EXIF"], dict) and "Rotation" in metadata["EXIF"]:
                             del metadata["EXIF"]["Rotation"]
-                            logger.debug(f"[MetadataTree] Removed duplicate EXIF/Rotation entry")
+                            logger.debug("[MetadataTree] Removed duplicate EXIF/Rotation entry")
 
                     logger.debug(f"[MetadataTree] Updated metadata in cache for {full_path}: {key_path}={new_value}")
 

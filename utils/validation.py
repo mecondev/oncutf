@@ -15,7 +15,9 @@ Functions:
 
 
 import re
+
 from config import ALLOWED_FILENAME_CHARS
+
 
 def is_valid_filename_text(text: str) -> bool:
     """

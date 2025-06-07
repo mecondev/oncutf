@@ -1,6 +1,5 @@
 # tests/test_specified_text_module.py
 
-import pytest
 from modules.specified_text_module import SpecifiedTextModule
 from tests.mocks import MockFileItem
 

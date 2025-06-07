@@ -9,11 +9,13 @@ Provides a utility function for converting nested metadata
 """
 
 import re
-from PyQt5.QtGui import QStandardItemModel, QStandardItem, QFont
+
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont, QStandardItem, QStandardItemModel
 
 # Initialize Logger
 from utils.logger_helper import get_logger
+
 logger = get_logger(__name__)
 
 

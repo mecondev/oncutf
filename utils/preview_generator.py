@@ -9,11 +9,12 @@ Author: Michael Economou
 Date: 2025-05-13
 """
 
-from typing import List, Tuple, Dict, Optional, Any
+from typing import Any, Dict, List, Optional, Tuple
+
 from models.file_item import FileItem
 from modules.metadata_module import MetadataModule
-from utils.validation import is_valid_filename_text
 from utils.logger_helper import get_logger
+from utils.validation import is_valid_filename_text
 
 logger = get_logger(__name__)
 

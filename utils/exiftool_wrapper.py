@@ -11,15 +11,16 @@ it falls back to a one-shot subprocess call with '-ee'.
 Requires: exiftool installed and in PATH
 """
 
-import subprocess
-import threading
 import json
 import os
+import subprocess
+import threading
 import time
 from typing import Optional
 
 # Initialize Logger
 from utils.logger_helper import get_logger
+
 logger = get_logger(__name__)
 
 
@@ -173,7 +174,7 @@ class ExifToolWrapper:
                 self.process.stdin.write("-stay_open\nFalse\n")
                 self.process.stdin.flush()
                 self.process.communicate(timeout=5)
-        except Exception as e:
+        except Exception:
             # print(f"[ExifToolWrapper] Shutdown error: {e}")
             pass
         finally:

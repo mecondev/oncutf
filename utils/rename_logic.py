@@ -16,7 +16,8 @@ Date: 2025-05-11
 """
 
 import os
-from typing import List, Tuple, Dict, Callable
+from typing import Callable, Dict, List, Tuple
+
 
 def build_rename_plan(
     file_items: List[object],
@@ -118,7 +119,7 @@ def execute_rename_plan(plan: List[Dict]) -> int:
         try:
             os.rename(entry["src_path"], entry["dst_path"])
             success_count += 1
-        except Exception as e:
+        except Exception:
             # print(f"Failed to rename {entry['src']} -> {entry['dst']}: {e}")
             pass  # Silent fail - could be logged in the future
 

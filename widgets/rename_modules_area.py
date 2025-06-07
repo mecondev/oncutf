@@ -12,17 +12,23 @@ Designed to scale and support future drag & drop reordering.
 """
 
 from typing import Optional
+
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QScrollArea, QPushButton,
-    QSpacerItem, QSizePolicy, QLabel, QFrame
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QScrollArea,
+    QSizePolicy,
+    QSpacerItem,
+    QVBoxLayout,
+    QWidget,
 )
-from PyQt5.QtCore import pyqtSignal, Qt, QTimer
 
 from modules.base_module import BaseRenameModule
-from widgets.rename_module_widget import RenameModuleWidget
-from widgets.name_transform_widget import NameTransformWidget
-
 from utils.logger_helper import get_logger
+from widgets.name_transform_widget import NameTransformWidget
+from widgets.rename_module_widget import RenameModuleWidget
 
 logger = get_logger(__name__)
 

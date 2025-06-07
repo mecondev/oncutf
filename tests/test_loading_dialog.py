@@ -23,7 +23,9 @@ during asynchronous operations like metadata scanning.
 import pytest
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QWidget
+
 from widgets.custom_msgdialog import CustomMessageDialog
+
 
 class FakeWorker(QObject):
     """

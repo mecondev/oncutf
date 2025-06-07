@@ -1,8 +1,9 @@
 """Base class for rename modules with signal optimization helpers."""
 
-from PyQt5.QtWidgets import QWidget
-from PyQt5.QtCore import pyqtSignal
 import logging
+
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QWidget
 
 logger = logging.getLogger(__name__)
 

@@ -8,12 +8,18 @@ This module provides a dialog for editing metadata values.
 It supports validation based on field type and shows appropriate error messages.
 """
 
+from typing import Tuple
+
 from PyQt5.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QComboBox, QMessageBox, QDialogButtonBox
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QVBoxLayout,
 )
-from PyQt5.QtCore import Qt
-from typing import Optional, Callable, Tuple, Any, List
+
 from utils.logger_helper import get_logger
 from utils.metadata_validators import get_validator_for_key
 

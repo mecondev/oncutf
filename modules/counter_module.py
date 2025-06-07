@@ -10,13 +10,16 @@ sequential file names based on configurable start value, step, and padding.
 """
 
 from typing import Optional
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout
+
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QIntValidator
-from PyQt5.QtCore import pyqtSignal, Qt, QTimer
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
+
 from modules.base_module import BaseRenameModule
 
 # initialize logger
 from utils.logger_helper import get_logger
+
 logger = get_logger(__name__)
 
 

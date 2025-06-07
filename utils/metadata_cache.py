@@ -12,10 +12,11 @@ for cache querying by extended state.
 
 import os
 import time
-from typing import Optional, Dict
+from typing import Dict, Optional
 
 # Setup Logger
 from utils.logger_helper import get_logger
+
 logger = get_logger(__name__)
 
 

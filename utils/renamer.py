@@ -1,15 +1,15 @@
 import os
-import re
-from typing import List, Callable, Optional
+from typing import Callable, List, Optional
+
 from PyQt5.QtWidgets import QWidget
+
 from models.file_item import FileItem
-from utils.preview_generator import generate_preview_names
 from modules.name_transform_module import NameTransformModule
-from utils.validation import is_valid_filename_text
-from widgets.custom_msgdialog import CustomMessageDialog
 
 # Initialize Logger
 from utils.logger_helper import get_logger
+from utils.preview_generator import generate_preview_names
+from utils.validation import is_valid_filename_text
 
 logger = get_logger(__name__)
 

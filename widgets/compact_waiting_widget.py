@@ -23,11 +23,20 @@ MetadataWaitingDialog to indicate progress during metadata loading (basic or ext
 """
 
 from typing import Optional
-from PyQt5.QtWidgets import QApplication ,QWidget, QVBoxLayout, QLabel, QProgressBar, QSizePolicy, QHBoxLayout
+
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QProgressBar,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
 # Setup Logger
 from utils.logger_helper import get_logger
+
 logger = get_logger(__name__)
 
 class CompactWaitingWidget(QWidget):

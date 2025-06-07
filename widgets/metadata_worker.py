@@ -16,15 +16,17 @@ Features:
 """
 
 import os
+import threading
 import time
 from typing import Optional
-import threading
+
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
-from utils.metadata_loader import MetadataLoader
-from utils.metadata_cache import MetadataCache
 
 # Logger setup
 from utils.logger_helper import get_logger
+from utils.metadata_cache import MetadataCache
+from utils.metadata_loader import MetadataLoader
+
 logger = get_logger(__name__)
 
 

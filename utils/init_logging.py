@@ -11,9 +11,11 @@ Author: Michael Economou
 Date: 2025-05-12
 """
 
-from utils.logger_helper import get_logger
-from utils.logger_file_helper import add_file_handler
 import logging
+
+from utils.logger_file_helper import add_file_handler
+from utils.logger_helper import get_logger
+
 
 def init_logging(app_name: str = "app") -> logging.Logger:
     """

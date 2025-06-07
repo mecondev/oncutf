@@ -11,23 +11,17 @@ It supports recursive directory scanning, file type filtering, and
 preparation of file data for use in the oncutf renaming system.
 """
 
-import os
-import glob
-import datetime
 from typing import TYPE_CHECKING
 
-from PyQt5.QtWidgets import QFileDialog, QApplication
 from PyQt5.QtCore import Qt
-from models.file_item import FileItem
-from config import ALLOWED_EXTENSIONS
+from PyQt5.QtWidgets import QApplication, QFileDialog
 
 if TYPE_CHECKING:
-    from PyQt5.QtWidgets import QTreeView, QFileSystemModel
-    from PyQt5.QtCore import QModelIndex
     from widgets.main_window import MainWindow  # forward reference
 
 # Initialize Logger
 from utils.logger_helper import get_logger
+
 logger = get_logger(__name__)
 
 

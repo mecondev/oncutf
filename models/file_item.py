@@ -12,11 +12,12 @@ within the FileTableModel to manage file entries in a table view.
 Classes:
     FileItem: Represents a single file item in the table.
 """
-from typing import Optional
 import os
+from typing import Optional
 
 # Initialize Logger
 from utils.logger_helper import get_logger
+
 logger = get_logger(__name__)
 
 

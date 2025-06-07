@@ -13,67 +13,82 @@ Many of the linter warnings are false positives and can be safely ignored.
 
 # type: ignore (PyQt5 attributes not recognized by linter)
 
-import os
-import glob
 import datetime
+import glob
+import os
 import platform
-import json
 import traceback
 from typing import Optional
-import threading
-from PyQt5.QtWidgets import (
-    QMainWindow, QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QSplitter, QFrame, QScrollArea, QTableWidget, QTreeView, QFileDialog,
-    QFileSystemModel, QAbstractItemView,  QSizePolicy, QHeaderView, QTableWidgetItem,
-    QDesktopWidget, QGraphicsOpacityEffect, QMenu, QShortcut
-)
+
 from PyQt5.QtCore import (
-    Qt, QDir, QUrl, QThread, QTimer, QModelIndex, QPropertyAnimation, QEvent, QMetaObject,
-    QItemSelection, QItemSelectionRange, QItemSelectionModel, QElapsedTimer
+    QDir,
+    QElapsedTimer,
+    QEvent,
+    QModelIndex,
+    QPropertyAnimation,
+    Qt,
+    QThread,
+    QTimer,
+    QUrl,
 )
 from PyQt5.QtGui import (
-    QPixmap, QBrush, QColor, QIcon, QDesktopServices, QStandardItem, QStandardItemModel,
-    QKeySequence, QCursor
+    QDesktopServices,
+    QKeySequence,
+    QStandardItem,
+    QStandardItemModel,
+)
+from PyQt5.QtWidgets import (
+    QAbstractItemView,
+    QApplication,
+    QDesktopWidget,
+    QFileDialog,
+    QFileSystemModel,
+    QFrame,
+    QGraphicsOpacityEffect,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QMainWindow,
+    QMenu,
+    QPushButton,
+    QShortcut,
+    QSizePolicy,
+    QSplitter,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
 )
 
-from models.file_table_model import FileTableModel
-from models.file_item import FileItem
-
-from modules.name_transform_module import NameTransformModule
-
-from utils.filename_validator import FilenameValidator
-from utils.preview_generator import generate_preview_names as generate_preview_logic
-from utils.icons import create_colored_icon
-from utils.icon_cache import prepare_status_icons
-from utils.icon_cache import load_preview_status_icons
-
-from utils.preview_engine import apply_rename_modules
-from utils.build_metadata_tree_model import build_metadata_tree_model
-from utils.metadata_cache import MetadataCache
-from utils.metadata_utils import resolve_skip_metadata
-from utils.renamer import Renamer
-from utils.text_helpers import elide_text
-from utils.icons_loader import load_metadata_icons, icons_loader, get_menu_icon
-from utils.metadata_loader import MetadataLoader
-
-from widgets.metadata_worker import MetadataWorker
-from widgets.interactive_header import InteractiveHeader
-from widgets.custom_msgdialog import CustomMessageDialog
-from widgets.file_table_view import FileTableView
-from widgets.metadata_tree_view import MetadataTreeView
-from widgets.metadata_waiting_dialog import MetadataWaitingDialog
-from widgets.rename_modules_area import RenameModulesArea
-from widgets.file_tree_view import FileTreeView
-
-
 from config import *
+from models.file_item import FileItem
+from models.file_table_model import FileTableModel
+from modules.name_transform_module import NameTransformModule
+from utils.build_metadata_tree_model import build_metadata_tree_model
+from utils.filename_validator import FilenameValidator
+from utils.icon_cache import load_preview_status_icons, prepare_status_icons
+from utils.icons import create_colored_icon
+from utils.icons_loader import get_menu_icon, icons_loader, load_metadata_icons
 
 # Setup Logger
 from utils.logger_helper import get_logger
+from utils.metadata_cache import MetadataCache
+from utils.metadata_loader import MetadataLoader
+from utils.preview_engine import apply_rename_modules
+from utils.renamer import Renamer
+from widgets.custom_msgdialog import CustomMessageDialog
+from widgets.file_table_view import FileTableView
+from widgets.file_tree_view import FileTreeView
+from widgets.interactive_header import InteractiveHeader
+from widgets.metadata_tree_view import MetadataTreeView
+from widgets.metadata_waiting_dialog import MetadataWaitingDialog
+from widgets.metadata_worker import MetadataWorker
+from widgets.rename_modules_area import RenameModulesArea
+
 logger = get_logger(__name__)
 
 import contextlib
-import re
+
 
 @contextlib.contextmanager
 def wait_cursor(restore_after=True):
@@ -86,9 +101,8 @@ def wait_cursor(restore_after=True):
         restore_after: If True, the cursor will be restored after the context block.
                        If False, the cursor will remain as wait cursor.
     """
-    import traceback
-    from PyQt5.QtWidgets import QApplication
     from PyQt5.QtCore import Qt
+    from PyQt5.QtWidgets import QApplication
 
     QApplication.setOverrideCursor(Qt.WaitCursor) # type: ignore
 

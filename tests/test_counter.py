@@ -1,5 +1,6 @@
 from modules.counter_module import CounterModule
 
+
 def test_counter_default():
     data = {"type": "counter", "start": 1, "step": 1, "padding": 3}
     assert CounterModule.apply_from_data(data, None, index=0) == "001"

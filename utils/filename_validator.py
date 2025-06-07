@@ -12,11 +12,11 @@ Used by oncutf to prevent errors during batch renaming.
 """
 
 import os
-import re
 import platform
 
 # Initialize Logger
 from utils.logger_helper import get_logger
+
 logger = get_logger(__name__)
 
 

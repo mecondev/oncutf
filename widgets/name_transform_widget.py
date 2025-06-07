@@ -11,7 +11,9 @@ Date: 2025-06-04
 """
 
 from typing import Optional
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox
+
+from PyQt5.QtWidgets import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+
 from modules.base_module import BaseRenameModule  # Debounced signal base
 
 

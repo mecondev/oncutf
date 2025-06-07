@@ -17,13 +17,16 @@ Supports:
 """
 
 import os
-from PyQt5.QtGui import QPixmap, QIcon
+
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon, QPixmap
+
 from config import PREVIEW_COLORS, PREVIEW_INDICATOR_SHAPE, PREVIEW_INDICATOR_SIZE
 from utils.icons import create_colored_icon
 
 # Initialize Logger
 from utils.logger_helper import get_logger
+
 logger = get_logger(__name__)
 
 

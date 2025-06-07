@@ -10,11 +10,17 @@ internal drag & drop functionality.
 '''
 
 import os
-from PyQt5.QtWidgets import QTreeView, QAbstractItemView, QApplication, QFileSystemModel, QHeaderView
-from PyQt5.QtCore import Qt, QMimeData, QEvent, QPoint, QUrl, pyqtSignal, QTimer, QObject
-from PyQt5.QtGui import QDrag, QMouseEvent, QKeyEvent
-from utils.logger_helper import get_logger
+
+from PyQt5.QtCore import QEvent, QMimeData, QObject, QPoint, Qt, QTimer, QUrl, pyqtSignal
+from PyQt5.QtGui import QDrag, QKeyEvent, QMouseEvent
+from PyQt5.QtWidgets import (
+    QAbstractItemView,
+    QApplication,
+    QTreeView,
+)
+
 from config import ALLOWED_EXTENSIONS
+from utils.logger_helper import get_logger
 
 logger = get_logger(__name__)
 

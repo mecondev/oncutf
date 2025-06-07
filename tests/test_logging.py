@@ -13,9 +13,11 @@ Date: 2025-05-12
 """
 
 import os
+
 from utils.init_logging import init_logging
-from utils.logger_helper import get_logger
 from utils.logger_file_helper import add_file_handler
+from utils.logger_helper import get_logger
+
 
 # Clean log files (for test only)
 def clean_logs():

@@ -13,9 +13,8 @@ Features:
 - Prevents accidental sort when resizing (Explorer-like behavior)
 """
 
-from typing import Optional
-from PyQt5.QtWidgets import QHeaderView, QMenu, QAction
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtCore import QPoint, Qt
+from PyQt5.QtWidgets import QAction, QHeaderView, QMenu
 
 
 class InteractiveHeader(QHeaderView):

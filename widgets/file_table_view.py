@@ -15,21 +15,26 @@ Key features:
 - Seamless integration with parent MainWindow for preview/metadata sync
 - Proper visual updates on hover/selection using manual viewport repaint
 '''
-import sys, os
 from pathlib import Path
-from PyQt5.QtWidgets import QAbstractItemView, QTableView, QApplication, QLabel
+
 from PyQt5.QtCore import (
-      QMimeData, QUrl, QItemSelectionModel, QItemSelection,
-      Qt, QPoint, QModelIndex, QTimer, pyqtSignal
+    QItemSelection,
+    QItemSelectionModel,
+    QMimeData,
+    QModelIndex,
+    QPoint,
+    Qt,
+    QTimer,
+    QUrl,
+    pyqtSignal,
 )
-from PyQt5.QtGui import QKeySequence, QDrag, QMouseEvent, QCursor, QPixmap, QPainter, QFont, QColor, QDropEvent
-from utils.file_drop_helper import (
-      analyze_drop, filter_allowed_files, ask_recursive_dialog, show_rejected_dialog, extract_file_paths
-)
-from .hover_delegate import HoverItemDelegate
+from PyQt5.QtGui import QCursor, QDrag, QDropEvent, QKeySequence, QMouseEvent, QPixmap
+from PyQt5.QtWidgets import QAbstractItemView, QApplication, QLabel, QTableView
 
-
+from utils.file_drop_helper import extract_file_paths
 from utils.logger_helper import get_logger
+
+from .hover_delegate import HoverItemDelegate
 
 logger = get_logger(__name__)
 

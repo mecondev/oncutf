@@ -14,18 +14,25 @@ Classes:
     FileTableModel: A table model for displaying and managing file entries.
 '''
 
-from typing import Optional
 from PyQt5.QtCore import (
-    Qt, QAbstractTableModel, QModelIndex, QVariant, pyqtSignal,
-    QItemSelection, QItemSelectionRange, QItemSelectionModel
+    QAbstractTableModel,
+    QItemSelection,
+    QItemSelectionModel,
+    QItemSelectionRange,
+    QModelIndex,
+    Qt,
+    QVariant,
+    pyqtSignal,
 )
 from PyQt5.QtGui import QColor, QIcon
+
 from models.file_item import FileItem
-from utils.metadata_cache import MetadataEntry
 from utils.icons_loader import load_metadata_icons
 
 # initialize logger
 from utils.logger_helper import get_logger
+from utils.metadata_cache import MetadataEntry
+
 logger = get_logger(__name__)
 
 

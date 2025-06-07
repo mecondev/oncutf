@@ -9,9 +9,9 @@ Author: Michael Economou
 Date: 2025-05-21
 """
 
-from PyQt5.QtWidgets import QStyledItemDelegate, QStyle, QStyleOptionViewItem, QTableView
-from PyQt5.QtGui import QPainter, QColor, QPen, QPalette, QIcon
-from PyQt5.QtCore import QModelIndex, Qt
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor, QIcon, QPalette, QPen
+from PyQt5.QtWidgets import QStyle, QStyledItemDelegate, QStyleOptionViewItem, QTableView
 
 
 class HoverItemDelegate(QStyledItemDelegate):

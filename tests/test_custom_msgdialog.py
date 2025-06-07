@@ -28,10 +28,13 @@ These tests ensure consistent and reliable user interaction in dialog-based flow
 
 
 import os
+
 import pytest
-from PyQt5.QtCore import Qt, QTimer, QObject, pyqtSignal
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget
+
 from widgets.custom_msgdialog import CustomMessageDialog
+
 
 @pytest.mark.skipif("CI" in os.environ, reason="Fails on CI due to GUI")
 def test_esc_key_triggers_cancel(qtbot) -> None:

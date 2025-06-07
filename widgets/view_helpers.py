@@ -13,7 +13,7 @@ Currently includes:
 """
 
 from PyQt5.QtWidgets import QTableView
-from PyQt5.QtCore import QModelIndex
+
 
 def update_info_icon(file_table_view: QTableView, model, file_path: str) -> None:
     """

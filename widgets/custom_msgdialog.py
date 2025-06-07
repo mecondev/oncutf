@@ -19,16 +19,23 @@ behavior, and styling.
 """
 
 from typing import Optional
-from PyQt5.QtWidgets import (
-    QDialog, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QWidget,
-    QProgressBar, QApplication, QCheckBox
-)
-
 
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QProgressBar,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 # Initialize Logger
 from utils.logger_helper import get_logger
+
 logger = get_logger(__name__)
 
 

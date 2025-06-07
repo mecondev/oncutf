@@ -9,9 +9,10 @@ the console, ERROR and higher to app.log, and DEBUG+ to app_debug.log (optional)
 
 import logging
 import os
-import sys
 import re
+import sys
 from logging.handlers import RotatingFileHandler
+
 from config import ENABLE_DEBUG_LOG_FILE
 from utils.logger_file_helper import add_file_handler
 

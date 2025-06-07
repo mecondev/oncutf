@@ -16,6 +16,7 @@ import os
 from logging.handlers import RotatingFileHandler
 from typing import Optional
 
+
 def add_file_handler(
     logger: logging.Logger,
     log_path: str,

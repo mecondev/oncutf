@@ -21,6 +21,7 @@ to reduce duplication and improve maintainability.
 """
 from PyQt5.QtWidgets import QWidget
 
+
 def resolve_skip_metadata(
     ctrl_override: bool,
     total_files: int,

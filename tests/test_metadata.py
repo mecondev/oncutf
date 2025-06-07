@@ -1,6 +1,7 @@
 from modules.metadata_module import MetadataModule
 from tests.mocks import MockFileItem
 
+
 def test_metadata_from_date_attr():
     data = {"type": "metadata", "field": "date", "category": "metadata_keys"}
     file_item = MockFileItem()

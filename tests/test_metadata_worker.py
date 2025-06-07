@@ -1,9 +1,10 @@
-import pytest
 import time
-from unittest.mock import Mock
-from PyQt5.QtCore import QCoreApplication, QTimer
+
+import pytest
+from PyQt5.QtCore import QCoreApplication
+
 from widgets.metadata_worker import MetadataWorker
-import os
+
 
 @pytest.fixture
 def fake_reader(mocker):

@@ -19,10 +19,12 @@ Date: 2025-05-12
 """
 
 import logging
-import sys
 import re
+import sys
 from functools import partial
+
 from config import SHOW_DEV_ONLY_IN_CONSOLE
+
 
 def safe_text(text: str) -> str:
     """
