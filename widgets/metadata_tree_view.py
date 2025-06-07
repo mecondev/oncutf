@@ -198,12 +198,12 @@ class MetadataTreeView(QTreeView):
                 # Normal content mode: HORIZONTAL SCROLLBAR enabled but controlled
                 self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
-                # Key column: min 80px, initial 120px, max 300px
+                # Key column: min 80px, initial 180px, max 800px
                 self.header().setSectionResizeMode(0, QHeaderView.Interactive)
                 self.header().setMinimumSectionSize(80)
                 self.header().resizeSection(0, 180)  # Initial size for Key column
 
-                # Value column: min 250px, allows wide content without stretching
+                # Value column: min 250px, initial 500px, allows wide content without stretching
                 self.header().setSectionResizeMode(1, QHeaderView.Interactive)
                 self.header().resizeSection(1, 500)  # Larger initial size for Value column
 

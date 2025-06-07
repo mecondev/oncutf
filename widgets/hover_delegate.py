@@ -13,7 +13,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QIcon, QPalette, QPen
 from PyQt5.QtWidgets import QStyle, QStyledItemDelegate, QStyleOptionViewItem, QTableView
 
-from utils.theme import get_qcolor
+from utils.theme import get_qcolor, get_theme_color
 
 
 class HoverItemDelegate(QStyledItemDelegate):
