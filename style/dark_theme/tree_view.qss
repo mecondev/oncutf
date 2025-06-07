@@ -70,33 +70,64 @@ MetadataTreeView[placeholder="true"]::item:selected {
     border: none !important;
 }
 
-/* Tree view branch styling - remove OS selection colors */
+/* Tree view branch styling - consistent with table view colors */
 QTreeView::branch {
     background-color: transparent !important;
     color: transparent !important;
     border: none !important;
+    /* Remove branch decorations completely */
+    outline: 0;
+    show-decoration-selected: 0;
 }
 
 QTreeView::branch:selected {
-    background-color: transparent !important;
-    color: transparent !important;
+    background-color: #748cab !important;  /* Same as table selection color */
+    color: #0d1321 !important;  /* Same as table selection text color */
     border: none !important;
 }
 
 QTreeView::branch:hover {
-    background-color: transparent !important;
+    background-color: #4a6fa5 !important;  /* Same as table hover color */
+    color: #f0ebd8 !important;  /* Same as table hover text color */
     border: none !important;
 }
 
-/* Branch indicators (τα σύμβολα +/- του δέντρου) */
+QTreeView::branch:selected:hover {
+    background-color: #748cab !important;  /* Keep selection color on hover */
+    color: #0d1321 !important;  /* Keep selection text color on hover */
+    border: none !important;
+}
+
+/* Complete hiding of branch connection lines */
+QTreeView::branch:has-siblings:!adjoins-item {
+    border-image: none;
+    image: none;
+    background: transparent;
+}
+
+QTreeView::branch:has-siblings:adjoins-item {
+    border-image: none;
+    image: none;
+    background: transparent;
+}
+
+QTreeView::branch:!has-children:!has-siblings:adjoins-item {
+    border-image: none;
+    image: none;
+    background: transparent;
+}
+
+/* Hide connection lines between branches */
 QTreeView::branch:has-children:!has-siblings:closed,
 QTreeView::branch:closed:has-children:has-siblings {
     border-image: none;
-    image: url(:/tree-closed.png);
+    image: none;  /* Removed url(:/tree-closed.png) */
+    background: transparent;
 }
 
 QTreeView::branch:open:has-children:!has-siblings,
 QTreeView::branch:open:has-children:has-siblings {
     border-image: none;
-    image: url(:/tree-open.png);
+    image: none;  /* Removed url(:/tree-open.png) */
+    background: transparent;
 }

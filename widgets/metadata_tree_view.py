@@ -37,10 +37,10 @@ class MetadataTreeView(QTreeView):
     """
     files_dropped = pyqtSignal(list, Qt.KeyboardModifiers)  # Emits list of local file paths
 
-    # Σήματα για τις λειτουργίες metadata
-    value_copied = pyqtSignal(str)  # Εκπέμπεται όταν αντιγράφεται μια τιμή
-    value_edited = pyqtSignal(str, str, str)  # Εκπέμπεται με (key_path, old_value, new_value)
-    value_reset = pyqtSignal(str)  # Εκπέμπεται με το key_path που έγινε reset
+    # Signals for metadata operations
+    value_copied = pyqtSignal(str)  # Emitted when a value is copied
+    value_edited = pyqtSignal(str, str, str)  # Emitted with (key_path, old_value, new_value)
+    value_reset = pyqtSignal(str)  # Emitted with the key_path that was reset
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -61,9 +61,6 @@ class MetadataTreeView(QTreeView):
 
         # Track if we're in placeholder mode
         self._is_placeholder_mode = True
-
-        # No scrollbar management needed since scrollTo is disabled
-
 
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
@@ -175,7 +172,7 @@ class MetadataTreeView(QTreeView):
 
                 self.header().setSectionResizeMode(0, QHeaderView.Fixed)
                 self.header().setSectionResizeMode(1, QHeaderView.Fixed)
-                self.header().resizeSection(0, 120)  # Key column fixed size
+                self.header().resizeSection(0, 100)  # Key column fixed size
                 self.header().resizeSection(1, 250)  # Value column fixed size
 
                 # Make placeholder items non-selectable
@@ -204,11 +201,11 @@ class MetadataTreeView(QTreeView):
                 # Key column: min 80px, initial 120px, max 300px
                 self.header().setSectionResizeMode(0, QHeaderView.Interactive)
                 self.header().setMinimumSectionSize(80)
-                self.header().resizeSection(0, 150)  # Initial size for Key column
+                self.header().resizeSection(0, 180)  # Initial size for Key column
 
                 # Value column: min 250px, allows wide content without stretching
                 self.header().setSectionResizeMode(1, QHeaderView.Interactive)
-                self.header().resizeSection(1, 350)  # Larger initial size for Value column
+                self.header().resizeSection(1, 500)  # Larger initial size for Value column
 
                 # Set specific min/max sizes per column
                 header = self.header()
