@@ -28,7 +28,7 @@ from PyQt5.QtWidgets import (
     QDesktopWidget, QGraphicsOpacityEffect, QMenu, QShortcut
 )
 from PyQt5.QtCore import (
-    Qt, QDir, QUrl, QThread, QTimer, QModelIndex, QPropertyAnimation, QMetaObject,
+    Qt, QDir, QUrl, QThread, QTimer, QModelIndex, QPropertyAnimation, QEvent, QMetaObject,
     QItemSelection, QItemSelectionRange, QItemSelectionModel, QElapsedTimer
 )
 from PyQt5.QtGui import (
@@ -571,7 +571,7 @@ class MainWindow(QMainWindow):
         if not CustomMessageDialog.question(self, "Reload Folder", "Reload current folder?", yes_text="Reload", no_text="Cancel"):
             return
 
-        ctrl_override = bool(QApplication.keyboardModifiers() & SKIP_METADATA_MODIFIER)
+        ctrl_override = bool(self.modifier_state & SKIP_METADATA_MODIFIER)
 
         skip_metadata, user_wants_scan = resolve_skip_metadata(
             ctrl_override=ctrl_override,
@@ -1927,7 +1927,7 @@ class MainWindow(QMainWindow):
                 - skip_metadata: True if Ctrl is pressed
                 - use_extended: True if Shift is pressed
         """
-        modifiers = QApplication.keyboardModifiers()
+        modifiers = self.modifier_state
         skip_metadata = modifiers & Qt.ControlModifier
         use_extended = modifiers & Qt.ShiftModifier
 
@@ -1936,25 +1936,28 @@ class MainWindow(QMainWindow):
 
     def determine_metadata_mode(self) -> tuple[bool, bool]:
         """
+        Determines whether to skip metadata scan or use extended mode based on modifier keys.
+
         Returns:
             tuple: (skip_metadata, use_extended)
 
-            - skip_metadata = True  ➜ no metadata at all (default)
-            - skip_metadata = False & use_extended = False ➜ fast
-            - skip_metadata = False & use_extended = True ➜ extended
-
-        Rules:
-            - If Ctrl is pressed → fast
-            - If Ctrl+Shift → extended
-            - Else (no modifiers) → skip
+            - skip_metadata = True ➜ No metadata scan
+            - skip_metadata = False & use_extended = False ➜ Fast scan
+            - skip_metadata = False & use_extended = True ➜ Extended scan
         """
-        modifiers = QApplication.keyboardModifiers()
+        modifiers = self.modifier_state
 
-        if modifiers & Qt.ControlModifier:
-            use_extended = modifiers & Qt.ShiftModifier
-            return False, bool(use_extended)
+        ctrl = bool(modifiers & Qt.ControlModifier)
+        shift = bool(modifiers & Qt.ShiftModifier)
 
-        return True, False
+        skip_metadata = not ctrl
+        use_extended = ctrl and shift
+
+        logger.debug(f"[determine_metadata_mode] ctrl={ctrl}, shift={shift}, "
+                    f"skip_metadata={skip_metadata}, use_extended={use_extended}")
+
+        return skip_metadata, use_extended
+
 
     def should_use_extended_metadata(self) -> bool:
         """
@@ -1963,7 +1966,7 @@ class MainWindow(QMainWindow):
 
         This assumes that metadata will be loaded — we only decide if it's fast or extended.
         """
-        modifiers = QApplication.keyboardModifiers()
+        modifiers = self.modifier_state
         return bool(modifiers & Qt.ShiftModifier)
 
     def update_preview_from_selection(self, selected_rows: list[int]) -> None:
@@ -2221,7 +2224,6 @@ class MainWindow(QMainWindow):
         # Clear preview since no files are selected
         self.update_preview_tables_from_pairs([])
 
-
     def load_metadata_from_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
         Called when user drops files onto metadata tree.
@@ -2261,7 +2263,7 @@ class MainWindow(QMainWindow):
 
             # Use modifiers passed or fallback to current
             if modifiers == Qt.NoModifier:
-                modifiers = QApplication.keyboardModifiers()
+                modifiers = self.modifier_state
 
             if modifiers & Qt.ControlModifier:
                 use_extended = modifiers & Qt.ShiftModifier
