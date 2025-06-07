@@ -167,6 +167,9 @@ class MainWindow(QMainWindow):
         # --- Signal connections ---
         self.setup_signals()
 
+        # --- Shortcuts ---
+        self.setup_shortcuts()
+
         # --- Preview update debouncing timer ---
         self.preview_update_timer = QTimer(self)
         self.preview_update_timer.setSingleShot(True)
@@ -513,16 +516,25 @@ class MainWindow(QMainWindow):
         # --- Connect the updated signal of RenameModulesArea to generate_preview_names ---
         self.rename_modules_area.updated.connect(self.request_preview_update)
 
-        # --- Shortcuts ---
-        QShortcut(QKeySequence("Ctrl+A"), self.file_table_view, activated=self.select_all_rows)
-        QShortcut(QKeySequence("Ctrl+Shift+A"), self.file_table_view, activated=self.clear_all_selection)
-        QShortcut(QKeySequence("Ctrl+I"), self.file_table_view, activated=self.invert_selection)
-
-        QShortcut(QKeySequence("Ctrl+O"), self.file_table_view, activated=self.handle_browse)
-        QShortcut(QKeySequence("Ctrl+R"), self.file_table_view, activated=self.force_reload)
-
-        QShortcut(QKeySequence("Ctrl+M"), self.file_table_view, activated=self.shortcut_load_metadata)
-        QShortcut(QKeySequence("Ctrl+E"), self.file_table_view, activated=self.shortcut_load_extended_metadata)
+    def setup_shortcuts(self) -> None:
+        """
+        Initializes all keyboard shortcuts for file table actions.
+        Stores them in self.shortcuts to avoid garbage collection.
+        """
+        self.shortcuts = []
+        shortcut_map = [
+            ("Ctrl+A", self.select_all_rows),
+            ("Ctrl+Shift+A", self.clear_all_selection),
+            ("Ctrl+I", self.invert_selection),
+            ("Ctrl+O", self.handle_browse),
+            ("Ctrl+R", self.force_reload),
+            ("Ctrl+M", self.shortcut_load_metadata),
+            ("Ctrl+E", self.shortcut_load_extended_metadata),
+        ]
+        for key, handler in shortcut_map:
+            shortcut = QShortcut(QKeySequence(key), self.file_table_view)
+            shortcut.activated.connect(handler)
+            self.shortcuts.append(shortcut)
 
     def request_preview_update(self) -> None:
         """
@@ -1166,6 +1178,20 @@ class MainWindow(QMainWindow):
         Generate new preview names for all selected files using current rename modules.
         Updates the preview map and UI elements accordingly.
         """
+
+        if not all_modules and not NameTransformModule.is_effective(post_transform):
+            logger.debug("[Preview] No modules and no post transform — skipping preview.")
+            self.update_preview_tables_from_pairs([])
+            self.rename_button.setEnabled(False)
+            self.rename_button.setToolTip("No rename modules configured")
+
+            if not all_modules and not NameTransformModule.is_effective(post_transform):
+                self.set_status("No rename modules defined.", color="#888888", auto_reset=True)
+            elif is_noop:
+                self.set_status("Rename modules present but inactive.", color="#888888", auto_reset=True)
+
+            return
+
         with wait_cursor():
             timer = QElapsedTimer()
             timer.start()
