@@ -25,6 +25,30 @@ QTreeView::item:selected {
 /* MetadataTreeView normal content styles */
 MetadataTreeView {
     color: #f0ebd8;  /* Light color for normal content */
+    background-color: #181818;
+}
+
+/* MetadataTreeView normal mode (not placeholder) - force bright colors */
+MetadataTreeView[placeholder="false"] {
+    color: #f0ebd8 !important;  /* Force bright color globally */
+    background-color: #181818 !important;
+}
+
+MetadataTreeView[placeholder="false"]::item {
+    color: #f0ebd8 !important;  /* Force bright color for items */
+    background-color: transparent;
+}
+
+MetadataTreeView[placeholder="false"]::item:hover {
+    background-color: #4a6fa5 !important;
+    color: #f0ebd8 !important;
+    border: none;
+}
+
+MetadataTreeView[placeholder="false"]::item:selected {
+    background-color: #748cab !important;
+    color: #f0ebd8 !important;  /* Changed to bright color for selected items too */
+    border: none;
 }
 
 /* MetadataTreeView placeholder styles */
