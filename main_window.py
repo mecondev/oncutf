@@ -229,12 +229,12 @@ class MainWindow(QMainWindow):
         self.dir_model.setRootPath('')
         self.dir_model.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs | QDir.Files)
 
-        # Προσθήκη φίλτρου για τις επιτρεπόμενες επεκτάσεις αρχείων
+        # Adding filter for allowed file extensions
         name_filters = []
         for ext in ALLOWED_EXTENSIONS:
             name_filters.append(f"*.{ext}")
         self.dir_model.setNameFilters(name_filters)
-        self.dir_model.setNameFilterDisables(False)  # Αυτό κρύβει τα αρχεία που δεν ταιριάζουν αντί να τα απενεργοποιεί
+        self.dir_model.setNameFilterDisables(False)  # This hides files that don't match instead of disabling them
 
         self.folder_tree.setModel(self.dir_model)
         for i in range(1, 4):
@@ -566,7 +566,7 @@ class MainWindow(QMainWindow):
         If Ctrl is held, metadata scan is skipped (like Select/Browse).
         Otherwise, full reload with scan.
         """
-        # Ενημέρωση της τρέχουσας κατάστασης των modifier keys
+        # Update current state of modifier keys
         self.modifier_state = QApplication.keyboardModifiers()
 
         if not self.current_folder_path:
@@ -576,7 +576,7 @@ class MainWindow(QMainWindow):
         if not CustomMessageDialog.question(self, "Reload Folder", "Reload current folder?", yes_text="Reload", no_text="Cancel"):
             return
 
-        # Χρησιμοποιώ τη μέθοδο determine_metadata_mode αντί για την απαρχαιωμένη resolve_skip_metadata
+        # Use determine_metadata_mode method instead of deprecated resolve_skip_metadata
         skip_metadata, use_extended = self.determine_metadata_mode()
         self.force_extended_metadata = use_extended
         self.skip_metadata_mode = skip_metadata
@@ -1947,15 +1947,15 @@ class MainWindow(QMainWindow):
         """
         modifiers = self.modifier_state
         if modifiers == Qt.NoModifier:
-            modifiers = QApplication.keyboardModifiers()  # ✅ fallback to current
+            modifiers = QApplication.keyboardModifiers()  # fallback to current
 
         ctrl = bool(modifiers & Qt.ControlModifier)
         shift = bool(modifiers & Qt.ShiftModifier)
 
-        # Νέα λογική:
-        # - Χωρίς modifiers: παράλειψη μεταδεδομένων
-        # - Με Ctrl: φόρτωση βασικών μεταδεδομένων
-        # - Με Ctrl+Shift: φόρτωση εκτεταμένων μεταδεδομένων
+        # New logic:
+        # - No modifiers: skip metadata
+        # - With Ctrl: load basic metadata
+        # - With Ctrl+Shift: load extended metadata
         skip_metadata = not ctrl
         use_extended = ctrl and shift
 
@@ -2056,7 +2056,6 @@ class MainWindow(QMainWindow):
         action_invert = menu.addAction("🔁 Invert selection (Ctrl+I)")
         action_select_all = menu.addAction("✅ Select all (Ctrl+A)")
         action_deselect_all = menu.addAction("❌ Deselect all")
-        action_deselect_all.setEnabled(total_files > 0)
 
         menu.addSeparator()
 
@@ -2155,7 +2154,7 @@ class MainWindow(QMainWindow):
         self.cleanup_metadata_worker()
 
         if hasattr(self.metadata_loader, "close"):
-            self.metadata_loader.close()  # ✨ new line
+            self.metadata_loader.close()  # new line
 
         super().closeEvent(event)
 
@@ -2271,7 +2270,7 @@ class MainWindow(QMainWindow):
             folder_path = paths[0]
             logger.info(f"[Drop] Setting folder from drop: {folder_path}")
 
-            # Ενημέρωση της τρέχουσας κατάστασης των modifier keys
+            # Update current state of modifier keys
             self.modifier_state = QApplication.keyboardModifiers()
 
             # Use modifiers passed or fallback to current
@@ -2290,7 +2289,7 @@ class MainWindow(QMainWindow):
             # Centralized loading logic
             self.prepare_folder_load(folder_path)
 
-            # Get loaded items (από self.model ή ανάκτηση από paths αν χρειάζεται)
+            # Get loaded items (from self.model or retrieved from paths if needed)
             items = self.model.files
 
             if not self.skip_metadata_mode:
@@ -2323,7 +2322,7 @@ class MainWindow(QMainWindow):
 
         Also updates the folder tree selection to reflect the newly selected folder.
         """
-        # Ενημέρωση της τρέχουσας κατάστασης των modifier keys
+        # Update current state of modifier keys
         self.modifier_state = QApplication.keyboardModifiers()
         self.last_action = "browse"
 
@@ -2386,7 +2385,7 @@ class MainWindow(QMainWindow):
 
         Triggered when the user clicks the 'Select Folder' button.
         """
-        # Ενημέρωση της τρέχουσας κατάστασης των modifier keys
+        # Update current state of modifier keys
         self.modifier_state = QApplication.keyboardModifiers()
         self.last_action = "folder_select"
 
