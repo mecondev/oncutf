@@ -608,7 +608,7 @@ class MainWindow(QMainWindow):
         total = len(self.model.files)
         if total == 0:
             return
-        
+
         selection_model = self.file_table_view.selectionModel()
         all_checked = all(f.checked for f in self.model.files)
         all_selected = False
@@ -2275,6 +2275,9 @@ class MainWindow(QMainWindow):
         Also updates the folder tree selection to reflect the newly selected folder.
         """
         self.last_action = "browse"
+
+        # Read modifiers BEFORE opening the dialog
+        modifiers = QApplication.keyboardModifiers()
 
         folder_path = QFileDialog.getExistingDirectory(self, "Select Folder", "/")
         if not folder_path:
