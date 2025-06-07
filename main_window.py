@@ -2265,12 +2265,9 @@ class MainWindow(QMainWindow):
             if modifiers == Qt.NoModifier:
                 modifiers = self.modifier_state
 
-            if modifiers & Qt.ControlModifier:
-                use_extended = modifiers & Qt.ShiftModifier
-                skip_metadata = False
-            else:
-                skip_metadata = True
-                use_extended = False
+            # Use safe casting via helper method
+            skip_metadata, use_extended = self.determine_metadata_mode()
+            logger.debug(f"[Drop] skip_metadata={skip_metadata}, use_extended={use_extended}")
 
             self.force_extended_metadata = use_extended
             self.skip_metadata_mode = skip_metadata
@@ -2279,6 +2276,16 @@ class MainWindow(QMainWindow):
 
             # Centralized loading logic
             self.prepare_folder_load(folder_path)
+
+            # Get loaded items (από self.model ή ανάκτηση από paths αν χρειάζεται)
+            items = self.model.files
+
+            if not self.skip_metadata_mode:
+                self.load_metadata_for_items(
+                    items,
+                    use_extended=self.force_extended_metadata,
+                    source="folder_drop"
+                )
 
             # Update folder tree selection (UI logic)
             if hasattr(self.dir_model, "index"):
@@ -2291,6 +2298,9 @@ class MainWindow(QMainWindow):
         else:
             # Load directly dropped files
             self.load_files_from_paths(paths, clear=True)
+
+        # After loading files + metadata
+        self.show_metadata_status()
 
     def handle_browse(self) -> None:
         """
@@ -2325,6 +2335,17 @@ class MainWindow(QMainWindow):
         self.force_extended_metadata = use_extended
         self.skip_metadata_mode = skip_metadata
 
+        logger.debug(f"[Browse] skip_metadata={skip_metadata}, use_extended={use_extended}")
+
+        # -- Trigger metadata load if needed
+        items = self.model.files
+        if not self.skip_metadata_mode:
+            self.load_metadata_for_items(
+                items,
+                use_extended=self.force_extended_metadata,
+                source="folder_browse"
+            )
+
         logger.debug("-" * 60)
         logger.info(
             f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata}, extended={use_extended}, "
@@ -2339,6 +2360,9 @@ class MainWindow(QMainWindow):
             if index.isValid():
                 self.folder_tree.setCurrentIndex(index)
                 self.folder_tree.scrollTo(index)
+
+        # After loading files + metadata
+        self.show_metadata_status()
 
     def handle_folder_select(self) -> None:
         """
@@ -2380,6 +2404,18 @@ class MainWindow(QMainWindow):
             extra={"dev_only": True}
         )
         logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
+
+        # Load metadata if needed
+        items = self.model.files
+        if not self.skip_metadata_mode:
+            self.load_metadata_for_items(
+                items,
+                use_extended=self.force_extended_metadata,
+                source="folder_select"
+            )
+
+        # After loading files + metadata
+        self.show_metadata_status()
 
     def load_metadata_for_items(
         self,
@@ -2475,5 +2511,23 @@ class MainWindow(QMainWindow):
                     idx = self.model.index(row, col)
                     self.file_table_view.viewport().update(self.file_table_view.visualRect(idx))
 
+    def show_metadata_status(self) -> None:
+        """
+        Shows a status bar message indicating the number of loaded files
+        and the type of metadata scan performed (skipped, basic, extended).
+        """
+        num_files = len(self.model.files)
+
+        if self.skip_metadata_mode:
+            status_msg = f"Loaded {num_files} files — metadata skipped"
+            color = "#999999"
+        elif self.force_extended_metadata:
+            status_msg = f"Loaded {num_files} files — metadata (extended)"
+            color = "#aa3300"
+        else:
+            status_msg = f"Loaded {num_files} files — metadata (basic)"
+            color = "#4444cc"
+
+        self.set_status(status_msg, color=color, auto_reset=True)
 
 
