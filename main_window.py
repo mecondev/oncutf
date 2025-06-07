@@ -566,6 +566,9 @@ class MainWindow(QMainWindow):
         If Ctrl is held, metadata scan is skipped (like Select/Browse).
         Otherwise, full reload with scan.
         """
+        # Ενημέρωση της τρέχουσας κατάστασης των modifier keys
+        self.modifier_state = QApplication.keyboardModifiers()
+
         if not self.current_folder_path:
             self.set_status("No folder loaded.", color="gray", auto_reset=True)
             return
@@ -573,22 +576,14 @@ class MainWindow(QMainWindow):
         if not CustomMessageDialog.question(self, "Reload Folder", "Reload current folder?", yes_text="Reload", no_text="Cancel"):
             return
 
-        ctrl_override = bool(self.modifier_state & SKIP_METADATA_MODIFIER)
-
-        skip_metadata, user_wants_scan = resolve_skip_metadata(
-            ctrl_override=ctrl_override,
-            total_files=len(self.files),
-            folder_path=self.current_folder_path,
-            parent_window=self,
-            default_skip=DEFAULT_SKIP_METADATA,
-            threshold=LARGE_FOLDER_WARNING_THRESHOLD
-        )
-
+        # Χρησιμοποιώ τη μέθοδο determine_metadata_mode αντί για την απαρχαιωμένη resolve_skip_metadata
+        skip_metadata, use_extended = self.determine_metadata_mode()
+        self.force_extended_metadata = use_extended
         self.skip_metadata_mode = skip_metadata
 
         logger.info(
             f"[ForceReload] Reloading {self.current_folder_path}, skip_metadata={skip_metadata} "
-            f"(ctrl={ctrl_override}, wants_scan={user_wants_scan}, default={DEFAULT_SKIP_METADATA})"
+            f"(use_extended={use_extended})"
         )
 
         self.load_files_from_folder(self.current_folder_path, skip_metadata=skip_metadata, force=True)
@@ -1926,15 +1921,18 @@ class MainWindow(QMainWindow):
 
         Returns:
             tuple: (skip_metadata: bool, use_extended: bool)
-                - skip_metadata: True if Ctrl is pressed
-                - use_extended: True if Shift is pressed
+                - skip_metadata: True if NO modifiers are pressed (default) or if Ctrl is NOT pressed
+                - use_extended: True if Ctrl+Shift is pressed
         """
         modifiers = self.modifier_state
-        skip_metadata = modifiers & Qt.ControlModifier
-        use_extended = modifiers & Qt.ShiftModifier
+        ctrl = bool(modifiers & Qt.ControlModifier)
+        shift = bool(modifiers & Qt.ShiftModifier)
+
+        skip_metadata = not ctrl
+        use_extended = ctrl and shift
 
         # [DEBUG] Modifiers: Ctrl=%s, Shift=%s", skip_metadata, use_extended
-        return bool(skip_metadata), bool(use_extended)
+        return skip_metadata, use_extended
 
     def determine_metadata_mode(self) -> tuple[bool, bool]:
         """
@@ -1943,9 +1941,9 @@ class MainWindow(QMainWindow):
         Returns:
             tuple: (skip_metadata, use_extended)
 
-            - skip_metadata = True ➜ No metadata scan
-            - skip_metadata = False & use_extended = False ➜ Fast scan
-            - skip_metadata = False & use_extended = True ➜ Extended scan
+            - skip_metadata = True ➜ No metadata scan (no modifiers)
+            - skip_metadata = False & use_extended = False ➜ Fast scan (Ctrl)
+            - skip_metadata = False & use_extended = True ➜ Extended scan (Ctrl+Shift)
         """
         modifiers = self.modifier_state
         if modifiers == Qt.NoModifier:
@@ -1954,6 +1952,10 @@ class MainWindow(QMainWindow):
         ctrl = bool(modifiers & Qt.ControlModifier)
         shift = bool(modifiers & Qt.ShiftModifier)
 
+        # Νέα λογική:
+        # - Χωρίς modifiers: παράλειψη μεταδεδομένων
+        # - Με Ctrl: φόρτωση βασικών μεταδεδομένων
+        # - Με Ctrl+Shift: φόρτωση εκτεταμένων μεταδεδομένων
         skip_metadata = not ctrl
         use_extended = ctrl and shift
 
@@ -1967,13 +1969,15 @@ class MainWindow(QMainWindow):
 
     def should_use_extended_metadata(self) -> bool:
         """
-        Returns True if Shift (or Ctrl+Shift) is held,
+        Returns True if Ctrl+Shift are both held,
         used in cases where metadata is always loaded (double click, drag & drop).
 
         This assumes that metadata will be loaded — we only decide if it's fast or extended.
         """
         modifiers = self.modifier_state
-        return bool(modifiers & Qt.ShiftModifier)
+        ctrl = bool(modifiers & Qt.ControlModifier)
+        shift = bool(modifiers & Qt.ShiftModifier)
+        return ctrl and shift
 
     def update_preview_from_selection(self, selected_rows: list[int]) -> None:
         """
@@ -2267,6 +2271,9 @@ class MainWindow(QMainWindow):
             folder_path = paths[0]
             logger.info(f"[Drop] Setting folder from drop: {folder_path}")
 
+            # Ενημέρωση της τρέχουσας κατάστασης των modifier keys
+            self.modifier_state = QApplication.keyboardModifiers()
+
             # Use modifiers passed or fallback to current
             if modifiers == Qt.NoModifier:
                 modifiers = self.modifier_state
@@ -2316,6 +2323,8 @@ class MainWindow(QMainWindow):
 
         Also updates the folder tree selection to reflect the newly selected folder.
         """
+        # Ενημέρωση της τρέχουσας κατάστασης των modifier keys
+        self.modifier_state = QApplication.keyboardModifiers()
         self.last_action = "browse"
 
         # Get current folder path
@@ -2377,6 +2386,8 @@ class MainWindow(QMainWindow):
 
         Triggered when the user clicks the 'Select Folder' button.
         """
+        # Ενημέρωση της τρέχουσας κατάστασης των modifier keys
+        self.modifier_state = QApplication.keyboardModifiers()
         self.last_action = "folder_select"
 
         # Get current folder index
