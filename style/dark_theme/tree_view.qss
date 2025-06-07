@@ -17,8 +17,8 @@ QTreeView::item:alternate {
 }
 
 QTreeView::item:hover {
-    background-color: #4a6fa5;
-    color: #ffffff;
+    background-color: #3e5c76;
+    color: #f0ebd8;
     border: none;
 }
 
@@ -29,8 +29,8 @@ QTreeView::item:selected {
 }
 
 QTreeView::item:selected:hover {
-    background-color: #4a6fa5;  /* Use hover color when hovering over selected item */
-    color: #ffffff;  /* Use bright text when hovering */
+    background-color: #8a9bb4;  /* Slightly lighter than selection - matches delegate */
+    color: #0d1321;  /* Keep dark text for selected items */
     border: none;
 }
 
@@ -39,6 +39,44 @@ QTreeView::item:selected:focus {
     color: #0d1321;
     border: none;
     outline: none;
+}
+
+/* FileTreeView specific styling to ensure consistent behavior */
+FileTreeView::item:hover {
+    background-color: #3e5c76;
+    color: #f0ebd8;
+    border: none;
+}
+
+FileTreeView::item:selected {
+    background-color: #748cab;
+    color: #0d1321;
+    border: none;
+}
+
+FileTreeView::item:selected:hover {
+    background-color: #8a9bb4;  /* Slightly lighter than selection - matches delegate */
+    color: #0d1321;  /* Keep dark text for selected items */
+    border: none;
+}
+
+/* FileTreeView branch styling */
+FileTreeView::branch:hover {
+    background-color: #3e5c76 !important;
+    color: transparent !important;
+    border: none !important;
+}
+
+FileTreeView::branch:selected {
+    background-color: #748cab !important;
+    color: transparent !important;
+    border: none !important;
+}
+
+FileTreeView::branch:selected:hover {
+    background-color: #8a9bb4 !important;  /* Slightly lighter than selection - matches delegate */
+    color: transparent !important;
+    border: none !important;
 }
 
 /* MetadataTreeView normal content styles */
@@ -59,8 +97,8 @@ MetadataTreeView[placeholder="false"]::item {
 }
 
 MetadataTreeView[placeholder="false"]::item:hover {
-    background-color: #4a6fa5 !important;
-    color: #ffffff !important;  /* Bright white text on hover */
+    background-color: #3e5c76 !important;
+    color: #f0ebd8 !important;  /* Normal light text on hover */
     border: none;
 }
 
@@ -71,8 +109,8 @@ MetadataTreeView[placeholder="false"]::item:selected {
 }
 
 MetadataTreeView[placeholder="false"]::item:selected:hover {
-    background-color: #4a6fa5 !important;  /* Use hover color when hovering over selected */
-    color: #ffffff !important;  /* Bright white text when hovering over selected */
+    background-color: #8a9bb4 !important;  /* Slightly lighter than selection - matches delegate */
+    color: #0d1321 !important;  /* Keep dark text for selected items */
     border: none;
 }
 
@@ -112,13 +150,13 @@ QTreeView::branch:selected {
 }
 
 QTreeView::branch:hover {
-    background-color: #4a6fa5 !important;  /* Match table hover color exactly */
+    background-color: #3e5c76 !important;  /* Match table hover color exactly */
     color: transparent !important;
     border: none !important;
 }
 
 QTreeView::branch:selected:hover {
-    background-color: #4a6fa5 !important;  /* Use hover color when hovering over selected branch */
+    background-color: #8a9bb4 !important;  /* Slightly lighter than selection - matches delegate */
     color: transparent !important;
     border: none !important;
 }

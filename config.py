@@ -118,3 +118,57 @@ FILE_TABLE_COLUMN_WIDTHS = {
     "EXTENSION_COLUMN": 60,  # Column 3: File extension column
     "DATE_COLUMN": 100       # Column 4: Modified date column
 }
+
+# ----------------------------
+# Theme Colors (Dark Theme)
+# ----------------------------
+THEME_COLORS = {
+    "dark": {
+        # Table/Tree view colors
+        "background": "#181818",
+        "text": "#f0ebd8",
+        "text_selected": "#0d1321",
+        "alternate_row": "#232323",
+
+        # Interactive states
+        "hover": "#3e5c76",
+        "selected": "#748cab",
+        "selected_hover": "#8a9bb4",  # Slightly lighter than selected
+
+        # UI elements
+        "button_bg": "#2a2a2a",
+        "button_hover": "#4a6fa5",
+        "border": "#3a3b40",
+    },
+    "light": {
+        # Table/Tree view colors
+        "background": "#ffffff",
+        "text": "#212121",
+        "text_selected": "#ffffff",
+        "alternate_row": "#f8f8f8",
+
+        # Interactive states
+        "hover": "#e3f2fd",
+        "selected": "#1976d2",
+        "selected_hover": "#42a5f5",  # Slightly lighter than selected
+
+        # UI elements
+        "button_bg": "#f5f5f5",
+        "button_hover": "#e3f2fd",
+        "border": "#cccccc",
+    }
+}
+
+def get_theme_color(color_key: str, theme: str = None) -> str:
+    """
+    Get a color from the current theme.
+
+    Args:
+        color_key: The color key (e.g., 'hover', 'selected')
+        theme: Theme name (defaults to THEME_NAME)
+
+    Returns:
+        The color hex string
+    """
+    actual_theme = theme if theme is not None else THEME_NAME
+    return THEME_COLORS.get(actual_theme, {}).get(color_key, "#ffffff")

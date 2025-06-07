@@ -11,6 +11,7 @@ Date: 2025-05-21
 """
 
 import os
+from typing import Dict, Any, Optional
 
 from config import THEME_NAME
 
@@ -18,6 +19,30 @@ from config import THEME_NAME
 from utils.logger_helper import get_logger
 
 logger = get_logger(__name__)
+
+# Theme color definitions
+THEME_COLORS = {
+    "dark": {
+        # Table/Tree view colors (matching HoverItemDelegate)
+        "hover": "#3e5c76",
+        "selected": "#748cab",
+        "selected_hover": "#8a9bb4",
+        "text": "#f0ebd8",
+        "text_selected": "#0d1321",
+        "alternate_row": "#232323",
+        "background": "#181818"
+    },
+    "light": {
+        # Future light theme colors
+        "hover": "#d4e4f7",
+        "selected": "#a8c5e8",
+        "selected_hover": "#c2d9f2",
+        "text": "#333333",
+        "text_selected": "#000000",
+        "alternate_row": "#f8f8f8",
+        "background": "#ffffff"
+    }
+}
 
 def load_stylesheet() -> str:
     """
@@ -46,3 +71,43 @@ def load_stylesheet() -> str:
             logger.warning(f"QSS file not found: {filename}")
 
     return full_style
+
+
+def get_theme_color(color_key: str, theme_name: Optional[str] = None) -> str:
+    """
+    Get a color from the current theme.
+
+    Args:
+        color_key: The color key (e.g., 'hover', 'selected')
+        theme_name: Theme name (defaults to THEME_NAME from config)
+
+    Returns:
+        The color hex string
+    """
+    actual_theme = theme_name if theme_name is not None else THEME_NAME
+    return THEME_COLORS.get(actual_theme, {}).get(color_key, "#ffffff")
+
+
+def get_current_theme_colors() -> Dict[str, str]:
+    """
+    Get all colors for the current theme.
+
+    Returns:
+        Dictionary with all color definitions for current theme
+    """
+    return THEME_COLORS.get(THEME_NAME, {})
+
+
+def get_qcolor(color_key: str, theme_name: str = None) -> Any:
+    """
+    Get a QColor object from theme colors.
+
+    Args:
+        color_key: The color key (e.g., 'hover', 'selected')
+        theme_name: Theme name (defaults to THEME_NAME from config)
+
+    Returns:
+        QColor object
+    """
+    from PyQt5.QtGui import QColor
+    return QColor(get_theme_color(color_key, theme_name))

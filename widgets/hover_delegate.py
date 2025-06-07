@@ -13,19 +13,23 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QIcon, QPalette, QPen
 from PyQt5.QtWidgets import QStyle, QStyledItemDelegate, QStyleOptionViewItem, QTableView
 
+from utils.theme import get_qcolor
+
 
 class HoverItemDelegate(QStyledItemDelegate):
-    def __init__(self, parent=None, hover_color: str = "#2e3b4e"):
+    def __init__(self, parent=None):
         """
         Initializes the hover delegate.
 
         Args:
             parent: The parent widget.
-            hover_color: The background color to use for hovered rows.
+            hover_color: The background color to use for hovered rows (if None, uses theme)
         """
         super().__init__(parent)
         self.hovered_row: int = -1
-        self.hover_color: QColor = QColor(hover_color)
+
+        # Get colors from theme system
+        self.hover_color: QColor = get_qcolor("hover")
 
     def update_hover_row(self, row: int) -> None:
         """
@@ -70,16 +74,16 @@ class HoverItemDelegate(QStyledItemDelegate):
         background_color = None
         if is_selected and is_hovered:
             # Selected + hovered: slightly lighter than normal selection
-            background_color = QColor("#8a9bb4")
+            background_color = QColor(get_theme_color("selected_hover"))
         elif is_selected:
             # Normal selection color
-            background_color = QColor("#748cab")
+            background_color = QColor(get_theme_color("selected"))
         elif is_hovered:
             # Hover color - paint over alternate background
             background_color = self.hover_color
         elif row % 2 == 1:
             # Alternate row color for odd rows (only if not selected/hovered)
-            background_color = QColor("#232323")
+            background_color = QColor(get_theme_color("alternate_row"))
         # For even rows, use default background (no painting needed)
 
         if background_color:
@@ -90,7 +94,7 @@ class HoverItemDelegate(QStyledItemDelegate):
         # Draw border for selected rows (only on the last column to avoid overlaps)
         if is_selected and model and column == model.columnCount() - 1:
             painter.save()
-            border_color = QColor("#748cab").darker(130)
+            border_color = QColor(get_theme_color("selected")).darker(130)
             painter.setPen(QPen(border_color, 1))
 
             # Calculate full row rect
@@ -118,9 +122,9 @@ class HoverItemDelegate(QStyledItemDelegate):
         # For all other columns, set appropriate text color and let default painting handle the rest
         text_option = QStyleOptionViewItem(option)
         if is_selected:
-            text_option.palette.setColor(QPalette.Text, QColor("#0d1321"))
+            text_option.palette.setColor(QPalette.Text, QColor(get_theme_color("text_selected")))
         else:
-            text_option.palette.setColor(QPalette.Text, QColor("#f0ebd8"))
+            text_option.palette.setColor(QPalette.Text, QColor(get_theme_color("text")))
 
         # Let default painting handle text (will paint over our background)
         super().paint(painter, text_option, index)

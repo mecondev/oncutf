@@ -79,8 +79,8 @@ class FileTableView(QTableView):
         self.selected_rows: set[int] = set()  # Keeps track of currently selected rows
         self.anchor_row: int | None = None    # Used for shift-click range selection
 
-        # Enable hover visuals via delegate
-        self.hover_delegate = HoverItemDelegate(self, hover_color="#3e5c76")
+        # Enable hover visuals via delegate (uses theme colors automatically)
+        self.hover_delegate = HoverItemDelegate(self)
         self.setItemDelegate(self.hover_delegate)
 
         # Used for right-click visual indication
