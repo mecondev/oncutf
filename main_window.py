@@ -932,7 +932,7 @@ class MainWindow(QMainWindow):
             self.set_status("Metadata scan skipped.", color="gray", auto_reset=True)
             return
 
-        self.set_status(f"Loading metadata for {len(file_items)} files...", color="blue")
+        self.set_status(f"Loading metadata for {len(file_items)} files...", color="#3377ff")
         QTimer.singleShot(100, lambda: self.start_metadata_scan([f.full_path for f in file_items if f.full_path]))
 
     def start_metadata_scan(self, file_paths: list[str]) -> None:
@@ -1179,19 +1179,6 @@ class MainWindow(QMainWindow):
         Updates the preview map and UI elements accordingly.
         """
 
-        if not all_modules and not NameTransformModule.is_effective(post_transform):
-            logger.debug("[Preview] No modules and no post transform — skipping preview.")
-            self.update_preview_tables_from_pairs([])
-            self.rename_button.setEnabled(False)
-            self.rename_button.setToolTip("No rename modules configured")
-
-            if not all_modules and not NameTransformModule.is_effective(post_transform):
-                self.set_status("No rename modules defined.", color="#888888", auto_reset=True)
-            elif is_noop:
-                self.set_status("Rename modules present but inactive.", color="#888888", auto_reset=True)
-
-            return
-
         with wait_cursor():
             timer = QElapsedTimer()
             timer.start()
@@ -1237,12 +1224,22 @@ class MainWindow(QMainWindow):
 
         if is_noop:
             logger.debug("[Preview] Fast path: no-op modules, skipping preview/validation.")
-            # No preview/validation needed, just identity mapping
-            name_pairs = [(f.filename, f.filename) for f in selected_files]
-            self.update_preview_tables_from_pairs(name_pairs)
             self.rename_button.setEnabled(False)
             self.rename_button.setToolTip("No changes to apply")
+
+            if not all_modules and not NameTransformModule.is_effective(post_transform):
+                # No modules at all → clear preview completely
+                self.update_preview_tables_from_pairs([])
+                self.set_status("No rename modules defined.", color="#888888", auto_reset=True)
+            else:
+                # Modules exist but inactive → show identity mapping with unchanged icons
+                name_pairs = [(f.filename, f.filename) for f in selected_files]
+                self.update_preview_tables_from_pairs(name_pairs)
+                self.set_status("Rename modules present but inactive.", color="#888888", auto_reset=True)
+
             return
+
+
 
         logger.debug("[Preview] Running full preview/validation for selected files.")
 
