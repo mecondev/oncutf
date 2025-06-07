@@ -4,6 +4,11 @@ QTreeView {
     alternate-background-color: #232323;
     border: none;
     show-decoration-selected: 1;
+    /* Force override of OS selection colors */
+    selection-background-color: #748cab;
+    selection-color: #0d1321;
+    /* Remove all OS styling from indentation area */
+    outline: none;
 }
 
 /* Alternative row styling */
@@ -13,6 +18,7 @@ QTreeView::item:alternate {
 
 QTreeView::item:hover {
     background-color: #4a6fa5;
+    color: #ffffff;
     border: none;
 }
 
@@ -20,6 +26,19 @@ QTreeView::item:selected {
     background-color: #748cab;
     color: #0d1321;
     border: none;
+}
+
+QTreeView::item:selected:hover {
+    background-color: #4a6fa5;  /* Use hover color when hovering over selected item */
+    color: #ffffff;  /* Use bright text when hovering */
+    border: none;
+}
+
+QTreeView::item:selected:focus {
+    background-color: #748cab;
+    color: #0d1321;
+    border: none;
+    outline: none;
 }
 
 /* MetadataTreeView normal content styles */
@@ -41,13 +60,19 @@ MetadataTreeView[placeholder="false"]::item {
 
 MetadataTreeView[placeholder="false"]::item:hover {
     background-color: #4a6fa5 !important;
-    color: #f0ebd8 !important;
+    color: #ffffff !important;  /* Bright white text on hover */
     border: none;
 }
 
 MetadataTreeView[placeholder="false"]::item:selected {
     background-color: #748cab !important;
-    color: #f0ebd8 !important;  /* Changed to bright color for selected items too */
+    color: #0d1321 !important;  /* Dark color for selected items - same as table */
+    border: none;
+}
+
+MetadataTreeView[placeholder="false"]::item:selected:hover {
+    background-color: #4a6fa5 !important;  /* Use hover color when hovering over selected */
+    color: #ffffff !important;  /* Bright white text when hovering over selected */
     border: none;
 }
 
@@ -70,9 +95,9 @@ MetadataTreeView[placeholder="true"]::item:selected {
     border: none !important;
 }
 
-/* Tree view branch styling - consistent with table view colors */
+/* Tree view branch styling - remove OS colors completely */
 QTreeView::branch {
-    background-color: transparent !important;
+    background-color: #181818 !important;  /* Force background to match tree view */
     color: transparent !important;
     border: none !important;
     /* Remove branch decorations completely */
@@ -81,20 +106,20 @@ QTreeView::branch {
 }
 
 QTreeView::branch:selected {
-    background-color: #748cab !important;  /* Same as table selection color */
-    color: #0d1321 !important;  /* Same as table selection text color */
+    background-color: #748cab !important;  /* Match table selection color exactly */
+    color: transparent !important;
     border: none !important;
 }
 
 QTreeView::branch:hover {
-    background-color: #4a6fa5 !important;  /* Same as table hover color */
-    color: #f0ebd8 !important;  /* Same as table hover text color */
+    background-color: #4a6fa5 !important;  /* Match table hover color exactly */
+    color: transparent !important;
     border: none !important;
 }
 
 QTreeView::branch:selected:hover {
-    background-color: #748cab !important;  /* Keep selection color on hover */
-    color: #0d1321 !important;  /* Keep selection text color on hover */
+    background-color: #4a6fa5 !important;  /* Use hover color when hovering over selected branch */
+    color: transparent !important;
     border: none !important;
 }
 
@@ -102,19 +127,19 @@ QTreeView::branch:selected:hover {
 QTreeView::branch:has-siblings:!adjoins-item {
     border-image: none;
     image: none;
-    background: transparent;
+    background: #181818;  /* Consistent background */
 }
 
 QTreeView::branch:has-siblings:adjoins-item {
     border-image: none;
     image: none;
-    background: transparent;
+    background: #181818;  /* Consistent background */
 }
 
 QTreeView::branch:!has-children:!has-siblings:adjoins-item {
     border-image: none;
     image: none;
-    background: transparent;
+    background: #181818;  /* Consistent background */
 }
 
 /* Hide connection lines between branches */
@@ -122,12 +147,22 @@ QTreeView::branch:has-children:!has-siblings:closed,
 QTreeView::branch:closed:has-children:has-siblings {
     border-image: none;
     image: none;  /* Removed url(:/tree-closed.png) */
-    background: transparent;
+    background: #181818;  /* Consistent background */
 }
 
 QTreeView::branch:open:has-children:!has-siblings,
 QTreeView::branch:open:has-children:has-siblings {
     border-image: none;
     image: none;  /* Removed url(:/tree-open.png) */
-    background: transparent;
+    background: #181818;  /* Force background color */
+}
+
+/* Force override of any remaining OS indentation styling */
+QTreeView QAbstractScrollArea, QTreeView::viewport {
+    background-color: #181818 !important;
+}
+
+/* Remove any possible OS styling from tree indentation */
+QTreeView::indent {
+    background-color: #181818 !important;
 }
