@@ -53,7 +53,7 @@ from utils.metadata_cache import MetadataCache
 from utils.metadata_utils import resolve_skip_metadata
 from utils.renamer import Renamer
 from utils.text_helpers import elide_text
-from utils.icon_loader import load_metadata_icons
+from utils.icons_loader import load_metadata_icons, icons_loader, get_menu_icon
 from utils.metadata_loader import MetadataLoader
 
 from widgets.metadata_worker import MetadataWorker
@@ -135,6 +135,9 @@ class MainWindow(QMainWindow):
         self.metadata_loader = MetadataLoader()
         self.model = FileTableModel(parent_window=self)
         self.metadata_loader.model = self.model
+
+        # Initialize theme icon loader with dark theme by default
+        icons_loader.set_theme("dark")
 
         self.loading_dialog = None
         self.modifier_state = Qt.NoModifier # type: ignore[attr-defined]
@@ -220,7 +223,9 @@ class MainWindow(QMainWindow):
 
         btn_layout = QHBoxLayout()
         self.select_folder_button = QPushButton("Select Folder")
+        self.select_folder_button.setIcon(get_menu_icon("folder"))
         self.browse_folder_button = QPushButton("Browse Folders")
+        self.browse_folder_button.setIcon(get_menu_icon("folder-plus"))
         btn_layout.addWidget(self.select_folder_button)
         btn_layout.addWidget(self.browse_folder_button)
         left_layout.addLayout(btn_layout)
@@ -318,6 +323,7 @@ class MainWindow(QMainWindow):
 
         # Expand/Collapse buttons
         self.toggle_expand_button = QPushButton("Expand All")
+        self.toggle_expand_button.setIcon(get_menu_icon("chevrons-down"))
         self.toggle_expand_button.setCheckable(True)
         self.toggle_expand_button.setFixedWidth(120)
 
@@ -445,6 +451,7 @@ class MainWindow(QMainWindow):
         controls_layout.addWidget(self.status_label, stretch=1)
 
         self.rename_button = QPushButton("Rename")
+        self.rename_button.setIcon(get_menu_icon("edit"))
         self.rename_button.setEnabled(False)
         self.rename_button.setFixedWidth(120)
         controls_layout.addWidget(self.rename_button)
@@ -1815,9 +1822,11 @@ class MainWindow(QMainWindow):
         if checked:
             self.metadata_tree_view.expandAll()
             self.toggle_expand_button.setText("Collapse All")
+            self.toggle_expand_button.setIcon(get_menu_icon("chevrons-up"))
         else:
             self.metadata_tree_view.collapseAll()
             self.toggle_expand_button.setText("Expand All")
+            self.toggle_expand_button.setIcon(get_menu_icon("chevrons-down"))
 
     def clear_file_table(self, message: str = "No folder selected") -> None:
         """
@@ -2035,6 +2044,8 @@ class MainWindow(QMainWindow):
         if not self.model.files:
             return
 
+        from utils.icons_loader import get_menu_icon
+
         index = self.file_table_view.indexAt(position)
         total_files = len(self.model.files)
 
@@ -2045,28 +2056,28 @@ class MainWindow(QMainWindow):
         menu = QMenu(self)
 
         # --- Metadata actions ---
-        action_load_sel = menu.addAction("📄 Load metadata for selected file(s)")
-        action_load_all = menu.addAction("📁 Load metadata for all files")
-        action_load_ext_sel = menu.addAction("📄 Load extended metadata for selected file(s)")
-        action_load_ext_all = menu.addAction("📁 Load extended metadata for all files")
+        action_load_sel = menu.addAction(get_menu_icon("file"), "Load metadata for selected file(s)")
+        action_load_all = menu.addAction(get_menu_icon("folder"), "Load metadata for all files")
+        action_load_ext_sel = menu.addAction(get_menu_icon("file-plus"), "Load extended metadata for selected file(s)")
+        action_load_ext_all = menu.addAction(get_menu_icon("folder-plus"), "Load extended metadata for all files")
 
         menu.addSeparator()
 
         # --- Selection actions ---
-        action_invert = menu.addAction("🔁 Invert selection (Ctrl+I)")
-        action_select_all = menu.addAction("✅ Select all (Ctrl+A)")
-        action_deselect_all = menu.addAction("❌ Deselect all")
+        action_invert = menu.addAction(get_menu_icon("refresh-cw"), "Invert selection (Ctrl+I)")
+        action_select_all = menu.addAction(get_menu_icon("check-square"), "Select all (Ctrl+A)")
+        action_deselect_all = menu.addAction(get_menu_icon("square"), "Deselect all")
 
         menu.addSeparator()
 
         # --- Other actions ---
-        action_reload = menu.addAction("🔄 Reload folder (Ctrl+R)")
+        action_reload = menu.addAction(get_menu_icon("refresh-cw"), "Reload folder (Ctrl+R)")
 
         menu.addSeparator()
 
         # --- Disabled future options ---
-        action_save_sel = menu.addAction("💾 Save metadata for selected file(s)")
-        action_save_all = menu.addAction("💾 Save metadata for all files")
+        action_save_sel = menu.addAction(get_menu_icon("save"), "Save metadata for selected file(s)")
+        action_save_all = menu.addAction(get_menu_icon("save"), "Save metadata for all files")
         action_save_sel.setEnabled(False)
         action_save_all.setEnabled(False)
 

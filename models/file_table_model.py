@@ -22,7 +22,7 @@ from PyQt5.QtCore import (
 from PyQt5.QtGui import QColor, QIcon
 from models.file_item import FileItem
 from utils.metadata_cache import MetadataEntry
-from utils.icon_loader import load_metadata_icons
+from utils.icons_loader import load_metadata_icons
 
 # initialize logger
 from utils.logger_helper import get_logger
