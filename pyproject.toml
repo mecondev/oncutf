@@ -25,83 +25,52 @@ dev = [
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+# --------------------------
+# 🧠 mypy configuration
+# --------------------------
 [tool.mypy]
 python_version = "3.9"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = false
-disallow_incomplete_defs = false
-check_untyped_defs = false
-disallow_untyped_decorators = false
-no_implicit_optional = false
-warn_redundant_casts = true
-warn_unused_ignores = false
-warn_no_return = false
-warn_unreachable = false
 strict = true
 ignore_missing_imports = true
+warn_unused_configs = true
+warn_return_any = true
+warn_redundant_casts = true
+exclude = '^(backups|\.cache|temp|reports)/'  # ✅ Global exclude, only one allowed
 
-# PyQt5 specific ignores
 [[tool.mypy.overrides]]
-module = [
-    "PyQt5.*",
-    "*.PyQt5.*",
-    "main_window",
-    "widgets.*",
-    "models.*"
-]
-ignore_errors = true
+module = ["PyQt5.*"]
 ignore_missing_imports = true
+ignore_errors = true
 
-exclude = '^(backups|\.cache|temp|reports)/'
+# --------------------------
+# ✅ Ruff configuration
+# --------------------------
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+fix = true
+exclude = ["backups", ".cache", "temp", "reports"]
 
-[tool.pylint.main]
-load-plugins = ["pylint.extensions.docparams"]
-extension-pkg-whitelist = ["PyQt5"]
+[tool.ruff.lint]
+select = ["E", "F", "I", "N"]
+ignore = ["E501"]
 
-[tool.pylint.messages_control]
-disable = [
-    "missing-module-docstring",
-    "missing-class-docstring",
-    "missing-function-docstring",
-    "too-many-arguments",
-    "too-many-locals",
-    "too-many-instance-attributes",
-    "too-many-statements",
-    "too-many-branches",
-    "too-many-public-methods",
-    "too-few-public-methods",
-    "invalid-name",
-    "attribute-defined-outside-init",
-    "no-member",  # PyQt5 false positives
-    "c-extension-no-member",  # PyQt5 false positives
-    "import-error",
-    "no-name-in-module",  # PyQt5 false positives
-    "unused-argument",
-    "broad-except",
-    "bare-except"
-]
+[tool.ruff.lint.isort]
+force-single-line = false
+combine-as-imports = true
 
-[tool.pylint.typecheck]
-# Ignore PyQt5 generated members
-generated-members = [
-    "PyQt5.*",
-    "Qt.*",
-    "QApplication.*",
-    "QWidget.*",
-    "QMainWindow.*",
-    "QTableWidget.*",
-    "QTreeView.*",
-    "QHeaderView.*",
-    "QAbstractItemView.*"
-]
-
+# --------------------------
+# ✅ Pytest
+# --------------------------
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra -q --tb=short"
 testpaths = ["tests"]
 qt_api = "pyqt5"
 
+# --------------------------
+# ✅ Coverage
+# --------------------------
 [tool.coverage.run]
 source = [".", "widgets", "models", "modules", "utils"]
 omit = [
@@ -126,33 +95,25 @@ exclude_lines = [
     "@(abc\\.)?abstractmethod"
 ]
 
-[tool.ruff]
-# Set the minimum supported Python version (affects syntax rules)
-target-version = "py39"
+# --------------------------
+# 💤 Παλιά Pylint (προαιρετικό)
+# --------------------------
+[tool.pylint.main]
+load-plugins = ["pylint.extensions.docparams"]
+extension-pkg-whitelist = ["PyQt5"]
 
-exclude = ["backups", ".cache", "temp", "reports"]
+[tool.pylint.messages_control]
+disable = [
+    "missing-module-docstring", "missing-class-docstring", "missing-function-docstring",
+    "too-many-arguments", "too-many-locals", "too-many-instance-attributes",
+    "too-many-statements", "too-many-branches", "too-many-public-methods",
+    "too-few-public-methods", "invalid-name", "attribute-defined-outside-init",
+    "no-member", "c-extension-no-member", "import-error", "no-name-in-module",
+    "unused-argument", "broad-except", "bare-except"
+]
 
-# Maximum allowed line length for code (PEP8 default is 88, here 100)
-line-length = 100
-
-# Apply automatic fixes when possible (like autopep8 or black)
-fix = true
-
-# Enable preview (unstable or experimental) features — optional
-# preview = true
-
-[tool.ruff.lint]
-# Select groups of linting rules to apply:
-# E - pycodestyle errors (basic style)
-# F - pyflakes (undefined variables, etc.)
-# I - isort (import sorting)
-# N - pep8-naming (class/function/variable naming rules)
-select = ["E", "F", "I", "N"]
-
-# Ignore specific rules (E501: line too long)
-ignore = ["E501"]
-
-[tool.ruff.lint.isort]
-# Control how import statements are sorted and formatted
-force-single-line = false          # Use grouped imports if possible
-combine-as-imports = true          # Combine 'import x as y' statements
+[tool.pylint.typecheck]
+generated-members = [
+    "PyQt5.*", "Qt.*", "QApplication.*", "QWidget.*", "QMainWindow.*",
+    "QTableWidget.*", "QTreeView.*", "QHeaderView.*", "QAbstractItemView.*"
+]
