@@ -53,6 +53,8 @@ module = [
 ignore_errors = true
 ignore_missing_imports = true
 
+exclude = '^(backups|\.cache|temp|reports)/'
+
 [tool.pylint.main]
 load-plugins = ["pylint.extensions.docparams"]
 extension-pkg-whitelist = ["PyQt5"]
@@ -127,6 +129,8 @@ exclude_lines = [
 [tool.ruff]
 # Set the minimum supported Python version (affects syntax rules)
 target-version = "py39"
+
+exclude = ["backups", ".cache", "temp", "reports"]
 
 # Maximum allowed line length for code (PEP8 default is 88, here 100)
 line-length = 100
