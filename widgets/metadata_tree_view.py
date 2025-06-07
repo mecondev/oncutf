@@ -65,8 +65,17 @@ class MetadataTreeView(QTreeView):
         """
         Fixes the horizontal scrollbar to stay at the left position when selecting a new item.
         """
-        # Reset horizontal scrollbar to beginning
-        QTimer.singleShot(0, lambda: self.horizontalScrollBar().setValue(0))
+        # Force horizontal scrollbar to always stay at the beginning (left position)
+        self.setProperty("keep-scroll-left", True)
+        self.horizontalScrollBar().setValue(0)
+
+        # Schedule a delayed second attempt as sometimes the first one doesn't work
+        QTimer.singleShot(10, lambda: self.horizontalScrollBar().setValue(0))
+
+        # For a more aggressive approach
+        self.horizontalScrollBar().valueChanged.connect(
+            lambda value: self.horizontalScrollBar().setValue(0) if self.property("keep-scroll-left") else None
+        )
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """
@@ -372,6 +381,8 @@ class MetadataTreeView(QTreeView):
                         if child_index.data() == child_name:
                             value_index = model.index(child_row, 1, parent_index)
                             model.setData(value_index, new_value)
+                            # Force a refresh
+                            model.dataChanged.emit(value_index, value_index)
                             return
 
     def reset_value(self, key_path):
@@ -437,29 +448,50 @@ class MetadataTreeView(QTreeView):
 
                 # Update the metadata in cache
                 metadata_entry = parent_window.metadata_cache.get_entry(full_path)
-                if metadata_entry and metadata_entry.data:
+                if metadata_entry and hasattr(metadata_entry, 'data'):
+                    # Get the raw metadata
+                    metadata = metadata_entry.data
+
                     # Parse key path (e.g. "EXIF/Rotation" -> ["EXIF", "Rotation"])
                     parts = key_path.split('/')
 
                     # Reset the value in the metadata by removing it
                     if len(parts) == 1:
                         # Top-level key
-                        if parts[0] in metadata_entry.data:
-                            metadata_entry.data.pop(parts[0], None)
+                        if parts[0] in metadata:
+                            metadata.pop(parts[0], None)
                     elif len(parts) == 2:
                         # Nested key (group/key)
                         group, key = parts
-                        if group in metadata_entry.data and isinstance(metadata_entry.data[group], dict):
-                            if key in metadata_entry.data[group]:
-                                metadata_entry.data[group].pop(key, None)
+                        if group in metadata and isinstance(metadata[group], dict):
+                            if key in metadata[group]:
+                                metadata[group].pop(key, None)
 
                     logger.debug(f"[MetadataTree] Reset metadata in cache for {full_path}: {key_path}")
+
+                    # Update file item metadata as well
+                    if hasattr(file_item, 'metadata') and file_item.metadata:
+                        if len(parts) == 1:
+                            if parts[0] in file_item.metadata:
+                                file_item.metadata.pop(parts[0], None)
+                        elif len(parts) == 2:
+                            group, key = parts
+                            if group in file_item.metadata and isinstance(file_item.metadata[group], dict):
+                                if key in file_item.metadata[group]:
+                                    file_item.metadata[group].pop(key, None)
 
                     # Update file icon status based on remaining modified items
                     if not self.modified_items:
                         file_item.metadata_status = "loaded"
                     else:
                         file_item.metadata_status = "modified"
+
+                    # Force update of the icon in file table
+                    file_model.dataChanged.emit(
+                        file_model.index(row, 0),
+                        file_model.index(row, 0),
+                        [Qt.DecorationRole]
+                    )
 
     def mark_as_modified(self, key_path):
         """
@@ -528,6 +560,8 @@ class MetadataTreeView(QTreeView):
         super().currentChanged(current, previous)
         # Reset horizontal scrollbar to beginning
         self.horizontalScrollBar().setValue(0)
+        # Schedule a delayed attempt as well
+        QTimer.singleShot(10, lambda: self.horizontalScrollBar().setValue(0))
 
     def _update_metadata_in_cache(self, key_path, new_value):
         """
@@ -571,24 +605,54 @@ class MetadataTreeView(QTreeView):
                 # Update the metadata in cache
                 metadata_entry = parent_window.metadata_cache.get_entry(full_path)
                 if metadata_entry and hasattr(metadata_entry, 'data'):
+                    # Get the raw metadata
+                    metadata = metadata_entry.data
+
                     # Parse key path (e.g. "EXIF/Rotation" -> ["EXIF", "Rotation"])
                     parts = key_path.split('/')
 
                     # Update the value in the metadata
                     if len(parts) == 1:
                         # Top-level key
-                        metadata_entry.data[parts[0]] = new_value
+                        metadata[parts[0]] = new_value
                     elif len(parts) == 2:
                         # Nested key (group/key)
                         group, key = parts
-                        if group not in metadata_entry.data:
-                            metadata_entry.data[group] = {}
-                        if not isinstance(metadata_entry.data[group], dict):
-                            metadata_entry.data[group] = {}
-                        metadata_entry.data[group][key] = new_value
+                        if group not in metadata:
+                            metadata[group] = {}
+                        elif not isinstance(metadata[group], dict):
+                            metadata[group] = {}
+                        metadata[group][key] = new_value
+
+                        # Check if this is replacing an existing "Other/Rotation" entry
+                        # If so, remove the other entry to avoid duplication
+                        if group == "EXIF" and key == "Rotation" and "Other" in metadata and isinstance(metadata["Other"], dict) and "Rotation" in metadata["Other"]:
+                            del metadata["Other"]["Rotation"]
+                            logger.debug(f"[MetadataTree] Removed duplicate Other/Rotation entry")
+                        elif group == "Other" and key == "Rotation" and "EXIF" in metadata and isinstance(metadata["EXIF"], dict) and "Rotation" in metadata["EXIF"]:
+                            del metadata["EXIF"]["Rotation"]
+                            logger.debug(f"[MetadataTree] Removed duplicate EXIF/Rotation entry")
 
                     logger.debug(f"[MetadataTree] Updated metadata in cache for {full_path}: {key_path}={new_value}")
 
-                    # Mark metadata as modified
+                    # Mark file item as modified
                     file_item.metadata_status = "modified"
+
+                    # Force update of the icon in file table
+                    file_model.dataChanged.emit(
+                        file_model.index(row, 0),
+                        file_model.index(row, 0),
+                        [Qt.DecorationRole]
+                    )
+
+                    # Set the modified flag on the file item
+                    if hasattr(file_item, 'metadata') and file_item.metadata:
+                        # Update the actual file item metadata as well
+                        if len(parts) == 1:
+                            file_item.metadata[parts[0]] = new_value
+                        elif len(parts) == 2:
+                            group, key = parts
+                            if group not in file_item.metadata:
+                                file_item.metadata[group] = {}
+                            file_item.metadata[group][key] = new_value
 

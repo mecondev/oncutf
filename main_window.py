@@ -607,10 +607,10 @@ class MainWindow(QMainWindow):
         if all_checked and all_selected:
             logger.debug("[SelectAll] All files already selected in both checked and selection model. No action taken.")
             return
-        logger.info(f"[SelectAll] Selecting all {total} rows.")
-        self.file_table_view.select_rows_range(0, total - 1)
-        self.file_table_view.anchor_row = 0
-        QTimer.singleShot(20, self.update_files_label)
+            logger.info(f"[SelectAll] Selecting all {total} rows.")
+            self.file_table_view.select_rows_range(0, total - 1)
+            self.file_table_view.anchor_row = 0
+            QTimer.singleShot(20, self.update_files_label)
 
     def clear_all_selection(self) -> None:
         # If everything is already deselected, do nothing
@@ -1208,61 +1208,61 @@ class MainWindow(QMainWindow):
             else:
                 logger.debug(f"[Preview] Post transform is NOT effective: {post_transform}")
 
-            self.preview_map = {file.filename: file for file in selected_files}
+        self.preview_map = {file.filename: file for file in selected_files}
 
-            if is_noop:
-                logger.debug("[Preview] Fast path: no-op modules, skipping preview/validation.")
-                # No preview/validation needed, just identity mapping
-                name_pairs = [(f.filename, f.filename) for f in selected_files]
-                self.update_preview_tables_from_pairs(name_pairs)
-                self.rename_button.setEnabled(False)
-                self.rename_button.setToolTip("No changes to apply")
-                return
+        if is_noop:
+            logger.debug("[Preview] Fast path: no-op modules, skipping preview/validation.")
+            # No preview/validation needed, just identity mapping
+            name_pairs = [(f.filename, f.filename) for f in selected_files]
+            self.update_preview_tables_from_pairs(name_pairs)
+            self.rename_button.setEnabled(False)
+            self.rename_button.setToolTip("No changes to apply")
+            return
 
-            logger.debug("[Preview] Running full preview/validation for selected files.")
+        logger.debug("[Preview] Running full preview/validation for selected files.")
 
-            name_pairs = []
+        name_pairs = []
 
-            for idx, file in enumerate(selected_files):
-                try:
-                    # Split filename into basename and extension
-                    import os
-                    basename, extension = os.path.splitext(file.filename)
+        for idx, file in enumerate(selected_files):
+            try:
+                # Split filename into basename and extension
+                import os
+                basename, extension = os.path.splitext(file.filename)
 
-                    # Apply modules to basename only
-                    new_fullname = apply_rename_modules(modules_data, idx, file, self.metadata_cache)
-                    # Αφαίρεσε το extension αν υπάρχει ήδη (ώστε να δουλεύει μόνο με το basename)
-                    if extension and new_fullname.lower().endswith(extension.lower()):
-                        new_basename = new_fullname[:-(len(extension))]
-                    else:
-                        new_basename = new_fullname
+                # Apply modules to basename only
+                new_fullname = apply_rename_modules(modules_data, idx, file, self.metadata_cache)
+                # Αφαίρεσε το extension αν υπάρχει ήδη (ώστε να δουλεύει μόνο με το basename)
+                if extension and new_fullname.lower().endswith(extension.lower()):
+                    new_basename = new_fullname[:-(len(extension))]
+                else:
+                    new_basename = new_fullname
 
-                    logger.debug(f"Modules: {modules_data}")
-                    logger.debug(f"Output from modules: {new_basename}")
+                logger.debug(f"Modules: {modules_data}")
+                logger.debug(f"Output from modules: {new_basename}")
 
-                    # Apply name transform (case, separator) to basename only
-                    if NameTransformModule.is_effective(post_transform):
-                        new_basename = NameTransformModule.apply_from_data(post_transform, new_basename)
-                        logger.debug(f"Transform applied: {new_basename}")
+                # Apply name transform (case, separator) to basename only
+                if NameTransformModule.is_effective(post_transform):
+                    new_basename = NameTransformModule.apply_from_data(post_transform, new_basename)
+                    logger.debug(f"Transform applied: {new_basename}")
 
-                    # Validate only the basename
-                    from utils.validation import is_valid_filename_text
-                    if not is_valid_filename_text(new_basename):
-                        logger.warning(f"Invalid basename generated: {new_basename}")
-                        name_pairs.append((file.filename, file.filename))
-                        continue
-                    # Add extension (with dot) only at the end
-                    if extension:
-                        new_name = f"{new_basename}{extension}"
-                    else:
-                        new_name = new_basename
-                    logger.debug(f"[Preview] {file.filename} -> {new_name}")
-                    name_pairs.append((file.filename, new_name))
-                    logger.debug(f"[Preview] Generating for {[f.filename for f in selected_files]}", extra={"dev_only": True})
-
-                except Exception as e:
-                    logger.warning(f"Failed to generate preview for {file.filename}: {e}")
+                # Validate only the basename
+                from utils.validation import is_valid_filename_text
+                if not is_valid_filename_text(new_basename):
+                    logger.warning(f"Invalid basename generated: {new_basename}")
                     name_pairs.append((file.filename, file.filename))
+                    continue
+                # Add extension (with dot) only at the end
+                if extension:
+                    new_name = f"{new_basename}{extension}"
+                else:
+                    new_name = new_basename
+                logger.debug(f"[Preview] {file.filename} -> {new_name}")
+                name_pairs.append((file.filename, new_name))
+                logger.debug(f"[Preview] Generating for {[f.filename for f in selected_files]}", extra={"dev_only": True})
+
+            except Exception as e:
+                logger.warning(f"Failed to generate preview for {file.filename}: {e}")
+                name_pairs.append((file.filename, file.filename))
 
             # Map new name → FileItem only when name changed
             for old_name, new_name in name_pairs:
@@ -2088,8 +2088,8 @@ class MainWindow(QMainWindow):
             # If user pressed Shift (for extended) and has multiple files selected,
             # limit to only the file that was double-clicked to avoid mistakes
             if use_extended and len(selected_files) > 1:
-                logger.debug(f"[ShiftFix] Qt range selection detected on Shift+DoubleClick — keeping only clicked file: {file.filename}")
-                selected_files = [file]
+                    logger.debug(f"[ShiftFix] Qt range selection detected on Shift+DoubleClick — keeping only clicked file: {file.filename}")
+                    selected_files = [file]
 
             # Use the unified method
             self.load_metadata_for_items(selected_files, use_extended=use_extended, source="double_click")

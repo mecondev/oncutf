@@ -54,10 +54,10 @@ class SpecifiedTextModule(BaseRenameModule):
             text (str): The text entered by the user.
         """
         # Apply validation styling
-        if is_valid_filename_text(text):
-            self.text_input.setStyleSheet("")
-        else:
-            self.text_input.setStyleSheet("border: 1px solid red;")
+            if is_valid_filename_text(text):
+                self.text_input.setStyleSheet("")
+            else:
+                self.text_input.setStyleSheet("border: 1px solid red;")
 
         # Always emit the signal (like CounterModule does)
         logger.debug(f"[SpecifiedText] Text changed to: '{text}', emitting signal")
