@@ -2192,9 +2192,6 @@ class MainWindow(QMainWindow):
         self.model.files = file_items
         self.model.layoutChanged.emit()
 
-        # Re-set header (if replacing it)
-        # self.file_table_view.setHorizontalHeader(self.header)
-
         # Sorting connections — must be after emit
         self.file_table_view.setSortingEnabled(True)
         self.header.setSectionsClickable(True)
@@ -2251,6 +2248,22 @@ class MainWindow(QMainWindow):
             folder_path = paths[0]
             logger.info(f"[Drop] Setting folder from drop: {folder_path}")
 
+            # Use modifiers passed or fallback to current
+            if modifiers == Qt.NoModifier:
+                modifiers = QApplication.keyboardModifiers()
+
+            if modifiers & Qt.ControlModifier:
+                use_extended = modifiers & Qt.ShiftModifier
+                skip_metadata = False
+            else:
+                skip_metadata = True
+                use_extended = False
+
+            self.force_extended_metadata = use_extended
+            self.skip_metadata_mode = skip_metadata
+
+            logger.debug(f"[Drop] skip_metadata={skip_metadata}, use_extended={use_extended}")
+
             # Centralized loading logic
             self.prepare_folder_load(folder_path)
 
@@ -2276,9 +2289,7 @@ class MainWindow(QMainWindow):
         """
         self.last_action = "browse"
 
-        # Read modifiers BEFORE opening the dialog
-        modifiers = QApplication.keyboardModifiers()
-
+        # Get current folder path
         folder_path = QFileDialog.getExistingDirectory(self, "Select Folder", "/")
         if not folder_path:
             logger.info("Folder selection canceled by user.")
@@ -2325,6 +2336,7 @@ class MainWindow(QMainWindow):
         """
         self.last_action = "folder_select"
 
+        # Get current folder index
         index = self.folder_tree.currentIndex()
         if not index.isValid():
             logger.warning("No folder selected in folder tree.")

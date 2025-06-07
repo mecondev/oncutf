@@ -113,6 +113,8 @@ logs/*.log*
 !logs/.gitkeep
 *.log
 debug.log
+.mypy_cache/
+.ruff_cache/
 
 # =======================================
 # 🖼️ GUI-related files (PyQt5, resources)
