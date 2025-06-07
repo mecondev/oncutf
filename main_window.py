@@ -604,9 +604,11 @@ class MainWindow(QMainWindow):
         """
         if not self.model.files:
             return
+
         total = len(self.model.files)
         if total == 0:
             return
+        
         selection_model = self.file_table_view.selectionModel()
         all_checked = all(f.checked for f in self.model.files)
         all_selected = False
@@ -615,13 +617,15 @@ class MainWindow(QMainWindow):
         if selection_model is not None:
             selected_rows = set(idx.row() for idx in selection_model.selectedRows())
             all_selected = (len(selected_rows) == total)
+
         if all_checked and all_selected:
             logger.debug("[SelectAll] All files already selected in both checked and selection model. No action taken.")
             return
-            logger.info(f"[SelectAll] Selecting all {total} rows.")
-            self.file_table_view.select_rows_range(0, total - 1)
-            self.file_table_view.anchor_row = 0
-            QTimer.singleShot(20, self.update_files_label)
+
+        logger.info(f"[SelectAll] Selecting all {total} rows.")
+        self.file_table_view.select_rows_range(0, total - 1)
+        self.file_table_view.anchor_row = 0
+        QTimer.singleShot(20, self.update_files_label)
 
     def clear_all_selection(self) -> None:
         # If everything is already deselected, do nothing
