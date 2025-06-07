@@ -725,13 +725,29 @@ class MetadataTreeView(QTreeView):
             super().scrollTo(index, hint)
             return
 
-        # In normal mode, maintain user's preferred horizontal scroll position
+        # In normal mode, let Qt do its thing but immediately restore horizontal position
         if index.isValid():
-            # Only do vertical scrolling if needed, but preserve horizontal position
-            super().scrollTo(index, hint)
-
-            # Restore the user's preferred horizontal scroll position
             horizontal_bar = self.horizontalScrollBar()
             if horizontal_bar:
-                horizontal_bar.setValue(self._user_preferred_scroll_position)
+                # Store the position we want to keep
+                saved_position = self._user_preferred_scroll_position
+
+                # Let Qt do the scrolling
+                super().scrollTo(index, hint)
+
+                # Schedule an immediate restoration of horizontal position
+                # Using 0ms delay (next event loop iteration) to minimize flash
+                QTimer.singleShot(0, lambda: self._restore_horizontal_scroll(saved_position))
+            else:
+                # No horizontal scrollbar, just do normal scrolling
+                super().scrollTo(index, hint)
+        else:
+            super().scrollTo(index, hint)
+
+    def _restore_horizontal_scroll(self, position):
+        """Restore horizontal scroll position after Qt's automatic scrolling."""
+        if not self._is_placeholder_mode:
+            horizontal_bar = self.horizontalScrollBar()
+            if horizontal_bar:
+                horizontal_bar.setValue(position)
 
