@@ -87,8 +87,13 @@ class FileTableModel(QAbstractTableModel):
                 return file.modified
 
         if role == Qt.ToolTipRole and col == 1:
-            if file.full_path in self.parent_window.metadata_loaded_paths:
-                return "Metadata loaded for this file"
+            entry = self.parent_window.metadata_cache.get_entry(file.full_path) if self.parent_window else None
+            if entry and entry.data:
+                metadata_count = len(entry.data)
+                if entry.is_extended:
+                    return f"Extended Metadata Loaded: {metadata_count} values"
+                else:
+                    return f"Metadata loaded: {metadata_count} values"
             else:
                 return "Metadata not loaded"
 

@@ -127,7 +127,6 @@ class MainWindow(QMainWindow):
         self.metadata_thread = None
         self.metadata_worker = None
         self.metadata_cache = MetadataCache()
-        self.metadata_loaded_paths = set()  # full paths with metadata
         self.metadata_icon_map = load_metadata_icons()
         self.preview_icons = load_preview_status_icons()
         self.force_extended_metadata = False
@@ -1167,23 +1166,23 @@ class MainWindow(QMainWindow):
         Triggered when column 0 header is clicked.
         Toggles selection and checked state of all files (efficient, like Ctrl+A).
         """
-        if not self.model.files:
+        if not self.file_model.files:
             return
 
-        total = len(self.model.files)
-        all_selected = all(file.checked for file in self.model.files)
+        total = len(self.file_model.files)
+        all_selected = all(file.checked for file in self.file_model.files)
         selection_model = self.file_table_view.selectionModel()
 
         with wait_cursor():
             if all_selected:
                 # Unselect all
                 selection_model.clearSelection()
-                for file in self.model.files:
+                for file in self.file_model.files:
                     file.checked = False
             else:
                 # Select all efficiently
                 self.file_table_view.select_rows_range(0, total - 1)
-                for file in self.model.files:
+                for file in self.file_model.files:
                     file.checked = True
                 self.file_table_view.anchor_row = 0
 
@@ -1999,7 +1998,7 @@ class MainWindow(QMainWindow):
         if not selected_rows:
             logger.debug("[Sync] No selection - clearing preview")
             # Clear all checked states
-            for file in self.model.files:
+            for file in self.file_model.files:
                 file.checked = False
             self.update_files_label()
             self.update_preview_tables_from_pairs([])
@@ -2252,7 +2251,7 @@ class MainWindow(QMainWindow):
         file_items = []
         for path in paths:
             filename = os.path.basename(path)
-            file = next((f for f in self.model.files if f.filename == filename), None)
+            file = next((f for f in self.file_model.files if f.filename == filename), None)
             if file:
                 file_items.append(file)
 
@@ -2300,8 +2299,8 @@ class MainWindow(QMainWindow):
             # Centralized loading logic
             self.prepare_folder_load(folder_path)
 
-            # Get loaded items (from self.model or retrieved from paths if needed)
-            items = self.model.files
+            # Get loaded items (from self.file_model or retrieved from paths if needed)
+            items = self.file_model.files
 
             if not self.skip_metadata_mode:
                 self.load_metadata_for_items(
@@ -2363,7 +2362,7 @@ class MainWindow(QMainWindow):
         logger.debug(f"[Browse] skip_metadata={skip_metadata}, use_extended={use_extended}")
 
         # -- Trigger metadata load if needed
-        items = self.model.files
+        items = self.file_model.files
         if not self.skip_metadata_mode:
             self.load_metadata_for_items(
                 items,
@@ -2433,7 +2432,7 @@ class MainWindow(QMainWindow):
         logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
 
         # Load metadata if needed
-        items = self.model.files
+        items = self.file_model.files
         if not self.skip_metadata_mode:
             self.load_metadata_for_items(
                 items,
