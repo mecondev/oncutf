@@ -26,7 +26,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 # --------------------------
-# 🧠 mypy configuration
+# mypy configuration
 # --------------------------
 [tool.mypy]
 python_version = "3.9"
@@ -35,7 +35,7 @@ ignore_missing_imports = true
 warn_unused_configs = true
 warn_return_any = true
 warn_redundant_casts = true
-exclude = '^(backups|\.cache|temp|reports)/'  # ✅ Global exclude, only one allowed
+exclude = '.*(backups|\.cache|temp|reports)/'  # Global exclude, only one allowed
 
 [[tool.mypy.overrides]]
 module = ["PyQt5.*"]
@@ -43,7 +43,7 @@ ignore_missing_imports = true
 ignore_errors = true
 
 # --------------------------
-# ✅ Ruff configuration
+# Ruff configuration
 # --------------------------
 [tool.ruff]
 target-version = "py39"
@@ -60,7 +60,7 @@ force-single-line = false
 combine-as-imports = true
 
 # --------------------------
-# ✅ Pytest
+# Pytest
 # --------------------------
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -69,7 +69,7 @@ testpaths = ["tests"]
 qt_api = "pyqt5"
 
 # --------------------------
-# ✅ Coverage
+# Coverage
 # --------------------------
 [tool.coverage.run]
 source = [".", "widgets", "models", "modules", "utils"]
@@ -95,25 +95,27 @@ exclude_lines = [
     "@(abc\\.)?abstractmethod"
 ]
 
-# --------------------------
-# 💤 Παλιά Pylint (προαιρετικό)
-# --------------------------
-[tool.pylint.main]
-load-plugins = ["pylint.extensions.docparams"]
-extension-pkg-whitelist = ["PyQt5"]
+# ----------------------------------------
+# Legacy Pylint configuration (optional)
 
-[tool.pylint.messages_control]
-disable = [
-    "missing-module-docstring", "missing-class-docstring", "missing-function-docstring",
-    "too-many-arguments", "too-many-locals", "too-many-instance-attributes",
-    "too-many-statements", "too-many-branches", "too-many-public-methods",
-    "too-few-public-methods", "invalid-name", "attribute-defined-outside-init",
-    "no-member", "c-extension-no-member", "import-error", "no-name-in-module",
-    "unused-argument", "broad-except", "bare-except"
-]
+# [tool.pylint.main]
+# load-plugins = ["pylint.extensions.docparams"]
+# extension-pkg-whitelist = ["PyQt5"]
 
-[tool.pylint.typecheck]
-generated-members = [
-    "PyQt5.*", "Qt.*", "QApplication.*", "QWidget.*", "QMainWindow.*",
-    "QTableWidget.*", "QTreeView.*", "QHeaderView.*", "QAbstractItemView.*"
-]
+# [tool.pylint.messages_control]
+# disable = [
+#     "missing-module-docstring", "missing-class-docstring", "missing-function-docstring",
+#     "too-many-arguments", "too-many-locals", "too-many-instance-attributes",
+#     "too-many-statements", "too-many-branches", "too-many-public-methods",
+#     "too-few-public-methods", "invalid-name", "attribute-defined-outside-init",
+#     "no-member", "c-extension-no-member", "import-error", "no-name-in-module",
+#     "unused-argument", "broad-except", "bare-except"
+# ]
+
+# [tool.pylint.typecheck]
+# generated-members = [
+#     "PyQt5.*", "Qt.*", "QApplication.*", "QWidget.*", "QMainWindow.*",
+#     "QTableWidget.*", "QTreeView.*", "QHeaderView.*", "QAbstractItemView.*"
+# ]
+
+# ----------------------------------------

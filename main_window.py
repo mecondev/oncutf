@@ -127,7 +127,6 @@ class MainWindow(QMainWindow):
         self.metadata_thread = None
         self.metadata_worker = None
         self.metadata_cache = MetadataCache()
-        self._metadata_worker_cancel_requested = False
         self.metadata_loaded_paths = set()  # full paths with metadata
         self.metadata_icon_map = load_metadata_icons()
         self.preview_icons = load_preview_status_icons()
