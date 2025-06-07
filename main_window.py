@@ -59,7 +59,7 @@ from utils.metadata_loader import MetadataLoader
 from widgets.metadata_worker import MetadataWorker
 from widgets.interactive_header import InteractiveHeader
 from widgets.custom_msgdialog import CustomMessageDialog
-from widgets.custom_table_view import CustomTableView
+from widgets.file_table_view import FileTableView
 from widgets.metadata_tree_view import MetadataTreeView
 from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 from widgets.rename_modules_area import RenameModulesArea
@@ -133,8 +133,8 @@ class MainWindow(QMainWindow):
         self.force_extended_metadata = False
         self.skip_metadata_mode = DEFAULT_SKIP_METADATA # Keeps state across folder reloads
         self.metadata_loader = MetadataLoader()
-        self.model = FileTableModel(parent_window=self)
-        self.metadata_loader.model = self.model
+        self.file_model = FileTableModel(parent_window=self)
+        self.metadata_loader.model = self.file_model
 
         # Initialize theme icon loader with dark theme by default
         icons_loader.set_theme("dark")
@@ -258,13 +258,13 @@ class MainWindow(QMainWindow):
         self.files_label = QLabel("Files")
         center_layout.addWidget(self.files_label)
 
-        self.file_table_view = CustomTableView(parent=self)
+        self.file_table_view = FileTableView(parent=self)
         self.file_table_view.parent_window = self
         self.file_table_view.verticalHeader().setVisible(False)
         self.file_table_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.file_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.model = FileTableModel(parent_window=self)
-        self.file_table_view.setModel(self.model)
+        self.file_model = FileTableModel(parent_window=self)
+        self.file_table_view.setModel(self.file_model)
 
         # Header setup
         self.header = InteractiveHeader(Qt.Horizontal, self.file_table_view, parent_window=self)
@@ -505,7 +505,7 @@ class MainWindow(QMainWindow):
         self.file_table_view.clicked.connect(self.on_table_row_clicked)
         self.file_table_view.selection_changed.connect(self.update_preview_from_selection)
         self.file_table_view.files_dropped.connect(self.load_files_from_dropped_items)
-        self.model.sort_changed.connect(self.request_preview_update)
+        self.file_model.sort_changed.connect(self.request_preview_update)
         self.file_table_view.setContextMenuPolicy(Qt.CustomContextMenu)
         self.file_table_view.customContextMenuRequested.connect(self.handle_table_context_menu)
 
@@ -617,15 +617,15 @@ class MainWindow(QMainWindow):
         """
         Selects all rows in the file table efficiently using select_rows_range helper.
         """
-        if not self.model.files:
+        if not self.file_model.files:
             return
 
-        total = len(self.model.files)
+        total = len(self.file_model.files)
         if total == 0:
             return
 
         selection_model = self.file_table_view.selectionModel()
-        all_checked = all(f.checked for f in self.model.files)
+        all_checked = all(f.checked for f in self.file_model.files)
         all_selected = False
 
         selected_rows = self.file_table_view.selected_rows
@@ -644,13 +644,13 @@ class MainWindow(QMainWindow):
 
     def clear_all_selection(self) -> None:
         # If everything is already deselected, do nothing
-        if not self.model.files or all(not f.checked for f in self.model.files):
+        if not self.file_model.files or all(not f.checked for f in self.file_model.files):
             logger.info("[ClearAll] All files already unselected. No action taken.")
             return
         with wait_cursor():
             selection_model = self.file_table_view.selectionModel()
             selection_model.clearSelection()
-            for file in self.model.files:
+            for file in self.file_model.files:
                 file.checked = False
             self.file_table_view.viewport().update()
             self.update_files_label()
@@ -662,18 +662,18 @@ class MainWindow(QMainWindow):
         Inverts the selection in the file table efficiently using select_rows_range helper.
         Shows wait cursor during the operation.
         """
-        if not self.model.files:
+        if not self.file_model.files:
             self.set_status("No files to invert selection.", color="gray", auto_reset=True)
             return
         with wait_cursor():
             selection_model = self.file_table_view.selectionModel()
             current_selected = set(idx.row() for idx in selection_model.selectedRows())
-            total = len(self.model.files)
+            total = len(self.file_model.files)
             # Uncheck all selected, check all unselected
-            for row, file in enumerate(self.model.files):
+            for row, file in enumerate(self.file_model.files):
                 file.checked = row not in current_selected
             # Find all checked rows (i.e. those that were previously unselected)
-            checked_rows = [row for row, file in enumerate(self.model.files) if file.checked]
+            checked_rows = [row for row, file in enumerate(self.file_model.files) if file.checked]
             checked_rows.sort()
             ranges = self._find_consecutive_ranges(checked_rows)
             selection_model.clearSelection()
@@ -688,7 +688,7 @@ class MainWindow(QMainWindow):
             if checked_rows:
                 def show_metadata_later():
                     last_row = checked_rows[-1]
-                    file_item = self.model.files[last_row]
+                    file_item = self.file_model.files[last_row]
                     metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
                     if isinstance(metadata, dict):
                         self.display_metadata(metadata, context="invert_selection")
@@ -717,18 +717,18 @@ class MainWindow(QMainWindow):
         else:
             new_order = Qt.AscendingOrder
 
-        self.model.sort(column, new_order)
+        self.file_model.sort(column, new_order)
         header.setSortIndicator(column, new_order)
 
     def restore_fileitem_metadata_from_cache(self) -> None:
         """
         After a folder reload (e.g. after rename), reassigns cached metadata
-        to the corresponding FileItem objects in self.model.files.
+        to the corresponding FileItem objects in self.file_model.files.
 
         This allows icons and previews to remain consistent without rescanning.
         """
         restored = 0
-        for file in self.model.files:
+        for file in self.file_model.files:
             cached = self.metadata_cache.get(file.full_path)
             if isinstance(cached, dict) and cached:
                 file.metadata = cached
@@ -751,7 +751,7 @@ class MainWindow(QMainWindow):
             self.set_status("No folder selected.", color="orange")
             return
 
-        selected_files = [f for f in self.model.files if f.checked]
+        selected_files = [f for f in self.file_model.files if f.checked]
         if not selected_files:
             self.set_status("No files selected.", color="gray")
             CustomMessageDialog.show_warning(
@@ -777,7 +777,7 @@ class MainWindow(QMainWindow):
 
         results = renamer.rename()
 
-        checked_paths = {f.full_path for f in self.model.files if f.checked}
+        checked_paths = {f.full_path for f in self.file_model.files if f.checked}
 
         renamed_count = 0
         for result in results:
@@ -815,15 +815,15 @@ class MainWindow(QMainWindow):
             self.request_preview_update()
 
         # Force update info icons in column 0
-        for row in range(self.model.rowCount()):
-            file_item = self.model.files[row]
+        for row in range(self.file_model.rowCount()):
+            file_item = self.file_model.files[row]
             if self.metadata_cache.has(file_item.full_path):
-                index = self.model.index(row, 0)
+                index = self.file_model.index(row, 0)
                 rect = self.file_table_view.visualRect(index)
                 self.file_table_view.viewport().update(rect)
 
         self.file_table_view.viewport().update()
-        logger.debug(f"[Rename] Restored {restored_count} checked out of {len(self.model.files)} files")
+        logger.debug(f"[Rename] Restored {restored_count} checked out of {len(self.file_model.files)} files")
 
         if renamed_count > 0:
             if CustomMessageDialog.question(
@@ -884,7 +884,7 @@ class MainWindow(QMainWindow):
         Args:
             file_items (list[FileItem]): List of FileItem objects to display in the table
         """
-        self.file_table_view.setModel(self.model)
+        self.file_table_view.setModel(self.file_model)
         for f in file_items:
             f.checked = False
 
@@ -892,9 +892,9 @@ class MainWindow(QMainWindow):
         self.file_table_view.clearSelection()
         self.file_table_view.selected_rows.clear()
 
-        self.model.set_files(file_items)
+        self.file_model.set_files(file_items)
         self.files = file_items
-        self.model.folder_path = self.current_folder_path
+        self.file_model.folder_path = self.current_folder_path
         self.preview_map = {f.filename: f for f in file_items}
 
         if hasattr(self, "header") and self.header is not None:
@@ -1045,7 +1045,7 @@ class MainWindow(QMainWindow):
         Uses the custom selected_rows from the file_table_view, not Qt's selectionModel().
         """
         selected_rows = self.file_table_view.selected_rows
-        selected = [self.model.files[r] for r in selected_rows if 0 <= r < len(self.model.files)]
+        selected = [self.file_model.files[r] for r in selected_rows if 0 <= r < len(self.file_model.files)]
 
         self.load_metadata_for_items(selected, use_extended=False, source="shortcut")
 
@@ -1060,7 +1060,7 @@ class MainWindow(QMainWindow):
             return
 
         selected_rows = self.file_table_view.selected_rows
-        selected = [self.model.files[r] for r in selected_rows if 0 <= r < len(self.model.files)]
+        selected = [self.file_model.files[r] for r in selected_rows if 0 <= r < len(self.file_model.files)]
 
         self.load_metadata_for_items(selected, use_extended=True, source="shortcut_extended")
 
@@ -1132,14 +1132,14 @@ class MainWindow(QMainWindow):
         if (
             current_index.isValid()
             and current_index in selected_rows
-            and 0 <= current_index.row() < len(self.model.files)
+            and 0 <= current_index.row() < len(self.file_model.files)
         ):
             target_index = current_index
         else:
             target_index = selected_rows[0]  # fallback
 
-        if 0 <= target_index.row() < len(self.model.files):
-            file_item = self.model.files[target_index.row()]
+        if 0 <= target_index.row() < len(self.file_model.files):
+            file_item = self.file_model.files[target_index.row()]
             metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
 
             if isinstance(metadata, dict) and metadata:
@@ -1202,7 +1202,7 @@ class MainWindow(QMainWindow):
             timer = QElapsedTimer()
             timer.start()
 
-            selected_files = [f for f in self.model.files if f.checked]
+            selected_files = [f for f in self.file_model.files if f.checked]
             logger.debug("[Preview] Triggered! Selected rows: %s", [f.filename for f in selected_files])
 
             if not selected_files:
@@ -1444,8 +1444,8 @@ class MainWindow(QMainWindow):
         Otherwise, it shows how many files are currently selected
         out of the total number loaded.
         """
-        total = len(self.model.files)
-        selected = sum(1 for f in self.model.files if f.checked) if total else 0
+        total = len(self.file_model.files)
+        selected = sum(1 for f in self.file_model.files if f.checked) if total else 0
 
         if total == 0:
             self.files_label.setText("Files (0)")
@@ -1500,7 +1500,7 @@ class MainWindow(QMainWindow):
         """
         return [
             (file.filename, file.filename)
-            for file in self.model.files
+            for file in self.file_model.files
             if file.checked
         ]
 
@@ -1688,7 +1688,7 @@ class MainWindow(QMainWindow):
         Returns a list of FileItem objects currently selected (blue-highlighted) in the table view.
         """
         selected_indexes = self.file_table_view.selectionModel().selectedRows()
-        return [self.model.files[i.row()] for i in selected_indexes if 0 <= i.row() < len(self.model.files)]
+        return [self.file_model.files[i.row()] for i in selected_indexes if 0 <= i.row() < len(self.file_model.files)]
 
     def find_fileitem_by_path(self, path: str) -> Optional[FileItem]:
         """
@@ -1700,7 +1700,7 @@ class MainWindow(QMainWindow):
         Returns:
             FileItem or None
         """
-        for file_item in self.model.files:
+        for file_item in self.file_model.files:
             if file_item.full_path == path:
                 return file_item
         return None
@@ -1786,12 +1786,12 @@ class MainWindow(QMainWindow):
         Triggered when a user clicks on a file row in the table.
         Displays the metadata for the selected file in the right panel.
         """
-        if not self.model.files:
+        if not self.file_model.files:
             logger.info("No files in model — click ignored.")
             return
 
         row = index.row()
-        if row < 0 or row >= len(self.model.files):
+        if row < 0 or row >= len(self.file_model.files):
             logger.warning("Invalid row clicked (out of range). Ignored.")
             return
 
@@ -1833,7 +1833,7 @@ class MainWindow(QMainWindow):
         Clears the file table and shows a placeholder message.
         """
         self.clear_metadata_view()
-        self.model.set_files([])  # reset model with empty list
+        self.file_model.set_files([])  # reset model with empty list
         self.file_table_view.set_placeholder_visible(False)
         self.header.setEnabled(False) # disable header
         self.status_label.setText(message)
@@ -1883,7 +1883,7 @@ class MainWindow(QMainWindow):
         """
         Returns the intersection of metadata keys from all checked files.
         """
-        selected_files = [f for f in self.model.files if f.checked]
+        selected_files = [f for f in self.file_model.files if f.checked]
         if not selected_files:
             return []
 
@@ -2010,7 +2010,7 @@ class MainWindow(QMainWindow):
         timer = QElapsedTimer()
         timer.start()
 
-        for row, file in enumerate(self.model.files):
+        for row, file in enumerate(self.file_model.files):
             file.checked = row in selected_rows
 
         self.update_files_label()
@@ -2019,8 +2019,8 @@ class MainWindow(QMainWindow):
         # Show metadata for last selected file
         if selected_rows:
             last_row = selected_rows[-1]
-            if 0 <= last_row < len(self.model.files):
-                file_item = self.model.files[last_row]
+            if 0 <= last_row < len(self.file_model.files):
+                file_item = self.file_model.files[last_row]
                 metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
                 if isinstance(metadata, dict):
                     self.display_metadata(metadata, context="update_preview_from_selection")
@@ -2041,17 +2041,17 @@ class MainWindow(QMainWindow):
         - Invert selection, select all, reload folder
         - Uses custom selection state from file_table_view.selected_rows
         """
-        if not self.model.files:
+        if not self.file_model.files:
             return
 
         from utils.icons_loader import get_menu_icon
 
         index = self.file_table_view.indexAt(position)
-        total_files = len(self.model.files)
+        total_files = len(self.file_model.files)
 
         # Get selected rows from custom selection model
         selected_rows = self.file_table_view.selected_rows
-        selected_files = [self.model.files[r] for r in selected_rows if 0 <= r < total_files]
+        selected_files = [self.file_model.files[r] for r in selected_rows if 0 <= r < total_files]
 
         menu = QMenu(self)
 
@@ -2111,10 +2111,10 @@ class MainWindow(QMainWindow):
             self.load_metadata_for_items(selected_files, use_extended=True, source="context_menu")
 
         elif action == action_load_all:
-            self.load_metadata_for_items(self.model.files, use_extended=False, source="context_menu_all")
+            self.load_metadata_for_items(self.file_model.files, use_extended=False, source="context_menu_all")
 
         elif action == action_load_ext_all:
-            self.load_metadata_for_items(self.model.files, use_extended=True, source="context_menu_all")
+            self.load_metadata_for_items(self.file_model.files, use_extended=True, source="context_menu_all")
 
         elif action == action_invert:
             self.invert_selection()
@@ -2134,8 +2134,8 @@ class MainWindow(QMainWindow):
         Shows wait cursor for 1 file or dialog for multiple selected.
         """
         row = index.row()
-        if 0 <= row < len(self.model.files):
-            file = self.model.files[row]
+        if 0 <= row < len(self.file_model.files):
+            file = self.file_model.files[row]
             logger.info(f"[DoubleClick] Requested metadata reload for: {file.filename}")
 
             # Check if Shift was pressed for extended metadata
@@ -2143,7 +2143,7 @@ class MainWindow(QMainWindow):
             logger.debug(f"[Modifiers] Shift held → use_extended={use_extended}")
 
             selected_indexes = self.file_table_view.selectionModel().selectedRows()
-            selected_files = [self.model.files[i.row()] for i in selected_indexes if 0 <= i.row() < len(self.model.files)]
+            selected_files = [self.file_model.files[i.row()] for i in selected_indexes if 0 <= i.row() < len(self.file_model.files)]
 
             # If user pressed Shift (for extended) and has multiple files selected,
             # limit to only the file that was double-clicked to avoid mistakes
@@ -2205,7 +2205,7 @@ class MainWindow(QMainWindow):
             clear: Whether to clear existing items before loading
         """
         if clear:
-            self.model.clear()
+            self.file_model.clear()
 
         if not file_paths:
             self.file_table_view.set_placeholder_visible(True)
@@ -2223,8 +2223,8 @@ class MainWindow(QMainWindow):
                         os.path.getmtime(path)).strftime("%Y-%m-%d %H:%M:%S")
                     file_items.append(FileItem(filename, ext, modified, full_path=path))
 
-        self.model.files = file_items
-        self.model.layoutChanged.emit()
+        self.file_model.files = file_items
+        self.file_model.layoutChanged.emit()
 
         # Sorting connections — must be after emit
         self.file_table_view.setSortingEnabled(True)
@@ -2533,9 +2533,9 @@ class MainWindow(QMainWindow):
                     self.display_metadata(metadata, context=f"load_metadata_from_{source}")
 
                 # Update UI for the specific file
-                row = self.model.files.index(last)
-                for col in range(self.model.columnCount()):
-                    idx = self.model.index(row, col)
+                row = self.file_model.files.index(last)
+                for col in range(self.file_model.columnCount()):
+                    idx = self.file_model.index(row, col)
                     self.file_table_view.viewport().update(self.file_table_view.visualRect(idx))
 
     def show_metadata_status(self) -> None:
@@ -2543,7 +2543,7 @@ class MainWindow(QMainWindow):
         Shows a status bar message indicating the number of loaded files
         and the type of metadata scan performed (skipped, basic, extended).
         """
-        num_files = len(self.model.files)
+        num_files = len(self.file_model.files)
 
         if self.skip_metadata_mode:
             status_msg = f"Loaded {num_files} files — metadata skipped"
