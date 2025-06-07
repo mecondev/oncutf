@@ -545,6 +545,8 @@ class MainWindow(QMainWindow):
         """
         if event.type() in (QEvent.KeyPress, QEvent.KeyRelease):
             self.modifier_state = QApplication.keyboardModifiers()
+            logger.debug(f"[Modifiers] eventFilter saw: {event.type()} with modifiers={int(event.modifiers())}")
+
         return super().eventFilter(obj, event)
 
     def request_preview_update(self) -> None:
@@ -1946,6 +1948,8 @@ class MainWindow(QMainWindow):
             - skip_metadata = False & use_extended = True ➜ Extended scan
         """
         modifiers = self.modifier_state
+        if modifiers == Qt.NoModifier:
+            modifiers = QApplication.keyboardModifiers()  # ✅ fallback to current
 
         ctrl = bool(modifiers & Qt.ControlModifier)
         shift = bool(modifiers & Qt.ShiftModifier)
@@ -1953,8 +1957,10 @@ class MainWindow(QMainWindow):
         skip_metadata = not ctrl
         use_extended = ctrl and shift
 
-        logger.debug(f"[determine_metadata_mode] ctrl={ctrl}, shift={shift}, "
-                    f"skip_metadata={skip_metadata}, use_extended={use_extended}")
+        logger.debug(
+            f"[determine_metadata_mode] modifiers={int(modifiers)}, "
+            f"ctrl={ctrl}, shift={shift}, skip_metadata={skip_metadata}, use_extended={use_extended}"
+        )
 
         return skip_metadata, use_extended
 
