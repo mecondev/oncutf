@@ -62,35 +62,9 @@ class MetadataTreeView(QTreeView):
         # Track if we're in placeholder mode
         self._is_placeholder_mode = True
 
-        # Track scrollbar position to prevent automatic rightward scrolling
-        self._last_scroll_value = 0
-        self._user_preferred_scroll_position = 0  # Track user's preferred horizontal scroll position
-        self._user_is_manually_scrolling = False  # Track if user is actively dragging scrollbar
+        # No scrollbar management needed since scrollTo is disabled
 
-    def fix_horizontal_scroll(self):
-        """
-        Fixes the horizontal scrollbar to stay at the left position when selecting a new item.
-        Only works in normal mode (not placeholder mode).
-        """
-        # Skip if in placeholder mode
-        if self._is_placeholder_mode:
-            return
 
-        # Force horizontal scrollbar to always stay at the beginning (left position)
-        self.setProperty("keep-scroll-left", True)
-
-        # Immediately set to 0
-        if self.horizontalScrollBar():
-            self.horizontalScrollBar().setValue(0)
-
-        # Schedule a delayed second attempt as sometimes the first one doesn't work
-        QTimer.singleShot(10, self._ensure_scroll_left)
-        QTimer.singleShot(50, self._ensure_scroll_left)  # Additional attempt
-
-    def _ensure_scroll_left(self):
-        """Helper method to ensure scrollbar stays at left position"""
-        if not self._is_placeholder_mode and self.horizontalScrollBar():
-            self.horizontalScrollBar().setValue(0)
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """
@@ -179,9 +153,7 @@ class MetadataTreeView(QTreeView):
         # First call the parent implementation
         super().setModel(model)
 
-        # Connect selection changed signal to fix horizontal scroll
-        if self.selectionModel():
-            self.selectionModel().selectionChanged.connect(self.fix_horizontal_scroll)
+
 
         # Then set column sizes if we have a header and model
         if model and self.header():
@@ -232,7 +204,7 @@ class MetadataTreeView(QTreeView):
                 # Key column: min 80px, initial 120px, max 300px
                 self.header().setSectionResizeMode(0, QHeaderView.Interactive)
                 self.header().setMinimumSectionSize(80)
-                self.header().resizeSection(0, 120)  # Initial size for Key column
+                self.header().resizeSection(0, 150)  # Initial size for Key column
 
                 # Value column: min 250px, allows wide content without stretching
                 self.header().setSectionResizeMode(1, QHeaderView.Interactive)
@@ -241,7 +213,7 @@ class MetadataTreeView(QTreeView):
                 # Set specific min/max sizes per column
                 header = self.header()
                 header.setMinimumSectionSize(80)   # Key column minimum
-                header.setMaximumSectionSize(300)  # Key column maximum (applies to section 0)
+                header.setMaximumSectionSize(800)  # Key column maximum (applies to section 0)
 
                 # Enable normal selection and clear placeholder property
                 self.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -253,46 +225,7 @@ class MetadataTreeView(QTreeView):
                 self.style().unpolish(self)
                 self.style().polish(self)
 
-                # Setup scrollbar control to keep it left
-                self._setup_scrollbar_control()
-
-    def _setup_scrollbar_control(self):
-        """
-        Sets up the horizontal scrollbar control to prevent automatic scrolling right.
-        Allows all manual user interactions but blocks only automatic rightward movement from selection changes.
-        """
-        # Ensure horizontal scrollbar starts at the left
-        QTimer.singleShot(50, self._ensure_scroll_left)
-        QTimer.singleShot(100, self._ensure_scroll_left)
-
-        if self.horizontalScrollBar():
-            # Store initial value
-            self._last_scroll_value = self.horizontalScrollBar().value()
-            self._user_preferred_scroll_position = 0  # Start at left
-
-            # Connect to track manual user scrolling
-            self.horizontalScrollBar().valueChanged.connect(self._on_scroll_change)
-            # Connect to track when user starts/stops interacting with scrollbar
-            self.horizontalScrollBar().sliderPressed.connect(self._on_scrollbar_pressed)
-            self.horizontalScrollBar().sliderReleased.connect(self._on_scrollbar_released)
-
-    def _on_scrollbar_pressed(self):
-        """Called when user starts dragging the scrollbar"""
-        self._user_is_manually_scrolling = True
-
-    def _on_scrollbar_released(self):
-        """Called when user stops dragging the scrollbar"""
-        self._user_is_manually_scrolling = False
-
-    def _on_scroll_change(self, value):
-        """
-        Track scrollbar changes and update user's preferred position only during manual scrolling.
-        This prevents automatic scrolling from PyQt5 from being considered as user preference.
-        """
-        if not self._is_placeholder_mode:
-            # Only update preferred position if user is manually scrolling
-            if self._user_is_manually_scrolling:
-                self._user_preferred_scroll_position = value
+                # No additional setup needed since scrollTo is disabled
 
     def show_context_menu(self, position):
         """
@@ -460,10 +393,6 @@ class MetadataTreeView(QTreeView):
         # Update the view
         self.viewport().update()
 
-        # Ensure scrollbar stays left after reset
-        if not self._is_placeholder_mode:
-            QTimer.singleShot(10, self._ensure_scroll_left)
-
         # Reset value in cache
         self._reset_metadata_in_cache(key_path)
 
@@ -567,10 +496,6 @@ class MetadataTreeView(QTreeView):
 
         # Update the view
         self.viewport().update()
-
-        # Ensure scrollbar stays left after modification
-        if not self._is_placeholder_mode:
-            QTimer.singleShot(10, self._ensure_scroll_left)
 
     def _update_file_icon_status(self):
         """
@@ -717,37 +642,15 @@ class MetadataTreeView(QTreeView):
 
     def scrollTo(self, index, hint=None):
         """
-        Override scrollTo to prevent automatic horizontal scrolling in normal mode.
-        Maintains the user's preferred horizontal scroll position during selection changes.
+        Override scrollTo to completely disable automatic scrolling in normal mode.
+        This prevents any scrolling when user changes selection in the metadata tree.
         """
         if self._is_placeholder_mode:
             # In placeholder mode, use normal scrolling
             super().scrollTo(index, hint)
             return
 
-        # In normal mode, let Qt do its thing but immediately restore horizontal position
-        if index.isValid():
-            horizontal_bar = self.horizontalScrollBar()
-            if horizontal_bar:
-                # Store the position we want to keep
-                saved_position = self._user_preferred_scroll_position
-
-                # Let Qt do the scrolling
-                super().scrollTo(index, hint)
-
-                # Schedule an immediate restoration of horizontal position
-                # Using 0ms delay (next event loop iteration) to minimize flash
-                QTimer.singleShot(0, lambda: self._restore_horizontal_scroll(saved_position))
-            else:
-                # No horizontal scrollbar, just do normal scrolling
-                super().scrollTo(index, hint)
-        else:
-            super().scrollTo(index, hint)
-
-    def _restore_horizontal_scroll(self, position):
-        """Restore horizontal scroll position after Qt's automatic scrolling."""
-        if not self._is_placeholder_mode:
-            horizontal_bar = self.horizontalScrollBar()
-            if horizontal_bar:
-                horizontal_bar.setValue(position)
+        # In normal mode, do nothing - no automatic scrolling at all
+        # The user can scroll manually using the scrollbars
+        return
 

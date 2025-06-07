@@ -1122,9 +1122,6 @@ class MainWindow(QMainWindow):
             self.toggle_expand_button.setChecked(True)
             self.toggle_expand_button.setText("Collapse All")
 
-            # Ensure horizontal scrollbar is at the left position after loading content
-            QTimer.singleShot(100, lambda: self.metadata_tree_view._ensure_scroll_left())
-
         except Exception as e:
             logger.exception(f"[render_metadata_view] Unexpected error while rendering: {e}")
             self.clear_metadata_view()
