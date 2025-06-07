@@ -38,7 +38,7 @@ warn_redundant_casts = true
 warn_unused_ignores = false
 warn_no_return = false
 warn_unreachable = false
-strict_equality = false
+strict = true
 ignore_missing_imports = true
 
 # PyQt5 specific ignores
@@ -123,3 +123,32 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod"
 ]
+
+[tool.ruff]
+# Set the minimum supported Python version (affects syntax rules)
+target-version = "py39"
+
+# Maximum allowed line length for code (PEP8 default is 88, here 100)
+line-length = 100
+
+# Apply automatic fixes when possible (like autopep8 or black)
+fix = true
+
+# Enable preview (unstable or experimental) features — optional
+# preview = true
+
+[tool.ruff.lint]
+# Select groups of linting rules to apply:
+# E - pycodestyle errors (basic style)
+# F - pyflakes (undefined variables, etc.)
+# I - isort (import sorting)
+# N - pep8-naming (class/function/variable naming rules)
+select = ["E", "F", "I", "N"]
+
+# Ignore specific rules (E501: line too long)
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+# Control how import statements are sorted and formatted
+force-single-line = false          # Use grouped imports if possible
+combine-as-imports = true          # Combine 'import x as y' statements
