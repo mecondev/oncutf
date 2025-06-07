@@ -137,6 +137,7 @@ class MainWindow(QMainWindow):
         self.metadata_loader.model = self.model
 
         self.loading_dialog = None
+        self.modifier_state = Qt.NoModifier # type: ignore[attr-defined]
 
         self.create_colored_icon = create_colored_icon
         self.icon_paths = prepare_status_icons()
@@ -483,6 +484,8 @@ class MainWindow(QMainWindow):
         """
         Connects UI elements to their corresponding event handlers.
         """
+        self.installEventFilter(self)
+
         self.header.sectionClicked.connect(self.sort_by_column)
 
         self.select_folder_button.clicked.connect(self.handle_folder_select)
@@ -535,6 +538,14 @@ class MainWindow(QMainWindow):
             shortcut = QShortcut(QKeySequence(key), self.file_table_view)
             shortcut.activated.connect(handler)
             self.shortcuts.append(shortcut)
+
+    def eventFilter(self, obj, event):
+        """
+        Captures global keyboard modifier state (Ctrl, Shift).
+        """
+        if event.type() in (QEvent.KeyPress, QEvent.KeyRelease):
+            self.modifier_state = QApplication.keyboardModifiers()
+        return super().eventFilter(obj, event)
 
     def request_preview_update(self) -> None:
         """
