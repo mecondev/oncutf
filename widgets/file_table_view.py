@@ -136,9 +136,10 @@ class FileTableView(QTableView):
             return
 
         # Calculate minimum widths for each column based on content
-        # Column 0: Status icon (fixed)
+        # Column 0: Status icon (fixed) - use config value
+        status_config_width = FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"]
         header.setSectionResizeMode(0, QHeaderView.Fixed)
-        self.setColumnWidth(0, 23)
+        self.setColumnWidth(0, status_config_width)
 
         # Column 1: Filename - use config value primarily, with reasonable minimum
         filename_sample = "Long_Filename_Example_2024.jpeg"  # Shorter, more realistic sample
@@ -148,35 +149,45 @@ class FileTableView(QTableView):
         header.setSectionResizeMode(1, QHeaderView.Interactive)
         self.setColumnWidth(1, filename_initial_width)
 
-        # Debug logging for column widths
-        logger.debug(f"[ColumnSetup] Filename: config={filename_config_width}px, calculated_min={filename_min_width}px, final={filename_initial_width}px")
-
-        # Column 2: Filesize - calculate based on largest size
+        # Column 2: Filesize - use config value with calculated minimum
         filesize_min_width = parent_window.fontMetrics().horizontalAdvance("999 GB") + 30
+        filesize_config_width = FILE_TABLE_COLUMN_WIDTHS["FILESIZE_COLUMN"]
+        filesize_initial_width = max(filesize_config_width, filesize_min_width)
         header.setSectionResizeMode(2, QHeaderView.Interactive)
-        self.setColumnWidth(2, filesize_min_width)
+        self.setColumnWidth(2, filesize_initial_width)
 
-        # Column 3: Extension - calculate based on longest extension
+        # Column 3: Extension - use config value with calculated minimum
         extension_min_width = parent_window.fontMetrics().horizontalAdvance("jpeg") + 30
+        extension_config_width = FILE_TABLE_COLUMN_WIDTHS["EXTENSION_COLUMN"]
+        extension_initial_width = max(extension_config_width, extension_min_width)
         header.setSectionResizeMode(3, QHeaderView.Interactive)
-        self.setColumnWidth(3, max(60, extension_min_width))
+        self.setColumnWidth(3, extension_initial_width)
 
-        # Column 4: Modified date - calculate based on datetime format
+        # Column 4: Modified date - use config value with calculated minimum
         datetime_min_width = parent_window.fontMetrics().horizontalAdvance("2024-12-30 15:45:30") + 20
+        datetime_config_width = FILE_TABLE_COLUMN_WIDTHS["DATE_COLUMN"]
+        datetime_initial_width = max(datetime_config_width, datetime_min_width)
         header.setSectionResizeMode(4, QHeaderView.Interactive)
-        self.setColumnWidth(4, max(140, datetime_min_width))
+        self.setColumnWidth(4, datetime_initial_width)
 
         # Store minimum widths for use in splitter logic
         self.column_min_widths = {
-            0: 23,
+            0: status_config_width,
             1: max(100, filename_min_width),  # Minimum 100px for filename
             2: filesize_min_width,
-            3: max(50, extension_min_width),  # Minimum 50px for extension
+            3: extension_min_width,
             4: datetime_min_width
         }
 
+        # Debug logging for all column widths
+        logger.debug(f"[ColumnSetup] Status: config={status_config_width}px, final={status_config_width}px")
+        logger.debug(f"[ColumnSetup] Filename: config={filename_config_width}px, calculated_min={filename_min_width}px, final={filename_initial_width}px")
+        logger.debug(f"[ColumnSetup] Filesize: config={filesize_config_width}px, calculated_min={filesize_min_width}px, final={filesize_initial_width}px")
+        logger.debug(f"[ColumnSetup] Extension: config={extension_config_width}px, calculated_min={extension_min_width}px, final={extension_initial_width}px")
+        logger.debug(f"[ColumnSetup] DateTime: config={datetime_config_width}px, calculated_min={datetime_min_width}px, final={datetime_initial_width}px")
+
         # Debug: Log total column widths vs available space
-        total_column_width = 23 + filename_initial_width + filesize_min_width + max(60, extension_min_width) + max(140, datetime_min_width)
+        total_column_width = status_config_width + filename_initial_width + filesize_initial_width + extension_initial_width + datetime_initial_width
         logger.debug(f"[ColumnSetup] Total column width: {total_column_width}px")
 
         logger.debug("[FileTableView] Columns configured with intelligent management", extra={"dev_only": True})
