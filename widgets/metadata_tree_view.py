@@ -24,6 +24,7 @@ from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
 from PyQt5.QtWidgets import QAbstractItemView, QAction, QApplication, QHeaderView, QMenu, QTreeView
 
+from config import METADATA_TREE_COLUMN_WIDTHS
 from utils.logger_helper import get_logger
 from widgets.metadata_edit_dialog import MetadataEditDialog
 
@@ -62,6 +63,13 @@ class MetadataTreeView(QTreeView):
         # Track if we're in placeholder mode
         self._is_placeholder_mode = True
 
+        # Scroll position memory: {file_path: scroll_position}
+        self._scroll_positions = {}
+        self._current_file_path = None
+
+    # =====================================
+    # Drag & Drop Methods
+    # =====================================
 
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         """
@@ -103,28 +111,28 @@ class MetadataTreeView(QTreeView):
             if files:
                 # Accept the event BEFORE emitting the signal
                 event.acceptProposedAction()
-                # Force cleanup of any drag state
-                while QApplication.overrideCursor():
-                    QApplication.restoreOverrideCursor()
-                # Ensure the filter is deactivated
-                _drag_cancel_filter.deactivate()
-                # Process events immediately
-                QApplication.processEvents()
+                self._perform_drag_cleanup(_drag_cancel_filter)
                 # Then emit signal for processing
                 self.files_dropped.emit(files, event.keyboardModifiers())
             else:
                 event.ignore()
-                _drag_cancel_filter.deactivate()
-                QApplication.restoreOverrideCursor()
-                QApplication.processEvents()
+                self._perform_drag_cleanup(_drag_cancel_filter)
         else:
             event.ignore()
-            _drag_cancel_filter.deactivate()
-            QApplication.restoreOverrideCursor()
-            QApplication.processEvents()
+            self._perform_drag_cleanup(_drag_cancel_filter)
 
         # Force additional cleanup through timer
         QTimer.singleShot(0, self._complete_drag_cleanup)
+
+    def _perform_drag_cleanup(self, drag_cancel_filter) -> None:
+        """Centralized drag cleanup logic."""
+        # Force cleanup of any drag state
+        while QApplication.overrideCursor():
+            QApplication.restoreOverrideCursor()
+        # Ensure the filter is deactivated
+        drag_cancel_filter.deactivate()
+        # Process events immediately
+        QApplication.processEvents()
 
     def _complete_drag_cleanup(self) -> None:
         """
@@ -143,86 +151,150 @@ class MetadataTreeView(QTreeView):
         if hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
             self.viewport().update()
 
+    # =====================================
+    # Model & Column Management
+    # =====================================
+
     def setModel(self, model) -> None:
         """
         Override the setModel method to set minimum column widths after the model is set.
         """
+        # Save scroll position for current file before switching
+        self._save_current_scroll_position()
+
         # First call the parent implementation
         super().setModel(model)
 
-
-
         # Then set column sizes if we have a header and model
         if model and self.header():
-            # Check if this is a placeholder model (has only one item)
-            is_placeholder = False
-            if model.rowCount() == 1:
-                root = model.invisibleRootItem()
-                # Check if the first item has text "No file selected" or similar placeholder
-                if root.rowCount() == 1:
-                    item = root.child(0, 0)
-                    if item and "No file" in item.text():
-                        is_placeholder = True
-
+            is_placeholder = self._detect_placeholder_mode(model)
             self._is_placeholder_mode = is_placeholder
 
             if is_placeholder:
-                # Placeholder mode: Fixed columns, no selection, no hover, NO HORIZONTAL SCROLLBAR
-                self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-
-                self.header().setSectionResizeMode(0, QHeaderView.Fixed)
-                self.header().setSectionResizeMode(1, QHeaderView.Fixed)
-                self.header().resizeSection(0, 100)  # Key column fixed size
-                self.header().resizeSection(1, 250)  # Value column fixed size
-
-                # Make placeholder items non-selectable
-                root = model.invisibleRootItem()
-                item = root.child(0, 0)
-                if item:
-                    item.setSelectable(False)
-                value_item = root.child(0, 1)
-                if value_item:
-                    value_item.setSelectable(False)
-
-                # Disable selection - styling will be handled by QSS
-                self.setSelectionMode(QAbstractItemView.NoSelection)
-                # Add a property for QSS targeting
-                self.setProperty("placeholder", True)
-                # Disable hover completely
-                self.setAttribute(Qt.WA_NoMousePropagation, True)
-
-                # Force style update
-                self.style().unpolish(self)
-                self.style().polish(self)
+                self._configure_placeholder_mode(model)
+                self._current_file_path = None  # No file selected
             else:
-                # Normal content mode: HORIZONTAL SCROLLBAR enabled but controlled
-                self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+                self._configure_normal_mode()
+                # Restore scroll position after model is set
+                QTimer.singleShot(50, self._restore_scroll_position_for_current_file)
 
-                # Key column: min 80px, initial 180px, max 800px
-                self.header().setSectionResizeMode(0, QHeaderView.Interactive)
-                self.header().setMinimumSectionSize(80)
-                self.header().resizeSection(0, 180)  # Initial size for Key column
+    def _detect_placeholder_mode(self, model) -> bool:
+        """Detect if the model contains placeholder content."""
+        if model.rowCount() == 1:
+            root = model.invisibleRootItem()
+            if root.rowCount() == 1:
+                item = root.child(0, 0)
+                if item and "No file" in item.text():
+                    return True
+        return False
 
-                # Value column: min 250px, initial 500px, allows wide content without stretching
-                self.header().setSectionResizeMode(1, QHeaderView.Interactive)
-                self.header().resizeSection(1, 500)  # Larger initial size for Value column
+    def _configure_placeholder_mode(self, model) -> None:
+        """Configure view for placeholder mode."""
+        # Placeholder mode: Fixed columns, no selection, no hover, NO HORIZONTAL SCROLLBAR
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-                # Set specific min/max sizes per column
-                header = self.header()
-                header.setMinimumSectionSize(80)   # Key column minimum
-                header.setMaximumSectionSize(800)  # Key column maximum (applies to section 0)
+        header = self.header()
+        header.setSectionResizeMode(0, QHeaderView.Fixed)
+        header.setSectionResizeMode(1, QHeaderView.Fixed)
+        header.resizeSection(0, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_KEY_WIDTH"])
+        header.resizeSection(1, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_VALUE_WIDTH"])
 
-                # Enable normal selection and clear placeholder property
-                self.setSelectionMode(QAbstractItemView.SingleSelection)
-                self.setProperty("placeholder", False)
-                # Enable hover
-                self.setAttribute(Qt.WA_NoMousePropagation, False)
+        # Make placeholder items non-selectable
+        self._make_placeholder_items_non_selectable(model)
 
-                # Force style update
-                self.style().unpolish(self)
-                self.style().polish(self)
+        # Disable selection and set properties for styling
+        self.setSelectionMode(QAbstractItemView.NoSelection)
+        self.setProperty("placeholder", True)
+        self.setAttribute(Qt.WA_NoMousePropagation, True)
 
-                # No additional setup needed since scrollTo is disabled
+        # Force style update
+        self._force_style_update()
+
+    def _configure_normal_mode(self) -> None:
+        """Configure view for normal content mode."""
+        # Normal content mode: HORIZONTAL SCROLLBAR enabled but controlled
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+        header = self.header()
+
+        # Key column: min 80px, initial 180px, max 800px
+        header.setSectionResizeMode(0, QHeaderView.Interactive)
+        header.setMinimumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"])
+        header.resizeSection(0, METADATA_TREE_COLUMN_WIDTHS["NORMAL_KEY_INITIAL_WIDTH"])
+
+        # Value column: min 250px, initial 500px, allows wide content without stretching
+        header.setSectionResizeMode(1, QHeaderView.Interactive)
+        header.resizeSection(1, METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"])
+
+        # Set specific min/max sizes per column
+        header.setMinimumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"])
+        header.setMaximumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MAX_WIDTH"])
+
+        # Enable normal selection and clear placeholder property
+        self.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.setProperty("placeholder", False)
+        self.setAttribute(Qt.WA_NoMousePropagation, False)
+
+        # Force style update
+        self._force_style_update()
+
+    def _make_placeholder_items_non_selectable(self, model) -> None:
+        """Make placeholder items non-selectable."""
+        root = model.invisibleRootItem()
+        item = root.child(0, 0)
+        if item:
+            item.setSelectable(False)
+        value_item = root.child(0, 1)
+        if value_item:
+            value_item.setSelectable(False)
+
+    def _force_style_update(self) -> None:
+        """Force Qt style system to update."""
+        self.style().unpolish(self)
+        self.style().polish(self)
+
+    # =====================================
+    # Scroll Position Memory
+    # =====================================
+
+    def set_current_file_path(self, file_path: str) -> None:
+        """Set the current file path for scroll position tracking."""
+        # Save current position before changing files
+        self._save_current_scroll_position()
+
+        # Update current file
+        self._current_file_path = file_path
+
+        # Restore position for the new file (with a small delay to ensure model is ready)
+        QTimer.singleShot(100, self._restore_scroll_position_for_current_file)
+
+    def _save_current_scroll_position(self) -> None:
+        """Save the current scroll position for the current file."""
+        if self._current_file_path and not self._is_placeholder_mode:
+            scroll_value = self.verticalScrollBar().value()
+            self._scroll_positions[self._current_file_path] = scroll_value
+            logger.debug(f"[MetadataTree] Saved scroll position {scroll_value} for {self._current_file_path}")
+
+    def _restore_scroll_position_for_current_file(self) -> None:
+        """Restore the scroll position for the current file."""
+        if self._current_file_path and not self._is_placeholder_mode:
+            saved_position = self._scroll_positions.get(self._current_file_path, 0)
+            if saved_position > 0:
+                self.verticalScrollBar().setValue(saved_position)
+                logger.debug(f"[MetadataTree] Restored scroll position {saved_position} for {self._current_file_path}")
+            else:
+                # For new files, start at the top
+                self.verticalScrollBar().setValue(0)
+
+    def clear_scroll_memory(self) -> None:
+        """Clear all saved scroll positions (useful when changing folders)."""
+        self._scroll_positions.clear()
+        self._current_file_path = None
+        logger.debug("[MetadataTree] Cleared scroll position memory")
+
+    # =====================================
+    # Context Menu & Actions
+    # =====================================
 
     def show_context_menu(self, position) -> None:
         """
@@ -304,6 +376,10 @@ class MetadataTreeView(QTreeView):
         # Emit signal
         self.value_copied.emit(str(value))
         logger.debug(f"[MetadataTree] Copied value: {value}")
+
+    # =====================================
+    # Metadata Editing Methods
+    # =====================================
 
     def edit_value(self, key_path, current_value) -> None:
         """
@@ -396,92 +472,6 @@ class MetadataTreeView(QTreeView):
         # Emit signal
         self.value_reset.emit(key_path)
 
-    def _reset_metadata_in_cache(self, key_path) -> None:
-        """
-        Resets the metadata value in the cache to its original state.
-        """
-        # Get parent window (MainWindow)
-        parent_window = self.parent()
-        while parent_window and not hasattr(parent_window, 'file_table_view'):
-            parent_window = parent_window.parent()
-
-        if not parent_window or not hasattr(parent_window, 'file_table_view'):
-            logger.warning("[MetadataTree] Cannot find parent window with file_table_view")
-            return
-
-        # Get the current selected file
-        selection = parent_window.file_table_view.selectionModel()
-        if not selection or not selection.hasSelection():
-            return
-
-        selected_rows = selection.selectedRows()
-        if not selected_rows:
-            return
-
-        # Get the file model
-        file_model = parent_window.model
-        if not file_model:
-            return
-
-        # For each selected file, reset its metadata in cache
-        for index in selected_rows:
-            row = index.row()
-            if 0 <= row < len(file_model.files):
-                file_item = file_model.files[row]
-                full_path = file_item.full_path
-
-                # Check if we have the metadata cache
-                if not hasattr(parent_window, 'metadata_cache'):
-                    logger.warning("[MetadataTree] Cannot find metadata_cache in parent window")
-                    return
-
-                # Update the metadata in cache
-                metadata_entry = parent_window.metadata_cache.get_entry(full_path)
-                if metadata_entry and hasattr(metadata_entry, 'data'):
-                    # Get the raw metadata
-                    metadata = metadata_entry.data
-
-                    # Parse key path (e.g. "EXIF/Rotation" -> ["EXIF", "Rotation"])
-                    parts = key_path.split('/')
-
-                    # Reset the value in the metadata by removing it
-                    if len(parts) == 1:
-                        # Top-level key
-                        if parts[0] in metadata:
-                            metadata.pop(parts[0], None)
-                    elif len(parts) == 2:
-                        # Nested key (group/key)
-                        group, key = parts
-                        if group in metadata and isinstance(metadata[group], dict):
-                            if key in metadata[group]:
-                                metadata[group].pop(key, None)
-
-                    logger.debug(f"[MetadataTree] Reset metadata in cache for {full_path}: {key_path}")
-
-                    # Update file item metadata as well
-                    if hasattr(file_item, 'metadata') and file_item.metadata:
-                        if len(parts) == 1:
-                            if parts[0] in file_item.metadata:
-                                file_item.metadata.pop(parts[0], None)
-                        elif len(parts) == 2:
-                            group, key = parts
-                            if group in file_item.metadata and isinstance(file_item.metadata[group], dict):
-                                if key in file_item.metadata[group]:
-                                    file_item.metadata[group].pop(key, None)
-
-                    # Update file icon status based on remaining modified items
-                    if not self.modified_items:
-                        file_item.metadata_status = "loaded"
-                    else:
-                        file_item.metadata_status = "modified"
-
-                    # Force update of the icon in file table
-                    file_model.dataChanged.emit(
-                        file_model.index(row, 0),
-                        file_model.index(row, 0),
-                        [Qt.DecorationRole]
-                    )
-
     def mark_as_modified(self, key_path) -> None:
         """
         Marks an item as modified.
@@ -494,9 +484,14 @@ class MetadataTreeView(QTreeView):
         # Update the view
         self.viewport().update()
 
-    def _update_file_icon_status(self) -> None:
+    # =====================================
+    # Parent Window Helper Methods
+    # =====================================
+
+    def _get_parent_window_with_file_table(self):
         """
-        Updates the file icon in the file table to reflect modified status.
+        Helper method to find the parent window that contains the file_table_view.
+        Returns tuple: (parent_window, file_model, selection, selected_rows)
         """
         # Get parent window (MainWindow)
         parent_window = self.parent()
@@ -505,20 +500,35 @@ class MetadataTreeView(QTreeView):
 
         if not parent_window or not hasattr(parent_window, 'file_table_view'):
             logger.warning("[MetadataTree] Cannot find parent window with file_table_view")
-            return
+            return None, None, None, None
 
         # Get the current selected file
         selection = parent_window.file_table_view.selectionModel()
         if not selection or not selection.hasSelection():
-            return
+            return parent_window, None, None, None
 
         selected_rows = selection.selectedRows()
         if not selected_rows:
-            return
+            return parent_window, None, selection, None
 
         # Get the file model
-        file_model = parent_window.model
+        file_model = parent_window.file_model
         if not file_model:
+            return parent_window, None, selection, selected_rows
+
+        return parent_window, file_model, selection, selected_rows
+
+    # =====================================
+    # Metadata Cache Management
+    # =====================================
+
+    def _update_file_icon_status(self) -> None:
+        """
+        Updates the file icon in the file table to reflect modified status.
+        """
+        parent_window, file_model, selection, selected_rows = self._get_parent_window_with_file_table()
+
+        if not all([parent_window, file_model, selected_rows]):
             return
 
         # For each selected file, update its icon
@@ -542,33 +552,60 @@ class MetadataTreeView(QTreeView):
                     [Qt.DecorationRole]
                 )
 
+    def _reset_metadata_in_cache(self, key_path) -> None:
+        """
+        Resets the metadata value in the cache to its original state.
+        """
+        parent_window, file_model, selection, selected_rows = self._get_parent_window_with_file_table()
 
+        if not all([parent_window, file_model, selected_rows]):
+            return
+
+        # Check if we have the metadata cache
+        if not hasattr(parent_window, 'metadata_cache'):
+            logger.warning("[MetadataTree] Cannot find metadata_cache in parent window")
+            return
+
+        # For each selected file, reset its metadata in cache
+        for index in selected_rows:
+            row = index.row()
+            if 0 <= row < len(file_model.files):
+                file_item = file_model.files[row]
+                full_path = file_item.full_path
+
+                # Update the metadata in cache
+                metadata_entry = parent_window.metadata_cache.get_entry(full_path)
+                if metadata_entry and hasattr(metadata_entry, 'data'):
+                    self._remove_metadata_from_cache(metadata_entry.data, key_path)
+                    self._remove_metadata_from_file_item(file_item, key_path)
+
+                    logger.debug(f"[MetadataTree] Reset metadata in cache for {full_path}: {key_path}")
+
+                    # Update file icon status based on remaining modified items
+                    if not self.modified_items:
+                        file_item.metadata_status = "loaded"
+                    else:
+                        file_item.metadata_status = "modified"
+
+                    # Force update of the icon in file table
+                    file_model.dataChanged.emit(
+                        file_model.index(row, 0),
+                        file_model.index(row, 0),
+                        [Qt.DecorationRole]
+                    )
 
     def _update_metadata_in_cache(self, key_path, new_value) -> None:
         """
         Updates the metadata value in the cache to persist changes.
         """
-        # Get parent window (MainWindow)
-        parent_window = self.parent()
-        while parent_window and not hasattr(parent_window, 'file_table_view'):
-            parent_window = parent_window.parent()
+        parent_window, file_model, selection, selected_rows = self._get_parent_window_with_file_table()
 
-        if not parent_window or not hasattr(parent_window, 'file_table_view'):
-            logger.warning("[MetadataTree] Cannot find parent window with file_table_view")
+        if not all([parent_window, file_model, selected_rows]):
             return
 
-        # Get the current selected file
-        selection = parent_window.file_table_view.selectionModel()
-        if not selection or not selection.hasSelection():
-            return
-
-        selected_rows = selection.selectedRows()
-        if not selected_rows:
-            return
-
-        # Get the file model
-        file_model = parent_window.model
-        if not file_model:
+        # Check if we have the metadata cache
+        if not hasattr(parent_window, 'metadata_cache'):
+            logger.warning("[MetadataTree] Cannot find metadata_cache in parent window")
             return
 
         # For each selected file, update its metadata in cache
@@ -578,41 +615,11 @@ class MetadataTreeView(QTreeView):
                 file_item = file_model.files[row]
                 full_path = file_item.full_path
 
-                # Get metadata from cache
-                if not hasattr(parent_window, 'metadata_cache'):
-                    logger.warning("[MetadataTree] Cannot find metadata_cache in parent window")
-                    return
-
                 # Update the metadata in cache
                 metadata_entry = parent_window.metadata_cache.get_entry(full_path)
                 if metadata_entry and hasattr(metadata_entry, 'data'):
-                    # Get the raw metadata
-                    metadata = metadata_entry.data
-
-                    # Parse key path (e.g. "EXIF/Rotation" -> ["EXIF", "Rotation"])
-                    parts = key_path.split('/')
-
-                    # Update the value in the metadata
-                    if len(parts) == 1:
-                        # Top-level key
-                        metadata[parts[0]] = new_value
-                    elif len(parts) == 2:
-                        # Nested key (group/key)
-                        group, key = parts
-                        if group not in metadata:
-                            metadata[group] = {}
-                        elif not isinstance(metadata[group], dict):
-                            metadata[group] = {}
-                        metadata[group][key] = new_value
-
-                        # Check if this is replacing an existing "Other/Rotation" entry
-                        # If so, remove the other entry to avoid duplication
-                        if group == "EXIF" and key == "Rotation" and "Other" in metadata and isinstance(metadata["Other"], dict) and "Rotation" in metadata["Other"]:
-                            del metadata["Other"]["Rotation"]
-                            logger.debug("[MetadataTree] Removed duplicate Other/Rotation entry")
-                        elif group == "Other" and key == "Rotation" and "EXIF" in metadata and isinstance(metadata["EXIF"], dict) and "Rotation" in metadata["EXIF"]:
-                            del metadata["EXIF"]["Rotation"]
-                            logger.debug("[MetadataTree] Removed duplicate EXIF/Rotation entry")
+                    self._set_metadata_in_cache(metadata_entry.data, key_path, new_value)
+                    self._set_metadata_in_file_item(file_item, key_path, new_value)
 
                     logger.debug(f"[MetadataTree] Updated metadata in cache for {full_path}: {key_path}={new_value}")
 
@@ -626,28 +633,73 @@ class MetadataTreeView(QTreeView):
                         [Qt.DecorationRole]
                     )
 
-                    # Set the modified flag on the file item
-                    if hasattr(file_item, 'metadata') and file_item.metadata:
-                        # Update the actual file item metadata as well
-                        if len(parts) == 1:
-                            file_item.metadata[parts[0]] = new_value
-                        elif len(parts) == 2:
-                            group, key = parts
-                            if group not in file_item.metadata:
-                                file_item.metadata[group] = {}
-                            file_item.metadata[group][key] = new_value
+    def _remove_metadata_from_cache(self, metadata, key_path) -> None:
+        """Remove metadata entry from cache dictionary."""
+        parts = key_path.split('/')
+
+        if len(parts) == 1:
+            # Top-level key
+            metadata.pop(parts[0], None)
+        elif len(parts) == 2:
+            # Nested key (group/key)
+            group, key = parts
+            if group in metadata and isinstance(metadata[group], dict):
+                metadata[group].pop(key, None)
+
+    def _remove_metadata_from_file_item(self, file_item, key_path) -> None:
+        """Remove metadata entry from file item."""
+        if hasattr(file_item, 'metadata') and file_item.metadata:
+            self._remove_metadata_from_cache(file_item.metadata, key_path)
+
+    def _set_metadata_in_cache(self, metadata, key_path, new_value) -> None:
+        """Set metadata entry in cache dictionary."""
+        parts = key_path.split('/')
+
+        if len(parts) == 1:
+            # Top-level key
+            metadata[parts[0]] = new_value
+        elif len(parts) == 2:
+            # Nested key (group/key)
+            group, key = parts
+            if group not in metadata:
+                metadata[group] = {}
+            elif not isinstance(metadata[group], dict):
+                metadata[group] = {}
+            metadata[group][key] = new_value
+
+            # Handle duplicate rotation entries
+            self._handle_duplicate_rotation_entries(metadata, group, key)
+
+    def _set_metadata_in_file_item(self, file_item, key_path, new_value) -> None:
+        """Set metadata entry in file item."""
+        if hasattr(file_item, 'metadata') and file_item.metadata:
+            self._set_metadata_in_cache(file_item.metadata, key_path, new_value)
+
+    def _handle_duplicate_rotation_entries(self, metadata, group, key) -> None:
+        """Handle duplicate rotation entries between EXIF and Other groups."""
+        if key == "Rotation":
+            if group == "EXIF" and "Other" in metadata and isinstance(metadata["Other"], dict) and "Rotation" in metadata["Other"]:
+                del metadata["Other"]["Rotation"]
+                logger.debug("[MetadataTree] Removed duplicate Other/Rotation entry")
+            elif group == "Other" and "EXIF" in metadata and isinstance(metadata["EXIF"], dict) and "Rotation" in metadata["EXIF"]:
+                del metadata["EXIF"]["Rotation"]
+                logger.debug("[MetadataTree] Removed duplicate EXIF/Rotation entry")
+
+    # =====================================
+    # Scroll Override
+    # =====================================
 
     def scrollTo(self, index, hint=None) -> None:
         """
-        Override scrollTo to completely disable automatic scrolling in normal mode.
-        This prevents any scrolling when user changes selection in the metadata tree.
+        Override scrollTo to prevent automatic scrolling.
+        Scroll position is managed manually via the scroll position memory system.
         """
         if self._is_placeholder_mode:
             # In placeholder mode, use normal scrolling
             super().scrollTo(index, hint)
             return
 
-        # In normal mode, do nothing - no automatic scrolling at all
-        # The user can scroll manually using the scrollbars
+        # In normal mode, do nothing - scroll position is managed manually
+        # This prevents Qt from automatically scrolling when selections change
         return
 

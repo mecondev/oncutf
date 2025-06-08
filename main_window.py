@@ -1176,6 +1176,10 @@ class MainWindow(QMainWindow):
             if isinstance(metadata, dict) and metadata:
                 display_metadata = dict(metadata)
                 display_metadata["FileName"] = file_item.filename
+
+                # Set current file path for scroll position memory
+                self.metadata_tree_view.set_current_file_path(file_item.full_path)
+
                 self.display_metadata(display_metadata, context="check_selection_and_show_metadata")
                 return
 
@@ -1914,6 +1918,8 @@ class MainWindow(QMainWindow):
         """
         Clears the metadata tree view and shows a placeholder message.
         """
+        # Clear scroll position memory when clearing metadata view
+        self.metadata_tree_view.clear_scroll_memory()
         self.show_empty_metadata_tree("No file selected")
 
     def get_common_metadata_fields(self) -> list[str]:

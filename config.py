@@ -120,6 +120,19 @@ FILE_TABLE_COLUMN_WIDTHS = {
 }
 
 # ----------------------------
+# Metadata Tree View Settings
+# ----------------------------
+METADATA_TREE_COLUMN_WIDTHS = {
+    "PLACEHOLDER_KEY_WIDTH": 100,
+    "PLACEHOLDER_VALUE_WIDTH": 250,
+    "NORMAL_KEY_INITIAL_WIDTH": 180,
+    "NORMAL_VALUE_INITIAL_WIDTH": 500,
+    "KEY_MIN_WIDTH": 80,
+    "KEY_MAX_WIDTH": 800,
+    "VALUE_MIN_WIDTH": 250
+}
+
+# ----------------------------
 # Theme Colors (Dark Theme)
 # ----------------------------
 THEME_COLORS = {
