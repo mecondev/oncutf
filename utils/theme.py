@@ -11,38 +11,15 @@ Date: 2025-05-21
 """
 
 import os
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
 
-from config import THEME_NAME
+from config import THEME_COLORS, THEME_NAME
 
 # Initialize Logger
 from utils.logger_helper import get_logger
 
 logger = get_logger(__name__)
 
-# Theme color definitions
-THEME_COLORS = {
-    "dark": {
-        # Table/Tree view colors (matching HoverItemDelegate)
-        "hover": "#3e5c76",
-        "selected": "#748cab",
-        "selected_hover": "#8a9bb4",
-        "text": "#f0ebd8",
-        "text_selected": "#0d1321",
-        "alternate_row": "#232323",
-        "background": "#181818"
-    },
-    "light": {
-        # Future light theme colors
-        "hover": "#d4e4f7",
-        "selected": "#a8c5e8",
-        "selected_hover": "#c2d9f2",
-        "text": "#333333",
-        "text_selected": "#000000",
-        "alternate_row": "#f8f8f8",
-        "background": "#ffffff"
-    }
-}
 
 def load_stylesheet() -> str:
     """

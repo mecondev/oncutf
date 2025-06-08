@@ -681,7 +681,7 @@ class MainWindow(QMainWindow):
         with wait_cursor():
             selection_model = self.file_table_view.selectionModel()
             current_selected = set(idx.row() for idx in selection_model.selectedRows())
-            total = len(self.file_model.files)
+
             # Uncheck all selected, check all unselected
             for row, file in enumerate(self.file_model.files):
                 file.checked = row not in current_selected
@@ -949,8 +949,6 @@ class MainWindow(QMainWindow):
         file_items = self.get_file_items_from_folder(folder_path)
 
         if not file_items:
-            short_name = os.path.basename(folder_path.rstrip("/\\"))
-            # self.show_file_table_placeholder(f"No supported files in '{short_name}'")
             self.clear_metadata_view()
             self.header.setEnabled(False)
             self.set_status("No supported files found.", color="orange", auto_reset=True)

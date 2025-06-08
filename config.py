@@ -159,16 +159,3 @@ THEME_COLORS = {
     }
 }
 
-def get_theme_color(color_key: str, theme: str = None) -> str:
-    """
-    Get a color from the current theme.
-
-    Args:
-        color_key: The color key (e.g., 'hover', 'selected')
-        theme: Theme name (defaults to THEME_NAME)
-
-    Returns:
-        The color hex string
-    """
-    actual_theme = theme if theme is not None else THEME_NAME
-    return THEME_COLORS.get(actual_theme, {}).get(color_key, "#ffffff")
