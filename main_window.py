@@ -270,8 +270,8 @@ class MainWindow(QMainWindow):
         # Configure the first column (filename) to allow horizontal scrolling
         header = self.folder_tree.header()
         if header:
-            # Set initial column width to fill most of the panel width (increased from 200)
-            initial_column_width = 220  # Start with 220px width to better fit larger panel
+            # Set initial column width to fill most of the panel width
+            initial_column_width = 200  # Start with 200px width
             self.folder_tree.setColumnWidth(0, initial_column_width)
             # Set the first column to ResizeToContents mode to show full text
             header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
@@ -284,8 +284,8 @@ class MainWindow(QMainWindow):
         root = "" if platform.system() == "Windows" else "/"
         self.folder_tree.setRootIndex(self.dir_model.index(root))
 
-        # Set minimum size for left panel and add to splitter (increased from 230)
-        self.left_frame.setMinimumWidth(250)
+        # Set minimum size for left panel and add to splitter
+        self.left_frame.setMinimumWidth(230)
         self.horizontal_splitter.addWidget(self.left_frame)
 
     def setup_center_panel(self) -> None:
@@ -339,17 +339,14 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(2, QHeaderView.Interactive)
         self.file_table_view.setColumnWidth(2, col2_min)
 
-        # Column 3: Extension (type column) - using config value with minimum width enforcement
+        # Column 3: Extension (type column)
         header.setSectionResizeMode(3, QHeaderView.Interactive)
-        # Calculate minimum width based on content "jpeg" + some padding
-        ext_min_width = self.fontMetrics().horizontalAdvance("jpeg") + 20
-        # Use the larger of config value or calculated minimum
-        ext_width = max(FILE_TABLE_COLUMN_WIDTHS["EXTENSION_COLUMN"], ext_min_width)
-        self.file_table_view.setColumnWidth(3, ext_width)
+        self.file_table_view.setColumnWidth(3, 60)
 
-        # Column 4: Modified date - using config value
-        header.setSectionResizeMode(4, QHeaderView.Stretch)
-        self.file_table_view.setColumnWidth(4, FILE_TABLE_COLUMN_WIDTHS["DATE_COLUMN"])
+        # Column 4: Modified date - Interactive mode with minimum width for datetime
+        datetime_min_width = self.fontMetrics().horizontalAdvance("2024-12-30 15:45:30") + 20
+        header.setSectionResizeMode(4, QHeaderView.Interactive)
+        self.file_table_view.setColumnWidth(4, max(140, datetime_min_width))
         # Per-section min/max width is not supported in PyQt5
 
         # Show placeholder after setup is complete
@@ -2613,6 +2610,29 @@ class MainWindow(QMainWindow):
                     header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
 
                     logger.debug(f"[HorizontalSplitter] Adjusted tree view column width to {available_width}px for panel width {left_panel_width}px")
+
+        # Manual stretch logic for datetime column (column 4) in file table
+        # Since we changed it from Stretch to Interactive mode, we need to handle stretching manually
+        center_panel_width = sizes[1]  # Center panel width
+        if center_panel_width > 0:
+            # Calculate minimum width for datetime
+            datetime_min_width = self.fontMetrics().horizontalAdvance("2024-12-30 15:45:30") + 20
+
+            # Get current widths of other columns
+            col0_width = self.file_table_view.columnWidth(0)  # Status column
+            col1_width = self.file_table_view.columnWidth(1)  # Filename column
+            col2_width = self.file_table_view.columnWidth(2)  # Filesize column
+            col3_width = self.file_table_view.columnWidth(3)  # Extension column
+
+            # Calculate available width for datetime column (leaving margin for scrollbars)
+            used_width = col0_width + col1_width + col2_width + col3_width
+            available_for_datetime = center_panel_width - used_width - 40  # 40px margin for scrollbars
+
+            # Set datetime column width to maximum of minimum required or available space
+            datetime_width = max(datetime_min_width, available_for_datetime)
+            if datetime_width != self.file_table_view.columnWidth(4):
+                self.file_table_view.setColumnWidth(4, datetime_width)
+                logger.debug(f"[HorizontalSplitter] Adjusted datetime column width to {datetime_width}px (min: {datetime_min_width}px, available: {available_for_datetime}px)")
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement for debugging optimal sizes"""
