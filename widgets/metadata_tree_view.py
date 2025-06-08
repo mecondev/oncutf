@@ -126,7 +126,7 @@ class MetadataTreeView(QTreeView):
         # Force additional cleanup through timer
         QTimer.singleShot(0, self._complete_drag_cleanup)
 
-    def _complete_drag_cleanup(self):
+    def _complete_drag_cleanup(self) -> None:
         """
         Additional cleanup method called after drop operation to ensure
         all drag state is completely reset.
@@ -143,7 +143,7 @@ class MetadataTreeView(QTreeView):
         if hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
             self.viewport().update()
 
-    def setModel(self, model):
+    def setModel(self, model) -> None:
         """
         Override the setModel method to set minimum column widths after the model is set.
         """
@@ -224,7 +224,7 @@ class MetadataTreeView(QTreeView):
 
                 # No additional setup needed since scrollTo is disabled
 
-    def show_context_menu(self, position):
+    def show_context_menu(self, position) -> None:
         """
         Displays context menu with available options depending on the selected item.
         """
@@ -267,7 +267,7 @@ class MetadataTreeView(QTreeView):
         # Show menu
         menu.exec_(self.viewport().mapToGlobal(position))
 
-    def get_key_path(self, index):
+    def get_key_path(self, index) -> str:
         """
         Returns the full key path for the given index.
         For example: "EXIF/DateTimeOriginal" or "XMP/Creator"
@@ -290,7 +290,7 @@ class MetadataTreeView(QTreeView):
 
         return item_text
 
-    def copy_value(self, value):
+    def copy_value(self, value) -> None:
         """
         Copies the value to clipboard and emits the value_copied signal.
         """
@@ -305,7 +305,7 @@ class MetadataTreeView(QTreeView):
         self.value_copied.emit(str(value))
         logger.debug(f"[MetadataTree] Copied value: {value}")
 
-    def edit_value(self, key_path, current_value):
+    def edit_value(self, key_path, current_value) -> None:
         """
         Opens a dialog to edit the value of a metadata field.
         """
@@ -337,7 +337,7 @@ class MetadataTreeView(QTreeView):
             # Find the item in the tree and update its value
             self._update_tree_item_value(key_path, new_value)
 
-    def _update_tree_item_value(self, key_path, new_value):
+    def _update_tree_item_value(self, key_path, new_value) -> None:
         """
         Updates the value of an item in the tree view.
         """
@@ -374,7 +374,7 @@ class MetadataTreeView(QTreeView):
                             model.dataChanged.emit(value_index, value_index)
                             return
 
-    def reset_value(self, key_path):
+    def reset_value(self, key_path) -> None:
         """
         Resets the value to its original state.
         """
@@ -396,7 +396,7 @@ class MetadataTreeView(QTreeView):
         # Emit signal
         self.value_reset.emit(key_path)
 
-    def _reset_metadata_in_cache(self, key_path):
+    def _reset_metadata_in_cache(self, key_path) -> None:
         """
         Resets the metadata value in the cache to its original state.
         """
@@ -482,7 +482,7 @@ class MetadataTreeView(QTreeView):
                         [Qt.DecorationRole]
                     )
 
-    def mark_as_modified(self, key_path):
+    def mark_as_modified(self, key_path) -> None:
         """
         Marks an item as modified.
         """
@@ -494,7 +494,7 @@ class MetadataTreeView(QTreeView):
         # Update the view
         self.viewport().update()
 
-    def _update_file_icon_status(self):
+    def _update_file_icon_status(self) -> None:
         """
         Updates the file icon in the file table to reflect modified status.
         """
@@ -544,7 +544,7 @@ class MetadataTreeView(QTreeView):
 
 
 
-    def _update_metadata_in_cache(self, key_path, new_value):
+    def _update_metadata_in_cache(self, key_path, new_value) -> None:
         """
         Updates the metadata value in the cache to persist changes.
         """
@@ -637,7 +637,7 @@ class MetadataTreeView(QTreeView):
                                 file_item.metadata[group] = {}
                             file_item.metadata[group][key] = new_value
 
-    def scrollTo(self, index, hint=None):
+    def scrollTo(self, index, hint=None) -> None:
         """
         Override scrollTo to completely disable automatic scrolling in normal mode.
         This prevents any scrolling when user changes selection in the metadata tree.

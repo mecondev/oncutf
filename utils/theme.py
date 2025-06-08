@@ -98,7 +98,7 @@ def get_current_theme_colors() -> Dict[str, str]:
     return THEME_COLORS.get(THEME_NAME, {})
 
 
-def get_qcolor(color_key: str, theme_name: str = None) -> Any:
+def get_qcolor(color_key: str, theme_name: Optional[str] = None) -> str:
     """
     Get a QColor object from theme colors.
 
