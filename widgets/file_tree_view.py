@@ -439,3 +439,20 @@ class FileTreeView(QTreeView):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
             logger.debug("[TreeView] Enter/Return key pressed, triggering folder_Selected.")
             self.folder_selected.emit()
+
+    def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
+        """
+        Callback for horizontal splitter movement to adjust column width dynamically.
+        This method is connected from the main window to handle splitter resizing.
+        """
+        # Force a scrollbar update when the splitter moves
+        self._force_scrollbar_update()
+        logger.debug(f"[FileTreeView] Horizontal splitter moved - triggering scrollbar update")
+
+    def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
+        """
+        Callback for vertical splitter movement for debugging.
+        This method is connected from the main window.
+        """
+        sizes = [pos, index]  # Basic info for debugging
+        logger.debug(f"[FileTreeView] Vertical splitter moved - Position: {pos}, Index: {index}")

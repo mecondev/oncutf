@@ -39,7 +39,7 @@ WINDOW_MIN_HEIGHT = 500
 
 # Splitter sizes
 TOP_BOTTOM_SPLIT_RATIO = [500, 300]
-LEFT_CENTER_RIGHT_SPLIT_RATIO = [250, 674, 250]
+LEFT_CENTER_RIGHT_SPLIT_RATIO = [250, 654, 250]
 # BOTTOM_MODULE_PREVIEW_RATIO = [450, 750]
 
 # Preview columns
@@ -115,8 +115,8 @@ FILE_TABLE_COLUMN_WIDTHS = {
     "STATUS_COLUMN": 23,     # Column 0: Status/info icon column
     "FILENAME_COLUMN": 330,  # Column 1: Filename column
     "FILESIZE_COLUMN": 80,   # Column 2: File size column
-    "EXTENSION_COLUMN": 60,  # Column 3: File extension column
-    "DATE_COLUMN": 100       # Column 4: Modified date column
+    "EXTENSION_COLUMN": 80,  # Column 3: File extension column (increased from 60)
+    "DATE_COLUMN": 120       # Column 4: Modified date column (increased from 100)
 }
 
 # ----------------------------

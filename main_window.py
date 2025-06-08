@@ -270,8 +270,8 @@ class MainWindow(QMainWindow):
         # Configure the first column (filename) to allow horizontal scrolling
         header = self.folder_tree.header()
         if header:
-            # Set initial column width to fill most of the panel width
-            initial_column_width = 200  # Start with 200px width
+            # Set initial column width to fill most of the panel width (increased from 200)
+            initial_column_width = 220  # Start with 220px width to better fit larger panel
             self.folder_tree.setColumnWidth(0, initial_column_width)
             # Set the first column to ResizeToContents mode to show full text
             header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
@@ -284,8 +284,8 @@ class MainWindow(QMainWindow):
         root = "" if platform.system() == "Windows" else "/"
         self.folder_tree.setRootIndex(self.dir_model.index(root))
 
-        # Set minimum size for left panel and add to splitter
-        self.left_frame.setMinimumWidth(230)
+        # Set minimum size for left panel and add to splitter (increased from 230)
+        self.left_frame.setMinimumWidth(250)
         self.horizontal_splitter.addWidget(self.left_frame)
 
     def setup_center_panel(self) -> None:
@@ -339,13 +339,17 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(2, QHeaderView.Interactive)
         self.file_table_view.setColumnWidth(2, col2_min)
 
-        # Column 3: Extension (type column)
+        # Column 3: Extension (type column) - using config value with minimum width enforcement
         header.setSectionResizeMode(3, QHeaderView.Interactive)
-        self.file_table_view.setColumnWidth(3, 60)
+        # Calculate minimum width based on content "jpeg" + some padding
+        ext_min_width = self.fontMetrics().horizontalAdvance("jpeg") + 20
+        # Use the larger of config value or calculated minimum
+        ext_width = max(FILE_TABLE_COLUMN_WIDTHS["EXTENSION_COLUMN"], ext_min_width)
+        self.file_table_view.setColumnWidth(3, ext_width)
 
-        # Column 4: Modified date
+        # Column 4: Modified date - using config value
         header.setSectionResizeMode(4, QHeaderView.Stretch)
-        self.file_table_view.setColumnWidth(4, 140)
+        self.file_table_view.setColumnWidth(4, FILE_TABLE_COLUMN_WIDTHS["DATE_COLUMN"])
         # Per-section min/max width is not supported in PyQt5
 
         # Show placeholder after setup is complete
@@ -547,6 +551,9 @@ class MainWindow(QMainWindow):
         self.horizontal_splitter.splitterMoved.connect(self.on_horizontal_splitter_moved)
         # Connect vertical splitter resize for debugging
         self.vertical_splitter.splitterMoved.connect(self.on_vertical_splitter_moved)
+        # Also connect tree view callbacks for better scrollbar handling
+        self.horizontal_splitter.splitterMoved.connect(self.folder_tree.on_horizontal_splitter_moved)
+        self.vertical_splitter.splitterMoved.connect(self.folder_tree.on_vertical_splitter_moved)
 
         self.file_table_view.clicked.connect(self.on_table_row_clicked)
         self.file_table_view.selection_changed.connect(self.update_preview_from_selection)
