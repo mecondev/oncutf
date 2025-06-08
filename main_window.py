@@ -330,12 +330,16 @@ class MainWindow(QMainWindow):
         header.setSectionResizeMode(0, QHeaderView.Fixed)
         self.file_table_view.setColumnWidth(0, 23)
 
-        # Column 1: Filename - calculate based on typical long filename
-        filename_sample = "Very_Long_Filename_With_Many_Details_2024_Final_Version.jpeg"
+        # Column 1: Filename - use config value primarily, with reasonable minimum
+        filename_sample = "Long_Filename_Example_2024.jpeg"  # Shorter, more realistic sample
         filename_min_width = self.fontMetrics().horizontalAdvance(filename_sample) + 30
-        filename_initial_width = max(350, filename_min_width)  # At least 350px (reduced from 400)
+        filename_config_width = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]  # From config.py
+        filename_initial_width = max(filename_config_width, filename_min_width, 200)  # At least 200px
         header.setSectionResizeMode(1, QHeaderView.Interactive)
         self.file_table_view.setColumnWidth(1, filename_initial_width)
+
+        # Debug logging for column widths
+        logger.debug(f"[ColumnSetup] Filename: config={filename_config_width}px, calculated_min={filename_min_width}px, final={filename_initial_width}px")
 
         # Column 2: Filesize - calculate based on largest size
         filesize_min_width = self.fontMetrics().horizontalAdvance("999 GB") + 30
@@ -360,6 +364,12 @@ class MainWindow(QMainWindow):
             3: max(50, extension_min_width),  # Minimum 50px for extension
             4: datetime_min_width
         }
+
+        # Debug: Log total column widths vs available space
+        total_column_width = 23 + filename_initial_width + filesize_min_width + max(60, extension_min_width) + max(140, datetime_min_width)
+        logger.debug(f"[ColumnSetup] Total column width: {total_column_width}px")
+        logger.debug(f"[ColumnSetup] Center panel minimum width: {self.center_frame.minimumWidth()}px")
+        logger.debug(f"[ColumnSetup] Window width: {WINDOW_WIDTH}px, Center ratio: {LEFT_CENTER_RIGHT_SPLIT_RATIO[1]}px")
 
         # Hide horizontal scrollbar when table is empty
         self._update_scrollbar_visibility()
@@ -2673,6 +2683,11 @@ class MainWindow(QMainWindow):
         """Update scrollbar visibility based on table content and vertical scrollbar state"""
         if not hasattr(self, 'file_table_view') or not hasattr(self, 'column_min_widths'):
             return
+
+        # Debug: Log current table dimensions
+        viewport_width = self.file_table_view.viewport().width()
+        total_columns_width = sum(self.file_table_view.columnWidth(i) for i in range(5))
+        logger.debug(f"[ScrollbarVisibility] Viewport width: {viewport_width}px, Total columns: {total_columns_width}px")
 
         # Check if table is empty (no model or no rows)
         is_empty = (self.file_table_view.model() is None or
