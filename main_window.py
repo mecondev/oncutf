@@ -267,19 +267,8 @@ class MainWindow(QMainWindow):
         for i in range(1, 4):
             self.folder_tree.hideColumn(i)
 
-        # Configure the first column (filename) to allow horizontal scrolling
-        header = self.folder_tree.header()
-        if header:
-            # Set initial column width to fill most of the panel width
-            initial_column_width = 200  # Start with 200px width
-            self.folder_tree.setColumnWidth(0, initial_column_width)
-            # Set the first column to ResizeToContents mode to show full text
-            header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-            # Set minimum section size to allow content to determine width
-            header.setMinimumSectionSize(50)
-            # Disable stretch last section to allow horizontal scrolling
-            header.setStretchLastSection(False)
-            logger.debug(f"[TreeView] Initial column width set to {initial_column_width}px")
+        # Header configuration is now handled by FileTreeView.configure_header_for_scrolling()
+        # when setModel() is called
 
         root = "" if platform.system() == "Windows" else "/"
         self.folder_tree.setRootIndex(self.dir_model.index(root))
@@ -2627,29 +2616,12 @@ class MainWindow(QMainWindow):
                     self.file_table_view.viewport().update(self.file_table_view.visualRect(idx))
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
-        """Handle horizontal splitter movement to dynamically adjust tree view column width"""
+        """Handle horizontal splitter movement to dynamically adjust layouts"""
         sizes = self.horizontal_splitter.sizes()
         logger.debug(f"[HorizontalSplitter] Moved - Position: {pos}, Index: {index}, Sizes: {sizes} (Left: {sizes[0]}px, Center: {sizes[1]}px, Right: {sizes[2]}px)")
 
-        # Only adjust if the left panel (index 0) is being resized
-        if index == 0:
-            # Get the new width of the left panel
-            left_panel_width = sizes[0]
-
-            # Adjust the tree view column width to fit the panel, leaving some margin for scrollbars
-            available_width = left_panel_width - 30  # Leave 30px margin for potential scrollbars
-
-            # Only adjust if the available width is reasonable
-            if available_width > 50:
-                header = self.folder_tree.header()
-                if header:
-                    # Temporarily switch to Fixed mode to set exact width
-                    header.setSectionResizeMode(0, QHeaderView.Fixed)
-                    self.folder_tree.setColumnWidth(0, available_width)
-                    # Switch back to ResizeToContents for normal operation
-                    header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-
-                    logger.debug(f"[HorizontalSplitter] Adjusted tree view column width to {available_width}px for panel width {left_panel_width}px")
+        # The tree view handles its own column width adjustment internally
+        # No need for specific tree view logic here
 
         # Manual stretch logic for file table columns - protect minimum widths
         center_panel_width = sizes[1]  # Center panel width
@@ -2741,7 +2713,7 @@ class MainWindow(QMainWindow):
         other_columns_width = col0_width + col2_width + col3_width + col4_width
 
         # Calculate ideal filename width to fit exactly in viewport with margin
-        ideal_filename_width = viewport_width - other_columns_width - 5  # 5px safety margin
+        ideal_filename_width = viewport_width - other_columns_width - 3  # 3px safety margin
 
         # Get current filename width
         current_filename_width = self.file_table_view.columnWidth(1)
