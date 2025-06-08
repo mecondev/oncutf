@@ -6,23 +6,32 @@
 QPushButton {
     background-color: #2a2a2a;
     color: #f0ebd8;
+    font-size: 9pt;
     border: none;
     border-radius: 8px;
     padding: 4px 12px;
 }
 
-/* Hover state */
+/* Hover state - match tree/table hover color */
 QPushButton:hover {
-    background-color: #4a6fa5;
+    background-color: #3e5c76;  /* Match tree/table hover color */
     color: #f0ebd8;
     border: none;
 }
 
-/* Pressed (active click) state */
+/* Pressed (active click) state - match tree/table selection color */
 QPushButton:pressed {
-    background-color: #748cab;
+    background-color: #748cab;  /* Match tree/table selection color */
     color: #0d1321;
     border: none;
+}
+
+/* Focus state - match selected+hover color */
+QPushButton:focus {
+    background-color: #8a9bb4;  /* Match tree/table selected+hover color */
+    color: #0d1321;  /* Dark text for light background */
+    border: none;
+    outline: none;
 }
 
 /* Disabled buttons */

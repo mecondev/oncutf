@@ -1,15 +1,18 @@
 QWidget {
     background-color: #212121;
     color: #f0ebd8;
+    font-size: 9pt;
 }
 
 QMainWindow {
     background-color: #212121;
+    font-size: 9pt;
 }
 
 QLabel {
     background-color: transparent !important;
     color: #f0ebd8;
+    font-size: 9pt;
     border: none !important;
     border-radius: 0px !important;
     padding: 2px;
@@ -67,32 +70,33 @@ QSplitter::handle {
 QMenu {
     background-color: #232323;
     color: #f0ebd8;
-    border: 1px solid #4a6fa5;
+    border: none;  /* Remove border */
     border-radius: 8px;
 }
 
 QMenu::item {
     background-color: transparent;
     color: #f0ebd8;
+    font-size: 9pt;
     padding: 6px 24px 6px 24px;
     border-radius: 6px;
     margin: 1px;
 }
 
 QMenu::item:hover {
-    background-color: #4a6fa5;
-    color: #ffffff;
+    background-color: #3e5c76;  /* Match tree/table hover color */
+    color: #f0ebd8;
     border-radius: 6px;
 }
 
 QMenu::item:selected {
-    background-color: #748cab;
+    background-color: #748cab;  /* Match tree/table selection color */
     color: #0d1321;
     border-radius: 6px;
 }
 
 QMenu::item:pressed {
-    background-color: #748cab;
+    background-color: #748cab;  /* Match tree/table selection color */
     color: #0d1321;
     border-radius: 6px;
 }

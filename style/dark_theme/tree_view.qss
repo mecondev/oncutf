@@ -1,6 +1,7 @@
 QTreeView {
     background-color: #181818;
     color: #f0ebd8;
+    font-size: 10pt;
     alternate-background-color: #232323;
     border: none;
     show-decoration-selected: 1;

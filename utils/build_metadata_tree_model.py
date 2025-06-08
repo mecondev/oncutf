@@ -70,7 +70,12 @@ def build_metadata_tree_model(metadata: dict) -> QStandardItemModel:
         group_item = QStandardItem(group_name)
         group_item.setEditable(False)
         group_item.setSelectable(False)
-        group_item.setFont(QFont("", weight=QFont.Bold))
+
+        # Set font with specific size and bold weight for cross-platform consistency
+        group_font = QFont()
+        group_font.setBold(True)
+        group_font.setPointSize(10)  # Explicit size for consistency across platforms
+        group_item.setFont(group_font)
 
         dummy_value_item = QStandardItem("")  # empty second column
         dummy_value_item.setSelectable(False)

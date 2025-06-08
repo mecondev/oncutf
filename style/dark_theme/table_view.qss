@@ -5,6 +5,7 @@
 QTableView, QTableWidget {
     background-color: #181818;
     color: #f0ebd8;
+    font-size: 9pt;
     alternate-background-color: #232323;
     gridline-color: transparent;
     border: none;
@@ -63,6 +64,7 @@ QTableWidget {
 QHeaderView::section {
     background-color: #181818;
     color: #f0ebd8;
+    font-size: 9pt;
     padding: 4px;
     border: none;
     border-radius: 8px;
