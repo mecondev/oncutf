@@ -325,28 +325,44 @@ class MainWindow(QMainWindow):
         header = self.file_table_view.horizontalHeader()
         self.file_table_view.verticalHeader().setDefaultSectionSize(22)  # Compact row height
 
-        header.setMinimumSectionSize(23)  # PyQt5: only global min width supported
+        # Calculate minimum widths for each column based on content
+        # Column 0: Status icon (fixed)
         header.setSectionResizeMode(0, QHeaderView.Fixed)
         self.file_table_view.setColumnWidth(0, 23)
 
-        # Column 1: Filename (wide, interactive)
+        # Column 1: Filename - calculate based on typical long filename
+        filename_sample = "Very_Long_Filename_With_Many_Details_2024_Final_Version.jpeg"
+        filename_min_width = self.fontMetrics().horizontalAdvance(filename_sample) + 30
+        filename_initial_width = max(350, filename_min_width)  # At least 350px (reduced from 400)
         header.setSectionResizeMode(1, QHeaderView.Interactive)
-        header.resizeSection(1, 290)
-        self.file_table_view.setColumnWidth(1, 290)
+        self.file_table_view.setColumnWidth(1, filename_initial_width)
 
-        # Column 2: Filesize (new column)
-        col2_min = self.fontMetrics().horizontalAdvance("999 GB") + 50
+        # Column 2: Filesize - calculate based on largest size
+        filesize_min_width = self.fontMetrics().horizontalAdvance("999 GB") + 30
         header.setSectionResizeMode(2, QHeaderView.Interactive)
-        self.file_table_view.setColumnWidth(2, col2_min)
+        self.file_table_view.setColumnWidth(2, filesize_min_width)
 
-        # Column 3: Extension (type column)
+        # Column 3: Extension - calculate based on longest extension
+        extension_min_width = self.fontMetrics().horizontalAdvance("jpeg") + 30
         header.setSectionResizeMode(3, QHeaderView.Interactive)
-        self.file_table_view.setColumnWidth(3, 60)
+        self.file_table_view.setColumnWidth(3, max(60, extension_min_width))
 
-        # Column 4: Modified date - Interactive mode with minimum width for datetime
+        # Column 4: Modified date - calculate based on datetime format
         datetime_min_width = self.fontMetrics().horizontalAdvance("2024-12-30 15:45:30") + 20
         header.setSectionResizeMode(4, QHeaderView.Interactive)
         self.file_table_view.setColumnWidth(4, max(140, datetime_min_width))
+
+        # Store minimum widths for use in splitter logic
+        self.column_min_widths = {
+            0: 23,
+            1: max(100, filename_min_width),  # Minimum 100px for filename
+            2: filesize_min_width,
+            3: max(50, extension_min_width),  # Minimum 50px for extension
+            4: datetime_min_width
+        }
+
+        # Hide horizontal scrollbar when table is empty
+        self._update_scrollbar_visibility()
         # Per-section min/max width is not supported in PyQt5
 
         # Show placeholder after setup is complete
@@ -961,6 +977,9 @@ class MainWindow(QMainWindow):
         # If we're coming from a rename operation and have active modules, regenerate preview
         if self.last_action == "rename":
             logger.debug("[PrepareTable] Post-rename detected, preview will be updated after checked state restore")
+
+        # Update scrollbar visibility after populating table
+        self._update_scrollbar_visibility()
 
     def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False, force: bool = False):
 
@@ -1887,6 +1906,9 @@ class MainWindow(QMainWindow):
         self.status_label.setText(message)
         self.update_files_label()
 
+        # Update scrollbar visibility after clearing table
+        self._update_scrollbar_visibility()
+
     def show_empty_metadata_tree(self, message: str = "No file selected") -> None:
         """
         Displays a placeholder message in the metadata tree view.
@@ -2611,33 +2633,90 @@ class MainWindow(QMainWindow):
 
                     logger.debug(f"[HorizontalSplitter] Adjusted tree view column width to {available_width}px for panel width {left_panel_width}px")
 
-        # Manual stretch logic for datetime column (column 4) in file table
-        # Since we changed it from Stretch to Interactive mode, we need to handle stretching manually
+        # Manual stretch logic for file table columns - protect minimum widths
         center_panel_width = sizes[1]  # Center panel width
-        if center_panel_width > 0:
-            # Calculate minimum width for datetime
-            datetime_min_width = self.fontMetrics().horizontalAdvance("2024-12-30 15:45:30") + 20
+        if center_panel_width > 0 and hasattr(self, 'column_min_widths'):
+            # Check each column and restore minimum width if needed
+            adjusted_columns = []
+            for col_index, min_width in self.column_min_widths.items():
+                current_width = self.file_table_view.columnWidth(col_index)
+                if current_width < min_width:
+                    self.file_table_view.setColumnWidth(col_index, min_width)
+                    adjusted_columns.append(f"Col{col_index}: {current_width}→{min_width}")
 
-            # Get current widths of other columns
-            col0_width = self.file_table_view.columnWidth(0)  # Status column
-            col1_width = self.file_table_view.columnWidth(1)  # Filename column
-            col2_width = self.file_table_view.columnWidth(2)  # Filesize column
-            col3_width = self.file_table_view.columnWidth(3)  # Extension column
+            if adjusted_columns:
+                logger.debug(f"[HorizontalSplitter] Restored minimum widths: {', '.join(adjusted_columns)}")
 
-            # Calculate available width for datetime column (leaving margin for scrollbars)
+            # Handle datetime column stretching (like before)
+            col0_width = self.file_table_view.columnWidth(0)
+            col1_width = self.file_table_view.columnWidth(1)
+            col2_width = self.file_table_view.columnWidth(2)
+            col3_width = self.file_table_view.columnWidth(3)
+
             used_width = col0_width + col1_width + col2_width + col3_width
             available_for_datetime = center_panel_width - used_width - 40  # 40px margin for scrollbars
 
-            # Set datetime column width to maximum of minimum required or available space
-            datetime_width = max(datetime_min_width, available_for_datetime)
+            datetime_width = max(self.column_min_widths[4], available_for_datetime)
             if datetime_width != self.file_table_view.columnWidth(4):
                 self.file_table_view.setColumnWidth(4, datetime_width)
-                logger.debug(f"[HorizontalSplitter] Adjusted datetime column width to {datetime_width}px (min: {datetime_min_width}px, available: {available_for_datetime}px)")
+                logger.debug(f"[HorizontalSplitter] Adjusted datetime column width to {datetime_width}px (min: {self.column_min_widths[4]}px, available: {available_for_datetime}px)")
+
+            # Also check if vertical scrollbar status requires filename adjustment
+            self._update_scrollbar_visibility()
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement for debugging optimal sizes"""
         sizes = self.vertical_splitter.sizes()
         logger.debug(f"[VerticalSplitter] Moved - Position: {pos}, Index: {index}, Sizes: {sizes} (Top: {sizes[0]}px, Bottom: {sizes[1]}px)")
+
+    def _update_scrollbar_visibility(self) -> None:
+        """Update scrollbar visibility based on table content and vertical scrollbar state"""
+        if not hasattr(self, 'file_table_view') or not hasattr(self, 'column_min_widths'):
+            return
+
+        # Check if table is empty
+        is_empty = self.file_table_view.model() is None or self.file_table_view.model().rowCount() == 0
+
+        if is_empty:
+            # Hide horizontal scrollbar when table is empty
+            self.file_table_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            logger.debug("[ScrollbarVisibility] Hiding horizontal scrollbar - table is empty")
+        else:
+            # Show horizontal scrollbar when needed
+            self.file_table_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+            # Check if vertical scrollbar is visible and adjust filename column accordingly
+            v_scrollbar_visible = self.file_table_view.verticalScrollBar().isVisible()
+            if v_scrollbar_visible:
+                self._adjust_filename_for_vertical_scrollbar()
+                logger.debug("[ScrollbarVisibility] Vertical scrollbar is visible - adjusting filename column")
+
+    def _adjust_filename_for_vertical_scrollbar(self) -> None:
+        """Reduce filename column width when vertical scrollbar appears to prevent horizontal scrollbar"""
+        if not hasattr(self, 'column_min_widths'):
+            return
+
+        # Get current viewport width
+        viewport_width = self.file_table_view.viewport().width()
+
+        # Calculate total width of other columns
+        col0_width = self.file_table_view.columnWidth(0)
+        col2_width = self.file_table_view.columnWidth(2)
+        col3_width = self.file_table_view.columnWidth(3)
+        col4_width = self.file_table_view.columnWidth(4)
+
+        other_columns_width = col0_width + col2_width + col3_width + col4_width
+
+        # Calculate available width for filename column (leaving margin)
+        available_for_filename = viewport_width - other_columns_width - 20  # 20px margin
+
+        # Use minimum of current width or available width, but not less than minimum
+        current_filename_width = self.file_table_view.columnWidth(1)
+        new_filename_width = max(self.column_min_widths[1], min(current_filename_width, available_for_filename))
+
+        if new_filename_width != current_filename_width:
+            self.file_table_view.setColumnWidth(1, new_filename_width)
+            logger.debug(f"[ScrollbarVisibility] Adjusted filename column: {current_filename_width}→{new_filename_width}px to prevent horizontal scrollbar")
 
     def show_metadata_status(self) -> None:
         """

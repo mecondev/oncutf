@@ -16,6 +16,7 @@ from PyQt5.QtGui import QDrag, QKeyEvent, QMouseEvent
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QApplication,
+    QHeaderView,
     QTreeView,
 )
 
@@ -119,9 +120,28 @@ class FileTreeView(QTreeView):
         # Debug logging for scrollbar behavior
         logger.debug("[FileTreeView] Initialized with horizontal scrollbar support")
 
+        # Ensure rows fill the full width to avoid gaps in alternate row colors
+        self.setAlternatingRowColors(True)
+
     def resizeEvent(self, event):
         """Override to log scrollbar visibility and content dimensions"""
         super().resizeEvent(event)
+
+        # Ensure column fills available width to prevent gaps in alternate row colors
+        viewport_width = self.viewport().width()
+        current_column_width = self.columnWidth(0)
+
+        # If viewport is wider than current column, expand column to fill (but only if reasonable)
+        if viewport_width > current_column_width and viewport_width < current_column_width * 1.5:
+            header = self.header()
+            if header:
+                # Temporarily switch to Fixed mode to set width
+                header.setSectionResizeMode(0, QHeaderView.Fixed)
+                self.setColumnWidth(0, viewport_width - 5)  # Leave small margin
+                # Switch back to ResizeToContents for normal operation
+                header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+                logger.debug(f"[FileTreeView] Expanded column to fill viewport: {viewport_width - 5}px")
+
         # Simplified logging - only log when something significant changes
         v_scrollbar_visible = self.verticalScrollBar().isVisible()
         h_scrollbar_visible = self.horizontalScrollBar().isVisible()
@@ -447,6 +467,17 @@ class FileTreeView(QTreeView):
         """
         # Force a scrollbar update when the splitter moves
         self._force_scrollbar_update()
+
+        # Also ensure column width fills the new viewport size
+        viewport_width = self.viewport().width()
+        if viewport_width > 50:  # Only if reasonable width
+            header = self.header()
+            if header:
+                # Temporarily adjust column width to fit new panel size
+                header.setSectionResizeMode(0, QHeaderView.Fixed)
+                self.setColumnWidth(0, max(200, viewport_width - 5))  # At least 200px
+                header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+
         logger.debug(f"[FileTreeView] Horizontal splitter moved - triggering scrollbar update")
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
