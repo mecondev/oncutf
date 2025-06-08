@@ -314,55 +314,8 @@ class MainWindow(QMainWindow):
         header = self.file_table_view.horizontalHeader()
         self.file_table_view.verticalHeader().setDefaultSectionSize(22)  # Compact row height
 
-        # Calculate minimum widths for each column based on content
-        # Column 0: Status icon (fixed)
-        header.setSectionResizeMode(0, QHeaderView.Fixed)
-        self.file_table_view.setColumnWidth(0, 23)
-
-        # Column 1: Filename - use config value primarily, with reasonable minimum
-        filename_sample = "Long_Filename_Example_2024.jpeg"  # Shorter, more realistic sample
-        filename_min_width = self.fontMetrics().horizontalAdvance(filename_sample) + 30
-        filename_config_width = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]  # From config.py
-        filename_initial_width = max(filename_config_width, filename_min_width, 200)  # At least 200px
-        header.setSectionResizeMode(1, QHeaderView.Interactive)
-        self.file_table_view.setColumnWidth(1, filename_initial_width)
-
-        # Debug logging for column widths
-        logger.debug(f"[ColumnSetup] Filename: config={filename_config_width}px, calculated_min={filename_min_width}px, final={filename_initial_width}px")
-
-        # Column 2: Filesize - calculate based on largest size
-        filesize_min_width = self.fontMetrics().horizontalAdvance("999 GB") + 30
-        header.setSectionResizeMode(2, QHeaderView.Interactive)
-        self.file_table_view.setColumnWidth(2, filesize_min_width)
-
-        # Column 3: Extension - calculate based on longest extension
-        extension_min_width = self.fontMetrics().horizontalAdvance("jpeg") + 30
-        header.setSectionResizeMode(3, QHeaderView.Interactive)
-        self.file_table_view.setColumnWidth(3, max(60, extension_min_width))
-
-        # Column 4: Modified date - calculate based on datetime format
-        datetime_min_width = self.fontMetrics().horizontalAdvance("2024-12-30 15:45:30") + 20
-        header.setSectionResizeMode(4, QHeaderView.Interactive)
-        self.file_table_view.setColumnWidth(4, max(140, datetime_min_width))
-
-        # Store minimum widths for use in splitter logic
-        self.column_min_widths = {
-            0: 23,
-            1: max(100, filename_min_width),  # Minimum 100px for filename
-            2: filesize_min_width,
-            3: max(50, extension_min_width),  # Minimum 50px for extension
-            4: datetime_min_width
-        }
-
-        # Debug: Log total column widths vs available space
-        total_column_width = 23 + filename_initial_width + filesize_min_width + max(60, extension_min_width) + max(140, datetime_min_width)
-        logger.debug(f"[ColumnSetup] Total column width: {total_column_width}px")
-        logger.debug(f"[ColumnSetup] Center panel minimum width: {self.center_frame.minimumWidth()}px")
-        logger.debug(f"[ColumnSetup] Window width: {WINDOW_WIDTH}px, Center ratio: {LEFT_CENTER_RIGHT_SPLIT_RATIO[1]}px")
-
-        # Hide horizontal scrollbar when table is empty
-        self._update_scrollbar_visibility()
-        # Per-section min/max width is not supported in PyQt5
+        # Column configuration is now handled by FileTableView._configure_columns()
+        # when setModel() is called
 
         # Show placeholder after setup is complete
         self.file_table_view.set_placeholder_visible(True)
@@ -563,9 +516,11 @@ class MainWindow(QMainWindow):
         self.horizontal_splitter.splitterMoved.connect(self.on_horizontal_splitter_moved)
         # Connect vertical splitter resize for debugging
         self.vertical_splitter.splitterMoved.connect(self.on_vertical_splitter_moved)
-        # Also connect tree view callbacks for better scrollbar handling
+        # Connect callbacks for both tree view and file table view
         self.horizontal_splitter.splitterMoved.connect(self.folder_tree.on_horizontal_splitter_moved)
         self.vertical_splitter.splitterMoved.connect(self.folder_tree.on_vertical_splitter_moved)
+        self.horizontal_splitter.splitterMoved.connect(self.file_table_view.on_horizontal_splitter_moved)
+        self.vertical_splitter.splitterMoved.connect(self.file_table_view.on_vertical_splitter_moved)
 
         self.file_table_view.clicked.connect(self.on_table_row_clicked)
         self.file_table_view.selection_changed.connect(self.update_preview_from_selection)
