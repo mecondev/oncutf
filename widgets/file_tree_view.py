@@ -117,46 +117,28 @@ class FileTreeView(QTreeView):
             app.installEventFilter(_drag_cancel_filter)
 
         # Debug logging for scrollbar behavior
-        logger.debug("[FileTreeView] Initialized with scrollbar policies: Vertical=ScrollBarAsNeeded, Horizontal=ScrollBarAsNeeded")
-        logger.debug(f"[FileTreeView] Text elide mode: {self.textElideMode()}")
+        logger.debug("[FileTreeView] Initialized with horizontal scrollbar support")
 
     def resizeEvent(self, event):
         """Override to log scrollbar visibility and content dimensions"""
         super().resizeEvent(event)
-
-        # Log viewport and content dimensions for debugging
-        viewport_size = self.viewport().size()
-        if hasattr(self, 'model') and self.model():
-            content_height = self.sizeHintForRow(0) * self.model().rowCount(self.rootIndex()) if self.model().rowCount(self.rootIndex()) > 0 else 0
-        else:
-            content_height = 0
-
+        # Simplified logging - only log when something significant changes
         v_scrollbar_visible = self.verticalScrollBar().isVisible()
         h_scrollbar_visible = self.horizontalScrollBar().isVisible()
 
-        logger.debug(f"[FileTreeView] Resize - Viewport: {viewport_size.width()}x{viewport_size.height()}, "
-                    f"Content height: {content_height}, "
-                    f"V-scrollbar visible: {v_scrollbar_visible}, H-scrollbar visible: {h_scrollbar_visible}")
+        if h_scrollbar_visible:
+            logger.debug(f"[FileTreeView] Horizontal scrollbar active - Viewport: {self.viewport().size()}")
 
     def setModel(self, model):
         """Override to add debug logging when model changes"""
         super().setModel(model)
         logger.debug(f"[FileTreeView] Model set: {type(model).__name__ if model else 'None'}")
-        if model:
-            # Connect to model signals to log when content changes
-            if hasattr(model, 'rowsInserted'):
-                model.rowsInserted.connect(self._on_model_changed)
-            if hasattr(model, 'rowsRemoved'):
-                model.rowsRemoved.connect(self._on_model_changed)
+        if model and hasattr(model, 'rowsInserted'):
+            model.rowsInserted.connect(self._on_model_changed)
 
     def _on_model_changed(self):
         """Log when model content changes"""
         if self.model():
-            row_count = self.model().rowCount(self.rootIndex())
-            logger.debug(f"[FileTreeView] Model content changed - Row count: {row_count}")
-            # Force a check of scrollbar visibility after model changes
-            QApplication.processEvents()
-            self._check_scrollbar_visibility()
             # Force scrollbar update by scheduling an update
             self._force_scrollbar_update()
 
