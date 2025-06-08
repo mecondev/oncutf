@@ -78,7 +78,7 @@ QMenu::item {
     background-color: transparent;
     color: #f0ebd8;
     font-size: 9pt;
-    padding: 6px 24px 6px 24px;
+    padding: 6px 16px 6px 16px;  /* More balanced padding for better icon spacing */
     border-radius: 6px;
     margin: 1px;
 }
@@ -104,6 +104,12 @@ QMenu::item:pressed {
 QMenu::item:disabled {
     color: #555555;
     background-color: transparent;
+}
+
+QMenu::separator {
+    background-color: #5a5a5a;  /* Brighter than default for better visibility */
+    height: 1px;
+    margin: 2px 8px;
 }
 
 QToolTip {

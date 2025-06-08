@@ -99,8 +99,14 @@ class FileTreeView(QTreeView):
         self.setDropIndicatorShown(True)
         # Enable horizontal scrollbar
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        # Disable wordwrap
-        self.setTextElideMode(Qt.ElideRight)
+        # Enable vertical scrollbar
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        # Allow horizontal scrolling for long folder names instead of eliding
+        self.setTextElideMode(Qt.ElideNone)
+        # Disable word wrapping to allow horizontal overflow
+        self.setWordWrap(False)
+        # Ensure uniform row heights for better scrolling behavior
+        self.setUniformRowHeights(True)
         self._drag_start_position = None
         self._dragging = False
 
@@ -109,6 +115,152 @@ class FileTreeView(QTreeView):
         if app:
             # Install the global event filter to catch all mouse/key events
             app.installEventFilter(_drag_cancel_filter)
+
+        # Debug logging for scrollbar behavior
+        logger.debug("[FileTreeView] Initialized with scrollbar policies: Vertical=ScrollBarAsNeeded, Horizontal=ScrollBarAsNeeded")
+        logger.debug(f"[FileTreeView] Text elide mode: {self.textElideMode()}")
+
+    def resizeEvent(self, event):
+        """Override to log scrollbar visibility and content dimensions"""
+        super().resizeEvent(event)
+
+        # Log viewport and content dimensions for debugging
+        viewport_size = self.viewport().size()
+        if hasattr(self, 'model') and self.model():
+            content_height = self.sizeHintForRow(0) * self.model().rowCount(self.rootIndex()) if self.model().rowCount(self.rootIndex()) > 0 else 0
+        else:
+            content_height = 0
+
+        v_scrollbar_visible = self.verticalScrollBar().isVisible()
+        h_scrollbar_visible = self.horizontalScrollBar().isVisible()
+
+        logger.debug(f"[FileTreeView] Resize - Viewport: {viewport_size.width()}x{viewport_size.height()}, "
+                    f"Content height: {content_height}, "
+                    f"V-scrollbar visible: {v_scrollbar_visible}, H-scrollbar visible: {h_scrollbar_visible}")
+
+    def setModel(self, model):
+        """Override to add debug logging when model changes"""
+        super().setModel(model)
+        logger.debug(f"[FileTreeView] Model set: {type(model).__name__ if model else 'None'}")
+        if model:
+            # Connect to model signals to log when content changes
+            if hasattr(model, 'rowsInserted'):
+                model.rowsInserted.connect(self._on_model_changed)
+            if hasattr(model, 'rowsRemoved'):
+                model.rowsRemoved.connect(self._on_model_changed)
+
+    def _on_model_changed(self):
+        """Log when model content changes"""
+        if self.model():
+            row_count = self.model().rowCount(self.rootIndex())
+            logger.debug(f"[FileTreeView] Model content changed - Row count: {row_count}")
+            # Force a check of scrollbar visibility after model changes
+            QApplication.processEvents()
+            self._check_scrollbar_visibility()
+            # Force scrollbar update by scheduling an update
+            self._force_scrollbar_update()
+
+    def _force_scrollbar_update(self):
+        """Force the tree view to update its scrollbars by triggering a layout update"""
+        # Force immediate update of scrollbars by triggering geometry updates
+        self.updateGeometry()
+        self.viewport().update()
+        # Schedule a delayed update to ensure scrollbars are properly shown
+        QTimer.singleShot(10, self._delayed_scrollbar_check)
+
+    def _delayed_scrollbar_check(self):
+        """Delayed check to ensure scrollbars are properly updated"""
+        self._check_scrollbar_visibility()
+        # If scrollbars are still not showing when they should, force a resize
+        v_scrollbar = self.verticalScrollBar()
+        h_scrollbar = self.horizontalScrollBar()
+
+        v_needed = v_scrollbar.maximum() > v_scrollbar.minimum()
+        h_needed = h_scrollbar.maximum() > h_scrollbar.minimum()
+        v_visible = v_scrollbar.isVisible()
+        h_visible = h_scrollbar.isVisible()
+
+        if (v_needed and not v_visible) or (h_needed and not h_visible):
+            logger.debug("[FileTreeView] Forcing layout refresh to show scrollbars")
+            # Force a minimal resize to trigger scrollbar update
+            current_size = self.size()
+            self.resize(current_size.width() - 1, current_size.height())
+            self.resize(current_size)
+            self.updateGeometry()
+            # Process events to ensure the resize takes effect
+            QApplication.processEvents()
+            self._check_scrollbar_visibility()
+
+    def _check_scrollbar_visibility(self):
+        """Helper method to check and log scrollbar visibility"""
+        v_scrollbar = self.verticalScrollBar()
+        h_scrollbar = self.horizontalScrollBar()
+
+        v_visible = v_scrollbar.isVisible()
+        h_visible = h_scrollbar.isVisible()
+        v_needed = v_scrollbar.maximum() > v_scrollbar.minimum()
+        h_needed = h_scrollbar.maximum() > h_scrollbar.minimum()
+
+        # Additional debug info for horizontal scrolling
+        viewport_width = self.viewport().width()
+        content_width = 0
+        max_text_width = 0
+        longest_name = ""
+
+        if self.model():
+            # Try to calculate the content width and check for long names
+            font_metrics = self.fontMetrics()
+            for i in range(self.model().rowCount(self.rootIndex())):
+                index = self.model().index(i, 0, self.rootIndex())
+                if index.isValid():
+                    rect = self.visualRect(index)
+                    item_width = rect.x() + rect.width()
+                    if item_width > content_width:
+                        content_width = item_width
+
+                    # Check actual text width
+                    text = self.model().data(index, 0)  # Qt.DisplayRole = 0
+                    if text:
+                        text_width = font_metrics.horizontalAdvance(str(text))
+                        if text_width > max_text_width:
+                            max_text_width = text_width
+                            longest_name = str(text)
+
+        logger.debug(f"[FileTreeView] Scrollbar status - V: visible={v_visible}, needed={v_needed} "
+                    f"(range: {v_scrollbar.minimum()}-{v_scrollbar.maximum()}), "
+                    f"H: visible={h_visible}, needed={h_needed} "
+                    f"(range: {h_scrollbar.minimum()}-{h_scrollbar.maximum()}), "
+                    f"Viewport width: {viewport_width}, Content width: {content_width}, "
+                    f"Max text width: {max_text_width}, Longest name: '{longest_name[:30]}{'...' if len(longest_name) > 30 else ''}'")
+
+        if v_needed and not v_visible:
+            logger.warning("[FileTreeView] Vertical scrollbar is needed but not visible!")
+        if h_needed and not h_visible:
+            logger.warning("[FileTreeView] Horizontal scrollbar is needed but not visible!")
+        elif max_text_width > viewport_width and not h_needed:
+            logger.warning(f"[FileTreeView] Text width ({max_text_width}px) exceeds viewport ({viewport_width}px) but horizontal scrollbar not needed!")
+            # Try to force horizontal scrollbar by adjusting the size hint
+            self._try_force_horizontal_scrollbar(max_text_width, viewport_width)
+
+    def _try_force_horizontal_scrollbar(self, required_width: int, viewport_width: int):
+        """Try to force horizontal scrollbar when text is too wide"""
+        logger.debug(f"[FileTreeView] Attempting to force horizontal scrollbar - required: {required_width}, available: {viewport_width}")
+
+        # Try setting a minimum size for the content
+        if hasattr(self, 'setMinimumWidth'):
+            # This might not work as expected, but let's try
+            pass
+
+        # Alternative: Try to trigger a relayout with different size hint
+        self.updateGeometry()
+        QApplication.processEvents()
+
+        # Check if it worked
+        h_scrollbar = self.horizontalScrollBar()
+        if h_scrollbar.maximum() > h_scrollbar.minimum():
+            logger.debug("[FileTreeView] Successfully triggered horizontal scrollbar")
+        else:
+            logger.debug("[FileTreeView] Failed to trigger horizontal scrollbar - may need different approach")
 
     def mousePressEvent(self, event):
         """Store initial position for drag detection"""

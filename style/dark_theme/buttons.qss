@@ -9,7 +9,7 @@ QPushButton {
     font-size: 9pt;
     border: none;
     border-radius: 8px;
-    padding: 4px 12px;
+    padding: 4px 8px 4px 16px;  /* More left padding to push icon away from text */
 }
 
 /* Hover state - match tree/table hover color */
@@ -19,19 +19,26 @@ QPushButton:hover {
     border: none;
 }
 
-/* Pressed (active click) state - match tree/table selection color */
+/* Pressed (active click) state - brightest color */
 QPushButton:pressed {
-    background-color: #748cab;  /* Match tree/table selection color */
+    background-color: #8a9bb4;  /* Brightest color - selected+hover from tree view */
     color: #0d1321;
     border: none;
 }
 
-/* Focus state - match selected+hover color */
+/* Focus state - dark color (hover) */
 QPushButton:focus {
-    background-color: #8a9bb4;  /* Match tree/table selected+hover color */
-    color: #0d1321;  /* Dark text for light background */
+    background-color: #3e5c76;  /* Dark color - hover */
+    color: #f0ebd8;
     border: none;
     outline: none;
+}
+
+/* Focus+Hover state - intermediate color */
+QPushButton:focus:hover {
+    background-color: #748cab;  /* Intermediate color - selection */
+    color: #0d1321;
+    border: none;
 }
 
 /* Disabled buttons */

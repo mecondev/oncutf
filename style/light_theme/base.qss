@@ -33,14 +33,19 @@ QComboBox:hover {
 }
 
 QComboBox:pressed {
-    background-color: #1976d2;  /* Match tree selection color */
+    background-color: #0d47a1;  /* Brightest color - selected+hover from tree view */
     color: #ffffff;
 }
 
 QComboBox:focus {
-    background-color: #1565c0;  /* Match tree selected+hover color */
-    color: #ffffff;  /* Light text for dark background */
+    background-color: #e3f2fd;  /* Dark color - hover */
+    color: #1976d2;
     outline: none;
+}
+
+QComboBox:focus:hover {
+    background-color: #1976d2;  /* Intermediate color - selection */
+    color: #ffffff;
 }
 
 /* Dropdown styling for light theme */
@@ -84,7 +89,7 @@ QPushButton {
     font-size: 9pt;
     border: none;  /* Remove border */
     border-radius: 8px;
-    padding: 8px 16px;
+    padding: 8px 12px 8px 20px;  /* More left padding to push icon away from text */
 }
 
 QPushButton:hover {
@@ -93,14 +98,19 @@ QPushButton:hover {
 }
 
 QPushButton:pressed {
-    background-color: #1976d2;  /* Match tree selection color */
+    background-color: #0d47a1;  /* Brightest color - selected+hover from tree view */
     color: #ffffff;
 }
 
 QPushButton:focus {
-    background-color: #1565c0;  /* Match tree selected+hover color */
-    color: #ffffff;  /* Light text for dark background */
+    background-color: #e3f2fd;  /* Dark color - hover */
+    color: #1976d2;
     outline: none;
+}
+
+QPushButton:focus:hover {
+    background-color: #1976d2;  /* Intermediate color - selection */
+    color: #ffffff;
 }
 
 /* Menu styling for light theme */
@@ -115,7 +125,7 @@ QMenu::item {
     background-color: transparent;
     color: #212121;
     font-size: 9pt;
-    padding: 6px 24px 6px 24px;
+    padding: 6px 16px 6px 16px;  /* More balanced padding for better icon spacing */
     border-radius: 6px;
     margin: 1px;
 }
@@ -143,6 +153,12 @@ QMenu::item:disabled {
     background-color: transparent;
 }
 
+QMenu::separator {
+    background-color: #cccccc;  /* Light gray for better visibility */
+    height: 1px;
+    margin: 2px 8px;
+}
+
 /* Tree View Styles */
 QTreeView {
     background-color: #ffffff;
@@ -165,6 +181,12 @@ QTreeView::item:hover {
 
 QTreeView::item:selected {
     background-color: #1976d2;
+    color: #ffffff;
+    border-radius: 6px;
+}
+
+QTreeView::item:selected:hover {
+    background-color: #0d47a1;  /* Brightest color - darker blue for selected+hover */
     color: #ffffff;
     border-radius: 6px;
 }

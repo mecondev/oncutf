@@ -13,14 +13,19 @@ QComboBox:hover {
 }
 
 QComboBox:pressed {
-    background-color: #748cab;  /* Match tree/table selection color */
+    background-color: #8a9bb4;  /* Brightest color - selected+hover from tree view */
     color: #0d1321;
 }
 
 QComboBox:focus {
-    background-color: #8a9bb4;  /* Match tree/table selected+hover color */
-    color: #0d1321;  /* Dark text for light background */
+    background-color: #3e5c76;  /* Dark color - hover */
+    color: #f0ebd8;
     outline: none;
+}
+
+QComboBox:focus:hover {
+    background-color: #748cab;  /* Intermediate color - selection */
+    color: #0d1321;
 }
 
 /* Fix για το right-click problem - εξασφαλίζει ότι θα γυρίσει στο normal state */
