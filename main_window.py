@@ -988,6 +988,9 @@ class MainWindow(QMainWindow):
         if self.last_action == "rename":
             logger.debug("[PrepareTable] Post-rename detected, preview will be updated after checked state restore")
 
+        # Reset filename column to initial width (clears any previous adjustments)
+        self._reset_filename_column_width()
+
         # Update scrollbar visibility after populating table
         self._update_scrollbar_visibility()
 
@@ -998,6 +1001,8 @@ class MainWindow(QMainWindow):
 
         if normalized_new == normalized_current and not force:
             logger.info(f"[FolderLoad] Ignored reload of already loaded folder: {normalized_new}")
+            # Even though we're not reloading, reset filename column in case it was adjusted
+            self._reset_filename_column_width()
             self.set_status("Folder already loaded.", color="gray", auto_reset=True)
             return
 
@@ -1916,6 +1921,9 @@ class MainWindow(QMainWindow):
         self.status_label.setText(message)
         self.update_files_label()
 
+        # Reset filename column to initial width (clears any previous adjustments)
+        self._reset_filename_column_width()
+
         # Update scrollbar visibility after clearing table
         self._update_scrollbar_visibility()
 
@@ -2702,38 +2710,72 @@ class MainWindow(QMainWindow):
             self.file_table_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
             logger.debug("[ScrollbarVisibility] Enabling horizontal scrollbar - table has content")
 
-            # Check if vertical scrollbar is visible and adjust filename column accordingly
-            v_scrollbar_visible = self.file_table_view.verticalScrollBar().isVisible()
-            if v_scrollbar_visible:
-                self._adjust_filename_for_vertical_scrollbar()
-                logger.debug("[ScrollbarVisibility] Vertical scrollbar is visible - adjusting filename column")
+        # Always check and adjust for vertical scrollbar, even when table is populated
+        # Use QTimer to ensure layout is complete before checking scrollbar visibility
+        QTimer.singleShot(50, self._check_and_adjust_for_vertical_scrollbar)
+
+    def _check_and_adjust_for_vertical_scrollbar(self) -> None:
+        """Check if vertical scrollbar is visible and adjust filename column to prevent horizontal scrollbar"""
+        if not hasattr(self, 'file_table_view') or not hasattr(self, 'column_min_widths'):
+            return
+
+        v_scrollbar_visible = self.file_table_view.verticalScrollBar().isVisible()
+        logger.debug(f"[ScrollbarCheck] Vertical scrollbar visible: {v_scrollbar_visible}")
+
+        if v_scrollbar_visible:
+            self._adjust_filename_for_vertical_scrollbar()
 
     def _adjust_filename_for_vertical_scrollbar(self) -> None:
         """Reduce filename column width when vertical scrollbar appears to prevent horizontal scrollbar"""
         if not hasattr(self, 'column_min_widths'):
             return
 
-        # Get current viewport width
+        # Get current viewport width (this accounts for vertical scrollbar)
         viewport_width = self.file_table_view.viewport().width()
 
-        # Calculate total width of other columns
+        # Calculate total width of other columns (excluding filename)
         col0_width = self.file_table_view.columnWidth(0)
         col2_width = self.file_table_view.columnWidth(2)
         col3_width = self.file_table_view.columnWidth(3)
         col4_width = self.file_table_view.columnWidth(4)
-
         other_columns_width = col0_width + col2_width + col3_width + col4_width
 
-        # Calculate available width for filename column (leaving margin)
-        available_for_filename = viewport_width - other_columns_width - 20  # 20px margin
+        # Calculate ideal filename width to fit exactly in viewport with margin
+        ideal_filename_width = viewport_width - other_columns_width - 5  # 5px safety margin
 
-        # Use minimum of current width or available width, but not less than minimum
+        # Get current filename width
         current_filename_width = self.file_table_view.columnWidth(1)
-        new_filename_width = max(self.column_min_widths[1], min(current_filename_width, available_for_filename))
 
-        if new_filename_width != current_filename_width:
-            self.file_table_view.setColumnWidth(1, new_filename_width)
-            logger.debug(f"[ScrollbarVisibility] Adjusted filename column: {current_filename_width}→{new_filename_width}px to prevent horizontal scrollbar")
+        # Only reduce width, never increase it (to prevent jumping)
+        if ideal_filename_width < current_filename_width:
+            # Ensure we don't go below minimum
+            new_filename_width = max(self.column_min_widths[1], ideal_filename_width)
+
+            if new_filename_width != current_filename_width:
+                self.file_table_view.setColumnWidth(1, new_filename_width)
+                logger.debug(f"[VerticalScrollbarAdjust] Reduced filename column: {current_filename_width}→{new_filename_width}px (viewport: {viewport_width}px, others: {other_columns_width}px)")
+        else:
+            logger.debug(f"[VerticalScrollbarAdjust] No adjustment needed - current: {current_filename_width}px, ideal: {ideal_filename_width}px")
+
+    def _reset_filename_column_width(self) -> None:
+        """Reset filename column to its initial configured width (clears previous adjustments)"""
+        if not hasattr(self, 'column_min_widths'):
+            logger.debug("[FilenameReset] Skipped - column_min_widths not available")
+            return
+
+        # Get initial filename width from config
+        config_width = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
+        min_width = self.column_min_widths[1]
+        initial_filename_width = max(config_width, min_width)
+        current_filename_width = self.file_table_view.columnWidth(1)
+
+        logger.debug(f"[FilenameReset] Config: {config_width}px, Min: {min_width}px, Target: {initial_filename_width}px, Current: {current_filename_width}px")
+
+        if current_filename_width != initial_filename_width:
+            self.file_table_view.setColumnWidth(1, initial_filename_width)
+            logger.debug(f"[FilenameReset] Reset filename column: {current_filename_width}→{initial_filename_width}px")
+        else:
+            logger.debug("[FilenameReset] No change needed - already at target width")
 
     def show_metadata_status(self) -> None:
         """

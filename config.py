@@ -113,7 +113,7 @@ TREE_EXPAND_MODE = "double"  # Επιλογές: "single" ή "double". Default: 
 # ----------------------------
 FILE_TABLE_COLUMN_WIDTHS = {
     "STATUS_COLUMN": 23,     # Column 0: Status/info icon column
-    "FILENAME_COLUMN": 280,  # Column 1: Filename column
+    "FILENAME_COLUMN": 345,  # Column 1: Filename column (set to 345px)
     "FILESIZE_COLUMN": 80,   # Column 2: File size column
     "EXTENSION_COLUMN": 60,  # Column 3: File extension column
     "DATE_COLUMN": 100       # Column 4: Modified date column
