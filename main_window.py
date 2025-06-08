@@ -2674,8 +2674,9 @@ class MainWindow(QMainWindow):
         if not hasattr(self, 'file_table_view') or not hasattr(self, 'column_min_widths'):
             return
 
-        # Check if table is empty
-        is_empty = self.file_table_view.model() is None or self.file_table_view.model().rowCount() == 0
+        # Check if table is empty (no model or no rows)
+        is_empty = (self.file_table_view.model() is None or
+                   self.file_table_view.model().rowCount() == 0)
 
         if is_empty:
             # Hide horizontal scrollbar when table is empty
@@ -2684,6 +2685,7 @@ class MainWindow(QMainWindow):
         else:
             # Show horizontal scrollbar when needed
             self.file_table_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            logger.debug("[ScrollbarVisibility] Enabling horizontal scrollbar - table has content")
 
             # Check if vertical scrollbar is visible and adjust filename column accordingly
             v_scrollbar_visible = self.file_table_view.verticalScrollBar().isVisible()
