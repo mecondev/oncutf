@@ -238,12 +238,12 @@ class MainWindow(QMainWindow):
             self.folder_tree.setExpandsOnDoubleClick(True)   # Double click expand
 
         btn_layout = QHBoxLayout()
-        self.select_folder_button = QPushButton("Select Folder")
+        self.select_folder_button = QPushButton("Select")
         self.select_folder_button.setIcon(get_menu_icon("folder"))
-        self.select_folder_button.setFixedWidth(120)
-        self.browse_folder_button = QPushButton("Browse Folders")
+        self.select_folder_button.setFixedWidth(100)
+        self.browse_folder_button = QPushButton("Browse")
         self.browse_folder_button.setIcon(get_menu_icon("folder-plus"))
-        self.browse_folder_button.setFixedWidth(120)
+        self.browse_folder_button.setFixedWidth(100)
         btn_layout.addWidget(self.select_folder_button)
         btn_layout.addWidget(self.browse_folder_button)
         left_layout.addLayout(btn_layout)
@@ -266,12 +266,16 @@ class MainWindow(QMainWindow):
         # Configure the first column (filename) to allow horizontal scrolling
         header = self.folder_tree.header()
         if header:
+            # Set initial column width to fill most of the panel width
+            initial_column_width = 200  # Start with 200px width
+            self.folder_tree.setColumnWidth(0, initial_column_width)
             # Set the first column to ResizeToContents mode to show full text
             header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
             # Set minimum section size to allow content to determine width
             header.setMinimumSectionSize(50)
             # Disable stretch last section to allow horizontal scrolling
             header.setStretchLastSection(False)
+            logger.debug(f"[TreeView] Initial column width set to {initial_column_width}px")
 
         root = "" if platform.system() == "Windows" else "/"
         self.folder_tree.setRootIndex(self.dir_model.index(root))
@@ -486,7 +490,7 @@ class MainWindow(QMainWindow):
         self.rename_button = QPushButton("Rename")
         self.rename_button.setIcon(get_menu_icon("edit"))
         self.rename_button.setEnabled(False)
-        self.rename_button.setFixedWidth(120)
+        self.rename_button.setFixedWidth(100)
         controls_layout.addWidget(self.rename_button)
         preview_layout.addLayout(controls_layout)
 
@@ -536,7 +540,9 @@ class MainWindow(QMainWindow):
         self.folder_tree.folder_selected.connect(self.handle_folder_select)
 
         # Connect splitter resize to adjust tree view column width
-        self.horizontal_splitter.splitterMoved.connect(self.on_splitter_moved)
+        self.horizontal_splitter.splitterMoved.connect(self.on_horizontal_splitter_moved)
+        # Connect vertical splitter resize for debugging
+        self.vertical_splitter.splitterMoved.connect(self.on_vertical_splitter_moved)
 
         self.file_table_view.clicked.connect(self.on_table_row_clicked)
         self.file_table_view.selection_changed.connect(self.update_preview_from_selection)
@@ -2572,12 +2578,15 @@ class MainWindow(QMainWindow):
                     idx = self.file_model.index(row, col)
                     self.file_table_view.viewport().update(self.file_table_view.visualRect(idx))
 
-    def on_splitter_moved(self, pos: int, index: int) -> None:
-        """Handle splitter movement to dynamically adjust tree view column width"""
+    def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
+        """Handle horizontal splitter movement to dynamically adjust tree view column width"""
+        sizes = self.horizontal_splitter.sizes()
+        logger.debug(f"[HorizontalSplitter] Moved - Position: {pos}, Index: {index}, Sizes: {sizes} (Left: {sizes[0]}px, Center: {sizes[1]}px, Right: {sizes[2]}px)")
+
         # Only adjust if the left panel (index 0) is being resized
         if index == 0:
             # Get the new width of the left panel
-            left_panel_width = self.horizontal_splitter.sizes()[0]
+            left_panel_width = sizes[0]
 
             # Adjust the tree view column width to fit the panel, leaving some margin for scrollbars
             available_width = left_panel_width - 30  # Leave 30px margin for potential scrollbars
@@ -2592,7 +2601,12 @@ class MainWindow(QMainWindow):
                     # Switch back to ResizeToContents for normal operation
                     header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
 
-                    logger.debug(f"[Splitter] Adjusted tree view column width to {available_width}px for panel width {left_panel_width}px")
+                    logger.debug(f"[HorizontalSplitter] Adjusted tree view column width to {available_width}px for panel width {left_panel_width}px")
+
+    def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
+        """Handle vertical splitter movement for debugging optimal sizes"""
+        sizes = self.vertical_splitter.sizes()
+        logger.debug(f"[VerticalSplitter] Moved - Position: {pos}, Index: {index}, Sizes: {sizes} (Top: {sizes[0]}px, Bottom: {sizes[1]}px)")
 
     def show_metadata_status(self) -> None:
         """
