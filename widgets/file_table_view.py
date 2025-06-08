@@ -4,17 +4,11 @@ file_table_view.py
 Author: Michael Economou
 Date: 2025-05-25
 
-This module defines the FileTableView class, a subclass of QTableView,
-that emulates the interactive behavior of the Windows File Explorer.
-
-Key features:
-- Full-row selection on click/keyboard/drag
-- Manual anchor index handling for Shift+Click/Shift+DoubleClick/Shift+RightClick
-- Hover highlight per row (including column 0)
-- Drag & drop export of file paths
-- Seamless integration with parent MainWindow for preview/metadata sync
-- Proper visual updates on hover/selection using manual viewport repaint
-- Intelligent column width management and scrollbar optimization
+Custom QTableView with Windows Explorer-like behavior:
+- Full-row selection with anchor handling
+- Intelligent column width management
+- Drag & drop support with custom MIME types
+- Hover highlighting and visual feedback
 '''
 from pathlib import Path
 from typing import Optional
@@ -47,70 +41,56 @@ class FileTableView(QTableView):
     files_dropped = pyqtSignal(list, object)  # Emitted with list of dropped paths and keyboard modifiers
 
     def __init__(self, parent=None) -> None:
-        """
-        Initializes the custom table view with full-row interaction logic.
-        Enables drag operations, QSS-based hover, and anchor-aware selection.
-        """
+        """Initialize the custom table view with Explorer-like behavior."""
         super().__init__(parent)
         self._manual_anchor_index: QModelIndex | None = None
         self._drag_start_pos: QPoint = QPoint()
+
+        # Configure table behavior
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.setDragEnabled(True)
         self.setDragDropMode(QAbstractItemView.DragDrop)
         self.setMouseTracking(True)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setAcceptDrops(True)
-        self.viewport().setAcceptDrops(True)  # Very important for drop functionality!
+        self.viewport().setAcceptDrops(True)
 
+        # Setup placeholder icon
         self.placeholder_label = QLabel(self.viewport())
         self.placeholder_label.setAlignment(Qt.AlignCenter)
         self.placeholder_label.setVisible(False)
 
-        # Load the placeholder icon
         icon_path = Path(__file__).parent.parent / "assets/File_Folder_Drag_Drop.png"
         self.placeholder_icon = QPixmap(str(icon_path))
 
-        # Safe usage only if it's OK
         if not self.placeholder_icon.isNull():
             scaled = self.placeholder_icon.scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.placeholder_label.setPixmap(scaled)
-            logger.debug(f"Successfully loaded placeholder icon from {icon_path}")
         else:
             logger.warning("Placeholder icon could not be loaded.")
 
-        # Selection state (custom selection model)
-        self.selected_rows: set[int] = set()  # Keeps track of currently selected rows
-        self.anchor_row: int | None = None    # Used for shift-click range selection
-
-        # Enable hover visuals via delegate (uses theme colors automatically)
-        self.hover_delegate = HoverItemDelegate(self)
-        self.setItemDelegate(self.hover_delegate)
-
-        # Used for right-click visual indication
+        # Selection and interaction state
+        self.selected_rows: set[int] = set()
+        self.anchor_row: int | None = None
         self.context_focused_row: int | None = None
-
-        # Column minimum widths storage for intelligent management
         self.column_min_widths: dict[int, int] = {}
 
-        logger.debug("[FileTableView] Initialized with intelligent column management", extra={"dev_only": True})
+        # Enable hover visuals
+        self.hover_delegate = HoverItemDelegate(self)
+        self.setItemDelegate(self.hover_delegate)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
         if self.placeholder_label:
             self.placeholder_label.resize(self.viewport().size())
             self.placeholder_label.move(0, 0)
-
-        # Delay adjustment to ensure layout is complete
         QTimer.singleShot(10, self._update_scrollbar_visibility)
 
     def setModel(self, model):
-        """Override to configure columns when model is set"""
+        """Configure columns when model is set."""
         super().setModel(model)
-        logger.debug(f"[FileTableView] Model set: {type(model).__name__ if model else 'None'}", extra={"dev_only": True})
-
-        # Configure columns when model is set
         if model:
-            self._configure_columns()
+            QTimer.singleShot(10, self._configure_columns)
             QTimer.singleShot(50, self._update_scrollbar_visibility)
 
     # =====================================
@@ -118,7 +98,7 @@ class FileTableView(QTableView):
     # =====================================
 
     def _configure_columns(self):
-        """Configure column settings and initial widths based on content and config"""
+        """Configure column settings and initial widths from config."""
         if not self.model():
             return
 
@@ -126,7 +106,7 @@ class FileTableView(QTableView):
         if not header:
             return
 
-        # Get parent window to access fontMetrics
+        # Find parent window with fontMetrics
         parent_window = self.parent()
         while parent_window and not hasattr(parent_window, 'fontMetrics'):
             parent_window = parent_window.parent()
@@ -135,209 +115,130 @@ class FileTableView(QTableView):
             logger.warning("[FileTableView] Cannot find parent window with fontMetrics")
             return
 
-        # Calculate minimum widths for each column based on content
-        # Column 0: Status icon (fixed) - use config value
-        status_config_width = FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"]
+        # Configure each column with config values and calculated minimums
+        status_width = FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"]
         header.setSectionResizeMode(0, QHeaderView.Fixed)
-        self.setColumnWidth(0, status_config_width)
+        self.setColumnWidth(0, status_width)
 
-        # Column 1: Filename - use config value primarily, with reasonable minimum
-        filename_sample = "Long_Filename_Example_2024.jpeg"  # Shorter, more realistic sample
-        filename_min_width = parent_window.fontMetrics().horizontalAdvance(filename_sample) + 30
-        filename_config_width = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]  # From config.py
-        filename_initial_width = max(filename_config_width, filename_min_width, 200)  # At least 200px
+        filename_min = parent_window.fontMetrics().horizontalAdvance("Long_Filename_Example_2024.jpeg") + 30
+        filename_width = max(FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"], filename_min, 200)
         header.setSectionResizeMode(1, QHeaderView.Interactive)
-        self.setColumnWidth(1, filename_initial_width)
+        self.setColumnWidth(1, filename_width)
 
-        # Column 2: Filesize - use config value with calculated minimum
-        filesize_min_width = parent_window.fontMetrics().horizontalAdvance("999 GB") + 30
-        filesize_config_width = FILE_TABLE_COLUMN_WIDTHS["FILESIZE_COLUMN"]
-        filesize_initial_width = max(filesize_config_width, filesize_min_width)
+        filesize_min = parent_window.fontMetrics().horizontalAdvance("999 GB") + 30
+        filesize_width = max(FILE_TABLE_COLUMN_WIDTHS["FILESIZE_COLUMN"], filesize_min)
         header.setSectionResizeMode(2, QHeaderView.Interactive)
-        self.setColumnWidth(2, filesize_initial_width)
+        self.setColumnWidth(2, filesize_width)
 
-        # Column 3: Extension - use config value with calculated minimum
-        extension_min_width = parent_window.fontMetrics().horizontalAdvance("jpeg") + 30
-        extension_config_width = FILE_TABLE_COLUMN_WIDTHS["EXTENSION_COLUMN"]
-        extension_initial_width = max(extension_config_width, extension_min_width)
+        extension_min = parent_window.fontMetrics().horizontalAdvance("jpeg") + 30
+        extension_width = max(FILE_TABLE_COLUMN_WIDTHS["EXTENSION_COLUMN"], extension_min)
         header.setSectionResizeMode(3, QHeaderView.Interactive)
-        self.setColumnWidth(3, extension_initial_width)
+        self.setColumnWidth(3, extension_width)
 
-        # Column 4: Modified date - use config value with calculated minimum
-        datetime_min_width = parent_window.fontMetrics().horizontalAdvance("2024-12-30 15:45:30") + 20
-        datetime_config_width = FILE_TABLE_COLUMN_WIDTHS["DATE_COLUMN"]
-        datetime_initial_width = max(datetime_config_width, datetime_min_width)
+        datetime_min = parent_window.fontMetrics().horizontalAdvance("2024-12-30 15:45:30") + 20
+        datetime_width = max(FILE_TABLE_COLUMN_WIDTHS["DATE_COLUMN"], datetime_min)
         header.setSectionResizeMode(4, QHeaderView.Interactive)
-        self.setColumnWidth(4, datetime_initial_width)
+        self.setColumnWidth(4, datetime_width)
 
-        # Store minimum widths for use in splitter logic
+        # Store minimum widths for splitter logic
         self.column_min_widths = {
-            0: status_config_width,
-            1: max(100, filename_min_width),  # Minimum 100px for filename
-            2: filesize_min_width,
-            3: extension_min_width,
-            4: datetime_min_width
+            0: status_width,
+            1: max(100, filename_min),
+            2: filesize_min,
+            3: extension_min,
+            4: datetime_min
         }
 
-        # Debug logging for all column widths
-        logger.debug(f"[ColumnSetup] Status: config={status_config_width}px, final={status_config_width}px")
-        logger.debug(f"[ColumnSetup] Filename: config={filename_config_width}px, calculated_min={filename_min_width}px, final={filename_initial_width}px")
-        logger.debug(f"[ColumnSetup] Filesize: config={filesize_config_width}px, calculated_min={filesize_min_width}px, final={filesize_initial_width}px")
-        logger.debug(f"[ColumnSetup] Extension: config={extension_config_width}px, calculated_min={extension_min_width}px, final={extension_initial_width}px")
-        logger.debug(f"[ColumnSetup] DateTime: config={datetime_config_width}px, calculated_min={datetime_min_width}px, final={datetime_initial_width}px")
-
-        # Debug: Log total column widths vs available space
-        total_column_width = status_config_width + filename_initial_width + filesize_initial_width + extension_initial_width + datetime_initial_width
-        logger.debug(f"[ColumnSetup] Total column width: {total_column_width}px")
-
-        logger.debug("[FileTableView] Columns configured with intelligent management", extra={"dev_only": True})
-
     def _update_scrollbar_visibility(self) -> None:
-        """Update scrollbar visibility based on table content and vertical scrollbar state"""
+        """Update scrollbar visibility based on table content."""
         if not self.model() or not self.column_min_widths:
             return
 
-        # Debug: Log current table dimensions
-        viewport_width = self.viewport().width()
-        total_columns_width = sum(self.columnWidth(i) for i in range(5))
-        logger.debug(f"[ScrollbarVisibility] Viewport width: {viewport_width}px, Total columns: {total_columns_width}px")
-
-        # Check if table is empty (no model or no rows)
         is_empty = (self.model() is None or self.model().rowCount() == 0)
 
         if is_empty:
-            # Hide horizontal scrollbar when table is empty
             self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            logger.debug("[ScrollbarVisibility] Hiding horizontal scrollbar - table is empty")
         else:
-            # Show horizontal scrollbar when needed
             self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-            logger.debug("[ScrollbarVisibility] Enabling horizontal scrollbar - table has content")
 
-        # Always check and adjust for vertical scrollbar, even when table is populated
-        # Use QTimer to ensure layout is complete before checking scrollbar visibility
         QTimer.singleShot(50, self._check_and_adjust_for_vertical_scrollbar)
 
     def _check_and_adjust_for_vertical_scrollbar(self) -> None:
-        """Check if vertical scrollbar is visible and adjust filename column to prevent horizontal scrollbar"""
+        """Adjust filename column if vertical scrollbar appears."""
         if not self.column_min_widths:
             return
 
-        v_scrollbar_visible = self.verticalScrollBar().isVisible()
-        logger.debug(f"[ScrollbarCheck] Vertical scrollbar visible: {v_scrollbar_visible}")
-
-        if v_scrollbar_visible:
+        if self.verticalScrollBar().isVisible():
             self._adjust_filename_for_vertical_scrollbar()
 
     def _adjust_filename_for_vertical_scrollbar(self) -> None:
-        """Reduce filename column width when vertical scrollbar appears to prevent horizontal scrollbar"""
+        """Reduce filename column width to prevent horizontal scrollbar."""
         if not self.column_min_widths:
             return
 
-        # Get current viewport width (this accounts for vertical scrollbar)
         viewport_width = self.viewport().width()
-
-        # Calculate total width of other columns (excluding filename)
-        col0_width = self.columnWidth(0)
-        col2_width = self.columnWidth(2)
-        col3_width = self.columnWidth(3)
-        col4_width = self.columnWidth(4)
-        other_columns_width = col0_width + col2_width + col3_width + col4_width
-
-        # Calculate ideal filename width to fit exactly in viewport with margin
-        ideal_filename_width = viewport_width - other_columns_width - 3  # 3px safety margin
-
-        # Get current filename width
+        other_columns_width = (self.columnWidth(0) + self.columnWidth(2) +
+                              self.columnWidth(3) + self.columnWidth(4))
+        ideal_filename_width = viewport_width - other_columns_width - 3
         current_filename_width = self.columnWidth(1)
 
-        # Only reduce width, never increase it (to prevent jumping)
         if ideal_filename_width < current_filename_width:
-            # Ensure we don't go below minimum
             new_filename_width = max(self.column_min_widths[1], ideal_filename_width)
-
             if new_filename_width != current_filename_width:
                 self.setColumnWidth(1, new_filename_width)
-                logger.debug(f"[VerticalScrollbarAdjust] Reduced filename column: {current_filename_width}→{new_filename_width}px (viewport: {viewport_width}px, others: {other_columns_width}px)")
-        else:
-            logger.debug(f"[VerticalScrollbarAdjust] No adjustment needed - current: {current_filename_width}px, ideal: {ideal_filename_width}px")
 
     def _reset_filename_column_width(self) -> None:
-        """Reset filename column to its initial configured width (clears previous adjustments)"""
+        """Reset filename column to its initial configured width."""
         if not self.column_min_widths:
-            logger.debug("[FilenameReset] Skipped - column_min_widths not available")
             return
 
-        # Get initial filename width from config
         config_width = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
         min_width = self.column_min_widths[1]
-        initial_filename_width = max(config_width, min_width)
-        current_filename_width = self.columnWidth(1)
+        initial_width = max(config_width, min_width)
 
-        logger.debug(f"[FilenameReset] Config: {config_width}px, Min: {min_width}px, Target: {initial_filename_width}px, Current: {current_filename_width}px")
-
-        if current_filename_width != initial_filename_width:
-            self.setColumnWidth(1, initial_filename_width)
-            logger.debug(f"[FilenameReset] Reset filename column: {current_filename_width}→{initial_filename_width}px")
-        else:
-            logger.debug("[FilenameReset] No change needed - already at target width")
+        if self.columnWidth(1) != initial_width:
+            self.setColumnWidth(1, initial_width)
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
-        """Handle horizontal splitter movement (called from MainWindow)"""
-        # Manual stretch logic for file table columns - protect minimum widths
+        """Handle horizontal splitter movement."""
         parent_window = self.parent()
         while parent_window and not hasattr(parent_window, 'horizontal_splitter'):
             parent_window = parent_window.parent()
 
         if not parent_window:
-            logger.warning("[FileTableView] Cannot find parent window with splitter")
             return
 
         sizes = parent_window.horizontal_splitter.sizes()
-        center_panel_width = sizes[1]  # Center panel width
-        logger.debug(f"[HorizontalSplitter] Moved - Position: {pos}, Index: {index}, Center width: {center_panel_width}px")
+        center_panel_width = sizes[1]
 
         if center_panel_width > 0 and self.column_min_widths:
-            # Check each column and restore minimum width if needed
-            adjusted_columns = []
+            # Restore minimum widths if needed
             for col_index, min_width in self.column_min_widths.items():
-                current_width = self.columnWidth(col_index)
-                if current_width < min_width:
+                if self.columnWidth(col_index) < min_width:
                     self.setColumnWidth(col_index, min_width)
-                    adjusted_columns.append(f"Col{col_index}: {current_width}→{min_width}")
 
-            if adjusted_columns:
-                logger.debug(f"[HorizontalSplitter] Restored minimum widths: {', '.join(adjusted_columns)}")
-
-            # Handle datetime column stretching
-            col0_width = self.columnWidth(0)
-            col1_width = self.columnWidth(1)
-            col2_width = self.columnWidth(2)
-            col3_width = self.columnWidth(3)
-
-            used_width = col0_width + col1_width + col2_width + col3_width
-            available_for_datetime = center_panel_width - used_width - 40  # 40px margin for scrollbars
-
+            # Adjust datetime column to fill available space
+            used_width = (self.columnWidth(0) + self.columnWidth(1) +
+                         self.columnWidth(2) + self.columnWidth(3))
+            available_for_datetime = center_panel_width - used_width - 40
             datetime_width = max(self.column_min_widths[4], available_for_datetime)
+
             if datetime_width != self.columnWidth(4):
                 self.setColumnWidth(4, datetime_width)
-                logger.debug(f"[HorizontalSplitter] Adjusted datetime column width to {datetime_width}px (min: {self.column_min_widths[4]}px, available: {available_for_datetime}px)")
 
-            # Also check if vertical scrollbar status requires filename adjustment
             self._update_scrollbar_visibility()
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
-        """Handle vertical splitter movement (for debugging)"""
-        logger.debug(f"[FileTableView] Vertical splitter moved - Pos: {pos}, Index: {index}", extra={"dev_only": True})
+        """Handle vertical splitter movement."""
+        pass  # Reserved for future use
 
     # =====================================
-    # Original FileTableView Methods
+    # UI Methods
     # =====================================
 
     def set_placeholder_visible(self, visible: bool) -> None:
-        """
-        Shows or hides the placeholder icon over the table (only image, no text).
-        """
-        assert self.model() is not None, "Cannot show placeholder: model has not been set on FileTableView"
+        """Show or hide the placeholder icon."""
+        assert self.model() is not None, "Model must be set before showing placeholder"
 
         if visible and not self.placeholder_icon.isNull():
             self.placeholder_label.raise_()
@@ -347,91 +248,63 @@ class FileTableView(QTableView):
             self.viewport().update()
 
     def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
-        """
-        Handles custom selection logic with anchor and modifier support.
-
-        Supports:
-        - Shift + Click: Selects a range from anchor to index
-        - Ctrl + Click: Toggles selection manually (Qt-safe)
-        - Plain Click: Selects only the clicked row
-
-        Args:
-            index (QModelIndex): Clicked index.
-            modifiers (Qt.KeyboardModifiers): Active keyboard modifiers.
-        """
+        """Handle selection logic with anchor and modifier support."""
         sm = self.selectionModel()
         model = self.model()
         if sm is None or model is None:
             return
 
-        if modifiers & Qt.ShiftModifier:  # type: ignore
+        if modifiers & Qt.ShiftModifier:
             if self._manual_anchor_index is None:
                 self._manual_anchor_index = index
-                logger.debug(f"[Anchor] Initialized at row {index.row()} (no previous anchor)")
             else:
                 selection = QItemSelection(self._manual_anchor_index, index)
-                sm.select(selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)  # type: ignore
-                sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)  # type: ignore
-                logger.debug(f"[Anchor] Shift-select from {self._manual_anchor_index.row()} to {index.row()}")
+                sm.select(selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+                sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
 
-        elif modifiers & Qt.ControlModifier:  # type: ignore
+        elif modifiers & Qt.ControlModifier:
             self._manual_anchor_index = index
             row = index.row()
             selection = QItemSelection(index, index)
             sm.blockSignals(True)
             if sm.isSelected(index):
-                sm.select(selection, QItemSelectionModel.Deselect | QItemSelectionModel.Rows)  # type: ignore
-                logger.debug(f"[Anchor] Ctrl-toggle OFF at row {row}")
+                sm.select(selection, QItemSelectionModel.Deselect | QItemSelectionModel.Rows)
             else:
-                sm.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)  # type: ignore
-                logger.debug(f"[Anchor] Ctrl-toggle ON at row {row}")
+                sm.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
             sm.blockSignals(False)
-            sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)  # type: ignore
-            # Force row update
+            sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
+
+            # Update visual feedback
             left = model.index(row, 0)
             right = model.index(row, model.columnCount() - 1)
             self.viewport().update(self.visualRect(left).united(self.visualRect(right)))
 
         else:
             self._manual_anchor_index = index
-            sm.select(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)  # type: ignore
-            sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)  # type: ignore
-            logger.debug(f"[Anchor] Single click select at row {index.row()}")
+            sm.select(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+            sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """
-        Custom mouse press handler for row selection.
-        Implements Ctrl, Shift, and Ctrl+Shift logic for reliable selection.
-        Implements explorer-style: single click always selects only the row, Ctrl+click toggles selection.
-        """
+        """Handle mouse press with custom selection logic."""
         index: QModelIndex = self.indexAt(event.pos())
         if not index.isValid() or self.is_empty():
             super().mousePressEvent(event)
             return
 
-        row: int = index.row()
-        modifiers = event.modifiers()
-        ctrl = modifiers & Qt.ControlModifier
-        shift = modifiers & Qt.ShiftModifier
-
-        # Right click inside selection: do nothing, just repaint
+        # Handle right-click separately
         if event.button() == Qt.RightButton:
             super().mousePressEvent(event)
             return
 
-        # Left click logic (range, ctrl, shift, etc.)
         super().mousePressEvent(event)
 
-        # Clear context_focused_row if not right click
+        # Clear context focus on left click
         if event.button() != Qt.RightButton and self.context_focused_row is not None:
             self.context_focused_row = None
             self.viewport().update()
 
     def mouseDoubleClickEvent(self, event) -> None:
-        """
-        Handles double-click with optional Shift modifier.
-        For Shift+DoubleClick, cancels range selection and loads extended metadata for one row only.
-        """
+        """Handle double-click with Shift modifier support."""
         if self.is_empty():
             event.ignore()
             return
@@ -444,18 +317,15 @@ class FileTableView(QTableView):
         selection_model = self.selectionModel()
 
         if event.modifiers() & Qt.ShiftModifier:
-            # SHIFT + DoubleClick → cancel any previous range selection
+            # Cancel range selection for extended metadata on single file
             selection_model.clearSelection()
             selection_model.select(index, QItemSelectionModel.Clear | QItemSelectionModel.Select | QItemSelectionModel.Rows)
             selection_model.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
-
-            self._manual_anchor_index = index  # new anchor
-            logger.debug(f"[DoubleClick] SHIFT override: only row {index.row()} selected for extended metadata")
+            self._manual_anchor_index = index
         else:
-            # Normal double-click → allow anchor-based selection
             self.ensure_anchor_or_select(index, event.modifiers())
 
-        # In all valid cases, trigger metadata load
+        # Trigger metadata load
         if hasattr(self, "parent_window"):
             self.parent_window.handle_file_double_click(index, event.modifiers())
 
@@ -470,7 +340,7 @@ class FileTableView(QTableView):
             if index.isValid() and event.modifiers() & Qt.ShiftModifier:
                 self.ensure_anchor_or_select(index, event.modifiers())
 
-                # Repaint selected rows
+                # Update visual range
                 top = min(self._manual_anchor_index.row(), index.row())
                 bottom = max(self._manual_anchor_index.row(), index.row())
                 for row in range(top, bottom + 1):
@@ -490,12 +360,13 @@ class FileTableView(QTableView):
         index = self.indexAt(event.pos())
         hovered_row = index.row() if index.isValid() else -1
 
-        # If dragging from already selected row, do not change selection (ignore modifiers)
+        # Handle drag initiation
         if event.buttons() & Qt.LeftButton and hovered_row in self.selected_rows:
             if (event.pos() - self._drag_start_pos).manhattanLength() >= QApplication.startDragDistance():
                 self.startDrag(Qt.CopyAction)
                 return
 
+        # Update hover highlighting
         if hasattr(self, "hover_delegate") and hovered_row != self.hover_delegate.hovered_row:
             old_row = self.hover_delegate.hovered_row
             self.hover_delegate.update_hover_row(hovered_row)
@@ -505,13 +376,10 @@ class FileTableView(QTableView):
                     left = self.model().index(r, 0)
                     right = self.model().index(r, self.model().columnCount() - 1)
                     row_rect = self.visualRect(left).united(self.visualRect(right))
-                    logger.debug(f"[Hover] Repainting full row {r}", extra={"dev_only": True})
                     self.viewport().update(row_rect)
 
     def keyPressEvent(self, event) -> None:
-        """
-        Handles keyboard navigation and ensures selection is synchronized.
-        """
+        """Handle keyboard navigation and sync selection."""
         super().keyPressEvent(event)
         if event.matches(QKeySequence.SelectAll) or event.key() in (
             Qt.Key_Space, Qt.Key_Return, Qt.Key_Enter,
@@ -524,14 +392,14 @@ class FileTableView(QTableView):
         if hasattr(parent, "sync_selection_to_checked"):
             selection = self.selectionModel().selection()
             selected_rows = set(idx.row() for idx in self.selectionModel().selectedRows())
-            logger.debug(f"[DEBUG] _sync_selection_safely → selected_rows: {selected_rows}")
             parent.sync_selection_to_checked(selection, QItemSelection())
 
+    # =====================================
+    # Drag & Drop Methods
+    # =====================================
+
     def startDrag(self, supportedActions: Qt.DropActions) -> None:
-        """
-        Initiates a drag operation for selected file paths.
-        Adds custom MIME type marker to identify drags originating from our file table.
-        """
+        """Initiate drag operation for selected files."""
         rows = sorted(self.selected_rows)
         if not rows:
             return
@@ -542,137 +410,54 @@ class FileTableView(QTableView):
         if not file_paths:
             return
 
-        # Get the global drag cancel filter
+        # Setup drag cancel filter
         from widgets.file_tree_view import _drag_cancel_filter
-
-        # Activate the filter to catch events that should terminate drag
         _drag_cancel_filter.activate()
 
-        # Create MIME data with custom marker
+        # Create MIME data
         mime_data = QMimeData()
-
-        # Add our custom MIME type to identify this drag as coming from the file table
-        # This is used by the metadata tree view to only accept drags from our application
         mime_data.setData("application/x-oncutf-filetable", b"1")
-
-        # Add standard URL format for file paths
         urls = [QUrl.fromLocalFile(p) for p in file_paths]
         mime_data.setUrls(urls)
 
-        # Create and execute the drag operation
+        # Execute drag
         drag = QDrag(self)
         drag.setMimeData(mime_data)
 
         try:
-            # Use exec() instead of exec_ (which is Python 2 compatible name)
-            # Execute drag with all possible actions to ensure proper termination
             result = drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
-            logger.debug(f"Drag completed with result: {result}")
         except Exception as e:
             logger.error(f"Drag operation failed: {e}")
         finally:
-            # Force complete cleanup of any lingering drag state
-            while QApplication.overrideCursor():
-                QApplication.restoreOverrideCursor()
+            self._cleanup_drag_state()
 
-            # Deactivate the filter
-            _drag_cancel_filter.deactivate()
-
-            # Force repaint to clear any visual artifacts
-            if hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
-                self.viewport().update()
-            # Force immediate processing of all pending events
-            QApplication.processEvents()
-
-        # Create a zero-delay timer to ensure complete cleanup after event loop returns
         QTimer.singleShot(0, self._complete_drag_cleanup)
 
-    def _complete_drag_cleanup(self):
-        """
-        Additional cleanup method called after drag operation to ensure
-        all drag state is completely reset.
-        """
-        # Get the global drag cancel filter to ensure it's deactivated
-        from widgets.file_tree_view import _drag_cancel_filter
-        _drag_cancel_filter.deactivate()
-
-        # Restore cursor if needed
+    def _cleanup_drag_state(self):
+        """Clean up drag operation state."""
         while QApplication.overrideCursor():
             QApplication.restoreOverrideCursor()
 
-        if hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
+        from widgets.file_tree_view import _drag_cancel_filter
+        _drag_cancel_filter.deactivate()
+
+        if hasattr(self, 'viewport'):
             self.viewport().update()
         QApplication.processEvents()
 
-    def selectionChanged(self, selected, deselected) -> None:
-        super().selectionChanged(selected, deselected)
-        # Sync custom selected_rows with the actual selection model
-        selection_model = self.selectionModel()
-        if selection_model is not None:
-            self.selected_rows = set(index.row() for index in selection_model.selectedRows())
-            self.selection_changed.emit(list(self.selected_rows))
-        # Always clear context_focused_row on selection change to avoid stale focus highlight
-        if self.context_focused_row is not None:
-            self.context_focused_row = None
-        if hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
+    def _complete_drag_cleanup(self):
+        """Complete drag cleanup after event loop."""
+        from widgets.file_tree_view import _drag_cancel_filter
+        _drag_cancel_filter.deactivate()
+
+        while QApplication.overrideCursor():
+            QApplication.restoreOverrideCursor()
+
+        if hasattr(self, 'viewport'):
             self.viewport().update()
-
-    def is_empty(self) -> bool:
-        return not getattr(self.model(), "files", [])
-
-    def focusOutEvent(self, event) -> None:
-        super().focusOutEvent(event)
-        # Clear context_focused_row when table loses focus (e.g. after context menu closes)
-        if self.context_focused_row is not None:
-            self.context_focused_row = None
-            self.viewport().update()
-
-    def focusInEvent(self, event) -> None:
-        super().focusInEvent(event)
-        # Sync custom selected_rows with the actual selection model on focus in
-        self.selected_rows = set(index.row() for index in self.selectionModel().selectedRows())
-        self.viewport().update()
-
-    def wheelEvent(self, event) -> None:
-        super().wheelEvent(event)
-        # Update hover row after scroll to follow mouse position
-        pos = self.viewport().mapFromGlobal(QCursor.pos())
-        index = self.indexAt(pos)
-        hovered_row = index.row() if index.isValid() else -1
-        if hasattr(self, "hover_delegate"):
-            old_row = self.hover_delegate.hovered_row
-            self.hover_delegate.update_hover_row(hovered_row)
-            if old_row != hovered_row:
-                for r in (old_row, hovered_row):
-                    if r >= 0:
-                        left = self.model().index(r, 0)
-                        right = self.model().index(r, self.model().columnCount() - 1)
-                        row_rect = self.visualRect(left).united(self.visualRect(right))
-                        self.viewport().update(row_rect)
-
-    def select_rows_range(self, start_row: int, end_row: int) -> None:
-        """Selects a range of rows efficiently (block selection). Does NOT clear previous selection."""
-        self.blockSignals(True)
-        selection_model = self.selectionModel()
-        model = self.model()
-        if selection_model is None or model is None:
-            self.blockSignals(False)
-            return
-        if hasattr(model, 'index') and hasattr(model, 'columnCount'):
-            top_left = model.index(start_row, 0)
-            bottom_right = model.index(end_row, model.columnCount() - 1)
-            selection = QItemSelection(top_left, bottom_right)
-            selection_model.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
-        self.blockSignals(False)
-        if hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
-            self.viewport().update()
-        # Update custom selected_rows and emit selection_changed for preview sync
-        if model is not None:
-            self.selected_rows = set(range(start_row, end_row + 1))
-            self.selection_changed.emit(list(self.selected_rows))
+        QApplication.processEvents()
 
     def dragEnterEvent(self, event):
-        logger.debug(f"[DragDrop] dragEnterEvent! formats={event.mimeData().formats()}")
         if event.mimeData().hasUrls() or event.mimeData().hasFormat("application/x-oncutf-internal"):
             event.acceptProposedAction()
         else:
@@ -685,43 +470,103 @@ class FileTableView(QTableView):
             super().dragMoveEvent(event)
 
     def dropEvent(self, event: QDropEvent) -> None:
-        """
-        Handles drop events for files/folders into the file table.
-
-        - Ignores internal drags (from this same QTableView).
-        - Filters out files that are already present in the model.
-        - Emits signal with unique new files to be loaded.
-        """
+        """Handle file/folder drops into the table."""
         mime_data = event.mimeData()
 
-        # 1. Ignore internal drag-drop from this same view
+        # Ignore internal drags from this table
         if mime_data.hasFormat("application/x-oncutf-filetable"):
-            logger.debug("[Drop] Ignoring internal drag-drop from file table")
             return
 
-        # 2. Extract paths from mime data (uses helper)
+        # Extract and process dropped paths
         modifiers = event.keyboardModifiers()
         dropped_paths = extract_file_paths(mime_data)
 
         if not dropped_paths:
-            logger.debug("[Drop] No valid file paths extracted")
             return
 
-        logger.info(f"[Drop] {len(dropped_paths)} file(s)/folder(s) dropped in table view")
-
-        # 3. Remove duplicates (already loaded files)
+        # Filter out duplicates
         if self.model() and hasattr(self.model(), "files"):
             existing_paths = {f.full_path for f in self.model().files}
             new_paths = [p for p in dropped_paths if p not in existing_paths]
             if not new_paths:
-                logger.debug("[Drop] All dropped files already exist in table. Ignored.")
                 return
         else:
             new_paths = dropped_paths
 
-        # 4. Emit signal with unique new files
+        # Emit signal for processing
         self.files_dropped.emit(new_paths, modifiers)
-
-        # 5. Finalize
         event.acceptProposedAction()
-        logger.debug("Drag completed with result: %s", event.dropAction())
+
+    # =====================================
+    # Selection & State Methods
+    # =====================================
+
+    def selectionChanged(self, selected, deselected) -> None:
+        super().selectionChanged(selected, deselected)
+        selection_model = self.selectionModel()
+        if selection_model is not None:
+            self.selected_rows = set(index.row() for index in selection_model.selectedRows())
+            self.selection_changed.emit(list(self.selected_rows))
+
+        if self.context_focused_row is not None:
+            self.context_focused_row = None
+
+        if hasattr(self, 'viewport'):
+            self.viewport().update()
+
+    def select_rows_range(self, start_row: int, end_row: int) -> None:
+        """Select a range of rows efficiently."""
+        self.blockSignals(True)
+        selection_model = self.selectionModel()
+        model = self.model()
+
+        if selection_model is None or model is None:
+            self.blockSignals(False)
+            return
+
+        if hasattr(model, 'index') and hasattr(model, 'columnCount'):
+            top_left = model.index(start_row, 0)
+            bottom_right = model.index(end_row, model.columnCount() - 1)
+            selection = QItemSelection(top_left, bottom_right)
+            selection_model.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+
+        self.blockSignals(False)
+
+        if hasattr(self, 'viewport'):
+            self.viewport().update()
+
+        if model is not None:
+            self.selected_rows = set(range(start_row, end_row + 1))
+            self.selection_changed.emit(list(self.selected_rows))
+
+    def is_empty(self) -> bool:
+        return not getattr(self.model(), "files", [])
+
+    def focusOutEvent(self, event) -> None:
+        super().focusOutEvent(event)
+        if self.context_focused_row is not None:
+            self.context_focused_row = None
+            self.viewport().update()
+
+    def focusInEvent(self, event) -> None:
+        super().focusInEvent(event)
+        self.selected_rows = set(index.row() for index in self.selectionModel().selectedRows())
+        self.viewport().update()
+
+    def wheelEvent(self, event) -> None:
+        super().wheelEvent(event)
+        # Update hover after scroll
+        pos = self.viewport().mapFromGlobal(QCursor.pos())
+        index = self.indexAt(pos)
+        hovered_row = index.row() if index.isValid() else -1
+
+        if hasattr(self, "hover_delegate"):
+            old_row = self.hover_delegate.hovered_row
+            self.hover_delegate.update_hover_row(hovered_row)
+            if old_row != hovered_row:
+                for r in (old_row, hovered_row):
+                    if r >= 0:
+                        left = self.model().index(r, 0)
+                        right = self.model().index(r, self.model().columnCount() - 1)
+                        row_rect = self.visualRect(left).united(self.visualRect(right))
+                        self.viewport().update(row_rect)
