@@ -9,9 +9,7 @@ QPushButton {
     font-size: 9pt;
     border: none;
     border-radius: 8px;
-    padding: 4px 12px 4px 8px;  /* Reduced left padding, increased right for balance */
-    text-align: left;  /* Align text to left to create space between icon and text */
-    icon-size: 14px;   /* Consistent icon size */
+    padding: 4px 12px 4px 8px;
 }
 
 /* Hover state - match tree/table hover color */

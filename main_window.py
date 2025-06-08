@@ -238,14 +238,18 @@ class MainWindow(QMainWindow):
             self.folder_tree.setExpandsOnDoubleClick(True)   # Double click expand
 
         btn_layout = QHBoxLayout()
-        self.select_folder_button = QPushButton("Select")
+        self.select_folder_button = QPushButton("  Select")
         self.select_folder_button.setIcon(get_menu_icon("folder"))
         self.select_folder_button.setFixedWidth(100)
-        self.browse_folder_button = QPushButton("Browse")
+        self.browse_folder_button = QPushButton("  Browse")
         self.browse_folder_button.setIcon(get_menu_icon("folder-plus"))
         self.browse_folder_button.setFixedWidth(100)
+
+        # Add buttons with fixed positioning - no stretching
         btn_layout.addWidget(self.select_folder_button)
+        btn_layout.addSpacing(4)  # 4px spacing between buttons
         btn_layout.addWidget(self.browse_folder_button)
+        btn_layout.addStretch()  # Push buttons to left, allow empty space on right
         left_layout.addLayout(btn_layout)
 
         self.dir_model = QFileSystemModel()
@@ -281,7 +285,7 @@ class MainWindow(QMainWindow):
         self.folder_tree.setRootIndex(self.dir_model.index(root))
 
         # Set minimum size for left panel and add to splitter
-        self.left_frame.setMinimumWidth(80)
+        self.left_frame.setMinimumWidth(230)
         self.horizontal_splitter.addWidget(self.left_frame)
 
     def setup_center_panel(self) -> None:
@@ -348,7 +352,7 @@ class MainWindow(QMainWindow):
         self.file_table_view.set_placeholder_visible(True)
         center_layout.addWidget(self.file_table_view)
         # Set minimum size for center panel and add to splitter
-        self.center_frame.setMinimumWidth(80)
+        self.center_frame.setMinimumWidth(230)
         self.horizontal_splitter.addWidget(self.center_frame)
 
     def setup_right_panel(self) -> None:
@@ -397,7 +401,7 @@ class MainWindow(QMainWindow):
         self.toggle_expand_button.setText("Collapse All")
 
         # Set minimum size for right panel and finalize
-        self.right_frame.setMinimumWidth(80)
+        self.right_frame.setMinimumWidth(230)
         self.horizontal_splitter.addWidget(self.right_frame)
         self.horizontal_splitter.setSizes(LEFT_CENTER_RIGHT_SPLIT_RATIO)
 
@@ -487,7 +491,7 @@ class MainWindow(QMainWindow):
         self.status_fade_anim.setEndValue(0.3)
         controls_layout.addWidget(self.status_label, stretch=1)
 
-        self.rename_button = QPushButton("Rename")
+        self.rename_button = QPushButton("  Rename")
         self.rename_button.setIcon(get_menu_icon("edit"))
         self.rename_button.setEnabled(False)
         self.rename_button.setFixedWidth(100)
