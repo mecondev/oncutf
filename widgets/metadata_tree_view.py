@@ -12,6 +12,13 @@ for triggering metadata loading in the Batch File Renamer GUI.
 The view accepts file drops ONLY from the internal file table of the application,
 and emits a signal (`files_dropped`) containing the dropped file paths.
 
+Features:
+- Drag & drop support from internal file table only
+- Intelligent scroll position memory per file with smooth animation
+- Context menu for metadata editing (copy, edit, reset)
+- Placeholder mode for empty content
+- Modified item tracking with visual indicators
+
 Expected usage:
 - Drag files from the file table (but not from external sources).
 - Drop onto the metadata tree.
@@ -20,10 +27,13 @@ Expected usage:
 Designed for integration with MainWindow and MetadataReader.
 """
 
-from typing import Optional, Dict, Set
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal
+from typing import Optional, Dict, Set, Tuple, Any, Union
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QModelIndex
 from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
-from PyQt5.QtWidgets import QAbstractItemView, QAction, QApplication, QHeaderView, QMenu, QTreeView
+from PyQt5.QtWidgets import (
+    QAbstractItemView, QAction, QApplication, QHeaderView,
+    QMenu, QTreeView, QWidget, QStandardItemModel, QStandardItem
+)
 
 from config import METADATA_TREE_COLUMN_WIDTHS
 from utils.logger_helper import get_logger
@@ -31,11 +41,18 @@ from widgets.metadata_edit_dialog import MetadataEditDialog
 
 logger = get_logger(__name__)
 
+
 class MetadataTreeView(QTreeView):
     """
     Custom tree view that accepts file drag & drop to trigger metadata loading.
     Only accepts drops from the application's file table, not external sources.
-    Includes intelligent scroll position memory per file.
+    Includes intelligent scroll position memory per file with smooth animation.
+
+    Signals:
+        files_dropped: Emitted when files are dropped from file table
+        value_copied: Emitted when a metadata value is copied to clipboard
+        value_edited: Emitted when a metadata value is edited
+        value_reset: Emitted when a metadata value is reset
     """
     files_dropped = pyqtSignal(list, Qt.KeyboardModifiers)  # Emits list of local file paths
 
@@ -44,7 +61,7 @@ class MetadataTreeView(QTreeView):
     value_edited = pyqtSignal(str, str, str)  # Emitted with (key_path, old_value, new_value)
     value_reset = pyqtSignal(str)  # Emitted with the key_path that was reset
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True)
@@ -120,7 +137,7 @@ class MetadataTreeView(QTreeView):
         # Force additional cleanup through timer
         QTimer.singleShot(0, self._complete_drag_cleanup)
 
-    def _perform_drag_cleanup(self, drag_cancel_filter) -> None:
+    def _perform_drag_cleanup(self, drag_cancel_filter: Any) -> None:
         """Centralized drag cleanup logic."""
         # Force cleanup of any drag state
         while QApplication.overrideCursor():
@@ -151,7 +168,7 @@ class MetadataTreeView(QTreeView):
     # Model & Column Management
     # =====================================
 
-    def setModel(self, model) -> None:
+    def setModel(self, model: Any) -> None:
         """
         Override the setModel method to set minimum column widths after the model is set.
         """
@@ -185,7 +202,7 @@ class MetadataTreeView(QTreeView):
 
                     # Apply immediately without delay
                     QTimer.singleShot(0, lambda: self._apply_scroll_position_immediately(saved_position))
-                    logger.debug(f"[MetadataTree] Scheduled immediate scroll to position {saved_position}")
+                    logger.debug(f"[MetadataTree] Scheduled immediate scroll to position {saved_position}", extra={"dev_only": True})
 
     def _apply_scroll_position_immediately(self, position: int) -> None:
         """Apply scroll position immediately without waiting for expandAll()."""
@@ -199,9 +216,9 @@ class MetadataTreeView(QTreeView):
 
             # Apply the position
             scrollbar.setValue(valid_position)
-            logger.debug(f"[MetadataTree] Applied immediate scroll to position {valid_position}")
+            logger.debug(f"[MetadataTree] Applied immediate scroll to position {valid_position}", extra={"dev_only": True})
 
-    def _detect_placeholder_mode(self, model) -> bool:
+    def _detect_placeholder_mode(self, model: Any) -> bool:
         """Detect if the model contains placeholder content."""
         if model.rowCount() == 1:
             root = model.invisibleRootItem()
@@ -211,7 +228,7 @@ class MetadataTreeView(QTreeView):
                     return True
         return False
 
-    def _configure_placeholder_mode(self, model) -> None:
+    def _configure_placeholder_mode(self, model: Any) -> None:
         """Configure view for placeholder mode."""
         # Only reset current file path when entering placeholder mode
         # DO NOT clear scroll positions - we want to preserve them for other files
@@ -260,7 +277,7 @@ class MetadataTreeView(QTreeView):
         # Force style update
         self._force_style_update()
 
-    def _make_placeholder_items_non_selectable(self, model) -> None:
+    def _make_placeholder_items_non_selectable(self, model: Any) -> None:
         """Make placeholder items non-selectable."""
         root = model.invisibleRootItem()
         item = root.child(0, 0)
@@ -281,11 +298,11 @@ class MetadataTreeView(QTreeView):
 
     def set_current_file_path(self, file_path: str) -> None:
         """Set the current file path for scroll position tracking."""
-        logger.info(f"[MetadataTree] >>> set_current_file_path called with: {file_path}")
+        logger.debug(f"[MetadataTree] >>> set_current_file_path called with: {file_path}", extra={"dev_only": True})
 
         # Skip if it's the same file (protect against duplicate calls)
         if self._current_file_path == file_path:
-            logger.debug(f"[MetadataTree] Skipping duplicate call for same file: {file_path}")
+            logger.debug(f"[MetadataTree] Skipping duplicate call for same file: {file_path}", extra={"dev_only": True})
             return
 
         # Save current position before changing files (only if we have a previous file)
@@ -295,7 +312,7 @@ class MetadataTreeView(QTreeView):
         # Update current file
         self._current_file_path = file_path
 
-        logger.debug(f"[MetadataTree] Set current file: {file_path}")
+        logger.debug(f"[MetadataTree] Set current file: {file_path}", extra={"dev_only": True})
 
     def _save_current_scroll_position(self) -> None:
         """Save the current scroll position for the current file."""
@@ -362,13 +379,13 @@ class MetadataTreeView(QTreeView):
         self._scroll_animation.setDuration(duration)
         self._scroll_animation.setStartValue(current_position)
         self._scroll_animation.setEndValue(target_position)
-        # self._scroll_animation.setEasingCurve(QEasingCurve.OutCubic)  # Smooth deceleration
-        self._scroll_animation.setEasingCurve(QEasingCurve.InOutSine)  # Smooth sine wave motion
+        self._scroll_animation.setEasingCurve(QEasingCurve.OutCubic)  # Smooth deceleration
+        # self._scroll_animation.setEasingCurve(QEasingCurve.InOutSine)  # Smooth sine wave motion
 
         # Start animation
         self._scroll_animation.start()
 
-        logger.debug(f"[MetadataTree] Started smooth scroll animation from {current_position} to {target_position} (duration: {duration}ms)")
+        logger.debug(f"[MetadataTree] Started smooth scroll animation from {current_position} to {target_position} (duration: {duration}ms)", extra={"dev_only": True})
 
     def clear_scroll_memory(self) -> None:
         """Clear all saved scroll positions (useful when changing folders)."""
@@ -380,7 +397,7 @@ class MetadataTreeView(QTreeView):
             self._pending_restore_timer.stop()
             self._pending_restore_timer = None
 
-        logger.debug("[MetadataTree] Cleared scroll position memory")
+        logger.debug("[MetadataTree] Cleared scroll position memory", extra={"dev_only": True})
 
     def restore_scroll_after_expand(self) -> None:
         """Trigger scroll position restore after expandAll() has completed."""
@@ -398,7 +415,7 @@ class MetadataTreeView(QTreeView):
     # Context Menu & Actions
     # =====================================
 
-    def show_context_menu(self, position) -> None:
+    def show_context_menu(self, position: QModelIndex) -> None:
         """
         Display context menu with available options depending on the selected item.
         """
@@ -441,7 +458,7 @@ class MetadataTreeView(QTreeView):
         # Show menu
         menu.exec_(self.viewport().mapToGlobal(position))
 
-    def get_key_path(self, index) -> str:
+    def get_key_path(self, index: QModelIndex) -> str:
         """
         Return the full key path for the given index.
         For example: "EXIF/DateTimeOriginal" or "XMP/Creator"
@@ -464,7 +481,7 @@ class MetadataTreeView(QTreeView):
 
         return item_text
 
-    def copy_value(self, value) -> None:
+    def copy_value(self, value: Any) -> None:
         """
         Copy the value to clipboard and emit the value_copied signal.
         """
@@ -482,7 +499,7 @@ class MetadataTreeView(QTreeView):
     # Metadata Editing Methods
     # =====================================
 
-    def edit_value(self, key_path: str, current_value) -> None:
+    def edit_value(self, key_path: str, current_value: Any) -> None:
         """
         Open a dialog to edit the value of a metadata field.
         """
@@ -581,10 +598,10 @@ class MetadataTreeView(QTreeView):
         self.viewport().update()
 
     # =====================================
-    # Parent Window Helper Methods
+    # Helper Methods
     # =====================================
 
-    def _get_parent_window_with_file_table(self):
+    def _get_parent_window_with_file_table(self) -> Tuple[Optional[QWidget], Optional[Any], Optional[Any], Optional[Any]]:
         """
         Helper method to find the parent window that contains the file_table_view.
         Returns tuple: (parent_window, file_model, selection, selected_rows)
@@ -725,7 +742,7 @@ class MetadataTreeView(QTreeView):
                         [Qt.DecorationRole]
                     )
 
-    def _remove_metadata_from_cache(self, metadata: dict, key_path: str) -> None:
+    def _remove_metadata_from_cache(self, metadata: Dict[str, Any], key_path: str) -> None:
         """Remove metadata entry from cache dictionary."""
         parts = key_path.split('/')
 
@@ -738,12 +755,12 @@ class MetadataTreeView(QTreeView):
             if group in metadata and isinstance(metadata[group], dict):
                 metadata[group].pop(key, None)
 
-    def _remove_metadata_from_file_item(self, file_item, key_path: str) -> None:
+    def _remove_metadata_from_file_item(self, file_item: Any, key_path: str) -> None:
         """Remove metadata entry from file item."""
         if hasattr(file_item, 'metadata') and file_item.metadata:
             self._remove_metadata_from_cache(file_item.metadata, key_path)
 
-    def _set_metadata_in_cache(self, metadata: dict, key_path: str, new_value: str) -> None:
+    def _set_metadata_in_cache(self, metadata: Dict[str, Any], key_path: str, new_value: str) -> None:
         """Set metadata entry in cache dictionary."""
         parts = key_path.split('/')
 
@@ -762,36 +779,334 @@ class MetadataTreeView(QTreeView):
             # Handle duplicate rotation entries
             self._handle_duplicate_rotation_entries(metadata, group, key)
 
-    def _set_metadata_in_file_item(self, file_item, key_path: str, new_value: str) -> None:
+    def _set_metadata_in_file_item(self, file_item: Any, key_path: str, new_value: str) -> None:
         """Set metadata entry in file item."""
         if hasattr(file_item, 'metadata') and file_item.metadata:
             self._set_metadata_in_cache(file_item.metadata, key_path, new_value)
 
-    def _handle_duplicate_rotation_entries(self, metadata: dict, group: str, key: str) -> None:
+    def _handle_duplicate_rotation_entries(self, metadata: Dict[str, Any], group: str, key: str) -> None:
         """Handle duplicate rotation entries between EXIF and Other groups."""
         if key == "Rotation":
             if group == "EXIF" and "Other" in metadata and isinstance(metadata["Other"], dict) and "Rotation" in metadata["Other"]:
                 del metadata["Other"]["Rotation"]
-                logger.debug("[MetadataTree] Removed duplicate Other/Rotation entry")
+                logger.debug("[MetadataTree] Removed duplicate Other/Rotation entry", extra={"dev_only": True})
             elif group == "Other" and "EXIF" in metadata and isinstance(metadata["EXIF"], dict) and "Rotation" in metadata["EXIF"]:
                 del metadata["EXIF"]["Rotation"]
-                logger.debug("[MetadataTree] Removed duplicate EXIF/Rotation entry")
+                logger.debug("[MetadataTree] Removed duplicate EXIF/Rotation entry", extra={"dev_only": True})
 
     # =====================================
     # Scroll Override
     # =====================================
 
-    def scrollTo(self, index, hint=None) -> None:
+    def scrollTo(self, index: QModelIndex, hint: Union[QAbstractItemView.ScrollHint, None] = None) -> None:
         """
-        Override scrollTo to prevent automatic scrolling.
-        Scroll position is managed manually via the scroll position memory system.
+        Override scrollTo to prevent unwanted scrolling during model changes.
+        Only allows scrolling if we're not in the middle of a model update.
         """
-        if self._is_placeholder_mode:
-            # In placeholder mode, use normal scrolling
-            super().scrollTo(index, hint)
+        # Allow scrolling during normal user interaction
+        super().scrollTo(index, hint)
+
+    # =====================================
+    # Metadata Display Management Methods
+    # =====================================
+
+    def show_empty_state(self, message: str = "No file selected") -> None:
+        """
+        Displays a placeholder message in the metadata tree view.
+
+        Args:
+            message (str): The message to display in the placeholder
+        """
+        model = QStandardItemModel()
+        model.setHorizontalHeaderLabels(["Key", "Value"])
+
+        key_item = QStandardItem(message)
+        key_item.setTextAlignment(Qt.AlignLeft)
+        font = key_item.font()
+        font.setItalic(True)
+        key_item.setFont(font)
+        key_item.setForeground(Qt.gray)
+        key_item.setSelectable(False)  # Make placeholder non-selectable
+
+        value_item = QStandardItem("-")
+        value_item.setForeground(Qt.gray)
+        value_item.setSelectable(False)  # Make placeholder non-selectable
+
+        model.appendRow([key_item, value_item])
+
+        # Model will handle selection mode and styling through setModel method
+        self.setModel(model)
+
+        # Notify parent about state change if it has the toggle button
+        self._update_parent_toggle_button(expanded=False, enabled=False)
+
+    def clear_view(self) -> None:
+        """
+        Clears the metadata tree view and shows a placeholder message.
+        Does not clear scroll position memory when just showing placeholder.
+        """
+        # Don't clear scroll position memory when just showing placeholder
+        # Only clear when actually changing folders
+        self.show_empty_state("No file selected")
+
+    def display_metadata(self, metadata: Optional[Dict[str, Any]], context: str = "") -> None:
+        """
+        Validates and displays metadata safely in the UI.
+
+        Args:
+            metadata (dict or None): The metadata to display.
+            context (str): Optional source for logging (e.g. 'doubleclick', 'worker')
+        """
+        if not isinstance(metadata, dict) or not metadata:
+            logger.warning(f"[display_metadata] Invalid metadata ({type(metadata)}) from {context}: {metadata}")
+            self.clear_view()
             return
 
-        # In normal mode, do nothing - scroll position is managed manually
-        # This prevents Qt from automatically scrolling when selections change
-        return
+        self._render_metadata_view(metadata)
+
+        # Notify parent about successful metadata display
+        self._update_parent_toggle_button(expanded=True, enabled=True)
+
+        # Enable header if it exists
+        if hasattr(self, 'header') and callable(self.header):
+            header = self.header()
+            if header:
+                header.setEnabled(True)
+
+    def _render_metadata_view(self, metadata: Dict[str, Any]) -> None:
+        """
+        Actually builds the metadata tree and displays it.
+        Assumes metadata is a non-empty dict.
+
+        Includes fallback protection in case called with invalid metadata.
+        """
+        if not isinstance(metadata, dict):
+            logger.error(f"[render_metadata_view] Called with invalid metadata: {type(metadata)} → {metadata}")
+            self.clear_view()
+            return
+
+        try:
+            # Import here to avoid circular imports
+            from utils.build_metadata_tree_model import build_metadata_tree_model
+
+            display_data = dict(metadata)
+            filename = metadata.get("FileName")
+            if filename:
+                display_data["FileName"] = filename
+
+            # Try to determine file path for scroll position memory
+            self._set_current_file_from_metadata(metadata)
+
+            tree_model = build_metadata_tree_model(display_data)
+            self.setModel(tree_model)
+            self.expandAll()
+
+            # Trigger scroll position restore AFTER expandAll
+            self.restore_scroll_after_expand()
+
+            # Notify parent that we successfully rendered metadata
+            self._update_parent_toggle_button(expanded=True, enabled=True)
+
+        except Exception as e:
+            logger.exception(f"[render_metadata_view] Unexpected error while rendering: {e}")
+            self.clear_view()
+
+    def _set_current_file_from_metadata(self, metadata: Dict[str, Any]) -> None:
+        """Try to determine the current file path from metadata and set it for scroll position memory."""
+        try:
+            # Method 1: Try to get SourceFile from metadata
+            source_file = metadata.get("SourceFile")
+            if source_file:
+                logger.debug(f"[ScrollMemory] Found SourceFile: {source_file}", extra={"dev_only": True})
+                self.set_current_file_path(source_file)
+                return
+
+            # Method 2: Try to find current file from parent's selection
+            parent_window = self._get_parent_with_file_table()
+            if parent_window and hasattr(parent_window, 'file_table_view'):
+                selection_model = parent_window.file_table_view.selectionModel()
+                if selection_model and selection_model.hasSelection():
+                    selected_rows = selection_model.selectedRows()
+                    if selected_rows:
+                        current_index = selection_model.currentIndex()
+                        target_index = current_index if current_index.isValid() and current_index in selected_rows else selected_rows[0]
+
+                        if hasattr(parent_window, 'file_model') and 0 <= target_index.row() < len(parent_window.file_model.files):
+                            file_item = parent_window.file_model.files[target_index.row()]
+                            logger.debug(f"[ScrollMemory] Found from selection: {file_item.full_path}", extra={"dev_only": True})
+                            self.set_current_file_path(file_item.full_path)
+                            return
+
+            logger.debug("[ScrollMemory] Could not determine current file", extra={"dev_only": True})
+
+        except Exception as e:
+            logger.debug(f"[ScrollMemory] Error determining current file: {e}", extra={"dev_only": True})
+
+    def _get_parent_with_file_table(self) -> Optional[QWidget]:
+        """Find the parent window that has file_table_view attribute."""
+        parent = self.parent()
+        while parent:
+            if hasattr(parent, 'file_table_view') and hasattr(parent, 'file_model'):
+                return parent
+            parent = parent.parent()
+        return None
+
+    def _update_parent_toggle_button(self, expanded: bool, enabled: bool) -> None:
+        """
+        Updates the parent's toggle expand button state if it exists.
+
+        Args:
+            expanded (bool): Whether the tree is expanded
+            enabled (bool): Whether the button should be enabled
+        """
+        parent_window = self._get_parent_with_file_table()
+        if parent_window and hasattr(parent_window, 'toggle_expand_button'):
+            button = parent_window.toggle_expand_button
+            button.setEnabled(enabled)
+            if enabled:
+                button.setChecked(expanded)
+                if expanded:
+                    button.setText("Collapse All")
+                    # Try to set icon if available
+                    try:
+                        from utils.icons_loader import get_menu_icon
+                        button.setIcon(get_menu_icon("chevrons-up"))
+                    except ImportError:
+                        pass
+                else:
+                    button.setText("Expand All")
+                    try:
+                        from utils.icons_loader import get_menu_icon
+                        button.setIcon(get_menu_icon("chevrons-down"))
+                    except ImportError:
+                        pass
+
+    def toggle_expand_all(self, expand: Optional[bool] = None) -> None:
+        """
+        Toggles between expanding and collapsing all tree items.
+
+        Args:
+            expand (bool, optional): If provided, forces expand (True) or collapse (False).
+                                   If None, toggles based on current state.
+        """
+        if expand is None:
+            # Auto-detect current state by checking if first item is expanded
+            model = self.model()
+            if model and model.rowCount() > 0:
+                first_index = model.index(0, 0)
+                expand = not self.isExpanded(first_index)
+            else:
+                expand = True
+
+        if expand:
+            self.expandAll()
+            self._update_parent_toggle_button(expanded=True, enabled=True)
+        else:
+            self.collapseAll()
+            self._update_parent_toggle_button(expanded=False, enabled=True)
+
+    # =====================================
+    # Selection-based Metadata Management
+    # =====================================
+
+    def update_from_parent_selection(self) -> None:
+        """
+        Updates metadata display based on the current selection in the parent's file table.
+        This replaces the functionality of check_selection_and_show_metadata from MainWindow.
+        """
+        parent_window = self._get_parent_with_file_table()
+        if not parent_window:
+            self.clear_view()
+            return
+
+        # Get selection from parent's file table
+        if not hasattr(parent_window, 'file_table_view'):
+            self.clear_view()
+            return
+
+        selection_model = parent_window.file_table_view.selectionModel()
+        if not selection_model:
+            self.clear_view()
+            return
+
+        selected_rows = selection_model.selectedRows()
+
+        if not selected_rows:
+            self.clear_view()
+            return
+
+        # Prefer currentIndex if it's valid and selected
+        current_index = selection_model.currentIndex()
+        target_index = None
+
+        if (
+            current_index.isValid()
+            and current_index in selected_rows
+            and hasattr(parent_window, 'file_model')
+            and 0 <= current_index.row() < len(parent_window.file_model.files)
+        ):
+            target_index = current_index
+        else:
+            target_index = selected_rows[0]  # fallback
+
+        if (hasattr(parent_window, 'file_model') and
+            0 <= target_index.row() < len(parent_window.file_model.files)):
+
+            file_item = parent_window.file_model.files[target_index.row()]
+
+            # Get metadata from file_item or cache
+            metadata = None
+            if hasattr(file_item, 'metadata') and file_item.metadata:
+                metadata = file_item.metadata
+            elif hasattr(parent_window, 'metadata_cache'):
+                metadata = parent_window.metadata_cache.get(file_item.full_path)
+
+            if isinstance(metadata, dict) and metadata:
+                display_metadata = dict(metadata)
+                display_metadata["FileName"] = file_item.filename
+
+                # Set current file path for scroll position memory
+                self.set_current_file_path(file_item.full_path)
+
+                self.display_metadata(display_metadata, context="update_from_parent_selection")
+                return
+
+        self.clear_view()
+
+    def refresh_metadata_from_selection(self) -> None:
+        """
+        Convenience method that triggers metadata update from parent selection.
+        Can be called from parent window when selection changes.
+        """
+        self.update_from_parent_selection()
+
+    def connect_toggle_button(self) -> None:
+        """
+        Connects the parent's toggle expand button to this tree view's functionality.
+        Should be called after the tree view is added to its parent.
+        """
+        parent_window = self._get_parent_with_file_table()
+        if parent_window and hasattr(parent_window, 'toggle_expand_button'):
+            button = parent_window.toggle_expand_button
+
+            # Disconnect any existing connections to avoid double-connections
+            try:
+                button.toggled.disconnect()
+            except TypeError:
+                pass  # No connections to disconnect
+
+            # Connect to our toggle method
+            button.toggled.connect(self.toggle_expand_all)
+
+            logger.debug("[MetadataTreeView] Toggle button connected successfully")
+        else:
+            logger.warning("[MetadataTreeView] Could not find toggle button to connect")
+
+    def initialize_with_parent(self) -> None:
+        """
+        Performs initial setup that requires parent window to be available.
+        Should be called after the tree view is added to its parent.
+        """
+        self.connect_toggle_button()
+        self.show_empty_state("No file selected")
 

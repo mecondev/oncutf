@@ -64,7 +64,7 @@ from config import *
 from models.file_item import FileItem
 from models.file_table_model import FileTableModel
 from modules.name_transform_module import NameTransformModule
-from utils.build_metadata_tree_model import build_metadata_tree_model
+
 from utils.filename_validator import FilenameValidator
 from utils.icon_cache import load_preview_status_icons, prepare_status_icons
 from utils.icons import create_colored_icon
@@ -363,16 +363,13 @@ class MainWindow(QMainWindow):
         placeholder_value = QStandardItem("-")
         placeholder_model.appendRow([placeholder_item, placeholder_value])
 
-        # self.metadata_tree_view.setModel(placeholder_model)
-        self.show_empty_metadata_tree("No file selected")
-        self.metadata_tree_view.expandAll()
-        self.toggle_expand_button.setChecked(True)
-        self.toggle_expand_button.setText("Collapse All")
-
         # Set minimum size for right panel and finalize
         self.right_frame.setMinimumWidth(230)
         self.horizontal_splitter.addWidget(self.right_frame)
         self.horizontal_splitter.setSizes(LEFT_CENTER_RIGHT_SPLIT_RATIO)
+
+        # Initialize MetadataTreeView with parent connections
+        self.metadata_tree_view.initialize_with_parent()
 
     def setup_bottom_layout(self) -> None:
         """Setup bottom layout for rename modules and preview."""
@@ -529,7 +526,8 @@ class MainWindow(QMainWindow):
         self.file_table_view.setContextMenuPolicy(Qt.CustomContextMenu)
         self.file_table_view.customContextMenuRequested.connect(self.handle_table_context_menu)
 
-        self.toggle_expand_button.toggled.connect(self.toggle_metadata_expand)
+        # Toggle button connection is now handled by MetadataTreeView
+        # self.toggle_expand_button.toggled.connect(self.toggle_metadata_expand)
 
         self.preview_old_name_table.verticalScrollBar().valueChanged.connect(
             self.preview_new_name_table.verticalScrollBar().setValue
@@ -675,7 +673,7 @@ class MainWindow(QMainWindow):
             self.file_table_view.viewport().update()
             self.update_files_label()
             self.request_preview_update()
-            self.clear_metadata_view()
+            self.metadata_tree_view.clear_view()
 
     def invert_selection(self) -> None:
         """
@@ -711,12 +709,12 @@ class MainWindow(QMainWindow):
                     file_item = self.file_model.files[last_row]
                     metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
                     if isinstance(metadata, dict):
-                        self.display_metadata(metadata, context="invert_selection")
+                        self.metadata_tree_view.display_metadata(metadata, context="invert_selection")
                     else:
-                        self.clear_metadata_view()
+                        self.metadata_tree_view.clear_view()
                 QTimer.singleShot(20, show_metadata_later)
             else:
-                self.clear_metadata_view()
+                self.metadata_tree_view.clear_view()
 
     def sort_by_column(self, column: int, order: Qt.SortOrder = None, force_order: Qt.SortOrder = None) -> None:
         """
@@ -964,19 +962,19 @@ class MainWindow(QMainWindow):
             self.metadata_cache.clear()
 
         self.current_folder_path = folder_path
-        self.check_selection_and_show_metadata() # reset metadata tree
+        self.metadata_tree_view.refresh_metadata_from_selection() # reset metadata tree
 
         file_items = self.get_file_items_from_folder(folder_path)
 
         if not file_items:
-            self.clear_metadata_view()
+            self.metadata_tree_view.clear_view()
             self.header.setEnabled(False)
             self.set_status("No supported files found.", color="orange", auto_reset=True)
             return
 
         self.prepare_file_table(file_items)
         self.sort_by_column(1, Qt.AscendingOrder)
-        self.clear_metadata_view()
+        self.metadata_tree_view.clear_view()
 
         if skip_metadata:
             self.set_status("Metadata scan skipped.", color="gray", auto_reset=True)
@@ -1095,131 +1093,9 @@ class MainWindow(QMainWindow):
 
         self.load_metadata_for_items(selected, use_extended=True, source="shortcut_extended")
 
-    def display_metadata(self, metadata: Optional[dict], context: str = "") -> None:
-        """
-        Validates and displays metadata safely in the UI.
 
-        Args:
-            metadata (dict or None): The metadata to display.
-            context (str): Optional source for logging (e.g. 'doubleclick', 'worker')
-        """
-        if not isinstance(metadata, dict) or not metadata:
-            logger.warning(f"[display_metadata] Invalid metadata ({type(metadata)}) from {context}: {metadata}")
-            self.clear_metadata_view()
-            return
 
-        self._render_metadata_view(metadata)
-        self.toggle_expand_button.setEnabled(True)  # Enable expand/collapse button
-        # If metadata_tree_view has a header, enable it
-        if hasattr(self.metadata_tree_view, 'header') and callable(self.metadata_tree_view.header):
-            header = self.metadata_tree_view.header()
-            if header:
-                header.setEnabled(True)
 
-    def _render_metadata_view(self, metadata: dict) -> None:
-        """
-        Actually builds the metadata tree and displays it.
-        Assumes metadata is a non-empty dict.
-
-        Includes fallback protection in case called with invalid metadata.
-        """
-        if not isinstance(metadata, dict):
-            logger.error(f"[render_metadata_view] Called with invalid metadata: {type(metadata)} → {metadata}")
-            self.clear_metadata_view()
-            return
-
-        try:
-            display_data = dict(metadata)
-            filename = metadata.get("FileName")
-            if filename:
-                display_data["FileName"] = filename
-
-            # Try to determine file path for scroll position memory
-            self._set_current_file_from_metadata(metadata)
-
-            tree_model = build_metadata_tree_model(display_data)
-            self.metadata_tree_view.setModel(tree_model)
-            self.metadata_tree_view.expandAll()
-
-            # Trigger scroll position restore AFTER expandAll
-            self.metadata_tree_view.restore_scroll_after_expand()
-
-            self.toggle_expand_button.setChecked(True)
-            self.toggle_expand_button.setText("Collapse All")
-
-        except Exception as e:
-            logger.exception(f"[render_metadata_view] Unexpected error while rendering: {e}")
-            self.clear_metadata_view()
-
-    def _set_current_file_from_metadata(self, metadata: dict) -> None:
-        """Try to determine the current file path from metadata and set it for scroll position memory."""
-        try:
-            # Method 1: Try to get SourceFile from metadata
-            source_file = metadata.get("SourceFile")
-            if source_file:
-                logger.debug(f"[ScrollMemory] Found SourceFile: {source_file}", extra={"dev_only": True})
-                self.metadata_tree_view.set_current_file_path(source_file)
-                return
-
-            # Method 2: Try to find current file from selection
-            selection_model = self.file_table_view.selectionModel()
-            if selection_model and selection_model.hasSelection():
-                selected_rows = selection_model.selectedRows()
-                if selected_rows:
-                    current_index = selection_model.currentIndex()
-                    target_index = current_index if current_index.isValid() and current_index in selected_rows else selected_rows[0]
-
-                    if 0 <= target_index.row() < len(self.file_model.files):
-                        file_item = self.file_model.files[target_index.row()]
-                        logger.debug(f"[ScrollMemory] Found from selection: {file_item.full_path}", extra={"dev_only": True})
-                        self.metadata_tree_view.set_current_file_path(file_item.full_path)
-                        return
-
-            logger.debug("[ScrollMemory] Could not determine current file", extra={"dev_only": True})
-
-        except Exception as e:
-            logger.debug(f"[ScrollMemory] Error determining current file: {e}", extra={"dev_only": True})
-
-    def check_selection_and_show_metadata(self) -> None:
-        """
-        Displays metadata of the currently selected (focused) file in the table view.
-        If no selection or no metadata exists, clears the metadata tree.
-        """
-        selection_model = self.file_table_view.selectionModel()
-        selected_rows = selection_model.selectedRows()
-
-        if not selected_rows:
-            self.clear_metadata_view()
-            return
-
-        # Prefer currentIndex if it's valid and selected
-        current_index = selection_model.currentIndex()
-        target_index = None
-
-        if (
-            current_index.isValid()
-            and current_index in selected_rows
-            and 0 <= current_index.row() < len(self.file_model.files)
-        ):
-            target_index = current_index
-        else:
-            target_index = selected_rows[0]  # fallback
-
-        if 0 <= target_index.row() < len(self.file_model.files):
-            file_item = self.file_model.files[target_index.row()]
-            metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
-
-            if isinstance(metadata, dict) and metadata:
-                display_metadata = dict(metadata)
-                display_metadata["FileName"] = file_item.filename
-
-                # Set current file path for scroll position memory
-                self.metadata_tree_view.set_current_file_path(file_item.full_path)
-
-                self.display_metadata(display_metadata, context="check_selection_and_show_metadata")
-                return
-
-        self.clear_metadata_view()
 
     def reload_current_folder(self) -> None:
         # Optional: adjust if flags need to be preserved
@@ -1261,7 +1137,7 @@ class MainWindow(QMainWindow):
             self.file_table_view.viewport().update()
             self.update_files_label()
             self.request_preview_update()
-            self.check_selection_and_show_metadata()
+            self.metadata_tree_view.refresh_metadata_from_selection()
 
     def generate_preview_names(self) -> None:
         """
@@ -1870,7 +1746,7 @@ class MainWindow(QMainWindow):
         if index.column() == 0:
             return
 
-        self.check_selection_and_show_metadata()
+        self.metadata_tree_view.refresh_metadata_from_selection()
 
     def prompt_file_conflict(self, target_path: str) -> str:
         """
@@ -1889,15 +1765,7 @@ class MainWindow(QMainWindow):
         )
         return response
 
-    def toggle_metadata_expand(self, checked: bool) -> None:
-        if checked:
-            self.metadata_tree_view.expandAll()
-            self.toggle_expand_button.setText("Collapse All")
-            self.toggle_expand_button.setIcon(get_menu_icon("chevrons-up"))
-        else:
-            self.metadata_tree_view.collapseAll()
-            self.toggle_expand_button.setText("Expand All")
-            self.toggle_expand_button.setIcon(get_menu_icon("chevrons-down"))
+
 
     def clear_file_table(self, message: str = "No folder selected") -> None:
         """
@@ -1905,7 +1773,7 @@ class MainWindow(QMainWindow):
         """
         # Clear scroll position memory when changing folders
         self.metadata_tree_view.clear_scroll_memory()
-        self.clear_metadata_view()
+        self.metadata_tree_view.clear_view()
         self.file_model.set_files([])  # reset model with empty list
         self.file_table_view.set_placeholder_visible(False)
         self.header.setEnabled(False) # disable header
@@ -1918,47 +1786,7 @@ class MainWindow(QMainWindow):
         # Update scrollbar visibility after clearing table
         self.file_table_view._update_scrollbar_visibility()
 
-    def show_empty_metadata_tree(self, message: str = "No file selected") -> None:
-        """
-        Displays a placeholder message in the metadata tree view.
-        """
 
-        model = QStandardItemModel()
-        model.setHorizontalHeaderLabels(["Key", "Value"])
-
-        key_item = QStandardItem(message)
-        key_item.setTextAlignment(Qt.AlignLeft)
-        font = key_item.font()
-        font.setItalic(True)
-        key_item.setFont(font)
-        key_item.setForeground(Qt.gray)
-        key_item.setSelectable(False)  # Make placeholder non-selectable
-
-        value_item = QStandardItem("-")
-        value_item.setForeground(Qt.gray)
-        value_item.setSelectable(False)  # Make placeholder non-selectable
-
-        model.appendRow([key_item, value_item])
-
-        # Model will handle selection mode and styling through setModel method
-        self.metadata_tree_view.setModel(model)
-
-        self.toggle_expand_button.setChecked(False)
-        self.toggle_expand_button.setText("Expand All")
-        self.toggle_expand_button.setEnabled(False)  # Disable expand/collapse button
-        # If metadata_tree_view has a header, disable it
-        if hasattr(self.metadata_tree_view, 'header') and callable(self.metadata_tree_view.header):
-            header = self.metadata_tree_view.header()
-            if header:
-                header.setEnabled(False)
-
-    def clear_metadata_view(self) -> None:
-        """
-        Clears the metadata tree view and shows a placeholder message.
-        """
-        # Don't clear scroll position memory when just showing placeholder
-        # Only clear when actually changing folders
-        self.show_empty_metadata_tree("No file selected")
 
     def get_common_metadata_fields(self) -> list[str]:
         """
@@ -2084,7 +1912,7 @@ class MainWindow(QMainWindow):
                 file.checked = False
             self.update_files_label()
             self.update_preview_tables_from_pairs([])
-            self.clear_metadata_view()
+            self.metadata_tree_view.clear_view()
             return
 
         logger.debug(f"[Sync] update_preview_from_selection: {selected_rows}")
@@ -2104,11 +1932,11 @@ class MainWindow(QMainWindow):
                 file_item = self.file_model.files[last_row]
                 metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
                 if isinstance(metadata, dict):
-                    self.display_metadata(metadata, context="update_preview_from_selection")
+                    self.metadata_tree_view.display_metadata(metadata, context="update_preview_from_selection")
                 else:
-                    self.clear_metadata_view()
+                    self.metadata_tree_view.clear_view()
         else:
-            self.clear_metadata_view()
+            self.metadata_tree_view.clear_view()
 
         elapsed = timer.elapsed()
         logger.debug(f"[Performance] Full preview update took {elapsed} ms")
@@ -2266,7 +2094,7 @@ class MainWindow(QMainWindow):
             list[str]: A list of file paths (full paths) that were successfully loaded.
         """
         self.clear_file_table("No folder selected")
-        self.clear_metadata_view()
+        self.metadata_tree_view.clear_view()
 
         file_items = self.get_file_items_from_folder(folder_path)
         self.current_folder_path = folder_path
@@ -2579,7 +2407,7 @@ class MainWindow(QMainWindow):
                 file_item = items[0]
                 metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
                 if isinstance(metadata, dict):
-                    self.display_metadata(metadata, context=f"existing_metadata_from_{source}")
+                    self.metadata_tree_view.display_metadata(metadata, context=f"existing_metadata_from_{source}")
                     self.set_status(f"Metadata already loaded for {file_item.filename}.", color="green", auto_reset=True)
                     return
             else:
@@ -2615,7 +2443,7 @@ class MainWindow(QMainWindow):
                 last = needs_loading[-1]
                 metadata = last.metadata or self.metadata_cache.get(last.full_path)
                 if isinstance(metadata, dict):
-                    self.display_metadata(metadata, context=f"load_metadata_from_{source}")
+                    self.metadata_tree_view.display_metadata(metadata, context=f"load_metadata_from_{source}")
 
                 # Update UI for the specific file
                 row = self.file_model.files.index(last)
