@@ -149,6 +149,14 @@ class FileTableView(QTableView):
             4: max(100, datetime_min)   # Use 100px as minimum for datetime column
         }
 
+        # Apply general minimum size to header (use the smallest minimum width)
+        general_min_width = min(self.column_min_widths.values())
+        header.setMinimumSectionSize(general_min_width)
+
+        # Set individual column minimum widths on the InteractiveHeader
+        if hasattr(header, 'set_column_minimum_widths'):
+            header.set_column_minimum_widths(self.column_min_widths)
+
     def _update_scrollbar_visibility(self) -> None:
         """Update scrollbar visibility based on table content."""
         if not self.model() or not self.column_min_widths:
