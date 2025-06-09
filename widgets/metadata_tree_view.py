@@ -29,10 +29,10 @@ Designed for integration with MainWindow and MetadataReader.
 
 from typing import Optional, Dict, Set, Tuple, Any, Union
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QModelIndex
-from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
+from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent, QStandardItemModel, QStandardItem
 from PyQt5.QtWidgets import (
     QAbstractItemView, QAction, QApplication, QHeaderView,
-    QMenu, QTreeView, QWidget, QStandardItemModel, QStandardItem
+    QMenu, QTreeView, QWidget
 )
 
 from config import METADATA_TREE_COLUMN_WIDTHS
@@ -85,6 +85,20 @@ class MetadataTreeView(QTreeView):
         self._scroll_positions: Dict[str, int] = {}
         self._current_file_path: Optional[str] = None
         self._pending_restore_timer: Optional[QTimer] = None
+
+        # Setup standard view properties
+        self._setup_tree_view_properties()
+
+    def _setup_tree_view_properties(self) -> None:
+        """Configure standard tree view properties."""
+        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.setUniformRowHeights(True)
+        self.expandToDepth(1)
+        self.setRootIsDecorated(False)
+        self.setAcceptDrops(True)
+        self.viewport().setAcceptDrops(True)
+        self.setDragDropMode(QAbstractItemView.DropOnly)
+        self.setAlternatingRowColors(True)  # Enable alternating row colors
 
     # =====================================
     # Drag & Drop Methods
@@ -1109,4 +1123,82 @@ class MetadataTreeView(QTreeView):
         """
         self.connect_toggle_button()
         self.show_empty_state("No file selected")
+
+    # =====================================
+    # Unified Metadata Management Interface
+    # =====================================
+
+    def clear_for_folder_change(self) -> None:
+        """
+        Clears both view and scroll memory when changing folders.
+        This is different from clear_view() which preserves scroll memory.
+        """
+        self.clear_scroll_memory()
+        self.clear_view()
+
+    def display_file_metadata(self, file_item: Any, context: str = "file_display") -> None:
+        """
+        Display metadata for a specific file item.
+        Handles metadata extraction from file_item or cache automatically.
+
+        Args:
+            file_item: FileItem object with metadata
+            context: Context string for logging
+        """
+        if not file_item:
+            self.clear_view()
+            return
+
+        # Get metadata from file_item or cache
+        metadata = None
+        if hasattr(file_item, 'metadata') and file_item.metadata:
+            metadata = file_item.metadata
+        else:
+            # Try to get from parent's cache
+            parent_window = self._get_parent_with_file_table()
+            if parent_window and hasattr(parent_window, 'metadata_cache'):
+                metadata = parent_window.metadata_cache.get(file_item.full_path)
+
+        if isinstance(metadata, dict) and metadata:
+            display_metadata = dict(metadata)
+            display_metadata["FileName"] = file_item.filename
+
+            # Set current file path for scroll position memory
+            self.set_current_file_path(file_item.full_path)
+
+            self.display_metadata(display_metadata, context=context)
+        else:
+            self.clear_view()
+
+    def handle_selection_change(self) -> None:
+        """
+        Handle selection changes from the parent file table.
+        This is a convenience method that can be connected to selection signals.
+        """
+        self.refresh_metadata_from_selection()
+
+    def handle_invert_selection(self, metadata: Optional[Dict[str, Any]]) -> None:
+        """
+        Handle metadata display after selection inversion.
+
+        Args:
+            metadata: The metadata to display, or None to clear
+        """
+        if isinstance(metadata, dict) and metadata:
+            self.display_metadata(metadata, context="invert_selection")
+        else:
+            self.clear_view()
+
+    def handle_metadata_load_completion(self, metadata: Optional[Dict[str, Any]], source: str) -> None:
+        """
+        Handle metadata display after a metadata loading operation completes.
+
+        Args:
+            metadata: The loaded metadata, or None if loading failed
+            source: Source of the metadata loading (e.g., "worker", "cache")
+        """
+        if isinstance(metadata, dict) and metadata:
+            self.display_metadata(metadata, context=f"load_completion_from_{source}")
+        else:
+            self.clear_view()
 

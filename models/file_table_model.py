@@ -198,7 +198,7 @@ class FileTableModel(QAbstractTableModel):
                 logger.debug(f"[Model] dataChanged.emit() for row {row}")
 
         selection_model.select(selection, QItemSelectionModel.Select)
-        self.parent_window.check_selection_and_show_metadata()
+        self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
 
     def clear(self):
         self.beginResetModel()

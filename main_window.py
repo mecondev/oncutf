@@ -345,14 +345,6 @@ class MainWindow(QMainWindow):
         # Metadata Tree View
         self.metadata_tree_view = MetadataTreeView()
         self.metadata_tree_view.files_dropped.connect(self.load_metadata_from_dropped_files)
-        self.metadata_tree_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.metadata_tree_view.setUniformRowHeights(True)
-        self.metadata_tree_view.expandToDepth(1)
-        self.metadata_tree_view.setRootIsDecorated(False)
-        self.metadata_tree_view.setAcceptDrops(True)
-        self.metadata_tree_view.viewport().setAcceptDrops(True)
-        self.metadata_tree_view.setDragDropMode(QAbstractItemView.DropOnly)
-        self.metadata_tree_view.setAlternatingRowColors(True)  # Enable alternating row colors
         right_layout.addWidget(self.metadata_tree_view)
 
         # Dummy initial model
@@ -708,13 +700,10 @@ class MainWindow(QMainWindow):
                     last_row = checked_rows[-1]
                     file_item = self.file_model.files[last_row]
                     metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
-                    if isinstance(metadata, dict):
-                        self.metadata_tree_view.display_metadata(metadata, context="invert_selection")
-                    else:
-                        self.metadata_tree_view.clear_view()
+                    self.metadata_tree_view.handle_invert_selection(metadata)
                 QTimer.singleShot(20, show_metadata_later)
             else:
-                self.metadata_tree_view.clear_view()
+                self.metadata_tree_view.handle_invert_selection(None)
 
     def sort_by_column(self, column: int, order: Qt.SortOrder = None, force_order: Qt.SortOrder = None) -> None:
         """
@@ -1772,8 +1761,7 @@ class MainWindow(QMainWindow):
         Clears the file table and shows a placeholder message.
         """
         # Clear scroll position memory when changing folders
-        self.metadata_tree_view.clear_scroll_memory()
-        self.metadata_tree_view.clear_view()
+        self.metadata_tree_view.clear_for_folder_change()
         self.file_model.set_files([])  # reset model with empty list
         self.file_table_view.set_placeholder_visible(False)
         self.header.setEnabled(False) # disable header
@@ -2406,10 +2394,9 @@ class MainWindow(QMainWindow):
                 # Display the existing metadata for single file selection
                 file_item = items[0]
                 metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
-                if isinstance(metadata, dict):
-                    self.metadata_tree_view.display_metadata(metadata, context=f"existing_metadata_from_{source}")
-                    self.set_status(f"Metadata already loaded for {file_item.filename}.", color="green", auto_reset=True)
-                    return
+                self.metadata_tree_view.handle_metadata_load_completion(metadata, f"existing_{source}")
+                self.set_status(f"Metadata already loaded for {file_item.filename}.", color="green", auto_reset=True)
+                return
             else:
                 self.set_status(f"Metadata already loaded for {len(items)} files.", color="green", auto_reset=True)
                 return
@@ -2442,8 +2429,7 @@ class MainWindow(QMainWindow):
                 # Display metadata if successfully loaded
                 last = needs_loading[-1]
                 metadata = last.metadata or self.metadata_cache.get(last.full_path)
-                if isinstance(metadata, dict):
-                    self.metadata_tree_view.display_metadata(metadata, context=f"load_metadata_from_{source}")
+                self.metadata_tree_view.handle_metadata_load_completion(metadata, source)
 
                 # Update UI for the specific file
                 row = self.file_model.files.index(last)
