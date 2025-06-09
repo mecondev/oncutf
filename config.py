@@ -116,7 +116,7 @@ FILE_TABLE_COLUMN_WIDTHS = {
     "FILENAME_COLUMN": 345,  # Column 1: Filename column (set to 345px)
     "FILESIZE_COLUMN": 80,   # Column 2: File size column
     "EXTENSION_COLUMN": 60,  # Column 3: File extension column
-    "DATE_COLUMN": 100       # Column 4: Modified date column
+    "DATE_COLUMN": 130       # Column 4: Modified date column
 }
 
 # ----------------------------

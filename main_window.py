@@ -924,9 +924,6 @@ class MainWindow(QMainWindow):
         if self.last_action == "rename":
             logger.debug("[PrepareTable] Post-rename detected, preview will be updated after checked state restore")
 
-        # Reset filename column to initial width (clears any previous adjustments)
-        self.file_table_view._reset_filename_column_width()
-
         # Update scrollbar visibility after populating table
         self.file_table_view._update_scrollbar_visibility()
 
@@ -937,8 +934,6 @@ class MainWindow(QMainWindow):
 
         if normalized_new == normalized_current and not force:
             logger.info(f"[FolderLoad] Ignored reload of already loaded folder: {normalized_new}")
-            # Even though we're not reloading, reset filename column in case it was adjusted
-            self.file_table_view._reset_filename_column_width()
             self.set_status("Folder already loaded.", color="gray", auto_reset=True)
             return
 
@@ -1767,9 +1762,6 @@ class MainWindow(QMainWindow):
         self.header.setEnabled(False) # disable header
         self.status_label.setText(message)
         self.update_files_label()
-
-        # Reset filename column to initial width (clears any previous adjustments)
-        self.file_table_view._reset_filename_column_width()
 
         # Update scrollbar visibility after clearing table
         self.file_table_view._update_scrollbar_visibility()
