@@ -1903,6 +1903,8 @@ class MainWindow(QMainWindow):
         """
         Clears the file table and shows a placeholder message.
         """
+        # Clear scroll position memory when changing folders
+        self.metadata_tree_view.clear_scroll_memory()
         self.clear_metadata_view()
         self.file_model.set_files([])  # reset model with empty list
         self.file_table_view.set_placeholder_visible(False)
@@ -1954,8 +1956,8 @@ class MainWindow(QMainWindow):
         """
         Clears the metadata tree view and shows a placeholder message.
         """
-        # Clear scroll position memory when clearing metadata view
-        self.metadata_tree_view.clear_scroll_memory()
+        # Don't clear scroll position memory when just showing placeholder
+        # Only clear when actually changing folders
         self.show_empty_metadata_tree("No file selected")
 
     def get_common_metadata_fields(self) -> list[str]:

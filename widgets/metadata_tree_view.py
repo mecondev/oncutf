@@ -176,7 +176,30 @@ class MetadataTreeView(QTreeView):
                 self._current_file_path = None  # No file selected
             else:
                 self._configure_normal_mode()
-                # Note: Scroll restoration will be triggered manually after expandAll() by MainWindow
+
+                # For non-placeholder mode, immediately restore scroll position
+                # This prevents the "jump to 0 then scroll to final position" effect
+                if self._current_file_path and self._current_file_path in self._scroll_positions:
+                    # Get the saved position
+                    saved_position = self._scroll_positions[self._current_file_path]
+
+                    # Apply immediately without delay
+                    QTimer.singleShot(0, lambda: self._apply_scroll_position_immediately(saved_position))
+                    logger.debug(f"[MetadataTree] Scheduled immediate scroll to position {saved_position}")
+
+    def _apply_scroll_position_immediately(self, position: int) -> None:
+        """Apply scroll position immediately without waiting for expandAll()."""
+        if self._current_file_path and not self._is_placeholder_mode:
+            scrollbar = self.verticalScrollBar()
+            max_scroll = scrollbar.maximum()
+
+            # Clamp position to valid range
+            valid_position = min(position, max_scroll)
+            valid_position = max(valid_position, 0)
+
+            # Apply the position
+            scrollbar.setValue(valid_position)
+            logger.debug(f"[MetadataTree] Applied immediate scroll to position {valid_position}")
 
     def _detect_placeholder_mode(self, model) -> bool:
         """Detect if the model contains placeholder content."""
@@ -286,13 +309,13 @@ class MetadataTreeView(QTreeView):
         if self._current_file_path and not self._is_placeholder_mode:
             # Check if this is the first time viewing this file
             if self._current_file_path not in self._scroll_positions:
-                # First time viewing - go to top
-                self.verticalScrollBar().setValue(0)
-                logger.info(f"[MetadataTree] First time viewing {self._current_file_path} - going to top")
+                # First time viewing - go to top with smooth animation
+                self._smooth_scroll_to_position(0)
+                logger.info(f"[MetadataTree] First time viewing {self._current_file_path} - smooth scroll to top")
                 # Mark this file as visited with position 0
                 self._scroll_positions[self._current_file_path] = 0
             else:
-                # Restore saved position
+                # Restore saved position with smooth animation
                 saved_position = self._scroll_positions[self._current_file_path]
 
                 # Validate scroll position against current content
@@ -303,17 +326,49 @@ class MetadataTreeView(QTreeView):
                 valid_position = min(saved_position, max_scroll)
                 valid_position = max(valid_position, 0)
 
-                # Apply the validated position
-                scrollbar.setValue(valid_position)
+                # Apply with smooth animation
+                self._smooth_scroll_to_position(valid_position)
 
                 if saved_position != valid_position:
-                    logger.info(f"[MetadataTree] Clamped scroll position {saved_position} -> {valid_position} (max: {max_scroll}) for {self._current_file_path}")
+                    logger.info(f"[MetadataTree] Smooth scroll with clamped position {saved_position} -> {valid_position} (max: {max_scroll}) for {self._current_file_path}")
                 else:
-                    logger.info(f"[MetadataTree] Restored scroll position {valid_position} for {self._current_file_path}")
+                    logger.info(f"[MetadataTree] Smooth scroll to restored position {valid_position} for {self._current_file_path}")
 
         # Clean up the timer
         if self._pending_restore_timer is not None:
             self._pending_restore_timer = None
+
+    def _smooth_scroll_to_position(self, target_position: int) -> None:
+        """Smoothly scroll to the target position using animation."""
+        scrollbar = self.verticalScrollBar()
+        current_position = scrollbar.value()
+
+        # If already at target position, no need to animate
+        if current_position == target_position:
+            return
+
+        # Calculate animation duration based on distance
+        distance = abs(target_position - current_position)
+        # Base duration 150ms, with additional time for longer distances
+        duration = min(150 + (distance // 10), 400)  # Max 400ms
+
+        # Create animation
+        if hasattr(self, '_scroll_animation'):
+            self._scroll_animation.stop()
+
+        from PyQt5.QtCore import QPropertyAnimation, QEasingCurve
+
+        self._scroll_animation = QPropertyAnimation(scrollbar, b"value")
+        self._scroll_animation.setDuration(duration)
+        self._scroll_animation.setStartValue(current_position)
+        self._scroll_animation.setEndValue(target_position)
+        # self._scroll_animation.setEasingCurve(QEasingCurve.OutCubic)  # Smooth deceleration
+        self._scroll_animation.setEasingCurve(QEasingCurve.InOutSine)  # Smooth sine wave motion
+
+        # Start animation
+        self._scroll_animation.start()
+
+        logger.debug(f"[MetadataTree] Started smooth scroll animation from {current_position} to {target_position} (duration: {duration}ms)")
 
     def clear_scroll_memory(self) -> None:
         """Clear all saved scroll positions (useful when changing folders)."""
@@ -330,14 +385,14 @@ class MetadataTreeView(QTreeView):
     def restore_scroll_after_expand(self) -> None:
         """Trigger scroll position restore after expandAll() has completed."""
         if self._current_file_path and not self._is_placeholder_mode:
-            # Use a longer delay to ensure expand operations are complete
+            # Use a shorter delay since we now do immediate restoration in setModel
             if self._pending_restore_timer is not None:
                 self._pending_restore_timer.stop()
 
             self._pending_restore_timer = QTimer()
             self._pending_restore_timer.timeout.connect(self._restore_scroll_position_for_current_file)
             self._pending_restore_timer.setSingleShot(True)
-            self._pending_restore_timer.start(100)  # Increased from 50ms to 100ms
+            self._pending_restore_timer.start(25)  # Reduced from 100ms to 25ms for faster response
 
     # =====================================
     # Context Menu & Actions
