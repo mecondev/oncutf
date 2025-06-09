@@ -244,7 +244,7 @@ class FileTableView(QTableView):
             self.placeholder_label.raise_()
             self.placeholder_label.show()
 
-            # Disable interactions when showing placeholder
+                        # Disable interactions when showing placeholder but keep drag & drop
             header = self.horizontalHeader()
             if header:
                 header.setEnabled(False)
@@ -252,12 +252,12 @@ class FileTableView(QTableView):
                 header.setSortIndicatorShown(False)
 
             self.setSelectionMode(QAbstractItemView.NoSelection)
-            self.setEnabled(False)  # Disable the entire table
+            self.setContextMenuPolicy(Qt.NoContextMenu)  # Disable context menu
 
         else:
             self.placeholder_label.hide()
 
-            # Re-enable interactions when hiding placeholder
+                        # Re-enable interactions when hiding placeholder
             header = self.horizontalHeader()
             if header:
                 header.setEnabled(True)
@@ -265,7 +265,7 @@ class FileTableView(QTableView):
                 header.setSortIndicatorShown(True)  # Enable sorting when there's content
 
             self.setSelectionMode(QAbstractItemView.ExtendedSelection)
-            self.setEnabled(True)  # Re-enable the entire table
+            self.setContextMenuPolicy(Qt.CustomContextMenu)  # Re-enable custom context menu
 
             self.viewport().update()
 

@@ -263,11 +263,12 @@ class MetadataTreeView(QTreeView):
         header.setSectionsClickable(False)
         header.setSortIndicatorShown(False)
 
-        # Disable tree interactions
+                # Disable tree interactions but keep drag & drop working
         self.setSelectionMode(QAbstractItemView.NoSelection)
         self.setItemsExpandable(False)
         self.setRootIsDecorated(False)
-        self.setEnabled(False)  # Disable the entire tree view
+        self.setContextMenuPolicy(Qt.NoContextMenu)  # Disable context menu
+        self.setMouseTracking(False)  # Disable hover effects
 
         # Set placeholder property for styling
         self.setProperty("placeholder", True)
@@ -297,11 +298,12 @@ class MetadataTreeView(QTreeView):
         header.setMinimumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"])
         header.setMaximumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MAX_WIDTH"])
 
-        # Re-enable tree interactions
-        self.setEnabled(True)  # Re-enable the entire tree view
+                # Re-enable tree interactions
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setItemsExpandable(True)
         self.setRootIsDecorated(False)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)  # Re-enable context menu
+        self.setMouseTracking(True)  # Re-enable hover effects
 
         # Clear placeholder property
         self.setProperty("placeholder", False)
