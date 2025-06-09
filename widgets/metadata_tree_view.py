@@ -273,7 +273,7 @@ class MetadataTreeView(QTreeView):
         # Only reset current file path when entering placeholder mode
         # DO NOT clear scroll positions - we want to preserve them for other files
         self._current_file_path = None
-        logger.info("[MetadataTree] Entered placeholder mode - reset current file only")
+        logger.debug("[MetadataTree] Entered placeholder mode - reset current file only", extra={"dev_only": True})
 
         # Show placeholder icon instead of text
         if self.placeholder_label and not self.placeholder_icon.isNull():
@@ -389,7 +389,7 @@ class MetadataTreeView(QTreeView):
         if self._current_file_path and not self._is_placeholder_mode:
             scroll_value = self.verticalScrollBar().value()
             self._scroll_positions[self._current_file_path] = scroll_value
-            logger.info(f"[MetadataTree] Saved scroll position {scroll_value} for {self._current_file_path}")
+            logger.debug(f"[MetadataTree] Saved scroll position {scroll_value} for {self._current_file_path}", extra={"dev_only": True})
 
     def _restore_scroll_position_for_current_file(self) -> None:
         """Restore the scroll position for the current file."""
@@ -398,7 +398,7 @@ class MetadataTreeView(QTreeView):
             if self._current_file_path not in self._scroll_positions:
                 # First time viewing - go to top with smooth animation
                 self._smooth_scroll_to_position(0)
-                logger.info(f"[MetadataTree] First time viewing {self._current_file_path} - smooth scroll to top")
+                logger.debug(f"[MetadataTree] First time viewing {self._current_file_path} - smooth scroll to top", extra={"dev_only": True})
                 # Mark this file as visited with position 0
                 self._scroll_positions[self._current_file_path] = 0
             else:

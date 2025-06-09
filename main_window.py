@@ -2413,14 +2413,14 @@ class MainWindow(QMainWindow):
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
         """Handle horizontal splitter movement - logic delegated to individual views"""
         sizes = self.horizontal_splitter.sizes()
-        logger.debug(f"[HorizontalSplitter] Moved - Position: {pos}, Index: {index}, Sizes: {sizes} (Left: {sizes[0]}px, Center: {sizes[1]}px, Right: {sizes[2]}px)")
+        logger.debug(f"[HorizontalSplitter] Moved - Position: {pos}, Index: {index}, Sizes: {sizes} (Left: {sizes[0]}px, Center: {sizes[1]}px, Right: {sizes[2]}px)", extra={"dev_only": True})
 
         # Individual views handle their own adjustments via their callback methods
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement for debugging optimal sizes"""
         sizes = self.vertical_splitter.sizes()
-        logger.debug(f"[VerticalSplitter] Moved - Position: {pos}, Index: {index}, Sizes: {sizes} (Top: {sizes[0]}px, Bottom: {sizes[1]}px)")
+        logger.debug(f"[VerticalSplitter] Moved - Position: {pos}, Index: {index}, Sizes: {sizes} (Top: {sizes[0]}px, Bottom: {sizes[1]}px)", extra={"dev_only": True})
 
 
 

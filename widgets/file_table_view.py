@@ -62,6 +62,7 @@ class FileTableView(QTableView):
         self._drag_start_pos: QPoint = QPoint()
         self._filename_min_width: int = 250  # Will be updated in _configure_columns
         self._user_preferred_width: Optional[int] = None  # User's preferred filename column width
+        self._programmatic_resize: bool = False  # Flag to indicate programmatic resize in progress
 
         # Configure table behavior
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -129,6 +130,10 @@ class FileTableView(QTableView):
         Args:
             file_items: List of FileItem objects to display in the table
         """
+        # Reset manual column preferences when loading new files
+        self._has_manual_preference = False
+        self._user_preferred_width = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
+
         # Clear selection and reset checked state
         for file_item in file_items:
             file_item.checked = False
@@ -171,7 +176,7 @@ class FileTableView(QTableView):
             parent_window = parent_window.parent()
 
         if not parent_window:
-            logger.warning("[FileTableView] Cannot find parent window with fontMetrics")
+            logger.warning("[FileTableView] Cannot find parent window with fontMetrics", extra={"dev_only": True})
             return
 
         # Configure each column with config values and calculated minimums
@@ -203,31 +208,36 @@ class FileTableView(QTableView):
         # Apply general minimum size to header (for all columns)
         header.setMinimumSectionSize(20)
 
-                # Store minimum width for filename column enforcement (use same as initial width)
+        # Store minimum width for filename column enforcement (use same as initial width)
         self._filename_min_width = filename_width
 
         # Initialize user preferred width to the initial width
         self._user_preferred_width = filename_width
+        self._has_manual_preference = False  # Track if user has manually resized
 
         # Connect signal to enforce filename column minimum width
         header.sectionResized.connect(self._on_filename_resized)
 
     def _on_filename_resized(self, logical_index: int, old_size: int, new_size: int) -> None:
-        """Enforce minimum width and remember user preference for filename column (column 1)."""
+        """Enforce minimum width and track manual user preferences for filename column (column 1)."""
         if logical_index == 1 and hasattr(self, '_filename_min_width'):
+            # Always enforce minimum width
             if new_size < self._filename_min_width:
                 self.setColumnWidth(1, self._filename_min_width)
-                self._user_preferred_width = self._filename_min_width
-            else:
-                # Remember user's preferred width
+                return
+
+            # Track manual user preference only if this is NOT a programmatic resize
+            if not getattr(self, '_programmatic_resize', False):
                 self._user_preferred_width = new_size
+                self._has_manual_preference = True
 
     def _update_scrollbar_visibility(self) -> None:
         """Update scrollbar visibility based on table content."""
-        if not self.model():
+        model = self.model()
+        if not model:
             return
 
-        is_empty = (self.model() is None or self.model().rowCount() == 0)
+        is_empty = (model.rowCount() == 0)
 
         if is_empty:
             self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -254,35 +264,29 @@ class FileTableView(QTableView):
 
             current_filename_width = self.columnWidth(1)
 
-            # Use available space, but respect minimum width
-            new_filename_width = max(self._filename_min_width, available_width)
+            # Simple logic: Check if user has manually resized the column
+            if getattr(self, '_has_manual_preference', False):
+                # User has manually resized - use their preferred width, but expand to fill space if needed
+                target_width = max(self._user_preferred_width, self._filename_min_width)
+                if available_width > target_width:
+                    # Expand to fill available space
+                    new_filename_width = available_width
+                else:
+                    # Use their preferred width (or minimum if space is constrained)
+                    new_filename_width = max(target_width, self._filename_min_width)
+            else:
+                # No manual preference - just fill available space
+                new_filename_width = max(self._filename_min_width, available_width)
 
-            # Only resize if the difference is significant (avoid micro-adjustments)
+            # Only resize if there's a meaningful difference (avoid micro-adjustments)
             size_difference = abs(new_filename_width - current_filename_width)
-
-            # Only adjust if:
-            # 1. We need to expand significantly (>20px more space available)
-            # 2. We need to shrink below current size due to space constraints
-            should_resize = False
-
-            if new_filename_width > current_filename_width and size_difference > 20:
-                # Expand only if we have significantly more space
-                should_resize = True
-            elif new_filename_width < current_filename_width:
-                # Always shrink when space is constrained
-                should_resize = True
+            should_resize = size_difference > 5  # Much smaller threshold for smoother behavior
 
             if should_resize:
-                # Temporarily disconnect signal to avoid updating user preference during auto-resize
-                header = self.horizontalHeader()
-                if header:
-                    header.sectionResized.disconnect(self._on_filename_resized)
-
+                # Set flag to indicate this is a programmatic resize
+                self._programmatic_resize = True
                 self.setColumnWidth(1, new_filename_width)
-
-                # Reconnect signal
-                if header:
-                    header.sectionResized.connect(self._on_filename_resized)
+                self._programmatic_resize = False
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement."""
