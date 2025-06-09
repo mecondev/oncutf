@@ -35,16 +35,33 @@ from .hover_delegate import HoverItemDelegate
 
 logger = get_logger(__name__)
 
+# Constants for better maintainability
+PLACEHOLDER_ICON_SIZE = 160
+SCROLLBAR_MARGIN = 40
+
 
 class FileTableView(QTableView):
+    """
+    Custom QTableView with Windows Explorer-like behavior.
+
+    Features:
+    - Full-row selection with anchor handling
+    - Intelligent column width management
+    - Drag & drop support with custom MIME types
+    - Hover highlighting and visual feedback
+    - Automatic placeholder management
+    """
+
     selection_changed = pyqtSignal(list)  # Emitted with list[int] of selected rows
     files_dropped = pyqtSignal(list, object)  # Emitted with list of dropped paths and keyboard modifiers
 
     def __init__(self, parent=None) -> None:
         """Initialize the custom table view with Explorer-like behavior."""
         super().__init__(parent)
-        self._manual_anchor_index: QModelIndex | None = None
+        self._manual_anchor_index: Optional[QModelIndex] = None
         self._drag_start_pos: QPoint = QPoint()
+        self._filename_min_width: int = 250  # Will be updated in _configure_columns
+        self._user_preferred_width: Optional[int] = None  # User's preferred filename column width
 
         # Configure table behavior
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -64,37 +81,82 @@ class FileTableView(QTableView):
         self.placeholder_icon = QPixmap(str(icon_path))
 
         if not self.placeholder_icon.isNull():
-            scaled = self.placeholder_icon.scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            scaled = self.placeholder_icon.scaled(
+                PLACEHOLDER_ICON_SIZE, PLACEHOLDER_ICON_SIZE,
+                Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
             self.placeholder_label.setPixmap(scaled)
         else:
             logger.warning("Placeholder icon could not be loaded.")
 
         # Selection and interaction state
         self.selected_rows: set[int] = set()
-        self.anchor_row: int | None = None
-        self.context_focused_row: int | None = None
+        self.anchor_row: Optional[int] = None
+        self.context_focused_row: Optional[int] = None
 
         # Enable hover visuals
         self.hover_delegate = HoverItemDelegate(self)
         self.setItemDelegate(self.hover_delegate)
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event) -> None:
+        """Handle resize events and update placeholder position."""
         super().resizeEvent(event)
         if self.placeholder_label:
             self.placeholder_label.resize(self.viewport().size())
             self.placeholder_label.move(0, 0)
 
-    def setModel(self, model):
+    def setModel(self, model) -> None:
         """Configure columns when model is set."""
         super().setModel(model)
         if model:
             QTimer.singleShot(10, self._configure_columns)
 
     # =====================================
+    # Table Preparation & Management
+    # =====================================
+
+    def prepare_table(self, file_items: list) -> None:
+        """
+        Prepare the table view with the given file items.
+
+        This method handles:
+        - Clearing selection and resetting state
+        - Setting files in the model
+        - Reconfiguring columns after model reset
+        - Updating delegates and UI elements
+        - Managing scrollbar visibility
+
+        Args:
+            file_items: List of FileItem objects to display in the table
+        """
+        # Clear selection and reset checked state
+        for file_item in file_items:
+            file_item.checked = False
+
+        self.clearSelection()
+        self.selected_rows.clear()
+
+        # Set files in model (this triggers beginResetModel/endResetModel)
+        if self.model() and hasattr(self.model(), 'set_files'):
+            self.model().set_files(file_items)
+
+        # Reconfigure columns after model reset
+        self._configure_columns()
+
+        # Reset hover delegate state
+        if hasattr(self, 'hover_delegate'):
+            self.setItemDelegate(self.hover_delegate)
+            self.hover_delegate.hovered_row = -1
+
+        # Update UI
+        self.viewport().update()
+        self._update_scrollbar_visibility()
+
+    # =====================================
     # Column Management & Scrollbar Optimization
     # =====================================
 
-    def _configure_columns(self):
+    def _configure_columns(self) -> None:
         """Configure column settings and initial widths from config."""
         if not self.model():
             return
@@ -119,7 +181,7 @@ class FileTableView(QTableView):
 
         # Filename column - Interactive with minimum width protection
         filename_min = parent_window.fontMetrics().horizontalAdvance("Long_Filename_Example_2024.jpeg") + 30
-        filename_width = max(FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"], filename_min, 250)  # Use 250px as absolute minimum
+        filename_width = max(FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"], filename_min, 250)
         header.setSectionResizeMode(1, QHeaderView.Interactive)
         self.setColumnWidth(1, filename_width)
 
@@ -141,18 +203,24 @@ class FileTableView(QTableView):
         # Apply general minimum size to header (for all columns)
         header.setMinimumSectionSize(20)
 
-        # Store minimum width for filename column enforcement (use same as initial width)
+                # Store minimum width for filename column enforcement (use same as initial width)
         self._filename_min_width = filename_width
+
+        # Initialize user preferred width to the initial width
+        self._user_preferred_width = filename_width
 
         # Connect signal to enforce filename column minimum width
         header.sectionResized.connect(self._on_filename_resized)
 
     def _on_filename_resized(self, logical_index: int, old_size: int, new_size: int) -> None:
-        """Enforce minimum width only for filename column (column 1)."""
+        """Enforce minimum width and remember user preference for filename column (column 1)."""
         if logical_index == 1 and hasattr(self, '_filename_min_width'):
             if new_size < self._filename_min_width:
                 self.setColumnWidth(1, self._filename_min_width)
-                logger.debug(f"Filename column size corrected from {new_size} to {self._filename_min_width}")
+                self._user_preferred_width = self._filename_min_width
+            else:
+                # Remember user's preferred width
+                self._user_preferred_width = new_size
 
     def _update_scrollbar_visibility(self) -> None:
         """Update scrollbar visibility based on table content."""
@@ -167,7 +235,7 @@ class FileTableView(QTableView):
             self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
-        """Handle horizontal splitter movement - expand filename column to fill available space."""
+        """Handle horizontal splitter movement - use user preference as base, expand if more space available."""
         parent_window = self.parent()
         while parent_window and not hasattr(parent_window, 'horizontal_splitter'):
             parent_window = parent_window.parent()
@@ -182,15 +250,39 @@ class FileTableView(QTableView):
             # Calculate available width for filename column
             other_columns_width = (self.columnWidth(0) + self.columnWidth(2) +
                                   self.columnWidth(3) + self.columnWidth(4))
+            available_width = center_panel_width - other_columns_width - SCROLLBAR_MARGIN
 
-            # Leave some margin for scrollbars and borders
-            available_width = center_panel_width - other_columns_width - 40
+            current_filename_width = self.columnWidth(1)
 
-            # Use at least the minimum width, but expand to fill available space
+            # Use available space, but respect minimum width
             new_filename_width = max(self._filename_min_width, available_width)
 
-            if new_filename_width != self.columnWidth(1):
+            # Only resize if the difference is significant (avoid micro-adjustments)
+            size_difference = abs(new_filename_width - current_filename_width)
+
+            # Only adjust if:
+            # 1. We need to expand significantly (>20px more space available)
+            # 2. We need to shrink below current size due to space constraints
+            should_resize = False
+
+            if new_filename_width > current_filename_width and size_difference > 20:
+                # Expand only if we have significantly more space
+                should_resize = True
+            elif new_filename_width < current_filename_width:
+                # Always shrink when space is constrained
+                should_resize = True
+
+            if should_resize:
+                # Temporarily disconnect signal to avoid updating user preference during auto-resize
+                header = self.horizontalHeader()
+                if header:
+                    header.sectionResized.disconnect(self._on_filename_resized)
+
                 self.setColumnWidth(1, new_filename_width)
+
+                # Reconnect signal
+                if header:
+                    header.sectionResized.connect(self._on_filename_resized)
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement."""
@@ -219,7 +311,7 @@ class FileTableView(QTableView):
                 header.setSortIndicatorShown(False)
 
             self.setSelectionMode(QAbstractItemView.NoSelection)
-            self.setContextMenuPolicy(Qt.NoContextMenu)  # Disable context menu
+            self.setContextMenuPolicy(Qt.NoContextMenu)
 
         else:
             self.placeholder_label.hide()
@@ -232,10 +324,10 @@ class FileTableView(QTableView):
             if header:
                 header.setEnabled(True)
                 header.setSectionsClickable(True)
-                header.setSortIndicatorShown(True)  # Enable sorting when there's content
+                header.setSortIndicatorShown(True)
 
             self.setSelectionMode(QAbstractItemView.ExtendedSelection)
-            self.setContextMenuPolicy(Qt.CustomContextMenu)  # Re-enable custom context menu
+            self.setContextMenuPolicy(Qt.CustomContextMenu)
 
             self.viewport().update()
 

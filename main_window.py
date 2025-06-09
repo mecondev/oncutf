@@ -885,47 +885,33 @@ class MainWindow(QMainWindow):
 
     def prepare_file_table(self, file_items: list[FileItem]) -> None:
         """
-        Prepares the file table view with the given file items, clearing selection
-        and setting up the model, delegates, and UI elements appropriately.
+        Prepare the file table view with the given file items.
+
+        Delegates the core table preparation to the FileTableView and handles
+        application-specific logic like updating labels and preview maps.
 
         Args:
-            file_items (list[FileItem]): List of FileItem objects to display in the table
+            file_items: List of FileItem objects to display in the table
         """
-        # Model is already set in setup_center_panel() - no need to set it again
-        for f in file_items:
-            f.checked = False
+        # Delegate table preparation to the view itself
+        self.file_table_view.prepare_table(file_items)
 
-            # Ensure no file is visually selected
-        self.file_table_view.clearSelection()
-        self.file_table_view.selected_rows.clear()
-
-        self.file_model.set_files(file_items)
-
-        # IMPORTANT: set_files() calls beginResetModel()/endResetModel() which resets column widths
-        # So we need to reconfigure columns AFTER set_files()
-        self.file_table_view._configure_columns()
-
+        # Handle application-specific setup
         self.files = file_items
         self.file_model.folder_path = self.current_folder_path
         self.preview_map = {f.filename: f for f in file_items}
 
+        # Enable header and update UI elements
         if hasattr(self, "header") and self.header is not None:
-            self.header.setEnabled(True)  # Enable file table header
-        # Enable hover delegate if it exists
-        if hasattr(self.file_table_view, 'hover_delegate'):
-            self.file_table_view.setItemDelegate(self.file_table_view.hover_delegate)
-            self.file_table_view.hover_delegate.hovered_row = -1
+            self.header.setEnabled(True)
+
         self.update_files_label()
         self.update_preview_tables_from_pairs([])
         self.rename_button.setEnabled(False)
-        self.file_table_view.viewport().update()
 
         # If we're coming from a rename operation and have active modules, regenerate preview
         if self.last_action == "rename":
             logger.debug("[PrepareTable] Post-rename detected, preview will be updated after checked state restore")
-
-        # Update scrollbar visibility after populating table
-        self.file_table_view._update_scrollbar_visibility()
 
     def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False, force: bool = False):
 
@@ -2112,30 +2098,25 @@ class MainWindow(QMainWindow):
                         os.path.getmtime(path)).strftime("%Y-%m-%d %H:%M:%S")
                     file_items.append(FileItem(filename, ext, modified, full_path=path))
 
-        self.file_model.files = file_items
-        self.file_model.layoutChanged.emit()
+        # Use the new prepare_table method instead of manual model manipulation
+        self.file_table_view.prepare_table(file_items)
 
-        # IMPORTANT: layoutChanged.emit() resets column widths to default (100px)
-        # So we need to reconfigure columns AFTER the emit
-        self.file_table_view._configure_columns()
+        # Handle application-specific setup
+        self.files = file_items
+        self.preview_map = {f.filename: f for f in file_items}
 
-        # Sorting connections — must be after emit
+        # Configure sorting and header after prepare_table
         self.file_table_view.setSortingEnabled(True)
-        self.header.setSectionsClickable(True)
-        self.header.setSortIndicatorShown(True)
-        self.header.setEnabled(True)  # <- required for right-click!
+        if hasattr(self, "header"):
+            self.header.setSectionsClickable(True)
+            self.header.setSortIndicatorShown(True)
+            self.header.setEnabled(True)
+
         self.file_table_view.sortByColumn(1, Qt.AscendingOrder)
-
-        # Clear highlight & preview
-        self.file_table_view.clearSelection()
-        self.file_table_view.selected_rows.clear()
-
-        # Placeholder & position
         self.file_table_view.set_placeholder_visible(len(file_items) == 0)
         self.file_table_view.scrollToTop()
-
-        # Clear preview since no files are selected
         self.update_preview_tables_from_pairs([])
+        self.update_files_label()
 
     def load_metadata_from_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
