@@ -258,10 +258,19 @@ class MetadataTreeView(QTreeView):
         header.resizeSection(0, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_KEY_WIDTH"])
         header.resizeSection(1, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_VALUE_WIDTH"])
 
-        # Disable interactions
+        # Disable header interactions
+        header.setEnabled(False)
+        header.setSectionsClickable(False)
+        header.setSortIndicatorShown(False)
+
+        # Disable tree interactions
         self.setSelectionMode(QAbstractItemView.NoSelection)
         self.setItemsExpandable(False)
         self.setRootIsDecorated(False)
+        self.setEnabled(False)  # Disable the entire tree view
+
+        # Set placeholder property for styling
+        self.setProperty("placeholder", True)
 
     def _configure_normal_mode(self) -> None:
         """Configure view for normal content mode."""
@@ -269,6 +278,11 @@ class MetadataTreeView(QTreeView):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
         header = self.header()
+
+        # Re-enable header interactions
+        header.setEnabled(True)
+        header.setSectionsClickable(True)
+        header.setSortIndicatorShown(False)  # Keep sorting disabled
 
         # Key column: min 80px, initial 180px, max 800px
         header.setSectionResizeMode(0, QHeaderView.Interactive)
@@ -283,8 +297,13 @@ class MetadataTreeView(QTreeView):
         header.setMinimumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"])
         header.setMaximumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MAX_WIDTH"])
 
-        # Enable normal selection and clear placeholder property
+        # Re-enable tree interactions
+        self.setEnabled(True)  # Re-enable the entire tree view
         self.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.setItemsExpandable(True)
+        self.setRootIsDecorated(False)
+
+        # Clear placeholder property
         self.setProperty("placeholder", False)
         self.setAttribute(Qt.WA_NoMousePropagation, False)
 
@@ -814,11 +833,18 @@ class MetadataTreeView(QTreeView):
 
     def scrollTo(self, index: QModelIndex, hint: Union[QAbstractItemView.ScrollHint, None] = None) -> None:
         """
-        Override scrollTo to prevent unwanted scrolling during model changes.
-        Only allows scrolling if we're not in the middle of a model update.
+        Override scrollTo to prevent automatic scrolling when selections change.
+        Scroll position is managed manually via the scroll position memory system.
+        This prevents the table from moving when selecting cells from column 1.
         """
-        # Allow scrolling during normal user interaction
-        super().scrollTo(index, hint)
+        if self._is_placeholder_mode:
+            # In placeholder mode, use normal scrolling
+            super().scrollTo(index, hint)
+            return
+
+        # In normal mode, do nothing - scroll position is managed manually
+        # This prevents Qt from automatically scrolling when selections change
+        return
 
     # =====================================
     # Metadata Display Management Methods

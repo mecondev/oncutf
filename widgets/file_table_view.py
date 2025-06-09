@@ -237,14 +237,36 @@ class FileTableView(QTableView):
     # =====================================
 
     def set_placeholder_visible(self, visible: bool) -> None:
-        """Show or hide the placeholder icon."""
+        """Show or hide the placeholder icon and configure table state."""
         assert self.model() is not None, "Model must be set before showing placeholder"
 
         if visible and not self.placeholder_icon.isNull():
             self.placeholder_label.raise_()
             self.placeholder_label.show()
+
+            # Disable interactions when showing placeholder
+            header = self.horizontalHeader()
+            if header:
+                header.setEnabled(False)
+                header.setSectionsClickable(False)
+                header.setSortIndicatorShown(False)
+
+            self.setSelectionMode(QAbstractItemView.NoSelection)
+            self.setEnabled(False)  # Disable the entire table
+
         else:
             self.placeholder_label.hide()
+
+            # Re-enable interactions when hiding placeholder
+            header = self.horizontalHeader()
+            if header:
+                header.setEnabled(True)
+                header.setSectionsClickable(True)
+                header.setSortIndicatorShown(True)  # Enable sorting when there's content
+
+            self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+            self.setEnabled(True)  # Re-enable the entire table
+
             self.viewport().update()
 
     def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
@@ -570,3 +592,23 @@ class FileTableView(QTableView):
                         right = self.model().index(r, self.model().columnCount() - 1)
                         row_rect = self.visualRect(left).united(self.visualRect(right))
                         self.viewport().update(row_rect)
+
+    def scrollTo(self, index, hint=None) -> None:
+        """
+        Override scrollTo to prevent automatic scrolling when selections change.
+        This prevents the table from moving when selecting rows.
+        """
+        # Check if table is empty or in placeholder mode
+        if self.is_empty():
+            # In empty/placeholder mode, allow normal scrolling
+            super().scrollTo(index, hint)
+            return
+
+        # Allow minimal scrolling only if the selected item is completely out of view
+        viewport_rect = self.viewport().rect()
+        item_rect = self.visualRect(index)
+
+        # Only scroll if item is completely outside the viewport
+        if not viewport_rect.intersects(item_rect):
+            super().scrollTo(index, hint)
+        # Otherwise, do nothing - prevent automatic centering

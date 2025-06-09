@@ -380,3 +380,17 @@ class FileTreeView(QTreeView):
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement (for debugging)"""
         logger.debug(f"[FileTreeView] Vertical splitter moved - Pos: {pos}, Index: {index}", extra={"dev_only": True})
+
+    def scrollTo(self, index, hint=None) -> None:
+        """
+        Override scrollTo to prevent automatic scrolling when selections change.
+        This prevents the tree from moving when selecting folders.
+        """
+        # Allow minimal scrolling only if the selected item is completely out of view
+        viewport_rect = self.viewport().rect()
+        item_rect = self.visualRect(index)
+
+        # Only scroll if item is completely outside the viewport
+        if not viewport_rect.intersects(item_rect):
+            super().scrollTo(index, hint)
+        # Otherwise, do nothing - prevent automatic centering
