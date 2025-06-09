@@ -1134,15 +1134,51 @@ class MainWindow(QMainWindow):
             if filename:
                 display_data["FileName"] = filename
 
+            # Try to determine file path for scroll position memory
+            self._set_current_file_from_metadata(metadata)
+
             tree_model = build_metadata_tree_model(display_data)
             self.metadata_tree_view.setModel(tree_model)
             self.metadata_tree_view.expandAll()
+
+            # Trigger scroll position restore AFTER expandAll
+            self.metadata_tree_view.restore_scroll_after_expand()
+
             self.toggle_expand_button.setChecked(True)
             self.toggle_expand_button.setText("Collapse All")
 
         except Exception as e:
             logger.exception(f"[render_metadata_view] Unexpected error while rendering: {e}")
             self.clear_metadata_view()
+
+    def _set_current_file_from_metadata(self, metadata: dict) -> None:
+        """Try to determine the current file path from metadata and set it for scroll position memory."""
+        try:
+            # Method 1: Try to get SourceFile from metadata
+            source_file = metadata.get("SourceFile")
+            if source_file:
+                logger.debug(f"[ScrollMemory] Found SourceFile: {source_file}", extra={"dev_only": True})
+                self.metadata_tree_view.set_current_file_path(source_file)
+                return
+
+            # Method 2: Try to find current file from selection
+            selection_model = self.file_table_view.selectionModel()
+            if selection_model and selection_model.hasSelection():
+                selected_rows = selection_model.selectedRows()
+                if selected_rows:
+                    current_index = selection_model.currentIndex()
+                    target_index = current_index if current_index.isValid() and current_index in selected_rows else selected_rows[0]
+
+                    if 0 <= target_index.row() < len(self.file_model.files):
+                        file_item = self.file_model.files[target_index.row()]
+                        logger.debug(f"[ScrollMemory] Found from selection: {file_item.full_path}", extra={"dev_only": True})
+                        self.metadata_tree_view.set_current_file_path(file_item.full_path)
+                        return
+
+            logger.debug("[ScrollMemory] Could not determine current file", extra={"dev_only": True})
+
+        except Exception as e:
+            logger.debug(f"[ScrollMemory] Error determining current file: {e}", extra={"dev_only": True})
 
     def check_selection_and_show_metadata(self) -> None:
         """

@@ -20,6 +20,7 @@ Expected usage:
 Designed for integration with MainWindow and MetadataReader.
 """
 
+from typing import Optional, Dict, Set
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent
 from PyQt5.QtWidgets import QAbstractItemView, QAction, QApplication, QHeaderView, QMenu, QTreeView
@@ -32,9 +33,9 @@ logger = get_logger(__name__)
 
 class MetadataTreeView(QTreeView):
     """
-    Tree view that accepts file drag & drop to trigger metadata loading.
+    Custom tree view that accepts file drag & drop to trigger metadata loading.
     Only accepts drops from the application's file table, not external sources.
-    Emits a signal with filenames to be processed.
+    Includes intelligent scroll position memory per file.
     """
     files_dropped = pyqtSignal(list, Qt.KeyboardModifiers)  # Emits list of local file paths
 
@@ -54,18 +55,19 @@ class MetadataTreeView(QTreeView):
         self.setTextElideMode(Qt.ElideRight)
 
         # Modified metadata items
-        self.modified_items = set()  # Set of paths for modified items
+        self.modified_items: Set[str] = set()  # Set of paths for modified items
 
         # Context menu setup
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
 
         # Track if we're in placeholder mode
-        self._is_placeholder_mode = True
+        self._is_placeholder_mode: bool = True
 
         # Scroll position memory: {file_path: scroll_position}
-        self._scroll_positions = {}
-        self._current_file_path = None
+        self._scroll_positions: Dict[str, int] = {}
+        self._current_file_path: Optional[str] = None
+        self._pending_restore_timer: Optional[QTimer] = None
 
     # =====================================
     # Drag & Drop Methods
@@ -76,10 +78,6 @@ class MetadataTreeView(QTreeView):
         Accept drag only if it comes from our application's file table.
         This is identified by the presence of our custom MIME type.
         """
-        # Debug MIME formats for troubleshooting
-        logger.debug(f"[DragDrop] dragEnterEvent! formats={event.mimeData().formats()}")
-
-        # Accept ONLY if the drag contains our custom application MIME type
         if event.mimeData().hasFormat("application/x-oncutf-filetable"):
             event.acceptProposedAction()
         else:
@@ -99,8 +97,6 @@ class MetadataTreeView(QTreeView):
         Process the drop, but only if it comes from our file table.
         Emit signal with the list of file paths.
         """
-        logger.debug("[DragDrop] dropEvent called!")
-
         # Get the global drag cancel filter
         from widgets.file_tree_view import _drag_cancel_filter
 
@@ -162,6 +158,11 @@ class MetadataTreeView(QTreeView):
         # Save scroll position for current file before switching
         self._save_current_scroll_position()
 
+        # Cancel any pending restore operation
+        if self._pending_restore_timer is not None:
+            self._pending_restore_timer.stop()
+            self._pending_restore_timer = None
+
         # First call the parent implementation
         super().setModel(model)
 
@@ -175,8 +176,7 @@ class MetadataTreeView(QTreeView):
                 self._current_file_path = None  # No file selected
             else:
                 self._configure_normal_mode()
-                # Restore scroll position after model is set
-                QTimer.singleShot(50, self._restore_scroll_position_for_current_file)
+                # Note: Scroll restoration will be triggered manually after expandAll() by MainWindow
 
     def _detect_placeholder_mode(self, model) -> bool:
         """Detect if the model contains placeholder content."""
@@ -265,32 +265,57 @@ class MetadataTreeView(QTreeView):
         # Update current file
         self._current_file_path = file_path
 
-        # Restore position for the new file (with a small delay to ensure model is ready)
-        QTimer.singleShot(100, self._restore_scroll_position_for_current_file)
+        logger.debug(f"[MetadataTree] Set current file: {file_path}", extra={"dev_only": True})
 
     def _save_current_scroll_position(self) -> None:
         """Save the current scroll position for the current file."""
         if self._current_file_path and not self._is_placeholder_mode:
             scroll_value = self.verticalScrollBar().value()
             self._scroll_positions[self._current_file_path] = scroll_value
-            logger.debug(f"[MetadataTree] Saved scroll position {scroll_value} for {self._current_file_path}")
+            logger.debug(f"[MetadataTree] Saved scroll position {scroll_value} for {self._current_file_path}", extra={"dev_only": True})
 
     def _restore_scroll_position_for_current_file(self) -> None:
         """Restore the scroll position for the current file."""
         if self._current_file_path and not self._is_placeholder_mode:
             saved_position = self._scroll_positions.get(self._current_file_path, 0)
-            if saved_position > 0:
-                self.verticalScrollBar().setValue(saved_position)
-                logger.debug(f"[MetadataTree] Restored scroll position {saved_position} for {self._current_file_path}")
+
+            # Validate scroll position against current content
+            scrollbar = self.verticalScrollBar()
+            max_scroll = scrollbar.maximum()
+
+            # Clamp the saved position to valid range
+            valid_position = min(saved_position, max_scroll)
+            valid_position = max(valid_position, 0)
+
+            # Apply the validated position
+            scrollbar.setValue(valid_position)
+
+            if saved_position != valid_position:
+                logger.debug(f"[MetadataTree] Clamped scroll position {saved_position} -> {valid_position} (max: {max_scroll}) for {self._current_file_path}", extra={"dev_only": True})
             else:
-                # For new files, start at the top
-                self.verticalScrollBar().setValue(0)
+                logger.debug(f"[MetadataTree] Restored scroll position {valid_position} for {self._current_file_path}", extra={"dev_only": True})
+
+        # Clean up the timer
+        if self._pending_restore_timer is not None:
+            self._pending_restore_timer = None
 
     def clear_scroll_memory(self) -> None:
         """Clear all saved scroll positions (useful when changing folders)."""
         self._scroll_positions.clear()
         self._current_file_path = None
-        logger.debug("[MetadataTree] Cleared scroll position memory")
+
+        # Cancel any pending restore
+        if self._pending_restore_timer is not None:
+            self._pending_restore_timer.stop()
+            self._pending_restore_timer = None
+
+        logger.debug("[MetadataTree] Cleared scroll position memory", extra={"dev_only": True})
+
+    def restore_scroll_after_expand(self) -> None:
+        """Trigger scroll position restore after expandAll() has completed."""
+        if self._current_file_path and not self._is_placeholder_mode:
+            # Use a short delay to ensure expand operations are complete
+            QTimer.singleShot(50, self._restore_scroll_position_for_current_file)
 
     # =====================================
     # Context Menu & Actions
@@ -298,7 +323,7 @@ class MetadataTreeView(QTreeView):
 
     def show_context_menu(self, position) -> None:
         """
-        Displays context menu with available options depending on the selected item.
+        Display context menu with available options depending on the selected item.
         """
         # Check if we're in placeholder mode - don't show menu
         if self._is_placeholder_mode or self.property("placeholder"):
@@ -341,7 +366,7 @@ class MetadataTreeView(QTreeView):
 
     def get_key_path(self, index) -> str:
         """
-        Returns the full key path for the given index.
+        Return the full key path for the given index.
         For example: "EXIF/DateTimeOriginal" or "XMP/Creator"
         """
         if not index.isValid():
@@ -364,7 +389,7 @@ class MetadataTreeView(QTreeView):
 
     def copy_value(self, value) -> None:
         """
-        Copies the value to clipboard and emits the value_copied signal.
+        Copy the value to clipboard and emit the value_copied signal.
         """
         if not value:
             return
@@ -375,18 +400,15 @@ class MetadataTreeView(QTreeView):
 
         # Emit signal
         self.value_copied.emit(str(value))
-        logger.debug(f"[MetadataTree] Copied value: {value}")
 
     # =====================================
     # Metadata Editing Methods
     # =====================================
 
-    def edit_value(self, key_path, current_value) -> None:
+    def edit_value(self, key_path: str, current_value) -> None:
         """
-        Opens a dialog to edit the value of a metadata field.
+        Open a dialog to edit the value of a metadata field.
         """
-        logger.debug(f"[MetadataTree] Editing value for key: {key_path}")
-
         accepted, new_value = MetadataEditDialog.get_value(
             parent=self,
             key_path=key_path,
@@ -407,15 +429,14 @@ class MetadataTreeView(QTreeView):
             self._update_metadata_in_cache(key_path, new_value)
 
             # Emit signal with the new value
-            logger.debug(f"[MetadataTree] Value changed from '{current_value}' to '{new_value}'")
             self.value_edited.emit(key_path, str(current_value), new_value)
 
             # Find the item in the tree and update its value
             self._update_tree_item_value(key_path, new_value)
 
-    def _update_tree_item_value(self, key_path, new_value) -> None:
+    def _update_tree_item_value(self, key_path: str, new_value: str) -> None:
         """
-        Updates the value of an item in the tree view.
+        Update the value of an item in the tree view.
         """
         model = self.model()
         if not model:
@@ -450,12 +471,10 @@ class MetadataTreeView(QTreeView):
                             model.dataChanged.emit(value_index, value_index)
                             return
 
-    def reset_value(self, key_path) -> None:
+    def reset_value(self, key_path: str) -> None:
         """
-        Resets the value to its original state.
+        Reset the value to its original state.
         """
-        logger.debug(f"[MetadataTree] Resetting value for key: {key_path}")
-
         # Remove from modified items
         if key_path in self.modified_items:
             self.modified_items.remove(key_path)
@@ -472,9 +491,9 @@ class MetadataTreeView(QTreeView):
         # Emit signal
         self.value_reset.emit(key_path)
 
-    def mark_as_modified(self, key_path) -> None:
+    def mark_as_modified(self, key_path: str) -> None:
         """
-        Marks an item as modified.
+        Mark an item as modified.
         """
         self.modified_items.add(key_path)
 
@@ -524,7 +543,7 @@ class MetadataTreeView(QTreeView):
 
     def _update_file_icon_status(self) -> None:
         """
-        Updates the file icon in the file table to reflect modified status.
+        Update the file icon in the file table to reflect modified status.
         """
         parent_window, file_model, selection, selected_rows = self._get_parent_window_with_file_table()
 
@@ -552,9 +571,9 @@ class MetadataTreeView(QTreeView):
                     [Qt.DecorationRole]
                 )
 
-    def _reset_metadata_in_cache(self, key_path) -> None:
+    def _reset_metadata_in_cache(self, key_path: str) -> None:
         """
-        Resets the metadata value in the cache to its original state.
+        Reset the metadata value in the cache to its original state.
         """
         parent_window, file_model, selection, selected_rows = self._get_parent_window_with_file_table()
 
@@ -579,8 +598,6 @@ class MetadataTreeView(QTreeView):
                     self._remove_metadata_from_cache(metadata_entry.data, key_path)
                     self._remove_metadata_from_file_item(file_item, key_path)
 
-                    logger.debug(f"[MetadataTree] Reset metadata in cache for {full_path}: {key_path}")
-
                     # Update file icon status based on remaining modified items
                     if not self.modified_items:
                         file_item.metadata_status = "loaded"
@@ -594,9 +611,9 @@ class MetadataTreeView(QTreeView):
                         [Qt.DecorationRole]
                     )
 
-    def _update_metadata_in_cache(self, key_path, new_value) -> None:
+    def _update_metadata_in_cache(self, key_path: str, new_value: str) -> None:
         """
-        Updates the metadata value in the cache to persist changes.
+        Update the metadata value in the cache to persist changes.
         """
         parent_window, file_model, selection, selected_rows = self._get_parent_window_with_file_table()
 
@@ -621,8 +638,6 @@ class MetadataTreeView(QTreeView):
                     self._set_metadata_in_cache(metadata_entry.data, key_path, new_value)
                     self._set_metadata_in_file_item(file_item, key_path, new_value)
 
-                    logger.debug(f"[MetadataTree] Updated metadata in cache for {full_path}: {key_path}={new_value}")
-
                     # Mark file item as modified
                     file_item.metadata_status = "modified"
 
@@ -633,7 +648,7 @@ class MetadataTreeView(QTreeView):
                         [Qt.DecorationRole]
                     )
 
-    def _remove_metadata_from_cache(self, metadata, key_path) -> None:
+    def _remove_metadata_from_cache(self, metadata: dict, key_path: str) -> None:
         """Remove metadata entry from cache dictionary."""
         parts = key_path.split('/')
 
@@ -646,12 +661,12 @@ class MetadataTreeView(QTreeView):
             if group in metadata and isinstance(metadata[group], dict):
                 metadata[group].pop(key, None)
 
-    def _remove_metadata_from_file_item(self, file_item, key_path) -> None:
+    def _remove_metadata_from_file_item(self, file_item, key_path: str) -> None:
         """Remove metadata entry from file item."""
         if hasattr(file_item, 'metadata') and file_item.metadata:
             self._remove_metadata_from_cache(file_item.metadata, key_path)
 
-    def _set_metadata_in_cache(self, metadata, key_path, new_value) -> None:
+    def _set_metadata_in_cache(self, metadata: dict, key_path: str, new_value: str) -> None:
         """Set metadata entry in cache dictionary."""
         parts = key_path.split('/')
 
@@ -670,20 +685,20 @@ class MetadataTreeView(QTreeView):
             # Handle duplicate rotation entries
             self._handle_duplicate_rotation_entries(metadata, group, key)
 
-    def _set_metadata_in_file_item(self, file_item, key_path, new_value) -> None:
+    def _set_metadata_in_file_item(self, file_item, key_path: str, new_value: str) -> None:
         """Set metadata entry in file item."""
         if hasattr(file_item, 'metadata') and file_item.metadata:
             self._set_metadata_in_cache(file_item.metadata, key_path, new_value)
 
-    def _handle_duplicate_rotation_entries(self, metadata, group, key) -> None:
+    def _handle_duplicate_rotation_entries(self, metadata: dict, group: str, key: str) -> None:
         """Handle duplicate rotation entries between EXIF and Other groups."""
         if key == "Rotation":
             if group == "EXIF" and "Other" in metadata and isinstance(metadata["Other"], dict) and "Rotation" in metadata["Other"]:
                 del metadata["Other"]["Rotation"]
-                logger.debug("[MetadataTree] Removed duplicate Other/Rotation entry")
+                logger.debug("[MetadataTree] Removed duplicate Other/Rotation entry", extra={"dev_only": True})
             elif group == "Other" and "EXIF" in metadata and isinstance(metadata["EXIF"], dict) and "Rotation" in metadata["EXIF"]:
                 del metadata["EXIF"]["Rotation"]
-                logger.debug("[MetadataTree] Removed duplicate EXIF/Rotation entry")
+                logger.debug("[MetadataTree] Removed duplicate EXIF/Rotation entry", extra={"dev_only": True})
 
     # =====================================
     # Scroll Override
