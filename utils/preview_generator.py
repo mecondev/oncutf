@@ -12,6 +12,7 @@ Date: 2025-05-13
 from typing import Any, Dict, List, Optional, Tuple
 
 from models.file_item import FileItem
+from modules.original_name_module import OriginalNameModule
 from modules.metadata_module import MetadataModule
 from utils.logger_helper import get_logger
 from utils.validation import is_valid_filename_text
@@ -67,6 +68,15 @@ def generate_preview_names(
                 value = start + (index * step)
                 logger.debug(f"[PreviewGen] Counter: value={value}, padding={padding}")
                 name_parts.append(str(value).zfill(padding))
+
+            elif module_type == "original_name":
+                try:
+                    result = OriginalNameModule.apply_from_data(module, file, index)
+                    logger.debug(f"[PreviewGen] OriginalName result: '{result}'")
+                    name_parts.append(result)
+                except Exception as e:
+                    logger.warning(f"[PreviewGen] Exception in OriginalNameModule for {file.filename}: {e}")
+                    name_parts.append("invalid")
 
             elif module_type == "metadata":
                 # Use MetadataModule for consistency with preview engine

@@ -99,7 +99,7 @@ class MetadataTreeView(QTreeView):
             scaled = self.placeholder_icon.scaled(120, 120, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.placeholder_label.setPixmap(scaled)
         else:
-            logger.warning("Metadata tree placeholder icon could not be loaded.")
+            logger.warning(f"[MetadataTree] Metadata tree placeholder icon could not be loaded from: {icon_path}")
 
         # Setup standard view properties
         self._setup_tree_view_properties()
@@ -270,6 +270,12 @@ class MetadataTreeView(QTreeView):
 
     def _configure_placeholder_mode(self, model: Any) -> None:
         """Configure view for placeholder mode."""
+        # Protection against repeated calls to placeholder mode - but only if ALL conditions are already met
+        if (getattr(self, '_is_placeholder_mode', False) and
+            self.placeholder_label and self.placeholder_label.isVisible() and
+            not self.placeholder_icon.isNull()):
+            return  # Already fully configured for placeholder mode, no need to reconfigure
+
         # Only reset current file path when entering placeholder mode
         # DO NOT clear scroll positions - we want to preserve them for other files
         self._current_file_path = None
@@ -279,6 +285,8 @@ class MetadataTreeView(QTreeView):
         if self.placeholder_label and not self.placeholder_icon.isNull():
             self.placeholder_label.raise_()
             self.placeholder_label.show()
+        else:
+            logger.warning("[MetadataTree] Could not show placeholder icon - missing label or icon")
 
         # Placeholder mode: Fixed columns, no selection, no hover, NO HORIZONTAL SCROLLBAR
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -417,9 +425,9 @@ class MetadataTreeView(QTreeView):
                 self._smooth_scroll_to_position(valid_position)
 
                 if saved_position != valid_position:
-                    logger.info(f"[MetadataTree] Smooth scroll with clamped position {saved_position} -> {valid_position} (max: {max_scroll}) for {self._current_file_path}")
+                    logger.debug(f"[MetadataTree] Smooth scroll with clamped position {saved_position} -> {valid_position} (max: {max_scroll}) for {self._current_file_path}", extra={"dev_only": True})
                 else:
-                    logger.info(f"[MetadataTree] Smooth scroll to restored position {valid_position} for {self._current_file_path}")
+                    logger.debug(f"[MetadataTree] Smooth scroll to restored position {valid_position} for {self._current_file_path}", extra={"dev_only": True})
 
         # Clean up the timer
         if self._pending_restore_timer is not None:

@@ -78,7 +78,7 @@ class FileTableView(QTableView):
         self.placeholder_label.setAlignment(Qt.AlignCenter)
         self.placeholder_label.setVisible(False)
 
-        icon_path = Path(__file__).parent.parent / "assets/File_Folder_Drag_Drop.png"
+        icon_path = Path(__file__).parent.parent / "resources/images/File_table_placeholder.png"
         self.placeholder_icon = QPixmap(str(icon_path))
 
         if not self.placeholder_icon.isNull():

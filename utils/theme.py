@@ -43,7 +43,7 @@ def load_stylesheet() -> str:
             with open(path, "r", encoding="utf-8") as f:
                 qss = f.read()
                 full_style += qss + "\n"
-                logger.debug(f"Loaded {filename} ({len(qss)} characters)")
+                logger.debug(f"Loaded {filename} ({len(qss)} characters)", extra={"dev_only": True})
         else:
             logger.warning(f"QSS file not found: {filename}")
 
