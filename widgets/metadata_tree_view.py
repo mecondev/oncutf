@@ -155,8 +155,9 @@ class MetadataTreeView(QTreeView):
         """
         Override the setModel method to set minimum column widths after the model is set.
         """
-        # Save scroll position for current file before switching
-        self._save_current_scroll_position()
+        # Save scroll position for current file before switching (only if we're not in placeholder mode)
+        if self._current_file_path and not self._is_placeholder_mode:
+            self._save_current_scroll_position()
 
         # Cancel any pending restore operation
         if self._pending_restore_timer is not None:
@@ -259,41 +260,49 @@ class MetadataTreeView(QTreeView):
 
     def set_current_file_path(self, file_path: str) -> None:
         """Set the current file path for scroll position tracking."""
-        # Save current position before changing files
-        self._save_current_scroll_position()
+        # Save current position before changing files (only if we have a previous file)
+        if self._current_file_path is not None:
+            self._save_current_scroll_position()
 
         # Update current file
         self._current_file_path = file_path
 
-        logger.debug(f"[MetadataTree] Set current file: {file_path}", extra={"dev_only": True})
+        logger.debug(f"[MetadataTree] Set current file: {file_path}")
 
     def _save_current_scroll_position(self) -> None:
         """Save the current scroll position for the current file."""
         if self._current_file_path and not self._is_placeholder_mode:
             scroll_value = self.verticalScrollBar().value()
             self._scroll_positions[self._current_file_path] = scroll_value
-            logger.debug(f"[MetadataTree] Saved scroll position {scroll_value} for {self._current_file_path}", extra={"dev_only": True})
+            logger.debug(f"[MetadataTree] Saved scroll position {scroll_value} for {self._current_file_path}")
 
     def _restore_scroll_position_for_current_file(self) -> None:
         """Restore the scroll position for the current file."""
         if self._current_file_path and not self._is_placeholder_mode:
-            saved_position = self._scroll_positions.get(self._current_file_path, 0)
-
-            # Validate scroll position against current content
-            scrollbar = self.verticalScrollBar()
-            max_scroll = scrollbar.maximum()
-
-            # Clamp the saved position to valid range
-            valid_position = min(saved_position, max_scroll)
-            valid_position = max(valid_position, 0)
-
-            # Apply the validated position
-            scrollbar.setValue(valid_position)
-
-            if saved_position != valid_position:
-                logger.debug(f"[MetadataTree] Clamped scroll position {saved_position} -> {valid_position} (max: {max_scroll}) for {self._current_file_path}", extra={"dev_only": True})
+            # Check if this is the first time viewing this file
+            if self._current_file_path not in self._scroll_positions:
+                # First time viewing - go to top
+                self.verticalScrollBar().setValue(0)
+                logger.debug(f"[MetadataTree] First time viewing {self._current_file_path} - going to top")
             else:
-                logger.debug(f"[MetadataTree] Restored scroll position {valid_position} for {self._current_file_path}", extra={"dev_only": True})
+                # Restore saved position
+                saved_position = self._scroll_positions[self._current_file_path]
+
+                # Validate scroll position against current content
+                scrollbar = self.verticalScrollBar()
+                max_scroll = scrollbar.maximum()
+
+                # Clamp the saved position to valid range
+                valid_position = min(saved_position, max_scroll)
+                valid_position = max(valid_position, 0)
+
+                # Apply the validated position
+                scrollbar.setValue(valid_position)
+
+                if saved_position != valid_position:
+                    logger.debug(f"[MetadataTree] Clamped scroll position {saved_position} -> {valid_position} (max: {max_scroll}) for {self._current_file_path}")
+                else:
+                    logger.debug(f"[MetadataTree] Restored scroll position {valid_position} for {self._current_file_path}")
 
         # Clean up the timer
         if self._pending_restore_timer is not None:
@@ -309,7 +318,7 @@ class MetadataTreeView(QTreeView):
             self._pending_restore_timer.stop()
             self._pending_restore_timer = None
 
-        logger.debug("[MetadataTree] Cleared scroll position memory", extra={"dev_only": True})
+        logger.debug("[MetadataTree] Cleared scroll position memory")
 
     def restore_scroll_after_expand(self) -> None:
         """Trigger scroll position restore after expandAll() has completed."""
@@ -695,10 +704,10 @@ class MetadataTreeView(QTreeView):
         if key == "Rotation":
             if group == "EXIF" and "Other" in metadata and isinstance(metadata["Other"], dict) and "Rotation" in metadata["Other"]:
                 del metadata["Other"]["Rotation"]
-                logger.debug("[MetadataTree] Removed duplicate Other/Rotation entry", extra={"dev_only": True})
+                logger.debug("[MetadataTree] Removed duplicate Other/Rotation entry")
             elif group == "Other" and "EXIF" in metadata and isinstance(metadata["EXIF"], dict) and "Rotation" in metadata["EXIF"]:
                 del metadata["EXIF"]["Rotation"]
-                logger.debug("[MetadataTree] Removed duplicate EXIF/Rotation entry", extra={"dev_only": True})
+                logger.debug("[MetadataTree] Removed duplicate EXIF/Rotation entry")
 
     # =====================================
     # Scroll Override
