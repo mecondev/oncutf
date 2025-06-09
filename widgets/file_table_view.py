@@ -140,13 +140,13 @@ class FileTableView(QTableView):
         header.setSectionResizeMode(4, QHeaderView.Interactive)
         self.setColumnWidth(4, datetime_width)
 
-        # Store minimum widths for splitter logic
+        # Store minimum widths for splitter logic - use config values as minimums
         self.column_min_widths = {
             0: status_width,
-            1: max(100, filename_min),
-            2: filesize_min,
-            3: extension_min,
-            4: datetime_min
+            1: max(200, filename_min),  # Use 200px as minimum for filename column
+            2: max(80, filesize_min),   # Use 80px as minimum for filesize column
+            3: max(60, extension_min),  # Use 60px as minimum for extension column
+            4: max(100, datetime_min)   # Use 100px as minimum for datetime column
         }
 
     def _update_scrollbar_visibility(self) -> None:
@@ -244,7 +244,10 @@ class FileTableView(QTableView):
             self.placeholder_label.raise_()
             self.placeholder_label.show()
 
-                        # Disable interactions when showing placeholder but keep drag & drop
+            # Force hide horizontal scrollbar when showing placeholder
+            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+            # Disable interactions when showing placeholder but keep drag & drop
             header = self.horizontalHeader()
             if header:
                 header.setEnabled(False)
@@ -257,7 +260,10 @@ class FileTableView(QTableView):
         else:
             self.placeholder_label.hide()
 
-                        # Re-enable interactions when hiding placeholder
+            # Re-enable scrollbar policy based on content
+            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+            # Re-enable interactions when hiding placeholder
             header = self.horizontalHeader()
             if header:
                 header.setEnabled(True)

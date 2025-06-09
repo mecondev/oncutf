@@ -184,7 +184,6 @@ class FileTreeView(QTreeView):
 
         # Get natural content width
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        QApplication.processEvents()
         natural_width = self.columnWidth(0)
 
         # Decide: expand to fill viewport or keep natural width for scrolling

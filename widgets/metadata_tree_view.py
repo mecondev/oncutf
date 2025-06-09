@@ -27,12 +27,13 @@ Expected usage:
 Designed for integration with MainWindow and MetadataReader.
 """
 
+from pathlib import Path
 from typing import Optional, Dict, Set, Tuple, Any, Union
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QModelIndex
-from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent, QStandardItemModel, QStandardItem
+from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent, QStandardItemModel, QStandardItem, QPixmap
 from PyQt5.QtWidgets import (
     QAbstractItemView, QAction, QApplication, QHeaderView,
-    QMenu, QTreeView, QWidget
+    QLabel, QMenu, QTreeView, QWidget
 )
 
 from config import METADATA_TREE_COLUMN_WIDTHS
@@ -86,6 +87,20 @@ class MetadataTreeView(QTreeView):
         self._current_file_path: Optional[str] = None
         self._pending_restore_timer: Optional[QTimer] = None
 
+        # Setup placeholder icon
+        self.placeholder_label = QLabel(self.viewport())
+        self.placeholder_label.setAlignment(Qt.AlignCenter)
+        self.placeholder_label.setVisible(False)
+
+        icon_path = Path(__file__).parent.parent / "resources/images/metadata_tree_placeholder.png"
+        self.placeholder_icon = QPixmap(str(icon_path))
+
+        if not self.placeholder_icon.isNull():
+            scaled = self.placeholder_icon.scaled(120, 120, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.placeholder_label.setPixmap(scaled)
+        else:
+            logger.warning("Metadata tree placeholder icon could not be loaded.")
+
         # Setup standard view properties
         self._setup_tree_view_properties()
 
@@ -99,6 +114,13 @@ class MetadataTreeView(QTreeView):
         self.viewport().setAcceptDrops(True)
         self.setDragDropMode(QAbstractItemView.DropOnly)
         self.setAlternatingRowColors(True)  # Enable alternating row colors
+
+    def resizeEvent(self, event):
+        """Handle resize events to adjust placeholder label size."""
+        super().resizeEvent(event)
+        if self.placeholder_label:
+            self.placeholder_label.resize(self.viewport().size())
+            self.placeholder_label.move(0, 0)
 
     # =====================================
     # Drag & Drop Methods
@@ -234,6 +256,10 @@ class MetadataTreeView(QTreeView):
 
     def _detect_placeholder_mode(self, model: Any) -> bool:
         """Detect if the model contains placeholder content."""
+        # Empty model (for PNG placeholder) is also placeholder mode
+        if model.rowCount() == 0:
+            return True
+
         if model.rowCount() == 1:
             root = model.invisibleRootItem()
             if root.rowCount() == 1:
@@ -249,6 +275,11 @@ class MetadataTreeView(QTreeView):
         self._current_file_path = None
         logger.info("[MetadataTree] Entered placeholder mode - reset current file only")
 
+        # Show placeholder icon instead of text
+        if self.placeholder_label and not self.placeholder_icon.isNull():
+            self.placeholder_label.raise_()
+            self.placeholder_label.show()
+
         # Placeholder mode: Fixed columns, no selection, no hover, NO HORIZONTAL SCROLLBAR
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
@@ -263,7 +294,7 @@ class MetadataTreeView(QTreeView):
         header.setSectionsClickable(False)
         header.setSortIndicatorShown(False)
 
-                # Disable tree interactions but keep drag & drop working
+        # Disable tree interactions but keep drag & drop working
         self.setSelectionMode(QAbstractItemView.NoSelection)
         self.setItemsExpandable(False)
         self.setRootIsDecorated(False)
@@ -275,6 +306,10 @@ class MetadataTreeView(QTreeView):
 
     def _configure_normal_mode(self) -> None:
         """Configure view for normal content mode."""
+        # Hide placeholder icon when showing normal content
+        if self.placeholder_label:
+            self.placeholder_label.hide()
+
         # Normal content mode: HORIZONTAL SCROLLBAR enabled but controlled
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
@@ -298,7 +333,7 @@ class MetadataTreeView(QTreeView):
         header.setMinimumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"])
         header.setMaximumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MAX_WIDTH"])
 
-                # Re-enable tree interactions
+        # Re-enable tree interactions
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setItemsExpandable(True)
         self.setRootIsDecorated(False)
@@ -854,27 +889,32 @@ class MetadataTreeView(QTreeView):
 
     def show_empty_state(self, message: str = "No file selected") -> None:
         """
-        Displays a placeholder message in the metadata tree view.
+        Displays a placeholder in the metadata tree view.
+        Uses PNG icon if available, otherwise shows text message.
 
         Args:
-            message (str): The message to display in the placeholder
+            message (str): The message to display if PNG is not available
         """
+        # Create an empty model for placeholder mode
         model = QStandardItemModel()
         model.setHorizontalHeaderLabels(["Key", "Value"])
 
-        key_item = QStandardItem(message)
-        key_item.setTextAlignment(Qt.AlignLeft)
-        font = key_item.font()
-        font.setItalic(True)
-        key_item.setFont(font)
-        key_item.setForeground(Qt.gray)
-        key_item.setSelectable(False)  # Make placeholder non-selectable
+        # If we have a PNG placeholder, use empty model (PNG will be shown by _configure_placeholder_mode)
+        # If no PNG, fallback to text placeholder
+        if self.placeholder_icon.isNull():
+            key_item = QStandardItem(message)
+            key_item.setTextAlignment(Qt.AlignLeft)
+            font = key_item.font()
+            font.setItalic(True)
+            key_item.setFont(font)
+            key_item.setForeground(Qt.gray)
+            key_item.setSelectable(False)  # Make placeholder non-selectable
 
-        value_item = QStandardItem("-")
-        value_item.setForeground(Qt.gray)
-        value_item.setSelectable(False)  # Make placeholder non-selectable
+            value_item = QStandardItem("-")
+            value_item.setForeground(Qt.gray)
+            value_item.setSelectable(False)  # Make placeholder non-selectable
 
-        model.appendRow([key_item, value_item])
+            model.appendRow([key_item, value_item])
 
         # Model will handle selection mode and styling through setModel method
         self.setModel(model)
