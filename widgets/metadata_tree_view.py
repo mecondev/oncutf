@@ -155,9 +155,8 @@ class MetadataTreeView(QTreeView):
         """
         Override the setModel method to set minimum column widths after the model is set.
         """
-        # Save scroll position for current file before switching (only if we're not in placeholder mode)
-        if self._current_file_path and not self._is_placeholder_mode:
-            self._save_current_scroll_position()
+        # NOTE: Do not save scroll position here - it's already handled in set_current_file_path()
+        # The _current_file_path has already been changed to the new file at this point
 
         # Cancel any pending restore operation
         if self._pending_restore_timer is not None:
@@ -191,6 +190,11 @@ class MetadataTreeView(QTreeView):
 
     def _configure_placeholder_mode(self, model) -> None:
         """Configure view for placeholder mode."""
+        # Only reset current file path when entering placeholder mode
+        # DO NOT clear scroll positions - we want to preserve them for other files
+        self._current_file_path = None
+        logger.info("[MetadataTree] Entered placeholder mode - reset current file only")
+
         # Placeholder mode: Fixed columns, no selection, no hover, NO HORIZONTAL SCROLLBAR
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
@@ -200,16 +204,10 @@ class MetadataTreeView(QTreeView):
         header.resizeSection(0, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_KEY_WIDTH"])
         header.resizeSection(1, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_VALUE_WIDTH"])
 
-        # Make placeholder items non-selectable
-        self._make_placeholder_items_non_selectable(model)
-
-        # Disable selection and set properties for styling
+        # Disable interactions
         self.setSelectionMode(QAbstractItemView.NoSelection)
-        self.setProperty("placeholder", True)
-        self.setAttribute(Qt.WA_NoMousePropagation, True)
-
-        # Force style update
-        self._force_style_update()
+        self.setItemsExpandable(False)
+        self.setRootIsDecorated(False)
 
     def _configure_normal_mode(self) -> None:
         """Configure view for normal content mode."""
@@ -260,6 +258,13 @@ class MetadataTreeView(QTreeView):
 
     def set_current_file_path(self, file_path: str) -> None:
         """Set the current file path for scroll position tracking."""
+        logger.info(f"[MetadataTree] >>> set_current_file_path called with: {file_path}")
+
+        # Skip if it's the same file (protect against duplicate calls)
+        if self._current_file_path == file_path:
+            logger.debug(f"[MetadataTree] Skipping duplicate call for same file: {file_path}")
+            return
+
         # Save current position before changing files (only if we have a previous file)
         if self._current_file_path is not None:
             self._save_current_scroll_position()
@@ -274,7 +279,7 @@ class MetadataTreeView(QTreeView):
         if self._current_file_path and not self._is_placeholder_mode:
             scroll_value = self.verticalScrollBar().value()
             self._scroll_positions[self._current_file_path] = scroll_value
-            logger.debug(f"[MetadataTree] Saved scroll position {scroll_value} for {self._current_file_path}")
+            logger.info(f"[MetadataTree] Saved scroll position {scroll_value} for {self._current_file_path}")
 
     def _restore_scroll_position_for_current_file(self) -> None:
         """Restore the scroll position for the current file."""
@@ -283,7 +288,9 @@ class MetadataTreeView(QTreeView):
             if self._current_file_path not in self._scroll_positions:
                 # First time viewing - go to top
                 self.verticalScrollBar().setValue(0)
-                logger.debug(f"[MetadataTree] First time viewing {self._current_file_path} - going to top")
+                logger.info(f"[MetadataTree] First time viewing {self._current_file_path} - going to top")
+                # Mark this file as visited with position 0
+                self._scroll_positions[self._current_file_path] = 0
             else:
                 # Restore saved position
                 saved_position = self._scroll_positions[self._current_file_path]
@@ -300,9 +307,9 @@ class MetadataTreeView(QTreeView):
                 scrollbar.setValue(valid_position)
 
                 if saved_position != valid_position:
-                    logger.debug(f"[MetadataTree] Clamped scroll position {saved_position} -> {valid_position} (max: {max_scroll}) for {self._current_file_path}")
+                    logger.info(f"[MetadataTree] Clamped scroll position {saved_position} -> {valid_position} (max: {max_scroll}) for {self._current_file_path}")
                 else:
-                    logger.debug(f"[MetadataTree] Restored scroll position {valid_position} for {self._current_file_path}")
+                    logger.info(f"[MetadataTree] Restored scroll position {valid_position} for {self._current_file_path}")
 
         # Clean up the timer
         if self._pending_restore_timer is not None:
@@ -323,8 +330,14 @@ class MetadataTreeView(QTreeView):
     def restore_scroll_after_expand(self) -> None:
         """Trigger scroll position restore after expandAll() has completed."""
         if self._current_file_path and not self._is_placeholder_mode:
-            # Use a short delay to ensure expand operations are complete
-            QTimer.singleShot(50, self._restore_scroll_position_for_current_file)
+            # Use a longer delay to ensure expand operations are complete
+            if self._pending_restore_timer is not None:
+                self._pending_restore_timer.stop()
+
+            self._pending_restore_timer = QTimer()
+            self._pending_restore_timer.timeout.connect(self._restore_scroll_position_for_current_file)
+            self._pending_restore_timer.setSingleShot(True)
+            self._pending_restore_timer.start(100)  # Increased from 50ms to 100ms
 
     # =====================================
     # Context Menu & Actions
