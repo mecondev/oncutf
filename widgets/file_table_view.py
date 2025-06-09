@@ -125,37 +125,45 @@ class FileTableView(QTableView):
         header.setSectionResizeMode(1, QHeaderView.Interactive)
         self.setColumnWidth(1, filename_width)
 
-        filesize_min = parent_window.fontMetrics().horizontalAdvance("999 GB") + 30
-        filesize_width = max(FILE_TABLE_COLUMN_WIDTHS["FILESIZE_COLUMN"], filesize_min)
-        header.setSectionResizeMode(2, QHeaderView.Interactive)
+        # File size column - Fixed width, cannot be resized
+        filesize_width = FILE_TABLE_COLUMN_WIDTHS["FILESIZE_COLUMN"]
+        header.setSectionResizeMode(2, QHeaderView.Fixed)
         self.setColumnWidth(2, filesize_width)
 
-        extension_min = parent_window.fontMetrics().horizontalAdvance("jpeg") + 30
-        extension_width = max(FILE_TABLE_COLUMN_WIDTHS["EXTENSION_COLUMN"], extension_min)
-        header.setSectionResizeMode(3, QHeaderView.Interactive)
+        # Extension column - Fixed width, cannot be resized
+        extension_width = FILE_TABLE_COLUMN_WIDTHS["EXTENSION_COLUMN"]
+        header.setSectionResizeMode(3, QHeaderView.Fixed)
         self.setColumnWidth(3, extension_width)
 
-        datetime_min = parent_window.fontMetrics().horizontalAdvance("2024-12-30 15:45:30") + 20
-        datetime_width = max(FILE_TABLE_COLUMN_WIDTHS["DATE_COLUMN"], datetime_min)
-        header.setSectionResizeMode(4, QHeaderView.Interactive)
+        # Date column - Fixed width, cannot be resized
+        datetime_width = FILE_TABLE_COLUMN_WIDTHS["DATE_COLUMN"]
+        header.setSectionResizeMode(4, QHeaderView.Fixed)
         self.setColumnWidth(4, datetime_width)
 
-        # Store minimum widths for splitter logic - use config values as minimums
+        # Store minimum widths for splitter logic - only filename column needs enforcement
+        # (columns 2,3,4 are now Fixed and cannot be resized)
         self.column_min_widths = {
-            0: status_width,
-            1: max(200, filename_min),  # Use 200px as minimum for filename column
-            2: max(80, filesize_min),   # Use 80px as minimum for filesize column
-            3: max(60, extension_min),  # Use 60px as minimum for extension column
-            4: max(100, datetime_min)   # Use 100px as minimum for datetime column
+            0: status_width,  # Status column is already Fixed
+            1: max(200, filename_min),  # Only filename column needs minimum width enforcement
         }
 
         # Apply general minimum size to header (use the smallest minimum width)
         general_min_width = min(self.column_min_widths.values())
         header.setMinimumSectionSize(general_min_width)
 
-        # Set individual column minimum widths on the InteractiveHeader
-        if hasattr(header, 'set_column_minimum_widths'):
-            header.set_column_minimum_widths(self.column_min_widths)
+        # Connect to header signals to enforce column minimum widths
+        header.sectionResized.connect(self._on_section_resized)
+
+    def _on_section_resized(self, logical_index: int, old_size: int, new_size: int) -> None:
+        """Enforce minimum column widths when user resizes columns."""
+        if not self.column_min_widths or logical_index not in self.column_min_widths:
+            return
+
+        min_width = self.column_min_widths[logical_index]
+        if new_size < min_width:
+            # Immediately set to minimum width
+            self.setColumnWidth(logical_index, min_width)
+            logger.debug(f"Column {logical_index} size corrected from {new_size} to {min_width}")
 
     def _update_scrollbar_visibility(self) -> None:
         """Update scrollbar visibility based on table content."""
@@ -181,6 +189,9 @@ class FileTableView(QTableView):
 
     def _adjust_filename_for_vertical_scrollbar(self) -> None:
         """Reduce filename column width to prevent horizontal scrollbar."""
+        # Temporarily disabled to prevent interference with minimum width enforcement
+        return
+
         if not self.column_min_widths:
             return
 
@@ -192,7 +203,7 @@ class FileTableView(QTableView):
 
         if ideal_filename_width < current_filename_width:
             new_filename_width = max(self.column_min_widths[1], ideal_filename_width)
-            if new_filename_width != current_filename_width:
+            if new_filename_width != current_filename_width and new_filename_width >= self.column_min_widths[1]:
                 self.setColumnWidth(1, new_filename_width)
 
     def _reset_filename_column_width(self) -> None:
@@ -220,21 +231,11 @@ class FileTableView(QTableView):
         center_panel_width = sizes[1]
 
         if center_panel_width > 0 and self.column_min_widths:
-            # Restore minimum widths if needed
-            for col_index, min_width in self.column_min_widths.items():
-                if self.columnWidth(col_index) < min_width:
-                    self.setColumnWidth(col_index, min_width)
-
-            # Adjust datetime column to fill available space
-            used_width = (self.columnWidth(0) + self.columnWidth(1) +
-                         self.columnWidth(2) + self.columnWidth(3))
-            available_for_datetime = center_panel_width - used_width - 40
-            datetime_width = max(self.column_min_widths[4], available_for_datetime)
-
-            if datetime_width != self.columnWidth(4):
-                self.setColumnWidth(4, datetime_width)
-
-            self._update_scrollbar_visibility()
+            # Only enforce minimum width for filename column (column 1)
+            # Other columns are now Fixed and cannot be resized
+            min_filename_width = self.column_min_widths[1]
+            if self.columnWidth(1) < min_filename_width:
+                self.setColumnWidth(1, min_filename_width)
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement."""

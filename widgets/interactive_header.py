@@ -34,7 +34,6 @@ class InteractiveHeader(QHeaderView):
         self.customContextMenuRequested.connect(self.contextMenuEvent)
 
         self.header_enabled = True
-        self.column_min_widths: dict[int, int] = {}
 
         self._press_pos: QPoint = QPoint()
         self._pressed_index: int = -1
@@ -97,19 +96,6 @@ class InteractiveHeader(QHeaderView):
         if self.parent_window and hasattr(self.parent_window, 'sort_by_column'):
             self.parent_window.sort_by_column(column, force_order=order)
 
-    def set_column_minimum_widths(self, min_widths: dict[int, int]) -> None:
-        """Set minimum widths for individual columns."""
-        self.column_min_widths = min_widths.copy()
 
-    def resizeSection(self, logicalIndex: int, size: int) -> None:
-        """Override resizeSection to enforce minimum widths without flicker."""
-        # Check if we have a minimum width for this column
-        if logicalIndex in self.column_min_widths:
-            min_width = self.column_min_widths[logicalIndex]
-            if size < min_width:
-                size = min_width
-
-        # Call the parent implementation with the corrected size
-        super().resizeSection(logicalIndex, size)
 
 
