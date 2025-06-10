@@ -2459,8 +2459,6 @@ class MainWindow(QMainWindow):
         sizes = self.vertical_splitter.sizes()
         logger.debug(f"[VerticalSplitter] Moved - Position: {pos}, Index: {index}, Sizes: {sizes} (Top: {sizes[0]}px, Bottom: {sizes[1]}px)", extra={"dev_only": True})
 
-
-
     def show_metadata_status(self) -> None:
         """
         Shows a status bar message indicating the number of loaded files
