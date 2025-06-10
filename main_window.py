@@ -635,6 +635,7 @@ class MainWindow(QMainWindow):
     def select_all_rows(self) -> None:
         """
         Selects all rows in the file table efficiently using select_rows_range helper.
+        Shows wait cursor during the operation for consistent UX.
         """
         if not self.file_model.files:
             return
@@ -656,10 +657,34 @@ class MainWindow(QMainWindow):
             logger.debug("[SelectAll] All files already selected in both checked and selection model. No action taken.")
             return
 
-        logger.info(f"[SelectAll] Selecting all {total} rows.")
-        self.file_table_view.select_rows_range(0, total - 1)
-        self.file_table_view.anchor_row = 0
-        QTimer.singleShot(20, self.update_files_label)
+        with wait_cursor():
+            logger.info(f"[SelectAll] Selecting all {total} rows.")
+
+            # Step 1: Pre-generate preview data (without updating UI yet)
+            all_files = list(self.file_model.files)  # Create a list of what will be selected
+
+            # Step 2: Update internal state first
+            for file in self.file_model.files:
+                file.checked = True
+
+            # Step 3: Start preview generation (this triggers the heavy work)
+            self.request_preview_update()
+
+            # Step 4: Add small delay to let preview start, then do visual selection
+            def apply_visual_selection():
+                self.file_table_view.select_rows_range(0, total - 1)
+                self.file_table_view.anchor_row = 0
+                self.file_table_view.viewport().update()
+                self.update_files_label()
+
+                # Handle metadata display for the last file
+                def show_metadata_later():
+                    last_file = self.file_model.files[-1]
+                    metadata = last_file.metadata or self.metadata_cache.get(last_file.full_path)
+                    self.metadata_tree_view.display_metadata(metadata, context="select_all")
+                QTimer.singleShot(15, show_metadata_later)
+
+            QTimer.singleShot(5, apply_visual_selection)
 
     def clear_all_selection(self) -> None:
         # If everything is already deselected, do nothing

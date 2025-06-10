@@ -16,6 +16,12 @@ Features:
 from PyQt5.QtCore import QPoint, Qt
 from PyQt5.QtWidgets import QAction, QHeaderView, QMenu
 
+# ApplicationContext integration
+try:
+    from core.application_context import get_app_context
+except ImportError:
+    get_app_context = None
+
 
 class InteractiveHeader(QHeaderView):
     """
@@ -26,7 +32,7 @@ class InteractiveHeader(QHeaderView):
 
     def __init__(self, orientation, parent=None, parent_window=None):
         super().__init__(orientation, parent)
-        self.parent_window = parent_window
+        self.parent_window = parent_window  # Keep for backward compatibility
         self.setSectionsClickable(True)
         self.setHighlightSections(True)
         self.setSortIndicatorShown(True)
@@ -37,6 +43,36 @@ class InteractiveHeader(QHeaderView):
 
         self._press_pos: QPoint = QPoint()
         self._pressed_index: int = -1
+
+    def _get_app_context(self):
+        """Get ApplicationContext with fallback to None."""
+        if get_app_context is None:
+            return None
+        try:
+            return get_app_context()
+        except RuntimeError:
+            # ApplicationContext not ready yet
+            return None
+
+    def _get_main_window_via_context(self):
+        """Get main window via ApplicationContext with fallback to parent traversal."""
+        # Try ApplicationContext first
+        context = self._get_app_context()
+        if context and hasattr(context, '_main_window'):
+            return context._main_window
+
+        # Fallback to legacy parent_window approach
+        if self.parent_window:
+            return self.parent_window
+
+        # Last resort: traverse parents to find main window
+        parent = self.parent()
+        while parent:
+            if hasattr(parent, 'handle_header_toggle') and hasattr(parent, 'sort_by_column'):
+                return parent
+            parent = parent.parent()
+
+        return None
 
     def mousePressEvent(self, event) -> None:
         self._press_pos = event.pos()
@@ -55,14 +91,16 @@ class InteractiveHeader(QHeaderView):
             return
 
         # Section was clicked without drag or resize intent
+        main_window = self._get_main_window_via_context()
+
         if released_index == 0:
-            if self.parent_window and hasattr(self.parent_window, 'handle_header_toggle'):
+            if main_window and hasattr(main_window, 'handle_header_toggle'):
                 # Qt.Checked μπορεί να μην υπάρχει πάντα ως attribute
                 checked = getattr(Qt, 'Checked', 2)
-                self.parent_window.handle_header_toggle(checked)
+                main_window.handle_header_toggle(checked)
         else:
-            if self.parent_window and hasattr(self.parent_window, 'sort_by_column'):
-                self.parent_window.sort_by_column(released_index)
+            if main_window and hasattr(main_window, 'sort_by_column'):
+                main_window.sort_by_column(released_index)
 
         super().mouseReleaseEvent(event)
 
@@ -93,8 +131,9 @@ class InteractiveHeader(QHeaderView):
         """
         Calls MainWindow.sort_by_column() with forced order from context menu.
         """
-        if self.parent_window and hasattr(self.parent_window, 'sort_by_column'):
-            self.parent_window.sort_by_column(column, force_order=order)
+        main_window = self._get_main_window_via_context()
+        if main_window and hasattr(main_window, 'sort_by_column'):
+            main_window.sort_by_column(column, force_order=order)
 
 
 

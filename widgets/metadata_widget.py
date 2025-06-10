@@ -15,6 +15,12 @@ from PyQt5.QtWidgets import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from utils.logger_helper import get_logger
 from utils.metadata_cache import MetadataEntry
 
+# ApplicationContext integration
+try:
+    from core.application_context import get_app_context
+except ImportError:
+    get_app_context = None
+
 logger = get_logger(__name__)
 
 
@@ -29,7 +35,7 @@ class MetadataWidget(QWidget):
 
     def __init__(self, parent: Optional[QWidget] = None, parent_window: Optional[QWidget] = None) -> None:
         super().__init__(parent)
-        self.parent_window = parent_window
+        self.parent_window = parent_window  # Keep for backward compatibility
         self.setProperty("module", True)
         self._last_data: Optional[dict] = None  # For change tracking
         self.setup_ui()
@@ -105,15 +111,44 @@ class MetadataWidget(QWidget):
             self.options_combo.addItem(display, userData=key)
         logger.debug(f"[MetadataWidget] Populated {len(keys)} metadata keys")
 
+    def _get_app_context(self):
+        """Get ApplicationContext with fallback to None."""
+        if get_app_context is None:
+            return None
+        try:
+            return get_app_context()
+        except RuntimeError:
+            # ApplicationContext not ready yet
+            return None
+
+    def _get_metadata_cache_via_context(self):
+        """Get metadata cache via ApplicationContext with fallback to parent traversal."""
+        # Try ApplicationContext first
+        context = self._get_app_context()
+        if context and hasattr(context, '_metadata_cache'):
+            return context._metadata_cache
+
+        # Fallback to legacy parent_window approach
+        if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
+            return self.parent_window.metadata_cache
+
+        return None
+
     def get_available_metadata_keys(self) -> Set[str]:
-        if not self.parent_window or not hasattr(self.parent_window, 'metadata_cache'):
+        metadata_cache = self._get_metadata_cache_via_context()
+        if not metadata_cache:
             logger.warning("[MetadataWidget] No access to metadata cache")
             return set()
+
         all_keys = set()
-        for entry in self.parent_window.metadata_cache._cache.values():
-            if isinstance(entry, MetadataEntry) and entry.data:
-                filtered = {k for k in entry.data if not k.startswith('_') and k not in {'path', 'filename'}}
-                all_keys.update(filtered)
+        try:
+            for entry in metadata_cache._cache.values():
+                if isinstance(entry, MetadataEntry) and entry.data:
+                    filtered = {k for k in entry.data if not k.startswith('_') and k not in {'path', 'filename'}}
+                    all_keys.update(filtered)
+        except Exception as e:
+            logger.warning(f"[MetadataWidget] Error accessing metadata cache: {e}")
+
         return all_keys
 
     def format_metadata_key_name(self, key: str) -> str:
