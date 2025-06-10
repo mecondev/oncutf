@@ -26,7 +26,8 @@ def test_specified_text_invalid_characters():
 
 
 def test_specified_text_empty():
+    """Test that empty text returns empty string (correct behavior)."""
     data = {"type": "specified_text", "text": ""}
     file_item = MockFileItem(filename="example.txt")
     result = SpecifiedTextModule.apply_from_data(data, file_item)
-    assert result == "example"
+    assert result == ""  # Empty text should return empty string, not original filename

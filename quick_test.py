@@ -1,1 +1,0 @@
-import time; from main_window import MainWindow; from PyQt5.QtWidgets import QApplication; app = QApplication([]); print("🚀 Starting Performance Test..."); start = time.time(); mw = MainWindow(); print(f"✅ MainWindow init: {(time.time()-start)*1000:.1f}ms"); mw.close(); print("✅ Performance test completed!")

@@ -15,7 +15,8 @@ Features:
 """
 
 from typing import Optional
-from PyQt5.QtCore import QObject, QTimer, QEvent, Qt
+
+from PyQt5.QtCore import QEvent, QObject, Qt, QTimer
 from PyQt5.QtWidgets import QApplication
 
 from utils.logger_helper import get_logger

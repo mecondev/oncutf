@@ -374,7 +374,7 @@ class FileTreeView(QTreeView):
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
         """Handle horizontal splitter movement (called from MainWindow)"""
         self._adjust_column_width()
-        logger.debug(f"[FileTreeView] Splitter moved - adjusting column width", extra={"dev_only": True})
+        logger.debug("[FileTreeView] Splitter moved - adjusting column width", extra={"dev_only": True})
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement (for debugging)"""

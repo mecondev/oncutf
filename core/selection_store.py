@@ -14,9 +14,10 @@ Features:
 - Automatic synchronization between selection and checked states
 """
 
-from typing import Set, Optional, List, Dict, Any
-from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 import time
+from typing import Any, Dict, Optional, Set
+
+from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 
 from utils.logger_helper import get_logger
 

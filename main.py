@@ -19,11 +19,11 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 
 from main_window import MainWindow
+from utils.fonts import _get_inter_fonts
 
 # Initialize logging system
 from utils.logger_setup import ConfigureLogger
 from utils.theme import load_stylesheet
-from utils.fonts import _get_inter_fonts
 
 ConfigureLogger(log_name="oncutf")
 

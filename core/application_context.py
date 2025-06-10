@@ -11,7 +11,8 @@ Current implementation is a skeleton that will gradually replace
 distributed state management across widgets.
 """
 
-from typing import Optional, Dict, Any, Set
+from typing import Any, Dict, Optional, Set
+
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from utils.logger_helper import get_logger
@@ -189,7 +190,6 @@ class ApplicationContext(QObject):
 
     def set_current_folder(self, folder_path: str) -> None:
         """Set current folder path."""
-        old_folder = self._current_folder
         self._current_folder = folder_path
 
         # Update FileStore if available

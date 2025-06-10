@@ -17,8 +17,9 @@ Manages:
 import datetime
 import glob
 import os
-from typing import List, Optional, Set, Dict, Any
-from PyQt5.QtCore import QObject, pyqtSignal, QElapsedTimer
+from typing import Any, Dict, List, Optional, Set
+
+from PyQt5.QtCore import QElapsedTimer, QObject, pyqtSignal
 
 from config import ALLOWED_EXTENSIONS
 from models.file_item import FileItem

@@ -229,7 +229,7 @@ class FileTableView(QTableView):
         # Try to get fontMetrics from ApplicationContext, fallback to parent traversal
         font_metrics = None
         try:
-            context = get_app_context()
+            get_app_context()
             # Try to get main window through context for font metrics
             # This is a transitional approach until we fully migrate font handling
             parent_window = self.parent()
@@ -323,7 +323,7 @@ class FileTableView(QTableView):
         # Try to get splitter from ApplicationContext, fallback to parent traversal
         horizontal_splitter = None
         try:
-            context = get_app_context()
+            get_app_context()
             # Try to get main window through context for splitter access
             # This is a transitional approach until we fully migrate splitter handling
             parent_window = self.parent()
@@ -507,7 +507,7 @@ class FileTableView(QTableView):
 
         # Trigger metadata load
         try:
-            context = get_app_context()
+            get_app_context()
             # Try to get main window through context for file double click handling
             # This is a transitional approach until we fully migrate event handling
             parent_window = self.parent()
@@ -583,7 +583,7 @@ class FileTableView(QTableView):
         parent = self.window()
         if hasattr(parent, "sync_selection_to_checked"):
             selection = self.selectionModel().selection()
-            selected_rows = set(idx.row() for idx in self.selectionModel().selectedRows())
+            set(idx.row() for idx in self.selectionModel().selectedRows())
             parent.sync_selection_to_checked(selection, QItemSelection())
 
     # =====================================
@@ -618,7 +618,7 @@ class FileTableView(QTableView):
         drag.setMimeData(mime_data)
 
         try:
-            result = drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
+            drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
         except Exception as e:
             logger.error(f"Drag operation failed: {e}")
         finally:

@@ -3,10 +3,11 @@ Font utilities for Inter fonts
 Manages loading and providing access to the Inter font family
 """
 
-from typing import Dict, Optional
-from PyQt5.QtGui import QFont, QFontDatabase
-from PyQt5.QtCore import QResource
 import logging
+from typing import Dict
+
+from PyQt5.QtCore import QResource
+from PyQt5.QtGui import QFont, QFontDatabase
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +42,7 @@ class InterFonts:
     def _load_fonts_from_resources(self) -> None:
         """Load all Inter fonts from filesystem or QResource based on configuration"""
         import os
+
         from config import USE_EMBEDDED_FONTS
 
         if USE_EMBEDDED_FONTS:

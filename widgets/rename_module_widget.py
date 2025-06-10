@@ -38,12 +38,21 @@ from utils.logger_helper import get_logger
 from widgets.metadata_widget import MetadataWidget
 from widgets.original_name_widget import OriginalNameWidget
 
+# ApplicationContext integration
+try:
+    from core.application_context import get_app_context
+except ImportError:
+    get_app_context = None
+
 logger = get_logger(__name__)
 
 class RenameModuleWidget(QWidget):
     """
     Container widget that hosts all rename modules and a fixed post-processing section.
     Provides a structured area for inserting, configuring, and removing rename logic modules.
+
+    Now supports ApplicationContext for optimized access patterns while maintaining
+    backward compatibility with parent_window parameter.
     """
     remove_requested = pyqtSignal(QWidget)
     updated = pyqtSignal(QWidget)
@@ -51,7 +60,7 @@ class RenameModuleWidget(QWidget):
     def __init__(self, parent: Optional[QWidget] = None, parent_window: Optional[QWidget] = None) -> None:
         super().__init__(parent)
 
-        self.parent_window = parent_window  # MainWindow
+        self.parent_window = parent_window  # Keep for backward compatibility
         self.setObjectName("RenameModuleWidget")
         self.setProperty("module", True)
 
@@ -108,8 +117,18 @@ class RenameModuleWidget(QWidget):
 
         logger.debug(f"[RenameModuleWidget] Before update_module_content: content_container_layout is {'initialized' if hasattr(self, 'content_container_layout') else 'not initialized'}")
 
+    def _get_app_context(self):
+        """Get ApplicationContext with fallback to None."""
+        if get_app_context is None:
+            return None
+        try:
+            return get_app_context()
+        except RuntimeError:
+            # ApplicationContext not ready yet
+            return None
+
     def connect_signals_for_module(self, module_widget: QWidget) -> None:
-        if self.parent_window and hasattr(module_widget, "updated"):
+        if hasattr(module_widget, "updated"):
             try:
                 # Connect the module's updated signal to emit our updated signal
                 module_widget.updated.connect(lambda _: self.updated.emit(self))
@@ -119,12 +138,13 @@ class RenameModuleWidget(QWidget):
                 logger.warning(f"[RenameModuleWidget] Signal connection failed: {e}")
 
         else:
-            logger.warning("[RenameModuleWidget] Could not connect signal. parent_window: %s, has updated: %s",
-                        self.parent_window, hasattr(module_widget, "updated"))
+            logger.warning("[RenameModuleWidget] Could not connect signal. Has updated: %s",
+                        hasattr(module_widget, "updated"))
 
     def update_module_content(self, module_name: str) -> None:
         """
         Replace module widget and adjust height constraint.
+        Now uses ApplicationContext-optimized approach for MetadataWidget creation.
         """
         if self.current_module_widget:
             self.content_container_layout.removeWidget(self.current_module_widget)
@@ -133,9 +153,18 @@ class RenameModuleWidget(QWidget):
 
         module_class = self.module_instances.get(module_name)
         if module_class:
-            # Special handling for MetadataWidget which needs parent_window reference
+            # MetadataWidget now supports ApplicationContext, no need for parent_window
             if module_name == "Metadata":
-                self.current_module_widget = module_class(parent_window=self.parent_window)
+                # Try ApplicationContext approach first, fallback to parent_window
+                context = self._get_app_context()
+                if context:
+                    # ApplicationContext available - MetadataWidget can find what it needs
+                    self.current_module_widget = module_class()
+                    logger.debug("[RenameModuleWidget] Created MetadataWidget via ApplicationContext")
+                else:
+                    # Fallback to legacy approach with parent_window
+                    self.current_module_widget = module_class(parent_window=self.parent_window)
+                    logger.debug("[RenameModuleWidget] Created MetadataWidget via parent_window fallback")
             else:
                 self.current_module_widget = module_class()
 

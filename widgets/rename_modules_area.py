@@ -9,6 +9,7 @@ scrollable area and provides fixed post-processing section and global
 add/remove controls.
 
 Designed to scale and support future drag & drop reordering.
+Now supports ApplicationContext for optimized access patterns.
 """
 
 from typing import Optional
@@ -30,6 +31,12 @@ from utils.logger_helper import get_logger
 from widgets.name_transform_widget import NameTransformWidget
 from widgets.rename_module_widget import RenameModuleWidget
 
+# ApplicationContext integration
+try:
+    from core.application_context import get_app_context
+except ImportError:
+    get_app_context = None
+
 logger = get_logger(__name__)
 
 
@@ -37,12 +44,15 @@ class RenameModulesArea(QWidget):
     """
     Main area that contains all rename modules and final transformation widget.
     Supports scrolling for large numbers of modules.
+
+    Now supports ApplicationContext for optimized access patterns while maintaining
+    backward compatibility with parent_window parameter.
     """
     updated = pyqtSignal()
 
     def __init__(self, parent: Optional[QWidget] = None, parent_window: Optional[QWidget] = None) -> None:
         super().__init__(parent)
-        self.parent_window = parent_window
+        self.parent_window = parent_window  # Keep for backward compatibility
         self.module_widgets: list[RenameModuleWidget] = []
 
         self.setObjectName("RenameModulesArea")
@@ -110,6 +120,16 @@ class RenameModulesArea(QWidget):
         self._update_timer.setInterval(100)  # 100ms debounce
         self._update_timer.timeout.connect(lambda: self.updated.emit())
 
+    def _get_app_context(self):
+        """Get ApplicationContext with fallback to None."""
+        if get_app_context is None:
+            return None
+        try:
+            return get_app_context()
+        except RuntimeError:
+            # ApplicationContext not ready yet
+            return None
+
     def _on_module_updated(self):
         """Handle module updates with debouncing to prevent duplicates."""
         logger.debug("[RenameModulesArea] Module updated, restarting timer")
@@ -117,7 +137,20 @@ class RenameModulesArea(QWidget):
         self._update_timer.start()
 
     def add_module(self):
-        module = RenameModuleWidget(parent=self, parent_window=self.parent_window)
+        """
+        Add a new RenameModuleWidget to the area.
+        Now uses ApplicationContext-optimized approach when available.
+        """
+        context = self._get_app_context()
+        if context:
+            # ApplicationContext available - create module without parent_window
+            module = RenameModuleWidget(parent=self)
+            logger.debug("[RenameModulesArea] Created RenameModuleWidget via ApplicationContext")
+        else:
+            # Fallback to legacy approach with parent_window
+            module = RenameModuleWidget(parent=self, parent_window=self.parent_window)
+            logger.debug("[RenameModulesArea] Created RenameModuleWidget via parent_window fallback")
+
         module.remove_requested.connect(lambda m=module: self.remove_module(m))
         module.updated.connect(lambda: self._on_module_updated())
         self.module_widgets.append(module)

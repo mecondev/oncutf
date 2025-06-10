@@ -148,10 +148,9 @@ class FileTableModel(QAbstractTableModel):
 
             # Try to update UI through ApplicationContext, fallback to parent_window
             try:
-                context = get_app_context()
+                get_app_context()
                 # For now, we still need to access parent window for UI updates
                 # This will be improved when we migrate UI update handling to context
-                parent_window = None
                 # Find parent window by traversing up the widget hierarchy
                 import sys
                 if hasattr(sys, '_getframe'):
@@ -194,7 +193,7 @@ class FileTableModel(QAbstractTableModel):
         # Try to get selection model from ApplicationContext, fallback to parent_window
         selection_model = None
         try:
-            context = get_app_context()
+            get_app_context()
             # For now, we still need to access parent window for selection model
             # This will be improved when we migrate selection handling to context
             if self.parent_window:
@@ -238,7 +237,7 @@ class FileTableModel(QAbstractTableModel):
 
         # Try to refresh metadata tree through ApplicationContext, fallback to parent_window
         try:
-            context = get_app_context()
+            get_app_context()
             # For now, we still need to access parent window for metadata tree
             # This will be improved when we migrate metadata tree handling to context
             if self.parent_window:
@@ -286,7 +285,7 @@ class FileTableModel(QAbstractTableModel):
 
         # Optionally notify parent window
         try:
-            context = get_app_context()
+            get_app_context()
             # For now, we still need to access parent window for UI updates
             # This will be improved when we migrate UI update handling to context
             if self.parent_window:

@@ -28,12 +28,26 @@ Designed for integration with MainWindow and MetadataReader.
 """
 
 from pathlib import Path
-from typing import Optional, Dict, Set, Tuple, Any, Union
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QModelIndex
-from PyQt5.QtGui import QDragEnterEvent, QDragMoveEvent, QDropEvent, QStandardItemModel, QStandardItem, QPixmap
+from typing import Any, Dict, Optional, Set, Tuple, Union
+
+from PyQt5.QtCore import QModelIndex, Qt, QTimer, pyqtSignal
+from PyQt5.QtGui import (
+    QDragEnterEvent,
+    QDragMoveEvent,
+    QDropEvent,
+    QPixmap,
+    QStandardItem,
+    QStandardItemModel,
+)
 from PyQt5.QtWidgets import (
-    QAbstractItemView, QAction, QApplication, QHeaderView,
-    QLabel, QMenu, QTreeView, QWidget
+    QAbstractItemView,
+    QAction,
+    QApplication,
+    QHeaderView,
+    QLabel,
+    QMenu,
+    QTreeView,
+    QWidget,
 )
 
 from config import METADATA_TREE_COLUMN_WIDTHS
@@ -457,7 +471,7 @@ class MetadataTreeView(QTreeView):
         if hasattr(self, '_scroll_animation'):
             self._scroll_animation.stop()
 
-        from PyQt5.QtCore import QPropertyAnimation, QEasingCurve
+        from PyQt5.QtCore import QEasingCurve, QPropertyAnimation
 
         self._scroll_animation = QPropertyAnimation(scrollbar, b"value")
         self._scroll_animation.setDuration(duration)

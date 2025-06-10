@@ -61,10 +61,12 @@ from PyQt5.QtWidgets import (
 )
 
 from config import *
+
+# Core application context
+from core.application_context import ApplicationContext
 from models.file_item import FileItem
 from models.file_table_model import FileTableModel
 from modules.name_transform_module import NameTransformModule
-
 from utils.filename_validator import FilenameValidator
 from utils.icon_cache import load_preview_status_icons, prepare_status_icons
 from utils.icons import create_colored_icon
@@ -84,9 +86,6 @@ from widgets.metadata_tree_view import MetadataTreeView
 from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 from widgets.metadata_worker import MetadataWorker
 from widgets.rename_modules_area import RenameModulesArea
-
-# Core application context
-from core.application_context import ApplicationContext
 
 logger = get_logger(__name__)
 
@@ -317,7 +316,7 @@ class MainWindow(QMainWindow):
         self.file_table_view.setWordWrap(False)
 
         # Initialize header and set default row height
-        header = self.file_table_view.horizontalHeader()
+        self.file_table_view.horizontalHeader()
         self.file_table_view.verticalHeader().setDefaultSectionSize(22)  # Compact row height
 
         # Column configuration is now handled by FileTableView._configure_columns()
@@ -661,7 +660,7 @@ class MainWindow(QMainWindow):
             logger.info(f"[SelectAll] Selecting all {total} rows.")
 
             # Step 1: Pre-generate preview data (without updating UI yet)
-            all_files = list(self.file_model.files)  # Create a list of what will be selected
+            list(self.file_model.files)  # Create a list of what will be selected
 
             # Step 2: Update internal state first
             for file in self.file_model.files:
@@ -1955,7 +1954,7 @@ class MainWindow(QMainWindow):
 
         from utils.icons_loader import get_menu_icon
 
-        index = self.file_table_view.indexAt(position)
+        self.file_table_view.indexAt(position)
         total_files = len(self.file_model.files)
 
         # Get selected rows from custom selection model
@@ -2258,7 +2257,7 @@ class MainWindow(QMainWindow):
         if self.should_skip_folder_reload(folder_path):
             return  # skip if user pressed Cancel
         else:
-            force_reload = True  # user pressed Reload
+            pass  # user pressed Reload
 
         # -- Prepare + load files using helper
         paths = self.prepare_folder_load(folder_path)
@@ -2323,7 +2322,7 @@ class MainWindow(QMainWindow):
         if self.should_skip_folder_reload(folder_path):
             return
         else:
-            force_reload = True
+            pass
 
         # -- Prepare + load files using helper
         paths = self.prepare_folder_load(folder_path)
