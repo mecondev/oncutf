@@ -98,7 +98,7 @@ class ApplicationContext(QObject):
         """Handle files loaded from FileStore."""
         self._files = files.copy()
         self.files_changed.emit(self._files)
-        logger.debug(f"ApplicationContext: Files loaded signal relayed: {len(files)} files")
+        logger.debug(f"ApplicationContext: Files loaded signal relayed: {len(files)} files", extra={"dev_only": True})
 
     def _on_folder_changed(self, folder_path: str) -> None:
         """Handle folder change from FileStore."""
@@ -117,7 +117,7 @@ class ApplicationContext(QObject):
             logger.debug("ApplicationContext: Converting list to set for signal compatibility")
             self.selection_changed.emit(set(selected_rows))
 
-        logger.debug(f"ApplicationContext: Selection changed signal relayed: {len(selected_rows)} rows")
+        logger.debug(f"ApplicationContext: Selection changed signal relayed: {len(selected_rows)} rows", extra={"dev_only": True})
 
     def _on_checked_changed(self, checked_rows: list[int]) -> None:
         """Handle checked state changed from SelectionStore."""

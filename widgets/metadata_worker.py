@@ -81,7 +81,7 @@ class MetadataWorker(QObject):
 
                 file_size_mb = os.path.getsize(path) / (1024 * 1024)
                 start_file = time.time()
-                logger.debug(f"[Worker] Processing file {index + 1}/{total}: {path} ({file_size_mb:.2f} MB)")
+                logger.debug(f"[Worker] Processing file {index + 1}/{total}: {path} ({file_size_mb:.2f} MB)", extra={"dev_only": True})
 
                 try:
                     metadata = self.reader.read_metadata(
@@ -98,13 +98,13 @@ class MetadataWorker(QObject):
                     # Determine final extended status from all sources
                     is_extended_flag = previous_extended or self.use_extended or metadata_has_extended
 
-                    logger.debug(f"[Worker] Extended metadata flags for {path}:")
-                    logger.debug(f"[Worker] - Previous entry extended: {previous_extended}")
-                    logger.debug(f"[Worker] - use_extended parameter: {self.use_extended}")
-                    logger.debug(f"[Worker] - metadata has __extended__ flag: {metadata_has_extended}")
-                    logger.debug(f"[Worker] - final extended status: {is_extended_flag}")
+                    logger.debug(f"[Worker] Extended metadata flags for {path}:", extra={"dev_only": True})
+                    logger.debug(f"[Worker] - Previous entry extended: {previous_extended}", extra={"dev_only": True})
+                    logger.debug(f"[Worker] - use_extended parameter: {self.use_extended}", extra={"dev_only": True})
+                    logger.debug(f"[Worker] - metadata has __extended__ flag: {metadata_has_extended}", extra={"dev_only": True})
+                    logger.debug(f"[Worker] - final extended status: {is_extended_flag}", extra={"dev_only": True})
 
-                    logger.debug(f"[Worker] Saving metadata for {path}, extended = {is_extended_flag}")
+                    logger.debug(f"[Worker] Saving metadata for {path}, extended = {is_extended_flag}", extra={"dev_only": True})
                     self.metadata_cache.set(path, metadata, is_extended=is_extended_flag)
 
                 except Exception as e:
@@ -115,11 +115,11 @@ class MetadataWorker(QObject):
                     for file_item in self.main_window.model.files:
                         if file_item.full_path == path:
                             file_item.metadata = metadata
-                            logger.debug(f"[Worker] Assigned metadata to FileItem: {file_item.filename}")
+                            logger.debug(f"[Worker] Assigned metadata to FileItem: {file_item.filename}", extra={"dev_only": True})
                             break
 
                 elapsed_file = time.time() - start_file
-                logger.debug(f"[Worker] File processed in {elapsed_file:.2f} sec")
+                logger.debug(f"[Worker] File processed in {elapsed_file:.2f} sec", extra={"dev_only": True})
 
                 self.progress.emit(index + 1, total)
 

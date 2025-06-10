@@ -56,7 +56,7 @@ class DragManager(QObject):
         if app:
             app.installEventFilter(self)
 
-        logger.debug("🎯 DragManager initialized")
+        logger.debug("[DragManager] Initialized")
 
     @classmethod
     def get_instance(cls) -> 'DragManager':
@@ -77,7 +77,7 @@ class DragManager(QObject):
             source: String identifier of the drag source widget
         """
         if self._drag_active:
-            logger.warning(f"🎯 Drag already active from {self._drag_source}, starting new from {source}")
+            logger.warning(f"[DragManager] Drag already active from {self._drag_source}, starting new from {source}")
 
         self._drag_active = True
         self._drag_source = source
@@ -85,7 +85,7 @@ class DragManager(QObject):
         # Start safety timer (5 seconds max drag duration)
         self._cleanup_timer.start(5000)
 
-        logger.debug(f"🎯 Drag started from: {source}")
+        logger.debug(f"[DragManager] Drag started from: {source}")
 
     def end_drag(self, source: str = None) -> None:
         """
@@ -95,14 +95,14 @@ class DragManager(QObject):
             source: Optional source identifier for verification
         """
         if not self._drag_active:
-            logger.debug("🎯 Drag end called but no drag active")
+            logger.debug("[DragManager] Drag end called but no drag active")
             return
 
         if source and source != self._drag_source:
-            logger.warning(f"🎯 Drag end from {source} but started from {self._drag_source}")
+            logger.warning(f"[DragManager] Drag end from {source} but started from {self._drag_source}")
 
         self._perform_cleanup()
-        logger.debug(f"🎯 Drag ended from: {source or self._drag_source}")
+        logger.debug(f"[DragManager] Drag ended from: {source or self._drag_source}")
 
     def is_drag_active(self) -> bool:
         """Check if a drag operation is currently active."""
@@ -128,11 +128,11 @@ class DragManager(QObject):
             QApplication.restoreOverrideCursor()
             cursor_count += 1
             if cursor_count > 10:  # Safety limit
-                logger.warning("🎯 Too many override cursors, breaking loop")
+                logger.warning("[DragManager] Too many override cursors, breaking loop")
                 break
 
         if cursor_count > 0:
-            logger.debug(f"🎯 Restored {cursor_count} override cursors")
+            logger.debug(f"[DragManager] Restored {cursor_count} override cursors")
 
         # Reset state
         self._drag_active = False
@@ -143,12 +143,12 @@ class DragManager(QObject):
 
     def _forced_cleanup(self) -> None:
         """Forced cleanup triggered by timer."""
-        logger.warning(f"🎯 Forced drag cleanup after timeout (source: {self._drag_source})")
+        logger.warning(f"[DragManager] Forced drag cleanup after timeout (source: {self._drag_source})")
         self._perform_cleanup()
 
     def force_cleanup(self) -> None:
         """Public method to force immediate cleanup."""
-        logger.info("🎯 Manual forced cleanup requested")
+        logger.info("[DragManager] Manual forced cleanup requested")
         self._perform_cleanup()
 
     # =====================================
@@ -172,7 +172,7 @@ class DragManager(QObject):
         # Escape key terminates drag
         if event_type == QEvent.KeyPress:
             if hasattr(event, 'key') and event.key() == Qt.Key_Escape:
-                logger.debug("🎯 Escape key pressed during drag, forcing cleanup")
+                logger.debug("[DragManager] Escape key pressed during drag, forcing cleanup")
                 self.force_cleanup()
                 return True  # Consume the escape key
 
@@ -181,7 +181,7 @@ class DragManager(QObject):
     def _check_and_cleanup(self) -> None:
         """Check if drag is still active and cleanup if needed."""
         if self._drag_active:
-            logger.debug("🎯 Drag still active after mouse release, performing cleanup")
+            logger.debug("[DragManager] Drag still active after mouse release, performing cleanup")
             self._perform_cleanup()
 
 

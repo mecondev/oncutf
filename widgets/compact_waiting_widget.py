@@ -114,7 +114,7 @@ class CompactWaitingWidget(QWidget):
         layout.addLayout(bottom_row)
 
     def set_progress(self, value: int, total: int) -> None:
-        logger.debug(f"[Waiting Dialog] Set progress. Called from: {value} of {total}")
+        logger.debug(f"[Waiting Dialog] Set progress. Called from: {value} of {total}", extra={"dev_only": True})
         self.set_count(value, total)
         self.progress_bar.setMaximum(total)
         self.progress_bar.setValue(value)

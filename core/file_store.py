@@ -52,7 +52,7 @@ class FileStore(QObject):
         # Performance tracking
         self._load_timer = QElapsedTimer()
 
-        logger.debug("📁 FileStore initialized")
+        logger.debug("[FileStore] Initialized")
 
     # =====================================
     # File Scanning Operations
@@ -79,7 +79,7 @@ class FileStore(QObject):
         # Check cache first
         if use_cache and folder_path in self._file_cache:
             cached_items = self._file_cache[folder_path]
-            logger.debug(f"📁 Using cached files for {folder_path}: {len(cached_items)} items")
+            logger.debug(f"[FileStore] Using cached files for {folder_path}: {len(cached_items)} items")
             return cached_items.copy()
 
         # Scan folder
@@ -104,7 +104,7 @@ class FileStore(QObject):
             self._file_cache[folder_path] = file_items.copy()
 
         elapsed = self._load_timer.elapsed()
-        logger.info(f"📁 Scanned {folder_path}: {len(file_items)} files in {elapsed}ms")
+        logger.info(f"[FileStore] Scanned {folder_path}: {len(file_items)} files in {elapsed}ms")
 
         return file_items
 
@@ -130,7 +130,7 @@ class FileStore(QObject):
             self._loaded_files.clear()
 
         if not file_paths:
-            logger.debug("📁 No file paths provided")
+            logger.debug("[FileStore] No file paths provided")
             return []
 
         file_items = []
@@ -141,7 +141,7 @@ class FileStore(QObject):
                     # Load folder contents
                     folder_items = self.get_file_items_from_folder(path)
                     file_items.extend(folder_items)
-                    logger.debug(f"📁 Loaded {len(folder_items)} files from folder: {path}")
+                    logger.debug(f"[FileStore] Loaded {len(folder_items)} files from folder: {path}")
 
                 elif os.path.isfile(path):
                     # Load individual file
@@ -151,12 +151,12 @@ class FileStore(QObject):
                         modified = datetime.datetime.fromtimestamp(
                             os.path.getmtime(path)).strftime("%Y-%m-%d %H:%M:%S")
                         file_items.append(FileItem(filename, ext, modified, full_path=path))
-                        logger.debug(f"📄 Loaded file: {filename}")
+                        logger.debug(f"[FileStore] Loaded file: {filename}")
                     else:
-                        logger.debug(f"📄 Skipped unsupported file: {path}")
+                        logger.debug(f"[FileStore] Skipped unsupported file: {path}")
 
             except OSError as e:
-                logger.error(f"📁 Error loading path {path}: {e}")
+                logger.error(f"[FileStore] Error loading path {path}: {e}")
                 continue
 
         # Update state
@@ -166,7 +166,7 @@ class FileStore(QObject):
             self._loaded_files.extend(file_items)
 
         elapsed = self._load_timer.elapsed()
-        logger.info(f"📁 Loaded {len(file_items)} total files in {elapsed}ms")
+        logger.info(f"[FileStore] Loaded {len(file_items)} total files in {elapsed}ms")
 
         # Emit signal
         self.files_loaded.emit(file_items)
@@ -192,13 +192,13 @@ class FileStore(QObject):
 
         if old_folder != folder_path:
             self.folder_changed.emit(folder_path)
-            logger.debug(f"📂 Current folder changed: {folder_path}")
+            logger.debug(f"[FileStore] Current folder changed: {folder_path}")
 
     def clear_files(self) -> None:
         """Clear all loaded files."""
         self._loaded_files.clear()
         self.files_loaded.emit([])
-        logger.debug("📁 Files cleared")
+        logger.debug("[FileStore] Files cleared")
 
     # =====================================
     # File Validation & Filtering
@@ -216,7 +216,7 @@ class FileStore(QObject):
         """Filter loaded files by extension."""
         filtered = [f for f in self._loaded_files if f.extension.lower() in extensions]
         self.files_filtered.emit(filtered)
-        logger.debug(f"📁 Filtered files: {len(filtered)} match extensions {extensions}")
+        logger.debug(f"[FileStore] Filtered files: {len(filtered)} match extensions {extensions}")
         return filtered
 
     # =====================================
@@ -226,7 +226,7 @@ class FileStore(QObject):
     def clear_cache(self) -> None:
         """Clear file cache."""
         self._file_cache.clear()
-        logger.debug("📁 File cache cleared")
+        logger.debug("[FileStore] File cache cleared")
 
     def get_cache_stats(self) -> Dict[str, Any]:
         """Get cache statistics."""

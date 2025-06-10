@@ -77,11 +77,11 @@ class MetadataCache:
         final_extended = is_extended or metadata_has_extended_flag
 
         # More detailed logging
-        logger.debug(f"[Cache] SET: {file_path}")
-        logger.debug(f"[Cache] Previous entry extended: {prev_extended}")
-        logger.debug(f"[Cache] Input is_extended parameter: {is_extended}")
-        logger.debug(f"[Cache] Metadata has __extended__ flag: {metadata_has_extended_flag}")
-        logger.debug(f"[Cache] Final extended status: {final_extended}")
+        logger.debug(f"[Cache] SET: {file_path}", extra={"dev_only": True})
+        logger.debug(f"[Cache] Previous entry extended: {prev_extended}", extra={"dev_only": True})
+        logger.debug(f"[Cache] Input is_extended parameter: {is_extended}", extra={"dev_only": True})
+        logger.debug(f"[Cache] Metadata has __extended__ flag: {metadata_has_extended_flag}", extra={"dev_only": True})
+        logger.debug(f"[Cache] Final extended status: {final_extended}", extra={"dev_only": True})
 
         self._cache[norm_path] = MetadataEntry(metadata, is_extended=final_extended)
 

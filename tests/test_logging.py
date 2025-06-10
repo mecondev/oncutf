@@ -33,11 +33,11 @@ def clean_logs():
 # Run test logging
 def run_tests():
     logger = init_logging("oncutf")
-    logger.info("✅ Application log test — info")
-    logger.debug("✅ Application log test — debug")
-    logger.warning("⚠️ Application log test — warning")
-    logger.error("❌ Application log test — error")
-    logger.critical("🔥 Application log test — critical")
+    logger.info("[TEST] Application log test - info")
+    logger.debug("[TEST] Application log test - debug")
+    logger.warning("[TEST] Application log test - warning")
+    logger.error("Application log test - error")
+    logger.critical("[TEST] Application log test - critical")
 
     # Setup rename logger separately
     rename_logger = get_logger("rename")

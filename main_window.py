@@ -1442,7 +1442,7 @@ class MainWindow(QMainWindow):
             logger.warning("Progress signal received after worker was already cleaned up — ignoring.")
             return
 
-        logger.debug(f"Metadata progress update: {current} of {total}")
+        logger.debug(f"Metadata progress update: {current} of {total}", extra={"dev_only": True})
 
         if getattr(self, "loading_dialog", None):
             self.loading_dialog.set_progress(current, total)

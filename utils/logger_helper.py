@@ -83,6 +83,9 @@ def get_logger(name: str = None) -> logging.Logger:
     logger = logging.getLogger(name or __name__)
     logger.setLevel(logging.DEBUG)
 
+    # Prevent propagation to root logger to avoid duplicate logs
+    logger.propagate = False
+
     if not logger.hasHandlers():
         handler = logging.StreamHandler(sys.stdout)
         handler.addFilter(DevOnlyFilter())

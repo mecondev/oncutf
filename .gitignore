@@ -1,5 +1,5 @@
 # =======================================
-# 🚀 General Python Files
+# General Python Files
 # =======================================
 
 # Byte-compiled Python files
@@ -35,7 +35,7 @@ Pipfile.lock
 poetry.lock
 
 # =======================================
-# 🔧 Build, dist and packaging
+# Build, dist and packaging
 # =======================================
 
 build/
@@ -68,7 +68,7 @@ coverage.xml
 htmlcov/
 
 # =======================================
-# 📋 Scripts
+# Scripts
 # =======================================
 
 # Shell and auxiliary scripts
@@ -83,7 +83,7 @@ scripts/
 .ipynb_checkpoints/
 
 # =======================================
-# 🖥️ IDEs / Editor folders
+# IDEs / Editor folders
 # =======================================
 
 # VSCode
@@ -117,7 +117,7 @@ debug.log
 .ruff_cache/
 
 # =======================================
-# 🖼️ GUI-related files (PyQt5, resources)
+# GUI-related files (PyQt5, resources)
 # =======================================
 
 *.qrc
@@ -146,7 +146,7 @@ reports/
 .continue
 
 # =======================================
-# ⚙️ System Files (Windows/macOS)
+# System Files (Windows/macOS)
 # =======================================
 
 .DS_Store

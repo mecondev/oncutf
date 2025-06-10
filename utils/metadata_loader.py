@@ -49,7 +49,7 @@ class MetadataLoader:
         use_extended: bool = False,
         cache: Optional[MetadataCache] = None
     ) -> None:
-        logger.debug(f"[Loader] load() final params: use_extended={use_extended}, force={force}")
+        logger.debug(f"[Loader] load() final params: use_extended={use_extended}, force={force}", extra={"dev_only": True})
         updated_count = 0
 
         for file in files:
@@ -57,14 +57,14 @@ class MetadataLoader:
             already_has_metadata = bool(file.metadata)
             already_extended = entry.is_extended if entry else False
 
-            logger.debug(f"[Loader] Loading {file.filename} — already_extended={already_extended}, already_has_metadata={already_has_metadata}")
+            logger.debug(f"[Loader] Loading {file.filename} — already_extended={already_extended}, already_has_metadata={already_has_metadata}", extra={"dev_only": True})
 
             if use_extended and already_extended:
-                logger.debug(f"[Loader] Skipping (already extended): {file.filename}")
+                logger.debug(f"[Loader] Skipping (already extended): {file.filename}", extra={"dev_only": True})
                 continue
 
             if not use_extended and already_has_metadata and not force:
-                logger.debug(f"[Loader] Skipping (already cached): {file.filename}")
+                logger.debug(f"[Loader] Skipping (already cached): {file.filename}", extra={"dev_only": True})
                 continue
 
             metadata = self.read(file.full_path, use_extended=use_extended)
@@ -75,10 +75,10 @@ class MetadataLoader:
             # Determine effective extended status
             effective_extended = use_extended or metadata_has_extended
 
-            logger.debug(f"[Loader] Metadata for {file.filename}:")
-            logger.debug(f"[Loader] - use_extended parameter: {use_extended}")
-            logger.debug(f"[Loader] - metadata has __extended__ flag: {metadata_has_extended}")
-            logger.debug(f"[Loader] - effective extended status: {effective_extended}")
+            logger.debug(f"[Loader] Metadata for {file.filename}:", extra={"dev_only": True})
+            logger.debug(f"[Loader] - use_extended parameter: {use_extended}", extra={"dev_only": True})
+            logger.debug(f"[Loader] - metadata has __extended__ flag: {metadata_has_extended}", extra={"dev_only": True})
+            logger.debug(f"[Loader] - effective extended status: {effective_extended}", extra={"dev_only": True})
 
             file.metadata = metadata
             updated_count += 1
@@ -114,18 +114,18 @@ class MetadataLoader:
         Returns:
             dict or None: Raw metadata dictionary or None on failure.
         """
-        logger.debug(f"[Loader] read_metadata() called: use_extended={use_extended}")
+        logger.debug(f"[Loader] read_metadata() called: use_extended={use_extended}", extra={"dev_only": True})
 
         if use_extended:
-            logger.debug(f"[Loader] Extended scan requested for: {filepath}")
+            logger.debug(f"[Loader] Extended scan requested for: {filepath}", extra={"dev_only": True})
             result = self.exiftool.get_metadata(filepath, use_extended=True)
         else:
-            logger.debug(f"[Loader] Fast scan requested for: {filepath}")
+            logger.debug(f"[Loader] Fast scan requested for: {filepath}", extra={"dev_only": True})
             result = self.exiftool.get_metadata(filepath, use_extended=False)
 
         if isinstance(result, dict):
-            logger.debug(f"[Loader] Result keys for {filepath}: {list(result.keys())[:10]}")
-            logger.debug(f"[Loader] '__extended__' in result? {'__extended__' in result}")
+            logger.debug(f"[Loader] Result keys for {filepath}: {list(result.keys())[:10]}", extra={"dev_only": True})
+            logger.debug(f"[Loader] '__extended__' in result? {'__extended__' in result}", extra={"dev_only": True})
 
             # Annotate explicitly if this was an extended scan
             if use_extended:

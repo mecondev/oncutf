@@ -11,7 +11,7 @@ Built for creators, photographers, and archivists who want their filenames to re
 
 ---
 
-## ✨ Features
+## Features
 
 - Rename files using EXIF tags (e.g. `CreateDate`, `Duration`, etc.)
 - Modular rename system (add prefix, counter, EXIF fields, etc.)
@@ -23,7 +23,7 @@ Built for creators, photographers, and archivists who want their filenames to re
 
 ---
 
-## 🛠 Requirements
+## Requirements
 
 - Python 3.9+
 - [ExifTool](https://exiftool.org/) — must be installed and available in system path
@@ -37,7 +37,7 @@ pip install -r requirements.txt
 
 ---
 
-## 🚀 Usage
+## Usage
 
 ```bash
 python main.py
@@ -51,7 +51,7 @@ python main.py
 
 ---
 
-## 🧪 Development
+## Development
 
 ### Running Tests
 
@@ -89,7 +89,7 @@ mypy main_window.py
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 oncutf/
@@ -106,29 +106,29 @@ oncutf/
 
 ---
 
-## 🌐 Project & Creator
+## Project & Creator
 
 **oncutf** is created by [Michael Economou](https://oncut.gr),
 as a personal non-commercial tool to support creative video & photo workflows.
 
-### 🔗 Links
+### Links
 
-- 🌍 Website: [oncut.gr](https://oncut.gr)
-- 📷 Instagram: [@oncut.gr](https://instagram.com/oncut.gr)
-- 📘 Facebook: [Oncut](https://facebook.com/oncut.gr)
+- Website: [oncut.gr](https://oncut.gr)
+- Instagram: [@oncut.gr](https://instagram.com/oncut.gr)
+- Facebook: [Oncut](https://facebook.com/oncut.gr)
 
 > This is a hobbyist project. Not affiliated with or endorsed by ExifTool or PyQt5.
 
 ---
 
-## 🪪 License
+## License
 
 This project is licensed under the MIT License.
 See the [LICENSE](LICENSE) file for full details.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [ExifTool](https://exiftool.org/) by Phil Harvey
 - PyQt5 by Riverbank Computing
