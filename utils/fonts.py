@@ -62,7 +62,7 @@ class InterFonts:
                             if families:
                                 self.loaded_fonts[font_key] = font_id
                                 self.font_families[font_key] = families[0]
-                                logger.info(f"✅ Loaded {font_key}: {families[0]} from {font_path}")
+                                logger.info(f"Loaded {font_key}: {families[0]} from {font_path}")
                             else:
                                 logger.warning(f"❌ No families found for {font_key}")
                         else:

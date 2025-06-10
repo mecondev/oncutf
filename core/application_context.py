@@ -64,7 +64,7 @@ class ApplicationContext(QObject):
         # Ready flag (will be used to ensure proper initialization)
         self._is_ready = False
 
-        logger.info("🚀 ApplicationContext initialized (skeleton mode)")
+        logger.info("ApplicationContext initialized (skeleton mode)")
 
     def initialize_stores(self) -> None:
         """
@@ -80,7 +80,7 @@ class ApplicationContext(QObject):
             self._file_store.files_loaded.connect(self._on_files_loaded)
             self._file_store.folder_changed.connect(self._on_folder_changed)
 
-            logger.info("📁 FileStore initialized in ApplicationContext")
+            logger.info("FileStore initialized in ApplicationContext")
 
         if self._selection_store is None:
             # Import here to avoid circular dependencies
@@ -91,29 +91,29 @@ class ApplicationContext(QObject):
             self._selection_store.selection_changed.connect(self._on_selection_changed)
             self._selection_store.checked_changed.connect(self._on_checked_changed)
 
-            logger.info("🎯 SelectionStore initialized in ApplicationContext")
+            logger.info("SelectionStore initialized in ApplicationContext")
 
     def _on_files_loaded(self, files: list) -> None:
         """Handle files loaded from FileStore."""
         self._files = files.copy()
         self.files_changed.emit(self._files)
-        logger.debug(f"📁 ApplicationContext: Files loaded signal relayed: {len(files)} files")
+        logger.debug(f"ApplicationContext: Files loaded signal relayed: {len(files)} files")
 
     def _on_folder_changed(self, folder_path: str) -> None:
         """Handle folder change from FileStore."""
         self._current_folder = folder_path
-        logger.debug(f"📂 ApplicationContext: Folder changed to {folder_path}")
+        logger.debug(f"ApplicationContext: Folder changed to {folder_path}")
 
     def _on_selection_changed(self, selected_rows: Set[int]) -> None:
         """Handle selection changed from SelectionStore."""
         self._selected_rows = selected_rows
         self.selection_changed.emit(selected_rows)
-        logger.debug(f"🎯 ApplicationContext: Selection changed signal relayed: {len(selected_rows)} rows")
+        logger.debug(f"ApplicationContext: Selection changed signal relayed: {len(selected_rows)} rows")
 
     def _on_checked_changed(self, checked_rows: Set[int]) -> None:
         """Handle checked state changed from SelectionStore."""
         # For now, just log it - will be used by file model updates later
-        logger.debug(f"🎯 ApplicationContext: Checked state changed: {len(checked_rows)} rows")
+        logger.debug(f"ApplicationContext: Checked state changed: {len(checked_rows)} rows")
 
     @classmethod
     def get_instance(cls) -> 'ApplicationContext':
@@ -173,7 +173,7 @@ class ApplicationContext(QObject):
         """Set current file list (legacy method)."""
         self._files = files.copy()
         self.files_changed.emit(self._files)
-        logger.debug(f"📁 Files updated (legacy): {len(files)} items")
+        logger.debug(f"Files updated (legacy): {len(files)} items")
 
     def get_current_folder(self) -> Optional[str]:
         """Get current folder path."""
@@ -188,7 +188,7 @@ class ApplicationContext(QObject):
         if self._file_store is not None:
             self._file_store.set_current_folder(folder_path)
 
-        logger.debug(f"📂 Current folder: {folder_path}")
+        logger.debug(f"Current folder: {folder_path}")
 
     # =====================================
     # Selection Management (Delegated to SelectionStore)
@@ -222,7 +222,7 @@ class ApplicationContext(QObject):
         """Set metadata for a file (placeholder implementation)."""
         self._metadata_cache[file_path] = metadata
         self.metadata_changed.emit(file_path, metadata)
-        logger.debug(f"📋 Metadata updated for: {file_path}")
+        logger.debug(f"Metadata updated for: {file_path}")
 
     # =====================================
     # Performance Tracking
@@ -231,7 +231,7 @@ class ApplicationContext(QObject):
     def track_performance(self, operation: str, duration_ms: float) -> None:
         """Track performance metrics for operations."""
         self._performance_metrics[operation] = duration_ms
-        logger.debug(f"⚡ Performance: {operation} took {duration_ms:.1f}ms")
+        logger.debug(f"Performance: {operation} took {duration_ms:.1f}ms")
 
     def get_performance_report(self) -> Dict[str, float]:
         """Get performance metrics report."""
@@ -255,7 +255,7 @@ class ApplicationContext(QObject):
     def mark_ready(self) -> None:
         """Mark context as fully initialized."""
         self._is_ready = True
-        logger.info("✅ ApplicationContext is ready")
+        logger.info("ApplicationContext is ready")
 
     def cleanup(self) -> None:
         """Clean up resources before shutdown."""
@@ -269,7 +269,7 @@ class ApplicationContext(QObject):
         self._selected_rows.clear()
         self._metadata_cache.clear()
         self._performance_metrics.clear()
-        logger.info("🧹 ApplicationContext cleaned up")
+        logger.info("ApplicationContext cleaned up")
 
 
 # Convenience function for getting the singleton
