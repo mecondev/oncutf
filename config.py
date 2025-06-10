@@ -67,6 +67,11 @@ ALLOWED_FILENAME_CHARS = r"^[^\\/:*?\"<>|]+$"
 THEME_NAME = "dark"
 
 # ----------------------------
+# Font Configuration
+# ----------------------------
+USE_EMBEDDED_FONTS = False  # Set to True to use QRC embedded fonts instead of filesystem
+
+# ----------------------------
 # Preview Indicator Settings
 # ----------------------------
 PREVIEW_COLORS = {

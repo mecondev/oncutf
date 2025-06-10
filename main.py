@@ -23,6 +23,7 @@ from main_window import MainWindow
 # Initialize logging system
 from utils.logger_setup import ConfigureLogger
 from utils.theme import load_stylesheet
+from utils.fonts import _get_inter_fonts
 
 ConfigureLogger(log_name="oncutf")
 
@@ -50,6 +51,11 @@ def main() -> None:
     app = QApplication(sys.argv)
     # Qt.AA_UseHighDpiPixmaps is defined in PyQt5, but linter may not resolve C++-level attributes
     app.setAttribute(Qt.AA_UseHighDpiPixmaps) # type: ignore[attr-defined]
+
+    # Load Inter fonts
+    logger.info("Initializing Inter fonts...")
+    _get_inter_fonts()
+
     app.setStyleSheet(load_stylesheet())
 
     # Create and show main window
