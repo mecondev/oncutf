@@ -16,6 +16,7 @@ Features:
 
 from typing import Set, Optional, List, Dict, Any
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
+import time
 
 from utils.logger_helper import get_logger
 
@@ -56,7 +57,7 @@ class SelectionStore(QObject):
         self._total_files: int = 0
 
         # Performance tracking
-        self._last_operation_time: float = 0.0
+        self._last_operation_time = time.time()
         self._batch_operations: Dict[str, int] = {}
 
         # Debouncing timer for high-frequency updates
@@ -99,7 +100,9 @@ class SelectionStore(QObject):
         self._selected_rows = rows.copy()
         new_count = len(self._selected_rows)
 
-        logger.debug(f"Selection updated: {old_count} → {new_count} rows")
+        self._last_operation_time = time.time()
+
+        logger.debug(f"Selection updated: {old_count} -> {new_count} rows")
 
         if emit_signal:
             self._schedule_selection_signal()
@@ -189,7 +192,7 @@ class SelectionStore(QObject):
         self._checked_rows = rows.copy()
         new_count = len(self._checked_rows)
 
-        logger.debug(f"Checked state updated: {old_count} → {new_count} rows")
+        logger.debug(f"Checked state updated: {old_count} -> {new_count} rows")
 
         if emit_signal:
             self._schedule_checked_signal()
@@ -273,7 +276,7 @@ class SelectionStore(QObject):
         old_anchor = self._anchor_row
         self._anchor_row = row
 
-                    logger.debug(f"Anchor changed: {old_anchor} → {row}")
+        logger.debug(f"Anchor changed: {old_anchor} -> {row}")
 
         if emit_signal:
             self.anchor_changed.emit(row if row is not None else -1)
@@ -294,7 +297,7 @@ class SelectionStore(QObject):
         self._checked_rows = self._selected_rows.copy()
         new_checked = len(self._checked_rows)
 
-        logger.debug(f"Synced selection→checked: {old_checked} → {new_checked} rows")
+        logger.debug(f"Synced selection->checked: {old_checked} -> {new_checked} rows")
         self._schedule_checked_signal()
 
     def sync_checked_to_selection(self) -> None:
@@ -309,7 +312,7 @@ class SelectionStore(QObject):
         self._selected_rows = self._checked_rows.copy()
         new_selected = len(self._selected_rows)
 
-        logger.debug(f"Synced checked→selection: {old_selected} → {new_selected} rows")
+        logger.debug(f"Synced checked->selection: {old_selected} -> {new_selected} rows")
         self._schedule_selection_signal()
 
     # =====================================
@@ -360,7 +363,7 @@ class SelectionStore(QObject):
         self._selected_rows = inverted_rows
         self._checked_rows = inverted_rows
 
-        logger.info(f"Inverted selection: {old_count} → {new_count} files")
+        logger.info(f"Inverted selection: {old_count} -> {new_count} files")
 
         # Emit both signals
         self._schedule_selection_signal()
@@ -418,7 +421,7 @@ class SelectionStore(QObject):
             if self._anchor_row is not None and self._anchor_row >= total:
                 self._anchor_row = None
 
-        logger.debug(f"Total files updated: {old_total} → {total}")
+        logger.debug(f"Total files updated: {old_total} -> {total}")
 
     def get_performance_stats(self) -> Dict[str, Any]:
         """Get performance statistics."""

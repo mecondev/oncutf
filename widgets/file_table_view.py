@@ -28,6 +28,7 @@ from PyQt5.QtGui import QCursor, QDrag, QDropEvent, QKeySequence, QMouseEvent, Q
 from PyQt5.QtWidgets import QAbstractItemView, QApplication, QHeaderView, QLabel, QTableView
 
 from config import FILE_TABLE_COLUMN_WIDTHS
+from core.application_context import get_app_context
 from utils.file_drop_helper import extract_file_paths
 from utils.logger_helper import get_logger
 
@@ -99,6 +100,55 @@ class FileTableView(QTableView):
         self.hover_delegate = HoverItemDelegate(self)
         self.setItemDelegate(self.hover_delegate)
 
+        # Selection store integration (with fallback to legacy selection handling)
+        self._legacy_selection_mode = True  # Start in legacy mode for compatibility
+
+    def _get_selection_store(self):
+        """Get SelectionStore from ApplicationContext with fallback to None."""
+        try:
+            context = get_app_context()
+            return context.selection_store
+        except RuntimeError:
+            # ApplicationContext not ready yet
+            return None
+
+    def _update_selection_store(self, selected_rows: set, emit_signal: bool = True):
+        """Update SelectionStore with current selection."""
+        selection_store = self._get_selection_store()
+        if selection_store and not self._legacy_selection_mode:
+            selection_store.set_selected_rows(selected_rows, emit_signal=emit_signal)
+
+        # Always update legacy state for compatibility
+        self.selected_rows = selected_rows
+        if emit_signal:
+            self.selection_changed.emit(list(selected_rows))
+
+    def _get_current_selection(self) -> set:
+        """Get current selection from SelectionStore or fallback to legacy."""
+        selection_store = self._get_selection_store()
+        if selection_store and not self._legacy_selection_mode:
+            return selection_store.get_selected_rows()
+        else:
+            # Fallback to legacy approach
+            return self.selected_rows
+
+    def _set_anchor_row(self, row: Optional[int]):
+        """Set anchor row in SelectionStore or fallback to legacy."""
+        selection_store = self._get_selection_store()
+        if selection_store and not self._legacy_selection_mode:
+            selection_store.set_anchor_row(row)
+
+        # Always update legacy state for compatibility
+        self.anchor_row = row
+
+    def _get_anchor_row(self) -> Optional[int]:
+        """Get anchor row from SelectionStore or fallback to legacy."""
+        selection_store = self._get_selection_store()
+        if selection_store and not self._legacy_selection_mode:
+            return selection_store.get_anchor_row()
+        else:
+            return self.anchor_row
+
     def resizeEvent(self, event) -> None:
         """Handle resize events and update placeholder position."""
         super().resizeEvent(event)
@@ -141,6 +191,12 @@ class FileTableView(QTableView):
         self.clearSelection()
         self.selected_rows.clear()
 
+        # Clear selection in SelectionStore as well
+        selection_store = self._get_selection_store()
+        if selection_store:
+            selection_store.clear_selection(emit_signal=False)
+            selection_store.set_anchor_row(None, emit_signal=False)
+
         # Set files in model (this triggers beginResetModel/endResetModel)
         if self.model() and hasattr(self.model(), 'set_files'):
             self.model().set_files(file_items)
@@ -170,14 +226,32 @@ class FileTableView(QTableView):
         if not header:
             return
 
-        # Find parent window with fontMetrics
-        parent_window = self.parent()
-        while parent_window and not hasattr(parent_window, 'fontMetrics'):
-            parent_window = parent_window.parent()
+        # Try to get fontMetrics from ApplicationContext, fallback to parent traversal
+        font_metrics = None
+        try:
+            context = get_app_context()
+            # Try to get main window through context for font metrics
+            # This is a transitional approach until we fully migrate font handling
+            parent_window = self.parent()
+            while parent_window and not hasattr(parent_window, 'fontMetrics'):
+                parent_window = parent_window.parent()
 
-        if not parent_window:
-            logger.warning("[FileTableView] Cannot find parent window with fontMetrics", extra={"dev_only": True})
-            return
+            if parent_window:
+                font_metrics = parent_window.fontMetrics()
+            else:
+                logger.warning("[FileTableView] Cannot find parent window with fontMetrics", extra={"dev_only": True})
+                return
+        except RuntimeError:
+            # ApplicationContext not ready yet, use legacy approach
+            parent_window = self.parent()
+            while parent_window and not hasattr(parent_window, 'fontMetrics'):
+                parent_window = parent_window.parent()
+
+            if not parent_window:
+                logger.warning("[FileTableView] Cannot find parent window with fontMetrics", extra={"dev_only": True})
+                return
+
+            font_metrics = parent_window.fontMetrics()
 
         # Configure each column with config values and calculated minimums
         status_width = FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"]
@@ -185,7 +259,7 @@ class FileTableView(QTableView):
         self.setColumnWidth(0, status_width)
 
         # Filename column - Interactive with minimum width protection
-        filename_min = parent_window.fontMetrics().horizontalAdvance("Long_Filename_Example_2024.jpeg") + 30
+        filename_min = font_metrics.horizontalAdvance("Long_Filename_Example_2024.jpeg") + 30
         filename_width = max(FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"], filename_min, 250)
         header.setSectionResizeMode(1, QHeaderView.Interactive)
         self.setColumnWidth(1, filename_width)
@@ -246,14 +320,32 @@ class FileTableView(QTableView):
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
         """Handle horizontal splitter movement - use user preference as base, expand if more space available."""
-        parent_window = self.parent()
-        while parent_window and not hasattr(parent_window, 'horizontal_splitter'):
-            parent_window = parent_window.parent()
+        # Try to get splitter from ApplicationContext, fallback to parent traversal
+        horizontal_splitter = None
+        try:
+            context = get_app_context()
+            # Try to get main window through context for splitter access
+            # This is a transitional approach until we fully migrate splitter handling
+            parent_window = self.parent()
+            while parent_window and not hasattr(parent_window, 'horizontal_splitter'):
+                parent_window = parent_window.parent()
 
-        if not parent_window:
-            return
+            if parent_window:
+                horizontal_splitter = parent_window.horizontal_splitter
+            else:
+                return
+        except RuntimeError:
+            # ApplicationContext not ready yet, use legacy approach
+            parent_window = self.parent()
+            while parent_window and not hasattr(parent_window, 'horizontal_splitter'):
+                parent_window = parent_window.parent()
 
-        sizes = parent_window.horizontal_splitter.sizes()
+            if not parent_window:
+                return
+
+            horizontal_splitter = parent_window.horizontal_splitter
+
+        sizes = horizontal_splitter.sizes()
         center_panel_width = sizes[1]
 
         if center_panel_width > 0 and hasattr(self, '_filename_min_width'):
@@ -414,8 +506,20 @@ class FileTableView(QTableView):
             self.ensure_anchor_or_select(index, event.modifiers())
 
         # Trigger metadata load
-        if hasattr(self, "parent_window"):
-            self.parent_window.handle_file_double_click(index, event.modifiers())
+        try:
+            context = get_app_context()
+            # Try to get main window through context for file double click handling
+            # This is a transitional approach until we fully migrate event handling
+            parent_window = self.parent()
+            while parent_window and not hasattr(parent_window, 'handle_file_double_click'):
+                parent_window = parent_window.parent()
+
+            if parent_window:
+                parent_window.handle_file_double_click(index, event.modifiers())
+        except RuntimeError:
+            # ApplicationContext not ready yet, use legacy approach
+            if hasattr(self, "parent_window"):
+                self.parent_window.handle_file_double_click(index, event.modifiers())
 
         self._sync_selection_safely()
 
@@ -448,8 +552,8 @@ class FileTableView(QTableView):
         index = self.indexAt(event.pos())
         hovered_row = index.row() if index.isValid() else -1
 
-        # Handle drag initiation
-        if event.buttons() & Qt.LeftButton and hovered_row in self.selected_rows:
+        # Start drag if moving and a selected row is being dragged
+        if event.buttons() & Qt.LeftButton and hovered_row in self._get_current_selection():
             if (event.pos() - self._drag_start_pos).manhattanLength() >= QApplication.startDragDistance():
                 self.startDrag(Qt.CopyAction)
                 return
@@ -488,7 +592,8 @@ class FileTableView(QTableView):
 
     def startDrag(self, supportedActions: Qt.DropActions) -> None:
         """Initiate drag operation for selected files."""
-        rows = sorted(self.selected_rows)
+        selected_rows = self._get_current_selection()
+        rows = sorted(selected_rows)
         if not rows:
             return
 
@@ -593,8 +698,8 @@ class FileTableView(QTableView):
         super().selectionChanged(selected, deselected)
         selection_model = self.selectionModel()
         if selection_model is not None:
-            self.selected_rows = set(index.row() for index in selection_model.selectedRows())
-            self.selection_changed.emit(list(self.selected_rows))
+            selected_rows = set(index.row() for index in selection_model.selectedRows())
+            self._update_selection_store(selected_rows, emit_signal=True)
 
         if self.context_focused_row is not None:
             self.context_focused_row = None
@@ -624,8 +729,8 @@ class FileTableView(QTableView):
             self.viewport().update()
 
         if model is not None:
-            self.selected_rows = set(range(start_row, end_row + 1))
-            self.selection_changed.emit(list(self.selected_rows))
+            selected_rows = set(range(start_row, end_row + 1))
+            self._update_selection_store(selected_rows, emit_signal=True)
 
     def is_empty(self) -> bool:
         return not getattr(self.model(), "files", [])
@@ -638,7 +743,8 @@ class FileTableView(QTableView):
 
     def focusInEvent(self, event) -> None:
         super().focusInEvent(event)
-        self.selected_rows = set(index.row() for index in self.selectionModel().selectedRows())
+        selected_rows = set(index.row() for index in self.selectionModel().selectedRows())
+        self._update_selection_store(selected_rows, emit_signal=False)  # Don't emit signal on focus
         self.viewport().update()
 
     def wheelEvent(self, event) -> None:
@@ -678,3 +784,22 @@ class FileTableView(QTableView):
         if not viewport_rect.intersects(item_rect):
             super().scrollTo(index, hint)
         # Otherwise, do nothing - prevent automatic centering
+
+    def enable_selection_store_mode(self):
+        """Enable SelectionStore mode (disable legacy selection handling)."""
+        selection_store = self._get_selection_store()
+        if selection_store:
+            self._legacy_selection_mode = False
+            # Sync current selection to SelectionStore
+            current_selection = set(index.row() for index in self.selectionModel().selectedRows())
+            selection_store.set_selected_rows(current_selection, emit_signal=False)
+            if hasattr(self, 'anchor_row') and self.anchor_row is not None:
+                selection_store.set_anchor_row(self.anchor_row, emit_signal=False)
+            logger.debug("[FileTableView] SelectionStore mode enabled")
+        else:
+            logger.warning("[FileTableView] Cannot enable SelectionStore mode - store not available")
+
+    def disable_selection_store_mode(self):
+        """Disable SelectionStore mode (enable legacy selection handling)."""
+        self._legacy_selection_mode = True
+        logger.debug("[FileTableView] SelectionStore mode disabled (legacy mode)")

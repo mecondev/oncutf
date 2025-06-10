@@ -26,6 +26,7 @@ from PyQt5.QtCore import (
 )
 from PyQt5.QtGui import QColor, QIcon
 
+from core.application_context import get_app_context
 from models.file_item import FileItem
 from utils.icons_loader import load_metadata_icons
 
@@ -144,10 +145,31 @@ class FileTableModel(QAbstractTableModel):
             file.checked = new_checked
 
             self.dataChanged.emit(index, index, [Qt.CheckStateRole])
-            if self.parent_window:
-                self.parent_window.header.update_state(self.files)
-                self.parent_window.update_files_label()
-                self.parent_window.request_preview_update()
+
+            # Try to update UI through ApplicationContext, fallback to parent_window
+            try:
+                context = get_app_context()
+                # For now, we still need to access parent window for UI updates
+                # This will be improved when we migrate UI update handling to context
+                parent_window = None
+                # Find parent window by traversing up the widget hierarchy
+                import sys
+                if hasattr(sys, '_getframe'):
+                    # Try to get parent window from current widget hierarchy
+                    # This is a transitional approach
+                    pass
+
+                # Use legacy approach for now until we fully migrate UI updates
+                if self.parent_window:
+                    self.parent_window.header.update_state(self.files)
+                    self.parent_window.update_files_label()
+                    self.parent_window.request_preview_update()
+            except RuntimeError:
+                # ApplicationContext not ready yet, use legacy approach
+                if self.parent_window:
+                    self.parent_window.header.update_state(self.files)
+                    self.parent_window.update_files_label()
+                    self.parent_window.request_preview_update()
 
             return True
 
@@ -169,7 +191,22 @@ class FileTableModel(QAbstractTableModel):
         if not self.files:
             return
 
-        selection_model = self.parent_window.file_table_view.selectionModel()
+        # Try to get selection model from ApplicationContext, fallback to parent_window
+        selection_model = None
+        try:
+            context = get_app_context()
+            # For now, we still need to access parent window for selection model
+            # This will be improved when we migrate selection handling to context
+            if self.parent_window:
+                selection_model = self.parent_window.file_table_view.selectionModel()
+        except RuntimeError:
+            # ApplicationContext not ready yet, use legacy approach
+            if self.parent_window:
+                selection_model = self.parent_window.file_table_view.selectionModel()
+
+        if not selection_model:
+            return
+
         selected_items = [self.files[i.row()] for i in selection_model.selectedRows()]
 
         reverse = (order == Qt.DescendingOrder)
@@ -198,7 +235,18 @@ class FileTableModel(QAbstractTableModel):
                 logger.debug(f"[Model] dataChanged.emit() for row {row}")
 
         selection_model.select(selection, QItemSelectionModel.Select)
-        self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
+
+        # Try to refresh metadata tree through ApplicationContext, fallback to parent_window
+        try:
+            context = get_app_context()
+            # For now, we still need to access parent window for metadata tree
+            # This will be improved when we migrate metadata tree handling to context
+            if self.parent_window:
+                self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
+        except RuntimeError:
+            # ApplicationContext not ready yet, use legacy approach
+            if self.parent_window:
+                self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
 
     def clear(self):
         self.beginResetModel()
@@ -237,5 +285,13 @@ class FileTableModel(QAbstractTableModel):
         self.layoutChanged.emit()
 
         # Optionally notify parent window
-        if self.parent_window:
-            self.parent_window.update_files_label()
+        try:
+            context = get_app_context()
+            # For now, we still need to access parent window for UI updates
+            # This will be improved when we migrate UI update handling to context
+            if self.parent_window:
+                self.parent_window.update_files_label()
+        except RuntimeError:
+            # ApplicationContext not ready yet, use legacy approach
+            if self.parent_window:
+                self.parent_window.update_files_label()

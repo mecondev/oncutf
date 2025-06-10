@@ -542,6 +542,9 @@ class MainWindow(QMainWindow):
         # --- Connect the updated signal of RenameModulesArea to generate_preview_names ---
         self.rename_modules_area.updated.connect(self.request_preview_update)
 
+        # Enable SelectionStore mode in FileTableView after signals are connected
+        QTimer.singleShot(100, self._enable_selection_store_mode)
+
     def setup_shortcuts(self) -> None:
         """
         Initializes all keyboard shortcuts for file table actions.
@@ -2452,5 +2455,22 @@ class MainWindow(QMainWindow):
             color = "#4444cc"
 
         self.set_status(status_msg, color=color, auto_reset=True)
+
+    def _enable_selection_store_mode(self):
+        """Enable SelectionStore mode in FileTableView once ApplicationContext is ready."""
+        try:
+            self.file_table_view.enable_selection_store_mode()
+
+            # Connect SelectionStore signals to MainWindow handlers
+            from core.application_context import get_app_context
+            context = get_app_context()
+            if context and context.selection_store:
+                # Connect selection changed signal to existing preview update
+                context.selection_store.selection_changed.connect(self.update_preview_from_selection)
+                logger.debug("[MainWindow] Connected SelectionStore signals")
+
+            logger.info("[MainWindow] SelectionStore mode enabled in FileTableView")
+        except Exception as e:
+            logger.warning(f"[MainWindow] Failed to enable SelectionStore mode: {e}")
 
 
