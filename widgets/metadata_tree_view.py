@@ -40,6 +40,12 @@ from config import METADATA_TREE_COLUMN_WIDTHS
 from utils.logger_helper import get_logger
 from widgets.metadata_edit_dialog import MetadataEditDialog
 
+# ApplicationContext integration
+try:
+    from core.application_context import get_app_context
+except ImportError:
+    get_app_context = None
+
 logger = get_logger(__name__)
 
 
@@ -717,108 +723,95 @@ class MetadataTreeView(QTreeView):
         """
         Update the file icon in the file table to reflect modified status.
         """
-        parent_window, file_model, selection, selected_rows = self._get_parent_window_with_file_table()
-
-        if not all([parent_window, file_model, selected_rows]):
+        selected_files = self._get_current_selection_via_context()
+        if not selected_files:
             return
 
         # For each selected file, update its icon
-        for index in selected_rows:
-            row = index.row()
-            if 0 <= row < len(file_model.files):
-                file_item = file_model.files[row]
+        for file_item in selected_files:
+            # Update icon based on whether we have modified items
+            if self.modified_items:
+                # Set modified icon
+                file_item.metadata_status = "modified"
+            else:
+                # Set normal loaded icon
+                file_item.metadata_status = "loaded"
 
-                # Update icon based on whether we have modified items
-                if self.modified_items:
-                    # Set modified icon
-                    file_item.metadata_status = "modified"
-                else:
-                    # Set normal loaded icon
-                    file_item.metadata_status = "loaded"
-
-                # Notify model the icon has changed
-                file_model.dataChanged.emit(
-                    file_model.index(row, 0),
-                    file_model.index(row, 0),
-                    [Qt.DecorationRole]
-                )
+        # Try to notify file model via ApplicationContext
+        context = self._get_app_context()
+        if context and hasattr(context, 'files_changed'):
+            # Emit files changed signal to trigger UI updates
+            context.files_changed.emit(context.get_files())
+        else:
+            # Fallback: use parent traversal to find file model
+            parent_window, file_model, selection, selected_rows = self._get_parent_window_with_file_table()
+            if file_model and selected_rows:
+                for index in selected_rows:
+                    row = index.row()
+                    if 0 <= row < len(file_model.files):
+                        # Notify model the icon has changed
+                        file_model.dataChanged.emit(
+                            file_model.index(row, 0),
+                            file_model.index(row, 0),
+                            [Qt.DecorationRole]
+                        )
 
     def _reset_metadata_in_cache(self, key_path: str) -> None:
         """
         Reset the metadata value in the cache to its original state.
         """
-        parent_window, file_model, selection, selected_rows = self._get_parent_window_with_file_table()
+        selected_files = self._get_current_selection_via_context()
+        metadata_cache = self._get_metadata_cache_via_context()
 
-        if not all([parent_window, file_model, selected_rows]):
-            return
-
-        # Check if we have the metadata cache
-        if not hasattr(parent_window, 'metadata_cache'):
-            logger.warning("[MetadataTree] Cannot find metadata_cache in parent window")
+        if not selected_files or not metadata_cache:
+            logger.debug("[MetadataTree] No selected files or metadata cache available")
             return
 
         # For each selected file, reset its metadata in cache
-        for index in selected_rows:
-            row = index.row()
-            if 0 <= row < len(file_model.files):
-                file_item = file_model.files[row]
-                full_path = file_item.full_path
+        for file_item in selected_files:
+            full_path = file_item.full_path
 
-                # Update the metadata in cache
-                metadata_entry = parent_window.metadata_cache.get_entry(full_path)
-                if metadata_entry and hasattr(metadata_entry, 'data'):
-                    self._remove_metadata_from_cache(metadata_entry.data, key_path)
-                    self._remove_metadata_from_file_item(file_item, key_path)
+            # Update the metadata in cache
+            metadata_entry = metadata_cache.get_entry(full_path)
+            if metadata_entry and hasattr(metadata_entry, 'data'):
+                self._remove_metadata_from_cache(metadata_entry.data, key_path)
+                self._remove_metadata_from_file_item(file_item, key_path)
 
-                    # Update file icon status based on remaining modified items
-                    if not self.modified_items:
-                        file_item.metadata_status = "loaded"
-                    else:
-                        file_item.metadata_status = "modified"
+                # Update file icon status based on remaining modified items
+                if not self.modified_items:
+                    file_item.metadata_status = "loaded"
+                else:
+                    file_item.metadata_status = "modified"
 
-                    # Force update of the icon in file table
-                    file_model.dataChanged.emit(
-                        file_model.index(row, 0),
-                        file_model.index(row, 0),
-                        [Qt.DecorationRole]
-                    )
+        # Trigger UI update
+        self._update_file_icon_status()
 
     def _update_metadata_in_cache(self, key_path: str, new_value: str) -> None:
         """
         Update the metadata value in the cache to persist changes.
         """
-        parent_window, file_model, selection, selected_rows = self._get_parent_window_with_file_table()
+        selected_files = self._get_current_selection_via_context()
+        metadata_cache = self._get_metadata_cache_via_context()
 
-        if not all([parent_window, file_model, selected_rows]):
-            return
-
-        # Check if we have the metadata cache
-        if not hasattr(parent_window, 'metadata_cache'):
-            logger.warning("[MetadataTree] Cannot find metadata_cache in parent window")
+        if not selected_files or not metadata_cache:
+            logger.debug("[MetadataTree] No selected files or metadata cache available")
             return
 
         # For each selected file, update its metadata in cache
-        for index in selected_rows:
-            row = index.row()
-            if 0 <= row < len(file_model.files):
-                file_item = file_model.files[row]
-                full_path = file_item.full_path
+        for file_item in selected_files:
+            full_path = file_item.full_path
 
-                # Update the metadata in cache
-                metadata_entry = parent_window.metadata_cache.get_entry(full_path)
-                if metadata_entry and hasattr(metadata_entry, 'data'):
-                    self._set_metadata_in_cache(metadata_entry.data, key_path, new_value)
-                    self._set_metadata_in_file_item(file_item, key_path, new_value)
+            # Update the metadata in cache
+            metadata_entry = metadata_cache.get_entry(full_path)
+            if metadata_entry and hasattr(metadata_entry, 'data'):
+                self._set_metadata_in_cache(metadata_entry.data, key_path, new_value)
+                self._set_metadata_in_file_item(file_item, key_path, new_value)
 
-                    # Mark file item as modified
-                    file_item.metadata_status = "modified"
+                # Mark file item as modified
+                file_item.metadata_status = "modified"
 
-                    # Force update of the icon in file table
-                    file_model.dataChanged.emit(
-                        file_model.index(row, 0),
-                        file_model.index(row, 0),
-                        [Qt.DecorationRole]
-                    )
+        # Trigger UI update
+        self._update_file_icon_status()
 
     def _remove_metadata_from_cache(self, metadata: Dict[str, Any], key_path: str) -> None:
         """Remove metadata entry from cache dictionary."""
@@ -1277,4 +1270,62 @@ class MetadataTreeView(QTreeView):
             self.display_metadata(metadata, context=f"load_completion_from_{source}")
         else:
             self.clear_view()
+
+    def _get_app_context(self):
+        """Get ApplicationContext with fallback to None."""
+        if get_app_context is None:
+            return None
+        try:
+            return get_app_context()
+        except RuntimeError:
+            # ApplicationContext not ready yet
+            return None
+
+    def _get_current_selection_via_context(self):
+        """Get current selection via ApplicationContext with fallback to parent traversal."""
+        context = self._get_app_context()
+        if context and context.selection_store:
+            try:
+                selected_rows = context.selection_store.get_selected_rows()
+                if selected_rows and hasattr(context, '_files') and context._files:
+                    # Convert row indices to file items
+                    selected_files = []
+                    for row in selected_rows:
+                        if 0 <= row < len(context._files):
+                            selected_files.append(context._files[row])
+                    return selected_files
+            except Exception as e:
+                logger.debug(f"[MetadataTree] Failed to get selection via context: {e}")
+
+        # Fallback to parent traversal
+        return self._get_selection_via_parent_traversal()
+
+    def _get_selection_via_parent_traversal(self):
+        """Legacy method for getting selection via parent traversal."""
+        parent_window, file_model, selection, selected_rows = self._get_parent_window_with_file_table()
+        if not all([parent_window, file_model, selected_rows]):
+            return []
+
+        selected_files = []
+        for index in selected_rows:
+            row = index.row()
+            if 0 <= row < len(file_model.files):
+                selected_files.append(file_model.files[row])
+        return selected_files
+
+    def _get_metadata_cache_via_context(self):
+        """Get metadata cache via ApplicationContext with fallback to parent traversal."""
+        context = self._get_app_context()
+        if context and hasattr(context, '_metadata_cache'):
+            return context._metadata_cache
+
+        # Fallback to parent traversal
+        parent_window = self.parent()
+        while parent_window and not hasattr(parent_window, 'metadata_cache'):
+            parent_window = parent_window.parent()
+
+        if parent_window and hasattr(parent_window, 'metadata_cache'):
+            return parent_window.metadata_cache
+
+        return None
 

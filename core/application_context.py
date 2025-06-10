@@ -35,7 +35,7 @@ class ApplicationContext(QObject):
 
     # Signals for state changes
     files_changed = pyqtSignal(list)  # Emitted when file list changes
-    selection_changed = pyqtSignal(set)  # Emitted when selection changes
+    selection_changed = pyqtSignal(list)  # Emitted when selection changes
     metadata_changed = pyqtSignal(str, dict)  # Emitted when metadata updates (path, metadata)
 
     _instance: Optional['ApplicationContext'] = None
@@ -104,13 +104,21 @@ class ApplicationContext(QObject):
         self._current_folder = folder_path
         logger.debug(f"ApplicationContext: Folder changed to {folder_path}")
 
-    def _on_selection_changed(self, selected_rows: Set[int]) -> None:
+    def _on_selection_changed(self, selected_rows: list[int]) -> None:
         """Handle selection changed from SelectionStore."""
-        self._selected_rows = selected_rows
-        self.selection_changed.emit(selected_rows)
+        self._selected_rows = set(selected_rows)  # Convert back to set for internal storage
+
+        # Emit with backward compatibility check
+        try:
+            self.selection_changed.emit(selected_rows)
+        except TypeError:
+            # Fallback: convert to set if the signal expects set type
+            logger.debug("ApplicationContext: Converting list to set for signal compatibility")
+            self.selection_changed.emit(set(selected_rows))
+
         logger.debug(f"ApplicationContext: Selection changed signal relayed: {len(selected_rows)} rows")
 
-    def _on_checked_changed(self, checked_rows: Set[int]) -> None:
+    def _on_checked_changed(self, checked_rows: list[int]) -> None:
         """Handle checked state changed from SelectionStore."""
         # For now, just log it - will be used by file model updates later
         logger.debug(f"ApplicationContext: Checked state changed: {len(checked_rows)} rows")

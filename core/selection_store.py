@@ -39,8 +39,8 @@ class SelectionStore(QObject):
     """
 
     # Signals for state changes
-    selection_changed = pyqtSignal(set)  # Emitted when selected rows change
-    checked_changed = pyqtSignal(set)    # Emitted when checked rows change
+    selection_changed = pyqtSignal(list)  # Emitted when selected rows change
+    checked_changed = pyqtSignal(list)    # Emitted when checked rows change
     anchor_changed = pyqtSignal(int)     # Emitted when anchor row changes
 
     # Combined signals for coordinated updates
@@ -453,11 +453,11 @@ class SelectionStore(QObject):
     def _emit_deferred_signals(self) -> None:
         """Emit pending signals after debounce timer."""
         if self._pending_selection_signal:
-            self.selection_changed.emit(self._selected_rows.copy())
+            self.selection_changed.emit(list(self._selected_rows))
             self._pending_selection_signal = False
 
         if self._pending_checked_signal:
-            self.checked_changed.emit(self._checked_rows.copy())
+            self.checked_changed.emit(list(self._checked_rows))
             self._pending_checked_signal = False
 
     # =====================================
