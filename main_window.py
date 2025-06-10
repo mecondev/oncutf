@@ -85,6 +85,9 @@ from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 from widgets.metadata_worker import MetadataWorker
 from widgets.rename_modules_area import RenameModulesArea
 
+# Core application context
+from core.application_context import ApplicationContext
+
 logger = get_logger(__name__)
 
 import contextlib
@@ -136,6 +139,9 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         """Initializes the main window and sets up the layout."""
         super().__init__()
+
+        # --- Core Application Context ---
+        self.context = ApplicationContext.create_instance(parent=self)
 
         # --- Attributes initialization ---
         self.metadata_thread = None
@@ -2040,7 +2046,11 @@ class MainWindow(QMainWindow):
         self.cleanup_metadata_worker()
 
         if hasattr(self.metadata_loader, "close"):
-            self.metadata_loader.close()  # new line
+            self.metadata_loader.close()
+
+        # Clean up application context
+        if hasattr(self, 'context'):
+            self.context.cleanup()
 
         super().closeEvent(event)
 
