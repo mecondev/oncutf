@@ -30,10 +30,12 @@ from PyQt5.QtCore import (
     QThread,
     QTimer,
     QUrl,
+    pyqtSignal,
 )
 from PyQt5.QtGui import (
     QDesktopServices,
     QKeySequence,
+    QPixmap,
     QStandardItem,
     QStandardItemModel,
 )
@@ -86,8 +88,12 @@ from widgets.metadata_tree_view import MetadataTreeView
 from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 from widgets.metadata_worker import MetadataWorker
 from widgets.rename_modules_area import RenameModulesArea
+from widgets.preview_tables_view import PreviewTablesView
 
 logger = get_logger(__name__)
+
+import contextlib
+
 
 import contextlib
 
@@ -381,66 +387,13 @@ class MainWindow(QMainWindow):
         # === Left: Rename modules ===
         self.rename_modules_area = RenameModulesArea(parent=self, parent_window=self)
 
-        # === Right: Rename preview ===
-        self.preview_frame = QFrame()
-        preview_layout = QVBoxLayout(self.preview_frame)
-        self.old_label = QLabel("Old file(s) name(s)")
-        self.new_label = QLabel("New file(s) name(s)")
+                        # === Right: Preview tables view ===
+        self.preview_tables_view = PreviewTablesView(parent=self)
 
-        self.preview_old_name_table = QTableWidget(0, 1)
-        self.preview_new_name_table = QTableWidget(0, 1)
-        self.preview_icon_table = QTableWidget(0, 1)
+        # Connect status updates from preview view
+        self.preview_tables_view.status_updated.connect(self._update_status_from_preview)
 
-        for table in [self.preview_old_name_table, self.preview_new_name_table]:
-            table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-            table.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
-            table.setWordWrap(False)
-            table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-            table.setSelectionMode(QAbstractItemView.NoSelection)
-            table.verticalHeader().setVisible(False)
-            table.setVerticalHeader(None)
-            table.horizontalHeader().setVisible(False)
-            table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
-            table.setAlternatingRowColors(True)  # Enable alternating row colors
-            table.verticalHeader().setDefaultSectionSize(22)  # Compact row height - same as icon table
-            # Disable drag & drop functionality
-            table.setDragEnabled(False)
-            table.setAcceptDrops(False)
-            table.setDragDropMode(QAbstractItemView.NoDragDrop)
-
-        self.preview_icon_table.setObjectName("iconTable")
-        self.preview_icon_table.setFixedWidth(24)
-        self.preview_icon_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.preview_icon_table.setSelectionMode(QAbstractItemView.NoSelection)
-        self.preview_icon_table.verticalHeader().setVisible(False)
-        self.preview_icon_table.setVerticalHeader(None)
-        self.preview_icon_table.setShowGrid(False)
-        self.preview_icon_table.horizontalHeader().setVisible(False)
-        self.preview_icon_table.setHorizontalHeader(None)
-        self.preview_icon_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.preview_icon_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.preview_icon_table.setShowGrid(False)
-        self.preview_icon_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
-        self.preview_icon_table.setStyleSheet("background-color: #212121;")
-        self.preview_icon_table.verticalHeader().setDefaultSectionSize(22)  # Compact row height
-
-        table_pair_layout = QHBoxLayout()
-        old_layout = QVBoxLayout()
-        new_layout = QVBoxLayout()
-        icon_layout = QVBoxLayout()
-
-        old_layout.addWidget(self.old_label)
-        old_layout.addWidget(self.preview_old_name_table)
-        new_layout.addWidget(self.new_label)
-        new_layout.addWidget(self.preview_new_name_table)
-        icon_layout.addWidget(QLabel(" "))
-        icon_layout.addWidget(self.preview_icon_table)
-
-        table_pair_layout.addLayout(old_layout)
-        table_pair_layout.addLayout(new_layout)
-        table_pair_layout.addLayout(icon_layout)
-        preview_layout.addLayout(table_pair_layout)
-
+        # Setup bottom controls
         controls_layout = QHBoxLayout()
         self.status_label = QLabel("")
         self.status_label.setTextFormat(Qt.RichText)
@@ -459,9 +412,12 @@ class MainWindow(QMainWindow):
         self.rename_button.setEnabled(False)
         self.rename_button.setFixedWidth(100)
         controls_layout.addWidget(self.rename_button)
-        preview_layout.addLayout(controls_layout)
 
-        self.preview_frame.setLayout(preview_layout)
+        # Create preview frame container
+        self.preview_frame = QFrame()
+        preview_layout = QVBoxLayout(self.preview_frame)
+        preview_layout.addWidget(self.preview_tables_view)
+        preview_layout.addLayout(controls_layout)
 
         content_layout.addWidget(self.rename_modules_area, stretch=1)
         content_layout.addWidget(self.preview_frame, stretch=3)
@@ -491,6 +447,12 @@ class MainWindow(QMainWindow):
         self.main_layout.addWidget(footer_separator)
         self.main_layout.addWidget(footer_widget)
 
+    def _update_status_from_preview(self, status_html: str) -> None:
+        """Update the status label from preview widget status updates."""
+        self.status_label.setText(status_html)
+
+
+
     def setup_signals(self) -> None:
         """
         Connects UI elements to their corresponding event handlers.
@@ -516,6 +478,9 @@ class MainWindow(QMainWindow):
         self.horizontal_splitter.splitterMoved.connect(self.file_table_view.on_horizontal_splitter_moved)
         self.vertical_splitter.splitterMoved.connect(self.file_table_view.on_vertical_splitter_moved)
 
+        # Connect splitter movements to preview tables view
+        self.vertical_splitter.splitterMoved.connect(self.preview_tables_view.handle_splitter_moved)
+
         self.file_table_view.clicked.connect(self.on_table_row_clicked)
         self.file_table_view.selection_changed.connect(self.update_preview_from_selection)
         self.file_table_view.files_dropped.connect(self.load_files_from_dropped_items)
@@ -526,15 +491,7 @@ class MainWindow(QMainWindow):
         # Toggle button connection is now handled by MetadataTreeView
         # self.toggle_expand_button.toggled.connect(self.toggle_metadata_expand)
 
-        self.preview_old_name_table.verticalScrollBar().valueChanged.connect(
-            self.preview_new_name_table.verticalScrollBar().setValue
-        )
-        self.preview_new_name_table.verticalScrollBar().valueChanged.connect(
-            self.preview_old_name_table.verticalScrollBar().setValue
-        )
-        self.preview_old_name_table.verticalScrollBar().valueChanged.connect(
-            self.preview_icon_table.verticalScrollBar().setValue
-        )
+
 
         self.rename_button.clicked.connect(self.rename_files)
 
@@ -1456,102 +1413,19 @@ class MainWindow(QMainWindow):
 
     def update_preview_tables_from_pairs(self, name_pairs: list[tuple[str, str]]) -> None:
         """
-        Updates all three preview tables:
-        - Old name table (left)
-        - New name table (center)
-        - Status icon table (right)
-
-        It also computes the status of each rename (unchanged, invalid, duplicate, valid),
-        updates the preview_map where needed, and renders the status label at the bottom.
+        Updates all three preview tables using the PreviewTablesView.
 
         Args:
             name_pairs (list[tuple[str, str]]): List of (old_name, new_name) pairs
                 generated during preview generation.
         """
-        # Clear all preview tables before updating
-        self.preview_old_name_table.setRowCount(0)
-        self.preview_new_name_table.setRowCount(0)
-        self.preview_icon_table.setRowCount(0)
-
-        if not name_pairs:
-            self.status_label.setText("No files selected.")
-            return
-
-        # Calculate appropriate width for consistent column size
-        all_names = [name for pair in name_pairs for name in pair]
-        max_width = max((self.fontMetrics().horizontalAdvance(name) for name in all_names), default=250)
-        adjusted_width = max(326, max_width) + 100
-        self.preview_old_name_table.setColumnWidth(0, adjusted_width)
-        self.preview_new_name_table.setColumnWidth(0, adjusted_width)
-
-        # Precompute duplicates
-        seen, duplicates = set(), set()
-        for _, new_name in name_pairs:
-            if new_name in seen:
-                duplicates.add(new_name)
-            else:
-                seen.add(new_name)
-
-        # Initialize status counters
-        stats = {"unchanged": 0, "invalid": 0, "duplicate": 0, "valid": 0}
-
-        for row, (old_name, new_name) in enumerate(name_pairs):
-            self.preview_old_name_table.insertRow(row)
-            self.preview_new_name_table.insertRow(row)
-            self.preview_icon_table.insertRow(row)
-
-            # Create table items
-            old_item = QTableWidgetItem(old_name)
-            new_item = QTableWidgetItem(new_name)
-
-            # Determine rename status
-            if old_name == new_name:
-                status = "unchanged"
-                tooltip = "Unchanged filename"
-            else:
-                is_valid, _ = self.filename_validator.is_valid_filename(new_name)
-                if not is_valid:
-                    status = "invalid"
-                    tooltip = "Invalid filename"
-                elif new_name in duplicates:
-                    status = "duplicate"
-                    tooltip = "Duplicate name"
-                else:
-                    status = "valid"
-                    tooltip = "Ready to rename"
-
-            # Fetch file item and enrich tooltip if metadata is missing
-            file_item = self.preview_map.get(new_name)
-            if file_item and not getattr(file_item, "metadata", None):
-                tooltip += " [No metadata available]"
-
-            # Update status counts
-            stats[status] += 1
-
-            # Prepare status icon
-            icon_item = QTableWidgetItem()
-            icon = self.preview_icons.get(status)
-            if icon:
-                icon_item.setIcon(icon)
-            icon_item.setToolTip(tooltip)
-
-            # Insert items into corresponding tables
-            self.preview_old_name_table.setItem(row, 0, old_item)
-            self.preview_new_name_table.setItem(row, 0, new_item)
-            self.preview_icon_table.setItem(row, 0, icon_item)
-
-        # Render bottom status summary (valid, unchanged, invalid, duplicate)
-        status_msg = (
-            f"<img src='{self.icon_paths['valid']}' width='14' height='14' style='vertical-align: middle';/>"
-            f"<span style='color:#ccc;'> Valid: {stats['valid']}</span>&nbsp;&nbsp;&nbsp;"
-            f"<img src='{self.icon_paths['unchanged']}' width='14' height='14' style='vertical-align: middle';/>"
-            f"<span style='color:#ccc;'> Unchanged: {stats['unchanged']}</span>&nbsp;&nbsp;&nbsp;"
-            f"<img src='{self.icon_paths['invalid']}' width='14' height='14' style='vertical-align: middle';/>"
-            f"<span style='color:#ccc;'> Invalid: {stats['invalid']}</span>&nbsp;&nbsp;&nbsp;"
-            f"<img src='{self.icon_paths['duplicate']}' width='14' height='14' style='vertical-align: middle';/>"
-            f"<span style='color:#ccc;'> Duplicates: {stats['duplicate']}</span>"
+        # Delegate to the preview tables view
+        self.preview_tables_view.update_from_pairs(
+            name_pairs,
+            self.preview_icons,
+            self.icon_paths,
+            self.filename_validator
         )
-        self.status_label.setText(status_msg)
 
     def on_metadata_progress(self, current: int, total: int) -> None:
         """
