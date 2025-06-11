@@ -141,7 +141,6 @@ QTreeView::branch {
     border: none !important;
     /* Remove branch decorations completely */
     outline: 0;
-    show-decoration-selected: 0;
 }
 
 QTreeView::branch:selected {
@@ -166,27 +165,90 @@ QTreeView::branch:selected:hover {
 QTreeView::branch:has-siblings:!adjoins-item {
     border-image: none;
     image: none;
-    background: #181818;  /* Consistent background */
+    background: #181818;  /* Default background */
 }
 
 QTreeView::branch:has-siblings:adjoins-item {
     border-image: none;
     image: none;
-    background: #181818;  /* Consistent background */
+    background: #181818;  /* Default background */
 }
 
 QTreeView::branch:!has-children:!has-siblings:adjoins-item {
     border-image: none;
     image: none;
-    background: #181818;  /* Consistent background */
+    background: #181818;  /* Default background */
 }
+
+/* Branch connection lines hover states */
+/*
+QTreeView::branch:has-siblings:!adjoins-item:hover {
+    border-image: none;
+    image: none;
+    background: #3e5c76 !important;  // Hover color
+}
+
+QTreeView::branch:has-siblings:adjoins-item:hover {
+    border-image: none;
+    image: none;
+    background: #3e5c76 !important;  // Hover color
+}
+
+QTreeView::branch:!has-children:!has-siblings:adjoins-item:hover {
+    border-image: none;
+    image: none;
+    background: #3e5c76 !important;  // Hover color
+}
+*/
+
+/* Branch connection lines selected states */
+/*
+QTreeView::branch:has-siblings:!adjoins-item:selected {
+    border-image: none;
+    image: none;
+    background: #748cab !important;  // Selection color
+}
+
+QTreeView::branch:has-siblings:adjoins-item:selected {
+    border-image: none;
+    image: none;
+    background: #748cab !important;  // Selection color
+}
+
+QTreeView::branch:!has-children:!has-siblings:adjoins-item:selected {
+    border-image: none;
+    image: none;
+    background: #748cab !important;  // Selection color
+}
+*/
+
+/* Branch connection lines selected+hover states */
+/*
+QTreeView::branch:has-siblings:!adjoins-item:selected:hover {
+    border-image: none;
+    image: none;
+    background: #8a9bb4 !important;  // Selected+hover color
+}
+
+QTreeView::branch:has-siblings:adjoins-item:selected:hover {
+    border-image: none;
+    image: none;
+    background: #8a9bb4 !important;  // Selected+hover color
+}
+
+QTreeView::branch:!has-children:!has-siblings:adjoins-item:selected:hover {
+    border-image: none;
+    image: none;
+    background: #8a9bb4 !important;  // Selected+hover color
+}
+*/
 
 /* Hide connection lines between branches - Now with feather icons */
 QTreeView::branch:has-children:!has-siblings:closed,
 QTreeView::branch:closed:has-children:has-siblings {
     border-image: none;
     image: url(resources/icons/feather_icons/chevron-right.svg);
-    background: #181818;  /* Consistent background */
+    background: #181818;  /* Default background */
     width: 16px;
     height: 16px;
     margin: 2px;
@@ -196,11 +258,80 @@ QTreeView::branch:open:has-children:!has-siblings,
 QTreeView::branch:open:has-children:has-siblings {
     border-image: none;
     image: url(resources/icons/feather_icons/chevron-down.svg);
-    background: #181818;  /* Force background color */
+    background: #181818;  /* Default background */
     width: 16px;
     height: 16px;
     margin: 2px;
 }
+
+/* Branch icon hover states */
+/*
+QTreeView::branch:has-children:!has-siblings:closed:hover,
+QTreeView::branch:closed:has-children:has-siblings:hover {
+    border-image: none;
+    image: url(resources/icons/feather_icons/chevron-right.svg);
+    background: #3e5c76 !important;  // Hover color
+    width: 16px;
+    height: 16px;
+    margin: 2px;
+}
+
+QTreeView::branch:open:has-children:!has-siblings:hover,
+QTreeView::branch:open:has-children:has-siblings:hover {
+    border-image: none;
+    image: url(resources/icons/feather_icons/chevron-down.svg);
+    background: #3e5c76 !important;  // Hover color
+    width: 16px;
+    height: 16px;
+    margin: 2px;
+}
+*/
+
+/* Branch icon selected states */
+/*
+QTreeView::branch:has-children:!has-siblings:closed:selected,
+QTreeView::branch:closed:has-children:has-siblings:selected {
+    border-image: none;
+    image: url(resources/icons/feather_icons/chevron-right.svg);
+    background: #748cab !important;  // Selection color
+    width: 16px;
+    height: 16px;
+    margin: 2px;
+}
+
+QTreeView::branch:open:has-children:!has-siblings:selected,
+QTreeView::branch:open:has-children:has-siblings:selected {
+    border-image: none;
+    image: url(resources/icons/feather_icons/chevron-down.svg);
+    background: #748cab !important;  // Selection color
+    width: 16px;
+    height: 16px;
+    margin: 2px;
+}
+*/
+
+/* Branch icon selected+hover states */
+/*
+QTreeView::branch:has-children:!has-siblings:closed:selected:hover,
+QTreeView::branch:closed:has-children:has-siblings:selected:hover {
+    border-image: none;
+    image: url(resources/icons/feather_icons/chevron-right.svg);
+    background: #8a9bb4 !important;  // Selected+hover color
+    width: 16px;
+    height: 16px;
+    margin: 2px;
+}
+
+QTreeView::branch:open:has-children:!has-siblings:selected:hover,
+QTreeView::branch:open:has-children:has-siblings:selected:hover {
+    border-image: none;
+    image: url(resources/icons/feather_icons/chevron-down.svg);
+    background: #8a9bb4 !important;  // Selected+hover color
+    width: 16px;
+    height: 16px;
+    margin: 2px;
+}
+*/
 
 /* Force override of any remaining OS indentation styling */
 QTreeView QAbstractScrollArea, QTreeView::viewport {

@@ -96,9 +96,13 @@ class PreviewTablesView(QWidget):
         self.old_label = QLabel("Old file(s) name(s)")
         self.new_label = QLabel("New file(s) name(s)")
 
+        # Create spacer label with same width as icon table for proper alignment
+        self.icon_spacer_label = QLabel("")
+        self.icon_spacer_label.setFixedWidth(24)  # Same as icon_table width
+
         labels_layout.addWidget(self.old_label)
         labels_layout.addWidget(self.new_label)
-        labels_layout.addWidget(QLabel(" "))  # Space for icon column
+        labels_layout.addWidget(self.icon_spacer_label)  # Space for icon column
 
         layout.addLayout(labels_layout)
 

@@ -97,11 +97,13 @@ class FileTreeView(QTreeView):
       shows scrollbar when content is large)
     - Proper drag & drop handling for internal use only
     - Automatic header configuration for optimal display
+    - Multi-selection support with Ctrl+Click and Shift+Click
     """
 
     # Signals
     folder_dropped = pyqtSignal(list, object)  # list of paths and keyboard modifiers
     folder_selected = pyqtSignal()  # Signal emitted when Return/Enter is pressed
+    selection_changed = pyqtSignal(list)  # Signal emitted when selection changes (list of paths)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -126,6 +128,10 @@ class FileTreeView(QTreeView):
         self.setRootIsDecorated(True)
         self.setAlternatingRowColors(True)
 
+        # Configure multi-selection support
+        self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.setSelectionBehavior(QAbstractItemView.SelectRows)
+
         # Initialize drag state
         self._drag_start_position: Optional[QPoint] = None
         self._dragging = False
@@ -136,6 +142,21 @@ class FileTreeView(QTreeView):
             app.installEventFilter(_drag_cancel_filter)
 
         logger.debug("[FileTreeView] Initialized with intelligent scrolling", extra={"dev_only": True})
+
+    def selectionChanged(self, selected, deselected):
+        """Override to emit custom signal with selected paths"""
+        super().selectionChanged(selected, deselected)
+
+        # Get all selected paths
+        selected_paths = []
+        for index in self.selectedIndexes():
+            if self.model() and hasattr(self.model(), 'filePath'):
+                path = self.model().filePath(index)
+                if path and path not in selected_paths:
+                    selected_paths.append(path)
+
+        logger.debug(f"[FileTreeView] Selection changed: {len(selected_paths)} items", extra={"dev_only": True})
+        self.selection_changed.emit(selected_paths)
 
     def setModel(self, model):
         """Override to configure header when model is set"""
@@ -204,13 +225,94 @@ class FileTreeView(QTreeView):
             self._adjust_column_width()
 
     # =====================================
+    # Multi-Selection Helper Methods
+    # =====================================
+
+    def get_selected_paths(self) -> list:
+        """Get list of selected file/folder paths"""
+        selected_paths = []
+        for index in self.selectedIndexes():
+            if self.model() and hasattr(self.model(), 'filePath'):
+                path = self.model().filePath(index)
+                if path and path not in selected_paths:
+                    selected_paths.append(path)
+        return selected_paths
+
+    def select_paths(self, paths: list, clear_existing: bool = True):
+        """Select specific paths in the tree view"""
+        if not self.model() or not hasattr(self.model(), 'filePath'):
+            return
+
+        if clear_existing:
+            self.clearSelection()
+
+        selection_model = self.selectionModel()
+        if not selection_model:
+            return
+
+        # Find and select the paths
+        for path in paths:
+            for i in range(self.model().rowCount()):
+                index = self.model().index(i, 0)
+                if self.model().filePath(index) == path:
+                    selection_model.select(index, selection_model.Select)
+                    break
+
+    def select_range(self, from_index, to_index):
+        """Select a range of items from one index to another"""
+        if not self.model():
+            return
+
+        selection_model = self.selectionModel()
+        if not selection_model:
+            return
+
+        # Ensure proper order
+        start_row = min(from_index.row(), to_index.row())
+        end_row = max(from_index.row(), to_index.row())
+
+        # Select the range
+        for row in range(start_row, end_row + 1):
+            index = self.model().index(row, 0, from_index.parent())
+            if index.isValid():
+                selection_model.select(index, selection_model.Select)
+
+    # =====================================
     # Drag & Drop Implementation
     # =====================================
 
     def mousePressEvent(self, event):
-        """Store initial position for drag detection"""
+        """Store initial position for drag detection and handle multi-selection"""
         if event.button() == Qt.LeftButton:
             self._drag_start_position = event.pos()
+
+            # Handle multi-selection with modifiers
+            index = self.indexAt(event.pos())
+            if index.isValid():
+                modifiers = event.modifiers()
+                selection_model = self.selectionModel()
+
+                if modifiers & Qt.ControlModifier:
+                    # Ctrl+Click: Toggle selection of this item
+                    if selection_model.isSelected(index):
+                        selection_model.select(index, selection_model.Deselect)
+                    else:
+                        selection_model.select(index, selection_model.Select)
+                    logger.debug(f"[FileTreeView] Ctrl+Click selection toggle", extra={"dev_only": True})
+                    return  # Don't call super() to prevent default behavior
+
+                elif modifiers & Qt.ShiftModifier:
+                    # Shift+Click: Select range from last selected to this item
+                    current_selection = self.selectedIndexes()
+                    if current_selection:
+                        # Find the last selected item
+                        last_selected = current_selection[-1]
+                        # Clear current selection and select range
+                        self.clearSelection()
+                        self.select_range(last_selected, index)
+                        logger.debug(f"[FileTreeView] Shift+Click range selection", extra={"dev_only": True})
+                        return  # Don't call super() to prevent default behavior
+
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -370,6 +472,8 @@ class FileTreeView(QTreeView):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
             logger.debug("[TreeView] Enter/Return pressed, triggering folder_selected", extra={"dev_only": True})
             self.folder_selected.emit()
+        else:
+            super().keyPressEvent(event)
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
         """Handle horizontal splitter movement (called from MainWindow)"""

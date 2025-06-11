@@ -113,6 +113,7 @@ class RenameModulesArea(QWidget):
         main_layout.addLayout(footer_layout)
 
         self.add_module()  # Start with one by default
+        self._update_remove_button_state()  # Set initial button state
 
         # Update timer for debouncing
         self._update_timer = QTimer()
@@ -155,19 +156,34 @@ class RenameModulesArea(QWidget):
         module.updated.connect(lambda: self._on_module_updated())
         self.module_widgets.append(module)
         self.scroll_layout.addWidget(module)
+        self._update_remove_button_state()
         self.updated.emit()
 
     def remove_module(self, module: RenameModuleWidget):
+        # Ensure at least one module always remains
+        if len(self.module_widgets) <= 1:
+            logger.debug("[RenameModulesArea] Cannot remove module - minimum 1 required", extra={"dev_only": True})
+            return
+
         if module in self.module_widgets:
             self.module_widgets.remove(module)
             self.scroll_layout.removeWidget(module)
             module.setParent(None)
             module.deleteLater()
+            self._update_remove_button_state()
             self.updated.emit()
 
     def remove_last_module(self):
-        if self.module_widgets:
+        # Ensure at least one module always remains
+        if len(self.module_widgets) > 1:
             self.remove_module(self.module_widgets[-1])
+        else:
+            logger.debug("[RenameModulesArea] Cannot remove last module - minimum 1 required", extra={"dev_only": True})
+
+    def _update_remove_button_state(self):
+        """Enable/disable remove button based on number of modules."""
+        self.remove_button.setEnabled(len(self.module_widgets) > 1)
+        logger.debug(f"[RenameModulesArea] Remove button {'enabled' if len(self.module_widgets) > 1 else 'disabled'} - {len(self.module_widgets)} modules", extra={"dev_only": True})
 
     def set_current_file_for_modules(self, file_item) -> None:
         """
