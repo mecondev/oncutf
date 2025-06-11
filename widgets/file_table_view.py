@@ -377,10 +377,24 @@ class FileTableView(QTableView):
             should_resize = size_difference > 5  # Much smaller threshold for smoother behavior
 
             if should_resize:
-                # Set flag to indicate this is a programmatic resize
-                self._programmatic_resize = True
-                self.setColumnWidth(1, new_filename_width)
-                self._programmatic_resize = False
+                # Use batch updates to prevent scrollbar flickering during column resize
+                self.setUpdatesEnabled(False)
+
+                try:
+                    # Set flag to indicate this is a programmatic resize
+                    self._programmatic_resize = True
+                    self.setColumnWidth(1, new_filename_width)
+                    self._programmatic_resize = False
+
+                    # Update scrollbar visibility intelligently after column resize
+                    self._update_scrollbar_visibility()
+
+                    logger.debug(f"[FileTableView] Column resized with anti-flickering: {current_filename_width}px → {new_filename_width}px", extra={"dev_only": True})
+
+                finally:
+                    # Re-enable updates and force a single refresh
+                    self.setUpdatesEnabled(True)
+                    self.viewport().update()
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement."""
