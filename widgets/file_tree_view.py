@@ -22,6 +22,11 @@ from PyQt5.QtWidgets import (
 
 from config import ALLOWED_EXTENSIONS
 from core.drag_manager import DragManager
+from core.drag_visual_manager import (
+    DragVisualManager, DragType, DropZoneState, ModifierState,
+    start_drag_visual, end_drag_visual, update_drop_zone_state,
+    update_modifier_state, is_valid_drop_target
+)
 from utils.logger_helper import get_logger
 
 logger = get_logger(__name__)
@@ -194,7 +199,7 @@ class FileTreeView(QTreeView):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        """Handle mouse move for custom drag start"""
+        """Handle mouse move for custom drag start and real-time drop zone validation"""
         # Only proceed if left button is pressed and we have a start position
         if not (event.buttons() & Qt.LeftButton) or not self._drag_start_pos:
             super().mouseMoveEvent(event)
@@ -206,8 +211,10 @@ class FileTreeView(QTreeView):
             super().mouseMoveEvent(event)
             return
 
-        # Already dragging? Don't start another
+        # Already dragging? Handle real-time validation
         if self._is_dragging:
+            self._update_drag_feedback()
+            super().mouseMoveEvent(event)
             return
 
         # Start our custom drag
@@ -220,7 +227,7 @@ class FileTreeView(QTreeView):
         super().mouseReleaseEvent(event)
 
     def _start_custom_drag(self):
-        """Start our custom drag operation"""
+        """Start our custom drag operation with enhanced visual feedback"""
         if not self._drag_start_pos:
             return
 
@@ -246,13 +253,57 @@ class FileTreeView(QTreeView):
         drag_manager = DragManager.get_instance()
         drag_manager.start_drag("file_tree")
 
-        # Set visual cursor
-        QApplication.setOverrideCursor(QCursor(Qt.ClosedHandCursor))
+        # Start enhanced visual feedback
+        visual_manager = DragVisualManager.get_instance()
+        drag_type = visual_manager.get_drag_type_from_path(path)
+        start_drag_visual(drag_type, path)
 
-        logger.debug(f"[FileTreeView] Custom drag started: {path}", extra={"dev_only": True})
+        logger.debug(f"[FileTreeView] Custom drag started with visual feedback: {path} (type: {drag_type.value})", extra={"dev_only": True})
+
+    def _update_drag_feedback(self):
+        """Update visual feedback based on current cursor position during drag"""
+        if not self._is_dragging:
+            return
+
+        # Update modifier state first (for Ctrl/Shift changes during drag)
+        update_modifier_state()
+
+        # Get widget under cursor
+        widget_under_cursor = QApplication.widgetAt(QCursor.pos())
+        if not widget_under_cursor:
+            update_drop_zone_state(DropZoneState.NEUTRAL)
+            return
+
+        # Check if current position is a valid drop target
+        visual_manager = DragVisualManager.get_instance()
+
+        # Walk up the parent hierarchy to find valid targets
+        parent = widget_under_cursor
+        valid_found = False
+
+        while parent and not valid_found:
+            # Check if this widget is a valid drop target
+            if visual_manager.is_valid_drop_target(parent, "file_tree"):
+                update_drop_zone_state(DropZoneState.VALID)
+                valid_found = True
+                logger.debug(f"[FileTreeView] Valid drop zone: {parent.__class__.__name__}", extra={"dev_only": True})
+                break
+
+            # Check for explicit invalid targets (policy violations)
+            elif parent.__class__.__name__ in ['FileTreeView', 'MetadataTreeView']:
+                update_drop_zone_state(DropZoneState.INVALID)
+                valid_found = True
+                logger.debug(f"[FileTreeView] Invalid drop zone: {parent.__class__.__name__}", extra={"dev_only": True})
+                break
+
+            parent = parent.parent()
+
+        # If no specific target found, neutral state
+        if not valid_found:
+            update_drop_zone_state(DropZoneState.NEUTRAL)
 
     def _end_custom_drag(self):
-        """End our custom drag operation"""
+        """End our custom drag operation with enhanced visual feedback"""
         if not self._is_dragging:
             return
 
@@ -265,12 +316,20 @@ class FileTreeView(QTreeView):
             path = self._drag_path
             self._drag_path = None
             self._drag_start_pos = None
+
+            # End visual feedback
+            end_drag_visual()
+
             logger.debug(f"[FileTreeView] Custom drag ended (cancelled): {path}", extra={"dev_only": True})
             return
 
         # Check if we dropped on a valid target (only FileTableView allowed)
         widget_under_cursor = QApplication.widgetAt(QCursor.pos())
         logger.debug(f"[FileTreeView] Widget under cursor: {widget_under_cursor}", extra={"dev_only": True})
+
+        # Use visual manager to validate drop target
+        visual_manager = DragVisualManager.get_instance()
+        valid_drop = False
 
         # Check if dropped on file table (strict policy: only FileTableView)
         if widget_under_cursor:
@@ -279,24 +338,31 @@ class FileTreeView(QTreeView):
             while parent:
                 logger.debug(f"[FileTreeView] Checking parent: {parent.__class__.__name__}", extra={"dev_only": True})
 
-                # Only accept drops on FileTableView
-                if parent.__class__.__name__ == 'FileTableView':
-                    logger.debug(f"[FileTreeView] Found FileTableView: {parent}", extra={"dev_only": True})
+                # Check with visual manager
+                if visual_manager.is_valid_drop_target(parent, "file_tree"):
+                    logger.debug(f"[FileTreeView] Valid drop target found: {parent.__class__.__name__}", extra={"dev_only": True})
                     self._handle_drop_on_table()
+                    valid_drop = True
                     break
 
                 # Also check viewport of FileTableView
-                if hasattr(parent, 'parent') and parent.parent() and parent.parent().__class__.__name__ == 'FileTableView':
-                    logger.debug(f"[FileTreeView] Found FileTableView via viewport: {parent.parent()}", extra={"dev_only": True})
-                    self._handle_drop_on_table()
-                    break
+                if hasattr(parent, 'parent') and parent.parent():
+                    if visual_manager.is_valid_drop_target(parent.parent(), "file_tree"):
+                        logger.debug(f"[FileTreeView] Valid drop target found via viewport: {parent.parent().__class__.__name__}", extra={"dev_only": True})
+                        self._handle_drop_on_table()
+                        valid_drop = True
+                        break
 
-                # Reject drops on other targets (FileTreeView itself, MetadataTreeView, etc.)
+                # Check for policy violations
                 if parent.__class__.__name__ in ['FileTreeView', 'MetadataTreeView']:
                     logger.debug(f"[FileTreeView] Rejecting drop on {parent.__class__.__name__} (policy violation)", extra={"dev_only": True})
                     break
 
                 parent = parent.parent()
+
+        # Log drop result
+        if not valid_drop:
+            logger.debug("[FileTreeView] Drop on invalid target", extra={"dev_only": True})
 
         # Clean up drag state
         self._is_dragging = False
@@ -304,13 +370,13 @@ class FileTreeView(QTreeView):
         self._drag_path = None
         self._drag_start_pos = None
 
-        # Restore cursor
-        QApplication.restoreOverrideCursor()
+        # End visual feedback
+        end_drag_visual()
 
         # Notify DragManager
         drag_manager.end_drag("file_tree")
 
-        logger.debug(f"[FileTreeView] Custom drag ended: {path}", extra={"dev_only": True})
+        logger.debug(f"[FileTreeView] Custom drag ended: {path} (valid_drop: {valid_drop})", extra={"dev_only": True})
 
     def _handle_drop_on_table(self):
         """Handle drop on file table"""
