@@ -569,7 +569,10 @@ class MainWindow(QMainWindow):
         drag_manager = DragManager.get_instance()
         drag_manager.force_cleanup()
 
-        # Step 2: Simple cursor cleanup - just remove all override cursors
+        # Step 2: Widget-specific drag state cleanup
+        self._cleanup_widget_drag_states()
+
+        # Step 3: Simple cursor cleanup - just remove all override cursors
         cursor_count = 0
         while QApplication.overrideCursor():
             QApplication.restoreOverrideCursor()
@@ -577,10 +580,10 @@ class MainWindow(QMainWindow):
             if cursor_count > 10:  # Reasonable limit
                 break
 
-        # Step 3: Update UI without creating new cursor issues
+        # Step 4: Update UI without creating new cursor issues
         QApplication.processEvents()
 
-        # Step 4: Update viewports
+        # Step 5: Update viewports
         if hasattr(self, 'file_table_view') and hasattr(self.file_table_view, 'viewport'):
             self.file_table_view.viewport().update()
         if hasattr(self, 'folder_tree') and hasattr(self.folder_tree, 'viewport'):
@@ -593,6 +596,36 @@ class MainWindow(QMainWindow):
         else:
             self.set_status("No stuck cursors found", color="blue", auto_reset=True, reset_delay=1000)
             logger.info("[MainWindow] FORCE CLEANUP: No cursors to clean")
+
+    def _cleanup_widget_drag_states(self) -> None:
+        """Clean up internal drag states in all widgets."""
+        # Clean up file tree drag state
+        if hasattr(self, 'folder_tree'):
+            if hasattr(self.folder_tree, '_dragging'):
+                self.folder_tree._dragging = False
+            if hasattr(self.folder_tree, '_drag_start_position'):
+                self.folder_tree._drag_start_position = None
+            if hasattr(self.folder_tree, '_reset_drag_state'):
+                self.folder_tree._reset_drag_state()
+            # Clean up any active QDrag objects
+            if hasattr(self.folder_tree, '_active_drag'):
+                self.folder_tree._active_drag = None
+
+        # Clean up file table drag state
+        if hasattr(self, 'file_table_view'):
+            if hasattr(self.file_table_view, '_drag_start_pos'):
+                self.file_table_view._drag_start_pos = None
+            # Clean up any active QDrag objects
+            if hasattr(self.file_table_view, '_active_drag'):
+                self.file_table_view._active_drag = None
+
+        # Force repaint to clear any ghost visuals
+        if hasattr(self, 'folder_tree') and self.folder_tree.viewport():
+            self.folder_tree.viewport().repaint()
+        if hasattr(self, 'file_table_view') and self.file_table_view.viewport():
+            self.file_table_view.viewport().repaint()
+
+        logger.debug("[MainWindow] Widget drag states cleaned")
 
     def _emergency_drag_cleanup(self) -> None:
         """

@@ -62,6 +62,7 @@ class FileTableView(QTableView):
         super().__init__(parent)
         self._manual_anchor_index: Optional[QModelIndex] = None
         self._drag_start_pos: QPoint = QPoint()
+        self._active_drag = None  # Store active QDrag object for cleanup
         self._filename_min_width: int = 250  # Will be updated in _configure_columns
         self._user_preferred_width: Optional[int] = None  # User's preferred filename column width
         self._programmatic_resize: bool = False  # Flag to indicate programmatic resize in progress
@@ -632,18 +633,20 @@ class FileTableView(QTableView):
         urls = [QUrl.fromLocalFile(p) for p in file_paths]
         mime_data.setUrls(urls)
 
-        # Execute drag
-        drag = QDrag(self)
-        drag.setMimeData(mime_data)
+        # Execute drag - store reference for cleanup
+        self._active_drag = QDrag(self)
+        self._active_drag.setMimeData(mime_data)
 
         try:
-            result = drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
+            result = self._active_drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
             logger.debug(f"[FileTable] Drag completed with result: {result}")
         except Exception as e:
             logger.error(f"Drag operation failed: {e}")
         finally:
             # End drag operation with DragManager
             drag_manager.end_drag("file_table")
+            # Clean up drag reference (Qt auto-deletes the QDrag after exec)
+            self._active_drag = None
 
         # Final cleanup with small delay to ensure Qt events are processed
         QTimer.singleShot(50, self._final_drag_cleanup)

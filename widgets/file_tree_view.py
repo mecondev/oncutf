@@ -144,6 +144,7 @@ class FileTreeView(QTreeView):
         # Initialize drag state
         self._drag_start_position: Optional[QPoint] = None
         self._dragging = False
+        self._active_drag = None  # Store active QDrag object for cleanup
 
         # Install global drag cancel filter
         app = QApplication.instance()
@@ -410,24 +411,26 @@ class FileTreeView(QTreeView):
 
         _drag_cancel_filter.activate()
 
-        # Create drag with MIME data
-        drag = QDrag(self)
+        # Create drag with MIME data and store reference for cleanup
+        self._active_drag = QDrag(self)
         mimeData = QMimeData()
         mimeData.setData("application/x-oncutf-internal", path.encode())
         mimeData.setText(path)
         mimeData.setUrls([QUrl.fromLocalFile(path)])
-        drag.setMimeData(mimeData)
+        self._active_drag.setMimeData(mimeData)
 
         self._dragging = False  # Reset before execution
 
         try:
-            result = drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
+            result = self._active_drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
             logger.debug(f"[FileTree] Drag completed with result: {result}", extra={"dev_only": True})
         except Exception as e:
             logger.error(f"Drag operation failed: {e}")
         finally:
             # End drag operation with DragManager
             drag_manager.end_drag("file_tree")
+            # Clean up drag reference (Qt auto-deletes the QDrag after exec)
+            self._active_drag = None
 
         # Final cleanup with small delay
         QTimer.singleShot(50, self._final_drag_cleanup)
@@ -449,6 +452,9 @@ class FileTreeView(QTreeView):
         """Reset internal drag state variables"""
         self._dragging = False
         self._drag_start_position = None
+        # Clean up active drag reference if exists (Qt auto-deletes the QDrag)
+        if hasattr(self, '_active_drag'):
+            self._active_drag = None
 
     def _send_fake_release(self):
         """Send fake mouse release event to clean up Qt drag session"""
