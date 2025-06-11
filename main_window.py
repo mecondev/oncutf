@@ -2194,24 +2194,16 @@ class MainWindow(QMainWindow):
             logger.info("[Drop] No matching files found in table.")
             return
 
-                # Use proper modifier logic for files (same as folders)
-        ctrl = bool(modifiers & Qt.ControlModifier)
+        # New logic for FileTable → MetadataTree drag:
+        # - No modifiers: fast metadata (normal metadata loading)
+        # - Shift: extended metadata
         shift = bool(modifiers & Qt.ShiftModifier)
+        use_extended = shift
 
-        # For individual files: same logic as folders
-        # - No modifiers: skip metadata (don't load)
-        # - Ctrl: load normal metadata
-        # - Ctrl+Shift: load extended metadata
-        skip_metadata = not ctrl
-        use_extended = ctrl and shift
+        logger.debug(f"[Modifiers] File drop on metadata tree: shift={shift} → extended={use_extended}")
 
-        logger.debug(f"[Modifiers] File drop: ctrl={ctrl}, shift={shift} → skip={skip_metadata}, extended={use_extended}")
-
-        # Only load metadata if not skipping
-        if not skip_metadata:
-            self.load_metadata_for_items(file_items, use_extended=use_extended, source="dropped_files")
-        else:
-            logger.info(f"[Drop] Skipping metadata for {len(file_items)} files (no Ctrl modifier)")
+        # Always load metadata (no skip option for metadata tree drops)
+        self.load_metadata_for_items(file_items, use_extended=use_extended, source="dropped_files")
 
     def load_files_from_dropped_items(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
