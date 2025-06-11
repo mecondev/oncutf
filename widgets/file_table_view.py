@@ -84,6 +84,7 @@ class FileTableView(QTableView):
         # Custom drag state tracking
         self._is_dragging = False
         self._drag_data = None  # Store selected file data for drag
+        self._drag_modifiers = Qt.NoModifier  # Store modifiers at drag start
 
         # Setup placeholder icon
         self.placeholder_label = QLabel(self.viewport())
@@ -509,6 +510,8 @@ class FileTableView(QTableView):
         # Store drag start position for drag detection
         if event.button() == Qt.LeftButton:
             self._drag_start_pos = event.pos()
+            # Store modifiers at press time to avoid selection conflicts
+            self._drag_modifiers = event.modifiers()
 
         # Handle right-click separately
         if event.button() == Qt.RightButton:
@@ -793,8 +796,8 @@ class FileTableView(QTableView):
         if not self._drag_data:
             return
 
-        # Get keyboard modifiers
-        modifiers = QApplication.keyboardModifiers()
+        # Use stored modifiers from drag start to avoid selection conflicts
+        modifiers = getattr(self, '_drag_modifiers', Qt.NoModifier)
 
         # Find metadata tree view to emit signal directly
         widget_under_cursor = QApplication.widgetAt(QCursor.pos())
@@ -814,7 +817,7 @@ class FileTableView(QTableView):
         if metadata_tree:
             # Emit signal directly on metadata tree
             metadata_tree.files_dropped.emit(self._drag_data, modifiers)
-            logger.info(f"[FileTableView] Dropped {len(self._drag_data)} files on metadata tree")
+            logger.info(f"[FileTableView] Dropped {len(self._drag_data)} files on metadata tree (modifiers: {modifiers})")
 
     # =====================================
     # Drag & Drop Methods (Legacy - may remove)

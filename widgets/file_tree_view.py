@@ -79,6 +79,7 @@ class FileTreeView(QTreeView):
         self._drag_start_pos: Optional[QPoint] = None
         self._is_dragging = False
         self._drag_path = None
+        self._drag_modifiers = Qt.NoModifier  # Store modifiers at drag start
 
         logger.debug("[FileTreeView] Initialized with custom drag system")
 
@@ -195,6 +196,9 @@ class FileTreeView(QTreeView):
             self._drag_start_pos = event.pos()
             self._is_dragging = False
             self._drag_path = None
+
+            # Store modifiers at press time to avoid selection conflicts
+            self._drag_modifiers = event.modifiers()
 
         super().mousePressEvent(event)
 
@@ -317,6 +321,9 @@ class FileTreeView(QTreeView):
             self._drag_path = None
             self._drag_start_pos = None
 
+            # Clear selection after cancelled drag for better UX
+            self.clearSelection()
+
             # End visual feedback
             end_drag_visual()
 
@@ -373,6 +380,11 @@ class FileTreeView(QTreeView):
         # End visual feedback
         end_drag_visual()
 
+        # Clear selection after successful drop for better UX
+        if valid_drop:
+            self.clearSelection()
+            logger.debug("[FileTreeView] Selection cleared after successful drop", extra={"dev_only": True})
+
         # Notify DragManager
         drag_manager.end_drag("file_tree")
 
@@ -383,10 +395,10 @@ class FileTreeView(QTreeView):
         if not self._drag_path:
             return
 
-        # Emit the drop signal with modifiers
-        modifiers = QApplication.keyboardModifiers()
+        # Use stored modifiers from drag start to avoid selection conflicts
+        modifiers = getattr(self, '_drag_modifiers', Qt.NoModifier)
         self.folder_dropped.emit([self._drag_path], modifiers)
-        logger.debug(f"[FileTreeView] Dropped on table: {self._drag_path}", extra={"dev_only": True})
+        logger.debug(f"[FileTreeView] Dropped on table: {self._drag_path} (modifiers: {modifiers})", extra={"dev_only": True})
 
     def _is_valid_drag_target(self, path: str) -> bool:
         """Check if path is valid for dragging"""

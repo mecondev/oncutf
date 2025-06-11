@@ -2194,11 +2194,24 @@ class MainWindow(QMainWindow):
             logger.info("[Drop] No matching files found in table.")
             return
 
-        use_extended = bool(int(modifiers) & int(Qt.ShiftModifier))
-        logger.debug(f"[Modifiers] Shift held → use_extended={use_extended}")
+                # Use proper modifier logic for files (same as folders)
+        ctrl = bool(modifiers & Qt.ControlModifier)
+        shift = bool(modifiers & Qt.ShiftModifier)
 
-        # Use the unified method
-        self.load_metadata_for_items(file_items, use_extended=use_extended, source="dropped_files")
+        # For individual files: same logic as folders
+        # - No modifiers: skip metadata (don't load)
+        # - Ctrl: load normal metadata
+        # - Ctrl+Shift: load extended metadata
+        skip_metadata = not ctrl
+        use_extended = ctrl and shift
+
+        logger.debug(f"[Modifiers] File drop: ctrl={ctrl}, shift={shift} → skip={skip_metadata}, extended={use_extended}")
+
+        # Only load metadata if not skipping
+        if not skip_metadata:
+            self.load_metadata_for_items(file_items, use_extended=use_extended, source="dropped_files")
+        else:
+            logger.info(f"[Drop] Skipping metadata for {len(file_items)} files (no Ctrl modifier)")
 
     def load_files_from_dropped_items(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
@@ -2215,16 +2228,12 @@ class MainWindow(QMainWindow):
             folder_path = paths[0]
             logger.info(f"[Drop] Setting folder from drop: {folder_path}")
 
-            # Update current state of modifier keys
-            self.modifier_state = QApplication.keyboardModifiers()
-
-            # Use modifiers passed or fallback to current
-            if modifiers == Qt.NoModifier:
-                modifiers = self.modifier_state
+            # Use passed modifiers (from drag start) instead of current state
+            self.modifier_state = modifiers if modifiers != Qt.NoModifier else QApplication.keyboardModifiers()
 
             # Use safe casting via helper method
             skip_metadata, use_extended = self.determine_metadata_mode()
-            logger.debug(f"[Drop] skip_metadata={skip_metadata}, use_extended={use_extended}")
+            logger.debug(f"[Drop] Using stored modifiers: {modifiers}, skip_metadata={skip_metadata}, use_extended={use_extended}")
 
             self.force_extended_metadata = use_extended
             self.skip_metadata_mode = skip_metadata
@@ -2253,8 +2262,23 @@ class MainWindow(QMainWindow):
             self.file_table_view.viewport().update()
             self.update_files_label()
         else:
-            # Load directly dropped files
+            # Load directly dropped files with modifier support
             self.load_files_from_paths(paths, clear=True)
+
+            # Apply modifier logic for individual files
+            ctrl = bool(modifiers & Qt.ControlModifier)
+            shift = bool(modifiers & Qt.ShiftModifier)
+            skip_metadata = not ctrl
+            use_extended = ctrl and shift
+
+            logger.debug(f"[Drop] Individual files: ctrl={ctrl}, shift={shift} → skip={skip_metadata}, extended={use_extended}")
+
+            # Load metadata if not skipping
+            if not skip_metadata:
+                items = self.file_model.files
+                self.load_metadata_for_items(items, use_extended=use_extended, source="individual_file_drop")
+            else:
+                logger.info(f"[Drop] Skipping metadata for {len(paths)} individual files (no Ctrl modifier)")
 
         # After loading files + metadata
         self.show_metadata_status()

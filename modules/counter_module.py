@@ -19,6 +19,7 @@ from modules.base_module import BaseRenameModule
 
 # initialize logger
 from utils.logger_helper import get_logger
+from utils.icons_loader import get_menu_icon
 
 logger = get_logger(__name__)
 
@@ -91,7 +92,7 @@ class CounterModule(BaseRenameModule):
         # Label with fixed width and right alignment
         label = QLabel(label_text)
         label.setFixedWidth(self.LABEL_WIDTH)
-        label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
         # Input field with integer validator
         input_field = QLineEdit(str(initial_value))
@@ -99,11 +100,15 @@ class CounterModule(BaseRenameModule):
         validator = QIntValidator(min_val, max_val, self)
         input_field.setValidator(validator)
 
-        # Buttons
-        btn_minus = QPushButton("-")
-        btn_plus = QPushButton("+")
+        # Buttons with icons
+        btn_minus = QPushButton()
+        btn_plus = QPushButton()
+        btn_minus.setIcon(get_menu_icon("minus"))
+        btn_plus.setIcon(get_menu_icon("plus"))
         btn_minus.setFixedSize(24, 24)
         btn_plus.setFixedSize(24, 24)
+        btn_minus.setToolTip("Decrease value")
+        btn_plus.setToolTip("Increase value")
 
         # Adjust helper
         def adjust(delta: int) -> None:

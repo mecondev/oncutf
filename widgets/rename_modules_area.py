@@ -28,6 +28,7 @@ from PyQt5.QtWidgets import (
 
 from modules.base_module import BaseRenameModule
 from utils.logger_helper import get_logger
+from utils.icons_loader import get_menu_icon
 from widgets.name_transform_widget import NameTransformWidget
 from widgets.rename_module_widget import RenameModuleWidget
 
@@ -91,11 +92,15 @@ class RenameModulesArea(QWidget):
         # Middle spacer
         spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
-        # Right side: buttons
-        self.add_button = QPushButton("+")
-        self.remove_button = QPushButton("-")
+        # Right side: buttons with icons
+        self.add_button = QPushButton()
+        self.remove_button = QPushButton()
+        self.add_button.setIcon(get_menu_icon("plus"))
+        self.remove_button.setIcon(get_menu_icon("minus"))
         self.add_button.setFixedSize(28, 28)
         self.remove_button.setFixedSize(28, 28)
+        self.add_button.setToolTip("Add new module")
+        self.remove_button.setToolTip("Remove last module")
 
         self.add_button.clicked.connect(self.add_module)
         self.remove_button.clicked.connect(self.remove_last_module)
