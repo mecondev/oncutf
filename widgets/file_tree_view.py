@@ -249,32 +249,53 @@ class FileTreeView(QTreeView):
         # Set visual cursor
         QApplication.setOverrideCursor(QCursor(Qt.ClosedHandCursor))
 
-        logger.debug(f"[FileTreeView] Custom drag started: {path}")
+        logger.debug(f"[FileTreeView] Custom drag started: {path}", extra={"dev_only": True})
 
     def _end_custom_drag(self):
         """End our custom drag operation"""
         if not self._is_dragging:
             return
 
-        # Check if we dropped on a valid target
-        widget_under_cursor = QApplication.widgetAt(QCursor.pos())
-        logger.debug(f"[FileTreeView] Widget under cursor: {widget_under_cursor}")
+        # Check if drag has been cancelled by external force cleanup
+        drag_manager = DragManager.get_instance()
+        if not drag_manager.is_drag_active():
+            logger.debug("[FileTreeView] Drag was cancelled, skipping drop", extra={"dev_only": True})
+            # Clean up drag state without performing drop
+            self._is_dragging = False
+            path = self._drag_path
+            self._drag_path = None
+            self._drag_start_pos = None
+            logger.debug(f"[FileTreeView] Custom drag ended (cancelled): {path}", extra={"dev_only": True})
+            return
 
-        # Check if dropped on file table
+        # Check if we dropped on a valid target (only FileTableView allowed)
+        widget_under_cursor = QApplication.widgetAt(QCursor.pos())
+        logger.debug(f"[FileTreeView] Widget under cursor: {widget_under_cursor}", extra={"dev_only": True})
+
+        # Check if dropped on file table (strict policy: only FileTableView)
         if widget_under_cursor:
             # Look for FileTableView in parent hierarchy
             parent = widget_under_cursor
             while parent:
-                logger.debug(f"[FileTreeView] Checking parent: {parent.__class__.__name__}")
+                logger.debug(f"[FileTreeView] Checking parent: {parent.__class__.__name__}", extra={"dev_only": True})
+
+                # Only accept drops on FileTableView
                 if parent.__class__.__name__ == 'FileTableView':
-                    logger.debug(f"[FileTreeView] Found FileTableView: {parent}")
+                    logger.debug(f"[FileTreeView] Found FileTableView: {parent}", extra={"dev_only": True})
                     self._handle_drop_on_table()
                     break
+
                 # Also check viewport of FileTableView
                 if hasattr(parent, 'parent') and parent.parent() and parent.parent().__class__.__name__ == 'FileTableView':
-                    logger.debug(f"[FileTreeView] Found FileTableView via viewport: {parent.parent()}")
+                    logger.debug(f"[FileTreeView] Found FileTableView via viewport: {parent.parent()}", extra={"dev_only": True})
                     self._handle_drop_on_table()
                     break
+
+                # Reject drops on other targets (FileTreeView itself, MetadataTreeView, etc.)
+                if parent.__class__.__name__ in ['FileTreeView', 'MetadataTreeView']:
+                    logger.debug(f"[FileTreeView] Rejecting drop on {parent.__class__.__name__} (policy violation)", extra={"dev_only": True})
+                    break
+
                 parent = parent.parent()
 
         # Clean up drag state
@@ -287,10 +308,9 @@ class FileTreeView(QTreeView):
         QApplication.restoreOverrideCursor()
 
         # Notify DragManager
-        drag_manager = DragManager.get_instance()
         drag_manager.end_drag("file_tree")
 
-        logger.debug(f"[FileTreeView] Custom drag ended: {path}")
+        logger.debug(f"[FileTreeView] Custom drag ended: {path}", extra={"dev_only": True})
 
     def _handle_drop_on_table(self):
         """Handle drop on file table"""
@@ -300,7 +320,7 @@ class FileTreeView(QTreeView):
         # Emit the drop signal with modifiers
         modifiers = QApplication.keyboardModifiers()
         self.folder_dropped.emit([self._drag_path], modifiers)
-        logger.debug(f"[FileTreeView] Dropped on table: {self._drag_path}")
+        logger.debug(f"[FileTreeView] Dropped on table: {self._drag_path}", extra={"dev_only": True})
 
     def _is_valid_drag_target(self, path: str) -> bool:
         """Check if path is valid for dragging"""
@@ -313,7 +333,7 @@ class FileTreeView(QTreeView):
             ext = ext[1:].lower()
 
         if ext not in ALLOWED_EXTENSIONS:
-            logger.debug(f"Skipping drag for non-allowed extension: {ext}", extra={"dev_only": True})
+            logger.debug(f"[FileTreeView] Skipping drag for non-allowed extension: {ext}", extra={"dev_only": True})
             return False
 
         return True

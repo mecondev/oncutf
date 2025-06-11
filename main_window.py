@@ -553,12 +553,29 @@ class MainWindow(QMainWindow):
         # Global shortcuts (attached to main window)
         global_shortcuts = [
             ("Escape", self.force_drag_cleanup),  # Global escape key
-            ("Ctrl+Escape", self.force_drag_cleanup),  # Alternative cleanup key
+            ("Ctrl+Escape", self.clear_file_table_shortcut),  # Clear file table
         ]
         for key, handler in global_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self)  # Attached to main window
             shortcut.activated.connect(handler)
             self.shortcuts.append(shortcut)
+
+    def clear_file_table_shortcut(self) -> None:
+        """
+        Clear file table triggered by Ctrl+Escape shortcut.
+        """
+        logger.info("[MainWindow] CLEAR TABLE: Ctrl+Escape key pressed")
+
+        if not self.file_model.files:
+            logger.info("[MainWindow] CLEAR TABLE: No files to clear")
+            self.set_status("No files to clear", color="gray", auto_reset=True, reset_delay=1000)
+            return
+
+        # Clear the file table
+        self.clear_file_table("Press Escape to clear, or drag folders here")
+        self.current_folder_path = None  # Reset current folder
+        self.set_status("File table cleared", color="blue", auto_reset=True, reset_delay=1000)
+        logger.info("[MainWindow] CLEAR TABLE: File table cleared successfully")
 
     def force_drag_cleanup(self) -> None:
         """

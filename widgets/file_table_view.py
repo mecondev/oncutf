@@ -69,12 +69,16 @@ class FileTableView(QTableView):
 
         # Configure table behavior
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.setDragEnabled(True)
-        self.setDragDropMode(QAbstractItemView.DragDrop)
+        self.setDragEnabled(False)  # Disable Qt's built-in drag for custom implementation
+        self.setDragDropMode(QAbstractItemView.DropOnly)  # Only accept drops, no built-in drags
         self.setMouseTracking(True)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True)
+
+        # Custom drag state tracking
+        self._is_dragging = False
+        self._drag_data = None  # Store selected file data for drag
 
         # Setup placeholder icon
         self.placeholder_label = QLabel(self.viewport())
@@ -557,6 +561,10 @@ class FileTableView(QTableView):
         """Handle mouse release events with enhanced drag cleanup."""
         super().mouseReleaseEvent(event)
 
+        # Handle custom drag end
+        if self._is_dragging:
+            self._end_custom_drag()
+
         # Force drag manager cleanup if active
         drag_manager = DragManager.get_instance()
         if drag_manager.is_drag_active():
@@ -572,16 +580,17 @@ class FileTableView(QTableView):
         index = self.indexAt(event.pos())
         hovered_row = index.row() if index.isValid() else -1
 
-        # Start drag if moving and a selected row is being dragged
-        if event.buttons() & Qt.LeftButton and hovered_row in self._get_current_selection():
-            # Check if drag is already active to prevent multiple drags
-            drag_manager = DragManager.get_instance()
-            if not drag_manager.is_drag_active():
-                # Check if we have a valid drag start position
-                if hasattr(self, '_drag_start_pos') and self._drag_start_pos is not None:
-                    if (event.pos() - self._drag_start_pos).manhattanLength() >= QApplication.startDragDistance():
-                        self.startDrag(Qt.CopyAction)
-                        return
+        # Handle custom drag start
+        if (event.buttons() & Qt.LeftButton and
+            self._drag_start_pos is not None and
+            not self._is_dragging and
+            hovered_row in self._get_current_selection()):
+
+            # Check if we've moved enough to start drag
+            distance = (event.pos() - self._drag_start_pos).manhattanLength()
+            if distance >= QApplication.startDragDistance():
+                self._start_custom_drag()
+                return
 
         # Update hover highlighting
         if hasattr(self, "hover_delegate") and hovered_row != self.hover_delegate.hovered_row:
@@ -612,7 +621,129 @@ class FileTableView(QTableView):
             parent.sync_selection_to_checked(selection, QItemSelection())
 
     # =====================================
-    # Drag & Drop Methods
+    # Custom Drag Implementation
+    # =====================================
+
+    def _start_custom_drag(self):
+        """Start our custom drag operation"""
+        if self._is_dragging:
+            return
+
+        # Get selected file data
+        selected_rows = self._get_current_selection()
+        if not selected_rows:
+            return
+
+        rows = sorted(selected_rows)
+        file_items = [self.model().files[r] for r in rows if 0 <= r < len(self.model().files)]
+        file_paths = [f.full_path for f in file_items if f.full_path]
+
+        if not file_paths:
+            return
+
+        # Set drag state
+        self._is_dragging = True
+        self._drag_data = file_paths
+
+        # Notify DragManager
+        drag_manager = DragManager.get_instance()
+        drag_manager.start_drag("file_table")
+
+        # Set visual cursor
+        QApplication.setOverrideCursor(QCursor(Qt.ClosedHandCursor))
+
+        logger.debug(f"[FileTableView] Custom drag started: {len(file_paths)} files", extra={"dev_only": True})
+
+    def _end_custom_drag(self):
+        """End our custom drag operation"""
+        if not self._is_dragging:
+            return
+
+        # Check if drag has been cancelled by external force cleanup
+        drag_manager = DragManager.get_instance()
+        if not drag_manager.is_drag_active():
+            logger.debug("[FileTableView] Drag was cancelled, skipping drop", extra={"dev_only": True})
+            # Clean up drag state without performing drop
+            self._is_dragging = False
+            self._drag_data = None
+            self._drag_start_pos = None
+            logger.debug("[FileTableView] Custom drag ended (cancelled)", extra={"dev_only": True})
+            return
+
+        # Check if we dropped on a valid target (only MetadataTreeView allowed)
+        widget_under_cursor = QApplication.widgetAt(QCursor.pos())
+        logger.debug(f"[FileTableView] Widget under cursor: {widget_under_cursor}", extra={"dev_only": True})
+
+        # Check if dropped on metadata tree (strict policy: only MetadataTreeView)
+        if widget_under_cursor:
+            # Look for MetadataTreeView in parent hierarchy
+            parent = widget_under_cursor
+            while parent:
+                logger.debug(f"[FileTableView] Checking parent: {parent.__class__.__name__}", extra={"dev_only": True})
+
+                # Only accept drops on MetadataTreeView
+                if parent.__class__.__name__ == 'MetadataTreeView':
+                    logger.debug(f"[FileTableView] Found MetadataTreeView: {parent}", extra={"dev_only": True})
+                    self._handle_drop_on_metadata_tree()
+                    break
+
+                # Also check viewport of MetadataTreeView
+                if hasattr(parent, 'parent') and parent.parent() and parent.parent().__class__.__name__ == 'MetadataTreeView':
+                    logger.debug(f"[FileTableView] Found MetadataTreeView via viewport: {parent.parent()}", extra={"dev_only": True})
+                    self._handle_drop_on_metadata_tree()
+                    break
+
+                # Reject drops on other targets (FileTreeView, FileTableView itself, external areas)
+                if parent.__class__.__name__ in ['FileTreeView', 'FileTableView']:
+                    logger.debug(f"[FileTableView] Rejecting drop on {parent.__class__.__name__} (policy violation)", extra={"dev_only": True})
+                    break
+
+                parent = parent.parent()
+
+        # Clean up drag state
+        self._is_dragging = False
+        data = self._drag_data
+        self._drag_data = None
+        self._drag_start_pos = None
+
+        # Restore cursor
+        QApplication.restoreOverrideCursor()
+
+        # Notify DragManager
+        drag_manager.end_drag("file_table")
+
+                logger.debug(f"[FileTableView] Custom drag ended: {len(data) if data else 0} files", extra={"dev_only": True})
+
+    def _handle_drop_on_metadata_tree(self):
+        """Handle drop on metadata tree"""
+        if not self._drag_data:
+            return
+
+        # Get keyboard modifiers
+        modifiers = QApplication.keyboardModifiers()
+
+        # Find metadata tree view to emit signal directly
+        widget_under_cursor = QApplication.widgetAt(QCursor.pos())
+        metadata_tree = None
+
+        # Search for MetadataTreeView
+        parent = widget_under_cursor
+        while parent:
+            if parent.__class__.__name__ == 'MetadataTreeView':
+                metadata_tree = parent
+                break
+            if hasattr(parent, 'parent') and parent.parent() and parent.parent().__class__.__name__ == 'MetadataTreeView':
+                metadata_tree = parent.parent()
+                break
+            parent = parent.parent()
+
+        if metadata_tree:
+            # Emit signal directly on metadata tree
+            metadata_tree.files_dropped.emit(self._drag_data, modifiers)
+            logger.info(f"[FileTableView] Dropped {len(self._drag_data)} files on metadata tree")
+
+    # =====================================
+    # Drag & Drop Methods (Legacy - may remove)
     # =====================================
 
     def startDrag(self, supportedActions: Qt.DropActions) -> None:
