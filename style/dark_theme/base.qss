@@ -197,3 +197,30 @@ QLineEdit {
     selection-color: #0d1321;
 }
 
+/* RenameModulesArea styling */
+QWidget[objectName="RenameModulesArea"] {
+    border: 2px solid #3a3a3a;  /* More visible border */
+    border-radius: 8px;
+    background-color: #212121;  /* Ensure consistent background */
+}
+
+/* Separators between modules (using QFrame as separator) */
+QFrame[accessibleName="module_separator"] {
+    background-color: #333333;  /* Brighter separator - more visible */
+    border: none;
+    margin: 4px 0px;
+    min-height: 2px;  /* Make separator 2px tall */
+    max-height: 2px;
+}
+
+/* Fallback for any generic separator lines in module area */
+QWidget[objectName="RenameModulesArea"] QFrame {
+    background-color: #333333;  /* Consistent separator color */
+}
+
+/* Fix labels in module area to have consistent background */
+QWidget[objectName="RenameModulesArea"] QLabel {
+    background-color: transparent !important;
+    color: #f0ebd8;
+}
+

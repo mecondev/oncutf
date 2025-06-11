@@ -155,8 +155,18 @@ class RenameModulesArea(QWidget):
         module.remove_requested.connect(lambda m=module: self.remove_module(m))
         module.updated.connect(lambda: self._on_module_updated())
         self.module_widgets.append(module)
+
+        # Add separator if this is not the first module
+        if len(self.module_widgets) > 1:
+            separator = self._create_separator()
+            self.scroll_layout.addWidget(separator)
+
         self.scroll_layout.addWidget(module)
         self._update_remove_button_state()
+
+        # Auto-scroll to show the newly added module
+        QTimer.singleShot(50, lambda: self._scroll_to_show_new_module(module))
+
         self.updated.emit()
 
     def remove_module(self, module: RenameModuleWidget):
@@ -166,11 +176,28 @@ class RenameModulesArea(QWidget):
             return
 
         if module in self.module_widgets:
+            # Find and remove any separator associated with this module
+            module_index = self.scroll_layout.indexOf(module)
+            if module_index > 0:  # Check if there's a separator before this module
+                previous_widget = self.scroll_layout.itemAt(module_index - 1)
+                if previous_widget and hasattr(previous_widget.widget(), 'accessibleName'):
+                    if previous_widget.widget().accessibleName() == "module_separator":
+                        separator = previous_widget.widget()
+                        self.scroll_layout.removeWidget(separator)
+                        separator.setParent(None)
+                        separator.deleteLater()
+
             self.module_widgets.remove(module)
             self.scroll_layout.removeWidget(module)
             module.setParent(None)
             module.deleteLater()
             self._update_remove_button_state()
+
+            # If only one module remains, scroll to top
+            if len(self.module_widgets) == 1:
+                QTimer.singleShot(50, lambda: self.scroll_area.verticalScrollBar().setValue(0))
+                logger.debug("[RenameModulesArea] Scrolled to top after removal (single module remains)", extra={"dev_only": True})
+
             self.updated.emit()
 
     def remove_last_module(self):
@@ -184,6 +211,28 @@ class RenameModulesArea(QWidget):
         """Enable/disable remove button based on number of modules."""
         self.remove_button.setEnabled(len(self.module_widgets) > 1)
         logger.debug(f"[RenameModulesArea] Remove button {'enabled' if len(self.module_widgets) > 1 else 'disabled'} - {len(self.module_widgets)} modules", extra={"dev_only": True})
+
+    def _scroll_to_show_new_module(self, new_module):
+        """Scroll to ensure the newly added module is visible."""
+        if len(self.module_widgets) == 1:
+            # If only one module, scroll to top
+            self.scroll_area.verticalScrollBar().setValue(0)
+            logger.debug("[RenameModulesArea] Scrolled to top (single module)", extra={"dev_only": True})
+        else:
+            # If multiple modules, scroll to show the new module
+            self.scroll_area.ensureWidgetVisible(new_module, 50, 50)
+            logger.debug(f"[RenameModulesArea] Scrolled to show new module ({len(self.module_widgets)} total)", extra={"dev_only": True})
+
+    def _create_separator(self):
+        """Create a visual separator between modules."""
+        from PyQt5.QtWidgets import QFrame
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        separator.setFrameShadow(QFrame.Plain)
+        separator.setAccessibleName("module_separator")  # For QSS targeting
+        separator.setFixedHeight(2)  # Make separator 2px tall
+        separator.setContentsMargins(10, 0, 10, 0)  # Add some horizontal margin
+        return separator
 
     def set_current_file_for_modules(self, file_item) -> None:
         """
