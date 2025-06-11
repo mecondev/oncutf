@@ -39,6 +39,9 @@ class DragCancelFilter(QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._active = False
+        self._cleanup_timer = QTimer(self)
+        self._cleanup_timer.setSingleShot(True)
+        self._cleanup_timer.timeout.connect(self._delayed_cleanup)
 
     def activate(self):
         """Activate this filter to start monitoring for drag termination events"""
@@ -48,6 +51,8 @@ class DragCancelFilter(QObject):
     def deactivate(self):
         """Deactivate this filter when drag has properly terminated"""
         self._active = False
+        if self._cleanup_timer.isActive():
+            self._cleanup_timer.stop()
         logger.debug("[DragFilter] Deactivated", extra={"dev_only": True})
 
     def eventFilter(self, obj, event):
@@ -55,19 +60,27 @@ class DragCancelFilter(QObject):
         if not self._active:
             return False
 
+        event_type = event.type()
+
         # Mouse press or release should terminate drag
-        if event.type() in (QEvent.MouseButtonPress, QEvent.MouseButtonRelease):
-            logger.debug("[DragFilter] Caught mouse event, forcing drag cleanup", extra={"dev_only": True})
-            self._cleanup_drag()
+        if event_type in (QEvent.MouseButtonPress, QEvent.MouseButtonRelease):
+            logger.debug("[DragFilter] Caught mouse event, scheduling cleanup", extra={"dev_only": True})
+            # Schedule cleanup with reasonable delay to let events process
+            self._cleanup_timer.start(50)
             return False  # Don't consume the event
 
-        # Escape key should terminate drag
-        if event.type() == QEvent.KeyPress:
+        # Escape key should terminate drag immediately
+        if event_type == QEvent.KeyPress:
             key_event = event  # type: QKeyEvent
             if key_event.key() == Qt.Key_Escape:
-                logger.debug("[DragFilter] Caught Escape key, forcing drag cleanup", extra={"dev_only": True})
+                logger.debug("[DragFilter] Caught Escape key, immediate cleanup", extra={"dev_only": True})
                 self._cleanup_drag()
                 return True  # Consume the escape key event
+
+        # Window deactivation should also trigger cleanup
+        if event_type in (QEvent.WindowDeactivate, QEvent.ApplicationDeactivate):
+            logger.debug("[DragFilter] Window deactivated, scheduling cleanup", extra={"dev_only": True})
+            self._cleanup_timer.start(100)
 
         return False  # Don't consume other events
 
@@ -80,16 +93,28 @@ class DragCancelFilter(QObject):
             drag_manager.force_cleanup()
 
         # Additional cleanup
-        while QApplication.overrideCursor():
+        cursor_count = 0
+        while QApplication.overrideCursor() and cursor_count < 10:
             QApplication.restoreOverrideCursor()
+            cursor_count += 1
 
         # Update all widgets
         app = QApplication.instance()
         if app:
-            for widget in app.allWidgets():
-                if hasattr(widget, 'viewport'):
-                    widget.viewport().update()
+            # Process pending events first
             app.processEvents()
+
+            # Update visible widgets
+            for widget in app.topLevelWidgets():
+                if widget.isVisible():
+                    widget.update()
+                    if hasattr(widget, 'viewport'):
+                        widget.viewport().update()
+
+    def _delayed_cleanup(self):
+        """Delayed cleanup to avoid interfering with active operations"""
+        if self._active:
+            self._cleanup_drag()
 
 
 # Create a single global instance
@@ -411,29 +436,81 @@ class FileTreeView(QTreeView):
 
         _drag_cancel_filter.activate()
 
-        # Create drag with MIME data and store reference for cleanup
-        self._active_drag = QDrag(self)
+        # Create drag with MIME data
+        drag = QDrag(self)
         mimeData = QMimeData()
         mimeData.setData("application/x-oncutf-internal", path.encode())
         mimeData.setText(path)
         mimeData.setUrls([QUrl.fromLocalFile(path)])
-        self._active_drag.setMimeData(mimeData)
+        drag.setMimeData(mimeData)
 
         self._dragging = False  # Reset before execution
+        self._active_drag = drag  # Store reference
 
         try:
-            result = self._active_drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
+            # Execute drag with timeout protection
+            result = drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
             logger.debug(f"[FileTree] Drag completed with result: {result}", extra={"dev_only": True})
         except Exception as e:
             logger.error(f"Drag operation failed: {e}")
+            result = Qt.IgnoreAction
         finally:
+            # Immediate cleanup
+            self._active_drag = None
+            self._dragging = False
+
             # End drag operation with DragManager
             drag_manager.end_drag("file_tree")
-            # Clean up drag reference (Qt auto-deletes the QDrag after exec)
-            self._active_drag = None
 
-        # Final cleanup with small delay
-        QTimer.singleShot(50, self._final_drag_cleanup)
+            # Deactivate filter
+            _drag_cancel_filter.deactivate()
+
+            # Force cursor restoration
+            while QApplication.overrideCursor():
+                QApplication.restoreOverrideCursor()
+
+            # Update UI immediately
+            self.viewport().update()
+            QApplication.processEvents()
+
+        # Schedule additional cleanup with reasonable delay
+        QTimer.singleShot(100, self._aggressive_post_drag_cleanup)
+
+    def _aggressive_post_drag_cleanup(self):
+        """Aggressive post-drag cleanup to prevent ghost effects"""
+        # Force DragManager cleanup
+        drag_manager = DragManager.get_instance()
+        if drag_manager.is_drag_active():
+            logger.debug("[FileTree] Forcing DragManager cleanup in post-drag", extra={"dev_only": True})
+            drag_manager.force_cleanup()
+
+        # Reset all drag state
+        self._reset_drag_state()
+
+        # Force cursor cleanup again
+        while QApplication.overrideCursor():
+            QApplication.restoreOverrideCursor()
+
+        # Deactivate filter if still active
+        if _drag_cancel_filter._active:
+            _drag_cancel_filter.deactivate()
+
+        # Force UI update
+        self.viewport().update()
+        self.update()
+
+        # Process events to clear any pending drag events
+        QApplication.processEvents()
+
+        # Send fake mouse release to self
+        fake_event = QMouseEvent(
+            QEvent.MouseButtonRelease,
+            QPoint(0, 0),
+            Qt.LeftButton,
+            Qt.NoButton,
+            Qt.NoModifier
+        )
+        QApplication.postEvent(self.viewport(), fake_event)
 
     def _final_drag_cleanup(self):
         """Complete cleanup of drag operation"""
@@ -446,7 +523,8 @@ class FileTreeView(QTreeView):
         self.viewport().update()
         QApplication.processEvents()
 
-        QTimer.singleShot(100, self._send_fake_release)
+        # Schedule more aggressive cleanup
+        QTimer.singleShot(50, self._aggressive_post_drag_cleanup)
 
     def _reset_drag_state(self):
         """Reset internal drag state variables"""

@@ -552,6 +552,7 @@ class MainWindow(QMainWindow):
         # Global shortcuts (attached to main window)
         global_shortcuts = [
             ("Escape", self.force_drag_cleanup),  # Global escape key
+            ("Ctrl+Escape", self.force_drag_cleanup),  # Alternative cleanup key
         ]
         for key, handler in global_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self)  # Attached to main window
@@ -565,65 +566,27 @@ class MainWindow(QMainWindow):
         """
         logger.info("[MainWindow] FORCE CLEANUP: Escape key pressed")
 
-        # Step 1: DragManager cleanup
+        # Just use DragManager - it handles everything smartly now
         drag_manager = DragManager.get_instance()
+
+        # Only proceed if there's actually a drag active
+        if not drag_manager.is_drag_active():
+            logger.info("[MainWindow] FORCE CLEANUP: No active drag to clean")
+            return
+
         drag_manager.force_cleanup()
-
-        # Step 2: Widget-specific drag state cleanup
-        self._cleanup_widget_drag_states()
-
-        # Step 3: Simple cursor cleanup - just remove all override cursors
-        cursor_count = 0
-        while QApplication.overrideCursor():
-            QApplication.restoreOverrideCursor()
-            cursor_count += 1
-            if cursor_count > 10:  # Reasonable limit
-                break
-
-        # Step 4: Update UI without creating new cursor issues
-        QApplication.processEvents()
-
-        # Step 5: Update viewports
-        if hasattr(self, 'file_table_view') and hasattr(self.file_table_view, 'viewport'):
-            self.file_table_view.viewport().update()
-        if hasattr(self, 'folder_tree') and hasattr(self.folder_tree, 'viewport'):
-            self.folder_tree.viewport().update()
-
-        # Report results
-        if cursor_count > 0:
-            self.set_status(f"Removed {cursor_count} stuck cursors", color="green", auto_reset=True, reset_delay=1500)
-            logger.info(f"[MainWindow] FORCE CLEANUP: Removed {cursor_count} cursors")
-        else:
-            self.set_status("No stuck cursors found", color="blue", auto_reset=True, reset_delay=1000)
-            logger.info("[MainWindow] FORCE CLEANUP: No cursors to clean")
+        self.set_status("Drag cancelled", color="blue", auto_reset=True, reset_delay=1000)
 
     def _cleanup_widget_drag_states(self) -> None:
-        """Clean up internal drag states in all widgets."""
-        # Clean up file tree drag state
+        """Clean up internal drag states in all widgets (lightweight version)."""
+        # Only clean essential drag state, let widgets handle their own cleanup
         if hasattr(self, 'folder_tree'):
             if hasattr(self.folder_tree, '_dragging'):
                 self.folder_tree._dragging = False
-            if hasattr(self.folder_tree, '_drag_start_position'):
-                self.folder_tree._drag_start_position = None
-            if hasattr(self.folder_tree, '_reset_drag_state'):
-                self.folder_tree._reset_drag_state()
-            # Clean up any active QDrag objects
-            if hasattr(self.folder_tree, '_active_drag'):
-                self.folder_tree._active_drag = None
 
-        # Clean up file table drag state
         if hasattr(self, 'file_table_view'):
             if hasattr(self.file_table_view, '_drag_start_pos'):
                 self.file_table_view._drag_start_pos = None
-            # Clean up any active QDrag objects
-            if hasattr(self.file_table_view, '_active_drag'):
-                self.file_table_view._active_drag = None
-
-        # Force repaint to clear any ghost visuals
-        if hasattr(self, 'folder_tree') and self.folder_tree.viewport():
-            self.folder_tree.viewport().repaint()
-        if hasattr(self, 'file_table_view') and self.file_table_view.viewport():
-            self.file_table_view.viewport().repaint()
 
         logger.debug("[MainWindow] Widget drag states cleaned")
 

@@ -61,7 +61,7 @@ class FileTableView(QTableView):
         """Initialize the custom table view with Explorer-like behavior."""
         super().__init__(parent)
         self._manual_anchor_index: Optional[QModelIndex] = None
-        self._drag_start_pos: QPoint = QPoint()
+        self._drag_start_pos: Optional[QPoint] = None  # Initialize as None instead of empty QPoint
         self._active_drag = None  # Store active QDrag object for cleanup
         self._filename_min_width: int = 250  # Will be updated in _configure_columns
         self._user_preferred_width: Optional[int] = None  # User's preferred filename column width
@@ -497,6 +497,10 @@ class FileTableView(QTableView):
             super().mousePressEvent(event)
             return
 
+        # Store drag start position for drag detection
+        if event.button() == Qt.LeftButton:
+            self._drag_start_pos = event.pos()
+
         # Handle right-click separately
         if event.button() == Qt.RightButton:
             super().mousePressEvent(event)
@@ -570,9 +574,14 @@ class FileTableView(QTableView):
 
         # Start drag if moving and a selected row is being dragged
         if event.buttons() & Qt.LeftButton and hovered_row in self._get_current_selection():
-            if (event.pos() - self._drag_start_pos).manhattanLength() >= QApplication.startDragDistance():
-                self.startDrag(Qt.CopyAction)
-                return
+            # Check if drag is already active to prevent multiple drags
+            drag_manager = DragManager.get_instance()
+            if not drag_manager.is_drag_active():
+                # Check if we have a valid drag start position
+                if hasattr(self, '_drag_start_pos') and self._drag_start_pos is not None:
+                    if (event.pos() - self._drag_start_pos).manhattanLength() >= QApplication.startDragDistance():
+                        self.startDrag(Qt.CopyAction)
+                        return
 
         # Update hover highlighting
         if hasattr(self, "hover_delegate") and hovered_row != self.hover_delegate.hovered_row:
@@ -634,22 +643,75 @@ class FileTableView(QTableView):
         mime_data.setUrls(urls)
 
         # Execute drag - store reference for cleanup
-        self._active_drag = QDrag(self)
-        self._active_drag.setMimeData(mime_data)
+        drag = QDrag(self)
+        drag.setMimeData(mime_data)
+        self._active_drag = drag
 
         try:
-            result = self._active_drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
+            result = drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
             logger.debug(f"[FileTable] Drag completed with result: {result}")
         except Exception as e:
             logger.error(f"Drag operation failed: {e}")
+            result = Qt.IgnoreAction
         finally:
-            # End drag operation with DragManager
-            drag_manager.end_drag("file_table")
-            # Clean up drag reference (Qt auto-deletes the QDrag after exec)
+            # Immediate cleanup
             self._active_drag = None
 
-        # Final cleanup with small delay to ensure Qt events are processed
-        QTimer.singleShot(50, self._final_drag_cleanup)
+            # End drag operation with DragManager
+            drag_manager.end_drag("file_table")
+
+            # Deactivate filter
+            _drag_cancel_filter.deactivate()
+
+            # Force cursor restoration
+            while QApplication.overrideCursor():
+                QApplication.restoreOverrideCursor()
+
+            # Update UI immediately
+            self.viewport().update()
+            QApplication.processEvents()
+
+        # Schedule aggressive cleanup with reasonable delay
+        QTimer.singleShot(100, self._aggressive_drag_cleanup)
+
+    def _aggressive_drag_cleanup(self):
+        """Aggressive post-drag cleanup to prevent ghost effects"""
+        # Force DragManager cleanup
+        drag_manager = DragManager.get_instance()
+        if drag_manager.is_drag_active():
+            logger.debug("[FileTable] Forcing DragManager cleanup in post-drag", extra={"dev_only": True})
+            drag_manager.force_cleanup()
+
+        # Reset drag state
+        self._drag_start_pos = None
+        if hasattr(self, '_active_drag'):
+            self._active_drag = None
+
+        # Force cursor cleanup again
+        while QApplication.overrideCursor():
+            QApplication.restoreOverrideCursor()
+
+        # Deactivate filter if still active
+        from widgets.file_tree_view import _drag_cancel_filter
+        if _drag_cancel_filter._active:
+            _drag_cancel_filter.deactivate()
+
+        # Force UI update
+        self.viewport().update()
+        self.update()
+
+        # Process events to clear any pending drag events
+        QApplication.processEvents()
+
+        # Send fake mouse release to self
+        fake_event = QMouseEvent(
+            QEvent.MouseButtonRelease,
+            QPoint(0, 0),
+            Qt.LeftButton,
+            Qt.NoButton,
+            Qt.NoModifier
+        )
+        QApplication.postEvent(self.viewport(), fake_event)
 
     def _final_drag_cleanup(self):
         """Final drag cleanup after event loop."""
@@ -662,6 +724,9 @@ class FileTableView(QTableView):
         if hasattr(self, 'viewport'):
             self.viewport().update()
         QApplication.processEvents()
+
+        # Schedule more aggressive cleanup
+        QTimer.singleShot(50, self._aggressive_drag_cleanup)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls() or event.mimeData().hasFormat("application/x-oncutf-internal"):
