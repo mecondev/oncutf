@@ -46,7 +46,7 @@ class SpecifiedTextModule(BaseRenameModule):
         self.text_label.setMaximumHeight(24)
         self.text_input = QLineEdit()
         self.text_input.setPlaceholderText("Enter custom text")
-        self.text_input.setMaxLength(128)
+        self.text_input.setMaxLength(240)
         self.text_input.setMaximumHeight(24)
         self._last_value = ""  # Initialize to prevent first empty emit
         self.text_input.textChanged.connect(self.validate_input)
@@ -57,6 +57,9 @@ class SpecifiedTextModule(BaseRenameModule):
 
         layout.addWidget(self.text_label)
         layout.addWidget(self.text_input)
+
+        # Track if field has ever had content to control empty styling
+        self._has_had_content = False
 
     def set_current_file(self, file_item) -> None:
         """
@@ -148,21 +151,35 @@ class SpecifiedTextModule(BaseRenameModule):
         self.text_input.setCursorPosition(cursor_pos + len(original_name))
 
     def validate_input(self, text: str) -> None:
-        """Validate and emit signal when text changes.
+        """Validate and emit signal when text changes with improved styling.
 
         Args:
             text (str): The text entered by the user.
         """
-        # Apply validation styling
-        if is_valid_filename_text(text):
+        # Track if field has ever had content
+        if text and not self._has_had_content:
+            self._has_had_content = True
+
+        # Determine validation state and apply appropriate styling
+        if len(text) >= 240:
+            # At character limit - darker gray styling
+            self.text_input.setStyleSheet("border: 2px solid #555555; background-color: #3a3a3a; color: #bbbbbb;")
+        elif not text and self._has_had_content:
+            # Empty after having content - darker orange styling
+            self.text_input.setStyleSheet("border: 2px solid #cc6600;")
+        elif not text:
+            # Empty initially - no special styling
             self.text_input.setStyleSheet("")
+        elif not is_valid_filename_text(text):
+            # Invalid characters - red styling
+            self.text_input.setStyleSheet("border: 2px solid #ff0000;")
         else:
-            self.text_input.setStyleSheet("border: 1px solid red;")
+            # Valid - default styling
+            self.text_input.setStyleSheet("")
 
         # Always emit the signal (like CounterModule does)
-        logger.debug(f"[SpecifiedText] Text changed to: '{text}', emitting signal", extra={"dev_only": True})
+        logger.debug(f"[SpecifiedText] Text changed to: '{text}' (len={len(text)}), emitting signal", extra={"dev_only": True})
         self.updated.emit(self)
-
 
     def get_data(self) -> dict:
         """
@@ -177,7 +194,9 @@ class SpecifiedTextModule(BaseRenameModule):
         }
 
     def reset(self) -> None:
+        self._has_had_content = False  # Reset tracking
         self.text_input.clear()
+        # After clearing and resetting, no special styling (like initial state)
         self.text_input.setStyleSheet("")
 
     def apply(self, file_item, index=0, metadata_cache=None) -> str:
