@@ -62,10 +62,25 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from config import *
+from config import (
+    ALLOWED_EXTENSIONS,
+    APP_NAME,
+    APP_VERSION,
+    DEFAULT_SKIP_METADATA,
+    FILE_TABLE_COLUMN_WIDTHS,
+    LARGE_FOLDER_WARNING_THRESHOLD,
+    LEFT_CENTER_RIGHT_SPLIT_RATIO,
+    TOP_BOTTOM_SPLIT_RATIO,
+    TREE_EXPAND_MODE,
+    WINDOW_HEIGHT,
+    WINDOW_MIN_HEIGHT,
+    WINDOW_MIN_WIDTH,
+    WINDOW_WIDTH,
+)
 
 # Core application context
 from core.application_context import ApplicationContext
+from core.drag_manager import DragManager
 from models.file_item import FileItem
 from models.file_table_model import FileTableModel
 from modules.name_transform_module import NameTransformModule
@@ -149,6 +164,9 @@ class MainWindow(QMainWindow):
         # --- Core Application Context ---
         self.context = ApplicationContext.create_instance(parent=self)
 
+        # --- Initialize DragManager ---
+        self.drag_manager = DragManager.get_instance()
+
         # --- Attributes initialization ---
         self.metadata_thread = None
         self.metadata_worker = None
@@ -204,6 +222,12 @@ class MainWindow(QMainWindow):
         self.preview_update_timer.setSingleShot(True)
         self.preview_update_timer.setInterval(100)  # milliseconds (reduced from 250ms for better performance)
         self.preview_update_timer.timeout.connect(self.generate_preview_names)
+
+        # --- Emergency drag cleanup timer ---
+        self.emergency_cleanup_timer = QTimer(self)
+        self.emergency_cleanup_timer.timeout.connect(self._emergency_drag_cleanup)
+        self.emergency_cleanup_timer.setInterval(5000)  # Check every 5 seconds, not 1
+        self.emergency_cleanup_timer.start()
 
     # --- Method definitions ---
     def setup_main_window(self) -> None:
@@ -517,11 +541,68 @@ class MainWindow(QMainWindow):
             ("Ctrl+R", self.force_reload),
             ("Ctrl+M", self.shortcut_load_metadata),
             ("Ctrl+E", self.shortcut_load_extended_metadata),
+            ("Escape", self.force_drag_cleanup),  # Add Escape key for drag cleanup
         ]
         for key, handler in shortcut_map:
             shortcut = QShortcut(QKeySequence(key), self.file_table_view)
             shortcut.activated.connect(handler)
             self.shortcuts.append(shortcut)
+
+    def force_drag_cleanup(self) -> None:
+        """
+        Force cleanup of any active drag operations.
+        Triggered by Escape key.
+        """
+        drag_manager = DragManager.get_instance()
+        if drag_manager.is_drag_active():
+            logger.info("[MainWindow] Force drag cleanup triggered via Escape key")
+            drag_manager.force_cleanup()
+            self.set_status("Drag operation cancelled", color="orange", auto_reset=True, reset_delay=1500)
+        else:
+            logger.debug("[MainWindow] Escape pressed but no drag active")
+
+    def _emergency_drag_cleanup(self) -> None:
+        """
+        Emergency cleanup that runs every 5 seconds to catch stuck cursors.
+        Only acts if cursor has been stuck for multiple checks.
+        """
+        app = QApplication.instance()
+        if not app:
+            return
+
+        # Check if cursor looks stuck in drag mode
+        current_cursor = app.overrideCursor()
+        if current_cursor:
+            cursor_shape = current_cursor.shape()
+            # Common drag cursor shapes that might be stuck
+            drag_cursors = [Qt.DragMoveCursor, Qt.DragCopyCursor, Qt.DragLinkCursor, Qt.ClosedHandCursor]
+
+            if cursor_shape in drag_cursors:
+                drag_manager = DragManager.get_instance()
+                if not drag_manager.is_drag_active():
+                    # Initialize stuck count if not exists
+                    if not hasattr(self, '_stuck_cursor_count'):
+                        self._stuck_cursor_count = 0
+
+                    self._stuck_cursor_count += 1
+
+                    # Only cleanup after 2 consecutive detections (10 seconds total)
+                    if self._stuck_cursor_count >= 2:
+                        logger.warning(f"[Emergency] Stuck drag cursor detected for {self._stuck_cursor_count * 5}s, forcing cleanup")
+                        drag_manager.force_cleanup()
+                        self.set_status("Stuck cursor fixed", color="green", auto_reset=True, reset_delay=1000)
+                        self._stuck_cursor_count = 0
+                    else:
+                        logger.debug(f"[Emergency] Suspicious cursor detected ({self._stuck_cursor_count}/2)")
+                else:
+                    # Reset count if drag is actually active
+                    self._stuck_cursor_count = 0
+            else:
+                # Reset count if cursor is not drag-related
+                self._stuck_cursor_count = 0
+        else:
+            # Reset count if no override cursor
+            self._stuck_cursor_count = 0
 
     def eventFilter(self, obj, event):
         """

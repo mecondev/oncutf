@@ -23,6 +23,7 @@ from PyQt5.QtWidgets import (
 )
 
 from config import ALLOWED_EXTENSIONS
+from core.drag_manager import DragManager
 from utils.logger_helper import get_logger
 
 logger = get_logger(__name__)
@@ -71,16 +72,24 @@ class DragCancelFilter(QObject):
         return False  # Don't consume other events
 
     def _cleanup_drag(self):
-        """Force cleanup of any drag operation"""
-        # Restore cursor
+        """Force cleanup all drag operations."""
+        # Use DragManager for centralized cleanup
+        drag_manager = DragManager.get_instance()
+        if drag_manager.is_drag_active():
+            logger.debug("[DragCancel] Forcing drag cleanup via DragManager")
+            drag_manager.force_cleanup()
+
+        # Additional cleanup
         while QApplication.overrideCursor():
             QApplication.restoreOverrideCursor()
 
-        # Immediately process events to update UI
-        QApplication.processEvents()
-
-        # Deactivate filter
-        self.deactivate()
+        # Update all widgets
+        app = QApplication.instance()
+        if app:
+            for widget in app.allWidgets():
+                if hasattr(widget, 'viewport'):
+                    widget.viewport().update()
+            app.processEvents()
 
 
 # Create a single global instance
@@ -338,12 +347,19 @@ class FileTreeView(QTreeView):
     def mouseReleaseEvent(self, event):
         """Ensure drag state is properly reset on mouse release"""
         self._reset_drag_state()
+
+        # Force drag manager cleanup if active
+        drag_manager = DragManager.get_instance()
+        if drag_manager.is_drag_active():
+            drag_manager.end_drag("file_tree_mouse_release")
+
         self.viewport().update()
         super().mouseReleaseEvent(event)
         QApplication.processEvents()
 
-        # Force cleanup with delay
+        # Force cleanup with delay and additional cleanup
         QTimer.singleShot(100, self._send_fake_release)
+        QTimer.singleShot(200, self._final_emergency_cleanup)
 
     def _start_internal_drag(self, position):
         """Start internal drag operation for folders/files"""
@@ -388,6 +404,10 @@ class FileTreeView(QTreeView):
 
     def _execute_drag(self, path: str):
         """Execute the drag operation with proper cleanup"""
+        # Start drag operation with DragManager
+        drag_manager = DragManager.get_instance()
+        drag_manager.start_drag("file_tree")
+
         _drag_cancel_filter.activate()
 
         # Create drag with MIME data
@@ -402,17 +422,17 @@ class FileTreeView(QTreeView):
 
         try:
             result = drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
-            logger.debug(f"Drag completed with result: {result}", extra={"dev_only": True})
-            if result == 0:
-                self._complete_drag_cleanup()
+            logger.debug(f"[FileTree] Drag completed with result: {result}", extra={"dev_only": True})
         except Exception as e:
             logger.error(f"Drag operation failed: {e}")
         finally:
-            self._complete_drag_cleanup()
+            # End drag operation with DragManager
+            drag_manager.end_drag("file_tree")
 
-        QTimer.singleShot(0, self._complete_drag_cleanup)
+        # Final cleanup with small delay
+        QTimer.singleShot(50, self._final_drag_cleanup)
 
-    def _complete_drag_cleanup(self):
+    def _final_drag_cleanup(self):
         """Complete cleanup of drag operation"""
         self._reset_drag_state()
 
@@ -441,6 +461,12 @@ class FileTreeView(QTreeView):
         )
         QApplication.postEvent(self, fake_event)
 
+    def _final_emergency_cleanup(self):
+        """Perform final emergency cleanup"""
+        self._reset_drag_state()
+        self.viewport().update()
+        QApplication.processEvents()
+
     # =====================================
     # Drop Events (Rejected)
     # =====================================
@@ -460,7 +486,7 @@ class FileTreeView(QTreeView):
     def dragLeaveEvent(self, event):
         """Handle drag leave with cleanup"""
         logger.debug("[DragDrop] dragLeaveEvent, forcing cleanup", extra={"dev_only": True})
-        self._complete_drag_cleanup()
+        self._final_drag_cleanup()
         event.ignore()
 
     # =====================================

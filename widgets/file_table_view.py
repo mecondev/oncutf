@@ -29,6 +29,7 @@ from PyQt5.QtWidgets import QAbstractItemView, QApplication, QHeaderView, QLabel
 
 from config import FILE_TABLE_COLUMN_WIDTHS
 from core.application_context import get_app_context
+from core.drag_manager import DragManager
 from utils.file_drop_helper import extract_file_paths
 from utils.logger_helper import get_logger
 
@@ -547,27 +548,17 @@ class FileTableView(QTableView):
 
         self._sync_selection_safely()
 
-    def mouseReleaseEvent(self, event) -> None:
-        if self.is_empty():
-            return
-
-        if event.button() == Qt.RightButton:
-            index = self.indexAt(event.pos())
-            if index.isValid() and event.modifiers() & Qt.ShiftModifier:
-                self.ensure_anchor_or_select(index, event.modifiers())
-
-                # Update visual range
-                top = min(self._manual_anchor_index.row(), index.row())
-                bottom = max(self._manual_anchor_index.row(), index.row())
-                for row in range(top, bottom + 1):
-                    left = self.model().index(row, 0)
-                    right = self.model().index(row, self.model().columnCount() - 1)
-                    self.viewport().update(self.visualRect(left).united(self.visualRect(right)))
-
-                self._sync_selection_safely()
-                return
-
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        """Handle mouse release events with enhanced drag cleanup."""
         super().mouseReleaseEvent(event)
+
+        # Force drag manager cleanup if active
+        drag_manager = DragManager.get_instance()
+        if drag_manager.is_drag_active():
+            drag_manager.end_drag("file_table_mouse_release")
+
+        # Additional cleanup with delay
+        QTimer.singleShot(100, self._emergency_cursor_cleanup)
 
     def mouseMoveEvent(self, event) -> None:
         if self.is_empty():
@@ -627,7 +618,11 @@ class FileTableView(QTableView):
         if not file_paths:
             return
 
-        # Setup drag cancel filter
+        # Start drag operation with DragManager
+        drag_manager = DragManager.get_instance()
+        drag_manager.start_drag("file_table")
+
+        # Setup drag cancel filter (legacy - may remove later)
         from widgets.file_tree_view import _drag_cancel_filter
         _drag_cancel_filter.activate()
 
@@ -642,28 +637,19 @@ class FileTableView(QTableView):
         drag.setMimeData(mime_data)
 
         try:
-            drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
+            result = drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
+            logger.debug(f"[FileTable] Drag completed with result: {result}")
         except Exception as e:
             logger.error(f"Drag operation failed: {e}")
         finally:
-            self._cleanup_drag_state()
+            # End drag operation with DragManager
+            drag_manager.end_drag("file_table")
 
-        QTimer.singleShot(0, self._complete_drag_cleanup)
+        # Final cleanup with small delay to ensure Qt events are processed
+        QTimer.singleShot(50, self._final_drag_cleanup)
 
-    def _cleanup_drag_state(self):
-        """Clean up drag operation state."""
-        while QApplication.overrideCursor():
-            QApplication.restoreOverrideCursor()
-
-        from widgets.file_tree_view import _drag_cancel_filter
-        _drag_cancel_filter.deactivate()
-
-        if hasattr(self, 'viewport'):
-            self.viewport().update()
-        QApplication.processEvents()
-
-    def _complete_drag_cleanup(self):
-        """Complete drag cleanup after event loop."""
+    def _final_drag_cleanup(self):
+        """Final drag cleanup after event loop."""
         from widgets.file_tree_view import _drag_cancel_filter
         _drag_cancel_filter.deactivate()
 
@@ -824,6 +810,25 @@ class FileTableView(QTableView):
             logger.warning("[FileTableView] Cannot enable SelectionStore mode - store not available")
 
     def disable_selection_store_mode(self):
-        """Disable SelectionStore mode (enable legacy selection handling)."""
-        self._legacy_selection_mode = True
-        logger.debug("[FileTableView] SelectionStore mode disabled (legacy mode)", extra={"dev_only": True})
+        """Disable selection store synchronization mode."""
+        if self._get_selection_store():
+            self._get_selection_store().set_active(False)
+            logger.debug("[FileTable] Selection store mode disabled")
+
+    def _emergency_cursor_cleanup(self):
+        """Emergency cursor cleanup method."""
+        # Aggressive cursor cleanup
+        cursor_count = 0
+        while QApplication.overrideCursor():
+            QApplication.restoreOverrideCursor()
+            cursor_count += 1
+            if cursor_count > 10:
+                break
+
+        if cursor_count > 0:
+            logger.debug(f"[FileTable] Emergency: Cleaned {cursor_count} stuck cursors")
+
+        # Force viewport update
+        if hasattr(self, 'viewport'):
+            self.viewport().update()
+        QApplication.processEvents()

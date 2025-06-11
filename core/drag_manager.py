@@ -45,18 +45,24 @@ class DragManager(QObject):
         # Drag state
         self._drag_active = False
         self._drag_source = None
+        self._drag_start_time = None  # Track when drag started
 
-        # Cleanup timer for forced cleanup
+        # Cleanup timer for forced cleanup (shorter interval)
         self._cleanup_timer = QTimer(self)
         self._cleanup_timer.setSingleShot(True)
         self._cleanup_timer.timeout.connect(self._forced_cleanup)
+
+        # Monitoring timer for stuck states (every 2 seconds, less aggressive)
+        self._monitor_timer = QTimer(self)
+        self._monitor_timer.timeout.connect(self._check_stuck_state)
+        self._monitor_timer.setInterval(2000)  # Increased from 500ms to 2 seconds
 
         # Install global event filter
         app = QApplication.instance()
         if app:
             app.installEventFilter(self)
 
-        logger.debug("[DragManager] Initialized")
+        logger.debug("[DragManager] Initialized with enhanced monitoring")
 
     @classmethod
     def get_instance(cls) -> 'DragManager':
@@ -77,13 +83,19 @@ class DragManager(QObject):
             source: String identifier of the drag source widget
         """
         if self._drag_active:
-            logger.warning(f"[DragManager] Drag already active from {self._drag_source}, starting new from {source}")
+            logger.warning(f"[DragManager] Drag already active from {self._drag_source}, forcing cleanup first")
+            self._perform_cleanup()
 
+        import time
         self._drag_active = True
         self._drag_source = source
+        self._drag_start_time = time.time()
 
-        # Start safety timer (5 seconds max drag duration)
+        # Start safety timer (5 seconds max drag duration - back to original)
         self._cleanup_timer.start(5000)
+
+        # Start monitoring timer
+        self._monitor_timer.start()
 
         logger.debug(f"[DragManager] Drag started from: {source}")
 
@@ -118,16 +130,18 @@ class DragManager(QObject):
 
     def _perform_cleanup(self) -> None:
         """Perform actual cleanup operations."""
-        # Stop timer
+        # Stop timers
         if self._cleanup_timer.isActive():
             self._cleanup_timer.stop()
+        if self._monitor_timer.isActive():
+            self._monitor_timer.stop()
 
-        # Restore cursor(s)
+        # Aggressive cursor restoration
         cursor_count = 0
         while QApplication.overrideCursor():
             QApplication.restoreOverrideCursor()
             cursor_count += 1
-            if cursor_count > 10:  # Safety limit
+            if cursor_count > 5:  # Reduced from 20 to 5
                 logger.warning("[DragManager] Too many override cursors, breaking loop")
                 break
 
@@ -137,9 +151,12 @@ class DragManager(QObject):
         # Reset state
         self._drag_active = False
         self._drag_source = None
+        self._drag_start_time = None
 
-        # Force UI update
+        # Force UI update (reduced to 1 time)
         QApplication.processEvents()
+
+        logger.debug("[DragManager] Cleanup completed")
 
     def _forced_cleanup(self) -> None:
         """Forced cleanup triggered by timer."""
@@ -163,18 +180,28 @@ class DragManager(QObject):
         event_type = event.type()
 
         # Mouse events that should terminate drag
-        if event_type in (QEvent.MouseButtonPress, QEvent.MouseButtonRelease):
-            if event_type == QEvent.MouseButtonRelease:
+        if event_type in (QEvent.MouseButtonPress, QEvent.MouseButtonRelease, QEvent.MouseButtonDblClick):
+            if event_type in (QEvent.MouseButtonRelease, QEvent.MouseButtonDblClick):
                 # Give a small delay for the drag operation to complete naturally
                 QTimer.singleShot(100, self._check_and_cleanup)
+            elif event_type == QEvent.MouseButtonPress:
+                # New mouse press during drag - check if it's been active long enough
+                if self._drag_start_time:
+                    import time
+                    elapsed = time.time() - self._drag_start_time
+                    if elapsed > 1.0:  # Only force cleanup if drag has been active for more than 1 second
+                        QTimer.singleShot(10, self.force_cleanup)
             return False
 
-        # Escape key terminates drag
+        # Key events - only handle Escape
         if event_type == QEvent.KeyPress:
-            if hasattr(event, 'key') and event.key() == Qt.Key_Escape:
-                logger.debug("[DragManager] Escape key pressed during drag, forcing cleanup")
-                self.force_cleanup()
-                return True  # Consume the escape key
+            if hasattr(event, 'key'):
+                key = event.key()
+                # Only Escape key terminates drag
+                if key == Qt.Key_Escape:
+                    logger.debug("[DragManager] Escape key pressed during drag, forcing cleanup")
+                    self.force_cleanup()
+                    return True  # Consume the escape key
 
         return False
 
@@ -183,6 +210,18 @@ class DragManager(QObject):
         if self._drag_active:
             logger.debug("[DragManager] Drag still active after mouse release, performing cleanup")
             self._perform_cleanup()
+
+    def _check_stuck_state(self) -> None:
+        """Check for stuck states and force cleanup if needed."""
+        if self._drag_active and self._drag_start_time:
+            import time
+            elapsed = time.time() - self._drag_start_time
+            # Only consider it stuck if it's been active for more than 3 seconds
+            if elapsed > 3.0:
+                logger.warning(f"[DragManager] Drag stuck for {elapsed:.1f}s, forcing cleanup")
+                self._perform_cleanup()
+            else:
+                logger.debug(f"[DragManager] Drag active for {elapsed:.1f}s, still normal")
 
 
 # Global convenience functions
