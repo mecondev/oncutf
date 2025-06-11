@@ -186,3 +186,16 @@ def get_menu_icon(name: str) -> QIcon:
         QIcon object for the requested icon
     """
     return icons_loader.get_menu_icon(name)
+
+
+def get_menu_icon_path(name: str) -> str:
+    """
+    Convenience function to get the file path of a menu icon for use in stylesheets.
+
+    Args:
+        name: The icon name (without extension)
+
+    Returns:
+        str: The full path to the icon file
+    """
+    return icons_loader.get_icon_path(name)

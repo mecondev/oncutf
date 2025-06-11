@@ -89,6 +89,7 @@ from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 from widgets.metadata_worker import MetadataWorker
 from widgets.rename_modules_area import RenameModulesArea
 from widgets.preview_tables_view import PreviewTablesView
+from widgets.custom_file_system_model import CustomFileSystemModel
 
 logger = get_logger(__name__)
 
@@ -263,7 +264,7 @@ class MainWindow(QMainWindow):
         btn_layout.addStretch()  # Push buttons to left, allow empty space on right
         left_layout.addLayout(btn_layout)
 
-        self.dir_model = QFileSystemModel()
+        self.dir_model = CustomFileSystemModel()
         self.dir_model.setRootPath('')
         self.dir_model.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs | QDir.Files)
 
@@ -275,6 +276,7 @@ class MainWindow(QMainWindow):
         self.dir_model.setNameFilterDisables(False)  # This hides files that don't match instead of disabling them
 
         self.folder_tree.setModel(self.dir_model)
+
         for i in range(1, 4):
             self.folder_tree.hideColumn(i)
 

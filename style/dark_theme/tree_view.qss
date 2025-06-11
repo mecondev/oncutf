@@ -181,19 +181,25 @@ QTreeView::branch:!has-children:!has-siblings:adjoins-item {
     background: #181818;  /* Consistent background */
 }
 
-/* Hide connection lines between branches */
+/* Hide connection lines between branches - Now with feather icons */
 QTreeView::branch:has-children:!has-siblings:closed,
 QTreeView::branch:closed:has-children:has-siblings {
     border-image: none;
-    image: none;  /* Removed url(:/tree-closed.png) */
+    image: url(resources/icons/feather_icons/chevron-right.svg);
     background: #181818;  /* Consistent background */
+    width: 16px;
+    height: 16px;
+    margin: 2px;
 }
 
 QTreeView::branch:open:has-children:!has-siblings,
 QTreeView::branch:open:has-children:has-siblings {
     border-image: none;
-    image: none;  /* Removed url(:/tree-open.png) */
+    image: url(resources/icons/feather_icons/chevron-down.svg);
     background: #181818;  /* Force background color */
+    width: 16px;
+    height: 16px;
+    margin: 2px;
 }
 
 /* Force override of any remaining OS indentation styling */
