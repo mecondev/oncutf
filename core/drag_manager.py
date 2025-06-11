@@ -94,8 +94,8 @@ class DragManager(QObject):
         # Start safety timer (5 seconds max drag duration - back to original)
         self._cleanup_timer.start(5000)
 
-        # Start monitoring timer
-        self._monitor_timer.start()
+        # Start monitoring timer (disabled for now)
+        # self._monitor_timer.start()
 
         logger.debug(f"[DragManager] Drag started from: {source}")
 
@@ -136,12 +136,12 @@ class DragManager(QObject):
         if self._monitor_timer.isActive():
             self._monitor_timer.stop()
 
-        # Aggressive cursor restoration
+        # Simple cursor restoration - just remove override cursors
         cursor_count = 0
         while QApplication.overrideCursor():
             QApplication.restoreOverrideCursor()
             cursor_count += 1
-            if cursor_count > 5:  # Reduced from 20 to 5
+            if cursor_count > 10:  # Reasonable safety limit
                 logger.warning("[DragManager] Too many override cursors, breaking loop")
                 break
 
@@ -153,7 +153,7 @@ class DragManager(QObject):
         self._drag_source = None
         self._drag_start_time = None
 
-        # Force UI update (reduced to 1 time)
+        # Simple UI update
         QApplication.processEvents()
 
         logger.debug("[DragManager] Cleanup completed")

@@ -223,11 +223,11 @@ class MainWindow(QMainWindow):
         self.preview_update_timer.setInterval(100)  # milliseconds (reduced from 250ms for better performance)
         self.preview_update_timer.timeout.connect(self.generate_preview_names)
 
-        # --- Emergency drag cleanup timer ---
-        self.emergency_cleanup_timer = QTimer(self)
-        self.emergency_cleanup_timer.timeout.connect(self._emergency_drag_cleanup)
-        self.emergency_cleanup_timer.setInterval(5000)  # Check every 5 seconds, not 1
-        self.emergency_cleanup_timer.start()
+        # --- Emergency drag cleanup timer --- (disabled for now)
+        # self.emergency_cleanup_timer = QTimer(self)
+        # self.emergency_cleanup_timer.timeout.connect(self._emergency_drag_cleanup)
+        # self.emergency_cleanup_timer.setInterval(5000)  # Check every 5 seconds, not 1
+        # self.emergency_cleanup_timer.start()
 
     # --- Method definitions ---
     def setup_main_window(self) -> None:
@@ -533,7 +533,9 @@ class MainWindow(QMainWindow):
         Stores them in self.shortcuts to avoid garbage collection.
         """
         self.shortcuts = []
-        shortcut_map = [
+
+        # File table shortcuts
+        file_table_shortcuts = [
             ("Ctrl+A", self.select_all_rows),
             ("Ctrl+Shift+A", self.clear_all_selection),
             ("Ctrl+I", self.invert_selection),
@@ -541,25 +543,56 @@ class MainWindow(QMainWindow):
             ("Ctrl+R", self.force_reload),
             ("Ctrl+M", self.shortcut_load_metadata),
             ("Ctrl+E", self.shortcut_load_extended_metadata),
-            ("Escape", self.force_drag_cleanup),  # Add Escape key for drag cleanup
         ]
-        for key, handler in shortcut_map:
+        for key, handler in file_table_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self.file_table_view)
+            shortcut.activated.connect(handler)
+            self.shortcuts.append(shortcut)
+
+        # Global shortcuts (attached to main window)
+        global_shortcuts = [
+            ("Escape", self.force_drag_cleanup),  # Global escape key
+        ]
+        for key, handler in global_shortcuts:
+            shortcut = QShortcut(QKeySequence(key), self)  # Attached to main window
             shortcut.activated.connect(handler)
             self.shortcuts.append(shortcut)
 
     def force_drag_cleanup(self) -> None:
         """
         Force cleanup of any active drag operations.
-        Triggered by Escape key.
+        Triggered by Escape key globally.
         """
+        logger.info("[MainWindow] FORCE CLEANUP: Escape key pressed")
+
+        # Step 1: DragManager cleanup
         drag_manager = DragManager.get_instance()
-        if drag_manager.is_drag_active():
-            logger.info("[MainWindow] Force drag cleanup triggered via Escape key")
-            drag_manager.force_cleanup()
-            self.set_status("Drag operation cancelled", color="orange", auto_reset=True, reset_delay=1500)
+        drag_manager.force_cleanup()
+
+        # Step 2: Simple cursor cleanup - just remove all override cursors
+        cursor_count = 0
+        while QApplication.overrideCursor():
+            QApplication.restoreOverrideCursor()
+            cursor_count += 1
+            if cursor_count > 10:  # Reasonable limit
+                break
+
+        # Step 3: Update UI without creating new cursor issues
+        QApplication.processEvents()
+
+        # Step 4: Update viewports
+        if hasattr(self, 'file_table_view') and hasattr(self.file_table_view, 'viewport'):
+            self.file_table_view.viewport().update()
+        if hasattr(self, 'folder_tree') and hasattr(self.folder_tree, 'viewport'):
+            self.folder_tree.viewport().update()
+
+        # Report results
+        if cursor_count > 0:
+            self.set_status(f"Removed {cursor_count} stuck cursors", color="green", auto_reset=True, reset_delay=1500)
+            logger.info(f"[MainWindow] FORCE CLEANUP: Removed {cursor_count} cursors")
         else:
-            logger.debug("[MainWindow] Escape pressed but no drag active")
+            self.set_status("No stuck cursors found", color="blue", auto_reset=True, reset_delay=1000)
+            logger.info("[MainWindow] FORCE CLEANUP: No cursors to clean")
 
     def _emergency_drag_cleanup(self) -> None:
         """
