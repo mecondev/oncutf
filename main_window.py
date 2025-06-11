@@ -201,7 +201,7 @@ class MainWindow(QMainWindow):
         # --- Preview update debouncing timer ---
         self.preview_update_timer = QTimer(self)
         self.preview_update_timer.setSingleShot(True)
-        self.preview_update_timer.setInterval(250)  # milliseconds
+        self.preview_update_timer.setInterval(100)  # milliseconds (reduced from 250ms for better performance)
         self.preview_update_timer.timeout.connect(self.generate_preview_names)
 
     # --- Method definitions ---
@@ -527,7 +527,7 @@ class MainWindow(QMainWindow):
         """
         if event.type() in (QEvent.KeyPress, QEvent.KeyRelease):
             self.modifier_state = QApplication.keyboardModifiers()
-            logger.debug(f"[Modifiers] eventFilter saw: {event.type()} with modifiers={int(event.modifiers())}")
+            logger.debug(f"[Modifiers] eventFilter saw: {event.type()} with modifiers={int(event.modifiers())}", extra={"dev_only": True})
 
         return super().eventFilter(obj, event)
 
@@ -610,7 +610,7 @@ class MainWindow(QMainWindow):
             all_selected = (len(selected_rows) == total)
 
         if all_checked and all_selected:
-            logger.debug("[SelectAll] All files already selected in both checked and selection model. No action taken.")
+            logger.debug("[SelectAll] All files already selected in both checked and selection model. No action taken.", extra={"dev_only": True})
             return
 
         with wait_cursor():
@@ -1110,10 +1110,10 @@ class MainWindow(QMainWindow):
             timer.start()
 
             selected_files = [f for f in self.file_model.files if f.checked]
-            logger.debug("[Preview] Triggered! Selected rows: %s", [f.filename for f in selected_files])
+            logger.debug("[Preview] Triggered! Selected rows: %s", [f.filename for f in selected_files], extra={"dev_only": True})
 
             if not selected_files:
-                logger.debug("[Preview] No selected files — skipping preview generation.")
+                logger.debug("[Preview] No selected files — skipping preview generation.", extra={"dev_only": True})
                 self.update_preview_tables_from_pairs([])
                 self.rename_button.setEnabled(False)
                 return
@@ -1122,34 +1122,34 @@ class MainWindow(QMainWindow):
             modules_data = rename_data.get("modules", [])
             post_transform = rename_data.get("post_transform", {})
 
-            logger.debug(f"[Preview] modules_data: {modules_data}")
-            logger.debug(f"[Preview] post_transform: {post_transform}")
+            logger.debug(f"[Preview] modules_data: {modules_data}", extra={"dev_only": True})
+            logger.debug(f"[Preview] post_transform: {post_transform}", extra={"dev_only": True})
 
             # Fast path: if all modules are no-op and no post_transform
             is_noop = True
 
             # Check if any module is effective
             all_modules = self.rename_modules_area.get_all_module_instances()
-            logger.debug(f"[Preview] Checking {len(all_modules)} modules for effectiveness")
+            logger.debug(f"[Preview] Checking {len(all_modules)} modules for effectiveness", extra={"dev_only": True})
             for module_widget in all_modules:
                 if module_widget.is_effective():
-                    logger.debug(f"[Preview] Module {module_widget.type_combo.currentText()} is effective!")
+                    logger.debug(f"[Preview] Module {module_widget.type_combo.currentText()} is effective!", extra={"dev_only": True})
                     is_noop = False
                     break
                 else:
-                    logger.debug(f"[Preview] Module {module_widget.type_combo.currentText()} is NOT effective")
+                    logger.debug(f"[Preview] Module {module_widget.type_combo.currentText()} is NOT effective", extra={"dev_only": True})
 
             # Check if post_transform is effective
             if NameTransformModule.is_effective(post_transform):
-                logger.debug(f"[Preview] Post transform is effective: {post_transform}")
+                logger.debug(f"[Preview] Post transform is effective: {post_transform}", extra={"dev_only": True})
                 is_noop = False
             else:
-                logger.debug(f"[Preview] Post transform is NOT effective: {post_transform}")
+                logger.debug(f"[Preview] Post transform is NOT effective: {post_transform}", extra={"dev_only": True})
 
         self.preview_map = {file.filename: file for file in selected_files}
 
         if is_noop:
-            logger.debug("[Preview] Fast path: no-op modules, skipping preview/validation.")
+            logger.debug("[Preview] Fast path: no-op modules, skipping preview/validation.", extra={"dev_only": True})
             self.rename_button.setEnabled(False)
             self.rename_button.setToolTip("No changes to apply")
 
@@ -1167,7 +1167,7 @@ class MainWindow(QMainWindow):
 
 
 
-        logger.debug("[Preview] Running full preview/validation for selected files.")
+        logger.debug("[Preview] Running full preview/validation for selected files.", extra={"dev_only": True})
 
         name_pairs = []
 
@@ -1185,13 +1185,9 @@ class MainWindow(QMainWindow):
                 else:
                     new_basename = new_fullname
 
-                logger.debug(f"Modules: {modules_data}")
-                logger.debug(f"Output from modules: {new_basename}")
-
                 # Apply name transform (case, separator) to basename only
                 if NameTransformModule.is_effective(post_transform):
                     new_basename = NameTransformModule.apply_from_data(post_transform, new_basename)
-                    logger.debug(f"Transform applied: {new_basename}")
 
                 # Validate only the basename
                 from utils.validation import is_valid_filename_text
@@ -1204,33 +1200,31 @@ class MainWindow(QMainWindow):
                     new_name = f"{new_basename}{extension}"
                 else:
                     new_name = new_basename
-                logger.debug(f"[Preview] {file.filename} -> {new_name}")
+
                 name_pairs.append((file.filename, new_name))
-                logger.debug(f"[Preview] Generating for {[f.filename for f in selected_files]}", extra={"dev_only": True})
 
             except Exception as e:
                 logger.warning(f"Failed to generate preview for {file.filename}: {e}")
                 name_pairs.append((file.filename, file.filename))
 
-            # Map new name → FileItem only when name changed
-            for old_name, new_name in name_pairs:
-                if old_name != new_name:
-                    file_item = self.preview_map.get(old_name)
-                    if file_item:
-                        self.preview_map[new_name] = file_item
-                        logger.debug(f"[Preview] preview_map updated: {old_name} -> {new_name}")
+        # Map new names → FileItem only when name changed (do this once after the loop)
+        for old_name, new_name in name_pairs:
+            if old_name != new_name:
+                file_item = self.preview_map.get(old_name)
+                if file_item:
+                    self.preview_map[new_name] = file_item
 
-            self.update_preview_tables_from_pairs(name_pairs)
+        # Update preview tables only once after all processing
+        self.update_preview_tables_from_pairs(name_pairs)
 
-            # Enable rename button if any name has changed
-            valid_pairs = [p for p in name_pairs if p[0] != p[1]]
-            self.rename_button.setEnabled(bool(valid_pairs))
-            tooltip_msg = f"{len(valid_pairs)} files will be renamed." if valid_pairs else "No changes to apply"
-            self.rename_button.setToolTip(tooltip_msg)
-            logger.debug(f"[PreviewMap] Keys: {list(self.preview_map.keys())}", extra={"dev_only": True})
+        # Enable rename button if any name has changed
+        valid_pairs = [p for p in name_pairs if p[0] != p[1]]
+        self.rename_button.setEnabled(bool(valid_pairs))
+        tooltip_msg = f"{len(valid_pairs)} files will be renamed." if valid_pairs else "No changes to apply"
+        self.rename_button.setToolTip(tooltip_msg)
 
-            elapsed = timer.elapsed()
-            logger.debug(f"[Performance] generate_preview_names took {elapsed} ms")
+        elapsed = timer.elapsed()
+        logger.debug(f"[Performance] generate_preview_names took {elapsed} ms", extra={"dev_only": True})
 
     def compute_max_filename_width(self, file_list: list[FileItem]) -> int:
         """
@@ -1779,7 +1773,7 @@ class MainWindow(QMainWindow):
             selected_rows (list[int]): The indices of selected rows (from custom selection).
         """
         if not selected_rows:
-            logger.debug("[Sync] No selection - clearing preview")
+            logger.debug("[Sync] No selection - clearing preview", extra={"dev_only": True})
             # Clear all checked states
             for file in self.file_model.files:
                 file.checked = False
@@ -1788,7 +1782,7 @@ class MainWindow(QMainWindow):
             self.metadata_tree_view.clear_view()
             return
 
-        logger.debug(f"[Sync] update_preview_from_selection: {selected_rows}")
+        logger.debug(f"[Sync] update_preview_from_selection: {selected_rows}", extra={"dev_only": True})
         timer = QElapsedTimer()
         timer.start()
 
@@ -1798,17 +1792,23 @@ class MainWindow(QMainWindow):
         self.update_files_label()
         self.request_preview_update()
 
-        # Show metadata for last selected file
+        # Show metadata for last selected file and update current file for context menus
         if selected_rows:
             last_row = selected_rows[-1]
             if 0 <= last_row < len(self.file_model.files):
                 file_item = self.file_model.files[last_row]
+
+                # Update current file for SpecifiedText modules context menu
+                self.rename_modules_area.set_current_file_for_modules(file_item)
+
                 metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
                 if isinstance(metadata, dict):
                     self.metadata_tree_view.display_metadata(metadata, context="update_preview_from_selection")
                 else:
                     self.metadata_tree_view.clear_view()
         else:
+            # Clear current file when no selection
+            self.rename_modules_area.set_current_file_for_modules(None)
             self.metadata_tree_view.clear_view()
 
         elapsed = timer.elapsed()
@@ -1930,7 +1930,7 @@ class MainWindow(QMainWindow):
             # If user pressed Shift (for extended) and has multiple files selected,
             # limit to only the file that was double-clicked to avoid mistakes
             if use_extended and len(selected_files) > 1:
-                    logger.debug(f"[ShiftFix] Qt range selection detected on Shift+DoubleClick — keeping only clicked file: {file.filename}")
+                    logger.debug(f"[ShiftFix] Qt range selection detected on Shift+DoubleClick — keeping only clicked file: {file.filename}", extra={"dev_only": True})
                     selected_files = [file]
 
             # Use the unified method
@@ -2363,7 +2363,7 @@ class MainWindow(QMainWindow):
             if context and context.selection_store:
                 # Connect selection changed signal to existing preview update
                 context.selection_store.selection_changed.connect(self.update_preview_from_selection)
-                logger.debug("[MainWindow] Connected SelectionStore signals")
+                logger.debug("[MainWindow] Connected SelectionStore signals", extra={"dev_only": True})
 
             logger.info("[MainWindow] SelectionStore mode enabled in FileTableView")
         except Exception as e:

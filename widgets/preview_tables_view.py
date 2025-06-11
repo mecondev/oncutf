@@ -229,7 +229,7 @@ class PreviewTablesView(QWidget):
             self.icon_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             self.icon_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-            logger.debug("[PreviewTablesView] Placeholders enabled - tables disabled")
+            logger.debug("[PreviewTablesView] Placeholders enabled - tables disabled", extra={"dev_only": True})
 
         else:
             # Hide placeholders
@@ -248,7 +248,7 @@ class PreviewTablesView(QWidget):
             # Update column widths for intelligent horizontal scrolling
             self._adjust_table_widths()
 
-            logger.debug("[PreviewTablesView] Placeholders disabled - tables enabled with intelligent scrolling")
+            logger.debug("[PreviewTablesView] Placeholders disabled - tables enabled with intelligent scrolling", extra={"dev_only": True})
 
     def _adjust_table_widths(self):
         """Intelligently adjust preview table column widths based on content length."""

@@ -132,7 +132,7 @@ class RenameModulesArea(QWidget):
 
     def _on_module_updated(self):
         """Handle module updates with debouncing to prevent duplicates."""
-        logger.debug("[RenameModulesArea] Module updated, restarting timer")
+        logger.debug("[RenameModulesArea] Module updated, restarting timer", extra={"dev_only": True})
         self._update_timer.stop()
         self._update_timer.start()
 
@@ -145,11 +145,11 @@ class RenameModulesArea(QWidget):
         if context:
             # ApplicationContext available - create module without parent_window
             module = RenameModuleWidget(parent=self)
-            logger.debug("[RenameModulesArea] Created RenameModuleWidget via ApplicationContext")
+            logger.debug("[RenameModulesArea] Created RenameModuleWidget via ApplicationContext", extra={"dev_only": True})
         else:
             # Fallback to legacy approach with parent_window
             module = RenameModuleWidget(parent=self, parent_window=self.parent_window)
-            logger.debug("[RenameModulesArea] Created RenameModuleWidget via parent_window fallback")
+            logger.debug("[RenameModulesArea] Created RenameModuleWidget via parent_window fallback", extra={"dev_only": True})
 
         module.remove_requested.connect(lambda m=module: self.remove_module(m))
         module.updated.connect(lambda: self._on_module_updated())
@@ -169,6 +169,20 @@ class RenameModulesArea(QWidget):
         if self.module_widgets:
             self.remove_module(self.module_widgets[-1])
 
+    def set_current_file_for_modules(self, file_item) -> None:
+        """
+        Set the current file for all SpecifiedText modules.
+
+        Args:
+            file_item: The FileItem object representing the currently selected file
+        """
+        for module_widget in self.module_widgets:
+            if hasattr(module_widget, 'current_module_widget') and module_widget.current_module_widget:
+                # Check if this is a SpecifiedTextModule
+                module_instance = module_widget.current_module_widget
+                if hasattr(module_instance, 'set_current_file'):
+                    module_instance.set_current_file(file_item)
+
     def get_all_data(self) -> dict:
         """
         Collects data from all modules and final transform.
@@ -183,7 +197,7 @@ class RenameModulesArea(QWidget):
         Returns all current rename module widget instances.
         Useful for checking is_effective() per module.
         """
-        logger.debug("[Preview] Modules: %s", self.module_widgets)
-        logger.debug("[Preview] Effective check: %s", [m.is_effective() for m in self.module_widgets])
+        logger.debug("[Preview] Modules: %s", self.module_widgets, extra={"dev_only": True})
+        logger.debug("[Preview] Effective check: %s", [m.is_effective() for m in self.module_widgets], extra={"dev_only": True})
 
         return self.module_widgets

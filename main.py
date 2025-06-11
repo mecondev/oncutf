@@ -53,7 +53,7 @@ def main() -> None:
     app.setAttribute(Qt.AA_UseHighDpiPixmaps) # type: ignore[attr-defined]
 
     # Load Inter fonts
-    logger.info("Initializing Inter fonts...")
+    logger.debug("Initializing Inter fonts...", extra={"dev_only": True})
     _get_inter_fonts()
 
     app.setStyleSheet(load_stylesheet())

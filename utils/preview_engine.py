@@ -40,58 +40,46 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
     """
     Applies the rename modules to the basename only. The extension (with the dot) is always appended at the end, unchanged.
     """
-    new_name_parts = []
     original_base_name, ext = os.path.splitext(file_item.filename)
-    logger.debug(f"[apply_rename_modules] Start: original filename='{file_item.filename}', base='{original_base_name}', ext='{ext}'")
-    # All modules operate only on the basename. The extension is not affected by any module.
+    logger.debug(f"[apply_rename_modules] Start: original filename='{file_item.filename}', base='{original_base_name}', ext='{ext}'", extra={"dev_only": True})
 
+    new_name_parts = []
     for i, data in enumerate(modules_data):
         module_type = data.get("type")
-        logger.debug(f"[apply_rename_modules] Module {i}: {module_type} | data={data}")
+        logger.debug(f"[apply_rename_modules] Module {i}: {module_type} | data={data}", extra={"dev_only": True})
 
-        if module_type == "noop":
-            continue
+        part = ""
 
-        module_cls = MODULE_TYPE_MAP.get(module_type)
-        if not module_cls:
-            logger.warning(f"Unknown module type: {module_type}")
-            continue
+        if module_type == "counter":
+            start = data.get("start", 1)
+            step = data.get("step", 1)
+            padding = data.get("padding", 1)
+            value = start + (index * step)
+            part = str(value).zfill(padding)
 
-        is_effective = True
-        if hasattr(module_cls, 'is_effective'):
-            is_effective = module_cls.is_effective(data)
-
-        # SpecifiedTextModule logic
-        if module_type == "specified_text":
-            text = data.get("text", "").strip()
+        elif module_type == "specified_text":
+            text = data.get("text", "")
             if not text:
-                if new_name_parts:
-                    continue
-                else:
-                    new_name_parts.append(original_base_name)
-                    logger.debug(f"[apply_rename_modules] SpecifiedText empty, using original base: {original_base_name}")
-                    continue
+                logger.debug(f"[apply_rename_modules] SpecifiedText empty, using original base: {original_base_name}", extra={"dev_only": True})
+                part = original_base_name
             else:
-                part = module_cls.apply_from_data(data, file_item, index, metadata_cache)
-                logger.debug(f"[apply_rename_modules] SpecifiedText part: '{part}' (from text='{text}')")
-                new_name_parts.append(part)
-                continue
+                part = SpecifiedTextModule.apply_from_data(data, file_item, index, metadata_cache)
+                logger.debug(f"[apply_rename_modules] SpecifiedText part: '{part}' (from text='{text}')", extra={"dev_only": True})
 
-        if module_type == "original_name" and not is_effective:
-            if not new_name_parts:
-                new_name_parts.append(original_base_name)
-                logger.debug(f"[apply_rename_modules] OriginalName fallback, using original base: {original_base_name}")
-            continue
+        elif module_type == "original_name":
+            part = original_base_name
+            if not part:
+                logger.debug(f"[apply_rename_modules] OriginalName fallback, using original base: {original_base_name}", extra={"dev_only": True})
+                part = "originalname"
 
-        if is_effective:
-            part = module_cls.apply_from_data(data, file_item, index, metadata_cache)
-            logger.debug(f"[apply_rename_modules] Module {module_type} part: '{part}'")
+        if part:
+            logger.debug(f"[apply_rename_modules] Module {module_type} part: '{part}'", extra={"dev_only": True})
             new_name_parts.append(part)
 
-    logger.debug(f"[apply_rename_modules] All parts before join: {new_name_parts}")
-    final_basename = ''.join(new_name_parts) if new_name_parts else ''
-    logger.debug(f"[apply_rename_modules] Final basename before extension: '{final_basename}'")
-    final_name = final_basename + ext
-    logger.debug(f"[apply_rename_modules] Final name with extension: '{final_name}'")
-    logger.debug(f"[apply_rename_modules] Final name: {file_item.filename} → {final_name}")
+    logger.debug(f"[apply_rename_modules] All parts before join: {new_name_parts}", extra={"dev_only": True})
+    final_basename = "_".join(new_name_parts)
+    logger.debug(f"[apply_rename_modules] Final basename before extension: '{final_basename}'", extra={"dev_only": True})
+    final_name = f"{final_basename}{ext}"
+    logger.debug(f"[apply_rename_modules] Final name with extension: '{final_name}'", extra={"dev_only": True})
+    logger.debug(f"[apply_rename_modules] Final name: {file_item.filename} → {final_name}", extra={"dev_only": True})
     return final_name

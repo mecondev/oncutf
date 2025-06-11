@@ -64,7 +64,7 @@ class InterFonts:
                             if families:
                                 self.loaded_fonts[font_key] = font_id
                                 self.font_families[font_key] = families[0]
-                                logger.info(f"Loaded {font_key}: {families[0]} from {font_path}")
+                                logger.debug(f"Loaded {font_key}: {families[0]} from {font_path}", extra={"dev_only": True})
                             else:
                                 logger.warning(f"No families found for {font_key}")
                         else:
@@ -76,7 +76,7 @@ class InterFonts:
 
         # Fallback: try QResource if filesystem loading failed
         if not self.loaded_fonts and not USE_EMBEDDED_FONTS:
-            logger.info("Trying QResource fallback...")
+            logger.debug("Trying QResource fallback...", extra={"dev_only": True})
             try:
                 import utils.fonts_rc
 
@@ -101,7 +101,7 @@ class InterFonts:
                                 if families:
                                     self.loaded_fonts[font_key] = font_id
                                     self.font_families[font_key] = families[0]
-                                    logger.info(f"Loaded {font_key}: {families[0]} from resources")
+                                    logger.debug(f"Loaded {font_key}: {families[0]} from resources", extra={"dev_only": True})
 
             except ImportError as e:
                 logger.error(f"Could not import fonts_rc: {e}")
@@ -112,7 +112,7 @@ class InterFonts:
         import os
         import tempfile
 
-        logger.info("Loading fonts from embedded QResource...")
+        logger.debug("Loading fonts from embedded QResource...", extra={"dev_only": True})
         try:
             import utils.fonts_rc
 
@@ -135,7 +135,7 @@ class InterFonts:
                         if families:
                             self.loaded_fonts[font_key] = font_id
                             self.font_families[font_key] = families[0]
-                            logger.info(f"Loaded {font_key}: {families[0]} from embedded resources")
+                            logger.debug(f"Loaded {font_key}: {families[0]} from embedded resources", extra={"dev_only": True})
                         else:
                             logger.warning(f"No families found for embedded {font_key}")
                     else:

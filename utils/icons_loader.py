@@ -45,7 +45,7 @@ def load_metadata_icons(base_dir: str = "resources/icons") -> dict[str, QPixmap]
         'modified': "info_modified.png",
     }
 
-    logger.debug("[IconLoader] Loading metadata icons")
+    logger.debug("[IconLoader] Loading metadata icons", extra={"dev_only": True})
 
     icon_map = {}
     for status, filename in icon_files.items():

@@ -795,11 +795,11 @@ class FileTableView(QTableView):
             selection_store.set_selected_rows(current_selection, emit_signal=False)
             if hasattr(self, 'anchor_row') and self.anchor_row is not None:
                 selection_store.set_anchor_row(self.anchor_row, emit_signal=False)
-            logger.debug("[FileTableView] SelectionStore mode enabled")
+            logger.debug("[FileTableView] SelectionStore mode enabled", extra={"dev_only": True})
         else:
             logger.warning("[FileTableView] Cannot enable SelectionStore mode - store not available")
 
     def disable_selection_store_mode(self):
         """Disable SelectionStore mode (enable legacy selection handling)."""
         self._legacy_selection_mode = True
-        logger.debug("[FileTableView] SelectionStore mode disabled (legacy mode)")
+        logger.debug("[FileTableView] SelectionStore mode disabled (legacy mode)", extra={"dev_only": True})
