@@ -197,11 +197,11 @@ QLineEdit {
     selection-color: #0d1321;
 }
 
-/* RenameModulesArea styling */
-QWidget[objectName="RenameModulesArea"] {
-    border: 2px solid #3a3a3a;  /* More visible border */
+/* RenameModulesArea scroll area styling */
+QWidget[objectName="RenameModulesArea"] QScrollArea {
+    border: 2px solid #333333;  /* Same color as separator */
     border-radius: 8px;
-    background-color: #212121;  /* Ensure consistent background */
+    background-color: #212121;
 }
 
 /* Separators between modules (using QFrame as separator) */
