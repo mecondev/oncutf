@@ -67,6 +67,7 @@ from config import (
     APP_NAME,
     APP_VERSION,
     DEFAULT_SKIP_METADATA,
+    EXTENDED_METADATA_SIZE_LIMIT_MB,
     FILE_TABLE_COLUMN_WIDTHS,
     LARGE_FOLDER_WARNING_THRESHOLD,
     LEFT_CENTER_RIGHT_SPLIT_RATIO,
@@ -566,16 +567,35 @@ class MainWindow(QMainWindow):
         """
         logger.info("[MainWindow] FORCE CLEANUP: Escape key pressed")
 
-        # Just use DragManager - it handles everything smartly now
         drag_manager = DragManager.get_instance()
 
-        # Only proceed if there's actually a drag active
-        if not drag_manager.is_drag_active():
-            logger.info("[MainWindow] FORCE CLEANUP: No active drag to clean")
+        # Check if there's any stuck cursor or drag state
+        has_override_cursor = QApplication.overrideCursor() is not None
+        has_active_drag = drag_manager.is_drag_active()
+
+        if not has_override_cursor and not has_active_drag:
+            logger.info("[MainWindow] FORCE CLEANUP: No cursors or drags to clean")
             return
 
-        drag_manager.force_cleanup()
-        self.set_status("Drag cancelled", color="blue", auto_reset=True, reset_delay=1000)
+        # Clean any stuck cursors first
+        cursor_count = 0
+        while QApplication.overrideCursor() and cursor_count < 5:
+            QApplication.restoreOverrideCursor()
+            cursor_count += 1
+
+        # Clean drag manager state if needed
+        if has_active_drag:
+            drag_manager.force_cleanup()
+
+        # Clean widget states
+        self._cleanup_widget_drag_states()
+
+        # Report what was cleaned
+        if cursor_count > 0 or has_active_drag:
+            self.set_status("Drag cancelled", color="blue", auto_reset=True, reset_delay=1000)
+            logger.info(f"[MainWindow] FORCE CLEANUP: Cleaned {cursor_count} cursors, drag_active={has_active_drag}")
+        else:
+            logger.info("[MainWindow] FORCE CLEANUP: Nothing to clean")
 
     def _cleanup_widget_drag_states(self) -> None:
         """Clean up internal drag states in all widgets (lightweight version)."""
@@ -1757,7 +1777,7 @@ class MainWindow(QMainWindow):
         # Clear scroll position memory when changing folders
         self.metadata_tree_view.clear_for_folder_change()
         self.file_model.set_files([])  # reset model with empty list
-        self.file_table_view.set_placeholder_visible(False)
+        self.file_table_view.set_placeholder_visible(True)  # Show placeholder when empty
         self.header.setEnabled(False) # disable header
         self.status_label.setText(message)
         self.update_files_label()

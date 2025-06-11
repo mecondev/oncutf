@@ -4,17 +4,15 @@ file_tree_view.py
 Author: Michael Economou
 Date: 2025-06-05
 
-Implements a custom tree view with modified drag & drop behavior
-to prevent drag-out to external applications while preserving
-internal drag & drop functionality. Also handles intelligent
-horizontal scrolling with viewport width optimization.
+Implements a custom tree view with clean custom drag implementation.
+No reliance on Qt built-in drag system - everything is manual and controlled.
 """
 
 import os
 from typing import Optional
 
-from PyQt5.QtCore import QEvent, QMimeData, QObject, QPoint, Qt, QTimer, QUrl, pyqtSignal
-from PyQt5.QtGui import QDrag, QKeyEvent, QMouseEvent
+from PyQt5.QtCore import QEvent, QPoint, Qt, QTimer, pyqtSignal
+from PyQt5.QtGui import QKeyEvent, QMouseEvent, QCursor
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -29,106 +27,13 @@ from utils.logger_helper import get_logger
 logger = get_logger(__name__)
 
 
-class DragCancelFilter(QObject):
-    """
-    Global event filter to forcefully cancel any lingering drag operations.
-    This is installed on QApplication to catch events like Escape key presses
-    and mouse clicks that should terminate drag operations.
-    """
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._active = False
-        self._cleanup_timer = QTimer(self)
-        self._cleanup_timer.setSingleShot(True)
-        self._cleanup_timer.timeout.connect(self._delayed_cleanup)
-
-    def activate(self):
-        """Activate this filter to start monitoring for drag termination events"""
-        self._active = True
-        logger.debug("[DragFilter] Activated", extra={"dev_only": True})
-
-    def deactivate(self):
-        """Deactivate this filter when drag has properly terminated"""
-        self._active = False
-        if self._cleanup_timer.isActive():
-            self._cleanup_timer.stop()
-        logger.debug("[DragFilter] Deactivated", extra={"dev_only": True})
-
-    def eventFilter(self, obj, event):
-        """Filter events to catch drag termination signals"""
-        if not self._active:
-            return False
-
-        event_type = event.type()
-
-        # Mouse press or release should terminate drag
-        if event_type in (QEvent.MouseButtonPress, QEvent.MouseButtonRelease):
-            logger.debug("[DragFilter] Caught mouse event, scheduling cleanup", extra={"dev_only": True})
-            # Schedule cleanup with reasonable delay to let events process
-            self._cleanup_timer.start(50)
-            return False  # Don't consume the event
-
-        # Escape key should terminate drag immediately
-        if event_type == QEvent.KeyPress:
-            key_event = event  # type: QKeyEvent
-            if key_event.key() == Qt.Key_Escape:
-                logger.debug("[DragFilter] Caught Escape key, immediate cleanup", extra={"dev_only": True})
-                self._cleanup_drag()
-                return True  # Consume the escape key event
-
-        # Window deactivation should also trigger cleanup
-        if event_type in (QEvent.WindowDeactivate, QEvent.ApplicationDeactivate):
-            logger.debug("[DragFilter] Window deactivated, scheduling cleanup", extra={"dev_only": True})
-            self._cleanup_timer.start(100)
-
-        return False  # Don't consume other events
-
-    def _cleanup_drag(self):
-        """Force cleanup all drag operations."""
-        # Use DragManager for centralized cleanup
-        drag_manager = DragManager.get_instance()
-        if drag_manager.is_drag_active():
-            logger.debug("[DragCancel] Forcing drag cleanup via DragManager")
-            drag_manager.force_cleanup()
-
-        # Additional cleanup
-        cursor_count = 0
-        while QApplication.overrideCursor() and cursor_count < 10:
-            QApplication.restoreOverrideCursor()
-            cursor_count += 1
-
-        # Update all widgets
-        app = QApplication.instance()
-        if app:
-            # Process pending events first
-            app.processEvents()
-
-            # Update visible widgets
-            for widget in app.topLevelWidgets():
-                if widget.isVisible():
-                    widget.update()
-                    if hasattr(widget, 'viewport'):
-                        widget.viewport().update()
-
-    def _delayed_cleanup(self):
-        """Delayed cleanup to avoid interfering with active operations"""
-        if self._active:
-            self._cleanup_drag()
-
-
-# Create a single global instance
-_drag_cancel_filter = DragCancelFilter()
-
-
 class FileTreeView(QTreeView):
     """
-    Custom tree view that prevents drag-out to external applications
-    while preserving internal drag & drop functionality.
+    Custom tree view with clean custom drag & drop implementation.
 
     Features:
-    - Intelligent horizontal scrolling (fills viewport when content is small,
-      shows scrollbar when content is large)
+    - Manual drag control (no Qt built-in drag system)
+    - Intelligent horizontal scrolling
     - Proper drag & drop handling for internal use only
     - Automatic header configuration for optimal display
     - Multi-selection support with Ctrl+Click and Shift+Click
@@ -142,11 +47,10 @@ class FileTreeView(QTreeView):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        # Configure drag & drop
-        self.setDragEnabled(True)
-        self.setAcceptDrops(True)
-        self.setDragDropMode(QAbstractItemView.InternalMove)
-        self.setDropIndicatorShown(True)
+        # DISABLE all built-in drag functionality
+        self.setDragEnabled(False)
+        self.setAcceptDrops(True)  # We still need to accept drops
+        self.setDragDropMode(QAbstractItemView.NoDragDrop)  # No built-in drag
 
         # Configure scrollbars for optimal horizontal scrolling
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
@@ -166,17 +70,12 @@ class FileTreeView(QTreeView):
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
 
-        # Initialize drag state
-        self._drag_start_position: Optional[QPoint] = None
-        self._dragging = False
-        self._active_drag = None  # Store active QDrag object for cleanup
+        # Initialize custom drag state
+        self._drag_start_pos: Optional[QPoint] = None
+        self._is_dragging = False
+        self._drag_path = None
 
-        # Install global drag cancel filter
-        app = QApplication.instance()
-        if app:
-            app.installEventFilter(_drag_cancel_filter)
-
-        logger.debug("[FileTreeView] Initialized with intelligent scrolling", extra={"dev_only": True})
+        logger.debug("[FileTreeView] Initialized with custom drag system")
 
     def selectionChanged(self, selected, deselected):
         """Override to emit custom signal with selected paths"""
@@ -196,221 +95,212 @@ class FileTreeView(QTreeView):
     def setModel(self, model):
         """Override to configure header when model is set"""
         super().setModel(model)
+        self._configure_header()
         logger.debug(f"[FileTreeView] Model set: {type(model).__name__ if model else 'None'}", extra={"dev_only": True})
 
-        # Configure header and trigger initial adjustment when model is set
-        if model:
-            self._configure_header()
-            if hasattr(model, 'rowsInserted'):
-                model.rowsInserted.connect(self._on_model_changed)
-            QTimer.singleShot(50, self._adjust_column_width)
-
     def resizeEvent(self, event):
-        """Override to handle intelligent column width adjustment on resize"""
+        """Handle resize to adjust column width for optimal horizontal scrolling"""
         super().resizeEvent(event)
-        # Delay adjustment to ensure layout is complete
-        QTimer.singleShot(10, self._adjust_column_width)
+        self._adjust_column_width()
 
     def _configure_header(self):
-        """Configure header settings for optimal horizontal scrolling behavior"""
+        """Configure header for optimal display"""
         header = self.header()
-        if not header:
-            return False
+        if header:
+            header.setStretchLastSection(False)
+            header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
 
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        header.setMinimumSectionSize(100)
-        header.setStretchLastSection(False)
-        header.setMaximumSectionSize(16777215)  # Max value for unlimited width
+            # Hide all columns except the first (name)
+            for col in range(1, self.model().columnCount() if self.model() else 4):
+                self.setColumnHidden(col, True)
 
-        logger.debug("[FileTreeView] Header configured for intelligent scrolling", extra={"dev_only": True})
-        return True
+            logger.debug("[FileTreeView] Header configured for single column display", extra={"dev_only": True})
 
     def _adjust_column_width(self):
-        """Intelligently adjust column width: fill viewport when content is small, allow scrolling when large"""
+        """Adjust column width for optimal horizontal scrolling"""
         if not self.model():
+            return
+
+        header = self.header()
+        if not header:
             return
 
         viewport_width = self.viewport().width()
-        if viewport_width <= 50:  # Skip if too small
-            return
+        content_width = self.sizeHintForColumn(0)
 
-        header = self.header()
-        if not header:
-            return
-
-        # Get natural content width
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        natural_width = self.columnWidth(0)
-
-        # Decide: expand to fill viewport or keep natural width for scrolling
-        if natural_width < viewport_width:
-            # Expand to fill viewport (prevents gaps in alternating colors)
-            target_width = viewport_width - 2  # Small margin (reduced from 5px to 2px for more content space)
-            header.setSectionResizeMode(0, QHeaderView.Fixed)
-            self.setColumnWidth(0, target_width)
-            logger.debug(f"[FileTreeView] Expanded: {natural_width}px → {target_width}px", extra={"dev_only": True})
-        else:
-            # Keep natural width (allows horizontal scrolling)
-            header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-            logger.debug(f"[FileTreeView] Natural width: {natural_width}px (viewport: {viewport_width}px)", extra={"dev_only": True})
+        if content_width > 0:
+            if content_width <= viewport_width:
+                header.setSectionResizeMode(0, QHeaderView.Stretch)
+                self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+                logger.debug("[FileTreeView] Content fits viewport - stretching column", extra={"dev_only": True})
+            else:
+                header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+                self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+                logger.debug(f"[FileTreeView] Content exceeds viewport ({content_width} > {viewport_width}) - enabling scrollbar", extra={"dev_only": True})
 
     def _on_model_changed(self):
-        """Handle model content changes"""
-        if self.model():
-            self._adjust_column_width()
-
-    # =====================================
-    # Multi-Selection Helper Methods
-    # =====================================
+        """Called when model data changes to update column width"""
+        QTimer.singleShot(10, self._adjust_column_width)
 
     def get_selected_paths(self) -> list:
         """Get list of selected file/folder paths"""
-        selected_paths = []
+        paths = []
         for index in self.selectedIndexes():
             if self.model() and hasattr(self.model(), 'filePath'):
                 path = self.model().filePath(index)
-                if path and path not in selected_paths:
-                    selected_paths.append(path)
-        return selected_paths
+                if path:
+                    paths.append(path)
+        return paths
 
     def select_paths(self, paths: list, clear_existing: bool = True):
-        """Select specific paths in the tree view"""
-        if not self.model() or not hasattr(self.model(), 'filePath'):
+        """Select items by their file paths"""
+        if not self.model() or not hasattr(self.model(), 'index'):
+            return
+
+        selection_model = self.selectionModel()
+        if not selection_model:
             return
 
         if clear_existing:
-            self.clearSelection()
+            selection_model.clearSelection()
 
-        selection_model = self.selectionModel()
-        if not selection_model:
-            return
-
-        # Find and select the paths
         for path in paths:
-            for i in range(self.model().rowCount()):
-                index = self.model().index(i, 0)
-                if self.model().filePath(index) == path:
-                    selection_model.select(index, selection_model.Select)
-                    break
+            index = self.model().index(path)
+            if index.isValid():
+                selection_model.select(index, selection_model.Select | selection_model.Rows)
 
     def select_range(self, from_index, to_index):
-        """Select a range of items from one index to another"""
-        if not self.model():
-            return
-
+        """Select a range of items (for Shift+Click behavior)"""
         selection_model = self.selectionModel()
         if not selection_model:
             return
 
-        # Ensure proper order
-        start_row = min(from_index.row(), to_index.row())
-        end_row = max(from_index.row(), to_index.row())
-
-        # Select the range
-        for row in range(start_row, end_row + 1):
-            index = self.model().index(row, 0, from_index.parent())
-            if index.isValid():
-                selection_model.select(index, selection_model.Select)
+        # Create selection from range
+        from PyQt5.QtCore import QItemSelection
+        selection = QItemSelection(from_index, to_index)
+        selection_model.select(selection, selection_model.Select | selection_model.Rows)
 
     # =====================================
-    # Drag & Drop Implementation
+    # CUSTOM DRAG IMPLEMENTATION
     # =====================================
 
     def mousePressEvent(self, event):
-        """Store initial position for drag detection and handle multi-selection"""
+        """Handle mouse press for custom drag detection"""
         if event.button() == Qt.LeftButton:
-            self._drag_start_position = event.pos()
-
-            # Handle multi-selection with modifiers
-            index = self.indexAt(event.pos())
-            if index.isValid():
-                modifiers = event.modifiers()
-                selection_model = self.selectionModel()
-
-                if modifiers & Qt.ControlModifier:
-                    # Ctrl+Click: Toggle selection of this item
-                    if selection_model.isSelected(index):
-                        selection_model.select(index, selection_model.Deselect)
-                    else:
-                        selection_model.select(index, selection_model.Select)
-                    logger.debug(f"[FileTreeView] Ctrl+Click selection toggle", extra={"dev_only": True})
-                    return  # Don't call super() to prevent default behavior
-
-                elif modifiers & Qt.ShiftModifier:
-                    # Shift+Click: Select range from last selected to this item
-                    current_selection = self.selectedIndexes()
-                    if current_selection:
-                        # Find the last selected item
-                        last_selected = current_selection[-1]
-                        # Clear current selection and select range
-                        self.clearSelection()
-                        self.select_range(last_selected, index)
-                        logger.debug(f"[FileTreeView] Shift+Click range selection", extra={"dev_only": True})
-                        return  # Don't call super() to prevent default behavior
+            self._drag_start_pos = event.pos()
+            self._is_dragging = False
+            self._drag_path = None
 
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        """Handle mouse move for internal drag & drop"""
-        if not (event.buttons() & Qt.LeftButton) or not self._drag_start_position:
-            return super().mouseMoveEvent(event)
-
-        # Check if moved enough to start drag
-        if (event.pos() - self._drag_start_position).manhattanLength() < QApplication.startDragDistance():
-            return super().mouseMoveEvent(event)
-
-        # Prevent multiple drag events
-        if self._dragging:
+        """Handle mouse move for custom drag start"""
+        # Only proceed if left button is pressed and we have a start position
+        if not (event.buttons() & Qt.LeftButton) or not self._drag_start_pos:
+            super().mouseMoveEvent(event)
             return
 
-        # Start internal drag
-        self._dragging = True
-        self._start_internal_drag(event.pos())
-        self._reset_drag_state()
+        # Check if we've moved enough to start drag
+        distance = (event.pos() - self._drag_start_pos).manhattanLength()
+        if distance < QApplication.startDragDistance():
+            super().mouseMoveEvent(event)
+            return
 
+        # Already dragging? Don't start another
+        if self._is_dragging:
+            return
+
+        # Start our custom drag
+        self._start_custom_drag()
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        """Ensure drag state is properly reset on mouse release"""
-        self._reset_drag_state()
-
-        # Force drag manager cleanup if active
-        drag_manager = DragManager.get_instance()
-        if drag_manager.is_drag_active():
-            drag_manager.end_drag("file_tree_mouse_release")
-
-        self.viewport().update()
+        """Handle mouse release to end drag"""
+        self._end_custom_drag()
         super().mouseReleaseEvent(event)
-        QApplication.processEvents()
 
-        # Force cleanup with delay and additional cleanup
-        QTimer.singleShot(100, self._send_fake_release)
-        QTimer.singleShot(200, self._final_emergency_cleanup)
+    def _start_custom_drag(self):
+        """Start our custom drag operation"""
+        if not self._drag_start_pos:
+            return
 
-    def _start_internal_drag(self, position):
-        """Start internal drag operation for folders/files"""
-        index = self.indexAt(position)
+        # Get the item under the mouse
+        index = self.indexAt(self._drag_start_pos)
         if not index.isValid():
-            index = self.currentIndex()
-            if not index.isValid():
-                return
+            return
 
-        # Get file path
+        # Get the path
         model = self.model()
-        if not hasattr(model, 'filePath'):
-            logger.warning("Model does not support filePath method")
+        if not model or not hasattr(model, 'filePath'):
             return
 
         path = model.filePath(index)
-        if not path:
+        if not path or not self._is_valid_drag_target(path):
             return
 
-        # Validate file type for drag
-        if not self._is_valid_drag_target(path):
+        # Set drag state
+        self._is_dragging = True
+        self._drag_path = path
+
+        # Notify DragManager
+        drag_manager = DragManager.get_instance()
+        drag_manager.start_drag("file_tree")
+
+        # Set visual cursor
+        QApplication.setOverrideCursor(QCursor(Qt.ClosedHandCursor))
+
+        logger.debug(f"[FileTreeView] Custom drag started: {path}")
+
+    def _end_custom_drag(self):
+        """End our custom drag operation"""
+        if not self._is_dragging:
             return
 
-        # Perform drag operation
-        self._execute_drag(path)
+        # Check if we dropped on a valid target
+        widget_under_cursor = QApplication.widgetAt(QCursor.pos())
+        logger.debug(f"[FileTreeView] Widget under cursor: {widget_under_cursor}")
+
+        # Check if dropped on file table
+        if widget_under_cursor:
+            # Look for FileTableView in parent hierarchy
+            parent = widget_under_cursor
+            while parent:
+                logger.debug(f"[FileTreeView] Checking parent: {parent.__class__.__name__}")
+                if parent.__class__.__name__ == 'FileTableView':
+                    logger.debug(f"[FileTreeView] Found FileTableView: {parent}")
+                    self._handle_drop_on_table()
+                    break
+                # Also check viewport of FileTableView
+                if hasattr(parent, 'parent') and parent.parent() and parent.parent().__class__.__name__ == 'FileTableView':
+                    logger.debug(f"[FileTreeView] Found FileTableView via viewport: {parent.parent()}")
+                    self._handle_drop_on_table()
+                    break
+                parent = parent.parent()
+
+        # Clean up drag state
+        self._is_dragging = False
+        path = self._drag_path
+        self._drag_path = None
+        self._drag_start_pos = None
+
+        # Restore cursor
+        QApplication.restoreOverrideCursor()
+
+        # Notify DragManager
+        drag_manager = DragManager.get_instance()
+        drag_manager.end_drag("file_tree")
+
+        logger.debug(f"[FileTreeView] Custom drag ended: {path}")
+
+    def _handle_drop_on_table(self):
+        """Handle drop on file table"""
+        if not self._drag_path:
+            return
+
+        # Emit the drop signal with modifiers
+        modifiers = QApplication.keyboardModifiers()
+        self.folder_dropped.emit([self._drag_path], modifiers)
+        logger.debug(f"[FileTreeView] Dropped on table: {self._drag_path}")
 
     def _is_valid_drag_target(self, path: str) -> bool:
         """Check if path is valid for dragging"""
@@ -428,182 +318,49 @@ class FileTreeView(QTreeView):
 
         return True
 
-    def _execute_drag(self, path: str):
-        """Execute the drag operation with proper cleanup"""
-        # Start drag operation with DragManager
-        drag_manager = DragManager.get_instance()
-        drag_manager.start_drag("file_tree")
-
-        _drag_cancel_filter.activate()
-
-        # Create drag with MIME data
-        drag = QDrag(self)
-        mimeData = QMimeData()
-        mimeData.setData("application/x-oncutf-internal", path.encode())
-        mimeData.setText(path)
-        mimeData.setUrls([QUrl.fromLocalFile(path)])
-        drag.setMimeData(mimeData)
-
-        self._dragging = False  # Reset before execution
-        self._active_drag = drag  # Store reference
-
-        try:
-            # Execute drag with timeout protection
-            result = drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
-            logger.debug(f"[FileTree] Drag completed with result: {result}", extra={"dev_only": True})
-        except Exception as e:
-            logger.error(f"Drag operation failed: {e}")
-            result = Qt.IgnoreAction
-        finally:
-            # Immediate cleanup
-            self._active_drag = None
-            self._dragging = False
-
-            # End drag operation with DragManager
-            drag_manager.end_drag("file_tree")
-
-            # Deactivate filter
-            _drag_cancel_filter.deactivate()
-
-            # Force cursor restoration
-            while QApplication.overrideCursor():
-                QApplication.restoreOverrideCursor()
-
-            # Update UI immediately
-            self.viewport().update()
-            QApplication.processEvents()
-
-        # Schedule additional cleanup with reasonable delay
-        QTimer.singleShot(100, self._aggressive_post_drag_cleanup)
-
-    def _aggressive_post_drag_cleanup(self):
-        """Aggressive post-drag cleanup to prevent ghost effects"""
-        # Force DragManager cleanup
-        drag_manager = DragManager.get_instance()
-        if drag_manager.is_drag_active():
-            logger.debug("[FileTree] Forcing DragManager cleanup in post-drag", extra={"dev_only": True})
-            drag_manager.force_cleanup()
-
-        # Reset all drag state
-        self._reset_drag_state()
-
-        # Force cursor cleanup again
-        while QApplication.overrideCursor():
-            QApplication.restoreOverrideCursor()
-
-        # Deactivate filter if still active
-        if _drag_cancel_filter._active:
-            _drag_cancel_filter.deactivate()
-
-        # Force UI update
-        self.viewport().update()
-        self.update()
-
-        # Process events to clear any pending drag events
-        QApplication.processEvents()
-
-        # Send fake mouse release to self
-        fake_event = QMouseEvent(
-            QEvent.MouseButtonRelease,
-            QPoint(0, 0),
-            Qt.LeftButton,
-            Qt.NoButton,
-            Qt.NoModifier
-        )
-        QApplication.postEvent(self.viewport(), fake_event)
-
-    def _final_drag_cleanup(self):
-        """Complete cleanup of drag operation"""
-        self._reset_drag_state()
-
-        while QApplication.overrideCursor():
-            QApplication.restoreOverrideCursor()
-
-        _drag_cancel_filter.deactivate()
-        self.viewport().update()
-        QApplication.processEvents()
-
-        # Schedule more aggressive cleanup
-        QTimer.singleShot(50, self._aggressive_post_drag_cleanup)
-
-    def _reset_drag_state(self):
-        """Reset internal drag state variables"""
-        self._dragging = False
-        self._drag_start_position = None
-        # Clean up active drag reference if exists (Qt auto-deletes the QDrag)
-        if hasattr(self, '_active_drag'):
-            self._active_drag = None
-
-    def _send_fake_release(self):
-        """Send fake mouse release event to clean up Qt drag session"""
-        fake_event = QMouseEvent(
-            QEvent.MouseButtonRelease,
-            QPoint(-1, -1),
-            Qt.LeftButton,
-            Qt.NoButton,
-            Qt.NoModifier
-        )
-        QApplication.postEvent(self, fake_event)
-
-    def _final_emergency_cleanup(self):
-        """Perform final emergency cleanup"""
-        self._reset_drag_state()
-        self.viewport().update()
-        QApplication.processEvents()
-
     # =====================================
-    # Drop Events (Rejected)
+    # DROP HANDLING (unchanged)
     # =====================================
 
     def dragEnterEvent(self, event):
-        """Reject all drag enter events - no drops allowed"""
+        """Accept internal drops only"""
         event.ignore()
 
     def dragMoveEvent(self, event):
-        """Reject all drag move events - no drops allowed"""
+        """Handle drag move"""
         event.ignore()
 
     def dropEvent(self, event):
-        """Reject all drop events - no drops allowed"""
+        """Handle drop events"""
         event.ignore()
 
     def dragLeaveEvent(self, event):
-        """Handle drag leave with cleanup"""
-        logger.debug("[DragDrop] dragLeaveEvent, forcing cleanup", extra={"dev_only": True})
-        self._final_drag_cleanup()
+        """Handle drag leave"""
         event.ignore()
 
     # =====================================
-    # Keyboard & External Events
+    # KEY HANDLING
     # =====================================
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        """Handle key press events - Enter/Return triggers folder selection"""
+        """Handle Return/Enter key to emit folder_selected signal"""
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
-            logger.debug("[TreeView] Enter/Return pressed, triggering folder_selected", extra={"dev_only": True})
             self.folder_selected.emit()
         else:
             super().keyPressEvent(event)
 
+    # =====================================
+    # SPLITTER INTEGRATION (unchanged)
+    # =====================================
+
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
-        """Handle horizontal splitter movement (called from MainWindow)"""
-        self._adjust_column_width()
-        logger.debug("[FileTreeView] Splitter moved - adjusting column width", extra={"dev_only": True})
+        """Handle horizontal splitter movement to adjust column width"""
+        QTimer.singleShot(50, self._adjust_column_width)
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
-        """Handle vertical splitter movement (for debugging)"""
-        logger.debug(f"[FileTreeView] Vertical splitter moved - Pos: {pos}, Index: {index}", extra={"dev_only": True})
+        """Handle vertical splitter movement (placeholder for future use)"""
+        pass
 
     def scrollTo(self, index, hint=None) -> None:
-        """
-        Override scrollTo to prevent automatic scrolling when selections change.
-        This prevents the tree from moving when selecting folders.
-        """
-        # Allow minimal scrolling only if the selected item is completely out of view
-        viewport_rect = self.viewport().rect()
-        item_rect = self.visualRect(index)
-
-        # Only scroll if item is completely outside the viewport
-        if not viewport_rect.intersects(item_rect):
-            super().scrollTo(index, hint)
-        # Otherwise, do nothing - prevent automatic centering
+        """Override to ensure optimal scrolling behavior"""
+        super().scrollTo(index, hint or QAbstractItemView.EnsureVisible)
