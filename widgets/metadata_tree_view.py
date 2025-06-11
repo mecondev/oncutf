@@ -289,7 +289,7 @@ class MetadataTreeView(QTreeView):
         return False
 
     def _configure_placeholder_mode(self, model: Any) -> None:
-        """Configure view for placeholder mode."""
+        """Configure view for placeholder mode with anti-flickering."""
         # Protection against repeated calls to placeholder mode - but only if ALL conditions are already met
         if (getattr(self, '_is_placeholder_mode', False) and
             self.placeholder_label and self.placeholder_label.isVisible() and
@@ -301,79 +301,110 @@ class MetadataTreeView(QTreeView):
         self._current_file_path = None
         logger.debug("[MetadataTree] Entered placeholder mode - reset current file only", extra={"dev_only": True})
 
-        # Show placeholder icon instead of text
-        if self.placeholder_label and not self.placeholder_icon.isNull():
-            self.placeholder_label.raise_()
-            self.placeholder_label.show()
-        else:
-            logger.warning("[MetadataTree] Could not show placeholder icon - missing label or icon")
+        # Use batch updates to prevent flickering during placeholder setup
+        self.setUpdatesEnabled(False)
 
-        # Placeholder mode: Fixed columns, no selection, no hover, NO HORIZONTAL SCROLLBAR
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        try:
+            # Show placeholder icon instead of text
+            if self.placeholder_label and not self.placeholder_icon.isNull():
+                self.placeholder_label.raise_()
+                self.placeholder_label.show()
+            else:
+                logger.warning("[MetadataTree] Could not show placeholder icon - missing label or icon")
 
-        header = self.header()
-        header.setSectionResizeMode(0, QHeaderView.Fixed)
-        header.setSectionResizeMode(1, QHeaderView.Fixed)
-        header.resizeSection(0, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_KEY_WIDTH"])
-        header.resizeSection(1, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_VALUE_WIDTH"])
+            # Placeholder mode: Fixed columns, no selection, no hover, NO HORIZONTAL SCROLLBAR
+            self._update_scrollbar_policy_intelligently(Qt.ScrollBarAlwaysOff)
 
-        # Disable header interactions
-        header.setEnabled(False)
-        header.setSectionsClickable(False)
-        header.setSortIndicatorShown(False)
+            header = self.header()
+            header.setSectionResizeMode(0, QHeaderView.Fixed)
+            header.setSectionResizeMode(1, QHeaderView.Fixed)
+            header.resizeSection(0, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_KEY_WIDTH"])
+            header.resizeSection(1, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_VALUE_WIDTH"])
 
-        # Disable tree interactions but keep drag & drop working
-        self.setSelectionMode(QAbstractItemView.NoSelection)
-        self.setItemsExpandable(False)
-        self.setRootIsDecorated(False)
-        self.setContextMenuPolicy(Qt.NoContextMenu)  # Disable context menu
-        self.setMouseTracking(False)  # Disable hover effects
+            # Disable header interactions
+            header.setEnabled(False)
+            header.setSectionsClickable(False)
+            header.setSortIndicatorShown(False)
 
-        # Set placeholder property for styling
-        self.setProperty("placeholder", True)
+            # Disable tree interactions but keep drag & drop working
+            self.setSelectionMode(QAbstractItemView.NoSelection)
+            self.setItemsExpandable(False)
+            self.setRootIsDecorated(False)
+            self.setContextMenuPolicy(Qt.NoContextMenu)  # Disable context menu
+            self.setMouseTracking(False)  # Disable hover effects
+
+                        # Set placeholder property for styling
+            self.setProperty("placeholder", True)
+
+            logger.debug("[MetadataTree] Placeholder mode configured with anti-flickering", extra={"dev_only": True})
+
+        finally:
+            # Re-enable updates and force a single refresh
+            self.setUpdatesEnabled(True)
+            if hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
+                self.viewport().update()
 
     def _configure_normal_mode(self) -> None:
-        """Configure view for normal content mode."""
-        # Hide placeholder icon when showing normal content
-        if self.placeholder_label:
-            self.placeholder_label.hide()
+        """Configure view for normal content mode with anti-flickering."""
+        # Use batch updates to prevent flickering during normal mode setup
+        self.setUpdatesEnabled(False)
 
-        # Normal content mode: HORIZONTAL SCROLLBAR enabled but controlled
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        try:
+            # Hide placeholder icon when showing normal content
+            if self.placeholder_label:
+                self.placeholder_label.hide()
 
-        header = self.header()
+            # Normal content mode: HORIZONTAL SCROLLBAR enabled but controlled
+            self._update_scrollbar_policy_intelligently(Qt.ScrollBarAsNeeded)
 
-        # Re-enable header interactions
-        header.setEnabled(True)
-        header.setSectionsClickable(True)
-        header.setSortIndicatorShown(False)  # Keep sorting disabled
+            header = self.header()
 
-        # Key column: min 80px, initial 180px, max 800px
-        header.setSectionResizeMode(0, QHeaderView.Interactive)
-        header.setMinimumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"])
-        header.resizeSection(0, METADATA_TREE_COLUMN_WIDTHS["NORMAL_KEY_INITIAL_WIDTH"])
+            # Re-enable header interactions
+            header.setEnabled(True)
+            header.setSectionsClickable(True)
+            header.setSortIndicatorShown(False)  # Keep sorting disabled
 
-        # Value column: min 250px, initial 500px, allows wide content without stretching
-        header.setSectionResizeMode(1, QHeaderView.Interactive)
-        header.resizeSection(1, METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"])
+            # Key column: min 80px, initial 180px, max 800px
+            header.setSectionResizeMode(0, QHeaderView.Interactive)
+            header.setMinimumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"])
+            header.resizeSection(0, METADATA_TREE_COLUMN_WIDTHS["NORMAL_KEY_INITIAL_WIDTH"])
 
-        # Set specific min/max sizes per column
-        header.setMinimumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"])
-        header.setMaximumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MAX_WIDTH"])
+            # Value column: min 250px, initial 500px, allows wide content without stretching
+            header.setSectionResizeMode(1, QHeaderView.Interactive)
+            header.resizeSection(1, METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"])
 
-        # Re-enable tree interactions
-        self.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.setItemsExpandable(True)
-        self.setRootIsDecorated(False)
-        self.setContextMenuPolicy(Qt.CustomContextMenu)  # Re-enable context menu
-        self.setMouseTracking(True)  # Re-enable hover effects
+            # Set specific min/max sizes per column
+            header.setMinimumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"])
+            header.setMaximumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MAX_WIDTH"])
 
-        # Clear placeholder property
-        self.setProperty("placeholder", False)
-        self.setAttribute(Qt.WA_NoMousePropagation, False)
+            # Re-enable tree interactions
+            self.setSelectionMode(QAbstractItemView.SingleSelection)
+            self.setItemsExpandable(True)
+            self.setRootIsDecorated(False)
+            self.setContextMenuPolicy(Qt.CustomContextMenu)  # Re-enable context menu
+            self.setMouseTracking(True)  # Re-enable hover effects
 
-        # Force style update
-        self._force_style_update()
+            # Clear placeholder property
+            self.setProperty("placeholder", False)
+            self.setAttribute(Qt.WA_NoMousePropagation, False)
+
+                        # Force style update
+            self._force_style_update()
+
+            logger.debug("[MetadataTree] Normal mode configured with anti-flickering", extra={"dev_only": True})
+
+        finally:
+            # Re-enable updates and force a single refresh
+            self.setUpdatesEnabled(True)
+            if hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
+                self.viewport().update()
+
+    def _update_scrollbar_policy_intelligently(self, target_policy: int) -> None:
+        """Update scrollbar policy only if it differs from current to prevent unnecessary updates."""
+        current_policy = self.horizontalScrollBarPolicy()
+        if current_policy != target_policy:
+            self.setHorizontalScrollBarPolicy(target_policy)
+            logger.debug(f"[MetadataTree] Updated scrollbar policy: {current_policy} → {target_policy}", extra={"dev_only": True})
 
     def _make_placeholder_items_non_selectable(self, model: Any) -> None:
         """Make placeholder items non-selectable."""

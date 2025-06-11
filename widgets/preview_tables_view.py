@@ -207,7 +207,7 @@ class PreviewTablesView(QWidget):
             self.icon_table.verticalScrollBar().setValue
         )
 
-    def _set_placeholders_visible(self, visible: bool):
+    def _set_placeholders_visible(self, visible: bool, defer_width_adjustment: bool = False):
         """Show or hide preview table placeholders and configure table states accordingly."""
         if visible:
             # Show placeholders
@@ -239,16 +239,44 @@ class PreviewTablesView(QWidget):
             if hasattr(self, 'new_names_placeholder'):
                 self.new_names_placeholder.hide()
 
-            # Re-enable intelligent scrollbars and interactions
+            # Re-enable interactions first
+            for table in [self.old_names_table, self.new_names_table]:
+                table.setEnabled(True)  # Re-enable interactions
+
+            # Defer scrollbar policy changes to avoid flickering when content is about to be added
+            if not defer_width_adjustment:
+                # Re-enable intelligent scrollbars immediately
+                for table in [self.old_names_table, self.new_names_table]:
+                    table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+                    table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+                # Update column widths for intelligent horizontal scrolling
+                self._adjust_table_widths()
+
+            logger.debug(f"[PreviewTablesView] Placeholders disabled - tables enabled {'(deferred)' if defer_width_adjustment else '(immediate)'}", extra={"dev_only": True})
+
+    def _finalize_scrollbar_setup(self):
+        """Complete the scrollbar setup after content has been added to prevent flickering."""
+        # Temporarily disable updates to prevent flickering during multiple changes
+        for table in [self.old_names_table, self.new_names_table]:
+            table.setUpdatesEnabled(False)
+
+        try:
+            # Re-enable intelligent scrollbars
             for table in [self.old_names_table, self.new_names_table]:
                 table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
                 table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-                table.setEnabled(True)  # Re-enable interactions
 
             # Update column widths for intelligent horizontal scrolling
             self._adjust_table_widths()
 
-            logger.debug("[PreviewTablesView] Placeholders disabled - tables enabled with intelligent scrolling", extra={"dev_only": True})
+        finally:
+            # Re-enable updates and force a single refresh
+            for table in [self.old_names_table, self.new_names_table]:
+                table.setUpdatesEnabled(True)
+                table.viewport().update()
+
+        logger.debug("[PreviewTablesView] Scrollbar setup finalized", extra={"dev_only": True})
 
     def _adjust_table_widths(self):
         """Intelligently adjust preview table column widths based on content length."""
@@ -330,16 +358,9 @@ class PreviewTablesView(QWidget):
             self.status_updated.emit("No files selected.")
             return
 
-        # Hide placeholders when we have content
-        self._set_placeholders_visible(False)
-
-        # Calculate appropriate width for consistent column size
-        all_names = [name for pair in name_pairs for name in pair]
-        font_metrics = self.fontMetrics()
-        max_width = max((font_metrics.horizontalAdvance(name) for name in all_names), default=250)
-        adjusted_width = max(326, max_width) + 100
-        self.old_names_table.setColumnWidth(0, adjusted_width)
-        self.new_names_table.setColumnWidth(0, adjusted_width)
+        # Hide placeholders when we have content (defer scrollbar setup to avoid flickering)
+        self._set_placeholders_visible(False, defer_width_adjustment=True)
+        logger.debug(f"[PreviewTablesView] Processing {len(name_pairs)} name pairs - scrollbar setup deferred", extra={"dev_only": True})
 
         # Precompute duplicates
         seen, duplicates = set(), set()
@@ -405,8 +426,8 @@ class PreviewTablesView(QWidget):
         )
         self.status_updated.emit(status_msg)
 
-        # Apply intelligent column width adjustments after content is loaded
-        QTimer.singleShot(10, self._adjust_table_widths)
+        # Finalize scrollbar setup after all content is loaded to prevent flickering
+        QTimer.singleShot(15, self._finalize_scrollbar_setup)
 
     def clear_tables(self):
         """Clear all tables and show placeholders."""

@@ -306,16 +306,18 @@ class FileTableView(QTableView):
                 self._has_manual_preference = True
 
     def _update_scrollbar_visibility(self) -> None:
-        """Update scrollbar visibility based on table content."""
+        """Update scrollbar visibility based on table content with anti-flickering."""
         model = self.model()
         if not model:
             return
 
         is_empty = (model.rowCount() == 0)
+        current_policy = self.horizontalScrollBarPolicy()
 
-        if is_empty:
+        # Only change policy if different to prevent unnecessary updates
+        if is_empty and current_policy != Qt.ScrollBarAlwaysOff:
             self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        else:
+        elif not is_empty and current_policy != Qt.ScrollBarAsNeeded:
             self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
@@ -410,22 +412,30 @@ class FileTableView(QTableView):
             self.setContextMenuPolicy(Qt.NoContextMenu)
 
         else:
-            self.placeholder_label.hide()
+            # Use batch updates to prevent flickering when re-enabling content
+            self.setUpdatesEnabled(False)
 
-            # Re-enable scrollbar policy based on content
-            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            try:
+                self.placeholder_label.hide()
 
-            # Re-enable interactions when hiding placeholder
-            header = self.horizontalHeader()
-            if header:
-                header.setEnabled(True)
-                header.setSectionsClickable(True)
-                header.setSortIndicatorShown(True)
+                # Re-enable scrollbar policy based on content
+                self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+                logger.debug("[FileTableView] Placeholder hidden - content mode restored with anti-flickering", extra={"dev_only": True})
 
-            self.setSelectionMode(QAbstractItemView.ExtendedSelection)
-            self.setContextMenuPolicy(Qt.CustomContextMenu)
+                # Re-enable interactions when hiding placeholder
+                header = self.horizontalHeader()
+                if header:
+                    header.setEnabled(True)
+                    header.setSectionsClickable(True)
+                    header.setSortIndicatorShown(True)
 
-            self.viewport().update()
+                self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+                self.setContextMenuPolicy(Qt.CustomContextMenu)
+
+            finally:
+                # Re-enable updates and force a single refresh
+                self.setUpdatesEnabled(True)
+                self.viewport().update()
 
     def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
         """Handle selection logic with anchor and modifier support."""
