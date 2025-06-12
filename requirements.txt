@@ -7,3 +7,6 @@ PyQt5_sip==12.15.0
 pytest==8.3.5
 pytest-qt==4.4.0
 pytest-cov==5.0.0  
+
+# --- Mock support for testing ---
+pytest-mock==3.14.1

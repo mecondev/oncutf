@@ -1647,7 +1647,7 @@ class MainWindow(QMainWindow):
         """
         if not file_paths:
             if clear:
-                self.file_table_view.set_placeholder_visible(True)
+            self.file_table_view.set_placeholder_visible(True)
             return
 
         # Use FileLoader to get file items
