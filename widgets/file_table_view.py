@@ -1020,57 +1020,80 @@ class FileTableView(QTableView):
 
     def select_dropped_files(self, file_paths: Optional[list[str]] = None) -> None:
         """Select specific files that were just dropped/loaded in the table."""
-        logger.warning(f"[FileTableView] SELECT_DROPPED_FILES CALLED with {len(file_paths) if file_paths else 0} paths: {file_paths}")
+        logger.warning(f"[FileTableView] *** SELECT_DROPPED_FILES CALLED with {len(file_paths) if file_paths else 0} paths ***")
 
         model = self.model()
         if not model or not hasattr(model, 'files'):
-            logger.warning(f"[FileTableView] NO MODEL or model has no files attribute")
+            logger.warning(f"[FileTableView] *** NO MODEL or model has no files attribute ***")
             return
 
-        logger.warning(f"[FileTableView] Model OK, has {len(model.files)} files")
+        logger.warning(f"[FileTableView] *** MODEL OK, has {len(model.files)} files ***")
 
         if not file_paths:
             # Fallback: select all files if no specific paths provided
             row_count = len(model.files)
             if row_count == 0:
+                logger.warning(f"[FileTableView] *** NO FILES IN MODEL - returning early ***")
                 return
-            logger.debug(f"[FileTableView] Selecting all {row_count} files after drop (fallback)", extra={"dev_only": True})
+            logger.warning(f"[FileTableView] *** FALLBACK: Selecting all {row_count} files ***")
             self.select_rows_range(0, row_count - 1)
             return
 
         # Select specific files based on their paths
         rows_to_select = []
-        logger.warning(f"[FileTableView] Matching {len(file_paths)} paths against {len(model.files)} files")
+        logger.warning(f"[FileTableView] *** MATCHING {len(file_paths)} paths against {len(model.files)} files ***")
 
         for i, file_item in enumerate(model.files):
-            logger.warning(f"[FileTableView] File {i}: {file_item.full_path}")
             if file_item.full_path in file_paths:
-                logger.warning(f"[FileTableView] MATCH! Adding row {i}")
+                logger.warning(f"[FileTableView] *** MATCH found at row {i}: {file_item.full_path} ***")
                 rows_to_select.append(i)
 
-        logger.warning(f"[FileTableView] Found {len(rows_to_select)} matching files: {rows_to_select}")
+        logger.warning(f"[FileTableView] *** FOUND {len(rows_to_select)} matching files: {rows_to_select} ***")
 
         if not rows_to_select:
-            logger.warning(f"[FileTableView] NO MATCHING FILES FOUND - returning early")
+            logger.warning(f"[FileTableView] *** NO MATCHING FILES FOUND - returning early ***")
             return
 
-        logger.warning(f"[FileTableView] Selecting {len(rows_to_select)} specific dropped files")
+        logger.warning(f"[FileTableView] *** STARTING SELECTION PROCESS ***")
 
         # Clear existing selection first
+        logger.warning(f"[FileTableView] *** CLEARING EXISTING SELECTION ***")
         self.clearSelection()
 
-        # Select the specific rows
+        # Select the specific rows ALL AT ONCE using range selection
         selection_model = self.selectionModel()
         if not selection_model:
+            logger.warning(f"[FileTableView] *** NO SELECTION MODEL - returning early ***")
             return
 
+        logger.warning(f"[FileTableView] *** BLOCKING SIGNALS ***")
         self.blockSignals(True)
-        for row in rows_to_select:
-            if 0 <= row < len(model.files):
-                index = model.index(row, 0)
-                if index.isValid():
-                    selection_model.select(index, selection_model.Select | selection_model.Rows)
 
+        # Create a single selection for all rows
+        from PyQt5.QtCore import QItemSelection
+        full_selection = QItemSelection()
+        logger.warning(f"[FileTableView] *** CREATED EMPTY SELECTION OBJECT ***")
+
+        for row in rows_to_select:
+            logger.warning(f"[FileTableView] *** PROCESSING ROW {row} ***")
+            if 0 <= row < len(model.files):
+                left_index = model.index(row, 0)
+                right_index = model.index(row, model.columnCount() - 1)
+                logger.warning(f"[FileTableView] *** ROW {row}: left_valid={left_index.isValid()}, right_valid={right_index.isValid()} ***")
+                if left_index.isValid() and right_index.isValid():
+                    logger.warning(f"[FileTableView] *** CREATING ROW SELECTION FOR ROW {row} ***")
+                    row_selection = QItemSelection(left_index, right_index)
+                    full_selection.merge(row_selection, selection_model.Select)
+                    logger.warning(f"[FileTableView] *** MERGED ROW {row} INTO FULL SELECTION ***")
+
+        # Apply the entire selection at once
+        logger.warning(f"[FileTableView] *** SELECTION EMPTY? {full_selection.isEmpty()} ***")
+        if not full_selection.isEmpty():
+            logger.warning(f"[FileTableView] *** APPLYING FULL SELECTION ***")
+            selection_model.select(full_selection, selection_model.Select)
+            logger.warning(f"[FileTableView] *** SELECTION APPLIED SUCCESSFULLY ***")
+
+        logger.warning(f"[FileTableView] *** UNBLOCKING SIGNALS ***")
         self.blockSignals(False)
 
         # Update selection store
@@ -1080,6 +1103,10 @@ class FileTableView(QTableView):
         # Update UI
         if hasattr(self, 'viewport'):
             self.viewport().update()
+
+        # Final verification
+        final_selection = set(index.row() for index in self.selectionModel().selectedRows()) if self.selectionModel() else set()
+        logger.warning(f"[FileTableView] *** FINAL VERIFICATION: {len(final_selection)} rows selected: {final_selection} ***")
 
     def is_empty(self) -> bool:
         return not getattr(self.model(), "files", [])
