@@ -92,6 +92,7 @@ from utils.icons_loader import get_menu_icon, icons_loader, load_metadata_icons
 
 # Setup Logger
 from utils.logger_helper import get_logger
+from utils.cursor_helper import wait_cursor, emergency_cursor_cleanup, force_restore_cursor
 from utils.metadata_cache import MetadataCache
 from utils.metadata_loader import MetadataLoader
 from utils.preview_engine import apply_rename_modules
@@ -111,51 +112,6 @@ logger = get_logger(__name__)
 
 import contextlib
 
-
-import contextlib
-
-
-@contextlib.contextmanager
-def wait_cursor(restore_after=True):
-    """
-    Context manager that sets the cursor to wait and restores it after.
-    Logs the file, line number, and function from where it was called.
-    The logged path is shortened to start from 'oncutf/' for clarity.
-
-    Parameters:
-        restore_after: If True, the cursor will be restored after the context block.
-                       If False, the cursor will remain as wait cursor.
-    """
-    from PyQt5.QtCore import Qt
-    from PyQt5.QtWidgets import QApplication
-
-    QApplication.setOverrideCursor(Qt.WaitCursor) # type: ignore
-
-    # Get full stack and reverse it (top frame is last)
-    stack = traceback.extract_stack()
-    # Remove the last frame (inside wait_cursor itself)
-    trimmed_stack = stack[:-1]
-
-    # Find last frame inside our project path ("oncutf/")
-    caller_line = next((f for f in reversed(trimmed_stack) if "oncutf/" in f.filename), None)
-
-    if caller_line:
-        short_path = caller_line.filename[caller_line.filename.find("oncutf/"):]
-        logger.debug(
-            f"[Cursor] Wait cursor activated. Called from: {short_path}, "
-            f"line {caller_line.lineno}, in {caller_line.name}()"
-        )
-    else:
-        logger.debug("[Cursor] Wait cursor activated. Caller path not in oncutf/")
-
-    try:
-        yield
-    finally:
-        if restore_after:
-            QApplication.restoreOverrideCursor()
-            logger.debug("[Cursor] Wait cursor restored.")
-        else:
-            logger.debug("[Cursor] Wait cursor NOT restored (as requested).")
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
@@ -492,7 +448,7 @@ class MainWindow(QMainWindow):
         self.browse_folder_button.clicked.connect(self.handle_browse)
 
         # Connect folder_tree for drag & drop operations
-        self.folder_tree.folder_dropped.connect(self.load_files_from_dropped_items)
+        self.folder_tree.item_dropped.connect(self.load_single_item_from_drop)
         self.folder_tree.folder_selected.connect(self.handle_folder_select)
 
         # Connect splitter resize to adjust tree view column width
@@ -2404,6 +2360,102 @@ class MainWindow(QMainWindow):
 
         # After loading files + metadata
         self.show_metadata_status()
+
+    def load_single_item_from_drop(self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
+        """
+        Called when user drops a single file or folder from the tree onto file table view.
+        Handles the new 4-modifier logic:
+        - Normal: Replace + shallow
+        - Ctrl: Replace + recursive
+        - Shift: Merge + shallow
+        - Ctrl+Shift: Merge + recursive
+        """
+        if not path:
+            logger.info("[Drop] No path provided.")
+            return
+
+        # Decode modifier combination
+        is_ctrl = bool(modifiers & Qt.ControlModifier)
+        is_shift = bool(modifiers & Qt.ShiftModifier)
+
+        if is_ctrl and is_shift:
+            action_type = "Merge + Recursive"
+            merge_mode = True
+            recursive = True
+        elif is_ctrl:
+            action_type = "Replace + Recursive"
+            merge_mode = False
+            recursive = True
+        elif is_shift:
+            action_type = "Merge + Shallow"
+            merge_mode = True
+            recursive = False
+        else:
+            action_type = "Replace + Shallow"
+            merge_mode = False
+            recursive = False
+
+        logger.info(f"[Drop] Single item: {path} ({action_type})")
+
+        # Use wait cursor for all operations
+        with wait_cursor():
+            if os.path.isdir(path):
+                # Handle folder drop
+                self._handle_folder_drop(path, merge_mode, recursive)
+            else:
+                # Handle single file drop
+                self._handle_file_drop(path, merge_mode)
+
+        # Update UI after loading
+        self.file_table_view.viewport().update()
+        self.update_files_label()
+        self.show_metadata_status()
+
+    def _handle_folder_drop(self, folder_path: str, merge_mode: bool, recursive: bool) -> None:
+        """Handle folder drop with merge/replace and recursive options"""
+        logger.debug(f"[Drop] Handling folder: {folder_path} (merge={merge_mode}, recursive={recursive})")
+
+        if recursive:
+            # Get all files recursively
+            file_paths = []
+            for root, dirs, files in os.walk(folder_path):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    # Filter by allowed extensions
+                    _, ext = os.path.splitext(file_path)
+                    if ext.startswith('.'):
+                        ext = ext[1:].lower()
+                    if ext in ALLOWED_EXTENSIONS:
+                        file_paths.append(file_path)
+
+            logger.info(f"[Drop] Found {len(file_paths)} files recursively in {folder_path}")
+        else:
+            # Get files from folder only (shallow)
+            file_items = self.get_file_items_from_folder(folder_path)
+            file_paths = [item.full_path for item in file_items]  # Convert FileItem to paths
+
+            logger.info(f"[Drop] Found {len(file_paths)} files in {folder_path} (shallow)")
+
+        # Load files with merge/replace logic
+        self.load_files_from_paths(file_paths, clear=not merge_mode)
+
+        # Update folder tree selection if replace mode
+        if not merge_mode and hasattr(self.dir_model, "index"):
+            index = self.dir_model.index(folder_path)
+            self.folder_tree.setCurrentIndex(index)
+
+    def _handle_file_drop(self, file_path: str, merge_mode: bool) -> None:
+        """Handle single file drop with merge/replace options"""
+        logger.debug(f"[Drop] Handling file: {file_path} (merge={merge_mode})")
+
+        # Load single file with merge/replace logic
+        self.load_files_from_paths([file_path], clear=not merge_mode)
+
+        # Select the dropped file after loading
+        def select_dropped_file():
+            self.file_table_view.select_dropped_files([file_path])
+
+        QTimer.singleShot(50, select_dropped_file)
 
     def load_metadata_for_items(
         self,
