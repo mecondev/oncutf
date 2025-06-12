@@ -84,7 +84,6 @@ class FileTableView(QTableView):
         # Custom drag state tracking
         self._is_dragging = False
         self._drag_data = None  # Store selected file data for drag
-        self._drag_modifiers = Qt.NoModifier  # Store modifiers at drag start
 
         # Setup placeholder icon
         self.placeholder_label = QLabel(self.viewport())
@@ -510,8 +509,6 @@ class FileTableView(QTableView):
         # Store drag start position for drag detection
         if event.button() == Qt.LeftButton:
             self._drag_start_pos = event.pos()
-            # Store modifiers at press time to avoid selection conflicts
-            self._drag_modifiers = event.modifiers()
 
         # Handle right-click separately
         if event.button() == Qt.RightButton:
@@ -685,7 +682,9 @@ class FileTableView(QTableView):
         # Get widget under cursor
         widget_under_cursor = QApplication.widgetAt(QCursor.pos())
         if not widget_under_cursor:
-            update_drop_zone_state(DropZoneState.NEUTRAL)
+            # Cursor is outside application window - terminate drag
+            logger.debug("[FileTableView] Cursor outside application - terminating drag", extra={"dev_only": True})
+            self._end_custom_drag()
             return
 
         # Check if current position is a valid drop target
@@ -796,8 +795,8 @@ class FileTableView(QTableView):
         if not self._drag_data:
             return
 
-        # Use stored modifiers from drag start to avoid selection conflicts
-        modifiers = getattr(self, '_drag_modifiers', Qt.NoModifier)
+        # Use real-time modifiers at drop time (standard UX behavior)
+        modifiers = QApplication.keyboardModifiers()
 
         # Find metadata tree view to emit signal directly
         widget_under_cursor = QApplication.widgetAt(QCursor.pos())

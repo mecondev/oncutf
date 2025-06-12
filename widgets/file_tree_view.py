@@ -86,7 +86,6 @@ class FileTreeView(QTreeView):
         self._drag_start_pos: Optional[QPoint] = None
         self._is_dragging = False
         self._drag_path: Optional[str] = None
-        self._drag_modifiers = Qt.NoModifier  # Store modifiers at drag start
 
         logger.debug("[FileTreeView] Initialized with single-item drag system")
 
@@ -200,11 +199,6 @@ class FileTreeView(QTreeView):
             self._is_dragging = False
             self._drag_path = None
 
-            # Store modifiers at press time
-            self._drag_modifiers = event.modifiers()
-
-            logger.debug(f"[FileTreeView] mousePressEvent: modifiers = {self._drag_modifiers}", extra={"dev_only": True})
-
         # Call super() to handle normal selection
         super().mousePressEvent(event)
 
@@ -287,7 +281,7 @@ class FileTreeView(QTreeView):
         drag_type = visual_manager.get_drag_type_from_path(clicked_path)
         start_drag_visual(drag_type, clicked_path)
 
-        logger.debug(f"[FileTreeView] Custom drag started: {clicked_path} (modifiers: {self._drag_modifiers})", extra={"dev_only": True})
+        logger.debug(f"[FileTreeView] Custom drag started: {clicked_path}", extra={"dev_only": True})
 
     def _update_drag_feedback(self):
         """Update visual feedback based on current cursor position during drag"""
@@ -300,7 +294,9 @@ class FileTreeView(QTreeView):
         # Get widget under cursor
         widget_under_cursor = QApplication.widgetAt(QCursor.pos())
         if not widget_under_cursor:
-            update_drop_zone_state(DropZoneState.NEUTRAL)
+            # Cursor is outside application window - terminate drag
+            logger.debug("[FileTreeView] Cursor outside application - terminating drag", extra={"dev_only": True})
+            self._end_custom_drag()
             return
 
         # Check if current position is a valid drop target
@@ -422,8 +418,8 @@ class FileTreeView(QTreeView):
         if not self._drag_path:
             return
 
-        # Use stored modifiers from drag start
-        modifiers = getattr(self, '_drag_modifiers', Qt.NoModifier)
+        # Use real-time modifiers at drop time (standard UX behavior)
+        modifiers = QApplication.keyboardModifiers()
 
         # Emit signal with single path and modifiers
         self.item_dropped.emit(self._drag_path, modifiers)

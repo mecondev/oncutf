@@ -22,7 +22,7 @@ from typing import Optional, Dict, Any
 from enum import Enum
 
 from PyQt5.QtCore import Qt, QPoint
-from PyQt5.QtGui import QCursor, QPixmap, QPainter, QIcon
+from PyQt5.QtGui import QCursor, QPixmap, QPainter, QIcon, QColor
 from PyQt5.QtWidgets import QApplication, QWidget
 
 from utils.icons_loader import get_menu_icon
@@ -80,7 +80,16 @@ class DragVisualManager:
         self._icon_cache: Dict[str, QIcon] = {}
         self._cursor_cache: Dict[str, QCursor] = {}
 
+        # Clear cache on initialization to ensure fresh icons
+        self._clear_cache()
+
         logger.debug("[DragVisualManager] Initialized")
+
+    def _clear_cache(self) -> None:
+        """Clear icon and cursor caches to ensure fresh renders."""
+        self._icon_cache.clear()
+        self._cursor_cache.clear()
+        logger.debug("[DragVisualManager] Cache cleared")
 
     @classmethod
     def get_instance(cls) -> 'DragVisualManager':
@@ -126,6 +135,9 @@ class DragVisualManager:
         self._drop_zone_state = DropZoneState.NEUTRAL
         self._modifier_state = ModifierState.NORMAL
         self._original_cursor = None
+
+        # Clear cache to ensure fresh icons next time
+        self._clear_cache()
 
         logger.debug("[DragVisualManager] Visual drag ended")
 
@@ -188,10 +200,8 @@ class DragVisualManager:
                 action_icon = "file-plus"  # Extended metadata
             else:
                 action_icon = "check"  # Valid drop
-        elif self._drop_zone_state == DropZoneState.INVALID:
-            action_icon = "x"  # Invalid drop
-        else:  # NEUTRAL
-            action_icon = "move"  # Default drag
+        else:  # INVALID or NEUTRAL - both should show "x" since neutral isn't a valid drop target
+            action_icon = "x"  # Invalid drop (including neutral zones)
 
         # Create composite cursor
         return self._create_composite_cursor(base_icon, action_icon)
@@ -204,8 +214,8 @@ class DragVisualManager:
             base_icon: Name of base icon (file/folder/copy)
             action_icon: Name of action icon (check/x/move/file-plus)
         """
-        # Create 32x32 pixmap
-        pixmap = QPixmap(32, 32)
+        # Create 48x48 pixmap (larger canvas for bigger icons)
+        pixmap = QPixmap(48, 48)
         pixmap.fill(Qt.transparent)
 
         painter = QPainter(pixmap)
@@ -214,19 +224,57 @@ class DragVisualManager:
         # Draw base icon (larger, center-left)
         base_qicon = get_menu_icon(base_icon)
         if not base_qicon.isNull():
-            base_pixmap = base_qicon.pixmap(20, 20)
-            painter.drawPixmap(2, 6, base_pixmap)
+            base_pixmap = base_qicon.pixmap(28, 28)  # Increased from 20x20
+            painter.drawPixmap(4, 8, base_pixmap)
 
         # Draw action icon (smaller, bottom-right)
         action_qicon = get_menu_icon(action_icon)
         if not action_qicon.isNull():
-            action_pixmap = action_qicon.pixmap(12, 12)
-            painter.drawPixmap(18, 18, action_pixmap)
+            action_pixmap = action_qicon.pixmap(18, 18)  # Increased from 12x12
+
+                        # Color the action icons for better visual feedback
+            if action_icon == "x":
+                # Red for invalid drop zones
+                colored_pixmap = QPixmap(action_pixmap.size())
+                colored_pixmap.fill(Qt.transparent)
+
+                color_painter = QPainter(colored_pixmap)
+                color_painter.setRenderHint(QPainter.Antialiasing)
+
+                # First draw the original icon
+                color_painter.drawPixmap(0, 0, action_pixmap)
+
+                # Then apply red color overlay (brighter red with added green/blue)
+                color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+                color_painter.fillRect(colored_pixmap.rect(), QColor(220, 68, 84))  # Brighter red (+15 green, +15 blue)
+
+                color_painter.end()
+                action_pixmap = colored_pixmap
+
+            elif action_icon == "check":
+                # Green for valid drop zones
+                colored_pixmap = QPixmap(action_pixmap.size())
+                colored_pixmap.fill(Qt.transparent)
+
+                color_painter = QPainter(colored_pixmap)
+                color_painter.setRenderHint(QPainter.Antialiasing)
+
+                # First draw the original icon
+                color_painter.drawPixmap(0, 0, action_pixmap)
+
+                # Then apply green color overlay (bright green)
+                color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+                color_painter.fillRect(colored_pixmap.rect(), QColor(40, 167, 69))  # Bootstrap success green
+
+                color_painter.end()
+                action_pixmap = colored_pixmap
+
+            painter.drawPixmap(26, 26, action_pixmap)
 
         painter.end()
 
-        # Create cursor with hotspot at (8, 8)
-        return QCursor(pixmap, 8, 8)
+        # Create cursor with hotspot at (12, 12) - adjusted for larger size
+        return QCursor(pixmap, 12, 12)
 
     def _restore_cursor(self) -> None:
         """Restore the original cursor."""
