@@ -23,6 +23,7 @@ from PyQt5.QtWidgets import (
 
 from config import ALLOWED_EXTENSIONS
 from core.drag_manager import DragManager
+from core.modifier_handler import decode_modifiers_to_flags
 from core.drag_visual_manager import (
     DragVisualManager, DragType, DropZoneState, ModifierState,
     start_drag_visual, end_drag_visual, update_drop_zone_state,
@@ -400,18 +401,8 @@ class FileTreeView(QTreeView):
         # Emit signal with single path and modifiers
         self.item_dropped.emit(self._drag_path, modifiers)
 
-        # Log the action for debugging
-        is_ctrl = bool(modifiers & Qt.ControlModifier)
-        is_shift = bool(modifiers & Qt.ShiftModifier)
-
-        if is_ctrl and is_shift:
-            action = "Merge + Recursive"
-        elif is_ctrl:
-            action = "Replace + Recursive"
-        elif is_shift:
-            action = "Merge + Shallow"
-        else:
-            action = "Replace + Shallow"
+        # Log the action for debugging using centralized logic
+        _, _, action = decode_modifiers_to_flags(modifiers)
 
         logger.info(f"[FileTreeView] Dropped: {self._drag_path} ({action})")
 

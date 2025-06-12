@@ -82,6 +82,7 @@ from config import (
 # Core application context
 from core.application_context import ApplicationContext
 from core.drag_manager import DragManager
+from core.modifier_handler import decode_modifiers_to_flags
 from models.file_item import FileItem
 from models.file_table_model import FileTableModel
 from modules.name_transform_module import NameTransformModule
@@ -146,7 +147,7 @@ class MainWindow(QMainWindow):
         self.icon_paths = prepare_status_icons()
 
         self.filename_validator = FilenameValidator()
-        self.last_action = None  # Could be: 'folder_select', 'browse', 'rename', etc.
+        self.last_action = None  # Could be: 'folder_import', 'browse', 'rename', etc.
         self.current_folder_path = None
         self.files = []
         self.preview_map = {}  # preview_filename -> FileItem
@@ -231,7 +232,7 @@ class MainWindow(QMainWindow):
             self.folder_tree.setExpandsOnDoubleClick(True)   # Double click expand
 
         btn_layout = QHBoxLayout()
-        self.select_folder_button = QPushButton("  Select")
+        self.select_folder_button = QPushButton("  Import")
         self.select_folder_button.setIcon(get_menu_icon("folder"))
         self.select_folder_button.setFixedWidth(100)
         self.browse_folder_button = QPushButton("  Browse")
@@ -444,12 +445,12 @@ class MainWindow(QMainWindow):
 
         self.header.sectionClicked.connect(self.sort_by_column)
 
-        self.select_folder_button.clicked.connect(self.handle_folder_select)
+        self.select_folder_button.clicked.connect(self.handle_folder_import)
         self.browse_folder_button.clicked.connect(self.handle_browse)
 
         # Connect folder_tree for drag & drop operations
         self.folder_tree.item_dropped.connect(self.load_single_item_from_drop)
-        self.folder_tree.folder_selected.connect(self.handle_folder_select)
+        self.folder_tree.folder_selected.connect(self.handle_folder_import)
 
         # Connect splitter resize to adjust tree view column width
         self.horizontal_splitter.splitterMoved.connect(self.on_horizontal_splitter_moved)
@@ -2093,33 +2094,54 @@ class MainWindow(QMainWindow):
 
         Args:
             file_paths: List of absolute file or folder paths
-            clear: Whether to clear existing items before loading
+            clear: Whether to clear existing items before loading (True = replace, False = merge)
         """
-        if clear:
-            self.file_model.clear()
-
         if not file_paths:
-            self.file_table_view.set_placeholder_visible(True)
+            if clear:
+                self.file_table_view.set_placeholder_visible(True)
             return
 
-        file_items = []
+        # Collect new file items
+        new_file_items = []
         for path in file_paths:
             if os.path.isdir(path):
-                file_items.extend(self.get_file_items_from_folder(path))
+                new_file_items.extend(self.get_file_items_from_folder(path))
             elif os.path.isfile(path):
                 ext = os.path.splitext(path)[1][1:].lower()
                 if ext in ALLOWED_EXTENSIONS:
                     filename = os.path.basename(path)
                     modified = datetime.datetime.fromtimestamp(
                         os.path.getmtime(path)).strftime("%Y-%m-%d %H:%M:%S")
-                    file_items.append(FileItem(filename, ext, modified, full_path=path))
+                    new_file_items.append(FileItem(filename, ext, modified, full_path=path))
 
-        # Use the new prepare_table method instead of manual model manipulation
-        self.file_table_view.prepare_table(file_items)
+        if clear:
+            # Replace mode: clear everything and load new files
+            logger.debug(f"[Load] Replace mode: loading {len(new_file_items)} new files")
+            self.file_table_view.prepare_table(new_file_items)
+            final_items = new_file_items
+        else:
+            # Merge mode: add to existing files, avoiding duplicates
+            existing_items = self.file_model.files if self.file_model else []
+            existing_paths = {item.full_path for item in existing_items}
+
+            # Filter out duplicates
+            unique_new_items = [item for item in new_file_items if item.full_path not in existing_paths]
+
+            logger.debug(f"[Load] Merge mode: {len(existing_items)} existing + {len(unique_new_items)} new = {len(existing_items) + len(unique_new_items)} total")
+
+            if unique_new_items:
+                # Combine existing + new
+                final_items = existing_items + unique_new_items
+
+                # Use prepare_table with combined list
+                self.file_table_view.prepare_table(final_items)
+            else:
+                logger.info(f"[Load] No new files to add (all {len(new_file_items)} files already exist)")
+                final_items = existing_items
 
         # Handle application-specific setup
-        self.files = file_items
-        self.preview_map = {f.filename: f for f in file_items}
+        self.files = final_items
+        self.preview_map = {f.filename: f for f in final_items}
 
         # Configure sorting and header after prepare_table
         self.file_table_view.setSortingEnabled(True)
@@ -2129,7 +2151,7 @@ class MainWindow(QMainWindow):
             self.header.setEnabled(True)
 
         self.file_table_view.sortByColumn(1, Qt.AscendingOrder)
-        self.file_table_view.set_placeholder_visible(len(file_items) == 0)
+        self.file_table_view.set_placeholder_visible(len(final_items) == 0)
         self.file_table_view.scrollToTop()
         self.update_preview_tables_from_pairs([])
         self.update_files_label()
@@ -2244,14 +2266,20 @@ class MainWindow(QMainWindow):
 
     def handle_browse(self) -> None:
         """
-        Triggered when the user clicks the 'Browse Folder' button.
-        Opens a folder selection dialog, checks file count, prompts
-        user if the folder is large, and optionally skips metadata scan.
+        Browse and select a folder, then import its files.
 
-        Also updates the folder tree selection to reflect the newly selected folder.
+        Modifier logic:
+        - Normal: Replace + shallow
+        - Shift: Merge + shallow
+        - Ctrl: Replace + recursive
+        - Ctrl+Shift: Merge + recursive
+
+        Triggered when the user clicks the 'Browse' button.
+        Updates the folder tree selection to reflect the newly selected folder.
         """
         # Update current state of modifier keys
-        self.modifier_state = QApplication.keyboardModifiers()
+        modifiers = QApplication.keyboardModifiers()
+        self.modifier_state = modifiers
         self.last_action = "browse"
 
         # Get current folder path
@@ -2262,60 +2290,43 @@ class MainWindow(QMainWindow):
 
         if self.should_skip_folder_reload(folder_path):
             return  # skip if user pressed Cancel
-        else:
-            pass  # user pressed Reload
 
-        # -- Prepare + load files using helper
-        paths = self.prepare_folder_load(folder_path)
+        # Decode modifier combination using centralized logic
+        merge_mode, recursive, action_type = decode_modifiers_to_flags(modifiers)
 
-        # -- Large folder warning check
-        is_large = len(paths) > LARGE_FOLDER_WARNING_THRESHOLD
+        logger.info(f"[Browse] Folder: {folder_path} ({action_type})")
 
-        # -- Metadata scan flags
-        skip_metadata, use_extended = self.determine_metadata_mode()
-        logger.debug(f"[Modifiers] skip_metadata={skip_metadata}, use_extended={use_extended}")
-        self.force_extended_metadata = use_extended
-        self.skip_metadata_mode = skip_metadata
+        # Use folder drop logic for consistency
+        with wait_cursor():
+            self._handle_folder_drop(folder_path, merge_mode, recursive)
 
-        logger.debug(f"[Browse] skip_metadata={skip_metadata}, use_extended={use_extended}")
-
-        # -- Trigger metadata load if needed
-        items = self.file_model.files
-        if not self.skip_metadata_mode:
-            self.load_metadata_for_items(
-                items,
-                use_extended=self.force_extended_metadata,
-                source="folder_browse"
-            )
-
-        logger.debug("-" * 60)
-        logger.info(
-            f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata}, extended={use_extended}, "
-            f"(large={is_large}, default={DEFAULT_SKIP_METADATA})",
-            extra={"dev_only": True}
-        )
-        logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
-
-        # -- Update tree selection (optional)
+        # Update tree selection
         if hasattr(self, "dir_model") and hasattr(self, "folder_tree"):
             index = self.dir_model.index(folder_path)
             if index.isValid():
                 self.folder_tree.setCurrentIndex(index)
                 self.folder_tree.scrollTo(index)
 
-        # After loading files + metadata
+        # After loading files
+        self.update_files_label()
         self.show_metadata_status()
 
-    def handle_folder_select(self) -> None:
+    def handle_folder_import(self) -> None:
         """
-        It loads files from the folder currently selected in the folder tree.
-        If the Ctrl key is held, metadata scanning is skipped.
+        Import files from the folder currently selected in the folder tree.
 
-        Triggered when the user clicks the 'Select Folder' button.
+        Modifier logic:
+        - Normal: Replace + shallow
+        - Shift: Merge + shallow
+        - Ctrl: Replace + recursive
+        - Ctrl+Shift: Merge + recursive
+
+        Triggered when the user clicks the 'Import' button or presses Enter on folder tree.
         """
         # Update current state of modifier keys
-        self.modifier_state = QApplication.keyboardModifiers()
-        self.last_action = "folder_select"
+        modifiers = QApplication.keyboardModifiers()
+        self.modifier_state = modifiers
+        self.last_action = "folder_import"
 
         # Get current folder index
         index = self.folder_tree.currentIndex()
@@ -2327,38 +2338,18 @@ class MainWindow(QMainWindow):
 
         if self.should_skip_folder_reload(folder_path):
             return
-        else:
-            pass
 
-        # -- Prepare + load files using helper
-        paths = self.prepare_folder_load(folder_path)
+        # Decode modifier combination using centralized logic
+        merge_mode, recursive, action_type = decode_modifiers_to_flags(modifiers)
 
-        # -- Large folder warning check
-        is_large = len(paths) > LARGE_FOLDER_WARNING_THRESHOLD
+        logger.info(f"[Import] Folder: {folder_path} ({action_type})")
 
-        # -- Metadata scan flags
-        skip_metadata, use_extended = self.determine_metadata_mode()
-        logger.debug(f"[Modifiers] skip_metadata={skip_metadata}, use_extended={use_extended}")
-        self.force_extended_metadata = use_extended
-        self.skip_metadata_mode = skip_metadata
+        # Use folder drop logic for consistency
+        with wait_cursor():
+            self._handle_folder_drop(folder_path, merge_mode, recursive)
 
-        logger.info(
-            f"Tree-selected folder: {folder_path}, skip_metadata={skip_metadata}, extended={use_extended}, "
-            f"(large={is_large}, default={DEFAULT_SKIP_METADATA})",
-            extra={"dev_only": True}
-        )
-        logger.warning(f"-> skip_metadata passed to loader: {skip_metadata}")
-
-        # Load metadata if needed
-        items = self.file_model.files
-        if not self.skip_metadata_mode:
-            self.load_metadata_for_items(
-                items,
-                use_extended=self.force_extended_metadata,
-                source="folder_select"
-            )
-
-        # After loading files + metadata
+        # After loading files
+        self.update_files_label()
         self.show_metadata_status()
 
     def load_single_item_from_drop(self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
@@ -2374,26 +2365,8 @@ class MainWindow(QMainWindow):
             logger.info("[Drop] No path provided.")
             return
 
-        # Decode modifier combination
-        is_ctrl = bool(modifiers & Qt.ControlModifier)
-        is_shift = bool(modifiers & Qt.ShiftModifier)
-
-        if is_ctrl and is_shift:
-            action_type = "Merge + Recursive"
-            merge_mode = True
-            recursive = True
-        elif is_ctrl:
-            action_type = "Replace + Recursive"
-            merge_mode = False
-            recursive = True
-        elif is_shift:
-            action_type = "Merge + Shallow"
-            merge_mode = True
-            recursive = False
-        else:
-            action_type = "Replace + Shallow"
-            merge_mode = False
-            recursive = False
+        # Decode modifier combination using centralized logic
+        merge_mode, recursive, action_type = decode_modifiers_to_flags(modifiers)
 
         logger.info(f"[Drop] Single item: {path} ({action_type})")
 
@@ -2410,6 +2383,21 @@ class MainWindow(QMainWindow):
         self.file_table_view.viewport().update()
         self.update_files_label()
         self.show_metadata_status()
+
+    def _has_deep_content(self, folder_path: str) -> bool:
+        """Check if folder has any supported files in deeper levels (beyond root)"""
+        try:
+            for root, dirs, files in os.walk(folder_path):
+                if root != folder_path:  # Skip first level
+                    for file in files:
+                        _, ext = os.path.splitext(file)
+                        if ext.startswith('.'):
+                            ext = ext[1:].lower()
+                        if ext in ALLOWED_EXTENSIONS:
+                            return True  # Found supported file in deeper level
+            return False
+        except (OSError, PermissionError):
+            return False  # Assume no content if can't scan
 
     def _handle_folder_drop(self, folder_path: str, merge_mode: bool, recursive: bool) -> None:
         """Handle folder drop with merge/replace and recursive options"""
@@ -2436,7 +2424,31 @@ class MainWindow(QMainWindow):
 
             logger.info(f"[Drop] Found {len(file_paths)} files in {folder_path} (shallow)")
 
-        # Load files with merge/replace logic
+        # Handle empty folder scenarios intelligently
+        if len(file_paths) == 0:
+            if not recursive and self._has_deep_content(folder_path):
+                # Folder has no files at root but has content deeper - suggest recursive scan
+                self.set_status("Folder has no supported files at root level. Try Ctrl+drag for recursive scan.",
+                               color="orange", auto_reset=True)
+                logger.info(f"[Drop] Folder '{os.path.basename(folder_path)}' has no root-level files but contains deeper content - no action taken")
+                return  # No action - leave table as is
+            elif not merge_mode:
+                # Truly empty folder in replace mode - clear table and show placeholder
+                logger.info(f"[Drop] Empty folder in replace mode - clearing table")
+                self.file_table_view.prepare_table([])  # Clear with empty list
+                self.file_table_view.set_placeholder_visible(True)
+                self.files = []
+                self.preview_map = {}
+                self.update_files_label()
+                self.set_status("Empty folder loaded - table cleared.", color="gray", auto_reset=True)
+                return
+            else:
+                # Empty folder in merge mode - no action
+                self.set_status("Empty folder ignored in merge mode.", color="gray", auto_reset=True)
+                logger.info(f"[Drop] Empty folder in merge mode - no action taken")
+                return
+
+        # Load files with merge/replace logic (only if we have files)
         self.load_files_from_paths(file_paths, clear=not merge_mode)
 
         # Update folder tree selection if replace mode
