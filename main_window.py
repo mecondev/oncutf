@@ -1647,7 +1647,7 @@ class MainWindow(QMainWindow):
         """
         if not file_paths:
             if clear:
-                self.file_table_view.set_placeholder_visible(True)
+            self.file_table_view.set_placeholder_visible(True)
             return
 
         # Use FileLoader to get file items
@@ -1803,7 +1803,7 @@ class MainWindow(QMainWindow):
         # After loading files + metadata
         self.show_metadata_status()
 
-        def handle_browse(self) -> None:
+    def handle_browse(self) -> None:
         """
         Browse and select a folder, then import its files.
 
@@ -1852,7 +1852,7 @@ class MainWindow(QMainWindow):
         self.update_files_label()
         self.show_metadata_status()
 
-        def handle_folder_import(self) -> None:
+    def handle_folder_import(self) -> None:
         """
         Import files from the folder currently selected in the folder tree.
 
