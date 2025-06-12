@@ -1638,8 +1638,7 @@ class MainWindow(QMainWindow):
 
     def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> None:
         """
-        Loads a mix of files and folders into the file table.
-        Uses centralized FileLoader for file processing.
+        Loads files from a list of file or folder paths.
 
         Args:
             file_paths: List of absolute file or folder paths
@@ -1647,7 +1646,7 @@ class MainWindow(QMainWindow):
         """
         if not file_paths:
             if clear:
-            self.file_table_view.set_placeholder_visible(True)
+                self.file_table_view.set_placeholder_visible(True)
             return
 
         # Use FileLoader to get file items
