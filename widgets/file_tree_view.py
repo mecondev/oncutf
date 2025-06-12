@@ -169,8 +169,8 @@ class FileTreeView(QTreeView):
 
         # Get first (and only) selected item
         index = selected_rows[0]
-            if self.model() and hasattr(self.model(), 'filePath'):
-                path = self.model().filePath(index)
+        if self.model() and hasattr(self.model(), 'filePath'):
+            path = self.model().filePath(index)
             return path if path else ""
 
         return ""
@@ -187,7 +187,7 @@ class FileTreeView(QTreeView):
         index = self.model().index(path)
         if index.isValid():
             selection_model.clearSelection()
-                selection_model.select(index, selection_model.Select | selection_model.Rows)
+            selection_model.select(index, selection_model.Select | selection_model.Rows)
 
     # =====================================
     # CUSTOM SINGLE-ITEM DRAG IMPLEMENTATION
