@@ -1,0 +1,44 @@
+"""
+config_imports.py
+
+Author: Michael Economou
+Date: 2025-01-27
+
+Centralized config imports to reduce clutter in main files.
+Re-exports commonly used configuration constants.
+"""
+
+from config import (
+    ALLOWED_EXTENSIONS,
+    APP_NAME,
+    APP_VERSION,
+    DEFAULT_SKIP_METADATA,
+    EXTENDED_METADATA_SIZE_LIMIT_MB,
+    FILE_TABLE_COLUMN_WIDTHS,
+    LARGE_FOLDER_WARNING_THRESHOLD,
+    LEFT_CENTER_RIGHT_SPLIT_RATIO,
+    TOP_BOTTOM_SPLIT_RATIO,
+    TREE_EXPAND_MODE,
+    WINDOW_HEIGHT,
+    WINDOW_MIN_HEIGHT,
+    WINDOW_MIN_WIDTH,
+    WINDOW_WIDTH,
+)
+
+# Re-export all config constants
+__all__ = [
+    'ALLOWED_EXTENSIONS',
+    'APP_NAME',
+    'APP_VERSION',
+    'DEFAULT_SKIP_METADATA',
+    'EXTENDED_METADATA_SIZE_LIMIT_MB',
+    'FILE_TABLE_COLUMN_WIDTHS',
+    'LARGE_FOLDER_WARNING_THRESHOLD',
+    'LEFT_CENTER_RIGHT_SPLIT_RATIO',
+    'TOP_BOTTOM_SPLIT_RATIO',
+    'TREE_EXPAND_MODE',
+    'WINDOW_HEIGHT',
+    'WINDOW_MIN_HEIGHT',
+    'WINDOW_MIN_WIDTH',
+    'WINDOW_WIDTH',
+]

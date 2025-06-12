@@ -20,84 +20,34 @@ import platform
 import traceback
 from typing import Optional
 
-from PyQt5.QtCore import (
-    QDir,
-    QElapsedTimer,
-    QEvent,
-    QModelIndex,
-    QPropertyAnimation,
-    Qt,
-    QThread,
-    QTimer,
-    QUrl,
-    pyqtSignal,
-)
-from PyQt5.QtGui import (
-    QDesktopServices,
-    QKeySequence,
-    QPixmap,
-    QStandardItem,
-    QStandardItemModel,
-)
-from PyQt5.QtWidgets import (
-    QAbstractItemView,
-    QApplication,
-    QDesktopWidget,
-    QFileDialog,
-    QFileSystemModel,
-    QFrame,
-    QGraphicsOpacityEffect,
-    QHBoxLayout,
-    QHeaderView,
-    QLabel,
-    QMainWindow,
-    QMenu,
-    QPushButton,
-    QShortcut,
-    QSizePolicy,
-    QSplitter,
-    QTableWidget,
-    QTableWidgetItem,
-    QVBoxLayout,
-    QWidget,
-)
+# Import all PyQt5 classes from centralized module
+from core.qt_imports import *
 
-from config import (
-    ALLOWED_EXTENSIONS,
-    APP_NAME,
-    APP_VERSION,
-    DEFAULT_SKIP_METADATA,
-    EXTENDED_METADATA_SIZE_LIMIT_MB,
-    FILE_TABLE_COLUMN_WIDTHS,
-    LARGE_FOLDER_WARNING_THRESHOLD,
-    LEFT_CENTER_RIGHT_SPLIT_RATIO,
-    TOP_BOTTOM_SPLIT_RATIO,
-    TREE_EXPAND_MODE,
-    WINDOW_HEIGHT,
-    WINDOW_MIN_HEIGHT,
-    WINDOW_MIN_WIDTH,
-    WINDOW_WIDTH,
-)
+# Import all config constants from centralized module
+from core.config_imports import *
 
-# Core application context
+# Core application modules
 from core.application_context import ApplicationContext
 from core.drag_manager import DragManager
+from core.file_loader import FileLoader
 from core.modifier_handler import decode_modifiers_to_flags
+# Data models and business logic modules
 from models.file_item import FileItem
 from models.file_table_model import FileTableModel
 from modules.name_transform_module import NameTransformModule
+# Utility functions and helpers
+from utils.cursor_helper import wait_cursor, emergency_cursor_cleanup, force_restore_cursor
 from utils.filename_validator import FilenameValidator
 from utils.icon_cache import load_preview_status_icons, prepare_status_icons
 from utils.icons import create_colored_icon
 from utils.icons_loader import get_menu_icon, icons_loader, load_metadata_icons
-
-# Setup Logger
 from utils.logger_helper import get_logger
-from utils.cursor_helper import wait_cursor, emergency_cursor_cleanup, force_restore_cursor
 from utils.metadata_cache import MetadataCache
 from utils.metadata_loader import MetadataLoader
 from utils.preview_engine import apply_rename_modules
 from utils.renamer import Renamer
+# UI widgets and custom components
+from widgets.custom_file_system_model import CustomFileSystemModel
 from widgets.custom_msgdialog import CustomMessageDialog
 from widgets.file_table_view import FileTableView
 from widgets.file_tree_view import FileTreeView
@@ -105,9 +55,8 @@ from widgets.interactive_header import InteractiveHeader
 from widgets.metadata_tree_view import MetadataTreeView
 from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 from widgets.metadata_worker import MetadataWorker
-from widgets.rename_modules_area import RenameModulesArea
 from widgets.preview_tables_view import PreviewTablesView
-from widgets.custom_file_system_model import CustomFileSystemModel
+from widgets.rename_modules_area import RenameModulesArea
 
 logger = get_logger(__name__)
 
@@ -125,6 +74,12 @@ class MainWindow(QMainWindow):
         # --- Initialize DragManager ---
         self.drag_manager = DragManager.get_instance()
 
+        # --- Initialize FileLoader ---
+        self.file_loader = FileLoader(parent_window=self)
+
+        # --- Initialize MetadataManager ---
+        self.metadata_manager = None  # Will be initialized after metadata components
+
         # --- Attributes initialization ---
         self.metadata_thread = None
         self.metadata_worker = None
@@ -136,6 +91,10 @@ class MainWindow(QMainWindow):
         self.metadata_loader = MetadataLoader()
         self.file_model = FileTableModel(parent_window=self)
         self.metadata_loader.model = self.file_model
+
+        # --- Initialize MetadataManager after dependencies are ready ---
+        from core.metadata_manager import MetadataManager
+        self.metadata_manager = MetadataManager(parent_window=self)
 
         # Initialize theme icon loader with dark theme by default
         icons_loader.set_theme("dark")
@@ -968,16 +927,8 @@ class MainWindow(QMainWindow):
         return False
 
     def get_file_items_from_folder(self, folder_path: str) -> list[FileItem]:
-        all_files = glob.glob(os.path.join(folder_path, "*"))
-        file_items = []
-        for file_path in sorted(all_files):
-            ext = os.path.splitext(file_path)[1][1:].lower()
-            if ext in ALLOWED_EXTENSIONS:
-                filename = os.path.basename(file_path)
-                modified = datetime.datetime.fromtimestamp(
-                    os.path.getmtime(file_path)).strftime("%Y-%m-%d %H:%M:%S")
-                file_items.append(FileItem(filename, ext, modified, full_path=file_path))
-        return file_items
+        """Get FileItem objects from folder_path. Returns empty list if folder doesn't exist."""
+        return self.file_loader.get_file_items_from_folder(folder_path)
 
     def prepare_file_table(self, file_items: list[FileItem]) -> None:
         """
@@ -1050,114 +1001,24 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(100, lambda: self.start_metadata_scan([f.full_path for f in file_items if f.full_path]))
 
     def start_metadata_scan(self, file_paths: list[str]) -> None:
-        """
-        Initiates the metadata scan process for the given file paths.
-
-        - Delegates actual work to load_metadata_in_thread()
-        """
-        logger.warning("[DEBUG] start_metadata_scan CALLED")
-        logger.debug(f"[MetadataScan] Launch with force_extended = {self.force_extended_metadata}")
-
-        is_extended = self.force_extended_metadata
-        self.loading_dialog = MetadataWaitingDialog(self, is_extended=is_extended)
-        self.loading_dialog.set_status("Reading metadata...")
-        self.loading_dialog.set_filename("")
-        self.loading_dialog.set_progress(0, len(file_paths))
-
-        # Connect cancel (ESC or manual close) to cancel logic
-        self.loading_dialog.rejected.connect(self.cancel_metadata_loading)
-
-        self.loading_dialog.show()
-        QApplication.processEvents()
-
-        self.load_metadata_in_thread(file_paths)
+        """Delegates to MetadataManager for metadata scan initiation."""
+        self.metadata_manager.start_metadata_scan(file_paths)
 
     def load_metadata_in_thread(self, file_paths: list[str]) -> None:
-        """
-        Initializes and starts a metadata loading thread using MetadataWorker.
-
-        This method:
-        - Creates a QThread and assigns a MetadataWorker to it
-        - Passes the list of file paths and extended mode flag to the worker
-        - Connects worker signals (progress, finished) to appropriate slots
-        - Ensures signal `progress` updates the dialog safely via on_metadata_progress()
-        - Starts the thread execution with the run_batch method
-
-        Parameters
-        ----------
-        file_paths : list[str]
-            A list of full file paths to extract metadata from.
-        """
-        logger.info(f"[MainWindow] Starting metadata thread for {len(file_paths)} files")
-
-        # Create background thread
-        self.metadata_thread = QThread()
-
-        # Create worker object (inherits from QObject)
-        self.metadata_worker = MetadataWorker(
-            reader=self.metadata_loader,
-            metadata_cache=self.metadata_cache,
-            parent=self  # gives access to model for direct FileItem metadata assignment
-        )
-
-        # Set the worker's inputs
-        self.metadata_worker.file_path = file_paths
-        self.metadata_worker.use_extended = self.force_extended_metadata
-
-        # Move worker to the thread context
-        self.metadata_worker.moveToThread(self.metadata_thread)
-
-        # Connect signals
-        self.metadata_thread.started.connect(self.metadata_worker.run_batch)
-
-        # update progress bar and message
-        self.metadata_worker.progress.connect(self.on_metadata_progress)
-
-        # Signal when finished
-        self.metadata_worker.finished.connect(self.handle_metadata_finished)
-
-        # Start thread execution
-        self.metadata_thread.start()
+        """Delegates to MetadataManager for thread-based metadata loading."""
+        self.metadata_manager.load_metadata_in_thread(file_paths)
 
     def start_metadata_scan_for_items(self, items: list[FileItem]) -> None:
-        """
-        Initiates the metadata scan process for the given FileItem objects.
-
-        - Delegates actual work to load_metadata_in_thread()
-        """
-        logger.info(f"[MainWindow] Starting metadata scan for {len(items)} items")
-
-        file_paths = [item.full_path for item in items]
-
-        # Use wait_cursor without restoring it, so cursor remains as wait during dialog display
-        with wait_cursor(restore_after=False):
-            self.start_metadata_scan(file_paths)
+        """Delegates to MetadataManager for FileItem-based metadata scanning."""
+        self.metadata_manager.start_metadata_scan_for_items(items)
 
     def shortcut_load_metadata(self) -> None:
-        """
-        Loads standard (non-extended) metadata for currently selected files.
-
-        Uses the custom selected_rows from the file_table_view, not Qt's selectionModel().
-        """
-        selected_rows = self.file_table_view.selected_rows
-        selected = [self.file_model.files[r] for r in selected_rows if 0 <= r < len(self.file_model.files)]
-
-        self.load_metadata_for_items(selected, use_extended=False, source="shortcut")
+        """Delegates to MetadataManager for shortcut-based metadata loading."""
+        self.metadata_manager.shortcut_load_metadata()
 
     def shortcut_load_extended_metadata(self) -> None:
-        """
-        Loads extended metadata for selected files via custom selection system.
-
-        Uses shift+Ctrl+E to trigger. Shows wait dialog if multiple files.
-        """
-        if self.is_running_metadata_task():
-            logger.warning("[Shortcut] Metadata scan already running — shortcut ignored.")
-            return
-
-        selected_rows = self.file_table_view.selected_rows
-        selected = [self.file_model.files[r] for r in selected_rows if 0 <= r < len(self.file_model.files)]
-
-        self.load_metadata_for_items(selected, use_extended=True, source="shortcut_extended")
+        """Delegates to MetadataManager for extended metadata shortcut loading."""
+        self.metadata_manager.shortcut_load_extended_metadata()
 
 
 
@@ -1528,57 +1389,12 @@ class MainWindow(QMainWindow):
         )
 
     def on_metadata_progress(self, current: int, total: int) -> None:
-        """
-        Slot connected to the `progress` signal of the MetadataWorker.
-
-        This method updates the loading dialog's progress bar and message label
-        as metadata files are being processed in the background.
-
-        Args:
-            current (int): Number of files analyzed so far (1-based index).
-            total (int): Total number of files to analyze.
-        """
-        if self.metadata_worker is None:
-            logger.warning("Progress signal received after worker was already cleaned up — ignoring.")
-            return
-
-        logger.debug(f"Metadata progress update: {current} of {total}", extra={"dev_only": True})
-
-        if getattr(self, "loading_dialog", None):
-            self.loading_dialog.set_progress(current, total)
-
-            # Show filename of current file (current-1 because progress starts at 1)
-            if 0 <= current - 1 < len(self.metadata_worker.file_path):
-                filename = os.path.basename(self.metadata_worker.file_path[current - 1])
-                self.loading_dialog.set_filename(filename)
-            else:
-                self.loading_dialog.set_filename("")
-
-            # Optional: update the label only once at the beginning
-            if current == 1:
-                self.loading_dialog.set_status("Reading metadata...")
-
-            # Force immediate UI refresh
-            QApplication.processEvents()
-        else:
-            logger.warning("Loading dialog not available during progress update — skipping UI update.")
+        """Delegates to MetadataManager for progress updates."""
+        self.metadata_manager.on_metadata_progress(current, total)
 
     def handle_metadata_finished(self) -> None:
-        """
-        Slot to handle the completion of metadata loading.
-
-        - Closes the loading dialog
-        - Restores the cursor to default
-        - Updates the UI as needed
-        """
-        logger.info("[MainWindow] Metadata loading finished")
-
-        if self.loading_dialog:
-            self.loading_dialog.close()
-
-        # Always restore the cursor when metadata loading is finished
-        QApplication.restoreOverrideCursor()
-        logger.debug("[MainWindow] Cursor explicitly restored after metadata task.")
+        """Delegates to MetadataManager for handling completion."""
+        self.metadata_manager.handle_metadata_finished()
 
     def cleanup_metadata_worker(self) -> None:
         """
@@ -2078,19 +1894,14 @@ class MainWindow(QMainWindow):
         """
         self.clear_file_table("No folder selected")
         self.metadata_tree_view.clear_view()
-
-        file_items = self.get_file_items_from_folder(folder_path)
         self.current_folder_path = folder_path
 
-        paths = [item.full_path for item in file_items]
-        self.load_files_from_paths(paths, clear=clear)
-
-        return paths
+        return self.file_loader.prepare_folder_load(folder_path, clear=clear)
 
     def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> None:
         """
         Loads a mix of files and folders into the file table.
-        Uses existing helper for folder reading.
+        Uses centralized FileLoader for file processing.
 
         Args:
             file_paths: List of absolute file or folder paths
@@ -2101,18 +1912,8 @@ class MainWindow(QMainWindow):
                 self.file_table_view.set_placeholder_visible(True)
             return
 
-        # Collect new file items
-        new_file_items = []
-        for path in file_paths:
-            if os.path.isdir(path):
-                new_file_items.extend(self.get_file_items_from_folder(path))
-            elif os.path.isfile(path):
-                ext = os.path.splitext(path)[1][1:].lower()
-                if ext in ALLOWED_EXTENSIONS:
-                    filename = os.path.basename(path)
-                    modified = datetime.datetime.fromtimestamp(
-                        os.path.getmtime(path)).strftime("%Y-%m-%d %H:%M:%S")
-                    new_file_items.append(FileItem(filename, ext, modified, full_path=path))
+        # Use FileLoader to get file items
+        new_file_items = self.file_loader.load_files_from_paths(file_paths, clear=clear)
 
         if clear:
             # Replace mode: clear everything and load new files
@@ -2361,113 +2162,20 @@ class MainWindow(QMainWindow):
         - Shift: Merge + shallow
         - Ctrl+Shift: Merge + recursive
         """
-        if not path:
-            logger.info("[Drop] No path provided.")
-            return
-
-        # Decode modifier combination using centralized logic
-        merge_mode, recursive, action_type = decode_modifiers_to_flags(modifiers)
-
-        logger.info(f"[Drop] Single item: {path} ({action_type})")
-
-        # Use wait cursor for all operations
-        with wait_cursor():
-            if os.path.isdir(path):
-                # Handle folder drop
-                self._handle_folder_drop(path, merge_mode, recursive)
-            else:
-                # Handle single file drop
-                self._handle_file_drop(path, merge_mode)
-
-        # Update UI after loading
-        self.file_table_view.viewport().update()
-        self.update_files_label()
-        self.show_metadata_status()
+        # Use centralized file loader
+        self.file_loader.handle_drop_operation(path, modifiers)
 
     def _has_deep_content(self, folder_path: str) -> bool:
         """Check if folder has any supported files in deeper levels (beyond root)"""
-        try:
-            for root, dirs, files in os.walk(folder_path):
-                if root != folder_path:  # Skip first level
-                    for file in files:
-                        _, ext = os.path.splitext(file)
-                        if ext.startswith('.'):
-                            ext = ext[1:].lower()
-                        if ext in ALLOWED_EXTENSIONS:
-                            return True  # Found supported file in deeper level
-            return False
-        except (OSError, PermissionError):
-            return False  # Assume no content if can't scan
+        return self.file_loader.has_deep_content(folder_path)
 
     def _handle_folder_drop(self, folder_path: str, merge_mode: bool, recursive: bool) -> None:
         """Handle folder drop with merge/replace and recursive options"""
-        logger.debug(f"[Drop] Handling folder: {folder_path} (merge={merge_mode}, recursive={recursive})")
-
-        if recursive:
-            # Get all files recursively
-            file_paths = []
-            for root, dirs, files in os.walk(folder_path):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    # Filter by allowed extensions
-                    _, ext = os.path.splitext(file_path)
-                    if ext.startswith('.'):
-                        ext = ext[1:].lower()
-                    if ext in ALLOWED_EXTENSIONS:
-                        file_paths.append(file_path)
-
-            logger.info(f"[Drop] Found {len(file_paths)} files recursively in {folder_path}")
-        else:
-            # Get files from folder only (shallow)
-            file_items = self.get_file_items_from_folder(folder_path)
-            file_paths = [item.full_path for item in file_items]  # Convert FileItem to paths
-
-            logger.info(f"[Drop] Found {len(file_paths)} files in {folder_path} (shallow)")
-
-        # Handle empty folder scenarios intelligently
-        if len(file_paths) == 0:
-            if not recursive and self._has_deep_content(folder_path):
-                # Folder has no files at root but has content deeper - suggest recursive scan
-                self.set_status("Folder has no supported files at root level. Try Ctrl+drag for recursive scan.",
-                               color="orange", auto_reset=True)
-                logger.info(f"[Drop] Folder '{os.path.basename(folder_path)}' has no root-level files but contains deeper content - no action taken")
-                return  # No action - leave table as is
-            elif not merge_mode:
-                # Truly empty folder in replace mode - clear table and show placeholder
-                logger.info(f"[Drop] Empty folder in replace mode - clearing table")
-                self.file_table_view.prepare_table([])  # Clear with empty list
-                self.file_table_view.set_placeholder_visible(True)
-                self.files = []
-                self.preview_map = {}
-                self.update_files_label()
-                self.set_status("Empty folder loaded - table cleared.", color="gray", auto_reset=True)
-                return
-            else:
-                # Empty folder in merge mode - no action
-                self.set_status("Empty folder ignored in merge mode.", color="gray", auto_reset=True)
-                logger.info(f"[Drop] Empty folder in merge mode - no action taken")
-                return
-
-        # Load files with merge/replace logic (only if we have files)
-        self.load_files_from_paths(file_paths, clear=not merge_mode)
-
-        # Update folder tree selection if replace mode
-        if not merge_mode and hasattr(self.dir_model, "index"):
-            index = self.dir_model.index(folder_path)
-            self.folder_tree.setCurrentIndex(index)
+        self.file_loader.handle_folder_drop(folder_path, merge_mode, recursive)
 
     def _handle_file_drop(self, file_path: str, merge_mode: bool) -> None:
         """Handle single file drop with merge/replace options"""
-        logger.debug(f"[Drop] Handling file: {file_path} (merge={merge_mode})")
-
-        # Load single file with merge/replace logic
-        self.load_files_from_paths([file_path], clear=not merge_mode)
-
-        # Select the dropped file after loading
-        def select_dropped_file():
-            self.file_table_view.select_dropped_files([file_path])
-
-        QTimer.singleShot(50, select_dropped_file)
+        self.file_loader.handle_file_drop(file_path, merge_mode)
 
     def load_metadata_for_items(
         self,
