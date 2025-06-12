@@ -221,20 +221,33 @@ class FileTreeView(QTreeView):
             super().mouseMoveEvent(event)
             return
 
-        # Already dragging? Handle real-time validation
+        # Already dragging? Handle real-time validation but avoid hover changes
         if self._is_dragging:
             self._update_drag_feedback()
-            super().mouseMoveEvent(event)
+            # Don't call super().mouseMoveEvent() during drag to prevent hover changes
             return
 
         # Start our custom drag
         self._start_custom_drag()
-        super().mouseMoveEvent(event)
+        # Don't call super().mouseMoveEvent() after starting drag to prevent hover changes
 
     def mouseReleaseEvent(self, event):
         """Handle mouse release to end drag"""
+        was_dragging = self._is_dragging
         self._end_custom_drag()
         super().mouseReleaseEvent(event)
+
+        # If we were dragging, send a fake mouse move event to restore hover state
+        if was_dragging:
+            # Create a fake mouse move event at the current position
+            fake_move_event = QMouseEvent(
+                QEvent.MouseMove,
+                event.pos(),
+                Qt.NoButton,
+                Qt.NoButton,
+                Qt.NoModifier
+            )
+            QApplication.postEvent(self, fake_move_event)
 
     def _start_custom_drag(self):
         """Start our custom drag operation with enhanced visual feedback"""
@@ -260,6 +273,10 @@ class FileTreeView(QTreeView):
 
         # Set drag state
         self._is_dragging = True
+
+        # Disable mouse tracking to prevent hover effects during drag
+        self._original_mouse_tracking = self.hasMouseTracking()
+        self.setMouseTracking(False)
 
         # Notify DragManager
         drag_manager = DragManager.get_instance()
@@ -329,6 +346,11 @@ class FileTreeView(QTreeView):
             self._drag_path = None
             self._drag_start_pos = None
 
+            # Restore mouse tracking to original state
+            if hasattr(self, '_original_mouse_tracking'):
+                self.setMouseTracking(self._original_mouse_tracking)
+                delattr(self, '_original_mouse_tracking')
+
             # End visual feedback
             end_drag_visual()
 
@@ -381,6 +403,11 @@ class FileTreeView(QTreeView):
         path = self._drag_path
         self._drag_path = None
         self._drag_start_pos = None
+
+        # Restore mouse tracking to original state
+        if hasattr(self, '_original_mouse_tracking'):
+            self.setMouseTracking(self._original_mouse_tracking)
+            delattr(self, '_original_mouse_tracking')
 
         # End visual feedback
         end_drag_visual()
