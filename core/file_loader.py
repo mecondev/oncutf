@@ -55,7 +55,7 @@ class FileLoader:
                         ext = ext[1:].lower()
 
                     if ext in ALLOWED_EXTENSIONS:
-                        file_item = FileItem(item_path)
+                        file_item = FileItem.from_path(item_path)
                         file_items.append(file_item)
 
         except (OSError, PermissionError) as e:
@@ -118,7 +118,7 @@ class FileLoader:
                     ext = ext[1:].lower()
 
                 if ext in ALLOWED_EXTENSIONS:
-                    file_item = FileItem(path)
+                    file_item = FileItem.from_path(path)
                     new_file_items.append(file_item)
 
         logger.info(f"[FileLoader] Loading {len(new_file_items)} valid files")

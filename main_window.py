@@ -94,7 +94,9 @@ class MainWindow(QMainWindow):
 
         # --- Initialize MetadataManager after dependencies are ready ---
         from core.metadata_manager import MetadataManager
+        from core.selection_manager import SelectionManager
         self.metadata_manager = MetadataManager(parent_window=self)
+        self.selection_manager = SelectionManager(parent_window=self)
 
         # Initialize theme icon loader with dark theme by default
         icons_loader.set_theme("dark")
@@ -654,111 +656,16 @@ class MainWindow(QMainWindow):
         return ranges
 
     def select_all_rows(self) -> None:
-        """
-        Selects all rows in the file table efficiently using select_rows_range helper.
-        Shows wait cursor during the operation for consistent UX.
-        """
-        if not self.file_model.files:
-            return
-
-        total = len(self.file_model.files)
-        if total == 0:
-            return
-
-        selection_model = self.file_table_view.selectionModel()
-        all_checked = all(f.checked for f in self.file_model.files)
-        all_selected = False
-
-        selected_rows = self.file_table_view.selected_rows
-        if selection_model is not None:
-            selected_rows = set(idx.row() for idx in selection_model.selectedRows())
-            all_selected = (len(selected_rows) == total)
-
-        if all_checked and all_selected:
-            logger.debug("[SelectAll] All files already selected in both checked and selection model. No action taken.", extra={"dev_only": True})
-            return
-
-        with wait_cursor():
-            logger.info(f"[SelectAll] Selecting all {total} rows.")
-
-            # Step 1: Pre-generate preview data (without updating UI yet)
-            list(self.file_model.files)  # Create a list of what will be selected
-
-            # Step 2: Update internal state first
-            for file in self.file_model.files:
-                file.checked = True
-
-            # Step 3: Start preview generation (this triggers the heavy work)
-            self.request_preview_update()
-
-            # Step 4: Add small delay to let preview start, then do visual selection
-            def apply_visual_selection():
-                self.file_table_view.select_rows_range(0, total - 1)
-                self.file_table_view.anchor_row = 0
-                self.file_table_view.viewport().update()
-                self.update_files_label()
-
-                # Handle metadata display for the last file
-                def show_metadata_later():
-                    last_file = self.file_model.files[-1]
-                    metadata = last_file.metadata or self.metadata_cache.get(last_file.full_path)
-                    self.metadata_tree_view.display_metadata(metadata, context="select_all")
-                QTimer.singleShot(15, show_metadata_later)
-
-            QTimer.singleShot(5, apply_visual_selection)
+        """Delegates to SelectionManager."""
+        self.selection_manager.select_all_rows()
 
     def clear_all_selection(self) -> None:
-        # If everything is already deselected, do nothing
-        if not self.file_model.files or all(not f.checked for f in self.file_model.files):
-            logger.info("[ClearAll] All files already unselected. No action taken.")
-            return
-        with wait_cursor():
-            selection_model = self.file_table_view.selectionModel()
-            selection_model.clearSelection()
-            for file in self.file_model.files:
-                file.checked = False
-            self.file_table_view.viewport().update()
-            self.update_files_label()
-            self.request_preview_update()
-            self.metadata_tree_view.clear_view()
+        """Delegates to SelectionManager."""
+        self.selection_manager.clear_all_selection()
 
     def invert_selection(self) -> None:
-        """
-        Inverts the selection in the file table efficiently using select_rows_range helper.
-        Shows wait cursor during the operation.
-        """
-        if not self.file_model.files:
-            self.set_status("No files to invert selection.", color="gray", auto_reset=True)
-            return
-        with wait_cursor():
-            selection_model = self.file_table_view.selectionModel()
-            current_selected = set(idx.row() for idx in selection_model.selectedRows())
-
-            # Uncheck all selected, check all unselected
-            for row, file in enumerate(self.file_model.files):
-                file.checked = row not in current_selected
-            # Find all checked rows (i.e. those that were previously unselected)
-            checked_rows = [row for row, file in enumerate(self.file_model.files) if file.checked]
-            checked_rows.sort()
-            ranges = self._find_consecutive_ranges(checked_rows)
-            selection_model.clearSelection()
-            logger.info(f"[InvertSelection] Selecting {len(checked_rows)} rows in {len(ranges)} ranges.")
-            for start, end in ranges:
-                self.file_table_view.select_rows_range(start, end)
-            self.file_table_view.anchor_row = checked_rows[0] if checked_rows else 0
-            self.file_table_view.viewport().update()
-            self.update_files_label()
-            self.request_preview_update()
-
-            if checked_rows:
-                def show_metadata_later():
-                    last_row = checked_rows[-1]
-                    file_item = self.file_model.files[last_row]
-                    metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
-                    self.metadata_tree_view.handle_invert_selection(metadata)
-                QTimer.singleShot(20, show_metadata_later)
-            else:
-                self.metadata_tree_view.handle_invert_selection(None)
+        """Delegates to SelectionManager."""
+        self.selection_manager.invert_selection()
 
     def sort_by_column(self, column: int, order: Qt.SortOrder = None, force_order: Qt.SortOrder = None) -> None:
         """
@@ -1397,31 +1304,8 @@ class MainWindow(QMainWindow):
         self.metadata_manager.handle_metadata_finished()
 
     def cleanup_metadata_worker(self) -> None:
-        """
-        Safely shuts down and deletes the metadata worker and its thread.
-
-        This method ensures that:
-        - The thread is properly stopped (using quit + wait)
-        - The worker and thread are deleted using deleteLater
-        - All references are cleared to avoid leaks or crashes
-        """
-        if self.metadata_thread:
-            if self.metadata_thread.isRunning():
-                logger.debug("[MainWindow] Quitting metadata thread...")
-                self.metadata_thread.quit()
-                self.metadata_thread.wait()
-                logger.debug("[MainWindow] Metadata thread has stopped.")
-
-            self.metadata_thread.deleteLater()
-            self.metadata_thread = None
-            logger.debug("[MainWindow] Metadata thread deleted.")
-
-        if self.metadata_worker:
-            self.metadata_worker.deleteLater()
-            self.metadata_worker = None
-            logger.debug("[MainWindow] Metadata worker deleted.")
-
-        self.force_extended_metadata = False
+        """Delegates to MetadataManager for worker cleanup."""
+        self.metadata_manager.cleanup_metadata_worker()
 
     def get_selected_files(self) -> list:
         """
@@ -1446,80 +1330,16 @@ class MainWindow(QMainWindow):
         return None
 
     def cancel_metadata_loading(self) -> None:
-        """
-        Cancels the metadata loading process and ensures the thread is properly terminated.
-        """
-        logger.info("[MainWindow] Cancelling metadata loading")
-
-        if hasattr(self, 'metadata_thread') and self.metadata_thread.isRunning():
-            self.metadata_worker.cancel()  # Use cancel method to stop the worker
-            self.metadata_thread.quit()
-            self.metadata_thread.wait()
-
-        if self.loading_dialog:
-            self.loading_dialog.close()
-
-        # Ensure cursor is restored, even if there were multiple setOverrideCursor calls
-        while QApplication.overrideCursor():
-            QApplication.restoreOverrideCursor()
-
-        logger.debug("[MainWindow] Cursor fully restored after metadata cancellation.")
+        """Delegates to MetadataManager for cancellation."""
+        self.metadata_manager.cancel_metadata_loading()
 
     def on_metadata_error(self, message: str) -> None:
-        """
-        Handles unexpected errors during metadata loading.
-
-        - Restores the UI cursor
-        - Closes the progress dialog
-        - Cleans up worker and thread
-        - Shows an error message to the user
-
-        Args:
-            message (str): The error message to display.
-        """
-        logger.error(f"Metadata error: {message}")
-
-        # 1. Restore busy cursor
-        while QApplication.overrideCursor():
-            QApplication.restoreOverrideCursor()
-        logger.debug("[MainWindow] Cursor fully restored after metadata error.")
-
-        # 2. Close the loading dialog
-        if getattr(self, "loading_dialog", None):
-            logger.info("Closing loading dialog due to error.")
-            self.loading_dialog.close()
-            self.loading_dialog = None
-        else:
-            logger.warning("No loading dialog found during error handling.")
-
-        # 3. Clean up worker and thread
-        self.cleanup_metadata_worker()
-
-        # 4. Notify user
-        CustomMessageDialog.show_warning(self, "Metadata Error", f"Failed to read metadata:\n\n{message}")
+        """Delegates to MetadataManager for error handling."""
+        self.metadata_manager.on_metadata_error(message)
 
     def is_running_metadata_task(self) -> bool:
-        """
-        Returns True if a metadata thread is currently active.
-
-        This helps prevent overlapping metadata scans by checking if
-        a previous background task is still running.
-
-        Returns
-        -------
-        bool
-            True if metadata_thread exists and is running, False otherwise.
-        """
-        running = (
-            getattr(self, "metadata_thread", None) is not None
-            and self.metadata_thread.isRunning()
-        )
-        logger.debug(f"Metadata task running? {running}")
-
-        return (
-            self.metadata_thread is not None and
-            self.metadata_thread.isRunning()
-        )
+        """Delegates to MetadataManager to check if metadata task is running."""
+        return self.metadata_manager.is_running_metadata_task()
 
     def on_table_row_clicked(self, index: QModelIndex) -> None:
         """
@@ -1642,99 +1462,17 @@ class MainWindow(QMainWindow):
         return skip_metadata, use_extended
 
     def determine_metadata_mode(self) -> tuple[bool, bool]:
-        """
-        Determines whether to skip metadata scan or use extended mode based on modifier keys.
-
-        Returns:
-            tuple: (skip_metadata, use_extended)
-
-            - skip_metadata = True ➜ No metadata scan (no modifiers)
-            - skip_metadata = False & use_extended = False ➜ Fast scan (Ctrl)
-            - skip_metadata = False & use_extended = True ➜ Extended scan (Ctrl+Shift)
-        """
-        modifiers = self.modifier_state
-        if modifiers == Qt.NoModifier:
-            modifiers = QApplication.keyboardModifiers()  # fallback to current
-
-        ctrl = bool(modifiers & Qt.ControlModifier)
-        shift = bool(modifiers & Qt.ShiftModifier)
-
-        # New logic:
-        # - No modifiers: skip metadata
-        # - With Ctrl: load basic metadata
-        # - With Ctrl+Shift: load extended metadata
-        skip_metadata = not ctrl
-        use_extended = ctrl and shift
-
-        logger.debug(
-            f"[determine_metadata_mode] modifiers={int(modifiers)}, "
-            f"ctrl={ctrl}, shift={shift}, skip_metadata={skip_metadata}, use_extended={use_extended}"
-        )
-
-        return skip_metadata, use_extended
+        """Delegates to MetadataManager for metadata mode determination."""
+        return self.metadata_manager.determine_metadata_mode(self.modifier_state)
 
 
     def should_use_extended_metadata(self) -> bool:
-        """
-        Returns True if Ctrl+Shift are both held,
-        used in cases where metadata is always loaded (double click, drag & drop).
-
-        This assumes that metadata will be loaded — we only decide if it's fast or extended.
-        """
-        modifiers = self.modifier_state
-        ctrl = bool(modifiers & Qt.ControlModifier)
-        shift = bool(modifiers & Qt.ShiftModifier)
-        return ctrl and shift
+        """Delegates to MetadataManager for extended metadata decision."""
+        return self.metadata_manager.should_use_extended_metadata(self.modifier_state)
 
     def update_preview_from_selection(self, selected_rows: list[int]) -> None:
-        """
-        Synchronizes the checked state of files and updates preview + metadata panel,
-        based on selected rows emitted from the custom table view.
-
-        Args:
-            selected_rows (list[int]): The indices of selected rows (from custom selection).
-        """
-        if not selected_rows:
-            logger.debug("[Sync] No selection - clearing preview", extra={"dev_only": True})
-            # Clear all checked states
-            for file in self.file_model.files:
-                file.checked = False
-            self.update_files_label()
-            self.update_preview_tables_from_pairs([])
-            self.metadata_tree_view.clear_view()
-            return
-
-        logger.debug(f"[Sync] update_preview_from_selection: {selected_rows}", extra={"dev_only": True})
-        timer = QElapsedTimer()
-        timer.start()
-
-        for row, file in enumerate(self.file_model.files):
-            file.checked = row in selected_rows
-
-        self.update_files_label()
-        self.request_preview_update()
-
-        # Show metadata for last selected file and update current file for context menus
-        if selected_rows:
-            last_row = selected_rows[-1]
-            if 0 <= last_row < len(self.file_model.files):
-                file_item = self.file_model.files[last_row]
-
-                # Update current file for SpecifiedText modules context menu
-                self.rename_modules_area.set_current_file_for_modules(file_item)
-
-                metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
-                if isinstance(metadata, dict):
-                    self.metadata_tree_view.display_metadata(metadata, context="update_preview_from_selection")
-                else:
-                    self.metadata_tree_view.clear_view()
-        else:
-            # Clear current file when no selection
-            self.rename_modules_area.set_current_file_for_modules(None)
-            self.metadata_tree_view.clear_view()
-
-        elapsed = timer.elapsed()
-        logger.debug(f"[Performance] Full preview update took {elapsed} ms")
+        """Delegates to SelectionManager."""
+        self.selection_manager.update_preview_from_selection(selected_rows)
 
     def handle_table_context_menu(self, position) -> None:
         """
@@ -2065,11 +1803,11 @@ class MainWindow(QMainWindow):
         # After loading files + metadata
         self.show_metadata_status()
 
-    def handle_browse(self) -> None:
+        def handle_browse(self) -> None:
         """
         Browse and select a folder, then import its files.
 
-        Modifier logic:
+        Modifier logic (checked AFTER folder selection):
         - Normal: Replace + shallow
         - Shift: Merge + shallow
         - Ctrl: Replace + recursive
@@ -2078,9 +1816,6 @@ class MainWindow(QMainWindow):
         Triggered when the user clicks the 'Browse' button.
         Updates the folder tree selection to reflect the newly selected folder.
         """
-        # Update current state of modifier keys
-        modifiers = QApplication.keyboardModifiers()
-        self.modifier_state = modifiers
         self.last_action = "browse"
 
         # Get current folder path
@@ -2092,9 +1827,14 @@ class MainWindow(QMainWindow):
         if self.should_skip_folder_reload(folder_path):
             return  # skip if user pressed Cancel
 
+        # Capture modifiers AFTER dialog closes (when user is ready to confirm the action)
+        modifiers = QApplication.keyboardModifiers()
+        self.modifier_state = modifiers
+
         # Decode modifier combination using centralized logic
         merge_mode, recursive, action_type = decode_modifiers_to_flags(modifiers)
 
+        logger.debug(f"[Browse] Captured modifiers after dialog: {modifiers} → {action_type}")
         logger.info(f"[Browse] Folder: {folder_path} ({action_type})")
 
         # Use folder drop logic for consistency
@@ -2112,11 +1852,11 @@ class MainWindow(QMainWindow):
         self.update_files_label()
         self.show_metadata_status()
 
-    def handle_folder_import(self) -> None:
+        def handle_folder_import(self) -> None:
         """
         Import files from the folder currently selected in the folder tree.
 
-        Modifier logic:
+        Modifier logic (checked when clicking Import button):
         - Normal: Replace + shallow
         - Shift: Merge + shallow
         - Ctrl: Replace + recursive
@@ -2124,12 +1864,7 @@ class MainWindow(QMainWindow):
 
         Triggered when the user clicks the 'Import' button or presses Enter on folder tree.
         """
-        # Update current state of modifier keys
-        modifiers = QApplication.keyboardModifiers()
-        self.modifier_state = modifiers
-        self.last_action = "folder_import"
-
-        # Get current folder index
+        # Get current folder index first
         index = self.folder_tree.currentIndex()
         if not index.isValid():
             logger.warning("No folder selected in folder tree.")
@@ -2140,9 +1875,15 @@ class MainWindow(QMainWindow):
         if self.should_skip_folder_reload(folder_path):
             return
 
+        # Capture modifiers at the moment of action (when user clicks Import)
+        modifiers = QApplication.keyboardModifiers()
+        self.modifier_state = modifiers
+        self.last_action = "folder_import"
+
         # Decode modifier combination using centralized logic
         merge_mode, recursive, action_type = decode_modifiers_to_flags(modifiers)
 
+        logger.debug(f"[Import] Captured modifiers at click: {modifiers} → {action_type}")
         logger.info(f"[Import] Folder: {folder_path} ({action_type})")
 
         # Use folder drop logic for consistency
@@ -2183,91 +1924,8 @@ class MainWindow(QMainWindow):
         use_extended: bool = False,
         source: str = "unknown"
     ) -> None:
-        """
-        Unified method for loading metadata from all access points.
-
-        Uses wait_cursor for a single file and CompactWaitingWidget for multiple files.
-        For extended metadata, first checks for large files.
-
-        Parameters:
-            items: List of FileItem objects to load metadata for
-            use_extended: Whether to load extended metadata
-            source: Source of the call (for logging)
-        """
-        if not items:
-            self.set_status("No files selected.", color="gray", auto_reset=True)
-            return
-
-        if self.is_running_metadata_task():
-            logger.warning(f"[{source}] Metadata scan already running — ignoring request.")
-            return
-
-        # Check if metadata is already loaded and of the right type
-        needs_loading = []
-        for item in items:
-            # Get the cached entry (which includes extended status)
-            entry = self.metadata_cache.get_entry(item.full_path)
-
-            # Add file to loading list if:
-            # 1. No cached entry exists
-            # 2. Extended metadata is requested but entry is not extended
-            if not entry:
-                logger.debug(f"[{source}] {item.filename} needs loading (no cache entry)")
-                needs_loading.append(item)
-            elif use_extended and not entry.is_extended:
-                logger.debug(f"[{source}] {item.filename} needs loading (extended requested but only basic loaded)")
-                needs_loading.append(item)
-            else:
-                logger.debug(f"[{source}] {item.filename} already has {'extended' if entry.is_extended else 'basic'} metadata")
-
-        # If all files already have appropriate metadata, just show it
-        if not needs_loading:
-            if len(items) == 1:
-                # Display the existing metadata for single file selection
-                file_item = items[0]
-                metadata = file_item.metadata or self.metadata_cache.get(file_item.full_path)
-                self.metadata_tree_view.handle_metadata_load_completion(metadata, f"existing_{source}")
-                self.set_status(f"Metadata already loaded for {file_item.filename}.", color="green", auto_reset=True)
-                return
-            else:
-                self.set_status(f"Metadata already loaded for {len(items)} files.", color="green", auto_reset=True)
-                return
-
-        # Check for large files if extended metadata was requested
-        if use_extended and not self.confirm_large_files(needs_loading):
-            return
-
-        # Set extended metadata flag
-        self.force_extended_metadata = use_extended
-
-        # If we need to load data, proceed with actual loading
-        if needs_loading:
-            # Decide whether to show dialog or simple wait_cursor
-            if len(needs_loading) > 1:
-                # Load with dialog (CompactWaitingWidget) for multiple files
-                logger.info(f"[{source}] Loading metadata for {len(needs_loading)} files with dialog (extended={use_extended})")
-                self.start_metadata_scan_for_items(needs_loading)
-            else:
-                # Simple loading with wait_cursor for a single file
-                logger.info(f"[{source}] Loading metadata for single file with wait_cursor (extended={use_extended})")
-                with wait_cursor():
-                    self.metadata_loader.load(
-                        needs_loading,
-                        force=False,
-                        cache=self.metadata_cache,
-                        use_extended=use_extended
-                    )
-
-                # Display metadata if successfully loaded
-                last = needs_loading[-1]
-                metadata = last.metadata or self.metadata_cache.get(last.full_path)
-                self.metadata_tree_view.handle_metadata_load_completion(metadata, source)
-
-                # Update UI for the specific file
-                row = self.file_model.files.index(last)
-                for col in range(self.file_model.columnCount()):
-                    idx = self.file_model.index(row, col)
-                    self.file_table_view.viewport().update(self.file_table_view.visualRect(idx))
+        """Delegates to MetadataManager for unified metadata loading."""
+        self.metadata_manager.load_metadata_for_items(items, use_extended, source)
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
         """Handle horizontal splitter movement - logic delegated to individual views"""

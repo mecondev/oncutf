@@ -16,7 +16,7 @@ from core.qt_imports import QApplication, QThread, QTimer
 from models.file_item import FileItem
 from utils.cursor_helper import wait_cursor
 from utils.logger_helper import get_logger
-from widgets.custom_message_dialog import CustomMessageDialog
+from widgets.custom_msgdialog import CustomMessageDialog
 from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 from widgets.metadata_worker import MetadataWorker
 
@@ -220,6 +220,8 @@ class MetadataManager:
             logger.debug("[MetadataManager] Metadata worker deleted.")
 
         self.force_extended_metadata = False
+        if self.parent_window:
+            self.parent_window.force_extended_metadata = False
 
     def cancel_metadata_loading(self) -> None:
         """
@@ -371,8 +373,10 @@ class MetadataManager:
             not self.parent_window.confirm_large_files(needs_loading)):
             return
 
-        # Set extended metadata flag
+        # Set extended metadata flag (sync with parent window)
         self.force_extended_metadata = use_extended
+        if self.parent_window:
+            self.parent_window.force_extended_metadata = use_extended
 
         # If we need to load data, proceed with actual loading
         if needs_loading:

@@ -45,6 +45,32 @@ class FileItem:
         self.metadata = {}
         self.size = self._detect_size()
 
+    @classmethod
+    def from_path(cls, file_path: str) -> 'FileItem':
+        """
+        Create a FileItem from a file path by auto-detecting properties.
+
+        Args:
+            file_path: Full path to the file
+
+        Returns:
+            FileItem instance with auto-detected properties
+        """
+        import time
+
+        filename = os.path.basename(file_path)
+        _, ext = os.path.splitext(filename)
+        extension = ext[1:].lower() if ext.startswith('.') else ''
+
+        # Get modification time
+        try:
+            mtime = os.path.getmtime(file_path)
+            modified = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(mtime))
+        except (OSError, ValueError):
+            modified = "Unknown"
+
+        return cls(filename, extension, modified, file_path)
+
     @property
     def name(self) -> str:
         return self.filename
