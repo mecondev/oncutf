@@ -4,13 +4,13 @@ file_tree_view.py
 Author: Michael Economou
 Date: 2025-06-05
 
-Implements a custom tree view with multi-selection drag implementation.
+Implements a custom tree view with clean single-item drag implementation.
 No reliance on Qt built-in drag system - everything is manual and controlled.
-Extended selection support with Ctrl+click for multi-selection.
+Single item selection only - no multi-selection complexity.
 """
 
 import os
-from typing import Optional, List
+from typing import Optional
 
 from PyQt5.QtCore import QEvent, QPoint, Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QKeyEvent, QMouseEvent, QCursor
@@ -37,12 +37,12 @@ logger = get_logger(__name__)
 
 class FileTreeView(QTreeView):
     """
-    Custom tree view with multi-selection drag & drop implementation.
+    Custom tree view with clean single-item drag & drop implementation.
 
     Features:
     - Manual drag control (no Qt built-in drag system)
     - Intelligent horizontal scrolling
-    - Extended selection support with Ctrl+click multi-selection
+    - Single item selection only (no multi-selection complexity)
     - 4 modifier combinations for drag behavior:
       * Normal: Replace + shallow
       * Ctrl: Replace + recursive
@@ -52,9 +52,9 @@ class FileTreeView(QTreeView):
     """
 
     # Signals
-    items_dropped = pyqtSignal(list, object)  # list of paths and keyboard modifiers
+    item_dropped = pyqtSignal(str, object)  # single path and keyboard modifiers
     folder_selected = pyqtSignal()  # Signal emitted when Return/Enter is pressed
-    selection_changed = pyqtSignal(list)  # Signal emitted when selection changes (list of paths)
+    selection_changed = pyqtSignal(str)  # Signal emitted when selection changes (single path)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -78,34 +78,33 @@ class FileTreeView(QTreeView):
         self.setRootIsDecorated(True)
         self.setAlternatingRowColors(True)
 
-        # Configure EXTENDED selection with multi-selection support
-        self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        # Configure SINGLE selection only
+        self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
 
-        # Initialize custom drag state (updated for multi-selection)
+        # Initialize custom drag state (simplified for single item)
         self._drag_start_pos: Optional[QPoint] = None
         self._is_dragging = False
-        self._drag_paths: List[str] = []  # Store multiple paths being dragged
+        self._drag_path: Optional[str] = None
         self._drag_modifiers = Qt.NoModifier  # Store modifiers at drag start
 
-        logger.debug("[FileTreeView] Initialized with multi-selection drag system")
+        logger.debug("[FileTreeView] Initialized with single-item drag system")
 
     def selectionChanged(self, selected, deselected):
-        """Override to emit custom signal with selected paths (multi-selection)"""
+        """Override to emit custom signal with selected path (single item only)"""
         super().selectionChanged(selected, deselected)
 
-        # Get selected paths using selectedRows() to avoid duplicates
-        selected_paths = []
-        selection_model = self.selectionModel()
-        if selection_model and self.model() and hasattr(self.model(), 'filePath'):
-            selected_rows = selection_model.selectedRows()
-            for index in selected_rows:
-                path = self.model().filePath(index)
-                if path:
-                    selected_paths.append(path)
+        # Get single selected path
+        selected_path = ""
+        indexes = self.selectedIndexes()
+        if indexes and self.model() and hasattr(self.model(), 'filePath'):
+            # Take first index (should be only one in single selection mode)
+            path = self.model().filePath(indexes[0])
+            if path:
+                selected_path = path
 
-        logger.debug(f"[FileTreeView] Selection changed: {selected_paths}", extra={"dev_only": True})
-        self.selection_changed.emit(selected_paths)
+        logger.debug(f"[FileTreeView] Selection changed: {selected_path if selected_path else 'None'}", extra={"dev_only": True})
+        self.selection_changed.emit(selected_path)
 
     def setModel(self, model):
         """Override to configure header when model is set"""
@@ -157,34 +156,27 @@ class FileTreeView(QTreeView):
         """Called when model data changes to update column width"""
         QTimer.singleShot(10, self._adjust_column_width)
 
-    def get_selected_paths(self) -> List[str]:
-        """Get the selected file/folder paths"""
+    def get_selected_path(self) -> str:
+        """Get the single selected file/folder path"""
         selection_model = self.selectionModel()
         if not selection_model:
-            return []
+            return ""
 
-        # Use selectedRows() for clean multi-selection
+        # Use selectedRows() for clean single selection
         selected_rows = selection_model.selectedRows()
         if not selected_rows:
-            return []
+            return ""
 
-        # Get selected items
-        paths = []
-        for index in selected_rows:
-            if self.model() and hasattr(self.model(), 'filePath'):
-                path = self.model().filePath(index)
-                if path:
-                    paths.append(path)
+        # Get first (and only) selected item
+        index = selected_rows[0]
+        if self.model() and hasattr(self.model(), 'filePath'):
+            path = self.model().filePath(index)
+            return path if path else ""
 
-        return paths
+        return ""
 
-    def get_selected_path(self) -> str:
-        """Get the first selected file/folder path (backward compatibility)"""
-        paths = self.get_selected_paths()
-        return paths[0] if paths else ""
-
-    def select_paths(self, paths: List[str]):
-        """Select items by their file paths"""
+    def select_path(self, path: str):
+        """Select item by its file path"""
         if not self.model() or not hasattr(self.model(), 'index'):
             return
 
@@ -192,38 +184,28 @@ class FileTreeView(QTreeView):
         if not selection_model:
             return
 
-        selection_model.clearSelection()
-        for path in paths:
-            index = self.model().index(path)
-            if index.isValid():
-                selection_model.select(index, selection_model.Select | selection_model.Rows)
-
-    def select_path(self, path: str):
-        """Select item by its file path (backward compatibility)"""
-        self.select_paths([path])
+        index = self.model().index(path)
+        if index.isValid():
+            selection_model.clearSelection()
+            selection_model.select(index, selection_model.Select | selection_model.Rows)
 
     # =====================================
-    # CUSTOM MULTI-ITEM DRAG IMPLEMENTATION
+    # CUSTOM SINGLE-ITEM DRAG IMPLEMENTATION
     # =====================================
 
     def mousePressEvent(self, event):
-        """Handle mouse press for custom drag detection and multi-selection"""
+        """Handle mouse press for custom drag detection"""
         if event.button() == Qt.LeftButton:
             self._drag_start_pos = event.pos()
             self._is_dragging = False
-            self._drag_paths = []
+            self._drag_path = None
 
-            # Store modifiers at press time to avoid selection conflicts
+            # Store modifiers at press time
             self._drag_modifiers = event.modifiers()
 
             logger.debug(f"[FileTreeView] mousePressEvent: modifiers = {self._drag_modifiers}", extra={"dev_only": True})
 
-        # Handle right-click separately (preserve single selection for context menu)
-        if event.button() == Qt.RightButton:
-            super().mousePressEvent(event)
-            return
-
-        # Call super() to handle normal multi-selection
+        # Call super() to handle normal selection
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
@@ -245,14 +227,8 @@ class FileTreeView(QTreeView):
             super().mouseMoveEvent(event)
             return
 
-        # Check if we're dragging a selected item
-        index = self.indexAt(self._drag_start_pos)
-        if index.isValid():
-            selection_model = self.selectionModel()
-            if selection_model and selection_model.isSelected(index):
-                # Start our custom drag if we're dragging a selected item
-                self._start_custom_drag()
-
+        # Start our custom drag
+        self._start_custom_drag()
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
@@ -265,18 +241,22 @@ class FileTreeView(QTreeView):
         if not self._drag_start_pos:
             return
 
-        # Get the selected paths for multi-selection drag
-        selected_paths = self.get_selected_paths()
-        if not selected_paths:
+        # Get the item under the mouse
+        index = self.indexAt(self._drag_start_pos)
+        if not index.isValid():
             return
 
-        # Filter out invalid drag targets
-        valid_paths = [path for path in selected_paths if self._is_valid_drag_target(path)]
-        if not valid_paths:
+        # Get the path under mouse
+        model = self.model()
+        if not model or not hasattr(model, 'filePath'):
             return
 
-        # Store the multiple items being dragged
-        self._drag_paths = valid_paths
+        clicked_path = model.filePath(index)
+        if not clicked_path or not self._is_valid_drag_target(clicked_path):
+            return
+
+        # Store the single item being dragged
+        self._drag_path = clicked_path
 
         # Set drag state
         self._is_dragging = True
@@ -287,16 +267,10 @@ class FileTreeView(QTreeView):
 
         # Start enhanced visual feedback
         visual_manager = DragVisualManager.get_instance()
+        drag_type = visual_manager.get_drag_type_from_path(clicked_path)
+        start_drag_visual(drag_type, clicked_path)
 
-        # Determine drag type based on selection
-        if len(valid_paths) == 1:
-            drag_type = visual_manager.get_drag_type_from_path(valid_paths[0])
-            start_drag_visual(drag_type, valid_paths[0])
-        else:
-            drag_type = DragType.MULTIPLE
-            start_drag_visual(drag_type, f"{len(valid_paths)} files")
-
-        logger.debug(f"[FileTreeView] Custom drag started: {valid_paths} (modifiers: {self._drag_modifiers})", extra={"dev_only": True})
+        logger.debug(f"[FileTreeView] Custom drag started: {clicked_path} (modifiers: {self._drag_modifiers})", extra={"dev_only": True})
 
     def _update_drag_feedback(self):
         """Update visual feedback based on current cursor position during drag"""
@@ -351,14 +325,14 @@ class FileTreeView(QTreeView):
             logger.debug("[FileTreeView] Drag was cancelled, skipping drop", extra={"dev_only": True})
             # Clean up drag state without performing drop
             self._is_dragging = False
-            paths = self._drag_paths
-            self._drag_paths = []
+            path = self._drag_path
+            self._drag_path = None
             self._drag_start_pos = None
 
             # End visual feedback
             end_drag_visual()
 
-            logger.debug(f"[FileTreeView] Custom drag ended (cancelled): {paths}", extra={"dev_only": True})
+            logger.debug(f"[FileTreeView] Custom drag ended (cancelled): {path}", extra={"dev_only": True})
             return
 
         # Check if we dropped on a valid target (only FileTableView allowed)
@@ -404,8 +378,8 @@ class FileTreeView(QTreeView):
 
         # Clean up drag state
         self._is_dragging = False
-        paths = self._drag_paths
-        self._drag_paths = []
+        path = self._drag_path
+        self._drag_path = None
         self._drag_start_pos = None
 
         # End visual feedback
@@ -414,23 +388,23 @@ class FileTreeView(QTreeView):
         # Notify DragManager
         drag_manager.end_drag("file_tree")
 
-        logger.debug(f"[FileTreeView] Custom drag ended: {paths} (valid_drop: {valid_drop})", extra={"dev_only": True})
+        logger.debug(f"[FileTreeView] Custom drag ended: {path} (valid_drop: {valid_drop})", extra={"dev_only": True})
 
     def _handle_drop_on_table(self):
         """Handle drop on file table with new 4-modifier logic"""
-        if not self._drag_paths:
+        if not self._drag_path:
             return
 
         # Use stored modifiers from drag start
         modifiers = getattr(self, '_drag_modifiers', Qt.NoModifier)
 
-        # Emit signal with multiple paths and modifiers
-        self.items_dropped.emit(self._drag_paths, modifiers)
+        # Emit signal with single path and modifiers
+        self.item_dropped.emit(self._drag_path, modifiers)
 
         # Log the action for debugging using centralized logic
         _, _, action = decode_modifiers_to_flags(modifiers)
 
-        logger.info(f"[FileTreeView] Dropped: {self._drag_paths} ({action})")
+        logger.info(f"[FileTreeView] Dropped: {self._drag_path} ({action})")
 
     def _is_valid_drag_target(self, path: str) -> bool:
         """Check if path is valid for dragging"""
