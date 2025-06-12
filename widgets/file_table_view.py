@@ -1018,6 +1018,69 @@ class FileTableView(QTableView):
             selected_rows = set(range(start_row, end_row + 1))
             self._update_selection_store(selected_rows, emit_signal=True)
 
+    def select_dropped_files(self, file_paths: Optional[list[str]] = None) -> None:
+        """Select specific files that were just dropped/loaded in the table."""
+        logger.warning(f"[FileTableView] SELECT_DROPPED_FILES CALLED with {len(file_paths) if file_paths else 0} paths: {file_paths}")
+
+        model = self.model()
+        if not model or not hasattr(model, 'files'):
+            logger.warning(f"[FileTableView] NO MODEL or model has no files attribute")
+            return
+
+        logger.warning(f"[FileTableView] Model OK, has {len(model.files)} files")
+
+        if not file_paths:
+            # Fallback: select all files if no specific paths provided
+            row_count = len(model.files)
+            if row_count == 0:
+                return
+            logger.debug(f"[FileTableView] Selecting all {row_count} files after drop (fallback)", extra={"dev_only": True})
+            self.select_rows_range(0, row_count - 1)
+            return
+
+        # Select specific files based on their paths
+        rows_to_select = []
+        logger.warning(f"[FileTableView] Matching {len(file_paths)} paths against {len(model.files)} files")
+
+        for i, file_item in enumerate(model.files):
+            logger.warning(f"[FileTableView] File {i}: {file_item.full_path}")
+            if file_item.full_path in file_paths:
+                logger.warning(f"[FileTableView] MATCH! Adding row {i}")
+                rows_to_select.append(i)
+
+        logger.warning(f"[FileTableView] Found {len(rows_to_select)} matching files: {rows_to_select}")
+
+        if not rows_to_select:
+            logger.warning(f"[FileTableView] NO MATCHING FILES FOUND - returning early")
+            return
+
+        logger.warning(f"[FileTableView] Selecting {len(rows_to_select)} specific dropped files")
+
+        # Clear existing selection first
+        self.clearSelection()
+
+        # Select the specific rows
+        selection_model = self.selectionModel()
+        if not selection_model:
+            return
+
+        self.blockSignals(True)
+        for row in rows_to_select:
+            if 0 <= row < len(model.files):
+                index = model.index(row, 0)
+                if index.isValid():
+                    selection_model.select(index, selection_model.Select | selection_model.Rows)
+
+        self.blockSignals(False)
+
+        # Update selection store
+        selected_rows = set(rows_to_select)
+        self._update_selection_store(selected_rows, emit_signal=True)
+
+        # Update UI
+        if hasattr(self, 'viewport'):
+            self.viewport().update()
+
     def is_empty(self) -> bool:
         return not getattr(self.model(), "files", [])
 

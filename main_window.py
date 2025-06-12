@@ -2215,6 +2215,7 @@ class MainWindow(QMainWindow):
             return
 
         logger.info(f"[Drop] {len(paths)} file(s)/folder(s) dropped in table view")
+        logger.debug(f"[Drop] ENTRY: load_files_from_dropped_items called with {len(paths)} paths", extra={"dev_only": True})
 
         if len(paths) == 1 and os.path.isdir(paths[0]):
             folder_path = paths[0]
@@ -2265,12 +2266,23 @@ class MainWindow(QMainWindow):
 
             logger.debug(f"[Drop] Individual files: ctrl={ctrl}, shift={shift} → skip={skip_metadata}, extended={use_extended}")
 
+            # Define selection function to call after metadata loading (or immediately if skipping)
+            def select_dropped_files():
+                logger.warning(f"[Drop] CALLING select_dropped_files with {len(paths)} paths: {paths}")
+                self.file_table_view.select_dropped_files(paths)
+
             # Load metadata if not skipping
             if not skip_metadata:
                 items = self.file_model.files
                 self.load_metadata_for_items(items, use_extended=use_extended, source="individual_file_drop")
+                # Select files AFTER metadata loading with a delay
+                logger.warning(f"[Drop] SCHEDULING selection after metadata with 100ms delay")
+                QTimer.singleShot(100, select_dropped_files)
             else:
                 logger.info(f"[Drop] Skipping metadata for {len(paths)} individual files (no Ctrl modifier)")
+                # Select files immediately if not loading metadata
+                logger.warning(f"[Drop] SCHEDULING selection immediately with 10ms delay")
+                QTimer.singleShot(10, select_dropped_files)
 
         # After loading files + metadata
         self.show_metadata_status()

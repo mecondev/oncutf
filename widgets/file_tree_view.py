@@ -153,10 +153,15 @@ class FileTreeView(QTreeView):
     def get_selected_paths(self) -> list:
         """Get list of selected file/folder paths"""
         paths = []
-        for index in self.selectedIndexes():
+        selection_model = self.selectionModel()
+        if not selection_model:
+            return paths
+
+        # Use selectedRows() to avoid duplicates from multiple columns
+        for index in selection_model.selectedRows():
             if self.model() and hasattr(self.model(), 'filePath'):
                 path = self.model().filePath(index)
-                if path:
+                if path and path not in paths:  # Additional safety check
                     paths.append(path)
         return paths
 
@@ -207,7 +212,16 @@ class FileTreeView(QTreeView):
             # This prevents Ctrl from interfering with drag selection
             self._pre_drag_selection = self.get_selected_paths()
 
+            # Log for debugging
+            logger.debug(f"[FileTreeView] mousePressEvent: pre-drag selection = {self._pre_drag_selection}", extra={"dev_only": True})
+
+        # Call super() after storing selection to prevent Qt interference
         super().mousePressEvent(event)
+
+        # Log selection after Qt processing for debugging
+        if event.button() == Qt.LeftButton:
+            post_selection = self.get_selected_paths()
+            logger.debug(f"[FileTreeView] mousePressEvent: post-Qt selection = {post_selection}", extra={"dev_only": True})
 
     def mouseMoveEvent(self, event):
         """Handle mouse move for custom drag start and real-time drop zone validation"""
