@@ -614,13 +614,25 @@ class FileTableView(QTableView):
                     self.viewport().update(row_rect)
 
     def keyPressEvent(self, event) -> None:
-        """Handle keyboard navigation and sync selection."""
+        """Handle keyboard navigation, sync selection, and modifier changes during drag."""
+        # Update drag feedback if we're currently dragging
+        if self._is_dragging:
+            self._update_drag_feedback()
+
         super().keyPressEvent(event)
         if event.matches(QKeySequence.SelectAll) or event.key() in (
             Qt.Key_Space, Qt.Key_Return, Qt.Key_Enter,
             Qt.Key_Up, Qt.Key_Down, Qt.Key_Left, Qt.Key_Right
         ):
             self._sync_selection_safely()
+
+    def keyReleaseEvent(self, event) -> None:
+        """Handle key release events, including modifier changes during drag."""
+        # Update drag feedback if we're currently dragging
+        if self._is_dragging:
+            self._update_drag_feedback()
+
+        super().keyReleaseEvent(event)
 
     def _sync_selection_safely(self) -> None:
         parent = self.window()

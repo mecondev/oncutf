@@ -470,11 +470,24 @@ class FileTreeView(QTreeView):
     # =====================================
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        """Handle Return/Enter key to emit folder_selected signal"""
+        """Handle key press events, including modifier changes during drag"""
+        # Update drag feedback if we're currently dragging
+        if self._is_dragging:
+            self._update_drag_feedback()
+
+        # Handle Return/Enter key to emit folder_selected signal
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
             self.folder_selected.emit()
         else:
             super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event: QKeyEvent) -> None:
+        """Handle key release events, including modifier changes during drag"""
+        # Update drag feedback if we're currently dragging
+        if self._is_dragging:
+            self._update_drag_feedback()
+
+        super().keyReleaseEvent(event)
 
     # =====================================
     # SPLITTER INTEGRATION (unchanged)

@@ -30,7 +30,10 @@ from core.config_imports import *
 from core.application_context import ApplicationContext
 from core.drag_manager import DragManager
 from core.file_loader import FileLoader
+from core.file_operations_manager import FileOperationsManager
 from core.modifier_handler import decode_modifiers_to_flags
+from core.preview_manager import PreviewManager
+from core.status_manager import StatusManager
 # Data models and business logic modules
 from models.file_item import FileItem
 from models.file_table_model import FileTableModel
@@ -76,6 +79,15 @@ class MainWindow(QMainWindow):
 
         # --- Initialize FileLoader ---
         self.file_loader = FileLoader(parent_window=self)
+
+        # --- Initialize PreviewManager ---
+        self.preview_manager = PreviewManager(parent_window=self)
+
+        # --- Initialize FileOperationsManager ---
+        self.file_operations_manager = FileOperationsManager(parent_window=self)
+
+        # --- Initialize StatusManager ---
+        self.status_manager = None  # Will be initialized after status label is created
 
         # --- Initialize MetadataManager ---
         self.metadata_manager = None  # Will be initialized after metadata components
@@ -343,7 +355,10 @@ class MainWindow(QMainWindow):
         self.status_label = QLabel("")
         self.status_label.setTextFormat(Qt.RichText)
 
-        # Status label fade effect setup
+        # Initialize StatusManager now that status_label exists
+        self.status_manager = StatusManager(status_label=self.status_label)
+
+        # Status label fade effect setup (kept for compatibility but not used by StatusManager)
         self.status_opacity_effect = QGraphicsOpacityEffect()
         self.status_label.setGraphicsEffect(self.status_opacity_effect)
         self.status_fade_anim = QPropertyAnimation(self.status_opacity_effect, b"opacity")
@@ -394,7 +409,7 @@ class MainWindow(QMainWindow):
 
     def _update_status_from_preview(self, status_html: str) -> None:
         """Update the status label from preview widget status updates."""
-        self.status_label.setText(status_html)
+        self.status_manager.update_status_from_preview(status_html)
 
 
 
@@ -706,64 +721,33 @@ class MainWindow(QMainWindow):
 
     def rename_files(self) -> None:
         """
-        Executes the batch rename process for checked files using active rename modules.
+        Execute the batch rename process for checked files using active rename modules.
 
-        This method:
-        - Validates preconditions (folder, files, modules)
-        - Renames files using the Renamer class
-        - Reloads folder from disk (skipping metadata scan)
-        - Restores checked state and metadata from cache
-        - Refreshes preview and icon status
-        - Prompts user to open folder if rename succeeded
+        This method handles the complete rename workflow including validation,
+        execution, folder reload, and state restoration.
         """
-        if not self.current_folder_path:
-            self.set_status("No folder selected.", color="orange")
-            return
-
         selected_files = [f for f in self.file_model.files if f.checked]
-        if not selected_files:
-            self.set_status("No files selected.", color="gray")
-            CustomMessageDialog.show_warning(
-                self, "Rename Warning", "No files are selected for renaming."
-            )
-            return
-
         rename_data = self.rename_modules_area.get_all_data()
         modules_data = rename_data.get("modules", [])
         post_transform = rename_data.get("post_transform", {})
 
-        logger.info(f"[Rename] Starting rename process for {len(selected_files)} files...")
-
-        renamer = Renamer(
-            files=selected_files,
-            modules_data=modules_data,
-            metadata_cache=self.metadata_cache,
-            post_transform=post_transform,
-            parent=self,
-            conflict_callback=CustomMessageDialog.rename_conflict_dialog,
-            validator=self.filename_validator
-        )
-
-        results = renamer.rename()
-
+        # Store checked paths for restoration
         checked_paths = {f.full_path for f in self.file_model.files if f.checked}
 
-        renamed_count = 0
-        for result in results:
-            if result.success:
-                renamed_count += 1
-                item = next((f for f in self.files if f.full_path == result.old_path), None)
-                if item:
-                    item.filename = os.path.basename(result.new_path)
-                    item.full_path = result.new_path
-            elif result.skip_reason:
-                logger.info(f"[Rename] Skipped: {result.old_path} — Reason: {result.skip_reason}")
-            elif result.error:
-                logger.error(f"[Rename] Error: {result.old_path} — {result.error}")
+        # Use FileOperationsManager to perform rename
+        renamed_count = self.file_operations_manager.rename_files(
+            selected_files=selected_files,
+            modules_data=modules_data,
+            post_transform=post_transform,
+            metadata_cache=self.metadata_cache,
+            filename_validator=self.filename_validator,
+            current_folder_path=self.current_folder_path
+        )
 
-        self.set_status(f"Renamed {renamed_count} file(s).", color="green", auto_reset=True)
-        logger.info(f"[Rename] Completed: {renamed_count} renamed out of {len(results)} total")
+        if renamed_count == 0:
+            return
 
+        # Post-rename workflow
         self.last_action = "rename"
         self.load_files_from_folder(self.current_folder_path, skip_metadata=True)
 
@@ -775,10 +759,10 @@ class MainWindow(QMainWindow):
                 file.checked = True
                 restored_count += 1
 
-        # Restore metadata from cache (to FileItem.metadata)
+        # Restore metadata from cache
         self.restore_fileitem_metadata_from_cache()
 
-        # After restoring checked state, regenerate preview with new filenames
+        # Regenerate preview with new filenames
         if self.last_action == "rename":
             logger.debug("[PostRename] Regenerating preview with new filenames and restored checked state")
             self.request_preview_update()
@@ -794,44 +778,11 @@ class MainWindow(QMainWindow):
         self.file_table_view.viewport().update()
         logger.debug(f"[Rename] Restored {restored_count} checked out of {len(self.file_model.files)} files")
 
-        if renamed_count > 0:
-            if CustomMessageDialog.question(
-                self,
-                "Rename Complete",
-                f"{renamed_count} file(s) renamed.\nOpen the folder?",
-                yes_text="Open Folder",
-                no_text="Close"
-            ):
-                QDesktopServices.openUrl(QUrl.fromLocalFile(self.current_folder_path))
-
     def should_skip_folder_reload(self, folder_path: str, force: bool = False) -> bool:
-        """
-        Checks if the given folder is already loaded and optionally prompts the user to reload.
-
-        Parameters:
-            folder_path (str): Folder path to check
-            force (bool): If True, bypasses the check and allows reload
-
-        Returns:
-            bool: True if reload should be skipped, False otherwise
-        """
-        if force:
-            return False
-
-        normalized_new = os.path.abspath(os.path.normpath(folder_path))
-        normalized_current = os.path.abspath(os.path.normpath(self.current_folder_path or ""))
-
-        if normalized_new == normalized_current:
-            result = CustomMessageDialog.question(
-                self,
-                "Reload Folder",
-                f"The folder '{os.path.basename(folder_path)}' is already loaded.\n\nDo you want to reload it?",
-                yes_text="Reload",
-                no_text="Cancel"
-            )
-            return not result  # Skip reload if user pressed Cancel
-
-        return False
+        """Delegates to FileOperationsManager for folder reload check."""
+        return self.file_operations_manager.should_skip_folder_reload(
+            folder_path, self.current_folder_path, force
+        )
 
     def get_file_items_from_folder(self, folder_path: str) -> list[FileItem]:
         """Get FileItem objects from folder_path. Returns empty list if folder doesn't exist."""
@@ -978,151 +929,55 @@ class MainWindow(QMainWindow):
         Generate new preview names for all selected files using current rename modules.
         Updates the preview map and UI elements accordingly.
         """
+        selected_files = [f for f in self.file_model.files if f.checked]
+        logger.debug("[Preview] Triggered! Selected rows: %s", [f.filename for f in selected_files], extra={"dev_only": True})
 
-        with wait_cursor():
-            timer = QElapsedTimer()
-            timer.start()
-
-            selected_files = [f for f in self.file_model.files if f.checked]
-            logger.debug("[Preview] Triggered! Selected rows: %s", [f.filename for f in selected_files], extra={"dev_only": True})
-
-            if not selected_files:
-                logger.debug("[Preview] No selected files — skipping preview generation.", extra={"dev_only": True})
-                self.update_preview_tables_from_pairs([])
-                self.rename_button.setEnabled(False)
-                return
-
-            rename_data = self.rename_modules_area.get_all_data()
-            modules_data = rename_data.get("modules", [])
-            post_transform = rename_data.get("post_transform", {})
-
-            logger.debug(f"[Preview] modules_data: {modules_data}", extra={"dev_only": True})
-            logger.debug(f"[Preview] post_transform: {post_transform}", extra={"dev_only": True})
-
-            # Fast path: if all modules are no-op and no post_transform
-            is_noop = True
-
-            # Check if any module is effective
-            all_modules = self.rename_modules_area.get_all_module_instances()
-            logger.debug(f"[Preview] Checking {len(all_modules)} modules for effectiveness", extra={"dev_only": True})
-            for module_widget in all_modules:
-                if module_widget.is_effective():
-                    logger.debug(f"[Preview] Module {module_widget.type_combo.currentText()} is effective!", extra={"dev_only": True})
-                    is_noop = False
-                    break
-                else:
-                    logger.debug(f"[Preview] Module {module_widget.type_combo.currentText()} is NOT effective", extra={"dev_only": True})
-
-            # Check if post_transform is effective
-            if NameTransformModule.is_effective(post_transform):
-                logger.debug(f"[Preview] Post transform is effective: {post_transform}", extra={"dev_only": True})
-                is_noop = False
-            else:
-                logger.debug(f"[Preview] Post transform is NOT effective: {post_transform}", extra={"dev_only": True})
-
-        self.preview_map = {file.filename: file for file in selected_files}
-
-        if is_noop:
-            logger.debug("[Preview] Fast path: no-op modules, skipping preview/validation.", extra={"dev_only": True})
+        if not selected_files:
+            logger.debug("[Preview] No selected files — skipping preview generation.", extra={"dev_only": True})
+            self.update_preview_tables_from_pairs([])
             self.rename_button.setEnabled(False)
-            self.rename_button.setToolTip("No changes to apply")
-
-            if not all_modules and not NameTransformModule.is_effective(post_transform):
-                # No modules at all → clear preview completely
-                self.update_preview_tables_from_pairs([])
-                self.set_status("No rename modules defined.", color="#888888", auto_reset=True)
-            else:
-                # Modules exist but inactive → show identity mapping with unchanged icons
-                name_pairs = [(f.filename, f.filename) for f in selected_files]
-                self.update_preview_tables_from_pairs(name_pairs)
-                self.set_status("Rename modules present but inactive.", color="#888888", auto_reset=True)
-
             return
 
+        # Get rename data and modules
+        rename_data = self.rename_modules_area.get_all_data()
+        all_modules = self.rename_modules_area.get_all_module_instances()
 
+        # Use PreviewManager to generate previews
+        name_pairs, has_changes = self.preview_manager.generate_preview_names(
+            selected_files, rename_data, self.metadata_cache, all_modules
+        )
 
-        logger.debug("[Preview] Running full preview/validation for selected files.", extra={"dev_only": True})
+        # Update preview map from manager
+        self.preview_map = self.preview_manager.get_preview_map()
 
-        name_pairs = []
+        # Handle UI updates based on results
+        if not name_pairs:
+            # No modules at all → clear preview completely
+            self.update_preview_tables_from_pairs([])
+            self.rename_button.setEnabled(False)
+            self.set_status("No rename modules defined.", color="#888888", auto_reset=True)
+            return
 
-        for idx, file in enumerate(selected_files):
-            try:
-                # Split filename into basename and extension
-                import os
-                basename, extension = os.path.splitext(file.filename)
+        if not has_changes:
+            # Modules exist but inactive → show identity mapping
+            self.rename_button.setEnabled(False)
+            self.rename_button.setToolTip("No changes to apply")
+            self.update_preview_tables_from_pairs(name_pairs)
+            self.set_status("Rename modules present but inactive.", color="#888888", auto_reset=True)
+            return
 
-                # Apply modules to basename only
-                new_fullname = apply_rename_modules(modules_data, idx, file, self.metadata_cache)
-                # Αφαίρεσε το extension αν υπάρχει ήδη (ώστε να δουλεύει μόνο με το basename)
-                if extension and new_fullname.lower().endswith(extension.lower()):
-                    new_basename = new_fullname[:-(len(extension))]
-                else:
-                    new_basename = new_fullname
-
-                # Apply name transform (case, separator) to basename only
-                if NameTransformModule.is_effective(post_transform):
-                    new_basename = NameTransformModule.apply_from_data(post_transform, new_basename)
-
-                # Validate only the basename
-                from utils.validation import is_valid_filename_text
-                if not is_valid_filename_text(new_basename):
-                    logger.warning(f"Invalid basename generated: {new_basename}")
-                    name_pairs.append((file.filename, file.filename))
-                    continue
-                # Add extension (with dot) only at the end
-                if extension:
-                    new_name = f"{new_basename}{extension}"
-                else:
-                    new_name = new_basename
-
-                name_pairs.append((file.filename, new_name))
-
-            except Exception as e:
-                logger.warning(f"Failed to generate preview for {file.filename}: {e}")
-                name_pairs.append((file.filename, file.filename))
-
-        # Map new names → FileItem only when name changed (do this once after the loop)
-        for old_name, new_name in name_pairs:
-            if old_name != new_name:
-                file_item = self.preview_map.get(old_name)
-                if file_item:
-                    self.preview_map[new_name] = file_item
-
-        # Update preview tables only once after all processing
+        # Update preview tables with changes
         self.update_preview_tables_from_pairs(name_pairs)
 
-        # Enable rename button if any name has changed
+        # Enable rename button and set tooltip
         valid_pairs = [p for p in name_pairs if p[0] != p[1]]
         self.rename_button.setEnabled(bool(valid_pairs))
         tooltip_msg = f"{len(valid_pairs)} files will be renamed." if valid_pairs else "No changes to apply"
         self.rename_button.setToolTip(tooltip_msg)
 
-        elapsed = timer.elapsed()
-        logger.debug(f"[Performance] generate_preview_names took {elapsed} ms", extra={"dev_only": True})
-
     def compute_max_filename_width(self, file_list: list[FileItem]) -> int:
-        """
-        Calculates the ideal column width in pixels based on the longest filename.
-
-        The width is estimated as: 8 * length of longest filename,
-        clamped between 250 and 1000 pixels. This ensures a readable but bounded width
-        for the filename column in the preview table.
-
-        Args:
-            file_list (list[FileItem]): A list of FileItem instances to analyze.
-
-        Returns:
-            int: Pixel width suitable for displaying the longest filename.
-        """
-        # Get the length of the longest filename (in characters)
-        max_len = max((len(file.filename) for file in file_list), default=0)
-
-        # Convert length to pixels (roughly 8 px per character), then clamp
-        pixel_width = 8 * max_len
-        clamped_width = min(max(pixel_width, 250), 1000)
-
-        logger.debug(f'Longest filename length: {max_len} chars -> width: {clamped_width} px (clamped)')
-        return clamped_width
+        """Delegates to PreviewManager for filename width calculation."""
+        return self.preview_manager.compute_max_filename_width(file_list)
 
     def center_window(self) -> None:
         """
@@ -1150,66 +1005,16 @@ class MainWindow(QMainWindow):
         logger.debug("Main window centered on screen.")
 
     def confirm_large_folder(self, file_list: list[str], folder_path: str) -> bool:
-        """
-        Warns if folder is big and asks user if they want to scan metadata.
-        Returns True to scan metadata, False to skip only metadata.
-        """
-        if len(file_list) > LARGE_FOLDER_WARNING_THRESHOLD:
-            proceed = CustomMessageDialog.question(
-                self,
-                "Large Folder",
-                f"This folder contains {len(file_list)} supported files.\n"
-                "Metadata scan may take time. Scan metadata?",
-                yes_text="Scan",
-                no_text="Skip Metadata"
-            )
-            logger.info(
-                "Large-folder dialog: user chose %s metadata scan for %s",
-                "scan" if proceed else "skip",
-                folder_path
-            )
-            return proceed
-        return True
+        """Delegates to FileOperationsManager for large folder confirmation."""
+        return self.file_operations_manager.confirm_large_folder(file_list, folder_path)
 
     def check_large_files(self, files: list[FileItem]) -> list[FileItem]:
-        """
-        Returns a list of files over the configured size threshold (in MB).
-        """
-        limit_bytes = EXTENDED_METADATA_SIZE_LIMIT_MB * 1024 * 1024
-        large_files = []
-        for f in files:
-            try:
-                if os.path.getsize(f.full_path) > limit_bytes:
-                    large_files.append(f)
-            except Exception as e:
-                logger.warning(f"[SizeCheck] Could not get size for {f.filename}: {e}")
-        return large_files
+        """Delegates to FileOperationsManager for large file checking."""
+        return self.file_operations_manager.check_large_files(files)
 
     def confirm_large_files(self, files: list[FileItem]) -> bool:
-        """
-        Checks for large files and asks the user whether to proceed.
-        Returns False if user cancels. True if OK.
-        """
-        large_files = self.check_large_files(files)
-        if not large_files:
-            return True
-
-        names = "\n".join(f.filename for f in large_files[:5])
-        if len(large_files) > 5:
-            names += "\n..."
-
-        if not CustomMessageDialog.question(
-            self,
-            "Warning: Large Files",
-            f"{len(large_files)} of the selected files are larger than {EXTENDED_METADATA_SIZE_LIMIT_MB} MB.\n\n"
-            f"{names}\n\n"
-            "Extended metadata scan may be slow or fail. Do you want to continue?",
-            yes_text="Continue",
-            no_text="Cancel"
-        ):
-            return False
-
-        return True
+        """Delegates to FileOperationsManager for large file confirmation."""
+        return self.file_operations_manager.confirm_large_files(files)
 
     def update_files_label(self) -> None:
         """
@@ -1222,10 +1027,7 @@ class MainWindow(QMainWindow):
         total = len(self.file_model.files)
         selected = sum(1 for f in self.file_model.files if f.checked) if total else 0
 
-        if total == 0:
-            self.files_label.setText("Files (0)")
-        else:
-            self.files_label.setText(f"Files ({total} loaded, {selected} selected)")
+        self.status_manager.update_files_label(self.files_label, total, selected)
 
     def fade_status_to_ready(self) -> None:
         """
@@ -1246,38 +1048,13 @@ class MainWindow(QMainWindow):
 
     def set_status(self, text: str, color: str = "", auto_reset: bool = False, reset_delay: int = 3000) -> None:
         """
-        Sets the status label text and optional color. Supports auto-reset with fade effect.
+        Sets the status label text and optional color. Delegates to StatusManager.
         """
-        # Always reset opacity to full when setting new text
-        if hasattr(self, "status_opacity_effect"):
-            self.status_opacity_effect.setOpacity(1.0)
-
-        self.status_label.setText(text)
-        if color:
-            self.status_label.setStyleSheet(f"color: {color};")
-        else:
-            self.status_label.setStyleSheet("")
-
-        if auto_reset:
-            if hasattr(self, "_status_timer") and self._status_timer:
-                self._status_timer.stop()
-            else:
-                self._status_timer = QTimer(self)
-
-            self._status_timer.setSingleShot(True)
-            self._status_timer.timeout.connect(lambda: self.fade_status_to_ready())
-            self._status_timer.start(reset_delay)
+        self.status_manager.set_status(text, color, auto_reset, reset_delay)
 
     def get_identity_name_pairs(self) -> list[tuple[str, str]]:
-        """
-        Returns a list of (original, new) filename pairs, where each 'new' filename is the same as the 'original' filename.
-        This is used to populate the preview tables when the user has not yet configured any rename modules.
-        """
-        return [
-            (file.filename, file.filename)
-            for file in self.file_model.files
-            if file.checked
-        ]
+        """Delegates to FileOperationsManager for identity name pairs."""
+        return self.file_operations_manager.get_identity_name_pairs(self.file_model.files)
 
     def update_preview_tables_from_pairs(self, name_pairs: list[tuple[str, str]]) -> None:
         """
@@ -1315,19 +1092,8 @@ class MainWindow(QMainWindow):
         return [self.file_model.files[i.row()] for i in selected_indexes if 0 <= i.row() < len(self.file_model.files)]
 
     def find_fileitem_by_path(self, path: str) -> Optional[FileItem]:
-        """
-        Finds and returns the FileItem corresponding to the given file path.
-
-        Args:
-            path (str): Full file path.
-
-        Returns:
-            FileItem or None
-        """
-        for file_item in self.file_model.files:
-            if file_item.full_path == path:
-                return file_item
-        return None
+        """Delegates to FileOperationsManager for finding FileItem by path."""
+        return self.file_operations_manager.find_fileitem_by_path(self.file_model.files, path)
 
     def cancel_metadata_loading(self) -> None:
         """Delegates to MetadataManager for cancellation."""
@@ -1362,21 +1128,8 @@ class MainWindow(QMainWindow):
         self.metadata_tree_view.refresh_metadata_from_selection()
 
     def prompt_file_conflict(self, target_path: str) -> str:
-        """
-        Ask user what to do if the target file already exists.
-        Returns: 'overwrite', 'skip', or 'cancel'
-        """
-        response = CustomMessageDialog.choice(
-            self,
-            "File Exists",
-            f"The file:\n{target_path}\nalready exists. What would you like to do?",
-            buttons={
-                "Overwrite": "overwrite",
-                "Skip": "skip",
-                "Cancel": "cancel"
-            }
-        )
-        return response
+        """Delegates to FileOperationsManager for file conflict resolution."""
+        return self.file_operations_manager.prompt_file_conflict(target_path)
 
 
 
@@ -1389,7 +1142,7 @@ class MainWindow(QMainWindow):
         self.file_model.set_files([])  # reset model with empty list
         self.file_table_view.set_placeholder_visible(True)  # Show placeholder when empty
         self.header.setEnabled(False) # disable header
-        self.status_label.setText(message)
+        self.status_manager.clear_file_table_status(self.files_label, message)
         self.update_files_label()
 
         # Update scrollbar visibility after clearing table
@@ -1944,18 +1697,7 @@ class MainWindow(QMainWindow):
         and the type of metadata scan performed (skipped, basic, extended).
         """
         num_files = len(self.file_model.files)
-
-        if self.skip_metadata_mode:
-            status_msg = f"Loaded {num_files} files — metadata skipped"
-            color = "#999999"
-        elif self.force_extended_metadata:
-            status_msg = f"Loaded {num_files} files — metadata (extended)"
-            color = "#aa3300"
-        else:
-            status_msg = f"Loaded {num_files} files — metadata (basic)"
-            color = "#4444cc"
-
-        self.set_status(status_msg, color=color, auto_reset=True)
+        self.status_manager.show_metadata_status(num_files, self.skip_metadata_mode, self.force_extended_metadata)
 
     def _enable_selection_store_mode(self):
         """Enable SelectionStore mode in FileTableView once ApplicationContext is ready."""

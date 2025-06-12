@@ -46,10 +46,11 @@ class DropZoneState(Enum):
 
 
 class ModifierState(Enum):
-    """Keyboard modifier states for metadata loading"""
-    NORMAL = "normal"          # No modifiers - normal metadata
-    EXTENDED = "extended"      # Ctrl pressed - extended metadata
-    MULTIPLE = "multiple"      # Shift pressed - multiple selection
+    """Keyboard modifier states for drag operations"""
+    NORMAL = "normal"          # No modifiers - Replace + Shallow
+    SHIFT = "shift"            # Shift only - Merge + Shallow
+    CTRL = "ctrl"              # Ctrl only - Replace + Recursive
+    CTRL_SHIFT = "ctrl_shift"  # Ctrl+Shift - Merge + Recursive
 
 
 class DragVisualManager:
@@ -194,12 +195,16 @@ class DragVisualManager:
         else:  # MULTIPLE
             base_icon = "copy"
 
-        # Choose action icon based on drop zone state
+        # Choose action icon based on drop zone state and modifiers
         if self._drop_zone_state == DropZoneState.VALID:
-            if self._modifier_state == ModifierState.EXTENDED:
-                action_icon = "file-plus"  # Extended metadata
+            if self._modifier_state == ModifierState.CTRL:
+                action_icon = "arrow-down"  # Replace + Recursive
+            elif self._modifier_state == ModifierState.SHIFT:
+                action_icon = "plus"  # Merge + Shallow
+            elif self._modifier_state == ModifierState.CTRL_SHIFT:
+                action_icon = "plus-circle"  # Merge + Recursive
             else:
-                action_icon = "check"  # Valid drop
+                action_icon = "check"  # Replace + Shallow (normal)
         else:  # INVALID or NEUTRAL - both should show "x" since neutral isn't a valid drop target
             action_icon = "x"  # Invalid drop (including neutral zones)
 
@@ -295,12 +300,15 @@ class DragVisualManager:
         """Detect current keyboard modifier state."""
         modifiers = QApplication.keyboardModifiers()
 
-        if modifiers & Qt.ControlModifier:
-            return ModifierState.EXTENDED
+        # Check for Shift+Ctrl combination first (highest priority)
+        if (modifiers & Qt.ControlModifier) and (modifiers & Qt.ShiftModifier):
+            return ModifierState.CTRL_SHIFT  # Ctrl+Shift = Merge + Recursive
         elif modifiers & Qt.ShiftModifier:
-            return ModifierState.MULTIPLE
+            return ModifierState.SHIFT       # Shift only = Merge + Shallow
+        elif modifiers & Qt.ControlModifier:
+            return ModifierState.CTRL        # Ctrl only = Replace + Recursive
         else:
-            return ModifierState.NORMAL
+            return ModifierState.NORMAL      # No modifiers = Replace + Shallow
 
     def get_drag_type_from_path(self, path: str) -> DragType:
         """
@@ -361,12 +369,13 @@ class DragVisualManager:
     def get_modifier_icon(self, state: ModifierState) -> QIcon:
         """Get icon for modifier state."""
         icon_map = {
-            ModifierState.NORMAL: "file",
-            ModifierState.EXTENDED: "file-plus",
-            ModifierState.MULTIPLE: "copy"
+            ModifierState.NORMAL: "check",
+            ModifierState.SHIFT: "plus",
+            ModifierState.CTRL: "arrow-down",
+            ModifierState.CTRL_SHIFT: "plus-circle"
         }
 
-        icon_name = icon_map.get(state, "file")
+        icon_name = icon_map.get(state, "check")
         return get_menu_icon(icon_name)
 
 
