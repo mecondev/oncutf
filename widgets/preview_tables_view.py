@@ -82,8 +82,12 @@ class PreviewTablesView(QWidget):
         self._setup_placeholders()
         self._setup_signals()
 
-        # Show placeholders initially
-        self._set_placeholders_visible(True)
+        # Don't show placeholders initially - they will be shown after proper positioning
+        # This prevents the "jump" effect where placeholders appear top-left then move to center
+        self._placeholders_ready = False
+
+        # Schedule initial placeholder setup with positioning
+        schedule_ui_update(self._initialize_placeholders, 10)
 
         logger.debug("[PreviewTablesView] Initialized with intelligent scrolling")
 
@@ -177,7 +181,6 @@ class PreviewTablesView(QWidget):
             self.old_names_placeholder.setPixmap(scaled_old)
             # Store the actual scaled size for accurate centering
             self.old_placeholder_actual_size = scaled_old.size()
-            logger.debug(f"[PreviewTablesView] Old placeholder setup: original={self.old_names_placeholder_icon.size().width()}x{self.old_names_placeholder_icon.size().height()}, scaled={scaled_old.size().width()}x{scaled_old.size().height()}")
         else:
             logger.warning("Old names placeholder icon could not be loaded.")
             self.old_placeholder_actual_size = None
@@ -198,7 +201,6 @@ class PreviewTablesView(QWidget):
             self.new_names_placeholder.setPixmap(scaled_new)
             # Store the actual scaled size for accurate centering
             self.new_placeholder_actual_size = scaled_new.size()
-            logger.debug(f"[PreviewTablesView] New placeholder setup: original={self.new_names_placeholder_icon.size().width()}x{self.new_names_placeholder_icon.size().height()}, scaled={scaled_new.size().width()}x{scaled_new.size().height()}")
         else:
             logger.warning("New names placeholder icon could not be loaded.")
             self.new_placeholder_actual_size = None
@@ -244,8 +246,12 @@ class PreviewTablesView(QWidget):
 
             logger.debug("[PreviewTablesView] Placeholders enabled - tables disabled")
 
-            # Center placeholders after they become visible
-            schedule_ui_update(self._handle_table_resize, 5)
+            # Center placeholders immediately if they are ready, otherwise they will be centered during initialization
+            if hasattr(self, '_placeholders_ready') and self._placeholders_ready:
+                schedule_ui_update(self._handle_table_resize, 5)
+            else:
+                # Do immediate centering for initialization
+                self._handle_table_resize()
 
         else:
             # Hide placeholders
@@ -339,8 +345,6 @@ class PreviewTablesView(QWidget):
 
     def _handle_table_resize(self):
         """Handle resize events for preview tables to update placeholder positions and column widths."""
-        logger.debug(f"[PreviewTablesView] _handle_table_resize called - old visible: {hasattr(self, 'old_names_placeholder') and self.old_names_placeholder.isVisible()}, new visible: {hasattr(self, 'new_names_placeholder') and self.new_names_placeholder.isVisible()}")
-
         # Update placeholder positions - center them properly in viewport (only if visible)
         if hasattr(self, 'old_names_placeholder') and self.old_names_placeholder.isVisible():
             viewport_size = self.old_names_table.viewport().size()
@@ -357,8 +361,6 @@ class PreviewTablesView(QWidget):
             # Calculate center position
             x = max(0, (viewport_size.width() - placeholder_width) // 2)
             y = max(0, (viewport_size.height() - placeholder_height) // 2)
-
-            logger.debug(f"[PreviewTablesView] Old placeholder positioning: viewport={viewport_size.width()}x{viewport_size.height()}, placeholder={placeholder_width}x{placeholder_height}, position=({x},{y})")
 
             self.old_names_placeholder.resize(placeholder_width, placeholder_height)
             self.old_names_placeholder.move(x, y)
@@ -378,8 +380,6 @@ class PreviewTablesView(QWidget):
             # Calculate center position
             x = max(0, (viewport_size.width() - placeholder_width) // 2)
             y = max(0, (viewport_size.height() - placeholder_height) // 2)
-
-            logger.debug(f"[PreviewTablesView] New placeholder positioning: viewport={viewport_size.width()}x{viewport_size.height()}, placeholder={placeholder_width}x{placeholder_height}, position=({x},{y})")
 
             self.new_names_placeholder.resize(placeholder_width, placeholder_height)
             self.new_names_placeholder.move(x, y)
@@ -491,3 +491,9 @@ class PreviewTablesView(QWidget):
     def handle_splitter_moved(self):
         """Handle parent splitter movement to adjust table widths."""
         self._handle_table_resize()
+
+    def _initialize_placeholders(self):
+        """Initialize placeholders after they are ready to be shown."""
+        self._set_placeholders_visible(True)
+        self._placeholders_ready = True
+        logger.debug("[PreviewTablesView] Placeholders initialized")

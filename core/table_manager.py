@@ -77,6 +77,13 @@ class TableManager:
         # Update scrollbar visibility after clearing table
         self.parent_window.file_table_view._update_scrollbar_visibility()
 
+        # Explicitly clear preview tables and show placeholders
+        self.parent_window.update_preview_tables_from_pairs([])
+
+        # Also clear the preview tables directly to ensure they show placeholders
+        if hasattr(self.parent_window, 'preview_tables_view'):
+            self.parent_window.preview_tables_view.clear_tables()
+
     def prepare_file_table(self, file_items: List[FileItem]) -> None:
         """
         Prepare the file table view with the given file items.

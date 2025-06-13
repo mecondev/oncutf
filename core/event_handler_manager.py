@@ -18,6 +18,7 @@ from PyQt5.QtGui import QKeyEvent
 
 from utils.logger_factory import get_cached_logger
 from utils.cursor_helper import wait_cursor
+from core.modifier_handler import decode_modifiers_to_flags
 
 logger = get_cached_logger(__name__)
 
@@ -40,9 +41,11 @@ class EventHandlerManager:
     def handle_browse(self) -> None:
         """
         Opens a file dialog to select a folder and loads its files.
-
-        Uses QFileDialog.getExistingDirectory() to let the user pick a folder,
-        then calls load_files_from_folder() to populate the file table.
+        Supports modifier keys for different loading modes:
+        - Normal: Replace + shallow (skip metadata)
+        - Ctrl: Replace + recursive (skip metadata)
+        - Shift: Merge + shallow (skip metadata)
+        - Ctrl+Shift: Merge + recursive (skip metadata)
         """
         folder_path = QFileDialog.getExistingDirectory(
             self.parent_window,
@@ -51,17 +54,34 @@ class EventHandlerManager:
         )
 
         if folder_path:
-            logger.info(f"[Browse] User selected folder: {folder_path}")
-            self.parent_window.load_files_from_folder(folder_path)
+            # Get current modifiers at time of selection
+            modifiers = QApplication.keyboardModifiers()
+            merge_mode, recursive, action_type = decode_modifiers_to_flags(modifiers)
+
+            logger.info(f"[Browse] User selected folder: {folder_path} ({action_type})")
+
+            # Use the same logic as drag & drop operations
+            if os.path.isdir(folder_path):
+                self.parent_window.file_loader.handle_folder_drop(folder_path, merge_mode, recursive)
+
+            # Update folder tree selection if replace mode
+            if (not merge_mode and
+                hasattr(self.parent_window, 'dir_model') and
+                hasattr(self.parent_window, 'folder_tree') and
+                hasattr(self.parent_window.dir_model, 'index')):
+                index = self.parent_window.dir_model.index(folder_path)
+                self.parent_window.folder_tree.setCurrentIndex(index)
         else:
             logger.debug("[Browse] User cancelled folder selection")
 
     def handle_folder_import(self) -> None:
         """
         Imports files from the currently selected folder in the tree view.
-
-        Gets the selected folder from the tree view and loads its files.
-        If no folder is selected, does nothing.
+        Supports modifier keys for different loading modes:
+        - Normal: Replace + shallow (skip metadata)
+        - Ctrl: Replace + recursive (skip metadata)
+        - Shift: Merge + shallow (skip metadata)
+        - Ctrl+Shift: Merge + recursive (skip metadata)
         """
         selected_path = self.parent_window.folder_tree.get_selected_path()
 
@@ -73,8 +93,14 @@ class EventHandlerManager:
             logger.debug(f"[FolderImport] Selected path is not a directory: {selected_path}")
             return
 
-        logger.info(f"[FolderImport] Loading folder: {selected_path}")
-        self.parent_window.load_files_from_folder(selected_path)
+        # Get current modifiers at time of import
+        modifiers = QApplication.keyboardModifiers()
+        merge_mode, recursive, action_type = decode_modifiers_to_flags(modifiers)
+
+        logger.info(f"[FolderImport] Loading folder: {selected_path} ({action_type})")
+
+        # Use the same logic as drag & drop operations
+        self.parent_window.file_loader.handle_folder_drop(selected_path, merge_mode, recursive)
 
     def handle_table_context_menu(self, position) -> None:
         """
