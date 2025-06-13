@@ -282,11 +282,11 @@ class FileLoader:
             self.parent_window.current_folder_path == folder_path):
 
             # Check if we should show confirmation dialog
-            if hasattr(self.parent_window, 'confirm_large_folder'):
+            if hasattr(self.parent_window, 'dialog_manager'):
                 file_items = self.get_file_items_from_folder(folder_path)
                 file_paths = [item.full_path for item in file_items]
 
                 if len(file_paths) > LARGE_FOLDER_WARNING_THRESHOLD:
-                    return not self.parent_window.confirm_large_folder(file_paths, folder_path)
+                    return not self.parent_window.dialog_manager.confirm_large_folder(file_paths, folder_path)
 
         return False

@@ -61,6 +61,9 @@ from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 from widgets.metadata_worker import MetadataWorker
 from widgets.preview_tables_view import PreviewTablesView
 from widgets.rename_modules_area import RenameModulesArea
+from core.dialog_manager import DialogManager
+from core.event_handler_manager import EventHandlerManager
+from core.file_load_manager import FileLoadManager
 
 logger = get_logger(__name__)
 
@@ -127,6 +130,11 @@ class MainWindow(QMainWindow):
         self.preview_map = {}  # preview_filename -> FileItem
         self._selection_sync_mode = "normal"  # values: "normal", "toggle"
 
+        # --- Initialize managers first ---
+        self.dialog_manager = DialogManager()
+        self.event_handler_manager = EventHandlerManager(self)
+        self.file_load_manager = FileLoadManager(self)
+
         # --- Initialize UIManager and setup all UI ---
         self.ui_manager = UIManager(parent_window=self)
         self.ui_manager.setup_all_ui()
@@ -136,12 +144,6 @@ class MainWindow(QMainWindow):
         self.preview_update_timer.setSingleShot(True)
         self.preview_update_timer.setInterval(100)  # milliseconds (reduced from 250ms for better performance)
         self.preview_update_timer.timeout.connect(self.generate_preview_names)
-
-        # --- Emergency drag cleanup timer --- (disabled for now)
-        # self.emergency_cleanup_timer = QTimer(self)
-        # self.emergency_cleanup_timer.timeout.connect(self._emergency_drag_cleanup)
-        # self.emergency_cleanup_timer.setInterval(5000)  # Check every 5 seconds, not 1
-        # self.emergency_cleanup_timer.start()
 
     # --- Method definitions ---
 
@@ -441,8 +443,8 @@ class MainWindow(QMainWindow):
         )
 
     def get_file_items_from_folder(self, folder_path: str) -> list[FileItem]:
-        """Get FileItem objects from folder_path. Returns empty list if folder doesn't exist."""
-        return self.file_loader.get_file_items_from_folder(folder_path)
+        """Delegates to FileLoadManager for getting file items from folder."""
+        return self.file_load_manager.get_file_items_from_folder(folder_path)
 
     def prepare_file_table(self, file_items: list[FileItem]) -> None:
         """
@@ -475,44 +477,8 @@ class MainWindow(QMainWindow):
             logger.debug("[PrepareTable] Post-rename detected, preview will be updated after checked state restore")
 
     def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False, force: bool = False):
-
-        normalized_new = os.path.abspath(os.path.normpath(folder_path))
-        normalized_current = os.path.abspath(os.path.normpath(self.current_folder_path or ""))
-
-        if normalized_new == normalized_current and not force:
-            logger.info(f"[FolderLoad] Ignored reload of already loaded folder: {normalized_new}")
-            self.set_status("Folder already loaded.", color="gray", auto_reset=True)
-            return
-
-        logger.info(f"Loading files from folder: {folder_path} (skip_metadata={skip_metadata})")
-
-        # Only skip clearing metadata cache immediately after rename action,
-        # and only if metadata scan is explicitly skipped (default fast path).
-        # In all other cases, always clear cache to reflect current OS state.
-        if not (self.last_action == "rename" and skip_metadata):
-            self.metadata_cache.clear()
-
-        self.current_folder_path = folder_path
-        self.metadata_tree_view.refresh_metadata_from_selection() # reset metadata tree
-
-        file_items = self.get_file_items_from_folder(folder_path)
-
-        if not file_items:
-            self.metadata_tree_view.clear_view()
-            self.header.setEnabled(False)
-            self.set_status("No supported files found.", color="orange", auto_reset=True)
-            return
-
-        self.prepare_file_table(file_items)
-        self.sort_by_column(1, Qt.AscendingOrder)
-        self.metadata_tree_view.clear_view()
-
-        if skip_metadata:
-            self.set_status("Metadata scan skipped.", color="gray", auto_reset=True)
-            return
-
-        self.set_status(f"Loading metadata for {len(file_items)} files...", color=STATUS_COLORS["info"])
-        QTimer.singleShot(100, lambda: self.start_metadata_scan([f.full_path for f in file_items if f.full_path]))
+        """Delegates to FileLoadManager for folder loading."""
+        self.file_load_manager.load_files_from_folder(folder_path, skip_metadata, force)
 
     def start_metadata_scan(self, file_paths: list[str]) -> None:
         """Delegates to MetadataManager for metadata scan initiation."""
@@ -535,10 +501,8 @@ class MainWindow(QMainWindow):
         self.metadata_manager.shortcut_load_extended_metadata()
 
     def reload_current_folder(self) -> None:
-        # Optional: adjust if flags need to be preserved
-        if self.current_folder_path:
-            self.load_files_from_folder(self.current_folder_path, skip_metadata=False)
-            self.sort_by_column(1, Qt.AscendingOrder)
+        """Delegates to FileLoadManager for reloading current folder."""
+        self.file_load_manager.reload_current_folder()
 
     def update_module_dividers(self) -> None:
         for index, module in enumerate(self.rename_modules):
@@ -546,34 +510,8 @@ class MainWindow(QMainWindow):
                 module.divider.setVisible(index > 0)
 
     def handle_header_toggle(self, _) -> None:
-        """
-        Triggered when column 0 header is clicked.
-        Toggles selection and checked state of all files (efficient, like Ctrl+A).
-        """
-        if not self.file_model.files:
-            return
-
-        total = len(self.file_model.files)
-        all_selected = all(file.checked for file in self.file_model.files)
-        selection_model = self.file_table_view.selectionModel()
-
-        with wait_cursor():
-            if all_selected:
-                # Unselect all
-                selection_model.clearSelection()
-                for file in self.file_model.files:
-                    file.checked = False
-            else:
-                # Select all efficiently
-                self.file_table_view.select_rows_range(0, total - 1)
-                for file in self.file_model.files:
-                    file.checked = True
-                self.file_table_view.anchor_row = 0
-
-            self.file_table_view.viewport().update()
-            self.update_files_label()
-            self.request_preview_update()
-            self.metadata_tree_view.refresh_metadata_from_selection()
+        """Delegates to EventHandlerManager for header toggle handling."""
+        self.event_handler_manager.handle_header_toggle(_)
 
     def generate_preview_names(self) -> None:
         """
@@ -667,6 +605,10 @@ class MainWindow(QMainWindow):
         """Delegates to FileOperationsManager for large file confirmation."""
         return self.file_operations_manager.confirm_large_files(files)
 
+    def prompt_file_conflict(self, target_path: str) -> str:
+        """Delegates to FileOperationsManager for file conflict resolution."""
+        return self.file_operations_manager.prompt_file_conflict(target_path)
+
     def update_files_label(self) -> None:
         """
         Updates the UI label that displays the count of selected files.
@@ -759,28 +701,8 @@ class MainWindow(QMainWindow):
         return self.metadata_manager.is_running_metadata_task()
 
     def on_table_row_clicked(self, index: QModelIndex) -> None:
-        """
-        Triggered when a user clicks on a file row in the table.
-        Displays the metadata for the selected file in the right panel.
-        """
-        if not self.file_model.files:
-            logger.info("No files in model — click ignored.")
-            return
-
-        row = index.row()
-        if row < 0 or row >= len(self.file_model.files):
-            logger.warning("Invalid row clicked (out of range). Ignored.")
-            return
-
-        # Ignore checkbox column clicks
-        if index.column() == 0:
-            return
-
-        self.metadata_tree_view.refresh_metadata_from_selection()
-
-    def prompt_file_conflict(self, target_path: str) -> str:
-        """Delegates to FileOperationsManager for file conflict resolution."""
-        return self.file_operations_manager.prompt_file_conflict(target_path)
+        """Delegates to EventHandlerManager for table row click handling."""
+        self.event_handler_manager.on_table_row_clicked(index)
 
     def clear_file_table(self, message: str = "No folder selected") -> None:
         """
@@ -873,126 +795,12 @@ class MainWindow(QMainWindow):
         self.selection_manager.update_preview_from_selection(selected_rows)
 
     def handle_table_context_menu(self, position) -> None:
-        """
-        Handles the right-click context menu for the file table.
-
-        Supports:
-        - Metadata load (normal / extended) for selected or all files
-        - Invert selection, select all, reload folder
-        - Uses custom selection state from file_table_view.selected_rows
-        """
-        if not self.file_model.files:
-            return
-
-        from utils.icons_loader import get_menu_icon
-
-        self.file_table_view.indexAt(position)
-        total_files = len(self.file_model.files)
-
-        # Get selected rows from custom selection model
-        selected_rows = self.file_table_view.selected_rows
-        selected_files = [self.file_model.files[r] for r in selected_rows if 0 <= r < total_files]
-
-        menu = QMenu(self)
-
-        # --- Metadata actions ---
-        action_load_sel = menu.addAction(get_menu_icon("file"), "Load metadata for selected file(s)")
-        action_load_all = menu.addAction(get_menu_icon("folder"), "Load metadata for all files")
-        action_load_ext_sel = menu.addAction(get_menu_icon("file-plus"), "Load extended metadata for selected file(s)")
-        action_load_ext_all = menu.addAction(get_menu_icon("folder-plus"), "Load extended metadata for all files")
-
-        menu.addSeparator()
-
-        # --- Selection actions ---
-        action_invert = menu.addAction(get_menu_icon("refresh-cw"), "Invert selection (Ctrl+I)")
-        action_select_all = menu.addAction(get_menu_icon("check-square"), "Select all (Ctrl+A)")
-        action_deselect_all = menu.addAction(get_menu_icon("square"), "Deselect all")
-
-        menu.addSeparator()
-
-        # --- Other actions ---
-        action_reload = menu.addAction(get_menu_icon("refresh-cw"), "Reload folder (Ctrl+R)")
-
-        menu.addSeparator()
-
-        # --- Disabled future options ---
-        action_save_sel = menu.addAction(get_menu_icon("save"), "Save metadata for selected file(s)")
-        action_save_all = menu.addAction(get_menu_icon("save"), "Save metadata for all files")
-        action_save_sel.setEnabled(False)
-        action_save_all.setEnabled(False)
-
-        # --- Enable/disable logic ---
-        if not selected_files:
-            action_load_sel.setEnabled(False)
-            action_load_ext_sel.setEnabled(False)
-            action_invert.setEnabled(total_files > 0)
-        else:
-            action_load_sel.setEnabled(True)
-            action_load_ext_sel.setEnabled(True)
-
-        action_load_all.setEnabled(total_files > 0)
-        action_load_ext_all.setEnabled(total_files > 0)
-        action_select_all.setEnabled(total_files > 0)
-        action_reload.setEnabled(total_files > 0)
-
-        # Show menu and get chosen action
-        action = menu.exec_(self.file_table_view.viewport().mapToGlobal(position))
-
-        self.file_table_view.context_focused_row = None
-        self.file_table_view.viewport().update()
-        # Force full repaint of the table to avoid stale selection highlight
-        self.file_table_view.update()
-
-        # === Handlers ===
-        if action == action_load_sel:
-            self.load_metadata_for_items(selected_files, use_extended=False, source="context_menu")
-
-        elif action == action_load_ext_sel:
-            self.load_metadata_for_items(selected_files, use_extended=True, source="context_menu")
-
-        elif action == action_load_all:
-            self.load_metadata_for_items(self.file_model.files, use_extended=False, source="context_menu_all")
-
-        elif action == action_load_ext_all:
-            self.load_metadata_for_items(self.file_model.files, use_extended=True, source="context_menu_all")
-
-        elif action == action_invert:
-            self.invert_selection()
-
-        elif action == action_select_all:
-            self.select_all_rows()
-
-        elif action == action_reload:
-            self.force_reload()
-
-        elif action == action_deselect_all:
-            self.clear_all_selection()
+        """Delegates to EventHandlerManager for table context menu handling."""
+        self.event_handler_manager.handle_table_context_menu(position)
 
     def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
-        """
-        Loads metadata for the file (even if already loaded), on double-click.
-        Shows wait cursor for 1 file or dialog for multiple selected.
-        """
-        row = index.row()
-        if 0 <= row < len(self.file_model.files):
-            file = self.file_model.files[row]
-            logger.info(f"[DoubleClick] Requested metadata reload for: {file.filename}")
-
-            # Check if Shift was pressed for extended metadata
-            use_extended = bool(int(modifiers) & int(Qt.ShiftModifier))
-            logger.debug(f"[Modifiers] Shift held → use_extended={use_extended}")
-
-            selected_indexes = self.file_table_view.selectionModel().selectedRows()
-            selected_files = [self.file_model.files[i.row()] for i in selected_indexes if 0 <= i.row() < len(self.file_model.files)]
-
-            # If user pressed Shift (for extended) and has multiple files selected,
-            # limit to only the file that was double-clicked to avoid mistakes
-            if use_extended and len(selected_files) > 1:
-                    logger.debug(f"[ShiftFix] Qt range selection detected on Shift+DoubleClick — keeping only clicked file: {file.filename}", extra={"dev_only": True})
-                    selected_files = [file]
-
-            # Use the unified method
-            self.load_metadata_for_items(selected_files, use_extended=use_extended, source="double_click")
+        """Delegates to EventHandlerManager for file double click handling."""
+        self.event_handler_manager.handle_file_double_click(index, modifiers)
 
     def closeEvent(self, event) -> None:
         """
@@ -1014,306 +822,44 @@ class MainWindow(QMainWindow):
         super().closeEvent(event)
 
     def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
-        """
-        Prepares the application state and loads files from the specified folder
-        into the file table.
-
-        This helper consolidates common logic used in folder-based file loading
-        (e.g., from folder select, browse, or dropped folder).
-
-        Args:
-            folder_path (str): Absolute path to the folder to load files from.
-            clear (bool): Whether to clear the file table before loading. Defaults to True.
-
-        Returns:
-            list[str]: A list of file paths (full paths) that were successfully loaded.
-        """
-        self.clear_file_table("No folder selected")
-        self.metadata_tree_view.clear_view()
-        self.current_folder_path = folder_path
-
-        return self.file_loader.prepare_folder_load(folder_path, clear=clear)
+        """Delegates to FileLoadManager for folder load preparation."""
+        return self.file_load_manager.prepare_folder_load(folder_path, clear=clear)
 
     def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> None:
-        """
-        Loads files from a list of file or folder paths.
-
-        Args:
-            file_paths: List of absolute file or folder paths
-            clear: Whether to clear existing items before loading (True = replace, False = merge)
-        """
-        if not file_paths:
-            if clear:
-                self.file_table_view.set_placeholder_visible(True)
-            return
-
-        # Use FileLoader to get file items
-        new_file_items = self.file_loader.load_files_from_paths(file_paths, clear=clear)
-
-        if clear:
-            # Replace mode: clear everything and load new files
-            logger.debug(f"[Load] Replace mode: loading {len(new_file_items)} new files")
-            self.file_table_view.prepare_table(new_file_items)
-            final_items = new_file_items
-        else:
-            # Merge mode: add to existing files, avoiding duplicates
-            existing_items = self.file_model.files if self.file_model else []
-            existing_paths = {item.full_path for item in existing_items}
-
-            # Filter out duplicates
-            unique_new_items = [item for item in new_file_items if item.full_path not in existing_paths]
-
-            logger.debug(f"[Load] Merge mode: {len(existing_items)} existing + {len(unique_new_items)} new = {len(existing_items) + len(unique_new_items)} total")
-
-            if unique_new_items:
-                # Combine existing + new
-                final_items = existing_items + unique_new_items
-
-                # Use prepare_table with combined list
-                self.file_table_view.prepare_table(final_items)
-            else:
-                logger.info(f"[Load] No new files to add (all {len(new_file_items)} files already exist)")
-                final_items = existing_items
-
-        # Handle application-specific setup
-        self.files = final_items
-        self.preview_map = {f.filename: f for f in final_items}
-
-        # Configure sorting and header after prepare_table
-        self.file_table_view.setSortingEnabled(True)
-        if hasattr(self, "header"):
-            self.header.setSectionsClickable(True)
-            self.header.setSortIndicatorShown(True)
-            self.header.setEnabled(True)
-
-        self.file_table_view.sortByColumn(1, Qt.AscendingOrder)
-        self.file_table_view.set_placeholder_visible(len(final_items) == 0)
-        self.file_table_view.scrollToTop()
-        self.update_preview_tables_from_pairs([])
-        self.update_files_label()
+        """Delegates to FileLoadManager for loading files from paths."""
+        self.file_load_manager.load_files_from_paths(file_paths, clear=clear)
 
     def load_metadata_from_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
-        """
-        Called when user drops files onto metadata tree.
-        Maps filenames to FileItem objects and triggers forced metadata loading.
-        """
-        file_items = []
-        for path in paths:
-            filename = os.path.basename(path)
-            file = next((f for f in self.file_model.files if f.filename == filename), None)
-            if file:
-                file_items.append(file)
-
-        if not file_items:
-            logger.info("[Drop] No matching files found in table.")
-            return
-
-        # New logic for FileTable → MetadataTree drag:
-        # - No modifiers: fast metadata (normal metadata loading)
-        # - Shift: extended metadata
-        shift = bool(modifiers & Qt.ShiftModifier)
-        use_extended = shift
-
-        logger.debug(f"[Modifiers] File drop on metadata tree: shift={shift} → extended={use_extended}")
-
-        # Always load metadata (no skip option for metadata tree drops)
-        self.load_metadata_for_items(file_items, use_extended=use_extended, source="dropped_files")
+        """Delegates to FileLoadManager for loading metadata from dropped files."""
+        self.file_load_manager.load_metadata_from_dropped_files(paths, modifiers)
 
     def load_files_from_dropped_items(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
-        """
-        Called when user drops files or folders onto file table view.
-        Imports the dropped files into the current view.
-        """
-        if not paths:
-            logger.info("[Drop] No files dropped in table.")
-            return
-
-        logger.info(f"[Drop] {len(paths)} file(s)/folder(s) dropped in table view")
-
-        if len(paths) == 1 and os.path.isdir(paths[0]):
-            folder_path = paths[0]
-            logger.info(f"[Drop] Setting folder from drop: {folder_path}")
-
-            # Use passed modifiers (from drag start) instead of current state
-            self.modifier_state = modifiers if modifiers != Qt.NoModifier else QApplication.keyboardModifiers()
-
-            # Use safe casting via helper method
-            skip_metadata, use_extended = self.determine_metadata_mode()
-            logger.debug(f"[Drop] Using stored modifiers: {modifiers}, skip_metadata={skip_metadata}, use_extended={use_extended}")
-
-            self.force_extended_metadata = use_extended
-            self.skip_metadata_mode = skip_metadata
-
-            logger.debug(f"[Drop] skip_metadata={skip_metadata}, use_extended={use_extended}")
-
-            # Centralized loading logic
-            self.prepare_folder_load(folder_path)
-
-            # Get loaded items (from self.file_model or retrieved from paths if needed)
-            items = self.file_model.files
-
-            if not self.skip_metadata_mode:
-                self.load_metadata_for_items(
-                    items,
-                    use_extended=self.force_extended_metadata,
-                    source="folder_drop"
-                )
-
-            # Update folder tree selection (UI logic)
-            if hasattr(self.dir_model, "index"):
-                index = self.dir_model.index(folder_path)
-                self.folder_tree.setCurrentIndex(index)
-
-            # Trigger label update and ensure repaint
-            self.file_table_view.viewport().update()
-            self.update_files_label()
-        else:
-            # Load directly dropped files with modifier support
-            self.load_files_from_paths(paths, clear=True)
-
-            # Apply modifier logic for individual files
-            ctrl = bool(modifiers & Qt.ControlModifier)
-            shift = bool(modifiers & Qt.ShiftModifier)
-            skip_metadata = not ctrl
-            use_extended = ctrl and shift
-
-            logger.debug(f"[Drop] Individual files: ctrl={ctrl}, shift={shift} → skip={skip_metadata}, extended={use_extended}")
-
-            # Define selection function to call after metadata loading (or immediately if skipping)
-            def select_dropped_files():
-                logger.warning(f"[Drop] *** CALLING select_dropped_files with {len(paths)} paths ***")
-                self.file_table_view.select_dropped_files(paths)
-
-            # Load metadata if not skipping
-            if not skip_metadata:
-                items = self.file_model.files
-                self.load_metadata_for_items(items, use_extended=use_extended, source="individual_file_drop")
-                # Select files AFTER metadata loading with a delay
-                logger.debug(f"[Drop] Scheduling selection after metadata with 100ms delay", extra={"dev_only": True})
-                QTimer.singleShot(100, select_dropped_files)
-            else:
-                logger.info(f"[Drop] Skipping metadata for {len(paths)} individual files (no Ctrl modifier)")
-                # Select files immediately if not loading metadata
-                logger.warning(f"[Drop] *** SCHEDULING selection immediately with 50ms delay ***")
-                QTimer.singleShot(50, select_dropped_files)
-
-        # After loading files + metadata
-        self.show_metadata_status()
+        """Delegates to FileLoadManager for loading files from dropped items."""
+        self.file_load_manager.load_files_from_dropped_items(paths, modifiers)
 
     def handle_browse(self) -> None:
-        """
-        Browse and select a folder, then import its files.
-
-        Modifier logic (checked AFTER folder selection):
-        - Normal: Replace + shallow
-        - Shift: Merge + shallow
-        - Ctrl: Replace + recursive
-        - Ctrl+Shift: Merge + recursive
-
-        Triggered when the user clicks the 'Browse' button.
-        Updates the folder tree selection to reflect the newly selected folder.
-        """
-        self.last_action = "browse"
-
-        # Get current folder path
-        folder_path = QFileDialog.getExistingDirectory(self, "Select Folder", "/")
-        if not folder_path:
-            logger.info("Folder selection canceled by user.")
-            return
-
-        if self.should_skip_folder_reload(folder_path):
-            return  # skip if user pressed Cancel
-
-        # Capture modifiers AFTER dialog closes (when user is ready to confirm the action)
-        modifiers = QApplication.keyboardModifiers()
-        self.modifier_state = modifiers
-
-        # Decode modifier combination using centralized logic
-        merge_mode, recursive, action_type = decode_modifiers_to_flags(modifiers)
-
-        logger.debug(f"[Browse] Captured modifiers after dialog: {modifiers} → {action_type}")
-        logger.info(f"[Browse] Folder: {folder_path} ({action_type})")
-
-        # Use folder drop logic for consistency
-        with wait_cursor():
-            self._handle_folder_drop(folder_path, merge_mode, recursive)
-
-        # Update tree selection
-        if hasattr(self, "dir_model") and hasattr(self, "folder_tree"):
-            index = self.dir_model.index(folder_path)
-            if index.isValid():
-                self.folder_tree.setCurrentIndex(index)
-                self.folder_tree.scrollTo(index)
-
-        # After loading files
-        self.update_files_label()
-        self.show_metadata_status()
+        """Delegates to EventHandlerManager for browse handling."""
+        self.event_handler_manager.handle_browse()
 
     def handle_folder_import(self) -> None:
-        """
-        Import files from the folder currently selected in the folder tree.
-
-        Modifier logic (checked when clicking Import button):
-        - Normal: Replace + shallow
-        - Shift: Merge + shallow
-        - Ctrl: Replace + recursive
-        - Ctrl+Shift: Merge + recursive
-
-        Triggered when the user clicks the 'Import' button or presses Enter on folder tree.
-        """
-        # Get current folder index first
-        index = self.folder_tree.currentIndex()
-        if not index.isValid():
-            logger.warning("No folder selected in folder tree.")
-            return
-
-        folder_path = self.dir_model.filePath(index)
-
-        if self.should_skip_folder_reload(folder_path):
-            return
-
-        # Capture modifiers at the moment of action (when user clicks Import)
-        modifiers = QApplication.keyboardModifiers()
-        self.modifier_state = modifiers
-        self.last_action = "folder_import"
-
-        # Decode modifier combination using centralized logic
-        merge_mode, recursive, action_type = decode_modifiers_to_flags(modifiers)
-
-        logger.debug(f"[Import] Captured modifiers at click: {modifiers} → {action_type}")
-        logger.info(f"[Import] Folder: {folder_path} ({action_type})")
-
-        # Use folder drop logic for consistency
-        with wait_cursor():
-            self._handle_folder_drop(folder_path, merge_mode, recursive)
-
-        # After loading files
-        self.update_files_label()
-        self.show_metadata_status()
+        """Delegates to EventHandlerManager for folder import handling."""
+        self.event_handler_manager.handle_folder_import()
 
     def load_single_item_from_drop(self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
-        """
-        Called when user drops a single file or folder from the tree onto file table view.
-        Handles the new 4-modifier logic:
-        - Normal: Replace + shallow
-        - Ctrl: Replace + recursive
-        - Shift: Merge + shallow
-        - Ctrl+Shift: Merge + recursive
-        """
-        # Use centralized file loader
-        self.file_loader.handle_drop_operation(path, modifiers)
+        """Delegates to FileLoadManager for loading single item from drop."""
+        self.file_load_manager.load_single_item_from_drop(path, modifiers)
 
     def _has_deep_content(self, folder_path: str) -> bool:
-        """Check if folder has any supported files in deeper levels (beyond root)"""
-        return self.file_loader.has_deep_content(folder_path)
+        """Delegates to FileLoadManager for checking deep content."""
+        return self.file_load_manager._has_deep_content(folder_path)
 
     def _handle_folder_drop(self, folder_path: str, merge_mode: bool, recursive: bool) -> None:
-        """Handle folder drop with merge/replace and recursive options"""
-        self.file_loader.handle_folder_drop(folder_path, merge_mode, recursive)
+        """Delegates to FileLoadManager for handling folder drop."""
+        self.file_load_manager._handle_folder_drop(folder_path, merge_mode, recursive)
 
     def _handle_file_drop(self, file_path: str, merge_mode: bool) -> None:
-        """Handle single file drop with merge/replace options"""
-        self.file_loader.handle_file_drop(file_path, merge_mode)
+        """Delegates to FileLoadManager for handling file drop."""
+        self.file_load_manager._handle_file_drop(file_path, merge_mode)
 
     def load_metadata_for_items(
         self,
@@ -1325,16 +871,12 @@ class MainWindow(QMainWindow):
         self.metadata_manager.load_metadata_for_items(items, use_extended, source)
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
-        """Handle horizontal splitter movement - logic delegated to individual views"""
-        sizes = self.horizontal_splitter.sizes()
-        logger.debug(f"[HorizontalSplitter] Moved - Position: {pos}, Index: {index}, Sizes: {sizes} (Left: {sizes[0]}px, Center: {sizes[1]}px, Right: {sizes[2]}px)", extra={"dev_only": True})
-
-        # Individual views handle their own adjustments via their callback methods
+        """Delegates to EventHandlerManager for horizontal splitter movement handling."""
+        self.event_handler_manager.on_horizontal_splitter_moved(pos, index)
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
-        """Handle vertical splitter movement for debugging optimal sizes"""
-        sizes = self.vertical_splitter.sizes()
-        logger.debug(f"[VerticalSplitter] Moved - Position: {pos}, Index: {index}, Sizes: {sizes} (Top: {sizes[0]}px, Bottom: {sizes[1]}px)", extra={"dev_only": True})
+        """Delegates to EventHandlerManager for vertical splitter movement handling."""
+        self.event_handler_manager.on_vertical_splitter_moved(pos, index)
 
     def show_metadata_status(self) -> None:
         """

@@ -57,7 +57,8 @@ class UIManager:
         self.parent_window.setWindowTitle("oncutf - Batch File Renamer and More")
         self.parent_window.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
         self.parent_window.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
-        self.parent_window.center_window()
+        # self.parent_window.center_window()
+        self.parent_window.dialog_manager.center_window(self.parent_window)
 
     def setup_main_layout(self) -> None:
         """Setup central widget and main layout."""

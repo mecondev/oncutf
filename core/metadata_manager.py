@@ -369,8 +369,8 @@ class MetadataManager:
 
         # Check for large files if extended metadata was requested
         if (use_extended and self.parent_window and
-            hasattr(self.parent_window, 'confirm_large_files') and
-            not self.parent_window.confirm_large_files(needs_loading)):
+            hasattr(self.parent_window, 'dialog_manager') and
+            not self.parent_window.dialog_manager.confirm_large_files(needs_loading)):
             return
 
         # Set extended metadata flag (sync with parent window)
