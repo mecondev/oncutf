@@ -65,6 +65,9 @@ from core.dialog_manager import DialogManager
 from core.event_handler_manager import EventHandlerManager
 from core.file_load_manager import FileLoadManager
 from core.table_manager import TableManager
+from core.utility_manager import UtilityManager
+from core.rename_manager import RenameManager
+from core.drag_cleanup_manager import DragCleanupManager
 
 logger = get_logger(__name__)
 
@@ -136,6 +139,9 @@ class MainWindow(QMainWindow):
         self.event_handler_manager = EventHandlerManager(self)
         self.file_load_manager = FileLoadManager(self)
         self.table_manager = TableManager(self)
+        self.utility_manager = UtilityManager(self)
+        self.rename_manager = RenameManager(self)
+        self.drag_cleanup_manager = DragCleanupManager(self)
 
         # --- Initialize UIManager and setup all UI ---
         self.ui_manager = UIManager(parent_window=self)
@@ -150,8 +156,8 @@ class MainWindow(QMainWindow):
     # --- Method definitions ---
 
     def _update_status_from_preview(self, status_html: str) -> None:
-        """Update the status label from preview widget status updates."""
-        self.status_manager.update_status_from_preview(status_html)
+        """Delegates to PreviewManager for status updates from preview."""
+        self.preview_manager.update_status_from_preview(status_html)
 
     def clear_file_table_shortcut(self) -> None:
         """
@@ -171,164 +177,32 @@ class MainWindow(QMainWindow):
         logger.info("[MainWindow] CLEAR TABLE: File table cleared successfully")
 
     def force_drag_cleanup(self) -> None:
-        """
-        Force cleanup of any active drag operations.
-        Triggered by Escape key globally.
-        """
-        logger.info("[MainWindow] FORCE CLEANUP: Escape key pressed")
-
-        drag_manager = DragManager.get_instance()
-
-        # Check if there's any stuck cursor or drag state
-        has_override_cursor = QApplication.overrideCursor() is not None
-        has_active_drag = drag_manager.is_drag_active()
-
-        if not has_override_cursor and not has_active_drag:
-            logger.info("[MainWindow] FORCE CLEANUP: No cursors or drags to clean")
-            return
-
-        # Clean any stuck cursors first
-        cursor_count = 0
-        while QApplication.overrideCursor() and cursor_count < 5:
-            QApplication.restoreOverrideCursor()
-            cursor_count += 1
-
-        # Clean drag manager state if needed
-        if has_active_drag:
-            drag_manager.force_cleanup()
-
-        # Clean widget states
-        self._cleanup_widget_drag_states()
-
-        # Report what was cleaned
-        if cursor_count > 0 or has_active_drag:
-            self.set_status("Drag cancelled", color="blue", auto_reset=True, reset_delay=1000)
-            logger.info(f"[MainWindow] FORCE CLEANUP: Cleaned {cursor_count} cursors, drag_active={has_active_drag}")
-        else:
-            logger.info("[MainWindow] FORCE CLEANUP: Nothing to clean")
+        """Delegates to DragCleanupManager for force drag cleanup."""
+        self.drag_cleanup_manager.force_drag_cleanup()
 
     def _cleanup_widget_drag_states(self) -> None:
-        """Clean up internal drag states in all widgets (lightweight version)."""
-        # Only clean essential drag state, let widgets handle their own cleanup
-        if hasattr(self, 'folder_tree'):
-            if hasattr(self.folder_tree, '_dragging'):
-                self.folder_tree._dragging = False
-
-        if hasattr(self, 'file_table_view'):
-            if hasattr(self.file_table_view, '_drag_start_pos'):
-                self.file_table_view._drag_start_pos = None
-
-        logger.debug("[MainWindow] Widget drag states cleaned")
+        """Delegates to DragCleanupManager for widget drag states cleanup."""
+        self.drag_cleanup_manager._cleanup_widget_drag_states()
 
     def _emergency_drag_cleanup(self) -> None:
-        """
-        Emergency cleanup that runs every 5 seconds to catch stuck cursors.
-        Only acts if cursor has been stuck for multiple checks.
-        """
-        app = QApplication.instance()
-        if not app:
-            return
-
-        # Check if cursor looks stuck in drag mode
-        current_cursor = app.overrideCursor()
-        if current_cursor:
-            cursor_shape = current_cursor.shape()
-            # Common drag cursor shapes that might be stuck
-            drag_cursors = [Qt.DragMoveCursor, Qt.DragCopyCursor, Qt.DragLinkCursor, Qt.ClosedHandCursor]
-
-            if cursor_shape in drag_cursors:
-                drag_manager = DragManager.get_instance()
-                if not drag_manager.is_drag_active():
-                    # Initialize stuck count if not exists
-                    if not hasattr(self, '_stuck_cursor_count'):
-                        self._stuck_cursor_count = 0
-
-                    self._stuck_cursor_count += 1
-
-                    # Only cleanup after 2 consecutive detections (10 seconds total)
-                    if self._stuck_cursor_count >= 2:
-                        logger.warning(f"[Emergency] Stuck drag cursor detected for {self._stuck_cursor_count * 5}s, forcing cleanup")
-                        drag_manager.force_cleanup()
-                        self.set_status("Stuck cursor fixed", color="green", auto_reset=True, reset_delay=1000)
-                        self._stuck_cursor_count = 0
-                    else:
-                        logger.debug(f"[Emergency] Suspicious cursor detected ({self._stuck_cursor_count}/2)")
-                else:
-                    # Reset count if drag is actually active
-                    self._stuck_cursor_count = 0
-            else:
-                # Reset count if cursor is not drag-related
-                self._stuck_cursor_count = 0
-        else:
-            # Reset count if no override cursor
-            self._stuck_cursor_count = 0
+        """Delegates to DragCleanupManager for emergency drag cleanup."""
+        self.drag_cleanup_manager.emergency_drag_cleanup()
 
     def eventFilter(self, obj, event):
-        """
-        Captures global keyboard modifier state (Ctrl, Shift).
-        """
-        if event.type() in (QEvent.KeyPress, QEvent.KeyRelease):
-            self.modifier_state = QApplication.keyboardModifiers()
-            logger.debug(f"[Modifiers] eventFilter saw: {event.type()} with modifiers={int(event.modifiers())}", extra={"dev_only": True})
-
-        return super().eventFilter(obj, event)
+        """Delegates to UtilityManager for event filtering."""
+        return self.utility_manager.event_filter(obj, event)
 
     def request_preview_update(self) -> None:
-        """
-        Schedules a delayed update of the name previews.
-        Instead of calling generate_preview_names directly every time something changes,
-        the timer is restarted so that the actual update occurs only when
-        changes stop for the specified duration (250ms).
-        """
-        if self.preview_update_timer.isActive():
-            self.preview_update_timer.stop()
-        self.preview_update_timer.start()
+        """Delegates to UtilityManager for preview update scheduling."""
+        self.utility_manager.request_preview_update()
 
     def force_reload(self) -> None:
-        """
-        Triggered by Ctrl+R.
-        If Ctrl is held, metadata scan is skipped (like Select/Browse).
-        Otherwise, full reload with scan.
-        """
-        # Update current state of modifier keys
-        self.modifier_state = QApplication.keyboardModifiers()
-
-        if not self.current_folder_path:
-            self.set_status("No folder loaded.", color="gray", auto_reset=True)
-            return
-
-        if not CustomMessageDialog.question(self, "Reload Folder", "Reload current folder?", yes_text="Reload", no_text="Cancel"):
-            return
-
-        # Use determine_metadata_mode method instead of deprecated resolve_skip_metadata
-        skip_metadata, use_extended = self.determine_metadata_mode()
-        self.force_extended_metadata = use_extended
-        self.skip_metadata_mode = skip_metadata
-
-        logger.info(
-            f"[ForceReload] Reloading {self.current_folder_path}, skip_metadata={skip_metadata} "
-            f"(use_extended={use_extended})"
-        )
-
-        self.load_files_from_folder(self.current_folder_path, skip_metadata=skip_metadata, force=True)
+        """Delegates to UtilityManager for force reload functionality."""
+        self.utility_manager.force_reload()
 
     def _find_consecutive_ranges(self, indices: list[int]) -> list[tuple[int, int]]:
-        """
-        Given a sorted list of indices, returns a list of (start, end) tuples for consecutive ranges.
-        Example: [1,2,3,7,8,10] -> [(1,3), (7,8), (10,10)]
-        """
-        if not indices:
-            return []
-        ranges = []
-        start = prev = indices[0]
-        for idx in indices[1:]:
-            if idx == prev + 1:
-                prev = idx
-            else:
-                ranges.append((start, prev))
-                start = prev = idx
-        ranges.append((start, prev))
-        return ranges
+        """Delegates to UtilityManager for consecutive ranges calculation."""
+        return self.utility_manager.find_consecutive_ranges(indices)
 
     def select_all_rows(self) -> None:
         """Delegates to SelectionManager."""
@@ -351,63 +225,8 @@ class MainWindow(QMainWindow):
         self.table_manager.restore_fileitem_metadata_from_cache()
 
     def rename_files(self) -> None:
-        """
-        Execute the batch rename process for checked files using active rename modules.
-
-        This method handles the complete rename workflow including validation,
-        execution, folder reload, and state restoration.
-        """
-        selected_files = self.get_selected_files()
-        rename_data = self.rename_modules_area.get_all_data()
-        modules_data = rename_data.get("modules", [])
-        post_transform = rename_data.get("post_transform", {})
-
-        # Store checked paths for restoration
-        checked_paths = {f.full_path for f in self.file_model.files if f.checked}
-
-        # Use FileOperationsManager to perform rename
-        renamed_count = self.file_operations_manager.rename_files(
-            selected_files=selected_files,
-            modules_data=modules_data,
-            post_transform=post_transform,
-            metadata_cache=self.metadata_cache,
-            filename_validator=self.filename_validator,
-            current_folder_path=self.current_folder_path
-        )
-
-        if renamed_count == 0:
-            return
-
-        # Post-rename workflow
-        self.last_action = "rename"
-        self.load_files_from_folder(self.current_folder_path, skip_metadata=True)
-
-        # Restore checked state
-        restored_count = 0
-        for path in checked_paths:
-            file = self.find_fileitem_by_path(path)
-            if file:
-                file.checked = True
-                restored_count += 1
-
-        # Restore metadata from cache
-        self.restore_fileitem_metadata_from_cache()
-
-        # Regenerate preview with new filenames
-        if self.last_action == "rename":
-            logger.debug("[PostRename] Regenerating preview with new filenames and restored checked state")
-            self.request_preview_update()
-
-        # Force update info icons in column 0
-        for row in range(self.file_model.rowCount()):
-            file_item = self.file_model.files[row]
-            if self.metadata_cache.has(file_item.full_path):
-                index = self.file_model.index(row, 0)
-                rect = self.file_table_view.visualRect(index)
-                self.file_table_view.viewport().update(rect)
-
-        self.file_table_view.viewport().update()
-        logger.debug(f"[Rename] Restored {restored_count} checked out of {len(self.file_model.files)} files")
+        """Delegates to RenameManager for batch rename execution."""
+        self.rename_manager.rename_files()
 
     def should_skip_folder_reload(self, folder_path: str, force: bool = False) -> bool:
         """Delegates to FileOperationsManager for folder reload check."""
@@ -452,93 +271,24 @@ class MainWindow(QMainWindow):
         self.file_load_manager.reload_current_folder()
 
     def update_module_dividers(self) -> None:
-        for index, module in enumerate(self.rename_modules):
-            if hasattr(module, "divider"):
-                module.divider.setVisible(index > 0)
+        """Delegates to RenameManager for module dividers update."""
+        self.rename_manager.update_module_dividers()
 
     def handle_header_toggle(self, _) -> None:
         """Delegates to EventHandlerManager for header toggle handling."""
         self.event_handler_manager.handle_header_toggle(_)
 
     def generate_preview_names(self) -> None:
-        """
-        Generate new preview names for all selected files using current rename modules.
-        Updates the preview map and UI elements accordingly.
-        """
-        selected_files = self.get_selected_files()
-        logger.debug("[Preview] Triggered! Selected rows: %s", [f.filename for f in selected_files], extra={"dev_only": True})
-
-        if not selected_files:
-            logger.debug("[Preview] No selected files — skipping preview generation.", extra={"dev_only": True})
-            self.update_preview_tables_from_pairs([])
-            self.rename_button.setEnabled(False)
-            return
-
-        # Get rename data and modules
-        rename_data = self.rename_modules_area.get_all_data()
-        all_modules = self.rename_modules_area.get_all_module_instances()
-
-        # Use PreviewManager to generate previews
-        name_pairs, has_changes = self.preview_manager.generate_preview_names(
-            selected_files, rename_data, self.metadata_cache, all_modules
-        )
-
-        # Update preview map from manager
-        self.preview_map = self.preview_manager.get_preview_map()
-
-        # Handle UI updates based on results
-        if not name_pairs:
-            # No modules at all → clear preview completely
-            self.update_preview_tables_from_pairs([])
-            self.rename_button.setEnabled(False)
-            self.set_status("No rename modules defined.", color=STATUS_COLORS["loading"], auto_reset=True)
-            return
-
-        if not has_changes:
-            # Modules exist but inactive → show identity mapping
-            self.rename_button.setEnabled(False)
-            self.rename_button.setToolTip("No changes to apply")
-            self.update_preview_tables_from_pairs(name_pairs)
-            self.set_status("Rename modules present but inactive.", color=STATUS_COLORS["loading"], auto_reset=True)
-            return
-
-        # Update preview tables with changes
-        self.update_preview_tables_from_pairs(name_pairs)
-
-        # Enable rename button and set tooltip
-        valid_pairs = [p for p in name_pairs if p[0] != p[1]]
-        self.rename_button.setEnabled(bool(valid_pairs))
-        tooltip_msg = f"{len(valid_pairs)} files will be renamed." if valid_pairs else "No changes to apply"
-        self.rename_button.setToolTip(tooltip_msg)
+        """Delegates to UtilityManager for preview names generation."""
+        self.utility_manager.generate_preview_names()
 
     def compute_max_filename_width(self, file_list: list[FileItem]) -> int:
         """Delegates to PreviewManager for filename width calculation."""
         return self.preview_manager.compute_max_filename_width(file_list)
 
     def center_window(self) -> None:
-        """
-        Centers the application window on the user's screen.
-
-        It calculates the screen's center point and moves the window
-        so its center aligns with that. This improves the initial UX
-        by avoiding awkward off-center placement.
-
-        Returns:
-            None
-        """
-        # Get current geometry of the window
-        window_geometry = self.frameGeometry()
-
-        # Get the center point of the available screen
-        screen_center = QDesktopWidget().availableGeometry().center()
-
-        # Move the window geometry so that its center aligns with screen center
-        window_geometry.moveCenter(screen_center)
-
-        # Reposition the window's top-left corner to match the new centered geometry
-        self.move(window_geometry.topLeft())
-
-        logger.debug("Main window centered on screen.")
+        """Delegates to UtilityManager for window centering."""
+        self.utility_manager.center_window()
 
     def confirm_large_folder(self, file_list: list[str], folder_path: str) -> bool:
         """Delegates to FileOperationsManager for large folder confirmation."""
@@ -557,34 +307,8 @@ class MainWindow(QMainWindow):
         return self.file_operations_manager.prompt_file_conflict(target_path)
 
     def update_files_label(self) -> None:
-        """
-        Updates the UI label that displays the count of selected files.
-
-        If no files are loaded, the label shows a default "Files".
-        Otherwise, it shows how many files are currently selected
-        out of the total number loaded.
-        """
-        total = len(self.file_model.files)
-        selected = sum(1 for f in self.file_model.files if f.checked) if total else 0
-
-        self.status_manager.update_files_label(self.files_label, total, selected)
-
-    def fade_status_to_ready(self) -> None:
-        """
-        Fades out the current status, then shows 'Ready' without fading.
-        """
-        self.status_fade_anim.stop()
-        self.status_fade_anim.start()
-
-        def show_ready_clean():
-            if hasattr(self, "status_fade_anim"):
-                self.status_fade_anim.stop()
-            if hasattr(self, "status_opacity_effect"):
-                self.status_opacity_effect.setOpacity(1.0)
-            self.status_label.setStyleSheet("")  # reset color
-            self.status_label.setText("Ready")
-
-        QTimer.singleShot(self.status_fade_anim.duration(), show_ready_clean)
+        """Delegates to UtilityManager for files label update."""
+        self.utility_manager.update_files_label()
 
     def set_status(self, text: str, color: str = "", auto_reset: bool = False, reset_delay: int = 3000) -> None:
         """
@@ -593,24 +317,12 @@ class MainWindow(QMainWindow):
         self.status_manager.set_status(text, color, auto_reset, reset_delay)
 
     def get_identity_name_pairs(self) -> list[tuple[str, str]]:
-        """Delegates to FileOperationsManager for identity name pairs."""
-        return self.file_operations_manager.get_identity_name_pairs(self.file_model.files)
+        """Delegates to PreviewManager for identity name pairs."""
+        return self.preview_manager.get_identity_name_pairs(self.file_model.files)
 
     def update_preview_tables_from_pairs(self, name_pairs: list[tuple[str, str]]) -> None:
-        """
-        Updates all three preview tables using the PreviewTablesView.
-
-        Args:
-            name_pairs (list[tuple[str, str]]): List of (old_name, new_name) pairs
-                generated during preview generation.
-        """
-        # Delegate to the preview tables view
-        self.preview_tables_view.update_from_pairs(
-            name_pairs,
-            self.preview_icons,
-            self.icon_paths,
-            self.filename_validator
-        )
+        """Delegates to PreviewManager for preview tables update."""
+        self.preview_manager.update_preview_tables_from_pairs(name_pairs)
 
     def on_metadata_progress(self, current: int, total: int) -> None:
         """Delegates to MetadataManager for progress updates."""
@@ -625,11 +337,8 @@ class MainWindow(QMainWindow):
         self.metadata_manager.cleanup_metadata_worker()
 
     def get_selected_rows_files(self) -> list:
-        """
-        Returns a list of FileItem objects currently selected (blue-highlighted) in the table view.
-        """
-        selected_indexes = self.file_table_view.selectionModel().selectedRows()
-        return [self.file_model.files[i.row()] for i in selected_indexes if 0 <= i.row() < len(self.file_model.files)]
+        """Delegates to UtilityManager for getting selected rows as files."""
+        return self.utility_manager.get_selected_rows_files()
 
     def find_fileitem_by_path(self, path: str) -> Optional[FileItem]:
         """Delegates to FileOperationsManager for finding FileItem by path."""
@@ -672,23 +381,8 @@ class MainWindow(QMainWindow):
         return self.table_manager.get_selected_files()
 
     def get_modifier_flags(self) -> tuple[bool, bool]:
-        """
-        Checks which keyboard modifiers are currently held down.
-
-        Returns:
-            tuple: (skip_metadata: bool, use_extended: bool)
-                - skip_metadata: True if NO modifiers are pressed (default) or if Ctrl is NOT pressed
-                - use_extended: True if Ctrl+Shift is pressed
-        """
-        modifiers = self.modifier_state
-        ctrl = bool(modifiers & Qt.ControlModifier)
-        shift = bool(modifiers & Qt.ShiftModifier)
-
-        skip_metadata = not ctrl
-        use_extended = ctrl and shift
-
-        # [DEBUG] Modifiers: Ctrl=%s, Shift=%s", skip_metadata, use_extended
-        return skip_metadata, use_extended
+        """Delegates to UtilityManager for modifier flags checking."""
+        return self.utility_manager.get_modifier_flags()
 
     def determine_metadata_mode(self) -> tuple[bool, bool]:
         """Delegates to MetadataManager for metadata mode determination."""
@@ -711,23 +405,8 @@ class MainWindow(QMainWindow):
         self.event_handler_manager.handle_file_double_click(index, modifiers)
 
     def closeEvent(self, event) -> None:
-        """
-        Called when the main window is about to close.
-
-        Ensures any background metadata threads are cleaned up
-        properly before the application exits.
-        """
-        logger.info("Main window closing. Cleaning up metadata worker.")
-        self.cleanup_metadata_worker()
-
-        if hasattr(self.metadata_loader, "close"):
-            self.metadata_loader.close()
-
-        # Clean up application context
-        if hasattr(self, 'context'):
-            self.context.cleanup()
-
-        super().closeEvent(event)
+        """Delegates to UtilityManager for close event handling."""
+        self.utility_manager.close_event(event)
 
     def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
         """Delegates to FileLoadManager for folder load preparation."""

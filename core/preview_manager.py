@@ -161,3 +161,34 @@ class PreviewManager:
 
         logger.debug(f'Longest filename length: {max_len} chars -> width: {clamped_width} px (clamped)')
         return clamped_width
+
+    def update_status_from_preview(self, status_html: str) -> None:
+        """Update the status label from preview widget status updates."""
+        if self.parent_window and hasattr(self.parent_window, 'status_manager'):
+            self.parent_window.status_manager.update_status_from_preview(status_html)
+
+    def get_identity_name_pairs(self, file_list: List[FileItem]) -> List[Tuple[str, str]]:
+        """Generate identity name pairs (filename -> filename) for given files."""
+        return [(file.filename, file.filename) for file in file_list]
+
+    def update_preview_tables_from_pairs(self, name_pairs: List[Tuple[str, str]]) -> None:
+        """
+        Updates all three preview tables using the PreviewTablesView.
+
+        Args:
+            name_pairs: List of (old_name, new_name) pairs generated during preview generation.
+        """
+        if not self.parent_window:
+            logger.warning("[PreviewManager] No parent window available for preview table updates")
+            return
+
+        # Delegate to the preview tables view
+        if hasattr(self.parent_window, 'preview_tables_view'):
+            self.parent_window.preview_tables_view.update_from_pairs(
+                name_pairs,
+                getattr(self.parent_window, 'preview_icons', {}),
+                getattr(self.parent_window, 'icon_paths', {}),
+                getattr(self.parent_window, 'filename_validator', None)
+            )
+        else:
+            logger.warning("[PreviewManager] Preview tables view not available")
