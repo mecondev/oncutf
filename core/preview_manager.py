@@ -28,7 +28,7 @@ class PreviewManager:
         """Initialize PreviewManager with reference to parent window."""
         self.parent_window = parent_window
         self.preview_map: Dict[str, FileItem] = {}
-        logger.debug("[PreviewManager] Initialized")
+        logger.debug("[PreviewManager] Initialized", extra={"dev_only": True})
 
     def generate_preview_names(
         self,

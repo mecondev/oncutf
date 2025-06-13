@@ -13,11 +13,7 @@ Many of the linter warnings are false positives and can be safely ignored.
 
 # type: ignore (PyQt5 attributes not recognized by linter)
 
-import datetime
-import glob
 import os
-import platform
-import traceback
 from typing import Optional
 
 # Import all PyQt5 classes from centralized module
@@ -68,10 +64,10 @@ from core.table_manager import TableManager
 from core.utility_manager import UtilityManager
 from core.rename_manager import RenameManager
 from core.drag_cleanup_manager import DragCleanupManager
+from core.shortcut_manager import ShortcutManager
+from core.initialization_manager import InitializationManager
 
 logger = get_logger(__name__)
-
-import contextlib
 
 
 class MainWindow(QMainWindow):
@@ -142,6 +138,8 @@ class MainWindow(QMainWindow):
         self.utility_manager = UtilityManager(self)
         self.rename_manager = RenameManager(self)
         self.drag_cleanup_manager = DragCleanupManager(self)
+        self.shortcut_manager = ShortcutManager(self)
+        self.initialization_manager = InitializationManager(self)
 
         # --- Initialize UIManager and setup all UI ---
         self.ui_manager = UIManager(parent_window=self)
@@ -156,25 +154,12 @@ class MainWindow(QMainWindow):
     # --- Method definitions ---
 
     def _update_status_from_preview(self, status_html: str) -> None:
-        """Delegates to PreviewManager for status updates from preview."""
-        self.preview_manager.update_status_from_preview(status_html)
+        """Delegates to InitializationManager for status updates from preview."""
+        self.initialization_manager.update_status_from_preview(status_html)
 
     def clear_file_table_shortcut(self) -> None:
-        """
-        Clear file table triggered by Ctrl+Escape shortcut.
-        """
-        logger.info("[MainWindow] CLEAR TABLE: Ctrl+Escape key pressed")
-
-        if not self.file_model.files:
-            logger.info("[MainWindow] CLEAR TABLE: No files to clear")
-            self.set_status("No files to clear", color="gray", auto_reset=True, reset_delay=1000)
-            return
-
-        # Clear the file table
-        self.clear_file_table("Press Escape to clear, or drag folders here")
-        self.current_folder_path = None  # Reset current folder
-        self.set_status("File table cleared", color="blue", auto_reset=True, reset_delay=1000)
-        logger.info("[MainWindow] CLEAR TABLE: File table cleared successfully")
+        """Delegates to ShortcutManager for clear file table shortcut."""
+        self.shortcut_manager.clear_file_table_shortcut()
 
     def force_drag_cleanup(self) -> None:
         """Delegates to DragCleanupManager for force drag cleanup."""
@@ -466,28 +451,9 @@ class MainWindow(QMainWindow):
         self.event_handler_manager.on_vertical_splitter_moved(pos, index)
 
     def show_metadata_status(self) -> None:
-        """
-        Shows a status bar message indicating the number of loaded files
-        and the type of metadata scan performed (skipped, basic, extended).
-        """
-        num_files = len(self.file_model.files)
-        self.status_manager.show_metadata_status(num_files, self.skip_metadata_mode, self.force_extended_metadata)
+        """Delegates to InitializationManager for metadata status display."""
+        self.initialization_manager.show_metadata_status()
 
     def _enable_selection_store_mode(self):
-        """Enable SelectionStore mode in FileTableView once ApplicationContext is ready."""
-        try:
-            self.file_table_view.enable_selection_store_mode()
-
-            # Connect SelectionStore signals to MainWindow handlers
-            from core.application_context import get_app_context
-            context = get_app_context()
-            if context and context.selection_store:
-                # Connect selection changed signal to existing preview update
-                context.selection_store.selection_changed.connect(self.update_preview_from_selection)
-                logger.debug("[MainWindow] Connected SelectionStore signals", extra={"dev_only": True})
-
-            logger.info("[MainWindow] SelectionStore mode enabled in FileTableView")
-        except Exception as e:
-            logger.warning(f"[MainWindow] Failed to enable SelectionStore mode: {e}")
-
-
+        """Delegates to InitializationManager for SelectionStore mode initialization."""
+        self.initialization_manager.enable_selection_store_mode()

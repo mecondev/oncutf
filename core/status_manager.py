@@ -24,7 +24,7 @@ class StatusManager:
         """Initialize StatusManager with status label reference."""
         self.status_label = status_label
         self._status_timer: Optional[QTimer] = None
-        logger.debug("[StatusManager] Initialized")
+        logger.debug("[StatusManager] Initialized", extra={"dev_only": True})
 
     def set_status(self, text: str, color: str = "", auto_reset: bool = False, reset_delay: int = 3000) -> None:
         """

@@ -103,7 +103,7 @@ class ApplicationContext(QObject):
     def _on_folder_changed(self, folder_path: str) -> None:
         """Handle folder change from FileStore."""
         self._current_folder = folder_path
-        logger.debug(f"ApplicationContext: Folder changed to {folder_path}")
+        logger.debug(f"ApplicationContext: Folder changed to {folder_path}", extra={"dev_only": True})
 
     def _on_selection_changed(self, selected_rows: list[int]) -> None:
         """Handle selection changed from SelectionStore."""
@@ -114,7 +114,7 @@ class ApplicationContext(QObject):
             self.selection_changed.emit(selected_rows)
         except TypeError:
             # Fallback: convert to set if the signal expects set type
-            logger.debug("ApplicationContext: Converting list to set for signal compatibility")
+            logger.debug("ApplicationContext: Converting list to set for signal compatibility", extra={"dev_only": True})
             self.selection_changed.emit(set(selected_rows))
 
         logger.debug(f"ApplicationContext: Selection changed signal relayed: {len(selected_rows)} rows", extra={"dev_only": True})

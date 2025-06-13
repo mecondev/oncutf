@@ -1,5 +1,17 @@
+"""
+metadata_waiting_dialog.py
+
+Author: Michael Economou
+Date: 2025-01-27
+
+Frameless waiting dialog for metadata extraction operations.
+Provides a clean, minimal UI for displaying metadata loading progress.
+"""
+
+from typing import Optional
+
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QVBoxLayout
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QWidget
 
 from config import (
     EXTENDED_METADATA_BG_COLOR,
@@ -19,7 +31,7 @@ class MetadataWaitingDialog(QDialog):
     - Is styled via QSS using standard QWidget rules
     - Hosts a compact waiting UI to display metadata reading progress
     """
-    def __init__(self, parent=None, is_extended=False):
+    def __init__(self, parent: Optional[QWidget] = None, is_extended: bool = False) -> None:
         super().__init__(parent)
 
         # Frameless and styled externally
@@ -45,11 +57,14 @@ class MetadataWaitingDialog(QDialog):
 
         self.setLayout(layout)
 
-    def set_progress(self, value: int, total: int):
+    def set_progress(self, value: int, total: int) -> None:
+        """Set progress bar value and total."""
         self.waiting_widget.set_progress(value, total)
 
-    def set_filename(self, filename: str):
+    def set_filename(self, filename: str) -> None:
+        """Set the filename being processed."""
         self.waiting_widget.set_filename(filename)
 
-    def set_status(self, text: str):
+    def set_status(self, text: str) -> None:
+        """Set the status text."""
         self.waiting_widget.set_status(text)

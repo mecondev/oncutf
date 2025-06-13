@@ -53,7 +53,7 @@ class DialogManager:
             return
 
         self._initialized = True
-        logger.debug("[DialogManager] Initialized")
+        logger.debug("[DialogManager] Initialized", extra={"dev_only": True})
 
     def confirm_large_folder(self, folder_path: str, file_count: int) -> bool:
         """Show confirmation dialog for large folders"""

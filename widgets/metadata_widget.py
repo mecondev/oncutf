@@ -77,7 +77,7 @@ class MetadataWidget(QWidget):
     def update_options(self) -> None:
         """Ενημερώνει τα πεδία ανάλογα με την κατηγορία."""
         category = self.category_combo.currentData()
-        logger.debug(f"[MetadataWidget] Updating options for category: {category}")
+        logger.debug(f"[MetadataWidget] Updating options for category: {category}", extra={"dev_only": True})
         self.options_combo.clear()
 
         if category == "file_dates":
@@ -98,7 +98,7 @@ class MetadataWidget(QWidget):
         ]
         for label, val in file_date_options:
             self.options_combo.addItem(label, userData=val)
-        logger.debug(f"[MetadataWidget] Populated {len(file_date_options)} file date options")
+        logger.debug(f"[MetadataWidget] Populated {len(file_date_options)} file date options", extra={"dev_only": True})
 
     def populate_metadata_keys(self) -> None:
         keys = self.get_available_metadata_keys()
@@ -109,7 +109,7 @@ class MetadataWidget(QWidget):
         for key in sorted(keys):
             display = self.format_metadata_key_name(key)
             self.options_combo.addItem(display, userData=key)
-        logger.debug(f"[MetadataWidget] Populated {len(keys)} metadata keys")
+        logger.debug(f"[MetadataWidget] Populated {len(keys)} metadata keys", extra={"dev_only": True})
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""

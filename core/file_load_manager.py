@@ -40,7 +40,7 @@ class FileLoadManager:
             parent_window: Reference to the MainWindow instance
         """
         self.parent_window = parent_window
-        logger.debug("[FileLoadManager] Initialized")
+        logger.debug("[FileLoadManager] Initialized", extra={"dev_only": True})
 
     def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False, force: bool = False):
         """

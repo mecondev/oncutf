@@ -26,7 +26,7 @@ class FileOperationsManager:
     def __init__(self, parent_window=None):
         """Initialize FileOperationsManager."""
         self.parent_window = parent_window
-        logger.debug("[FileOperationsManager] Initialized")
+        logger.debug("[FileOperationsManager] Initialized", extra={"dev_only": True})
 
     def rename_files(
         self,

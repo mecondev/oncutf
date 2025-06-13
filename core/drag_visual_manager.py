@@ -84,7 +84,7 @@ class DragVisualManager:
         # Clear cache on initialization to ensure fresh icons
         self._clear_cache()
 
-        logger.debug("[DragVisualManager] Initialized")
+        logger.debug("[DragVisualManager] Initialized", extra={"dev_only": True})
 
     def _clear_cache(self) -> None:
         """Clear icon and cursor caches to ensure fresh renders."""

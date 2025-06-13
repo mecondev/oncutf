@@ -1,3 +1,16 @@
+"""
+text_helpers.py
+
+Author: Michael Economou
+Date: 2025-01-27
+
+Utility functions for text manipulation and formatting.
+Provides helper functions for truncating, formatting, and processing text strings.
+"""
+
+from typing import Optional
+
+
 def elide_text(text: str, max_len: int) -> str:
     """
     Truncates text to a maximum number of characters with ellipsis if needed.

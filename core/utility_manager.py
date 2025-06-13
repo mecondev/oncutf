@@ -48,7 +48,7 @@ class UtilityManager:
             main_window: Reference to the main window instance
         """
         self.main_window = main_window
-        logger.debug("[UtilityManager] Initialized")
+        logger.debug("[UtilityManager] Initialized", extra={"dev_only": True})
 
     def event_filter(self, obj, event):
         """
@@ -141,7 +141,7 @@ class UtilityManager:
         # Reposition the window's top-left corner to match the new centered geometry
         self.main_window.move(window_geometry.topLeft())
 
-        logger.debug("Main window centered on screen.")
+        logger.debug("Main window centered on screen.", extra={"dev_only": True})
 
     def update_files_label(self) -> None:
         """

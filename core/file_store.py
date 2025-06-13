@@ -52,7 +52,7 @@ class FileStore(QObject):
         # Performance tracking
         self._load_timer = QElapsedTimer()
 
-        logger.debug("[FileStore] Initialized")
+        logger.debug("[FileStore] Initialized", extra={"dev_only": True})
 
     # =====================================
     # File Scanning Operations

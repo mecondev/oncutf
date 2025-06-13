@@ -56,7 +56,7 @@ class OriginalNameWidget(BaseRenameModule):
         Emits signal only if state has changed from last known.
         """
         data_str = str(self.get_data())
-        logger.debug(f"[OriginalNameWidget] Toggled checkbox → {data_str}")
+        logger.debug(f"[OriginalNameWidget] Toggled checkbox → {data_str}", extra={"dev_only": True})
         self.emit_if_changed(data_str)
 
     def get_data(self) -> dict:

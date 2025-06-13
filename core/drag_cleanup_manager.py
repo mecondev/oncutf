@@ -44,7 +44,7 @@ class DragCleanupManager:
             main_window: Reference to the main window instance
         """
         self.main_window = main_window
-        logger.debug("[DragCleanupManager] Initialized")
+        logger.debug("[DragCleanupManager] Initialized", extra={"dev_only": True})
 
     def force_drag_cleanup(self) -> None:
         """

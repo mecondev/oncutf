@@ -38,7 +38,7 @@ class TableManager:
             parent_window: Reference to the MainWindow instance
         """
         self.parent_window = parent_window
-        logger.debug("[TableManager] Initialized")
+        logger.debug("[TableManager] Initialized", extra={"dev_only": True})
 
     def sort_by_column(self, column: int, order: Qt.SortOrder = None, force_order: Qt.SortOrder = None) -> None:
         """
