@@ -23,6 +23,7 @@ from PyQt5.QtCore import (
     QTimer,
     QUrl,
     pyqtSignal,
+    QEvent,
 )
 from PyQt5.QtGui import QCursor, QDrag, QDropEvent, QKeySequence, QMouseEvent, QPixmap
 from PyQt5.QtWidgets import QAbstractItemView, QApplication, QHeaderView, QLabel, QTableView
@@ -607,8 +608,10 @@ class FileTableView(QTableView):
         # Handle real-time drag feedback
         if self._is_dragging:
             self._update_drag_feedback()
+            # Don't update hover highlighting during drag
+            return
 
-        # Update hover highlighting
+        # Update hover highlighting (only when not dragging)
         if hasattr(self, "hover_delegate") and hovered_row != self.hover_delegate.hovered_row:
             old_row = self.hover_delegate.hovered_row
             self.hover_delegate.update_hover_row(hovered_row)
@@ -668,6 +671,16 @@ class FileTableView(QTableView):
 
         if not file_paths:
             return
+
+        # Clear hover state before starting drag
+        if hasattr(self, 'hover_delegate'):
+            old_row = self.hover_delegate.hovered_row
+            self.hover_delegate.update_hover_row(-1)
+            if old_row >= 0:
+                left = self.model().index(old_row, 0)
+                right = self.model().index(old_row, self.model().columnCount() - 1)
+                row_rect = self.visualRect(left).united(self.visualRect(right))
+                self.viewport().update(row_rect)
 
         # Set drag state
         self._is_dragging = True
@@ -751,6 +764,9 @@ class FileTableView(QTableView):
             # End visual feedback
             end_drag_visual()
 
+            # Restore hover state with fake mouse move event
+            self._restore_hover_after_drag()
+
             logger.debug("[FileTableView] Custom drag ended (cancelled)", extra={"dev_only": True})
             return
 
@@ -807,7 +823,31 @@ class FileTableView(QTableView):
         # Notify DragManager
         drag_manager.end_drag("file_table")
 
+        # Restore hover state with fake mouse move event
+        self._restore_hover_after_drag()
+
         logger.debug(f"[FileTableView] Custom drag ended: {len(data) if data else 0} files (valid_drop: {valid_drop})", extra={"dev_only": True})
+
+    def _restore_hover_after_drag(self):
+        """Restore hover state after drag ends by sending a fake mouse move event"""
+        if not hasattr(self, 'hover_delegate'):
+            return
+
+        # Get current cursor position relative to this widget
+        global_pos = QCursor.pos()
+        local_pos = self.mapFromGlobal(global_pos)
+
+        # Only restore hover if cursor is still over this widget
+        if self.rect().contains(local_pos):
+            # Create and post a fake mouse move event
+            fake_move_event = QMouseEvent(
+                QEvent.MouseMove,
+                local_pos,
+                Qt.NoButton,
+                Qt.NoButton,
+                Qt.NoModifier
+            )
+            QApplication.postEvent(self, fake_move_event)
 
     def _handle_drop_on_metadata_tree(self):
         """Handle drop on metadata tree"""
