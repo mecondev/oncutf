@@ -197,14 +197,14 @@ class DragVisualManager:
 
         # Choose action icon based on drop zone state and modifiers
         if self._drop_zone_state == DropZoneState.VALID:
-            if self._modifier_state == ModifierState.CTRL:
-                action_icon = "arrow-down"  # Replace + Recursive
-            elif self._modifier_state == ModifierState.SHIFT:
-                action_icon = "plus"  # Merge + Shallow
+            if self._modifier_state == ModifierState.SHIFT:
+                action_icon = "plus"  # Merge + Shallow (Shift only)
+            elif self._modifier_state == ModifierState.CTRL:
+                action_icon = "arrow-down"  # Replace + Recursive (Ctrl only)
             elif self._modifier_state == ModifierState.CTRL_SHIFT:
-                action_icon = "plus-circle"  # Merge + Recursive
+                action_icon = "plus-circle"  # Merge + Recursive (Ctrl+Shift)
             else:
-                action_icon = "check"  # Replace + Shallow (normal)
+                action_icon = "check"  # Replace + Shallow (Normal - no modifiers)
         else:  # INVALID or NEUTRAL - both should show "x" since neutral isn't a valid drop target
             action_icon = "x"  # Invalid drop (including neutral zones)
 
@@ -282,15 +282,21 @@ class DragVisualManager:
         return QCursor(pixmap, 12, 12)
 
     def _restore_cursor(self) -> None:
-        """Restore the original cursor."""
-        # Remove all override cursors
+        """Restore the original cursor with aggressive cleanup."""
+        # Remove all override cursors aggressively
         cursor_count = 0
-        while QApplication.overrideCursor() and cursor_count < 5:
+        while QApplication.overrideCursor() and cursor_count < 10:  # Increased limit
             QApplication.restoreOverrideCursor()
             cursor_count += 1
 
         if cursor_count > 0:
             logger.debug(f"[DragVisualManager] Restored {cursor_count} override cursors")
+
+        # Force set to default cursor if still stuck
+        if QApplication.overrideCursor():
+            QApplication.setOverrideCursor(QCursor(Qt.ArrowCursor))
+            QApplication.restoreOverrideCursor()
+            logger.debug("[DragVisualManager] Force-restored stuck cursor")
 
     # =====================================
     # State Detection
@@ -300,15 +306,21 @@ class DragVisualManager:
         """Detect current keyboard modifier state."""
         modifiers = QApplication.keyboardModifiers()
 
+        is_ctrl = bool(modifiers & Qt.ControlModifier)
+        is_shift = bool(modifiers & Qt.ShiftModifier)
+
         # Check for Shift+Ctrl combination first (highest priority)
-        if (modifiers & Qt.ControlModifier) and (modifiers & Qt.ShiftModifier):
-            return ModifierState.CTRL_SHIFT  # Ctrl+Shift = Merge + Recursive
-        elif modifiers & Qt.ShiftModifier:
-            return ModifierState.SHIFT       # Shift only = Merge + Shallow
-        elif modifiers & Qt.ControlModifier:
-            return ModifierState.CTRL        # Ctrl only = Replace + Recursive
+        if is_ctrl and is_shift:
+            result = ModifierState.CTRL_SHIFT  # Ctrl+Shift = Merge + Recursive
+        elif is_shift:
+            result = ModifierState.SHIFT       # Shift only = Merge + Shallow
+        elif is_ctrl:
+            result = ModifierState.CTRL        # Ctrl only = Replace + Recursive
         else:
-            return ModifierState.NORMAL      # No modifiers = Replace + Shallow
+            result = ModifierState.NORMAL      # No modifiers = Replace + Shallow
+
+        logger.debug(f"[DragVisualManager] Modifiers: Ctrl={is_ctrl}, Shift={is_shift} → {result.value}", extra={"dev_only": True})
+        return result
 
     def get_drag_type_from_path(self, path: str) -> DragType:
         """

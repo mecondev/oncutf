@@ -10,6 +10,7 @@ Provides clean, immediate status updates without fade effects.
 
 from typing import Optional
 
+from config import STATUS_COLORS
 from core.qt_imports import QTimer
 from utils.logger_helper import get_logger
 
@@ -54,27 +55,27 @@ class StatusManager:
 
     def set_ready(self) -> None:
         """Set status to 'Ready' with default styling."""
-        self.set_status("Ready", color="", auto_reset=False)
+        self.set_status("Ready", color=STATUS_COLORS["ready"], auto_reset=False)
 
     def set_error(self, message: str, auto_reset: bool = True) -> None:
         """Set error status with red color."""
-        self.set_status(message, color="red", auto_reset=auto_reset)
+        self.set_status(message, color=STATUS_COLORS["error"], auto_reset=auto_reset)
 
     def set_success(self, message: str, auto_reset: bool = True) -> None:
         """Set success status with green color."""
-        self.set_status(message, color="green", auto_reset=auto_reset)
+        self.set_status(message, color=STATUS_COLORS["success"], auto_reset=auto_reset)
 
     def set_warning(self, message: str, auto_reset: bool = True) -> None:
         """Set warning status with orange color."""
-        self.set_status(message, color="orange", auto_reset=auto_reset)
+        self.set_status(message, color=STATUS_COLORS["warning"], auto_reset=auto_reset)
 
     def set_info(self, message: str, auto_reset: bool = True) -> None:
         """Set info status with blue color."""
-        self.set_status(message, color="blue", auto_reset=auto_reset)
+        self.set_status(message, color=STATUS_COLORS["info"], auto_reset=auto_reset)
 
     def set_loading(self, message: str = "Loading...") -> None:
         """Set loading status with gray color."""
-        self.set_status(message, color="gray", auto_reset=False)
+        self.set_status(message, color=STATUS_COLORS["loading"], auto_reset=False)
 
     def _start_auto_reset(self, delay: int) -> None:
         """Start auto-reset timer."""
@@ -124,7 +125,7 @@ class StatusManager:
         if files_label:
             files_label.setText("Files (0)")
 
-        self.set_status(message, color="gray", auto_reset=False)
+        self.set_status(message, color=STATUS_COLORS["loading"], auto_reset=False)
 
     def show_metadata_status(self, num_files: int, skip_metadata_mode: bool, force_extended_metadata: bool) -> None:
         """
@@ -137,13 +138,13 @@ class StatusManager:
         """
         if skip_metadata_mode:
             status_msg = f"Loaded {num_files} files — metadata skipped"
-            color = "#999999"
+            color = STATUS_COLORS["metadata_skipped"]
         elif force_extended_metadata:
             status_msg = f"Loaded {num_files} files — metadata (extended)"
-            color = "#aa3300"
+            color = STATUS_COLORS["metadata_extended"]
         else:
             status_msg = f"Loaded {num_files} files — metadata (basic)"
-            color = "#4444cc"
+            color = STATUS_COLORS["metadata_basic"]
 
         self.set_status(status_msg, color=color, auto_reset=True)
 

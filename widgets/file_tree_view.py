@@ -228,12 +228,25 @@ class FileTreeView(QTreeView):
     def mouseReleaseEvent(self, event):
         """Handle mouse release to end drag"""
         was_dragging = self._is_dragging
+
+        # End drag first
         self._end_custom_drag()
+
+        # Call super() for normal processing
         super().mouseReleaseEvent(event)
 
-        # If we were dragging, send a fake mouse move event to restore hover state
+        # Force cursor cleanup if we were dragging
         if was_dragging:
-            # Create a fake mouse move event at the current position
+            # Ensure all override cursors are removed
+            cursor_count = 0
+            while QApplication.overrideCursor() and cursor_count < 5:
+                QApplication.restoreOverrideCursor()
+                cursor_count += 1
+
+            if cursor_count > 0:
+                logger.debug(f"[FileTreeView] Cleaned {cursor_count} stuck cursors after drag", extra={"dev_only": True})
+
+            # Create a fake mouse move event to restore hover state
             fake_move_event = QMouseEvent(
                 QEvent.MouseMove,
                 event.pos(),

@@ -138,6 +138,21 @@ METADATA_TREE_COLUMN_WIDTHS = {
 }
 
 # ----------------------------
+# Status Label Colors
+# ----------------------------
+STATUS_COLORS = {
+    "ready": "",                    # Default color (no override)
+    "error": "#ff6b6b",            # Light red (was "red")
+    "success": "#51cf66",          # Light green (was "green")
+    "warning": "#ffa726",          # Light orange (was "orange")
+    "info": "#74c0fc",             # Light blue/cyan (was "blue" - now more cyan/light blue)
+    "loading": "#adb5bd",          # Light gray (was "gray")
+    "metadata_skipped": "#adb5bd", # Light gray for skipped metadata
+    "metadata_extended": "#ff8a65", # Light orange-red for extended metadata
+    "metadata_basic": "#74c0fc"    # Light blue/cyan for basic metadata
+}
+
+# ----------------------------
 # Theme Colors (Dark Theme)
 # ----------------------------
 THEME_COLORS = {

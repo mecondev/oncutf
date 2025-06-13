@@ -34,6 +34,7 @@ from core.file_operations_manager import FileOperationsManager
 from core.modifier_handler import decode_modifiers_to_flags
 from core.preview_manager import PreviewManager
 from core.status_manager import StatusManager
+from core.ui_manager import UIManager
 # Data models and business logic modules
 from models.file_item import FileItem
 from models.file_table_model import FileTableModel
@@ -126,27 +127,9 @@ class MainWindow(QMainWindow):
         self.preview_map = {}  # preview_filename -> FileItem
         self._selection_sync_mode = "normal"  # values: "normal", "toggle"
 
-        # --- Setup window and central widget ---
-        self.setup_main_window()
-        self.setup_main_layout()
-
-        # --- Setup splitters and panels ---
-        self.setup_splitters()
-        self.setup_left_panel()
-        self.setup_center_panel()
-        self.setup_right_panel()
-
-        # --- Bottom layout setup ---
-        self.setup_bottom_layout()
-
-        # --- Footer setup ---
-        self.setup_footer()
-
-        # --- Signal connections ---
-        self.setup_signals()
-
-        # --- Shortcuts ---
-        self.setup_shortcuts()
+        # --- Initialize UIManager and setup all UI ---
+        self.ui_manager = UIManager(parent_window=self)
+        self.ui_manager.setup_all_ui()
 
         # --- Preview update debouncing timer ---
         self.preview_update_timer = QTimer(self)
@@ -161,337 +144,10 @@ class MainWindow(QMainWindow):
         # self.emergency_cleanup_timer.start()
 
     # --- Method definitions ---
-    def setup_main_window(self) -> None:
-        """Configure main window properties."""
-        self.setWindowTitle("oncutf - Batch File Renamer and More")
-        self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
-        self.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
-        self.center_window()
-
-    def setup_main_layout(self) -> None:
-        """Setup central widget and main layout."""
-        self.central_widget = QWidget()
-        self.setCentralWidget(self.central_widget)
-        self.main_layout = QVBoxLayout(self.central_widget)
-
-    def setup_splitters(self) -> None:
-        """Setup vertical and horizontal splitters."""
-        self.vertical_splitter = QSplitter(Qt.Vertical)  # type: ignore
-        self.main_layout.addWidget(self.vertical_splitter)
-
-        self.horizontal_splitter = QSplitter(Qt.Horizontal)  # type: ignore
-        self.vertical_splitter.addWidget(self.horizontal_splitter)
-        self.vertical_splitter.setSizes(TOP_BOTTOM_SPLIT_RATIO)
-
-        # Set minimum sizes for all panels to 80px
-        self.horizontal_splitter.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-    def setup_left_panel(self) -> None:
-        """Setup left panel (folder tree)."""
-        self.left_frame = QFrame()
-        left_layout = QVBoxLayout(self.left_frame)
-        left_layout.addWidget(QLabel("Folders"))
-
-        self.folder_tree = FileTreeView()
-        self.folder_tree.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.folder_tree.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.folder_tree.setAlternatingRowColors(True)  # Enable alternating row colors
-        left_layout.addWidget(self.folder_tree)
-
-        # Expand/collapse mode (single or double click)
-        if TREE_EXPAND_MODE == "single":
-            self.folder_tree.setExpandsOnDoubleClick(False)  # Single click expand
-        else:
-            self.folder_tree.setExpandsOnDoubleClick(True)   # Double click expand
-
-        btn_layout = QHBoxLayout()
-        self.select_folder_button = QPushButton("  Import")
-        self.select_folder_button.setIcon(get_menu_icon("folder"))
-        self.select_folder_button.setFixedWidth(100)
-        self.browse_folder_button = QPushButton("  Browse")
-        self.browse_folder_button.setIcon(get_menu_icon("folder-plus"))
-        self.browse_folder_button.setFixedWidth(100)
-
-        # Add buttons with fixed positioning - no stretching
-        btn_layout.addWidget(self.select_folder_button)
-        btn_layout.addSpacing(4)  # 4px spacing between buttons
-        btn_layout.addWidget(self.browse_folder_button)
-        btn_layout.addStretch()  # Push buttons to left, allow empty space on right
-        left_layout.addLayout(btn_layout)
-
-        self.dir_model = CustomFileSystemModel()
-        self.dir_model.setRootPath('')
-        self.dir_model.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs | QDir.Files)
-
-        # Adding filter for allowed file extensions
-        name_filters = []
-        for ext in ALLOWED_EXTENSIONS:
-            name_filters.append(f"*.{ext}")
-        self.dir_model.setNameFilters(name_filters)
-        self.dir_model.setNameFilterDisables(False)  # This hides files that don't match instead of disabling them
-
-        self.folder_tree.setModel(self.dir_model)
-
-        for i in range(1, 4):
-            self.folder_tree.hideColumn(i)
-
-        # Header configuration is now handled by FileTreeView.configure_header_for_scrolling()
-        # when setModel() is called
-
-        root = "" if platform.system() == "Windows" else "/"
-        self.folder_tree.setRootIndex(self.dir_model.index(root))
-
-        # Set minimum size for left panel and add to splitter
-        self.left_frame.setMinimumWidth(230)
-        self.horizontal_splitter.addWidget(self.left_frame)
-
-    def setup_center_panel(self) -> None:
-        """Setup center panel (file table view)."""
-        self.center_frame = QFrame()
-        center_layout = QVBoxLayout(self.center_frame)
-
-        self.files_label = QLabel("Files")
-        center_layout.addWidget(self.files_label)
-
-        self.file_table_view = FileTableView(parent=self)
-        self.file_table_view.parent_window = self
-        self.file_table_view.verticalHeader().setVisible(False)
-        self.file_table_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.file_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.file_model = FileTableModel(parent_window=self)
-        self.file_table_view.setModel(self.file_model)
-
-        # Header setup
-        self.header = InteractiveHeader(Qt.Horizontal, self.file_table_view, parent_window=self)
-        self.file_table_view.setHorizontalHeader(self.header)
-        # Align all headers to the left (if supported)
-        if hasattr(self.header, 'setDefaultAlignment'):
-            self.header.setDefaultAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        self.header.setSortIndicatorShown(False)
-        self.header.setSectionsClickable(False)
-        self.header.setHighlightSections(False)
-
-        self.file_table_view.setHorizontalHeader(self.header)
-        self.file_table_view.setAlternatingRowColors(True)
-        self.file_table_view.setShowGrid(False)
-        self.file_table_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.file_table_view.setSortingEnabled(False)  # Manual sorting logic
-        self.file_table_view.setWordWrap(False)
-
-        # Initialize header and set default row height
-        self.file_table_view.horizontalHeader()
-        self.file_table_view.verticalHeader().setDefaultSectionSize(22)  # Compact row height
-
-        # Column configuration is now handled by FileTableView._configure_columns()
-        # when setModel() is called
-
-        # Show placeholder after setup is complete
-        self.file_table_view.set_placeholder_visible(True)
-        center_layout.addWidget(self.file_table_view)
-        # Set minimum size for center panel and add to splitter
-        self.center_frame.setMinimumWidth(230)
-        self.horizontal_splitter.addWidget(self.center_frame)
-
-    def setup_right_panel(self) -> None:
-        """Setup right panel (metadata tree view)."""
-        self.right_frame = QFrame()
-        right_layout = QVBoxLayout(self.right_frame)
-        right_layout.addWidget(QLabel("Information"))
-
-        # Expand/Collapse buttons
-        self.toggle_expand_button = QPushButton("Expand All")
-        self.toggle_expand_button.setIcon(get_menu_icon("chevrons-down"))
-        self.toggle_expand_button.setCheckable(True)
-        self.toggle_expand_button.setFixedWidth(120)
-
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(self.toggle_expand_button)
-        button_layout.addStretch()
-
-        right_layout.addLayout(button_layout)
-
-        # Metadata Tree View
-        self.metadata_tree_view = MetadataTreeView()
-        self.metadata_tree_view.files_dropped.connect(self.load_metadata_from_dropped_files)
-        right_layout.addWidget(self.metadata_tree_view)
-
-        # Dummy initial model
-        placeholder_model = QStandardItemModel()
-        placeholder_model.setHorizontalHeaderLabels(["Key", "Value"])
-        placeholder_item = QStandardItem("No file selected")
-        placeholder_item.setTextAlignment(Qt.AlignLeft)
-        placeholder_value = QStandardItem("-")
-        placeholder_model.appendRow([placeholder_item, placeholder_value])
-
-        # Set minimum size for right panel and finalize
-        self.right_frame.setMinimumWidth(230)
-        self.horizontal_splitter.addWidget(self.right_frame)
-        self.horizontal_splitter.setSizes(LEFT_CENTER_RIGHT_SPLIT_RATIO)
-
-        # Initialize MetadataTreeView with parent connections
-        self.metadata_tree_view.initialize_with_parent()
-
-    def setup_bottom_layout(self) -> None:
-        """Setup bottom layout for rename modules and preview."""
-        # --- Bottom Frame: Rename Modules + Preview ---
-        self.bottom_frame = QFrame()
-        self.bottom_layout = QVBoxLayout(self.bottom_frame)
-        self.bottom_layout.setSpacing(0)
-        self.bottom_layout.setContentsMargins(0, 0, 0, 0)
-
-        content_layout = QHBoxLayout()
-
-        # === Left: Rename modules ===
-        self.rename_modules_area = RenameModulesArea(parent=self, parent_window=self)
-
-                        # === Right: Preview tables view ===
-        self.preview_tables_view = PreviewTablesView(parent=self)
-
-        # Connect status updates from preview view
-        self.preview_tables_view.status_updated.connect(self._update_status_from_preview)
-
-        # Setup bottom controls
-        controls_layout = QHBoxLayout()
-        self.status_label = QLabel("")
-        self.status_label.setTextFormat(Qt.RichText)
-
-        # Initialize StatusManager now that status_label exists
-        self.status_manager = StatusManager(status_label=self.status_label)
-
-        # Status label fade effect setup (kept for compatibility but not used by StatusManager)
-        self.status_opacity_effect = QGraphicsOpacityEffect()
-        self.status_label.setGraphicsEffect(self.status_opacity_effect)
-        self.status_fade_anim = QPropertyAnimation(self.status_opacity_effect, b"opacity")
-        self.status_fade_anim.setDuration(800)  # ms
-        self.status_fade_anim.setStartValue(1.0)
-        self.status_fade_anim.setEndValue(0.3)
-        controls_layout.addWidget(self.status_label, stretch=1)
-
-        self.rename_button = QPushButton("  Rename")
-        self.rename_button.setIcon(get_menu_icon("edit"))
-        self.rename_button.setEnabled(False)
-        self.rename_button.setFixedWidth(100)
-        controls_layout.addWidget(self.rename_button)
-
-        # Create preview frame container
-        self.preview_frame = QFrame()
-        preview_layout = QVBoxLayout(self.preview_frame)
-        preview_layout.addWidget(self.preview_tables_view)
-        preview_layout.addLayout(controls_layout)
-
-        content_layout.addWidget(self.rename_modules_area, stretch=1)
-        content_layout.addWidget(self.preview_frame, stretch=3)
-        self.bottom_layout.addLayout(content_layout)
-
-    def setup_footer(self) -> None:
-        """Setup footer with version label."""
-        footer_separator = QFrame()
-        footer_separator.setFrameShape(QFrame.HLine)
-        footer_separator.setFrameShadow(QFrame.Sunken)
-
-        footer_widget = QWidget()
-        footer_layout = QHBoxLayout(footer_widget)
-        footer_layout.setContentsMargins(10, 4, 10, 4)
-
-        self.version_label = QLabel()
-        self.version_label.setText(f"{APP_NAME} v{APP_VERSION}")
-        self.version_label.setObjectName("versionLabel")
-        self.version_label.setAlignment(Qt.AlignLeft)
-        footer_layout.addWidget(self.version_label)
-        footer_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-
-        self.vertical_splitter.addWidget(self.horizontal_splitter)
-        self.vertical_splitter.addWidget(self.bottom_frame)
-        self.vertical_splitter.setSizes([500, 300])
-
-        self.main_layout.addWidget(footer_separator)
-        self.main_layout.addWidget(footer_widget)
 
     def _update_status_from_preview(self, status_html: str) -> None:
         """Update the status label from preview widget status updates."""
         self.status_manager.update_status_from_preview(status_html)
-
-
-
-    def setup_signals(self) -> None:
-        """
-        Connects UI elements to their corresponding event handlers.
-        """
-        self.installEventFilter(self)
-
-        self.header.sectionClicked.connect(self.sort_by_column)
-
-        self.select_folder_button.clicked.connect(self.handle_folder_import)
-        self.browse_folder_button.clicked.connect(self.handle_browse)
-
-        # Connect folder_tree for drag & drop operations
-        self.folder_tree.item_dropped.connect(self.load_single_item_from_drop)
-        self.folder_tree.folder_selected.connect(self.handle_folder_import)
-
-        # Connect splitter resize to adjust tree view column width
-        self.horizontal_splitter.splitterMoved.connect(self.on_horizontal_splitter_moved)
-        # Connect vertical splitter resize for debugging
-        self.vertical_splitter.splitterMoved.connect(self.on_vertical_splitter_moved)
-        # Connect callbacks for both tree view and file table view
-        self.horizontal_splitter.splitterMoved.connect(self.folder_tree.on_horizontal_splitter_moved)
-        self.vertical_splitter.splitterMoved.connect(self.folder_tree.on_vertical_splitter_moved)
-        self.horizontal_splitter.splitterMoved.connect(self.file_table_view.on_horizontal_splitter_moved)
-        self.vertical_splitter.splitterMoved.connect(self.file_table_view.on_vertical_splitter_moved)
-
-        # Connect splitter movements to preview tables view
-        self.vertical_splitter.splitterMoved.connect(self.preview_tables_view.handle_splitter_moved)
-
-        self.file_table_view.clicked.connect(self.on_table_row_clicked)
-        self.file_table_view.selection_changed.connect(self.update_preview_from_selection)
-        self.file_table_view.files_dropped.connect(self.load_files_from_dropped_items)
-        self.file_model.sort_changed.connect(self.request_preview_update)
-        self.file_table_view.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.file_table_view.customContextMenuRequested.connect(self.handle_table_context_menu)
-
-        # Toggle button connection is now handled by MetadataTreeView
-        # self.toggle_expand_button.toggled.connect(self.toggle_metadata_expand)
-
-
-
-        self.rename_button.clicked.connect(self.rename_files)
-
-        # --- Connect the updated signal of RenameModulesArea to generate_preview_names ---
-        self.rename_modules_area.updated.connect(self.request_preview_update)
-
-        # Enable SelectionStore mode in FileTableView after signals are connected
-        QTimer.singleShot(100, self._enable_selection_store_mode)
-
-    def setup_shortcuts(self) -> None:
-        """
-        Initializes all keyboard shortcuts for file table actions.
-        Stores them in self.shortcuts to avoid garbage collection.
-        """
-        self.shortcuts = []
-
-        # File table shortcuts
-        file_table_shortcuts = [
-            ("Ctrl+A", self.select_all_rows),
-            ("Ctrl+Shift+A", self.clear_all_selection),
-            ("Ctrl+I", self.invert_selection),
-            ("Ctrl+O", self.handle_browse),
-            ("Ctrl+R", self.force_reload),
-            ("Ctrl+M", self.shortcut_load_metadata),
-            ("Ctrl+E", self.shortcut_load_extended_metadata),
-        ]
-        for key, handler in file_table_shortcuts:
-            shortcut = QShortcut(QKeySequence(key), self.file_table_view)
-            shortcut.activated.connect(handler)
-            self.shortcuts.append(shortcut)
-
-        # Global shortcuts (attached to main window)
-        global_shortcuts = [
-            ("Escape", self.force_drag_cleanup),  # Global escape key
-            ("Ctrl+Escape", self.clear_file_table_shortcut),  # Clear file table
-        ]
-        for key, handler in global_shortcuts:
-            shortcut = QShortcut(QKeySequence(key), self)  # Attached to main window
-            shortcut.activated.connect(handler)
-            self.shortcuts.append(shortcut)
 
     def clear_file_table_shortcut(self) -> None:
         """
@@ -855,7 +511,7 @@ class MainWindow(QMainWindow):
             self.set_status("Metadata scan skipped.", color="gray", auto_reset=True)
             return
 
-        self.set_status(f"Loading metadata for {len(file_items)} files...", color="#3377ff")
+        self.set_status(f"Loading metadata for {len(file_items)} files...", color=STATUS_COLORS["info"])
         QTimer.singleShot(100, lambda: self.start_metadata_scan([f.full_path for f in file_items if f.full_path]))
 
     def start_metadata_scan(self, file_paths: list[str]) -> None:
@@ -878,16 +534,11 @@ class MainWindow(QMainWindow):
         """Delegates to MetadataManager for extended metadata shortcut loading."""
         self.metadata_manager.shortcut_load_extended_metadata()
 
-
-
-
-
     def reload_current_folder(self) -> None:
         # Optional: adjust if flags need to be preserved
         if self.current_folder_path:
             self.load_files_from_folder(self.current_folder_path, skip_metadata=False)
             self.sort_by_column(1, Qt.AscendingOrder)
-
 
     def update_module_dividers(self) -> None:
         for index, module in enumerate(self.rename_modules):
@@ -955,7 +606,7 @@ class MainWindow(QMainWindow):
             # No modules at all → clear preview completely
             self.update_preview_tables_from_pairs([])
             self.rename_button.setEnabled(False)
-            self.set_status("No rename modules defined.", color="#888888", auto_reset=True)
+            self.set_status("No rename modules defined.", color=STATUS_COLORS["loading"], auto_reset=True)
             return
 
         if not has_changes:
@@ -963,7 +614,7 @@ class MainWindow(QMainWindow):
             self.rename_button.setEnabled(False)
             self.rename_button.setToolTip("No changes to apply")
             self.update_preview_tables_from_pairs(name_pairs)
-            self.set_status("Rename modules present but inactive.", color="#888888", auto_reset=True)
+            self.set_status("Rename modules present but inactive.", color=STATUS_COLORS["loading"], auto_reset=True)
             return
 
         # Update preview tables with changes
@@ -1131,8 +782,6 @@ class MainWindow(QMainWindow):
         """Delegates to FileOperationsManager for file conflict resolution."""
         return self.file_operations_manager.prompt_file_conflict(target_path)
 
-
-
     def clear_file_table(self, message: str = "No folder selected") -> None:
         """
         Clears the file table and shows a placeholder message.
@@ -1147,8 +796,6 @@ class MainWindow(QMainWindow):
 
         # Update scrollbar visibility after clearing table
         self.file_table_view._update_scrollbar_visibility()
-
-
 
     def get_common_metadata_fields(self) -> list[str]:
         """
@@ -1194,7 +841,6 @@ class MainWindow(QMainWindow):
         self.update_files_label()
         self.request_preview_update()
 
-
     def get_modifier_flags(self) -> tuple[bool, bool]:
         """
         Checks which keyboard modifiers are currently held down.
@@ -1217,7 +863,6 @@ class MainWindow(QMainWindow):
     def determine_metadata_mode(self) -> tuple[bool, bool]:
         """Delegates to MetadataManager for metadata mode determination."""
         return self.metadata_manager.determine_metadata_mode(self.modifier_state)
-
 
     def should_use_extended_metadata(self) -> bool:
         """Delegates to MetadataManager for extended metadata decision."""

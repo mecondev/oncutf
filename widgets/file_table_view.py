@@ -563,20 +563,26 @@ class FileTableView(QTableView):
         self._sync_selection_safely()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse release events with enhanced drag cleanup."""
-        super().mouseReleaseEvent(event)
+        """Handle mouse release and end drag operations."""
+        was_dragging = self._is_dragging
 
-        # Handle custom drag end
+        # End drag first
         if self._is_dragging:
             self._end_custom_drag()
 
-        # Force drag manager cleanup if active
-        drag_manager = DragManager.get_instance()
-        if drag_manager.is_drag_active():
-            drag_manager.end_drag("file_table_mouse_release")
+        # Call super for normal processing
+        super().mouseReleaseEvent(event)
 
-        # Additional cleanup with delay
-        QTimer.singleShot(100, self._emergency_cursor_cleanup)
+        # Force cursor cleanup if we were dragging
+        if was_dragging:
+            # Ensure all override cursors are removed
+            cursor_count = 0
+            while QApplication.overrideCursor() and cursor_count < 5:
+                QApplication.restoreOverrideCursor()
+                cursor_count += 1
+
+            if cursor_count > 0:
+                logger.debug(f"[FileTableView] Cleaned {cursor_count} stuck cursors after drag", extra={"dev_only": True})
 
     def mouseMoveEvent(self, event) -> None:
         if self.is_empty():
