@@ -37,6 +37,7 @@ from modules.specified_text_module import SpecifiedTextModule
 from utils.logger_factory import get_cached_logger
 from widgets.metadata_widget import MetadataWidget
 from widgets.original_name_widget import OriginalNameWidget
+from utils.timer_manager import schedule_ui_update
 
 # ApplicationContext integration
 try:
@@ -113,7 +114,7 @@ class RenameModuleWidget(QWidget):
 
         # Load default module
         logger.debug(f"[RenameModuleWidget] Before QTimer.singleShot: content_container_layout is {'initialized' if hasattr(self, 'content_container_layout') else 'not initialized'}")
-        QTimer.singleShot(0, lambda: self.update_module_content(self.type_combo.currentText()))
+        schedule_ui_update(lambda: self.update_module_content(self.type_combo.currentText()), 0)
 
         logger.debug(f"[RenameModuleWidget] Before update_module_content: content_container_layout is {'initialized' if hasattr(self, 'content_container_layout') else 'not initialized'}")
 

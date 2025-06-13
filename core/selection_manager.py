@@ -13,6 +13,7 @@ from typing import List
 from core.qt_imports import QTimer, QElapsedTimer
 from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
+from utils.timer_manager import schedule_selection_update, schedule_metadata_load
 
 logger = get_cached_logger(__name__)
 
@@ -96,9 +97,9 @@ class SelectionManager:
                         metadata = last_file.metadata or metadata_cache.get(last_file.full_path)
                         metadata_tree_view.display_metadata(metadata, context="select_all")
 
-                QTimer.singleShot(15, show_metadata_later)
+                schedule_metadata_load(show_metadata_later, 15)
 
-            QTimer.singleShot(5, apply_visual_selection)
+            schedule_selection_update(apply_visual_selection, 5)
 
     def clear_all_selection(self) -> None:
         """
@@ -210,7 +211,7 @@ class SelectionManager:
                         metadata_tree_view.handle_invert_selection(metadata)
                     elif hasattr(metadata_tree_view, 'display_metadata'):
                         metadata_tree_view.display_metadata(metadata, context="invert_selection")
-                QTimer.singleShot(20, show_metadata_later)
+                schedule_metadata_load(show_metadata_later, 20)
             elif metadata_tree_view and hasattr(metadata_tree_view, 'handle_invert_selection'):
                 metadata_tree_view.handle_invert_selection(None)
 

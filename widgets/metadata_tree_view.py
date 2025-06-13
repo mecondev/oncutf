@@ -52,6 +52,7 @@ from PyQt5.QtWidgets import (
 
 from config import METADATA_TREE_COLUMN_WIDTHS
 from utils.logger_factory import get_cached_logger
+from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust
 from widgets.metadata_edit_dialog import MetadataEditDialog
 
 # ApplicationContext integration
@@ -190,8 +191,8 @@ class MetadataTreeView(QTreeView):
             event.ignore()
             self._perform_drag_cleanup(_drag_cancel_filter)
 
-        # Force additional cleanup through timer
-        QTimer.singleShot(0, self._complete_drag_cleanup)
+        # Schedule drag cleanup
+        schedule_drag_cleanup(self._complete_drag_cleanup, 0)
 
     def _perform_drag_cleanup(self, drag_cancel_filter: Any) -> None:
         """Centralized drag cleanup logic."""
@@ -256,9 +257,8 @@ class MetadataTreeView(QTreeView):
                     # Get the saved position
                     saved_position = self._scroll_positions[self._current_file_path]
 
-                    # Apply immediately without delay
-                    QTimer.singleShot(0, lambda: self._apply_scroll_position_immediately(saved_position))
-                    logger.debug(f"[MetadataTree] Scheduled immediate scroll to position {saved_position}", extra={"dev_only": True})
+                    # Schedule scroll position restoration
+                    schedule_scroll_adjust(lambda: self._apply_scroll_position_immediately(saved_position), 0)
 
     def _apply_scroll_position_immediately(self, position: int) -> None:
         """Apply scroll position immediately without waiting for expandAll()."""

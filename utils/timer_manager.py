@@ -11,6 +11,7 @@ Provides optimized timer operations with automatic cleanup and debugging capabil
 from enum import Enum
 from typing import Callable, Dict, Optional, Set
 import weakref
+import threading
 
 from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 
@@ -62,6 +63,9 @@ class TimerManager(QObject):
     def __init__(self, parent: Optional[QObject] = None):
         super().__init__(parent)
 
+        # Thread safety
+        self._lock = threading.RLock()
+
         # Active timers tracking
         self._active_timers: Dict[str, QTimer] = {}
         self._timer_callbacks: Dict[str, Callable] = {}
@@ -99,44 +103,45 @@ class TimerManager(QObject):
         Returns:
             str: Timer ID for tracking/cancellation
         """
-        # Use priority default delay if not specified
-        if delay is None:
-            delay = priority.value
+        with self._lock:
+            # Use priority default delay if not specified
+            if delay is None:
+                delay = priority.value
 
-        # Generate timer ID if not provided
-        if timer_id is None:
-            timer_id = f"{timer_type.value}_{self._timer_count}"
-            self._timer_count += 1
+            # Generate timer ID if not provided
+            if timer_id is None:
+                timer_id = f"{timer_type.value}_{self._timer_count}"
+                self._timer_count += 1
 
-        # Consolidate similar timers if requested
-        if consolidate:
-            existing_id = self._find_consolidatable_timer(timer_type, delay)
-            if existing_id:
-                logger.debug(f"[TimerManager] Consolidating timer {timer_id} with {existing_id}", extra={"dev_only": True})
-                # Cancel the new timer request and use existing
-                return existing_id
+            # Consolidate similar timers if requested
+            if consolidate:
+                existing_id = self._find_consolidatable_timer(timer_type, delay)
+                if existing_id:
+                    logger.debug(f"[TimerManager] Consolidating timer {timer_id} with {existing_id}", extra={"dev_only": True})
+                    # Cancel the new timer request and use existing
+                    return existing_id
 
-        # Cancel existing timer with same ID
-        if timer_id in self._active_timers:
-            self.cancel(timer_id)
+            # Cancel existing timer with same ID
+            if timer_id in self._active_timers:
+                self.cancel(timer_id)
 
-        # Create new timer
-        timer = QTimer(self)
-        timer.setSingleShot(True)
-        timer.timeout.connect(lambda: self._on_timer_finished(timer_id))
+            # Create new timer
+            timer = QTimer(self)
+            timer.setSingleShot(True)
+            timer.timeout.connect(lambda: self._on_timer_finished(timer_id))
 
-        # Store timer info
-        self._active_timers[timer_id] = timer
-        self._timer_callbacks[timer_id] = callback
-        self._timer_types[timer_id] = timer_type
+            # Store timer info
+            self._active_timers[timer_id] = timer
+            self._timer_callbacks[timer_id] = callback
+            self._timer_types[timer_id] = timer_type
 
-        # Start timer
-        timer.start(delay)
+            # Start timer
+            timer.start(delay)
 
-        logger.debug(f"[TimerManager] Scheduled {timer_type.value} timer '{timer_id}' with {delay}ms delay", extra={"dev_only": True})
-        self.timer_started.emit(timer_id, delay)
+            logger.debug(f"[TimerManager] Scheduled {timer_type.value} timer '{timer_id}' with {delay}ms delay", extra={"dev_only": True})
+            self.timer_started.emit(timer_id, delay)
 
-        return timer_id
+            return timer_id
 
     def cancel(self, timer_id: str) -> bool:
         """
@@ -173,8 +178,10 @@ class TimerManager(QObject):
         Returns:
             int: Number of timers cancelled
         """
+        # Create a copy to avoid dictionary changed size during iteration
+        timer_items = list(self._timer_types.items())
         to_cancel = [
-            timer_id for timer_id, t_type in self._timer_types.items()
+            timer_id for timer_id, t_type in timer_items
             if t_type == timer_type
         ]
 
@@ -190,7 +197,10 @@ class TimerManager(QObject):
 
     def _find_consolidatable_timer(self, timer_type: TimerType, delay: int) -> Optional[str]:
         """Find existing timer that can be consolidated with new request."""
-        for timer_id, existing_type in self._timer_types.items():
+        # Create a copy of the items to avoid dictionary changed size during iteration
+        timer_items = list(self._timer_types.items())
+
+        for timer_id, existing_type in timer_items:
             if existing_type == timer_type:
                 existing_timer = self._active_timers.get(timer_id)
                 if existing_timer and existing_timer.isActive():

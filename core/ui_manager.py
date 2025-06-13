@@ -23,6 +23,7 @@ from widgets.interactive_header import InteractiveHeader
 from widgets.metadata_tree_view import MetadataTreeView
 from widgets.preview_tables_view import PreviewTablesView
 from widgets.rename_modules_area import RenameModulesArea
+from utils.timer_manager import schedule_selection_update
 
 if TYPE_CHECKING:
     from main_window import MainWindow
@@ -335,7 +336,7 @@ class UIManager:
         self.parent_window.rename_modules_area.updated.connect(self.parent_window.request_preview_update)
 
         # Enable SelectionStore mode in FileTableView after signals are connected
-        QTimer.singleShot(100, self.parent_window._enable_selection_store_mode)
+        schedule_selection_update(self.parent_window._enable_selection_store_mode, 100)
 
     def setup_shortcuts(self) -> None:
         """Initialize all keyboard shortcuts for file table actions."""

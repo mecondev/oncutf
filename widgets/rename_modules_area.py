@@ -31,6 +31,7 @@ from utils.logger_factory import get_cached_logger
 from utils.icons_loader import get_menu_icon
 from widgets.name_transform_widget import NameTransformWidget
 from widgets.rename_module_widget import RenameModuleWidget
+from utils.timer_manager import schedule_scroll_adjust
 
 # ApplicationContext integration
 try:
@@ -169,8 +170,8 @@ class RenameModulesArea(QWidget):
         self.scroll_layout.addWidget(module)
         self._update_remove_button_state()
 
-        # Auto-scroll to show the newly added module
-        QTimer.singleShot(50, lambda: self._scroll_to_show_new_module(module))
+        # Schedule scroll to new module
+        schedule_scroll_adjust(lambda: self._scroll_to_show_new_module(module), 50)
 
         self.updated.emit()
 
@@ -200,7 +201,8 @@ class RenameModulesArea(QWidget):
 
             # If only one module remains, scroll to top
             if len(self.module_widgets) == 1:
-                QTimer.singleShot(50, lambda: self.scroll_area.verticalScrollBar().setValue(0))
+                # Schedule scroll to top
+                schedule_scroll_adjust(lambda: self.scroll_area.verticalScrollBar().setValue(0), 50)
                 logger.debug("[RenameModulesArea] Scrolled to top after removal (single module remains)", extra={"dev_only": True})
 
             self.updated.emit()

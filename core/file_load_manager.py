@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import QApplication
 
 from config import STATUS_COLORS
 from utils.logger_factory import get_cached_logger
+from utils.timer_manager import schedule_metadata_load, schedule_selection_update
 
 logger = get_cached_logger(__name__)
 
@@ -87,7 +88,7 @@ class FileLoadManager:
             return
 
         self.parent_window.set_status(f"Loading metadata for {len(file_items)} files...", color=STATUS_COLORS["info"])
-        QTimer.singleShot(100, lambda: self.parent_window.start_metadata_scan([f.full_path for f in file_items if f.full_path]))
+        schedule_metadata_load(lambda: self.parent_window.start_metadata_scan([f.full_path for f in file_items if f.full_path]), 100)
 
     def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
         """
@@ -266,12 +267,12 @@ class FileLoadManager:
                 self.parent_window.load_metadata_for_items(items, use_extended=use_extended, source="individual_file_drop")
                 # Select files AFTER metadata loading with a delay
                 logger.debug(f"[Drop] Scheduling selection after metadata with 100ms delay", extra={"dev_only": True})
-                QTimer.singleShot(100, select_dropped_files)
+                schedule_metadata_load(select_dropped_files, 100)
             else:
                 logger.info(f"[Drop] Skipping metadata for {len(paths)} individual files (no Ctrl modifier)")
                 # Select files immediately if not loading metadata
                 logger.warning(f"[Drop] *** SCHEDULING selection immediately with 50ms delay ***")
-                QTimer.singleShot(50, select_dropped_files)
+                schedule_selection_update(select_dropped_files, 50)
 
         # After loading files + metadata
         self.parent_window.show_metadata_status()

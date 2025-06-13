@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from utils.logger_factory import get_cached_logger
 from utils.metadata_cache import MetadataEntry
+from utils.timer_manager import schedule_ui_update
 
 # ApplicationContext integration
 try:
@@ -72,7 +73,8 @@ class MetadataWidget(QWidget):
         self.category_combo.currentIndexChanged.connect(self.update_options)
         self.options_combo.currentIndexChanged.connect(self.emit_if_changed)
 
-        QTimer.singleShot(0, self.update_options)
+        # Schedule options update
+        schedule_ui_update(self.update_options, 0)
 
     def update_options(self) -> None:
         """Updates fields according to the selected category."""

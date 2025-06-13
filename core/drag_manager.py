@@ -21,6 +21,7 @@ from PyQt5.QtGui import QMouseEvent
 from PyQt5.QtWidgets import QApplication, QWidget
 
 from utils.logger_factory import get_cached_logger
+from utils.timer_manager import schedule_drag_cleanup
 
 logger = get_cached_logger(__name__)
 
@@ -203,7 +204,7 @@ class DragManager(QObject):
         # Mouse release - check after a delay
         if event_type == QEvent.MouseButtonRelease:
             # Give more time for normal drag completion
-            QTimer.singleShot(200, self._check_and_cleanup)
+            schedule_drag_cleanup(self._check_and_cleanup, 200)
 
         # Window focus events - only after significant time
         if event_type in (QEvent.WindowDeactivate, QEvent.ApplicationDeactivate):
@@ -212,7 +213,7 @@ class DragManager(QObject):
                 elapsed = time.time() - self._drag_start_time
                 if elapsed > 3.0:  # Only cleanup after 3 seconds
                     logger.debug("[DragManager] Window deactivated after long drag")
-                    QTimer.singleShot(500, self.force_cleanup)
+                    schedule_drag_cleanup(self.force_cleanup, 500)
 
         return False
 

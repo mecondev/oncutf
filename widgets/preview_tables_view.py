@@ -33,6 +33,7 @@ from PyQt5.QtWidgets import (
 )
 
 from utils.logger_factory import get_cached_logger
+from utils.timer_manager import schedule_ui_update, schedule_scroll_adjust
 
 logger = get_cached_logger(__name__)
 
@@ -51,7 +52,7 @@ class PreviewTableWidget(QTableWidget):
         """Override to emit resize signal for intelligent column width adjustments."""
         super().resizeEvent(event)
         # Emit signal with small delay to ensure layout is stable
-        QTimer.singleShot(10, self.resized.emit)
+        schedule_ui_update(self.resized.emit, 10)
 
 
 class PreviewTablesView(QWidget):
@@ -430,8 +431,8 @@ class PreviewTablesView(QWidget):
         )
         self.status_updated.emit(status_msg)
 
-        # Finalize scrollbar setup after all content is loaded to prevent flickering
-        QTimer.singleShot(15, self._finalize_scrollbar_setup)
+        # Schedule scrollbar setup
+        schedule_scroll_adjust(self._finalize_scrollbar_setup, 15)
 
     def clear_tables(self):
         """Clear all tables and show placeholders."""

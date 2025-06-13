@@ -17,6 +17,7 @@ from core.qt_imports import Qt, QTimer
 from models.file_item import FileItem
 from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
+from utils.timer_manager import schedule_selection_update
 
 logger = get_cached_logger(__name__)
 
@@ -225,7 +226,7 @@ class FileLoader:
             def select_dropped_file():
                 self.parent_window.file_table_view.select_dropped_files([file_path])
 
-            QTimer.singleShot(50, select_dropped_file)
+            schedule_selection_update(select_dropped_file, 50)
 
     def handle_drop_operation(self, path: str, modifiers: Qt.KeyboardModifiers) -> None:
         """

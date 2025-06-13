@@ -172,7 +172,7 @@ class FileTableView(QTableView):
         """Configure columns when model is set."""
         super().setModel(model)
         if model:
-            QTimer.singleShot(10, self._configure_columns)
+            schedule_resize_adjust(self._configure_columns, 10)
 
     # =====================================
     # Table Preparation & Management
@@ -898,7 +898,7 @@ class FileTableView(QTableView):
             QApplication.processEvents()
 
         # Schedule aggressive cleanup with reasonable delay
-        QTimer.singleShot(100, self._aggressive_drag_cleanup)
+        schedule_drag_cleanup(self._aggressive_drag_cleanup, 100)
 
     def _aggressive_drag_cleanup(self):
         """Aggressive post-drag cleanup to prevent ghost effects"""
@@ -952,7 +952,7 @@ class FileTableView(QTableView):
         QApplication.processEvents()
 
         # Schedule more aggressive cleanup
-        QTimer.singleShot(50, self._aggressive_drag_cleanup)
+        schedule_drag_cleanup(self._aggressive_drag_cleanup, 50)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls() or event.mimeData().hasFormat("application/x-oncutf-internal"):
