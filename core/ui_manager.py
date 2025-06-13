@@ -15,7 +15,7 @@ from core.config_imports import *
 from core.qt_imports import *
 from models.file_table_model import FileTableModel
 from utils.icons_loader import get_menu_icon
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 from widgets.custom_file_system_model import CustomFileSystemModel
 from widgets.file_table_view import FileTableView
 from widgets.file_tree_view import FileTreeView

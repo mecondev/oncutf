@@ -22,7 +22,7 @@ from typing import Dict, Optional
 
 from PyQt5.QtGui import QIcon, QPixmap
 
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

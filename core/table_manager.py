@@ -13,7 +13,7 @@ from typing import List, Optional
 from PyQt5.QtCore import Qt
 
 from models.file_item import FileItem
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

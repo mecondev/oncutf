@@ -9,7 +9,7 @@ Date: 2025-05-15
 import os
 
 from models.file_item import FileItem
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 from utils.transform_utils import apply_transform
 
 logger = get_cached_logger(__name__)

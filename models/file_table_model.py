@@ -31,7 +31,7 @@ from models.file_item import FileItem
 from utils.icons_loader import load_metadata_icons
 
 # initialize logger
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 from utils.metadata_cache import MetadataEntry
 
 logger = get_cached_logger(__name__)

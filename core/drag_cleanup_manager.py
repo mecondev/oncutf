@@ -17,7 +17,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 
 from core.drag_manager import DragManager
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from main_window import MainWindow

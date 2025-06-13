@@ -13,7 +13,7 @@ from typing import List, Optional
 from core.qt_imports import QDesktopServices, QUrl
 from core.config_imports import LARGE_FOLDER_WARNING_THRESHOLD, EXTENDED_METADATA_SIZE_LIMIT_MB
 from models.file_item import FileItem
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 from utils.renamer import Renamer
 from widgets.custom_msgdialog import CustomMessageDialog
 

@@ -29,8 +29,9 @@ from core.drag_visual_manager import (
     start_drag_visual, end_drag_visual, update_drop_zone_state,
     update_modifier_state, is_valid_drop_target
 )
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 from utils.cursor_helper import wait_cursor
+from utils.timer_manager import schedule_scroll_adjust
 
 logger = get_cached_logger(__name__)
 
@@ -153,7 +154,7 @@ class FileTreeView(QTreeView):
 
     def _on_model_changed(self) -> None:
         """Called when model data changes to update column width"""
-        QTimer.singleShot(10, self._adjust_column_width)
+        schedule_scroll_adjust(self._adjust_column_width, 10)
 
     def get_selected_path(self) -> str:
         """Get the single selected file/folder path"""
@@ -508,7 +509,7 @@ class FileTreeView(QTreeView):
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
         """Handle horizontal splitter movement to adjust column width"""
-        QTimer.singleShot(50, self._adjust_column_width)
+        schedule_scroll_adjust(self._adjust_column_width, 50)
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement (placeholder for future use)"""

@@ -10,7 +10,7 @@ Date: 2025-06-04
 from PyQt5.QtWidgets import QCheckBox, QHBoxLayout, QVBoxLayout
 
 from modules.base_module import BaseRenameModule  # NEW
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

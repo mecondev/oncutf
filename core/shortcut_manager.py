@@ -11,7 +11,7 @@ This manager centralizes keyboard shortcut handling including:
 
 from typing import TYPE_CHECKING
 
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from main_window import MainWindow

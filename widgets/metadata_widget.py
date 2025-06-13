@@ -12,7 +12,7 @@ from typing import Optional, Set
 from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtWidgets import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 from utils.metadata_cache import MetadataEntry
 
 # ApplicationContext integration

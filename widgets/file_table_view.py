@@ -36,7 +36,8 @@ from core.drag_visual_manager import (
     update_modifier_state, is_valid_drop_target
 )
 from utils.file_drop_helper import extract_file_paths
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
+from utils.timer_manager import schedule_resize_adjust, schedule_drag_cleanup
 
 from .hover_delegate import HoverItemDelegate
 

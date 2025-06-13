@@ -15,7 +15,7 @@ from typing import Any, Dict, Optional, Set
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

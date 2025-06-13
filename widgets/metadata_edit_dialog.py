@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
 )
 
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 from utils.metadata_validators import get_validator_for_key
 
 logger = get_cached_logger(__name__)

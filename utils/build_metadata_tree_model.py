@@ -14,7 +14,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QStandardItem, QStandardItemModel
 
 # Initialize Logger
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

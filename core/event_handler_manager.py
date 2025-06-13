@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QModelIndex, QTimer
 from PyQt5.QtGui import QKeyEvent
 
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 from utils.cursor_helper import wait_cursor
 
 logger = get_cached_logger(__name__)

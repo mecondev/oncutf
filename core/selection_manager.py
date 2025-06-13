@@ -12,7 +12,7 @@ from typing import List
 
 from core.qt_imports import QTimer, QElapsedTimer
 from utils.cursor_helper import wait_cursor
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

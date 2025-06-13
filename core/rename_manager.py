@@ -14,7 +14,7 @@ This manager centralizes rename operations including:
 from typing import TYPE_CHECKING, List, Set
 
 from models.file_item import FileItem
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
     from main_window import MainWindow

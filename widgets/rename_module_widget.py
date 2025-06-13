@@ -34,7 +34,7 @@ from modules.counter_module import CounterModule
 from modules.specified_text_module import SpecifiedTextModule
 
 # Initialize Logger
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 from widgets.metadata_widget import MetadataWidget
 from widgets.original_name_widget import OriginalNameWidget
 

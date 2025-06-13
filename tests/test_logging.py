@@ -16,7 +16,7 @@ import os
 
 from utils.init_logging import init_logging
 from utils.logger_file_helper import add_file_handler
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 
 
 # Clean log files (for test only)

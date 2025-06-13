@@ -23,7 +23,7 @@ from typing import Optional
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 # Logger setup
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 from utils.metadata_cache import MetadataCache
 from utils.metadata_loader import MetadataLoader
 

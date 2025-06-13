@@ -25,7 +25,7 @@ from modules.original_name_module import OriginalNameModule
 from modules.specified_text_module import SpecifiedTextModule
 
 # Initialize Logger
-from utils.logger_helper import get_cached_logger
+from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
