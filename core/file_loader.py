@@ -19,7 +19,13 @@ from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_selection_update
 
+# Import for threading support
+from core.cancellable_file_loader import CancellableFileLoader
+
 logger = get_cached_logger(__name__)
+
+# Threshold for using threaded loading (number of estimated files)
+THREADING_THRESHOLD = 1000
 
 
 class FileLoader:
@@ -35,6 +41,7 @@ class FileLoader:
     def __init__(self, parent_window=None):
         """Initialize FileLoader with optional parent window reference."""
         self.parent_window = parent_window
+        self._cancellable_loader = None
 
     def get_file_items_from_folder(self, folder_path: str) -> List[FileItem]:
         """
@@ -146,6 +153,17 @@ class FileLoader:
         """Handle folder drop with merge/replace and recursive options."""
         logger.debug(f"[FileLoader] Handling folder: {folder_path} (merge={merge_mode}, recursive={recursive})")
 
+        # Check if we should use threading for this operation
+        if self._should_use_threading(folder_path, recursive):
+            logger.info(f"[FileLoader] Using threaded loading for large folder: {folder_path}")
+            self._handle_folder_drop_threaded(folder_path, merge_mode, recursive)
+            return
+
+        # Use original synchronous method for smaller folders
+        self._handle_folder_drop_sync(folder_path, merge_mode, recursive)
+
+    def _handle_folder_drop_sync(self, folder_path: str, merge_mode: bool, recursive: bool) -> None:
+        """Handle folder drop synchronously (original implementation)."""
         if recursive:
             # Get all files recursively
             file_paths = []
@@ -213,6 +231,109 @@ class FileLoader:
             index = self.parent_window.dir_model.index(folder_path)
             self.parent_window.folder_tree.setCurrentIndex(index)
 
+    def _handle_folder_drop_threaded(self, folder_path: str, merge_mode: bool, recursive: bool) -> None:
+        """Handle folder drop using threaded loading for large folders."""
+        # Create cancellable loader if not exists
+        if not self._cancellable_loader:
+            self._cancellable_loader = CancellableFileLoader(self.parent_window)
+
+            # Connect signals
+            self._cancellable_loader.files_loaded.connect(self._on_threaded_files_loaded)
+            self._cancellable_loader.loading_cancelled.connect(self._on_threaded_loading_cancelled)
+            self._cancellable_loader.loading_failed.connect(self._on_threaded_loading_failed)
+
+        # Store context for completion callback
+        self._threaded_context = {
+            'merge_mode': merge_mode,
+            'recursive': recursive,
+            'folder_path': folder_path
+        }
+
+        # Start threaded loading
+        self._cancellable_loader.load_files_from_folder(
+            folder_path,
+            recursive=recursive,
+            completion_callback=self._on_threaded_completion
+        )
+
+    def _on_threaded_completion(self, file_paths: List[str]) -> None:
+        """Handle completion of threaded file loading."""
+        if not hasattr(self, '_threaded_context'):
+            return
+
+        context = self._threaded_context
+        merge_mode = context['merge_mode']
+        folder_path = context['folder_path']
+
+        logger.info(f"[FileLoader] Threaded loading completed: {len(file_paths)} files")
+
+        # Handle empty folder scenarios
+        if len(file_paths) == 0:
+            if not context['recursive'] and self.has_deep_content(folder_path):
+                if self.parent_window and hasattr(self.parent_window, 'set_status'):
+                    self.parent_window.set_status(
+                        "Folder has no supported files at root level. Try Ctrl+drag for recursive scan.",
+                        color="orange", auto_reset=True
+                    )
+                return
+            elif not merge_mode:
+                # Clear table for empty folder in replace mode
+                if self.parent_window:
+                    if hasattr(self.parent_window, 'file_table_view'):
+                        self.parent_window.file_table_view.prepare_table([])
+                        self.parent_window.file_table_view.set_placeholder_visible(True)
+                    if hasattr(self.parent_window, 'files'):
+                        self.parent_window.files = []
+                    if hasattr(self.parent_window, 'preview_map'):
+                        self.parent_window.preview_map = {}
+                    if hasattr(self.parent_window, 'update_files_label'):
+                        self.parent_window.update_files_label()
+                    if hasattr(self.parent_window, 'set_status'):
+                        self.parent_window.set_status("Empty folder loaded - table cleared.", color="gray", auto_reset=True)
+                return
+            else:
+                if self.parent_window and hasattr(self.parent_window, 'set_status'):
+                    self.parent_window.set_status("Empty folder ignored in merge mode.", color="gray", auto_reset=True)
+                return
+
+        # Load files with merge/replace logic
+        if self.parent_window and hasattr(self.parent_window, 'load_files_from_paths'):
+            self.parent_window.load_files_from_paths(file_paths, clear=not merge_mode)
+
+        # Update folder tree selection if replace mode
+        if (not merge_mode and self.parent_window and
+            hasattr(self.parent_window, 'dir_model') and
+            hasattr(self.parent_window, 'folder_tree') and
+            hasattr(self.parent_window.dir_model, 'index')):
+            index = self.parent_window.dir_model.index(folder_path)
+            self.parent_window.folder_tree.setCurrentIndex(index)
+
+        # Update UI after loading
+        if self.parent_window:
+            if hasattr(self.parent_window, 'file_table_view'):
+                self.parent_window.file_table_view.viewport().update()
+            if hasattr(self.parent_window, 'update_files_label'):
+                self.parent_window.update_files_label()
+            if hasattr(self.parent_window, 'show_metadata_status'):
+                self.parent_window.show_metadata_status()
+
+    def _on_threaded_files_loaded(self, file_paths: List[str]) -> None:
+        """Handle files loaded signal from threaded loader."""
+        # This is handled by the completion callback
+        pass
+
+    def _on_threaded_loading_cancelled(self) -> None:
+        """Handle loading cancelled signal from threaded loader."""
+        logger.info("[FileLoader] Threaded file loading was cancelled by user")
+        if self.parent_window and hasattr(self.parent_window, 'set_status'):
+            self.parent_window.set_status("File loading cancelled.", color="gray", auto_reset=True)
+
+    def _on_threaded_loading_failed(self, error_message: str) -> None:
+        """Handle loading failed signal from threaded loader."""
+        logger.error(f"[FileLoader] Threaded file loading failed: {error_message}")
+        if self.parent_window and hasattr(self.parent_window, 'set_status'):
+            self.parent_window.set_status(f"File loading failed: {error_message}", color="red", auto_reset=True)
+
     def handle_file_drop(self, file_path: str, merge_mode: bool) -> None:
         """Handle single file drop with merge/replace options."""
         logger.debug(f"[FileLoader] Handling file: {file_path} (merge={merge_mode})")
@@ -245,23 +366,31 @@ class FileLoader:
 
         logger.info(f"[FileLoader] Drop operation: {path} ({action_type})")
 
-        # Use wait cursor for all operations
-        with wait_cursor():
-            if os.path.isdir(path):
-                # Handle folder drop
+        if os.path.isdir(path):
+            # Check if we'll use threading for this folder
+            use_threading = self._should_use_threading(path, recursive)
+
+            if use_threading:
+                # Don't use wait_cursor for threaded operations (they have their own progress dialog)
                 self.handle_folder_drop(path, merge_mode, recursive)
             else:
-                # Handle single file drop
+                # Use wait cursor for synchronous operations
+                with wait_cursor():
+                    self.handle_folder_drop(path, merge_mode, recursive)
+        else:
+            # Single file drops are always synchronous and fast
+            with wait_cursor():
                 self.handle_file_drop(path, merge_mode)
 
-        # Update UI after loading
-        if self.parent_window:
-            if hasattr(self.parent_window, 'file_table_view'):
-                self.parent_window.file_table_view.viewport().update()
-            if hasattr(self.parent_window, 'update_files_label'):
-                self.parent_window.update_files_label()
-            if hasattr(self.parent_window, 'show_metadata_status'):
-                self.parent_window.show_metadata_status()
+        # Update UI after loading (only for non-threaded operations)
+        if not (os.path.isdir(path) and self._should_use_threading(path, recursive)):
+            if self.parent_window:
+                if hasattr(self.parent_window, 'file_table_view'):
+                    self.parent_window.file_table_view.viewport().update()
+                if hasattr(self.parent_window, 'update_files_label'):
+                    self.parent_window.update_files_label()
+                if hasattr(self.parent_window, 'show_metadata_status'):
+                    self.parent_window.show_metadata_status()
 
     def should_skip_folder_reload(self, folder_path: str, force: bool = False) -> bool:
         """
@@ -291,3 +420,56 @@ class FileLoader:
                     return not self.parent_window.dialog_manager.confirm_large_folder(file_paths, folder_path)
 
         return False
+
+    def _estimate_folder_size(self, folder_path: str, recursive: bool = False) -> int:
+        """
+        Estimate the number of files in a folder.
+
+        Args:
+            folder_path: Path to estimate
+            recursive: Whether to estimate recursively
+
+        Returns:
+            Estimated number of files
+        """
+        try:
+            if not recursive:
+                # Quick count for shallow scan
+                items = os.listdir(folder_path)
+                return len([item for item in items if os.path.isfile(os.path.join(folder_path, item))])
+            else:
+                # For recursive, do a quick sample-based estimation
+                total_files = 0
+                sample_dirs = 0
+                max_sample_dirs = 10  # Limit sampling to avoid long delays
+
+                for root, dirs, files in os.walk(folder_path):
+                    total_files += len(files)
+                    sample_dirs += 1
+
+                    # If we've sampled enough directories and found many files,
+                    # assume it's a large folder
+                    if sample_dirs >= max_sample_dirs and total_files > THREADING_THRESHOLD // 2:
+                        return total_files * 2  # Rough extrapolation
+
+                return total_files
+
+        except (OSError, PermissionError):
+            return 0
+
+    def _should_use_threading(self, folder_path: str, recursive: bool = False) -> bool:
+        """
+        Determine if threading should be used for folder scanning.
+
+        Args:
+            folder_path: Path to scan
+            recursive: Whether scanning recursively
+
+        Returns:
+            True if threading should be used
+        """
+        estimated_files = self._estimate_folder_size(folder_path, recursive)
+        should_thread = estimated_files > THREADING_THRESHOLD
+
+        logger.debug(f"[FileLoader] Estimated {estimated_files} files, threading: {should_thread}")
+        return should_thread
