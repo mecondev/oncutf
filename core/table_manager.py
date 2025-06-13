@@ -1,0 +1,179 @@
+"""
+table_manager.py
+
+Author: Michael Economou
+Date: 2025-01-27
+
+Manager for handling file table operations in the MainWindow.
+Consolidates all table-related logic including sorting, clearing,
+preparation, and selection management.
+"""
+
+from typing import List, Optional
+from PyQt5.QtCore import Qt
+
+from models.file_item import FileItem
+from utils.logger_helper import get_logger
+
+logger = get_logger(__name__)
+
+
+class TableManager:
+    """
+    Manager for handling all file table operations.
+
+    This manager consolidates table-related logic that was previously scattered
+    throughout the MainWindow, providing a clean interface for:
+    - Table sorting operations
+    - Table clearing and preparation
+    - Selection management
+    - File retrieval operations
+    """
+
+    def __init__(self, parent_window):
+        """
+        Initialize the TableManager.
+
+        Args:
+            parent_window: Reference to the MainWindow instance
+        """
+        self.parent_window = parent_window
+        logger.debug("[TableManager] Initialized")
+
+    def sort_by_column(self, column: int, order: Qt.SortOrder = None, force_order: Qt.SortOrder = None) -> None:
+        """
+        Sorts the file table based on clicked header column or context menu.
+        Toggle logic unless a force_order is explicitly provided.
+        """
+        if column == 0:
+            return  # Do not sort the status/info column
+
+        header = self.parent_window.file_table_view.horizontalHeader()
+        current_column = header.sortIndicatorSection()
+        current_order = header.sortIndicatorOrder()
+
+        if force_order is not None:
+            new_order = force_order
+        elif column == current_column:
+            new_order = Qt.DescendingOrder if current_order == Qt.AscendingOrder else Qt.AscendingOrder
+        else:
+            new_order = Qt.AscendingOrder
+
+        self.parent_window.file_model.sort(column, new_order)
+        header.setSortIndicator(column, new_order)
+
+    def clear_file_table(self, message: str = "No folder selected") -> None:
+        """
+        Clears the file table and shows a placeholder message.
+        """
+        # Clear scroll position memory when changing folders
+        self.parent_window.metadata_tree_view.clear_for_folder_change()
+        self.parent_window.file_model.set_files([])  # reset model with empty list
+        self.parent_window.file_table_view.set_placeholder_visible(True)  # Show placeholder when empty
+        self.parent_window.header.setEnabled(False) # disable header
+        self.parent_window.status_manager.clear_file_table_status(self.parent_window.files_label, message)
+        self.parent_window.update_files_label()
+
+        # Update scrollbar visibility after clearing table
+        self.parent_window.file_table_view._update_scrollbar_visibility()
+
+    def prepare_file_table(self, file_items: List[FileItem]) -> None:
+        """
+        Prepare the file table view with the given file items.
+
+        Delegates the core table preparation to the FileTableView and handles
+        application-specific logic like updating labels and preview maps.
+
+        Args:
+            file_items: List of FileItem objects to display in the table
+        """
+        # Delegate table preparation to the view itself
+        self.parent_window.file_table_view.prepare_table(file_items)
+
+        # Handle application-specific setup
+        self.parent_window.files = file_items
+        self.parent_window.file_model.folder_path = self.parent_window.current_folder_path
+        self.parent_window.preview_map = {f.filename: f for f in file_items}
+
+        # Enable header and update UI elements
+        if hasattr(self.parent_window, "header") and self.parent_window.header is not None:
+            self.parent_window.header.setEnabled(True)
+
+        self.parent_window.update_files_label()
+        self.parent_window.update_preview_tables_from_pairs([])
+        self.parent_window.rename_button.setEnabled(False)
+
+        # If we're coming from a rename operation and have active modules, regenerate preview
+        if self.parent_window.last_action == "rename":
+            logger.debug("[PrepareTable] Post-rename detected, preview will be updated after checked state restore")
+
+    def get_selected_files(self) -> List[FileItem]:
+        """
+        Returns a list of currently checked/selected files.
+
+        Returns:
+            List of FileItem objects that are currently checked
+        """
+        if not self.parent_window.file_model or not self.parent_window.file_model.files:
+            return []
+
+        return [f for f in self.parent_window.file_model.files if f.checked]
+
+    def after_check_change(self) -> None:
+        """
+        Called after the checked state of any file is modified.
+
+        Triggers UI refresh for the file table, updates the header state and label,
+        and regenerates the filename preview.
+        """
+        self.parent_window.file_table_view.viewport().update()
+        self.parent_window.update_files_label()
+        self.parent_window.request_preview_update()
+
+    def get_common_metadata_fields(self) -> List[str]:
+        """
+        Returns the intersection of metadata keys from all checked files.
+        """
+        selected_files = self.get_selected_files()
+        if not selected_files:
+            return []
+
+        common_keys = None
+
+        for file in selected_files:
+            path = file.full_path
+            metadata = self.parent_window.metadata_cache.get(path, {})
+            keys = set(metadata.keys())
+
+            if common_keys is None:
+                common_keys = keys
+            else:
+                common_keys &= keys  # intersection
+
+        return sorted(common_keys) if common_keys else []
+
+    def set_fields_from_list(self, field_names: List[str]) -> None:
+        """
+        Replaces the combo box entries with the given field names.
+        """
+        self.parent_window.combo.clear()
+        for name in field_names:
+            self.parent_window.combo.addItem(name, userData=name)
+
+        # Trigger signal to refresh preview
+        self.parent_window.updated.emit(self.parent_window)
+
+    def restore_fileitem_metadata_from_cache(self) -> None:
+        """
+        After a folder reload (e.g. after rename), reassigns cached metadata
+        to the corresponding FileItem objects in self.file_model.files.
+
+        This allows icons and previews to remain consistent without rescanning.
+        """
+        restored = 0
+        for file in self.parent_window.file_model.files:
+            cached = self.parent_window.metadata_cache.get(file.full_path)
+            if isinstance(cached, dict) and cached:
+                file.metadata = cached
+                restored += 1
+        logger.info(f"[MetadataRestore] Restored metadata from cache for {restored} files.")
