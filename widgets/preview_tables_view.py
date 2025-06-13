@@ -175,8 +175,12 @@ class PreviewTablesView(QWidget):
                 Qt.KeepAspectRatio, Qt.SmoothTransformation
             )
             self.old_names_placeholder.setPixmap(scaled_old)
+            # Store the actual scaled size for accurate centering
+            self.old_placeholder_actual_size = scaled_old.size()
+            logger.debug(f"[PreviewTablesView] Old placeholder setup: original={self.old_names_placeholder_icon.size().width()}x{self.old_names_placeholder_icon.size().height()}, scaled={scaled_old.size().width()}x{scaled_old.size().height()}")
         else:
             logger.warning("Old names placeholder icon could not be loaded.")
+            self.old_placeholder_actual_size = None
 
         # Setup new names placeholder
         self.new_names_placeholder = QLabel(self.new_names_table.viewport())
@@ -192,8 +196,12 @@ class PreviewTablesView(QWidget):
                 Qt.KeepAspectRatio, Qt.SmoothTransformation
             )
             self.new_names_placeholder.setPixmap(scaled_new)
+            # Store the actual scaled size for accurate centering
+            self.new_placeholder_actual_size = scaled_new.size()
+            logger.debug(f"[PreviewTablesView] New placeholder setup: original={self.new_names_placeholder_icon.size().width()}x{self.new_names_placeholder_icon.size().height()}, scaled={scaled_new.size().width()}x{scaled_new.size().height()}")
         else:
             logger.warning("New names placeholder icon could not be loaded.")
+            self.new_placeholder_actual_size = None
 
     def _setup_signals(self):
         """Setup signal connections for table interactions."""
@@ -234,7 +242,10 @@ class PreviewTablesView(QWidget):
             self.icon_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             self.icon_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-            logger.debug("[PreviewTablesView] Placeholders enabled - tables disabled", extra={"dev_only": True})
+            logger.debug("[PreviewTablesView] Placeholders enabled - tables disabled")
+
+            # Center placeholders after they become visible
+            schedule_ui_update(self._handle_table_resize, 5)
 
         else:
             # Hide placeholders
@@ -258,7 +269,7 @@ class PreviewTablesView(QWidget):
                 # Update column widths for intelligent horizontal scrolling
                 self._adjust_table_widths()
 
-            logger.debug(f"[PreviewTablesView] Placeholders disabled - tables enabled {'(deferred)' if defer_width_adjustment else '(immediate)'}", extra={"dev_only": True})
+            logger.debug(f"[PreviewTablesView] Placeholders disabled - tables enabled {'(deferred)' if defer_width_adjustment else '(immediate)'}")
 
     def _finalize_scrollbar_setup(self):
         """Complete the scrollbar setup after content has been added to prevent flickering."""
@@ -281,7 +292,7 @@ class PreviewTablesView(QWidget):
                 table.setUpdatesEnabled(True)
                 table.viewport().update()
 
-        logger.debug("[PreviewTablesView] Scrollbar setup finalized", extra={"dev_only": True})
+        logger.debug("[PreviewTablesView] Scrollbar setup finalized")
 
     def _adjust_table_widths(self):
         """Intelligently adjust preview table column widths based on content length."""
@@ -320,22 +331,58 @@ class PreviewTablesView(QWidget):
                 target_width = viewport_width - 5  # Small margin for scrollbar space
                 header.setSectionResizeMode(0, QHeaderView.Fixed)
                 table.setColumnWidth(0, target_width)
-                logger.debug(f"[PreviewTablesView] {table.objectName() or 'Unknown'} expanded: {content_width}px → {target_width}px", extra={"dev_only": True})
+                logger.debug(f"[PreviewTablesView] {table.objectName() or 'Unknown'} expanded: {content_width}px → {target_width}px")
             else:
                 # Keep content width (allows horizontal scrolling when needed)
                 header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-                logger.debug(f"[PreviewTablesView] {table.objectName() or 'Unknown'} content width: {content_width}px (viewport: {viewport_width}px) - scrolling enabled", extra={"dev_only": True})
+                logger.debug(f"[PreviewTablesView] {table.objectName() or 'Unknown'} content width: {content_width}px (viewport: {viewport_width}px) - scrolling enabled")
 
     def _handle_table_resize(self):
         """Handle resize events for preview tables to update placeholder positions and column widths."""
-        # Update placeholder positions
-        if hasattr(self, 'old_names_placeholder'):
-            self.old_names_placeholder.resize(self.old_names_table.viewport().size())
-            self.old_names_placeholder.move(0, 0)
+        logger.debug(f"[PreviewTablesView] _handle_table_resize called - old visible: {hasattr(self, 'old_names_placeholder') and self.old_names_placeholder.isVisible()}, new visible: {hasattr(self, 'new_names_placeholder') and self.new_names_placeholder.isVisible()}")
 
-        if hasattr(self, 'new_names_placeholder'):
-            self.new_names_placeholder.resize(self.new_names_table.viewport().size())
-            self.new_names_placeholder.move(0, 0)
+        # Update placeholder positions - center them properly in viewport (only if visible)
+        if hasattr(self, 'old_names_placeholder') and self.old_names_placeholder.isVisible():
+            viewport_size = self.old_names_table.viewport().size()
+
+            # Use the stored scaled size for accurate centering
+            if hasattr(self, 'old_placeholder_actual_size') and self.old_placeholder_actual_size:
+                placeholder_width = self.old_placeholder_actual_size.width()
+                placeholder_height = self.old_placeholder_actual_size.height()
+            else:
+                # Fallback to placeholder size if no stored size
+                placeholder_width = self.PLACEHOLDER_SIZE
+                placeholder_height = self.PLACEHOLDER_SIZE
+
+            # Calculate center position
+            x = max(0, (viewport_size.width() - placeholder_width) // 2)
+            y = max(0, (viewport_size.height() - placeholder_height) // 2)
+
+            logger.debug(f"[PreviewTablesView] Old placeholder positioning: viewport={viewport_size.width()}x{viewport_size.height()}, placeholder={placeholder_width}x{placeholder_height}, position=({x},{y})")
+
+            self.old_names_placeholder.resize(placeholder_width, placeholder_height)
+            self.old_names_placeholder.move(x, y)
+
+        if hasattr(self, 'new_names_placeholder') and self.new_names_placeholder.isVisible():
+            viewport_size = self.new_names_table.viewport().size()
+
+            # Use the stored scaled size for accurate centering
+            if hasattr(self, 'new_placeholder_actual_size') and self.new_placeholder_actual_size:
+                placeholder_width = self.new_placeholder_actual_size.width()
+                placeholder_height = self.new_placeholder_actual_size.height()
+            else:
+                # Fallback to placeholder size if no stored size
+                placeholder_width = self.PLACEHOLDER_SIZE
+                placeholder_height = self.PLACEHOLDER_SIZE
+
+            # Calculate center position
+            x = max(0, (viewport_size.width() - placeholder_width) // 2)
+            y = max(0, (viewport_size.height() - placeholder_height) // 2)
+
+            logger.debug(f"[PreviewTablesView] New placeholder positioning: viewport={viewport_size.width()}x{viewport_size.height()}, placeholder={placeholder_width}x{placeholder_height}, position=({x},{y})")
+
+            self.new_names_placeholder.resize(placeholder_width, placeholder_height)
+            self.new_names_placeholder.move(x, y)
 
         # Update column widths if tables are active (not in placeholder mode)
         if (hasattr(self, 'old_names_placeholder') and
@@ -365,7 +412,7 @@ class PreviewTablesView(QWidget):
 
         # Hide placeholders when we have content (defer scrollbar setup to avoid flickering)
         self._set_placeholders_visible(False, defer_width_adjustment=True)
-        logger.debug(f"[PreviewTablesView] Processing {len(name_pairs)} name pairs - scrollbar setup deferred", extra={"dev_only": True})
+        logger.debug(f"[PreviewTablesView] Processing {len(name_pairs)} name pairs - scrollbar setup deferred")
 
         # Precompute duplicates
         seen, duplicates = set(), set()
