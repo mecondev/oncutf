@@ -2,7 +2,7 @@
 file_load_manager.py
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-05-01
 
 Manager for handling file loading operations in the MainWindow.
 Consolidates all file loading logic including folder loading, dropped items,
@@ -15,9 +15,9 @@ from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QApplication
 
 from config import STATUS_COLORS
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class FileLoadManager:

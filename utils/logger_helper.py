@@ -110,3 +110,26 @@ class DevOnlyFilter(logging.Filter):
         if SHOW_DEV_ONLY_IN_CONSOLE:
             return True
         return not getattr(record, "dev_only", False)
+
+
+# NEW: Import cached logger for optional performance boost
+try:
+    from utils.logger_factory import LoggerFactory
+
+    def get_cached_logger(name: str = None) -> logging.Logger:
+        """
+        Performance-optimized logger with caching.
+        Falls back to regular get_logger if factory unavailable.
+
+        Args:
+            name (str): Logger name
+
+        Returns:
+            logging.Logger: Cached logger instance
+        """
+        return LoggerFactory.get_logger(name)
+
+except ImportError:
+    # Fallback if logger_factory not available
+    def get_cached_logger(name: str = None) -> logging.Logger:
+        return get_logger(name)

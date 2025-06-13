@@ -19,11 +19,11 @@ from PyQt5.QtWidgets import QLabel, QLineEdit, QVBoxLayout, QWidget, QMenu, QAct
 from modules.base_module import BaseRenameModule
 
 # initialize logger
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 from utils.validation import is_valid_filename_text
 from utils.icons_loader import get_menu_icon
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class SpecifiedTextModule(BaseRenameModule):

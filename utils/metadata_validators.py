@@ -10,9 +10,9 @@ Each validator checks if a given value is valid for a specific metadata field.
 
 from typing import Optional, Tuple
 
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 def validate_rotation(value: str) -> Tuple[bool, Optional[str], Optional[str]]:
     """

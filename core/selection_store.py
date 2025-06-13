@@ -19,9 +19,9 @@ from typing import Any, Dict, Optional, Set
 
 from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class SelectionStore(QObject):

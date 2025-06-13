@@ -41,7 +41,7 @@ from utils.filename_validator import FilenameValidator
 from utils.icon_cache import load_preview_status_icons, prepare_status_icons
 from utils.icons import create_colored_icon
 from utils.icons_loader import get_menu_icon, icons_loader, load_metadata_icons
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 from utils.metadata_cache import MetadataCache
 from utils.metadata_loader import MetadataLoader
 from utils.preview_engine import apply_rename_modules
@@ -67,7 +67,7 @@ from core.drag_cleanup_manager import DragCleanupManager
 from core.shortcut_manager import ShortcutManager
 from core.initialization_manager import InitializationManager
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class MainWindow(QMainWindow):

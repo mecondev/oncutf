@@ -23,9 +23,9 @@ from PyQt5.QtCore import QElapsedTimer, QObject, pyqtSignal
 
 from config import ALLOWED_EXTENSIONS
 from models.file_item import FileItem
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class FileStore(QObject):

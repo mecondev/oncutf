@@ -34,7 +34,7 @@ from modules.counter_module import CounterModule
 from modules.specified_text_module import SpecifiedTextModule
 
 # Initialize Logger
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 from widgets.metadata_widget import MetadataWidget
 from widgets.original_name_widget import OriginalNameWidget
 
@@ -44,7 +44,7 @@ try:
 except ImportError:
     get_app_context = None
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 class RenameModuleWidget(QWidget):
     """

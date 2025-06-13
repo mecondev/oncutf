@@ -25,9 +25,9 @@ from modules.original_name_module import OriginalNameModule
 from modules.specified_text_module import SpecifiedTextModule
 
 # Initialize Logger
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 MODULE_TYPE_MAP = {
     "specified_text": SpecifiedTextModule,

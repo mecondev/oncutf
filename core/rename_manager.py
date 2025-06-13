@@ -2,7 +2,7 @@
 RenameManager - Handles rename operations and workflow
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-05-01
 
 This manager centralizes rename operations including:
 - Batch rename execution
@@ -14,12 +14,12 @@ This manager centralizes rename operations including:
 from typing import TYPE_CHECKING, List, Set
 
 from models.file_item import FileItem
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
 if TYPE_CHECKING:
     from main_window import MainWindow
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class RenameManager:

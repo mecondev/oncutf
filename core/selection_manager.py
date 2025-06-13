@@ -2,7 +2,7 @@
 selection_manager.py
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-05-01
 
 Centralized selection management operations extracted from MainWindow.
 Handles file table selection operations, preview updates, and metadata synchronization.
@@ -12,9 +12,9 @@ from typing import List
 
 from core.qt_imports import QTimer, QElapsedTimer
 from utils.cursor_helper import wait_cursor
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class SelectionManager:

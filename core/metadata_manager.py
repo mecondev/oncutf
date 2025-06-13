@@ -2,7 +2,7 @@
 metadata_manager.py
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-05-01
 
 Centralized metadata management operations extracted from MainWindow.
 Handles metadata loading, progress tracking, thread management, and UI coordination.
@@ -15,12 +15,12 @@ from core.config_imports import LARGE_FOLDER_WARNING_THRESHOLD
 from core.qt_imports import QApplication, QThread, QTimer
 from models.file_item import FileItem
 from utils.cursor_helper import wait_cursor
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 from widgets.custom_msgdialog import CustomMessageDialog
 from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 from widgets.metadata_worker import MetadataWorker
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class MetadataManager:

@@ -29,10 +29,10 @@ from core.drag_visual_manager import (
     start_drag_visual, end_drag_visual, update_drop_zone_state,
     update_modifier_state, is_valid_drop_target
 )
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 from utils.cursor_helper import wait_cursor
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class FileTreeView(QTreeView):
@@ -56,7 +56,7 @@ class FileTreeView(QTreeView):
     folder_selected = pyqtSignal()  # Signal emitted when Return/Enter is pressed
     selection_changed = pyqtSignal(str)  # Signal emitted when selection changes (single path)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
 
         # DISABLE all built-in drag functionality
@@ -89,7 +89,7 @@ class FileTreeView(QTreeView):
 
         logger.debug("[FileTreeView] Initialized with single-item drag system")
 
-    def selectionChanged(self, selected, deselected):
+    def selectionChanged(self, selected, deselected) -> None:
         """Override to emit custom signal with selected path (single item only)"""
         super().selectionChanged(selected, deselected)
 
@@ -105,18 +105,18 @@ class FileTreeView(QTreeView):
         logger.debug(f"[FileTreeView] Selection changed: {selected_path if selected_path else 'None'}", extra={"dev_only": True})
         self.selection_changed.emit(selected_path)
 
-    def setModel(self, model):
+    def setModel(self, model) -> None:
         """Override to configure header when model is set"""
         super().setModel(model)
         self._configure_header()
         logger.debug(f"[FileTreeView] Model set: {type(model).__name__ if model else 'None'}", extra={"dev_only": True})
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event) -> None:
         """Handle resize to adjust column width for optimal horizontal scrolling"""
         super().resizeEvent(event)
         self._adjust_column_width()
 
-    def _configure_header(self):
+    def _configure_header(self) -> None:
         """Configure header for optimal display"""
         header = self.header()
         if header:
@@ -129,7 +129,7 @@ class FileTreeView(QTreeView):
 
             logger.debug("[FileTreeView] Header configured for single column display", extra={"dev_only": True})
 
-    def _adjust_column_width(self):
+    def _adjust_column_width(self) -> None:
         """Adjust column width for optimal horizontal scrolling"""
         if not self.model():
             return
@@ -151,7 +151,7 @@ class FileTreeView(QTreeView):
                 self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
                 logger.debug(f"[FileTreeView] Content exceeds viewport ({content_width} > {viewport_width}) - enabling scrollbar", extra={"dev_only": True})
 
-    def _on_model_changed(self):
+    def _on_model_changed(self) -> None:
         """Called when model data changes to update column width"""
         QTimer.singleShot(10, self._adjust_column_width)
 
@@ -174,7 +174,7 @@ class FileTreeView(QTreeView):
 
         return ""
 
-    def select_path(self, path: str):
+    def select_path(self, path: str) -> None:
         """Select item by its file path"""
         if not self.model() or not hasattr(self.model(), 'index'):
             return

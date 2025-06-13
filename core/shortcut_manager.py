@@ -2,7 +2,7 @@
 ShortcutManager - Handles keyboard shortcuts
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-05-01
 
 This manager centralizes keyboard shortcut handling including:
 - Clear file table shortcut (Ctrl+Escape)
@@ -11,12 +11,12 @@ This manager centralizes keyboard shortcut handling including:
 
 from typing import TYPE_CHECKING
 
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
 if TYPE_CHECKING:
     from main_window import MainWindow
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class ShortcutManager:

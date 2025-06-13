@@ -5,7 +5,7 @@ Author: Michael Economou
 Date: 2025-06-13
 
 Manages UI setup and layout configuration for the main window.
-Handles all UI component initialization, layout setup, and signal connections.
+Handles widget initialization, signal connections, and layout management.
 """
 
 import platform
@@ -15,7 +15,7 @@ from core.config_imports import *
 from core.qt_imports import *
 from models.file_table_model import FileTableModel
 from utils.icons_loader import get_menu_icon
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 from widgets.custom_file_system_model import CustomFileSystemModel
 from widgets.file_table_view import FileTableView
 from widgets.file_tree_view import FileTreeView
@@ -27,7 +27,7 @@ from widgets.rename_modules_area import RenameModulesArea
 if TYPE_CHECKING:
     from main_window import MainWindow
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class UIManager:

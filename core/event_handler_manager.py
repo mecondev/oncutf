@@ -2,7 +2,7 @@
 event_handler_manager.py
 
 Author: Michael Economou
-Date: 2025-06-05
+Date: 2025-05-01
 
 Manages all event handling operations for the application.
 Centralizes UI event handlers, user interactions, and widget callbacks.
@@ -16,10 +16,10 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QModelIndex, QTimer
 from PyQt5.QtGui import QKeyEvent
 
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 from utils.cursor_helper import wait_cursor
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class EventHandlerManager:

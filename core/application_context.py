@@ -5,7 +5,7 @@ Author: Michael Economou
 Date: 2025-06-10
 
 This module provides centralized access to application state, eliminating
-the need for parent_window traversals and improving performance.
+the need for complex parent-child traversal patterns throughout the codebase.
 
 Current implementation is a skeleton that will gradually replace
 distributed state management across widgets.
@@ -15,9 +15,9 @@ from typing import Any, Dict, Optional, Set
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class ApplicationContext(QObject):

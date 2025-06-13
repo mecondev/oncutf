@@ -2,7 +2,7 @@
 text_helpers.py
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-05-01
 
 Utility functions for text manipulation and formatting.
 Provides helper functions for truncating, formatting, and processing text strings.

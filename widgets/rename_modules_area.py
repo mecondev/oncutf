@@ -27,7 +27,7 @@ from PyQt5.QtWidgets import (
 )
 
 from modules.base_module import BaseRenameModule
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 from utils.icons_loader import get_menu_icon
 from widgets.name_transform_widget import NameTransformWidget
 from widgets.rename_module_widget import RenameModuleWidget
@@ -38,7 +38,7 @@ try:
 except ImportError:
     get_app_context = None
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class RenameModulesArea(QWidget):

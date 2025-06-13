@@ -13,17 +13,17 @@ from typing import List, Optional
 from core.qt_imports import QDesktopServices, QUrl
 from core.config_imports import LARGE_FOLDER_WARNING_THRESHOLD, EXTENDED_METADATA_SIZE_LIMIT_MB
 from models.file_item import FileItem
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 from utils.renamer import Renamer
 from widgets.custom_msgdialog import CustomMessageDialog
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class FileOperationsManager:
     """Manages file operations like rename, validation, and conflict resolution."""
 
-    def __init__(self, parent_window=None):
+    def __init__(self, parent_window=None) -> None:
         """Initialize FileOperationsManager."""
         self.parent_window = parent_window
         logger.debug("[FileOperationsManager] Initialized", extra={"dev_only": True})

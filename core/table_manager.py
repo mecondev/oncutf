@@ -2,7 +2,7 @@
 table_manager.py
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-05-01
 
 Manager for handling file table operations in the MainWindow.
 Consolidates all table-related logic including sorting, clearing,
@@ -13,9 +13,9 @@ from typing import List, Optional
 from PyQt5.QtCore import Qt
 
 from models.file_item import FileItem
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class TableManager:

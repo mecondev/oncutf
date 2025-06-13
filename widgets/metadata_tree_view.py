@@ -51,7 +51,7 @@ from PyQt5.QtWidgets import (
 )
 
 from config import METADATA_TREE_COLUMN_WIDTHS
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 from widgets.metadata_edit_dialog import MetadataEditDialog
 
 # ApplicationContext integration
@@ -60,7 +60,7 @@ try:
 except ImportError:
     get_app_context = None
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class MetadataTreeView(QTreeView):

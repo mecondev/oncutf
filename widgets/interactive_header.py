@@ -95,7 +95,7 @@ class InteractiveHeader(QHeaderView):
 
         if released_index == 0:
             if main_window and hasattr(main_window, 'handle_header_toggle'):
-                # Qt.Checked μπορεί να μην υπάρχει πάντα ως attribute
+                # Qt.Checked may not always exist as attribute
                 checked = getattr(Qt, 'Checked', 2)
                 main_window.handle_header_toggle(checked)
         else:

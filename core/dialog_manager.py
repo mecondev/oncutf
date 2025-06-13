@@ -24,9 +24,9 @@ from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon
 import os
 
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class DialogManager:

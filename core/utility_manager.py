@@ -2,7 +2,7 @@
 UtilityManager - Handles utility functions and miscellaneous operations
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-05-01
 
 This manager centralizes utility functions including:
 - Event filtering and modifier handling
@@ -20,12 +20,12 @@ from PyQt5.QtWidgets import QApplication, QDesktopWidget
 
 from config import STATUS_COLORS
 from models.file_item import FileItem
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
 if TYPE_CHECKING:
     from main_window import MainWindow
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class UtilityManager:

@@ -5,7 +5,7 @@ Author: Michael Economou
 Date: 2025-06-12
 
 Utility functions for cursor management across the application.
-Provides context managers and helper functions for wait cursor operations.
+Provides safe cursor operations with emergency cleanup capabilities.
 """
 
 import contextlib
@@ -15,9 +15,9 @@ from typing import Optional
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 @contextlib.contextmanager

@@ -16,9 +16,9 @@ from typing import Dict, Optional
 from config import THEME_COLORS, THEME_NAME
 
 # Initialize Logger
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 def load_stylesheet() -> str:

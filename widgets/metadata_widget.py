@@ -2,9 +2,9 @@
 Module: metadata_widget.py
 
 Author: Michael Economou
-Date: 2025-06-04 (refactored)
+Date: 2025-05-01
 
-Widget για επιλογή metadata (ημερομηνίες αρχείου ή EXIF), με βελτιστοποιημένο σύστημα εκπομπής σήματος.
+Widget for metadata selection (file dates or EXIF), with optimized signal emission system.
 """
 
 from typing import Optional, Set
@@ -12,7 +12,7 @@ from typing import Optional, Set
 from PyQt5.QtCore import QTimer, pyqtSignal
 from PyQt5.QtWidgets import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 from utils.metadata_cache import MetadataEntry
 
 # ApplicationContext integration
@@ -21,14 +21,14 @@ try:
 except ImportError:
     get_app_context = None
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class MetadataWidget(QWidget):
     """
-    Widget για επιλογή μεταδεδομένων αρχείων (file dates ή EXIF).
-    Υποστηρίζει επιλογή κατηγορίας και δυναμικά πεδία,
-    και εκπέμπει σήμα ενημέρωσης μόνο όταν υπάρχει πραγματική αλλαγή.
+    Widget for file metadata selection (file dates or EXIF).
+    Supports category selection and dynamic fields,
+    and emits update signal only when there is an actual change.
     """
 
     updated = pyqtSignal(object)
@@ -68,14 +68,14 @@ class MetadataWidget(QWidget):
         options_row.addStretch()
         layout.addLayout(options_row)
 
-        # Συνδέσεις
+        # Connections
         self.category_combo.currentIndexChanged.connect(self.update_options)
         self.options_combo.currentIndexChanged.connect(self.emit_if_changed)
 
         QTimer.singleShot(0, self.update_options)
 
     def update_options(self) -> None:
-        """Ενημερώνει τα πεδία ανάλογα με την κατηγορία."""
+        """Updates fields according to the selected category."""
         category = self.category_combo.currentData()
         logger.debug(f"[MetadataWidget] Updating options for category: {category}", extra={"dev_only": True})
         self.options_combo.clear()
@@ -163,7 +163,7 @@ class MetadataWidget(QWidget):
         return formatted
 
     def get_data(self) -> dict:
-        """Επιστρέφει το state για χρήση στο rename system."""
+        """Returns the state for use in the rename system."""
         return {
             "type": "metadata",
             "category": self.category_combo.currentData() or "file_dates",
@@ -171,7 +171,7 @@ class MetadataWidget(QWidget):
         }
 
     def emit_if_changed(self) -> None:
-        """Εκπέμπει updated μόνο αν έχει αλλάξει το state."""
+        """Emits updated signal only if the state has changed."""
         new_data = self.get_data()
         if new_data != self._last_data:
             logger.debug(f"[MetadataWidget] Emitting updated with data: {new_data}")

@@ -2,7 +2,7 @@
 file_loader.py
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-05-01
 
 Centralized file loading operations extracted from MainWindow.
 Handles folder scanning, file filtering, and drop operations.
@@ -16,9 +16,9 @@ from core.modifier_handler import decode_modifiers_to_flags
 from core.qt_imports import Qt, QTimer
 from models.file_item import FileItem
 from utils.cursor_helper import wait_cursor
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class FileLoader:

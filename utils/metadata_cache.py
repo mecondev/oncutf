@@ -15,9 +15,9 @@ import time
 from typing import Dict, Optional
 
 # Setup Logger
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class MetadataEntry:

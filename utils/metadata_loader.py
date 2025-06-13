@@ -22,10 +22,10 @@ from typing import Dict, Optional
 
 from models.file_item import FileItem
 from utils.exiftool_wrapper import ExifToolWrapper
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 from utils.metadata_cache import MetadataCache
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class MetadataLoader:

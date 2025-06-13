@@ -2,7 +2,7 @@
 status_manager.py
 
 Author: Michael Economou
-Date: 2025-06-13
+Date: 2025-05-01
 
 Manages status bar updates and UI feedback.
 Provides clean, immediate status updates without fade effects.
@@ -12,15 +12,15 @@ from typing import Optional
 
 from config import STATUS_COLORS
 from core.qt_imports import QTimer
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class StatusManager:
     """Manages status bar updates and UI feedback."""
 
-    def __init__(self, status_label=None):
+    def __init__(self, status_label=None) -> None:
         """Initialize StatusManager with status label reference."""
         self.status_label = status_label
         self._status_timer: Optional[QTimer] = None

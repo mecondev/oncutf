@@ -14,7 +14,7 @@ Date: 2025-05-12
 import logging
 
 from utils.logger_file_helper import add_file_handler
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
 
 def init_logging(app_name: str = "app") -> logging.Logger:
@@ -28,7 +28,7 @@ def init_logging(app_name: str = "app") -> logging.Logger:
     Returns:
         logging.Logger: The main logger for __main__ module.
     """
-    logger = get_logger(__name__)
+    logger = get_cached_logger(__name__)
 
     add_file_handler(logger, f"logs/{app_name}_activity.log", level=logging.INFO)
     add_file_handler(logger, f"logs/{app_name}_errors.log", level=logging.ERROR)

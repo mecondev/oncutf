@@ -2,7 +2,7 @@
 metadata_waiting_dialog.py
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-05-01
 
 Frameless waiting dialog for metadata extraction operations.
 Provides a clean, minimal UI for displaying metadata loading progress.

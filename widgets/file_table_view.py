@@ -36,11 +36,11 @@ from core.drag_visual_manager import (
     update_modifier_state, is_valid_drop_target
 )
 from utils.file_drop_helper import extract_file_paths
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
 from .hover_delegate import HoverItemDelegate
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 # Constants for better maintainability
 PLACEHOLDER_ICON_SIZE = 160
@@ -123,7 +123,7 @@ class FileTableView(QTableView):
             # ApplicationContext not ready yet
             return None
 
-    def _update_selection_store(self, selected_rows: set, emit_signal: bool = True):
+    def _update_selection_store(self, selected_rows: set, emit_signal: bool = True) -> None:
         """Update SelectionStore with current selection."""
         selection_store = self._get_selection_store()
         if selection_store and not self._legacy_selection_mode:
@@ -143,7 +143,7 @@ class FileTableView(QTableView):
             # Fallback to legacy approach
             return self.selected_rows
 
-    def _set_anchor_row(self, row: Optional[int]):
+    def _set_anchor_row(self, row: Optional[int]) -> None:
         """Set anchor row in SelectionStore or fallback to legacy."""
         selection_store = self._get_selection_store()
         if selection_store and not self._legacy_selection_mode:

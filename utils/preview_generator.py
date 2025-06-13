@@ -14,10 +14,10 @@ from typing import Any, Dict, List, Optional, Tuple
 from models.file_item import FileItem
 from modules.metadata_module import MetadataModule
 from modules.original_name_module import OriginalNameModule
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 from utils.validation import is_valid_filename_text
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 def generate_preview_names(

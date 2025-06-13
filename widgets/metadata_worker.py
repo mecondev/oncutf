@@ -23,11 +23,11 @@ from typing import Optional
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 # Logger setup
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 from utils.metadata_cache import MetadataCache
 from utils.metadata_loader import MetadataLoader
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class MetadataWorker(QObject):

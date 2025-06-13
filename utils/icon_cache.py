@@ -25,9 +25,9 @@ from config import PREVIEW_COLORS, PREVIEW_INDICATOR_SHAPE, PREVIEW_INDICATOR_SI
 from utils.icons import create_colored_icon
 
 # Initialize Logger
-from utils.logger_helper import get_logger
+from utils.logger_helper import get_cached_logger
 
-logger = get_logger(__name__)
+logger = get_cached_logger(__name__)
 
 
 ICON_NAMES = ["valid", "unchanged", "invalid", "duplicate"]

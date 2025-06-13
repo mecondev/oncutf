@@ -100,7 +100,7 @@ EXTENDED_METADATA_SIZE_LIMIT_MB = 500  # Over this size, warn user before attemp
 # ----------------------------
 EXTENDED_METADATA_COLOR = "#e67e22"  # orange (same as extended info icon)
 EXTENDED_METADATA_BG_COLOR = "#4a2a00"  # dark orange for progress bar bg
-FAST_METADATA_COLOR = "#4a90e2"  # blue (ίδιο με selection-background-color στο QSS)
+FAST_METADATA_COLOR = "#4a90e2"  # blue (same as selection-background-color in QSS)
 FAST_METADATA_BG_COLOR = "#102040"  # dark blue for progress bar bg
 
 # ----------------------------
@@ -111,7 +111,7 @@ MAX_LABEL_LENGTH = 30
 # ----------------------------
 # Tree View Expand/Collapse Mode
 # ----------------------------
-TREE_EXPAND_MODE = "double"  # Επιλογές: "single" ή "double". Default: double click για expand/collapse
+TREE_EXPAND_MODE = "double"  # Options: "single" or "double". Default: double click for expand/collapse
 
 # ----------------------------
 # File Table Column Widths
