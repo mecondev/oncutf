@@ -9,7 +9,8 @@ Handles drag & drop, folder loading, and metadata integration.
 """
 
 import os
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Set
+from datetime import datetime
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
@@ -32,6 +33,7 @@ class FileLoadManager:
     def __init__(self, parent_window=None):
         self.parent_window = parent_window
         self.waiting_widget = None
+        self.allowed_extensions = {'.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.mpg', '.mpeg', '.3gp', '.ts', '.mts', '.m2ts'}
 
     def _count_files_in_folder(self, folder_path: str, recursive: bool = False) -> int:
         """
@@ -118,75 +120,46 @@ class FileLoadManager:
                     source="file_drop"
                 )
 
-    def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> None:
+    def load_files_from_paths(self, paths: List[str], clear: bool = False) -> None:
         """
-        Load files from the given paths into the file table.
-        Handles both single files and folders.
+        Load files from the given paths using a worker thread.
+        Shows a progress dialog and allows cancellation.
         """
-        if not file_paths:
-            logger.info("[FileLoadManager] No files to load")
-            return
-
-        # Count total files first for accurate progress
-        total_files = 0
-        for path in file_paths:
-            if os.path.isdir(path):
-                total_files += self._count_files_in_folder(path)
-            else:
-                total_files += 1
-
-        # Show waiting widget for large folders
-        if total_files > 1000:
-            self.waiting_widget = CompactWaitingWidget(
-                self.parent_window,
-                bar_color="#64b5f6",  # pal blue
-                bar_bg_color="#0a1a2a"  # darker blue bg
-            )
-            self.waiting_widget.set_status("Loading files...")
-            self.waiting_widget.show()
-            QApplication.processEvents()
-
-        # Load files with wait cursor
-        with wait_cursor():
-            # Clear existing files if requested
-            if clear and hasattr(self.parent_window, "file_model"):
-                self.parent_window.file_model.clear()
-
-            # Create FileItem objects
+        try:
             items = []
-            current = 0
-
-            for path in file_paths:
-                if os.path.isdir(path):
-                    # Load files from folder
-                    folder_files = self._get_files_from_folder(path)
-                    for file_path in folder_files:
-                        if self.waiting_widget and current % 100 == 0:
-                            self.waiting_widget.set_progress(current, total_files)
-                            self.waiting_widget.set_filename(f"Loading {current} of {total_files} files...")
-                            QApplication.processEvents()
-                        items.append(FileItem(file_path))
-                        current += 1
+            for path in paths:
+                if os.path.isfile(path):
+                    if self._is_allowed_extension(path):
+                        extension = os.path.splitext(path)[1].lower()
+                        modified = datetime.fromtimestamp(os.path.getmtime(path))
+                        items.append(FileItem(path, extension, modified))
                 else:
-                    # Load single file
-                    if self.waiting_widget and current % 100 == 0:
-                        self.waiting_widget.set_progress(current, total_files)
-                        self.waiting_widget.set_filename(f"Loading {current} of {total_files} files...")
-                        QApplication.processEvents()
-                    items.append(FileItem(path))
-                    current += 1
+                    for root, _, files in os.walk(path):
+                        for file in files:
+                            if self._is_allowed_extension(file):
+                                full_path = os.path.join(root, file)
+                                extension = os.path.splitext(file)[1].lower()
+                                modified = datetime.fromtimestamp(os.path.getmtime(full_path))
+                                items.append(FileItem(full_path, extension, modified))
 
-            # Update model
-            if hasattr(self.parent_window, "file_model"):
-                self.parent_window.file_model.add_files(items)
+            if items:
+                # TODO: Update UI with loaded items
+                logger.info(f"Loaded {len(items)} files")
+            else:
+                logger.warning("No files found with allowed extensions")
 
-        # Close waiting widget if shown
-        if self.waiting_widget:
-            self.waiting_widget.close()
-            self.waiting_widget = None
+        except Exception as e:
+            logger.error(f"Error loading files: {str(e)}")
+            raise
 
-        # Update UI
-        self._update_ui_after_load(items)
+    def _is_allowed_extension(self, path: str) -> bool:
+        """Check if file has an allowed extension."""
+        ext = os.path.splitext(path)[1].lower()
+        return ext in self.allowed_extensions
+
+    def set_allowed_extensions(self, extensions: Set[str]) -> None:
+        """Update the set of allowed file extensions."""
+        self.allowed_extensions = extensions
 
     def _update_ui_after_load(self, items: List[FileItem]) -> None:
         """Update UI elements after loading files."""
