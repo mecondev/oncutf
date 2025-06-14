@@ -4,167 +4,208 @@ file_load_manager.py
 Author: Michael Economou
 Date: 2025-05-01
 
-Manager for handling file loading operations in the MainWindow.
-Consolidates all file loading logic including folder loading, dropped items,
-and metadata loading operations.
+Manages file loading operations with support for both synchronous and threaded loading.
+Handles drag & drop, folder loading, and metadata integration.
 """
 
 import os
-from typing import Optional, List
-from PyQt5.QtCore import Qt, QTimer
+from typing import List, Optional, Tuple
+
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 
-from config import STATUS_COLORS
+from config import ALLOWED_EXTENSIONS
+from models.file_item import FileItem
+from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
-from utils.timer_manager import schedule_metadata_load, schedule_selection_update
+from widgets.compact_waiting_widget import CompactWaitingWidget
 
 logger = get_cached_logger(__name__)
 
 
 class FileLoadManager:
     """
-    Manager for handling all file loading operations.
-
-    This manager consolidates file loading logic that was previously scattered
-    throughout the MainWindow, providing a clean interface for:
-    - Loading files from folders
-    - Handling dropped files and folders
-    - Managing metadata loading operations
-    - Preparing file tables and UI updates
+    Manages file loading operations with support for both synchronous and threaded loading.
+    Handles drag & drop, folder loading, and metadata integration.
     """
 
-    def __init__(self, parent_window):
-        """
-        Initialize the FileLoadManager.
-
-        Args:
-            parent_window: Reference to the MainWindow instance
-        """
+    def __init__(self, parent_window=None):
         self.parent_window = parent_window
-        logger.debug("[FileLoadManager] Initialized", extra={"dev_only": True})
+        self.waiting_widget = None
 
-    def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False, force: bool = False):
+    def _count_files_in_folder(self, folder_path: str, recursive: bool = False) -> int:
         """
-        Load files from the specified folder into the file table.
-
-        Args:
-            folder_path: Path to the folder to load files from
-            skip_metadata: Whether to skip metadata scanning
-            force: Whether to force reload even if folder is already loaded
+        Count total number of valid files in folder.
+        Returns accurate count for progress bar.
         """
-        normalized_new = os.path.abspath(os.path.normpath(folder_path))
-        normalized_current = os.path.abspath(os.path.normpath(self.parent_window.current_folder_path or ""))
+        count = 0
+        for root, _, filenames in os.walk(folder_path):
+            if not recursive and root != folder_path:
+                continue
+            count += sum(1 for f in filenames if os.path.splitext(f)[1].lower()[1:] in ALLOWED_EXTENSIONS)
+        return count
 
-        if normalized_new == normalized_current and not force:
-            logger.info(f"[FolderLoad] Ignored reload of already loaded folder: {normalized_new}")
-            self.parent_window.set_status("Folder already loaded.", color="gray", auto_reset=True)
-            return
-
-        logger.info(f"Loading files from folder: {folder_path} (skip_metadata={skip_metadata})")
-
-        # Only skip clearing metadata cache immediately after rename action,
-        # and only if metadata scan is explicitly skipped (default fast path).
-        # In all other cases, always clear cache to reflect current OS state.
-        if not (self.parent_window.last_action == "rename" and skip_metadata):
-            self.parent_window.metadata_cache.clear()
-
-        self.parent_window.current_folder_path = folder_path
-        self.parent_window.metadata_tree_view.refresh_metadata_from_selection()  # reset metadata tree
-
-        file_items = self.get_file_items_from_folder(folder_path)
-
-        if not file_items:
-            self.parent_window.metadata_tree_view.clear_view()
-            self.parent_window.header.setEnabled(False)
-            self.parent_window.set_status("No supported files found.", color="orange", auto_reset=True)
-            return
-
-        self.parent_window.prepare_file_table(file_items)
-        self.parent_window.sort_by_column(1, Qt.AscendingOrder)
-        self.parent_window.metadata_tree_view.clear_view()
-
-        if skip_metadata:
-            self.parent_window.set_status("Metadata scan skipped.", color="gray", auto_reset=True)
-            return
-
-        self.parent_window.set_status(f"Loading metadata for {len(file_items)} files...", color=STATUS_COLORS["info"])
-        schedule_metadata_load(lambda: self.parent_window.start_metadata_scan([f.full_path for f in file_items if f.full_path]), 100)
+    def _get_files_from_folder(self, folder_path: str, recursive: bool = False) -> List[str]:
+        """
+        Get list of valid file paths from folder.
+        Returns list of full paths.
+        """
+        files = []
+        for root, _, filenames in os.walk(folder_path):
+            if not recursive and root != folder_path:
+                continue
+            for filename in filenames:
+                if os.path.splitext(filename)[1].lower()[1:] in ALLOWED_EXTENSIONS:
+                    full_path = os.path.join(root, filename)
+                    files.append(full_path)
+        return files
 
     def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
         """
-        Prepares the application state and loads files from the specified folder
-        into the file table.
-
-        This helper consolidates common logic used in folder-based file loading
-        (e.g., from folder select, browse, or dropped folder).
-
-        Args:
-            folder_path (str): Absolute path to the folder to load files from.
-            clear (bool): Whether to clear the file table before loading. Defaults to True.
-
-        Returns:
-            list[str]: A list of file paths (full paths) that were successfully loaded.
+        Prepare folder for loading by checking contents and permissions.
+        Returns list of file paths to load.
         """
-        self.parent_window.clear_file_table("No folder selected")
-        self.parent_window.metadata_tree_view.clear_view()
-        self.parent_window.current_folder_path = folder_path
+        if not os.path.isdir(folder_path):
+            logger.error(f"[FileLoadManager] Path is not a directory: {folder_path}")
+            return []
 
-        return self.parent_window.file_loader.prepare_folder_load(folder_path, clear=clear)
+        # Get all files in folder
+        return self._get_files_from_folder(folder_path)
+
+    def load_single_item_from_drop(self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
+        """
+        Load a single item (file or folder) from drag & drop.
+        Handles both files and folders with proper modifier support.
+        """
+        logger.info(f"[Drop] Loading single item: {path}")
+
+        if os.path.isdir(path):
+            # Handle folder drop
+            self.load_files_from_paths([path], clear=True)
+
+            # Apply modifier logic
+            ctrl = bool(modifiers & Qt.ControlModifier)
+            shift = bool(modifiers & Qt.ShiftModifier)
+            skip_metadata = not ctrl
+            use_extended = ctrl and shift
+
+            logger.debug(f"[Drop] Folder: ctrl={ctrl}, shift={shift} → skip={skip_metadata}, extended={use_extended}")
+
+            if not skip_metadata:
+                items = self.parent_window.file_model.files
+                self.parent_window.load_metadata_for_items(
+                    items,
+                    use_extended=use_extended,
+                    source="folder_drop"
+                )
+        else:
+            # Handle single file drop
+            self.load_files_from_paths([path], clear=True)
+
+            # Apply modifier logic
+            ctrl = bool(modifiers & Qt.ControlModifier)
+            shift = bool(modifiers & Qt.ShiftModifier)
+            skip_metadata = not ctrl
+            use_extended = ctrl and shift
+
+            logger.debug(f"[Drop] File: ctrl={ctrl}, shift={shift} → skip={skip_metadata}, extended={use_extended}")
+
+            if not skip_metadata:
+                items = self.parent_window.file_model.files
+                self.parent_window.load_metadata_for_items(
+                    items,
+                    use_extended=use_extended,
+                    source="file_drop"
+                )
 
     def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> None:
         """
-        Loads files from a list of file or folder paths.
-
-        Args:
-            file_paths: List of absolute file or folder paths
-            clear: Whether to clear existing items before loading (True = replace, False = merge)
+        Load files from the given paths into the file table.
+        Handles both single files and folders.
         """
         if not file_paths:
-            if clear:
-                self.parent_window.file_table_view.set_placeholder_visible(True)
+            logger.info("[FileLoadManager] No files to load")
             return
 
-        # Use FileLoader to get file items
-        new_file_items = self.parent_window.file_loader.load_files_from_paths(file_paths, clear=clear)
-
-        if clear:
-            # Replace mode: clear everything and load new files
-            logger.debug(f"[Load] Replace mode: loading {len(new_file_items)} new files")
-            self.parent_window.file_table_view.prepare_table(new_file_items)
-            final_items = new_file_items
-        else:
-            # Merge mode: add to existing files, avoiding duplicates
-            existing_items = self.parent_window.file_model.files if self.parent_window.file_model else []
-            existing_paths = {item.full_path for item in existing_items}
-
-            # Filter out duplicates
-            unique_new_items = [item for item in new_file_items if item.full_path not in existing_paths]
-
-            logger.debug(f"[Load] Merge mode: {len(existing_items)} existing + {len(unique_new_items)} new = {len(existing_items) + len(unique_new_items)} total")
-
-            if unique_new_items:
-                # Combine existing + new
-                final_items = existing_items + unique_new_items
-
-                # Use prepare_table with combined list
-                self.parent_window.file_table_view.prepare_table(final_items)
+        # Count total files first for accurate progress
+        total_files = 0
+        for path in file_paths:
+            if os.path.isdir(path):
+                total_files += self._count_files_in_folder(path)
             else:
-                logger.info(f"[Load] No new files to add (all {len(new_file_items)} files already exist)")
-                final_items = existing_items
+                total_files += 1
 
-        # Handle application-specific setup
-        self.parent_window.files = final_items
-        self.parent_window.preview_map = {f.filename: f for f in final_items}
+        # Show waiting widget for large folders
+        if total_files > 1000:
+            self.waiting_widget = CompactWaitingWidget(
+                self.parent_window,
+                bar_color="#64b5f6",  # pal blue
+                bar_bg_color="#0a1a2a"  # darker blue bg
+            )
+            self.waiting_widget.set_status("Loading files...")
+            self.waiting_widget.show()
+            QApplication.processEvents()
 
-        # Configure sorting and header after prepare_table
+        # Load files with wait cursor
+        with wait_cursor():
+            # Clear existing files if requested
+            if clear and hasattr(self.parent_window, "file_model"):
+                self.parent_window.file_model.clear()
+
+            # Create FileItem objects
+            items = []
+            current = 0
+
+            for path in file_paths:
+                if os.path.isdir(path):
+                    # Load files from folder
+                    folder_files = self._get_files_from_folder(path)
+                    for file_path in folder_files:
+                        if self.waiting_widget and current % 100 == 0:
+                            self.waiting_widget.set_progress(current, total_files)
+                            self.waiting_widget.set_filename(f"Loading {current} of {total_files} files...")
+                            QApplication.processEvents()
+                        items.append(FileItem(file_path))
+                        current += 1
+                else:
+                    # Load single file
+                    if self.waiting_widget and current % 100 == 0:
+                        self.waiting_widget.set_progress(current, total_files)
+                        self.waiting_widget.set_filename(f"Loading {current} of {total_files} files...")
+                        QApplication.processEvents()
+                    items.append(FileItem(path))
+                    current += 1
+
+            # Update model
+            if hasattr(self.parent_window, "file_model"):
+                self.parent_window.file_model.add_files(items)
+
+        # Close waiting widget if shown
+        if self.waiting_widget:
+            self.waiting_widget.close()
+            self.waiting_widget = None
+
+        # Update UI
+        self._update_ui_after_load(items)
+
+    def _update_ui_after_load(self, items: List[FileItem]) -> None:
+        """Update UI elements after loading files."""
+        if not hasattr(self.parent_window, "file_model"):
+            return
+
+        # Update preview map
+        self.parent_window.preview_map = {f.filename: f for f in items}
+
+        # Configure sorting and header
         self.parent_window.file_table_view.setSortingEnabled(True)
         if hasattr(self.parent_window, "header"):
             self.parent_window.header.setSectionsClickable(True)
             self.parent_window.header.setSortIndicatorShown(True)
             self.parent_window.header.setEnabled(True)
 
+        # Sort and update UI
         self.parent_window.file_table_view.sortByColumn(1, Qt.AscendingOrder)
-        self.parent_window.file_table_view.set_placeholder_visible(len(final_items) == 0)
+        self.parent_window.file_table_view.set_placeholder_visible(len(items) == 0)
         self.parent_window.file_table_view.scrollToTop()
         self.parent_window.update_preview_tables_from_pairs([])
         self.parent_window.update_files_label()
@@ -264,38 +305,14 @@ class FileLoadManager:
             # Load metadata if not skipping
             if not skip_metadata:
                 items = self.parent_window.file_model.files
-                self.parent_window.load_metadata_for_items(items, use_extended=use_extended, source="individual_file_drop")
-                # Select files AFTER metadata loading with a delay
-                logger.debug(f"[Drop] Scheduling selection after metadata with 100ms delay", extra={"dev_only": True})
-                schedule_metadata_load(select_dropped_files, 100)
+                self.parent_window.load_metadata_for_items(
+                    items,
+                    use_extended=use_extended,
+                    source="file_drop"
+                )
             else:
-                logger.info(f"[Drop] Skipping metadata for {len(paths)} individual files (no Ctrl modifier)")
-                # Select files immediately if not loading metadata
-                logger.warning(f"[Drop] *** SCHEDULING selection immediately with 50ms delay ***")
-                schedule_selection_update(select_dropped_files, 50)
-
-        # After loading files + metadata
-        self.parent_window.show_metadata_status()
-
-    def load_single_item_from_drop(self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
-        """
-        Called when user drops a single file or folder from the tree onto file table view.
-        Handles the new 4-modifier logic:
-        - Normal: Replace + shallow
-        - Ctrl: Replace + recursive
-        - Shift: Merge + shallow
-        - Ctrl+Shift: Merge + recursive
-        """
-        # Use centralized file loader
-        self.parent_window.file_loader.handle_drop_operation(path, modifiers)
-
-    def get_file_items_from_folder(self, folder_path: str) -> list:
-        """Get FileItem objects from folder_path. Returns empty list if folder doesn't exist."""
-        return self.parent_window.file_loader.get_file_items_from_folder(folder_path)
-
-    def _has_deep_content(self, folder_path: str) -> bool:
-        """Check if folder has any supported files in deeper levels (beyond root)"""
-        return self.parent_window.file_loader.has_deep_content(folder_path)
+                # If skipping metadata, just select the files
+                select_dropped_files()
 
     def _handle_folder_drop(self, folder_path: str, merge_mode: bool, recursive: bool) -> None:
         """Handle folder drop with merge/replace and recursive options"""
