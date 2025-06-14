@@ -57,8 +57,8 @@ class CompactWaitingWidget(QWidget):
         self.setFixedWidth(250)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)
-        layout.setSpacing(6)
+        layout.setContentsMargins(8, 6, 8, 6)  # Reduced margins for more compact appearance
+        layout.setSpacing(4)  # Reduced spacing between elements
 
         # First row: status label
         status_row = QHBoxLayout()
@@ -79,17 +79,17 @@ class CompactWaitingWidget(QWidget):
         # Second row: progress bar
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setTextVisible(False)  # Hide percentage inside bar
-        self.progress_bar.setFixedHeight(10)
+        self.progress_bar.setFixedHeight(8)  # Even thinner progress bar
 
         # Apply optional color override for extended metadata scans
         if bar_color and bar_bg_color:
             self.progress_bar.setStyleSheet(
-                f"QProgressBar {{ background-color: {bar_bg_color}; border-radius: 4px; }} "
-                f"QProgressBar::chunk {{ background-color: {bar_color}; border-radius: 4px; }}"
+                f"QProgressBar {{ background-color: {bar_bg_color}; border-radius: 3px; }} "
+                f"QProgressBar::chunk {{ background-color: {bar_color}; border-radius: 3px; }}"
             )
         elif bar_color:
             self.progress_bar.setStyleSheet(
-                f"QProgressBar::chunk {{ background-color: {bar_color}; }}"
+                f"QProgressBar::chunk {{ background-color: {bar_color}; border-radius: 3px; }}"
             )
 
         layout.addWidget(self.progress_bar)

@@ -37,7 +37,7 @@ class FileLoadManager:
     def handle_folder_drop(self, folder_path: str, merge_mode: bool = False, recursive: bool = False) -> None:
         """
         Handle folder drop with merge/replace and recursive options.
-        Shows progress dialog only for large operations.
+        Shows progress dialog only for recursive operations to avoid flashing.
         """
         logger.info(f"[FileLoadManager] handle_folder_drop: {folder_path} (merge={merge_mode}, recursive={recursive})")
 
@@ -45,10 +45,12 @@ class FileLoadManager:
             logger.error(f"Path is not a directory: {folder_path}")
             return
 
-        # Count files first to decide if we need progress dialog
-        file_count = self._count_files_in_folder(folder_path, recursive)
+        # Clear any drag cursor immediately to show we're processing
+        if hasattr(self.parent_window, 'setCursor'):
+            self.parent_window.setCursor(Qt.ArrowCursor)
 
-        if file_count > 50:  # Use progress dialog for large operations
+        if recursive:
+            # Recursive operations: show progress dialog for user feedback
             # Create callback to handle loaded files
             def on_files_loaded(file_paths: List[str]):
                 logger.info(f"[FileLoadManager] Loaded {len(file_paths)} files from folder")
@@ -56,12 +58,13 @@ class FileLoadManager:
 
             # Show loading dialog and start worker
             dialog = FileLoadingDialog(self.parent_window, on_files_loaded)
-            dialog.load_files([folder_path], self.allowed_extensions)
+            dialog.load_files_with_options([folder_path], self.allowed_extensions, recursive=recursive)
             dialog.exec_()
         else:
-            # Simple synchronous loading for small operations
-            file_paths = self._get_files_from_folder(folder_path, recursive)
-            self._update_ui_with_files(file_paths, clear=not merge_mode)
+            # Non-recursive operations: simple synchronous loading with wait cursor
+            with wait_cursor():
+                file_paths = self._get_files_from_folder(folder_path, recursive=False)
+                self._update_ui_with_files(file_paths, clear=not merge_mode)
 
     def load_single_item_from_drop(self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
