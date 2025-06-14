@@ -62,7 +62,7 @@ class EventHandlerManager:
 
             # Use the same logic as drag & drop operations
             if os.path.isdir(folder_path):
-                self.parent_window.file_loader.handle_folder_drop(folder_path, merge_mode, recursive)
+                self.parent_window.file_load_manager.handle_folder_drop(folder_path, merge_mode, recursive)
 
             # Update folder tree selection if replace mode
             if (not merge_mode and
@@ -75,32 +75,24 @@ class EventHandlerManager:
             logger.debug("[Browse] User cancelled folder selection")
 
     def handle_folder_import(self) -> None:
-        """
-        Imports files from the currently selected folder in the tree view.
-        Supports modifier keys for different loading modes:
-        - Normal: Replace + shallow (skip metadata)
-        - Ctrl: Replace + recursive (skip metadata)
-        - Shift: Merge + shallow (skip metadata)
-        - Ctrl+Shift: Merge + recursive (skip metadata)
-        """
+        """Handle folder import from browse button"""
         selected_path = self.parent_window.folder_tree.get_selected_path()
-
         if not selected_path:
-            logger.debug("[FolderImport] No folder selected in tree")
+            logger.debug("[FolderImport] No folder selected")
             return
 
-        if not os.path.isdir(selected_path):
-            logger.debug(f"[FolderImport] Selected path is not a directory: {selected_path}")
-            return
-
-        # Get current modifiers at time of import
+        # Get modifier state for merge/recursive options
         modifiers = QApplication.keyboardModifiers()
-        merge_mode, recursive, action_type = decode_modifiers_to_flags(modifiers)
+        ctrl = bool(modifiers & Qt.ControlModifier)
+        shift = bool(modifiers & Qt.ShiftModifier)
 
-        logger.info(f"[FolderImport] Loading folder: {selected_path} ({action_type})")
+        merge_mode = shift
+        recursive = ctrl
 
-        # Use the same logic as drag & drop operations
-        self.parent_window.file_loader.handle_folder_drop(selected_path, merge_mode, recursive)
+        logger.info(f"[FolderImport] Loading folder: {selected_path} ({'Merge' if merge_mode else 'Replace'} + {'Recursive' if recursive else 'Shallow'})")
+
+        # Use the new file_load_manager instead of file_loader
+        self.parent_window.file_load_manager.handle_folder_drop(selected_path, merge_mode, recursive)
 
     def handle_table_context_menu(self, position) -> None:
         """

@@ -13,6 +13,7 @@ Classes:
     FileItem: Represents a single file item in the table.
 """
 import os
+from datetime import datetime
 from typing import Optional
 
 # Initialize Logger
@@ -23,27 +24,26 @@ logger = get_cached_logger(__name__)
 
 class FileItem:
     """
-    Represents a single file item in the table.
-
-    Attributes:
-        filename (str): The name of the file without the path.
-        extension (str): The extension/type of the file (e.g., jpg, png, mp4).
-        modified (str): The file's last modification date as a string.
-        full_path (Optional[str]): Full path to the file.
-        checked (bool): Whether the file is selected for renaming.
-        metadata (dict): Optional metadata dictionary for this file.
-        size (int): File size in bytes (autodetected from full_path).
+    Represents a file in the application.
+    Stores file metadata and handles file operations.
     """
 
-    def __init__(self, filename: str, extension: str, modified: str, full_path: Optional[str] = None):
-        self.filename = filename
+    def __init__(self, path: str, extension: str, modified: datetime):
+        self.full_path = path  # Full absolute path
+        self.path = path  # Keep for compatibility
         self.extension = extension
         self.modified = modified
-        self.full_path = full_path
-        self.checked = False  # Files start unselected
-        self.date = None
-        self.metadata = {}
-        self.size = self._detect_size()
+        self.filename = os.path.basename(path)  # Just the filename
+        self.name = self.filename  # Keep for compatibility
+        self.size = 0  # Will be updated later if needed
+        self.metadata = {}  # Will store file metadata
+        self.checked = False  # Selection state for UI
+
+    def __str__(self) -> str:
+        return f"FileItem({self.filename})"
+
+    def __repr__(self) -> str:
+        return f"FileItem(full_path='{self.full_path}', extension='{self.extension}', modified='{self.modified}')"
 
     @classmethod
     def from_path(cls, file_path: str) -> 'FileItem':
@@ -65,15 +65,20 @@ class FileItem:
         # Get modification time
         try:
             mtime = os.path.getmtime(file_path)
-            modified = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(mtime))
+            modified = datetime.fromtimestamp(mtime)
         except (OSError, ValueError):
-            modified = "Unknown"
+            modified = datetime.fromtimestamp(0)
 
-        return cls(filename, extension, modified, file_path)
+        return cls(file_path, extension, modified)
 
     @property
-    def name(self) -> str:
-        return self.filename
+    def has_metadata(self) -> bool:
+        logger.debug(f"[DEBUG] Checking has_metadata for {self.filename}")
+        return isinstance(self.metadata, dict) and bool(self.metadata)
+
+    @property
+    def metadata_extended(self) -> bool:
+        return isinstance(self.metadata, dict) and self.metadata.get('__extended__') is True
 
     def _detect_size(self) -> int:
         """
@@ -98,12 +103,3 @@ class FileItem:
             size /= 1024.0
             index += 1
         return f"{size:.1f} {units[index]}"
-
-    @property
-    def has_metadata(self) -> bool:
-        logger.debug(f"[DEBUG] Checking has_metadata for {self.filename}")
-        return isinstance(self.metadata, dict) and bool(self.metadata)
-
-    @property
-    def metadata_extended(self) -> bool:
-        return isinstance(self.metadata, dict) and self.metadata.get('__extended__') is True
