@@ -54,7 +54,7 @@ class CompactWaitingWidget(QWidget):
     def __init__(self, parent=None, bar_color: Optional[str] = None, bar_bg_color: Optional[str] = None):
         super().__init__(parent)
 
-        self.setFixedWidth(400)  # Increased from 350px to 400px for better text accommodation
+        self.setFixedWidth(400)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)  # Slightly reduced margins for better space utilization

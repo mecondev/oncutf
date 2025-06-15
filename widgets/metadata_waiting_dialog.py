@@ -8,7 +8,7 @@ Frameless waiting dialog for metadata extraction operations.
 Provides a clean, minimal UI for displaying metadata loading progress.
 """
 
-from typing import Optional
+from typing import Optional, Callable
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QWidget
@@ -20,7 +20,10 @@ from config import (
     FAST_METADATA_COLOR,
 )
 from utils.dialog_utils import setup_dialog_size_and_center
+from utils.logger_factory import get_cached_logger
 from widgets.compact_waiting_widget import CompactWaitingWidget
+
+logger = get_cached_logger(__name__)
 
 
 class MetadataWaitingDialog(QDialog):
@@ -31,9 +34,12 @@ class MetadataWaitingDialog(QDialog):
     - Has no title bar (frameless)
     - Is styled via QSS using standard QWidget rules
     - Hosts a compact waiting UI to display metadata reading progress
+    - Supports ESC key cancellation
     """
-    def __init__(self, parent: Optional[QWidget] = None, is_extended: bool = False) -> None:
+    def __init__(self, parent: Optional[QWidget] = None, is_extended: bool = False,
+                 cancel_callback: Optional[Callable] = None) -> None:
         super().__init__(parent)
+        self.cancel_callback = cancel_callback
 
         # Frameless and styled externally
         self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
@@ -60,6 +66,20 @@ class MetadataWaitingDialog(QDialog):
 
         # Setup dialog size and centering using utility function
         setup_dialog_size_and_center(self, self.waiting_widget)
+
+    def keyPressEvent(self, event):
+        """Handle ESC key to cancel metadata loading."""
+        if event.key() == Qt.Key_Escape:
+            logger.info("[MetadataWaitingDialog] User cancelled metadata loading")
+            self.waiting_widget.set_status("Cancelling...")
+
+            # Call the cancel callback if provided
+            if self.cancel_callback:
+                self.cancel_callback()
+
+            self.reject()
+        else:
+            super().keyPressEvent(event)
 
     def set_progress(self, value: int, total: int) -> None:
         """Set progress bar value and total."""
