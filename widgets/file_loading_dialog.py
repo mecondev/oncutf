@@ -6,12 +6,13 @@ Date: 2025-05-01
 
 Dialog that shows progress while loading files.
 Handles ESC key to cancel loading and shows wait cursor.
+Uses UnifiedFileWorker for consistent file loading behavior.
 """
 
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QDialog, QVBoxLayout
 from .compact_waiting_widget import CompactWaitingWidget
-from .file_loading_worker import FileLoadingWorker
+from core.unified_file_worker import UnifiedFileWorker
 from typing import List, Set, Callable
 from utils.dialog_utils import setup_dialog_size_and_center
 from utils.logger_factory import get_cached_logger
@@ -22,6 +23,7 @@ class FileLoadingDialog(QDialog):
     """
     Dialog that shows progress while loading files.
     Handles ESC key to cancel loading and shows wait cursor.
+    Uses UnifiedFileWorker for consistent file loading behavior.
     """
     def __init__(self, parent=None, on_files_loaded: Callable[[List[str]], None] = None):
         super().__init__(parent)
@@ -74,13 +76,15 @@ class FileLoadingDialog(QDialog):
         # Force UI update
         self.repaint()
 
-        self.worker = FileLoadingWorker(paths, allowed_extensions, recursive=recursive)
+        # Create and setup unified worker
+        self.worker = UnifiedFileWorker()
+        self.worker.setup_scan(paths, allowed_extensions, recursive)
 
-        # Connect signals
+        # Connect signals - map unified worker signals to dialog methods
         self.worker.progress_updated.connect(self._update_progress)
         self.worker.file_loaded.connect(self._update_filename)
         self.worker.status_updated.connect(self._update_status)
-        self.worker.finished_loading.connect(self._on_loading_finished)
+        self.worker.files_found.connect(self._on_loading_finished)  # files_found -> finished
         self.worker.error_occurred.connect(self._on_error)
 
         # Start loading with a small delay to ensure UI is ready

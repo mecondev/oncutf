@@ -12,7 +12,7 @@ from typing import List, Optional, Callable
 from PyQt5.QtCore import QObject, pyqtSignal, QTimer
 from PyQt5.QtWidgets import QWidget
 
-from core.file_load_worker import FileLoadWorker
+from core.unified_file_worker import UnifiedFileWorker
 from widgets.file_loading_dialog import FileLoadingDialog
 from utils.logger_factory import get_cached_logger
 
@@ -57,11 +57,11 @@ class CancellableFileLoader(QObject):
 
         self._completion_callback = completion_callback
 
-        # Create worker
-        self._worker = FileLoadWorker(self)
-        self._worker.setup_scan(folder_path, recursive)
+        # Create unified worker
+        self._worker = UnifiedFileWorker(self)
+        self._worker.setup_scan(folder_path, recursive=recursive)
 
-        # Connect signals
+        # Connect signals - map unified worker signals to existing methods
         self._worker.progress_updated.connect(self._on_progress_updated)
         self._worker.files_found.connect(self._on_files_found)
         self._worker.finished_scanning.connect(self._on_scanning_finished)
