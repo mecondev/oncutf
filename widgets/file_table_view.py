@@ -478,11 +478,18 @@ class FileTableView(QTableView):
 
         if modifiers & Qt.ShiftModifier:
             if self._manual_anchor_index is None:
-                self._manual_anchor_index = index
-            else:
-                selection = QItemSelection(self._manual_anchor_index, index)
-                sm.select(selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
-                sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
+                # If no anchor exists, use the first selected item as anchor
+                selected_indexes = sm.selectedRows()
+                if selected_indexes:
+                    self._manual_anchor_index = selected_indexes[0]
+                else:
+                    self._manual_anchor_index = index
+
+            # Create selection from anchor to current index
+            selection = QItemSelection(self._manual_anchor_index, index)
+            # Use Select instead of ClearAndSelect to preserve existing selection
+            sm.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+            sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
 
             # Update SelectionStore to match Qt selection model
             selection_store = self._get_selection_store()
@@ -571,15 +578,25 @@ class FileTableView(QTableView):
                 self._clicked_index = index
                 # Don't call super() or sync selection - preserve current state
             else:
-                # Normal selection handling with modifiers (including Ctrl+Click)
-                self.ensure_anchor_or_select(index, event.modifiers())
-                self._preserve_selection_for_drag = False
-                self._clicked_on_selected = False
-                self._clicked_index = None
-                # Sync selection state after changing it
-                self._sync_selection_safely()
-                # Call super() for normal Qt processing
-                super().mousePressEvent(event)
+                # Handle selection with modifiers (Ctrl+Click, Shift+Click)
+                if event.modifiers() & (Qt.ControlModifier | Qt.ShiftModifier):
+                    # Custom selection handling for modifiers - don't call super()
+                    self.ensure_anchor_or_select(index, event.modifiers())
+                    self._preserve_selection_for_drag = False
+                    self._clicked_on_selected = False
+                    self._clicked_index = None
+                    # Sync selection state after changing it
+                    self._sync_selection_safely()
+                else:
+                    # Normal selection handling without modifiers
+                    self.ensure_anchor_or_select(index, event.modifiers())
+                    self._preserve_selection_for_drag = False
+                    self._clicked_on_selected = False
+                    self._clicked_index = None
+                    # Sync selection state after changing it
+                    self._sync_selection_safely()
+                    # Call super() only for normal clicks (no modifiers)
+                    super().mousePressEvent(event)
         else:
             # For non-left clicks, always call super()
             super().mousePressEvent(event)
@@ -704,6 +721,9 @@ class FileTableView(QTableView):
 
     def keyPressEvent(self, event) -> None:
         """Handle keyboard navigation, sync selection, and modifier changes during drag."""
+        # Don't handle ESC at all - let it pass through to dialogs and other components
+        # Cursor cleanup is handled automatically by other mechanisms
+
         # Update drag feedback if we're currently dragging
         if self._is_dragging:
             self._update_drag_feedback()
@@ -844,6 +864,9 @@ class FileTableView(QTableView):
         if not self._is_dragging:
             return
 
+        # Force immediate cursor cleanup first
+        self._force_cursor_cleanup()
+
         # Check if drag has been cancelled by external force cleanup
         drag_manager = DragManager.get_instance()
         if not drag_manager.is_drag_active():
@@ -855,6 +878,9 @@ class FileTableView(QTableView):
 
             # End visual feedback
             end_drag_visual()
+
+            # Force cursor cleanup again after visual cleanup
+            self._force_cursor_cleanup()
 
             # Restore hover state with fake mouse move event
             self._restore_hover_after_drag()
@@ -912,11 +938,17 @@ class FileTableView(QTableView):
         # End visual feedback
         end_drag_visual()
 
+        # Final cursor cleanup after visual feedback ends
+        self._force_cursor_cleanup()
+
         # Notify DragManager
         drag_manager.end_drag("file_table")
 
         # Restore hover state with fake mouse move event
         self._restore_hover_after_drag()
+
+        # Schedule delayed cleanup to handle any remaining cursor issues from dialogs
+        schedule_drag_cleanup(self._force_cursor_cleanup, 200)
 
         logger.debug(f"[FileTableView] Custom drag ended: {len(data) if data else 0} files (valid_drop: {valid_drop})", extra={"dev_only": True})
 
@@ -946,6 +978,9 @@ class FileTableView(QTableView):
         if not self._drag_data:
             return
 
+        # Force cursor cleanup before handling drop (prevents stuck cursor during dialogs)
+        self._force_cursor_cleanup()
+
         # Use real-time modifiers at drop time (standard UX behavior)
         modifiers = QApplication.keyboardModifiers()
 
@@ -965,9 +1000,16 @@ class FileTableView(QTableView):
             parent = parent.parent()
 
         if metadata_tree:
+            # Store data temporarily for cleanup after signal emission
+            data_count = len(self._drag_data)
+
             # Emit signal directly on metadata tree
             metadata_tree.files_dropped.emit(self._drag_data, modifiers)
-            logger.info(f"[FileTableView] Dropped {len(self._drag_data)} files on metadata tree (modifiers: {modifiers})")
+            logger.info(f"[FileTableView] Dropped {data_count} files on metadata tree (modifiers: {modifiers})")
+
+            # Force additional cursor cleanup after signal emission (handles dialog scenarios)
+            QApplication.processEvents()  # Allow signal to be processed
+            self._force_cursor_cleanup()  # Clean up any remaining cursor issues
 
     # =====================================
     # Drag & Drop Methods (Legacy - may remove)
@@ -1331,18 +1373,32 @@ class FileTableView(QTableView):
             self._get_selection_store().set_active(False)
             logger.debug("[FileTable] Selection store mode disabled")
 
-    def _emergency_cursor_cleanup(self):
-        """Emergency cursor cleanup method."""
-        # Aggressive cursor cleanup
+    def _force_cursor_cleanup(self):
+        """Force immediate cursor cleanup during drag operations."""
+        # Immediate and aggressive cursor cleanup
         cursor_count = 0
         while QApplication.overrideCursor():
             QApplication.restoreOverrideCursor()
             cursor_count += 1
-            if cursor_count > 10:
+            if cursor_count > 15:  # Higher limit for stuck cursors
                 break
 
         if cursor_count > 0:
-            logger.debug(f"[FileTable] Emergency: Cleaned {cursor_count} stuck cursors")
+            logger.debug(f"[FileTableView] Force cleaned {cursor_count} stuck cursors during drag", extra={"dev_only": True})
+
+        # Process events immediately
+        QApplication.processEvents()
+
+    def _emergency_cursor_cleanup(self):
+        """Emergency cursor cleanup method."""
+        # Use the force cleanup method first
+        self._force_cursor_cleanup()
+
+        # Additional cleanup for drag manager
+        drag_manager = DragManager.get_instance()
+        if drag_manager.is_drag_active():
+            logger.debug("[FileTableView] Emergency: Forcing DragManager cleanup", extra={"dev_only": True})
+            drag_manager.force_cleanup()
 
         # Force viewport update
         if hasattr(self, 'viewport'):

@@ -14,6 +14,7 @@ Classes:
     FileTableModel: A table model for displaying and managing file entries.
 '''
 
+from datetime import datetime
 from PyQt5.QtCore import (
     QAbstractTableModel,
     QItemSelection,
@@ -92,7 +93,10 @@ class FileTableModel(QAbstractTableModel):
             elif col == 3:
                 return file.extension
             elif col == 4:
-                return file.modified
+                # Format the datetime for better display
+                if isinstance(file.modified, datetime):
+                    return file.modified.strftime("%Y-%m-%d %H:%M:%S")
+                return str(file.modified)
 
         if role == Qt.ToolTipRole and col == 1:
             entry = self.parent_window.metadata_cache.get_entry(file.full_path) if self.parent_window else None

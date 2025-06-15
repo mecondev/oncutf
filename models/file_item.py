@@ -69,7 +69,13 @@ class FileItem:
         except (OSError, ValueError):
             modified = datetime.fromtimestamp(0)
 
-        return cls(file_path, extension, modified)
+        # Create the instance
+        instance = cls(file_path, extension, modified)
+
+        # Calculate and set the file size
+        instance.size = instance._detect_size()
+
+        return instance
 
     @property
     def has_metadata(self) -> bool:
