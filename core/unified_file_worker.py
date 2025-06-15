@@ -74,7 +74,7 @@ class UnifiedFileWorker(QThread):
 
         # Enhanced cancellation tracking
         self._cancel_check_counter = 0
-        self._cancel_check_frequency = 10  # Check every 10 operations in phase 2
+        self._cancel_check_frequency = 1  # Check every 1 operation for immediate response
 
     def setup_scan(self,
                    paths: Union[str, List[str]],

@@ -67,39 +67,43 @@ class SelectionManager:
         with wait_cursor():
             logger.info(f"[SelectAll] Selecting all {total} rows.")
 
-            # Step 1: Pre-generate preview data (without updating UI yet)
-            list(file_model.files)  # Create a list of what will be selected
+            # Disable updates during batch operations to prevent flickering
+            file_table_view.setUpdatesEnabled(False)
 
-            # Step 2: Update internal state first
-            for file in file_model.files:
-                file.checked = True
+            try:
+                # Step 1: Update internal state first (batch operation)
+                for file in file_model.files:
+                    file.checked = True
 
-            # Step 3: Start preview generation (this triggers the heavy work)
-            if hasattr(self.parent_window, 'request_preview_update'):
-                self.parent_window.request_preview_update()
-
-            # Step 4: Add small delay to let preview start, then do visual selection
-            def apply_visual_selection():
+                # Step 2: Update visual selection immediately
                 file_table_view.select_rows_range(0, total - 1)
                 if hasattr(file_table_view, 'anchor_row'):
                     file_table_view.anchor_row = 0
-                file_table_view.viewport().update()
+
+                # Step 3: Update UI labels immediately
                 if hasattr(self.parent_window, 'update_files_label'):
                     self.parent_window.update_files_label()
 
-                # Handle metadata display for the last file
-                def show_metadata_later():
-                    last_file = file_model.files[-1]
-                    metadata_cache = getattr(self.parent_window, 'metadata_cache', None)
-                    metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
+            finally:
+                # Re-enable updates
+                file_table_view.setUpdatesEnabled(True)
+                file_table_view.viewport().update()
 
-                    if metadata_cache and metadata_tree_view:
-                        metadata = last_file.metadata or metadata_cache.get(last_file.full_path)
-                        metadata_tree_view.display_metadata(metadata, context="select_all")
+            # Step 4: Request preview update (this can be async to avoid blocking)
+            if hasattr(self.parent_window, 'request_preview_update'):
+                self.parent_window.request_preview_update()
 
-                schedule_metadata_load(show_metadata_later, 15)
+            # Step 5: Handle metadata display for the last file (async)
+            def show_metadata_later():
+                last_file = file_model.files[-1]
+                metadata_cache = getattr(self.parent_window, 'metadata_cache', None)
+                metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
 
-            schedule_selection_update(apply_visual_selection, 5)
+                if metadata_cache and metadata_tree_view:
+                    metadata = last_file.metadata or metadata_cache.get(last_file.full_path)
+                    metadata_tree_view.display_metadata(metadata, context="select_all")
+
+            schedule_metadata_load(show_metadata_later, 15)
 
     def clear_all_selection(self) -> None:
         """

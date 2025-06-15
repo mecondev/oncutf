@@ -519,13 +519,34 @@ class FileTableView(QTableView):
 
         # CRITICAL FIX: Handle left-click selection properly
         if event.button() == Qt.LeftButton:
-            # Call ensure_anchor_or_select to handle selection with modifiers
-            self.ensure_anchor_or_select(index, event.modifiers())
+            # Check if we're clicking on an already selected item for potential drag
+            current_selection = self._get_current_selection()
+            clicked_row = index.row()
 
-            # Sync selection state
-            self._sync_selection_safely()
+            # If clicking on a selected item without modifiers, don't change selection yet
+            # (wait to see if it's a drag operation)
+            if (clicked_row in current_selection and
+                not (event.modifiers() & (Qt.ControlModifier | Qt.ShiftModifier)) and
+                len(current_selection) > 1):
+                # Don't change selection - preserve multi-selection for potential drag
+                # Selection will be handled in mouseReleaseEvent if it's not a drag
+                self._preserve_selection_for_drag = True
+                self._clicked_on_selected = True
+                self._clicked_index = index
+            else:
+                # Normal selection handling with modifiers
+                self.ensure_anchor_or_select(index, event.modifiers())
+                self._preserve_selection_for_drag = False
+                self._clicked_on_selected = False
+                self._clicked_index = None
 
-        super().mousePressEvent(event)
+            # Sync selection state only if we changed it
+            if not self._preserve_selection_for_drag:
+                self._sync_selection_safely()
+
+        # Don't call super() if we're preserving selection for drag
+        if not getattr(self, '_preserve_selection_for_drag', False):
+            super().mousePressEvent(event)
 
         # Clear context focus on left click
         if event.button() != Qt.RightButton and self.context_focused_row is not None:
@@ -579,6 +600,20 @@ class FileTableView(QTableView):
         # End drag first
         if self._is_dragging:
             self._end_custom_drag()
+
+        # Handle preserved selection case (clicked on selected item but didn't drag)
+        if (getattr(self, '_preserve_selection_for_drag', False) and
+            not was_dragging and
+            event.button() == Qt.LeftButton):
+            # User clicked on selected item but didn't drag - select only that item
+            if hasattr(self, '_clicked_index') and self._clicked_index:
+                self.ensure_anchor_or_select(self._clicked_index, Qt.NoModifier)
+                self._sync_selection_safely()
+
+            # Clean up flags
+            self._preserve_selection_for_drag = False
+            self._clicked_on_selected = False
+            self._clicked_index = None
 
         # Call super for normal processing
         super().mouseReleaseEvent(event)

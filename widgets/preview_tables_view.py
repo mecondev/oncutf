@@ -125,21 +125,21 @@ class PreviewTablesView(QWidget):
 
         # Configure preview tables
         for table in [self.old_names_table, self.new_names_table]:
-            table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-            table.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
-            table.setWordWrap(False)
-            table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-            table.setSelectionMode(QAbstractItemView.NoSelection)
-            table.verticalHeader().setVisible(False)
-            table.setVerticalHeader(None)
-            table.horizontalHeader().setVisible(False)
-            table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Interactive)
             table.setAlternatingRowColors(True)
+            table.setSelectionBehavior(QAbstractItemView.SelectRows)
+            table.setSelectionMode(QAbstractItemView.SingleSelection)
+            table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            table.setWordWrap(False)
+            table.setShowGrid(False)
+            table.verticalHeader().setVisible(False)
+            table.horizontalHeader().setVisible(False)
+            table.setFocusPolicy(Qt.NoFocus)
+            # Set same row height as icon table
             table.verticalHeader().setDefaultSectionSize(22)
-            # Disable drag & drop functionality
-            table.setDragEnabled(False)
-            table.setAcceptDrops(False)
-            table.setDragDropMode(QAbstractItemView.NoDragDrop)
+            # Reduce flickering during updates
+            table.setUpdatesEnabled(True)
+            table.viewport().setUpdatesEnabled(True)
 
         # Configure icon table
         self.icon_table.setFixedWidth(24)
@@ -280,7 +280,7 @@ class PreviewTablesView(QWidget):
     def _finalize_scrollbar_setup(self):
         """Complete the scrollbar setup after content has been added to prevent flickering."""
         # Temporarily disable updates to prevent flickering during multiple changes
-        for table in [self.old_names_table, self.new_names_table]:
+        for table in [self.old_names_table, self.new_names_table, self.icon_table]:
             table.setUpdatesEnabled(False)
 
         try:
@@ -293,10 +293,14 @@ class PreviewTablesView(QWidget):
             self._adjust_table_widths()
 
         finally:
-            # Re-enable updates and force a single refresh
-            for table in [self.old_names_table, self.new_names_table]:
+            # Re-enable updates with a single batch refresh
+            for table in [self.old_names_table, self.new_names_table, self.icon_table]:
                 table.setUpdatesEnabled(True)
-                table.viewport().update()
+
+            # Force a single coordinated update for all tables
+            self.old_names_table.viewport().update()
+            self.new_names_table.viewport().update()
+            self.icon_table.viewport().update()
 
         logger.debug("[PreviewTablesView] Scrollbar setup finalized")
 
@@ -399,94 +403,117 @@ class PreviewTablesView(QWidget):
             icon_paths: Dictionary of icon file paths for HTML rendering
             validator: FilenameValidator instance for validation
         """
-        # Clear all preview tables before updating
-        self.old_names_table.setRowCount(0)
-        self.new_names_table.setRowCount(0)
-        self.icon_table.setRowCount(0)
+        # Disable updates to prevent flickering during batch operations
+        self.old_names_table.setUpdatesEnabled(False)
+        self.new_names_table.setUpdatesEnabled(False)
+        self.icon_table.setUpdatesEnabled(False)
 
-        if not name_pairs:
-            # Show placeholders when no content
-            self._set_placeholders_visible(True)
-            self.status_updated.emit("No files selected.")
-            return
+        try:
+            # Clear all preview tables before updating
+            self.old_names_table.setRowCount(0)
+            self.new_names_table.setRowCount(0)
+            self.icon_table.setRowCount(0)
 
-        # Hide placeholders when we have content (defer scrollbar setup to avoid flickering)
-        self._set_placeholders_visible(False, defer_width_adjustment=True)
-        logger.debug(f"[PreviewTablesView] Processing {len(name_pairs)} name pairs - scrollbar setup deferred")
+            if not name_pairs:
+                # Show placeholders when no content
+                self._set_placeholders_visible(True)
+                self.status_updated.emit("No files selected.")
+                return
 
-        # Precompute duplicates
-        seen, duplicates = set(), set()
-        for _, new_name in name_pairs:
-            if new_name in seen:
-                duplicates.add(new_name)
-            else:
-                seen.add(new_name)
+            # Hide placeholders when we have content (defer scrollbar setup to avoid flickering)
+            self._set_placeholders_visible(False, defer_width_adjustment=True)
+            logger.debug(f"[PreviewTablesView] Processing {len(name_pairs)} name pairs - scrollbar setup deferred")
 
-        # Initialize status counters
-        stats = {"unchanged": 0, "invalid": 0, "duplicate": 0, "valid": 0}
-
-        for row, (old_name, new_name) in enumerate(name_pairs):
-            self.old_names_table.insertRow(row)
-            self.new_names_table.insertRow(row)
-            self.icon_table.insertRow(row)
-
-            # Create table items
-            old_item = QTableWidgetItem(old_name)
-            new_item = QTableWidgetItem(new_name)
-
-            # Determine rename status
-            if old_name == new_name:
-                status = "unchanged"
-                tooltip = "Unchanged filename"
-            else:
-                is_valid, _ = validator.is_valid_filename(new_name)
-                if not is_valid:
-                    status = "invalid"
-                    tooltip = "Invalid filename"
-                elif new_name in duplicates:
-                    status = "duplicate"
-                    tooltip = "Duplicate name"
+            # Precompute duplicates
+            seen, duplicates = set(), set()
+            for _, new_name in name_pairs:
+                if new_name in seen:
+                    duplicates.add(new_name)
                 else:
-                    status = "valid"
-                    tooltip = "Ready to rename"
+                    seen.add(new_name)
 
-            # Update status counts
-            stats[status] += 1
+            # Initialize status counters
+            stats = {"unchanged": 0, "invalid": 0, "duplicate": 0, "valid": 0}
 
-            # Prepare status icon
-            icon_item = QTableWidgetItem()
-            icon = preview_icons.get(status)
-            if icon:
-                icon_item.setIcon(icon)
-            icon_item.setToolTip(tooltip)
+            for row, (old_name, new_name) in enumerate(name_pairs):
+                self.old_names_table.insertRow(row)
+                self.new_names_table.insertRow(row)
+                self.icon_table.insertRow(row)
 
-            # Insert items into corresponding tables
-            self.old_names_table.setItem(row, 0, old_item)
-            self.new_names_table.setItem(row, 0, new_item)
-            self.icon_table.setItem(row, 0, icon_item)
+                # Create table items
+                old_item = QTableWidgetItem(old_name)
+                new_item = QTableWidgetItem(new_name)
 
-        # Render bottom status summary (valid, unchanged, invalid, duplicate)
-        status_msg = (
-            f"<img src='{icon_paths['valid']}' width='14' height='14' style='vertical-align: middle';/>"
-            f"<span style='color:#ccc;'> Valid: {stats['valid']}</span>&nbsp;&nbsp;&nbsp;"
-            f"<img src='{icon_paths['unchanged']}' width='14' height='14' style='vertical-align: middle';/>"
-            f"<span style='color:#ccc;'> Unchanged: {stats['unchanged']}</span>&nbsp;&nbsp;&nbsp;"
-            f"<img src='{icon_paths['invalid']}' width='14' height='14' style='vertical-align: middle';/>"
-            f"<span style='color:#ccc;'> Invalid: {stats['invalid']}</span>&nbsp;&nbsp;&nbsp;"
-            f"<img src='{icon_paths['duplicate']}' width='14' height='14' style='vertical-align: middle';/>"
-            f"<span style='color:#ccc;'> Duplicates: {stats['duplicate']}</span>"
-        )
-        self.status_updated.emit(status_msg)
+                # Determine rename status
+                if old_name == new_name:
+                    status = "unchanged"
+                    tooltip = "Unchanged filename"
+                else:
+                    is_valid, _ = validator.is_valid_filename(new_name)
+                    if not is_valid:
+                        status = "invalid"
+                        tooltip = "Invalid filename"
+                    elif new_name in duplicates:
+                        status = "duplicate"
+                        tooltip = "Duplicate name"
+                    else:
+                        status = "valid"
+                        tooltip = "Ready to rename"
 
-        # Schedule scrollbar setup
-        schedule_scroll_adjust(self._finalize_scrollbar_setup, 15)
+                # Update status counts
+                stats[status] += 1
+
+                # Prepare status icon
+                icon_item = QTableWidgetItem()
+                icon = preview_icons.get(status)
+                if icon:
+                    icon_item.setIcon(icon)
+                icon_item.setToolTip(tooltip)
+
+                # Insert items into corresponding tables
+                self.old_names_table.setItem(row, 0, old_item)
+                self.new_names_table.setItem(row, 0, new_item)
+                self.icon_table.setItem(row, 0, icon_item)
+
+            # Render bottom status summary (valid, unchanged, invalid, duplicate)
+            status_msg = (
+                f"<img src='{icon_paths['valid']}' width='14' height='14' style='vertical-align: middle';/>"
+                f"<span style='color:#ccc;'> Valid: {stats['valid']}</span>&nbsp;&nbsp;&nbsp;"
+                f"<img src='{icon_paths['unchanged']}' width='14' height='14' style='vertical-align: middle';/>"
+                f"<span style='color:#ccc;'> Unchanged: {stats['unchanged']}</span>&nbsp;&nbsp;&nbsp;"
+                f"<img src='{icon_paths['invalid']}' width='14' height='14' style='vertical-align: middle';/>"
+                f"<span style='color:#ccc;'> Invalid: {stats['invalid']}</span>&nbsp;&nbsp;&nbsp;"
+                f"<img src='{icon_paths['duplicate']}' width='14' height='14' style='vertical-align: middle';/>"
+                f"<span style='color:#ccc;'> Duplicates: {stats['duplicate']}</span>"
+            )
+            self.status_updated.emit(status_msg)
+
+            # Schedule scrollbar setup
+            schedule_scroll_adjust(self._finalize_scrollbar_setup, 15)
+
+        finally:
+            # Re-enable updates after all operations are complete
+            self.old_names_table.setUpdatesEnabled(True)
+            self.new_names_table.setUpdatesEnabled(True)
+            self.icon_table.setUpdatesEnabled(True)
 
     def clear_tables(self):
         """Clear all tables and show placeholders."""
-        self.old_names_table.setRowCount(0)
-        self.new_names_table.setRowCount(0)
-        self.icon_table.setRowCount(0)
-        self._set_placeholders_visible(True)
+        # Disable updates to prevent flickering during clearing
+        self.old_names_table.setUpdatesEnabled(False)
+        self.new_names_table.setUpdatesEnabled(False)
+        self.icon_table.setUpdatesEnabled(False)
+
+        try:
+            self.old_names_table.setRowCount(0)
+            self.new_names_table.setRowCount(0)
+            self.icon_table.setRowCount(0)
+            self._set_placeholders_visible(True)
+        finally:
+            # Re-enable updates after clearing is complete
+            self.old_names_table.setUpdatesEnabled(True)
+            self.new_names_table.setUpdatesEnabled(True)
+            self.icon_table.setUpdatesEnabled(True)
 
     def handle_splitter_moved(self):
         """Handle parent splitter movement to adjust table widths."""

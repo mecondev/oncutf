@@ -23,6 +23,7 @@ MetadataWaitingDialog to indicate progress during metadata loading (basic or ext
 """
 
 from typing import Optional
+import os
 
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import (
@@ -66,6 +67,8 @@ class CompactWaitingWidget(QWidget):
 
         self.status_label = QLabel("Reading metadata...", self)
         self.status_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.status_label.setWordWrap(True)
+        self.status_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         self.count_label = QLabel("", self)
         self.count_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
@@ -128,11 +131,57 @@ class CompactWaitingWidget(QWidget):
         self.percentage_label.setText(f"{percent}%")
 
     def set_filename(self, filename: str) -> None:
-        self.filename_label.setText(filename)
+        """Set the filename with intelligent truncation for long paths."""
+        if not filename:
+            self.filename_label.setText("")
+            return
+
+        # For very long filenames, show beginning + "..." + extension
+        max_length = 60  # Adjust based on dialog width
+        if len(filename) > max_length:
+            # Try to preserve extension
+            name_part, ext_part = os.path.splitext(filename)
+            if ext_part and len(ext_part) < 10:  # Reasonable extension length
+                # Calculate how much of the name we can show
+                available_length = max_length - len(ext_part) - 3  # 3 for "..."
+                if available_length > 10:  # Minimum meaningful name length
+                    truncated_name = name_part[:available_length] + "..." + ext_part
+                    self.filename_label.setText(truncated_name)
+                else:
+                    # Extension too long or name too short, just truncate normally
+                    self.filename_label.setText(filename[:max_length] + "...")
+            else:
+                # No extension or extension too long, just truncate
+                self.filename_label.setText(filename[:max_length] + "...")
+        else:
+            self.filename_label.setText(filename)
 
     def set_status(self, text: str) -> None:
+        """Set the status with intelligent truncation for long messages."""
         logger.debug(f"[Waiting Dialog] Set status. Called from: {text.strip()}")
-        self.status_label.setText(text)
+
+        if not text:
+            self.status_label.setText("")
+            return
+
+        # For very long status messages, apply intelligent truncation
+        max_length = 50  # Adjust based on dialog width and count label space
+        if len(text) > max_length:
+            # For paths in status messages, try to preserve meaningful parts
+            if "/" in text or "\\" in text:  # Looks like a path
+                # Try to show beginning and end of path
+                parts = text.replace("\\", "/").split("/")
+                if len(parts) > 2:
+                    # Show first part + "..." + last part
+                    truncated_text = f"{parts[0]}/.../{parts[-1]}"
+                    if len(truncated_text) <= max_length:
+                        self.status_label.setText(truncated_text)
+                        return
+
+            # Fallback: simple truncation with ellipsis
+            self.status_label.setText(text[:max_length] + "...")
+        else:
+            self.status_label.setText(text)
 
     def set_count(self, current: int, total: int) -> None:
         self.count_label.setText(f"{current} of {total}")
