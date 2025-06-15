@@ -64,9 +64,10 @@ class FileLoadingDialog(QDialog):
         """Start loading files with the given paths, allowed extensions, and recursive option."""
         logger.info(f"[FileLoadingDialog] Starting to load {len(paths)} paths (recursive={recursive})")
 
-        # Set wait cursor on parent window immediately
+        # Set wait cursor on both parent and dialog immediately
         if self.parent():
             self.parent().setCursor(Qt.WaitCursor)
+        self.setCursor(Qt.WaitCursor)
 
         # Update UI immediately before starting worker
         self.waiting_widget.set_status("Counting files...")
@@ -86,6 +87,7 @@ class FileLoadingDialog(QDialog):
         self.worker.status_updated.connect(self._update_status)
         self.worker.files_found.connect(self._on_loading_finished)  # files_found -> finished
         self.worker.error_occurred.connect(self._on_error)
+        self.worker.finished_scanning.connect(self._on_worker_finished)  # Handle worker completion
 
         # Start loading with a small delay to ensure UI is ready
         QTimer.singleShot(10, self.worker.start)  # Reduced delay for faster response
@@ -108,22 +110,34 @@ class FileLoadingDialog(QDialog):
         """Handle loading completion."""
         logger.info(f"[FileLoadingDialog] Loading finished with {len(files)} files")
 
-        # Restore cursor on parent window
-        if self.parent():
-            self.parent().setCursor(Qt.ArrowCursor)
+        # Restore cursor on both parent and dialog
+        self._restore_cursors()
 
         if self.on_files_loaded:
             self.on_files_loaded(files)
 
         self.accept()
 
+    def _on_worker_finished(self, success: bool):
+        """Handle worker completion (success or failure)."""
+        logger.debug(f"[FileLoadingDialog] Worker finished (success={success})")
+
+        # Only restore cursors if we haven't already done so
+        if not success:
+            self._restore_cursors()
+
+    def _restore_cursors(self):
+        """Restore normal cursors on both parent and dialog."""
+        if self.parent():
+            self.parent().setCursor(Qt.ArrowCursor)
+        self.setCursor(Qt.ArrowCursor)
+
     def _on_error(self, error_msg: str):
         """Handle loading error."""
         logger.error(f"[FileLoadingDialog] Error loading files: {error_msg}")
 
-        # Restore cursor on parent window
-        if self.parent():
-            self.parent().setCursor(Qt.ArrowCursor)
+        # Restore cursors
+        self._restore_cursors()
         self.waiting_widget.set_status(f"Error: {error_msg}")
 
         # Keep dialog open to show error for a moment
@@ -134,15 +148,23 @@ class FileLoadingDialog(QDialog):
         if event.key() == Qt.Key_Escape:
             if self.worker and self.worker.isRunning():
                 logger.info("[FileLoadingDialog] User cancelled loading")
-                self.worker.cancel()
+
+                # Update UI immediately to show cancellation
                 self.waiting_widget.set_status("Cancelling...")
-                # Restore cursor on parent window
-                if self.parent():
-                    self.parent().setCursor(Qt.ArrowCursor)
-                # Wait a bit for worker to finish
-                self.worker.wait(1000)  # Wait max 1 second
-                self.reject()
+                self.waiting_widget.set_filename("Please wait...")
+                self.repaint()  # Force immediate UI update
+
+                # Cancel worker
+                self.worker.cancel()
+
+                # Restore cursors immediately
+                self._restore_cursors()
+
+                # Wait a bit for worker to finish, then close
+                QTimer.singleShot(500, self.reject)  # Close after 500ms
             else:
+                # No worker running, just close
+                self._restore_cursors()
                 self.reject()
         else:
             super().keyPressEvent(event)
@@ -154,7 +176,6 @@ class FileLoadingDialog(QDialog):
             self.worker.cancel()
             self.worker.wait(1000)  # Wait max 1 second
 
-        # Restore cursor on parent window
-        if self.parent():
-            self.parent().setCursor(Qt.ArrowCursor)
+        # Always restore cursors when closing
+        self._restore_cursors()
         event.accept()

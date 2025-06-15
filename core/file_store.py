@@ -92,11 +92,9 @@ class FileStore(QObject):
                 if ext in ALLOWED_EXTENSIONS:
                     filename = os.path.basename(file_path)
                     try:
-                        modified = datetime.datetime.fromtimestamp(
-                            os.path.getmtime(file_path)).strftime("%Y-%m-%d %H:%M:%S")
-                        file_items.append(FileItem(filename, ext, modified, full_path=file_path))
+                        file_items.append(FileItem.from_path(file_path))
                     except OSError as e:
-                        logger.warning(f"Could not get modification time for {filename}: {e}")
+                        logger.warning(f"Could not create FileItem for {filename}: {e}")
                         continue
 
         # Cache results
@@ -147,11 +145,8 @@ class FileStore(QObject):
                     # Load individual file
                     ext = os.path.splitext(path)[1][1:].lower()
                     if ext in ALLOWED_EXTENSIONS:
-                        filename = os.path.basename(path)
-                        modified = datetime.datetime.fromtimestamp(
-                            os.path.getmtime(path)).strftime("%Y-%m-%d %H:%M:%S")
-                        file_items.append(FileItem(filename, ext, modified, full_path=path))
-                        logger.debug(f"[FileStore] Loaded file: {filename}")
+                        file_items.append(FileItem.from_path(path))
+                        logger.debug(f"[FileStore] Loaded file: {os.path.basename(path)}")
                     else:
                         logger.debug(f"[FileStore] Skipped unsupported file: {path}")
 

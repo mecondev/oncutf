@@ -129,7 +129,7 @@ class FileLoader:
                 for filename in filenames:
                     if os.path.splitext(filename)[1].lower()[1:] in ALLOWED_EXTENSIONS:
                         full_path = os.path.join(root, filename)
-                        files.append(FileItem(full_path))
+                        files.append(FileItem.from_path(full_path))
 
             return files
 
@@ -153,7 +153,7 @@ class FileLoader:
 
     def _handle_files_found(self, file_paths: List[str]):
         """Handle files found by worker - convert to FileItem objects."""
-        self.loaded_files = [FileItem(path) for path in file_paths]
+        self.loaded_files = [FileItem.from_path(path) for path in file_paths]
         logger.info(f"[FileLoader] Converted {len(file_paths)} paths to FileItem objects")
 
     def _handle_finished(self, success: bool):

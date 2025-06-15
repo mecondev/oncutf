@@ -300,7 +300,7 @@ class FileLoadManager:
         file_items = []
         for path in file_paths:
             try:
-                file_item = FileItem(path)
+                file_item = FileItem.from_path(path)
                 file_items.append(file_item)
             except Exception as e:
                 logger.error(f"Error creating FileItem for {path}: {e}")
