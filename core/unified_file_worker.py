@@ -2,7 +2,7 @@
 unified_file_worker.py
 
 Author: Michael Economou
-Date: 2025-01-20
+Date: 2025-05-01
 
 🎯 UNIFIED QThread worker for background file scanning operations.
 
@@ -34,6 +34,7 @@ from typing import List, Set, Optional, Union
 from PyQt5.QtCore import QThread, pyqtSignal, QMutex, QMutexLocker
 
 from config import ALLOWED_EXTENSIONS
+from utils.timer_manager import get_timer_manager, TimerType, TimerPriority
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -43,7 +44,9 @@ class UnifiedFileWorker(QThread):
     """
     Unified background worker for file scanning operations.
 
-    Features:
+    Enhanced Features:
+    - Improved cancellation responsiveness in both phases
+    - Timer-based progress updates for better UX
     - Thread-safe with QMutex protection
     - Support for multiple paths or single folder
     - Configurable allowed extensions
@@ -63,27 +66,26 @@ class UnifiedFileWorker(QThread):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._mutex = QMutex()
-        self._cancelled = False
-
-        # Configuration parameters
-        self._paths: List[str] = []
-        self._allowed_extensions: Set[str] = set(ALLOWED_EXTENSIONS)
+        self._paths = []
+        self._allowed_extensions = set()
         self._recursive = False
+        self._cancelled = False
+        self.timer_manager = get_timer_manager()
+
+        # Enhanced cancellation tracking
+        self._cancel_check_counter = 0
+        self._cancel_check_frequency = 10  # Check every 10 operations in phase 2
 
     def setup_scan(self,
                    paths: Union[str, List[str]],
                    allowed_extensions: Optional[Set[str]] = None,
                    recursive: bool = False):
         """
-        Setup the scan parameters.
-
-        Args:
-            paths: Single path string or list of paths to scan
-            allowed_extensions: Set of allowed file extensions (without dots)
-            recursive: Whether to scan recursively
+        Configure the worker for scanning.
+        Thread-safe setup with mutex protection.
         """
         with QMutexLocker(self._mutex):
-            # Normalize paths to list
+            # Handle both single path and list of paths
             if isinstance(paths, str):
                 self._paths = [paths]
             else:
@@ -97,20 +99,32 @@ class UnifiedFileWorker(QThread):
 
             self._recursive = recursive
             self._cancelled = False
+            self._cancel_check_counter = 0
 
     def cancel(self):
-        """Cancel the current scanning operation."""
+        """Cancel the current scanning operation with immediate effect."""
         with QMutexLocker(self._mutex):
             self._cancelled = True
-            logger.debug("[UnifiedFileWorker] Scan cancellation requested")
+            logger.debug("[UnifiedFileWorker] Scan cancellation requested - immediate effect")
 
     def is_cancelled(self) -> bool:
         """Check if the operation has been cancelled."""
         with QMutexLocker(self._mutex):
             return self._cancelled
 
+    def _check_cancellation_frequently(self) -> bool:
+        """
+        Enhanced cancellation check for phase 2 (file loading).
+        Checks more frequently during file processing.
+        """
+        self._cancel_check_counter += 1
+        if self._cancel_check_counter >= self._cancel_check_frequency:
+            self._cancel_check_counter = 0
+            return self.is_cancelled()
+        return False
+
     def run(self):
-        """Main thread execution - scan for files."""
+        """Main thread execution - scan for files with enhanced cancellation."""
         try:
             if self.is_cancelled():
                 self.finished_scanning.emit(False)
@@ -134,6 +148,7 @@ class UnifiedFileWorker(QThread):
 
             for path in paths:
                 if self.is_cancelled():
+                    logger.debug("[UnifiedFileWorker] Cancelled during phase 1 (counting)")
                     self.finished_scanning.emit(False)
                     return
 
@@ -144,6 +159,7 @@ class UnifiedFileWorker(QThread):
                     total_files += self._count_files_in_directory(path, allowed_extensions, recursive)
 
             if self.is_cancelled():
+                logger.debug("[UnifiedFileWorker] Cancelled after phase 1 (counting)")
                 self.finished_scanning.emit(False)
                 return
 
@@ -155,11 +171,13 @@ class UnifiedFileWorker(QThread):
                 self.finished_scanning.emit(True)
                 return
 
-            # Phase 2: Collect files with detailed progress
+            # Phase 2: Collect files with detailed progress and enhanced cancellation
             self.status_updated.emit("Loading files...")
+            self._cancel_check_counter = 0  # Reset counter for phase 2
 
             for path in paths:
                 if self.is_cancelled():
+                    logger.debug("[UnifiedFileWorker] Cancelled during phase 2 (loading)")
                     self.finished_scanning.emit(False)
                     return
 
@@ -170,9 +188,21 @@ class UnifiedFileWorker(QThread):
                         self.progress_updated.emit(current_file, total_files)
                         self.file_loaded.emit(os.path.basename(path))
 
+                        # Enhanced cancellation check for single files
+                        if self._check_cancellation_frequently():
+                            logger.debug("[UnifiedFileWorker] Cancelled during single file processing")
+                            self.finished_scanning.emit(False)
+                            return
+
                 elif os.path.isdir(path):
-                    found_files = self._scan_directory(path, allowed_extensions, recursive,
-                                                     current_file, total_files)
+                    found_files = self._scan_directory_with_enhanced_cancellation(
+                        path, allowed_extensions, recursive, current_file, total_files
+                    )
+                    if found_files is None:  # Cancellation occurred
+                        logger.debug("[UnifiedFileWorker] Cancelled during directory scanning")
+                        self.finished_scanning.emit(False)
+                        return
+
                     all_files.extend(found_files)
                     current_file += len(found_files)
 
@@ -182,7 +212,7 @@ class UnifiedFileWorker(QThread):
                 self.files_found.emit(all_files)
                 self.finished_scanning.emit(True)
             else:
-                logger.debug("[UnifiedFileWorker] Scan was cancelled")
+                logger.debug("[UnifiedFileWorker] Scan was cancelled during final phase")
                 self.finished_scanning.emit(False)
 
         except Exception as e:
@@ -191,7 +221,7 @@ class UnifiedFileWorker(QThread):
             self.finished_scanning.emit(False)
 
     def _count_files_in_directory(self, directory: str, allowed_extensions: Set[str], recursive: bool) -> int:
-        """Count total files in directory for progress calculation."""
+        """Count total files in directory for progress calculation with cancellation support."""
         count = 0
         scanned_items = 0
 
@@ -202,10 +232,12 @@ class UnifiedFileWorker(QThread):
                         break
 
                     scanned_items += len(files)
-                    if scanned_items % 1000 == 0:  # Update every 1000 items during counting
+                    if scanned_items % 500 == 0:  # More frequent updates during counting
                         self.status_updated.emit(f"Counting files... ({scanned_items} items scanned)")
 
                     for file in files:
+                        if self.is_cancelled():
+                            break
                         if self._is_allowed_extension(file, allowed_extensions):
                             count += 1
             else:
@@ -225,9 +257,12 @@ class UnifiedFileWorker(QThread):
 
         return count
 
-    def _scan_directory(self, directory: str, allowed_extensions: Set[str], recursive: bool,
-                       current_progress: int, total_files: int) -> List[str]:
-        """Scan directory and return list of matching files."""
+    def _scan_directory_with_enhanced_cancellation(self, directory: str, allowed_extensions: Set[str],
+                                                  recursive: bool, current_progress: int, total_files: int) -> Optional[List[str]]:
+        """
+        Scan directory with enhanced cancellation support.
+        Returns None if cancelled, otherwise returns list of files.
+        """
         files_found = []
         scanned_items = 0
 
@@ -235,7 +270,7 @@ class UnifiedFileWorker(QThread):
             if recursive:
                 for root, _, files in os.walk(directory):
                     if self.is_cancelled():
-                        break
+                        return None
 
                     # Update status with current directory
                     relative_path = os.path.relpath(root, directory)
@@ -244,12 +279,16 @@ class UnifiedFileWorker(QThread):
 
                     for file in files:
                         if self.is_cancelled():
-                            break
+                            return None
 
                         scanned_items += 1
 
+                        # Enhanced cancellation check during file processing
+                        if self._check_cancellation_frequently():
+                            return None
+
                         # Show progress for non-matching files too
-                        if scanned_items % 100 == 0:
+                        if scanned_items % 50 == 0:  # More frequent updates
                             self.file_loaded.emit(f"Scanning... ({scanned_items} items)")
 
                         if self._is_allowed_extension(file, allowed_extensions):
@@ -262,11 +301,15 @@ class UnifiedFileWorker(QThread):
                 files = os.listdir(directory)
                 for file in files:
                     if self.is_cancelled():
-                        break
+                        return None
 
                     scanned_items += 1
 
-                    if scanned_items % 50 == 0:
+                    # Enhanced cancellation check
+                    if self._check_cancellation_frequently():
+                        return None
+
+                    if scanned_items % 25 == 0:  # More frequent updates for non-recursive
                         self.file_loaded.emit(f"Scanning... ({scanned_items} items)")
 
                     file_path = os.path.join(directory, file)

@@ -60,9 +60,9 @@ class EventHandlerManager:
 
             logger.info(f"[Browse] User selected folder: {folder_path} ({action_type})")
 
-            # Use the same logic as drag & drop operations
+            # Use unified folder loading method
             if os.path.isdir(folder_path):
-                self.parent_window.file_load_manager.handle_folder_drop(folder_path, merge_mode, recursive)
+                self.parent_window.file_load_manager.load_folder(folder_path, merge_mode, recursive)
 
             # Update folder tree selection if replace mode
             if (not merge_mode and
@@ -91,8 +91,8 @@ class EventHandlerManager:
 
         logger.info(f"[FolderImport] Loading folder: {selected_path} ({'Merge' if merge_mode else 'Replace'} + {'Recursive' if recursive else 'Shallow'})")
 
-        # Use the new file_load_manager instead of file_loader
-        self.parent_window.file_load_manager.handle_folder_drop(selected_path, merge_mode, recursive)
+        # Use unified folder loading method
+        self.parent_window.file_load_manager.load_folder(selected_path, merge_mode, recursive)
 
     def handle_table_context_menu(self, position) -> None:
         """
