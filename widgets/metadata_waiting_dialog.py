@@ -19,6 +19,7 @@ from config import (
     FAST_METADATA_BG_COLOR,
     FAST_METADATA_COLOR,
 )
+from utils.dialog_utils import setup_dialog_size_and_center
 from widgets.compact_waiting_widget import CompactWaitingWidget
 
 
@@ -56,6 +57,9 @@ class MetadataWaitingDialog(QDialog):
         layout.addWidget(self.waiting_widget)
 
         self.setLayout(layout)
+
+        # Setup dialog size and centering using utility function
+        setup_dialog_size_and_center(self, self.waiting_widget)
 
     def set_progress(self, value: int, total: int) -> None:
         """Set progress bar value and total."""

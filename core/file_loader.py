@@ -18,6 +18,7 @@ from config import ALLOWED_EXTENSIONS
 from models.file_item import FileItem
 from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
+from utils.dialog_utils import center_widget_on_parent
 from widgets.compact_waiting_widget import CompactWaitingWidget
 
 logger = get_cached_logger(__name__)
@@ -152,6 +153,10 @@ class FileLoader:
             bar_bg_color="#0a1a2a"  # darker blue bg
         )
         self.waiting_widget.set_status("Scanning files...")
+
+        # Center the widget on parent window using utility function
+        center_widget_on_parent(self.waiting_widget, self.parent_window)
+
         self.waiting_widget.show()
 
         # Connect signals

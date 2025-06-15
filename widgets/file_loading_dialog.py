@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import QDialog, QVBoxLayout
 from .compact_waiting_widget import CompactWaitingWidget
 from .file_loading_worker import FileLoadingWorker
 from typing import List, Set, Callable
+from utils.dialog_utils import setup_dialog_size_and_center
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -50,16 +51,8 @@ class FileLoadingDialog(QDialog):
 
         layout.addWidget(self.waiting_widget)
 
-        # Use the same size as the widget itself - no extra padding
-        widget_size = self.waiting_widget.sizeHint()
-        self.setFixedSize(widget_size.width(), widget_size.height())
-
-        # Center the dialog on parent
-        if self.parent():
-            parent_rect = self.parent().geometry()
-            x = parent_rect.x() + (parent_rect.width() - self.width()) // 2
-            y = parent_rect.y() + (parent_rect.height() - self.height()) // 2
-            self.move(x, y)
+        # Setup dialog size and centering using utility function
+        setup_dialog_size_and_center(self, self.waiting_widget)
 
     def load_files(self, paths: List[str], allowed_extensions: Set[str]):
         """Start loading files with the given paths and allowed extensions."""

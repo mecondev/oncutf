@@ -24,7 +24,7 @@ MetadataWaitingDialog to indicate progress during metadata loading (basic or ext
 
 from typing import Optional
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -44,7 +44,7 @@ class CompactWaitingWidget(QWidget):
     A compact widget-based progress display to be embedded in dialogs or floating containers.
 
     Features:
-    - Fixed width (380 px)
+    - Fixed width (400 px)
     - No window title, no close button
     - First row: status label (align left)
     - Second row: progress bar (minimal height, no percentage text)
@@ -54,7 +54,7 @@ class CompactWaitingWidget(QWidget):
     def __init__(self, parent=None, bar_color: Optional[str] = None, bar_bg_color: Optional[str] = None):
         super().__init__(parent)
 
-        self.setFixedWidth(380)  # Increased from 250px to accommodate longer text
+        self.setFixedWidth(400)  # Increased from 350px to 400px for better text accommodation
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)  # Slightly reduced margins for better space utilization
@@ -112,6 +112,12 @@ class CompactWaitingWidget(QWidget):
         bottom_row.addWidget(self.filename_label)
 
         layout.addLayout(bottom_row)
+
+    def sizeHint(self):
+        """Return the preferred size for this widget."""
+        # Return the fixed width we set, and let the height be calculated by the layout
+        height = super().sizeHint().height()
+        return QSize(400, height)  # Use our fixed width of 400px
 
     def set_progress(self, value: int, total: int) -> None:
         logger.debug(f"[Waiting Dialog] Set progress. Called from: {value} of {total}", extra={"dev_only": True})
