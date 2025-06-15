@@ -87,6 +87,11 @@ class FileTableView(QTableView):
         self._is_dragging = False
         self._drag_data = None  # Store selected file data for drag
 
+        # Selection preservation for drag operations
+        self._preserve_selection_for_drag = False
+        self._clicked_on_selected = False
+        self._clicked_index = None
+
         # Setup placeholder icon
         self.placeholder_label = QLabel(self.viewport())
         self.placeholder_label.setAlignment(Qt.AlignCenter)
@@ -479,19 +484,43 @@ class FileTableView(QTableView):
                 sm.select(selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
                 sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
 
+            # Update SelectionStore to match Qt selection model
+            selection_store = self._get_selection_store()
+            if selection_store and not self._legacy_selection_mode:
+                current_qt_selection = set(idx.row() for idx in sm.selectedRows())
+                selection_store.set_selected_rows(current_qt_selection, emit_signal=True)
+                if self._manual_anchor_index:
+                    selection_store.set_anchor_row(self._manual_anchor_index.row(), emit_signal=False)
+
+            # Force visual update
+            left = model.index(index.row(), 0)
+            right = model.index(index.row(), model.columnCount() - 1)
+            self.viewport().update(self.visualRect(left).united(self.visualRect(right)))
+
         elif modifiers & Qt.ControlModifier:
             self._manual_anchor_index = index
             row = index.row()
-            selection = QItemSelection(index, index)
-            sm.blockSignals(True)
-            if sm.isSelected(index):
-                sm.select(selection, QItemSelectionModel.Deselect | QItemSelectionModel.Rows)
+
+            # Get current selection state before making changes
+            was_selected = sm.isSelected(index)
+
+            # Toggle selection in Qt selection model
+            if was_selected:
+                sm.select(index, QItemSelectionModel.Deselect | QItemSelectionModel.Rows)
             else:
-                sm.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
-            sm.blockSignals(False)
+                sm.select(index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+
+            # Set current index without clearing selection
             sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
 
-            # Update visual feedback
+            # Update SelectionStore to match Qt selection model
+            selection_store = self._get_selection_store()
+            if selection_store and not self._legacy_selection_mode:
+                current_qt_selection = set(idx.row() for idx in sm.selectedRows())
+                selection_store.set_selected_rows(current_qt_selection, emit_signal=True)
+                selection_store.set_anchor_row(row, emit_signal=False)
+
+            # Force visual update
             left = model.index(row, 0)
             right = model.index(row, model.columnCount() - 1)
             self.viewport().update(self.visualRect(left).united(self.visualRect(right)))
@@ -500,6 +529,13 @@ class FileTableView(QTableView):
             self._manual_anchor_index = index
             sm.select(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
             sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
+
+            # Update SelectionStore to match Qt selection model
+            selection_store = self._get_selection_store()
+            if selection_store and not self._legacy_selection_mode:
+                current_qt_selection = set(idx.row() for idx in sm.selectedRows())
+                selection_store.set_selected_rows(current_qt_selection, emit_signal=True)
+                selection_store.set_anchor_row(index.row(), emit_signal=False)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Handle mouse press with custom selection logic."""
@@ -533,19 +569,19 @@ class FileTableView(QTableView):
                 self._preserve_selection_for_drag = True
                 self._clicked_on_selected = True
                 self._clicked_index = index
+                # Don't call super() or sync selection - preserve current state
             else:
-                # Normal selection handling with modifiers
+                # Normal selection handling with modifiers (including Ctrl+Click)
                 self.ensure_anchor_or_select(index, event.modifiers())
                 self._preserve_selection_for_drag = False
                 self._clicked_on_selected = False
                 self._clicked_index = None
-
-            # Sync selection state only if we changed it
-            if not self._preserve_selection_for_drag:
+                # Sync selection state after changing it
                 self._sync_selection_safely()
-
-        # Don't call super() if we're preserving selection for drag
-        if not getattr(self, '_preserve_selection_for_drag', False):
+                # Call super() for normal Qt processing
+                super().mousePressEvent(event)
+        else:
+            # For non-left clicks, always call super()
             super().mousePressEvent(event)
 
         # Clear context focus on left click
@@ -688,10 +724,18 @@ class FileTableView(QTableView):
         super().keyReleaseEvent(event)
 
     def _sync_selection_safely(self) -> None:
+        """Sync selection state with parent window or SelectionStore."""
+        # First, try to sync with SelectionStore if available
+        selection_store = self._get_selection_store()
+        if selection_store and not self._legacy_selection_mode:
+            current_qt_selection = set(idx.row() for idx in self.selectionModel().selectedRows())
+            selection_store.set_selected_rows(current_qt_selection, emit_signal=True)
+            return
+
+        # Fallback: try parent window sync method
         parent = self.window()
         if hasattr(parent, "sync_selection_to_checked"):
             selection = self.selectionModel().selection()
-            set(idx.row() for idx in self.selectionModel().selectedRows())
             parent.sync_selection_to_checked(selection, QItemSelection())
 
     # =====================================
@@ -702,6 +746,11 @@ class FileTableView(QTableView):
         """Start our custom drag operation with enhanced visual feedback"""
         if self._is_dragging:
             return
+
+        # Clean up selection preservation flags since we're starting a drag
+        self._preserve_selection_for_drag = False
+        self._clicked_on_selected = False
+        self._clicked_index = None
 
         # Get selected file data
         selected_rows = self._get_current_selection()
