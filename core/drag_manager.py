@@ -198,6 +198,19 @@ class DragManager(QObject):
                 key = event.key()
                 if key == Qt.Key_Escape:
                     logger.debug("[DragManager] Escape key pressed during drag")
+
+                    # CRITICAL FIX: Don't consume ESC if there's an active FileLoadingDialog
+                    # Check if there's a modal dialog (FileLoadingDialog) that should handle ESC
+                    app = QApplication.instance()
+                    if app:
+                        active_modal = app.activeModalWidget()
+                        if active_modal and active_modal.__class__.__name__ == 'FileLoadingDialog':
+                            logger.debug("[DragManager] FileLoadingDialog is active, allowing it to handle ESC")
+                            # Force cleanup drag state but don't consume the ESC key
+                            self.force_cleanup()
+                            return False  # Let the dialog handle ESC
+
+                    # Normal case: consume ESC and cleanup drag
                     self.force_cleanup()
                     return True  # Consume the escape key
 

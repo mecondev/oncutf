@@ -97,6 +97,14 @@ class TableManager:
         # Delegate table preparation to the view itself
         self.parent_window.file_table_view.prepare_table(file_items)
 
+        # CRITICAL: Hide placeholder when files are loaded
+        if file_items:
+            self.parent_window.file_table_view.set_placeholder_visible(False)
+            logger.debug("[TableManager] Hidden file table placeholder - files loaded")
+        else:
+            self.parent_window.file_table_view.set_placeholder_visible(True)
+            logger.debug("[TableManager] Shown file table placeholder - no files")
+
         # Handle application-specific setup
         self.parent_window.files = file_items
         self.parent_window.file_model.folder_path = self.parent_window.current_folder_path

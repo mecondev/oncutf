@@ -517,6 +517,14 @@ class FileTableView(QTableView):
             super().mousePressEvent(event)
             return
 
+        # CRITICAL FIX: Handle left-click selection properly
+        if event.button() == Qt.LeftButton:
+            # Call ensure_anchor_or_select to handle selection with modifiers
+            self.ensure_anchor_or_select(index, event.modifiers())
+
+            # Sync selection state
+            self._sync_selection_safely()
+
         super().mousePressEvent(event)
 
         # Clear context focus on left click

@@ -19,6 +19,7 @@ from models.file_item import FileItem
 from widgets.file_loading_dialog import FileLoadingDialog
 from utils.cursor_helper import wait_cursor, force_restore_cursor
 from utils.timer_manager import get_timer_manager, TimerType, TimerPriority
+from core.drag_manager import force_cleanup_drag, is_dragging
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -51,6 +52,12 @@ class FileLoadManager:
             logger.error(f"Path is not a directory: {folder_path}")
             return
 
+        # CRITICAL: Force cleanup any active drag state immediately
+        # This ensures ESC key works properly in FileLoadingDialog
+        if is_dragging():
+            logger.debug("[FileLoadManager] Active drag detected, forcing cleanup before loading")
+            force_cleanup_drag()
+
         # Clear any existing cursors immediately
         force_restore_cursor()
 
@@ -72,6 +79,11 @@ class FileLoadManager:
         Always uses progress dialog since it can handle multiple paths.
         """
         logger.info(f"[FileLoadManager] load_files_from_paths: {len(paths)} paths")
+
+        # Force cleanup any active drag state (import button shouldn't have drag, but safety first)
+        if is_dragging():
+            logger.debug("[FileLoadManager] Active drag detected during import, forcing cleanup")
+            force_cleanup_drag()
 
         def on_files_loaded(file_paths: List[str]):
             logger.info(f"[FileLoadManager] Loaded {len(file_paths)} files from paths")
@@ -98,10 +110,14 @@ class FileLoadManager:
         logger.debug(f"[Drop] Modifiers: ctrl={ctrl}, shift={shift} → recursive={recursive}, merge={merge_mode}")
 
         if os.path.isdir(path):
-            # Use unified folder loading
+            # Use unified folder loading (will handle drag cleanup internally)
             self.load_folder(path, merge_mode=merge_mode, recursive=recursive)
         else:
-            # Handle single file
+            # Handle single file - cleanup drag state first
+            if is_dragging():
+                logger.debug("[FileLoadManager] Active drag detected during single file drop, forcing cleanup")
+                force_cleanup_drag()
+
             if self._is_allowed_extension(path):
                 self._update_ui_with_files([path], clear=not merge_mode)
 
@@ -281,12 +297,73 @@ class FileLoadManager:
                 self.parent_window.file_model.set_files(combined_files)
                 logger.info(f"[FileLoadManager] Added {len(items)} items to existing {len(existing_files)} files")
 
-            # Update UI elements
-            if hasattr(self.parent_window, 'update_ui_after_file_load'):
-                self.parent_window.update_ui_after_file_load()
+            # CRITICAL: Update all UI elements after file loading
+            self._refresh_ui_after_file_load()
 
         except Exception as e:
             logger.error(f"[FileLoadManager] Error updating UI: {e}")
+
+    def _refresh_ui_after_file_load(self) -> None:
+        """
+        Refresh all UI elements after files are loaded.
+        This ensures placeholders are hidden, labels are updated, and selection works.
+        """
+        try:
+            # Update files label (shows count)
+            if hasattr(self.parent_window, 'update_files_label'):
+                self.parent_window.update_files_label()
+                logger.debug("[FileLoadManager] Updated files label")
+
+            total_files = len(self.parent_window.file_model.files)
+
+            # Hide file table placeholder when files are loaded
+            if hasattr(self.parent_window, 'file_table_view'):
+                if total_files > 0:
+                    # Hide file table placeholder when files are loaded
+                    self.parent_window.file_table_view.set_placeholder_visible(False)
+                    logger.debug("[FileLoadManager] Hidden file table placeholder")
+                else:
+                    # Show file table placeholder when no files
+                    self.parent_window.file_table_view.set_placeholder_visible(True)
+                    logger.debug("[FileLoadManager] Shown file table placeholder")
+
+            # Hide placeholders in preview tables (if files are loaded)
+            if hasattr(self.parent_window, 'preview_tables_view'):
+                if total_files > 0:
+                    # Hide placeholders when files are loaded
+                    self.parent_window.preview_tables_view._set_placeholders_visible(False)
+                    logger.debug("[FileLoadManager] Hidden preview table placeholders")
+                else:
+                    # Show placeholders when no files
+                    self.parent_window.preview_tables_view._set_placeholders_visible(True)
+                    logger.debug("[FileLoadManager] Shown preview table placeholders")
+
+            # Update preview tables
+            if hasattr(self.parent_window, 'request_preview_update'):
+                self.parent_window.request_preview_update()
+                logger.debug("[FileLoadManager] Requested preview update")
+
+            # Ensure file table selection works properly
+            if hasattr(self.parent_window, 'file_table_view'):
+                # Force refresh of the table view
+                self.parent_window.file_table_view.viewport().update()
+
+                # Reset selection state to ensure clicks work
+                if hasattr(self.parent_window.file_table_view, '_sync_selection_safely'):
+                    self.parent_window.file_table_view._sync_selection_safely()
+
+                logger.debug("[FileLoadManager] Refreshed file table view")
+
+            # Update metadata tree (clear it for new files)
+            if hasattr(self.parent_window, 'metadata_tree_view'):
+                if hasattr(self.parent_window.metadata_tree_view, 'refresh_metadata_from_selection'):
+                    self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
+                    logger.debug("[FileLoadManager] Refreshed metadata tree")
+
+            logger.info("[FileLoadManager] UI refresh completed successfully")
+
+        except Exception as e:
+            logger.error(f"[FileLoadManager] Error refreshing UI: {e}")
 
     def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
         """
