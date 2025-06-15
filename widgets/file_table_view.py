@@ -74,6 +74,11 @@ class FileTableView(QTableView):
         self._user_preferred_width: Optional[int] = None  # User's preferred filename column width
         self._programmatic_resize: bool = False  # Flag to indicate programmatic resize in progress
 
+        # Vertical scrollbar tracking for filename column adjustment
+        self._vertical_scrollbar_visible: bool = False
+        self._filename_base_width: int = 0  # Store the base width before scrollbar adjustment
+        self._scrollbar_adjustment: int = 12  # How much to reduce filename column when scrollbar appears
+
         # Configure table behavior
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.setDragEnabled(False)  # Disable Qt's built-in drag for custom implementation
@@ -174,6 +179,10 @@ class FileTableView(QTableView):
             self.placeholder_label.resize(self.viewport().size())
             self.placeholder_label.move(0, 0)
 
+        # Check if vertical scrollbar visibility changed after resize
+        # Use a small delay to ensure scrollbar state is updated
+        schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 10)
+
     def setModel(self, model) -> None:
         """Configure columns when model is set."""
         super().setModel(model)
@@ -230,6 +239,10 @@ class FileTableView(QTableView):
         # Update UI
         self.viewport().update()
         self._update_scrollbar_visibility()
+
+        # Check vertical scrollbar visibility and adjust filename column if needed
+        # Use a timer to ensure the scrollbar visibility is properly updated after model reset
+        schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 50)
 
     # =====================================
     # Column Management & Scrollbar Optimization
@@ -300,8 +313,9 @@ class FileTableView(QTableView):
         # Apply general minimum size to header (for all columns)
         header.setMinimumSectionSize(20)
 
-        # Store minimum width for filename column enforcement (use same as initial width)
-        self._filename_min_width = filename_width
+        # Store minimum width for filename column enforcement (allow reduction for scrollbar)
+        # Set minimum to be smaller than initial width to allow scrollbar adjustment
+        self._filename_min_width = max(filename_min, 333)  # Use calculated minimum or 333px, whichever is larger
 
         # Initialize user preferred width to the initial width
         self._user_preferred_width = filename_width
@@ -337,6 +351,70 @@ class FileTableView(QTableView):
             self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         elif not is_empty and current_policy != Qt.ScrollBarAsNeeded:
             self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+    def _check_vertical_scrollbar_visibility(self) -> None:
+        """Check if vertical scrollbar is needed and adjust filename column accordingly."""
+        if not self.model():
+            return
+
+        # Check if vertical scrollbar is needed by comparing content height with viewport height
+        model = self.model()
+        row_count = model.rowCount()
+
+        if row_count == 0:
+            return
+
+        # Calculate if scrollbar is needed
+        viewport_height = self.viewport().height()
+        row_height = self.rowHeight(0) if row_count > 0 else 25  # fallback height
+        total_content_height = row_count * row_height
+        header_height = self.horizontalHeader().height() if self.horizontalHeader() else 0
+
+        # Add some margin for safety
+        is_scrollbar_needed = (total_content_height + header_height) > viewport_height
+
+        # Also check the actual scrollbar visibility as backup
+        vertical_scrollbar = self.verticalScrollBar()
+        is_actually_visible = vertical_scrollbar.isVisible()
+
+        # Use the calculated need or actual visibility (whichever indicates scrollbar is needed)
+        is_visible = is_scrollbar_needed or is_actually_visible
+
+        # Only proceed if visibility state has changed
+        if is_visible == self._vertical_scrollbar_visible:
+            return
+
+        self._vertical_scrollbar_visible = is_visible
+
+        # Get current filename column width
+        current_width = self.columnWidth(1)
+
+        if is_visible:
+            # Scrollbar needed - reduce filename column by adjustment amount
+            if self._filename_base_width == 0:
+                # Store the current width as base width
+                self._filename_base_width = current_width
+
+            new_width = max(self._filename_base_width - self._scrollbar_adjustment, self._filename_min_width)
+
+            if new_width != current_width:
+                self._programmatic_resize = True
+                self.setColumnWidth(1, new_width)
+                self._programmatic_resize = False
+                logger.debug(f"[FileTableView] Vertical scrollbar appeared - reduced filename column: {current_width}px → {new_width}px", extra={"dev_only": True})
+        else:
+            # Scrollbar not needed - restore filename column to base width
+            if self._filename_base_width > 0:
+                new_width = max(self._filename_base_width, self._filename_min_width)
+
+                if new_width != current_width:
+                    self._programmatic_resize = True
+                    self.setColumnWidth(1, new_width)
+                    self._programmatic_resize = False
+                    logger.debug(f"[FileTableView] Vertical scrollbar disappeared - restored filename column: {current_width}px → {new_width}px", extra={"dev_only": True})
+
+                # Reset base width for next cycle
+                self._filename_base_width = 0
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
         """Handle horizontal splitter movement - use user preference as base, expand if more space available."""
@@ -414,6 +492,9 @@ class FileTableView(QTableView):
                     self.setUpdatesEnabled(True)
                     self.viewport().update()
 
+                    # Check if vertical scrollbar visibility changed after column resize
+                    schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 10)
+
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement."""
         pass  # Reserved for future use
@@ -477,19 +558,29 @@ class FileTableView(QTableView):
             return
 
         if modifiers & Qt.ShiftModifier:
-            if self._manual_anchor_index is None:
-                # If no anchor exists, use the first selected item as anchor
-                selected_indexes = sm.selectedRows()
-                if selected_indexes:
-                    self._manual_anchor_index = selected_indexes[0]
-                else:
-                    self._manual_anchor_index = index
+            # Check if we're clicking on an already selected item
+            current_selection = set(idx.row() for idx in sm.selectedRows())
+            clicked_row = index.row()
 
-            # Create selection from anchor to current index
-            selection = QItemSelection(self._manual_anchor_index, index)
-            # Use Select instead of ClearAndSelect to preserve existing selection
-            sm.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
-            sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
+            # If clicking on an already selected item, don't change selection
+            if clicked_row in current_selection:
+                # Just update the current index without changing selection
+                sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
+            else:
+                # Normal Shift+Click behavior for unselected items
+                if self._manual_anchor_index is None:
+                    # If no anchor exists, use the first selected item as anchor
+                    selected_indexes = sm.selectedRows()
+                    if selected_indexes:
+                        self._manual_anchor_index = selected_indexes[0]
+                    else:
+                        self._manual_anchor_index = index
+
+                # Create selection from anchor to current index
+                selection = QItemSelection(self._manual_anchor_index, index)
+                # Use Select instead of ClearAndSelect to preserve existing selection
+                sm.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+                sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
 
             # Update SelectionStore to match Qt selection model
             selection_store = self._get_selection_store()
@@ -1332,6 +1423,10 @@ class FileTableView(QTableView):
                         right = self.model().index(r, self.model().columnCount() - 1)
                         row_rect = self.visualRect(left).united(self.visualRect(right))
                         self.viewport().update(row_rect)
+
+        # Check if vertical scrollbar visibility changed after wheel scroll
+        # Use a small delay to ensure scrollbar state is updated
+        schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 10)
 
     def scrollTo(self, index, hint=None) -> None:
         """

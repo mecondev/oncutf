@@ -85,23 +85,47 @@ class DialogManager:
         if not files:
             return True
 
+        # First, check which files are actually large
+        large_files = []
+        for f in files:
+            size_mb = 0
+            if hasattr(f, 'size') and f.size > 0:  # FileItem object with size
+                size_mb = f.size / (1024 * 1024)
+            elif hasattr(f, 'full_path'):  # FileItem object, check file system
+                try:
+                    size_mb = os.path.getsize(f.full_path) / (1024 * 1024)
+                except OSError:
+                    continue
+            elif isinstance(f, str):  # String path
+                try:
+                    size_mb = os.path.getsize(f) / (1024 * 1024)
+                except OSError:
+                    continue
+
+            if size_mb > max_size_mb:
+                large_files.append(f)
+
+        # If no files are actually large, don't show dialog
+        if not large_files:
+            return True
+
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Warning)
         msg.setWindowTitle("Large Files Detected")
 
         # Handle both FileItem objects and string paths
         file_names = []
-        for f in files[:5]:
+        for f in large_files[:5]:
             if hasattr(f, 'filename'):  # FileItem object
                 file_names.append(f.filename)
             else:  # String path
                 file_names.append(os.path.basename(f))
 
         file_list = "\n".join(f"- {name}" for name in file_names)
-        if len(files) > 5:
-            file_list += f"\n... and {len(files) - 5} more"
+        if len(large_files) > 5:
+            file_list += f"\n... and {len(large_files) - 5} more"
 
-        msg.setText(f"Found {len(files)} files larger than {max_size_mb}MB")
+        msg.setText(f"Found {len(large_files)} files larger than {max_size_mb}MB")
         msg.setInformativeText(f"Large files:\n{file_list}\n\nProcessing may take longer.")
         msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
         msg.setDefaultButton(QMessageBox.Ok)
