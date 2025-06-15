@@ -44,7 +44,7 @@ class CompactWaitingWidget(QWidget):
     A compact widget-based progress display to be embedded in dialogs or floating containers.
 
     Features:
-    - Fixed width (250 px)
+    - Fixed width (380 px)
     - No window title, no close button
     - First row: status label (align left)
     - Second row: progress bar (minimal height, no percentage text)
@@ -54,10 +54,10 @@ class CompactWaitingWidget(QWidget):
     def __init__(self, parent=None, bar_color: Optional[str] = None, bar_bg_color: Optional[str] = None):
         super().__init__(parent)
 
-        self.setFixedWidth(250)
+        self.setFixedWidth(380)  # Increased from 250px to accommodate longer text
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 6, 8, 6)  # Reduced margins for more compact appearance
+        layout.setContentsMargins(6, 6, 6, 6)  # Slightly reduced margins for better space utilization
         layout.setSpacing(4)  # Reduced spacing between elements
 
         # First row: status label
@@ -69,7 +69,7 @@ class CompactWaitingWidget(QWidget):
 
         self.count_label = QLabel("", self)
         self.count_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        self.count_label.setFixedWidth(60)  # enough for "1234/1234"
+        self.count_label.setFixedWidth(90)  # Increased from 60px to handle larger numbers like "2034600"
 
         status_row.addWidget(self.status_label)
         status_row.addWidget(self.count_label)
