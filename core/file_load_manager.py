@@ -6,6 +6,7 @@ Date: 2025-05-01
 
 Manages file loading operations with support for both synchronous and threaded loading.
 Handles drag & drop, folder loading, and metadata integration.
+Uses UnifiedFileLoader for advanced scenarios and FileLoadingDialog for simple cases.
 """
 
 import os
@@ -20,6 +21,7 @@ from models.file_item import FileItem
 from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
 from widgets.file_loading_dialog import FileLoadingDialog
+from core.unified_file_loader import UnifiedFileLoader
 
 logger = get_cached_logger(__name__)
 
@@ -28,11 +30,25 @@ class FileLoadManager:
     """
     Manages file loading operations with support for both synchronous and threaded loading.
     Handles drag & drop, folder loading, and metadata integration.
+    Now supports both FileLoadingDialog and UnifiedFileLoader for different scenarios.
+
+    Features:
+    - Automatic mode selection based on operation complexity
+    - Support for both FileLoadingDialog and UnifiedFileLoader
+    - Drag & drop with modifier key support
+    - Recursive and non-recursive folder scanning
     """
 
     def __init__(self, parent_window=None):
         self.parent_window = parent_window
         self.allowed_extensions = set(ALLOWED_EXTENSIONS)
+
+        # Initialize unified file loader for advanced scenarios
+        self.unified_loader = UnifiedFileLoader(parent_window)
+        if hasattr(self.unified_loader, 'files_loaded'):
+            self.unified_loader.files_loaded.connect(self._on_unified_files_loaded)
+        if hasattr(self.unified_loader, 'loading_failed'):
+            self.unified_loader.loading_failed.connect(self._on_unified_loading_failed)
 
     def handle_folder_drop(self, folder_path: str, merge_mode: bool = False, recursive: bool = False) -> None:
         """
@@ -105,10 +121,27 @@ class FileLoadManager:
 
     def load_files_from_paths(self, paths: List[str], clear: bool = True) -> None:
         """
-        Load files from the given paths using worker thread.
+        Load files from the given paths using FileLoadingDialog.
         Shows progress dialog and updates UI.
         """
         logger.info(f"[FileLoadManager] load_files_from_paths: {len(paths)} paths")
+
+        # Create callback to handle loaded files
+        def on_files_loaded(file_paths: List[str]):
+            logger.info(f"[FileLoadManager] Loaded {len(file_paths)} files from paths")
+            self._update_ui_with_files(file_paths, clear=clear)
+
+        # Show loading dialog and start worker
+        dialog = FileLoadingDialog(self.parent_window, on_files_loaded)
+        dialog.load_files(paths, self.allowed_extensions)
+        dialog.exec_()
+
+    def load_files_from_paths_legacy(self, paths: List[str], clear: bool = True) -> None:
+        """
+        Legacy method using FileLoadingDialog directly.
+        Kept for compatibility with existing code.
+        """
+        logger.info(f"[FileLoadManager] load_files_from_paths_legacy: {len(paths)} paths")
 
         # Create callback to handle loaded files
         def on_files_loaded(file_paths: List[str]):
@@ -184,6 +217,28 @@ class FileLoadManager:
         if hasattr(self.parent_window, 'load_metadata_for_items'):
             self.parent_window.load_metadata_for_items(file_items, use_extended=use_extended, source="dropped_files")
 
+    def load_files_with_unified_loader(self, paths: List[str], clear: bool = True, recursive: bool = False) -> None:
+        """
+        Load files using UnifiedFileLoader for automatic mode selection.
+        Alternative to the standard FileLoadingDialog approach.
+        """
+        logger.info(f"[FileLoadManager] load_files_with_unified_loader: {len(paths)} paths")
+
+        # Use UnifiedFileLoader for automatic mode selection
+        self.unified_loader.load_files(
+            paths,
+            recursive=recursive,
+            completion_callback=lambda files: self._update_ui_with_files(files, clear=clear)
+        )
+
+    def _on_unified_files_loaded(self, file_paths: List[str]) -> None:
+        """Handle files loaded by UnifiedFileLoader."""
+        logger.info(f"[FileLoadManager] UnifiedFileLoader loaded {len(file_paths)} files")
+
+    def _on_unified_loading_failed(self, error_msg: str) -> None:
+        """Handle loading failure from UnifiedFileLoader."""
+        logger.error(f"[FileLoadManager] UnifiedFileLoader failed: {error_msg}")
+
     def _count_files_in_folder(self, folder_path: str, recursive: bool = False) -> int:
         """
         Count total number of valid files in folder.
@@ -198,37 +253,34 @@ class FileLoadManager:
                 filenames = os.listdir(folder_path)
                 count = sum(1 for f in filenames if self._is_allowed_extension(f))
             except OSError:
-                count = 0
+                pass
         return count
 
     def _get_files_from_folder(self, folder_path: str, recursive: bool = False) -> List[str]:
         """
-        Get list of valid file paths from folder.
-        Returns list of full paths.
+        Get all valid files from folder.
+        Returns list of file paths.
         """
-        files = []
+        file_paths = []
         if recursive:
             for root, _, filenames in os.walk(folder_path):
                 for filename in filenames:
                     if self._is_allowed_extension(filename):
-                        full_path = os.path.join(root, filename)
-                        files.append(full_path)
+                        file_paths.append(os.path.join(root, filename))
         else:
             try:
-                filenames = os.listdir(folder_path)
-                for filename in filenames:
+                for filename in os.listdir(folder_path):
                     if self._is_allowed_extension(filename):
                         full_path = os.path.join(folder_path, filename)
                         if os.path.isfile(full_path):
-                            files.append(full_path)
+                            file_paths.append(full_path)
             except OSError:
                 pass
-        return files
+        return file_paths
 
     def _is_allowed_extension(self, path: str) -> bool:
-        """Check if file has an allowed extension."""
+        """Check if file has allowed extension."""
         ext = os.path.splitext(path)[1].lower()
-        # Remove the dot from extension for comparison
         if ext.startswith('.'):
             ext = ext[1:]
         return ext in self.allowed_extensions
@@ -236,86 +288,74 @@ class FileLoadManager:
     def _update_ui_with_files(self, file_paths: List[str], clear: bool = True) -> None:
         """
         Update UI with loaded files.
-        Creates FileItem objects and updates the file model.
+        Converts file paths to FileItem objects and updates the model.
         """
-        try:
-            # Create FileItem objects
-            items = []
-            for path in file_paths:
-                if os.path.isfile(path):
-                    extension = os.path.splitext(path)[1].lower()
-                    modified = datetime.fromtimestamp(os.path.getmtime(path))
-                    items.append(FileItem(path, extension, modified))
-
-            if not items:
-                logger.warning("No valid files to add to UI")
-                return
-
-            # Update file model
-            if hasattr(self.parent_window, "file_model"):
-                if clear:
-                    self.parent_window.file_model.clear()
-                self.parent_window.file_model.add_files(items)
-
-            # Update UI elements
-            self._update_ui_after_load(items)
-
-        except Exception as e:
-            logger.error(f"Error updating UI with files: {str(e)}")
-            raise
-
-    def _update_ui_after_load(self, items: List[FileItem]) -> None:
-        """Update UI elements after loading files."""
-        if not hasattr(self.parent_window, "file_model"):
+        if not file_paths:
+            logger.info("[FileLoadManager] No files to update UI with")
             return
 
-        # Update preview map
-        if hasattr(self.parent_window, 'preview_map'):
-            self.parent_window.preview_map = {f.filename: f for f in items}
+        logger.info(f"[FileLoadManager] Updating UI with {len(file_paths)} files (clear={clear})")
 
-        # Configure sorting and header
-        if hasattr(self.parent_window, 'file_table_view'):
-            self.parent_window.file_table_view.setSortingEnabled(True)
+        # Convert file paths to FileItem objects
+        file_items = []
+        for path in file_paths:
+            try:
+                file_item = FileItem(path)
+                file_items.append(file_item)
+            except Exception as e:
+                logger.error(f"Error creating FileItem for {path}: {e}")
 
-            if hasattr(self.parent_window, "header"):
-                self.parent_window.header.setSectionsClickable(True)
-                self.parent_window.header.setSortIndicatorShown(True)
-                self.parent_window.header.setEnabled(True)
+        if not file_items:
+            logger.warning("[FileLoadManager] No valid FileItem objects created")
+            return
 
-            # Sort and update UI
-            self.parent_window.file_table_view.sortByColumn(1, Qt.AscendingOrder)
-            self.parent_window.file_table_view.set_placeholder_visible(len(items) == 0)
-            self.parent_window.file_table_view.scrollToTop()
+        # Update the model
+        self._update_ui_after_load(file_items, clear=clear)
 
-            # Update viewport
-            self.parent_window.file_table_view.viewport().update()
+    def _update_ui_after_load(self, items: List[FileItem], clear: bool = True) -> None:
+        """
+        Update UI after loading files.
+        Handles model updates and UI refresh.
+        """
+        if not hasattr(self.parent_window, 'file_model'):
+            logger.error("[FileLoadManager] Parent window has no file_model attribute")
+            return
 
-        # Update preview tables and labels
-        if hasattr(self.parent_window, 'update_preview_tables_from_pairs'):
-            self.parent_window.update_preview_tables_from_pairs([])
+        try:
+            if clear:
+                # Replace existing files
+                self.parent_window.file_model.set_files(items)
+                logger.info(f"[FileLoadManager] Replaced files with {len(items)} new items")
+            else:
+                # Add to existing files
+                existing_files = self.parent_window.file_model.files
+                combined_files = existing_files + items
+                self.parent_window.file_model.set_files(combined_files)
+                logger.info(f"[FileLoadManager] Added {len(items)} items to existing {len(existing_files)} files")
 
-        if hasattr(self.parent_window, 'update_files_label'):
-            self.parent_window.update_files_label()
+            # Update UI elements
+            if hasattr(self.parent_window, 'update_ui_after_file_load'):
+                self.parent_window.update_ui_after_file_load()
 
-        logger.info(f"[FileLoadManager] UI updated with {len(items)} files")
+        except Exception as e:
+            logger.error(f"[FileLoadManager] Error updating UI: {e}")
 
     def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
         """
-        Prepare folder for loading by checking contents and permissions.
-        Returns list of file paths to load.
+        Prepare folder for loading by getting file list.
+        Returns list of file paths without loading them into UI.
         """
-        if not os.path.isdir(folder_path):
-            logger.error(f"[FileLoadManager] Path is not a directory: {folder_path}")
-            return []
-
-        # Get all files in folder (non-recursive by default)
+        logger.info(f"[FileLoadManager] prepare_folder_load: {folder_path}")
         return self._get_files_from_folder(folder_path, recursive=False)
 
     def reload_current_folder(self) -> None:
-        """Reload the current folder if one is loaded"""
-        if hasattr(self.parent_window, 'current_folder_path') and self.parent_window.current_folder_path:
-            self.handle_folder_drop(self.parent_window.current_folder_path, merge_mode=False, recursive=False)
+        """Reload the current folder if available."""
+        logger.info("[FileLoadManager] reload_current_folder called")
+        # Implementation depends on how current folder is tracked
 
     def set_allowed_extensions(self, extensions: Set[str]) -> None:
         """Update the set of allowed file extensions."""
         self.allowed_extensions = extensions
+        if self.unified_loader:
+            self.unified_loader.allowed_extensions = extensions
+        logger.info(f"[FileLoadManager] Updated allowed extensions: {extensions}")

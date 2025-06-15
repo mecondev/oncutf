@@ -4,9 +4,29 @@ unified_file_worker.py
 Author: Michael Economou
 Date: 2025-01-20
 
-Unified QThread worker for background file scanning operations.
-Combines the best features of both core/file_load_worker.py and widgets/file_loading_worker.py.
+🎯 UNIFIED QThread worker for background file scanning operations.
+
+This module replaces and consolidates the functionality of:
+- core/file_load_worker.py (DEPRECATED - removed)
+- widgets/file_loading_worker.py (DEPRECATED - removed)
+
 Provides thread-safe, cancellable file discovery with detailed progress updates.
+Used by all file loading components across the application for consistent behavior.
+
+Key Features:
+- Thread-safe with QMutex protection
+- Support for multiple paths or single folder scanning
+- Configurable allowed extensions per operation
+- Comprehensive progress and status updates
+- Graceful cancellation support
+- Both recursive and non-recursive scanning modes
+- Optimized for both small and large file operations
+
+Usage:
+    worker = UnifiedFileWorker()
+    worker.setup_scan(paths, allowed_extensions, recursive=True)
+    worker.files_found.connect(handle_files)
+    worker.start()
 """
 
 import os

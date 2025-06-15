@@ -4,13 +4,30 @@ unified_file_loader.py
 Author: Michael Economou
 Date: 2025-01-20
 
-Unified file loading system that combines the functionality of:
-- core/file_loader.py
-- widgets/file_loading_dialog.py
-- core/file_load_manager.py
+🎯 UNIFIED file loading system - High-level interface for all file loading operations.
 
-Provides a single, comprehensive interface for all file loading operations
-with support for both dialog-based and direct loading modes.
+This module provides a comprehensive, intelligent file loading system that:
+- Automatically selects the best loading mode (dialog vs cursor vs widget)
+- Handles single files, multiple files, and directories
+- Provides consistent UI experience across all loading scenarios
+- Supports progress feedback and cancellation
+- Uses UnifiedFileWorker for all background operations
+
+Architecture:
+- UnifiedFileLoader (this module) - High-level interface
+- UnifiedFileWorker - Low-level background processing
+- FileLoadingDialog - UI component for dialog-based loading
+- CompactWaitingWidget - UI component for standalone progress
+
+Loading Modes:
+1. Cursor Mode: For small operations (<1000 files estimated)
+2. Widget Mode: For medium operations (standalone progress widget)
+3. Dialog Mode: For large operations (full dialog with cancellation)
+
+Usage:
+    loader = UnifiedFileLoader(parent_window)
+    loader.files_loaded.connect(handle_files)
+    loader.load_files(paths, recursive=True)
 """
 
 import os
@@ -200,19 +217,37 @@ class UnifiedFileLoader(QObject):
         """Load files using cursor-based feedback for small operations."""
         logger.debug("[UnifiedFileLoader] Using cursor mode for file loading")
 
-        with wait_cursor():
-            # Create worker for background processing
-            self.worker = UnifiedFileWorker()
-            self.worker.setup_scan(paths, extensions, recursive)
+        # Try to use wait cursor if QApplication is available
+        try:
+            from PyQt5.QtWidgets import QApplication
+            if QApplication.instance() is not None:
+                with wait_cursor():
+                    self._execute_cursor_loading(paths, recursive, extensions, completion_callback)
+            else:
+                # No QApplication, just run without cursor
+                self._execute_cursor_loading(paths, recursive, extensions, completion_callback)
+        except Exception as e:
+            logger.warning(f"[UnifiedFileLoader] Could not use wait cursor: {e}")
+            self._execute_cursor_loading(paths, recursive, extensions, completion_callback)
 
-            # Connect signals
-            self.worker.files_found.connect(lambda files: self._on_files_loaded(files, completion_callback))
-            self.worker.error_occurred.connect(self._on_error)
-            self.worker.finished_scanning.connect(self._on_finished)
+    def _execute_cursor_loading(self,
+                               paths: List[str],
+                               recursive: bool,
+                               extensions: Set[str],
+                               completion_callback: Optional[Callable[[List[str]], None]]) -> None:
+        """Execute the actual cursor-based loading without cursor management."""
+        # Create worker for background processing
+        self.worker = UnifiedFileWorker()
+        self.worker.setup_scan(paths, extensions, recursive)
 
-            # Start worker and wait for completion
-            self.worker.start()
-            self.worker.wait()  # Synchronous wait for small operations
+        # Connect signals
+        self.worker.files_found.connect(lambda files: self._on_files_loaded(files, completion_callback))
+        self.worker.error_occurred.connect(self._on_error)
+        self.worker.finished_scanning.connect(self._on_finished)
+
+        # Start worker and wait for completion
+        self.worker.start()
+        self.worker.wait()  # Synchronous wait for small operations
 
     def _load_with_widget(self,
                          paths: List[str],
