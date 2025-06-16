@@ -226,6 +226,12 @@ class FileTableModel(QAbstractTableModel):
         self.layoutChanged.emit()
         self.sort_changed.emit()
 
+        # Store current sort state in parent window for post-rename consistency
+        if self.parent_window:
+            self.parent_window.current_sort_column = column
+            self.parent_window.current_sort_order = order
+            logger.debug(f"[Model] Stored sort state: column={column}, order={order}")
+
         selection_model.clearSelection()
         selection = QItemSelection()
 

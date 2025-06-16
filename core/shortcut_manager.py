@@ -11,6 +11,7 @@ This manager centralizes keyboard shortcut handling including:
 
 from typing import TYPE_CHECKING
 
+from PyQt5.QtCore import Qt
 from utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
@@ -52,6 +53,9 @@ class ShortcutManager:
         # Clear the file table
         self.main_window.clear_file_table("Press Escape to clear, or drag folders here")
         self.main_window.current_folder_path = None  # Reset current folder
+        self.main_window.current_folder_is_recursive = False  # Reset recursive state
+        self.main_window.current_sort_column = 1  # Reset to filename column
+        self.main_window.current_sort_order = Qt.AscendingOrder  # Reset to ascending
         self.main_window.set_status("File table cleared", color="blue", auto_reset=True, reset_delay=1000)
         logger.info("[MainWindow] CLEAR TABLE: File table cleared successfully")
 

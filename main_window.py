@@ -127,6 +127,8 @@ class MainWindow(QMainWindow):
         self.last_action = None  # Could be: 'folder_import', 'browse', 'rename', etc.
         self.current_folder_path = None
         self.current_folder_is_recursive = False  # Track if current folder was loaded recursively
+        self.current_sort_column = 1  # Track current sort column (default: filename)
+        self.current_sort_order = Qt.AscendingOrder  # Track current sort order
         self.files = []
         self.preview_map = {}  # preview_filename -> FileItem
         self._selection_sync_mode = "normal"  # values: "normal", "toggle"
@@ -232,6 +234,7 @@ class MainWindow(QMainWindow):
         """Delegates to FileLoadManager for folder loading."""
         # Use the remembered recursive state for consistent behavior
         recursive = getattr(self, 'current_folder_is_recursive', False)
+        logger.info(f"[MainWindow] load_files_from_folder: {folder_path} (recursive={recursive}, remembered from previous load)")
         self.file_load_manager.load_folder(folder_path, merge_mode=False, recursive=recursive)
 
     def start_metadata_scan(self, file_paths: list[str]) -> None:

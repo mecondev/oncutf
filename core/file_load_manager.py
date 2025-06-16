@@ -52,6 +52,11 @@ class FileLoadManager:
             logger.error(f"Path is not a directory: {folder_path}")
             return
 
+        # Store the recursive state for future reloads (if not merging)
+        if not merge_mode and hasattr(self.parent_window, 'current_folder_is_recursive'):
+            self.parent_window.current_folder_is_recursive = recursive
+            logger.info(f"[FileLoadManager] Stored recursive state: {recursive}")
+
         # CRITICAL: Force cleanup any active drag state immediately
         # This ensures ESC key works properly in FileLoadingDialog
         if is_dragging():
@@ -360,6 +365,18 @@ class FileLoadManager:
 
             # Ensure file table selection works properly
             if hasattr(self.parent_window, 'file_table_view'):
+                # Restore previous sorting state for consistency
+                if (hasattr(self.parent_window, 'current_sort_column') and
+                    hasattr(self.parent_window, 'current_sort_order')):
+                    sort_column = self.parent_window.current_sort_column
+                    sort_order = self.parent_window.current_sort_order
+                    logger.debug(f"[FileLoadManager] Restoring sort state: column={sort_column}, order={sort_order}")
+
+                    # Apply sorting through the model and header
+                    self.parent_window.file_model.sort(sort_column, sort_order)
+                    header = self.parent_window.file_table_view.horizontalHeader()
+                    header.setSortIndicator(sort_column, sort_order)
+
                 # Force refresh of the table view
                 self.parent_window.file_table_view.viewport().update()
 

@@ -124,10 +124,11 @@ class TableManager:
 
     def get_selected_files(self) -> List[FileItem]:
         """
-        Returns a list of currently selected files (blue highlighted).
+        Returns a list of currently selected files (blue highlighted) in table display order.
 
         Returns:
-            List of FileItem objects that are currently selected in the table view
+            List of FileItem objects that are currently selected in the table view,
+            sorted by their row position to maintain consistent rename order
         """
         if not self.parent_window.file_model or not self.parent_window.file_model.files:
             return []
@@ -141,9 +142,11 @@ class TableManager:
             return []
 
         selected_indexes = selection_model.selectedRows()
+        # Sort by row number to maintain table display order (critical for consistent rename sequence)
+        sorted_indexes = sorted(selected_indexes, key=lambda idx: idx.row())
         selected_files = []
 
-        for index in selected_indexes:
+        for index in sorted_indexes:
             row = index.row()
             if 0 <= row < len(self.parent_window.file_model.files):
                 selected_files.append(self.parent_window.file_model.files[row])
