@@ -126,14 +126,20 @@ class MetadataManager:
         # Start thread execution
         self.metadata_thread.start()
 
-    def start_metadata_scan_for_items(self, items: List[FileItem]) -> None:
+    def start_metadata_scan_for_items(self, items: List[FileItem], use_extended: bool = False) -> None:
         """
         Initiates the metadata scan process for the given FileItem objects.
 
         Args:
             items: List of FileItem objects to scan
+            use_extended: Whether to load extended metadata (default: False)
         """
         logger.info(f"[MetadataManager] Starting metadata scan for {len(items)} items")
+
+        # Set the extended metadata flag before starting scan
+        self.force_extended_metadata = use_extended
+        if self.parent_window:
+            self.parent_window.force_extended_metadata = use_extended
 
         file_paths = [item.full_path for item in items]
 
@@ -378,7 +384,7 @@ class MetadataManager:
             if len(needs_loading) > 1:
                 # Load with dialog (CompactWaitingWidget) for multiple files
                 logger.info(f"[{source}] Loading metadata for {len(needs_loading)} files with dialog (extended={use_extended})")
-                self.start_metadata_scan_for_items(needs_loading)
+                self.start_metadata_scan_for_items(needs_loading, use_extended)
             else:
                 # Simple loading with wait_cursor for a single file
                 logger.info(f"[{source}] Loading metadata for single file with wait_cursor (extended={use_extended})")
@@ -498,7 +504,8 @@ class MetadataManager:
                 return
 
             logger.info(f"[Shortcut] Loading basic metadata for {len(selected)} files")
-            self.load_metadata_for_items(selected, use_extended=False, source="shortcut")
+            # Use unified dialog-based loading for consistency
+            self.start_metadata_scan_for_items(selected, use_extended=False)
 
     def shortcut_load_extended_metadata(self) -> None:
         """
@@ -524,4 +531,5 @@ class MetadataManager:
                 return
 
             logger.info(f"[Shortcut] Loading extended metadata for {len(selected)} files")
-            self.load_metadata_for_items(selected, use_extended=True, source="shortcut_extended")
+            # Use unified dialog-based loading for consistency
+            self.start_metadata_scan_for_items(selected, use_extended=True)

@@ -164,18 +164,37 @@ class FileLoadManager:
     def load_metadata_from_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
         Handle files dropped onto metadata tree.
-        Maps filenames to FileItem objects and triggers metadata loading.
-        """
-        file_items = []
-        for path in paths:
-            filename = os.path.basename(path)
-            file = next((f for f in self.parent_window.file_model.files if f.filename == filename), None)
-            if file:
-                file_items.append(file)
 
-        if not file_items:
-            logger.info("[Drop] No matching files found in table.")
+        IMPORTANT: This now loads metadata for ALL CURRENTLY SELECTED FILES,
+        not just the dropped file(s). This ensures consistent behavior with
+        context menu and shortcuts, maintaining selection and using dialog.
+        """
+        # Get currently selected files (the real selection we want to process)
+        if not hasattr(self.parent_window, 'file_table_view'):
+            logger.warning("[Drop] No file_table_view available for selection")
             return
+
+        current_selection = self.parent_window.file_table_view._get_current_selection()
+        if not current_selection:
+            logger.info("[Drop] No files selected for metadata loading.")
+            return
+
+        # Convert selection to FileItem objects
+        selected_files = [self.parent_window.file_model.files[r]
+                         for r in current_selection
+                         if 0 <= r < len(self.parent_window.file_model.files)]
+
+        if not selected_files:
+            logger.warning("[Drop] No valid selected files found for metadata loading")
+            return
+
+        # Debug logging: Compare dropped vs selected
+        dropped_filenames = [os.path.basename(path) for path in paths]
+        selected_filenames = [f.filename for f in selected_files]
+
+        logger.debug(f"[Drop] Current selection: {selected_filenames}", extra={"dev_only": True})
+        logger.debug(f"[Drop] Dropped files: {dropped_filenames}", extra={"dev_only": True})
+        logger.debug(f"[Drop] Processing {len(selected_files)} selected files (ignoring specific dropped files)", extra={"dev_only": True})
 
         # Parse modifiers for metadata loading
         shift = bool(modifiers & Qt.ShiftModifier)
@@ -183,9 +202,18 @@ class FileLoadManager:
 
         logger.debug(f"[Modifiers] File drop on metadata tree: shift={shift} → extended={use_extended}")
 
-        # Load metadata for matched files
-        if hasattr(self.parent_window, 'load_metadata_for_items'):
-            self.parent_window.load_metadata_for_items(file_items, use_extended=use_extended, source="dropped_files")
+        # CRITICAL: Always use dialog-based loading (like context menu) for consistency
+        # This ensures no flickering and proper selection preservation
+        logger.info(f"[Drop] Loading metadata for {len(selected_files)} files with dialog (extended={use_extended})")
+
+        # Force dialog-based loading by using start_metadata_scan_for_items directly
+        if hasattr(self.parent_window, 'metadata_manager'):
+            # Use the metadata manager's scan method which always uses dialog for multiple files
+            # Even for single files, we want dialog for consistency and pass the extended flag
+            self.parent_window.metadata_manager.start_metadata_scan_for_items(selected_files, use_extended)
+        else:
+            logger.error("[Drop] No metadata_manager available")
+            return
 
     def _load_folder_with_progress(self, folder_path: str, merge_mode: bool) -> None:
         """Load folder with progress dialog (for recursive operations)."""

@@ -1043,9 +1043,12 @@ class FileTableView(QTableView):
             QApplication.postEvent(self, fake_move_event)
 
     def _handle_drop_on_metadata_tree(self):
-        """Handle drop on metadata tree with simple, reliable selection preservation"""
+        """Handle drop on metadata tree - simplified version using dialog-based loading"""
         if not self._drag_data:
-            return
+            logger.debug("[FileTableView] No drag data available for metadata tree drop", extra={"dev_only": True})
+            return False
+
+        logger.debug(f"[FileTableView] Handling drop on metadata tree with {len(self._drag_data)} files", extra={"dev_only": True})
 
         # Force cursor cleanup before handling drop
         self._force_cursor_cleanup()
@@ -1053,68 +1056,25 @@ class FileTableView(QTableView):
         # Use real-time modifiers at drop time
         modifiers = QApplication.keyboardModifiers()
 
-        # ALWAYS get and restore selection - simplified logic
-        from widgets.file_tree_view import _drag_cancel_filter
-        preserved_selection = self._get_current_selection()  # Get current selection directly
-
-        # If drag cancel filter was active, use its preserved selection instead
-        if _drag_cancel_filter.is_active():
-            filter_selection = _drag_cancel_filter.get_preserved_selection()
-            if filter_selection:
-                preserved_selection = filter_selection
-
         # Find metadata tree view to emit signal directly
         parent_window = self._get_parent_with_metadata_tree()
         if parent_window and hasattr(parent_window, 'metadata_tree_view'):
             metadata_tree = parent_window.metadata_tree_view
 
-            # Emit the signal for metadata loading
+            logger.debug(f"[FileTableView] Emitting files_dropped signal with {len(self._drag_data)} files", extra={"dev_only": True})
+            # Emit the signal for metadata loading - this now uses dialog-based loading
+            # which preserves selection naturally, so no complex restoration needed
             metadata_tree.files_dropped.emit(self._drag_data, modifiers)
 
-            # ALWAYS restore selection immediately after signal emission
-            if preserved_selection:
-                logger.debug(f"[FileTableView] Restoring selection for {len(preserved_selection)} files after drop", extra={"dev_only": True})
+            # Force additional cursor cleanup after signal emission
+            QApplication.processEvents()  # Allow signal to be processed
+            self._force_cursor_cleanup()  # Clean up any remaining cursor issues
 
-                # Restore selection immediately
-                self._restore_preserved_selection(preserved_selection)
-
-                # Also schedule a delayed restore as backup
-                schedule_selection_update(
-                    lambda: self._restore_preserved_selection(preserved_selection),
-                    delay=100,  # Short delay to ensure metadata loading doesn't interfere
-                    timer_id="backup_restore_selection"
-                )
-
-        # Force additional cursor cleanup after signal emission
-        QApplication.processEvents()  # Allow signal to be processed
-        self._force_cursor_cleanup()  # Clean up any remaining cursor issues
-
-    def _restore_preserved_selection(self, preserved_selection: set):
-        """Restore preserved selection after metadata loading"""
-        if not preserved_selection:
-            return
-
-        logger.debug(f"[FileTableView] Restoring selection for {len(preserved_selection)} files", extra={"dev_only": True})
-
-        # Update selection store first
-        self._update_selection_store(preserved_selection, emit_signal=False)
-
-        # Update Qt selection model
-        selection_model = self.selectionModel()
-        if selection_model:
-            selection_model.clearSelection()
-            for row in preserved_selection:
-                if 0 <= row < self.model().rowCount():
-                    index = self.model().index(row, 0)
-                    selection_model.select(index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
-
-        # Emit signal after all selection is restored
-        self._update_selection_store(preserved_selection, emit_signal=True)
-
-        # Force viewport update
-        self.viewport().update()
-
-        logger.debug(f"[FileTableView] Selection restored for {len(preserved_selection)} files", extra={"dev_only": True})
+            logger.debug("[FileTableView] Metadata tree drop completed successfully", extra={"dev_only": True})
+            return True
+        else:
+            logger.warning("[FileTableView] Could not find metadata tree view for drop", extra={"dev_only": True})
+            return False
 
     def _get_parent_with_metadata_tree(self):
         """Find parent window that has metadata_tree_view attribute"""

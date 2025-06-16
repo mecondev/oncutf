@@ -54,6 +54,7 @@ from config import METADATA_TREE_COLUMN_WIDTHS
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust
 from widgets.metadata_edit_dialog import MetadataEditDialog
+from widgets.file_tree_view import _drag_cancel_filter
 
 # ApplicationContext integration
 try:
@@ -171,9 +172,11 @@ class MetadataTreeView(QTreeView):
 
     def dropEvent(self, event: QDropEvent) -> None:
         """
-        Process the drop, but only if it comes from our file table.
-        Emit signal with the list of file paths.
+        Process drops from the file table to load metadata.
+        Only accepts drops with our custom MIME type.
         """
+        logger.debug("[MetadataTreeView] Drop event received", extra={"dev_only": True})
+
         # Get the global drag cancel filter
         from widgets.file_tree_view import _drag_cancel_filter
 
@@ -182,15 +185,19 @@ class MetadataTreeView(QTreeView):
             urls = event.mimeData().urls()
             files = [url.toLocalFile() for url in urls if url.isLocalFile()]
             if files:
+                logger.debug(f"[MetadataTreeView] Processing drop of {len(files)} files", extra={"dev_only": True})
                 # Accept the event BEFORE emitting the signal
                 event.acceptProposedAction()
                 self._perform_drag_cleanup(_drag_cancel_filter)
                 # Then emit signal for processing
+                logger.debug(f"[MetadataTreeView] Emitting files_dropped signal", extra={"dev_only": True})
                 self.files_dropped.emit(files, event.keyboardModifiers())
             else:
+                logger.debug("[MetadataTreeView] No valid files in drop", extra={"dev_only": True})
                 event.ignore()
                 self._perform_drag_cleanup(_drag_cancel_filter)
         else:
+            logger.debug("[MetadataTreeView] Drop ignored - wrong MIME type", extra={"dev_only": True})
             event.ignore()
             self._perform_drag_cleanup(_drag_cancel_filter)
 

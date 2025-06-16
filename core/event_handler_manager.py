@@ -101,7 +101,7 @@ class EventHandlerManager:
         Supports:
         - Metadata load (normal / extended) for selected or all files
         - Invert selection, select all, reload folder
-        - Uses custom selection state from file_table_view.selected_rows
+        - Uses unified selection system (_get_current_selection)
         """
         if not self.parent_window.file_model.files:
             return
@@ -111,9 +111,11 @@ class EventHandlerManager:
         self.parent_window.file_table_view.indexAt(position)
         total_files = len(self.parent_window.file_model.files)
 
-        # Get selected rows from custom selection model
-        selected_rows = self.parent_window.file_table_view.selected_rows
+        # Use the unified selection system (same as shortcuts and drag-drop)
+        selected_rows = self.parent_window.file_table_view._get_current_selection()
         selected_files = [self.parent_window.file_model.files[r] for r in selected_rows if 0 <= r < total_files]
+
+        logger.debug(f"[ContextMenu] Found {len(selected_files)} selected files", extra={"dev_only": True})
 
         menu = QMenu(self.parent_window)
 
@@ -167,16 +169,32 @@ class EventHandlerManager:
 
         # === Handlers ===
         if action == action_load_sel:
-            self.parent_window.load_metadata_for_items(selected_files, use_extended=False, source="context_menu")
+            # Use unified dialog-based loading for consistency
+            if hasattr(self.parent_window, 'metadata_manager'):
+                self.parent_window.metadata_manager.start_metadata_scan_for_items(selected_files, use_extended=False)
+            else:
+                self.parent_window.load_metadata_for_items(selected_files, use_extended=False, source="context_menu")
 
         elif action == action_load_ext_sel:
-            self.parent_window.load_metadata_for_items(selected_files, use_extended=True, source="context_menu")
+            # Use unified dialog-based loading for consistency
+            if hasattr(self.parent_window, 'metadata_manager'):
+                self.parent_window.metadata_manager.start_metadata_scan_for_items(selected_files, use_extended=True)
+            else:
+                self.parent_window.load_metadata_for_items(selected_files, use_extended=True, source="context_menu")
 
         elif action == action_load_all:
-            self.parent_window.load_metadata_for_items(self.parent_window.file_model.files, use_extended=False, source="context_menu_all")
+            # Use unified dialog-based loading for consistency
+            if hasattr(self.parent_window, 'metadata_manager'):
+                self.parent_window.metadata_manager.start_metadata_scan_for_items(self.parent_window.file_model.files, use_extended=False)
+            else:
+                self.parent_window.load_metadata_for_items(self.parent_window.file_model.files, use_extended=False, source="context_menu_all")
 
         elif action == action_load_ext_all:
-            self.parent_window.load_metadata_for_items(self.parent_window.file_model.files, use_extended=True, source="context_menu_all")
+            # Use unified dialog-based loading for consistency
+            if hasattr(self.parent_window, 'metadata_manager'):
+                self.parent_window.metadata_manager.start_metadata_scan_for_items(self.parent_window.file_model.files, use_extended=True)
+            else:
+                self.parent_window.load_metadata_for_items(self.parent_window.file_model.files, use_extended=True, source="context_menu_all")
 
         elif action == action_invert:
             self.parent_window.invert_selection()
