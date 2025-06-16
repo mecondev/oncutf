@@ -124,19 +124,35 @@ class TableManager:
 
     def get_selected_files(self) -> List[FileItem]:
         """
-        Returns a list of currently checked/selected files.
+        Returns a list of currently selected files (blue highlighted).
 
         Returns:
-            List of FileItem objects that are currently checked
+            List of FileItem objects that are currently selected in the table view
         """
         if not self.parent_window.file_model or not self.parent_window.file_model.files:
             return []
 
-        return [f for f in self.parent_window.file_model.files if f.checked]
+        # Get currently selected rows from the file table view
+        if not hasattr(self.parent_window, 'file_table_view'):
+            return []
+
+        selection_model = self.parent_window.file_table_view.selectionModel()
+        if not selection_model:
+            return []
+
+        selected_indexes = selection_model.selectedRows()
+        selected_files = []
+
+        for index in selected_indexes:
+            row = index.row()
+            if 0 <= row < len(self.parent_window.file_model.files):
+                selected_files.append(self.parent_window.file_model.files[row])
+
+        return selected_files
 
     def after_check_change(self) -> None:
         """
-        Called after the checked state of any file is modified.
+        Called after the selection state of any file is modified.
 
         Triggers UI refresh for the file table, updates the header state and label,
         and regenerates the filename preview.
@@ -147,7 +163,7 @@ class TableManager:
 
     def get_common_metadata_fields(self) -> List[str]:
         """
-        Returns the intersection of metadata keys from all checked files.
+        Returns the intersection of metadata keys from all selected files.
         """
         selected_files = self.get_selected_files()
         if not selected_files:

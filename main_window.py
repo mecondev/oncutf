@@ -126,6 +126,7 @@ class MainWindow(QMainWindow):
         # Filename validation utilities available as functions in utils.filename_validator
         self.last_action = None  # Could be: 'folder_import', 'browse', 'rename', etc.
         self.current_folder_path = None
+        self.current_folder_is_recursive = False  # Track if current folder was loaded recursively
         self.files = []
         self.preview_map = {}  # preview_filename -> FileItem
         self._selection_sync_mode = "normal"  # values: "normal", "toggle"
@@ -229,7 +230,9 @@ class MainWindow(QMainWindow):
 
     def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False, force: bool = False):
         """Delegates to FileLoadManager for folder loading."""
-        self.file_load_manager.load_files_from_folder(folder_path, skip_metadata, force)
+        # Use the remembered recursive state for consistent behavior
+        recursive = getattr(self, 'current_folder_is_recursive', False)
+        self.file_load_manager.load_folder(folder_path, merge_mode=False, recursive=recursive)
 
     def start_metadata_scan(self, file_paths: list[str]) -> None:
         """Delegates to MetadataManager for metadata scan initiation."""

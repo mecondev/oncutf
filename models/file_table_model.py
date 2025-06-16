@@ -6,7 +6,7 @@ Date: 2025-05-01
 
 This module defines the FileTableModel class, which is a PyQt5 QAbstractTableModel
 for managing and displaying a list of FileItem objects in a QTableView. The model
-supports functionalities such as checkboxes for selection, sorting by different
+supports functionalities such as row selection (blue highlighting), sorting by different
 columns, and updating previews based on user interactions. It emits signals to
 notify changes in sorting and interacts with a parent window for UI updates.
 
@@ -41,7 +41,7 @@ logger = get_cached_logger(__name__)
 class FileTableModel(QAbstractTableModel):
     """
     Table model for displaying and managing a list of FileItem objects
-    in a QTableView. Supports checkboxes, sorting, and preview updates.
+    in a QTableView. Supports row selection (blue highlighting), sorting, and preview updates.
     """
     sort_changed = pyqtSignal()  # Emitted when sort() is called
 

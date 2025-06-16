@@ -286,6 +286,21 @@ class FileLoadManager:
             return
 
         try:
+            # Set current folder path from first file's directory
+            if items and clear:
+                first_file_path = items[0].full_path
+                if first_file_path:
+                    folder_path = os.path.dirname(first_file_path)
+                    self.parent_window.current_folder_path = folder_path
+                    logger.info(f"[FileLoadManager] Set current_folder_path to: {folder_path}")
+
+                    # Check if this was a recursive load by looking for files in subdirectories
+                    has_subdirectory_files = any(
+                        os.path.dirname(item.full_path) != folder_path for item in items
+                    )
+                    self.parent_window.current_folder_is_recursive = has_subdirectory_files
+                    logger.info(f"[FileLoadManager] Set recursive mode to: {has_subdirectory_files}")
+
             if clear:
                 # Replace existing files
                 self.parent_window.file_model.set_files(items)

@@ -52,13 +52,17 @@ class FileOperationsManager:
 
         logger.info(f"[Rename] Starting rename process for {len(selected_files)} files...")
 
+        # Import validator here to avoid circular imports
+        from utils.filename_validator import validate_filename_part
+
         renamer = Renamer(
             files=selected_files,
             modules_data=modules_data,
             metadata_cache=metadata_cache,
             post_transform=post_transform,
             parent=self.parent_window,
-            conflict_callback=CustomMessageDialog.rename_conflict_dialog
+            conflict_callback=lambda parent, filename: CustomMessageDialog.rename_conflict_dialog(parent, filename),
+            validator=validate_filename_part
         )
 
         results = renamer.rename()

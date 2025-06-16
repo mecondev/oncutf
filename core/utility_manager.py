@@ -152,7 +152,7 @@ class UtilityManager:
         out of the total number loaded.
         """
         total = len(self.main_window.file_model.files)
-        selected = sum(1 for f in self.main_window.file_model.files if f.checked) if total else 0
+        selected = len(self.main_window.get_selected_files()) if total else 0
 
         self.main_window.status_manager.update_files_label(self.main_window.files_label, total, selected)
 

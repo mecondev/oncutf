@@ -115,9 +115,10 @@ class Renamer:
             new_filename = os.path.basename(dst)
 
             # Validation
-            if not is_valid_filename_text(new_filename):
-                logger.warning(f"Invalid filename: {new_filename}")
-                results.append(RenameResult(src, dst, success=False, error="Invalid filename"))
+            is_valid, error_msg = self.validator(new_filename)
+            if not is_valid:
+                logger.warning(f"Invalid filename: {new_filename} - {error_msg}")
+                results.append(RenameResult(src, dst, success=False, error=error_msg))
                 continue
 
             # Conflict resolution
