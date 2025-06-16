@@ -9,7 +9,7 @@ Handles metadata loading, progress tracking, thread management, and UI coordinat
 """
 
 import os
-from typing import List, Optional
+from typing import List, Optional, Any
 
 from core.config_imports import LARGE_FOLDER_WARNING_THRESHOLD
 from core.qt_imports import QApplication, QThread, QTimer
@@ -331,6 +331,10 @@ class MetadataManager:
             logger.error("[MetadataManager] Missing metadata_cache or metadata_loader from parent window")
             return
 
+        # Store the current selection before loading metadata
+        current_selection = self._get_current_selection_for_display()
+        target_file_for_display = self._determine_target_file_for_display(items, current_selection)
+
         # Check if metadata is already loaded and of the right type
         needs_loading = []
         for item in items:
@@ -349,18 +353,17 @@ class MetadataManager:
             else:
                 logger.debug(f"[{source}] {item.filename} already has {'extended' if entry.is_extended else 'basic'} metadata")
 
-        # If all files already have appropriate metadata, just show it
+        # If all files already have appropriate metadata, just show it for the target file
         if not needs_loading:
-            if len(items) == 1:
-                # Display the existing metadata for single file selection
-                file_item = items[0]
-                metadata = file_item.metadata or metadata_cache.get(file_item.full_path)
+            if target_file_for_display:
+                # Display the existing metadata for target file
+                metadata = target_file_for_display.metadata or metadata_cache.get(target_file_for_display.full_path)
                 if (self.parent_window and
                     hasattr(self.parent_window, 'metadata_tree_view') and
                     hasattr(self.parent_window.metadata_tree_view, 'handle_metadata_load_completion')):
                     self.parent_window.metadata_tree_view.handle_metadata_load_completion(metadata, f"existing_{source}")
                 if self.parent_window and hasattr(self.parent_window, 'set_status'):
-                    self.parent_window.set_status(f"Metadata already loaded for {file_item.filename}.", color="green", auto_reset=True)
+                    self.parent_window.set_status(f"Metadata already loaded for {target_file_for_display.filename}.", color="green", auto_reset=True)
                 return
             else:
                 if self.parent_window and hasattr(self.parent_window, 'set_status'):
@@ -396,27 +399,68 @@ class MetadataManager:
                         use_extended=use_extended
                     )
 
-                # Display metadata if successfully loaded
-                last = needs_loading[-1]
-                metadata = last.metadata or metadata_cache.get(last.full_path)
-                if (self.parent_window and
-                    hasattr(self.parent_window, 'metadata_tree_view') and
-                    hasattr(self.parent_window.metadata_tree_view, 'handle_metadata_load_completion')):
-                    self.parent_window.metadata_tree_view.handle_metadata_load_completion(metadata, source)
+                # Display metadata for the target file (not necessarily the loaded file)
+                if target_file_for_display:
+                    metadata = target_file_for_display.metadata or metadata_cache.get(target_file_for_display.full_path)
+                    if (self.parent_window and
+                        hasattr(self.parent_window, 'metadata_tree_view') and
+                        hasattr(self.parent_window.metadata_tree_view, 'handle_metadata_load_completion')):
+                        self.parent_window.metadata_tree_view.handle_metadata_load_completion(metadata, source)
 
-                # Update UI for the specific file
+                # Update UI for all loaded files
                 if (self.parent_window and
                     hasattr(self.parent_window, 'file_model') and
                     hasattr(self.parent_window, 'file_table_view')):
-                    try:
-                        row = self.parent_window.file_model.files.index(last)
-                        for col in range(self.parent_window.file_model.columnCount()):
-                            idx = self.parent_window.file_model.index(row, col)
-                            self.parent_window.file_table_view.viewport().update(
-                                self.parent_window.file_table_view.visualRect(idx)
-                            )
-                    except (ValueError, AttributeError) as e:
-                        logger.debug(f"[MetadataManager] Could not update UI for file: {e}")
+                    for loaded_file in needs_loading:
+                        try:
+                            row = self.parent_window.file_model.files.index(loaded_file)
+                            for col in range(self.parent_window.file_model.columnCount()):
+                                idx = self.parent_window.file_model.index(row, col)
+                                self.parent_window.file_table_view.viewport().update(
+                                    self.parent_window.file_table_view.visualRect(idx)
+                                )
+                        except (ValueError, AttributeError) as e:
+                            logger.debug(f"[MetadataManager] Could not update UI for file: {e}")
+
+    def _get_current_selection_for_display(self) -> List[Any]:
+        """Get the current selection to determine which file to display metadata for."""
+        if not self.parent_window:
+            return []
+
+        if (hasattr(self.parent_window, 'file_table_view') and
+            hasattr(self.parent_window, 'file_model')):
+            selection_model = self.parent_window.file_table_view.selectionModel()
+            if selection_model:
+                selected_rows = selection_model.selectedRows()
+                selected_files = []
+                for index in selected_rows:
+                    row = index.row()
+                    if 0 <= row < len(self.parent_window.file_model.files):
+                        selected_files.append(self.parent_window.file_model.files[row])
+                return selected_files
+        return []
+
+    def _determine_target_file_for_display(self, items: List[Any], current_selection: List[Any]) -> Any:
+        """Determine which file should be used for metadata display."""
+        # If we have a current selection, use the last selected file
+        if current_selection:
+            # Prefer currentIndex if it's valid and in the selection
+            if (self.parent_window and
+                hasattr(self.parent_window, 'file_table_view')):
+                selection_model = self.parent_window.file_table_view.selectionModel()
+                if selection_model:
+                    current_index = selection_model.currentIndex()
+                    if current_index.isValid():
+                        row = current_index.row()
+                        if (0 <= row < len(self.parent_window.file_model.files) and
+                            self.parent_window.file_model.files[row] in current_selection):
+                            return self.parent_window.file_model.files[row]
+
+            # Fallback to last item in current selection
+            return current_selection[-1]
+
+        # If no current selection, fallback to last item in the items list
+        return items[-1] if items else None
 
     def determine_metadata_mode(self, modifier_state=None) -> tuple[bool, bool]:
         """
