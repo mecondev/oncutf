@@ -41,61 +41,72 @@ logger_effective_level =logger.getEffectiveLevel()
 logger.debug(f"Effective logging level: {logger_effective_level}", extra={"dev_only": True})
 
 def main() -> None:
-    # Setup logging
     """
     Entry point for the Batch File Renamer application.
 
     Initializes logging, creates a Qt application and stylesheet, creates a
     MainWindow and shows it, and enters the application's main loop.
     """
+    try:
+        # Create application
+        app = QApplication(sys.argv)
+        # Qt.AA_UseHighDpiPixmaps is defined in PyQt5, but linter may not resolve C++-level attributes
+        app.setAttribute(Qt.AA_UseHighDpiPixmaps) # type: ignore[attr-defined]
 
-    # Create application
-    app = QApplication(sys.argv)
-    # Qt.AA_UseHighDpiPixmaps is defined in PyQt5, but linter may not resolve C++-level attributes
-    app.setAttribute(Qt.AA_UseHighDpiPixmaps) # type: ignore[attr-defined]
+        # Set native style for proper system cursor integration
+        system = platform.system()
+        available_styles = QStyleFactory.keys()
 
-    # Set native style for proper system cursor integration
-    system = platform.system()
-    available_styles = QStyleFactory.keys()
+        if system == "Windows" and "windowsvista" in available_styles:
+            app.setStyle("windowsvista")
+            logger.debug("Using Windows Vista style for native cursor support")
+        elif system == "Windows" and "Windows" in available_styles:
+            app.setStyle("Windows")
+            logger.debug("Using Windows style for native cursor support")
+        elif system == "Darwin":  # macOS
+            # macOS should use the default style which is native
+            logger.debug("Using default macOS style for native cursor support")
+        elif system == "Linux":
+            # Try to use native style if available, otherwise keep Fusion but log it
+            if "gtk+" in available_styles or "GTK+" in available_styles:
+                # Some Qt builds have GTK+ style
+                for style in available_styles:
+                    if "gtk" in style.lower():
+                        app.setStyle(style)
+                        logger.debug(f"Using {style} style for native cursor support on Linux")
+                        break
+            else:
+                # Keep Fusion on Linux but log that cursor may not match system theme
+                logger.debug("Using Fusion style on Linux - cursor may not match system theme")
 
-    if system == "Windows" and "windowsvista" in available_styles:
-        app.setStyle("windowsvista")
-        logger.debug("Using Windows Vista style for native cursor support")
-    elif system == "Windows" and "Windows" in available_styles:
-        app.setStyle("Windows")
-        logger.debug("Using Windows style for native cursor support")
-    elif system == "Darwin":  # macOS
-        # macOS should use the default style which is native
-        logger.debug("Using default macOS style for native cursor support")
-    elif system == "Linux":
-        # Try to use native style if available, otherwise keep Fusion but log it
-        if "gtk+" in available_styles or "GTK+" in available_styles:
-            # Some Qt builds have GTK+ style
-            for style in available_styles:
-                if "gtk" in style.lower():
-                    app.setStyle(style)
-                    logger.debug(f"Using {style} style for native cursor support on Linux")
-                    break
-        else:
-            # Keep Fusion on Linux but log that cursor may not match system theme
-            logger.debug("Using Fusion style on Linux - cursor may not match system theme")
+        logger.debug(f"Final Qt style: {app.style().objectName()}")
 
-    logger.debug(f"Final Qt style: {app.style().objectName()}")
+        # Load Inter fonts
+        logger.debug("Initializing Inter fonts...", extra={"dev_only": True})
+        _get_inter_fonts()
 
-    # Load Inter fonts
-    logger.debug("Initializing Inter fonts...", extra={"dev_only": True})
-    _get_inter_fonts()
+        app.setStyleSheet(load_stylesheet())
 
-    app.setStyleSheet(load_stylesheet())
+        # Create and show main window
+        window = MainWindow()
+        window.show()
 
-    # Create and show main window
-    window = MainWindow()
-    window.show()
+        # Run the app
+        exit_code = app.exec_()
 
-    # Run the app
-    sys.exit(app.exec_())
+        # Clean up before exit
+        logger.info("Application shutting down with exit code: %d", exit_code)
+
+        # Force quit any remaining processes
+        app.quit()
+
+        return exit_code
+
+    except Exception as e:
+        logger.critical("Fatal error in main: %s", str(e), exc_info=True)
+        return 1
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
 
 

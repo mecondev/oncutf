@@ -390,8 +390,39 @@ class MainWindow(QMainWindow):
         self.event_handler_manager.handle_file_double_click(index, modifiers)
 
     def closeEvent(self, event) -> None:
-        """Delegates to UtilityManager for close event handling."""
-        self.utility_manager.close_event(event)
+        """
+        Handles application shutdown and cleanup.
+
+        Ensures all resources are properly released and threads are stopped.
+        """
+        logger.info("Application shutting down...")
+
+        # 1. Stop any running metadata operations
+        self.cleanup_metadata_worker()
+
+        # 2. Clean up any active drag operations
+        self.drag_cleanup_manager.emergency_drag_cleanup()
+
+        # 3. Clean up any open dialogs
+        if hasattr(self, 'dialog_manager'):
+            self.dialog_manager.cleanup()
+
+        # 4. Clean up application context
+        if hasattr(self, 'context'):
+            self.context.cleanup()
+
+        # 5. Stop any running timers
+        for timer in self.findChildren(QTimer):
+            timer.stop()
+
+        # 6. Clean up any remaining Qt resources
+        QApplication.processEvents()
+
+        # 7. Call parent closeEvent
+        super().closeEvent(event)
+
+        # 8. Force quit the application
+        QApplication.quit()
 
     def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
         """Delegates to FileLoadManager for folder load preparation."""

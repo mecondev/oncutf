@@ -18,7 +18,8 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QHBoxLayout,
     QCheckBox,
-    QApplication
+    QApplication,
+    QFileDialog
 )
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon
@@ -179,3 +180,18 @@ class DialogManager:
             return True
 
         return False
+
+    def cleanup(self):
+        """Close all open dialogs and clean up resources."""
+        # Close any open message dialogs
+        for widget in QApplication.topLevelWidgets():
+            if isinstance(widget, QMessageBox):
+                widget.close()
+
+        # Close any open file dialogs
+        for widget in QApplication.topLevelWidgets():
+            if isinstance(widget, QFileDialog):
+                widget.close()
+
+        # Process any pending events
+        QApplication.processEvents()
