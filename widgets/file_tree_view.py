@@ -615,3 +615,48 @@ class FileTreeView(QTreeView):
         # This prevents Qt from starting its own drag which could cause hover issues
         logger.debug("[FileTreeView] Built-in startDrag called but ignored - using custom drag system", extra={"dev_only": True})
         return
+
+
+# =====================================
+# DRAG CANCEL FILTER (Global Instance)
+# =====================================
+
+class DragCancelFilter:
+    """
+    Filter that prevents selection clearing during drag operations.
+
+    This is used to maintain file selection when dragging from FileTableView
+    to MetadataTreeView, especially when no modifier keys are pressed.
+    """
+
+    def __init__(self):
+        self._active = False
+        self._preserved_selection = set()
+
+    def activate(self):
+        """Activate the filter to preserve current selection"""
+        self._active = True
+        logger.debug("[DragCancelFilter] Activated - preserving selection", extra={"dev_only": True})
+
+    def deactivate(self):
+        """Deactivate the filter"""
+        if self._active:
+            self._active = False
+            self._preserved_selection.clear()
+            logger.debug("[DragCancelFilter] Deactivated", extra={"dev_only": True})
+
+    def preserve_selection(self, selection: set):
+        """Store selection to preserve during drag"""
+        self._preserved_selection = selection.copy()
+
+    def get_preserved_selection(self) -> set:
+        """Get preserved selection"""
+        return self._preserved_selection.copy()
+
+    def is_active(self) -> bool:
+        """Check if filter is active"""
+        return self._active
+
+
+# Create global instance
+_drag_cancel_filter = DragCancelFilter()

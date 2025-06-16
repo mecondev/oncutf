@@ -88,6 +88,10 @@ class FileTableView(QTableView):
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True)
 
+        # Enable rubber band selection
+        self.setRubberBandSelectionMode(QAbstractItemView.IntersectsItemBoundingRect)
+        self.setRubberBandSelectionEnabled(True)
+
         # Custom drag state tracking
         self._is_dragging = False
         self._drag_data = None  # Store selected file data for drag
@@ -636,66 +640,58 @@ class FileTableView(QTableView):
                 selection_store.set_anchor_row(index.row(), emit_signal=False)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse press with custom selection logic."""
-        index: QModelIndex = self.indexAt(event.pos())
-        if not index.isValid() or self.is_empty():
-            super().mousePressEvent(event)
-            return
+        """
+        Handle mouse press events for selection and drag initiation.
+        """
+        # Get the index under the mouse
+        index = self.indexAt(event.pos())
+        modifiers = event.modifiers()
 
-        # Store drag start position for drag detection
+        # Store clicked index for potential drag
+        self._clicked_index = index
+
+        # Check if we clicked on a selected item
+        if index.isValid():
+            self._clicked_on_selected = index.row() in self._get_current_selection()
+        else:
+            self._clicked_on_selected = False
+
+        # Handle left button press
         if event.button() == Qt.LeftButton:
+            # Store drag start position
             self._drag_start_pos = event.pos()
 
-        # Handle right-click separately
-        if event.button() == Qt.RightButton:
-            super().mousePressEvent(event)
-            return
+            # If clicking on empty space, clear selection
+            if not index.isValid():
+                if modifiers == Qt.NoModifier:
+                    self.clearSelection()
+                    self._set_anchor_row(None)
+                return
 
-        # CRITICAL FIX: Handle left-click selection properly
-        if event.button() == Qt.LeftButton:
-            # Check if we're clicking on an already selected item for potential drag
-            current_selection = self._get_current_selection()
-            clicked_row = index.row()
-
-            # If clicking on a selected item without modifiers, don't change selection yet
-            # (wait to see if it's a drag operation)
-            if (clicked_row in current_selection and
-                not (event.modifiers() & (Qt.ControlModifier | Qt.ShiftModifier)) and
-                len(current_selection) > 1):
-                # Don't change selection - preserve multi-selection for potential drag
-                # Selection will be handled in mouseReleaseEvent if it's not a drag
-                self._preserve_selection_for_drag = True
-                self._clicked_on_selected = True
-                self._clicked_index = index
-                # Don't call super() or sync selection - preserve current state
-            else:
-                # Handle selection with modifiers (Ctrl+Click, Shift+Click)
-                if event.modifiers() & (Qt.ControlModifier | Qt.ShiftModifier):
-                    # Custom selection handling for modifiers - don't call super()
-                    self.ensure_anchor_or_select(index, event.modifiers())
-                    self._preserve_selection_for_drag = False
-                    self._clicked_on_selected = False
-                    self._clicked_index = None
-                    # Sync selection state after changing it
-                    self._sync_selection_safely()
+            # Handle selection based on modifiers
+            if modifiers == Qt.NoModifier:
+                # Single click - select single row
+                self._set_anchor_row(index.row())
+                self._update_selection_store({index.row()})
+            elif modifiers == Qt.ControlModifier:
+                # Ctrl+click - toggle selection
+                current_selection = self._get_current_selection()
+                if index.row() in current_selection:
+                    current_selection.remove(index.row())
                 else:
-                    # Normal selection handling without modifiers
-                    self.ensure_anchor_or_select(index, event.modifiers())
-                    self._preserve_selection_for_drag = False
-                    self._clicked_on_selected = False
-                    self._clicked_index = None
-                    # Sync selection state after changing it
-                    self._sync_selection_safely()
-                    # Call super() only for normal clicks (no modifiers)
-                    super().mousePressEvent(event)
-        else:
-            # For non-left clicks, always call super()
-            super().mousePressEvent(event)
+                    current_selection.add(index.row())
+                self._update_selection_store(current_selection)
+            elif modifiers == Qt.ShiftModifier:
+                # Shift+click - select range
+                anchor = self._get_anchor_row()
+                if anchor is not None:
+                    self.select_rows_range(anchor, index.row())
+                else:
+                    self._set_anchor_row(index.row())
+                    self._update_selection_store({index.row()})
 
-        # Clear context focus on left click
-        if event.button() != Qt.RightButton and self.context_focused_row is not None:
-            self.context_focused_row = None
-            self.viewport().update()
+        # Call parent implementation for rubber band selection
+        super().mousePressEvent(event)
 
     def mouseDoubleClickEvent(self, event) -> None:
         """Handle double-click with Shift modifier support."""
@@ -738,77 +734,34 @@ class FileTableView(QTableView):
         self._sync_selection_safely()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """Handle mouse release and end drag operations."""
-        was_dragging = self._is_dragging
+        """
+        Handle mouse release events.
+        """
+        if event.button() == Qt.LeftButton:
+            # Reset drag start position
+            self._drag_start_pos = None
 
-        # End drag first
-        if self._is_dragging:
-            self._end_custom_drag()
+            # If we were dragging, clean up
+            if self._is_dragging:
+                self._end_custom_drag()
 
-        # Handle preserved selection case (clicked on selected item but didn't drag)
-        if (getattr(self, '_preserve_selection_for_drag', False) and
-            not was_dragging and
-            event.button() == Qt.LeftButton):
-            # User clicked on selected item but didn't drag - select only that item
-            if hasattr(self, '_clicked_index') and self._clicked_index:
-                self.ensure_anchor_or_select(self._clicked_index, Qt.NoModifier)
-                self._sync_selection_safely()
-
-            # Clean up flags
-            self._preserve_selection_for_drag = False
-            self._clicked_on_selected = False
-            self._clicked_index = None
-
-        # Call super for normal processing
+        # Call parent implementation for rubber band selection
         super().mouseReleaseEvent(event)
 
-        # Force cursor cleanup if we were dragging
-        if was_dragging:
-            # Ensure all override cursors are removed
-            cursor_count = 0
-            while QApplication.overrideCursor() and cursor_count < 5:
-                QApplication.restoreOverrideCursor()
-                cursor_count += 1
-
-            if cursor_count > 0:
-                logger.debug(f"[FileTableView] Cleaned {cursor_count} stuck cursors after drag", extra={"dev_only": True})
-
     def mouseMoveEvent(self, event) -> None:
-        if self.is_empty():
-            return
+        """
+        Handle mouse move events for drag initiation and rubber band selection.
+        """
+        if self._drag_start_pos is not None:
+            # Check if we've moved enough to start a drag
+            if (event.pos() - self._drag_start_pos).manhattanLength() >= QApplication.startDragDistance():
+                # Start drag if we have selected items
+                if self._get_current_selection():
+                    self._start_custom_drag()
+                    return
 
-        index = self.indexAt(event.pos())
-        hovered_row = index.row() if index.isValid() else -1
-
-        # Handle custom drag start
-        if (event.buttons() & Qt.LeftButton and
-            self._drag_start_pos is not None and
-            not self._is_dragging and
-            hovered_row in self._get_current_selection()):
-
-            # Check if we've moved enough to start drag
-            distance = (event.pos() - self._drag_start_pos).manhattanLength()
-            if distance >= QApplication.startDragDistance():
-                self._start_custom_drag()
-                return
-
-        # Handle real-time drag feedback
-        if self._is_dragging:
-            self._update_drag_feedback()
-            # Don't update hover highlighting during drag
-            return
-
-        # Update hover highlighting (only when not dragging)
-        if hasattr(self, "hover_delegate") and hovered_row != self.hover_delegate.hovered_row:
-            old_row = self.hover_delegate.hovered_row
-            self.hover_delegate.update_hover_row(hovered_row)
-
-            for r in (old_row, hovered_row):
-                if r >= 0:
-                    left = self.model().index(r, 0)
-                    right = self.model().index(r, self.model().columnCount() - 1)
-                    row_rect = self.visualRect(left).united(self.visualRect(right))
-                    self.viewport().update(row_rect)
+        # Call parent implementation for rubber band selection
+        super().mouseMoveEvent(event)
 
     def keyPressEvent(self, event) -> None:
         """Handle keyboard navigation, sync selection, and modifier changes during drag."""
@@ -874,6 +827,11 @@ class FileTableView(QTableView):
 
         if not file_paths:
             return
+
+        # Activate drag cancel filter to preserve selection (especially for no-modifier drags)
+        from widgets.file_tree_view import _drag_cancel_filter
+        _drag_cancel_filter.activate()
+        _drag_cancel_filter.preserve_selection(selected_rows)
 
         # Clear hover state before starting drag
         if hasattr(self, 'hover_delegate'):
@@ -1026,6 +984,11 @@ class FileTableView(QTableView):
         self._drag_data = None
         self._drag_start_pos = None
 
+        # Deactivate drag cancel filter after drop processing
+        from widgets.file_tree_view import _drag_cancel_filter
+        if not valid_drop:  # Only deactivate if drop was invalid
+            _drag_cancel_filter.deactivate()
+
         # End visual feedback
         end_drag_visual()
 
@@ -1075,6 +1038,12 @@ class FileTableView(QTableView):
         # Use real-time modifiers at drop time (standard UX behavior)
         modifiers = QApplication.keyboardModifiers()
 
+        # Get preserved selection before deactivating filter
+        from widgets.file_tree_view import _drag_cancel_filter
+        preserved_selection = set()
+        if _drag_cancel_filter.is_active():
+            preserved_selection = _drag_cancel_filter.get_preserved_selection()
+
         # Find metadata tree view to emit signal directly
         widget_under_cursor = QApplication.widgetAt(QCursor.pos())
         metadata_tree = None
@@ -1098,9 +1067,39 @@ class FileTableView(QTableView):
             metadata_tree.files_dropped.emit(self._drag_data, modifiers)
             logger.info(f"[FileTableView] Dropped {data_count} files on metadata tree (modifiers: {modifiers})")
 
+            # If no modifiers were used and we have preserved selection, restore it
+            if modifiers == Qt.NoModifier and preserved_selection:
+                # Schedule selection restoration after metadata loading completes
+                from utils.timer_manager import schedule_selection_update
+                schedule_selection_update(
+                    lambda: self._restore_preserved_selection(preserved_selection),
+                    delay=100,
+                    timer_id=f"restore_selection_{len(preserved_selection)}"
+                )
+                logger.debug(f"[FileTableView] Scheduled selection restoration for {len(preserved_selection)} files", extra={"dev_only": True})
+
             # Force additional cursor cleanup after signal emission (handles dialog scenarios)
             QApplication.processEvents()  # Allow signal to be processed
             self._force_cursor_cleanup()  # Clean up any remaining cursor issues
+
+    def _restore_preserved_selection(self, preserved_selection: set):
+        """Restore preserved selection after metadata loading"""
+        if not preserved_selection:
+            return
+
+        # Update selection store
+        self._update_selection_store(preserved_selection, emit_signal=True)
+
+        # Update Qt selection model
+        selection_model = self.selectionModel()
+        if selection_model:
+            selection_model.clearSelection()
+            for row in preserved_selection:
+                if 0 <= row < self.model().rowCount():
+                    index = self.model().index(row, 0)
+                    selection_model.select(index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+
+        logger.debug(f"[FileTableView] Restored selection for {len(preserved_selection)} files", extra={"dev_only": True})
 
     # =====================================
     # Drag & Drop Methods (Legacy - may remove)

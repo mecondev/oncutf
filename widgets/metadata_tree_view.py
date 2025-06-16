@@ -108,6 +108,9 @@ class MetadataTreeView(QTreeView):
         self._current_file_path: Optional[str] = None
         self._pending_restore_timer: Optional[QTimer] = None
 
+        # Flag to prevent flickering during drag
+        self._is_dragging: bool = False
+
         # Setup placeholder icon
         self.placeholder_label = QLabel(self.viewport())
         self.placeholder_label.setAlignment(Qt.AlignCenter)
@@ -153,6 +156,7 @@ class MetadataTreeView(QTreeView):
         This is identified by the presence of our custom MIME type.
         """
         if event.mimeData().hasFormat("application/x-oncutf-filetable"):
+            self._is_dragging = True
             event.acceptProposedAction()
         else:
             event.ignore()
@@ -199,27 +203,12 @@ class MetadataTreeView(QTreeView):
         # Force cleanup of any drag state
         while QApplication.overrideCursor():
             QApplication.restoreOverrideCursor()
-        # Ensure the filter is deactivated
-        drag_cancel_filter.deactivate()
-        # Process events immediately
-        QApplication.processEvents()
+        self._is_dragging = False
 
     def _complete_drag_cleanup(self) -> None:
-        """
-        Additional cleanup method called after drop operation to ensure
-        all drag state is completely reset.
-        """
-        # Get the global drag cancel filter to ensure it's deactivated
-        from widgets.file_tree_view import _drag_cancel_filter
-        _drag_cancel_filter.deactivate()
-
-        # Restore cursor if needed
-        while QApplication.overrideCursor():
-            QApplication.restoreOverrideCursor()
-
-        QApplication.processEvents()
-        if hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
-            self.viewport().update()
+        """Complete cleanup after drag operation."""
+        self._is_dragging = False
+        self.viewport().update()
 
     # =====================================
     # Model & Column Management
@@ -482,7 +471,7 @@ class MetadataTreeView(QTreeView):
 
         # Clean up the timer
         if self._pending_restore_timer is not None:
-            self._pending_restore_timer = None
+            self._pending_restore_timer.stop()
 
     def _smooth_scroll_to_position(self, target_position: int) -> None:
         """Smoothly scroll to the target position using animation."""
@@ -979,27 +968,33 @@ class MetadataTreeView(QTreeView):
 
     def display_metadata(self, metadata: Optional[Dict[str, Any]], context: str = "") -> None:
         """
-        Validates and displays metadata safely in the UI.
-
-        Args:
-            metadata (dict or None): The metadata to display.
-            context (str): Optional source for logging (e.g. 'doubleclick', 'worker')
+        Display metadata in the tree view.
+        If metadata is None, show empty state.
         """
-        if not isinstance(metadata, dict) or not metadata:
-            logger.warning(f"[display_metadata] Invalid metadata ({type(metadata)}) from {context}: {metadata}")
-            self.clear_view()
+        if self._is_dragging:
+            return  # Skip updates during drag
+
+        if not metadata:
+            self.show_empty_state()
             return
 
+        # Store current scroll position before updating
+        self._save_current_scroll_position()
+
+        # Render the metadata view
         self._render_metadata_view(metadata)
 
-        # Notify parent about successful metadata display
-        self._update_parent_toggle_button(expanded=True, enabled=True)
+        # Update current file path from metadata
+        self._set_current_file_from_metadata(metadata)
 
-        # Enable header if it exists
-        if hasattr(self, 'header') and callable(self.header):
-            header = self.header()
-            if header:
-                header.setEnabled(True)
+        # Restore scroll position after a short delay
+        schedule_scroll_adjust(self._restore_scroll_position_for_current_file, 50)
+
+        # Update parent toggle button state
+        self._update_parent_toggle_button(True, True)
+
+        # Force style update
+        self._force_style_update()
 
     def _render_metadata_view(self, metadata: Dict[str, Any]) -> None:
         """
