@@ -32,7 +32,8 @@ def load_stylesheet() -> str:
         "combo_box.qss",
         "scrollbars.qss",
         "table_view.qss",
-        "tree_view.qss"
+        "tree_view.qss",
+        "tooltip.qss"
         # Add more QSS files here if needed
     ]
 

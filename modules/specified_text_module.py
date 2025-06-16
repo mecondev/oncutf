@@ -17,6 +17,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtWidgets import QLabel, QLineEdit, QVBoxLayout, QWidget, QMenu, QAction
 
 from modules.base_module import BaseRenameModule
+from widgets.validated_line_edit import ValidatedLineEdit
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
@@ -44,12 +45,15 @@ class SpecifiedTextModule(BaseRenameModule):
 
         self.text_label = QLabel("Text")
         self.text_label.setMaximumHeight(24)
-        self.text_input = QLineEdit()
+        self.text_input = ValidatedLineEdit()
         self.text_input.setPlaceholderText("Enter custom text")
         self.text_input.setMaxLength(240)
         self.text_input.setMaximumHeight(24)
         self._last_value = ""  # Initialize to prevent first empty emit
         self.text_input.textChanged.connect(self.validate_input)
+
+        # Connect validation state change to update module state
+        self.text_input.validation_changed.connect(self._on_validation_changed)
 
         # Set up custom context menu
         self.text_input.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -60,6 +64,9 @@ class SpecifiedTextModule(BaseRenameModule):
 
         # Track if field has ever had content to control empty styling
         self._has_had_content = False
+
+        # Track validation state
+        self._is_input_valid = True
 
     def set_current_file(self, file_item) -> None:
         """
@@ -181,6 +188,19 @@ class SpecifiedTextModule(BaseRenameModule):
         logger.debug(f"[SpecifiedText] Text changed to: '{text}' (len={len(text)}), emitting signal", extra={"dev_only": True})
         self.updated.emit(self)
 
+    def _on_validation_changed(self, is_valid: bool) -> None:
+        """
+        Handle validation state changes from the ValidatedLineEdit
+
+        Args:
+            is_valid: True if input is valid, False otherwise
+        """
+        self._is_input_valid = is_valid
+        logger.debug(f"[SpecifiedText] Validation state changed: {is_valid}", extra={"dev_only": True})
+
+        # Emit update signal so preview can refresh
+        self.updated.emit(self)
+
     def get_data(self) -> dict:
         """
         Retrieves the current configuration of the specified text module.
@@ -195,9 +215,9 @@ class SpecifiedTextModule(BaseRenameModule):
 
     def reset(self) -> None:
         self._has_had_content = False  # Reset tracking
+        self._is_input_valid = True   # Reset validation state
         self.text_input.clear()
-        # After clearing and resetting, no special styling (like initial state)
-        self.text_input.setStyleSheet("")
+        self.text_input.reset_validation_state()  # Reset ValidatedLineEdit state
 
     def apply(self, file_item, index=0, metadata_cache=None) -> str:
         return self.apply_from_data(self.get_data(), file_item, index, metadata_cache)

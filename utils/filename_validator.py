@@ -1,92 +1,216 @@
 """
-Module: filename_validator.py
-
-Author: Michael Economou
-Date: 2025-05-01
-
-This utility module provides logic for validating filenames across
-different operating systems. It checks for invalid characters, reserved
-names, and other constraints to ensure safe and portable file naming.
-
-Used by oncutf to prevent errors during batch renaming.
+Filename Validation and Cleaning Utility
+Provides functions for validating and cleaning filenames according to Windows standards.
 """
 
-import os
-import platform
+import re
+import logging
+from typing import Tuple, Union
+from config import INVALID_FILENAME_CHARS, INVALID_TRAILING_CHARS, INVALID_FILENAME_MARKER
 
-# Initialize Logger
-from utils.logger_factory import get_cached_logger
-
-logger = get_cached_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
-class FilenameValidator:
+def is_valid_filename_char(char: str) -> bool:
     """
-    Validates proposed filenames for compatibility across operating systems.
-    Includes checks for invalid characters, reserved names, length, and duplicates.
-    """
+    Check if a character is valid for filenames
 
-    # Reserved names on Windows (case-insensitive)
-    WINDOWS_RESERVED_NAMES = {
-        "CON", "PRN", "AUX", "NUL",
-        *(f"COM{i}" for i in range(1, 10)),
-        *(f"LPT{i}" for i in range(1, 10))
+    Args:
+        char: Single character to check
+
+    Returns:
+        bool: True if character is valid for filenames
+    """
+    return char not in INVALID_FILENAME_CHARS
+
+
+def clean_filename_text(text: str) -> str:
+    """
+    Clean text by removing invalid filename characters
+
+    Args:
+        text: Input text to clean
+
+    Returns:
+        str: Cleaned text with invalid characters removed
+    """
+    # Remove invalid characters
+    cleaned = ''.join(char for char in text if is_valid_filename_char(char))
+
+    logger.debug(f"[FilenameValidator] Cleaned text: '{text}' → '{cleaned}'")
+    return cleaned
+
+
+def clean_trailing_chars(filename_part: str) -> str:
+    """
+    Remove trailing characters that are not allowed at the end of filenames
+
+    Args:
+        filename_part: The filename part (without extension) to clean
+
+    Returns:
+        str: Cleaned filename part
+    """
+    original = filename_part
+    cleaned = filename_part.rstrip(INVALID_TRAILING_CHARS)
+
+    if cleaned != original:
+        logger.debug(f"[FilenameValidator] Removed trailing chars: '{original}' → '{cleaned}'")
+
+    return cleaned
+
+
+def validate_filename_part(filename_part: str) -> Tuple[bool, str]:
+    """
+    Validate a filename part and return validation status and clean version
+
+    Args:
+        filename_part: The filename part to validate
+
+    Returns:
+        Tuple[bool, str]: (is_valid, cleaned_filename_part)
+    """
+    if not filename_part:
+        return False, INVALID_FILENAME_MARKER
+
+    # Check for invalid characters
+    has_invalid_chars = any(char in INVALID_FILENAME_CHARS for char in filename_part)
+
+    if has_invalid_chars:
+        logger.debug(f"[FilenameValidator] Invalid characters found in: '{filename_part}'")
+        return False, INVALID_FILENAME_MARKER
+
+    # Clean trailing characters
+    cleaned = clean_trailing_chars(filename_part)
+
+    # Check if result is empty after cleaning
+    if not cleaned.strip():
+        logger.debug(f"[FilenameValidator] Empty filename after cleaning: '{filename_part}'")
+        return False, INVALID_FILENAME_MARKER
+
+    # Check for Windows reserved names
+    reserved_names = {
+        'CON', 'PRN', 'AUX', 'NUL',
+        'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
+        'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'
     }
 
-    # Common invalid characters (based on Windows)
-    INVALID_CHARS_WIN = r'<>:"/\\|?*'
-    INVALID_CHARS_UNIX = '/'  # Unix only disallows slash
+    if cleaned.upper() in reserved_names:
+        logger.debug(f"[FilenameValidator] Reserved Windows name: '{cleaned}'")
+        return False, INVALID_FILENAME_MARKER
 
-    def __init__(self) -> None:
-        self.os_name = platform.system()
+    return True, cleaned
 
-    def is_valid_filename(self, name: str) -> tuple[bool, str]:
-        """
-        Checks if a given filename is valid for the current platform.
 
-        Args:
-            name (str): The filename to validate.
+def should_allow_character_input(char: str) -> bool:
+    """
+    Determine if a character input should be allowed in filename text fields
 
-        Returns:
-            (bool, str): A tuple where the first value is True if valid,
-                         and the second is an error message if not.
-        """
-        if not name or name.strip() == "":
-            return False, "Filename cannot be empty"
+    Args:
+        char: Character being typed
 
-        # Check invalid characters
-        if self.os_name == "Windows":
-            if any(c in name for c in self.INVALID_CHARS_WIN):
-                return False, f"Filename contains invalid characters: {self.INVALID_CHARS_WIN}"
-        else:
-            if "/" in name:
-                return False, "Filename cannot contain '/' on Unix-like systems"
+    Returns:
+        bool: True if character should be allowed
+    """
+    return is_valid_filename_char(char)
 
-        # Check reserved names (Windows)
-        base_name = os.path.splitext(name)[0].upper()
-        if self.os_name == "Windows" and base_name in self.WINDOWS_RESERVED_NAMES:
-            return False, f"'{base_name}' is a reserved name in Windows"
 
-        # Check max length
-        if len(name) > 255:
-            return False, "Filename is too long (maximum 255 characters)"
+def get_validation_error_message(filename_part: str) -> str:
+    """
+    Get a user-friendly error message for invalid filename
 
-        return True, ""
+    Args:
+        filename_part: The invalid filename part
 
-    def has_duplicates(self, names: list[str]) -> tuple[bool, str]:
-        """
-        Checks for duplicate filenames in a list.
+    Returns:
+        str: User-friendly error message
+    """
+    if not filename_part:
+        return "Filename cannot be empty"
 
-        Args:
-            names (list[str]): A list of filenames to check.
+    # Check for invalid characters
+    invalid_chars = [char for char in filename_part if char in INVALID_FILENAME_CHARS]
+    if invalid_chars:
+        unique_chars = list(set(invalid_chars))
+        char_list = "', '".join(unique_chars)
+        return f"Invalid characters: '{char_list}'"
 
-        Returns:
-            (bool, str): True if duplicates exist, along with an error message.
-        """
-        seen = set()
-        for name in names:
-            lower_name = name.lower()
-            if lower_name in seen:
-                return True, f"Duplicate filename found: '{name}'"
-            seen.add(lower_name)
-        return False, ""
+    # Check for trailing characters
+    if filename_part != filename_part.rstrip(INVALID_TRAILING_CHARS):
+        return "Filename cannot end with spaces or dots"
+
+    # Check for Windows reserved names
+    reserved_names = {
+        'CON', 'PRN', 'AUX', 'NUL',
+        'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
+        'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'
+    }
+
+    if filename_part.upper() in reserved_names:
+        return f"'{filename_part}' is a reserved Windows filename"
+
+    # Check if empty after cleaning
+    cleaned = clean_trailing_chars(filename_part)
+    if not cleaned.strip():
+        return "Filename becomes empty after removing invalid trailing characters"
+
+    return "Invalid filename"
+
+
+def is_validation_error_marker(text: str) -> bool:
+    """
+    Check if text is a validation error marker
+
+    Args:
+        text: Text to check
+
+    Returns:
+        bool: True if text is a validation error marker
+    """
+    return text == INVALID_FILENAME_MARKER or text.endswith(INVALID_FILENAME_MARKER)
+
+
+# Convenience functions for common operations
+def clean_and_validate(text: str) -> Tuple[bool, str, str]:
+    """
+    Clean and validate text in one operation
+
+    Args:
+        text: Input text
+
+    Returns:
+        Tuple[bool, str, str]: (is_valid, cleaned_text, error_message)
+    """
+    cleaned = clean_filename_text(text)
+    is_valid, result = validate_filename_part(cleaned)
+
+    if not is_valid:
+        error_msg = get_validation_error_message(text)
+        return False, result, error_msg
+
+    return True, result, ""
+
+
+def prepare_final_filename(filename_part: str, extension: str = "") -> str:
+    """
+    Prepare final filename by cleaning and combining with extension
+
+    Args:
+        filename_part: The main filename part
+        extension: File extension (with or without dot)
+
+    Returns:
+        str: Final cleaned filename
+    """
+    # Clean the filename part
+    cleaned_part = clean_trailing_chars(filename_part)
+
+    # Handle extension
+    if extension and not extension.startswith('.'):
+        extension = '.' + extension
+
+    final_filename = cleaned_part + extension
+
+    logger.debug(f"[FilenameValidator] Prepared final filename: '{filename_part}' + '{extension}' → '{final_filename}'")
+
+    return final_filename

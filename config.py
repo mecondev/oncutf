@@ -153,6 +153,19 @@ STATUS_COLORS = {
 }
 
 # ----------------------------
+# Tooltip Settings
+# ----------------------------
+TOOLTIP_DURATION = 2000  # Duration in milliseconds (2 seconds)
+TOOLTIP_POSITION_OFFSET = (10, -25)  # (x, y) offset from widget position
+
+# Invalid filename characters for input filtering
+INVALID_FILENAME_CHARS = '<>:"/\\|?*'
+# Characters that shouldn't be at the end of filename (before extension)
+INVALID_TRAILING_CHARS = ' .'
+# Validation error marker (unique string that users won't intentionally use)
+INVALID_FILENAME_MARKER = "__VALIDATION_ERROR__"
+
+# ----------------------------
 # Theme Colors (Dark Theme)
 # ----------------------------
 THEME_COLORS = {
