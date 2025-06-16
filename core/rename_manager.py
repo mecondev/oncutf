@@ -64,7 +64,6 @@ class RenameManager:
             modules_data=modules_data,
             post_transform=post_transform,
             metadata_cache=self.main_window.metadata_cache,
-            filename_validator=self.main_window.filename_validator,
             current_folder_path=self.main_window.current_folder_path
         )
 

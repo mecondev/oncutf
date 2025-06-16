@@ -21,7 +21,7 @@ from widgets.validated_line_edit import ValidatedLineEdit
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
-from utils.validation import is_valid_filename_text
+from utils.filename_validator import validate_filename_part
 from utils.icons_loader import get_menu_icon
 
 logger = get_cached_logger(__name__)
@@ -177,12 +177,15 @@ class SpecifiedTextModule(BaseRenameModule):
         elif not text:
             # Empty initially - no special styling
             self.text_input.setStyleSheet("")
-        elif not is_valid_filename_text(text):
-            # Invalid characters - red styling
-            self.text_input.setStyleSheet("border: 2px solid #ff0000;")
         else:
-            # Valid - default styling
-            self.text_input.setStyleSheet("")
+            # Check validation using new system
+            is_valid, _ = validate_filename_part(text)
+            if not is_valid:
+                # Invalid characters - red styling
+                self.text_input.setStyleSheet("border: 2px solid #ff0000;")
+            else:
+                # Valid - default styling
+                self.text_input.setStyleSheet("")
 
         # Always emit the signal (like CounterModule does)
         logger.debug(f"[SpecifiedText] Text changed to: '{text}' (len={len(text)}), emitting signal", extra={"dev_only": True})
@@ -231,9 +234,12 @@ class SpecifiedTextModule(BaseRenameModule):
             logger.debug("[SpecifiedTextModule] Empty text input, returning empty string.", extra={"dev_only": True})
             return ""
 
-        if not is_valid_filename_text(text):
+        # Validate using new system
+        is_valid, validated_text = validate_filename_part(text)
+        if not is_valid:
             logger.warning(f"[SpecifiedTextModule] Invalid filename text: '{text}'")
-            return "invalid"
+            from config import INVALID_FILENAME_MARKER
+            return INVALID_FILENAME_MARKER
 
         # Always return only the basename (remove extension if user typed it)
         return os.path.splitext(text)[0]

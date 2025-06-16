@@ -34,6 +34,7 @@ from PyQt5.QtWidgets import (
 
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_ui_update, schedule_scroll_adjust
+from utils.filename_validator import is_validation_error_marker, get_validation_error_message
 
 logger = get_cached_logger(__name__)
 
@@ -42,17 +43,43 @@ class PreviewTableWidget(QTableWidget):
     """
     Custom QTableWidget for preview tables with intelligent scrollbar management.
     Emits resize signal when the widget is resized to update placeholders and column widths.
+    Supports enhanced tooltips for validation errors.
     """
     resized = pyqtSignal()  # Emitted when table is resized
 
     def __init__(self, rows=0, columns=1, parent=None):
         super().__init__(rows, columns, parent)
 
+        # Enable mouse tracking for tooltips
+        self.setMouseTracking(True)
+
     def resizeEvent(self, event):
         """Override to emit resize signal for intelligent column width adjustments."""
         super().resizeEvent(event)
         # Emit signal with small delay to ensure layout is stable
         schedule_ui_update(self.resized.emit, 10)
+
+    def mouseMoveEvent(self, event):
+        """Handle mouse move events to show enhanced tooltips"""
+        try:
+            # Get item under mouse
+            item = self.itemAt(event.pos())
+            if item and item.text():
+                # Check if this is a validation error case
+                if is_validation_error_marker(item.text()):
+                    # Show enhanced error tooltip
+                    from utils.tooltip_helper import show_error_tooltip
+                    error_msg = "Invalid filename - contains validation errors"
+                    show_error_tooltip(self, error_msg)
+                else:
+                    # Let Qt handle standard tooltips
+                    super().mouseMoveEvent(event)
+            else:
+                super().mouseMoveEvent(event)
+
+        except Exception as e:
+            logger.debug(f"[PreviewTableWidget] Error in mouseMoveEvent: {e}")
+            super().mouseMoveEvent(event)
 
 
 class PreviewTablesView(QWidget):
@@ -393,7 +420,7 @@ class PreviewTablesView(QWidget):
             not self.old_names_placeholder.isVisible()):
             self._adjust_table_widths()
 
-    def update_from_pairs(self, name_pairs: list[Tuple[str, str]], preview_icons: dict, icon_paths: dict, validator):
+    def update_from_pairs(self, name_pairs: list[Tuple[str, str]], preview_icons: dict, icon_paths: dict):
         """
         Update preview tables with name pairs and status validation.
 
@@ -401,7 +428,6 @@ class PreviewTablesView(QWidget):
             name_pairs: List of (old_name, new_name) tuples
             preview_icons: Dictionary of status icons
             icon_paths: Dictionary of icon file paths for HTML rendering
-            validator: FilenameValidator instance for validation
         """
         # Disable updates to prevent flickering during batch operations
         self.old_names_table.setUpdatesEnabled(False)
@@ -449,16 +475,26 @@ class PreviewTablesView(QWidget):
                     status = "unchanged"
                     tooltip = "Unchanged filename"
                 else:
-                    is_valid, _ = validator.is_valid_filename(new_name)
-                    if not is_valid:
+                    # Check for validation error marker first
+                    if is_validation_error_marker(new_name):
                         status = "invalid"
-                        tooltip = "Invalid filename"
-                    elif new_name in duplicates:
-                        status = "duplicate"
-                        tooltip = "Duplicate name"
+                        tooltip = get_validation_error_message(old_name)  # Get detailed error for original name
                     else:
-                        status = "valid"
-                        tooltip = "Ready to rename"
+                        # Use new validation system
+                        from utils.filename_validator import validate_filename_part
+                        import os
+                        # Get filename without extension for validation
+                        basename = os.path.splitext(new_name)[0]
+                        is_valid, _ = validate_filename_part(basename)
+                        if not is_valid:
+                            status = "invalid"
+                            tooltip = "Invalid filename"
+                        elif new_name in duplicates:
+                            status = "duplicate"
+                            tooltip = "Duplicate name"
+                        else:
+                            status = "valid"
+                            tooltip = "Ready to rename"
 
                 # Update status counts
                 stats[status] += 1

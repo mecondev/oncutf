@@ -251,8 +251,24 @@ class UtilityManager:
 
         # Enable rename button and set tooltip
         valid_pairs = [p for p in name_pairs if p[0] != p[1]]
-        self.main_window.rename_button.setEnabled(bool(valid_pairs))
-        tooltip_msg = f"{len(valid_pairs)} files will be renamed." if valid_pairs else "No changes to apply"
+
+        # Check for validation errors in new names
+        from utils.filename_validator import is_validation_error_marker
+        has_validation_errors = any(is_validation_error_marker(new_name) for _, new_name in name_pairs)
+
+        # Rename button should be enabled only if we have changes AND no validation errors
+        can_rename = bool(valid_pairs) and not has_validation_errors
+        self.main_window.rename_button.setEnabled(can_rename)
+
+        # Set appropriate tooltip message
+        if has_validation_errors:
+            error_count = sum(1 for _, new_name in name_pairs if is_validation_error_marker(new_name))
+            tooltip_msg = f"Cannot rename: {error_count} validation error(s) found"
+        elif valid_pairs:
+            tooltip_msg = f"{len(valid_pairs)} files will be renamed."
+        else:
+            tooltip_msg = "No changes to apply"
+
         self.main_window.rename_button.setToolTip(tooltip_msg)
 
 

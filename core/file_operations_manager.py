@@ -34,7 +34,6 @@ class FileOperationsManager:
         modules_data: List[dict],
         post_transform: dict,
         metadata_cache,
-        filename_validator,
         current_folder_path: str
     ) -> int:
         """Execute batch rename process."""
@@ -59,8 +58,7 @@ class FileOperationsManager:
             metadata_cache=metadata_cache,
             post_transform=post_transform,
             parent=self.parent_window,
-            conflict_callback=CustomMessageDialog.rename_conflict_dialog,
-            validator=filename_validator
+            conflict_callback=CustomMessageDialog.rename_conflict_dialog
         )
 
         results = renamer.rename()

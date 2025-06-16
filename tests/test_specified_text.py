@@ -9,4 +9,5 @@ def test_specified_text_simple():
 def test_specified_text_invalid():
     data = {"type": "specified_text", "text": "file/name"}
     result = SpecifiedTextModule.apply_from_data(data, file_item=None)
-    assert result == "invalid"
+    from config import INVALID_FILENAME_MARKER
+    assert result == INVALID_FILENAME_MARKER

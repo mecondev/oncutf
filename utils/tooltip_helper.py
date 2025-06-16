@@ -2,7 +2,7 @@
 Module: tooltip_helper.py
 
 Author: Michael Economou
-Date: 2025-01-01
+Date: 2025-06-16
 
 This module provides centralized tooltip management with custom styling and
 configurable duration for the oncutf application. It offers a unified system

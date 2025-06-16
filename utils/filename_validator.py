@@ -1,6 +1,16 @@
 """
-Filename Validation and Cleaning Utility
-Provides functions for validating and cleaning filenames according to Windows standards.
+Module: filename_validator.py
+
+Author: Michael Economou
+Date: 2025-06-16
+
+This module provides functions for validating and cleaning filenames according
+to Windows standards. It includes utilities for checking character validity,
+cleaning text, and preparing final filenames.
+
+Contains:
+- is_valid_filename_char: Check if a character is valid for filenames
+- clean_filename_text: Clean text by removing invalid characters
 """
 
 import re

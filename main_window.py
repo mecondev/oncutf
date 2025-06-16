@@ -37,7 +37,7 @@ from models.file_table_model import FileTableModel
 from modules.name_transform_module import NameTransformModule
 # Utility functions and helpers
 from utils.cursor_helper import wait_cursor, emergency_cursor_cleanup, force_restore_cursor
-from utils.filename_validator import FilenameValidator
+# Filename validation utilities available as functions
 from utils.icon_cache import load_preview_status_icons, prepare_status_icons
 from utils.icons import create_colored_icon
 from utils.icons_loader import get_menu_icon, icons_loader, load_metadata_icons
@@ -123,7 +123,7 @@ class MainWindow(QMainWindow):
         self.create_colored_icon = create_colored_icon
         self.icon_paths = prepare_status_icons()
 
-        self.filename_validator = FilenameValidator()
+        # Filename validation utilities available as functions in utils.filename_validator
         self.last_action = None  # Could be: 'folder_import', 'browse', 'rename', etc.
         self.current_folder_path = None
         self.files = []

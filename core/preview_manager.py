@@ -187,8 +187,7 @@ class PreviewManager:
             self.parent_window.preview_tables_view.update_from_pairs(
                 name_pairs,
                 getattr(self.parent_window, 'preview_icons', {}),
-                getattr(self.parent_window, 'icon_paths', {}),
-                getattr(self.parent_window, 'filename_validator', None)
+                getattr(self.parent_window, 'icon_paths', {})
             )
         else:
             logger.warning("[PreviewManager] Preview tables view not available")
