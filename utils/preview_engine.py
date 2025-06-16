@@ -58,13 +58,8 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
             part = str(value).zfill(padding)
 
         elif module_type == "specified_text":
-            text = data.get("text", "")
-            if not text:
-                logger.debug(f"[apply_rename_modules] SpecifiedText empty, using original base: {original_base_name}", extra={"dev_only": True})
-                part = original_base_name
-            else:
-                part = SpecifiedTextModule.apply_from_data(data, file_item, index, metadata_cache)
-                logger.debug(f"[apply_rename_modules] SpecifiedText part: '{part}' (from text='{text}')", extra={"dev_only": True})
+            part = SpecifiedTextModule.apply_from_data(data, file_item, index, metadata_cache)
+            logger.debug(f"[apply_rename_modules] SpecifiedText part: '{part}'", extra={"dev_only": True})
 
         elif module_type == "original_name":
             part = original_base_name
@@ -77,7 +72,14 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
             new_name_parts.append(part)
 
     logger.debug(f"[apply_rename_modules] All parts before join: {new_name_parts}", extra={"dev_only": True})
-    final_basename = "_".join(new_name_parts)
+
+    # If no effective modules produced content, fallback to original name
+    if not new_name_parts or all(not part.strip() for part in new_name_parts):
+        logger.debug(f"[apply_rename_modules] No effective modules, using original base: {original_base_name}", extra={"dev_only": True})
+        final_basename = original_base_name
+    else:
+        final_basename = "".join(new_name_parts)
+
     logger.debug(f"[apply_rename_modules] Final basename before extension: '{final_basename}'", extra={"dev_only": True})
     final_name = f"{final_basename}{ext}"
     logger.debug(f"[apply_rename_modules] Final name with extension: '{final_name}'", extra={"dev_only": True})

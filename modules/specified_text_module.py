@@ -241,8 +241,8 @@ class SpecifiedTextModule(BaseRenameModule):
             from config import INVALID_FILENAME_MARKER
             return INVALID_FILENAME_MARKER
 
-        # Always return only the basename (remove extension if user typed it)
-        return os.path.splitext(text)[0]
+        # Return the text exactly as entered by the user
+        return text
 
     @staticmethod
     def is_effective(data: dict) -> bool:
