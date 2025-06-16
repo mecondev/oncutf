@@ -26,7 +26,7 @@ from PyQt5.QtCore import (
     pyqtSignal,
     QEvent,
 )
-from PyQt5.QtGui import QCursor, QDrag, QDropEvent, QKeySequence, QMouseEvent, QPixmap
+from PyQt5.QtGui import QCursor, QDrag, QDropEvent, QKeySequence, QMouseEvent, QPixmap, QPainter, QPen, QBrush, QColor
 from PyQt5.QtWidgets import QAbstractItemView, QApplication, QHeaderView, QLabel, QTableView
 
 from config import FILE_TABLE_COLUMN_WIDTHS
@@ -96,6 +96,11 @@ class FileTableView(QTableView):
         self._is_dragging = False
         self._drag_data = None  # Store selected file data for drag
 
+        # Lasso selection state
+        self._is_lasso_active = False
+        self._lasso_start_pos = None
+        self._lasso_current_pos = None
+
         # Selection preservation for drag operations
         self._preserve_selection_for_drag = False
         self._clicked_on_selected = False
@@ -129,6 +134,31 @@ class FileTableView(QTableView):
 
         # Selection store integration (with fallback to legacy selection handling)
         self._legacy_selection_mode = True  # Start in legacy mode for compatibility
+
+    def paintEvent(self, event):
+        """Paint the table and lasso selection rectangle."""
+        # Paint the normal table
+        super().paintEvent(event)
+
+                # Paint lasso rectangle if active
+        if self._is_lasso_active and self._lasso_start_pos and self._lasso_current_pos:
+            painter = QPainter(self.viewport())
+            painter.setRenderHint(QPainter.Antialiasing)
+
+            # Create lasso rectangle
+            lasso_rect = QRect(self._lasso_start_pos, self._lasso_current_pos).normalized()
+
+            # Fill with semi-transparent background
+            fill_color = QColor(0, 120, 215, 50)  # Windows-like selection blue with transparency
+            painter.fillRect(lasso_rect, QBrush(fill_color))
+
+            # Draw border
+            border_color = QColor(0, 120, 215, 180)  # Darker blue for border
+            pen = QPen(border_color, 1, Qt.SolidLine)
+            painter.setPen(pen)
+            painter.drawRect(lasso_rect)
+
+            painter.end()
 
     def _get_selection_store(self):
         """Get SelectionStore from ApplicationContext with fallback to None."""
@@ -669,9 +699,11 @@ class FileTableView(QTableView):
                     self._set_anchor_row(None)
                     self._update_selection_store(set(), emit_signal=True)
                 elif modifiers == Qt.ControlModifier:
-                    # Ctrl+click on empty space - allow lasso selection
-                    # Don't clear selection, just prepare for potential lasso
+                    # Ctrl+click on empty space - prepare for potential lasso selection
+                    # DON'T clear selection here - let the drag handler decide
+                    logger.info("[FileTableView] Ctrl+click on empty space - preparing for lasso")
                     pass
+                # Don't call super() for empty space clicks to avoid Qt's default behavior
                 return
 
             # Handle selection based on modifiers
@@ -772,6 +804,10 @@ class FileTableView(QTableView):
             # Reset drag start position
             self._drag_start_pos = None
 
+            # If we were lassoing, finish lasso selection
+            if self._is_lasso_active:
+                self._finish_lasso_selection()
+
             # If we were dragging, clean up
             if self._is_dragging:
                 self._end_custom_drag()
@@ -779,32 +815,38 @@ class FileTableView(QTableView):
         # Call parent implementation
         super().mouseReleaseEvent(event)
 
-    def _perform_lasso_selection(self, start_pos: QPoint, end_pos: QPoint) -> None:
-        """
-        Perform lasso selection between two points.
-        Select all rows that intersect with the lasso rectangle.
-        """
-        if not self.model():
+    def _start_lasso_selection(self, start_pos: QPoint) -> None:
+        """Start lasso selection at given position."""
+        self._is_lasso_active = True
+        self._lasso_start_pos = start_pos
+        self._lasso_current_pos = start_pos
+        logger.info(f"[FileTableView] Lasso selection started at {start_pos.x()}, {start_pos.y()}")
+
+    def _update_lasso_selection(self, current_pos: QPoint) -> None:
+        """Update lasso selection rectangle and selection in real-time."""
+        if not self._is_lasso_active or not self._lasso_start_pos:
             return
 
+        # Update current position
+        self._lasso_current_pos = current_pos
+
         # Create selection rectangle
-        selection_rect = self.rect().intersected(
-            QRect(start_pos, end_pos).normalized()
-        )
+        lasso_rect = QRect(self._lasso_start_pos, current_pos).normalized()
 
         # Get current selection to add to (Ctrl+drag adds to selection)
         current_selection = self._get_current_selection()
         new_selection = set(current_selection)
 
-        # Check each row to see if it intersects with selection rectangle
-        for row in range(self.model().rowCount()):
-            row_rect = self.visualRect(self.model().index(row, 0))
-            # Extend row rect to full width
-            row_rect.setLeft(0)
-            row_rect.setRight(self.viewport().width())
+        # Check each row to see if it intersects with lasso rectangle
+        if self.model():
+            for row in range(self.model().rowCount()):
+                row_rect = self.visualRect(self.model().index(row, 0))
+                # Extend row rect to full width
+                row_rect.setLeft(0)
+                row_rect.setRight(self.viewport().width())
 
-            if selection_rect.intersects(row_rect):
-                new_selection.add(row)
+                if lasso_rect.intersects(row_rect):
+                    new_selection.add(row)
 
         # Update selection
         self._update_selection_store(new_selection)
@@ -818,7 +860,23 @@ class FileTableView(QTableView):
                     index = self.model().index(row, 0)
                     selection_model.select(index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
 
-        logger.debug(f"[FileTableView] Lasso selected {len(new_selection)} rows", extra={"dev_only": True})
+        # Trigger repaint to show lasso rectangle
+        self.viewport().update()
+
+        # Debug logging
+        if len(new_selection) != len(current_selection):
+            logger.info(f"[FileTableView] Lasso selection updated: {len(new_selection)} files selected")
+
+    def _finish_lasso_selection(self) -> None:
+        """Finish lasso selection and clean up."""
+        if self._is_lasso_active:
+            selected_count = len(self._get_current_selection())
+            logger.info(f"[FileTableView] Lasso selection finished with {selected_count} files")
+            self._is_lasso_active = False
+            self._lasso_start_pos = None
+            self._lasso_current_pos = None
+            # Final repaint to clear lasso rectangle
+            self.viewport().update()
 
     def mouseMoveEvent(self, event) -> None:
         """
@@ -840,20 +898,37 @@ class FileTableView(QTableView):
 
                 # Check if we should start a drag or lasso
                 if modifiers == Qt.ControlModifier:
-                    # Ctrl+drag from empty space or for lasso selection
+                    # Ctrl+drag - check where we started
                     start_index = self.indexAt(self._drag_start_pos)
                     if not start_index.isValid():
-                        # Started from empty space - do lasso selection
-                        self._perform_lasso_selection(self._drag_start_pos, event.pos())
+                        # Started from empty space - start lasso selection
+                        self._start_lasso_selection(self._drag_start_pos)
                         return
-                    elif hovered_row in self._get_current_selection():
-                        # Started from selected item with Ctrl - start drag
-                        self._start_custom_drag()
-                        return
-                elif hovered_row in self._get_current_selection():
-                    # Normal drag from selected item
-                    self._start_custom_drag()
-                    return
+                    else:
+                        # Started from an item - check if it's selected
+                        start_row = start_index.row()
+                        if start_row in self._get_current_selection():
+                            # Started from selected item with Ctrl - start drag
+                            self._start_custom_drag()
+                            return
+                        else:
+                            # Started from unselected item with Ctrl - start lasso
+                            self._start_lasso_selection(self._drag_start_pos)
+                            return
+                else:
+                    # No Ctrl modifier - only start drag if we're on a selected item
+                    start_index = self.indexAt(self._drag_start_pos)
+                    if start_index.isValid():
+                        start_row = start_index.row()
+                        if start_row in self._get_current_selection():
+                            # Normal drag from selected item
+                            self._start_custom_drag()
+                            return
+
+        # Handle lasso selection updates
+        if self._is_lasso_active:
+            self._update_lasso_selection(event.pos())
+            return
 
         # Handle real-time drag feedback if dragging
         if self._is_dragging:
@@ -936,6 +1011,11 @@ class FileTableView(QTableView):
 
         if not file_paths:
             return
+
+        # Notify metadata tree that drag is starting
+        parent_window = self.window()
+        if hasattr(parent_window, 'metadata_tree_view'):
+            parent_window.metadata_tree_view._is_dragging = True
 
         # Activate drag cancel filter to preserve selection (especially for no-modifier drags)
         from widgets.file_tree_view import _drag_cancel_filter
@@ -1032,88 +1112,62 @@ class FileTableView(QTableView):
             # Clean up drag state without performing drop
             self._is_dragging = False
             self._drag_data = None
-            self._drag_start_pos = None
 
-            # End visual feedback
+            # Notify metadata tree that drag ended
+            parent_window = self.window()
+            if hasattr(parent_window, 'metadata_tree_view'):
+                parent_window.metadata_tree_view._is_dragging = False
+                # Force refresh metadata after drag ends
+                parent_window.metadata_tree_view.refresh_metadata_from_selection(force_update=True)
+
+            # Cleanup visual feedback
             end_drag_visual()
+            drag_manager.end_drag("file_table")
 
-            # Force cursor cleanup again after visual cleanup
-            self._force_cursor_cleanup()
-
-            # Restore hover state with fake mouse move event
-            self._restore_hover_after_drag()
-
-            logger.debug("[FileTableView] Custom drag ended (cancelled)", extra={"dev_only": True})
             return
 
-        # Check if we dropped on a valid target (only MetadataTreeView allowed)
-        widget_under_cursor = QApplication.widgetAt(QCursor.pos())
-        logger.debug(f"[FileTableView] Widget under cursor: {widget_under_cursor}", extra={"dev_only": True})
+        logger.debug("[FileTableView] Ending custom drag operation", extra={"dev_only": True})
 
-        # Use visual manager to validate drop target
-        visual_manager = DragVisualManager.get_instance()
-        valid_drop = False
+        # Get widget under cursor for drop detection
+        cursor_pos = QCursor.pos()
+        widget_under_cursor = QApplication.widgetAt(cursor_pos)
 
-        # Check if dropped on metadata tree (strict policy: only MetadataTreeView)
+        dropped_successfully = False
+
         if widget_under_cursor:
-            # Look for MetadataTreeView in parent hierarchy
+            # Walk up parent hierarchy to find drop targets
             parent = widget_under_cursor
-            while parent:
-                logger.debug(f"[FileTableView] Checking parent: {parent.__class__.__name__}", extra={"dev_only": True})
-
-                # Check with visual manager
-                if visual_manager.is_valid_drop_target(parent, "file_table"):
-                    logger.debug(f"[FileTableView] Valid drop target found: {parent.__class__.__name__}", extra={"dev_only": True})
-                    self._handle_drop_on_metadata_tree()
-                    valid_drop = True
+            while parent and not dropped_successfully:
+                if parent.__class__.__name__ == 'MetadataTreeView':
+                    dropped_successfully = self._handle_drop_on_metadata_tree()
                     break
-
-                # Also check viewport of MetadataTreeView
-                if hasattr(parent, 'parent') and parent.parent():
-                    if visual_manager.is_valid_drop_target(parent.parent(), "file_table"):
-                        logger.debug(f"[FileTableView] Valid drop target found via viewport: {parent.parent().__class__.__name__}", extra={"dev_only": True})
-                        self._handle_drop_on_metadata_tree()
-                        valid_drop = True
-                        break
-
-                # Check for policy violations
-                if parent.__class__.__name__ in ['FileTreeView', 'FileTableView']:
-                    logger.debug(f"[FileTableView] Rejecting drop on {parent.__class__.__name__} (policy violation)", extra={"dev_only": True})
-                    break
-
                 parent = parent.parent()
-
-        # Log drop result
-        if not valid_drop:
-            logger.debug("[FileTableView] Drop on invalid target", extra={"dev_only": True})
 
         # Clean up drag state
         self._is_dragging = False
-        data = self._drag_data
         self._drag_data = None
-        self._drag_start_pos = None
 
-        # Deactivate drag cancel filter after drop processing
-        from widgets.file_tree_view import _drag_cancel_filter
-        if not valid_drop:  # Only deactivate if drop was invalid
-            _drag_cancel_filter.deactivate()
+        # Notify metadata tree that drag ended
+        parent_window = self.window()
+        if hasattr(parent_window, 'metadata_tree_view'):
+            parent_window.metadata_tree_view._is_dragging = False
+            if dropped_successfully:
+                # Don't refresh immediately after successful drop - let the drop handler do it
+                pass
+            else:
+                # Force refresh metadata after unsuccessful drag
+                parent_window.metadata_tree_view.refresh_metadata_from_selection(force_update=True)
 
-        # End visual feedback
+        # Cleanup visual feedback
         end_drag_visual()
-
-        # Final cursor cleanup after visual feedback ends
-        self._force_cursor_cleanup()
 
         # Notify DragManager
         drag_manager.end_drag("file_table")
 
-        # Restore hover state with fake mouse move event
-        self._restore_hover_after_drag()
+        # Force cleanup any remaining visual artifacts
+        schedule_drag_cleanup(self._restore_hover_after_drag, 10)
 
-        # Schedule delayed cleanup to handle any remaining cursor issues from dialogs
-        schedule_drag_cleanup(self._force_cursor_cleanup, 200)
-
-        logger.debug(f"[FileTableView] Custom drag ended: {len(data) if data else 0} files (valid_drop: {valid_drop})", extra={"dev_only": True})
+        logger.debug("[FileTableView] Custom drag operation completed", extra={"dev_only": True})
 
     def _restore_hover_after_drag(self):
         """Restore hover state after drag ends by sending a fake mouse move event"""
@@ -1196,8 +1250,10 @@ class FileTableView(QTableView):
         if not preserved_selection:
             return
 
-        # Update selection store
-        self._update_selection_store(preserved_selection, emit_signal=True)
+        logger.debug(f"[FileTableView] Restoring selection for {len(preserved_selection)} files", extra={"dev_only": True})
+
+        # Update selection store first
+        self._update_selection_store(preserved_selection, emit_signal=False)
 
         # Update Qt selection model
         selection_model = self.selectionModel()
@@ -1208,7 +1264,13 @@ class FileTableView(QTableView):
                     index = self.model().index(row, 0)
                     selection_model.select(index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
 
-        logger.debug(f"[FileTableView] Restored selection for {len(preserved_selection)} files", extra={"dev_only": True})
+        # Emit signal after all selection is restored
+        self._update_selection_store(preserved_selection, emit_signal=True)
+
+        # Force viewport update
+        self.viewport().update()
+
+        logger.debug(f"[FileTableView] Selection restored for {len(preserved_selection)} files", extra={"dev_only": True})
 
     # =====================================
     # Drag & Drop Methods (Legacy - may remove)

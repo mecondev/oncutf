@@ -959,12 +959,16 @@ class MetadataTreeView(QTreeView):
 
     def clear_view(self) -> None:
         """
-        Clears the metadata tree view and shows a placeholder message.
-        Does not clear scroll position memory when just showing placeholder.
+        Clear the metadata tree view and show placeholder.
         """
-        # Don't clear scroll position memory when just showing placeholder
-        # Only clear when actually changing folders
-        self.show_empty_state("No file selected")
+        if self._is_dragging:
+            return  # Skip updates during drag
+
+        # Clear the displayed metadata cache
+        if hasattr(self, '_current_displayed_metadata'):
+            self._current_displayed_metadata = None
+
+        self.show_empty_state()
 
     def display_metadata(self, metadata: Optional[Dict[str, Any]], context: str = "") -> None:
         """
@@ -974,9 +978,32 @@ class MetadataTreeView(QTreeView):
         if self._is_dragging:
             return  # Skip updates during drag
 
+        # Prevent multiple rapid updates with better debouncing
+        if not hasattr(self, '_last_metadata_update'):
+            self._last_metadata_update = 0
+
+        import time
+        current_time = time.time()
+        time_since_last = current_time - self._last_metadata_update
+
+        # Skip if too frequent, unless it's a forced update or significant time has passed
+        if time_since_last < 0.15 and not context.startswith("forced_"):
+            logger.debug(f"[MetadataTree] Skipping rapid update (last: {time_since_last:.3f}s ago)")
+            return
+
+        self._last_metadata_update = current_time
+
         if not metadata:
             self.show_empty_state()
             return
+
+        # Check if this is the same metadata we're already showing
+        current_metadata = getattr(self, '_current_displayed_metadata', None)
+        if current_metadata == metadata:
+            logger.debug("[MetadataTree] Same metadata already displayed, skipping update")
+            return
+
+        self._current_displayed_metadata = metadata
 
         # Store current scroll position before updating
         self._save_current_scroll_position()
@@ -1196,12 +1223,76 @@ class MetadataTreeView(QTreeView):
 
         self.clear_view()
 
-    def refresh_metadata_from_selection(self) -> None:
+    def refresh_metadata_from_selection(self, force_update: bool = False) -> None:
         """
-        Convenience method that triggers metadata update from parent selection.
-        Can be called from parent window when selection changes.
+        Refresh metadata display based on current file selection.
+
+        Args:
+            force_update: If True, skip debouncing and update immediately
         """
-        self.update_from_parent_selection()
+        if self._is_dragging and not force_update:
+            return  # Skip updates during drag unless forced
+
+        # Debounce rapid updates unless forced
+        if not force_update:
+            if not hasattr(self, '_last_refresh_time'):
+                self._last_refresh_time = 0
+
+            import time
+            current_time = time.time()
+            if current_time - self._last_refresh_time < 0.2:  # 200ms debounce
+                # Schedule deferred update
+                if not hasattr(self, '_deferred_refresh_timer'):
+                    from PyQt5.QtCore import QTimer
+                    self._deferred_refresh_timer = QTimer()
+                    self._deferred_refresh_timer.setSingleShot(True)
+                    self._deferred_refresh_timer.timeout.connect(lambda: self.refresh_metadata_from_selection(force_update=True))
+
+                self._deferred_refresh_timer.stop()
+                self._deferred_refresh_timer.start(200)
+                return
+
+            self._last_refresh_time = current_time
+
+        parent_window = self._get_parent_with_file_table()
+        if not parent_window or not hasattr(parent_window, 'file_table_view'):
+            self.clear_view()
+            return
+
+        selection_model = parent_window.file_table_view.selectionModel()
+        if not selection_model:
+            self.clear_view()
+            return
+
+        selected_rows = selection_model.selectedRows()
+        if not selected_rows:
+            self.clear_view()
+            return
+
+        # Get the current index or last selected
+        current_index = selection_model.currentIndex()
+        target_index = current_index if current_index.isValid() and current_index in selected_rows else selected_rows[-1]
+
+        if not target_index.isValid():
+            self.clear_view()
+            return
+
+        row = target_index.row()
+        if not (0 <= row < len(parent_window.file_model.files)):
+            self.clear_view()
+            return
+
+        file_item = parent_window.file_model.files[row]
+
+        # Check if we already have metadata for this file
+        metadata = file_item.metadata
+        if not metadata and hasattr(parent_window, 'metadata_cache'):
+            metadata = parent_window.metadata_cache.get(file_item.full_path)
+
+        if metadata:
+            self.display_metadata(metadata, context=f"refresh_selection_row_{row}")
+        else:
+            self.clear_view()
 
     def connect_toggle_button(self) -> None:
         """
