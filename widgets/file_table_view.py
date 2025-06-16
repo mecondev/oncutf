@@ -19,6 +19,7 @@ from PyQt5.QtCore import (
     QMimeData,
     QModelIndex,
     QPoint,
+    QRect,
     Qt,
     QTimer,
     QUrl,
@@ -88,9 +89,8 @@ class FileTableView(QTableView):
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True)
 
-        # Enable rubber band selection
-        self.setRubberBandSelectionMode(QAbstractItemView.IntersectsItemBoundingRect)
-        self.setRubberBandSelectionEnabled(True)
+        # Note: QTableView in PyQt5 doesn't have setRubberBandSelectionMode
+        # We'll implement custom lasso selection with Ctrl+drag
 
         # Custom drag state tracking
         self._is_dragging = False
@@ -661,11 +661,17 @@ class FileTableView(QTableView):
             # Store drag start position
             self._drag_start_pos = event.pos()
 
-            # If clicking on empty space, clear selection
+            # If clicking on empty space
             if not index.isValid():
                 if modifiers == Qt.NoModifier:
+                    # Clear selection on normal click on empty space
                     self.clearSelection()
                     self._set_anchor_row(None)
+                    self._update_selection_store(set(), emit_signal=True)
+                elif modifiers == Qt.ControlModifier:
+                    # Ctrl+click on empty space - allow lasso selection
+                    # Don't clear selection, just prepare for potential lasso
+                    pass
                 return
 
             # Handle selection based on modifiers
@@ -674,13 +680,17 @@ class FileTableView(QTableView):
                 self._set_anchor_row(index.row())
                 self._update_selection_store({index.row()})
             elif modifiers == Qt.ControlModifier:
-                # Ctrl+click - toggle selection
+                # Check if we're on a selected item for potential drag
                 current_selection = self._get_current_selection()
                 if index.row() in current_selection:
-                    current_selection.remove(index.row())
+                    # Don't change selection yet - might be starting a drag
+                    self._preserve_selection_for_drag = True
+                    self._clicked_on_selected = True
+                    return
                 else:
+                    # Ctrl+click on unselected - toggle selection
                     current_selection.add(index.row())
-                self._update_selection_store(current_selection)
+                    self._update_selection_store(current_selection)
             elif modifiers == Qt.ShiftModifier:
                 # Shift+click - select range
                 anchor = self._get_anchor_row()
@@ -738,6 +748,27 @@ class FileTableView(QTableView):
         Handle mouse release events.
         """
         if event.button() == Qt.LeftButton:
+            # Handle preserved selection case (clicked on selected item but didn't drag)
+            if (getattr(self, '_preserve_selection_for_drag', False) and
+                not self._is_dragging and
+                hasattr(self, '_clicked_on_selected') and self._clicked_on_selected):
+
+                modifiers = QApplication.keyboardModifiers()
+                if modifiers == Qt.ControlModifier:
+                    # Ctrl+click on selected item without drag - toggle selection
+                    if hasattr(self, '_clicked_index') and self._clicked_index and self._clicked_index.isValid():
+                        current_selection = self._get_current_selection()
+                        row = self._clicked_index.row()
+                        if row in current_selection:
+                            current_selection.remove(row)
+                            self._update_selection_store(current_selection)
+
+            # Clean up flags
+            self._preserve_selection_for_drag = False
+            self._clicked_on_selected = False
+            if hasattr(self, '_clicked_index'):
+                self._clicked_index = None
+
             # Reset drag start position
             self._drag_start_pos = None
 
@@ -745,23 +776,101 @@ class FileTableView(QTableView):
             if self._is_dragging:
                 self._end_custom_drag()
 
-        # Call parent implementation for rubber band selection
+        # Call parent implementation
         super().mouseReleaseEvent(event)
+
+    def _perform_lasso_selection(self, start_pos: QPoint, end_pos: QPoint) -> None:
+        """
+        Perform lasso selection between two points.
+        Select all rows that intersect with the lasso rectangle.
+        """
+        if not self.model():
+            return
+
+        # Create selection rectangle
+        selection_rect = self.rect().intersected(
+            QRect(start_pos, end_pos).normalized()
+        )
+
+        # Get current selection to add to (Ctrl+drag adds to selection)
+        current_selection = self._get_current_selection()
+        new_selection = set(current_selection)
+
+        # Check each row to see if it intersects with selection rectangle
+        for row in range(self.model().rowCount()):
+            row_rect = self.visualRect(self.model().index(row, 0))
+            # Extend row rect to full width
+            row_rect.setLeft(0)
+            row_rect.setRight(self.viewport().width())
+
+            if selection_rect.intersects(row_rect):
+                new_selection.add(row)
+
+        # Update selection
+        self._update_selection_store(new_selection)
+
+        # Update Qt selection model
+        selection_model = self.selectionModel()
+        if selection_model:
+            selection_model.clearSelection()
+            for row in new_selection:
+                if 0 <= row < self.model().rowCount():
+                    index = self.model().index(row, 0)
+                    selection_model.select(index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+
+        logger.debug(f"[FileTableView] Lasso selected {len(new_selection)} rows", extra={"dev_only": True})
 
     def mouseMoveEvent(self, event) -> None:
         """
-        Handle mouse move events for drag initiation and rubber band selection.
+        Handle mouse move events for drag initiation and lasso selection.
         """
-        if self._drag_start_pos is not None:
-            # Check if we've moved enough to start a drag
-            if (event.pos() - self._drag_start_pos).manhattanLength() >= QApplication.startDragDistance():
-                # Start drag if we have selected items
-                if self._get_current_selection():
+        if self.is_empty():
+            return
+
+        # Get current mouse position and check what's under it
+        index = self.indexAt(event.pos())
+        hovered_row = index.row() if index.isValid() else -1
+
+        # Handle drag operations
+        if (event.buttons() & Qt.LeftButton and self._drag_start_pos is not None):
+            distance = (event.pos() - self._drag_start_pos).manhattanLength()
+
+            if distance >= QApplication.startDragDistance():
+                modifiers = QApplication.keyboardModifiers()
+
+                # Check if we should start a drag or lasso
+                if modifiers == Qt.ControlModifier:
+                    # Ctrl+drag from empty space or for lasso selection
+                    start_index = self.indexAt(self._drag_start_pos)
+                    if not start_index.isValid():
+                        # Started from empty space - do lasso selection
+                        self._perform_lasso_selection(self._drag_start_pos, event.pos())
+                        return
+                    elif hovered_row in self._get_current_selection():
+                        # Started from selected item with Ctrl - start drag
+                        self._start_custom_drag()
+                        return
+                elif hovered_row in self._get_current_selection():
+                    # Normal drag from selected item
                     self._start_custom_drag()
                     return
 
-        # Call parent implementation for rubber band selection
-        super().mouseMoveEvent(event)
+        # Handle real-time drag feedback if dragging
+        if self._is_dragging:
+            self._update_drag_feedback()
+            return
+
+        # Update hover highlighting (only when not dragging)
+        if hasattr(self, "hover_delegate") and hovered_row != self.hover_delegate.hovered_row:
+            old_row = self.hover_delegate.hovered_row
+            self.hover_delegate.update_hover_row(hovered_row)
+
+            for r in (old_row, hovered_row):
+                if r >= 0:
+                    left = self.model().index(r, 0)
+                    right = self.model().index(r, self.model().columnCount() - 1)
+                    row_rect = self.visualRect(left).united(self.visualRect(right))
+                    self.viewport().update(row_rect)
 
     def keyPressEvent(self, event) -> None:
         """Handle keyboard navigation, sync selection, and modifier changes during drag."""
