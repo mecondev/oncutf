@@ -39,7 +39,7 @@ from core.drag_visual_manager import (
 )
 from utils.file_drop_helper import extract_file_paths
 from utils.logger_factory import get_cached_logger
-from utils.timer_manager import schedule_resize_adjust, schedule_drag_cleanup
+from utils.timer_manager import schedule_resize_adjust, schedule_drag_cleanup, schedule_selection_update
 
 from .hover_delegate import HoverItemDelegate
 
@@ -1043,53 +1043,51 @@ class FileTableView(QTableView):
             QApplication.postEvent(self, fake_move_event)
 
     def _handle_drop_on_metadata_tree(self):
-        """Handle drop on metadata tree"""
+        """Handle drop on metadata tree with simple, reliable selection preservation"""
         if not self._drag_data:
             return
 
-        # Force cursor cleanup before handling drop (prevents stuck cursor during dialogs)
+        # Force cursor cleanup before handling drop
         self._force_cursor_cleanup()
 
-        # Use real-time modifiers at drop time (standard UX behavior)
+        # Use real-time modifiers at drop time
         modifiers = QApplication.keyboardModifiers()
 
-        # Get preserved selection before deactivating filter
+        # ALWAYS get and restore selection - simplified logic
         from widgets.file_tree_view import _drag_cancel_filter
-        preserved_selection = set()
-        if _drag_cancel_filter.is_active():
-            preserved_selection = _drag_cancel_filter.get_preserved_selection()
+        preserved_selection = self._get_current_selection()  # Get current selection directly
 
-        # Restore selection IMMEDIATELY if no modifiers (before metadata loading)
-        if modifiers == Qt.NoModifier and preserved_selection:
-            logger.debug(f"[FileTableView] Restoring selection immediately for {len(preserved_selection)} files", extra={"dev_only": True})
-            self._restore_preserved_selection(preserved_selection)
+        # If drag cancel filter was active, use its preserved selection instead
+        if _drag_cancel_filter.is_active():
+            filter_selection = _drag_cancel_filter.get_preserved_selection()
+            if filter_selection:
+                preserved_selection = filter_selection
 
         # Find metadata tree view to emit signal directly
-        widget_under_cursor = QApplication.widgetAt(QCursor.pos())
-        metadata_tree = None
+        parent_window = self._get_parent_with_metadata_tree()
+        if parent_window and hasattr(parent_window, 'metadata_tree_view'):
+            metadata_tree = parent_window.metadata_tree_view
 
-        # Search for MetadataTreeView
-        parent = widget_under_cursor
-        while parent:
-            if parent.__class__.__name__ == 'MetadataTreeView':
-                metadata_tree = parent
-                break
-            if hasattr(parent, 'parent') and parent.parent() and parent.parent().__class__.__name__ == 'MetadataTreeView':
-                metadata_tree = parent.parent()
-                break
-            parent = parent.parent()
-
-        if metadata_tree:
-            # Store data temporarily for cleanup after signal emission
-            data_count = len(self._drag_data)
-
-            # Emit signal directly on metadata tree
+            # Emit the signal for metadata loading
             metadata_tree.files_dropped.emit(self._drag_data, modifiers)
-            logger.info(f"[FileTableView] Dropped {data_count} files on metadata tree (modifiers: {modifiers})")
 
-            # Force additional cursor cleanup after signal emission (handles dialog scenarios)
-            QApplication.processEvents()  # Allow signal to be processed
-            self._force_cursor_cleanup()  # Clean up any remaining cursor issues
+            # ALWAYS restore selection immediately after signal emission
+            if preserved_selection:
+                logger.debug(f"[FileTableView] Restoring selection for {len(preserved_selection)} files after drop", extra={"dev_only": True})
+
+                # Restore selection immediately
+                self._restore_preserved_selection(preserved_selection)
+
+                # Also schedule a delayed restore as backup
+                schedule_selection_update(
+                    lambda: self._restore_preserved_selection(preserved_selection),
+                    delay=100,  # Short delay to ensure metadata loading doesn't interfere
+                    timer_id="backup_restore_selection"
+                )
+
+        # Force additional cursor cleanup after signal emission
+        QApplication.processEvents()  # Allow signal to be processed
+        self._force_cursor_cleanup()  # Clean up any remaining cursor issues
 
     def _restore_preserved_selection(self, preserved_selection: set):
         """Restore preserved selection after metadata loading"""
@@ -1118,6 +1116,15 @@ class FileTableView(QTableView):
 
         logger.debug(f"[FileTableView] Selection restored for {len(preserved_selection)} files", extra={"dev_only": True})
 
+    def _get_parent_with_metadata_tree(self):
+        """Find parent window that has metadata_tree_view attribute"""
+        parent = self.parent()
+        while parent:
+            if hasattr(parent, 'metadata_tree_view'):
+                return parent
+            parent = parent.parent()
+        return None
+
     # =====================================
     # Drag & Drop Methods (Legacy - may remove)
     # =====================================
@@ -1139,9 +1146,13 @@ class FileTableView(QTableView):
         drag_manager = DragManager.get_instance()
         drag_manager.start_drag("file_table")
 
-        # Setup drag cancel filter (legacy - may remove later)
+        # Setup drag cancel filter and PRESERVE CURRENT SELECTION
         from widgets.file_tree_view import _drag_cancel_filter
         _drag_cancel_filter.activate()
+        # THIS IS THE KEY FIX: Preserve selection BEFORE drag starts
+        _drag_cancel_filter.preserve_selection(selected_rows)
+
+        logger.debug(f"[FileTableView] Starting drag with {len(selected_rows)} files selected", extra={"dev_only": True})
 
         # Create MIME data
         mime_data = QMimeData()

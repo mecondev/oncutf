@@ -108,14 +108,6 @@ class MetadataTreeView(QTreeView):
         self._current_file_path: Optional[str] = None
         self._pending_restore_timer: Optional[QTimer] = None
 
-        # Flag to prevent flickering during drag
-        self._is_dragging: bool = False
-
-        # Debouncing for metadata display to prevent flickering
-        self._metadata_display_timer: Optional[QTimer] = None
-        self._pending_metadata: Optional[Dict[str, Any]] = None
-        self._pending_context: str = ""
-
         # Setup placeholder icon
         self.placeholder_label = QLabel(self.viewport())
         self.placeholder_label.setAlignment(Qt.AlignCenter)
@@ -132,6 +124,9 @@ class MetadataTreeView(QTreeView):
 
         # Setup standard view properties
         self._setup_tree_view_properties()
+
+        # Timer for update debouncing (use timer_manager)
+        self._update_timer_id = None
 
     def _setup_tree_view_properties(self) -> None:
         """Configure standard tree view properties."""
@@ -161,7 +156,6 @@ class MetadataTreeView(QTreeView):
         This is identified by the presence of our custom MIME type.
         """
         if event.mimeData().hasFormat("application/x-oncutf-filetable"):
-            self._is_dragging = True
             event.acceptProposedAction()
         else:
             event.ignore()
@@ -208,11 +202,10 @@ class MetadataTreeView(QTreeView):
         # Force cleanup of any drag state
         while QApplication.overrideCursor():
             QApplication.restoreOverrideCursor()
-        self._is_dragging = False
+        self.viewport().update()
 
     def _complete_drag_cleanup(self) -> None:
         """Complete cleanup after drag operation."""
-        self._is_dragging = False
         self.viewport().update()
 
     # =====================================
@@ -973,45 +966,12 @@ class MetadataTreeView(QTreeView):
 
     def display_metadata(self, metadata: Optional[Dict[str, Any]], context: str = "") -> None:
         """
-        Display metadata in the tree view with anti-flickering debouncing.
+        Display metadata in the tree view with simple, direct rendering.
 
         Args:
             metadata: Dictionary containing metadata to display
             context: Context string for debugging
         """
-        # Skip updates during drag operations to prevent flickering
-        if self._is_dragging:
-            logger.debug(f"[MetadataTree] Skipping metadata display during drag (context: {context})", extra={"dev_only": True})
-            return
-
-        # Store pending metadata and context
-        self._pending_metadata = metadata
-        self._pending_context = context
-
-        # Cancel any existing timer
-        if self._metadata_display_timer:
-            self._metadata_display_timer.stop()
-            self._metadata_display_timer = None
-
-        # Create new timer for debouncing
-        self._metadata_display_timer = QTimer()
-        self._metadata_display_timer.setSingleShot(True)
-        self._metadata_display_timer.timeout.connect(self._perform_metadata_display)
-
-        # Use shorter delay for immediate contexts, longer for bulk operations
-        delay = 5 if context.startswith(("update_from_parent", "existing_")) else 25
-        self._metadata_display_timer.start(delay)
-
-    def _perform_metadata_display(self) -> None:
-        """Perform the actual metadata display after debouncing."""
-        metadata = self._pending_metadata
-        context = self._pending_context
-
-        # Clear pending data
-        self._pending_metadata = None
-        self._pending_context = ""
-        self._metadata_display_timer = None
-
         if not isinstance(metadata, dict) or not metadata:
             logger.debug(f"[MetadataTree] No metadata to display (context: {context})", extra={"dev_only": True})
             self.clear_view()
@@ -1158,8 +1118,7 @@ class MetadataTreeView(QTreeView):
 
     def update_from_parent_selection(self) -> None:
         """
-        Updates metadata display based on the current selection in the parent's file table.
-        This replaces the functionality of check_selection_and_show_metadata from MainWindow.
+        Simple metadata display based on current selection - no complex logic.
         """
         parent_window = self._get_parent_with_file_table()
         if not parent_window:
@@ -1182,19 +1141,8 @@ class MetadataTreeView(QTreeView):
             self.clear_view()
             return
 
-        # Prefer currentIndex if it's valid and selected
-        current_index = selection_model.currentIndex()
-        target_index = None
-
-        if (
-            current_index.isValid()
-            and current_index in selected_rows
-            and hasattr(parent_window, 'file_model')
-            and 0 <= current_index.row() < len(parent_window.file_model.files)
-        ):
-            target_index = current_index
-        else:
-            target_index = selected_rows[0]  # fallback
+        # Always use the last selected row - simple and predictable
+        target_index = selected_rows[-1]
 
         if (hasattr(parent_window, 'file_model') and
             0 <= target_index.row() < len(parent_window.file_model.files)):
