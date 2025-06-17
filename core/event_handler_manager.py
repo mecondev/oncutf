@@ -223,7 +223,7 @@ class EventHandlerManager:
 
             if len(selected_files) <= 1:
                 # Single file or no selection - intelligent loading (will use wait cursor for single file)
-                self.parent_window.load_metadata_for_items([file], use_extended=False, source="double_click")
+                    self.parent_window.load_metadata_for_items([file], use_extended=False, source="double_click")
             else:
                 # Multiple files selected - intelligent loading (will use dialog for multiple)
                 self.parent_window.load_metadata_for_items(selected_files, use_extended=False, source="double_click_multi")

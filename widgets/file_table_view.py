@@ -582,8 +582,8 @@ class FileTableView(QTableView):
                     selected_indexes = sm.selectedRows()
                     if selected_indexes:
                         self._manual_anchor_index = selected_indexes[0]
-                    else:
-                        self._manual_anchor_index = index
+                else:
+                    self._manual_anchor_index = index
 
                 # Create selection from anchor to current index
                 selection = QItemSelection(self._manual_anchor_index, index)
@@ -777,8 +777,8 @@ class FileTableView(QTableView):
         if event.button() == Qt.LeftButton:
             # Handle preserved selection case (clicked on selected item but didn't drag)
             if (getattr(self, '_preserve_selection_for_drag', False) and
-                not self._is_dragging and
-                hasattr(self, '_clicked_on_selected') and self._clicked_on_selected):
+                    not self._is_dragging and
+                    hasattr(self, '_clicked_on_selected') and self._clicked_on_selected):
 
                 modifiers = QApplication.keyboardModifiers()
                 if modifiers == Qt.ControlModifier:
@@ -1130,12 +1130,38 @@ class FileTableView(QTableView):
             QApplication.postEvent(self, fake_move_event)
 
     def _handle_drop_on_metadata_tree(self):
-        """Handle drop on metadata tree - simplified version using dialog-based loading"""
+        """Handle drop on metadata tree - send ALL SELECTED files, not just dragged files"""
         if not self._drag_data:
             logger.debug("[FileTableView] No drag data available for metadata tree drop", extra={"dev_only": True})
             return False
 
-        logger.debug(f"[FileTableView] Handling drop on metadata tree with {len(self._drag_data)} files", extra={"dev_only": True})
+        # CRITICAL: Use preserved selection from drag start instead of current selection
+        # This ensures we process ALL selected files, not just the ones that were dragged
+        if hasattr(self, '_drag_start_selection') and isinstance(self._drag_start_selection, set):
+            selected_rows = self._drag_start_selection
+            logger.debug(f"[FileTableView] Using preserved selection for metadata drop: {len(selected_rows)} files", extra={"dev_only": True})
+        else:
+            # Fallback: try to get current selection (though it might be lost)
+            selected_rows = self._get_current_selection()
+            logger.debug(f"[FileTableView] Fallback to current selection for metadata drop: {len(selected_rows)} files", extra={"dev_only": True})
+
+        if not selected_rows:
+            logger.warning("[FileTableView] No selected files found for metadata tree drop")
+            return False
+
+        # Convert selected rows to file paths
+        try:
+            file_items = [self.model().files[r] for r in selected_rows if 0 <= r < len(self.model().files)]
+            selected_file_paths = [f.full_path for f in file_items if f.full_path]
+        except (AttributeError, IndexError) as e:
+            logger.error(f"[FileTableView] Error getting selected file paths: {e}")
+            return False
+
+        if not selected_file_paths:
+            logger.warning("[FileTableView] No valid file paths found for metadata tree drop")
+            return False
+
+        logger.debug(f"[FileTableView] Handling drop on metadata tree with {len(selected_file_paths)} selected files", extra={"dev_only": True})
 
         # Force cursor cleanup before handling drop
         self._force_cursor_cleanup()
@@ -1148,10 +1174,9 @@ class FileTableView(QTableView):
         if parent_window and hasattr(parent_window, 'metadata_tree_view'):
             metadata_tree = parent_window.metadata_tree_view
 
-            logger.debug(f"[FileTableView] Emitting files_dropped signal with {len(self._drag_data)} files", extra={"dev_only": True})
-            # Emit the signal for metadata loading - this now uses dialog-based loading
-            # which preserves selection naturally, so no complex restoration needed
-            metadata_tree.files_dropped.emit(self._drag_data, modifiers)
+            logger.debug(f"[FileTableView] Emitting files_dropped signal with {len(selected_file_paths)} selected files", extra={"dev_only": True})
+            # Emit the signal with ALL SELECTED files, not just dragged files
+            metadata_tree.files_dropped.emit(selected_file_paths, modifiers)
 
             # Force additional cursor cleanup after signal emission
             QApplication.processEvents()  # Allow signal to be processed

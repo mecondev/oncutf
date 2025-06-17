@@ -171,10 +171,10 @@ def is_validation_error_marker(text: str) -> bool:
     """
     Check if text is a validation error marker
 
-    Args:
+        Args:
         text: Text to check
 
-    Returns:
+        Returns:
         bool: True if text is a validation error marker
     """
     return text == INVALID_FILENAME_MARKER or text.endswith(INVALID_FILENAME_MARKER)
@@ -205,11 +205,11 @@ def prepare_final_filename(filename_part: str, extension: str = "") -> str:
     """
     Prepare final filename by cleaning and combining with extension
 
-    Args:
+        Args:
         filename_part: The main filename part
         extension: File extension (with or without dot)
 
-    Returns:
+        Returns:
         str: Final cleaned filename
     """
     # Clean the filename part

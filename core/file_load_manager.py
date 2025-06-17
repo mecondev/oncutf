@@ -170,36 +170,33 @@ class FileLoadManager:
         - No modifiers: Fast metadata with CompactWaitingWidget
         - Shift: Extended metadata with CompactWaitingWidget
 
-        IMPORTANT: This loads metadata for ALL CURRENTLY SELECTED FILES,
-        not just the dropped file(s). This ensures consistent behavior with
-        context menu and shortcuts.
+        IMPORTANT: The paths parameter now contains ALL SELECTED FILES from the drag operation,
+        not just the dropped file(s). This ensures consistent behavior with context menu and shortcuts.
         """
-        # Get currently selected files (the real selection we want to process)
-        if not hasattr(self.parent_window, 'file_table_view'):
-            logger.warning("[Drop] No file_table_view available for selection")
+        if not paths:
+            logger.info("[Drop] No files provided for metadata loading.")
             return
 
-        current_selection = self.parent_window.file_table_view._get_current_selection()
-        if not current_selection:
-            logger.info("[Drop] No files selected for metadata loading.")
+        # Convert file paths to FileItem objects by finding them in the current model
+        if not hasattr(self.parent_window, 'file_model'):
+            logger.warning("[Drop] No file_model available")
             return
 
-        # Convert selection to FileItem objects
-        selected_files = [self.parent_window.file_model.files[r]
-                         for r in current_selection
-                         if 0 <= r < len(self.parent_window.file_model.files)]
+        selected_files = []
+        for path in paths:
+            # Find the corresponding FileItem in the model
+            for file_item in self.parent_window.file_model.files:
+                if file_item.full_path == path:
+                    selected_files.append(file_item)
+                    break
 
         if not selected_files:
-            logger.warning("[Drop] No valid selected files found for metadata loading")
+            logger.warning("[Drop] No valid FileItem objects found for the provided paths")
             return
 
-        # Debug logging: Compare dropped vs selected
-        dropped_filenames = [os.path.basename(path) for path in paths]
+        # Debug logging
         selected_filenames = [f.filename for f in selected_files]
-
-        logger.debug(f"[Drop] Current selection: {selected_filenames}", extra={"dev_only": True})
-        logger.debug(f"[Drop] Dropped files: {dropped_filenames}", extra={"dev_only": True})
-        logger.debug(f"[Drop] Processing {len(selected_files)} selected files (ignoring specific dropped files)", extra={"dev_only": True})
+        logger.debug(f"[Drop] Processing {len(selected_files)} selected files: {selected_filenames}", extra={"dev_only": True})
 
         # Parse modifiers for metadata loading
         ctrl = bool(modifiers & Qt.ControlModifier)
@@ -321,6 +318,13 @@ class FileLoadManager:
 
         logger.info(f"[CompactScan] Starting compact metadata scan for {len(file_paths)} files (extended={use_extended})")
 
+        # CRITICAL: Store current selection before showing dialog
+        preserved_selection = None
+        if (hasattr(self.parent_window, 'file_table_view') and
+            hasattr(self.parent_window.file_table_view, '_get_current_selection')):
+            preserved_selection = self.parent_window.file_table_view._get_current_selection().copy()
+            logger.debug(f"[CompactScan] Preserved selection before dialog: {len(preserved_selection)} files")
+
         # Import CompactWaitingWidget
         from widgets.compact_waiting_widget import CompactWaitingWidget
         from widgets.custom_msgdialog import CustomMessageDialog
@@ -366,6 +370,7 @@ class FileLoadManager:
         # Store references for cleanup
         self._compact_dialog = dialog
         self._compact_widget = compact_widget
+        self._preserved_selection = preserved_selection  # Store for restoration later
 
         # Show dialog
         dialog.show()
@@ -473,6 +478,30 @@ class FileLoadManager:
 
         # Clean up worker and thread
         self._cleanup_compact_metadata_worker()
+
+        # CRITICAL: Restore preserved selection after dialog closes
+        if (hasattr(self, '_preserved_selection') and self._preserved_selection and
+            hasattr(self.parent_window, 'file_table_view') and
+            hasattr(self.parent_window.file_table_view, '_update_selection_store')):
+            logger.debug(f"[CompactScan] Restoring preserved selection: {len(self._preserved_selection)} files")
+            self.parent_window.file_table_view._update_selection_store(self._preserved_selection, emit_signal=True)
+
+            # Also update Qt selection model to ensure visual consistency
+            selection_model = self.parent_window.file_table_view.selectionModel()
+            if selection_model and hasattr(self.parent_window, 'file_model'):
+                selection_model.clearSelection()
+                for row in self._preserved_selection:
+                    if 0 <= row < self.parent_window.file_model.rowCount():
+                        index = self.parent_window.file_model.index(row, 0)
+                        selection_model.select(index,
+                                             selection_model.Select | selection_model.Rows)
+
+                # Force viewport update to show selection
+                self.parent_window.file_table_view.viewport().update()
+                logger.debug(f"[CompactScan] Selection restored successfully")
+
+            # Clear the preserved selection
+            self._preserved_selection = None
 
         # Update metadata tree view with the last selected file
         if (self.parent_window and
