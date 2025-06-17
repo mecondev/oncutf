@@ -463,14 +463,25 @@ class MetadataManager:
 
         # If all files already have appropriate metadata, just show it for the target file
         if not needs_loading:
-            # Display the existing metadata for target file
-            metadata = target_file.metadata or metadata_cache.get(target_file.full_path)
-            if (self.parent_window and
-                hasattr(self.parent_window, 'metadata_tree_view') and
-                hasattr(self.parent_window.metadata_tree_view, 'display_metadata')):
-                self.parent_window.metadata_tree_view.display_metadata(metadata, context=f"existing_{source}")
-            if self.parent_window and hasattr(self.parent_window, 'set_status'):
-                self.parent_window.set_status(f"Metadata already loaded for {target_file.filename}.", color="green", auto_reset=True)
+            # For single file selection, display the existing metadata
+            # For multiple files, don't show anything (like context menu behavior)
+            if len(items) == 1:
+                metadata = target_file.metadata or metadata_cache.get(target_file.full_path)
+                if (self.parent_window and
+                    hasattr(self.parent_window, 'metadata_tree_view') and
+                    hasattr(self.parent_window.metadata_tree_view, 'display_metadata')):
+                    self.parent_window.metadata_tree_view.display_metadata(metadata, context=f"existing_{source}")
+                if self.parent_window and hasattr(self.parent_window, 'set_status'):
+                    self.parent_window.set_status(f"Metadata already loaded for {target_file.filename}.", color="green", auto_reset=True)
+            else:
+                # Multiple files - don't show metadata tree, just status
+                if self.parent_window and hasattr(self.parent_window, 'set_status'):
+                    self.parent_window.set_status(f"Metadata already loaded for {len(items)} files.", color="green", auto_reset=True)
+                # Optionally clear the tree or show a message
+                if (self.parent_window and
+                    hasattr(self.parent_window, 'metadata_tree_view') and
+                    hasattr(self.parent_window.metadata_tree_view, 'show_empty_state')):
+                    self.parent_window.metadata_tree_view.show_empty_state("Multiple files selected")
             return
 
         # Check for large files if extended metadata was requested
@@ -503,12 +514,22 @@ class MetadataManager:
                     use_extended=use_extended
                 )
 
-            # Always display metadata for the target file (last in list)
-            metadata = target_file.metadata or metadata_cache.get(target_file.full_path)
-            if (self.parent_window and
-                hasattr(self.parent_window, 'metadata_tree_view') and
-                hasattr(self.parent_window.metadata_tree_view, 'display_metadata')):
-                self.parent_window.metadata_tree_view.display_metadata(metadata, context=source)
+            # Only display metadata if we have single file selection originally
+            # For multiple files (even if only one needs loading), don't show metadata tree
+            if len(items) == 1:
+                # Always display metadata for the target file (last in list)
+                metadata = target_file.metadata or metadata_cache.get(target_file.full_path)
+                if (self.parent_window and
+                    hasattr(self.parent_window, 'metadata_tree_view') and
+                    hasattr(self.parent_window.metadata_tree_view, 'display_metadata')):
+                    self.parent_window.metadata_tree_view.display_metadata(metadata, context=source)
+            else:
+                # Multiple files selected - don't show metadata tree
+                logger.debug(f"[{source}] Multiple files selected ({len(items)}) - not updating metadata tree after single file load")
+                if (self.parent_window and
+                    hasattr(self.parent_window, 'metadata_tree_view') and
+                    hasattr(self.parent_window.metadata_tree_view, 'show_empty_state')):
+                    self.parent_window.metadata_tree_view.show_empty_state("Multiple files selected")
 
             # Update UI for all loaded files
             if (self.parent_window and

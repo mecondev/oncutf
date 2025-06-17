@@ -775,11 +775,14 @@ class FileTableView(QTableView):
                     super().mousePressEvent(event)
                     return
                 else:
-                    # Ctrl+click on unselected - toggle selection
+                    # Ctrl+click on unselected - add to selection (toggle)
                     current_selection = current_selection.copy()  # Make a copy to avoid modifying the original
                     current_selection.add(index.row())
+                    self._set_anchor_row(index.row())  # Set anchor for future range selections
                     self._update_selection_store(current_selection)
                     logger.debug(f"[FileTableView] Ctrl+click toggle: added row {index.row()}, total: {len(current_selection)}", extra={"dev_only": True})
+                    # Don't call super() - we handled the selection ourselves
+                    return
             elif modifiers == Qt.ShiftModifier:
                 # Check if we're clicking on a selected item for potential drag
                 current_selection = self._get_current_selection()
@@ -801,6 +804,8 @@ class FileTableView(QTableView):
                         self._set_anchor_row(index.row())
                         self._update_selection_store({index.row()})
                         logger.debug(f"[FileTableView] Shift+click new anchor: row {index.row()}", extra={"dev_only": True})
+                    # Don't call super() - we handled the selection ourselves
+                    return
 
         # Call parent implementation
         super().mousePressEvent(event)
@@ -857,13 +862,19 @@ class FileTableView(QTableView):
 
                 modifiers = QApplication.keyboardModifiers()
                 if modifiers == Qt.ControlModifier:
-                    # Ctrl+click on selected item without drag - toggle selection
+                    # Ctrl+click on selected item without drag - toggle selection (remove)
                     if hasattr(self, '_clicked_index') and self._clicked_index and self._clicked_index.isValid():
-                        current_selection = self._get_current_selection()
+                        current_selection = self._get_current_selection().copy()
                         row = self._clicked_index.row()
                         if row in current_selection:
                             current_selection.remove(row)
+                            # Update anchor to another selected item if available
+                            if current_selection:
+                                self._set_anchor_row(max(current_selection))  # Use highest row as new anchor
+                            else:
+                                self._set_anchor_row(None)  # No selection left
                             self._update_selection_store(current_selection)
+                            logger.debug(f"[FileTableView] Ctrl+click toggle: removed row {row}, remaining: {len(current_selection)}", extra={"dev_only": True})
                 elif modifiers == Qt.NoModifier:
                     # Regular click on selected item without drag - clear selection and select only this
                     if hasattr(self, '_clicked_index') and self._clicked_index and self._clicked_index.isValid():
