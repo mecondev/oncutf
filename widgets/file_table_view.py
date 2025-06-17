@@ -666,6 +666,10 @@ class FileTableView(QTableView):
             # Store drag start position
             self._drag_start_pos = event.pos()
 
+            # CRITICAL: Store current selection BEFORE any changes for potential drag
+            # This ensures we have the correct selection even if Qt changes it
+            self._drag_start_selection = self._get_current_selection().copy()
+
             # If clicking on empty space, clear selection
             if not index.isValid():
                 if modifiers == Qt.NoModifier:
@@ -677,9 +681,19 @@ class FileTableView(QTableView):
 
             # Handle selection based on modifiers
             if modifiers == Qt.NoModifier:
-                # Single click - select single row
-                self._set_anchor_row(index.row())
-                self._update_selection_store({index.row()})
+                # Check if we're clicking on an already selected item for potential drag
+                current_selection = self._get_current_selection()
+                if index.row() in current_selection and len(current_selection) > 1:
+                    # Don't change selection yet - might be starting a drag
+                    self._preserve_selection_for_drag = True
+                    self._clicked_on_selected = True
+                    # IMPORTANT: Still call super() to allow Qt to process the event
+                    super().mousePressEvent(event)
+                    return
+                else:
+                    # Single click - select single row
+                    self._set_anchor_row(index.row())
+                    self._update_selection_store({index.row()})
             elif modifiers == Qt.ControlModifier:
                 # Check if we're on a selected item for potential drag
                 current_selection = self._get_current_selection()
@@ -771,6 +785,20 @@ class FileTableView(QTableView):
                         if row in current_selection:
                             current_selection.remove(row)
                             self._update_selection_store(current_selection)
+                elif modifiers == Qt.NoModifier:
+                    # Regular click on selected item without drag - clear selection and select only this
+                    if hasattr(self, '_clicked_index') and self._clicked_index and self._clicked_index.isValid():
+                        row = self._clicked_index.row()
+                        # Clear selection and select only the clicked item
+                        self._set_anchor_row(row)
+                        self._update_selection_store({row})
+
+                        # Update Qt selection model to match
+                        selection_model = self.selectionModel()
+                        if selection_model:
+                            selection_model.clearSelection()
+                            index = self.model().index(row, 0)
+                            selection_model.select(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
 
             # Clean up flags
             self._preserve_selection_for_drag = False
@@ -884,7 +912,15 @@ class FileTableView(QTableView):
         self._clicked_index = None
 
         # Get selected file data
-        selected_rows = self._get_current_selection()
+        # CRITICAL: Use preserved selection if available (from mousePressEvent)
+        # This ensures we use the selection that existed when the drag started
+        if hasattr(self, '_drag_start_selection') and isinstance(self._drag_start_selection, set):
+            selected_rows = self._drag_start_selection
+            logger.debug(f"[FileTableView] Using preserved selection for drag: {len(selected_rows)} files", extra={"dev_only": True})
+        else:
+            selected_rows = self._get_current_selection()
+            logger.debug(f"[FileTableView] Using current selection for drag: {len(selected_rows)} files", extra={"dev_only": True})
+
         if not selected_rows:
             return
 
@@ -1000,6 +1036,10 @@ class FileTableView(QTableView):
             self._is_dragging = False
             self._drag_data = None
 
+            # Clear the preserved drag selection
+            if hasattr(self, '_drag_start_selection'):
+                self._drag_start_selection = None
+
             # Cleanup visual feedback
             end_drag_visual()
             drag_manager.end_drag("file_table")
@@ -1031,6 +1071,10 @@ class FileTableView(QTableView):
         # Clean up drag state
         self._is_dragging = False
         self._drag_data = None
+
+        # Clear the preserved drag selection
+        if hasattr(self, '_drag_start_selection'):
+            self._drag_start_selection = None
 
         # Cleanup visual feedback
         end_drag_visual()

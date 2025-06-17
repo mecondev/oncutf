@@ -352,6 +352,7 @@ class DragVisualManager:
             return False
 
         widget_class = widget.__class__.__name__
+        logger.debug(f"[DragVisualManager] Checking drop target: widget_class={widget_class}, drag_source={drag_source}", extra={"dev_only": True})
 
         # FileTreeView can only drop on FileTableView
         if drag_source == "file_tree":
@@ -359,7 +360,10 @@ class DragVisualManager:
 
         # FileTableView can only drop on MetadataTreeView
         elif drag_source == "file_table":
-            return widget_class == "MetadataTreeView"
+            result = widget_class == "MetadataTreeView"
+            if not result:
+                logger.debug(f"[DragVisualManager] Not a MetadataTreeView: {widget_class}", extra={"dev_only": True})
+            return result
 
         return False
 

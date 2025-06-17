@@ -103,9 +103,12 @@ class MetadataManager:
         # Create worker object (inherits from QObject)
         self.metadata_worker = MetadataWorker(
             reader=metadata_loader,
-            metadata_cache=metadata_cache,
-            parent=self.parent_window  # gives access to model for direct FileItem metadata assignment
+            metadata_cache=metadata_cache
+            # No parent to allow moveToThread
         )
+
+        # Give worker access to main window for FileItem updates
+        self.metadata_worker.main_window = self.parent_window
 
         # Set the worker's inputs
         self.metadata_worker.file_path = file_paths

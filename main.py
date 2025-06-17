@@ -40,7 +40,7 @@ logger.info(f"Application started at {now}")
 logger_effective_level =logger.getEffectiveLevel()
 logger.debug(f"Effective logging level: {logger_effective_level}", extra={"dev_only": True})
 
-def main() -> None:
+def main() -> int:
     """
     Entry point for the Batch File Renamer application.
 
