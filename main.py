@@ -79,7 +79,7 @@ def main() -> int:
                 # Keep Fusion on Linux but log that cursor may not match system theme
                 logger.debug("Using Fusion style on Linux - cursor may not match system theme")
 
-        logger.debug(f"Final Qt style: {app.style().objectName()}")
+        logger.debug(f"Final Qt style: {app.style().objectName()}") # type: ignore
 
         # Load Inter fonts
         logger.debug("Initializing Inter fonts...", extra={"dev_only": True})

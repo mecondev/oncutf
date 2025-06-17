@@ -87,7 +87,7 @@ class FileTableView(QTableView):
         self.setMouseTracking(True)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.setAcceptDrops(True)
-        self.viewport().setAcceptDrops(True)
+        self.viewport().setAcceptDrops(True) # type: ignore
 
         # Note: QTableView in PyQt5 doesn't have setRubberBandSelectionMode
         # We'll implement custom lasso selection with Ctrl+drag
@@ -103,7 +103,7 @@ class FileTableView(QTableView):
 
         # Setup placeholder icon
         self.placeholder_label = QLabel(self.viewport())
-        self.placeholder_label.setAlignment(Qt.AlignCenter)
+        self.placeholder_label.setAlignment(Qt.AlignCenter) # type: ignore
         self.placeholder_label.setVisible(False)
 
         icon_path = Path(__file__).parent.parent / "resources/images/File_table_placeholder.png"
@@ -112,7 +112,7 @@ class FileTableView(QTableView):
         if not self.placeholder_icon.isNull():
             scaled = self.placeholder_icon.scaled(
                 PLACEHOLDER_ICON_SIZE, PLACEHOLDER_ICON_SIZE,
-                Qt.KeepAspectRatio, Qt.SmoothTransformation
+                Qt.KeepAspectRatio, Qt.SmoothTransformation # type: ignore
             )
             self.placeholder_label.setPixmap(scaled)
         else:
@@ -190,18 +190,18 @@ class FileTableView(QTableView):
                     full_selection = QItemSelection()
 
                     for row in selected_rows:
-                        if 0 <= row < self.model().rowCount():
-                            left_index = self.model().index(row, 0)
-                            right_index = self.model().index(row, self.model().columnCount() - 1)
+                        if 0 <= row < self.model().rowCount(): # type: ignore
+                            left_index = self.model().index(row, 0) # type: ignore
+                            right_index = self.model().index(row, self.model().columnCount() - 1) # type: ignore
                             if left_index.isValid() and right_index.isValid():
                                 row_selection = QItemSelection(left_index, right_index)
-                                full_selection.merge(row_selection, selection_model.Select)
+                                full_selection.merge(row_selection, selection_model.Select) # type: ignore
 
                     if not full_selection.isEmpty():
-                        selection_model.select(full_selection, selection_model.Select)
+                        selection_model.select(full_selection, selection_model.Select) # type: ignore
 
                 # Force visual update
-                self.viewport().update()
+                self.viewport().update() # type: ignore
 
             finally:
                 self.blockSignals(False)
@@ -653,8 +653,8 @@ class FileTableView(QTableView):
 
                 # Create selection from anchor to current index
                 selection = QItemSelection(self._manual_anchor_index, index)
-                # Use Select instead of ClearAndSelect to preserve existing selection
-                sm.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+                # Use ClearAndSelect to replace existing selection with the range
+                sm.select(selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
                 sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
 
             # Update SelectionStore to match Qt selection model
@@ -1529,18 +1529,24 @@ class FileTableView(QTableView):
             return
 
         if hasattr(model, 'index') and hasattr(model, 'columnCount'):
-            top_left = model.index(start_row, 0)
-            bottom_right = model.index(end_row, model.columnCount() - 1)
+            # Ensure we always select from lower to higher row number
+            min_row = min(start_row, end_row)
+            max_row = max(start_row, end_row)
+            top_left = model.index(min_row, 0)
+            bottom_right = model.index(max_row, model.columnCount() - 1)
             selection = QItemSelection(top_left, bottom_right)
-            selection_model.select(selection, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+            selection_model.select(selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)  # type: ignore
 
         self.blockSignals(False)
 
         if hasattr(self, 'viewport'):
-            self.viewport().update()
+            self.viewport().update()  # type: ignore
 
         if model is not None:
-            selected_rows = set(range(start_row, end_row + 1))
+            # Ensure we always create range from lower to higher
+            min_row = min(start_row, end_row)
+            max_row = max(start_row, end_row)
+            selected_rows = set(range(min_row, max_row + 1))
             self._update_selection_store(selected_rows, emit_signal=True)
 
     def select_dropped_files(self, file_paths: Optional[list[str]] = None) -> None:
@@ -1661,10 +1667,10 @@ class FileTableView(QTableView):
             if old_row != hovered_row:
                 for r in (old_row, hovered_row):
                     if r >= 0:
-                        left = self.model().index(r, 0)
-                        right = self.model().index(r, self.model().columnCount() - 1)
+                        left = self.model().index(r, 0) # type: ignore
+                        right = self.model().index(r, self.model().columnCount() - 1) # type: ignore
                         row_rect = self.visualRect(left).united(self.visualRect(right))
-                        self.viewport().update(row_rect)
+                        self.viewport().update(row_rect) # type: ignore
 
         # Check if vertical scrollbar visibility changed after wheel scroll
         # Use a small delay to ensure scrollbar state is updated
@@ -1682,8 +1688,8 @@ class FileTableView(QTableView):
             return
 
         # Allow minimal scrolling only if the selected item is completely out of view
-        viewport_rect = self.viewport().rect()
-        item_rect = self.visualRect(index)
+        viewport_rect = self.viewport().rect() # type: ignore
+        item_rect = self.visualRect(index) # type: ignore
 
         # Only scroll if item is completely outside the viewport
         if not viewport_rect.intersects(item_rect):
@@ -1696,7 +1702,7 @@ class FileTableView(QTableView):
         if selection_store:
             self._legacy_selection_mode = False
             # Sync current selection to SelectionStore
-            current_selection = set(index.row() for index in self.selectionModel().selectedRows())
+            current_selection = set(index.row() for index in self.selectionModel().selectedRows()) # type: ignore
             selection_store.set_selected_rows(current_selection, emit_signal=False)
             if hasattr(self, 'anchor_row') and self.anchor_row is not None:
                 selection_store.set_anchor_row(self.anchor_row, emit_signal=False)
@@ -1707,7 +1713,7 @@ class FileTableView(QTableView):
     def disable_selection_store_mode(self):
         """Disable selection store synchronization mode."""
         if self._get_selection_store():
-            self._get_selection_store().set_active(False)
+            self._get_selection_store().set_active(False) # type: ignore
             logger.debug("[FileTable] Selection store mode disabled")
 
     def _force_cursor_cleanup(self):
@@ -1739,5 +1745,5 @@ class FileTableView(QTableView):
 
         # Force viewport update
         if hasattr(self, 'viewport'):
-            self.viewport().update()
+            self.viewport().update() # type: ignore
         QApplication.processEvents()
