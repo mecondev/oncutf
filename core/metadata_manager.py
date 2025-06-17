@@ -311,11 +311,11 @@ class MetadataManager:
             else:
                 modifiers = QApplication.keyboardModifiers()
 
-        if modifiers == Qt.NoModifier:
+        if modifiers == Qt.NoModifier: # type: ignore
             modifiers = QApplication.keyboardModifiers()  # fallback to current
 
-        ctrl = bool(modifiers & Qt.ControlModifier)
-        shift = bool(modifiers & Qt.ShiftModifier)
+        ctrl = bool(modifiers & Qt.ControlModifier) # type: ignore
+        shift = bool(modifiers & Qt.ShiftModifier) # type: ignore
 
         # New logic:
         # - No modifiers: skip metadata
@@ -350,8 +350,8 @@ class MetadataManager:
             else:
                 modifiers = QApplication.keyboardModifiers()
 
-        ctrl = bool(modifiers & Qt.ControlModifier)
-        shift = bool(modifiers & Qt.ShiftModifier)
+        ctrl = bool(modifiers & Qt.ControlModifier) # type: ignore
+        shift = bool(modifiers & Qt.ShiftModifier) # type: ignore
         return ctrl and shift
 
     def shortcut_load_metadata(self) -> None:
