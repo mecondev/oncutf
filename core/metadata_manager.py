@@ -46,6 +46,10 @@ class MetadataManager:
 
         # State tracking
         self.force_extended_metadata = False
+        self._original_selection_count = 0  # Track original selection count for metadata tree update
+        self._target_file_path = None  # Track target file for single selection display
+        self._preserved_selection = None  # Track selection before metadata loading starts
+        self._preserved_selection = None  # Track selection before metadata loading starts
 
     def start_metadata_scan(self, file_paths: List[str]) -> None:
         """
@@ -56,6 +60,15 @@ class MetadataManager:
         """
         logger.warning("[DEBUG] start_metadata_scan CALLED")
         logger.debug(f"[MetadataScan] Launch with force_extended = {self.force_extended_metadata}")
+
+        # CRITICAL: Store current selection BEFORE showing dialog or starting thread
+        # The dialog or thread might cause selection loss
+        self._preserved_selection = None
+        if (self.parent_window and
+            hasattr(self.parent_window, 'file_table_view') and
+            hasattr(self.parent_window.file_table_view, '_get_current_selection')):
+            self._preserved_selection = self.parent_window.file_table_view._get_current_selection().copy()
+            logger.debug(f"[MetadataManager] Preserved selection of {len(self._preserved_selection)} files before metadata scan")
 
         is_extended = self.force_extended_metadata
         self.loading_dialog = MetadataWaitingDialog(self.parent_window, is_extended=is_extended)
@@ -177,12 +190,113 @@ class MetadataManager:
         """
         logger.info("[MetadataManager] Metadata loading finished")
 
+        # Disconnect the cancel handler to prevent ESC after completion from clearing selection
         if self.loading_dialog:
+            try:
+                self.loading_dialog.rejected.disconnect()
+                logger.debug("[MetadataManager] Disconnected cancel handler from dialog")
+            except:
+                pass  # Already disconnected or not connected
             self.loading_dialog.close()
 
         # Always restore the cursor when metadata loading is finished
         QApplication.restoreOverrideCursor()
         logger.debug("[MetadataManager] Cursor explicitly restored after metadata task.")
+
+        # Update metadata tree based on original selection
+        if self._original_selection_count == 1 and self._target_file_path:
+            # Single file was selected - show its metadata
+            metadata_cache = getattr(self.parent_window, 'metadata_cache', None)
+            if metadata_cache:
+                metadata = metadata_cache.get(self._target_file_path)
+                if (metadata and self.parent_window and
+                    hasattr(self.parent_window, 'metadata_tree_view') and
+                    hasattr(self.parent_window.metadata_tree_view, 'display_metadata')):
+                    self.parent_window.metadata_tree_view.display_metadata(metadata, context="batch_completed")
+                    logger.debug(f"[MetadataManager] Displayed metadata for single file after batch loading")
+        elif self._original_selection_count > 1:
+            # Multiple files were selected - show appropriate message
+            if (self.parent_window and
+                hasattr(self.parent_window, 'metadata_tree_view') and
+                hasattr(self.parent_window.metadata_tree_view, 'show_empty_state')):
+                self.parent_window.metadata_tree_view.show_empty_state("Multiple files selected")
+                logger.debug(f"[MetadataManager] Showing 'Multiple files selected' after batch loading {self._original_selection_count} files")
+
+        # CRITICAL: Selective UI update for loaded files only
+        # This ensures the metadata icons are updated without causing selection loss
+        if (self.parent_window and
+            hasattr(self.parent_window, 'file_model') and
+            hasattr(self.parent_window, 'file_table_view') and
+            hasattr(self.parent_window.metadata_worker, 'file_path')):
+            # Get the list of files that were loaded
+            loaded_file_paths = self.metadata_worker.file_path
+            file_model = self.parent_window.file_model
+            file_table_view = self.parent_window.file_table_view
+
+            # Update only the rows for files that were loaded
+            for file_path in loaded_file_paths:
+                # Find the file in the model
+                for i, file_item in enumerate(file_model.files):
+                    if file_item.full_path == file_path:
+                        # Update all columns for this row
+                        for col in range(file_model.columnCount()):
+                            idx = file_model.index(i, col)
+                            rect = file_table_view.visualRect(idx)
+                            if rect.isValid():
+                                file_table_view.viewport().update(rect)
+                        break
+
+            logger.debug(f"[MetadataManager] Selective viewport update for {len(loaded_file_paths)} files after batch loading")
+
+        # CRITICAL: Restore selection after all UI updates using preserved selection
+        if (hasattr(self, '_preserved_selection') and
+            self._preserved_selection is not None and
+            self.parent_window and
+            hasattr(self.parent_window, 'file_table_view') and
+            hasattr(self.parent_window.file_table_view, '_update_selection_store')):
+
+            logger.debug(f"[MetadataManager] Selection restoration conditions met, preserved selection has {len(self._preserved_selection)} files")
+
+            # Use TimerManager instead of QTimer
+            from utils.timer_manager import get_timer_manager, TimerType, TimerPriority
+            timer_manager = get_timer_manager()
+
+            def restore_selection():
+                if (self.parent_window and
+                    hasattr(self.parent_window, 'file_table_view') and
+                    hasattr(self.parent_window.file_table_view, '_update_selection_store')):
+                    self.parent_window.file_table_view._update_selection_store(self._preserved_selection, emit_signal=False)
+                    logger.debug(f"[MetadataManager] Restored selection of {len(self._preserved_selection)} files after batch loading (delayed)")
+                # Reset preserved selection after successful restoration
+                self._preserved_selection = None
+
+            # Schedule the selection restoration with a 50ms delay using TimerManager
+            timer_manager.schedule(
+                restore_selection,
+                50,
+                priority=TimerPriority.HIGH,
+                timer_type=TimerType.SELECTION_UPDATE,
+                timer_id="metadata_selection_restore"
+            )
+            logger.debug(f"[MetadataManager] Scheduled selection restoration for {len(self._preserved_selection)} files")
+        else:
+            # Debug why restoration is not happening
+            logger.debug(f"[MetadataManager] Selection restoration NOT happening because:")
+            logger.debug(f"  - hasattr(self, '_preserved_selection'): {hasattr(self, '_preserved_selection')}")
+            if hasattr(self, '_preserved_selection'):
+                logger.debug(f"  - self._preserved_selection is not None: {self._preserved_selection is not None}")
+                if self._preserved_selection is not None:
+                    logger.debug(f"  - self._preserved_selection has {len(self._preserved_selection)} files")
+            logger.debug(f"  - self.parent_window: {self.parent_window is not None}")
+            if self.parent_window:
+                logger.debug(f"  - hasattr(self.parent_window, 'file_table_view'): {hasattr(self.parent_window, 'file_table_view')}")
+                if hasattr(self.parent_window, 'file_table_view'):
+                    logger.debug(f"  - hasattr(self.parent_window.file_table_view, '_update_selection_store'): {hasattr(self.parent_window.file_table_view, '_update_selection_store')}")
+
+        # Reset state tracking (but NOT _preserved_selection as it's done in the callback)
+        self._original_selection_count = 0
+        self._target_file_path = None
+        # self._preserved_selection = None  # REMOVED - now done in callback
 
     def cleanup_metadata_worker(self) -> None:
         """
@@ -213,11 +327,19 @@ class MetadataManager:
         if self.parent_window:
             self.parent_window.force_extended_metadata = False
 
+        # Reset tracking variables
+        self._original_selection_count = 0
+        self._target_file_path = None
+        # Don't reset _preserved_selection here - it might still be used by the timer callback
+
     def cancel_metadata_loading(self) -> None:
         """
         Cancels the metadata loading process and ensures the thread is properly terminated.
         """
         logger.info("[MetadataManager] Cancelling metadata loading")
+
+        # Clear preserved selection to prevent restoration after cancel
+        self._preserved_selection = None
 
         if hasattr(self, 'metadata_thread') and self.metadata_thread and self.metadata_thread.isRunning():
             if self.metadata_worker:
@@ -495,6 +617,10 @@ class MetadataManager:
         if self.parent_window:
             self.parent_window.force_extended_metadata = use_extended
 
+        # Store original selection info for metadata tree update after loading
+        self._original_selection_count = len(items)
+        self._target_file_path = target_file.full_path if target_file else None
+
         # Smart UX: Choose loading method based on number of files
         if len(needs_loading) > 1:
             # Multiple files: Use dialog with progress bar for better UX
@@ -503,6 +629,7 @@ class MetadataManager:
             file_paths = [item.full_path for item in needs_loading]
             with wait_cursor(restore_after=False):
                 self.start_metadata_scan(file_paths)
+            # Metadata tree update will be handled in handle_metadata_finished()
         else:
             # Single file: Use simple wait_cursor for faster UX
             logger.info(f"[{source}] Loading metadata for single file with wait_cursor (extended={use_extended})")
@@ -535,6 +662,13 @@ class MetadataManager:
             if (self.parent_window and
                 hasattr(self.parent_window, 'file_model') and
                 hasattr(self.parent_window, 'file_table_view')):
+                # CRITICAL: Preserve current selection before UI updates
+                # UI updates can sometimes cause selection loss
+                current_selection = None
+                if hasattr(self.parent_window.file_table_view, '_get_current_selection'):
+                    current_selection = self.parent_window.file_table_view._get_current_selection().copy()
+                    logger.debug(f"[MetadataManager] Preserving selection of {len(current_selection)} files before UI update")
+
                 for loaded_file in needs_loading:
                     try:
                         row = self.parent_window.file_model.files.index(loaded_file)
@@ -545,3 +679,8 @@ class MetadataManager:
                             )
                     except (ValueError, AttributeError) as e:
                         logger.debug(f"[MetadataManager] Could not update UI for file: {e}")
+
+                # CRITICAL: Restore selection after UI updates
+                if current_selection is not None and hasattr(self.parent_window.file_table_view, '_update_selection_store'):
+                    self.parent_window.file_table_view._update_selection_store(current_selection, emit_signal=False)
+                    logger.debug(f"[MetadataManager] Restored selection of {len(current_selection)} files after UI update")
