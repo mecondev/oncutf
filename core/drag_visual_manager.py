@@ -340,9 +340,10 @@ class DragVisualManager:
     def is_valid_drop_target(self, widget: QWidget, drag_source: str) -> bool:
         """
         Check if widget is a valid drop target for the given drag source.
+        Walks up the parent hierarchy to find valid targets.
 
         Args:
-            widget: Widget to check
+            widget: Widget to check (can be child widget)
             drag_source: Source of the drag operation
 
         Returns:
@@ -351,20 +352,29 @@ class DragVisualManager:
         if widget is None:
             return False
 
-        widget_class = widget.__class__.__name__
-        logger.debug(f"[DragVisualManager] Checking drop target: widget_class={widget_class}, drag_source={drag_source}", extra={"dev_only": True})
+        # Walk up the parent hierarchy to find valid targets
+        current_widget = widget
+        while current_widget:
+            widget_class = current_widget.__class__.__name__
 
-        # FileTreeView can only drop on FileTableView
-        if drag_source == "file_tree":
-            return widget_class == "FileTableView"
+            logger.debug(f"[DragVisualManager] Checking widget: {widget_class} for drag_source={drag_source}", extra={"dev_only": True})
 
-        # FileTableView can only drop on MetadataTreeView
-        elif drag_source == "file_table":
-            result = widget_class == "MetadataTreeView"
-            if not result:
-                logger.debug(f"[DragVisualManager] Not a MetadataTreeView: {widget_class}", extra={"dev_only": True})
-            return result
+            # FileTreeView can only drop on FileTableView
+            if drag_source == "file_tree":
+                if widget_class == "FileTableView":
+                    logger.debug(f"[DragVisualManager] Valid drop target found: {widget_class}", extra={"dev_only": True})
+                    return True
 
+            # FileTableView can only drop on MetadataTreeView
+            elif drag_source == "file_table":
+                if widget_class == "MetadataTreeView":
+                    logger.debug(f"[DragVisualManager] Valid drop target found: {widget_class}", extra={"dev_only": True})
+                    return True
+
+            # Move to parent widget
+            current_widget = current_widget.parent()
+
+        logger.debug(f"[DragVisualManager] No valid drop target found for drag_source={drag_source}", extra={"dev_only": True})
         return False
 
     # =====================================

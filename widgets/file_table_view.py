@@ -701,6 +701,8 @@ class FileTableView(QTableView):
                     # Don't change selection yet - might be starting a drag
                     self._preserve_selection_for_drag = True
                     self._clicked_on_selected = True
+                    # CRITICAL: Call super() to allow Qt to process the event
+                    super().mousePressEvent(event)
                     return
                 else:
                     # Ctrl+click on unselected - toggle selection
@@ -713,6 +715,8 @@ class FileTableView(QTableView):
                     # Don't change selection yet - might be starting a drag with Shift held
                     self._preserve_selection_for_drag = True
                     self._clicked_on_selected = True
+                    # CRITICAL: Call super() to allow Qt to process the event for Shift+Drag
+                    super().mousePressEvent(event)
                     return
                 else:
                     # Shift+click - select range
@@ -792,13 +796,6 @@ class FileTableView(QTableView):
                         # Clear selection and select only the clicked item
                         self._set_anchor_row(row)
                         self._update_selection_store({row})
-
-                        # Update Qt selection model to match
-                        selection_model = self.selectionModel()
-                        if selection_model:
-                            selection_model.clearSelection()
-                            index = self.model().index(row, 0)
-                            selection_model.select(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
 
             # Clean up flags
             self._preserve_selection_for_drag = False
@@ -988,33 +985,30 @@ class FileTableView(QTableView):
             self._end_custom_drag()
             return
 
-        # Check if current position is a valid drop target
+        # Use the improved drop target detection from DragVisualManager
         visual_manager = DragVisualManager.get_instance()
 
-        # Walk up the parent hierarchy to find valid targets
-        parent = widget_under_cursor
-        valid_found = False
-
-        while parent and not valid_found:
-            # Check if this widget is a valid drop target
-            if visual_manager.is_valid_drop_target(parent, "file_table"):
-                update_drop_zone_state(DropZoneState.VALID)
-                valid_found = True
-                logger.debug(f"[FileTableView] Valid drop zone: {parent.__class__.__name__}", extra={"dev_only": True})
-                break
-
+        # Check if current position is a valid drop target (walks up parent hierarchy automatically)
+        if visual_manager.is_valid_drop_target(widget_under_cursor, "file_table"):
+            update_drop_zone_state(DropZoneState.VALID)
+            logger.debug(f"[FileTableView] Valid drop zone detected", extra={"dev_only": True})
+        else:
             # Check for explicit invalid targets (policy violations)
-            elif parent.__class__.__name__ in ['FileTreeView', 'FileTableView']:
-                update_drop_zone_state(DropZoneState.INVALID)
-                valid_found = True
-                logger.debug(f"[FileTableView] Invalid drop zone: {parent.__class__.__name__}", extra={"dev_only": True})
-                break
+            current_widget = widget_under_cursor
+            invalid_found = False
 
-            parent = parent.parent()
+            while current_widget and not invalid_found:
+                widget_class = current_widget.__class__.__name__
+                if widget_class in ['FileTreeView', 'FileTableView']:
+                    update_drop_zone_state(DropZoneState.INVALID)
+                    invalid_found = True
+                    logger.debug(f"[FileTableView] Invalid drop zone: {widget_class}", extra={"dev_only": True})
+                    break
+                current_widget = current_widget.parent()
 
-        # If no specific target found, neutral state
-        if not valid_found:
-            update_drop_zone_state(DropZoneState.NEUTRAL)
+            # If no specific invalid target found, neutral state
+            if not invalid_found:
+                update_drop_zone_state(DropZoneState.NEUTRAL)
 
     def _end_custom_drag(self):
         """End our custom drag operation with enhanced visual feedback"""
