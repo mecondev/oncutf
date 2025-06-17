@@ -19,7 +19,6 @@ from PyQt5.QtGui import QKeyEvent
 from utils.logger_factory import get_cached_logger
 from utils.cursor_helper import wait_cursor
 from core.modifier_handler import decode_modifiers_to_flags
-from core.qt_imports import QApplication, QFileDialog, QMenu, QModelIndex, Qt
 
 logger = get_cached_logger(__name__)
 

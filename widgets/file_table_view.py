@@ -693,13 +693,21 @@ class FileTableView(QTableView):
                     current_selection.add(index.row())
                     self._update_selection_store(current_selection)
             elif modifiers == Qt.ShiftModifier:
-                # Shift+click - select range
-                anchor = self._get_anchor_row()
-                if anchor is not None:
-                    self.select_rows_range(anchor, index.row())
+                # Check if we're clicking on a selected item for potential drag
+                current_selection = self._get_current_selection()
+                if index.row() in current_selection and len(current_selection) > 1:
+                    # Don't change selection yet - might be starting a drag with Shift held
+                    self._preserve_selection_for_drag = True
+                    self._clicked_on_selected = True
+                    return
                 else:
-                    self._set_anchor_row(index.row())
-                    self._update_selection_store({index.row()})
+                    # Shift+click - select range
+                    anchor = self._get_anchor_row()
+                    if anchor is not None:
+                        self.select_rows_range(anchor, index.row())
+                    else:
+                        self._set_anchor_row(index.row())
+                        self._update_selection_store({index.row()})
 
         # Call parent implementation
         super().mousePressEvent(event)
@@ -913,13 +921,18 @@ class FileTableView(QTableView):
         # Start enhanced visual feedback
         visual_manager = DragVisualManager.get_instance()
 
-        # Determine drag type based on selection
+        # Determine drag type and info string based on selection
         if len(file_paths) == 1:
             drag_type = visual_manager.get_drag_type_from_path(file_paths[0])
+            # For single file, show just the filename
+            import os
+            source_info = os.path.basename(file_paths[0])
         else:
             drag_type = DragType.MULTIPLE
+            # For multiple files, show count
+            source_info = f"{len(file_paths)} files"
 
-        start_drag_visual(drag_type, f"{len(file_paths)} files")
+        start_drag_visual(drag_type, source_info)
 
         logger.debug(f"[FileTableView] Custom drag started with visual feedback: {len(file_paths)} files (type: {drag_type.value})", extra={"dev_only": True})
 
@@ -1027,8 +1040,9 @@ class FileTableView(QTableView):
 
         # CRITICAL: Restore selection after drag-drop operation
         if current_selection:
-            # Use a timer to restore selection after all cleanup is done
-            QTimer.singleShot(10, lambda: self._restore_selection_after_drag(current_selection))
+            # Use timer manager to restore selection after all cleanup is done
+            from utils.timer_manager import schedule_selection_update
+            schedule_selection_update(lambda: self._restore_selection_after_drag(current_selection), 10)
 
         # Force cleanup any remaining visual artifacts
         schedule_drag_cleanup(self._restore_hover_after_drag, 10)
