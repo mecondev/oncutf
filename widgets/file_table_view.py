@@ -972,6 +972,10 @@ class FileTableView(QTableView):
         if not self._is_dragging:
             return
 
+        # Store current selection before ending drag to preserve it
+        current_selection = self._get_current_selection().copy()
+        logger.debug(f"[FileTableView] Preserving selection during drag end: {len(current_selection)} files", extra={"dev_only": True})
+
         # Force immediate cursor cleanup first
         self._force_cursor_cleanup()
 
@@ -986,6 +990,11 @@ class FileTableView(QTableView):
             # Cleanup visual feedback
             end_drag_visual()
             drag_manager.end_drag("file_table")
+
+            # Restore selection that was preserved
+            if current_selection:
+                self._update_selection_store(current_selection, emit_signal=True)
+                logger.debug(f"[FileTableView] Restored selection after cancelled drag: {len(current_selection)} files", extra={"dev_only": True})
 
             return
 
@@ -1016,10 +1025,36 @@ class FileTableView(QTableView):
         # Notify DragManager
         drag_manager.end_drag("file_table")
 
+        # CRITICAL: Restore selection after drag-drop operation
+        if current_selection:
+            # Use a timer to restore selection after all cleanup is done
+            QTimer.singleShot(10, lambda: self._restore_selection_after_drag(current_selection))
+
         # Force cleanup any remaining visual artifacts
         schedule_drag_cleanup(self._restore_hover_after_drag, 10)
 
         logger.debug("[FileTableView] Custom drag operation completed", extra={"dev_only": True})
+
+    def _restore_selection_after_drag(self, preserved_selection: set):
+        """Restore selection after drag-drop operation is complete"""
+        logger.debug(f"[FileTableView] Restoring selection after drag: {len(preserved_selection)} files", extra={"dev_only": True})
+
+        # Restore the preserved selection
+        self._update_selection_store(preserved_selection, emit_signal=True)
+
+        # Update Qt selection model to match
+        selection_model = self.selectionModel()
+        if selection_model:
+            selection_model.clearSelection()
+            for row in preserved_selection:
+                if 0 <= row < self.model().rowCount():
+                    index = self.model().index(row, 0)
+                    selection_model.select(index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+
+        # Force viewport update to show selection
+        self.viewport().update()
+
+        logger.debug(f"[FileTableView] Selection restored successfully: {len(preserved_selection)} files", extra={"dev_only": True})
 
     def _restore_hover_after_drag(self):
         """Restore hover state after drag ends by sending a fake mouse move event"""

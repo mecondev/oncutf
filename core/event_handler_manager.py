@@ -19,6 +19,7 @@ from PyQt5.QtGui import QKeyEvent
 from utils.logger_factory import get_cached_logger
 from utils.cursor_helper import wait_cursor
 from core.modifier_handler import decode_modifiers_to_flags
+from core.qt_imports import QApplication, QFileDialog, QMenu, QModelIndex, Qt
 
 logger = get_cached_logger(__name__)
 
@@ -108,14 +109,21 @@ class EventHandlerManager:
 
         from utils.icons_loader import get_menu_icon
 
-        self.parent_window.file_table_view.indexAt(position)
+        # Get the index at position to ensure proper context
+        index_at_position = self.parent_window.file_table_view.indexAt(position)
         total_files = len(self.parent_window.file_model.files)
+
+        # Force sync selection to ensure it's current before showing menu
+        self.parent_window.file_table_view._sync_selection_safely()
+
+        # Give a brief moment for sync to complete
+        QApplication.processEvents()
 
         # Use the unified selection system (same as shortcuts and drag-drop)
         selected_rows = self.parent_window.file_table_view._get_current_selection()
         selected_files = [self.parent_window.file_model.files[r] for r in selected_rows if 0 <= r < total_files]
 
-        logger.debug(f"[ContextMenu] Found {len(selected_files)} selected files", extra={"dev_only": True})
+        logger.debug(f"[ContextMenu] Found {len(selected_files)} selected files at position row {index_at_position.row() if index_at_position.isValid() else 'invalid'}", extra={"dev_only": True})
 
         menu = QMenu(self.parent_window)
 
@@ -145,14 +153,19 @@ class EventHandlerManager:
         action_save_sel.setEnabled(False)
         action_save_all.setEnabled(False)
 
-        # --- Enable/disable logic ---
-        if not selected_files:
+        # --- Enable/disable logic with enhanced debugging ---
+        has_selection = len(selected_files) > 0
+        logger.debug(f"[ContextMenu] Selection state: {has_selection} ({len(selected_files)} files)", extra={"dev_only": True})
+
+        if not has_selection:
             action_load_sel.setEnabled(False)
             action_load_ext_sel.setEnabled(False)
             action_invert.setEnabled(total_files > 0)
+            logger.debug("[ContextMenu] Disabled selection-based actions (no selection)", extra={"dev_only": True})
         else:
             action_load_sel.setEnabled(True)
             action_load_ext_sel.setEnabled(True)
+            logger.debug(f"[ContextMenu] Enabled selection-based actions ({len(selected_files)} files selected)", extra={"dev_only": True})
 
         action_load_all.setEnabled(total_files > 0)
         action_load_ext_all.setEnabled(total_files > 0)

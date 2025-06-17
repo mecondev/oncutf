@@ -103,13 +103,13 @@ class DragVisualManager:
     # Drag State Management
     # =====================================
 
-    def start_drag_visual(self, drag_type: DragType, source_path: str) -> None:
+    def start_drag_visual(self, drag_type: DragType, source_info: str) -> None:
         """
         Start visual feedback for a drag operation.
 
         Args:
             drag_type: Type of content being dragged
-            source_path: Path to the source item
+            source_info: Information about the source (e.g., "4 files", "folder_path")
         """
         self._drag_type = drag_type
         self._drop_zone_state = DropZoneState.NEUTRAL
@@ -121,7 +121,7 @@ class DragVisualManager:
         # Set appropriate drag cursor
         self._update_cursor()
 
-        logger.debug(f"[DragVisualManager] Visual drag started: {drag_type.value} from {source_path}")
+        logger.debug(f"[DragVisualManager] Visual drag started: {drag_type.value} from {source_info}")
 
     def end_drag_visual(self) -> None:
         """End visual feedback for drag operation."""
@@ -392,9 +392,9 @@ class DragVisualManager:
 
 
 # Global convenience functions
-def start_drag_visual(drag_type: DragType, source_path: str) -> None:
+def start_drag_visual(drag_type: DragType, source_info: str) -> None:
     """Start visual feedback for drag operation."""
-    DragVisualManager.get_instance().start_drag_visual(drag_type, source_path)
+    DragVisualManager.get_instance().start_drag_visual(drag_type, source_info)
 
 def end_drag_visual() -> None:
     """End visual feedback for drag operation."""
