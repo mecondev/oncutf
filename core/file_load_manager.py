@@ -167,9 +167,8 @@ class FileLoadManager:
         Handle files dropped onto metadata tree with modifier-based loading.
 
         Modifier behavior:
-        - Shift: Fast metadata with CompactWaitingWidget
-        - Ctrl+Shift: Extended metadata with CompactWaitingWidget
-        - No modifiers: Use intelligent loading (wait cursor for 1 file, dialog for multiple)
+        - No modifiers: Fast metadata with CompactWaitingWidget
+        - Shift: Extended metadata with CompactWaitingWidget
 
         IMPORTANT: This loads metadata for ALL CURRENTLY SELECTED FILES,
         not just the dropped file(s). This ensures consistent behavior with
@@ -207,34 +206,21 @@ class FileLoadManager:
         shift = bool(modifiers & Qt.ShiftModifier)
 
         # Determine loading mode based on modifiers
-        if shift and ctrl:
-            # Ctrl+Shift: Extended metadata with CompactWaitingWidget
+        if shift:
+            # Shift: Extended metadata with CompactWaitingWidget
             use_extended = True
             use_compact_widget = True
-            logger.debug(f"[Modifiers] Ctrl+Shift detected → Extended metadata with CompactWaitingWidget")
-        elif shift:
-            # Shift only: Fast metadata with CompactWaitingWidget
+            logger.debug(f"[Modifiers] Shift detected → Extended metadata with CompactWaitingWidget")
+        else:
+            # No modifiers: Fast metadata with CompactWaitingWidget
             use_extended = False
             use_compact_widget = True
-            logger.debug(f"[Modifiers] Shift detected → Fast metadata with CompactWaitingWidget")
-        else:
-            # No modifiers: Use intelligent loading (existing behavior)
-            use_extended = False
-            use_compact_widget = False
-            logger.debug(f"[Modifiers] No modifiers → Intelligent loading")
+            logger.debug(f"[Modifiers] No modifiers → Fast metadata with CompactWaitingWidget")
 
         logger.info(f"[Drop] Loading metadata for {len(selected_files)} files (extended={use_extended}, compact={use_compact_widget})")
 
-        # Use appropriate loading method
-        if use_compact_widget:
-            # Use CompactWaitingWidget for Shift/Ctrl+Shift drags
-            self._load_metadata_with_compact_widget(selected_files, use_extended, source="drag_drop")
-        else:
-            # Use intelligent loading for normal drags (existing behavior)
-            if hasattr(self.parent_window, 'load_metadata_for_items'):
-                self.parent_window.load_metadata_for_items(selected_files, use_extended, source="drag_drop")
-            else:
-                logger.error("[Drop] No load_metadata_for_items available")
+        # Always use CompactWaitingWidget for drag operations (better UX)
+        self._load_metadata_with_compact_widget(selected_files, use_extended, source="drag_drop")
 
     def _load_metadata_with_compact_widget(self, selected_files: list, use_extended: bool, source: str) -> None:
         """
@@ -298,8 +284,8 @@ class FileLoadManager:
 
         # Check for large files if extended metadata was requested
         if (use_extended and self.parent_window and
-            hasattr(self.parent_window, 'file_operations_manager') and
-            not self.parent_window.file_operations_manager.confirm_large_files(needs_loading)):
+            hasattr(self.parent_window, 'dialog_manager') and
+            not self.parent_window.dialog_manager.confirm_large_files(needs_loading)):
             return
 
         # Set extended metadata flag (sync with parent window)
