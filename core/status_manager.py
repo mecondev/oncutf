@@ -51,10 +51,15 @@ class StatusManager:
         if auto_reset:
             self._start_auto_reset(reset_delay)
 
-        logger.debug(f"[StatusManager] Status set: '{text}' (color: {color}, auto_reset: {auto_reset})")
+        # Only log non-Ready status changes to reduce log spam
+        if text != "Ready":
+            logger.debug(f"[StatusManager] Status set: '{text}' (color: {color}, auto_reset: {auto_reset})")
 
     def set_ready(self) -> None:
         """Set status to 'Ready' with default styling."""
+        # Avoid setting Ready if already Ready (prevents log spam)
+        if self.status_label and self.status_label.text() == "Ready":
+            return
         self.set_status("Ready", color=STATUS_COLORS["ready"], auto_reset=False)
 
     def set_error(self, message: str, auto_reset: bool = True) -> None:
@@ -82,10 +87,11 @@ class StatusManager:
         # Stop existing timer if running
         if self._status_timer:
             self._status_timer.stop()
-        else:
-            self._status_timer = QTimer()
+            self._status_timer.deleteLater()
+            self._status_timer = None
 
-        # Setup timer
+        # Create new timer
+        self._status_timer = QTimer()
         self._status_timer.setSingleShot(True)
         self._status_timer.timeout.connect(self.set_ready)
         self._status_timer.start(delay)

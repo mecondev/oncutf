@@ -168,7 +168,7 @@ class FileLoadManager:
 
         Modifier behavior:
         - No modifiers: Fast metadata with CompactWaitingWidget
-        - Shift: Extended metadata with CompactWaitingWidget
+        - Alt: Extended metadata with CompactWaitingWidget
 
         IMPORTANT: The paths parameter now contains ALL SELECTED FILES from the drag operation,
         not just the dropped file(s). This ensures consistent behavior with context menu and shortcuts.
@@ -199,15 +199,14 @@ class FileLoadManager:
         logger.debug(f"[Drop] Processing {len(selected_files)} selected files: {selected_filenames}", extra={"dev_only": True})
 
         # Parse modifiers for metadata loading
-        ctrl = bool(modifiers & Qt.ControlModifier)
-        shift = bool(modifiers & Qt.ShiftModifier)
+        alt = bool(modifiers & Qt.AltModifier)
 
         # Determine loading mode based on modifiers
-        if shift:
-            # Shift: Extended metadata with CompactWaitingWidget
+        if alt:
+            # Alt: Extended metadata with CompactWaitingWidget
             use_extended = True
             use_compact_widget = True
-            logger.debug(f"[Modifiers] Shift detected → Extended metadata with CompactWaitingWidget")
+            logger.debug(f"[Modifiers] Alt detected → Extended metadata with CompactWaitingWidget")
         else:
             # No modifiers: Fast metadata with CompactWaitingWidget
             use_extended = False
