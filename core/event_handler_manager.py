@@ -169,32 +169,20 @@ class EventHandlerManager:
 
         # === Handlers ===
         if action == action_load_sel:
-            # Use unified dialog-based loading for consistency
-            if hasattr(self.parent_window, 'metadata_manager'):
-                self.parent_window.metadata_manager.start_metadata_scan_for_items(selected_files, use_extended=False)
-            else:
-                self.parent_window.load_metadata_for_items(selected_files, use_extended=False, source="context_menu")
+            # Use intelligent loading with cache checking and smart UX
+            self.parent_window.load_metadata_for_items(selected_files, use_extended=False, source="context_menu")
 
         elif action == action_load_ext_sel:
-            # Use unified dialog-based loading for consistency
-            if hasattr(self.parent_window, 'metadata_manager'):
-                self.parent_window.metadata_manager.start_metadata_scan_for_items(selected_files, use_extended=True)
-            else:
-                self.parent_window.load_metadata_for_items(selected_files, use_extended=True, source="context_menu")
+            # Use intelligent loading with cache checking and smart UX
+            self.parent_window.load_metadata_for_items(selected_files, use_extended=True, source="context_menu")
 
         elif action == action_load_all:
-            # Use unified dialog-based loading for consistency
-            if hasattr(self.parent_window, 'metadata_manager'):
-                self.parent_window.metadata_manager.start_metadata_scan_for_items(self.parent_window.file_model.files, use_extended=False)
-            else:
-                self.parent_window.load_metadata_for_items(self.parent_window.file_model.files, use_extended=False, source="context_menu_all")
+            # Use intelligent loading with cache checking and smart UX
+            self.parent_window.load_metadata_for_items(self.parent_window.file_model.files, use_extended=False, source="context_menu_all")
 
         elif action == action_load_ext_all:
-            # Use unified dialog-based loading for consistency
-            if hasattr(self.parent_window, 'metadata_manager'):
-                self.parent_window.metadata_manager.start_metadata_scan_for_items(self.parent_window.file_model.files, use_extended=True)
-            else:
-                self.parent_window.load_metadata_for_items(self.parent_window.file_model.files, use_extended=True, source="context_menu_all")
+            # Use intelligent loading with cache checking and smart UX
+            self.parent_window.load_metadata_for_items(self.parent_window.file_model.files, use_extended=True, source="context_menu_all")
 
         elif action == action_invert:
             self.parent_window.invert_selection()
@@ -211,7 +199,7 @@ class EventHandlerManager:
     def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
         Loads metadata for the file (even if already loaded), on double-click.
-        Shows wait cursor for 1 file or dialog for multiple selected.
+        Uses unified dialog-based loading for consistency.
         """
         row = index.row()
         if 0 <= row < len(self.parent_window.file_model.files):
@@ -222,11 +210,10 @@ class EventHandlerManager:
             selected_files = [f for f in self.parent_window.file_model.files if f.checked]
 
             if len(selected_files) <= 1:
-                # Single file or no selection - use wait cursor
-                with wait_cursor():
-                    self.parent_window.load_metadata_for_items([file], use_extended=False, source="double_click")
+                # Single file or no selection - intelligent loading (will use wait cursor for single file)
+                self.parent_window.load_metadata_for_items([file], use_extended=False, source="double_click")
             else:
-                # Multiple files selected - let user choose
+                # Multiple files selected - intelligent loading (will use dialog for multiple)
                 self.parent_window.load_metadata_for_items(selected_files, use_extended=False, source="double_click_multi")
 
     def handle_header_toggle(self, _) -> None:

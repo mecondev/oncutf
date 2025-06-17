@@ -202,17 +202,16 @@ class FileLoadManager:
 
         logger.debug(f"[Modifiers] File drop on metadata tree: shift={shift} → extended={use_extended}")
 
-        # CRITICAL: Always use dialog-based loading (like context menu) for consistency
-        # This ensures no flickering and proper selection preservation
-        logger.info(f"[Drop] Loading metadata for {len(selected_files)} files with dialog (extended={use_extended})")
+                # Use the same intelligent loading as context menu and shortcuts
+        # This provides optimal UX: wait cursor for 1 file, dialog for multiple, cache checking
+        logger.info(f"[Drop] Loading metadata for {len(selected_files)} files with intelligent loading (extended={use_extended})")
 
-        # Force dialog-based loading by using start_metadata_scan_for_items directly
-        if hasattr(self.parent_window, 'metadata_manager'):
-            # Use the metadata manager's scan method which always uses dialog for multiple files
-            # Even for single files, we want dialog for consistency and pass the extended flag
-            self.parent_window.metadata_manager.start_metadata_scan_for_items(selected_files, use_extended)
+        # Use the smart loading method that handles everything optimally
+        if hasattr(self.parent_window, 'load_metadata_for_items'):
+            # Use the intelligent loading method with cache checking and smart UX
+            self.parent_window.load_metadata_for_items(selected_files, use_extended, source="drag_drop")
         else:
-            logger.error("[Drop] No metadata_manager available")
+            logger.error("[Drop] No load_metadata_for_items available")
             return
 
     def _load_folder_with_progress(self, folder_path: str, merge_mode: bool) -> None:

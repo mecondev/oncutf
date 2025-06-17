@@ -245,9 +245,7 @@ class MainWindow(QMainWindow):
         """Delegates to MetadataManager for thread-based metadata loading."""
         self.metadata_manager.load_metadata_in_thread(file_paths)
 
-    def start_metadata_scan_for_items(self, items: list[FileItem]) -> None:
-        """Delegates to MetadataManager for FileItem-based metadata scanning."""
-        self.metadata_manager.start_metadata_scan_for_items(items)
+
 
     def shortcut_load_metadata(self) -> None:
         """Delegates to MetadataManager for shortcut-based metadata loading."""
@@ -476,7 +474,7 @@ class MainWindow(QMainWindow):
         use_extended: bool = False,
         source: str = "unknown"
     ) -> None:
-        """Delegates to MetadataManager for unified metadata loading."""
+        """Delegates to MetadataManager for intelligent metadata loading with cache checking."""
         self.metadata_manager.load_metadata_for_items(items, use_extended, source)
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:

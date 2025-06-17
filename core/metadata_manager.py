@@ -126,26 +126,7 @@ class MetadataManager:
         # Start thread execution
         self.metadata_thread.start()
 
-    def start_metadata_scan_for_items(self, items: List[FileItem], use_extended: bool = False) -> None:
-        """
-        Initiates the metadata scan process for the given FileItem objects.
 
-        Args:
-            items: List of FileItem objects to scan
-            use_extended: Whether to load extended metadata (default: False)
-        """
-        logger.info(f"[MetadataManager] Starting metadata scan for {len(items)} items")
-
-        # Set the extended metadata flag before starting scan
-        self.force_extended_metadata = use_extended
-        if self.parent_window:
-            self.parent_window.force_extended_metadata = use_extended
-
-        file_paths = [item.full_path for item in items]
-
-        # Use wait_cursor without restoring it, so cursor remains as wait during dialog display
-        with wait_cursor(restore_after=False):
-            self.start_metadata_scan(file_paths)
 
     def on_metadata_progress(self, current: int, total: int) -> None:
         """
@@ -303,120 +284,6 @@ class MetadataManager:
         logger.debug(f"Metadata task running? {running}")
         return running
 
-    def load_metadata_for_items(
-        self,
-        items: List[FileItem],
-        use_extended: bool = False,
-        source: str = "unknown"
-    ) -> None:
-        """
-        Simplified method for loading metadata - always works, no complex logic.
-
-        Parameters:
-            items: List of FileItem objects to load metadata for
-            use_extended: Whether to load extended metadata
-            source: Source of the call (for logging)
-        """
-        if not items:
-            if self.parent_window and hasattr(self.parent_window, 'set_status'):
-                self.parent_window.set_status("No files selected.", color="gray", auto_reset=True)
-            return
-
-        if self.is_running_metadata_task():
-            logger.warning(f"[{source}] Metadata scan already running — ignoring request.")
-            return
-
-        # Get required components from parent window
-        metadata_cache = getattr(self.parent_window, 'metadata_cache', None)
-        metadata_loader = getattr(self.parent_window, 'metadata_loader', None)
-
-        if not metadata_cache or not metadata_loader:
-            logger.error("[MetadataManager] Missing metadata_cache or metadata_loader from parent window")
-            return
-
-        # Check if metadata is already loaded and of the right type
-        needs_loading = []
-        for item in items:
-            # Get the cached entry (which includes extended status)
-            entry = metadata_cache.get_entry(item.full_path)
-
-            # Add file to loading list if:
-            # 1. No cached entry exists
-            # 2. Extended metadata is requested but entry is not extended
-            if not entry:
-                logger.debug(f"[{source}] {item.filename} needs loading (no cache entry)")
-                needs_loading.append(item)
-            elif use_extended and not entry.is_extended:
-                logger.debug(f"[{source}] {item.filename} needs loading (extended requested but only basic loaded)")
-                needs_loading.append(item)
-            else:
-                logger.debug(f"[{source}] {item.filename} already has {'extended' if entry.is_extended else 'basic'} metadata")
-
-        # Always show metadata for the last file in the list
-        target_file = items[-1]
-
-        # If all files already have appropriate metadata, just show it for the target file
-        if not needs_loading:
-            # Display the existing metadata for target file
-            metadata = target_file.metadata or metadata_cache.get(target_file.full_path)
-            if (self.parent_window and
-                hasattr(self.parent_window, 'metadata_tree_view') and
-                hasattr(self.parent_window.metadata_tree_view, 'display_metadata')):
-                self.parent_window.metadata_tree_view.display_metadata(metadata, context=f"existing_{source}")
-            if self.parent_window and hasattr(self.parent_window, 'set_status'):
-                self.parent_window.set_status(f"Metadata already loaded for {target_file.filename}.", color="green", auto_reset=True)
-            return
-
-        # Check for large files if extended metadata was requested
-        if (use_extended and self.parent_window and
-            hasattr(self.parent_window, 'dialog_manager') and
-            not self.parent_window.dialog_manager.confirm_large_files(needs_loading)):
-            return
-
-        # Set extended metadata flag (sync with parent window)
-        self.force_extended_metadata = use_extended
-        if self.parent_window:
-            self.parent_window.force_extended_metadata = use_extended
-
-        # If we need to load data, proceed with actual loading
-        if needs_loading:
-            # Decide whether to show dialog or simple wait_cursor
-            if len(needs_loading) > 1:
-                # Load with dialog (CompactWaitingWidget) for multiple files
-                logger.info(f"[{source}] Loading metadata for {len(needs_loading)} files with dialog (extended={use_extended})")
-                self.start_metadata_scan_for_items(needs_loading, use_extended)
-            else:
-                # Simple loading with wait_cursor for a single file
-                logger.info(f"[{source}] Loading metadata for single file with wait_cursor (extended={use_extended})")
-                with wait_cursor():
-                    metadata_loader.load(
-                        needs_loading,
-                        force=False,
-                        cache=metadata_cache,
-                        use_extended=use_extended
-                    )
-
-                # Always display metadata for the target file (last in list)
-                metadata = target_file.metadata or metadata_cache.get(target_file.full_path)
-                if (self.parent_window and
-                    hasattr(self.parent_window, 'metadata_tree_view') and
-                    hasattr(self.parent_window.metadata_tree_view, 'display_metadata')):
-                    self.parent_window.metadata_tree_view.display_metadata(metadata, context=source)
-
-                # Update UI for all loaded files
-                if (self.parent_window and
-                    hasattr(self.parent_window, 'file_model') and
-                    hasattr(self.parent_window, 'file_table_view')):
-                    for loaded_file in needs_loading:
-                        try:
-                            row = self.parent_window.file_model.files.index(loaded_file)
-                            for col in range(self.parent_window.file_model.columnCount()):
-                                idx = self.parent_window.file_model.index(row, col)
-                                self.parent_window.file_table_view.viewport().update(
-                                    self.parent_window.file_table_view.visualRect(idx)
-                                )
-                        except (ValueError, AttributeError) as e:
-                            logger.debug(f"[MetadataManager] Could not update UI for file: {e}")
 
     def determine_metadata_mode(self, modifier_state=None) -> tuple[bool, bool]:
         """
@@ -504,8 +371,8 @@ class MetadataManager:
                 return
 
             logger.info(f"[Shortcut] Loading basic metadata for {len(selected)} files")
-            # Use unified dialog-based loading for consistency
-            self.start_metadata_scan_for_items(selected, use_extended=False)
+            # Use intelligent loading with cache checking and smart UX
+            self.load_metadata_for_items(selected, use_extended=False, source="shortcut")
 
     def shortcut_load_extended_metadata(self) -> None:
         """
@@ -531,5 +398,126 @@ class MetadataManager:
                 return
 
             logger.info(f"[Shortcut] Loading extended metadata for {len(selected)} files")
-            # Use unified dialog-based loading for consistency
-            self.start_metadata_scan_for_items(selected, use_extended=True)
+            # Use intelligent loading with cache checking and smart UX
+            self.load_metadata_for_items(selected, use_extended=True, source="shortcut")
+
+    def load_metadata_for_items(
+        self,
+        items: List[FileItem],
+        use_extended: bool = False,
+        source: str = "unknown"
+    ) -> None:
+        """
+        Intelligent metadata loading with cache checking and smart UX.
+
+        Features:
+        - Cache intelligence: Only loads what's needed
+        - Smart UX: Wait cursor for 1 file, dialog for multiple
+        - Extended metadata support: Properly handles basic vs extended
+
+        Parameters:
+            items: List of FileItem objects to load metadata for
+            use_extended: Whether to load extended metadata
+            source: Source of the call (for logging)
+        """
+        if not items:
+            if self.parent_window and hasattr(self.parent_window, 'set_status'):
+                self.parent_window.set_status("No files selected.", color="gray", auto_reset=True)
+            return
+
+        if self.is_running_metadata_task():
+            logger.warning(f"[{source}] Metadata scan already running — ignoring request.")
+            return
+
+        # Get required components from parent window
+        metadata_cache = getattr(self.parent_window, 'metadata_cache', None)
+        metadata_loader = getattr(self.parent_window, 'metadata_loader', None)
+
+        if not metadata_cache or not metadata_loader:
+            logger.error("[load_metadata_for_items] Missing metadata_cache or metadata_loader from parent window")
+            return
+
+        # Intelligent cache checking - only load what's needed
+        needs_loading = []
+        for item in items:
+            # Get the cached entry (which includes extended status)
+            entry = metadata_cache.get_entry(item.full_path)
+
+            # Add file to loading list if:
+            # 1. No cached entry exists
+            # 2. Extended metadata is requested but entry is not extended
+            if not entry:
+                logger.debug(f"[{source}] {item.filename} needs loading (no cache entry)")
+                needs_loading.append(item)
+            elif use_extended and not entry.is_extended:
+                logger.debug(f"[{source}] {item.filename} needs loading (extended requested but only basic loaded)")
+                needs_loading.append(item)
+            else:
+                logger.debug(f"[{source}] {item.filename} already has {'extended' if entry.is_extended else 'basic'} metadata")
+
+        # Always show metadata for the last file in the list
+        target_file = items[-1]
+
+        # If all files already have appropriate metadata, just show it for the target file
+        if not needs_loading:
+            # Display the existing metadata for target file
+            metadata = target_file.metadata or metadata_cache.get(target_file.full_path)
+            if (self.parent_window and
+                hasattr(self.parent_window, 'metadata_tree_view') and
+                hasattr(self.parent_window.metadata_tree_view, 'display_metadata')):
+                self.parent_window.metadata_tree_view.display_metadata(metadata, context=f"existing_{source}")
+            if self.parent_window and hasattr(self.parent_window, 'set_status'):
+                self.parent_window.set_status(f"Metadata already loaded for {target_file.filename}.", color="green", auto_reset=True)
+            return
+
+        # Check for large files if extended metadata was requested
+        if (use_extended and self.parent_window and
+            hasattr(self.parent_window, 'dialog_manager') and
+            not self.parent_window.dialog_manager.confirm_large_files(needs_loading)):
+            return
+
+        # Set extended metadata flag (sync with parent window)
+        self.force_extended_metadata = use_extended
+        if self.parent_window:
+            self.parent_window.force_extended_metadata = use_extended
+
+        # Smart UX: Choose loading method based on number of files
+        if len(needs_loading) > 1:
+            # Multiple files: Use dialog with progress bar for better UX
+            logger.info(f"[{source}] Loading metadata for {len(needs_loading)} files with dialog (extended={use_extended})")
+            # Convert to file paths and use the base metadata scan method
+            file_paths = [item.full_path for item in needs_loading]
+            with wait_cursor(restore_after=False):
+                self.start_metadata_scan(file_paths)
+        else:
+            # Single file: Use simple wait_cursor for faster UX
+            logger.info(f"[{source}] Loading metadata for single file with wait_cursor (extended={use_extended})")
+            with wait_cursor():
+                metadata_loader.load(
+                    needs_loading,
+                    force=False,
+                    cache=metadata_cache,
+                    use_extended=use_extended
+                )
+
+            # Always display metadata for the target file (last in list)
+            metadata = target_file.metadata or metadata_cache.get(target_file.full_path)
+            if (self.parent_window and
+                hasattr(self.parent_window, 'metadata_tree_view') and
+                hasattr(self.parent_window.metadata_tree_view, 'display_metadata')):
+                self.parent_window.metadata_tree_view.display_metadata(metadata, context=source)
+
+            # Update UI for all loaded files
+            if (self.parent_window and
+                hasattr(self.parent_window, 'file_model') and
+                hasattr(self.parent_window, 'file_table_view')):
+                for loaded_file in needs_loading:
+                    try:
+                        row = self.parent_window.file_model.files.index(loaded_file)
+                        for col in range(self.parent_window.file_model.columnCount()):
+                            idx = self.parent_window.file_model.index(row, col)
+                            self.parent_window.file_table_view.viewport().update(
+                                self.parent_window.file_table_view.visualRect(idx)
+                            )
+                    except (ValueError, AttributeError) as e:
+                        logger.debug(f"[MetadataManager] Could not update UI for file: {e}")
