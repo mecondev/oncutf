@@ -298,6 +298,10 @@ class MetadataManager:
         self._target_file_path = None
         # self._preserved_selection = None  # REMOVED - now done in callback
 
+        # CRITICAL: Clean up the worker and thread to prevent "already running" issues
+        self.cleanup_metadata_worker()
+        logger.debug("[MetadataManager] Worker and thread cleaned up after metadata loading finished")
+
     def cleanup_metadata_worker(self) -> None:
         """
         Safely shuts down and deletes the metadata worker and its thread.
@@ -355,6 +359,10 @@ class MetadataManager:
             QApplication.restoreOverrideCursor()
 
         logger.debug("[MetadataManager] Cursor fully restored after metadata cancellation.")
+
+        # CRITICAL: Clean up the worker and thread to prevent "already running" issues
+        self.cleanup_metadata_worker()
+        logger.debug("[MetadataManager] Worker and thread cleaned up after metadata cancellation")
 
     def on_metadata_error(self, message: str) -> None:
         """

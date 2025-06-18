@@ -245,8 +245,6 @@ class MainWindow(QMainWindow):
         """Delegates to MetadataManager for thread-based metadata loading."""
         self.metadata_manager.load_metadata_in_thread(file_paths)
 
-
-
     def shortcut_load_metadata(self) -> None:
         """Delegates to MetadataManager for shortcut-based metadata loading."""
         self.metadata_manager.shortcut_load_metadata()

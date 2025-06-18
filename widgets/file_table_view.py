@@ -786,16 +786,17 @@ class FileTableView(QTableView):
             elif modifiers == Qt.ShiftModifier:
                 # Check if we're clicking on a selected item for potential drag
                 current_selection = self._get_current_selection()
-                if index.row() in current_selection and len(current_selection) > 1:
-                    # Don't change selection yet - might be starting a drag with Shift held
+                if index.row() in current_selection:
+                    # Clicking on already selected item with Shift - preserve selection for drag
+                    # This prevents Shift+drag from changing selection
                     self._preserve_selection_for_drag = True
                     self._clicked_on_selected = True
                     logger.debug(f"[FileTableView] Preserving Shift-selection for potential drag: {len(current_selection)} files", extra={"dev_only": True})
-                    # CRITICAL: Call super() to allow Qt to process the event for Shift+Click
-                    super().mousePressEvent(event)
+                    # IMPORTANT: Don't call super() and don't change selection
+                    # This prevents Shift+Click from changing selection when starting a drag
                     return
                 else:
-                    # Shift+click - select range
+                    # Shift+click on unselected item - select range
                     anchor = self._get_anchor_row()
                     if anchor is not None:
                         self.select_rows_range(anchor, index.row())
@@ -803,7 +804,6 @@ class FileTableView(QTableView):
                     else:
                         self._set_anchor_row(index.row())
                         self._update_selection_store({index.row()})
-                        logger.debug(f"[FileTableView] Shift+click new anchor: row {index.row()}", extra={"dev_only": True})
                     # Don't call super() - we handled the selection ourselves
                     return
 
@@ -875,6 +875,10 @@ class FileTableView(QTableView):
                                 self._set_anchor_row(None)  # No selection left
                             self._update_selection_store(current_selection)
                             logger.debug(f"[FileTableView] Ctrl+click toggle: removed row {row}, remaining: {len(current_selection)}", extra={"dev_only": True})
+                elif modifiers == Qt.ShiftModifier:
+                    # Shift+click on selected item without drag - preserve current selection
+                    # Don't change selection when Shift is held and we clicked on a selected item
+                    logger.debug(f"[FileTableView] Shift+click on selected item without drag - preserving selection", extra={"dev_only": True})
                 elif modifiers == Qt.NoModifier:
                     # Regular click on selected item without drag - clear selection and select only this
                     if hasattr(self, '_clicked_index') and self._clicked_index and self._clicked_index.isValid():
