@@ -125,6 +125,7 @@ class DragVisualManager:
         self._update_cursor()
 
         logger.debug(f"[DragVisualManager] Visual drag started: {drag_type.value} from {source_info} (source: {drag_source})")
+        logger.debug(f"[DragVisualManager] Initial state: drop_zone={self._drop_zone_state.value}, modifier={self._modifier_state.value}")
 
     def end_drag_visual(self) -> None:
         """End visual feedback for drag operation."""
@@ -176,7 +177,9 @@ class DragVisualManager:
 
     def _update_cursor(self) -> None:
         """Update cursor based on current state."""
+        logger.debug(f"[DragVisualManager] _update_cursor called, drag_type={self._drag_type}", extra={"dev_only": True})
         if self._drag_type is None:
+            logger.debug(f"[DragVisualManager] _update_cursor skipped - drag_type is None", extra={"dev_only": True})
             return
 
         cursor_key = self._get_cursor_key()
@@ -230,8 +233,15 @@ class DragVisualManager:
                     action_icon = "plus-circle"  # Merge + Recursive (Ctrl+Shift)
                 else:
                     action_icon = "check"  # Replace + Shallow (Normal - no modifiers)
-        else:  # INVALID or NEUTRAL - both should show "x" since neutral isn't a valid drop target
-            action_icon = "x"  # Invalid drop (including neutral zones)
+        elif self._drop_zone_state == DropZoneState.NEUTRAL and is_metadata_drop:
+            # For metadata drops, show the appropriate icon even in neutral state (but it will be dimmed)
+            if self._modifier_state == ModifierState.SHIFT:
+                action_icon = "database"  # Extended metadata (Shift)
+            else:
+                action_icon = "info"  # Fast metadata (no modifiers)
+            logger.debug(f"[DragVisualManager] Metadata drop (neutral): modifier={self._modifier_state.value}, icon={action_icon}", extra={"dev_only": True})
+        else:  # INVALID or NEUTRAL (non-metadata)
+            action_icon = "x"  # Invalid drop
 
         # Create composite cursor
         return self._create_composite_cursor(base_icon, action_icon)
@@ -312,13 +322,14 @@ class DragVisualManager:
 
                 # Then apply blue color overlay
                 color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
-                color_painter.fillRect(colored_pixmap.rect(), QColor(0, 123, 255))  # Bootstrap primary blue
-
+                # Always use regular blue - dimmed colors were not requested by user
+                color_painter.fillRect(colored_pixmap.rect(), QColor(0, 123, 255))  # Regular blue
                 color_painter.end()
+
                 action_pixmap = colored_pixmap
 
             elif action_icon == "database":
-                # Orange/amber for extended metadata
+                # Orange for extended metadata
                 colored_pixmap = QPixmap(action_pixmap.size())
                 colored_pixmap.fill(Qt.transparent)
 
@@ -330,9 +341,10 @@ class DragVisualManager:
 
                 # Then apply orange color overlay
                 color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
-                color_painter.fillRect(colored_pixmap.rect(), QColor(255, 140, 0))  # Dark orange
-
+                # Always use regular orange - dimmed colors were not requested by user
+                color_painter.fillRect(colored_pixmap.rect(), QColor(255, 140, 0))  # Regular orange
                 color_painter.end()
+
                 action_pixmap = colored_pixmap
 
             painter.drawPixmap(26, 26, action_pixmap)

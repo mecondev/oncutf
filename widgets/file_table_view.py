@@ -100,6 +100,7 @@ class FileTableView(QTableView):
         self._preserve_selection_for_drag = False
         self._clicked_on_selected = False
         self._clicked_index = None
+        self._ignore_selection_changes = False  # Flag to ignore selection changes during drag/drop
 
         # Setup placeholder icon
         self.placeholder_label = QLabel(self.viewport())
@@ -997,6 +998,7 @@ class FileTableView(QTableView):
         self._preserve_selection_for_drag = False
         self._clicked_on_selected = False
         self._clicked_index = None
+        self._ignore_selection_changes = False  # Ensure flag is clear at drag start
 
         # Get selected file data using safe method
         selected_rows = self._get_current_selection_safe()
@@ -1075,7 +1077,7 @@ class FileTableView(QTableView):
         # Check if current position is a valid drop target (walks up parent hierarchy automatically)
         if visual_manager.is_valid_drop_target(widget_under_cursor, "file_table"):
             update_drop_zone_state(DropZoneState.VALID)
-            logger.debug(f"[FileTableView] Valid drop zone detected", extra={"dev_only": True})
+            logger.debug(f"[FileTableView] Valid drop zone detected: {widget_under_cursor.__class__.__name__}", extra={"dev_only": True})
         else:
             # Check for explicit invalid targets (policy violations)
             current_widget = widget_under_cursor
@@ -1206,6 +1208,10 @@ class FileTableView(QTableView):
 
         logger.debug(f"[FileTableView] Selection restored immediately: {len(preserved_selection)} files", extra={"dev_only": True})
 
+        # Clear the ignore flag after restoration is complete
+        self._ignore_selection_changes = False
+        logger.debug("[FileTableView] Cleared ignore_selection_changes flag after restoration", extra={"dev_only": True})
+
     def _restore_qt_selection(self, preserved_selection: set):
         """Restore Qt selection model to match preserved selection"""
         selection_model = self.selectionModel()
@@ -1264,6 +1270,10 @@ class FileTableView(QTableView):
         if not self._drag_data:
             logger.debug("[FileTableView] No drag data available for metadata tree drop", extra={"dev_only": True})
             return False
+
+        # Enable flag to ignore selection changes during drop
+        self._ignore_selection_changes = True
+        logger.debug("[FileTableView] Enabled ignore_selection_changes flag for metadata drop", extra={"dev_only": True})
 
         # CRITICAL: Use preserved selection from drag start IMMEDIATELY
         # This must happen BEFORE any cleanup that might affect selection
@@ -1504,6 +1514,12 @@ class FileTableView(QTableView):
 
     def selectionChanged(self, selected, deselected) -> None:
         super().selectionChanged(selected, deselected)
+
+        # Ignore selection changes during drag operations
+        if self._ignore_selection_changes:
+            logger.debug("[FileTableView] Ignoring selection change during drag/drop operation", extra={"dev_only": True})
+            return
+
         selection_model = self.selectionModel()
         if selection_model is not None:
             selected_rows = set(index.row() for index in selection_model.selectedRows())

@@ -103,6 +103,10 @@ class DragCleanupManager:
         if hasattr(self.main_window, 'file_table_view'):
             if hasattr(self.main_window.file_table_view, '_drag_start_pos'):
                 self.main_window.file_table_view._drag_start_pos = None
+            # Clear the ignore selection changes flag
+            if hasattr(self.main_window.file_table_view, '_ignore_selection_changes'):
+                self.main_window.file_table_view._ignore_selection_changes = False
+                logger.debug("[DragCleanupManager] Cleared _ignore_selection_changes flag", extra={"dev_only": True})
 
         logger.debug("[MainWindow] Widget drag states cleaned")
 
