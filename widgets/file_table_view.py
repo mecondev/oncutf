@@ -1049,7 +1049,7 @@ class FileTableView(QTableView):
             # For multiple files, show count
             source_info = f"{len(file_paths)} files"
 
-        start_drag_visual(drag_type, source_info)
+        start_drag_visual(drag_type, source_info, "file_table")
 
         logger.debug(f"[FileTableView] Custom drag started with visual feedback: {len(file_paths)} files (type: {drag_type.value})", extra={"dev_only": True})
 
