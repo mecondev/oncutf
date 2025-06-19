@@ -52,7 +52,7 @@ def create_item(text: str, alignment: Qt.AlignmentFlag = Qt.AlignLeft) -> QStand
 
 
 def build_metadata_tree_model(metadata: dict, modified_keys: set = None) -> QStandardItemModel:
-    logger.debug(">>> build_metadata_tree_model called")
+    logger.debug(">>> build_metadata_tree_model called", extra={"dev_only": True})
     logger.debug(f"metadata type: {type(metadata)} | keys: {list(metadata.keys()) if isinstance(metadata, dict) else 'N/A'}", extra={"dev_only": True})
 
     if modified_keys is None:
