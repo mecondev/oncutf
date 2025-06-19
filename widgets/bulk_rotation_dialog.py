@@ -1,28 +1,17 @@
 """
 bulk_rotation_dialog.py
 
-Author: Michael Economou
-Date: 2025-06-20
-
-Dialog for bulk rotation operations on selected files.
-Features file type grouping, missing metadata detection, and toggle switches.
+Dialog for bulk rotation operations.
 """
 
-from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import List, Optional
 
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
-    QCheckBox,
-    QDialog,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-    QFrame,
-    QGroupBox
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+    QWidget, QFrame, QScrollArea, QCheckBox
 )
 
 from utils.logger_factory import get_cached_logger
@@ -30,442 +19,308 @@ from utils.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 
-class ToggleSwitch(QWidget):
-    """
-    Custom toggle switch widget with smooth animation and professional styling.
-    """
-    toggled = pyqtSignal(bool)
-
-    def __init__(self, text: str = "", parent: Optional[QWidget] = None):
-        super().__init__(parent)
-        self.setFixedHeight(30)
-        self._checked = True
-        self._text = text
-
-        # Apply toggle switch styling
-        self.setStyleSheet("""
-            ToggleSwitch {
-                background: transparent;
-                border: none;
-            }
-        """)
-
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
-
-        # Text label
-        self.label = QLabel(text)
-        self.label.setStyleSheet("color: #333333; font-size: 14px;")
-        layout.addWidget(self.label)
-
-        layout.addStretch()
-
-        # Toggle switch button
-        self.switch_button = QPushButton()
-        self.switch_button.setCheckable(True)
-        self.switch_button.setChecked(True)
-        self.switch_button.setFixedSize(50, 25)
-        self.switch_button.clicked.connect(self._on_toggle)
-
-        # Apply switch styling with green color from buttons.qss
-        self.switch_button.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                border: 2px solid #4CAF50;
-                border-radius: 12px;
-                color: white;
-                font-weight: bold;
-                font-size: 10px;
-            }
-            QPushButton:checked {
-                background-color: #4CAF50;
-                border-color: #4CAF50;
-            }
-            QPushButton:!checked {
-                background-color: #cccccc;
-                border-color: #cccccc;
-                color: #666666;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-                border-color: #45a049;
-            }
-            QPushButton:!checked:hover {
-                background-color: #bbbbbb;
-                border-color: #bbbbbb;
-            }
-        """)
-
-        layout.addWidget(self.switch_button)
-
-        self._update_switch_text()
-
-    def _on_toggle(self):
-        """Handle toggle switch click."""
-        self._checked = self.switch_button.isChecked()
-        self._update_switch_text()
-        self.toggled.emit(self._checked)
-
-    def _update_switch_text(self):
-        """Update switch button text."""
-        if self._checked:
-            self.switch_button.setText("ON")
-        else:
-            self.switch_button.setText("OFF")
-
-    def isChecked(self) -> bool:
-        """Return whether the switch is checked."""
-        return self._checked
-
-    def setChecked(self, checked: bool):
-        """Set the switch state."""
-        self._checked = checked
-        self.switch_button.setChecked(checked)
-        self._update_switch_text()
-
-
 class BulkRotationDialog(QDialog):
-    """
-    Dialog for setting rotation to 0° for multiple selected files.
+    """Dialog for bulk rotation operations with file analysis and checkboxes."""
 
-    Features:
-    - File type grouping with counts
-    - Missing metadata detection
-    - Toggle switches for modern UX
-    - Professional styling
-    """
-
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent=None, selected_files=None, metadata_cache=None):
         super().__init__(parent)
+        self.selected_files = selected_files or []
+        self.metadata_cache = metadata_cache
+        self.file_groups = {}
+        self.checkboxes = {}
 
-        # Remove title bar and make it a widget-like dialog
         self.setWindowFlags(Qt.Dialog | Qt.CustomizeWindowHint)
         self.setModal(True)
-        self.setMinimumWidth(550)  # Wider to prevent text cutting
-        self.setMaximumWidth(600)
+        self.setFixedSize(600, 450)
 
-        # Data storage
-        self.selected_files: List = []
-        self.file_groups: Dict[str, List] = {}
-        self.missing_metadata_files: List = []
-        self.files_needing_change: Dict[str, List] = {}
-
-        # UI components
-        self.file_type_switches: Dict[str, ToggleSwitch] = {}
-        self.load_metadata_switch: Optional[ToggleSwitch] = None
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #212121;
+                color: #f0ebd8;
+                font-size: 9pt;
+                border-radius: 8px;
+            }
+            QLabel {
+                background-color: transparent;
+                color: #f0ebd8;
+                font-size: 9pt;
+                border: none;
+                padding: 2px;
+            }
+            QCheckBox {
+                color: #f0ebd8;
+                font-size: 9pt;
+                spacing: 8px;
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+                border: 1px solid #555555;
+                border-radius: 3px;
+                background-color: #2c2c2c;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #748cab;
+                border-color: #748cab;
+            }
+            QFrame {
+                background-color: #181818;
+                border: 1px solid #444444;
+                border-radius: 8px;
+            }
+            QScrollArea {
+                background-color: #181818;
+                border: 1px solid #444444;
+                border-radius: 8px;
+            }
+            QScrollArea QWidget {
+                background-color: transparent;
+            }
+        """)
 
         self._setup_ui()
+        self._analyze_files()
 
-    def _setup_ui(self) -> None:
-        """Setup the dialog UI components."""
+    def _setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(25, 25, 25, 25)
-        layout.setSpacing(20)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(16)
 
-        # Title section
-        title_label = QLabel("Set Rotation to 0° (Reset to Normal)")
-        title_label.setStyleSheet("""
-            font-size: 18px;
-            font-weight: bold;
-            color: #333333;
-            margin-bottom: 5px;
-        """)
-        layout.addWidget(title_label)
+        # Title
+        title = QLabel("Bulk Rotation Settings")
+        title_font = QFont()
+        title_font.setBold(True)
+        title_font.setPointSize(11)
+        title.setFont(title_font)
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
 
         # Description
-        desc_label = QLabel("This will reset the rotation metadata to 0° for selected file types.")
-        desc_label.setStyleSheet("""
-            color: #666666;
-            font-size: 14px;
-            margin-bottom: 15px;
-        """)
-        desc_label.setWordWrap(True)
-        layout.addWidget(desc_label)
+        desc = QLabel("Set rotation to 0° for selected file types:")
+        desc.setWordWrap(True)
+        layout.addWidget(desc)
 
-        # File types group
-        self.file_types_group = QGroupBox("Files to Process")
-        self.file_types_group.setStyleSheet("""
-            QGroupBox {
-                font-size: 14px;
-                font-weight: bold;
-                color: #333333;
-                border: 2px solid #e0e0e0;
-                border-radius: 8px;
-                margin-top: 10px;
-                padding-top: 10px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 8px 0 8px;
-                background-color: white;
-            }
-        """)
-        self.file_types_layout = QVBoxLayout(self.file_types_group)
-        self.file_types_layout.setSpacing(12)
-        layout.addWidget(self.file_types_group)
+        # Scroll area for file groups
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll.setMinimumHeight(250)
 
-        # Missing metadata section
-        self.metadata_frame = QFrame()
-        self.metadata_layout = QVBoxLayout(self.metadata_frame)
-        self.metadata_layout.setContentsMargins(0, 15, 0, 0)
-        layout.addWidget(self.metadata_frame)
+        # Content widget
+        content = QWidget()
+        self.content_layout = QVBoxLayout(content)
+        self.content_layout.setContentsMargins(10, 10, 10, 10)
+        self.content_layout.setSpacing(12)
 
-        # Separator
-        separator = QFrame()
-        separator.setFrameShape(QFrame.HLine)
-        separator.setFrameShadow(QFrame.Sunken)
-        separator.setStyleSheet("color: #e0e0e0; margin: 10px 0;")
-        layout.addWidget(separator)
+        scroll.setWidget(content)
+        layout.addWidget(scroll)
+
+        # Info label
+        self.info_label = QLabel()
+        self.info_label.setWordWrap(True)
+        self.info_label.setStyleSheet("color: #888888; font-size: 8pt;")
+        layout.addWidget(self.info_label)
 
         # Buttons
         button_layout = QHBoxLayout()
-        button_layout.addStretch()
+        button_layout.setSpacing(12)
 
+        # Cancel button
         self.cancel_button = QPushButton("Cancel")
-        self.cancel_button.setFixedWidth(120)
+        self.cancel_button.setDefault(False)
+        self.cancel_button.setAutoDefault(False)
+        self.cancel_button.setFocus()
         self.cancel_button.clicked.connect(self.reject)
 
-        # Apply button styling from buttons.qss theme
         self.cancel_button.setStyleSheet("""
             QPushButton {
-                background-color: #f5f5f5;
-                color: #333333;
-                border: 2px solid #cccccc;
-                padding: 10px;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 14px;
+                background-color: #2a2a2a;
+                color: #f0ebd8;
+                font-size: 9pt;
+                border: none;
+                border-radius: 8px;
+                padding: 4px 12px 4px 8px;
+                min-width: 70px;
             }
             QPushButton:hover {
-                background-color: #e8e8e8;
-                border-color: #999999;
+                background-color: #3a3a3a;
             }
             QPushButton:pressed {
-                background-color: #d0d0d0;
+                background-color: #1a1a1a;
             }
         """)
-        button_layout.addWidget(self.cancel_button)
 
+        # Apply button
         self.apply_button = QPushButton("Apply")
-        self.apply_button.setFixedWidth(120)
-        self.apply_button.setDefault(True)
         self.apply_button.clicked.connect(self.accept)
 
-        # Apply green button styling consistent with theme
         self.apply_button.setStyleSheet("""
             QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                border: 2px solid #4CAF50;
-                padding: 10px;
-                border-radius: 6px;
-                font-weight: bold;
-                font-size: 14px;
+                background-color: #2a2a2a;
+                color: #f0ebd8;
+                font-size: 9pt;
+                border: none;
+                border-radius: 8px;
+                padding: 4px 12px 4px 8px;
+                min-width: 70px;
             }
             QPushButton:hover {
-                background-color: #45a049;
-                border-color: #45a049;
+                background-color: #748cab;
             }
             QPushButton:pressed {
-                background-color: #3d8b40;
-                border-color: #3d8b40;
+                background-color: #5a6b7a;
             }
         """)
-        button_layout.addWidget(self.apply_button)
 
+        button_layout.addStretch()
+        button_layout.addWidget(self.cancel_button)
+        button_layout.addWidget(self.apply_button)
         layout.addLayout(button_layout)
 
-        # Set focus to Cancel button (safer default)
-        self.cancel_button.setFocus()
+    def _analyze_files(self):
+        if not self.selected_files:
+            self.info_label.setText("No files selected.")
+            return
 
-    def set_files(self, files: List, metadata_cache) -> None:
-        """
-        Set the files to process and analyze them.
-
-        Args:
-            files: List of FileItem objects
-            metadata_cache: Metadata cache to check for existing metadata
-        """
-        self.selected_files = files
-        self._analyze_files(metadata_cache)
-        self._update_ui()
-
-    def _analyze_files(self, metadata_cache) -> None:
-        """Analyze files by type, metadata availability, and rotation values."""
-        # Group files by extension
-        self.file_groups = defaultdict(list)
-        self.missing_metadata_files = []
-        self.files_needing_change = defaultdict(list)
+        # Group files by extension and analyze rotation needs
+        file_types = {}
+        total_files = len(self.selected_files)
+        total_needing_rotation = 0
+        files_missing_metadata = 0
 
         for file_item in self.selected_files:
-            # Get file extension
             ext = Path(file_item.filename).suffix.lower()
             if ext.startswith('.'):
-                ext = ext[1:]  # Remove the dot
+                ext = ext[1:]
 
-            # Group by extension
-            self.file_groups[ext].append(file_item)
-
-            # Check if metadata is missing
-            if not metadata_cache.has(file_item.full_path):
-                self.missing_metadata_files.append(file_item)
+            if ext in ['jpg', 'jpeg', 'png', 'tiff', 'tif', 'bmp', 'gif']:
+                file_type = "Images"
+            elif ext in ['mp4', 'avi', 'mov', 'mkv', 'wmv', 'flv', 'm4v']:
+                file_type = "Videos"
+            elif ext in ['mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg']:
+                file_type = "Audio"
             else:
-                # Check if file needs rotation change (not already 0)
-                cache_entry = metadata_cache.get_entry(file_item.full_path)
-                if cache_entry and hasattr(cache_entry, 'data'):
-                    current_rotation = cache_entry.data.get("Rotation", "0")
-                    if str(current_rotation) != "0":
-                        self.files_needing_change[ext].append(file_item)
-                        logger.debug(f"[BulkRotation] {file_item.filename} needs change: rotation={current_rotation}")
-                    else:
-                        logger.debug(f"[BulkRotation] {file_item.filename} already at 0°")
+                file_type = "Other"
 
-        logger.debug(f"[BulkRotation] Analyzed {len(self.selected_files)} files into {len(self.file_groups)} groups")
-        logger.debug(f"[BulkRotation] {len(self.missing_metadata_files)} files missing metadata")
-        logger.debug(f"[BulkRotation] {sum(len(files) for files in self.files_needing_change.values())} files need rotation change")
+            if file_type not in file_types:
+                file_types[file_type] = {
+                    'all_files': [],
+                    'files_needing_change': [],
+                    'extensions': set()
+                }
 
-    def _update_ui(self) -> None:
-        """Update UI based on analyzed files."""
-        # Clear existing switches
-        for switch in self.file_type_switches.values():
-            switch.deleteLater()
-        self.file_type_switches.clear()
+            file_types[file_type]['all_files'].append(file_item)
+            file_types[file_type]['extensions'].add(ext.upper())
 
-        # Add file type switches - show only files that need changes or missing metadata
-        total_files = len(self.selected_files)
-        for ext, all_files in sorted(self.file_groups.items()):
-            files_needing_change = self.files_needing_change.get(ext, [])
-            missing_files = [f for f in all_files if f in self.missing_metadata_files]
+            # Check if this file needs rotation change
+            current_rotation = self._get_current_rotation(file_item)
+            if current_rotation is None:
+                files_missing_metadata += 1
+                # Files without metadata will be treated as needing change (assume non-zero)
+                file_types[file_type]['files_needing_change'].append(file_item)
+                total_needing_rotation += 1
+            elif current_rotation != "0":
+                file_types[file_type]['files_needing_change'].append(file_item)
+                total_needing_rotation += 1
 
-            # Count files that need processing (either missing metadata or need rotation change)
-            files_to_process = len(set(files_needing_change + missing_files))
-            total_of_type = len(all_files)
+        # Only create UI for file types that have files needing rotation change
+        groups_with_changes = 0
+        for file_type, data in file_types.items():
+            if data['files_needing_change']:  # Only show groups with files that need changes
+                files_needing_change = data['files_needing_change']
+                total_files_in_group = len(data['all_files'])
+                extensions = sorted(data['extensions'])
+                self._create_group_widget(file_type, files_needing_change, total_files_in_group, extensions)
+                groups_with_changes += 1
 
-            if files_to_process == 0:
-                continue  # Skip file types that don't need any changes
-
-            # Determine file type description
-            if ext.lower() in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'webp']:
-                type_desc = "Images"
-            elif ext.lower() in ['mp4', 'mov', 'avi', 'mkv', 'wmv', 'flv', 'm4v']:
-                type_desc = "Videos"
-            elif ext.lower() in ['mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg']:
-                type_desc = "Audio"
-            else:
-                type_desc = "Files"
-
-            # Show ratio of files that need processing vs total
-            switch_text = f"{type_desc} ({files_to_process}/{total_of_type} files): {ext.upper()}"
-            switch = ToggleSwitch(switch_text)
-            switch.setChecked(True)  # Default to checked
-
-            self.file_types_layout.addWidget(switch)
-            self.file_type_switches[ext] = switch
-
-        # Update files count in group title
-        total_needing_change = sum(len(files) for files in self.files_needing_change.values())
-        total_missing = len(self.missing_metadata_files)
-        total_to_process = len(set(self.missing_metadata_files +
-                                [f for files in self.files_needing_change.values() for f in files]))
-
-        self.file_types_group.setTitle(f"Files to Process: {total_to_process}/{total_files} selected")
-
-        # Add missing metadata switch if needed
-        if self.missing_metadata_files:
-            missing_count = len(self.missing_metadata_files)
-
-            if self.load_metadata_switch:
-                self.load_metadata_switch.deleteLater()
-
-            switch_text = f"Load missing metadata first ({missing_count} files)"
-            self.load_metadata_switch = ToggleSwitch(switch_text)
-            self.load_metadata_switch.setChecked(True)  # Default to checked
-
-            # Special styling for metadata loading switch
-            self.load_metadata_switch.label.setStyleSheet("""
-                color: #ff6b35;
-                font-weight: bold;
-                font-size: 14px;
-            """)
-
-            self.metadata_layout.addWidget(self.load_metadata_switch)
-            self.metadata_frame.setVisible(True)
+        # Update info label with meaningful information
+        if total_needing_rotation == 0:
+            self.info_label.setText("All selected files already have 0° rotation.")
+            # Disable apply button since no changes needed
+            self.apply_button.setEnabled(False)
+            self.apply_button.setText("No Changes Needed")
+            # Update dialog title to reflect no changes needed
+            self.setWindowTitle("Bulk Rotation - No Changes Needed")
         else:
-            self.metadata_frame.setVisible(False)
+            info_text = f"{total_needing_rotation} of {total_files} files will be set to 0° rotation"
+            if files_missing_metadata > 0:
+                info_text += f" ({files_missing_metadata} without metadata)"
+            self.info_label.setText(info_text)
+            # Update dialog title to show how many files will be changed
+            self.setWindowTitle(f"Bulk Rotation - {total_needing_rotation} Files")
 
-    def get_selected_file_types(self) -> Set[str]:
-        """Get the file extensions that are selected for processing."""
-        selected = set()
-        for ext, switch in self.file_type_switches.items():
-            if switch.isChecked():
-                selected.add(ext)
+    def _get_current_rotation(self, file_item) -> Optional[str]:
+        """Get current rotation value for a file, checking cache first then file metadata."""
+        if not self.metadata_cache:
+            return None
+
+        # Check metadata cache first (includes any pending modifications)
+        metadata_entry = self.metadata_cache.get_entry(file_item.full_path)
+        if metadata_entry and hasattr(metadata_entry, 'data'):
+            rotation = metadata_entry.data.get("Rotation")
+            if rotation is not None:
+                return str(rotation)
+
+        # Fallback to file metadata
+        if hasattr(file_item, 'metadata') and file_item.metadata:
+            rotation = file_item.metadata.get("Rotation")
+            if rotation is not None:
+                return str(rotation)
+
+        # Return None for files without rotation metadata (will be treated as needing change)
+        return None
+
+    def _create_group_widget(self, file_type: str, files_needing_change: List, total_files_in_group: int, extensions: List[str]):
+        frame = QFrame()
+        frame.setFrameStyle(QFrame.StyledPanel)
+
+        layout = QVBoxLayout(frame)
+        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setSpacing(8)
+
+        # Header with checkbox
+        header_layout = QHBoxLayout()
+        header_layout.setSpacing(12)
+
+        # Checkbox
+        checkbox = QCheckBox()
+        checkbox.setChecked(True)  # Default to checked
+        self.checkboxes[file_type] = checkbox
+
+        # Label with file count showing only files that need changes
+        extensions_text = ", ".join(extensions)
+        files_to_change = len(files_needing_change)
+
+        if files_to_change == total_files_in_group:
+            # All files in this group need changes
+            label_text = f"{file_type} ({files_to_change} files): {extensions_text}"
+        else:
+            # Some files already have 0° rotation
+            label_text = f"{file_type} ({files_to_change}/{total_files_in_group} files): {extensions_text}"
+
+        label = QLabel(label_text)
+        label.setWordWrap(True)
+
+        header_layout.addWidget(checkbox)
+        header_layout.addWidget(label, 1)
+        layout.addLayout(header_layout)
+
+        self.content_layout.addWidget(frame)
+        # Store only the files that actually need changes
+        self.file_groups[file_type] = files_needing_change
+
+    def get_selected_files(self) -> List:
+        selected = []
+        for file_type, checkbox in self.checkboxes.items():
+            if checkbox.isChecked():
+                selected.extend(self.file_groups[file_type])
         return selected
 
-    def should_load_missing_metadata(self) -> bool:
-        """Check if missing metadata should be loaded."""
-        return (self.load_metadata_switch is not None and
-                self.load_metadata_switch.isChecked())
-
-    def get_files_to_process(self) -> List:
-        """Get the actual FileItem objects to process based on selections."""
-        selected_extensions = self.get_selected_file_types()
-        files_to_process = []
-
-        for file_item in self.selected_files:
-            ext = Path(file_item.filename).suffix.lower()
-            if ext.startswith('.'):
-                ext = ext[1:]
-
-            if ext in selected_extensions:
-                files_to_process.append(file_item)
-
-        return files_to_process
-
-    def get_missing_metadata_files(self) -> List:
-        """Get files that need metadata loading."""
-        if not self.should_load_missing_metadata():
-            return []
-
-        selected_extensions = self.get_selected_file_types()
-        missing_to_load = []
-
-        for file_item in self.missing_metadata_files:
-            ext = Path(file_item.filename).suffix.lower()
-            if ext.startswith('.'):
-                ext = ext[1:]
-
-            if ext in selected_extensions:
-                missing_to_load.append(file_item)
-
-        return missing_to_load
-
     @staticmethod
-    def get_bulk_rotation_choice(parent: QWidget, files: List, metadata_cache) -> Tuple[bool, Dict]:
-        """
-        Show the bulk rotation dialog and return user choice.
-
-        Args:
-            parent: Parent widget
-            files: List of FileItem objects
-            metadata_cache: Metadata cache
-
-        Returns:
-            Tuple of (accepted, result_data) where result_data contains:
-            - 'files_to_process': List of files to process
-            - 'load_missing': List of files needing metadata loading
-            - 'selected_extensions': Set of selected file extensions
-        """
-        dialog = BulkRotationDialog(parent)
-        dialog.set_files(files, metadata_cache)
+    def get_bulk_rotation_choice(parent, selected_files, metadata_cache):
+        dialog = BulkRotationDialog(parent, selected_files, metadata_cache)
 
         if dialog.exec_() == QDialog.Accepted:
-            result_data = {
-                'files_to_process': dialog.get_files_to_process(),
-                'load_missing': dialog.get_missing_metadata_files(),
-                'selected_extensions': dialog.get_selected_file_types()
-            }
-            return True, result_data
-        else:
-            return False, {}
+            return dialog.get_selected_files()
+        return []

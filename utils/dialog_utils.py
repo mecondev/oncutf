@@ -69,4 +69,4 @@ def show_error_message(parent: Optional[QWidget], title: str, message: str) -> N
         message: Message to display
     """
     from widgets.custom_msgdialog import CustomMessageDialog
-    CustomMessageDialog.critical(parent, title, message)
+    CustomMessageDialog.information(parent, title, message)

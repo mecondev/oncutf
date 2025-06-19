@@ -150,7 +150,20 @@ class EventHandlerManager:
         action_bulk_rotation = menu.addAction(get_menu_icon("rotate-ccw"), "Set All Files to 0° Rotation...")
         action_bulk_rotation.setEnabled(len(selected_files) > 0)
         if len(selected_files) > 0:
-            action_bulk_rotation.setToolTip(f"Reset rotation to 0° for {len(selected_files)} selected file(s)")
+            # Count how many files actually need rotation changes
+            files_needing_rotation = 0
+            for file_item in selected_files:
+                current_rotation = self._get_current_rotation_for_file(file_item)
+                if current_rotation != "0":
+                    files_needing_rotation += 1
+
+            if files_needing_rotation == 0:
+                action_bulk_rotation.setToolTip("All selected files already have 0° rotation")
+                action_bulk_rotation.setEnabled(False)
+            elif files_needing_rotation == len(selected_files):
+                action_bulk_rotation.setToolTip(f"Reset rotation to 0° for {files_needing_rotation} selected file(s)")
+            else:
+                action_bulk_rotation.setToolTip(f"Reset rotation to 0° for {files_needing_rotation} of {len(selected_files)} selected file(s)")
         else:
             action_bulk_rotation.setToolTip("Select files first to reset their rotation")
 
@@ -371,37 +384,24 @@ class EventHandlerManager:
             from widgets.bulk_rotation_dialog import BulkRotationDialog
 
             # Show dialog and get user choices
-            accepted, result_data = BulkRotationDialog.get_bulk_rotation_choice(
+            files_to_process = BulkRotationDialog.get_bulk_rotation_choice(
                 self.parent_window,
                 selected_files,
                 self.parent_window.metadata_cache
             )
 
-            if not accepted:
-                logger.debug("[BulkRotation] User cancelled bulk rotation")
+            if not files_to_process:
+                logger.debug("[BulkRotation] User cancelled bulk rotation or no files selected")
                 return
-
-            files_to_process = result_data.get('files_to_process', [])
-            files_to_load = result_data.get('load_missing', [])
 
             if not files_to_process:
                 logger.info("[BulkRotation] No files selected for processing")
                 return
 
-            logger.info(f"[BulkRotation] Processing {len(files_to_process)} files, loading {len(files_to_load)} missing metadata")
+            logger.info(f"[BulkRotation] Processing {len(files_to_process)} files")
 
-            # Step 1: Load missing metadata if requested
-            if files_to_load:
-                logger.info(f"[BulkRotation] Loading metadata for {len(files_to_load)} files first")
-                self.parent_window.load_metadata_for_items(files_to_load, use_extended=False, source="bulk_rotation_prep")
-
-                # Wait for metadata loading to complete
-                # The metadata manager will handle this asynchronously
-                # We'll continue with the rotation in the callback
-                self._pending_bulk_rotation = files_to_process
-            else:
-                # No missing metadata, proceed directly
-                self._apply_bulk_rotation(files_to_process)
+            # Apply rotation directly
+            self._apply_bulk_rotation(files_to_process)
 
         except ImportError as e:
             logger.error(f"[BulkRotation] Failed to import BulkRotationDialog: {e}")
@@ -422,7 +422,7 @@ class EventHandlerManager:
 
     def _apply_bulk_rotation(self, files_to_process: List) -> None:
         """
-        Apply 0° rotation to the specified files.
+        Apply 0° rotation to the specified files, but only to files that actually need the change.
 
         Args:
             files_to_process: List of FileItem objects to set rotation to 0°
@@ -430,50 +430,84 @@ class EventHandlerManager:
         if not files_to_process:
             return
 
-        logger.info(f"[BulkRotation] Applying 0° rotation to {len(files_to_process)} files")
+        logger.info(f"[BulkRotation] Checking rotation for {len(files_to_process)} files")
 
         try:
-            # Apply rotation changes to metadata cache
+            # Apply rotation changes to metadata cache, but only for files that need it
             modified_count = 0
+            skipped_count = 0
 
             for file_item in files_to_process:
-                # Get metadata cache entry
+                # Check current rotation first
+                current_rotation = self._get_current_rotation_for_file(file_item)
+
+                # Skip files that already have 0° rotation
+                if current_rotation == "0":
+                    logger.debug(f"[BulkRotation] Skipping {file_item.filename} - already has 0° rotation")
+                    skipped_count += 1
+                    continue
+
+                # Get or create metadata cache entry
                 cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+                if not cache_entry:
+                    # Create a new cache entry if none exists
+                    metadata_dict = getattr(file_item, 'metadata', {}) or {}
+                    self.parent_window.metadata_cache.set(file_item.full_path, metadata_dict)
+                    cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+
                 if cache_entry and hasattr(cache_entry, 'data'):
                     # Set rotation to 0
                     cache_entry.data["Rotation"] = "0"
                     cache_entry.modified = True
 
                     # Update file item metadata too
-                    if hasattr(file_item, 'metadata') and file_item.metadata:
-                        file_item.metadata["Rotation"] = "0"
+                    if not hasattr(file_item, 'metadata') or file_item.metadata is None:
+                        file_item.metadata = {}
+                    file_item.metadata["Rotation"] = "0"
 
                     # Mark file as modified
                     file_item.metadata_status = "modified"
                     modified_count += 1
 
-                    logger.debug(f"[BulkRotation] Set rotation=0 for {file_item.filename}")
+                    logger.debug(f"[BulkRotation] Set rotation=0 for {file_item.filename} (was: {current_rotation})")
 
             # Update UI to reflect changes
             if modified_count > 0:
                 # Update file table icons
                 self.parent_window.file_model.layoutChanged.emit()
 
-                # Update metadata tree if visible
+                # CRITICAL: Update metadata tree view to mark items as modified
                 if hasattr(self.parent_window, 'metadata_tree_view'):
+                    # For each modified file, mark rotation as modified in tree view
+                    for file_item in files_to_process:
+                        if file_item.metadata_status == "modified":
+                            # Add to modified items for this file path
+                            if file_item.full_path not in self.parent_window.metadata_tree_view.modified_items_per_file:
+                                self.parent_window.metadata_tree_view.modified_items_per_file[file_item.full_path] = set()
+                            self.parent_window.metadata_tree_view.modified_items_per_file[file_item.full_path].add("Rotation")
+
+                            # If this is the currently displayed file, update current modified items too
+                            if (hasattr(self.parent_window.metadata_tree_view, '_current_file_path') and
+                                self.parent_window.metadata_tree_view._current_file_path == file_item.full_path):
+                                self.parent_window.metadata_tree_view.modified_items.add("Rotation")
+
+                    # Refresh the metadata display to show the changes
                     self.parent_window.metadata_tree_view.update_from_parent_selection()
 
                 # Show status message
                 if hasattr(self.parent_window, 'set_status'):
-                    self.parent_window.set_status(
-                        f"Set rotation to 0° for {modified_count} file(s)",
-                        color="green",
-                        auto_reset=True
-                    )
+                    if skipped_count > 0:
+                        status_msg = f"Set rotation to 0° for {modified_count} file(s), {skipped_count} already had 0° rotation"
+                    else:
+                        status_msg = f"Set rotation to 0° for {modified_count} file(s)"
 
-                logger.info(f"[BulkRotation] Successfully applied rotation to {modified_count} files")
+                    self.parent_window.set_status(status_msg, color="green", auto_reset=True)
+
+                logger.info(f"[BulkRotation] Successfully applied rotation to {modified_count} files, skipped {skipped_count} files")
             else:
-                logger.warning("[BulkRotation] No files were modified")
+                logger.info("[BulkRotation] No files needed rotation changes")
+                if hasattr(self.parent_window, 'set_status'):
+                    self.parent_window.set_status("All selected files already have 0° rotation", color="gray", auto_reset=True)
 
         except Exception as e:
             logger.exception(f"[BulkRotation] Error applying rotation: {e}")
@@ -483,3 +517,27 @@ class EventHandlerManager:
                 "Error",
                 f"Failed to apply rotation changes: {str(e)}"
             )
+
+    def _get_current_rotation_for_file(self, file_item) -> str:
+        """
+        Get the current rotation value for a file, checking cache first then file metadata.
+
+        Returns:
+            str: Current rotation value ("0", "90", "180", "270") or "0" if not found
+        """
+        # Check metadata cache first (includes any pending modifications)
+        if hasattr(self.parent_window, 'metadata_cache'):
+            cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+            if cache_entry and hasattr(cache_entry, 'data'):
+                rotation = cache_entry.data.get("Rotation")
+                if rotation is not None:
+                    return str(rotation)
+
+        # Fallback to file item metadata
+        if hasattr(file_item, 'metadata') and file_item.metadata:
+            rotation = file_item.metadata.get("Rotation")
+            if rotation is not None:
+                return str(rotation)
+
+        # Default to "0" if no rotation found
+        return "0"
