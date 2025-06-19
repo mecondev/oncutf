@@ -701,7 +701,7 @@ class MetadataManager:
             logger.info("[MetadataManager] No metadata modifications to save")
             return
 
-        # Get selected files
+        # Get selected files for filtering
         selected_files = []
         if hasattr(self.parent_window, 'file_table_view'):
             selected_rows = self.parent_window.file_table_view._get_current_selection()
@@ -714,11 +714,18 @@ class MetadataManager:
             logger.warning("[MetadataManager] No files selected for metadata save")
             return
 
-        # Filter to only save selected files that have modifications
+        # Get file paths of selected files for filtering
+        selected_file_paths = {file_item.full_path for file_item in selected_files}
+
+        # Find files that have modifications AND are selected
         files_to_save = []
-        for file_item in selected_files:
-            if file_item.full_path in all_modified_metadata:
-                files_to_save.append(file_item)
+        for file_path, modified_metadata in all_modified_metadata.items():
+            if file_path in selected_file_paths and modified_metadata:
+                # Find the corresponding FileItem
+                for file_item in selected_files:
+                    if file_item.full_path == file_path:
+                        files_to_save.append(file_item)
+                        break
 
         if not files_to_save:
             logger.info("[MetadataManager] No selected files have metadata modifications")
@@ -734,71 +741,126 @@ class MetadataManager:
         failed_files = []
 
         try:
-            # Save metadata for each file
-            for file_item in files_to_save:
-                modified_metadata = all_modified_metadata.get(file_item.full_path, {})
-                if not modified_metadata:
-                    continue
+            if len(files_to_save) == 1:
+                # Single file: Use wait cursor
+                from utils.cursor_helper import wait_cursor
+                with wait_cursor():
+                    file_item = files_to_save[0]
+                    modified_metadata = all_modified_metadata.get(file_item.full_path, {})
 
-                logger.info(f"[MetadataManager] Saving metadata for: {file_item.filename}")
+                    if modified_metadata:
+                        logger.info(f"[MetadataManager] Saving metadata for: {file_item.filename}")
+                        success = exiftool.write_metadata(file_item.full_path, modified_metadata)
 
-                # Write metadata to file
-                success = exiftool.write_metadata(file_item.full_path, modified_metadata)
+                        if success:
+                            logger.info(f"[MetadataManager] Successfully saved metadata to: {file_item.filename}")
+                            success_count += 1
+                            self._update_file_after_save(file_item)
+                        else:
+                            logger.error(f"[MetadataManager] Failed to save metadata to: {file_item.filename}")
+                            failed_files.append(file_item.filename)
+            else:
+                # Multiple files: Use waiting dialog
+                from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 
-                if success:
-                    logger.info(f"[MetadataManager] Successfully saved metadata to: {file_item.filename}")
-                    success_count += 1
+                # Create save dialog
+                save_dialog = MetadataWaitingDialog(
+                    parent=self.parent_window,
+                    is_extended=False,  # Save operation, not extended metadata
+                    cancel_callback=None  # No cancellation for save operations
+                )
+                save_dialog.set_status("Saving metadata...")
+                save_dialog.show()
 
-                    # Clear modifications for this file in tree view
-                    self.parent_window.metadata_tree_view.clear_modifications_for_file(file_item.full_path)
+                # Process each file
+                for i, file_item in enumerate(files_to_save):
+                    # Update progress
+                    save_dialog.set_progress(i, len(files_to_save))
+                    save_dialog.set_filename(file_item.filename)
 
-                    # Clear modified flag in cache
-                    metadata_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
-                    if metadata_entry:
-                        metadata_entry.modified = False
+                    # Process events to update the dialog
+                    from PyQt5.QtWidgets import QApplication
+                    QApplication.processEvents()
 
-                    # Update file icon
-                    file_item.metadata_status = "loaded"
+                    modified_metadata = all_modified_metadata.get(file_item.full_path, {})
+                    if not modified_metadata:
+                        continue
 
-                    # Refresh file table to show updated icon
-                    if hasattr(self.parent_window, 'file_model'):
-                        try:
-                            row = self.parent_window.file_model.files.index(file_item)
-                            icon_index = self.parent_window.file_model.index(row, 0)
-                            from PyQt5.QtCore import Qt
-                            self.parent_window.file_model.dataChanged.emit(
-                                icon_index,
-                                icon_index,
-                                [Qt.DecorationRole]
-                            )
-                        except ValueError:
-                            pass  # File not in model
-                else:
-                    logger.error(f"[MetadataManager] Failed to save metadata to: {file_item.filename}")
-                    failed_files.append(file_item.filename)
+                    logger.info(f"[MetadataManager] Saving metadata for: {file_item.filename}")
+
+                    # Write metadata to file
+                    success = exiftool.write_metadata(file_item.full_path, modified_metadata)
+
+                    if success:
+                        logger.info(f"[MetadataManager] Successfully saved metadata to: {file_item.filename}")
+                        success_count += 1
+                        self._update_file_after_save(file_item)
+                    else:
+                        logger.error(f"[MetadataManager] Failed to save metadata to: {file_item.filename}")
+                        failed_files.append(file_item.filename)
+
+                # Complete progress and close dialog
+                save_dialog.set_progress(len(files_to_save), len(files_to_save))
+                save_dialog.set_status("Save complete!")
+                QApplication.processEvents()
+
+                # Keep dialog visible for a moment to show completion
+                from PyQt5.QtCore import QTimer
+                QTimer.singleShot(500, lambda: save_dialog.close())
 
             # Show result message
-            if success_count > 0:
-                from utils.dialog_utils import show_info_message
-                if failed_files:
-                    message = f"Successfully saved metadata for {success_count} file(s).\n\nFailed files:\n" + "\n".join(failed_files)
-                    show_info_message(self.parent_window, "Metadata Save Results", message)
-                else:
-                    if success_count == 1:
-                        message = f"Successfully saved metadata changes to:\n{files_to_save[0].filename}"
-                    else:
-                        message = f"Successfully saved metadata changes to {success_count} files."
-                    show_info_message(self.parent_window, "Metadata Saved", message)
-            elif failed_files:
-                from utils.dialog_utils import show_error_message
-                show_error_message(
-                    self.parent_window,
-                    "Save Failed",
-                    f"Failed to save metadata changes to:\n" + "\n".join(failed_files)
-                )
+            self._show_save_results(success_count, failed_files, files_to_save)
 
         finally:
             exiftool.close()
+
+    def _update_file_after_save(self, file_item):
+        """Update file state after successful metadata save."""
+        # Clear modifications for this file in tree view
+        self.parent_window.metadata_tree_view.clear_modifications_for_file(file_item.full_path)
+
+        # Clear modified flag in cache
+        metadata_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+        if metadata_entry:
+            metadata_entry.modified = False
+
+        # Update file icon
+        file_item.metadata_status = "loaded"
+
+        # Refresh file table to show updated icon
+        if hasattr(self.parent_window, 'file_model'):
+            try:
+                row = self.parent_window.file_model.files.index(file_item)
+                icon_index = self.parent_window.file_model.index(row, 0)
+                from PyQt5.QtCore import Qt
+                self.parent_window.file_model.dataChanged.emit(
+                    icon_index,
+                    icon_index,
+                    [Qt.DecorationRole]
+                )
+            except ValueError:
+                pass  # File not in model
+
+    def _show_save_results(self, success_count, failed_files, files_to_save):
+        """Show results dialog after save operation."""
+        if success_count > 0:
+            from utils.dialog_utils import show_info_message
+            if failed_files:
+                message = f"Successfully saved metadata for {success_count} file(s).\n\nFailed files:\n" + "\n".join(failed_files)
+                show_info_message(self.parent_window, "Metadata Save Results", message)
+            else:
+                if success_count == 1:
+                    message = f"Successfully saved metadata changes to:\n{files_to_save[0].filename}"
+                else:
+                    message = f"Successfully saved metadata changes to {success_count} files."
+                show_info_message(self.parent_window, "Metadata Saved", message)
+        elif failed_files:
+            from utils.dialog_utils import show_error_message
+            show_error_message(
+                self.parent_window,
+                "Save Failed",
+                f"Failed to save metadata changes to:\n" + "\n".join(failed_files)
+            )
 
     def _get_files_from_source(self, source: str) -> Optional[List[FileItem]]:
         """

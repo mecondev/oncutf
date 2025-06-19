@@ -675,8 +675,8 @@ class MetadataTreeView(QTreeView):
         Get the original value of a metadata field from the cache.
         This should be called before resetting to get the original value.
         """
-        selected_files = self._get_current_selection_via_context()
-        metadata_cache = self._get_metadata_cache_via_context()
+        selected_files = self._get_current_selection()
+        metadata_cache = self._get_metadata_cache()
 
         if not selected_files or not metadata_cache:
             logger.debug("[MetadataTree] No selected files or metadata cache available", extra={"dev_only": True})
@@ -761,45 +761,64 @@ class MetadataTreeView(QTreeView):
     # Helper Methods
     # =====================================
 
-    def _get_parent_window_with_file_table(self) -> Tuple[Optional[QWidget], Optional[Any], Optional[Any], Optional[Any]]:
-        """
-        Helper method to find the parent window that contains the file_table_view.
-        Returns tuple: (parent_window, file_model, selection, selected_rows)
-        """
-        # Get parent window (MainWindow)
-        parent_window = self.parent()
-        while parent_window and not hasattr(parent_window, 'file_table_view'):
-            parent_window = parent_window.parent()
+    def _get_parent_with_file_table(self) -> Optional[QWidget]:
+        """Find the parent window that has file_table_view attribute."""
+        parent = self.parent()
+        while parent:
+            if hasattr(parent, 'file_table_view') and hasattr(parent, 'file_model'):
+                return parent
+            parent = parent.parent()
+        return None
 
-        if not parent_window or not hasattr(parent_window, 'file_table_view'):
-            logger.warning("[MetadataTree] Cannot find parent window with file_table_view")
-            return None, None, None, None
+    def _get_current_selection(self):
+        """Get current selection via parent traversal."""
+        parent_window = self._get_parent_with_file_table()
+
+        if not parent_window:
+            logger.debug("[MetadataTree] No parent window found", extra={"dev_only": True})
+            return []
 
         # Get the current selected file
         selection = parent_window.file_table_view.selectionModel()
         if not selection or not selection.hasSelection():
-            return parent_window, None, None, None
+            logger.debug("[MetadataTree] No selection found", extra={"dev_only": True})
+            return []
 
         selected_rows = selection.selectedRows()
         if not selected_rows:
-            return parent_window, None, selection, None
+            logger.debug("[MetadataTree] No selected rows found", extra={"dev_only": True})
+            return []
 
         # Get the file model
         file_model = parent_window.file_model
         if not file_model:
-            return parent_window, None, selection, selected_rows
+            logger.debug("[MetadataTree] No file model found", extra={"dev_only": True})
+            return []
 
-        return parent_window, file_model, selection, selected_rows
+        selected_files = []
+        for index in selected_rows:
+            row = index.row()
+            if 0 <= row < len(file_model.files):
+                selected_files.append(file_model.files[row])
 
-    # =====================================
-    # Metadata Cache Management
-    # =====================================
+        logger.debug(f"[MetadataTree] Found {len(selected_files)} selected files", extra={"dev_only": True})
+        return selected_files
+
+    def _get_metadata_cache(self):
+        """Get metadata cache via parent traversal."""
+        parent_window = self._get_parent_with_file_table()
+        if parent_window and hasattr(parent_window, 'metadata_cache'):
+            logger.debug("[MetadataTree] Found metadata cache", extra={"dev_only": True})
+            return parent_window.metadata_cache
+
+        logger.debug("[MetadataTree] No metadata cache found", extra={"dev_only": True})
+        return None
 
     def _update_file_icon_status(self) -> None:
         """
         Update the file icon in the file table to reflect modified status.
         """
-        selected_files = self._get_current_selection_via_context()
+        selected_files = self._get_current_selection()
         if not selected_files:
             return
 
@@ -824,28 +843,43 @@ class MetadataTreeView(QTreeView):
                 file_item.metadata_status = "loaded"
 
         # Get parent window and file model
-        parent_window, file_model, selection, selected_rows = self._get_parent_window_with_file_table()
+        parent_window = self._get_parent_with_file_table()
+        if not parent_window:
+            return
 
-        if file_model and selected_rows:
-            # Emit dataChanged for all selected rows to update their icons
-            for index in selected_rows:
-                row = index.row()
-                if 0 <= row < len(file_model.files):
-                    # Emit dataChanged specifically for the icon column (column 0)
-                    icon_index = file_model.index(row, 0)
-                    file_model.dataChanged.emit(
-                        icon_index,
-                        icon_index,
-                        [Qt.DecorationRole]
-                    )
-                    logger.debug(f"[MetadataTree] Updated icon for row {row}", extra={"dev_only": True})
+        # Get the current selected file
+        selection = parent_window.file_table_view.selectionModel()
+        if not selection or not selection.hasSelection():
+            return
+
+        selected_rows = selection.selectedRows()
+        if not selected_rows:
+            return
+
+        # Get the file model
+        file_model = parent_window.file_model
+        if not file_model:
+            return
+
+        # Emit dataChanged for all selected rows to update their icons
+        for index in selected_rows:
+            row = index.row()
+            if 0 <= row < len(file_model.files):
+                # Emit dataChanged specifically for the icon column (column 0)
+                icon_index = file_model.index(row, 0)
+                file_model.dataChanged.emit(
+                    icon_index,
+                    icon_index,
+                    [Qt.DecorationRole]
+                )
+                logger.debug(f"[MetadataTree] Updated icon for row {row}", extra={"dev_only": True})
 
     def _reset_metadata_in_cache(self, key_path: str) -> None:
         """
         Reset the metadata value in the cache to its original state.
         """
-        selected_files = self._get_current_selection_via_context()
-        metadata_cache = self._get_metadata_cache_via_context()
+        selected_files = self._get_current_selection()
+        metadata_cache = self._get_metadata_cache()
 
         if not selected_files or not metadata_cache:
             logger.debug("[MetadataTree] No selected files or metadata cache available", extra={"dev_only": True})
@@ -887,8 +921,8 @@ class MetadataTreeView(QTreeView):
         Update the metadata value in the cache to persist changes.
         SIMPLIFIED: Rotation is always a top-level field.
         """
-        selected_files = self._get_current_selection_via_context()
-        metadata_cache = self._get_metadata_cache_via_context()
+        selected_files = self._get_current_selection()
+        metadata_cache = self._get_metadata_cache()
 
         if not selected_files or not metadata_cache:
             logger.debug("[MetadataTree] No selected files or metadata cache available", extra={"dev_only": True})
@@ -1156,8 +1190,8 @@ class MetadataTreeView(QTreeView):
             return
 
         # Get the current metadata cache to get the modified values
-        selected_files = self._get_current_selection_via_context()
-        metadata_cache = self._get_metadata_cache_via_context()
+        selected_files = self._get_current_selection()
+        metadata_cache = self._get_metadata_cache()
 
         if not selected_files or not metadata_cache:
             return
@@ -1172,7 +1206,7 @@ class MetadataTreeView(QTreeView):
         if not metadata_entry or not hasattr(metadata_entry, 'data'):
             return
 
-                # Apply each modified value to the display_data
+        # Apply each modified value to the display_data
         logger.debug(f"[MetadataTree] Applying {len(self.modified_items)} modified items", extra={"dev_only": True})
 
         for key_path in self.modified_items:
@@ -1198,18 +1232,18 @@ class MetadataTreeView(QTreeView):
                     display_data[key] = metadata_entry.data[key]
                     logger.debug(f"[MetadataTree] Applied {key_path}: {metadata_entry.data[key]}", extra={"dev_only": True})
             elif len(parts) == 2:
-                    # Nested key (group/key)
-                    group, key = parts
-                    if group in metadata_entry.data and isinstance(metadata_entry.data[group], dict):
-                        if key in metadata_entry.data[group]:
-                            # Ensure the group exists in display_data
-                            if group not in display_data:
-                                display_data[group] = {}
-                            elif not isinstance(display_data[group], dict):
-                                display_data[group] = {}
+                # Nested key (group/key)
+                group, key = parts
+                if group in metadata_entry.data and isinstance(metadata_entry.data[group], dict):
+                    if key in metadata_entry.data[group]:
+                        # Ensure the group exists in display_data
+                        if group not in display_data:
+                            display_data[group] = {}
+                        elif not isinstance(display_data[group], dict):
+                            display_data[group] = {}
 
-                            display_data[group][key] = metadata_entry.data[group][key]
-                            logger.debug(f"[MetadataTree] Applied {key_path}: {metadata_entry.data[group][key]}", extra={"dev_only": True})
+                        display_data[group][key] = metadata_entry.data[group][key]
+                        logger.debug(f"[MetadataTree] Applied {key_path}: {metadata_entry.data[group][key]}", extra={"dev_only": True})
 
         # Clean up any empty groups
         self._cleanup_empty_groups(display_data)
@@ -1275,15 +1309,6 @@ class MetadataTreeView(QTreeView):
 
         except Exception as e:
             logger.debug(f"[ScrollMemory] Error determining current file: {e}", extra={"dev_only": True})
-
-    def _get_parent_with_file_table(self) -> Optional[QWidget]:
-        """Find the parent window that has file_table_view attribute."""
-        parent = self.parent()
-        while parent:
-            if hasattr(parent, 'file_table_view') and hasattr(parent, 'file_model'):
-                return parent
-            parent = parent.parent()
-        return None
 
     def _update_parent_toggle_button(self, expanded: bool, enabled: bool) -> None:
         """
@@ -1546,49 +1571,6 @@ class MetadataTreeView(QTreeView):
             # ApplicationContext not ready yet
             return None
 
-    def _get_current_selection_via_context(self):
-        """Get current selection via parent traversal (simplified approach)."""
-        # Always use parent traversal for reliability
-        return self._get_selection_via_parent_traversal()
-
-    def _get_selection_via_parent_traversal(self):
-        """Get selection via parent traversal."""
-        parent_window, file_model, selection, selected_rows = self._get_parent_window_with_file_table()
-
-        if not parent_window:
-            logger.debug("[MetadataTree] No parent window found", extra={"dev_only": True})
-            return []
-
-        if not file_model:
-            logger.debug("[MetadataTree] No file model found", extra={"dev_only": True})
-            return []
-
-        if not selected_rows:
-            logger.debug("[MetadataTree] No selected rows found", extra={"dev_only": True})
-            return []
-
-        selected_files = []
-        for index in selected_rows:
-            row = index.row()
-            if 0 <= row < len(file_model.files):
-                selected_files.append(file_model.files[row])
-
-        logger.debug(f"[MetadataTree] Found {len(selected_files)} selected files via parent traversal", extra={"dev_only": True})
-        return selected_files
-
-    def _get_metadata_cache_via_context(self):
-        """Get metadata cache via parent traversal."""
-        parent_window = self.parent()
-        while parent_window and not hasattr(parent_window, 'metadata_cache'):
-            parent_window = parent_window.parent()
-
-        if parent_window and hasattr(parent_window, 'metadata_cache'):
-            logger.debug("[MetadataTree] Found metadata cache via parent traversal", extra={"dev_only": True})
-            return parent_window.metadata_cache
-
-        logger.debug("[MetadataTree] No metadata cache found", extra={"dev_only": True})
-        return None
-
     def get_modified_metadata(self) -> Dict[str, str]:
         """
         Collect all modified metadata items for the current file.
@@ -1602,8 +1584,8 @@ class MetadataTreeView(QTreeView):
         modified_metadata = {}
 
         # Get current file's metadata
-        selected_files = self._get_current_selection_via_context()
-        metadata_cache = self._get_metadata_cache_via_context()
+        selected_files = self._get_current_selection()
+        metadata_cache = self._get_metadata_cache()
 
         if not selected_files or not metadata_cache:
             logger.debug("[MetadataTree] No selected files or metadata cache for collecting modifications", extra={"dev_only": True})
@@ -1661,17 +1643,21 @@ class MetadataTreeView(QTreeView):
         # Save current file's modifications first
         if self._current_file_path and self.modified_items:
             self.modified_items_per_file[self._current_file_path] = self.modified_items.copy()
+            logger.debug(f"[MetadataTree] Saved current file modifications: {self._current_file_path} -> {len(self.modified_items)} items", extra={"dev_only": True})
 
         # Clean up any None keys that might exist in the dictionary
-        if None in self.modified_items_per_file:
-            del self.modified_items_per_file[None]
+        none_keys = [k for k in self.modified_items_per_file.keys() if k is None]
+        for none_key in none_keys:
+            del self.modified_items_per_file[none_key]
             logger.debug("[MetadataTree] Cleaned up None key from modified_items_per_file", extra={"dev_only": True})
 
         # Get metadata cache
-        metadata_cache = self._get_metadata_cache_via_context()
+        metadata_cache = self._get_metadata_cache()
         if not metadata_cache:
             logger.debug("[MetadataTree] No metadata cache available for collecting all modifications", extra={"dev_only": True})
             return {}
+
+        logger.debug(f"[MetadataTree] Processing modifications for {len(self.modified_items_per_file)} files", extra={"dev_only": True})
 
         # Collect modifications for each file
         for file_path, modified_keys in self.modified_items_per_file.items():
@@ -1679,8 +1665,11 @@ class MetadataTreeView(QTreeView):
             if not file_path or not modified_keys:
                 continue
 
+            logger.debug(f"[MetadataTree] Processing file: {file_path} with {len(modified_keys)} modified keys: {list(modified_keys)}", extra={"dev_only": True})
+
             metadata_entry = metadata_cache.get_entry(file_path)
             if not metadata_entry or not hasattr(metadata_entry, 'data'):
+                logger.debug(f"[MetadataTree] No metadata entry found for {file_path}", extra={"dev_only": True})
                 continue
 
             file_modifications = {}
@@ -1690,6 +1679,9 @@ class MetadataTreeView(QTreeView):
                 if key_path.lower() == "rotation":
                     if "Rotation" in metadata_entry.data:
                         file_modifications["Rotation"] = str(metadata_entry.data["Rotation"])
+                        logger.debug(f"[MetadataTree] Found rotation: {metadata_entry.data['Rotation']}", extra={"dev_only": True})
+                    else:
+                        logger.debug(f"[MetadataTree] Rotation not found in metadata for {file_path}", extra={"dev_only": True})
                     continue
 
                 # Handle other fields normally
@@ -1699,17 +1691,22 @@ class MetadataTreeView(QTreeView):
                     # Top-level key
                     if parts[0] in metadata_entry.data:
                         file_modifications[key_path] = str(metadata_entry.data[parts[0]])
+                        logger.debug(f"[MetadataTree] Found top-level key: {key_path} = {metadata_entry.data[parts[0]]}", extra={"dev_only": True})
                 elif len(parts) == 2:
                     # Nested key (group/key)
                     group, key = parts
                     if group in metadata_entry.data and isinstance(metadata_entry.data[group], dict):
                         if key in metadata_entry.data[group]:
                             file_modifications[key_path] = str(metadata_entry.data[group][key])
+                            logger.debug(f"[MetadataTree] Found nested key: {key_path} = {metadata_entry.data[group][key]}", extra={"dev_only": True})
 
             if file_modifications:
                 all_modifications[file_path] = file_modifications
                 logger.debug(f"[MetadataTree] Collected {len(file_modifications)} modifications for {file_path}", extra={"dev_only": True})
+            else:
+                logger.debug(f"[MetadataTree] No modifications found for {file_path}", extra={"dev_only": True})
 
+        logger.info(f"[MetadataTree] Total files with modifications: {len(all_modifications)}")
         return all_modifications
 
     def clear_modifications(self) -> None:
@@ -1742,10 +1739,10 @@ class MetadataTreeView(QTreeView):
             # Refresh the view to remove italic style
             if hasattr(self, 'display_metadata'):
                 # Get current selection to refresh
-                selected_files = self._get_current_selection_via_context()
+                selected_files = self._get_current_selection()
                 if selected_files and len(selected_files) == 1:
                     file_item = selected_files[0]
-                    metadata_cache = self._get_metadata_cache_via_context()
+                    metadata_cache = self._get_metadata_cache()
                     if metadata_cache:
                         metadata_entry = metadata_cache.get_entry(file_item.full_path)
                         if metadata_entry and hasattr(metadata_entry, 'data'):

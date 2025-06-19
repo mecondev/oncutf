@@ -29,19 +29,21 @@ def classify_key(key: str) -> str:
     """Classify a metadata key into a group label."""
     key_lower = key.lower()
 
-    if key_lower.startswith("file"):
+    # File-related metadata
+    if key_lower.startswith("file") or key_lower in {"rotation"}:
         return "File Info"
-    elif key_lower.startswith("audio") or key_lower in {"samplerate", "channelmode", "bitrate"}:
+
+    # Media-specific metadata
+    if (key_lower.startswith("audio") or
+        key_lower in {"samplerate", "channelmode", "bitrate", "title", "album", "artist", "composer", "genre"}):
         return "Audio Info"
-    elif key_lower in {"title", "album", "artist", "composer", "genre"}:
-        return "ID3 Tags"
-    elif key_lower.startswith("image") or "sensor" in key_lower:
+
+    # Image-specific metadata
+    if key_lower.startswith("image") or "sensor" in key_lower:
         return "Image Info"
-    elif key_lower in {"rotation"}:
-        # Rotation stays as top-level, no grouping
-        return "File Info"
-    else:
-        return "Other"
+
+    # Everything else
+    return "Other"
 
 
 def create_item(text: str, alignment: Qt.AlignmentFlag = Qt.AlignLeft) -> QStandardItem:
