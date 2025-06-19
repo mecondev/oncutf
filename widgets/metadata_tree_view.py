@@ -939,45 +939,43 @@ class MetadataTreeView(QTreeView):
                 if len(parts) == 2 and parts[1].lower() == "rotation":
                     group, key = parts
 
-                                        # First, remove ALL existing rotation entries
-                    removed_from_groups = []
+                    # First, check if rotation exists at root level
+                    if "Rotation" in metadata_entry.data:
+                        # Remove from root level
+                        del metadata_entry.data["Rotation"]
+                        logger.debug(f"[MetadataTree] Removed root-level Rotation")
 
-                    # Debug: Log initial state
-                    logger.debug(f"[MetadataTree] BEFORE removing rotation from cache:")
-                    for g, d in metadata_entry.data.items():
-                        if isinstance(d, dict):
-                            for k, v in d.items():
-                                if "rotation" in k.lower():
-                                    logger.debug(f"[MetadataTree]   {g}/{k} = {v}")
+                    # Also check for lowercase
+                    if "rotation" in metadata_entry.data:
+                        del metadata_entry.data["rotation"]
+                        logger.debug(f"[MetadataTree] Removed root-level rotation")
 
+                    # Check and remove from all groups
                     for existing_group, existing_data in list(metadata_entry.data.items()):
                         if isinstance(existing_data, dict):
                             if "Rotation" in existing_data:
                                 del existing_data["Rotation"]
-                                removed_from_groups.append(existing_group)
+                                logger.debug(f"[MetadataTree] Removed Rotation from group: {existing_group}")
                             if "rotation" in existing_data:
                                 del existing_data["rotation"]
-                                removed_from_groups.append(existing_group)
+                                logger.debug(f"[MetadataTree] Removed rotation from group: {existing_group}")
 
-                    if removed_from_groups:
-                        logger.debug(f"[MetadataTree] Removed old rotation from groups: {removed_from_groups}")
-
-                    # Then add the new value to the appropriate group
-                    # If it was in a specific group before, use that, otherwise use the requested group
-                    target_group = removed_from_groups[0] if removed_from_groups else group
-
+                    # Now add the new value to the requested group
                     # Ensure the group exists
-                    if target_group not in metadata_entry.data:
-                        metadata_entry.data[target_group] = {}
-                    elif not isinstance(metadata_entry.data[target_group], dict):
-                        metadata_entry.data[target_group] = {}
+                    if group not in metadata_entry.data:
+                        metadata_entry.data[group] = {}
+                        logger.debug(f"[MetadataTree] Created new group: {group}")
+                    elif not isinstance(metadata_entry.data[group], dict):
+                        metadata_entry.data[group] = {}
+                        logger.debug(f"[MetadataTree] Converted {group} to dict")
 
                     # Add the new rotation value
-                    metadata_entry.data[target_group]["Rotation"] = new_value
-                    logger.debug(f"[MetadataTree] Added new rotation to group {target_group}: {new_value}")
+                    metadata_entry.data[group]["Rotation"] = new_value
+                    logger.debug(f"[MetadataTree] Added rotation to {group}/Rotation = {new_value}")
 
                     # Debug: Log final state
                     logger.debug(f"[MetadataTree] AFTER updating rotation in cache:")
+                    logger.debug(f"[MetadataTree]   Groups in cache: {list(metadata_entry.data.keys())}")
                     for g, d in metadata_entry.data.items():
                         if isinstance(d, dict):
                             for k, v in d.items():
@@ -1172,11 +1170,7 @@ class MetadataTreeView(QTreeView):
             if filename:
                 display_data["FileName"] = filename
 
-            # CRITICAL: Clean up ALL rotation entries BEFORE applying modifications
-            # This prevents duplicate entries when rotation exists in different groups
-            self._cleanup_all_rotation_entries(display_data)
-
-            # Apply any modified values that the user has changed in the UI
+                        # Apply any modified values that the user has changed in the UI
             self._apply_modified_values_to_display_data(display_data)
 
             # Debug: Log what we have after applying modifications
@@ -1231,8 +1225,18 @@ class MetadataTreeView(QTreeView):
         if not metadata_entry or not hasattr(metadata_entry, 'data'):
             return
 
+        # Check if we have any rotation modifications
+        has_rotation_modifications = any("rotation" in key_path.lower() for key_path in self.modified_items)
+
+        # Only clean up rotation entries if we have rotation modifications
+        if has_rotation_modifications:
+            logger.debug(f"[MetadataTree] Cleaning up rotation entries before applying modifications")
+            self._cleanup_all_rotation_entries(display_data)
+
         # Apply each modified value to the display_data
+        logger.debug(f"[MetadataTree] Applying {len(self.modified_items)} modified items")
         for key_path in self.modified_items:
+            logger.debug(f"[MetadataTree] Processing modified item: {key_path}")
             parts = key_path.split('/')
 
             if len(parts) == 1:
@@ -1244,16 +1248,16 @@ class MetadataTreeView(QTreeView):
             elif len(parts) == 2:
                 # Nested key (group/key)
                 group, key = parts
+                logger.debug(f"[MetadataTree] Looking for {group}/{key} in metadata_entry.data")
                 if group in metadata_entry.data and isinstance(metadata_entry.data[group], dict):
+                    logger.debug(f"[MetadataTree] Found group {group}, checking for key {key}")
                     if key in metadata_entry.data[group]:
                         # Get the modified value
                         modified_value = metadata_entry.data[group][key]
+                        logger.debug(f"[MetadataTree] Found modified value: {modified_value}")
 
                         # Special handling for rotation
                         if key.lower() == "rotation":
-                            # Note: We already cleaned ALL rotation entries in _cleanup_all_rotation_entries
-                            # so we can just add the modified value to the appropriate group
-
                             # Use the group from the key_path (e.g., "File Info" from "File Info/Rotation")
                             target_group = group
 
@@ -1266,6 +1270,12 @@ class MetadataTreeView(QTreeView):
                             # Add the new rotation value (always use "Rotation" with capital R)
                             display_data[target_group]["Rotation"] = modified_value
                             logger.debug(f"[MetadataTree] Added modified rotation to {target_group}: {modified_value}")
+
+                            # Debug: verify it was added
+                            if target_group in display_data and "Rotation" in display_data[target_group]:
+                                logger.debug(f"[MetadataTree] Verified: {target_group}/Rotation now exists with value: {display_data[target_group]['Rotation']}")
+                            else:
+                                logger.error(f"[MetadataTree] ERROR: Failed to add rotation to {target_group}!")
                         else:
                             # Normal handling for non-rotation fields
                             if group not in display_data:
@@ -1274,6 +1284,10 @@ class MetadataTreeView(QTreeView):
                                 display_data[group] = {}
                             display_data[group][key] = modified_value
                             logger.debug(f"[MetadataTree] Applied modified value for {key_path}: {modified_value}")
+                    else:
+                        logger.debug(f"[MetadataTree] Key {key} not found in group {group}")
+                else:
+                    logger.debug(f"[MetadataTree] Group {group} not found or not a dict in metadata_entry.data")
 
         # Final cleanup: remove any empty groups that might have been created
         self._cleanup_empty_groups(display_data)
@@ -1294,10 +1308,21 @@ class MetadataTreeView(QTreeView):
         """
         empty_groups = []
 
+        # Check which groups have modified items
+        groups_with_modifications = set()
+        for key_path in self.modified_items:
+            if "/" in key_path:
+                group_name = key_path.split("/")[0]
+                groups_with_modifications.add(group_name)
+
         for group_name, group_data in display_data.items():
             if isinstance(group_data, dict) and len(group_data) == 0:
-                empty_groups.append(group_name)
-                logger.debug(f"[MetadataTree] Found empty group to remove: {group_name}")
+                # Don't remove groups that have modified items (they will be populated)
+                if group_name not in groups_with_modifications:
+                    empty_groups.append(group_name)
+                    logger.debug(f"[MetadataTree] Found empty group to remove: {group_name}")
+                else:
+                    logger.debug(f"[MetadataTree] Keeping empty group {group_name} - has modifications")
 
         for group_name in empty_groups:
             display_data.pop(group_name, None)
@@ -1305,11 +1330,17 @@ class MetadataTreeView(QTreeView):
 
     def _cleanup_all_rotation_entries(self, display_data: Dict[str, Any]) -> None:
         """
-        Remove ALL rotation entries from display_data before applying modifications.
-        This prevents duplicate entries when the original metadata has rotation in one place
-        and we add modified rotation in another place.
+        Remove rotation entries that are NOT in the target group for modifications.
+        This prevents duplicate entries while preserving the rotation in the correct location.
         """
-        # First, check for rotation at root level
+        # Find the target group for rotation modifications
+        target_group = None
+        for key_path in self.modified_items:
+            if "rotation" in key_path.lower() and "/" in key_path:
+                target_group = key_path.split("/")[0]
+                break
+
+        # First, check for rotation at root level - always remove these
         keys_to_remove_at_root = []
         for key in list(display_data.keys()):
             if isinstance(key, str) and "rotation" in key.lower():
@@ -1322,9 +1353,12 @@ class MetadataTreeView(QTreeView):
         # Then check inside each group
         for group_name, group_data in display_data.items():
             if isinstance(group_data, dict):
+                # If this is the target group and we have a rotation modification for it,
+                # we'll update it later, so remove it now to avoid duplicates
                 keys_to_remove = []
                 for key in list(group_data.keys()):
                     if isinstance(key, str) and "rotation" in key.lower():
+                        # Always remove to avoid duplicates - will be re-added with correct value
                         keys_to_remove.append(key)
 
                 for key in keys_to_remove:
