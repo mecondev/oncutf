@@ -146,6 +146,16 @@ class EventHandlerManager:
 
         menu.addSeparator()
 
+        # --- Bulk rotation action ---
+        action_bulk_rotation = menu.addAction(get_menu_icon("rotate-ccw"), "Set All Files to 0° Rotation...")
+        action_bulk_rotation.setEnabled(len(selected_files) > 0)
+        if len(selected_files) > 0:
+            action_bulk_rotation.setToolTip(f"Reset rotation to 0° for {len(selected_files)} selected file(s)")
+        else:
+            action_bulk_rotation.setToolTip("Select files first to reset their rotation")
+
+        menu.addSeparator()
+
         # --- Disabled future options ---
         action_save_sel = menu.addAction(get_menu_icon("save"), "Save metadata for selected file(s)")
         action_save_all = menu.addAction(get_menu_icon("save"), "Save ALL modified metadata")
@@ -243,6 +253,10 @@ class EventHandlerManager:
             else:
                 logger.warning("[EventHandler] No metadata manager available for save all")
 
+        elif action == action_bulk_rotation:
+            # Handle bulk rotation to 0°
+            self._handle_bulk_rotation(selected_files)
+
     def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
         Loads metadata for the file (even if already loaded), on double-click.
@@ -339,3 +353,133 @@ class EventHandlerManager:
 
         if hasattr(self.parent_window, 'preview_tables_view'):
             self.parent_window.preview_tables_view.handle_splitter_moved(pos, index)
+
+    def _handle_bulk_rotation(self, selected_files: List) -> None:
+        """
+        Handle bulk rotation setting to 0° for selected files.
+
+        Args:
+            selected_files: List of FileItem objects to process
+        """
+        if not selected_files:
+            logger.warning("[BulkRotation] No files selected for bulk rotation")
+            return
+
+        logger.info(f"[BulkRotation] Starting bulk rotation for {len(selected_files)} files")
+
+        try:
+            from widgets.bulk_rotation_dialog import BulkRotationDialog
+
+            # Show dialog and get user choices
+            accepted, result_data = BulkRotationDialog.get_bulk_rotation_choice(
+                self.parent_window,
+                selected_files,
+                self.parent_window.metadata_cache
+            )
+
+            if not accepted:
+                logger.debug("[BulkRotation] User cancelled bulk rotation")
+                return
+
+            files_to_process = result_data.get('files_to_process', [])
+            files_to_load = result_data.get('load_missing', [])
+
+            if not files_to_process:
+                logger.info("[BulkRotation] No files selected for processing")
+                return
+
+            logger.info(f"[BulkRotation] Processing {len(files_to_process)} files, loading {len(files_to_load)} missing metadata")
+
+            # Step 1: Load missing metadata if requested
+            if files_to_load:
+                logger.info(f"[BulkRotation] Loading metadata for {len(files_to_load)} files first")
+                self.parent_window.load_metadata_for_items(files_to_load, use_extended=False, source="bulk_rotation_prep")
+
+                # Wait for metadata loading to complete
+                # The metadata manager will handle this asynchronously
+                # We'll continue with the rotation in the callback
+                self._pending_bulk_rotation = files_to_process
+            else:
+                # No missing metadata, proceed directly
+                self._apply_bulk_rotation(files_to_process)
+
+        except ImportError as e:
+            logger.error(f"[BulkRotation] Failed to import BulkRotationDialog: {e}")
+            from utils.dialog_utils import show_error_message
+            show_error_message(
+                self.parent_window,
+                "Error",
+                "Bulk rotation dialog is not available. Please check the installation."
+            )
+        except Exception as e:
+            logger.exception(f"[BulkRotation] Unexpected error: {e}")
+            from utils.dialog_utils import show_error_message
+            show_error_message(
+                self.parent_window,
+                "Error",
+                f"An error occurred during bulk rotation: {str(e)}"
+            )
+
+    def _apply_bulk_rotation(self, files_to_process: List) -> None:
+        """
+        Apply 0° rotation to the specified files.
+
+        Args:
+            files_to_process: List of FileItem objects to set rotation to 0°
+        """
+        if not files_to_process:
+            return
+
+        logger.info(f"[BulkRotation] Applying 0° rotation to {len(files_to_process)} files")
+
+        try:
+            # Apply rotation changes to metadata cache
+            modified_count = 0
+
+            for file_item in files_to_process:
+                # Get metadata cache entry
+                cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+                if cache_entry and hasattr(cache_entry, 'data'):
+                    # Set rotation to 0
+                    cache_entry.data["Rotation"] = "0"
+                    cache_entry.modified = True
+
+                    # Update file item metadata too
+                    if hasattr(file_item, 'metadata') and file_item.metadata:
+                        file_item.metadata["Rotation"] = "0"
+
+                    # Mark file as modified
+                    file_item.metadata_status = "modified"
+                    modified_count += 1
+
+                    logger.debug(f"[BulkRotation] Set rotation=0 for {file_item.filename}")
+
+            # Update UI to reflect changes
+            if modified_count > 0:
+                # Update file table icons
+                self.parent_window.file_model.layoutChanged.emit()
+
+                # Update metadata tree if visible
+                if hasattr(self.parent_window, 'metadata_tree_view'):
+                    self.parent_window.metadata_tree_view.update_from_parent_selection()
+
+                # Show status message
+                if hasattr(self.parent_window, 'set_status'):
+                    self.parent_window.set_status(
+                        f"Set rotation to 0° for {modified_count} file(s)",
+                        color="green",
+                        auto_reset=True
+                    )
+
+                logger.info(f"[BulkRotation] Successfully applied rotation to {modified_count} files")
+            else:
+                logger.warning("[BulkRotation] No files were modified")
+
+        except Exception as e:
+            logger.exception(f"[BulkRotation] Error applying rotation: {e}")
+            from utils.dialog_utils import show_error_message
+            show_error_message(
+                self.parent_window,
+                "Error",
+                f"Failed to apply rotation changes: {str(e)}"
+            )
