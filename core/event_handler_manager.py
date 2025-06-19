@@ -157,7 +157,16 @@ class EventHandlerManager:
         # Enable save for selected if we have modified metadata
         has_modifications = False
         if hasattr(self.parent_window, 'metadata_tree_view'):
+            # Check current file's modifications
             has_modifications = bool(self.parent_window.metadata_tree_view.modified_items)
+
+            # Also check if there are any modifications in any file
+            if not has_modifications and hasattr(self.parent_window.metadata_tree_view, 'modified_items_per_file'):
+                # Check if any file has modifications
+                for file_path, mods in self.parent_window.metadata_tree_view.modified_items_per_file.items():
+                    if mods:
+                        has_modifications = True
+                        break
 
         action_save_sel.setEnabled(has_selection and has_modifications)
         action_save_all.setEnabled(False)  # Keep disabled for now

@@ -38,7 +38,7 @@ def classify_key(key: str) -> str:
     elif key_lower.startswith("image") or "sensor" in key_lower:
         return "Image Info"
     elif key_lower in {"rotation"}:
-        # Rotation is a composite field, put it in File Info instead of Other
+        # Rotation stays as top-level, no grouping
         return "File Info"
     else:
         return "Other"
