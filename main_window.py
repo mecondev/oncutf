@@ -253,6 +253,14 @@ class MainWindow(QMainWindow):
         """Delegates to MetadataManager for extended metadata shortcut loading."""
         self.metadata_manager.shortcut_load_extended_metadata()
 
+    def shortcut_save_selected_metadata(self) -> None:
+        """Delegates to MetadataManager for saving metadata of selected files."""
+        self.metadata_manager.save_metadata_for_selected()
+
+    def shortcut_save_all_metadata(self) -> None:
+        """Delegates to MetadataManager for saving all modified metadata."""
+        self.metadata_manager.save_all_modified_metadata()
+
     def reload_current_folder(self) -> None:
         """Delegates to FileLoadManager for reloading current folder."""
         self.file_load_manager.reload_current_folder()

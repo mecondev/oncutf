@@ -1752,3 +1752,53 @@ class MetadataTreeView(QTreeView):
             self._update_file_icon_status()
             self.viewport().update()
 
+    def has_modifications_for_selected_files(self) -> bool:
+        """
+        Check if any of the currently selected files have modifications.
+
+        Returns:
+            bool: True if any selected file has modifications
+        """
+        # Save current file's modifications first
+        if self._current_file_path and self.modified_items:
+            self.modified_items_per_file[self._current_file_path] = self.modified_items.copy()
+
+        # Get selected files
+        selected_files = self._get_current_selection()
+        if not selected_files:
+            return False
+
+        # Check if any selected file has modifications
+        for file_item in selected_files:
+            file_path = file_item.full_path
+
+            # Check both current modified items and stored ones
+            if file_path == self._current_file_path and self.modified_items:
+                return True
+            elif file_path in self.modified_items_per_file and self.modified_items_per_file[file_path]:
+                return True
+
+        return False
+
+    def has_any_modifications(self) -> bool:
+        """
+        Check if there are any modifications in any file.
+
+        Returns:
+            bool: True if any file has modifications
+        """
+        # Save current file's modifications first
+        if self._current_file_path and self.modified_items:
+            self.modified_items_per_file[self._current_file_path] = self.modified_items.copy()
+
+        # Check current file modifications
+        if self.modified_items:
+            return True
+
+        # Check stored modifications for all files
+        for file_path, modifications in self.modified_items_per_file.items():
+            if modifications:  # Non-empty set
+                return True
+
+        return False
+

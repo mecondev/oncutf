@@ -688,7 +688,7 @@ class MetadataManager:
 
     def save_metadata_for_selected(self) -> None:
         """
-        Save modified metadata for the currently selected file(s).
+        Save modified metadata for the currently selected file(s) only.
         """
         if not hasattr(self.parent_window, 'metadata_tree_view'):
             logger.warning("[MetadataManager] No metadata tree view available")
@@ -731,8 +731,58 @@ class MetadataManager:
             logger.info("[MetadataManager] No selected files have metadata modifications")
             return
 
-        logger.info(f"[MetadataManager] Saving metadata for {len(files_to_save)} file(s)")
+        logger.info(f"[MetadataManager] Saving metadata for {len(files_to_save)} selected file(s)")
+        self._save_metadata_files(files_to_save, all_modified_metadata)
 
+    def save_all_modified_metadata(self) -> None:
+        """
+        Save modified metadata for ALL files that have modifications, regardless of selection.
+        """
+        if not hasattr(self.parent_window, 'metadata_tree_view'):
+            logger.warning("[MetadataManager] No metadata tree view available")
+            return
+
+        # Get all modified metadata for all files
+        all_modified_metadata = self.parent_window.metadata_tree_view.get_all_modified_metadata_for_files()
+
+        if not all_modified_metadata:
+            logger.info("[MetadataManager] No metadata modifications to save")
+            return
+
+        # Get all files from file model to find corresponding FileItems
+        all_files = []
+        if hasattr(self.parent_window, 'file_model') and self.parent_window.file_model.files:
+            all_files = self.parent_window.file_model.files
+
+        if not all_files:
+            logger.warning("[MetadataManager] No files available in file model")
+            return
+
+        # Find FileItems for all files that have modifications
+        files_to_save = []
+        for file_path, modified_metadata in all_modified_metadata.items():
+            if modified_metadata:  # Only files with actual modifications
+                # Find the corresponding FileItem
+                for file_item in all_files:
+                    if file_item.full_path == file_path:
+                        files_to_save.append(file_item)
+                        break
+
+        if not files_to_save:
+            logger.info("[MetadataManager] No files with metadata modifications found")
+            return
+
+        logger.info(f"[MetadataManager] Saving metadata for ALL {len(files_to_save)} modified file(s)")
+        self._save_metadata_files(files_to_save, all_modified_metadata)
+
+    def _save_metadata_files(self, files_to_save: list, all_modified_metadata: dict) -> None:
+        """
+        Common method to save metadata for a list of files.
+
+        Args:
+            files_to_save: List of FileItem objects to save
+            all_modified_metadata: Dictionary of all modified metadata
+        """
         # Create ExifToolWrapper instance
         from utils.exiftool_wrapper import ExifToolWrapper
         exiftool = ExifToolWrapper()

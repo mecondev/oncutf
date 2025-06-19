@@ -146,30 +146,36 @@ class EventHandlerManager:
 
         menu.addSeparator()
 
+        # --- Disabled future options ---
+        action_save_sel = menu.addAction(get_menu_icon("save"), "Save metadata for selected file(s)")
+        action_save_all = menu.addAction(get_menu_icon("save"), "Save ALL modified metadata")
+
+        # Check for modifications using the new methods
+        has_selected_modifications = False
+        has_any_modifications = False
+
+        if hasattr(self.parent_window, 'metadata_tree_view'):
+            has_selected_modifications = self.parent_window.metadata_tree_view.has_modifications_for_selected_files()
+            has_any_modifications = self.parent_window.metadata_tree_view.has_any_modifications()
+
+        # Enable/disable save actions based on modifications
+        action_save_sel.setEnabled(has_selected_modifications)
+        action_save_all.setEnabled(has_any_modifications)
+
+        # Update tooltips
+        if has_selected_modifications:
+            action_save_sel.setToolTip("Save metadata for selected file(s) with modifications")
+        else:
+            action_save_sel.setToolTip("No modifications in selected files")
+
+        if has_any_modifications:
+            action_save_all.setToolTip("Save ALL modified metadata")
+        else:
+            action_save_all.setToolTip("No metadata modifications to save")
+
         # --- Enable/disable logic with enhanced debugging ---
         has_selection = len(selected_files) > 0
         logger.debug(f"[ContextMenu] Selection state: {has_selection} ({len(selected_files)} files)", extra={"dev_only": True})
-
-        # --- Disabled future options ---
-        action_save_sel = menu.addAction(get_menu_icon("save"), "Save metadata for selected file(s)")
-        action_save_all = menu.addAction(get_menu_icon("save"), "Save metadata for all files")
-
-        # Enable save for selected if we have modified metadata
-        has_modifications = False
-        if hasattr(self.parent_window, 'metadata_tree_view'):
-            # Check current file's modifications
-            has_modifications = bool(self.parent_window.metadata_tree_view.modified_items)
-
-            # Also check if there are any modifications in any file
-            if not has_modifications and hasattr(self.parent_window.metadata_tree_view, 'modified_items_per_file'):
-                # Check if any file has modifications
-                for file_path, mods in self.parent_window.metadata_tree_view.modified_items_per_file.items():
-                    if mods:
-                        has_modifications = True
-                        break
-
-        action_save_sel.setEnabled(has_selection and has_modifications)
-        action_save_all.setEnabled(False)  # Keep disabled for now
 
         if not has_selection:
             action_load_sel.setEnabled(False)
@@ -229,6 +235,13 @@ class EventHandlerManager:
                 self.parent_window.metadata_manager.save_metadata_for_selected()
             else:
                 logger.warning("[EventHandler] No metadata manager available for save")
+
+        elif action == action_save_all:
+            # Save ALL modified metadata regardless of selection
+            if hasattr(self.parent_window, 'metadata_manager'):
+                self.parent_window.metadata_manager.save_all_modified_metadata()
+            else:
+                logger.warning("[EventHandler] No metadata manager available for save all")
 
     def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
