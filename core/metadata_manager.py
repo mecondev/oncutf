@@ -855,8 +855,8 @@ class MetadataManager:
                 QApplication.processEvents()
 
                 # Keep dialog visible for a moment to show completion
-                from PyQt5.QtCore import QTimer
-                QTimer.singleShot(500, lambda: save_dialog.close())
+                from utils.timer_manager import schedule_dialog_close
+                schedule_dialog_close(save_dialog.close, 500)
 
             # Show result message
             self._show_save_results(success_count, failed_files, files_to_save)
@@ -892,19 +892,24 @@ class MetadataManager:
                 pass  # File not in model
 
     def _show_save_results(self, success_count, failed_files, files_to_save):
-        """Show results dialog after save operation."""
+        """Show results status message after save operation."""
         if success_count > 0:
-            from utils.dialog_utils import show_info_message
             if failed_files:
-                message = f"Successfully saved metadata for {success_count} file(s).\n\nFailed files:\n" + "\n".join(failed_files)
-                show_info_message(self.parent_window, "Metadata Save Results", message)
+                # Show error dialog only for failed files
+                from utils.dialog_utils import show_error_message
+                message = f"Successfully saved {success_count} file(s), but failed to save:\n" + "\n".join(failed_files)
+                show_error_message(self.parent_window, "Partial Save Failure", message)
             else:
+                # Success - just show status message, no dialog
                 if success_count == 1:
-                    message = f"Successfully saved metadata changes to:\n{files_to_save[0].filename}"
+                    status_msg = f"Saved metadata changes to {files_to_save[0].filename}"
                 else:
-                    message = f"Successfully saved metadata changes to {success_count} files."
-                show_info_message(self.parent_window, "Metadata Saved", message)
+                    status_msg = f"Saved metadata changes to {success_count} files"
+
+                if hasattr(self.parent_window, 'set_status'):
+                    self.parent_window.set_status(status_msg, color="green", auto_reset=True)
         elif failed_files:
+            # Show error dialog only for failures
             from utils.dialog_utils import show_error_message
             show_error_message(
                 self.parent_window,

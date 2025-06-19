@@ -10,7 +10,6 @@ Centralizes dialog creation, validation logic, and user confirmations.
 
 from typing import Optional, Tuple, List
 from PyQt5.QtWidgets import (
-    QMessageBox,
     QWidget,
     QDialog,
     QVBoxLayout,
@@ -58,15 +57,14 @@ class DialogManager:
 
     def confirm_large_folder(self, folder_path: str, file_count: int) -> bool:
         """Show confirmation dialog for large folders"""
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Warning)
-        msg.setWindowTitle("Large Folder Detected")
-        msg.setText(f"Folder contains {file_count} files")
-        msg.setInformativeText(f"This may take a while to process.\n\n{folder_path}")
-        msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-        msg.setDefaultButton(QMessageBox.Ok)
-
-        return msg.exec_() == QMessageBox.Ok
+        from widgets.custom_msgdialog import CustomMessageDialog
+        return CustomMessageDialog.question(
+            None,
+            "Large Folder Detected",
+            f"Folder contains {file_count} files.\n\nThis may take a while to process.\n\n{folder_path}",
+            yes_text="Continue",
+            no_text="Cancel"
+        )
 
     def check_large_files(self, files: List[str], max_size_mb: int = 100) -> Tuple[bool, List[str]]:
         """Check for large files and return list of oversized files"""
@@ -110,9 +108,7 @@ class DialogManager:
         if not large_files:
             return True
 
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Warning)
-        msg.setWindowTitle("Large Files Detected")
+        from widgets.custom_msgdialog import CustomMessageDialog
 
         # Handle both FileItem objects and string paths
         file_names = []
@@ -126,24 +122,26 @@ class DialogManager:
         if len(large_files) > 5:
             file_list += f"\n... and {len(large_files) - 5} more"
 
-        msg.setText(f"Found {len(large_files)} files larger than {max_size_mb}MB")
-        msg.setInformativeText(f"Large files:\n{file_list}\n\nProcessing may take longer.")
-        msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-        msg.setDefaultButton(QMessageBox.Ok)
+        message = f"Found {len(large_files)} files larger than {max_size_mb}MB:\n\n{file_list}\n\nProcessing may take longer."
 
-        return msg.exec_() == QMessageBox.Ok
+        return CustomMessageDialog.question(
+            None,
+            "Large Files Detected",
+            message,
+            yes_text="Continue",
+            no_text="Cancel"
+        )
 
     def prompt_file_conflict(self, old_name: str, new_name: str) -> bool:
         """Show confirmation dialog for file rename conflicts"""
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Warning)
-        msg.setWindowTitle("File Conflict")
-        msg.setText(f"File already exists:\n{new_name}")
-        msg.setInformativeText("Do you want to overwrite it?")
-        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        msg.setDefaultButton(QMessageBox.No)
-
-        return msg.exec_() == QMessageBox.Yes
+        from widgets.custom_msgdialog import CustomMessageDialog
+        return CustomMessageDialog.question(
+            None,
+            "File Conflict",
+            f"File already exists:\n{new_name}\n\nDo you want to overwrite it?",
+            yes_text="Overwrite",
+            no_text="Cancel"
+        )
 
     def center_window(self, window: QWidget):
         """Center a window on the screen"""
@@ -185,7 +183,7 @@ class DialogManager:
         """Close all open dialogs and clean up resources."""
         # Close any open message dialogs
         for widget in QApplication.topLevelWidgets():
-            if isinstance(widget, QMessageBox):
+            if hasattr(widget, 'close') and 'Dialog' in widget.__class__.__name__:
                 widget.close()
 
         # Close any open file dialogs

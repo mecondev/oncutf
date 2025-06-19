@@ -204,7 +204,8 @@ class ValidatedLineEdit(QLineEdit):
             self.setStyleSheet("border: 2px solid #ff4444; background-color: #3a2222;")
 
             # Reset style after a short delay
-            QTimer.singleShot(500, lambda: self._update_styling(self.text()))
+            from utils.timer_manager import schedule_ui_update
+            schedule_ui_update(lambda: self._update_styling(self.text()), 500)
 
         except Exception as e:
             logger.error(f"[ValidatedLineEdit] Error in _apply_temporary_error_style: {e}")

@@ -90,7 +90,8 @@ class CancellableFileLoader(QObject):
             self._worker.cancel()
 
             # Give worker a moment to stop gracefully
-            QTimer.singleShot(100, self._force_cleanup)
+            from utils.timer_manager import schedule_cleanup
+        schedule_cleanup(self._force_cleanup, 100)
 
     def _force_cleanup(self):
         """Force cleanup if worker doesn't stop gracefully."""

@@ -322,6 +322,13 @@ def schedule_resize_adjust(callback: Callable, delay: int = 10, timer_id: Option
     )
 
 
+def schedule_dialog_close(callback: Callable, delay: int = 500, timer_id: Optional[str] = None) -> str:
+    """Schedule a dialog close operation with delay."""
+    return get_timer_manager().schedule(
+        callback, delay, TimerPriority.DELAYED, TimerType.GENERIC, timer_id
+    )
+
+
 def cancel_timer(timer_id: str) -> bool:
     """Cancel a specific timer."""
     return get_timer_manager().cancel(timer_id)

@@ -47,7 +47,7 @@ from PyQt5.QtWidgets import (
     QLabel,
     QMenu,
     QTreeView,
-    QWidget,
+    QWidget
 )
 
 from config import METADATA_TREE_COLUMN_WIDTHS
@@ -572,25 +572,54 @@ class MetadataTreeView(QTreeView):
         # Get the value of the item
         value = index.sibling(index.row(), 1).data()
 
+        # Check if we have multiple files selected - disable Edit/Reset for multiple selection
+        selected_files = self._get_current_selection()
+        has_multiple_selection = len(selected_files) > 1
+
         # Create menu
         menu = QMenu(self)
 
-        # Copy value action
+        # Copy value action - always enabled
         copy_action = QAction("Copy Value", self)
         copy_action.triggered.connect(lambda: self.copy_value(value))
         menu.addAction(copy_action)
 
-        # Edit value action (enabled for Rotation only for now)
+        # Edit value action
         edit_action = QAction("Edit Value", self)
         edit_action.triggered.connect(lambda: self.edit_value(key_path, value))
-        edit_action.setEnabled("Rotation" in key_path)  # Enable only for rotation fields
+
+        # Enable Edit only if:
+        # 1. Single file selection (not multiple)
+        # 2. Field is rotation
+        can_edit = not has_multiple_selection and "Rotation" in key_path
+        edit_action.setEnabled(can_edit)
+
+        if has_multiple_selection:
+            edit_action.setToolTip("Edit disabled for multiple file selection")
+        elif "Rotation" not in key_path:
+            edit_action.setToolTip("Edit only available for Rotation fields")
+        else:
+            edit_action.setToolTip("Edit this metadata value")
+
         menu.addAction(edit_action)
 
-        # Reset value action (enabled for rotation)
+        # Reset value action
         reset_action = QAction("Reset Value", self)
         reset_action.triggered.connect(lambda: self.reset_value(key_path))
-        # Enable only for rotation for now
-        reset_action.setEnabled("Rotation" in key_path)
+
+        # Enable Reset only if:
+        # 1. Single file selection (not multiple)
+        # 2. Field is rotation
+        can_reset = not has_multiple_selection and "Rotation" in key_path
+        reset_action.setEnabled(can_reset)
+
+        if has_multiple_selection:
+            reset_action.setToolTip("Reset disabled for multiple file selection")
+        elif "Rotation" not in key_path:
+            reset_action.setToolTip("Reset only available for Rotation fields")
+        else:
+            reset_action.setToolTip("Reset this field to original value")
+
         menu.addAction(reset_action)
 
         # Show menu
@@ -1159,10 +1188,8 @@ class MetadataTreeView(QTreeView):
             if filename:
                 display_data["FileName"] = filename
 
-                        # Apply any modified values that the user has changed in the UI
+            # Apply any modified values that the user has changed in the UI
             self._apply_modified_values_to_display_data(display_data)
-
-
 
             # Try to determine file path for scroll position memory
             self._set_current_file_from_metadata(metadata)
@@ -1248,8 +1275,6 @@ class MetadataTreeView(QTreeView):
         # Clean up any empty groups
         self._cleanup_empty_groups(display_data)
 
-
-
     def _cleanup_empty_groups(self, display_data: Dict[str, Any]) -> None:
         """
         Remove any empty groups from display_data.
@@ -1276,8 +1301,6 @@ class MetadataTreeView(QTreeView):
         for group_name in empty_groups:
             display_data.pop(group_name, None)
             logger.debug(f"[MetadataTree] Removed empty group: {group_name}", extra={"dev_only": True})
-
-
 
     def _set_current_file_from_metadata(self, metadata: Dict[str, Any]) -> None:
         """Try to determine the current file path from metadata and set it for scroll position memory."""
@@ -1423,8 +1446,6 @@ class MetadataTreeView(QTreeView):
                 # Create a fresh copy of the metadata for display
                 display_metadata = dict(metadata)
                 display_metadata["FileName"] = file_item.filename
-
-
 
                 # Set current file path for scroll position memory
                 self.set_current_file_path(file_item.full_path)
