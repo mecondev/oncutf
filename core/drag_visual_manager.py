@@ -214,17 +214,17 @@ class DragVisualManager:
 
         logger.debug(f"[DragVisualManager] _create_cursor: drag_source={self._drag_source}, is_metadata_drop={is_metadata_drop}", extra={"dev_only": True})
 
-        # Choose action icon based on drop zone state and modifiers
-        if self._drop_zone_state == DropZoneState.VALID:
-            if is_metadata_drop:
-                # Special handling for metadata tree drops
-                if self._modifier_state == ModifierState.SHIFT:
-                    action_icon = "database"  # Extended metadata (Shift)
-                else:
-                    action_icon = "info"  # Fast metadata (no modifiers)
-                logger.debug(f"[DragVisualManager] Metadata drop: modifier={self._modifier_state.value}, icon={action_icon}", extra={"dev_only": True})
+        # Choose action icon based on context
+        if is_metadata_drop:
+            # For metadata drops, always show the appropriate icon
+            if self._modifier_state == ModifierState.SHIFT:
+                action_icon = "database"  # Extended metadata
             else:
-                # Normal file/folder drops
+                action_icon = "info"  # Fast metadata
+            logger.debug(f"[DragVisualManager] Metadata drop: modifier={self._modifier_state.value}, icon={action_icon}", extra={"dev_only": True})
+        else:
+            # Normal file/folder drops - check drop zone state
+            if self._drop_zone_state == DropZoneState.VALID:
                 if self._modifier_state == ModifierState.SHIFT:
                     action_icon = "plus"  # Merge + Shallow (Shift only)
                 elif self._modifier_state == ModifierState.CTRL:
@@ -233,15 +233,8 @@ class DragVisualManager:
                     action_icon = "plus-circle"  # Merge + Recursive (Ctrl+Shift)
                 else:
                     action_icon = "check"  # Replace + Shallow (Normal - no modifiers)
-        elif self._drop_zone_state == DropZoneState.NEUTRAL and is_metadata_drop:
-            # For metadata drops, show the appropriate icon even in neutral state (but it will be dimmed)
-            if self._modifier_state == ModifierState.SHIFT:
-                action_icon = "database"  # Extended metadata (Shift)
-            else:
-                action_icon = "info"  # Fast metadata (no modifiers)
-            logger.debug(f"[DragVisualManager] Metadata drop (neutral): modifier={self._modifier_state.value}, icon={action_icon}", extra={"dev_only": True})
-        else:  # INVALID or NEUTRAL (non-metadata)
-            action_icon = "x"  # Invalid drop
+            else:  # INVALID or NEUTRAL
+                action_icon = "x"  # Invalid drop
 
         # Create composite cursor
         return self._create_composite_cursor(base_icon, action_icon)
@@ -382,6 +375,17 @@ class DragVisualManager:
         is_ctrl = bool(modifiers & Qt.ControlModifier)
         is_shift = bool(modifiers & Qt.ShiftModifier)
 
+        # Special handling for metadata drops (file_table -> metadata_tree)
+        if self._drag_source == "file_table":
+            # For metadata drops, only Shift matters (ignore Ctrl)
+            if is_shift:
+                result = ModifierState.SHIFT  # Extended metadata
+            else:
+                result = ModifierState.NORMAL  # Fast metadata
+            logger.debug(f"[DragVisualManager] Metadata drop modifiers: Shift={is_shift} → {result.value} (Ctrl ignored)", extra={"dev_only": True})
+            return result
+
+        # Normal drag operations (file/folder drops)
         # Check for Shift+Ctrl combination first (highest priority)
         if is_ctrl and is_shift:
             result = ModifierState.CTRL_SHIFT  # Ctrl+Shift = Merge + Recursive

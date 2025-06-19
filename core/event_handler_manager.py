@@ -146,15 +146,21 @@ class EventHandlerManager:
 
         menu.addSeparator()
 
-        # --- Disabled future options ---
-        action_save_sel = menu.addAction(get_menu_icon("save"), "Save metadata for selected file(s)")
-        action_save_all = menu.addAction(get_menu_icon("save"), "Save metadata for all files")
-        action_save_sel.setEnabled(False)
-        action_save_all.setEnabled(False)
-
         # --- Enable/disable logic with enhanced debugging ---
         has_selection = len(selected_files) > 0
         logger.debug(f"[ContextMenu] Selection state: {has_selection} ({len(selected_files)} files)", extra={"dev_only": True})
+
+        # --- Disabled future options ---
+        action_save_sel = menu.addAction(get_menu_icon("save"), "Save metadata for selected file(s)")
+        action_save_all = menu.addAction(get_menu_icon("save"), "Save metadata for all files")
+
+        # Enable save for selected if we have modified metadata
+        has_modifications = False
+        if hasattr(self.parent_window, 'metadata_tree_view'):
+            has_modifications = bool(self.parent_window.metadata_tree_view.modified_items)
+
+        action_save_sel.setEnabled(has_selection and has_modifications)
+        action_save_all.setEnabled(False)  # Keep disabled for now
 
         if not has_selection:
             action_load_sel.setEnabled(False)
@@ -207,6 +213,13 @@ class EventHandlerManager:
 
         elif action == action_deselect_all:
             self.parent_window.clear_all_selection()
+
+        elif action == action_save_sel:
+            # Save modified metadata for selected files
+            if hasattr(self.parent_window, 'metadata_manager'):
+                self.parent_window.metadata_manager.save_metadata_for_selected()
+            else:
+                logger.warning("[EventHandler] No metadata manager available for save")
 
     def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """

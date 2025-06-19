@@ -327,6 +327,11 @@ class UIManager:
         self.parent_window.file_table_view.setContextMenuPolicy(Qt.CustomContextMenu)
         self.parent_window.file_table_view.customContextMenuRequested.connect(self.parent_window.handle_table_context_menu)
 
+        # Connect metadata tree view signals for editing operations
+        self.parent_window.metadata_tree_view.value_edited.connect(self.parent_window.on_metadata_value_edited)
+        self.parent_window.metadata_tree_view.value_reset.connect(self.parent_window.on_metadata_value_reset)
+        self.parent_window.metadata_tree_view.value_copied.connect(self.parent_window.on_metadata_value_copied)
+
         # Toggle button connection is now handled by MetadataTreeView
         # self.parent_window.toggle_expand_button.toggled.connect(self.parent_window.toggle_metadata_expand)
 

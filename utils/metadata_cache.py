@@ -28,12 +28,14 @@ class MetadataEntry:
         data (dict): Raw metadata dictionary
         is_extended (bool): Whether extended metadata (via -ee) was used
         timestamp (float): UNIX timestamp when this entry was stored
+        modified (bool): Whether the metadata has been edited by the user
     """
 
-    def __init__(self, data: dict, is_extended: bool = False, timestamp: Optional[float] = None):
+    def __init__(self, data: dict, is_extended: bool = False, timestamp: Optional[float] = None, modified: bool = False):
         self.data = data
         self.is_extended = is_extended
         self.timestamp = timestamp or time.time()
+        self.modified = modified
 
     def to_dict(self) -> dict:
         """Returns a copy of the raw metadata dictionary."""

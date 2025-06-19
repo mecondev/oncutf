@@ -103,12 +103,8 @@ class DragCleanupManager:
         if hasattr(self.main_window, 'file_table_view'):
             if hasattr(self.main_window.file_table_view, '_drag_start_pos'):
                 self.main_window.file_table_view._drag_start_pos = None
-            # Clear the ignore selection changes flag
-            if hasattr(self.main_window.file_table_view, '_ignore_selection_changes'):
-                self.main_window.file_table_view._ignore_selection_changes = False
-                logger.debug("[DragCleanupManager] Cleared _ignore_selection_changes flag", extra={"dev_only": True})
 
-        logger.debug("[MainWindow] Widget drag states cleaned")
+        logger.debug("[DragCleanupManager] Widget drag states cleaned")
 
     def emergency_drag_cleanup(self) -> None:
         """
@@ -120,11 +116,11 @@ class DragCleanupManager:
             return
 
         # Check if cursor looks stuck in drag mode
-        current_cursor = app.overrideCursor()
+        current_cursor = app.overrideCursor() # type: ignore
         if current_cursor:
             cursor_shape = current_cursor.shape()
             # Common drag cursor shapes that might be stuck
-            drag_cursors = [Qt.DragMoveCursor, Qt.DragCopyCursor, Qt.DragLinkCursor, Qt.ClosedHandCursor]
+            drag_cursors = [Qt.DragMoveCursor, Qt.DragCopyCursor, Qt.DragLinkCursor, Qt.ClosedHandCursor] # type: ignore
 
             if cursor_shape in drag_cursors:
                 self._handle_stuck_cursor()

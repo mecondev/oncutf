@@ -488,5 +488,56 @@ class MainWindow(QMainWindow):
         self.initialization_manager.show_metadata_status()
 
     def _enable_selection_store_mode(self):
-        """Delegates to InitializationManager for SelectionStore mode initialization."""
-        self.initialization_manager.enable_selection_store_mode()
+        """Enable selection store mode in file table view after UI initialization."""
+        if hasattr(self, 'file_table_view'):
+            logger.debug("[MainWindow] Enabling SelectionStore mode in FileTableView")
+            self.file_table_view.enable_selection_store_mode()
+
+    # =====================================
+    # Metadata Editing Signal Handlers
+    # =====================================
+
+    def on_metadata_value_edited(self, key_path: str, old_value: str, new_value: str) -> None:
+        """
+        Handle metadata value edited signal from metadata tree view.
+
+        Args:
+            key_path: The metadata key path (e.g. "EXIF/Rotation")
+            old_value: The previous value
+            new_value: The new value
+        """
+        logger.info(f"[MetadataEdit] Value changed: {key_path} = '{old_value}' -> '{new_value}'")
+
+        # Update status to show the change
+        self.set_status(f"Modified {key_path}: {old_value} → {new_value}", color="blue", auto_reset=True)
+
+        # The file icon status update is already handled by MetadataTreeView._update_file_icon_status()
+        # Just log the change for debugging
+        logger.debug(f"[MetadataEdit] Modified metadata field: {key_path}")
+
+    def on_metadata_value_reset(self, key_path: str) -> None:
+        """
+        Handle metadata value reset signal from metadata tree view.
+
+        Args:
+            key_path: The metadata key path that was reset
+        """
+        logger.info(f"[MetadataEdit] Value reset: {key_path}")
+
+        # Update status to show the reset
+        self.set_status(f"Reset {key_path} to original value", color="orange", auto_reset=True)
+
+        # The file icon status update is already handled by MetadataTreeView._update_file_icon_status()
+        logger.debug(f"[MetadataEdit] Reset metadata field: {key_path}")
+
+    def on_metadata_value_copied(self, value: str) -> None:
+        """
+        Handle metadata value copied signal from metadata tree view.
+
+        Args:
+            value: The value that was copied to clipboard
+        """
+        logger.debug(f"[MetadataEdit] Value copied to clipboard: {value}")
+
+        # Show a brief status message
+        self.set_status(f"Copied '{value}' to clipboard", color="green", auto_reset=True, reset_delay=2000)

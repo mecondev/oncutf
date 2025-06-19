@@ -100,7 +100,6 @@ class FileTableView(QTableView):
         self._preserve_selection_for_drag = False
         self._clicked_on_selected = False
         self._clicked_index = None
-        self._ignore_selection_changes = False  # Flag to ignore selection changes during drag/drop
 
         # Setup placeholder icon
         self.placeholder_label = QLabel(self.viewport())
@@ -923,8 +922,8 @@ class FileTableView(QTableView):
                 # Check if we're dragging from a selected item
                 start_index = self.indexAt(self._drag_start_pos)
                 if start_index.isValid():
-                                    start_row = start_index.row()
-                if start_row in self._get_current_selection_safe():
+                    start_row = start_index.row()
+                    if start_row in self._get_current_selection_safe():
                         # Start drag from selected item
                         self._start_custom_drag()
                         return
@@ -998,7 +997,6 @@ class FileTableView(QTableView):
         self._preserve_selection_for_drag = False
         self._clicked_on_selected = False
         self._clicked_index = None
-        self._ignore_selection_changes = False  # Ensure flag is clear at drag start
 
         # Get selected file data using safe method
         selected_rows = self._get_current_selection_safe()
@@ -1208,10 +1206,6 @@ class FileTableView(QTableView):
 
         logger.debug(f"[FileTableView] Selection restored immediately: {len(preserved_selection)} files", extra={"dev_only": True})
 
-        # Clear the ignore flag after restoration is complete
-        self._ignore_selection_changes = False
-        logger.debug("[FileTableView] Cleared ignore_selection_changes flag after restoration", extra={"dev_only": True})
-
     def _restore_qt_selection(self, preserved_selection: set):
         """Restore Qt selection model to match preserved selection"""
         selection_model = self.selectionModel()
@@ -1270,10 +1264,6 @@ class FileTableView(QTableView):
         if not self._drag_data:
             logger.debug("[FileTableView] No drag data available for metadata tree drop", extra={"dev_only": True})
             return False
-
-        # Enable flag to ignore selection changes during drop
-        self._ignore_selection_changes = True
-        logger.debug("[FileTableView] Enabled ignore_selection_changes flag for metadata drop", extra={"dev_only": True})
 
         # CRITICAL: Use preserved selection from drag start IMMEDIATELY
         # This must happen BEFORE any cleanup that might affect selection
@@ -1348,133 +1338,18 @@ class FileTableView(QTableView):
         return None
 
     # =====================================
-    # Drag & Drop Methods (Legacy - may remove)
+    # Drag & Drop Event Handlers
     # =====================================
 
-    def startDrag(self, supportedActions: Qt.DropActions) -> None:
-        """Initiate drag operation for selected files."""
-        selected_rows = self._get_current_selection()
-        rows = sorted(selected_rows)
-        if not rows:
-            return
-
-        file_items = [self.model().files[r] for r in rows if 0 <= r < len(self.model().files)]
-        file_paths = [f.full_path for f in file_items if f.full_path]
-
-        if not file_paths:
-            return
-
-        # Start drag operation with DragManager
-        drag_manager = DragManager.get_instance()
-        drag_manager.start_drag("file_table")
-
-        # Setup drag cancel filter and PRESERVE CURRENT SELECTION
-        from widgets.file_tree_view import _drag_cancel_filter
-        _drag_cancel_filter.activate()
-        # THIS IS THE KEY FIX: Preserve selection BEFORE drag starts
-        _drag_cancel_filter.preserve_selection(selected_rows)
-
-        logger.debug(f"[FileTableView] Starting drag with {len(selected_rows)} files selected", extra={"dev_only": True})
-
-        # Create MIME data
-        mime_data = QMimeData()
-        mime_data.setData("application/x-oncutf-filetable", b"1")
-        urls = [QUrl.fromLocalFile(p) for p in file_paths]
-        mime_data.setUrls(urls)
-
-        # Execute drag - store reference for cleanup
-        drag = QDrag(self)
-        drag.setMimeData(mime_data)
-        self._active_drag = drag
-
-        try:
-            result = drag.exec(Qt.CopyAction | Qt.MoveAction | Qt.LinkAction)
-            logger.debug(f"[FileTable] Drag completed with result: {result}")
-        except Exception as e:
-            logger.error(f"Drag operation failed: {e}")
-            result = Qt.IgnoreAction
-        finally:
-            # Immediate cleanup
-            self._active_drag = None
-
-            # End drag operation with DragManager
-            drag_manager.end_drag("file_table")
-
-            # Deactivate filter
-            _drag_cancel_filter.deactivate()
-
-            # Force cursor restoration
-            while QApplication.overrideCursor():
-                QApplication.restoreOverrideCursor()
-
-            # Update UI immediately
-            self.viewport().update()
-            QApplication.processEvents()
-
-        # Schedule aggressive cleanup with reasonable delay
-        schedule_drag_cleanup(self._aggressive_drag_cleanup, 100)
-
-    def _aggressive_drag_cleanup(self):
-        """Aggressive post-drag cleanup to prevent ghost effects"""
-        # Force DragManager cleanup
-        drag_manager = DragManager.get_instance()
-        if drag_manager.is_drag_active():
-            logger.debug("[FileTable] Forcing DragManager cleanup in post-drag", extra={"dev_only": True})
-            drag_manager.force_cleanup()
-
-        # Reset drag state
-        self._drag_start_pos = None
-        if hasattr(self, '_active_drag'):
-            self._active_drag = None
-
-        # Force cursor cleanup again
-        while QApplication.overrideCursor():
-            QApplication.restoreOverrideCursor()
-
-        # Deactivate filter if still active
-        from widgets.file_tree_view import _drag_cancel_filter
-        if _drag_cancel_filter._active:
-            _drag_cancel_filter.deactivate()
-
-        # Force UI update
-        self.viewport().update()
-        self.update()
-
-        # Process events to clear any pending drag events
-        QApplication.processEvents()
-
-        # Send fake mouse release to self
-        fake_event = QMouseEvent(
-            QEvent.MouseButtonRelease,
-            QPoint(0, 0),
-            Qt.LeftButton,
-            Qt.NoButton,
-            Qt.NoModifier
-        )
-        QApplication.postEvent(self.viewport(), fake_event)
-
-    def _final_drag_cleanup(self):
-        """Final drag cleanup after event loop."""
-        from widgets.file_tree_view import _drag_cancel_filter
-        _drag_cancel_filter.deactivate()
-
-        while QApplication.overrideCursor():
-            QApplication.restoreOverrideCursor()
-
-        if hasattr(self, 'viewport'):
-            self.viewport().update()
-        QApplication.processEvents()
-
-        # Schedule more aggressive cleanup
-        schedule_drag_cleanup(self._aggressive_drag_cleanup, 50)
-
     def dragEnterEvent(self, event):
+        """Accept drag events with URLs or internal format."""
         if event.mimeData().hasUrls() or event.mimeData().hasFormat("application/x-oncutf-internal"):
             event.acceptProposedAction()
         else:
             super().dragEnterEvent(event)
 
     def dragMoveEvent(self, event):
+        """Accept drag move events with URLs or internal format."""
         if event.mimeData().hasUrls() or event.mimeData().hasFormat("application/x-oncutf-internal"):
             event.acceptProposedAction()
         else:
@@ -1514,11 +1389,6 @@ class FileTableView(QTableView):
 
     def selectionChanged(self, selected, deselected) -> None:
         super().selectionChanged(selected, deselected)
-
-        # Ignore selection changes during drag operations
-        if self._ignore_selection_changes:
-            logger.debug("[FileTableView] Ignoring selection change during drag/drop operation", extra={"dev_only": True})
-            return
 
         selection_model = self.selectionModel()
         if selection_model is not None:

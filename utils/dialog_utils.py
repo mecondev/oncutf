@@ -9,7 +9,7 @@ Provides centralized logic for common dialog operations like centering.
 """
 
 from typing import Optional
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget, QMessageBox
 
 
 def center_widget_on_parent(widget: QWidget, parent: Optional[QWidget] = None) -> None:
@@ -44,3 +44,27 @@ def setup_dialog_size_and_center(dialog: QWidget, content_widget: QWidget) -> No
 
     # Center the dialog on parent
     center_widget_on_parent(dialog)
+
+
+def show_info_message(parent: Optional[QWidget], title: str, message: str) -> None:
+    """
+    Show an information message dialog.
+
+    Args:
+        parent: Parent widget for the dialog
+        title: Dialog title
+        message: Message to display
+    """
+    QMessageBox.information(parent, title, message)
+
+
+def show_error_message(parent: Optional[QWidget], title: str, message: str) -> None:
+    """
+    Show an error message dialog.
+
+    Args:
+        parent: Parent widget for the dialog
+        title: Dialog title
+        message: Message to display
+    """
+    QMessageBox.critical(parent, title, message)

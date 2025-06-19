@@ -84,7 +84,7 @@ class UtilityManager:
             self.main_window.set_status("No folder loaded.", color="gray", auto_reset=True)
             return
 
-        from widgets.custom_message_dialog import CustomMessageDialog
+        from widgets.custom_msgdialog import CustomMessageDialog
         if not CustomMessageDialog.question(self.main_window, "Reload Folder", "Reload current folder?", yes_text="Reload", no_text="Cancel"):
             return
 

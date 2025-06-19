@@ -112,7 +112,10 @@ class FileTableModel(QAbstractTableModel):
         if role == Qt.DecorationRole and index.column() == 0:
             entry = self.parent_window.metadata_cache.get_entry(file.full_path) if self.parent_window else None
             if entry:
-                if entry.is_extended:
+                # Check if metadata has been modified
+                if hasattr(entry, 'modified') and entry.modified:
+                    return QIcon(self.metadata_icons.get("modified"))
+                elif entry.is_extended:
                     return QIcon(self.metadata_icons.get("extended"))
                 return QIcon(self.metadata_icons.get("loaded"))
 

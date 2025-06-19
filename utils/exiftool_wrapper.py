@@ -167,6 +167,70 @@ class ExifToolWrapper:
             logger.error(f"[ExtendedReader] Failed to read extended metadata: {e}", exc_info=True)
             return None
 
+    def write_metadata(self, file_path: str, metadata_changes: dict) -> bool:
+        """
+        Writes metadata changes to a file using exiftool.
+
+        Args:
+            file_path (str): Full path to the file
+            metadata_changes (dict): Dictionary of metadata changes to write
+                                   Format: {"EXIF:Rotation": "90", "IPTC:Keywords": "test"}
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        if not os.path.isfile(file_path):
+            logger.warning(f"[ExifToolWrapper] File not found for writing: {file_path}")
+            return False
+
+        if not metadata_changes:
+            logger.warning(f"[ExifToolWrapper] No metadata changes provided")
+            return False
+
+        try:
+            # Build exiftool command
+            cmd = ["exiftool", "-overwrite_original"]
+
+            # Add each metadata change as a tag
+            for key, value in metadata_changes.items():
+                # Handle special cases for rotation metadata
+                key_lower = key.lower()
+                if "rotation" in key_lower:
+                    # For any rotation tag, use simple -Rotation (works for most file types)
+                    tag_name = "Rotation"
+                else:
+                    # Convert our format (e.g., "EXIF/DateTimeOriginal") to exiftool format
+                    tag_name = key.replace("/", ":")
+
+                cmd.append(f"-{tag_name}={value}")
+
+            cmd.append(file_path)
+
+            logger.debug(f"[ExifToolWrapper] Writing metadata with command: {' '.join(cmd)}")
+
+            # Execute the command
+            result = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=10
+            )
+
+            if result.returncode == 0:
+                logger.info(f"[ExifToolWrapper] Successfully wrote metadata to: {file_path}")
+                return True
+            else:
+                logger.error(f"[ExifToolWrapper] Failed to write metadata: {result.stderr}")
+                return False
+
+        except subprocess.TimeoutExpired:
+            logger.error(f"[ExifToolWrapper] Timeout while writing metadata to: {file_path}")
+            return False
+        except Exception as e:
+            logger.error(f"[ExifToolWrapper] Exception while writing metadata: {e}", exc_info=True)
+            return False
+
     def close(self) -> None:
         """Shuts down the persistent ExifTool process cleanly."""
         try:

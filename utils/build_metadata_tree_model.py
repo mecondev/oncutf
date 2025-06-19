@@ -37,6 +37,9 @@ def classify_key(key: str) -> str:
         return "ID3 Tags"
     elif key_lower.startswith("image") or "sensor" in key_lower:
         return "Image Info"
+    elif key_lower in {"rotation"}:
+        # Rotation is a composite field, put it in File Info instead of Other
+        return "File Info"
     else:
         return "Other"
 
@@ -48,9 +51,12 @@ def create_item(text: str, alignment: Qt.AlignmentFlag = Qt.AlignLeft) -> QStand
     return item
 
 
-def build_metadata_tree_model(metadata: dict) -> QStandardItemModel:
+def build_metadata_tree_model(metadata: dict, modified_keys: set = None) -> QStandardItemModel:
     logger.debug(">>> build_metadata_tree_model called")
     logger.debug(f"metadata type: {type(metadata)} | keys: {list(metadata.keys()) if isinstance(metadata, dict) else 'N/A'}", extra={"dev_only": True})
+
+    if modified_keys is None:
+        modified_keys = set()
 
     model = QStandardItemModel()
     model.setHorizontalHeaderLabels(["Key", "Value"])
@@ -83,6 +89,19 @@ def build_metadata_tree_model(metadata: dict) -> QStandardItemModel:
         for key, value in items:
             key_item = create_item(format_key(key))
             value_item = create_item(str(value))
+
+            # Check if this key is modified and apply italic style
+            key_path = f"{group_name}/{key}"
+            if key_path in modified_keys or key in modified_keys:
+                # Apply italic style to both key and value for modified items
+                italic_font = QFont()
+                italic_font.setItalic(True)
+                key_item.setFont(italic_font)
+                value_item.setFont(italic_font)
+                # Optionally, add a tooltip to indicate it's modified
+                key_item.setToolTip("Modified value")
+                value_item.setToolTip("Modified value")
+
             group_item.appendRow([key_item, value_item])
 
         root_item.appendRow([group_item, dummy_value_item])

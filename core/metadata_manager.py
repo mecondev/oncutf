@@ -252,33 +252,17 @@ class MetadataManager:
         if (hasattr(self, '_preserved_selection') and
             self._preserved_selection is not None and
             self.parent_window and
-            hasattr(self.parent_window, 'file_table_view') and
-            hasattr(self.parent_window.file_table_view, '_update_selection_store')):
+            hasattr(self.parent_window, 'file_table_view')):
 
-            logger.debug(f"[MetadataManager] Selection restoration conditions met, preserved selection has {len(self._preserved_selection)} files")
+            logger.debug(f"[MetadataManager] Restoring selection immediately: {len(self._preserved_selection)} files")
 
-            # Use TimerManager instead of QTimer
-            from utils.timer_manager import get_timer_manager, TimerType, TimerPriority
-            timer_manager = get_timer_manager()
+            # Restore selection immediately
+            if hasattr(self.parent_window.file_table_view, '_update_selection_store'):
+                self.parent_window.file_table_view._update_selection_store(self._preserved_selection, emit_signal=True)
+                logger.debug(f"[MetadataManager] Selection restored successfully")
 
-            def restore_selection():
-                if (self.parent_window and
-                    hasattr(self.parent_window, 'file_table_view') and
-                    hasattr(self.parent_window.file_table_view, '_update_selection_store')):
-                    self.parent_window.file_table_view._update_selection_store(self._preserved_selection, emit_signal=False)
-                    logger.debug(f"[MetadataManager] Restored selection of {len(self._preserved_selection)} files after batch loading (delayed)")
-                # Reset preserved selection after successful restoration
-                self._preserved_selection = None
-
-            # Schedule the selection restoration with a 50ms delay using TimerManager
-            timer_manager.schedule(
-                restore_selection,
-                50,
-                priority=TimerPriority.HIGH,
-                timer_type=TimerType.SELECTION_UPDATE,
-                timer_id="metadata_selection_restore"
-            )
-            logger.debug(f"[MetadataManager] Scheduled selection restoration for {len(self._preserved_selection)} files")
+            # Clear preserved selection after restoration
+            self._preserved_selection = None
         else:
             # Debug why restoration is not happening
             logger.debug(f"[MetadataManager] Selection restoration NOT happening because:")
@@ -287,16 +271,10 @@ class MetadataManager:
                 logger.debug(f"  - self._preserved_selection is not None: {self._preserved_selection is not None}")
                 if self._preserved_selection is not None:
                     logger.debug(f"  - self._preserved_selection has {len(self._preserved_selection)} files")
-            logger.debug(f"  - self.parent_window: {self.parent_window is not None}")
-            if self.parent_window:
-                logger.debug(f"  - hasattr(self.parent_window, 'file_table_view'): {hasattr(self.parent_window, 'file_table_view')}")
-                if hasattr(self.parent_window, 'file_table_view'):
-                    logger.debug(f"  - hasattr(self.parent_window.file_table_view, '_update_selection_store'): {hasattr(self.parent_window.file_table_view, '_update_selection_store')}")
 
-        # Reset state tracking (but NOT _preserved_selection as it's done in the callback)
+        # Reset tracking variables
         self._original_selection_count = 0
         self._target_file_path = None
-        # self._preserved_selection = None  # REMOVED - now done in callback
 
         # CRITICAL: Clean up the worker and thread to prevent "already running" issues
         self.cleanup_metadata_worker()
@@ -707,3 +685,145 @@ class MetadataManager:
 
             # Reset preserved selection after successful restoration
             self._preserved_selection = None
+
+    def save_metadata_for_selected(self) -> None:
+        """
+        Save modified metadata for the currently selected file(s).
+        """
+        if not hasattr(self.parent_window, 'metadata_tree_view'):
+            logger.warning("[MetadataManager] No metadata tree view available")
+            return
+
+        # Get all modified metadata for all files
+        all_modified_metadata = self.parent_window.metadata_tree_view.get_all_modified_metadata_for_files()
+
+        if not all_modified_metadata:
+            logger.info("[MetadataManager] No metadata modifications to save")
+            return
+
+        # Get selected files
+        selected_files = []
+        if hasattr(self.parent_window, 'file_table_view'):
+            selected_rows = self.parent_window.file_table_view._get_current_selection()
+            if selected_rows and hasattr(self.parent_window, 'file_model'):
+                for row in selected_rows:
+                    if 0 <= row < len(self.parent_window.file_model.files):
+                        selected_files.append(self.parent_window.file_model.files[row])
+
+        if not selected_files:
+            logger.warning("[MetadataManager] No files selected for metadata save")
+            return
+
+        # Filter to only save selected files that have modifications
+        files_to_save = []
+        for file_item in selected_files:
+            if file_item.full_path in all_modified_metadata:
+                files_to_save.append(file_item)
+
+        if not files_to_save:
+            logger.info("[MetadataManager] No selected files have metadata modifications")
+            return
+
+        logger.info(f"[MetadataManager] Saving metadata for {len(files_to_save)} file(s)")
+
+        # Create ExifToolWrapper instance
+        from utils.exiftool_wrapper import ExifToolWrapper
+        exiftool = ExifToolWrapper()
+
+        success_count = 0
+        failed_files = []
+
+        try:
+            # Save metadata for each file
+            for file_item in files_to_save:
+                modified_metadata = all_modified_metadata.get(file_item.full_path, {})
+                if not modified_metadata:
+                    continue
+
+                logger.info(f"[MetadataManager] Saving metadata for: {file_item.filename}")
+
+                # Write metadata to file
+                success = exiftool.write_metadata(file_item.full_path, modified_metadata)
+
+                if success:
+                    logger.info(f"[MetadataManager] Successfully saved metadata to: {file_item.filename}")
+                    success_count += 1
+
+                    # Clear modifications for this file in tree view
+                    self.parent_window.metadata_tree_view.clear_modifications_for_file(file_item.full_path)
+
+                    # Clear modified flag in cache
+                    metadata_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+                    if metadata_entry:
+                        metadata_entry.modified = False
+
+                    # Update file icon
+                    file_item.metadata_status = "loaded"
+
+                    # Refresh file table to show updated icon
+                    if hasattr(self.parent_window, 'file_model'):
+                        try:
+                            row = self.parent_window.file_model.files.index(file_item)
+                            icon_index = self.parent_window.file_model.index(row, 0)
+                            from PyQt5.QtCore import Qt
+                            self.parent_window.file_model.dataChanged.emit(
+                                icon_index,
+                                icon_index,
+                                [Qt.DecorationRole]
+                            )
+                        except ValueError:
+                            pass  # File not in model
+                else:
+                    logger.error(f"[MetadataManager] Failed to save metadata to: {file_item.filename}")
+                    failed_files.append(file_item.filename)
+
+            # Show result message
+            if success_count > 0:
+                from utils.dialog_utils import show_info_message
+                if failed_files:
+                    message = f"Successfully saved metadata for {success_count} file(s).\n\nFailed files:\n" + "\n".join(failed_files)
+                    show_info_message(self.parent_window, "Metadata Save Results", message)
+                else:
+                    if success_count == 1:
+                        message = f"Successfully saved metadata changes to:\n{files_to_save[0].filename}"
+                    else:
+                        message = f"Successfully saved metadata changes to {success_count} files."
+                    show_info_message(self.parent_window, "Metadata Saved", message)
+            elif failed_files:
+                from utils.dialog_utils import show_error_message
+                show_error_message(
+                    self.parent_window,
+                    "Save Failed",
+                    f"Failed to save metadata changes to:\n" + "\n".join(failed_files)
+                )
+
+        finally:
+            exiftool.close()
+
+    def _get_files_from_source(self, source: str) -> Optional[List[FileItem]]:
+        """
+        Get list of files based on source identifier.
+
+        Args:
+            source: Source identifier (e.g., "selected", "all")
+
+        Returns:
+            List of FileItem objects or None
+        """
+        if not self.parent_window:
+            return None
+
+        if source == "selected":
+            # Get selected files
+            if hasattr(self.parent_window, 'file_table_view'):
+                selected_rows = self.parent_window.file_table_view._get_current_selection()
+                if selected_rows and hasattr(self.parent_window, 'file_model'):
+                    return [self.parent_window.file_model.files[r]
+                           for r in selected_rows
+                           if 0 <= r < len(self.parent_window.file_model.files)]
+        elif source == "all":
+            # Get all files
+            if hasattr(self.parent_window, 'file_model'):
+                return self.parent_window.file_model.files
+
+        return None
