@@ -30,7 +30,7 @@ Designed for integration with MainWindow and MetadataReader.
 from pathlib import Path
 from typing import Any, Dict, Optional, Set, Union
 
-from PyQt5.QtCore import QModelIndex, Qt, QTimer, pyqtSignal
+from PyQt5.QtCore import QModelIndex, Qt, QTimer, pyqtSignal, QSortFilterProxyModel
 from PyQt5.QtGui import (
     QDragEnterEvent,
     QDragMoveEvent,
@@ -64,6 +64,49 @@ except ImportError:
     get_app_context = None
 
 logger = get_cached_logger(__name__)
+
+
+class MetadataProxyModel(QSortFilterProxyModel):
+    """Custom proxy model for filtering metadata tree items."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFilterCaseSensitivity(Qt.CaseInsensitive)
+        self.setFilterKeyColumn(-1)  # Filter all columns
+
+    def filterAcceptsRow(self, source_row: int, source_parent: QModelIndex) -> bool:
+        """Custom filtering logic for metadata items."""
+        if not self.filterRegExp().pattern():
+            return True  # No filter, accept all
+
+        source_model = self.sourceModel()
+        if not source_model:
+            return True
+
+        # Get the item at this row
+        key_index = source_model.index(source_row, 0, source_parent)
+        value_index = source_model.index(source_row, 1, source_parent)
+
+        if not key_index.isValid():
+            return True
+
+        # Get the text from both key and value columns
+        key_text = source_model.data(key_index, Qt.DisplayRole) or ""
+        value_text = source_model.data(value_index, Qt.DisplayRole) or ""
+
+        # Check if filter matches key or value
+        filter_text = self.filterRegExp().pattern().lower()
+        if (filter_text in key_text.lower() or
+            filter_text in value_text.lower()):
+            return True
+
+        # If this item has children, check if any child matches
+        if source_model.hasChildren(key_index):
+            for child_row in range(source_model.rowCount(key_index)):
+                if self.filterAcceptsRow(child_row, key_index):
+                    return True  # Accept parent if any child matches
+
+        return False
 
 
 class MetadataTreeView(QTreeView):
@@ -1282,16 +1325,65 @@ class MetadataTreeView(QTreeView):
         parent_window = self._get_parent_with_file_table()
         if parent_window and hasattr(parent_window, 'metadata_search_field'):
             search_field = parent_window.metadata_search_field
+
+            # Save expanded state before changing field state
+            expanded_items = []
+            if hasattr(parent_window, 'metadata_proxy_model') and parent_window.metadata_proxy_model.sourceModel():
+                source_model = parent_window.metadata_proxy_model.sourceModel()
+                if source_model:
+                    # Save which items are expanded
+                    for i in range(source_model.rowCount()):
+                        index = parent_window.metadata_proxy_model.mapFromSource(source_model.index(i, 0))
+                        if self.isExpanded(index):
+                            item = source_model.itemFromIndex(source_model.index(i, 0))
+                            if item:
+                                expanded_items.append(item.text())
+
             search_field.setEnabled(enabled)
 
+            # Use custom styling to maintain consistent icon appearance
             if enabled:
                 search_field.setToolTip("Search metadata...")
+                # Clear any custom styling for enabled state
+                search_field.setStyleSheet("")
                 # Restore any saved search text
                 if hasattr(parent_window, 'ui_manager'):
                     parent_window.ui_manager.restore_metadata_search_text()
             else:
                 search_field.setToolTip("No metadata available")
-                search_field.clear()
+                # Apply custom styling to keep icons at normal opacity
+                search_field.setStyleSheet("""
+                    QLineEdit:disabled {
+                        color: #666;
+                        background-color: #f0f0f0;
+                    }
+                    QLineEdit:disabled QAction {
+                        opacity: 1.0;
+                    }
+                """)
+                # Don't clear the search text - preserve it for when metadata is available again
+
+            # Restore expanded state after a short delay
+            if expanded_items:
+                from PyQt5.QtCore import QTimer
+                QTimer.singleShot(50, lambda: self._restore_expanded_state(expanded_items))
+
+    def _restore_expanded_state(self, expanded_items):
+        """Restore the expanded state of metadata tree items."""
+        parent_window = self._get_parent_with_file_table()
+        if not parent_window or not hasattr(parent_window, 'metadata_proxy_model'):
+            return
+
+        source_model = parent_window.metadata_proxy_model.sourceModel()
+        if not source_model:
+            return
+
+        # Restore expanded state for saved items
+        for i in range(source_model.rowCount()):
+            item = source_model.itemFromIndex(source_model.index(i, 0))
+            if item and item.text() in expanded_items:
+                proxy_index = parent_window.metadata_proxy_model.mapFromSource(source_model.index(i, 0))
+                self.setExpanded(proxy_index, True)
 
     def _render_metadata_view(self, metadata: Dict[str, Any]) -> None:
         """
