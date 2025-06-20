@@ -39,6 +39,7 @@ from modules.name_transform_module import NameTransformModule
 from utils.cursor_helper import wait_cursor, emergency_cursor_cleanup, force_restore_cursor
 # Filename validation utilities available as functions
 from utils.icon_cache import load_preview_status_icons, prepare_status_icons
+from utils.preferences_manager import get_preferences_manager
 from utils.icons import create_colored_icon
 from utils.icons_loader import get_menu_icon, icons_loader, load_metadata_icons
 from utils.logger_factory import get_cached_logger
@@ -148,8 +149,17 @@ class MainWindow(QMainWindow):
         self.ui_manager = UIManager(parent_window=self)
         self.ui_manager.setup_all_ui()
 
+        # --- Apply UI preferences after UI is initialized ---
+        self._apply_loaded_preferences()
+
         # Store initial geometry for proper restore behavior
         self._initial_geometry = self.geometry()
+
+        # --- Initialize Preferences Manager ---
+        self.preferences_manager = get_preferences_manager()
+
+        # --- Load and apply window preferences ---
+        self._load_window_preferences()
 
         # --- Preview update debouncing timer ---
         self.preview_update_timer = QTimer(self)
@@ -461,6 +471,9 @@ class MainWindow(QMainWindow):
         """
         logger.info("Application shutting down...")
 
+        # 0. Save window preferences before cleanup
+        self._save_window_preferences()
+
         # 1. Stop any running metadata operations
         self.cleanup_metadata_worker()
 
@@ -603,3 +616,175 @@ class MainWindow(QMainWindow):
 
         # Show a brief status message
         self.set_status(f"Copied '{value}' to clipboard", color="green", auto_reset=True, reset_delay=2000)
+
+    # =====================================
+    # Window Preferences Management
+    # =====================================
+
+    def _load_window_preferences(self) -> None:
+        """Load and apply window preferences from preferences manager."""
+        try:
+            prefs = self.preferences_manager.window
+
+            # Load geometry
+            geometry = prefs.get('geometry')
+            if geometry:
+                self.setGeometry(
+                    geometry['x'], geometry['y'],
+                    geometry['width'], geometry['height']
+                )
+                logger.debug(f"[Preferences] Loaded window geometry: {geometry}")
+
+            # Load window state
+            window_state = prefs.get('window_state', 'normal')
+            if window_state == 'maximized':
+                self.showMaximized()
+            elif window_state == 'minimized':
+                self.showMinimized()
+            else:
+                self.showNormal()
+
+            # Store last folder and other settings for later use
+            self._last_folder_from_prefs = prefs.get('last_folder', '')
+            self._recursive_mode_from_prefs = prefs.get('recursive_mode', False)
+            self._sort_column_from_prefs = prefs.get('sort_column', 1)
+            self._sort_order_from_prefs = prefs.get('sort_order', 0)
+
+            logger.info("[Preferences] Window preferences loaded successfully")
+
+        except Exception as e:
+            logger.error(f"[Preferences] Failed to load window preferences: {e}")
+
+    def _save_window_preferences(self) -> None:
+        """Save current window state to preferences manager."""
+        try:
+            prefs = self.preferences_manager.window
+
+            # Save geometry (use normal geometry if maximized)
+            if self.isMaximized():
+                # Use stored restore geometry if available, otherwise use initial
+                if hasattr(self, '_restore_geometry'):
+                    geo = self._restore_geometry
+                else:
+                    geo = self._initial_geometry
+            else:
+                geo = self.geometry()
+
+            prefs.set('geometry', {
+                'x': geo.x(),
+                'y': geo.y(),
+                'width': geo.width(),
+                'height': geo.height()
+            })
+
+            # Save window state
+            if self.isMaximized():
+                window_state = 'maximized'
+            elif self.isMinimized():
+                window_state = 'minimized'
+            else:
+                window_state = 'normal'
+            prefs.set('window_state', window_state)
+
+            # Save splitter states
+            splitter_states = {}
+            if hasattr(self, 'horizontal_splitter'):
+                splitter_states['horizontal'] = self.horizontal_splitter.sizes()
+            if hasattr(self, 'vertical_splitter'):
+                splitter_states['vertical'] = self.vertical_splitter.sizes()
+            prefs.set('splitter_states', splitter_states)
+
+            # Save column widths
+            column_widths = {}
+            if hasattr(self, 'file_table_view') and self.file_table_view.model():
+                header = self.file_table_view.horizontalHeader()
+                file_table_widths = []
+                for i in range(header.count()):
+                    file_table_widths.append(header.sectionSize(i))
+                column_widths['file_table'] = file_table_widths
+
+            if hasattr(self, 'metadata_tree_view'):
+                header = self.metadata_tree_view.header()
+                metadata_tree_widths = []
+                for i in range(header.count()):
+                    metadata_tree_widths.append(header.sectionSize(i))
+                column_widths['metadata_tree'] = metadata_tree_widths
+
+            prefs.set('column_widths', column_widths)
+
+            # Save current folder and settings
+            if hasattr(self, 'current_folder_path') and self.current_folder_path:
+                prefs.set('last_folder', self.current_folder_path)
+                self.preferences_manager.app.add_recent_folder(self.current_folder_path)
+
+            if hasattr(self, 'current_folder_is_recursive'):
+                prefs.set('recursive_mode', self.current_folder_is_recursive)
+
+            if hasattr(self, 'current_sort_column'):
+                prefs.set('sort_column', self.current_sort_column)
+
+            if hasattr(self, 'current_sort_order'):
+                prefs.set('sort_order', int(self.current_sort_order))
+
+            # Save preferences to file
+            self.preferences_manager.save()
+
+            logger.info("[Preferences] Window preferences saved successfully")
+
+        except Exception as e:
+            logger.error(f"[Preferences] Failed to save window preferences: {e}")
+
+    def _apply_loaded_preferences(self) -> None:
+        """Apply loaded preferences after UI is fully initialized."""
+        try:
+            prefs = self.preferences_manager.window
+
+            # Apply splitter states
+            splitter_states = prefs.get('splitter_states', {})
+            if 'horizontal' in splitter_states and hasattr(self, 'horizontal_splitter'):
+                self.horizontal_splitter.setSizes(splitter_states['horizontal'])
+                logger.debug(f"[Preferences] Applied horizontal splitter: {splitter_states['horizontal']}")
+
+            if 'vertical' in splitter_states and hasattr(self, 'vertical_splitter'):
+                self.vertical_splitter.setSizes(splitter_states['vertical'])
+                logger.debug(f"[Preferences] Applied vertical splitter: {splitter_states['vertical']}")
+
+            # Apply column widths
+            column_widths = prefs.get('column_widths', {})
+            if 'file_table' in column_widths and hasattr(self, 'file_table_view'):
+                widths = column_widths['file_table']
+                header = self.file_table_view.horizontalHeader()
+                for i, width in enumerate(widths):
+                    if i < header.count():
+                        header.resizeSection(i, width)
+                logger.debug(f"[Preferences] Applied file table column widths: {widths}")
+
+            if 'metadata_tree' in column_widths and hasattr(self, 'metadata_tree_view'):
+                widths = column_widths['metadata_tree']
+                header = self.metadata_tree_view.header()
+                for i, width in enumerate(widths):
+                    if i < header.count():
+                        header.resizeSection(i, width)
+                logger.debug(f"[Preferences] Applied metadata tree column widths: {widths}")
+
+            logger.info("[Preferences] UI preferences applied successfully")
+
+        except Exception as e:
+            logger.error(f"[Preferences] Failed to apply UI preferences: {e}")
+
+    def restore_last_folder_if_available(self) -> None:
+        """Restore the last folder if available and user wants it."""
+        if hasattr(self, '_last_folder_from_prefs') and self._last_folder_from_prefs:
+            last_folder = self._last_folder_from_prefs
+            if os.path.exists(last_folder):
+                logger.info(f"[Preferences] Restoring last folder: {last_folder}")
+                # Use the file load manager to load the folder
+                recursive = getattr(self, '_recursive_mode_from_prefs', False)
+                self.file_load_manager.load_folder(last_folder, merge=False, recursive=recursive)
+
+                # Apply sort preferences after loading
+                if hasattr(self, '_sort_column_from_prefs') and hasattr(self, '_sort_order_from_prefs'):
+                    sort_order = Qt.AscendingOrder if self._sort_order_from_prefs == 0 else Qt.DescendingOrder
+                    self.sort_by_column(self._sort_column_from_prefs, sort_order)
+            else:
+                logger.warning(f"[Preferences] Last folder no longer exists: {last_folder}")
