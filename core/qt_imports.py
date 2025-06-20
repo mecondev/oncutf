@@ -52,6 +52,7 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
+    QLineEdit,
     QMainWindow,
     QMenu,
     QPushButton,
@@ -80,7 +81,7 @@ __all__ = [
     # Widgets
     'QAbstractItemView', 'QApplication', 'QDesktopWidget', 'QFileDialog',
     'QFileSystemModel', 'QFrame', 'QGraphicsOpacityEffect', 'QHBoxLayout',
-    'QHeaderView', 'QLabel', 'QMainWindow', 'QMenu', 'QPushButton', 'QShortcut',
+    'QHeaderView', 'QLabel', 'QLineEdit', 'QMainWindow', 'QMenu', 'QPushButton', 'QShortcut',
     'QSizePolicy', 'QSplitter', 'QTableWidget', 'QTableWidgetItem', 'QTableView',
     'QVBoxLayout', 'QWidget',
 ]

@@ -556,6 +556,7 @@ class MetadataTreeView(QTreeView):
     def show_context_menu(self, position: QModelIndex) -> None:
         """
         Display context menu with available options depending on the selected item.
+        Uses consistent styling and icons like the specified text module.
         """
         # Check if we're in placeholder mode - don't show menu
         if self._is_placeholder_mode or self.property("placeholder"):
@@ -576,16 +577,12 @@ class MetadataTreeView(QTreeView):
         selected_files = self._get_current_selection()
         has_multiple_selection = len(selected_files) > 1
 
-        # Create menu
+        # Create menu with consistent styling
         menu = QMenu(self)
 
-        # Copy value action - always enabled
-        copy_action = QAction("Copy Value", self)
-        copy_action.triggered.connect(lambda: self.copy_value(value))
-        menu.addAction(copy_action)
-
-        # Edit value action
-        edit_action = QAction("Edit Value", self)
+        # Edit value action (with edit icon)
+        edit_action = QAction("Edit Value", menu)
+        edit_action.setIcon(self._get_menu_icon("edit"))
         edit_action.triggered.connect(lambda: self.edit_value(key_path, value))
 
         # Enable Edit only if:
@@ -603,8 +600,9 @@ class MetadataTreeView(QTreeView):
 
         menu.addAction(edit_action)
 
-        # Reset value action
-        reset_action = QAction("Reset Value", self)
+        # Reset value action (with rotate-ccw icon)
+        reset_action = QAction("Reset Value", menu)
+        reset_action.setIcon(self._get_menu_icon("rotate-ccw"))
         reset_action.triggered.connect(lambda: self.reset_value(key_path))
 
         # Enable Reset only if:
@@ -621,9 +619,25 @@ class MetadataTreeView(QTreeView):
             reset_action.setToolTip("Reset this field to original value")
 
         menu.addAction(reset_action)
+        menu.addSeparator()
+
+        # Copy value action (with copy icon)
+        copy_action = QAction("Copy", menu)
+        copy_action.setIcon(self._get_menu_icon("copy"))
+        copy_action.triggered.connect(lambda: self.copy_value(value))
+        copy_action.setEnabled(bool(value))
+        menu.addAction(copy_action)
 
         # Show menu
         menu.exec_(self.viewport().mapToGlobal(position))
+
+    def _get_menu_icon(self, icon_name: str):
+        """Get menu icon using the same system as specified text module."""
+        try:
+            from utils.icons_loader import get_menu_icon
+            return get_menu_icon(icon_name)
+        except ImportError:
+            return None
 
     def get_key_path(self, index: QModelIndex) -> str:
         """

@@ -131,9 +131,16 @@ class FileTableView(QTableView):
         self._legacy_selection_mode = True  # Start in legacy mode for compatibility
 
     def paintEvent(self, event):
-        """Paint the table."""
+        """Paint the table with proper viewport handling."""
         # Paint the normal table
         super().paintEvent(event)
+
+        # Ensure placeholder is positioned correctly if visible
+        if self.placeholder_label and self.placeholder_label.isVisible():
+            viewport_size = self.viewport().size()
+            if self.placeholder_label.size() != viewport_size:
+                self.placeholder_label.resize(viewport_size)
+                self.placeholder_label.move(0, 0)
 
     def _get_selection_store(self):
         """Get SelectionStore from ApplicationContext with fallback to None."""
@@ -254,9 +261,29 @@ class FileTableView(QTableView):
             self.placeholder_label.resize(self.viewport().size())
             self.placeholder_label.move(0, 0)
 
+        # Force complete refresh of the table display
+        self.viewport().update()
+        self.update()
+        self.updateGeometry()
+
+        # Reconfigure columns to adapt to new size
+        if self.model():
+            schedule_resize_adjust(self._configure_columns, 5)
+
         # Check if vertical scrollbar visibility changed after resize
         # Use a small delay to ensure scrollbar state is updated
-        schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 10)
+        schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 15)
+
+    def showEvent(self, event) -> None:
+        """Handle show events to ensure proper display after visibility changes."""
+        super().showEvent(event)
+        # Force refresh when table becomes visible (e.g., after maximize/restore)
+        self.viewport().update()
+        self.update()
+
+        # Reconfigure columns to ensure proper sizing
+        if self.model():
+            schedule_resize_adjust(self._configure_columns, 10)
 
     def setModel(self, model) -> None:
         """Configure columns when model is set."""

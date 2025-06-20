@@ -191,6 +191,25 @@ class UIManager:
         right_layout = QVBoxLayout(self.parent_window.right_frame)
         right_layout.addWidget(QLabel("Information"))
 
+        # Search layout
+        search_layout = QHBoxLayout()
+        self.parent_window.metadata_search_field = QLineEdit()
+        self.parent_window.metadata_search_field.setPlaceholderText("Search metadata...")
+        self.parent_window.metadata_search_button = QPushButton()
+        self.parent_window.metadata_search_button.setIcon(get_menu_icon("search"))
+        self.parent_window.metadata_search_button.setFixedSize(32, 32)  # Square button
+        self.parent_window.metadata_search_button.setToolTip("Search metadata")
+
+        # Set up custom context menu for search field
+        self.parent_window.metadata_search_field.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.parent_window.metadata_search_field.customContextMenuRequested.connect(
+            lambda pos: self._show_search_context_menu(pos, self.parent_window.metadata_search_field)
+        )
+
+        search_layout.addWidget(self.parent_window.metadata_search_field)
+        search_layout.addWidget(self.parent_window.metadata_search_button)
+        right_layout.addLayout(search_layout)
+
         # Expand/Collapse buttons
         self.parent_window.toggle_expand_button = QPushButton("Expand All")
         self.parent_window.toggle_expand_button.setIcon(get_menu_icon("chevrons-down"))
@@ -373,3 +392,53 @@ class UIManager:
             shortcut = QShortcut(QKeySequence(key), self.parent_window)  # Attached to main window
             shortcut.activated.connect(handler)
             self.parent_window.shortcuts.append(shortcut)
+
+    def _show_search_context_menu(self, position, line_edit: QLineEdit) -> None:
+        """
+        Show custom context menu for the search field with consistent styling and icons.
+        """
+        menu = QMenu(line_edit)
+
+        # Standard editing actions
+        undo_action = QAction("Undo", menu)
+        undo_action.setIcon(get_menu_icon("rotate-ccw"))
+        undo_action.triggered.connect(line_edit.undo)
+        undo_action.setEnabled(line_edit.isUndoAvailable())
+        menu.addAction(undo_action)
+
+        redo_action = QAction("Redo", menu)
+        redo_action.setIcon(get_menu_icon("rotate-cw"))
+        redo_action.triggered.connect(line_edit.redo)
+        redo_action.setEnabled(line_edit.isRedoAvailable())
+        menu.addAction(redo_action)
+
+        menu.addSeparator()
+
+        cut_action = QAction("Cut", menu)
+        cut_action.setIcon(get_menu_icon("scissors"))
+        cut_action.triggered.connect(line_edit.cut)
+        cut_action.setEnabled(line_edit.hasSelectedText())
+        menu.addAction(cut_action)
+
+        copy_action = QAction("Copy", menu)
+        copy_action.setIcon(get_menu_icon("copy"))
+        copy_action.triggered.connect(line_edit.copy)
+        copy_action.setEnabled(line_edit.hasSelectedText())
+        menu.addAction(copy_action)
+
+        paste_action = QAction("Paste", menu)
+        paste_action.setIcon(get_menu_icon("clipboard"))  # Using clipboard as paste icon
+        paste_action.triggered.connect(line_edit.paste)
+        menu.addAction(paste_action)
+
+        menu.addSeparator()
+
+        select_all_action = QAction("Select All", menu)
+        select_all_action.setIcon(get_menu_icon("check-square"))
+        select_all_action.triggered.connect(line_edit.selectAll)
+        select_all_action.setEnabled(bool(line_edit.text()))
+        menu.addAction(select_all_action)
+
+        # Show the menu at the cursor position
+        global_pos = line_edit.mapToGlobal(position)
+        menu.exec_(global_pos)
