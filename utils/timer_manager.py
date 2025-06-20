@@ -8,10 +8,10 @@ Centralized timer management system for improved performance and better control.
 Provides optimized timer operations with automatic cleanup and debugging capabilities.
 """
 
+import threading
+import weakref
 from enum import Enum
 from typing import Callable, Dict, Optional, Set
-import weakref
-import threading
 
 from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 

@@ -14,32 +14,42 @@ from pathlib import Path
 from typing import Optional
 
 from PyQt5.QtCore import (
+    QEvent,
     QItemSelection,
     QItemSelectionModel,
-    QMimeData,
     QModelIndex,
     QPoint,
-    QRect,
     Qt,
     QTimer,
-    QUrl,
     pyqtSignal,
-    QEvent,
 )
-from PyQt5.QtGui import QCursor, QDrag, QDropEvent, QKeySequence, QMouseEvent, QPixmap, QPainter, QPen, QBrush, QColor
+from PyQt5.QtGui import (
+    QCursor,
+    QDropEvent,
+    QKeySequence,
+    QMouseEvent,
+    QPixmap,
+)
 from PyQt5.QtWidgets import QAbstractItemView, QApplication, QHeaderView, QLabel, QTableView
 
 from config import FILE_TABLE_COLUMN_WIDTHS
 from core.application_context import get_app_context
 from core.drag_manager import DragManager
 from core.drag_visual_manager import (
-    DragVisualManager, DragType, DropZoneState, ModifierState,
-    start_drag_visual, end_drag_visual, update_drop_zone_state,
-    update_modifier_state, is_valid_drop_target
+    DragType,
+    DragVisualManager,
+    DropZoneState,
+    end_drag_visual,
+    start_drag_visual,
+    update_drop_zone_state,
+    update_modifier_state,
 )
 from utils.file_drop_helper import extract_file_paths
 from utils.logger_factory import get_cached_logger
-from utils.timer_manager import schedule_resize_adjust, schedule_drag_cleanup, schedule_selection_update
+from utils.timer_manager import (
+    schedule_drag_cleanup,
+    schedule_resize_adjust,
+)
 
 from .hover_delegate import HoverItemDelegate
 
@@ -900,7 +910,7 @@ class FileTableView(QTableView):
                 elif modifiers == Qt.ShiftModifier:
                     # Shift+click on selected item without drag - preserve current selection
                     # Don't change selection when Shift is held and we clicked on a selected item
-                    logger.debug(f"[FileTableView] Shift+click on selected item without drag - preserving selection", extra={"dev_only": True})
+                    logger.debug("[FileTableView] Shift+click on selected item without drag - preserving selection", extra={"dev_only": True})
                 elif modifiers == Qt.NoModifier:
                     # Regular click on selected item without drag - clear selection and select only this
                     if hasattr(self, '_clicked_index') and self._clicked_index and self._clicked_index.isValid():
@@ -1467,7 +1477,7 @@ class FileTableView(QTableView):
 
         model = self.model()
         if not model or not hasattr(model, 'files'):
-            logger.warning(f"[FileTableView] *** NO MODEL or model has no files attribute ***")
+            logger.warning("[FileTableView] *** NO MODEL or model has no files attribute ***")
             return
 
         logger.warning(f"[FileTableView] *** MODEL OK, has {len(model.files)} files ***")
@@ -1476,7 +1486,7 @@ class FileTableView(QTableView):
             # Fallback: select all files if no specific paths provided
             row_count = len(model.files)
             if row_count == 0:
-                logger.warning(f"[FileTableView] *** NO FILES IN MODEL - returning early ***")
+                logger.warning("[FileTableView] *** NO FILES IN MODEL - returning early ***")
                 return
             logger.warning(f"[FileTableView] *** FALLBACK: Selecting all {row_count} files ***")
             self.select_rows_range(0, row_count - 1)
@@ -1494,28 +1504,28 @@ class FileTableView(QTableView):
         logger.warning(f"[FileTableView] *** FOUND {len(rows_to_select)} matching files: {rows_to_select} ***")
 
         if not rows_to_select:
-            logger.warning(f"[FileTableView] *** NO MATCHING FILES FOUND - returning early ***")
+            logger.warning("[FileTableView] *** NO MATCHING FILES FOUND - returning early ***")
             return
 
-        logger.warning(f"[FileTableView] *** STARTING SELECTION PROCESS ***")
+        logger.warning("[FileTableView] *** STARTING SELECTION PROCESS ***")
 
         # Clear existing selection first
-        logger.warning(f"[FileTableView] *** CLEARING EXISTING SELECTION ***")
+        logger.warning("[FileTableView] *** CLEARING EXISTING SELECTION ***")
         self.clearSelection()
 
         # Select the specific rows ALL AT ONCE using range selection
         selection_model = self.selectionModel()
         if not selection_model:
-            logger.warning(f"[FileTableView] *** NO SELECTION MODEL - returning early ***")
+            logger.warning("[FileTableView] *** NO SELECTION MODEL - returning early ***")
             return
 
-        logger.warning(f"[FileTableView] *** BLOCKING SIGNALS ***")
+        logger.warning("[FileTableView] *** BLOCKING SIGNALS ***")
         self.blockSignals(True)
 
         # Create a single selection for all rows
         from PyQt5.QtCore import QItemSelection
         full_selection = QItemSelection()
-        logger.warning(f"[FileTableView] *** CREATED EMPTY SELECTION OBJECT ***")
+        logger.warning("[FileTableView] *** CREATED EMPTY SELECTION OBJECT ***")
 
         for row in rows_to_select:
             logger.warning(f"[FileTableView] *** PROCESSING ROW {row} ***")
@@ -1532,11 +1542,11 @@ class FileTableView(QTableView):
         # Apply the entire selection at once
         logger.warning(f"[FileTableView] *** SELECTION EMPTY? {full_selection.isEmpty()} ***")
         if not full_selection.isEmpty():
-            logger.warning(f"[FileTableView] *** APPLYING FULL SELECTION ***")
+            logger.warning("[FileTableView] *** APPLYING FULL SELECTION ***")
             selection_model.select(full_selection, selection_model.Select)
-            logger.warning(f"[FileTableView] *** SELECTION APPLIED SUCCESSFULLY ***")
+            logger.warning("[FileTableView] *** SELECTION APPLIED SUCCESSFULLY ***")
 
-        logger.warning(f"[FileTableView] *** UNBLOCKING SIGNALS ***")
+        logger.warning("[FileTableView] *** UNBLOCKING SIGNALS ***")
         self.blockSignals(False)
 
         # Update selection store

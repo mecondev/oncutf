@@ -1,10 +1,9 @@
 """Integration tests for the enhanced rename workflow with validation"""
 
-import pytest
-from modules.specified_text_module import SpecifiedTextModule
-from utils.filename_validator import is_validation_error_marker
 from config import INVALID_FILENAME_MARKER
+from modules.specified_text_module import SpecifiedTextModule
 from tests.mocks import MockFileItem
+from utils.filename_validator import is_validation_error_marker
 
 
 class TestRenameIntegration:

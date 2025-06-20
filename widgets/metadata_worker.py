@@ -27,7 +27,6 @@ from utils.logger_factory import get_cached_logger
 from utils.metadata_cache import MetadataCache
 from utils.metadata_loader import MetadataLoader
 
-
 logger = get_cached_logger(__name__)
 
 

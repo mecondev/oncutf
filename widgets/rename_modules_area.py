@@ -27,11 +27,11 @@ from PyQt5.QtWidgets import (
 )
 
 from modules.base_module import BaseRenameModule
-from utils.logger_factory import get_cached_logger
 from utils.icons_loader import get_menu_icon
+from utils.logger_factory import get_cached_logger
+from utils.timer_manager import schedule_scroll_adjust
 from widgets.name_transform_widget import NameTransformWidget
 from widgets.rename_module_widget import RenameModuleWidget
-from utils.timer_manager import schedule_scroll_adjust
 
 # ApplicationContext integration
 try:

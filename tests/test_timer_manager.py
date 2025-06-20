@@ -7,11 +7,13 @@ Author: Michael Economou
 Date: 2025-05-01
 """
 
+import sys
+
 import pytest
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QApplication
-import sys
-from utils.timer_manager import schedule_ui_update, get_timer_manager, cleanup_all_timers
+
+from utils.timer_manager import cleanup_all_timers, get_timer_manager, schedule_ui_update
 
 # Ensure QApplication exists for timer tests
 if not QApplication.instance():

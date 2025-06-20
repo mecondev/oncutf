@@ -16,10 +16,10 @@ from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
 from modules.base_module import BaseRenameModule
+from utils.icons_loader import get_menu_icon
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
-from utils.icons_loader import get_menu_icon
 
 logger = get_cached_logger(__name__)
 

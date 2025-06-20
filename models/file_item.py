@@ -14,7 +14,6 @@ Classes:
 """
 import os
 from datetime import datetime
-from typing import Optional
 
 # Initialize Logger
 from utils.logger_factory import get_cached_logger
@@ -56,7 +55,6 @@ class FileItem:
         Returns:
             FileItem instance with auto-detected properties
         """
-        import time
 
         filename = os.path.basename(file_path)
         _, ext = os.path.splitext(filename)

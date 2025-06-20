@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 """
 Module: main.py
 
@@ -14,22 +14,25 @@ Functions:
 """
 
 import datetime
-import sys
+import logging
 import platform
+import sys
+from pathlib import Path
+
+# Add the project root to the Python path
+project_root = Path(__file__).parent
+sys.path.insert(0, str(project_root))
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QStyleFactory
 
 from main_window import MainWindow
 from utils.fonts import _get_inter_fonts
-
-# Initialize logging system
 from utils.logger_setup import ConfigureLogger
 from utils.theme import load_stylesheet
 
+# Configure logging first
 ConfigureLogger(log_name="oncutf")
-
-import logging
 
 logger = logging.getLogger()
 

@@ -78,7 +78,8 @@ class InterFonts:
         if not self.loaded_fonts and not USE_EMBEDDED_FONTS:
             logger.debug("Trying QResource fallback...", extra={"dev_only": True})
             try:
-                import utils.fonts_rc
+                # Import is used for side effects to register resources
+                import utils.fonts_rc  # noqa: F401
 
                 for font_key, font_file in self.FONT_FILES.items():
                     if font_key not in self.loaded_fonts:
@@ -114,7 +115,8 @@ class InterFonts:
 
         logger.debug("Loading fonts from embedded QResource...", extra={"dev_only": True})
         try:
-            import utils.fonts_rc
+            # Import is used for side effects to register resources
+            import utils.fonts_rc  # noqa: F401
 
             for font_key, font_file in self.FONT_FILES.items():
                 resource_path = f":/fonts/{font_file}"

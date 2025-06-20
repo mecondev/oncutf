@@ -8,7 +8,7 @@ Frameless waiting dialog for metadata extraction operations.
 Provides a clean, minimal UI for displaying metadata loading progress.
 """
 
-from typing import Optional, Callable
+from typing import Callable, Optional
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QWidget

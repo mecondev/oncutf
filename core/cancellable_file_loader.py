@@ -8,13 +8,14 @@ Cancellable file loader with progress dialog and Esc key support.
 Provides non-blocking file scanning operations.
 """
 
-from typing import List, Optional, Callable
-from PyQt5.QtCore import QObject, pyqtSignal, QTimer
+from typing import Callable, List, Optional
+
+from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QWidget
 
 from core.unified_file_worker import UnifiedFileWorker
-from widgets.file_loading_dialog import FileLoadingDialog
 from utils.logger_factory import get_cached_logger
+from widgets.file_loading_dialog import FileLoadingDialog
 
 logger = get_cached_logger(__name__)
 

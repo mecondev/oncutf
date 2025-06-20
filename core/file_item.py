@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

@@ -12,20 +12,20 @@ Contains:
 - ValidatedLineEdit: Enhanced QLineEdit with validation and tooltip support
 """
 
+import logging
 from typing import Optional
-from PyQt5.QtWidgets import QLineEdit, QWidget
+
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QKeyEvent
+from PyQt5.QtWidgets import QLineEdit, QWidget
 
-from utils.tooltip_helper import show_error_tooltip, TooltipType
 from utils.filename_validator import (
-    should_allow_character_input,
-    get_validation_error_message,
     clean_filename_text,
-    is_validation_error_marker
+    get_validation_error_message,
+    is_validation_error_marker,
+    should_allow_character_input,
 )
-from config import INVALID_FILENAME_MARKER
-import logging
+from utils.tooltip_helper import show_error_tooltip
 
 logger = logging.getLogger(__name__)
 
@@ -198,7 +198,6 @@ class ValidatedLineEdit(QLineEdit):
     def _apply_temporary_error_style(self) -> None:
         """Apply temporary error styling for blocked characters"""
         try:
-            from PyQt5.QtCore import QTimer
 
             # Apply error style
             self.setStyleSheet("border: 2px solid #ff4444; background-color: #3a2222;")

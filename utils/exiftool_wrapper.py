@@ -184,7 +184,7 @@ class ExifToolWrapper:
             return False
 
         if not metadata_changes:
-            logger.warning(f"[ExifToolWrapper] No metadata changes provided")
+            logger.warning("[ExifToolWrapper] No metadata changes provided")
             return False
 
         try:

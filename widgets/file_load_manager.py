@@ -1,8 +1,9 @@
-from typing import List, Set, Optional
-from PyQt5.QtWidgets import QApplication
-from .file_loading_dialog import FileLoadingDialog
+from typing import List, Optional, Set
+
 from core.unified_file_loader import UnifiedFileLoader
 from utils.logger_factory import get_cached_logger
+
+from .file_loading_dialog import FileLoadingDialog
 
 logger = get_cached_logger(__name__)
 

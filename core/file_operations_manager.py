@@ -11,11 +11,10 @@ import os
 from typing import List, Optional
 
 from core.qt_imports import QDesktopServices, QUrl
-from core.config_imports import LARGE_FOLDER_WARNING_THRESHOLD, EXTENDED_METADATA_SIZE_LIMIT_MB
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
+from utils.path_utils import find_file_by_path
 from utils.renamer import Renamer
-from utils.path_utils import paths_equal, find_file_by_path
 from widgets.custom_msgdialog import CustomMessageDialog
 
 logger = get_cached_logger(__name__)

@@ -11,18 +11,18 @@ Unified file loading manager with simplified policy:
 """
 
 import os
-from typing import List, Set, Optional
+from typing import List, Set
+
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication
 
 from config import ALLOWED_EXTENSIONS
-from models.file_item import FileItem
-from widgets.file_loading_dialog import FileLoadingDialog
-from utils.cursor_helper import wait_cursor, force_restore_cursor
-from utils.timer_manager import get_timer_manager, TimerType, TimerPriority
 from core.drag_manager import force_cleanup_drag, is_dragging
+from models.file_item import FileItem
+from utils.cursor_helper import force_restore_cursor, wait_cursor
 from utils.logger_factory import get_cached_logger
-from utils.path_utils import paths_equal, find_file_by_path
+from utils.path_utils import find_file_by_path
+from utils.timer_manager import get_timer_manager
+from widgets.file_loading_dialog import FileLoadingDialog
 
 logger = get_cached_logger(__name__)
 
@@ -147,14 +147,12 @@ class FileLoadManager:
 
         # Process all items with unified logic
         all_file_paths = []
-        has_folders = False
 
         for path in paths:
             if os.path.isfile(path):
                 if self._is_allowed_extension(path):
                     all_file_paths.append(path)
             elif os.path.isdir(path):
-                has_folders = True
                 # For table drops, collect files synchronously to avoid multiple dialogs
                 folder_files = self._get_files_from_folder(path, recursive)
                 all_file_paths.extend(folder_files)
@@ -207,9 +205,9 @@ class FileLoadManager:
         use_extended = shift
 
         if shift:
-            logger.debug(f"[Modifiers] Shift detected → Extended metadata")
+            logger.debug("[Modifiers] Shift detected → Extended metadata")
         else:
-            logger.debug(f"[Modifiers] No modifiers → Fast metadata")
+            logger.debug("[Modifiers] No modifiers → Fast metadata")
 
         logger.info(f"[Drop] Loading metadata for {len(selected_files)} files (extended={use_extended})")
 
@@ -368,7 +366,7 @@ class FileLoadManager:
             # Update files label (shows count)
             if hasattr(self.parent_window, 'update_files_label'):
                 self.parent_window.update_files_label()
-                logger.debug(f"[FileLoadManager] Updated files label", extra={"dev_only": True})
+                logger.debug("[FileLoadManager] Updated files label", extra={"dev_only": True})
 
             total_files = len(self.parent_window.file_model.files)
 
@@ -377,27 +375,27 @@ class FileLoadManager:
                 if total_files > 0:
                     # Hide file table placeholder when files are loaded
                     self.parent_window.file_table_view.set_placeholder_visible(False)
-                    logger.debug(f"[FileLoadManager] Hidden file table placeholder", extra={"dev_only": True})
+                    logger.debug("[FileLoadManager] Hidden file table placeholder", extra={"dev_only": True})
                 else:
                     # Show file table placeholder when no files
                     self.parent_window.file_table_view.set_placeholder_visible(True)
-                    logger.debug(f"[FileLoadManager] Shown file table placeholder", extra={"dev_only": True})
+                    logger.debug("[FileLoadManager] Shown file table placeholder", extra={"dev_only": True})
 
             # Hide placeholders in preview tables (if files are loaded)
             if hasattr(self.parent_window, 'preview_tables_view'):
                 if total_files > 0:
                     # Hide placeholders when files are loaded
                     self.parent_window.preview_tables_view._set_placeholders_visible(False)
-                    logger.debug(f"[FileLoadManager] Hidden preview table placeholders", extra={"dev_only": True})
+                    logger.debug("[FileLoadManager] Hidden preview table placeholders", extra={"dev_only": True})
                 else:
                     # Show placeholders when no files
                     self.parent_window.preview_tables_view._set_placeholders_visible(True)
-                    logger.debug(f"[FileLoadManager] Shown preview table placeholders", extra={"dev_only": True})
+                    logger.debug("[FileLoadManager] Shown preview table placeholders", extra={"dev_only": True})
 
             # Update preview tables
             if hasattr(self.parent_window, 'request_preview_update'):
                 self.parent_window.request_preview_update()
-                logger.debug(f"[FileLoadManager] Requested preview update", extra={"dev_only": True})
+                logger.debug("[FileLoadManager] Requested preview update", extra={"dev_only": True})
 
             # Ensure file table selection works properly
             if hasattr(self.parent_window, 'file_table_view'):
@@ -420,13 +418,13 @@ class FileLoadManager:
                 if hasattr(self.parent_window.file_table_view, '_sync_selection_safely'):
                     self.parent_window.file_table_view._sync_selection_safely()
 
-                logger.debug(f"[FileLoadManager] Refreshed file table view", extra={"dev_only": True})
+                logger.debug("[FileLoadManager] Refreshed file table view", extra={"dev_only": True})
 
             # Update metadata tree (clear it for new files)
             if hasattr(self.parent_window, 'metadata_tree_view'):
                 if hasattr(self.parent_window.metadata_tree_view, 'refresh_metadata_from_selection'):
                     self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
-                    logger.debug(f"[FileLoadManager] Refreshed metadata tree", extra={"dev_only": True})
+                    logger.debug("[FileLoadManager] Refreshed metadata tree", extra={"dev_only": True})
 
             logger.info("[FileLoadManager] UI refresh completed successfully", extra={"dev_only": True})
 

@@ -11,11 +11,15 @@ Current implementation is a skeleton that will gradually replace
 distributed state management across widgets.
 """
 
-from typing import Any, Dict, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from utils.logger_factory import get_cached_logger
+
+if TYPE_CHECKING:
+    from core.file_store import FileStore
+    from core.selection_store import SelectionStore
 
 logger = get_cached_logger(__name__)
 

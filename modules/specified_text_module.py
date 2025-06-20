@@ -13,16 +13,16 @@ Used in the oncutf application as one of the modular renaming components.
 import os
 from typing import Optional
 
-from PyQt5.QtCore import pyqtSignal, Qt
-from PyQt5.QtWidgets import QLabel, QLineEdit, QVBoxLayout, QWidget, QMenu, QAction
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import QAction, QLabel, QMenu, QVBoxLayout, QWidget
 
 from modules.base_module import BaseRenameModule
-from widgets.validated_line_edit import ValidatedLineEdit
+from utils.filename_validator import validate_filename_part
+from utils.icons_loader import get_menu_icon
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
-from utils.filename_validator import validate_filename_part
-from utils.icons_loader import get_menu_icon
+from widgets.validated_line_edit import ValidatedLineEdit
 
 logger = get_cached_logger(__name__)
 

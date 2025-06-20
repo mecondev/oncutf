@@ -12,14 +12,12 @@ This manager centralizes utility functions including:
 - Application lifecycle management
 """
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import QEvent, QTimer, Qt
-from PyQt5.QtGui import QKeyEvent
+from PyQt5.QtCore import QEvent, Qt
 from PyQt5.QtWidgets import QApplication, QDesktopWidget
 
 from config import STATUS_COLORS
-from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:

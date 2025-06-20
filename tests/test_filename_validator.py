@@ -2,19 +2,18 @@
 Tests for filename validation utilities
 """
 
-import pytest
+from config import INVALID_FILENAME_CHARS, INVALID_FILENAME_MARKER
 from utils.filename_validator import (
-    is_valid_filename_char,
+    clean_and_validate,
     clean_filename_text,
     clean_trailing_chars,
-    validate_filename_part,
-    should_allow_character_input,
     get_validation_error_message,
+    is_valid_filename_char,
     is_validation_error_marker,
-    clean_and_validate,
-    prepare_final_filename
+    prepare_final_filename,
+    should_allow_character_input,
+    validate_filename_part,
 )
-from config import INVALID_FILENAME_CHARS, INVALID_TRAILING_CHARS, INVALID_FILENAME_MARKER
 
 
 class TestFilenameValidator:

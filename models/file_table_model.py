@@ -15,6 +15,7 @@ Classes:
 '''
 
 from datetime import datetime
+
 from PyQt5.QtCore import (
     QAbstractTableModel,
     QItemSelection,

@@ -13,6 +13,7 @@ Currently includes:
 """
 
 from PyQt5.QtWidgets import QTableView
+
 from utils.path_utils import paths_equal
 
 

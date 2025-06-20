@@ -12,11 +12,11 @@ Author: Michael Economou
 Date: 2025-05-12
 """
 
+import logging
 import os
 
 from utils.init_logging import init_logging
 from utils.logger_file_helper import add_file_handler
-from utils.logger_factory import get_cached_logger
 
 
 # Clean log files (for test only)
@@ -40,7 +40,7 @@ def run_tests():
     logger.critical("[TEST] Application log test - critical")
 
     # Setup rename logger separately
-    rename_logger = get_logger("rename")
+    rename_logger = logging.getLogger("rename")
     rename_logger.propagate = False  # prevent logs going to root handlers
     add_file_handler(rename_logger, "logs/rename.log", level=20, filter_by_name="rename")
 

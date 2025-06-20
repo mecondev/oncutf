@@ -21,7 +21,7 @@ def fake_cache(mocker):
 
 def test_metadata_worker_cancel_stops_early(qtbot, fake_reader, fake_cache, mocker):
     mocker.patch('os.path.getsize', return_value=1024*1024)  # Mock file size as 1MB
-    app = QCoreApplication.instance() or QCoreApplication([])
+    app = QCoreApplication.instance() or QCoreApplication([])  # noqa: F841
 
     files = [f"/fake/path/file{i}.mp4" for i in range(5)]
     worker = MetadataWorker(reader=fake_reader, metadata_cache=fake_cache)
@@ -43,7 +43,7 @@ def test_metadata_worker_cancel_stops_early(qtbot, fake_reader, fake_cache, mock
 
 def test_metadata_worker_runs_to_completion(qtbot, fake_reader, fake_cache, mocker):
     mocker.patch('os.path.getsize', return_value=1024*1024)  # Mock file size as 1MB
-    app = QCoreApplication.instance() or QCoreApplication([])
+    app = QCoreApplication.instance() or QCoreApplication([])  # noqa: F841
 
     files = [f"/fake/path/file{i}.mp4" for i in range(3)]
     worker = MetadataWorker(reader=fake_reader, metadata_cache=fake_cache)

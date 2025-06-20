@@ -16,57 +16,44 @@ Many of the linter warnings are false positives and can be safely ignored.
 import os
 from typing import Optional
 
-# Import all PyQt5 classes from centralized module
-from core.qt_imports import *
+# Core application modules
+from core.application_context import ApplicationContext
 
 # Import all config constants from centralized module
 from core.config_imports import *
-
-# Core application modules
-from core.application_context import ApplicationContext
+from core.dialog_manager import DialogManager
+from core.drag_cleanup_manager import DragCleanupManager
 from core.drag_manager import DragManager
+from core.event_handler_manager import EventHandlerManager
+from core.file_load_manager import FileLoadManager
 from core.file_loader import FileLoader
 from core.file_operations_manager import FileOperationsManager
-from core.modifier_handler import decode_modifiers_to_flags
+from core.initialization_manager import InitializationManager
 from core.preview_manager import PreviewManager
-from core.status_manager import StatusManager
+
+# Import all PyQt5 classes from centralized module
+from core.qt_imports import *
+from core.rename_manager import RenameManager
+from core.shortcut_manager import ShortcutManager
+from core.table_manager import TableManager
 from core.ui_manager import UIManager
+from core.utility_manager import UtilityManager
+
 # Data models and business logic modules
 from models.file_item import FileItem
 from models.file_table_model import FileTableModel
-from modules.name_transform_module import NameTransformModule
+
 # Utility functions and helpers
-from utils.cursor_helper import wait_cursor, emergency_cursor_cleanup, force_restore_cursor
 # Filename validation utilities available as functions
 from utils.icon_cache import load_preview_status_icons, prepare_status_icons
-from utils.json_config_manager import get_app_config_manager
 from utils.icons import create_colored_icon
-from utils.icons_loader import get_menu_icon, icons_loader, load_metadata_icons
+from utils.icons_loader import icons_loader, load_metadata_icons
+from utils.json_config_manager import get_app_config_manager
 from utils.logger_factory import get_cached_logger
 from utils.metadata_cache import MetadataCache
 from utils.metadata_loader import MetadataLoader
-from utils.preview_engine import apply_rename_modules
-from utils.renamer import Renamer
+
 # UI widgets and custom components
-from widgets.custom_file_system_model import CustomFileSystemModel
-from widgets.custom_msgdialog import CustomMessageDialog
-from widgets.file_table_view import FileTableView
-from widgets.file_tree_view import FileTreeView
-from widgets.interactive_header import InteractiveHeader
-from widgets.metadata_tree_view import MetadataTreeView
-from widgets.metadata_waiting_dialog import MetadataWaitingDialog
-from widgets.metadata_worker import MetadataWorker
-from widgets.preview_tables_view import PreviewTablesView
-from widgets.rename_modules_area import RenameModulesArea
-from core.dialog_manager import DialogManager
-from core.event_handler_manager import EventHandlerManager
-from core.file_load_manager import FileLoadManager
-from core.table_manager import TableManager
-from core.utility_manager import UtilityManager
-from core.rename_manager import RenameManager
-from core.drag_cleanup_manager import DragCleanupManager
-from core.shortcut_manager import ShortcutManager
-from core.initialization_manager import InitializationManager
 
 logger = get_cached_logger(__name__)
 

@@ -21,7 +21,7 @@ Features:
 
 from typing import Optional
 
-from PyQt5.QtCore import QTimer, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -35,9 +35,9 @@ from modules.specified_text_module import SpecifiedTextModule
 
 # Initialize Logger
 from utils.logger_factory import get_cached_logger
+from utils.timer_manager import schedule_ui_update
 from widgets.metadata_widget import MetadataWidget
 from widgets.original_name_widget import OriginalNameWidget
-from utils.timer_manager import schedule_ui_update
 
 # ApplicationContext integration
 try:

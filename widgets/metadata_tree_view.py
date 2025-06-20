@@ -28,7 +28,7 @@ Designed for integration with MainWindow and MetadataReader.
 """
 
 from pathlib import Path
-from typing import Any, Dict, Optional, Set, Tuple, Union
+from typing import Any, Dict, Optional, Set, Union
 
 from PyQt5.QtCore import QModelIndex, Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import (
@@ -47,16 +47,15 @@ from PyQt5.QtWidgets import (
     QLabel,
     QMenu,
     QTreeView,
-    QWidget
+    QWidget,
 )
 
 from config import METADATA_TREE_COLUMN_WIDTHS
 from utils.logger_factory import get_cached_logger
-from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust
-from widgets.metadata_edit_dialog import MetadataEditDialog
-from widgets.file_tree_view import _drag_cancel_filter
-from utils.metadata_cache import MetadataCache
 from utils.path_utils import paths_equal
+from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust
+from widgets.file_tree_view import _drag_cancel_filter
+from widgets.metadata_edit_dialog import MetadataEditDialog
 
 # ApplicationContext integration
 try:
@@ -183,7 +182,6 @@ class MetadataTreeView(QTreeView):
         logger.debug("[MetadataTreeView] Drop event received", extra={"dev_only": True})
 
         # Get the global drag cancel filter
-        from widgets.file_tree_view import _drag_cancel_filter
 
         # Only process drops from our file table
         if event.mimeData().hasFormat("application/x-oncutf-filetable"):
@@ -195,7 +193,7 @@ class MetadataTreeView(QTreeView):
                 event.acceptProposedAction()
                 self._perform_drag_cleanup(_drag_cancel_filter)
                 # Then emit signal for processing
-                logger.debug(f"[MetadataTreeView] Emitting files_dropped signal", extra={"dev_only": True})
+                logger.debug("[MetadataTreeView] Emitting files_dropped signal", extra={"dev_only": True})
                 self.files_dropped.emit(files, event.keyboardModifiers())
             else:
                 logger.debug("[MetadataTreeView] No valid files in drop", extra={"dev_only": True})
@@ -1343,7 +1341,7 @@ class MetadataTreeView(QTreeView):
                     display_data["Rotation"] = current_rotation
                     logger.debug(f"[MetadataTree] Applied Rotation: {current_rotation}", extra={"dev_only": True})
                 else:
-                    logger.warning(f"[MetadataTree] Rotation not found in cache data!")
+                    logger.warning("[MetadataTree] Rotation not found in cache data!")
                 continue
 
             # Handle other fields normally
@@ -1728,7 +1726,7 @@ class MetadataTreeView(QTreeView):
                     modified_metadata["Rotation"] = str(metadata_entry.data["Rotation"])
                     logger.debug(f"[MetadataTree] Found Rotation = {metadata_entry.data['Rotation']} in cache", extra={"dev_only": True})
                 else:
-                    logger.warning(f"[MetadataTree] Rotation not found in cache for current file")
+                    logger.warning("[MetadataTree] Rotation not found in cache for current file")
                 continue
 
             # Handle other fields normally

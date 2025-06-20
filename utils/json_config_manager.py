@@ -12,12 +12,12 @@ import json
 import os
 import shutil
 import threading
-from pathlib import Path
-from typing import Any, Dict, Optional, TypeVar, Generic
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, Generic, Optional, TypeVar
 
+from config import APP_VERSION, WINDOW_HEIGHT, WINDOW_WIDTH
 from utils.logger_factory import get_cached_logger
-from config import APP_VERSION, WINDOW_WIDTH, WINDOW_HEIGHT
 
 logger = get_cached_logger(__name__)
 

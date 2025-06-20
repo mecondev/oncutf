@@ -16,9 +16,8 @@ Features:
 
 from typing import Optional
 
-from PyQt5.QtCore import QEvent, QObject, Qt, QTimer, QPoint
-from PyQt5.QtGui import QMouseEvent
-from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5.QtCore import QEvent, QObject, Qt, QTimer
+from PyQt5.QtWidgets import QApplication
 
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_drag_cleanup

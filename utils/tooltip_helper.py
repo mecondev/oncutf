@@ -16,11 +16,10 @@ Contains:
 - Convenience functions for easy tooltip display
 """
 
-from typing import Optional, Union
-from PyQt5.QtWidgets import QWidget, QLabel, QApplication
-from PyQt5.QtCore import QTimer, Qt, QPoint
-from PyQt5.QtGui import QCursor
 import logging
+
+from PyQt5.QtCore import QPoint, Qt, QTimer
+from PyQt5.QtWidgets import QApplication, QLabel, QWidget
 
 logger = logging.getLogger(__name__)
 

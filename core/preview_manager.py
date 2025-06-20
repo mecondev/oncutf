@@ -9,7 +9,7 @@ Extracted from MainWindow to separate business logic from UI.
 """
 
 import os
-from typing import List, Tuple, Dict, Any
+from typing import Any, Dict, List, Tuple
 
 from core.qt_imports import QElapsedTimer
 from models.file_item import FileItem

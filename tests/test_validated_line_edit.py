@@ -3,13 +3,9 @@ Tests for ValidatedLineEdit widget
 """
 
 import pytest
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QKeyEvent
-from PyQt5.QtTest import QTest
 
+from config import INVALID_FILENAME_CHARS
 from widgets.validated_line_edit import ValidatedLineEdit
-from config import INVALID_FILENAME_CHARS, INVALID_FILENAME_MARKER
 
 
 class TestValidatedLineEdit:

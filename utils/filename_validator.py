@@ -13,10 +13,10 @@ Contains:
 - clean_filename_text: Clean text by removing invalid characters
 """
 
-import re
 import logging
-from typing import Tuple, Union
-from config import INVALID_FILENAME_CHARS, INVALID_TRAILING_CHARS, INVALID_FILENAME_MARKER
+from typing import Tuple
+
+from config import INVALID_FILENAME_CHARS, INVALID_FILENAME_MARKER, INVALID_TRAILING_CHARS
 
 logger = logging.getLogger(__name__)
 

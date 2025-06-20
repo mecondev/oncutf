@@ -60,9 +60,9 @@ from PyQt5.QtWidgets import (
     QShortcut,
     QSizePolicy,
     QSplitter,
+    QTableView,
     QTableWidget,
     QTableWidgetItem,
-    QTableView,
     QVBoxLayout,
     QWidget,
 )

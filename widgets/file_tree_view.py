@@ -12,8 +12,8 @@ Single item selection only - no multi-selection complexity.
 import os
 from typing import Optional
 
-from PyQt5.QtCore import QEvent, QPoint, Qt, QTimer, pyqtSignal
-from PyQt5.QtGui import QKeyEvent, QMouseEvent, QCursor
+from PyQt5.QtCore import QEvent, QPoint, Qt, pyqtSignal
+from PyQt5.QtGui import QCursor, QKeyEvent, QMouseEvent
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -23,14 +23,16 @@ from PyQt5.QtWidgets import (
 
 from config import ALLOWED_EXTENSIONS
 from core.drag_manager import DragManager
-from core.modifier_handler import decode_modifiers_to_flags
 from core.drag_visual_manager import (
-    DragVisualManager, DragType, DropZoneState, ModifierState,
-    start_drag_visual, end_drag_visual, update_drop_zone_state,
-    update_modifier_state, is_valid_drop_target
+    DragVisualManager,
+    DropZoneState,
+    end_drag_visual,
+    start_drag_visual,
+    update_drop_zone_state,
+    update_modifier_state,
 )
+from core.modifier_handler import decode_modifiers_to_flags
 from utils.logger_factory import get_cached_logger
-from utils.cursor_helper import wait_cursor
 from utils.timer_manager import schedule_scroll_adjust
 
 logger = get_cached_logger(__name__)
@@ -609,7 +611,7 @@ class FileTreeView(QTreeView):
 
         return super().event(event)
 
-    def startDrag(self, supportedActions):
+    def startDrag(self, supported_actions):
         """Override Qt's built-in drag to prevent it from interfering with our custom drag"""
         # Do nothing - we handle all drag operations through our custom system
         # This prevents Qt from starting its own drag which could cause hover issues

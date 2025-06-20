@@ -16,13 +16,12 @@ Features:
 """
 
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Tuple
 
-from PyQt5.QtCore import QTimer, Qt, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import (
     QAbstractItemView,
-    QFrame,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -32,9 +31,9 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from utils.filename_validator import get_validation_error_message, is_validation_error_marker
 from utils.logger_factory import get_cached_logger
-from utils.timer_manager import schedule_ui_update, schedule_scroll_adjust
-from utils.filename_validator import is_validation_error_marker, get_validation_error_message
+from utils.timer_manager import schedule_scroll_adjust, schedule_ui_update
 
 logger = get_cached_logger(__name__)
 
@@ -481,8 +480,9 @@ class PreviewTablesView(QWidget):
                         tooltip = get_validation_error_message(old_name)  # Get detailed error for original name
                     else:
                         # Use new validation system
-                        from utils.filename_validator import validate_filename_part
                         import os
+
+                        from utils.filename_validator import validate_filename_part
                         # Get filename without extension for validation
                         basename = os.path.splitext(new_name)[0]
                         is_valid, _ = validate_filename_part(basename)

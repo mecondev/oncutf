@@ -9,7 +9,8 @@ Consolidates all table-related logic including sorting, clearing,
 preparation, and selection management.
 """
 
-from typing import List, Optional
+from typing import List
+
 from PyQt5.QtCore import Qt
 
 from models.file_item import FileItem

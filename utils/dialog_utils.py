@@ -9,6 +9,7 @@ Provides centralized logic for common dialog operations like centering.
 """
 
 from typing import Optional
+
 from PyQt5.QtWidgets import QWidget
 
 

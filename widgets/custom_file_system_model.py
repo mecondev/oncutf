@@ -10,7 +10,7 @@ for folders, files, and expand/collapse indicators.
 """
 
 import os
-from typing import Any, Optional
+from typing import Any
 
 from PyQt5.QtCore import QModelIndex, Qt
 from PyQt5.QtGui import QIcon

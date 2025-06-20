@@ -18,11 +18,11 @@ Features:
 """
 
 import os
-from typing import Optional, Dict, Any
 from enum import Enum
+from typing import Dict, Optional
 
-from PyQt5.QtCore import Qt, QPoint
-from PyQt5.QtGui import QCursor, QPixmap, QPainter, QIcon, QColor
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor, QCursor, QIcon, QPainter, QPixmap
 from PyQt5.QtWidgets import QApplication, QWidget
 
 from utils.icons_loader import get_menu_icon
@@ -179,7 +179,7 @@ class DragVisualManager:
         """Update cursor based on current state."""
         logger.debug(f"[DragVisualManager] _update_cursor called, drag_type={self._drag_type}", extra={"dev_only": True})
         if self._drag_type is None:
-            logger.debug(f"[DragVisualManager] _update_cursor skipped - drag_type is None", extra={"dev_only": True})
+            logger.debug("[DragVisualManager] _update_cursor skipped - drag_type is None", extra={"dev_only": True})
             return
 
         cursor_key = self._get_cursor_key()

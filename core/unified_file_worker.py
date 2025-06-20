@@ -30,12 +30,13 @@ Usage:
 """
 
 import os
-from typing import List, Set, Optional, Union
-from PyQt5.QtCore import QThread, pyqtSignal, QMutex, QMutexLocker
+from typing import List, Optional, Set, Union
+
+from PyQt5.QtCore import QMutex, QMutexLocker, QThread, pyqtSignal
 
 from config import ALLOWED_EXTENSIONS
-from utils.timer_manager import get_timer_manager, TimerType, TimerPriority
 from utils.logger_factory import get_cached_logger
+from utils.timer_manager import get_timer_manager
 
 logger = get_cached_logger(__name__)
 
@@ -141,7 +142,6 @@ class UnifiedFileWorker(QThread):
             all_files = []
             total_files = 0
             current_file = 0
-            scanned_items = 0
 
             # Phase 1: Count total files for accurate progress
             self.status_updated.emit("Counting files...")
@@ -223,17 +223,12 @@ class UnifiedFileWorker(QThread):
     def _count_files_in_directory(self, directory: str, allowed_extensions: Set[str], recursive: bool) -> int:
         """Count total files in directory for progress calculation with cancellation support."""
         count = 0
-        scanned_items = 0
 
         try:
             if recursive:
                 for root, _, files in os.walk(directory):
                     if self.is_cancelled():
                         break
-
-                    scanned_items += len(files)
-                    if scanned_items % 500 == 0:  # More frequent updates during counting
-                        self.status_updated.emit(f"Counting files... ({scanned_items} items scanned)")
 
                     for file in files:
                         if self.is_cancelled():
@@ -242,9 +237,6 @@ class UnifiedFileWorker(QThread):
                             count += 1
             else:
                 files = os.listdir(directory)
-                scanned_items = len(files)
-                self.status_updated.emit(f"Counting files... ({scanned_items} items scanned)")
-
                 for file in files:
                     if self.is_cancelled():
                         break
@@ -281,11 +273,11 @@ class UnifiedFileWorker(QThread):
                         if self.is_cancelled():
                             return None
 
-                        scanned_items += 1
-
                         # Enhanced cancellation check during file processing
                         if self._check_cancellation_frequently():
                             return None
+
+                        scanned_items += 1
 
                         # Show progress for non-matching files too
                         if scanned_items % 50 == 0:  # More frequent updates

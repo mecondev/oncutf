@@ -22,10 +22,10 @@ This widget is used in the Batch File Renamer GUI application within the
 MetadataWaitingDialog to indicate progress during metadata loading (basic or extended).
 """
 
-from typing import Optional
 import os
+from typing import Optional
 
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtWidgets import (
     QHBoxLayout,
     QLabel,

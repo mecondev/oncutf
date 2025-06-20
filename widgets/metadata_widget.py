@@ -9,7 +9,7 @@ Widget for metadata selection (file dates or EXIF), with optimized signal emissi
 
 from typing import Optional, Set
 
-from PyQt5.QtCore import QTimer, pyqtSignal
+from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from utils.logger_factory import get_cached_logger

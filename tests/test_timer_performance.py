@@ -4,15 +4,14 @@ test_timer_performance.py
 Performance tests for the centralized timer management system.
 """
 
-import pytest
+import sys
 import time
+
+import pytest
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QApplication
-import sys
 
-from utils.timer_manager import (
-    schedule_ui_update, cleanup_all_timers, get_timer_manager
-)
+from utils.timer_manager import cleanup_all_timers, get_timer_manager, schedule_ui_update
 
 # Ensure QApplication exists for timer tests
 if not QApplication.instance():
@@ -91,8 +90,6 @@ class TestTimerPerformance:
         timer_count = 200
         for i in range(timer_count):
             schedule_ui_update(lambda: None, 1000)  # 1 second delay
-
-        initial_active = tm.get_active_count()
 
         # Measure cleanup time
         start_time = time.time()

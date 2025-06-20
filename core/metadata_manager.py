@@ -9,17 +9,16 @@ Handles metadata loading, progress tracking, thread management, and UI coordinat
 """
 
 import os
-from typing import List, Optional, Any
+from typing import List, Optional
 
-from core.config_imports import LARGE_FOLDER_WARNING_THRESHOLD
-from core.qt_imports import QApplication, QThread, QTimer
+from core.qt_imports import QApplication, QThread
 from models.file_item import FileItem
 from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
+from utils.path_utils import find_file_by_path, paths_equal
 from widgets.custom_msgdialog import CustomMessageDialog
 from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 from widgets.metadata_worker import MetadataWorker
-from utils.path_utils import paths_equal, find_file_by_path
 
 logger = get_cached_logger(__name__)
 
@@ -196,7 +195,7 @@ class MetadataManager:
             try:
                 self.loading_dialog.rejected.disconnect()
                 logger.debug("[MetadataManager] Disconnected cancel handler from dialog")
-            except:
+            except (TypeError, RuntimeError):
                 pass  # Already disconnected or not connected
             self.loading_dialog.close()
 
@@ -214,7 +213,7 @@ class MetadataManager:
                     hasattr(self.parent_window, 'metadata_tree_view') and
                     hasattr(self.parent_window.metadata_tree_view, 'display_metadata')):
                     self.parent_window.metadata_tree_view.display_metadata(metadata, context="batch_completed")
-                    logger.debug(f"[MetadataManager] Displayed metadata for single file after batch loading")
+                    logger.debug("[MetadataManager] Displayed metadata for single file after batch loading")
         elif self._original_selection_count > 1:
             # Multiple files were selected - show appropriate message
             if (self.parent_window and
@@ -260,13 +259,13 @@ class MetadataManager:
             # Restore selection immediately
             if hasattr(self.parent_window.file_table_view, '_update_selection_store'):
                 self.parent_window.file_table_view._update_selection_store(self._preserved_selection, emit_signal=True)
-                logger.debug(f"[MetadataManager] Selection restored successfully")
+                logger.debug("[MetadataManager] Selection restored successfully")
 
             # Clear preserved selection after restoration
             self._preserved_selection = None
         else:
             # Debug why restoration is not happening
-            logger.debug(f"[MetadataManager] Selection restoration NOT happening because:")
+            logger.debug("[MetadataManager] Selection restoration NOT happening because:")
             logger.debug(f"  - hasattr(self, '_preserved_selection'): {hasattr(self, '_preserved_selection')}")
             if hasattr(self, '_preserved_selection'):
                 logger.debug(f"  - self._preserved_selection is not None: {self._preserved_selection is not None}")
@@ -925,7 +924,7 @@ class MetadataManager:
             show_error_message(
                 self.parent_window,
                 "Save Failed",
-                f"Failed to save metadata changes to:\n" + "\n".join(failed_files)
+                "Failed to save metadata changes to:\n" + "\n".join(failed_files)
             )
 
     def _get_files_from_source(self, source: str) -> Optional[List[FileItem]]:

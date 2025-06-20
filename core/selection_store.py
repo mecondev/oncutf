@@ -251,7 +251,6 @@ class SelectionStore(QObject):
         if not self._checked_rows:
             return
 
-        count = len(self._checked_rows)
         self._checked_rows.clear()
         if emit_signal:
             self._schedule_checked_signal()

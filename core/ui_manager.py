@@ -14,8 +14,9 @@ from typing import TYPE_CHECKING
 from core.config_imports import *
 from core.qt_imports import *
 from models.file_table_model import FileTableModel
-from utils.icons_loader import get_menu_icon, get_app_icon
+from utils.icons_loader import get_app_icon, get_menu_icon
 from utils.logger_factory import get_cached_logger
+from utils.timer_manager import schedule_selection_update
 from widgets.custom_file_system_model import CustomFileSystemModel
 from widgets.file_table_view import FileTableView
 from widgets.file_tree_view import FileTreeView
@@ -23,7 +24,6 @@ from widgets.interactive_header import InteractiveHeader
 from widgets.metadata_tree_view import MetadataTreeView
 from widgets.preview_tables_view import PreviewTablesView
 from widgets.rename_modules_area import RenameModulesArea
-from utils.timer_manager import schedule_selection_update
 
 if TYPE_CHECKING:
     from main_window import MainWindow
@@ -130,7 +130,6 @@ class UIManager:
         # Base percentages derived from good 4:3 ratios (230px sides on 1177px = ~19.5% each)
         left_percentage = 0.195   # ~19.5% for left panel
         right_percentage = 0.195  # ~19.5% for right panel
-        center_percentage = 0.61  # ~61% for center panel
 
         # Calculate sizes based on percentages
         left_width = int(window_width * left_percentage)

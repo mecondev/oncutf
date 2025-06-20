@@ -82,8 +82,6 @@ def find_file_by_path(files: list, target_path: str, path_attr: str = 'full_path
     if not files or not target_path:
         return None
 
-    normalized_target = normalize_path(target_path)
-
     for file_obj in files:
         if hasattr(file_obj, path_attr):
             file_path = getattr(file_obj, path_attr)

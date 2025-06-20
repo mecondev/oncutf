@@ -11,15 +11,16 @@ Uses UnifiedFileWorker for consistent file loading behavior.
 
 import os
 from typing import List
+
 from PyQt5.QtWidgets import QApplication
 
-from models.file_item import FileItem
 from config import ALLOWED_EXTENSIONS
-from utils.cursor_helper import wait_cursor
-from utils.logger_factory import get_cached_logger
-from utils.dialog_utils import center_widget_on_parent
-from widgets.compact_waiting_widget import CompactWaitingWidget
 from core.unified_file_worker import UnifiedFileWorker
+from models.file_item import FileItem
+from utils.cursor_helper import wait_cursor
+from utils.dialog_utils import center_widget_on_parent
+from utils.logger_factory import get_cached_logger
+from widgets.compact_waiting_widget import CompactWaitingWidget
 
 logger = get_cached_logger(__name__)
 

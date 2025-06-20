@@ -3,18 +3,18 @@ Tests for tooltip helper system
 """
 
 import pytest
-from PyQt5.QtWidgets import QWidget, QLabel
 from PyQt5.QtCore import QPoint
+from PyQt5.QtWidgets import QLabel
 
 from utils.tooltip_helper import (
-    TooltipType,
     CustomTooltip,
     TooltipHelper,
-    show_tooltip,
+    TooltipType,
     show_error_tooltip,
-    show_warning_tooltip,
     show_info_tooltip,
-    show_success_tooltip
+    show_success_tooltip,
+    show_tooltip,
+    show_warning_tooltip,
 )
 
 

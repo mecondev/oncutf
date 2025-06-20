@@ -9,7 +9,6 @@ from modules.name_transform_module import NameTransformModule
 # Initialize Logger
 from utils.logger_factory import get_cached_logger
 from utils.preview_generator import generate_preview_names
-from utils.validation import is_valid_filename_text
 
 logger = get_cached_logger(__name__)
 

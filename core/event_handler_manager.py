@@ -9,17 +9,15 @@ Centralizes UI event handlers, user interactions, and widget callbacks.
 """
 
 import os
-from typing import Optional, List
-from PyQt5.QtWidgets import (
-    QFileDialog, QMenu, QApplication, QAbstractItemView
-)
-from PyQt5.QtCore import Qt, QModelIndex, QTimer
-from PyQt5.QtGui import QKeyEvent
+from typing import List
 
+from PyQt5.QtCore import QModelIndex, Qt
+from PyQt5.QtWidgets import QApplication, QFileDialog, QMenu
+
+from core.modifier_handler import decode_modifiers_to_flags
+from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
 from utils.path_utils import paths_equal
-from utils.cursor_helper import wait_cursor
-from core.modifier_handler import decode_modifiers_to_flags
 
 logger = get_cached_logger(__name__)
 

@@ -10,15 +10,18 @@ Handles ESC key to cancel loading and shows wait cursor.
 Uses UnifiedFileWorker for consistent file loading behavior.
 """
 
-from PyQt5.QtCore import Qt, QTimer
+from typing import Callable, List, Set
+
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDialog, QVBoxLayout
-from .compact_waiting_widget import CompactWaitingWidget
+
 from core.unified_file_worker import UnifiedFileWorker
-from typing import List, Set, Callable
-from utils.dialog_utils import setup_dialog_size_and_center
 from utils.cursor_helper import force_restore_cursor
-from utils.timer_manager import get_timer_manager, TimerType, TimerPriority
+from utils.dialog_utils import setup_dialog_size_and_center
 from utils.logger_factory import get_cached_logger
+from utils.timer_manager import TimerPriority, TimerType, get_timer_manager
+
+from .compact_waiting_widget import CompactWaitingWidget
 
 logger = get_cached_logger(__name__)
 
