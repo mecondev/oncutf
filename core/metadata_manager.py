@@ -758,15 +758,31 @@ class MetadataManager:
             logger.warning("[MetadataManager] No files available in file model")
             return
 
+        # DEBUG: Log what we got from MetadataTree
+        logger.debug(f"[MetadataManager] Got modifications for {len(all_modified_metadata)} files:")
+        for file_path, modifications in all_modified_metadata.items():
+            logger.debug(f"[MetadataManager]   - {file_path}: {list(modifications.keys())}")
+
         # Find FileItems for all files that have modifications
         files_to_save = []
         for file_path, modified_metadata in all_modified_metadata.items():
             if modified_metadata:  # Only files with actual modifications
+                logger.debug(f"[MetadataManager] Looking for FileItem with path: {file_path}")
+
                 # Find the corresponding FileItem
+                found = False
                 for file_item in all_files:
+                    logger.debug(f"[MetadataManager]   Comparing with: {file_item.full_path}")
                     if file_item.full_path == file_path:
                         files_to_save.append(file_item)
+                        found = True
+                        logger.debug(f"[MetadataManager]   MATCH found for: {file_item.filename}")
                         break
+
+                if not found:
+                    logger.warning(f"[MetadataManager]   NO MATCH found for path: {file_path}")
+
+        logger.debug(f"[MetadataManager] Found {len(files_to_save)} FileItems to save")
 
         if not files_to_save:
             logger.info("[MetadataManager] No files with metadata modifications found")
