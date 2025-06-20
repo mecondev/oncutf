@@ -38,6 +38,7 @@ from PyQt5.QtGui import (
     QPixmap,
     QStandardItem,
     QStandardItemModel,
+    QIcon,
 )
 from PyQt5.QtWidgets import (
     QAbstractItemView,
@@ -67,44 +68,52 @@ logger = get_cached_logger(__name__)
 
 
 class MetadataProxyModel(QSortFilterProxyModel):
-    """Custom proxy model for filtering metadata tree items."""
+    """Custom proxy model for metadata tree filtering."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setFilterCaseSensitivity(Qt.CaseInsensitive)
-        self.setFilterKeyColumn(-1)  # Filter all columns
+        self.setRecursiveFilteringEnabled(True)  # Enable hierarchical filtering
 
-    def filterAcceptsRow(self, source_row: int, source_parent: QModelIndex) -> bool:
-        """Custom filtering logic for metadata items."""
+    def filterAcceptsRow(self, source_row, source_parent):
+        """
+        Custom filter logic for metadata tree.
+        Shows a row if:
+        1. The row itself matches the filter
+        2. Any of its children match the filter
+        3. Its parent matches the filter
+        """
         if not self.filterRegExp().pattern():
-            return True  # No filter, accept all
+            return True
 
         source_model = self.sourceModel()
         if not source_model:
             return True
 
-        # Get the item at this row
+        # Get the current item
+        index = source_model.index(source_row, 0, source_parent)
+        if not index.isValid():
+            return True
+
+        # Check if current item matches (key or value)
         key_index = source_model.index(source_row, 0, source_parent)
         value_index = source_model.index(source_row, 1, source_parent)
 
-        if not key_index.isValid():
-            return True
-
-        # Get the text from both key and value columns
         key_text = source_model.data(key_index, Qt.DisplayRole) or ""
         value_text = source_model.data(value_index, Qt.DisplayRole) or ""
 
-        # Check if filter matches key or value
-        filter_text = self.filterRegExp().pattern().lower()
-        if (filter_text in key_text.lower() or
-            filter_text in value_text.lower()):
+        pattern = self.filterRegExp().pattern()
+
+        # Check if this item matches
+        if (pattern.lower() in key_text.lower() or
+            pattern.lower() in value_text.lower()):
             return True
 
-        # If this item has children, check if any child matches
-        if source_model.hasChildren(key_index):
-            for child_row in range(source_model.rowCount(key_index)):
-                if self.filterAcceptsRow(child_row, key_index):
-                    return True  # Accept parent if any child matches
+        # Check if any child matches
+        if source_model.hasChildren(index):
+            for i in range(source_model.rowCount(index)):
+                if self.filterAcceptsRow(i, index):
+                    return True
 
         return False
 
@@ -1323,67 +1332,37 @@ class MetadataTreeView(QTreeView):
     def _update_search_field_state(self, enabled: bool):
         """Update the metadata search field enabled state and tooltip."""
         parent_window = self._get_parent_with_file_table()
-        if parent_window and hasattr(parent_window, 'metadata_search_field'):
-            search_field = parent_window.metadata_search_field
-
-            # Save expanded state before changing field state
-            expanded_items = []
-            if hasattr(parent_window, 'metadata_proxy_model') and parent_window.metadata_proxy_model.sourceModel():
-                source_model = parent_window.metadata_proxy_model.sourceModel()
-                if source_model:
-                    # Save which items are expanded
-                    for i in range(source_model.rowCount()):
-                        index = parent_window.metadata_proxy_model.mapFromSource(source_model.index(i, 0))
-                        if self.isExpanded(index):
-                            item = source_model.itemFromIndex(source_model.index(i, 0))
-                            if item:
-                                expanded_items.append(item.text())
-
-            search_field.setEnabled(enabled)
-
-            # Use custom styling to maintain consistent icon appearance
-            if enabled:
-                search_field.setToolTip("Search metadata...")
-                # Clear any custom styling for enabled state
-                search_field.setStyleSheet("")
-                # Restore any saved search text
-                if hasattr(parent_window, 'ui_manager'):
-                    parent_window.ui_manager.restore_metadata_search_text()
-            else:
-                search_field.setToolTip("No metadata available")
-                # Apply custom styling to keep icons at normal opacity
-                search_field.setStyleSheet("""
-                    QLineEdit:disabled {
-                        color: #666;
-                        background-color: #f0f0f0;
-                    }
-                    QLineEdit:disabled QAction {
-                        opacity: 1.0;
-                    }
-                """)
-                # Don't clear the search text - preserve it for when metadata is available again
-
-            # Restore expanded state after a short delay
-            if expanded_items:
-                from PyQt5.QtCore import QTimer
-                QTimer.singleShot(50, lambda: self._restore_expanded_state(expanded_items))
-
-    def _restore_expanded_state(self, expanded_items):
-        """Restore the expanded state of metadata tree items."""
-        parent_window = self._get_parent_with_file_table()
-        if not parent_window or not hasattr(parent_window, 'metadata_proxy_model'):
+        if not parent_window or not hasattr(parent_window, 'metadata_search_field'):
             return
 
-        source_model = parent_window.metadata_proxy_model.sourceModel()
-        if not source_model:
-            return
+        search_field = parent_window.metadata_search_field
 
-        # Restore expanded state for saved items
-        for i in range(source_model.rowCount()):
-            item = source_model.itemFromIndex(source_model.index(i, 0))
-            if item and item.text() in expanded_items:
-                proxy_index = parent_window.metadata_proxy_model.mapFromSource(source_model.index(i, 0))
-                self.setExpanded(proxy_index, True)
+        if enabled:
+            search_field.setEnabled(True)
+            search_field.setReadOnly(False)
+            search_field.setToolTip("Search metadata...")
+            # Clear any custom styling for enabled state
+            search_field.setStyleSheet("")
+            # Restore any saved search text
+            if hasattr(parent_window, 'ui_manager'):
+                parent_window.ui_manager.restore_metadata_search_text()
+        else:
+            # Don't disable the entire field - just make it read-only
+            # This prevents the search icon from becoming lighter
+            search_field.setEnabled(True)
+            search_field.setReadOnly(True)
+            search_field.setToolTip("No metadata available")
+            # Apply custom styling to show it's disabled but keep icons normal
+            search_field.setStyleSheet("""
+                QLineEdit[readOnly="true"] {
+                    color: #666;
+                    background-color: #2b2b2b;
+                    border: 1px solid #555;
+                }
+            """)
+            # Don't clear the search text - preserve it for when metadata is available again
+
+
 
     def _render_metadata_view(self, metadata: Dict[str, Any]) -> None:
         """
@@ -1432,7 +1411,7 @@ class MetadataTreeView(QTreeView):
             self.restore_scroll_after_expand()
 
             # Notify parent that we successfully rendered metadata
-            self._update_parent_toggle_button(expanded=True, enabled=True)
+            # Groups are always expanded - no toggle functionality needed
 
         except Exception as e:
             logger.exception(f"[render_metadata_view] Unexpected error while rendering: {e}")

@@ -315,18 +315,6 @@ class UIManager:
         search_layout.addWidget(self.parent_window.metadata_search_field)
         right_layout.addLayout(search_layout)
 
-        # Expand/Collapse buttons
-        self.parent_window.toggle_expand_button = QPushButton("Expand All")
-        self.parent_window.toggle_expand_button.setIcon(get_menu_icon("chevrons-down"))
-        self.parent_window.toggle_expand_button.setCheckable(True)
-        self.parent_window.toggle_expand_button.setFixedWidth(120)
-
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(self.parent_window.toggle_expand_button)
-        button_layout.addStretch()
-
-        right_layout.addLayout(button_layout)
-
         # Metadata Tree View
         self.parent_window.metadata_tree_view = MetadataTreeView()
         self.parent_window.metadata_tree_view.files_dropped.connect(self.parent_window.load_metadata_from_dropped_files)
@@ -466,8 +454,7 @@ class UIManager:
         self.parent_window.metadata_tree_view.value_reset.connect(self.parent_window.on_metadata_value_reset)
         self.parent_window.metadata_tree_view.value_copied.connect(self.parent_window.on_metadata_value_copied)
 
-        # Toggle button connection is now handled by MetadataTreeView
-        # self.parent_window.toggle_expand_button.toggled.connect(self.parent_window.toggle_metadata_expand)
+
 
         self.parent_window.rename_button.clicked.connect(self.parent_window.rename_files)
 
@@ -558,25 +545,8 @@ class UIManager:
         global_pos = line_edit.mapToGlobal(position)
         menu.exec_(global_pos)
 
-    def _clear_metadata_search(self):
-        """Clear the metadata search field and hide the clear button."""
-        # Save expanded state before clearing filter
-        self._save_metadata_expanded_state()
-
-        self.parent_window.metadata_search_field.clear()
-        self.parent_window.clear_search_action.setVisible(False)
-        self.parent_window._metadata_search_text = ""
-        self.parent_window.metadata_proxy_model.setFilterRegExp("")
-
-        # Restore expanded state after clearing filter
-        self._restore_metadata_expanded_state()
-
     def _on_metadata_search_text_changed(self):
         """Handle text changes in the metadata search field."""
-        # Save expanded state before applying filter
-        if not hasattr(self, '_filtering_in_progress'):
-            self._save_metadata_expanded_state()
-
         text = self.parent_window.metadata_search_field.text()
         self.parent_window.clear_search_action.setVisible(bool(text))
         self.parent_window._metadata_search_text = text
@@ -584,54 +554,12 @@ class UIManager:
         # Use setFilterRegExp for better filtering with the custom proxy model
         self.parent_window.metadata_proxy_model.setFilterRegExp(text)
 
-        # If filter is cleared, restore expanded state
-        if not text:
-            self._restore_metadata_expanded_state()
-
-    def _save_metadata_expanded_state(self):
-        """Save the current expanded state of metadata tree items."""
-        if not hasattr(self.parent_window, 'metadata_tree_view'):
-            return
-
-        self._expanded_items = []
-        if hasattr(self.parent_window, 'metadata_proxy_model') and self.parent_window.metadata_proxy_model.sourceModel():
-            source_model = self.parent_window.metadata_proxy_model.sourceModel()
-            if source_model:
-                # Save which items are expanded
-                for i in range(source_model.rowCount()):
-                    index = self.parent_window.metadata_proxy_model.mapFromSource(source_model.index(i, 0))
-                    if self.parent_window.metadata_tree_view.isExpanded(index):
-                        item = source_model.itemFromIndex(source_model.index(i, 0))
-                        if item:
-                            self._expanded_items.append(item.text())
-
-    def _restore_metadata_expanded_state(self):
-        """Restore the expanded state of metadata tree items."""
-        if not hasattr(self, '_expanded_items') or not hasattr(self.parent_window, 'metadata_tree_view'):
-            return
-
-        if hasattr(self.parent_window, 'metadata_proxy_model') and self.parent_window.metadata_proxy_model.sourceModel():
-            source_model = self.parent_window.metadata_proxy_model.sourceModel()
-            if source_model:
-                # Use QTimer to restore after the view has been updated
-                from PyQt5.QtCore import QTimer
-                QTimer.singleShot(50, self._do_restore_expanded_state)
-
-    def _do_restore_expanded_state(self):
-        """Actually restore the expanded state after a delay."""
-        if not hasattr(self, '_expanded_items'):
-            return
-
-        source_model = self.parent_window.metadata_proxy_model.sourceModel()
-        if not source_model:
-            return
-
-        # Restore expanded state for saved items
-        for i in range(source_model.rowCount()):
-            item = source_model.itemFromIndex(source_model.index(i, 0))
-            if item and item.text() in self._expanded_items:
-                proxy_index = self.parent_window.metadata_proxy_model.mapFromSource(source_model.index(i, 0))
-                self.parent_window.metadata_tree_view.setExpanded(proxy_index, True)
+    def _clear_metadata_search(self):
+        """Clear the metadata search field and hide the clear button."""
+        self.parent_window.metadata_search_field.clear()
+        self.parent_window.clear_search_action.setVisible(False)
+        self.parent_window._metadata_search_text = ""
+        self.parent_window.metadata_proxy_model.setFilterRegExp("")
 
     def restore_metadata_search_text(self):
         """Restore the metadata search text from session storage."""
