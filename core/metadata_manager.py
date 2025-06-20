@@ -19,6 +19,7 @@ from utils.logger_factory import get_cached_logger
 from widgets.custom_msgdialog import CustomMessageDialog
 from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 from widgets.metadata_worker import MetadataWorker
+from utils.path_utils import paths_equal, find_file_by_path
 
 logger = get_cached_logger(__name__)
 
@@ -235,9 +236,9 @@ class MetadataManager:
 
             # Update only the rows for files that were loaded
             for file_path in loaded_file_paths:
-                # Find the file in the model
+                # Find the file in the model using normalized path comparison
                 for i, file_item in enumerate(file_model.files):
-                    if file_item.full_path == file_path:
+                    if paths_equal(file_item.full_path, file_path):
                         # Update all columns for this row
                         for col in range(file_model.columnCount()):
                             idx = file_model.index(i, col)
@@ -721,11 +722,10 @@ class MetadataManager:
         files_to_save = []
         for file_path, modified_metadata in all_modified_metadata.items():
             if file_path in selected_file_paths and modified_metadata:
-                # Find the corresponding FileItem
-                for file_item in selected_files:
-                    if file_item.full_path == file_path:
-                        files_to_save.append(file_item)
-                        break
+                # Find the corresponding FileItem using normalized path comparison
+                file_item = find_file_by_path(selected_files, file_path, 'full_path')
+                if file_item:
+                    files_to_save.append(file_item)
 
         if not files_to_save:
             logger.info("[MetadataManager] No selected files have metadata modifications")
@@ -769,18 +769,12 @@ class MetadataManager:
             if modified_metadata:  # Only files with actual modifications
                 logger.debug(f"[MetadataManager] Looking for FileItem with path: {file_path}")
 
-                # Find the corresponding FileItem
-                found = False
-                for file_item in all_files:
-                    logger.debug(f"[MetadataManager]   Comparing with: {file_item.full_path}")
-                    if file_item.full_path == file_path:
-                        files_to_save.append(file_item)
-                        found = True
-                        logger.debug(f"[MetadataManager]   MATCH found for: {file_item.filename}")
-                        break
-
-                if not found:
-                    logger.warning(f"[MetadataManager]   NO MATCH found for path: {file_path}")
+                # Check if we already have metadata for this file
+                file_item = find_file_by_path(all_files, file_path, 'full_path')
+                if file_item and hasattr(file_item, 'metadata_status') and file_item.metadata_status == "loaded":
+                    already_loaded.append(file_path)
+                else:
+                    files_to_load.append(file_path)
 
         logger.debug(f"[MetadataManager] Found {len(files_to_save)} FileItems to save")
 

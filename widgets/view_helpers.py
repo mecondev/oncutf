@@ -13,6 +13,7 @@ Currently includes:
 """
 
 from PyQt5.QtWidgets import QTableView
+from utils.path_utils import paths_equal
 
 
 def update_info_icon(file_table_view: QTableView, model, file_path: str) -> None:
@@ -25,7 +26,7 @@ def update_info_icon(file_table_view: QTableView, model, file_path: str) -> None
         file_path (str): The full path of the file whose icon should be updated.
     """
     for row, file_item in enumerate(model.files):
-        if file_item.full_path == file_path:
+        if paths_equal(file_item.full_path, file_path):
             index = model.index(row, 0)
             rect = file_table_view.visualRect(index)
             file_table_view.viewport().update(rect)

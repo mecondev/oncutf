@@ -15,6 +15,7 @@ from core.config_imports import LARGE_FOLDER_WARNING_THRESHOLD, EXTENDED_METADAT
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
 from utils.renamer import Renamer
+from utils.path_utils import paths_equal, find_file_by_path
 from widgets.custom_msgdialog import CustomMessageDialog
 
 logger = get_cached_logger(__name__)
@@ -71,7 +72,7 @@ class FileOperationsManager:
         for result in results:
             if result.success:
                 renamed_count += 1
-                item = next((f for f in selected_files if f.full_path == result.old_path), None)
+                item = find_file_by_path(selected_files, result.old_path, 'full_path')
                 if item:
                     item.filename = os.path.basename(result.new_path)
                     item.full_path = result.new_path
@@ -98,11 +99,8 @@ class FileOperationsManager:
         return renamed_count
 
     def find_fileitem_by_path(self, files: List[FileItem], path: str) -> Optional[FileItem]:
-        """Find FileItem by path."""
-        for file_item in files:
-            if file_item.full_path == path:
-                return file_item
-        return None
+        """Find FileItem by path using normalized comparison."""
+        return find_file_by_path(files, path, 'full_path')
 
     def get_identity_name_pairs(self, files: List[FileItem]) -> List[tuple]:
         """Return identity name pairs for checked files."""

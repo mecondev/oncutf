@@ -55,6 +55,8 @@ from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust
 from widgets.metadata_edit_dialog import MetadataEditDialog
 from widgets.file_tree_view import _drag_cancel_filter
+from utils.metadata_cache import MetadataCache
+from utils.path_utils import paths_equal
 
 # ApplicationContext integration
 try:
@@ -423,12 +425,12 @@ class MetadataTreeView(QTreeView):
     # =====================================
 
     def set_current_file_path(self, file_path: str) -> None:
-        """Set the current file path for scroll position tracking and modified items management."""
-        logger.debug(f"[MetadataTree] >>> set_current_file_path called with: {file_path}", extra={"dev_only": True})
-
-        # Skip if it's the same file (protect against duplicate calls)
-        if self._current_file_path == file_path:
-            logger.debug(f"[MetadataTree] Skipping duplicate call for same file: {file_path}", extra={"dev_only": True})
+        """
+        Set the current file path and manage scroll position restoration.
+        """
+        # If it's the same file, don't do anything
+        if paths_equal(self._current_file_path, file_path):
+            logger.debug(f"[MetadataTreeView] Same file path, skipping: {file_path}", extra={"dev_only": True})
             return
 
         # Save current data before changing files (only if we have a previous file)
@@ -1769,7 +1771,7 @@ class MetadataTreeView(QTreeView):
             logger.debug(f"[MetadataTree] Cleared modifications for {file_path}", extra={"dev_only": True})
 
         # If this is the current file, also clear current modifications and update UI
-        if file_path == self._current_file_path:
+        if paths_equal(file_path, self._current_file_path):
             self.modified_items.clear()
             # Refresh the view to remove italic style
             if hasattr(self, 'display_metadata'):
@@ -1808,7 +1810,7 @@ class MetadataTreeView(QTreeView):
             file_path = file_item.full_path
 
             # Check both current modified items and stored ones
-            if file_path == self._current_file_path and self.modified_items:
+            if paths_equal(file_path, self._current_file_path) and self.modified_items:
                 return True
             elif file_path in self.modified_items_per_file and self.modified_items_per_file[file_path]:
                 return True

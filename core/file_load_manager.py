@@ -22,6 +22,7 @@ from utils.cursor_helper import wait_cursor, force_restore_cursor
 from utils.timer_manager import get_timer_manager, TimerType, TimerPriority
 from core.drag_manager import force_cleanup_drag, is_dragging
 from utils.logger_factory import get_cached_logger
+from utils.path_utils import paths_equal, find_file_by_path
 
 logger = get_cached_logger(__name__)
 
@@ -186,11 +187,10 @@ class FileLoadManager:
 
         selected_files = []
         for path in paths:
-            # Find the corresponding FileItem in the model
-            for file_item in self.parent_window.file_model.files:
-                if file_item.full_path == path:
-                    selected_files.append(file_item)
-                    break
+            # Find the corresponding FileItem in the model using normalized path comparison
+            file_item = find_file_by_path(self.parent_window.file_model.files, path, 'full_path')
+            if file_item:
+                selected_files.append(file_item)
 
         if not selected_files:
             logger.warning("[Drop] No valid FileItem objects found for the provided paths")

@@ -17,6 +17,7 @@ from PyQt5.QtCore import Qt, QModelIndex, QTimer
 from PyQt5.QtGui import QKeyEvent
 
 from utils.logger_factory import get_cached_logger
+from utils.path_utils import paths_equal
 from utils.cursor_helper import wait_cursor
 from core.modifier_handler import decode_modifiers_to_flags
 
@@ -488,7 +489,7 @@ class EventHandlerManager:
 
                             # If this is the currently displayed file, update current modified items too
                             if (hasattr(self.parent_window.metadata_tree_view, '_current_file_path') and
-                                self.parent_window.metadata_tree_view._current_file_path == file_item.full_path):
+                                paths_equal(self.parent_window.metadata_tree_view._current_file_path, file_item.full_path)):
                                 self.parent_window.metadata_tree_view.modified_items.add("Rotation")
 
                     # Refresh the metadata display to show the changes

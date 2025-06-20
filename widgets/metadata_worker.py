@@ -27,6 +27,7 @@ from utils.logger_factory import get_cached_logger
 from utils.metadata_cache import MetadataCache
 from utils.metadata_loader import MetadataLoader
 
+
 logger = get_cached_logger(__name__)
 
 
@@ -111,12 +112,8 @@ class MetadataWorker(QObject):
                     logger.exception(f"[Worker] Exception while reading metadata for {path}: {e}")
                     metadata = {}
 
-                if isinstance(metadata, dict) and hasattr(self.main_window, "model"):
-                    for file_item in self.main_window.model.files:
-                        if file_item.full_path == path:
-                            file_item.metadata = metadata
-                            logger.debug(f"[Worker] Assigned metadata to FileItem: {file_item.filename}", extra={"dev_only": True})
-                            break
+                # Note: File item status updates are handled by the parent window
+                # after metadata loading is complete
 
                 elapsed_file = time.time() - start_file
                 logger.debug(f"[Worker] File processed in {elapsed_file:.2f} sec", extra={"dev_only": True})
