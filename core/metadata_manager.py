@@ -769,12 +769,13 @@ class MetadataManager:
             if modified_metadata:  # Only files with actual modifications
                 logger.debug(f"[MetadataManager] Looking for FileItem with path: {file_path}")
 
-                # Check if we already have metadata for this file
+                # Find the corresponding FileItem using normalized path comparison
                 file_item = find_file_by_path(all_files, file_path, 'full_path')
-                if file_item and hasattr(file_item, 'metadata_status') and file_item.metadata_status == "loaded":
-                    already_loaded.append(file_path)
+                if file_item:
+                    files_to_save.append(file_item)
+                    logger.debug(f"[MetadataManager] MATCH found for: {file_item.filename}")
                 else:
-                    files_to_load.append(file_path)
+                    logger.warning(f"[MetadataManager] NO MATCH found for path: {file_path}")
 
         logger.debug(f"[MetadataManager] Found {len(files_to_save)} FileItems to save")
 

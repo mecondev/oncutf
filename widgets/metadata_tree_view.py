@@ -1677,10 +1677,25 @@ class MetadataTreeView(QTreeView):
         """
         all_modifications = {}
 
+        # DEBUG: Log current state before saving
+        logger.debug(f"[MetadataTree] BEFORE save - Current file: {self._current_file_path}", extra={"dev_only": True})
+        logger.debug(f"[MetadataTree] BEFORE save - Current modified items: {list(self.modified_items) if self.modified_items else 'none'}", extra={"dev_only": True})
+        logger.debug(f"[MetadataTree] BEFORE save - Stored files with mods: {list(self.modified_items_per_file.keys())}", extra={"dev_only": True})
+
         # Save current file's modifications first
         if self._current_file_path and self.modified_items:
             self.modified_items_per_file[self._current_file_path] = self.modified_items.copy()
             logger.debug(f"[MetadataTree] Saved current file modifications: {self._current_file_path} -> {len(self.modified_items)} items", extra={"dev_only": True})
+        else:
+            if not self._current_file_path:
+                logger.debug("[MetadataTree] No current file path to save modifications for", extra={"dev_only": True})
+            if not self.modified_items:
+                logger.debug("[MetadataTree] No current modifications to save", extra={"dev_only": True})
+
+        # DEBUG: Log state after saving current
+        logger.debug(f"[MetadataTree] AFTER save - Stored files with mods: {list(self.modified_items_per_file.keys())}", extra={"dev_only": True})
+        for file_path, mods in self.modified_items_per_file.items():
+            logger.debug(f"[MetadataTree] AFTER save - {file_path}: {list(mods) if mods else 'none'}", extra={"dev_only": True})
 
         # Clean up any None keys that might exist in the dictionary
         none_keys = [k for k in self.modified_items_per_file.keys() if k is None]
@@ -1744,6 +1759,7 @@ class MetadataTreeView(QTreeView):
                 logger.debug(f"[MetadataTree] No modifications found for {file_path}", extra={"dev_only": True})
 
         logger.info(f"[MetadataTree] Total files with modifications: {len(all_modifications)}")
+        logger.debug(f"[MetadataTree] Final result: {list(all_modifications.keys())}", extra={"dev_only": True})
         return all_modifications
 
     def clear_modifications(self) -> None:
