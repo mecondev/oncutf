@@ -19,6 +19,7 @@ from PyQt5.QtCore import (
     QModelIndex,
     QPoint,
     QPropertyAnimation,
+    QSize,
     Qt,
     QThread,
     QTimer,
@@ -70,7 +71,7 @@ from PyQt5.QtWidgets import (
 __all__ = [
     # Core
     'QDir', 'QElapsedTimer', 'QEvent', 'QItemSelection', 'QItemSelectionModel',
-    'QMimeData', 'QModelIndex', 'QPoint', 'QPropertyAnimation', 'Qt', 'QThread',
+    'QMimeData', 'QModelIndex', 'QPoint', 'QPropertyAnimation', 'QSize', 'Qt', 'QThread',
     'QTimer', 'QUrl', 'pyqtSignal',
 
     # GUI

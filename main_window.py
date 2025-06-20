@@ -148,6 +148,9 @@ class MainWindow(QMainWindow):
         self.ui_manager = UIManager(parent_window=self)
         self.ui_manager.setup_all_ui()
 
+        # Store initial geometry for proper restore behavior
+        self._initial_geometry = self.geometry()
+
         # --- Preview update debouncing timer ---
         self.preview_update_timer = QTimer(self)
         self.preview_update_timer.setSingleShot(True)
@@ -398,6 +401,57 @@ class MainWindow(QMainWindow):
     def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """Delegates to EventHandlerManager for file double click handling."""
         self.event_handler_manager.handle_file_double_click(index, modifiers)
+
+    def changeEvent(self, event) -> None:
+        """Handle window state changes (maximize, minimize, restore)."""
+        super().changeEvent(event)
+
+        if event.type() == QEvent.WindowStateChange:  # type: ignore
+            self._handle_window_state_change()
+
+    def _handle_window_state_change(self) -> None:
+        """Handle maximize/restore geometry and file table refresh."""
+        # Handle maximize: store appropriate geometry for restore
+        if self.isMaximized() and not hasattr(self, '_restore_geometry'):
+            current_geo = self.geometry()
+            initial_size = self._initial_geometry.size()
+
+            # Use current geometry if manually resized, otherwise use initial
+            is_manually_resized = (
+                abs(current_geo.width() - initial_size.width()) > 10 or
+                abs(current_geo.height() - initial_size.height()) > 10
+            )
+
+            self._restore_geometry = current_geo if is_manually_resized else self._initial_geometry
+            logger.debug(f"[MainWindow] Stored {'manual' if is_manually_resized else 'initial'} geometry for restore")
+
+        # Handle restore: restore stored geometry
+        elif not self.isMaximized() and hasattr(self, '_restore_geometry'):
+            self.setGeometry(self._restore_geometry)
+            delattr(self, '_restore_geometry')
+            logger.debug("[MainWindow] Restored geometry")
+
+        # Refresh file table after state change
+        self._refresh_file_table_for_window_change()
+
+    def _refresh_file_table_for_window_change(self) -> None:
+        """Refresh file table after window state changes."""
+        if not hasattr(self, 'file_table_view') or not self.file_table_view.model():
+            return
+
+        from utils.timer_manager import schedule_resize_adjust
+
+        def refresh():
+            # Reset manual column preference for auto-sizing
+            if not getattr(self.file_table_view, '_recent_manual_resize', False):
+                self.file_table_view._has_manual_preference = False
+
+            # Use existing splitter logic for column sizing
+            if hasattr(self, 'horizontal_splitter'):
+                sizes = self.horizontal_splitter.sizes()
+                self.file_table_view.on_horizontal_splitter_moved(sizes[1], 1)
+
+        schedule_resize_adjust(refresh, 25)
 
     def closeEvent(self, event) -> None:
         """

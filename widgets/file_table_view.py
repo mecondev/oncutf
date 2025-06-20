@@ -131,16 +131,8 @@ class FileTableView(QTableView):
         self._legacy_selection_mode = True  # Start in legacy mode for compatibility
 
     def paintEvent(self, event):
-        """Paint the table with proper viewport handling."""
         # Paint the normal table
         super().paintEvent(event)
-
-        # Ensure placeholder is positioned correctly if visible
-        if self.placeholder_label and self.placeholder_label.isVisible():
-            viewport_size = self.viewport().size()
-            if self.placeholder_label.size() != viewport_size:
-                self.placeholder_label.resize(viewport_size)
-                self.placeholder_label.move(0, 0)
 
     def _get_selection_store(self):
         """Get SelectionStore from ApplicationContext with fallback to None."""
@@ -261,29 +253,15 @@ class FileTableView(QTableView):
             self.placeholder_label.resize(self.viewport().size())
             self.placeholder_label.move(0, 0)
 
-        # Force complete refresh of the table display
-        self.viewport().update()
-        self.update()
-        self.updateGeometry()
-
-        # Reconfigure columns to adapt to new size
-        if self.model():
-            schedule_resize_adjust(self._configure_columns, 5)
-
         # Check if vertical scrollbar visibility changed after resize
         # Use a small delay to ensure scrollbar state is updated
-        schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 15)
+        schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 10)
 
     def showEvent(self, event) -> None:
         """Handle show events to ensure proper display after visibility changes."""
         super().showEvent(event)
-        # Force refresh when table becomes visible (e.g., after maximize/restore)
-        self.viewport().update()
-        self.update()
-
-        # Reconfigure columns to ensure proper sizing
-        if self.model():
-            schedule_resize_adjust(self._configure_columns, 10)
+        # Force viewport refresh when table becomes visible (e.g., after maximize/restore)
+        schedule_resize_adjust(lambda: self.viewport().update(), 5)
 
     def setModel(self, model) -> None:
         """Configure columns when model is set."""
@@ -391,9 +369,18 @@ class FileTableView(QTableView):
         header.setSectionResizeMode(0, QHeaderView.Fixed)
         self.setColumnWidth(0, status_width)
 
-        # Filename column - Interactive with minimum width protection
+        # Filename column - Interactive with minimum width protection and dynamic sizing
         filename_min = font_metrics.horizontalAdvance("Long_Filename_Example_2024.jpeg") + 30
-        filename_width = max(FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"], filename_min, 250)
+
+                # Determine filename width based on user preference or use config default
+        if hasattr(self, '_has_manual_preference') and self._has_manual_preference:
+            # User has manually resized - use their preference but ensure minimum
+            filename_width = max(self._user_preferred_width, filename_min)
+        else:
+            # Use config default as baseline for auto-sizing
+            config_default = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
+            filename_width = max(config_default, filename_min, 250)
+
         header.setSectionResizeMode(1, QHeaderView.Interactive)
         self.setColumnWidth(1, filename_width)
 
@@ -421,7 +408,10 @@ class FileTableView(QTableView):
 
         # Initialize user preferred width to the initial width
         self._user_preferred_width = filename_width
-        self._has_manual_preference = False  # Track if user has manually resized
+
+        # Initialize user preference tracking
+        if not hasattr(self, '_has_manual_preference'):
+            self._has_manual_preference = False  # Track if user has manually resized
 
         # Connect signal to enforce filename column minimum width
         header.sectionResized.connect(self._on_filename_resized)
@@ -438,6 +428,11 @@ class FileTableView(QTableView):
             if not getattr(self, '_programmatic_resize', False):
                 self._user_preferred_width = new_size
                 self._has_manual_preference = True
+                self._recent_manual_resize = True
+
+                # Clear the flag after some time to allow auto-sizing on window changes
+                from utils.timer_manager import schedule_resize_adjust
+                schedule_resize_adjust(lambda: setattr(self, '_recent_manual_resize', False), 5000)
 
     def _update_scrollbar_visibility(self) -> None:
         """Update scrollbar visibility based on table content with anti-flickering."""

@@ -56,16 +56,97 @@ class UIManager:
     def setup_main_window(self) -> None:
         """Configure main window properties."""
         self.parent_window.setWindowTitle("oncutf - Batch File Renamer and More")
-        self.parent_window.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
+
+        # Calculate optimal window size based on screen resolution
+        optimal_size = self._calculate_optimal_window_size()
+        self.parent_window.resize(optimal_size.width(), optimal_size.height())
+
         self.parent_window.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
         # self.parent_window.center_window()
         self.parent_window.dialog_manager.center_window(self.parent_window)
+
+    def _calculate_optimal_window_size(self):
+        """Calculate optimal window size based on screen resolution and aspect ratio."""
+        # Get primary screen geometry
+        screen = QApplication.desktop().screenGeometry()
+        screen_width = screen.width()
+        screen_height = screen.height()
+        screen_aspect = screen_width / screen_height
+
+        logger.debug(f"[UIManager] Screen resolution: {screen_width}x{screen_height}, aspect: {screen_aspect:.2f}")
+
+        # Define target percentages of screen size
+        width_percentage = 0.75  # Use 75% of screen width
+        height_percentage = 0.80  # Use 80% of screen height
+
+        # Calculate initial size based on screen percentage
+        target_width = int(screen_width * width_percentage)
+        target_height = int(screen_height * height_percentage)
+
+        # Adjust for different aspect ratios
+        if screen_aspect >= 2.3:  # Ultrawide (21:9 or wider)
+            # For ultrawide screens, use less width percentage to avoid too wide windows
+            target_width = int(screen_width * 0.65)
+            target_height = int(screen_height * 0.85)
+        elif screen_aspect >= 1.7:  # Widescreen (16:9, 16:10)
+            # Standard widescreen - use calculated values
+            pass
+        elif screen_aspect <= 1.4:  # 4:3 or close
+            # For 4:3 screens, use more width and height percentage (they're usually smaller)
+            target_width = int(screen_width * 0.92)  # Use 92% of width for 4:3
+            target_height = int(screen_height * 0.85)
+
+        # Ensure minimum constraints
+        target_width = max(target_width, WINDOW_MIN_WIDTH)
+        target_height = max(target_height, WINDOW_MIN_HEIGHT)
+
+        # Ensure maximum reasonable size (not bigger than config fallback)
+        max_width = max(WINDOW_WIDTH, 1600)  # At least config default or 1600px
+        max_height = max(WINDOW_HEIGHT, 1200)  # At least config default or 1200px
+        target_width = min(target_width, max_width)
+        target_height = min(target_height, max_height)
+
+        optimal_size = QSize(target_width, target_height)
+
+        logger.debug(f"[UIManager] Calculated optimal window size: {target_width}x{target_height}")
+        return optimal_size
 
     def setup_main_layout(self) -> None:
         """Setup central widget and main layout."""
         self.parent_window.central_widget = QWidget()
         self.parent_window.setCentralWidget(self.parent_window.central_widget)
         self.parent_window.main_layout = QVBoxLayout(self.parent_window.central_widget)
+
+    def _calculate_optimal_splitter_sizes(self, window_width: int):
+        """Calculate optimal splitter sizes based on window width using percentage-based approach."""
+        # Base percentages derived from good 4:3 ratios (230px sides on 1177px = ~19.5% each)
+        left_percentage = 0.195   # ~19.5% for left panel
+        right_percentage = 0.195  # ~19.5% for right panel
+        center_percentage = 0.61  # ~61% for center panel
+
+        # Calculate sizes based on percentages
+        left_width = int(window_width * left_percentage)
+        right_width = int(window_width * right_percentage)
+        center_width = window_width - left_width - right_width
+
+        # Apply minimum constraints to prevent panels from becoming too small
+        left_min = 200   # Absolute minimum for left panel
+        right_min = 200  # Absolute minimum for right panel
+        center_min = 400  # Absolute minimum for center panel
+
+        # Ensure minimums are respected
+        left_width = max(left_width, left_min)
+        right_width = max(right_width, right_min)
+
+        # Recalculate center if minimums were applied
+        center_width = window_width - left_width - right_width
+        center_width = max(center_width, center_min)
+
+        optimal_sizes = [left_width, center_width, right_width]
+
+        logger.debug(f"[UIManager] Calculated splitter sizes for {window_width}px: {optimal_sizes} "
+                    f"({left_width/window_width*100:.1f}%, {center_width/window_width*100:.1f}%, {right_width/window_width*100:.1f}%)")
+        return optimal_sizes
 
     def setup_splitters(self) -> None:
         """Setup vertical and horizontal splitters."""
@@ -238,7 +319,11 @@ class UIManager:
         # Set minimum size for right panel and finalize
         self.parent_window.right_frame.setMinimumWidth(230)
         self.parent_window.horizontal_splitter.addWidget(self.parent_window.right_frame)
-        self.parent_window.horizontal_splitter.setSizes(LEFT_CENTER_RIGHT_SPLIT_RATIO)
+
+        # Calculate optimal splitter sizes based on current window width
+        current_width = self.parent_window.width()
+        optimal_splitter_sizes = self._calculate_optimal_splitter_sizes(current_width)
+        self.parent_window.horizontal_splitter.setSizes(optimal_splitter_sizes)
 
         # Initialize MetadataTreeView with parent connections
         self.parent_window.metadata_tree_view.initialize_with_parent()
