@@ -283,10 +283,12 @@ class UIManager:
         search_layout = QHBoxLayout()
         self.parent_window.metadata_search_field = QLineEdit()
         self.parent_window.metadata_search_field.setPlaceholderText("Search metadata...")
-        self.parent_window.metadata_search_button = QPushButton()
-        self.parent_window.metadata_search_button.setIcon(get_menu_icon("search"))
-        self.parent_window.metadata_search_button.setFixedSize(32, 32)  # Square button
-        self.parent_window.metadata_search_button.setToolTip("Search metadata")
+        self.parent_window.metadata_search_field.setFixedHeight(20)  # Same height as rename module combo boxes
+        self.parent_window.metadata_search_field.setObjectName("metadataSearchField")  # For QSS styling
+
+        # Add search icon as QAction
+        search_action = QAction(QIcon("resources/icons/feather_icons/search_dark.svg"), "Search", self.parent_window.metadata_search_field)
+        self.parent_window.metadata_search_field.addAction(search_action, QLineEdit.TrailingPosition)
 
         # Set up custom context menu for search field
         self.parent_window.metadata_search_field.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -295,7 +297,6 @@ class UIManager:
         )
 
         search_layout.addWidget(self.parent_window.metadata_search_field)
-        search_layout.addWidget(self.parent_window.metadata_search_button)
         right_layout.addLayout(search_layout)
 
         # Expand/Collapse buttons

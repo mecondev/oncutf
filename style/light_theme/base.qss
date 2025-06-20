@@ -240,8 +240,17 @@ QTreeView::branch:closed:has-children:has-siblings {
     image: url(:/tree-closed.png);
 }
 
-QTreeView::branch:open:has-children:!has-siblings,
 QTreeView::branch:open:has-children:has-siblings {
     border-image: none;
     image: url(:/tree-open.png);
+}
+
+/* QLineEdit styling for light theme */
+QLineEdit {
+    background-color: #f5f5f5;
+    color: #212121;
+    border: none;
+    border-radius: 8px;
+    selection-background-color: #1976d2;
+    selection-color: #ffffff;
 }

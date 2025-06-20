@@ -44,11 +44,11 @@ class SpecifiedTextModule(BaseRenameModule):
         layout.setSpacing(4)
 
         self.text_label = QLabel("Text")
-        self.text_label.setMaximumHeight(24)
+        self.text_label.setMaximumHeight(20)
         self.text_input = ValidatedLineEdit()
         self.text_input.setPlaceholderText("Enter custom text")
         self.text_input.setMaxLength(240)
-        self.text_input.setMaximumHeight(24)
+        self.text_input.setFixedHeight(20)
         self._last_value = ""  # Initialize to prevent first empty emit
         self.text_input.textChanged.connect(self.validate_input)
 

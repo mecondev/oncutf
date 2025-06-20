@@ -33,6 +33,7 @@ from PyQt5.QtGui import (
     QDesktopServices,
     QDrag,
     QDropEvent,
+    QIcon,
     QKeyEvent,
     QKeySequence,
     QMouseEvent,
@@ -44,6 +45,7 @@ from PyQt5.QtGui import (
 # Widget classes for UI components
 from PyQt5.QtWidgets import (
     QAbstractItemView,
+    QAction,
     QApplication,
     QDesktopWidget,
     QFileDialog,
@@ -75,12 +77,12 @@ __all__ = [
     'QTimer', 'QUrl', 'pyqtSignal',
 
     # GUI
-    'QCursor', 'QDesktopServices', 'QDrag', 'QDropEvent', 'QKeyEvent',
+    'QCursor', 'QDesktopServices', 'QDrag', 'QDropEvent', 'QIcon', 'QKeyEvent',
     'QKeySequence', 'QMouseEvent', 'QPixmap', 'QStandardItem',
     'QStandardItemModel',
 
     # Widgets
-    'QAbstractItemView', 'QApplication', 'QDesktopWidget', 'QFileDialog',
+    'QAbstractItemView', 'QAction', 'QApplication', 'QDesktopWidget', 'QFileDialog',
     'QFileSystemModel', 'QFrame', 'QGraphicsOpacityEffect', 'QHBoxLayout',
     'QHeaderView', 'QLabel', 'QLineEdit', 'QMainWindow', 'QMenu', 'QPushButton', 'QShortcut',
     'QSizePolicy', 'QSplitter', 'QTableWidget', 'QTableWidgetItem', 'QTableView',
