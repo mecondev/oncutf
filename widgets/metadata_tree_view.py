@@ -1231,8 +1231,17 @@ class MetadataTreeView(QTreeView):
 
             model.appendRow([key_item, value_item])
 
-        # Model will handle selection mode and styling through setModel method
-        self.setModel(model)
+        # Use proxy model for consistency, even for placeholder content
+        parent_window = self._get_parent_with_file_table()
+        if parent_window and hasattr(parent_window, 'metadata_proxy_model'):
+            # Set the placeholder model as source model to the proxy model
+            parent_window.metadata_proxy_model.setSourceModel(model)
+            # Make sure the tree view uses the proxy model
+            if self.model() != parent_window.metadata_proxy_model:
+                super().setModel(parent_window.metadata_proxy_model)
+        else:
+            # Fallback: set model directly if proxy model is not available
+            self.setModel(model)
 
         # Notify parent about state change if it has the toggle button
         self._update_parent_toggle_button(expanded=False, enabled=False)
@@ -1245,6 +1254,8 @@ class MetadataTreeView(QTreeView):
         # Don't clear scroll position memory when just showing placeholder
         # Only clear when actually changing folders
         self.show_empty_state("No file selected")
+        # Disable search field when clearing view
+        self._update_search_field_state(False)
 
     def display_metadata(self, metadata: Optional[Dict[str, Any]], context: str = "") -> None:
         """
@@ -1257,10 +1268,30 @@ class MetadataTreeView(QTreeView):
         if not isinstance(metadata, dict) or not metadata:
             logger.debug(f"[MetadataTree] No metadata to display (context: {context})", extra={"dev_only": True})
             self.clear_view()
+            # Disable search field when no metadata
+            self._update_search_field_state(False)
             return
 
         logger.debug(f"[MetadataTree] Displaying metadata for file (context: {context})", extra={"dev_only": True})
+        # Enable search field when metadata is available
+        self._update_search_field_state(True)
         self._render_metadata_view(metadata)
+
+    def _update_search_field_state(self, enabled: bool):
+        """Update the metadata search field enabled state and tooltip."""
+        parent_window = self._get_parent_with_file_table()
+        if parent_window and hasattr(parent_window, 'metadata_search_field'):
+            search_field = parent_window.metadata_search_field
+            search_field.setEnabled(enabled)
+
+            if enabled:
+                search_field.setToolTip("Search metadata...")
+                # Restore any saved search text
+                if hasattr(parent_window, 'ui_manager'):
+                    parent_window.ui_manager.restore_metadata_search_text()
+            else:
+                search_field.setToolTip("No metadata available")
+                search_field.clear()
 
     def _render_metadata_view(self, metadata: Dict[str, Any]) -> None:
         """
@@ -1290,7 +1321,19 @@ class MetadataTreeView(QTreeView):
             self._set_current_file_from_metadata(metadata)
 
             tree_model = build_metadata_tree_model(display_data, self.modified_items)
-            self.setModel(tree_model)
+
+            # Use proxy model for filtering instead of setting model directly
+            parent_window = self._get_parent_with_file_table()
+            if parent_window and hasattr(parent_window, 'metadata_proxy_model'):
+                # Set the source model to the proxy model
+                parent_window.metadata_proxy_model.setSourceModel(tree_model)
+                # Make sure the tree view uses the proxy model
+                if self.model() != parent_window.metadata_proxy_model:
+                    super().setModel(parent_window.metadata_proxy_model)
+            else:
+                # Fallback: set model directly if proxy model is not available
+                self.setModel(tree_model)
+
             self.expandAll()
 
             # Trigger scroll position restore AFTER expandAll
@@ -1589,6 +1632,8 @@ class MetadataTreeView(QTreeView):
         """
         self.connect_toggle_button()
         self.show_empty_state("No file selected")
+        # Initialize search field as disabled
+        self._update_search_field_state(False)
 
     # =====================================
     # Unified Metadata Management Interface
@@ -1605,6 +1650,8 @@ class MetadataTreeView(QTreeView):
         self.modified_items.clear()
         logger.debug("[MetadataTree] Cleared all modified items for folder change", extra={"dev_only": True})
         self.clear_view()
+        # Disable search field when changing folders
+        self._update_search_field_state(False)
 
     def display_file_metadata(self, file_item: Any, context: str = "file_display") -> None:
         """

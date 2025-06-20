@@ -286,15 +286,30 @@ class UIManager:
         self.parent_window.metadata_search_field.setFixedHeight(20)  # Same height as rename module combo boxes
         self.parent_window.metadata_search_field.setObjectName("metadataSearchField")  # For QSS styling
 
-        # Add search icon as QAction
+        # Add search icon as QAction (always last)
         search_action = QAction(QIcon("resources/icons/feather_icons/search_dark.svg"), "Search", self.parent_window.metadata_search_field)
         self.parent_window.metadata_search_field.addAction(search_action, QLineEdit.TrailingPosition)
+
+        # Add clear icon (X) as QAction - Trailing, πριν το φακό
+        self.parent_window.clear_search_action = QAction(QIcon("resources/icons/feather_icons/x_dark.svg"), "Clear", self.parent_window.metadata_search_field)
+        self.parent_window.clear_search_action.triggered.connect(self._clear_metadata_search)
+        # Προσθέτουμε το Χ πριν το search icon (Trailing, αλλά μπαίνει πρώτο)
+        self.parent_window.metadata_search_field.addAction(self.parent_window.clear_search_action, QLineEdit.TrailingPosition)
+        self.parent_window.clear_search_action.setVisible(False)  # Initially hidden
 
         # Set up custom context menu for search field
         self.parent_window.metadata_search_field.setContextMenuPolicy(Qt.CustomContextMenu)
         self.parent_window.metadata_search_field.customContextMenuRequested.connect(
             lambda pos: self._show_search_context_menu(pos, self.parent_window.metadata_search_field)
         )
+
+        # QSortFilterProxyModel για το metadata tree
+        self.parent_window.metadata_proxy_model = QSortFilterProxyModel()
+        self.parent_window.metadata_proxy_model.setFilterCaseSensitivity(Qt.CaseInsensitive)
+        self.parent_window.metadata_proxy_model.setFilterKeyColumn(-1)  # Όλα τα columns
+
+        # Συνδέουμε το QLineEdit με το proxy model
+        self.parent_window.metadata_search_field.textChanged.connect(self._on_metadata_search_text_changed)
 
         search_layout.addWidget(self.parent_window.metadata_search_field)
         right_layout.addLayout(search_layout)
@@ -314,6 +329,8 @@ class UIManager:
         # Metadata Tree View
         self.parent_window.metadata_tree_view = MetadataTreeView()
         self.parent_window.metadata_tree_view.files_dropped.connect(self.parent_window.load_metadata_from_dropped_files)
+        # Συνδέουμε το proxy model με το tree view
+        self.parent_window.metadata_tree_view.setModel(self.parent_window.metadata_proxy_model)
         right_layout.addWidget(self.parent_window.metadata_tree_view)
 
         # Dummy initial model
@@ -323,6 +340,7 @@ class UIManager:
         placeholder_item.setTextAlignment(Qt.AlignLeft)
         placeholder_value = QStandardItem("-")
         placeholder_model.appendRow([placeholder_item, placeholder_value])
+        self.parent_window.metadata_proxy_model.setSourceModel(placeholder_model)
 
         # Set minimum size for right panel and finalize
         self.parent_window.right_frame.setMinimumWidth(230)
@@ -335,6 +353,9 @@ class UIManager:
 
         # Initialize MetadataTreeView with parent connections
         self.parent_window.metadata_tree_view.initialize_with_parent()
+
+        # Initialize search state
+        self.parent_window._metadata_search_text = ""  # Store current search text for session persistence
 
     def setup_bottom_layout(self) -> None:
         """Setup bottom layout for rename modules and preview."""
@@ -535,3 +556,23 @@ class UIManager:
         # Show the menu at the cursor position
         global_pos = line_edit.mapToGlobal(position)
         menu.exec_(global_pos)
+
+    def _clear_metadata_search(self):
+        """Clear the metadata search field and hide the clear button."""
+        self.parent_window.metadata_search_field.clear()
+        self.parent_window.clear_search_action.setVisible(False)
+        self.parent_window._metadata_search_text = ""
+        self.parent_window.metadata_proxy_model.setFilterFixedString("")
+
+    def _on_metadata_search_text_changed(self):
+        """Handle text changes in the metadata search field."""
+        text = self.parent_window.metadata_search_field.text()
+        self.parent_window.clear_search_action.setVisible(bool(text))
+        self.parent_window._metadata_search_text = text
+        self.parent_window.metadata_proxy_model.setFilterFixedString(text)
+
+    def restore_metadata_search_text(self):
+        """Restore the metadata search text from session storage."""
+        if hasattr(self.parent_window, '_metadata_search_text') and self.parent_window._metadata_search_text:
+            self.parent_window.metadata_search_field.setText(self.parent_window._metadata_search_text)
+            self.parent_window.metadata_proxy_model.setFilterFixedString(self.parent_window._metadata_search_text)
