@@ -34,6 +34,7 @@
 - **Conflict Resolution**: Overwrite/Skip/Cancel options for existing files
 - **Responsive Layout**: Splitter-based interface with memory of panel sizes
 - **Context Menus**: Rich right-click functionality throughout the interface
+- **Configuration Management**: JSON-based settings with automatic backup and cross-platform support
 
 ### Metadata Integration
 - **File Dates**: Last modified in various formats (ISO, European, US, year-only, etc.)
@@ -120,6 +121,8 @@ oncutf/
 │   ├── exiftool_wrapper.py # Persistent ExifTool integration
 │   ├── metadata_loader.py  # Threaded metadata processing
 │   ├── metadata_cache.py   # Intelligent caching system
+│   ├── json_config_manager.py     # JSON configuration system
+│   ├── path_utils.py       # Cross-platform path utilities
 │   └── drag_visual_manager.py     # Advanced drag & drop feedback
 └── tests/                  # Comprehensive test suite
 ```
@@ -165,6 +168,7 @@ mypy main_window.py
 - **Intelligent Caching**: Avoids redundant metadata reads with smart cache invalidation
 - **Threaded Operations**: Non-blocking metadata loading with progress feedback
 - **Signal Debouncing**: Prevents excessive UI updates during rapid changes
+- **Cross-Platform Path Handling**: Normalized path operations for Windows/Linux compatibility
 
 ### Advanced Drag & Drop System
 - **Multi-Selection Aware**: Handles complex selection scenarios with modifier keys

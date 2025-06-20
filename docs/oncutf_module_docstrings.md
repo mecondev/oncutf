@@ -159,3 +159,30 @@ oncutf application. It provides the common interface and functionality
 that all specific rename modules inherit from, including configuration
 UI, validation, and preview generation capabilities.
 
+## `utils/json_config_manager.py`
+Module: json_config_manager.py
+
+Author: Michael Economou
+Date: 2025-06-20
+
+This module provides a comprehensive JSON-based configuration manager for any application.
+It handles JSON serialization, deserialization, and management with support for
+multiple configuration categories, automatic backups, and thread-safe operations.
+
+The module includes ConfigCategory base class for type-safe configuration handling,
+WindowConfig, FileHashConfig, and AppConfig classes for specific application needs,
+and JSONConfigManager as the main configuration management class.
+
+## `utils/path_utils.py`
+Module: path_utils.py
+
+Author: Michael Economou
+Date: 2025-06-20
+
+This utility module provides cross-platform path normalization and comparison functions.
+It addresses path separator inconsistencies between different operating systems and
+ensures reliable path-based operations throughout the application.
+
+Key functions include normalize_path(), paths_equal(), and find_file_by_path()
+for consistent path handling across Windows and Unix-like systems.
+
