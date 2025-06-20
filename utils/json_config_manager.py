@@ -17,6 +17,7 @@ from typing import Any, Dict, Optional, TypeVar, Generic
 from datetime import datetime
 
 from utils.logger_factory import get_cached_logger
+from config import APP_VERSION, WINDOW_WIDTH, WINDOW_HEIGHT
 
 logger = get_cached_logger(__name__)
 
@@ -62,7 +63,7 @@ class WindowConfig(ConfigCategory):
 
     def __init__(self):
         defaults = {
-            'geometry': {'x': 100, 'y': 100, 'width': 1200, 'height': 900},
+            'geometry': {'x': 100, 'y': 100, 'width': WINDOW_WIDTH, 'height': WINDOW_HEIGHT},
             'window_state': 'normal',
             'splitter_states': {
                 'horizontal': [250, 674, 250],
@@ -143,14 +144,14 @@ class JSONConfigManager:
         self.app_name = app_name
         self.config_dir = Path(config_dir or self._get_default_config_dir())
         self.config_file = self.config_dir / 'config.json'
-        self.backup_file = self.config_dir / 'config.backup.json'
+        self.backup_file = self.config_dir / 'config.json.backup'
 
         self._lock = threading.RLock()
         self._categories: Dict[str, ConfigCategory] = {}
 
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"[JSONConfigManager] Initialized for '{app_name}' with dir: {self.config_dir}")
+        logger.info(f"[JSONConfigManager] Initialized for '{app_name}' with dir: {self.config_dir}", extra={"dev_only": True})
 
     def _get_default_config_dir(self) -> str:
         """Get default configuration directory based on OS."""
@@ -179,7 +180,7 @@ class JSONConfigManager:
         with self._lock:
             try:
                 if not self.config_file.exists():
-                    logger.info("[JSONConfigManager] No config file found, using defaults")
+                    logger.info("[JSONConfigManager] No config file found, using defaults", extra={"dev_only": True})
                     return True
 
                 with open(self.config_file, 'r', encoding='utf-8') as f:
@@ -189,7 +190,7 @@ class JSONConfigManager:
                     if category_name in data:
                         category.from_dict(data[category_name])
 
-                logger.info("[JSONConfigManager] Configuration loaded successfully")
+                logger.info("[JSONConfigManager] Configuration loaded successfully", extra={"dev_only": True})
                 return True
 
             except Exception as e:
@@ -209,7 +210,7 @@ class JSONConfigManager:
 
                 data['_metadata'] = {
                     'last_saved': datetime.now().isoformat(),
-                    'version': '1.0',
+                    'version': APP_VERSION,
                     'app_name': self.app_name
                 }
 

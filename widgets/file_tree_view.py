@@ -89,7 +89,7 @@ class FileTreeView(QTreeView):
         self._drag_path: Optional[str] = None
         self._drag_preparation = False  # Flag to block hover during drag preparation
 
-        logger.debug("[FileTreeView] Initialized with single-item drag system")
+        logger.debug("[FileTreeView] Initialized with single-item drag system", extra={"dev_only": True})
 
     def selectionChanged(self, selected, deselected) -> None:
         """Override to emit custom signal with selected path (single item only)"""
@@ -521,7 +521,7 @@ class FileTreeView(QTreeView):
         # Log the action for debugging using centralized logic
         _, _, action = decode_modifiers_to_flags(modifiers)
 
-        logger.info(f"[FileTreeView] Dropped: {self._drag_path} ({action})")
+        logger.info(f"[FileTreeView] Dropped: {self._drag_path} ({action})", extra={"dev_only": True})
 
     def _is_valid_drag_target(self, path: str) -> bool:
         """Check if path is valid for dragging"""

@@ -123,7 +123,6 @@ class CompactWaitingWidget(QWidget):
         return QSize(400, height)  # Use our fixed width of 400px
 
     def set_progress(self, value: int, total: int) -> None:
-        logger.debug(f"[Waiting Dialog] Set progress. Called from: {value} of {total}", extra={"dev_only": True})
         self.set_count(value, total)
         self.progress_bar.setMaximum(total)
         self.progress_bar.setValue(value)
@@ -158,7 +157,8 @@ class CompactWaitingWidget(QWidget):
 
     def set_status(self, text: str) -> None:
         """Set the status with intelligent truncation for long messages."""
-        logger.debug(f"[Waiting Dialog] Set status. Called from: {text.strip()}")
+        if text.strip():
+            logger.debug(f"[Waiting Dialog] Status: {text.strip()}", extra={"dev_only": True})
 
         if not text:
             self.status_label.setText("")

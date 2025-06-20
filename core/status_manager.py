@@ -118,7 +118,7 @@ class StatusManager:
         else:
             files_label.setText(f"Files ({total_files} loaded, {selected_files} selected)")
 
-        logger.debug(f"[StatusManager] Files label updated: {total_files} total, {selected_files} selected")
+        logger.debug(f"[StatusManager] Files label updated: {total_files} total, {selected_files} selected", extra={"dev_only": True})
 
     def clear_file_table_status(self, files_label, message: str = "No folder selected") -> None:
         """
@@ -165,4 +165,4 @@ class StatusManager:
             return
 
         self.status_label.setText(status_html)
-        logger.debug(f"[StatusManager] Status updated from preview: {status_html[:50]}...")
+        logger.debug(f"[StatusManager] Status updated from preview: {status_html[:50]}...", extra={"dev_only": True})

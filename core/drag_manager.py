@@ -61,7 +61,7 @@ class DragManager(QObject):
         if app:
             app.installEventFilter(self)
 
-        logger.debug("[DragManager] Initialized with smart cleanup")
+        logger.debug("[DragManager] Initialized with smart cleanup", extra={"dev_only": True})
 
     @classmethod
     def get_instance(cls) -> 'DragManager':
@@ -96,7 +96,7 @@ class DragManager(QObject):
         # Start safety timer (longer timeout - 10 seconds)
         self._cleanup_timer.start(10000)
 
-        logger.debug(f"[DragManager] Drag started from: {source}")
+        logger.debug(f"[DragManager] Drag started from: {source}", extra={"dev_only": True})
 
     def end_drag(self, source: str = None) -> None:
         """
@@ -106,7 +106,7 @@ class DragManager(QObject):
             source: Optional source identifier for verification
         """
         if not self._drag_active:
-            logger.debug("[DragManager] Drag end called but no drag active")
+            logger.debug("[DragManager] Drag end called but no drag active", extra={"dev_only": True})
             return
 
         if source and source != self._drag_source:
@@ -157,14 +157,14 @@ class DragManager(QObject):
             cursor_count += 1
 
         if cursor_count > 0:
-            logger.debug(f"[DragManager] Restored {cursor_count} override cursors")
+            logger.debug(f"[DragManager] Restored {cursor_count} override cursors", extra={"dev_only": True})
 
         # Reset state
         self._drag_active = False
         self._drag_source = None
         self._drag_start_time = None
 
-        logger.debug(f"[DragManager] Cleanup completed (attempt #{self._cleanup_count})")
+        logger.debug(f"[DragManager] Cleanup completed (attempt #{self._cleanup_count})", extra={"dev_only": True})
 
     def _safety_cleanup(self) -> None:
         """Safety cleanup triggered by timer (only for stuck drags)."""
@@ -178,7 +178,7 @@ class DragManager(QObject):
             logger.debug("[DragManager] Force cleanup called but no drag active")
             return
 
-        logger.info("[DragManager] Manual forced cleanup requested")
+        logger.info("[DragManager] Manual forced cleanup requested", extra={"dev_only": True})
         self._perform_cleanup()
 
     # =====================================

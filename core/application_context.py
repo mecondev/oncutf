@@ -65,7 +65,7 @@ class ApplicationContext(QObject):
         # Ready flag (will be used to ensure proper initialization)
         self._is_ready = False
 
-        logger.info("ApplicationContext initialized (skeleton mode)")
+        logger.info("ApplicationContext initialized (skeleton mode)", extra={"dev_only": True})
 
     def initialize_stores(self) -> None:
         """
@@ -81,7 +81,7 @@ class ApplicationContext(QObject):
             self._file_store.files_loaded.connect(self._on_files_loaded)
             self._file_store.folder_changed.connect(self._on_folder_changed)
 
-            logger.info("FileStore initialized in ApplicationContext")
+            logger.info("FileStore initialized in ApplicationContext", extra={"dev_only": True})
 
         if self._selection_store is None:
             # Import here to avoid circular dependencies
@@ -92,7 +92,7 @@ class ApplicationContext(QObject):
             self._selection_store.selection_changed.connect(self._on_selection_changed)
             self._selection_store.checked_changed.connect(self._on_checked_changed)
 
-            logger.info("SelectionStore initialized in ApplicationContext")
+            logger.info("SelectionStore initialized in ApplicationContext", extra={"dev_only": True})
 
     def _on_files_loaded(self, files: list) -> None:
         """Handle files loaded from FileStore."""
@@ -263,7 +263,7 @@ class ApplicationContext(QObject):
     def mark_ready(self) -> None:
         """Mark context as fully initialized."""
         self._is_ready = True
-        logger.info("ApplicationContext is ready")
+        logger.info("ApplicationContext is ready", extra={"dev_only": True})
 
     def cleanup(self) -> None:
         """Clean up resources before shutdown."""
@@ -277,7 +277,7 @@ class ApplicationContext(QObject):
         self._selected_rows.clear()
         self._metadata_cache.clear()
         self._performance_metrics.clear()
-        logger.info("ApplicationContext cleaned up")
+        logger.info("ApplicationContext cleaned up", extra={"dev_only": True})
 
 
 # Convenience function for getting the singleton

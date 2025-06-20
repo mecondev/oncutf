@@ -602,6 +602,34 @@ class MetadataTreeView(QTreeView):
 
         menu.addAction(edit_action)
 
+        # Set to 0 action (with refresh-cw icon)
+        if "Rotation" in key_path:
+            set_zero_action = QAction("Set Rotation to 0°", menu)
+        else:
+            set_zero_action = QAction("Set to 0", menu)
+        set_zero_action.setIcon(self._get_menu_icon("refresh-cw"))
+        set_zero_action.triggered.connect(lambda: self.set_rotation_to_zero(key_path))
+
+        # Enable Set to 0 only if:
+        # 1. Single file selection (not multiple)
+        # 2. Field is rotation
+        # 3. Current value is not already 0
+        current_value_str = str(value) if value is not None else ""
+        is_not_zero = current_value_str not in ["0", "0°", ""]
+        can_set_zero = not has_multiple_selection and "Rotation" in key_path and is_not_zero
+        set_zero_action.setEnabled(can_set_zero)
+
+        if has_multiple_selection:
+            set_zero_action.setToolTip("Set to 0 disabled for multiple file selection")
+        elif "Rotation" not in key_path:
+            set_zero_action.setToolTip("Set to 0 only available for Rotation fields")
+        elif not is_not_zero:
+            set_zero_action.setToolTip("Value is already 0")
+        else:
+            set_zero_action.setToolTip("Set rotation to 0° (no rotation)")
+
+        menu.addAction(set_zero_action)
+
         # Reset value action (with rotate-ccw icon)
         reset_action = QAction("Reset Value", menu)
         reset_action.setIcon(self._get_menu_icon("rotate-ccw"))
@@ -610,13 +638,19 @@ class MetadataTreeView(QTreeView):
         # Enable Reset only if:
         # 1. Single file selection (not multiple)
         # 2. Field is rotation
-        can_reset = not has_multiple_selection and "Rotation" in key_path
+        # 3. Field has been modified (is in modified_items)
+        # Check both the exact key_path and normalized "Rotation" key
+        normalized_key_path = "Rotation" if "rotation" in key_path.lower() else key_path
+        has_been_modified = normalized_key_path in self.modified_items
+        can_reset = not has_multiple_selection and "Rotation" in key_path and has_been_modified
         reset_action.setEnabled(can_reset)
 
         if has_multiple_selection:
             reset_action.setToolTip("Reset disabled for multiple file selection")
         elif "Rotation" not in key_path:
             reset_action.setToolTip("Reset only available for Rotation fields")
+        elif not has_been_modified:
+            reset_action.setToolTip("No changes to reset")
         else:
             reset_action.setToolTip("Reset this field to original value")
 
@@ -763,6 +797,44 @@ class MetadataTreeView(QTreeView):
 
         return None
 
+    def set_rotation_to_zero(self, key_path: str) -> None:
+        """
+        Set the rotation value to 0° (specifically for rotation fields).
+        """
+        # Get current value for the signal
+        selected_files = self._get_current_selection()
+        if not selected_files:
+            return
+
+        # Get current value from the first selected file
+        current_value = None
+        file_item = selected_files[0]
+        if hasattr(file_item, 'metadata') and file_item.metadata:
+            current_value = self._get_value_from_metadata_dict(file_item.metadata, key_path)
+
+        # Normalize rotation key_path to be always "Rotation" (top-level)
+        if "rotation" in key_path.lower():
+            normalized_key_path = "Rotation"
+        else:
+            normalized_key_path = key_path
+
+        new_value = "0"
+
+        # Add to modified items
+        self.modified_items.add(normalized_key_path)
+
+        # Update metadata in cache
+        self._update_metadata_in_cache(normalized_key_path, new_value)
+
+        # Update the file icon in the file table to show it's modified
+        self._update_file_icon_status()
+
+        # Emit signal with the new value
+        self.value_edited.emit(normalized_key_path, str(current_value) if current_value else "", new_value)
+
+        # FORCE a complete refresh of the metadata display to show the change immediately
+        self.update_from_parent_selection()
+
     def reset_value(self, key_path: str) -> None:
         """
         Reset the value to its original state.
@@ -789,6 +861,15 @@ class MetadataTreeView(QTreeView):
 
         # Emit signal
         self.value_reset.emit(key_path)
+
+    def _update_tree_item_value(self, key_path: str, new_value: str) -> None:
+        """
+        Update the display value of a tree item to reflect changes.
+        This forces a refresh of the metadata display.
+        """
+        # For now, just trigger a complete refresh
+        # This ensures the updated value is displayed correctly
+        self.update_from_parent_selection()
 
     def mark_as_modified(self, key_path: str) -> None:
         """
@@ -1781,7 +1862,7 @@ class MetadataTreeView(QTreeView):
         Args:
             file_path: Full path of the file to clear modifications for
         """
-        # Remove from per-file storage
+                # Remove from per-file storage
         if file_path in self.modified_items_per_file:
             del self.modified_items_per_file[file_path]
             logger.debug(f"[MetadataTree] Cleared modifications for {file_path}", extra={"dev_only": True})

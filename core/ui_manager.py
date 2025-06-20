@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 from core.config_imports import *
 from core.qt_imports import *
 from models.file_table_model import FileTableModel
-from utils.icons_loader import get_menu_icon
+from utils.icons_loader import get_menu_icon, get_app_icon
 from utils.logger_factory import get_cached_logger
 from widgets.custom_file_system_model import CustomFileSystemModel
 from widgets.file_table_view import FileTableView
@@ -37,7 +37,7 @@ class UIManager:
     def __init__(self, parent_window: 'MainWindow'):
         """Initialize UIManager with parent window reference."""
         self.parent_window = parent_window
-        logger.debug("[UIManager] Initialized")
+        logger.debug("[UIManager] Initialized", extra={"dev_only": True})
 
     def setup_all_ui(self) -> None:
         """Setup all UI components in the correct order."""
@@ -51,11 +51,19 @@ class UIManager:
         self.setup_footer()
         self.setup_signals()
         self.setup_shortcuts()
-        logger.debug("[UIManager] All UI components setup completed")
+        logger.debug("[UIManager] All UI components setup completed", extra={"dev_only": True})
 
     def setup_main_window(self) -> None:
         """Configure main window properties."""
         self.parent_window.setWindowTitle("oncutf - Batch File Renamer and More")
+
+        # Set window icon using the centralized icon loader
+        app_icon = get_app_icon()
+        if not app_icon.isNull():
+            self.parent_window.setWindowIcon(app_icon)
+            logger.debug("[UIManager] Window icon set using icon loader", extra={"dev_only": True})
+        else:
+            logger.warning("[UIManager] Failed to load application icon")
 
         # Calculate optimal window size based on screen resolution
         optimal_size = self._calculate_optimal_window_size()
@@ -73,7 +81,7 @@ class UIManager:
         screen_height = screen.height()
         screen_aspect = screen_width / screen_height
 
-        logger.debug(f"[UIManager] Screen resolution: {screen_width}x{screen_height}, aspect: {screen_aspect:.2f}")
+        logger.debug(f"[UIManager] Screen resolution: {screen_width}x{screen_height}, aspect: {screen_aspect:.2f}", extra={"dev_only": True})
 
         # Define target percentages of screen size
         width_percentage = 0.75  # Use 75% of screen width
@@ -108,7 +116,7 @@ class UIManager:
 
         optimal_size = QSize(target_width, target_height)
 
-        logger.debug(f"[UIManager] Calculated optimal window size: {target_width}x{target_height}")
+        logger.debug(f"[UIManager] Calculated optimal window size: {target_width}x{target_height}", extra={"dev_only": True})
         return optimal_size
 
     def setup_main_layout(self) -> None:
@@ -145,7 +153,7 @@ class UIManager:
         optimal_sizes = [left_width, center_width, right_width]
 
         logger.debug(f"[UIManager] Calculated splitter sizes for {window_width}px: {optimal_sizes} "
-                    f"({left_width/window_width*100:.1f}%, {center_width/window_width*100:.1f}%, {right_width/window_width*100:.1f}%)")
+                    f"({left_width/window_width*100:.1f}%, {center_width/window_width*100:.1f}%, {right_width/window_width*100:.1f}%)", extra={"dev_only": True})
         return optimal_sizes
 
     def setup_splitters(self) -> None:

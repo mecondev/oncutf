@@ -67,7 +67,7 @@ class InitializationManager:
                 context.selection_store.selection_changed.connect(self.main_window.update_preview_from_selection)
                 logger.debug("[MainWindow] Connected SelectionStore signals", extra={"dev_only": True})
 
-            logger.info("[MainWindow] SelectionStore mode enabled in FileTableView")
+            logger.debug("[MainWindow] Enabling SelectionStore mode in FileTableView", extra={"dev_only": True})
         except Exception as e:
             logger.warning(f"[MainWindow] Failed to enable SelectionStore mode: {e}")
 

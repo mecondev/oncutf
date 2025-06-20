@@ -78,7 +78,7 @@ class PreviewTableWidget(QTableWidget):
                 super().mouseMoveEvent(event)
 
         except Exception as e:
-            logger.debug(f"[PreviewTableWidget] Error in mouseMoveEvent: {e}")
+            logger.debug(f"[PreviewTableWidget] Error in mouseMoveEvent: {e}", extra={"dev_only": True})
             super().mouseMoveEvent(event)
 
 
@@ -116,7 +116,7 @@ class PreviewTablesView(QWidget):
         # Schedule initial placeholder setup with positioning
         schedule_ui_update(self._initialize_placeholders, 10)
 
-        logger.debug("[PreviewTablesView] Initialized with intelligent scrolling")
+        logger.debug("[PreviewTablesView] Initialized with intelligent scrolling", extra={"dev_only": True})
 
     def _setup_ui(self):
         """Setup the UI layout and tables."""
@@ -271,7 +271,7 @@ class PreviewTablesView(QWidget):
             self.icon_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             self.icon_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-            logger.debug("[PreviewTablesView] Placeholders enabled - tables disabled")
+            logger.debug("[PreviewTablesView] Placeholders enabled - tables disabled", extra={"dev_only": True})
 
             # Center placeholders immediately if they are ready, otherwise they will be centered during initialization
             if hasattr(self, '_placeholders_ready') and self._placeholders_ready:
@@ -302,7 +302,7 @@ class PreviewTablesView(QWidget):
                 # Update column widths for intelligent horizontal scrolling
                 self._adjust_table_widths()
 
-            logger.debug(f"[PreviewTablesView] Placeholders disabled - tables enabled {'(deferred)' if defer_width_adjustment else '(immediate)'}")
+            logger.debug(f"[PreviewTablesView] Placeholders disabled - tables enabled {'(deferred)' if defer_width_adjustment else '(immediate)'}", extra={"dev_only": True})
 
     def _finalize_scrollbar_setup(self):
         """Complete the scrollbar setup after content has been added to prevent flickering."""
@@ -329,7 +329,7 @@ class PreviewTablesView(QWidget):
             self.new_names_table.viewport().update()
             self.icon_table.viewport().update()
 
-        logger.debug("[PreviewTablesView] Scrollbar setup finalized")
+        logger.debug("[PreviewTablesView] Scrollbar setup finalized", extra={"dev_only": True})
 
     def _adjust_table_widths(self):
         """Intelligently adjust preview table column widths based on content length."""
@@ -368,11 +368,11 @@ class PreviewTablesView(QWidget):
                 target_width = viewport_width - 5  # Small margin for scrollbar space
                 header.setSectionResizeMode(0, QHeaderView.Fixed)
                 table.setColumnWidth(0, target_width)
-                logger.debug(f"[PreviewTablesView] {table.objectName() or 'Unknown'} expanded: {content_width}px → {target_width}px")
+                logger.debug(f"[PreviewTablesView] {table.objectName() or 'Unknown'} expanded: {content_width}px → {target_width}px", extra={"dev_only": True})
             else:
                 # Keep content width (allows horizontal scrolling when needed)
                 header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-                logger.debug(f"[PreviewTablesView] {table.objectName() or 'Unknown'} content width: {content_width}px (viewport: {viewport_width}px) - scrolling enabled")
+                logger.debug(f"[PreviewTablesView] {table.objectName() or 'Unknown'} content width: {content_width}px (viewport: {viewport_width}px) - scrolling enabled", extra={"dev_only": True})
 
     def _handle_table_resize(self):
         """Handle resize events for preview tables to update placeholder positions and column widths."""
@@ -448,7 +448,7 @@ class PreviewTablesView(QWidget):
 
             # Hide placeholders when we have content (defer scrollbar setup to avoid flickering)
             self._set_placeholders_visible(False, defer_width_adjustment=True)
-            logger.debug(f"[PreviewTablesView] Processing {len(name_pairs)} name pairs - scrollbar setup deferred")
+            logger.debug(f"[PreviewTablesView] Processing {len(name_pairs)} name pairs - scrollbar setup deferred", extra={"dev_only": True})
 
             # Precompute duplicates
             seen, duplicates = set(), set()
@@ -559,4 +559,4 @@ class PreviewTablesView(QWidget):
         """Initialize placeholders after they are ready to be shown."""
         self._set_placeholders_visible(True)
         self._placeholders_ready = True
-        logger.debug("[PreviewTablesView] Placeholders initialized")
+        logger.debug("[PreviewTablesView] Placeholders initialized", extra={"dev_only": True})

@@ -233,7 +233,7 @@ class FileTableModel(QAbstractTableModel):
         if self.parent_window:
             self.parent_window.current_sort_column = column
             self.parent_window.current_sort_order = order
-            logger.debug(f"[Model] Stored sort state: column={column}, order={order}")
+            logger.debug(f"[Model] Stored sort state: column={column}, order={order}", extra={"dev_only": True})
 
         selection_model.clearSelection()
         selection = QItemSelection()

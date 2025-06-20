@@ -757,7 +757,7 @@ class FileTableView(QTableView):
             # CRITICAL: Store current selection BEFORE any changes for potential drag
             # This ensures we have the correct selection even if Qt changes it
             self._drag_start_selection = self._get_current_selection().copy()
-            logger.debug(f"[FileTableView] Preserved selection for potential drag: {len(self._drag_start_selection)} files", extra={"dev_only": True})
+            # Removed verbose drag debug log
 
             # If clicking on empty space, clear selection
             if not index.isValid():

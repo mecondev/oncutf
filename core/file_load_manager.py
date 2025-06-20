@@ -48,7 +48,7 @@ class FileLoadManager:
         - Non-recursive: wait_cursor only (fast, synchronous)
         - Recursive: FileLoadingDialog with progress bar
         """
-        logger.info(f"[FileLoadManager] load_folder: {folder_path} (merge={merge_mode}, recursive={recursive})")
+        logger.info(f"[FileLoadManager] load_folder: {folder_path} (merge={merge_mode}, recursive={recursive})", extra={"dev_only": True})
 
         if not os.path.isdir(folder_path):
             logger.error(f"Path is not a directory: {folder_path}")
@@ -57,7 +57,7 @@ class FileLoadManager:
         # Store the recursive state for future reloads (if not merging)
         if not merge_mode and hasattr(self.parent_window, 'current_folder_is_recursive'):
             self.parent_window.current_folder_is_recursive = recursive
-            logger.info(f"[FileLoadManager] Stored recursive state: {recursive}")
+            logger.info(f"[FileLoadManager] Stored recursive state: {recursive}", extra={"dev_only": True})
 
         # CRITICAL: Force cleanup any active drag state immediately
         # This ensures ESC key works properly in FileLoadingDialog
@@ -85,7 +85,7 @@ class FileLoadManager:
         Load files from multiple paths (used by import button).
         Always uses progress dialog since it can handle multiple paths.
         """
-        logger.info(f"[FileLoadManager] load_files_from_paths: {len(paths)} paths")
+        logger.info(f"[FileLoadManager] load_files_from_paths: {len(paths)} paths", extra={"dev_only": True})
 
         # Force cleanup any active drag state (import button shouldn't have drag, but safety first)
         if is_dragging():
@@ -93,7 +93,7 @@ class FileLoadManager:
             force_cleanup_drag()
 
         def on_files_loaded(file_paths: List[str]):
-            logger.info(f"[FileLoadManager] Loaded {len(file_paths)} files from paths")
+            logger.info(f"[FileLoadManager] Loaded {len(file_paths)} files from paths", extra={"dev_only": True})
             self._update_ui_with_files(file_paths, clear=clear)
 
         # Always use progress dialog for multi-path operations
@@ -106,7 +106,7 @@ class FileLoadManager:
         Handle single item drop with modifier support.
         Uses unified load_folder method for consistent behavior.
         """
-        logger.info(f"[FileLoadManager] load_single_item_from_drop: {path}")
+        logger.info(f"[FileLoadManager] load_single_item_from_drop: {path}", extra={"dev_only": True})
 
         # Parse modifiers
         ctrl = bool(modifiers & Qt.ControlModifier)
@@ -238,7 +238,7 @@ class FileLoadManager:
 
     def _load_folder_with_wait_cursor(self, folder_path: str, merge_mode: bool) -> None:
         """Load folder with wait cursor only (for non-recursive operations)."""
-        logger.debug(f"[FileLoadManager] Loading folder with wait cursor: {folder_path}")
+        logger.debug(f"[FileLoadManager] Loading folder with wait cursor: {folder_path}", extra={"dev_only": True})
 
         with wait_cursor():
             file_paths = self._get_files_from_folder(folder_path, recursive=False)
@@ -299,7 +299,7 @@ class FileLoadManager:
             logger.info("[FileLoadManager] No files to update UI with")
             return
 
-        logger.info(f"[FileLoadManager] Updating UI with {len(file_paths)} files (clear={clear})")
+        logger.info(f"[FileLoadManager] Updating UI with {len(file_paths)} files (clear={clear})", extra={"dev_only": True})
 
         # Convert file paths to FileItem objects
         file_items = []
@@ -333,19 +333,19 @@ class FileLoadManager:
                 if first_file_path:
                     folder_path = os.path.dirname(first_file_path)
                     self.parent_window.current_folder_path = folder_path
-                    logger.info(f"[FileLoadManager] Set current_folder_path to: {folder_path}")
+                    logger.info(f"[FileLoadManager] Set current_folder_path to: {folder_path}", extra={"dev_only": True})
 
                     # Check if this was a recursive load by looking for files in subdirectories
                     has_subdirectory_files = any(
                         os.path.dirname(item.full_path) != folder_path for item in items
                     )
                     self.parent_window.current_folder_is_recursive = has_subdirectory_files
-                    logger.info(f"[FileLoadManager] Set recursive mode to: {has_subdirectory_files}")
+                    logger.info(f"[FileLoadManager] Set recursive mode to: {has_subdirectory_files}", extra={"dev_only": True})
 
             if clear:
                 # Replace existing files
                 self.parent_window.file_model.set_files(items)
-                logger.info(f"[FileLoadManager] Replaced files with {len(items)} new items")
+                logger.info(f"[FileLoadManager] Replaced files with {len(items)} new items", extra={"dev_only": True})
             else:
                 # Add to existing files
                 existing_files = self.parent_window.file_model.files
@@ -368,7 +368,7 @@ class FileLoadManager:
             # Update files label (shows count)
             if hasattr(self.parent_window, 'update_files_label'):
                 self.parent_window.update_files_label()
-                logger.debug("[FileLoadManager] Updated files label")
+                logger.debug(f"[FileLoadManager] Updated files label", extra={"dev_only": True})
 
             total_files = len(self.parent_window.file_model.files)
 
@@ -377,27 +377,27 @@ class FileLoadManager:
                 if total_files > 0:
                     # Hide file table placeholder when files are loaded
                     self.parent_window.file_table_view.set_placeholder_visible(False)
-                    logger.debug("[FileLoadManager] Hidden file table placeholder")
+                    logger.debug(f"[FileLoadManager] Hidden file table placeholder", extra={"dev_only": True})
                 else:
                     # Show file table placeholder when no files
                     self.parent_window.file_table_view.set_placeholder_visible(True)
-                    logger.debug("[FileLoadManager] Shown file table placeholder")
+                    logger.debug(f"[FileLoadManager] Shown file table placeholder", extra={"dev_only": True})
 
             # Hide placeholders in preview tables (if files are loaded)
             if hasattr(self.parent_window, 'preview_tables_view'):
                 if total_files > 0:
                     # Hide placeholders when files are loaded
                     self.parent_window.preview_tables_view._set_placeholders_visible(False)
-                    logger.debug("[FileLoadManager] Hidden preview table placeholders")
+                    logger.debug(f"[FileLoadManager] Hidden preview table placeholders", extra={"dev_only": True})
                 else:
                     # Show placeholders when no files
                     self.parent_window.preview_tables_view._set_placeholders_visible(True)
-                    logger.debug("[FileLoadManager] Shown preview table placeholders")
+                    logger.debug(f"[FileLoadManager] Shown preview table placeholders", extra={"dev_only": True})
 
             # Update preview tables
             if hasattr(self.parent_window, 'request_preview_update'):
                 self.parent_window.request_preview_update()
-                logger.debug("[FileLoadManager] Requested preview update")
+                logger.debug(f"[FileLoadManager] Requested preview update", extra={"dev_only": True})
 
             # Ensure file table selection works properly
             if hasattr(self.parent_window, 'file_table_view'):
@@ -406,7 +406,7 @@ class FileLoadManager:
                     hasattr(self.parent_window, 'current_sort_order')):
                     sort_column = self.parent_window.current_sort_column
                     sort_order = self.parent_window.current_sort_order
-                    logger.debug(f"[FileLoadManager] Restoring sort state: column={sort_column}, order={sort_order}")
+                    logger.debug(f"[FileLoadManager] Restoring sort state: column={sort_column}, order={sort_order}", extra={"dev_only": True})
 
                     # Apply sorting through the model and header
                     self.parent_window.file_model.sort(sort_column, sort_order)
@@ -420,15 +420,15 @@ class FileLoadManager:
                 if hasattr(self.parent_window.file_table_view, '_sync_selection_safely'):
                     self.parent_window.file_table_view._sync_selection_safely()
 
-                logger.debug("[FileLoadManager] Refreshed file table view")
+                logger.debug(f"[FileLoadManager] Refreshed file table view", extra={"dev_only": True})
 
             # Update metadata tree (clear it for new files)
             if hasattr(self.parent_window, 'metadata_tree_view'):
                 if hasattr(self.parent_window.metadata_tree_view, 'refresh_metadata_from_selection'):
                     self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
-                    logger.debug("[FileLoadManager] Refreshed metadata tree")
+                    logger.debug(f"[FileLoadManager] Refreshed metadata tree", extra={"dev_only": True})
 
-            logger.info("[FileLoadManager] UI refresh completed successfully")
+            logger.info("[FileLoadManager] UI refresh completed successfully", extra={"dev_only": True})
 
         except Exception as e:
             logger.error(f"[FileLoadManager] Error refreshing UI: {e}")

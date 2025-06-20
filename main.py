@@ -53,33 +53,29 @@ def main() -> int:
         # Qt.AA_UseHighDpiPixmaps is defined in PyQt5, but linter may not resolve C++-level attributes
         app.setAttribute(Qt.AA_UseHighDpiPixmaps) # type: ignore[attr-defined]
 
-        # Set native style for proper system cursor integration
+        # Set native style for proper system cursor integration (simplified logging)
         system = platform.system()
         available_styles = QStyleFactory.keys()
 
         if system == "Windows" and "windowsvista" in available_styles:
             app.setStyle("windowsvista")
-            logger.debug("Using Windows Vista style for native cursor support")
+            logger.debug("Using Windows Vista style", extra={"dev_only": True})
         elif system == "Windows" and "Windows" in available_styles:
             app.setStyle("Windows")
-            logger.debug("Using Windows style for native cursor support")
+            logger.debug("Using Windows style", extra={"dev_only": True})
         elif system == "Darwin":  # macOS
-            # macOS should use the default style which is native
-            logger.debug("Using default macOS style for native cursor support")
+            logger.debug("Using default macOS style", extra={"dev_only": True})
         elif system == "Linux":
-            # Try to use native style if available, otherwise keep Fusion but log it
-            if "gtk+" in available_styles or "GTK+" in available_styles:
-                # Some Qt builds have GTK+ style
-                for style in available_styles:
-                    if "gtk" in style.lower():
-                        app.setStyle(style)
-                        logger.debug(f"Using {style} style for native cursor support on Linux")
-                        break
+            # Try to use native style if available
+            for style in available_styles:
+                if "gtk" in style.lower():
+                    app.setStyle(style)
+                    logger.debug(f"Using {style} style on Linux", extra={"dev_only": True})
+                    break
             else:
-                # Keep Fusion on Linux but log that cursor may not match system theme
-                logger.debug("Using Fusion style on Linux - cursor may not match system theme")
+                logger.debug("Using Fusion style on Linux", extra={"dev_only": True})
 
-        logger.debug(f"Final Qt style: {app.style().objectName()}") # type: ignore
+        logger.debug(f"Qt style: {app.style().objectName()}", extra={"dev_only": True}) # type: ignore
 
         # Load Inter fonts
         logger.debug("Initializing Inter fonts...", extra={"dev_only": True})

@@ -170,6 +170,25 @@ class ThemeIconLoader:
         """
         return self.load_icon(name)
 
+    def get_app_icon(self) -> QIcon:
+        """
+        Get the main application icon (favicon) for window icon.
+
+        Returns:
+            QIcon object for the application icon
+        """
+        # Get the project root directory
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(current_dir)
+        favicon_path = os.path.join(project_root, "assets", "favicon.ico")
+
+        if os.path.exists(favicon_path):
+            logger.debug(f"[IconLoader] Loading app icon from: {favicon_path}")
+            return QIcon(favicon_path)
+        else:
+            logger.warning(f"[IconLoader] App icon not found at: {favicon_path}")
+            return QIcon()
+
 
 # Create a singleton instance for global use
 icons_loader = ThemeIconLoader(theme="dark")
@@ -199,3 +218,13 @@ def get_menu_icon_path(name: str) -> str:
         str: The full path to the icon file
     """
     return icons_loader.get_icon_path(name)
+
+
+def get_app_icon() -> QIcon:
+    """
+    Convenience function to get the application icon from the global icon loader.
+
+    Returns:
+        QIcon object for the application icon
+    """
+    return icons_loader.get_app_icon()

@@ -633,7 +633,7 @@ class MainWindow(QMainWindow):
                     geometry['x'], geometry['y'],
                     geometry['width'], geometry['height']
                 )
-                logger.debug(f"[Config] Loaded window geometry: {geometry}")
+                logger.debug(f"[Config] Loaded window geometry: {geometry}", extra={"dev_only": True})
 
             # Load window state
             window_state = window_config.get('window_state', 'normal')
@@ -650,7 +650,7 @@ class MainWindow(QMainWindow):
             self._sort_column_from_config = window_config.get('sort_column', 1)
             self._sort_order_from_config = window_config.get('sort_order', 0)
 
-            logger.info("[Config] Window configuration loaded successfully")
+            logger.info("[Config] Window configuration loaded successfully", extra={"dev_only": True})
 
         except Exception as e:
             logger.error(f"[Config] Failed to load window configuration: {e}")
@@ -730,7 +730,7 @@ class MainWindow(QMainWindow):
             # Save configuration to file
             self.config_manager.save()
 
-            logger.info("[Config] Window configuration saved successfully")
+            logger.info("[Config] Window configuration saved successfully", extra={"dev_only": True})
 
         except Exception as e:
             logger.error(f"[Preferences] Failed to save window preferences: {e}")
@@ -744,11 +744,11 @@ class MainWindow(QMainWindow):
             splitter_states = window_config.get('splitter_states', {})
             if 'horizontal' in splitter_states and hasattr(self, 'horizontal_splitter'):
                 self.horizontal_splitter.setSizes(splitter_states['horizontal'])
-                logger.debug(f"[Config] Applied horizontal splitter: {splitter_states['horizontal']}")
+                logger.debug(f"[Config] Applied horizontal splitter: {splitter_states['horizontal']}", extra={"dev_only": True})
 
             if 'vertical' in splitter_states and hasattr(self, 'vertical_splitter'):
                 self.vertical_splitter.setSizes(splitter_states['vertical'])
-                logger.debug(f"[Config] Applied vertical splitter: {splitter_states['vertical']}")
+                logger.debug(f"[Config] Applied vertical splitter: {splitter_states['vertical']}", extra={"dev_only": True})
 
             # Apply column widths
             column_widths = window_config.get('column_widths', {})
@@ -758,7 +758,7 @@ class MainWindow(QMainWindow):
                 for i, width in enumerate(widths):
                     if i < header.count():
                         header.resizeSection(i, width)
-                logger.debug(f"[Config] Applied file table column widths: {widths}")
+                logger.debug(f"[Config] Applied file table column widths: {widths}", extra={"dev_only": True})
 
             if 'metadata_tree' in column_widths and hasattr(self, 'metadata_tree_view'):
                 widths = column_widths['metadata_tree']
@@ -766,9 +766,9 @@ class MainWindow(QMainWindow):
                 for i, width in enumerate(widths):
                     if i < header.count():
                         header.resizeSection(i, width)
-                logger.debug(f"[Config] Applied metadata tree column widths: {widths}")
+                logger.debug(f"[Config] Applied metadata tree column widths: {widths}", extra={"dev_only": True})
 
-            logger.info("[Config] UI configuration applied successfully")
+            logger.info("[Config] UI configuration applied successfully", extra={"dev_only": True})
 
         except Exception as e:
             logger.error(f"[Config] Failed to apply UI configuration: {e}")
