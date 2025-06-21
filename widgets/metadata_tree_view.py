@@ -723,6 +723,7 @@ class MetadataTreeView(QTreeView):
 
         # Check if current file has modifications for this field
         has_modifications = False
+        current_rotation_value = None
         if self._current_file_path:
             # Check current modifications
             normalized_key_path = "Rotation" if is_rotation_field else key_path
@@ -732,6 +733,26 @@ class MetadataTreeView(QTreeView):
             if not has_modifications and self._path_in_dict(self._current_file_path, self.modified_items_per_file):
                 stored_modifications = self._get_from_path_dict(self._current_file_path, self.modified_items_per_file)
                 has_modifications = normalized_key_path in (stored_modifications or set())
+
+            # Get current rotation value for "Set to 0°" action
+            if is_rotation_field:
+                selected_files = self._get_current_selection()
+                if selected_files:
+                    file_item = selected_files[0]
+                    # Check cache first (for any pending modifications)
+                    metadata_cache = self._get_metadata_cache()
+                    if metadata_cache:
+                        cache_entry = metadata_cache.get_entry(file_item.full_path)
+                        if cache_entry and hasattr(cache_entry, 'data'):
+                            current_rotation_value = cache_entry.data.get("Rotation")
+
+                    # Fallback to file item metadata if not in cache
+                    if current_rotation_value is None and hasattr(file_item, 'metadata') and file_item.metadata:
+                        current_rotation_value = self._get_value_from_metadata_dict(file_item.metadata, key_path)
+
+                    # Default to "0" if no rotation found
+                    if current_rotation_value is None:
+                        current_rotation_value = "0"
 
         # Create menu
         menu = QMenu(self)
@@ -751,11 +772,26 @@ class MetadataTreeView(QTreeView):
         reset_action.setEnabled(not has_multiple_selection and is_rotation_field and has_modifications)
         menu.addAction(reset_action)
 
-        # Set to 0° action - enabled only for rotation fields (regardless of current value)
+        # Set to 0° action - enabled only for rotation fields with non-zero values
         set_zero_action = QAction("Set Rotation to 0°", menu)
         set_zero_action.setIcon(self._get_menu_icon("rotate-ccw"))
         set_zero_action.triggered.connect(lambda: self.set_rotation_to_zero(key_path))
-        set_zero_action.setEnabled(not has_multiple_selection and is_rotation_field)
+
+        # Enable only if: single selection + rotation field + current value is not "0"
+        is_zero_rotation = str(current_rotation_value) == "0" if current_rotation_value is not None else False
+        set_zero_enabled = not has_multiple_selection and is_rotation_field and not is_zero_rotation
+        set_zero_action.setEnabled(set_zero_enabled)
+
+        # Update tooltip based on current state
+        if has_multiple_selection:
+            set_zero_action.setToolTip("Single file selection required")
+        elif not is_rotation_field:
+            set_zero_action.setToolTip("Only available for rotation fields")
+        elif is_zero_rotation:
+            set_zero_action.setToolTip("Rotation is already set to 0°")
+        else:
+            set_zero_action.setToolTip(f"Set rotation to 0° (current: {current_rotation_value}°)")
+
         menu.addAction(set_zero_action)
 
         menu.addSeparator()
