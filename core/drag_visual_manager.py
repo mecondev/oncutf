@@ -225,14 +225,23 @@ class DragVisualManager:
         else:
             # Normal file/folder drops - check drop zone state
             if self._drop_zone_state == DropZoneState.VALID:
-                if self._modifier_state == ModifierState.SHIFT:
-                    action_icon = "plus"  # Merge + Shallow (Shift only)
-                elif self._modifier_state == ModifierState.CTRL:
-                    action_icon = "download-cloud"  # Replace + Recursive (Ctrl only)
-                elif self._modifier_state == ModifierState.CTRL_SHIFT:
-                    action_icon = "layers"  # Merge + Recursive (Ctrl+Shift)
+                # For file drops, ignore recursive modifiers (Ctrl) since files don't have subdirectories
+                if self._drag_type == DragType.FILE:
+                    if self._modifier_state in [ModifierState.SHIFT, ModifierState.CTRL_SHIFT]:
+                        action_icon = "plus"  # Merge + Shallow (Shift or Ctrl+Shift - keep merge behavior)
+                    else:
+                        # Normal and Ctrl are treated as normal for files
+                        action_icon = "download"  # Replace + Shallow (Normal/Ctrl same for files)
                 else:
-                    action_icon = "download"  # Replace + Shallow (Normal - no modifiers)
+                    # For folders and multiple items, all modifiers work normally
+                    if self._modifier_state == ModifierState.SHIFT:
+                        action_icon = "plus"  # Merge + Shallow (Shift only)
+                    elif self._modifier_state == ModifierState.CTRL:
+                        action_icon = "download-cloud"  # Replace + Recursive (Ctrl only)
+                    elif self._modifier_state == ModifierState.CTRL_SHIFT:
+                        action_icon = "layers"  # Merge + Recursive (Ctrl+Shift)
+                    else:
+                        action_icon = "download"  # Replace + Shallow (Normal - no modifiers)
             elif self._drop_zone_state == DropZoneState.INVALID:
                 action_icon = "x"  # Invalid drop
             else:  # NEUTRAL
@@ -266,7 +275,7 @@ class DragVisualManager:
         if action_icon is not None:
             action_qicon = get_menu_icon(action_icon)
             if not action_qicon.isNull():
-                action_pixmap = action_qicon.pixmap(18, 18)  # Increased from 12x12
+                action_pixmap = action_qicon.pixmap(22, 22)  # Increased from 18x18 for better visibility
 
                 # Color the action icons for better visual feedback
                 if action_icon == "x":
@@ -287,8 +296,8 @@ class DragVisualManager:
                     color_painter.end()
                     action_pixmap = colored_pixmap
 
-                elif action_icon in ["download", "download-cloud"]:
-                    # Green for valid drop zones
+                elif action_icon in ["download", "download-cloud"] and self._drag_source == "file_table":
+                    # Green for valid drop zones (only for metadata drops)
                     colored_pixmap = QPixmap(action_pixmap.size())
                     colored_pixmap.fill(Qt.transparent)
 
@@ -342,7 +351,7 @@ class DragVisualManager:
 
                     action_pixmap = colored_pixmap
 
-                painter.drawPixmap(26, 26, action_pixmap)
+                painter.drawPixmap(24, 24, action_pixmap)  # Adjusted position for larger icon
 
         painter.end()
 
