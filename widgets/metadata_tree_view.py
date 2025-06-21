@@ -179,6 +179,113 @@ class MetadataTreeView(QTreeView):
         self.setDragDropMode(QAbstractItemView.DropOnly)
         self.setAlternatingRowColors(True)
 
+    # =====================================
+    # Path-Safe Dictionary Operations
+    # =====================================
+
+    def _path_in_dict(self, path: str, path_dict: Dict[str, Any]) -> bool:
+        """
+        Check if a path exists in dictionary using path-aware comparison.
+
+        Args:
+            path: Path to look for
+            path_dict: Dictionary with path keys
+
+        Returns:
+            bool: True if path exists in dictionary
+        """
+        if not path or not path_dict:
+            return False
+
+        # First try direct lookup (fastest)
+        if path in path_dict:
+            return True
+
+        # If not found, try normalized path comparison
+        for existing_path in path_dict.keys():
+            if paths_equal(path, existing_path):
+                return True
+
+        return False
+
+    def _get_from_path_dict(self, path: str, path_dict: Dict[str, Any]) -> Any:
+        """
+        Get value from dictionary using path-aware comparison.
+
+        Args:
+            path: Path key to look for
+            path_dict: Dictionary with path keys
+
+        Returns:
+            Any: Value if found, None otherwise
+        """
+        if not path or not path_dict:
+            return None
+
+        # First try direct lookup (fastest)
+        if path in path_dict:
+            return path_dict[path]
+
+        # If not found, try normalized path comparison
+        for existing_path, value in path_dict.items():
+            if paths_equal(path, existing_path):
+                return value
+
+        return None
+
+    def _set_in_path_dict(self, path: str, value: Any, path_dict: Dict[str, Any]) -> None:
+        """
+        Set value in dictionary using path-aware key management.
+
+        Args:
+            path: Path key to set
+            value: Value to set
+            path_dict: Dictionary with path keys
+        """
+        if not path:
+            return
+
+        # Remove any existing equivalent paths first
+        keys_to_remove = []
+        for existing_path in path_dict.keys():
+            if paths_equal(path, existing_path):
+                keys_to_remove.append(existing_path)
+
+        for key in keys_to_remove:
+            del path_dict[key]
+
+        # Set with the new path
+        path_dict[path] = value
+
+    def _remove_from_path_dict(self, path: str, path_dict: Dict[str, Any]) -> bool:
+        """
+        Remove path from dictionary using path-aware comparison.
+
+        Args:
+            path: Path key to remove
+            path_dict: Dictionary with path keys
+
+        Returns:
+            bool: True if something was removed
+        """
+        if not path or not path_dict:
+            return False
+
+        removed = False
+        keys_to_remove = []
+
+        # Find all equivalent paths
+        for existing_path in path_dict.keys():
+            if paths_equal(path, existing_path):
+                keys_to_remove.append(existing_path)
+
+        # Remove them
+        for key in keys_to_remove:
+            del path_dict[key]
+            removed = True
+
+        return removed
+
     def resizeEvent(self, event):
         """Handle resize events to adjust placeholder label size."""
         super().resizeEvent(event)
@@ -479,7 +586,7 @@ class MetadataTreeView(QTreeView):
             self._save_current_scroll_position()
             # Save current modified items for the previous file
             if self.modified_items:
-                self.modified_items_per_file[self._current_file_path] = self.modified_items.copy()
+                self._set_in_path_dict(self._current_file_path, self.modified_items.copy(), self.modified_items_per_file)
                 logger.debug(f"[MetadataTreeView] Saved {len(self.modified_items)} modifications for previous file: {self._current_file_path}", extra={"dev_only": True})
                 logger.debug(f"[MetadataTreeView] Saved modifications: {list(self.modified_items)}", extra={"dev_only": True})
 
@@ -488,8 +595,9 @@ class MetadataTreeView(QTreeView):
         Load modifications for the specified file.
         Simplified helper method for better code organization.
         """
-        if file_path in self.modified_items_per_file:
-            self.modified_items = self.modified_items_per_file[file_path].copy()
+        if self._path_in_dict(file_path, self.modified_items_per_file):
+            existing_modifications = self._get_from_path_dict(file_path, self.modified_items_per_file)
+            self.modified_items = existing_modifications.copy() if existing_modifications else set()
             logger.debug(f"[MetadataTreeView] Loaded {len(self.modified_items)} existing modifications for new file", extra={"dev_only": True})
             logger.debug(f"[MetadataTreeView] Loaded modifications: {list(self.modified_items)}", extra={"dev_only": True})
         else:
@@ -610,26 +718,49 @@ class MetadataTreeView(QTreeView):
         selected_files = self._get_current_selection()
         has_multiple_selection = len(selected_files) > 1
 
+        # Check if this field can be edited (only Rotation fields)
+        is_rotation_field = "rotation" in key_path.lower()
+
+        # Check if current file has modifications for this field
+        has_modifications = False
+        if self._current_file_path:
+            # Check current modifications
+            normalized_key_path = "Rotation" if is_rotation_field else key_path
+            has_modifications = normalized_key_path in self.modified_items
+
+            # Also check stored modifications for this file
+            if not has_modifications and self._path_in_dict(self._current_file_path, self.modified_items_per_file):
+                stored_modifications = self._get_from_path_dict(self._current_file_path, self.modified_items_per_file)
+                has_modifications = normalized_key_path in (stored_modifications or set())
+
         # Create menu
         menu = QMenu(self)
         self._current_menu = menu
 
-        # Edit action
+        # Edit action - enabled only for rotation fields with single selection
         edit_action = QAction("Edit Value", menu)
         edit_action.setIcon(self._get_menu_icon("edit"))
         edit_action.triggered.connect(lambda: self.edit_value(key_path, value))
-        edit_action.setEnabled(not has_multiple_selection and "Rotation" in key_path)
+        edit_action.setEnabled(not has_multiple_selection and is_rotation_field)
         menu.addAction(edit_action)
 
-        # Reset action
+        # Reset action - enabled only for rotation fields with modifications
         reset_action = QAction("Reset Value", menu)
         reset_action.setIcon(self._get_menu_icon("rotate-ccw"))
         reset_action.triggered.connect(lambda: self.reset_value(key_path))
-        reset_action.setEnabled(not has_multiple_selection and "Rotation" in key_path)
+        reset_action.setEnabled(not has_multiple_selection and is_rotation_field and has_modifications)
         menu.addAction(reset_action)
+
+        # Set to 0° action - enabled only for rotation fields (regardless of current value)
+        set_zero_action = QAction("Set Rotation to 0°", menu)
+        set_zero_action.setIcon(self._get_menu_icon("rotate-ccw"))
+        set_zero_action.triggered.connect(lambda: self.set_rotation_to_zero(key_path))
+        set_zero_action.setEnabled(not has_multiple_selection and is_rotation_field)
+        menu.addAction(set_zero_action)
+
         menu.addSeparator()
 
-        # Copy action
+        # Copy action - always available if there's a value
         copy_action = QAction("Copy", menu)
         copy_action.setIcon(self._get_menu_icon("copy"))
         copy_action.triggered.connect(lambda: self.copy_value(value))
@@ -704,11 +835,26 @@ class MetadataTreeView(QTreeView):
         )
 
         if accepted and new_value != str(current_value):
+            # Mark as modified
             self.modified_items.add(normalized_key_path)
+
+            # Update metadata in cache
             self._update_metadata_in_cache(normalized_key_path, new_value)
+
+            # Update the file icon status immediately
             self._update_file_icon_status()
+
+            # Update the tree display to show the new value
+            self._update_tree_item_value(normalized_key_path, new_value)
+
+            # Emit signal for external listeners
             self.value_edited.emit(normalized_key_path, str(current_value), new_value)
+
+            # Refresh the metadata display to ensure consistency
             self.update_from_parent_selection()
+
+            # Force viewport update to refresh visual state
+            self.viewport().update()
 
     def _get_original_value_from_cache(self, key_path: str) -> Optional[Any]:
         """
@@ -773,42 +919,66 @@ class MetadataTreeView(QTreeView):
             current_value = self._get_value_from_metadata_dict(file_item.metadata, key_path)
 
         # Normalize rotation key_path to be always "Rotation" (top-level)
-        if "rotation" in key_path.lower():
-            normalized_key_path = "Rotation"
-        else:
-            normalized_key_path = key_path
+        normalized_key_path = "Rotation" if "rotation" in key_path.lower() else key_path
 
         new_value = "0"
 
-        # Add to modified items
+        # Only proceed if the value is actually changing
+        if str(current_value) == new_value:
+            logger.debug(f"[MetadataTree] Rotation already set to 0° for {file_item.filename}")
+            return
+
+        # Mark as modified
         self.modified_items.add(normalized_key_path)
 
         # Update metadata in cache
         self._update_metadata_in_cache(normalized_key_path, new_value)
 
-        # Update the file icon in the file table to show it's modified
+        # Update the file icon status immediately
         self._update_file_icon_status()
 
-        # Emit signal with the new value
+        # Update the tree display to show the new value
+        self._update_tree_item_value(normalized_key_path, new_value)
+
+        # Emit signal for external listeners
         self.value_edited.emit(normalized_key_path, str(current_value) if current_value else "", new_value)
 
-        # FORCE a complete refresh of the metadata display to show the change immediately
+        # Refresh the metadata display to ensure consistency
         self.update_from_parent_selection()
+
+        # Force viewport update to refresh visual state
+        self.viewport().update()
 
     def reset_value(self, key_path: str) -> None:
         """Reset the value to its original state."""
-        original_value = self._get_original_value_from_cache(key_path)
+        # Normalize rotation key_path to be always "Rotation" (top-level)
+        normalized_key_path = "Rotation" if "rotation" in key_path.lower() else key_path
 
-        if key_path in self.modified_items:
-            self.modified_items.remove(key_path)
+        # Get the original value before resetting
+        original_value = self._get_original_value_from_cache(normalized_key_path)
 
+        # Remove from modified items
+        if normalized_key_path in self.modified_items:
+            self.modified_items.remove(normalized_key_path)
+
+        # Reset metadata in cache to original value
+        self._reset_metadata_in_cache(normalized_key_path)
+
+        # Update the file icon status
         self._update_file_icon_status()
-        self._reset_metadata_in_cache(key_path)
 
+        # Update the tree display to show the original value
         if original_value is not None:
-            self._update_tree_item_value(key_path, str(original_value))
+            self._update_tree_item_value(normalized_key_path, str(original_value))
 
-        self.value_reset.emit(key_path)
+        # Emit signal for external listeners
+        self.value_reset.emit(normalized_key_path)
+
+        # Refresh the metadata display to ensure consistency
+        self.update_from_parent_selection()
+
+        # Force viewport update to refresh visual state
+        self.viewport().update()
 
     def _update_tree_item_value(self, key_path: str, new_value: str) -> None:
         """
@@ -889,19 +1059,31 @@ class MetadataTreeView(QTreeView):
         if not selected_files:
             return
 
+        # Get parent window and file model
+        parent_window = self._get_parent_with_file_table()
+        if not parent_window:
+            return
+
+        file_model = parent_window.file_model
+        if not file_model:
+            return
+
         # For each selected file, update its icon
+        updated_rows = []
         for file_item in selected_files:
             # Check if this specific file has modified items
             file_path = file_item.full_path
 
             # Check both current modified items and stored ones
             has_modifications = False
-            if file_path == self._current_file_path and self.modified_items:
+            if paths_equal(file_path, self._current_file_path) and self.modified_items:
                 has_modifications = True
-            elif file_path in self.modified_items_per_file and self.modified_items_per_file[file_path]:
-                has_modifications = True
+            elif self._path_in_dict(file_path, self.modified_items_per_file):
+                stored_modifications = self._get_from_path_dict(file_path, self.modified_items_per_file)
+                has_modifications = bool(stored_modifications)
 
             # Update icon based on whether we have modified items
+            old_status = getattr(file_item, 'metadata_status', None)
             if has_modifications:
                 # Set modified icon
                 file_item.metadata_status = "modified"
@@ -909,28 +1091,14 @@ class MetadataTreeView(QTreeView):
                 # Set normal loaded icon
                 file_item.metadata_status = "loaded"
 
-        # Get parent window and file model
-        parent_window = self._get_parent_with_file_table()
-        if not parent_window:
-            return
+            # Find the row for this file item and mark for update
+            for row, model_file in enumerate(file_model.files):
+                if paths_equal(model_file.full_path, file_path):
+                    updated_rows.append(row)
+                    break
 
-        # Get the current selected file
-        selection = parent_window.file_table_view.selectionModel()
-        if not selection or not selection.hasSelection():
-            return
-
-        selected_rows = selection.selectedRows()
-        if not selected_rows:
-            return
-
-        # Get the file model
-        file_model = parent_window.file_model
-        if not file_model:
-            return
-
-        # Emit dataChanged for all selected rows to update their icons
-        for index in selected_rows:
-            row = index.row()
+        # Emit dataChanged for all updated rows to refresh their icons
+        for row in updated_rows:
             if 0 <= row < len(file_model.files):
                 # Emit dataChanged specifically for the icon column (column 0)
                 icon_index = file_model.index(row, 0)
@@ -1671,7 +1839,7 @@ class MetadataTreeView(QTreeView):
 
         # Save current file's modifications first
         if self._current_file_path and self.modified_items:
-            self.modified_items_per_file[self._current_file_path] = self.modified_items.copy()
+            self._set_in_path_dict(self._current_file_path, self.modified_items.copy(), self.modified_items_per_file)
 
         # Clean up any None keys that might exist in the dictionary
         none_keys = [k for k in self.modified_items_per_file.keys() if k is None]
@@ -1728,8 +1896,8 @@ class MetadataTreeView(QTreeView):
         """
         self.modified_items.clear()
         # Also clear from the per-file storage
-        if self._current_file_path and self._current_file_path in self.modified_items_per_file:
-            del self.modified_items_per_file[self._current_file_path]
+        if self._current_file_path:
+            self._remove_from_path_dict(self._current_file_path, self.modified_items_per_file)
         self._update_file_icon_status()
         self.viewport().update()
 
@@ -1741,8 +1909,7 @@ class MetadataTreeView(QTreeView):
             file_path: Full path of the file to clear modifications for
         """
         # Remove from per-file storage
-        if file_path in self.modified_items_per_file:
-            del self.modified_items_per_file[file_path]
+        self._remove_from_path_dict(file_path, self.modified_items_per_file)
 
         # If this is the current file, also clear current modifications and update UI
         if paths_equal(file_path, self._current_file_path):
@@ -1772,7 +1939,7 @@ class MetadataTreeView(QTreeView):
         """
         # Save current file's modifications first
         if self._current_file_path and self.modified_items:
-            self.modified_items_per_file[self._current_file_path] = self.modified_items.copy()
+            self._set_in_path_dict(self._current_file_path, self.modified_items.copy(), self.modified_items_per_file)
 
         # Get selected files
         selected_files = self._get_current_selection()
@@ -1786,8 +1953,10 @@ class MetadataTreeView(QTreeView):
             # Check both current modified items and stored ones
             if paths_equal(file_path, self._current_file_path) and self.modified_items:
                 return True
-            elif file_path in self.modified_items_per_file and self.modified_items_per_file[file_path]:
-                return True
+            elif self._path_in_dict(file_path, self.modified_items_per_file):
+                stored_modifications = self._get_from_path_dict(file_path, self.modified_items_per_file)
+                if stored_modifications:
+                    return True
 
         return False
 
@@ -1800,7 +1969,7 @@ class MetadataTreeView(QTreeView):
         """
         # Save current file's modifications first
         if self._current_file_path and self.modified_items:
-            self.modified_items_per_file[self._current_file_path] = self.modified_items.copy()
+            self._set_in_path_dict(self._current_file_path, self.modified_items.copy(), self.modified_items_per_file)
 
         # Check current file modifications
         if self.modified_items:

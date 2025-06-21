@@ -132,13 +132,23 @@ class DialogManager:
             no_text="Cancel"
         )
 
+    def confirm_unsaved_changes(self, parent: QWidget = None) -> str:
+        """
+        Show confirmation dialog for unsaved metadata changes with three options.
+
+        Returns:
+            str: One of 'save_and_close', 'close_without_saving', 'cancel'
+        """
+        from widgets.custom_msgdialog import CustomMessageDialog
+        return CustomMessageDialog.unsaved_changes(parent)
+
     def center_window(self, window: QWidget):
         """Center a window on the screen"""
         if not window:
             return
 
         # Get screen geometry
-        screen = QApplication.primaryScreen().geometry()
+        screen = QApplication.primaryScreen().geometry() # type: ignore
 
         # Get window geometry
         window_geometry = window.geometry()

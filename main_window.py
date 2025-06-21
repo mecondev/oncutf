@@ -458,35 +458,97 @@ class MainWindow(QMainWindow):
         """
         logger.info("Application shutting down...")
 
-        # 0. Save window configuration before cleanup
+        # 0. Check for unsaved metadata changes
+        if self._check_for_unsaved_changes():
+            reply = self.dialog_manager.confirm_unsaved_changes(self)
+
+            if reply == "cancel":
+                # User wants to cancel closing
+                event.ignore()
+                return
+            elif reply == "save_and_close":
+                # User wants to save changes before closing
+                try:
+                    # Save all modified metadata
+                    if hasattr(self, 'metadata_manager'):
+                        self.metadata_manager.save_all_modified_metadata()
+                        logger.info("[CloseEvent] Saved all metadata changes before closing")
+                    else:
+                        logger.warning("[CloseEvent] MetadataManager not available for saving")
+                except Exception as e:
+                    logger.error(f"[CloseEvent] Failed to save metadata before closing: {e}")
+                    # Show error but continue closing anyway
+                    from widgets.custom_msgdialog import CustomMessageDialog
+                    CustomMessageDialog.information(
+                        self,
+                        "Save Error",
+                        f"Failed to save metadata changes:\n{e}\n\nClosing anyway."
+                    )
+            # If reply == "close_without_saving", we just continue with closing
+
+        # 1. Save window configuration before cleanup
         self._save_window_config()
 
-        # 1. Stop any running metadata operations
+        # 2. Stop any running metadata operations
         self.cleanup_metadata_worker()
 
-        # 2. Clean up any active drag operations
+        # 3. Clean up any active drag operations
         self.drag_cleanup_manager.emergency_drag_cleanup()
 
-        # 3. Clean up any open dialogs
+        # 4. Clean up any open dialogs
         if hasattr(self, 'dialog_manager'):
             self.dialog_manager.cleanup()
 
-        # 4. Clean up application context
+        # 5. Clean up application context
         if hasattr(self, 'context'):
             self.context.cleanup()
 
-        # 5. Stop any running timers
+        # 6. Stop any running timers
         for timer in self.findChildren(QTimer):
             timer.stop()
 
-        # 6. Clean up any remaining Qt resources
+        # 7. Clean up any remaining Qt resources
         QApplication.processEvents()
 
-        # 7. Call parent closeEvent
+        # 8. Call parent closeEvent
         super().closeEvent(event)
 
-        # 8. Force quit the application
+        # 9. Force quit the application
         QApplication.quit()
+
+    def _check_for_unsaved_changes(self) -> bool:
+        """
+        Check if there are any unsaved metadata changes.
+
+        Returns:
+            bool: True if there are unsaved changes, False otherwise
+        """
+        if not hasattr(self, 'metadata_tree_view'):
+            return False
+
+        try:
+            # Force save current file modifications to per-file storage first
+            if hasattr(self.metadata_tree_view, '_current_file_path') and self.metadata_tree_view._current_file_path:
+                if self.metadata_tree_view.modified_items:
+                    self.metadata_tree_view.modified_items_per_file[self.metadata_tree_view._current_file_path] = self.metadata_tree_view.modified_items.copy()
+
+            # Get all modified metadata for all files
+            all_modifications = self.metadata_tree_view.get_all_modified_metadata_for_files()
+
+            # Check if there are any actual modifications
+            has_modifications = any(modifications for modifications in all_modifications.values())
+
+            if has_modifications:
+                logger.info(f"[CloseEvent] Found unsaved changes in {len(all_modifications)} files")
+                for file_path, modifications in all_modifications.items():
+                    if modifications:
+                        logger.debug(f"[CloseEvent] - {file_path}: {list(modifications.keys())}")
+
+            return has_modifications
+
+        except Exception as e:
+            logger.warning(f"[CloseEvent] Error checking for unsaved changes: {e}")
+            return False
 
     def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
         """Delegates to FileLoadManager for folder load preparation."""

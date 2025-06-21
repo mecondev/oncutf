@@ -481,9 +481,14 @@ class EventHandlerManager:
                     for file_item in files_to_process:
                         if file_item.metadata_status == "modified":
                             # Add to modified items for this file path
-                            if file_item.full_path not in self.parent_window.metadata_tree_view.modified_items_per_file:
-                                self.parent_window.metadata_tree_view.modified_items_per_file[file_item.full_path] = set()
-                            self.parent_window.metadata_tree_view.modified_items_per_file[file_item.full_path].add("Rotation")
+                            if not self.parent_window.metadata_tree_view._path_in_dict(file_item.full_path, self.parent_window.metadata_tree_view.modified_items_per_file):
+                                self.parent_window.metadata_tree_view._set_in_path_dict(file_item.full_path, set(), self.parent_window.metadata_tree_view.modified_items_per_file)
+
+                            existing_modifications = self.parent_window.metadata_tree_view._get_from_path_dict(file_item.full_path, self.parent_window.metadata_tree_view.modified_items_per_file)
+                            if existing_modifications is None:
+                                existing_modifications = set()
+                            existing_modifications.add("Rotation")
+                            self.parent_window.metadata_tree_view._set_in_path_dict(file_item.full_path, existing_modifications, self.parent_window.metadata_tree_view.modified_items_per_file)
 
                             # If this is the currently displayed file, update current modified items too
                             if (hasattr(self.parent_window.metadata_tree_view, '_current_file_path') and

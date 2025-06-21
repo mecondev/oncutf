@@ -180,6 +180,39 @@ class CustomMessageDialog(QDialog):
         dlg = CustomMessageDialog(title, message, [ok_text], parent)
         dlg.exec_()
 
+    @staticmethod
+    def unsaved_changes(parent: QWidget, title: str = "Unsaved Changes",
+                       message: str = "You have unsaved metadata changes. What would you like to do?") -> str:
+        """
+        Displays a dialog for handling unsaved changes with three options.
+
+        Parameters
+        ----------
+        parent : QWidget
+            Parent widget
+        title : str, optional
+            Dialog title
+        message : str, optional
+            Dialog message
+
+        Returns
+        -------
+        str
+            One of: 'save_and_close', 'close_without_saving', 'cancel'
+        """
+        buttons = ["Save & Close", "Close without saving", "Cancel"]
+        dlg = CustomMessageDialog(title, message, buttons, parent)
+        dlg.exec_()
+
+        # Map button text to return values
+        button_map = {
+            "Save & Close": "save_and_close",
+            "Close without saving": "close_without_saving",
+            "Cancel": "cancel"
+        }
+
+        return button_map.get(dlg.selected, "cancel")
+
     def set_progress(self, value: int, total: int = None):
         """
         Updates the progress bar with the current progress value.
