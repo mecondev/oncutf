@@ -458,6 +458,9 @@ class MetadataTreeView(QTreeView):
         if paths_equal(self._current_file_path, file_path):
             return
 
+        # Store the previous file path before updating
+        previous_file_path = self._current_file_path
+
         # Save current data before changing files (only if we have a previous file)
         if self._current_file_path is not None:
             self._save_current_scroll_position()
@@ -472,7 +475,11 @@ class MetadataTreeView(QTreeView):
         if file_path in self.modified_items_per_file:
             self.modified_items = self.modified_items_per_file[file_path].copy()
         else:
-            self.modified_items = set()
+            # IMPORTANT: If this is the same file as before and we have current modifications,
+            # don't clear them! This happens when set_current_file_path is called during
+            # metadata refresh after editing a value.
+            if not paths_equal(file_path, previous_file_path) or not self.modified_items:
+                self.modified_items = set()
 
     def _save_current_scroll_position(self) -> None:
         """Save the current scroll position for the current file."""
@@ -1643,21 +1650,9 @@ class MetadataTreeView(QTreeView):
         """
         all_modifications = {}
 
-        # DEBUG: Check current state
-        logger.debug(f"[MetadataTree] get_all_modified_metadata_for_files called")
-        logger.debug(f"[MetadataTree] _current_file_path: {self._current_file_path}")
-        logger.debug(f"[MetadataTree] modified_items: {self.modified_items}")
-        logger.debug(f"[MetadataTree] modified_items_per_file keys: {list(self.modified_items_per_file.keys())}")
-
         # Save current file's modifications first
         if self._current_file_path and self.modified_items:
-            logger.debug(f"[MetadataTree] Saving current modifications for: {self._current_file_path}")
             self.modified_items_per_file[self._current_file_path] = self.modified_items.copy()
-        else:
-            if not self._current_file_path:
-                logger.debug("[MetadataTree] No current file path set")
-            if not self.modified_items:
-                logger.debug("[MetadataTree] No modified items")
 
         # Clean up any None keys that might exist in the dictionary
         none_keys = [k for k in self.modified_items_per_file.keys() if k is None]
@@ -1667,35 +1662,25 @@ class MetadataTreeView(QTreeView):
         # Get metadata cache
         metadata_cache = self._get_metadata_cache()
         if not metadata_cache:
-            logger.debug("[MetadataTree] No metadata cache available")
             return {}
 
         # Collect modifications for each file
         for file_path, modified_keys in self.modified_items_per_file.items():
-            logger.debug(f"[MetadataTree] Processing file: {file_path} with keys: {modified_keys}")
-
             # Skip None or empty file paths
             if not file_path or not modified_keys:
-                logger.debug(f"[MetadataTree] Skipping file (empty path or keys): {file_path}")
                 continue
 
             metadata_entry = metadata_cache.get_entry(file_path)
             if not metadata_entry or not hasattr(metadata_entry, 'data'):
-                logger.debug(f"[MetadataTree] No metadata entry for: {file_path}")
                 continue
 
             file_modifications = {}
 
             for key_path in modified_keys:
-                logger.debug(f"[MetadataTree] Processing key_path: {key_path}")
-
                 # Special handling for rotation - it's always top-level
                 if key_path.lower() == "rotation":
                     if "Rotation" in metadata_entry.data:
                         file_modifications["Rotation"] = str(metadata_entry.data["Rotation"])
-                        logger.debug(f"[MetadataTree] Added Rotation: {metadata_entry.data['Rotation']}")
-                    else:
-                        logger.debug("[MetadataTree] Rotation not found in metadata")
                     continue
 
                 # Handle other fields normally
@@ -1705,23 +1690,17 @@ class MetadataTreeView(QTreeView):
                     # Top-level key
                     if parts[0] in metadata_entry.data:
                         file_modifications[key_path] = str(metadata_entry.data[parts[0]])
-                        logger.debug(f"[MetadataTree] Added {key_path}: {metadata_entry.data[parts[0]]}")
                 elif len(parts) == 2:
                     # Nested key (group/key)
                     group, key = parts
                     if group in metadata_entry.data and isinstance(metadata_entry.data[group], dict):
                         if key in metadata_entry.data[group]:
                             file_modifications[key_path] = str(metadata_entry.data[group][key])
-                            logger.debug(f"[MetadataTree] Added {key_path}: {metadata_entry.data[group][key]}")
 
             if file_modifications:
                 all_modifications[file_path] = file_modifications
-                logger.debug(f"[MetadataTree] File {file_path} has modifications: {file_modifications}")
-            else:
-                logger.debug(f"[MetadataTree] File {file_path} has no valid modifications")
 
         logger.info(f"[MetadataTree] Total files with modifications: {len(all_modifications)}")
-        logger.debug(f"[MetadataTree] Final all_modifications: {all_modifications}")
         return all_modifications
 
     def clear_modifications(self) -> None:
