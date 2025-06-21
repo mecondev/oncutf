@@ -208,17 +208,29 @@ class FileTreeView(QTreeView):
         """Handle mouse move for custom drag start and real-time drop zone validation"""
         # If we're dragging, only handle drag feedback and block all other processing
         if self._is_dragging:
-            # Only update drag feedback after the cursor has moved away from the start position
+            # Only update drag feedback after the cursor has moved away from the FileTreeView widget
             # This prevents immediate "invalid" feedback when drag starts over the source widget
             if not self._initial_drag_move:
                 self._update_drag_feedback()
             else:
-                # Check if cursor has moved enough from start position to begin feedback
-                if self._drag_start_pos:
-                    distance = (event.pos() - self._drag_start_pos).manhattanLength()
-                    if distance > 30:  # Larger threshold to give time for neutral cursor to show
-                        self._initial_drag_move = False
-                        self._update_drag_feedback()
+                # Check if cursor has moved outside the FileTreeView widget
+                cursor_pos = QCursor.pos()
+                widget_under_cursor = QApplication.widgetAt(cursor_pos)
+
+                # Check if cursor is still over this FileTreeView or its children
+                current_widget = widget_under_cursor
+                still_over_source = False
+
+                while current_widget:
+                    if current_widget is self:
+                        still_over_source = True
+                        break
+                    current_widget = current_widget.parent()
+
+                # If cursor has left the FileTreeView, start feedback
+                if not still_over_source:
+                    self._initial_drag_move = False
+                    self._update_drag_feedback()
             # Don't call super().mouseMoveEvent() during drag to prevent hover changes
             return
 

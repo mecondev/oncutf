@@ -318,7 +318,7 @@ class FileLoadManager:
     def _update_ui_after_load(self, items: List[FileItem], clear: bool = True) -> None:
         """
         Update UI after loading files.
-        Handles model updates and UI refresh.
+        Handles model updates and UI refresh with duplicate detection in merge mode.
         """
         if not hasattr(self.parent_window, 'file_model'):
             logger.error("[FileLoadManager] Parent window has no file_model attribute")
@@ -345,11 +345,32 @@ class FileLoadManager:
                 self.parent_window.file_model.set_files(items)
                 logger.info(f"[FileLoadManager] Replaced files with {len(items)} new items", extra={"dev_only": True})
             else:
-                # Add to existing files
+                # Add to existing files with duplicate detection
                 existing_files = self.parent_window.file_model.files
-                combined_files = existing_files + items
+
+                # Create a set of existing file paths for fast lookup
+                existing_paths = {file_item.full_path for file_item in existing_files}
+
+                # Filter out duplicates from new items
+                new_items = []
+                duplicate_count = 0
+
+                for item in items:
+                    if item.full_path not in existing_paths:
+                        new_items.append(item)
+                        existing_paths.add(item.full_path)  # Add to set to avoid duplicates within the new items too
+                    else:
+                        duplicate_count += 1
+
+                # Combine existing files with new non-duplicate items
+                combined_files = existing_files + new_items
                 self.parent_window.file_model.set_files(combined_files)
-                logger.info(f"[FileLoadManager] Added {len(items)} items to existing {len(existing_files)} files")
+
+                # Log the results
+                if duplicate_count > 0:
+                    logger.info(f"[FileLoadManager] Added {len(new_items)} new items, skipped {duplicate_count} duplicates (total: {len(combined_files)})")
+                else:
+                    logger.info(f"[FileLoadManager] Added {len(new_items)} new items to existing {len(existing_files)} files (total: {len(combined_files)})")
 
             # CRITICAL: Update all UI elements after file loading
             self._refresh_ui_after_file_load()

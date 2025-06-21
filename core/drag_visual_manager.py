@@ -218,7 +218,7 @@ class DragVisualManager:
         if is_metadata_drop:
             # For metadata drops, always show the appropriate icon
             if self._modifier_state == ModifierState.SHIFT:
-                action_icon = "database"  # Extended metadata
+                action_icon = "server"  # Extended metadata
             else:
                 action_icon = "info"  # Fast metadata
             logger.debug(f"[DragVisualManager] Metadata drop: modifier={self._modifier_state.value}, icon={action_icon}", extra={"dev_only": True})
@@ -228,11 +228,11 @@ class DragVisualManager:
                 if self._modifier_state == ModifierState.SHIFT:
                     action_icon = "plus"  # Merge + Shallow (Shift only)
                 elif self._modifier_state == ModifierState.CTRL:
-                    action_icon = "arrow-down"  # Replace + Recursive (Ctrl only)
+                    action_icon = "download-cloud"  # Replace + Recursive (Ctrl only)
                 elif self._modifier_state == ModifierState.CTRL_SHIFT:
-                    action_icon = "plus-circle"  # Merge + Recursive (Ctrl+Shift)
+                    action_icon = "layers"  # Merge + Recursive (Ctrl+Shift)
                 else:
-                    action_icon = "check"  # Replace + Shallow (Normal - no modifiers)
+                    action_icon = "download"  # Replace + Shallow (Normal - no modifiers)
             elif self._drop_zone_state == DropZoneState.INVALID:
                 action_icon = "x"  # Invalid drop
             else:  # NEUTRAL
@@ -287,7 +287,7 @@ class DragVisualManager:
                     color_painter.end()
                     action_pixmap = colored_pixmap
 
-                elif action_icon == "check":
+                elif action_icon in ["download", "download-cloud"]:
                     # Green for valid drop zones
                     colored_pixmap = QPixmap(action_pixmap.size())
                     colored_pixmap.fill(Qt.transparent)
@@ -306,7 +306,7 @@ class DragVisualManager:
                     action_pixmap = colored_pixmap
 
                 elif action_icon == "info":
-                    # Blue for fast metadata
+                    # Green for fast metadata (same as valid operations)
                     colored_pixmap = QPixmap(action_pixmap.size())
                     colored_pixmap.fill(Qt.transparent)
 
@@ -316,15 +316,14 @@ class DragVisualManager:
                     # First draw the original icon
                     color_painter.drawPixmap(0, 0, action_pixmap)
 
-                    # Then apply blue color overlay
+                    # Then apply green color overlay
                     color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
-                    # Always use regular blue - dimmed colors were not requested by user
-                    color_painter.fillRect(colored_pixmap.rect(), QColor(0, 123, 255))  # Regular blue
+                    color_painter.fillRect(colored_pixmap.rect(), QColor(46, 204, 113))  # User specified green
                     color_painter.end()
 
                     action_pixmap = colored_pixmap
 
-                elif action_icon == "database":
+                elif action_icon == "server":
                     # Orange for extended metadata
                     colored_pixmap = QPixmap(action_pixmap.size())
                     colored_pixmap.fill(Qt.transparent)
