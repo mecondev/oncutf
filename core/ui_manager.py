@@ -323,6 +323,7 @@ class UIManager:
         # Συνδέουμε το proxy model με το tree view
         self.parent_window.metadata_tree_view.setModel(self.parent_window.metadata_proxy_model)
         right_layout.addWidget(self.parent_window.metadata_tree_view)
+        logger.debug("[UIManager] MetadataTreeView widget added to layout", extra={"dev_only": True})
 
         # Dummy initial model
         placeholder_model = QStandardItemModel()

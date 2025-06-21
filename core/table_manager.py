@@ -67,8 +67,22 @@ class TableManager:
         """
         Clears the file table and shows a placeholder message.
         """
-        # Clear scroll position memory when changing folders
-        self.parent_window.metadata_tree_view.clear_for_folder_change()
+        # Only clear metadata modifications if we're actually changing folders
+        # This preserves modifications when reloading the same folder
+        should_clear_modifications = (
+            message != "No folder selected" or  # User explicitly clearing
+            not hasattr(self.parent_window, 'current_folder_path') or  # No current folder
+            self.parent_window.current_folder_path is None  # Folder path is None
+        )
+
+        if should_clear_modifications:
+            logger.debug(f"[TableManager] Clearing metadata modifications: {message}", extra={"dev_only": True})
+            self.parent_window.metadata_tree_view.clear_for_folder_change()
+        else:
+            logger.debug(f"[TableManager] Preserving metadata modifications: {message}", extra={"dev_only": True})
+            # Just clear the view without losing modifications
+            self.parent_window.metadata_tree_view.clear_view()
+
         self.parent_window.file_model.set_files([])  # reset model with empty list
         self.parent_window.file_table_view.set_placeholder_visible(True)  # Show placeholder when empty
         self.parent_window.header.setEnabled(False) # disable header

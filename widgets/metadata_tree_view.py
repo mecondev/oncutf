@@ -456,30 +456,49 @@ class MetadataTreeView(QTreeView):
         """
         # If it's the same file, don't do anything
         if paths_equal(self._current_file_path, file_path):
+            logger.debug(f"[MetadataTreeView] set_current_file_path: Same file, skipping: {file_path}", extra={"dev_only": True})
             return
 
-        # Store the previous file path before updating
-        previous_file_path = self._current_file_path
+        # Save current file state before switching
+        self._save_current_file_state()
 
-        # Save current data before changing files (only if we have a previous file)
+        # Update current file
+        previous_file_path = self._current_file_path
+        self._current_file_path = file_path
+        logger.debug(f"[MetadataTreeView] set_current_file_path: Switching to file: {file_path}", extra={"dev_only": True})
+
+        # Load state for the new file
+        self._load_file_state(file_path, previous_file_path)
+
+    def _save_current_file_state(self) -> None:
+        """
+        Save the current file's scroll position and modifications.
+        Simplified helper method for better code organization.
+        """
         if self._current_file_path is not None:
             self._save_current_scroll_position()
             # Save current modified items for the previous file
             if self.modified_items:
                 self.modified_items_per_file[self._current_file_path] = self.modified_items.copy()
+                logger.debug(f"[MetadataTreeView] Saved {len(self.modified_items)} modifications for previous file: {self._current_file_path}", extra={"dev_only": True})
+                logger.debug(f"[MetadataTreeView] Saved modifications: {list(self.modified_items)}", extra={"dev_only": True})
 
-        # Update current file
-        self._current_file_path = file_path
-
-        # Load modified items for the new file
+    def _load_file_state(self, file_path: str, previous_file_path: str) -> None:
+        """
+        Load modifications for the specified file.
+        Simplified helper method for better code organization.
+        """
         if file_path in self.modified_items_per_file:
             self.modified_items = self.modified_items_per_file[file_path].copy()
+            logger.debug(f"[MetadataTreeView] Loaded {len(self.modified_items)} existing modifications for new file", extra={"dev_only": True})
+            logger.debug(f"[MetadataTreeView] Loaded modifications: {list(self.modified_items)}", extra={"dev_only": True})
         else:
             # IMPORTANT: If this is the same file as before and we have current modifications,
             # don't clear them! This happens when set_current_file_path is called during
             # metadata refresh after editing a value.
             if not paths_equal(file_path, previous_file_path) or not self.modified_items:
                 self.modified_items = set()
+                logger.debug(f"[MetadataTreeView] Cleared modifications for new file (no existing modifications)", extra={"dev_only": True})
 
     def _save_current_scroll_position(self) -> None:
         """Save the current scroll position for the current file."""
