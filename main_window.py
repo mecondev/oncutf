@@ -62,8 +62,6 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         """Initializes the main window and sets up the layout."""
         super().__init__()
-        print("=== MAIN WINDOW __INIT__ CALLED ===")
-        logger.debug("=== MAIN WINDOW __INIT__ CALLED ===", extra={"dev_only": True})
 
         # --- Core Application Context ---
         self.context = ApplicationContext.create_instance(parent=self)
@@ -136,14 +134,7 @@ class MainWindow(QMainWindow):
 
         # --- Initialize UIManager and setup all UI ---
         self.ui_manager = UIManager(parent_window=self)
-        try:
-            logger.debug("[MainWindow] About to call setup_all_ui()", extra={"dev_only": True})
-            self.ui_manager.setup_all_ui()
-            logger.debug("[MainWindow] setup_all_ui() completed successfully", extra={"dev_only": True})
-        except Exception as e:
-            logger.error(f"[MainWindow] EXCEPTION in setup_all_ui(): {e}", extra={"dev_only": True})
-            import traceback
-            traceback.print_exc()
+        self.ui_manager.setup_all_ui()
 
         # Store initial geometry for proper restore behavior
         self._initial_geometry = self.geometry()
