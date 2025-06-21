@@ -642,138 +642,73 @@ class MetadataTreeView(QTreeView):
     # =====================================
 
     def show_context_menu(self, position: QPoint) -> None:
-        """
-        Display context menu with available options depending on the selected item.
-        Uses consistent styling and icons like the specified text module.
-
-        Args:
-            position: QPoint position where the context menu was requested
-        """
-        logger.debug(f"[MetadataTree] Context menu requested at position {position}", extra={"dev_only": True})
-
-        # Check if we're in placeholder mode - don't show menu
+        """Display context menu with available options."""
         if self._is_placeholder_mode or self.property("placeholder"):
-            logger.debug("[MetadataTree] Context menu blocked - in placeholder mode", extra={"dev_only": True})
             return
 
-        # Get the item at the click position
         index = self.indexAt(position)
-        print(f"=== Context menu: position={position}, index={index}, valid={index.isValid()} ===")
         if not index.isValid():
-            logger.debug("[MetadataTree] Context menu blocked - invalid index", extra={"dev_only": True})
             return
 
-        logger.debug(f"[MetadataTree] Context menu valid index: row={index.row()}, col={index.column()}", extra={"dev_only": True})
-        print(f"=== Context menu: valid index found, row={index.row()}, col={index.column()} ===")
-
-        # Get the key path (e.g. "EXIF/DateTimeOriginal")
         key_path = self.get_key_path(index)
-        print(f"=== Context menu: key_path = '{key_path}' ===")
-
-        # Get the value of the item
         value = index.sibling(index.row(), 1).data()
-        print(f"=== Context menu: value = '{value}' ===")
-
-        # Check if we have multiple files selected - disable Edit/Reset for multiple selection
         selected_files = self._get_current_selection()
         has_multiple_selection = len(selected_files) > 1
-        print(f"=== Context menu: has_multiple_selection = {has_multiple_selection} ===")
 
-        # Clean up any existing menu
-        if self._current_menu and self._current_menu.isVisible():
+        # Close any existing menu
+        if self._current_menu:
             self._current_menu.close()
+            self._current_menu.deleteLater()
+            self._current_menu = None
 
-        # Create menu with consistent styling
-        print(f"=== Context menu: Creating QMenu ===")
+        # Create menu
         menu = QMenu(self)
         self._current_menu = menu
-        print(f"=== Context menu: Menu created successfully ===")
 
-        # Test: Add a simple action first to see if basic menu works
-        test_action = QAction("Test Action", menu)
-        menu.addAction(test_action)
-        print(f"=== Context menu: Test action added ===")
+        # Edit action
+        edit_action = QAction("Edit Value", menu)
+        edit_action.setIcon(self._get_menu_icon("edit"))
+        edit_action.triggered.connect(lambda: self.edit_value(key_path, value))
+        can_edit = not has_multiple_selection and "Rotation" in key_path
+        edit_action.setEnabled(can_edit)
+        if has_multiple_selection:
+            edit_action.setToolTip("Edit disabled for multiple file selection")
+        elif "Rotation" not in key_path:
+            edit_action.setToolTip("Edit only available for Rotation fields")
+        else:
+            edit_action.setToolTip("Edit this metadata value")
+        menu.addAction(edit_action)
 
-        try:
+        # Reset action
+        reset_action = QAction("Reset Value", menu)
+        reset_action.setIcon(self._get_menu_icon("rotate-ccw"))
+        reset_action.triggered.connect(lambda: self.reset_value(key_path))
+        can_reset = not has_multiple_selection and "Rotation" in key_path
+        reset_action.setEnabled(can_reset)
+        if has_multiple_selection:
+            reset_action.setToolTip("Reset disabled for multiple file selection")
+        elif "Rotation" not in key_path:
+            reset_action.setToolTip("Reset only available for Rotation fields")
+        else:
+            reset_action.setToolTip("Reset this field to original value")
+        menu.addAction(reset_action)
+        menu.addSeparator()
 
-            # Edit value action (with edit icon)
-            print(f"=== Context menu: Creating edit action ===")
-            edit_action = QAction("Edit Value", menu)
-            edit_action.setIcon(self._get_menu_icon("edit"))
-            edit_action.triggered.connect(lambda: self.edit_value(key_path, value))
+        # Copy action
+        copy_action = QAction("Copy", menu)
+        copy_action.setIcon(self._get_menu_icon("copy"))
+        copy_action.triggered.connect(lambda: self.copy_value(value))
+        copy_action.setEnabled(bool(value))
+        menu.addAction(copy_action)
 
-            # Enable Edit only if:
-            # 1. Single file selection (not multiple)
-            # 2. Field is rotation
-            can_edit = not has_multiple_selection and "Rotation" in key_path
-            edit_action.setEnabled(can_edit)
-            print(f"=== Context menu: Edit action enabled = {can_edit} ===")
+        # Show menu
+        global_pos = self.mapToGlobal(position)
+        menu.exec_(global_pos)
 
-            if has_multiple_selection:
-                edit_action.setToolTip("Edit disabled for multiple file selection")
-            elif "Rotation" not in key_path:
-                edit_action.setToolTip("Edit only available for Rotation fields")
-            else:
-                edit_action.setToolTip("Edit this metadata value")
-
-            menu.addAction(edit_action)
-            print(f"=== Context menu: Edit action added ===")
-
-            # Reset value action (with rotate-ccw icon)
-            print(f"=== Context menu: Creating reset action ===")
-            reset_action = QAction("Reset Value", menu)
-            reset_action.setIcon(self._get_menu_icon("rotate-ccw"))
-            reset_action.triggered.connect(lambda: self.reset_value(key_path))
-
-            # Enable Reset only if:
-            # 1. Single file selection (not multiple)
-            # 2. Field is rotation
-            can_reset = not has_multiple_selection and "Rotation" in key_path
-            reset_action.setEnabled(can_reset)
-            print(f"=== Context menu: Reset action enabled = {can_reset} ===")
-
-            if has_multiple_selection:
-                reset_action.setToolTip("Reset disabled for multiple file selection")
-            elif "Rotation" not in key_path:
-                reset_action.setToolTip("Reset only available for Rotation fields")
-            else:
-                reset_action.setToolTip("Reset this field to original value")
-
-            menu.addAction(reset_action)
-            menu.addSeparator()
-            print(f"=== Context menu: Reset action added ===")
-
-            # Copy value action (with copy icon)
-            print(f"=== Context menu: Creating copy action ===")
-            copy_action = QAction("Copy", menu)
-            copy_action.setIcon(self._get_menu_icon("copy"))
-            copy_action.triggered.connect(lambda: self.copy_value(value))
-            copy_action.setEnabled(bool(value))
-            menu.addAction(copy_action)
-            print(f"=== Context menu: Copy action added, enabled = {bool(value)} ===")
-
-                                # Show menu and handle cleanup
-            print(f"=== Context menu: About to show menu ===")
-            global_pos = self.mapToGlobal(position)
-            print(f"=== Context menu: Global position = {global_pos} ===")
-            result = menu.exec_(global_pos)
-            print(f"=== Context menu: Menu exec result = {result} ===")
-
-            # Ensure menu is properly cleaned up after execution
-            # menu.close()  # Don't force close immediately
-            # menu.deleteLater()
-
-            # Clear focus to ensure proper event handling
-            # self.clearFocus()
-            # self.setFocus()
-
-            # Force viewport update to clear any visual artifacts
-            # self.viewport().update()
-
-        except Exception as e:
-            print(f"=== Context menu ERROR: {e} ===")
-            import traceback
-            traceback.print_exc()
+        # Cleanup
+        if self._current_menu:
+            self._current_menu.deleteLater()
+            self._current_menu = None
 
     def _get_menu_icon(self, icon_name: str):
         """Get menu icon using the same system as specified text module."""
@@ -810,6 +745,14 @@ class MetadataTreeView(QTreeView):
         """
         Copy the value to clipboard and emit the value_copied signal.
         """
+        # Clean up any open context menu
+        print(f"=== copy_value: Cleaning up context menu ===")
+        if self._current_menu:
+            if self._current_menu.isVisible():
+                self._current_menu.close()
+            self._current_menu.deleteLater()
+            self._current_menu = None
+
         if not value:
             return
 
@@ -836,9 +779,24 @@ class MetadataTreeView(QTreeView):
             normalized_key_path = key_path
 
         # Clean up any open context menu before showing dialog
-        if self._current_menu and self._current_menu.isVisible():
-            self._current_menu.close()
+        print(f"=== edit_value: Cleaning up context menu before dialog ===")
+        if self._current_menu:
+            if self._current_menu.isVisible():
+                print(f"=== edit_value: Menu is visible, closing it ===")
+                self._current_menu.close()
+            self._current_menu.deleteLater()
             self._current_menu = None
+            print(f"=== edit_value: Menu cleanup completed ===")
+
+        # Force a small delay to ensure menu is fully closed
+        from PyQt5.QtCore import QTimer
+        QTimer.singleShot(10, lambda: self._show_edit_dialog(normalized_key_path, current_value))
+
+    def _show_edit_dialog(self, normalized_key_path: str, current_value: Any) -> None:
+        """Show the edit dialog after menu cleanup."""
+        print(f"=== _show_edit_dialog: Opening dialog for {normalized_key_path} ===")
+
+        from widgets.metadata_edit_dialog import MetadataEditDialog
 
         accepted, new_value = MetadataEditDialog.get_value(
             parent=self,
@@ -952,6 +910,14 @@ class MetadataTreeView(QTreeView):
         """
         Reset the value to its original state.
         """
+        # Clean up any open context menu
+        print(f"=== reset_value: Cleaning up context menu ===")
+        if self._current_menu:
+            if self._current_menu.isVisible():
+                self._current_menu.close()
+            self._current_menu.deleteLater()
+            self._current_menu = None
+
         # Get the original value before resetting
         original_value = self._get_original_value_from_cache(key_path)
 
@@ -1314,19 +1280,28 @@ class MetadataTreeView(QTreeView):
         return
 
     def focusOutEvent(self, event):
-        """Handle focus loss to clean up any open context menus."""
-        # Temporarily disabled to debug context menu
-        # if self._current_menu and self._current_menu.isVisible():
-        #     self._current_menu.close()
+        """Handle focus loss, but preserve active context menus."""
+        # Don't close context menu when it's actively shown
+        # The menu will close naturally when user clicks elsewhere or presses Escape
+        if self._current_menu and self._current_menu.isVisible():
+            print(f"=== Context menu: Focus lost but menu is active, keeping it open ===")
+            # Don't close the menu - let it close naturally
         super().focusOutEvent(event)
 
     def mousePressEvent(self, event):
         """Handle mouse press events to clean up context menus."""
-        # Temporarily disabled to debug context menu
-        # if self._current_menu and self._current_menu.isVisible():
-        #     # Check if click is outside the menu
-        #     if not self._current_menu.geometry().contains(event.globalPos()):
-        #         self._current_menu.close()
+        print(f"=== mousePressEvent: button={event.button()}, LeftButton={Qt.LeftButton}, RightButton={Qt.RightButton} ===")
+
+        # Only close menu on LEFT click - right click will handle menu opening/closing separately
+        if self._current_menu and self._current_menu.isVisible():
+            if event.button() == Qt.LeftButton:
+                print(f"=== Context menu: Left click detected, closing menu ===")
+                self._current_menu.close()
+                self._current_menu.deleteLater()
+                self._current_menu = None
+            # Don't close on right click - let the context menu handler deal with it
+
+        # Call super first to handle the event properly
         super().mousePressEvent(event)
 
     # =====================================
