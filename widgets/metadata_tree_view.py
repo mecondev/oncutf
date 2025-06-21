@@ -283,7 +283,6 @@ class MetadataTreeView(QTreeView):
         """
         Override the setModel method to set minimum column widths after the model is set.
         """
-        print(f"=== setModel CALLED with model: {type(model)} ===")
         logger.debug(f"[MetadataTree] setModel() called with model: {type(model)}", extra={"dev_only": True})
 
         # NOTE: Do not save scroll position here - it's already handled in set_current_file_path()
@@ -299,18 +298,14 @@ class MetadataTreeView(QTreeView):
         logger.debug(f"[MetadataTree] Parent setModel() completed", extra={"dev_only": True})
 
         # Then set column sizes if we have a header and model
-        print(f"=== setModel: model exists: {model is not None}, header exists: {self.header() is not None} ===")
         if model and self.header():
             is_placeholder = self._detect_placeholder_mode(model)
-            print(f"=== setModel: is_placeholder = {is_placeholder} ===")
             self._is_placeholder_mode = is_placeholder
 
             if is_placeholder:
-                print(f"=== setModel: calling _configure_placeholder_mode ===")
                 self._configure_placeholder_mode(model)
                 self._current_file_path = None  # No file selected
             else:
-                print(f"=== setModel: calling _configure_normal_mode ===")
                 self._configure_normal_mode()
 
                 # For non-placeholder mode, immediately restore scroll position
@@ -338,20 +333,15 @@ class MetadataTreeView(QTreeView):
 
     def _detect_placeholder_mode(self, model: Any) -> bool:
         """Detect if the model contains placeholder content."""
-        print(f"=== _detect_placeholder_mode: model type = {type(model)} ===")
-
         # Check if it's a proxy model and get the source model
         source_model = model
         if hasattr(model, 'sourceModel') and callable(getattr(model, 'sourceModel')):
             source_model = model.sourceModel()
-            print(f"=== _detect_placeholder_mode: source_model = {type(source_model)} ===")
             if not source_model:
-                print(f"=== _detect_placeholder_mode: NO SOURCE MODEL -> placeholder ===")
                 return True  # No source model = placeholder
 
         # Empty model (for PNG placeholder) is also placeholder mode
         if source_model.rowCount() == 0:
-            print(f"=== _detect_placeholder_mode: EMPTY MODEL -> placeholder ===")
             return True
 
         if source_model.rowCount() == 1:
@@ -359,10 +349,8 @@ class MetadataTreeView(QTreeView):
             if root and root.rowCount() == 1:
                 item = root.child(0, 0)
                 if item and "No file" in item.text():
-                    print(f"=== _detect_placeholder_mode: 'No file' text -> placeholder ===")
                     return True
 
-        print(f"=== _detect_placeholder_mode: HAS CONTENT -> normal mode ===")
         return False
 
     def _configure_placeholder_mode(self, model: Any) -> None:
@@ -650,16 +638,15 @@ class MetadataTreeView(QTreeView):
         if not index.isValid():
             return
 
+        # Close any existing menu
+        if self._current_menu:
+            self._current_menu.close()
+            self._current_menu = None
+
         key_path = self.get_key_path(index)
         value = index.sibling(index.row(), 1).data()
         selected_files = self._get_current_selection()
         has_multiple_selection = len(selected_files) > 1
-
-        # Close any existing menu
-        if self._current_menu:
-            self._current_menu.close()
-            self._current_menu.deleteLater()
-            self._current_menu = None
 
         # Create menu
         menu = QMenu(self)
@@ -669,28 +656,14 @@ class MetadataTreeView(QTreeView):
         edit_action = QAction("Edit Value", menu)
         edit_action.setIcon(self._get_menu_icon("edit"))
         edit_action.triggered.connect(lambda: self.edit_value(key_path, value))
-        can_edit = not has_multiple_selection and "Rotation" in key_path
-        edit_action.setEnabled(can_edit)
-        if has_multiple_selection:
-            edit_action.setToolTip("Edit disabled for multiple file selection")
-        elif "Rotation" not in key_path:
-            edit_action.setToolTip("Edit only available for Rotation fields")
-        else:
-            edit_action.setToolTip("Edit this metadata value")
+        edit_action.setEnabled(not has_multiple_selection and "Rotation" in key_path)
         menu.addAction(edit_action)
 
         # Reset action
         reset_action = QAction("Reset Value", menu)
         reset_action.setIcon(self._get_menu_icon("rotate-ccw"))
         reset_action.triggered.connect(lambda: self.reset_value(key_path))
-        can_reset = not has_multiple_selection and "Rotation" in key_path
-        reset_action.setEnabled(can_reset)
-        if has_multiple_selection:
-            reset_action.setToolTip("Reset disabled for multiple file selection")
-        elif "Rotation" not in key_path:
-            reset_action.setToolTip("Reset only available for Rotation fields")
-        else:
-            reset_action.setToolTip("Reset this field to original value")
+        reset_action.setEnabled(not has_multiple_selection and "Rotation" in key_path)
         menu.addAction(reset_action)
         menu.addSeparator()
 
@@ -701,14 +674,15 @@ class MetadataTreeView(QTreeView):
         copy_action.setEnabled(bool(value))
         menu.addAction(copy_action)
 
-        # Show menu
-        global_pos = self.mapToGlobal(position)
-        menu.exec_(global_pos)
+        # Use popup() instead of exec_() to avoid blocking
+        menu.popup(self.mapToGlobal(position))
 
-        # Cleanup
-        if self._current_menu:
-            self._current_menu.deleteLater()
-            self._current_menu = None
+        # Connect cleanup to aboutToHide after showing
+        menu.aboutToHide.connect(self._cleanup_menu)
+
+    def _cleanup_menu(self) -> None:
+        """Clean up the current menu reference."""
+        self._current_menu = None
 
     def _get_menu_icon(self, icon_name: str):
         """Get menu icon using the same system as specified text module."""
@@ -742,25 +716,12 @@ class MetadataTreeView(QTreeView):
         return item_text
 
     def copy_value(self, value: Any) -> None:
-        """
-        Copy the value to clipboard and emit the value_copied signal.
-        """
-        # Clean up any open context menu
-        print(f"=== copy_value: Cleaning up context menu ===")
-        if self._current_menu:
-            if self._current_menu.isVisible():
-                self._current_menu.close()
-            self._current_menu.deleteLater()
-            self._current_menu = None
-
+        """Copy the value to clipboard and emit the value_copied signal."""
         if not value:
             return
 
-        # Copy to clipboard
         clipboard = QApplication.clipboard()
         clipboard.setText(str(value))
-
-        # Emit signal
         self.value_copied.emit(str(value))
 
     # =====================================
@@ -768,33 +729,9 @@ class MetadataTreeView(QTreeView):
     # =====================================
 
     def edit_value(self, key_path: str, current_value: Any) -> None:
-        """
-        Open a dialog to edit the value of a metadata field.
-        SIMPLIFIED: For rotation, always use "Rotation" as key_path.
-        """
+        """Open a dialog to edit the value of a metadata field."""
         # Normalize rotation key_path to be always "Rotation" (top-level)
-        if "rotation" in key_path.lower():
-            normalized_key_path = "Rotation"
-        else:
-            normalized_key_path = key_path
-
-        # Clean up any open context menu before showing dialog
-        print(f"=== edit_value: Cleaning up context menu before dialog ===")
-        if self._current_menu:
-            if self._current_menu.isVisible():
-                print(f"=== edit_value: Menu is visible, closing it ===")
-                self._current_menu.close()
-            self._current_menu.deleteLater()
-            self._current_menu = None
-            print(f"=== edit_value: Menu cleanup completed ===")
-
-        # Force a small delay to ensure menu is fully closed
-        from PyQt5.QtCore import QTimer
-        QTimer.singleShot(10, lambda: self._show_edit_dialog(normalized_key_path, current_value))
-
-    def _show_edit_dialog(self, normalized_key_path: str, current_value: Any) -> None:
-        """Show the edit dialog after menu cleanup."""
-        print(f"=== _show_edit_dialog: Opening dialog for {normalized_key_path} ===")
+        normalized_key_path = "Rotation" if "rotation" in key_path.lower() else key_path
 
         from widgets.metadata_edit_dialog import MetadataEditDialog
 
@@ -805,19 +742,10 @@ class MetadataTreeView(QTreeView):
         )
 
         if accepted and new_value != str(current_value):
-            # Add to modified items (use normalized path)
             self.modified_items.add(normalized_key_path)
-
-            # Update metadata in cache FIRST
             self._update_metadata_in_cache(normalized_key_path, new_value)
-
-            # Update the file icon in the file table to show it's modified
             self._update_file_icon_status()
-
-            # Emit signal with the new value
             self.value_edited.emit(normalized_key_path, str(current_value), new_value)
-
-            # FORCE a complete refresh of the metadata display to show the change immediately
             self.update_from_parent_selection()
 
     def _get_original_value_from_cache(self, key_path: str) -> Optional[Any]:
@@ -907,38 +835,18 @@ class MetadataTreeView(QTreeView):
         self.update_from_parent_selection()
 
     def reset_value(self, key_path: str) -> None:
-        """
-        Reset the value to its original state.
-        """
-        # Clean up any open context menu
-        print(f"=== reset_value: Cleaning up context menu ===")
-        if self._current_menu:
-            if self._current_menu.isVisible():
-                self._current_menu.close()
-            self._current_menu.deleteLater()
-            self._current_menu = None
-
-        # Get the original value before resetting
+        """Reset the value to its original state."""
         original_value = self._get_original_value_from_cache(key_path)
 
-        # Remove from modified items
         if key_path in self.modified_items:
             self.modified_items.remove(key_path)
 
-        # Update the file icon in the file table
         self._update_file_icon_status()
-
-        # Update the view
-        self.viewport().update()
-
-        # Reset value in cache
         self._reset_metadata_in_cache(key_path)
 
-        # Update the tree view to show the original value
         if original_value is not None:
             self._update_tree_item_value(key_path, str(original_value))
 
-        # Emit signal
         self.value_reset.emit(key_path)
 
     def _update_tree_item_value(self, key_path: str, new_value: str) -> None:
@@ -1280,28 +1188,16 @@ class MetadataTreeView(QTreeView):
         return
 
     def focusOutEvent(self, event):
-        """Handle focus loss, but preserve active context menus."""
-        # Don't close context menu when it's actively shown
-        # The menu will close naturally when user clicks elsewhere or presses Escape
-        if self._current_menu and self._current_menu.isVisible():
-            print(f"=== Context menu: Focus lost but menu is active, keeping it open ===")
-            # Don't close the menu - let it close naturally
+        """Handle focus loss events."""
         super().focusOutEvent(event)
 
     def mousePressEvent(self, event):
-        """Handle mouse press events to clean up context menus."""
-        print(f"=== mousePressEvent: button={event.button()}, LeftButton={Qt.LeftButton}, RightButton={Qt.RightButton} ===")
+        """Handle mouse press events."""
+        # Close any open context menu on left click
+        if event.button() == Qt.LeftButton and self._current_menu:
+            self._current_menu.close()
+            self._current_menu = None
 
-        # Only close menu on LEFT click - right click will handle menu opening/closing separately
-        if self._current_menu and self._current_menu.isVisible():
-            if event.button() == Qt.LeftButton:
-                print(f"=== Context menu: Left click detected, closing menu ===")
-                self._current_menu.close()
-                self._current_menu.deleteLater()
-                self._current_menu = None
-            # Don't close on right click - let the context menu handler deal with it
-
-        # Call super first to handle the event properly
         super().mousePressEvent(event)
 
     # =====================================
@@ -1316,7 +1212,7 @@ class MetadataTreeView(QTreeView):
         Args:
             message (str): The message to display if PNG is not available
         """
-        print(f"=== show_empty_state CALLED with message: {message} ===")
+
 
         # Create an empty model for placeholder mode
         model = QStandardItemModel()
@@ -1355,7 +1251,7 @@ class MetadataTreeView(QTreeView):
         Clears the metadata tree view and shows a placeholder message.
         Does not clear scroll position memory when just showing placeholder.
         """
-        print("=== clear_view CALLED - showing placeholder ===")
+
         # Don't clear scroll position memory when just showing placeholder
         # Only clear when actually changing folders
         self.show_empty_state("No file selected")
@@ -1370,17 +1266,14 @@ class MetadataTreeView(QTreeView):
             metadata: Dictionary containing metadata to display
             context: Context string for debugging
         """
-        print(f"=== display_metadata CALLED with context: {context}, metadata type: {type(metadata)} ===")
-
         if not isinstance(metadata, dict) or not metadata:
-            print(f"=== display_metadata: NO METADATA (context: {context}) ===")
             logger.debug(f"[MetadataTree] No metadata to display (context: {context})", extra={"dev_only": True})
             self.clear_view()
             # Disable search field when no metadata
             self._update_search_field_state(False)
             return
 
-        print(f"=== display_metadata: HAS METADATA (context: {context}, {len(metadata)} keys) ===")
+
         logger.debug(f"[MetadataTree] Displaying metadata for file (context: {context})", extra={"dev_only": True})
         # Enable search field when metadata is available
         self._update_search_field_state(True)
@@ -1428,7 +1321,7 @@ class MetadataTreeView(QTreeView):
 
         Includes fallback protection in case called with invalid metadata.
         """
-        print(f"=== _render_metadata_view CALLED with {len(metadata)} keys ===")
+
 
         if not isinstance(metadata, dict):
             logger.error(f"[render_metadata_view] Called with invalid metadata: {type(metadata)} → {metadata}")
@@ -1454,16 +1347,12 @@ class MetadataTreeView(QTreeView):
 
             # Use proxy model for filtering instead of setting model directly
             parent_window = self._get_parent_with_file_table()
-            print(f"=== parent_window found: {parent_window is not None} ===")
             if parent_window and hasattr(parent_window, 'metadata_proxy_model'):
-                print(f"=== Using proxy model path ===")
                 # Set the source model to the proxy model
                 parent_window.metadata_proxy_model.setSourceModel(tree_model)
                 # ALWAYS call setModel to trigger mode changes (placeholder vs normal)
-                print(f"=== ALWAYS calling setModel with proxy model ===")
                 self.setModel(parent_window.metadata_proxy_model)  # Use self.setModel() not super()
             else:
-                print(f"=== Using fallback direct model path ===")
                 # Fallback: set model directly if proxy model is not available
                 self.setModel(tree_model)
 
