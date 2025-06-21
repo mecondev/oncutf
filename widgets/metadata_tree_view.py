@@ -196,6 +196,10 @@ class MetadataTreeView(QTreeView):
         self.setDragDropMode(QAbstractItemView.DropOnly)
         self.setAlternatingRowColors(True)  # Enable alternating row colors
 
+        # Set up context menu
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
+
     def resizeEvent(self, event):
         """Handle resize events to adjust placeholder label size."""
         super().resizeEvent(event)
@@ -325,13 +329,20 @@ class MetadataTreeView(QTreeView):
 
     def _detect_placeholder_mode(self, model: Any) -> bool:
         """Detect if the model contains placeholder content."""
+        # Check if it's a proxy model and get the source model
+        source_model = model
+        if hasattr(model, 'sourceModel') and callable(getattr(model, 'sourceModel')):
+            source_model = model.sourceModel()
+            if not source_model:
+                return True  # No source model = placeholder
+
         # Empty model (for PNG placeholder) is also placeholder mode
-        if model.rowCount() == 0:
+        if source_model.rowCount() == 0:
             return True
 
-        if model.rowCount() == 1:
-            root = model.invisibleRootItem()
-            if root.rowCount() == 1:
+        if source_model.rowCount() == 1:
+            root = source_model.invisibleRootItem()
+            if root and root.rowCount() == 1:
                 item = root.child(0, 0)
                 if item and "No file" in item.text():
                     return True
@@ -362,7 +373,7 @@ class MetadataTreeView(QTreeView):
                 logger.warning("[MetadataTree] Could not show placeholder icon - missing label or icon")
 
             # Placeholder mode: Fixed columns, no selection, no hover, NO HORIZONTAL SCROLLBAR
-            self._update_scrollbar_policy_intelligently(Qt.ScrollBarAlwaysOff)
+            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # type: ignore
 
             header = self.header()
             header.setSectionResizeMode(0, QHeaderView.Fixed)
@@ -403,8 +414,10 @@ class MetadataTreeView(QTreeView):
             if self.placeholder_label:
                 self.placeholder_label.hide()
 
-            # Normal content mode: HORIZONTAL SCROLLBAR enabled but controlled
-            self._update_scrollbar_policy_intelligently(Qt.ScrollBarAsNeeded)
+            # Normal content mode: HORIZONTAL SCROLLBAR visible when needed for long metadata values
+            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)  # type: ignore
+            # Also ensure vertical scrollbar is set properly
+            self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)  # type: ignore
 
             header = self.header()
 
@@ -448,12 +461,7 @@ class MetadataTreeView(QTreeView):
             if hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
                 self.viewport().update()
 
-    def _update_scrollbar_policy_intelligently(self, target_policy: int) -> None:
-        """Update scrollbar policy only if it differs from current to prevent unnecessary updates."""
-        current_policy = self.horizontalScrollBarPolicy()
-        if current_policy != target_policy:
-            self.setHorizontalScrollBarPolicy(target_policy)
-            logger.debug(f"[MetadataTree] Updated scrollbar policy: {current_policy} → {target_policy}", extra={"dev_only": True})
+
 
     def _make_placeholder_items_non_selectable(self, model: Any) -> None:
         """Make placeholder items non-selectable."""
@@ -1293,10 +1301,9 @@ class MetadataTreeView(QTreeView):
                 super().setModel(parent_window.metadata_proxy_model)
         else:
             # Fallback: set model directly if proxy model is not available
-            self.setModel(model)
+            super().setModel(model)
 
-        # Notify parent about state change if it has the toggle button
-        self._update_parent_toggle_button(expanded=False, enabled=False)
+        # Don't force placeholder mode here - let setModel() handle it properly
 
     def clear_view(self) -> None:
         """
@@ -1542,59 +1549,7 @@ class MetadataTreeView(QTreeView):
         except Exception as e:
             logger.debug(f"[ScrollMemory] Error determining current file: {e}", extra={"dev_only": True})
 
-    def _update_parent_toggle_button(self, expanded: bool, enabled: bool) -> None:
-        """
-        Updates the parent's toggle expand button state if it exists.
 
-        Args:
-            expanded (bool): Whether the tree is expanded
-            enabled (bool): Whether the button should be enabled
-        """
-        parent_window = self._get_parent_with_file_table()
-        if parent_window and hasattr(parent_window, 'toggle_expand_button'):
-            button = parent_window.toggle_expand_button
-            button.setEnabled(enabled)
-            if enabled:
-                button.setChecked(expanded)
-                if expanded:
-                    button.setText("Collapse All")
-                    # Try to set icon if available
-                    try:
-                        from utils.icons_loader import get_menu_icon
-                        button.setIcon(get_menu_icon("chevrons-up"))
-                    except ImportError:
-                        pass
-                else:
-                    button.setText("Expand All")
-                    try:
-                        from utils.icons_loader import get_menu_icon
-                        button.setIcon(get_menu_icon("chevrons-down"))
-                    except ImportError:
-                        pass
-
-    def toggle_expand_all(self, expand: Optional[bool] = None) -> None:
-        """
-        Toggles between expanding and collapsing all tree items.
-
-        Args:
-            expand (bool, optional): If provided, forces expand (True) or collapse (False).
-                                   If None, toggles based on current state.
-        """
-        if expand is None:
-            # Auto-detect current state by checking if first item is expanded
-            model = self.model()
-            if model and model.rowCount() > 0:
-                first_index = model.index(0, 0)
-                expand = not self.isExpanded(first_index)
-            else:
-                expand = True
-
-        if expand:
-            self.expandAll()
-            self._update_parent_toggle_button(expanded=True, enabled=True)
-        else:
-            self.collapseAll()
-            self._update_parent_toggle_button(expanded=False, enabled=True)
 
     # =====================================
     # Selection-based Metadata Management
@@ -1674,34 +1629,13 @@ class MetadataTreeView(QTreeView):
         """
         self.update_from_parent_selection()
 
-    def connect_toggle_button(self) -> None:
-        """
-        Connects the parent's toggle expand button to this tree view's functionality.
-        Should be called after the tree view is added to its parent.
-        """
-        parent_window = self._get_parent_with_file_table()
-        if parent_window and hasattr(parent_window, 'toggle_expand_button'):
-            button = parent_window.toggle_expand_button
 
-            # Disconnect any existing connections to avoid double-connections
-            try:
-                button.toggled.disconnect()
-            except TypeError:
-                pass  # No connections to disconnect
-
-            # Connect to our toggle method
-            button.toggled.connect(self.toggle_expand_all)
-
-            logger.debug("[MetadataTreeView] Toggle button connected successfully", extra={"dev_only": True})
-        else:
-            logger.warning("[MetadataTreeView] Could not find toggle button to connect")
 
     def initialize_with_parent(self) -> None:
         """
         Performs initial setup that requires parent window to be available.
         Should be called after the tree view is added to its parent.
         """
-        self.connect_toggle_button()
         self.show_empty_state("No file selected")
         # Initialize search field as disabled
         self._update_search_field_state(False)

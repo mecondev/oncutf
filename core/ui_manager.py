@@ -76,7 +76,7 @@ class UIManager:
     def _calculate_optimal_window_size(self):
         """Calculate optimal window size based on screen resolution and aspect ratio."""
         # Get primary screen geometry
-        screen = QApplication.desktop().screenGeometry()
+        screen = QApplication.desktop().screenGeometry()  # type: ignore
         screen_width = screen.width()
         screen_height = screen.height()
         screen_aspect = screen_width / screen_height
@@ -454,8 +454,6 @@ class UIManager:
         self.parent_window.metadata_tree_view.value_reset.connect(self.parent_window.on_metadata_value_reset)
         self.parent_window.metadata_tree_view.value_copied.connect(self.parent_window.on_metadata_value_copied)
 
-
-
         self.parent_window.rename_button.clicked.connect(self.parent_window.rename_files)
 
         # --- Connect the updated signal of RenameModulesArea to generate_preview_names ---
@@ -554,12 +552,20 @@ class UIManager:
         # Use setFilterRegExp for better filtering with the custom proxy model
         self.parent_window.metadata_proxy_model.setFilterRegExp(text)
 
+        # Always expand all groups after filtering to keep them open
+        from PyQt5.QtCore import QTimer
+        QTimer.singleShot(10, self.parent_window.metadata_tree_view.expandAll)
+
     def _clear_metadata_search(self):
         """Clear the metadata search field and hide the clear button."""
         self.parent_window.metadata_search_field.clear()
         self.parent_window.clear_search_action.setVisible(False)
         self.parent_window._metadata_search_text = ""
         self.parent_window.metadata_proxy_model.setFilterRegExp("")
+
+        # Always expand all groups after clearing filter
+        from PyQt5.QtCore import QTimer
+        QTimer.singleShot(10, self.parent_window.metadata_tree_view.expandAll)
 
     def restore_metadata_search_text(self):
         """Restore the metadata search text from session storage."""
