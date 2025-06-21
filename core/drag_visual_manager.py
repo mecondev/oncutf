@@ -233,8 +233,10 @@ class DragVisualManager:
                     action_icon = "plus-circle"  # Merge + Recursive (Ctrl+Shift)
                 else:
                     action_icon = "check"  # Replace + Shallow (Normal - no modifiers)
-            else:  # INVALID or NEUTRAL
+            elif self._drop_zone_state == DropZoneState.INVALID:
                 action_icon = "x"  # Invalid drop
+            else:  # NEUTRAL
+                action_icon = None  # No action icon - just show base icon
 
         # Create composite cursor
         return self._create_composite_cursor(base_icon, action_icon)
@@ -260,87 +262,88 @@ class DragVisualManager:
             base_pixmap = base_qicon.pixmap(28, 28)  # Increased from 20x20
             painter.drawPixmap(4, 8, base_pixmap)
 
-        # Draw action icon (smaller, bottom-right)
-        action_qicon = get_menu_icon(action_icon)
-        if not action_qicon.isNull():
-            action_pixmap = action_qicon.pixmap(18, 18)  # Increased from 12x12
+        # Draw action icon (smaller, bottom-right) only if action_icon is specified
+        if action_icon is not None:
+            action_qicon = get_menu_icon(action_icon)
+            if not action_qicon.isNull():
+                action_pixmap = action_qicon.pixmap(18, 18)  # Increased from 12x12
 
-            # Color the action icons for better visual feedback
-            if action_icon == "x":
-                # Red for invalid drop zones
-                colored_pixmap = QPixmap(action_pixmap.size())
-                colored_pixmap.fill(Qt.transparent)
+                # Color the action icons for better visual feedback
+                if action_icon == "x":
+                    # Red for invalid drop zones
+                    colored_pixmap = QPixmap(action_pixmap.size())
+                    colored_pixmap.fill(Qt.transparent)
 
-                color_painter = QPainter(colored_pixmap)
-                color_painter.setRenderHint(QPainter.Antialiasing)
+                    color_painter = QPainter(colored_pixmap)
+                    color_painter.setRenderHint(QPainter.Antialiasing)
 
-                # First draw the original icon
-                color_painter.drawPixmap(0, 0, action_pixmap)
+                    # First draw the original icon
+                    color_painter.drawPixmap(0, 0, action_pixmap)
 
-                # Then apply red color overlay (brighter red with added green/blue)
-                color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
-                color_painter.fillRect(colored_pixmap.rect(), QColor(220, 68, 84))  # Brighter red (+15 green, +15 blue)
+                    # Then apply red color overlay (brighter red with added green/blue)
+                    color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+                    color_painter.fillRect(colored_pixmap.rect(), QColor(220, 68, 84))  # Brighter red (+15 green, +15 blue)
 
-                color_painter.end()
-                action_pixmap = colored_pixmap
+                    color_painter.end()
+                    action_pixmap = colored_pixmap
 
-            elif action_icon == "check":
-                # Green for valid drop zones
-                colored_pixmap = QPixmap(action_pixmap.size())
-                colored_pixmap.fill(Qt.transparent)
+                elif action_icon == "check":
+                    # Green for valid drop zones
+                    colored_pixmap = QPixmap(action_pixmap.size())
+                    colored_pixmap.fill(Qt.transparent)
 
-                color_painter = QPainter(colored_pixmap)
-                color_painter.setRenderHint(QPainter.Antialiasing)
+                    color_painter = QPainter(colored_pixmap)
+                    color_painter.setRenderHint(QPainter.Antialiasing)
 
-                # First draw the original icon
-                color_painter.drawPixmap(0, 0, action_pixmap)
+                    # First draw the original icon
+                    color_painter.drawPixmap(0, 0, action_pixmap)
 
-                # Then apply green color overlay (bright green)
-                color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
-                color_painter.fillRect(colored_pixmap.rect(), QColor(40, 167, 69))  # Bootstrap success green
+                    # Then apply green color overlay (bright green)
+                    color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+                    color_painter.fillRect(colored_pixmap.rect(), QColor(40, 167, 69))  # Bootstrap success green
 
-                color_painter.end()
-                action_pixmap = colored_pixmap
+                    color_painter.end()
+                    action_pixmap = colored_pixmap
 
-            elif action_icon == "info":
-                # Blue for fast metadata
-                colored_pixmap = QPixmap(action_pixmap.size())
-                colored_pixmap.fill(Qt.transparent)
+                elif action_icon == "info":
+                    # Blue for fast metadata
+                    colored_pixmap = QPixmap(action_pixmap.size())
+                    colored_pixmap.fill(Qt.transparent)
 
-                color_painter = QPainter(colored_pixmap)
-                color_painter.setRenderHint(QPainter.Antialiasing)
+                    color_painter = QPainter(colored_pixmap)
+                    color_painter.setRenderHint(QPainter.Antialiasing)
 
-                # First draw the original icon
-                color_painter.drawPixmap(0, 0, action_pixmap)
+                    # First draw the original icon
+                    color_painter.drawPixmap(0, 0, action_pixmap)
 
-                # Then apply blue color overlay
-                color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
-                # Always use regular blue - dimmed colors were not requested by user
-                color_painter.fillRect(colored_pixmap.rect(), QColor(0, 123, 255))  # Regular blue
-                color_painter.end()
+                    # Then apply blue color overlay
+                    color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+                    # Always use regular blue - dimmed colors were not requested by user
+                    color_painter.fillRect(colored_pixmap.rect(), QColor(0, 123, 255))  # Regular blue
+                    color_painter.end()
 
-                action_pixmap = colored_pixmap
+                    action_pixmap = colored_pixmap
 
-            elif action_icon == "database":
-                # Orange for extended metadata
-                colored_pixmap = QPixmap(action_pixmap.size())
-                colored_pixmap.fill(Qt.transparent)
+                elif action_icon == "database":
+                    # Orange for extended metadata
+                    colored_pixmap = QPixmap(action_pixmap.size())
+                    colored_pixmap.fill(Qt.transparent)
 
-                color_painter = QPainter(colored_pixmap)
-                color_painter.setRenderHint(QPainter.Antialiasing)
+                    color_painter = QPainter(colored_pixmap)
+                    color_painter.setRenderHint(QPainter.Antialiasing)
 
-                # First draw the original icon
-                color_painter.drawPixmap(0, 0, action_pixmap)
+                    # First draw the original icon
+                    color_painter.drawPixmap(0, 0, action_pixmap)
 
-                # Then apply orange color overlay
-                color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
-                # Always use regular orange - dimmed colors were not requested by user
-                color_painter.fillRect(colored_pixmap.rect(), QColor(255, 140, 0))  # Regular orange
-                color_painter.end()
+                    # Then apply orange color overlay
+                    color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+                    # Always use regular orange - dimmed colors were not requested by user
+                    color_painter.fillRect(colored_pixmap.rect(), QColor(255, 140, 0))  # Regular orange
+                    color_painter.end()
 
-                action_pixmap = colored_pixmap
+                    action_pixmap = colored_pixmap
 
-            painter.drawPixmap(26, 26, action_pixmap)
+                painter.drawPixmap(26, 26, action_pixmap)
 
         painter.end()
 

@@ -86,6 +86,7 @@ class FileTreeView(QTreeView):
         self._is_dragging = False
         self._drag_path: Optional[str] = None
         self._drag_preparation = False  # Flag to block hover during drag preparation
+        self._initial_drag_move = True  # Flag to track first mouse move after drag start
 
         logger.debug("[FileTreeView] Initialized with single-item drag system", extra={"dev_only": True})
 
@@ -198,6 +199,7 @@ class FileTreeView(QTreeView):
             self._drag_start_pos = event.pos()
             self._is_dragging = False
             self._drag_path = None
+            self._initial_drag_move = True  # Reset flag for potential new drag
 
         # Call super() to handle normal selection
         super().mousePressEvent(event)
@@ -206,7 +208,17 @@ class FileTreeView(QTreeView):
         """Handle mouse move for custom drag start and real-time drop zone validation"""
         # If we're dragging, only handle drag feedback and block all other processing
         if self._is_dragging:
-            self._update_drag_feedback()
+            # Only update drag feedback after the cursor has moved away from the start position
+            # This prevents immediate "invalid" feedback when drag starts over the source widget
+            if not self._initial_drag_move:
+                self._update_drag_feedback()
+            else:
+                # Check if cursor has moved enough from start position to begin feedback
+                if self._drag_start_pos:
+                    distance = (event.pos() - self._drag_start_pos).manhattanLength()
+                    if distance > 30:  # Larger threshold to give time for neutral cursor to show
+                        self._initial_drag_move = False
+                        self._update_drag_feedback()
             # Don't call super().mouseMoveEvent() during drag to prevent hover changes
             return
 
@@ -289,6 +301,7 @@ class FileTreeView(QTreeView):
 
         # Set drag state
         self._is_dragging = True
+        self._initial_drag_move = True  # Reset flag for new drag operation
 
         # Disable mouse tracking to prevent hover effects during drag
         self._original_mouse_tracking = self.hasMouseTracking()
@@ -377,6 +390,7 @@ class FileTreeView(QTreeView):
             # Clean up drag state without performing drop
             self._is_dragging = False
             self._drag_preparation = False  # Clear preparation flag
+            self._initial_drag_move = True  # Reset flag
             path = self._drag_path
             self._drag_path = None
             self._drag_start_pos = None
@@ -453,6 +467,7 @@ class FileTreeView(QTreeView):
         # Clean up drag state
         self._is_dragging = False
         self._drag_preparation = False  # Clear preparation flag
+        self._initial_drag_move = True  # Reset flag
         path = self._drag_path
         self._drag_path = None
         self._drag_start_pos = None
