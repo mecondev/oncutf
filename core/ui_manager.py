@@ -41,12 +41,16 @@ class UIManager:
 
     def setup_all_ui(self) -> None:
         """Setup all UI components in the correct order."""
+        print("=== UIManager setup_all_ui() CALLED ===")
+        logger.debug("[UIManager] setup_all_ui() CALLED", extra={"dev_only": True})
         self.setup_main_window()
         self.setup_main_layout()
         self.setup_splitters()
         self.setup_left_panel()
         self.setup_center_panel()
+        logger.debug("[UIManager] setup_center_panel() DONE - calling setup_right_panel()", extra={"dev_only": True})
         self.setup_right_panel()
+        logger.debug("[UIManager] setup_right_panel() DONE", extra={"dev_only": True})
         self.setup_bottom_layout()
         self.setup_footer()
         self.setup_signals()
@@ -275,6 +279,7 @@ class UIManager:
 
     def setup_right_panel(self) -> None:
         """Setup right panel (metadata tree view)."""
+        print("=== UIManager setup_right_panel() CALLED ===")
         self.parent_window.right_frame = QFrame()
         right_layout = QVBoxLayout(self.parent_window.right_frame)
         right_layout.addWidget(QLabel("Information"))
@@ -316,7 +321,11 @@ class UIManager:
         right_layout.addLayout(search_layout)
 
         # Metadata Tree View
+        print("=== ABOUT TO CREATE MetadataTreeView ===")
+        logger.debug("[UIManager] Creating MetadataTreeView...", extra={"dev_only": True})
         self.parent_window.metadata_tree_view = MetadataTreeView()
+        print("=== MetadataTreeView CREATED SUCCESSFULLY ===")
+        logger.debug("[UIManager] MetadataTreeView created successfully!", extra={"dev_only": True})
         self.parent_window.metadata_tree_view.files_dropped.connect(self.parent_window.load_metadata_from_dropped_files)
         # Συνδέουμε το proxy model με το tree view
         self.parent_window.metadata_tree_view.setModel(self.parent_window.metadata_proxy_model)

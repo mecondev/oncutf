@@ -139,6 +139,8 @@ class MetadataTreeView(QTreeView):
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
+        print("=== MetadataTreeView __init__() CALLED ===")
+        logger.debug("[MetadataTree] __init__() called - MetadataTreeView initializing", extra={"dev_only": True})
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True)
         self.setDragDropMode(QAbstractItemView.DropOnly)
@@ -282,6 +284,8 @@ class MetadataTreeView(QTreeView):
         """
         Override the setModel method to set minimum column widths after the model is set.
         """
+        logger.debug(f"[MetadataTree] setModel() called with model: {type(model)}", extra={"dev_only": True})
+
         # NOTE: Do not save scroll position here - it's already handled in set_current_file_path()
         # The _current_file_path has already been changed to the new file at this point
 
@@ -292,6 +296,7 @@ class MetadataTreeView(QTreeView):
 
         # First call the parent implementation
         super().setModel(model)
+        logger.debug(f"[MetadataTree] Parent setModel() completed", extra={"dev_only": True})
 
         # Then set column sizes if we have a header and model
         if model and self.header():
@@ -350,6 +355,8 @@ class MetadataTreeView(QTreeView):
 
     def _configure_placeholder_mode(self, model: Any) -> None:
         """Configure view for placeholder mode with anti-flickering."""
+        logger.debug("[MetadataTree] Configuring PLACEHOLDER mode", extra={"dev_only": True})
+
         # Protection against repeated calls to placeholder mode - but only if ALL conditions are already met
         if (getattr(self, '_is_placeholder_mode', False) and
             self.placeholder_label and self.placeholder_label.isVisible() and
@@ -390,7 +397,8 @@ class MetadataTreeView(QTreeView):
             self.setSelectionMode(QAbstractItemView.NoSelection)
             self.setItemsExpandable(False)
             self.setRootIsDecorated(False)
-            self.setContextMenuPolicy(Qt.NoContextMenu)  # Disable context menu
+            self.setContextMenuPolicy(Qt.NoContextMenu)  # Disable context menu in placeholder mode
+            logger.debug("[MetadataTree] Context menu DISABLED in placeholder mode", extra={"dev_only": True})
             self.setMouseTracking(False)  # Disable hover effects
 
                         # Set placeholder property for styling
@@ -406,6 +414,8 @@ class MetadataTreeView(QTreeView):
 
     def _configure_normal_mode(self) -> None:
         """Configure view for normal content mode with anti-flickering."""
+        logger.debug("[MetadataTree] Configuring NORMAL mode", extra={"dev_only": True})
+
         # Use batch updates to prevent flickering during normal mode setup
         self.setUpdatesEnabled(False)
 
@@ -414,8 +424,8 @@ class MetadataTreeView(QTreeView):
             if self.placeholder_label:
                 self.placeholder_label.hide()
 
-            # Normal content mode: HORIZONTAL SCROLLBAR visible when needed for long metadata values
-            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)  # type: ignore
+            # Normal content mode: HORIZONTAL SCROLLBAR enabled but controlled
+            self._update_scrollbar_policy_intelligently(Qt.ScrollBarAsNeeded)
             # Also ensure vertical scrollbar is set properly
             self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)  # type: ignore
 
@@ -444,6 +454,7 @@ class MetadataTreeView(QTreeView):
             self.setItemsExpandable(True)
             self.setRootIsDecorated(False)
             self.setContextMenuPolicy(Qt.CustomContextMenu)  # Re-enable context menu
+            logger.debug("[MetadataTree] Context menu ENABLED in normal mode", extra={"dev_only": True})
             self.setMouseTracking(True)  # Re-enable hover effects
 
             # Clear placeholder property
@@ -461,7 +472,12 @@ class MetadataTreeView(QTreeView):
             if hasattr(self, 'viewport') and callable(getattr(self.viewport(), 'update', None)):
                 self.viewport().update()
 
-
+    def _update_scrollbar_policy_intelligently(self, target_policy: int) -> None:
+        """Update scrollbar policy only if it differs from current to prevent unnecessary updates."""
+        current_policy = self.horizontalScrollBarPolicy()
+        if current_policy != target_policy:
+            self.setHorizontalScrollBarPolicy(target_policy)
+            logger.debug(f"[MetadataTree] Updated scrollbar policy: {current_policy} → {target_policy}", extra={"dev_only": True})
 
     def _make_placeholder_items_non_selectable(self, model: Any) -> None:
         """Make placeholder items non-selectable."""
@@ -618,14 +634,20 @@ class MetadataTreeView(QTreeView):
         Display context menu with available options depending on the selected item.
         Uses consistent styling and icons like the specified text module.
         """
+        logger.debug(f"[MetadataTree] Context menu requested at position {position}", extra={"dev_only": True})
+
         # Check if we're in placeholder mode - don't show menu
         if self._is_placeholder_mode or self.property("placeholder"):
+            logger.debug("[MetadataTree] Context menu blocked - in placeholder mode", extra={"dev_only": True})
             return
 
         # Get the item at the click position
         index = self.indexAt(position)
         if not index.isValid():
+            logger.debug("[MetadataTree] Context menu blocked - invalid index", extra={"dev_only": True})
             return
+
+        logger.debug(f"[MetadataTree] Context menu valid index: row={index.row()}, col={index.column()}", extra={"dev_only": True})
 
         # Get the key path (e.g. "EXIF/DateTimeOriginal")
         key_path = self.get_key_path(index)
@@ -660,34 +682,6 @@ class MetadataTreeView(QTreeView):
 
         menu.addAction(edit_action)
 
-        # Set to 0 action (with refresh-cw icon)
-        if "Rotation" in key_path:
-            set_zero_action = QAction("Set Rotation to 0°", menu)
-        else:
-            set_zero_action = QAction("Set to 0", menu)
-        set_zero_action.setIcon(self._get_menu_icon("refresh-cw"))
-        set_zero_action.triggered.connect(lambda: self.set_rotation_to_zero(key_path))
-
-        # Enable Set to 0 only if:
-        # 1. Single file selection (not multiple)
-        # 2. Field is rotation
-        # 3. Current value is not already 0
-        current_value_str = str(value) if value is not None else ""
-        is_not_zero = current_value_str not in ["0", "0°", ""]
-        can_set_zero = not has_multiple_selection and "Rotation" in key_path and is_not_zero
-        set_zero_action.setEnabled(can_set_zero)
-
-        if has_multiple_selection:
-            set_zero_action.setToolTip("Set to 0 disabled for multiple file selection")
-        elif "Rotation" not in key_path:
-            set_zero_action.setToolTip("Set to 0 only available for Rotation fields")
-        elif not is_not_zero:
-            set_zero_action.setToolTip("Value is already 0")
-        else:
-            set_zero_action.setToolTip("Set rotation to 0° (no rotation)")
-
-        menu.addAction(set_zero_action)
-
         # Reset value action (with rotate-ccw icon)
         reset_action = QAction("Reset Value", menu)
         reset_action.setIcon(self._get_menu_icon("rotate-ccw"))
@@ -696,19 +690,13 @@ class MetadataTreeView(QTreeView):
         # Enable Reset only if:
         # 1. Single file selection (not multiple)
         # 2. Field is rotation
-        # 3. Field has been modified (is in modified_items)
-        # Check both the exact key_path and normalized "Rotation" key
-        normalized_key_path = "Rotation" if "rotation" in key_path.lower() else key_path
-        has_been_modified = normalized_key_path in self.modified_items
-        can_reset = not has_multiple_selection and "Rotation" in key_path and has_been_modified
+        can_reset = not has_multiple_selection and "Rotation" in key_path
         reset_action.setEnabled(can_reset)
 
         if has_multiple_selection:
             reset_action.setToolTip("Reset disabled for multiple file selection")
         elif "Rotation" not in key_path:
             reset_action.setToolTip("Reset only available for Rotation fields")
-        elif not has_been_modified:
-            reset_action.setToolTip("No changes to reset")
         else:
             reset_action.setToolTip("Reset this field to original value")
 
@@ -1303,8 +1291,6 @@ class MetadataTreeView(QTreeView):
             # Fallback: set model directly if proxy model is not available
             super().setModel(model)
 
-        # Don't force placeholder mode here - let setModel() handle it properly
-
     def clear_view(self) -> None:
         """
         Clears the metadata tree view and shows a placeholder message.
@@ -1412,13 +1398,11 @@ class MetadataTreeView(QTreeView):
                 # Fallback: set model directly if proxy model is not available
                 self.setModel(tree_model)
 
+            # Always expand all - no collapse functionality
             self.expandAll()
 
             # Trigger scroll position restore AFTER expandAll
             self.restore_scroll_after_expand()
-
-            # Notify parent that we successfully rendered metadata
-            # Groups are always expanded - no toggle functionality needed
 
         except Exception as e:
             logger.exception(f"[render_metadata_view] Unexpected error while rendering: {e}")
