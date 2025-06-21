@@ -14,12 +14,8 @@ from typing import Optional
 
 from PyQt5.QtCore import QEvent, QPoint, Qt, pyqtSignal
 from PyQt5.QtGui import QCursor, QKeyEvent, QMouseEvent
-from PyQt5.QtWidgets import (
-    QAbstractItemView,
-    QApplication,
-    QHeaderView,
-    QTreeView,
-)
+from PyQt5.QtWidgets import QApplication
+from core.qt_imports import QAbstractItemView, QHeaderView, QTreeView
 
 from config import ALLOWED_EXTENSIONS
 from core.drag_manager import DragManager

@@ -33,6 +33,8 @@ from PyQt5.QtGui import (
     QCursor,
     QDesktopServices,
     QDrag,
+    QDragEnterEvent,
+    QDragMoveEvent,
     QDropEvent,
     QIcon,
     QKeyEvent,
@@ -66,6 +68,7 @@ from PyQt5.QtWidgets import (
     QTableView,
     QTableWidget,
     QTableWidgetItem,
+    QTreeView,
     QVBoxLayout,
     QWidget,
 )
@@ -78,7 +81,7 @@ __all__ = [
     'QTimer', 'QUrl', 'pyqtSignal',
 
     # GUI
-    'QCursor', 'QDesktopServices', 'QDrag', 'QDropEvent', 'QIcon', 'QKeyEvent',
+    'QCursor', 'QDesktopServices', 'QDrag', 'QDragEnterEvent', 'QDragMoveEvent', 'QDropEvent', 'QIcon', 'QKeyEvent',
     'QKeySequence', 'QMouseEvent', 'QPixmap', 'QStandardItem',
     'QStandardItemModel',
 
@@ -86,6 +89,6 @@ __all__ = [
     'QAbstractItemView', 'QAction', 'QApplication', 'QDesktopWidget', 'QFileDialog',
     'QFileSystemModel', 'QFrame', 'QGraphicsOpacityEffect', 'QHBoxLayout',
     'QHeaderView', 'QLabel', 'QLineEdit', 'QMainWindow', 'QMenu', 'QPushButton', 'QShortcut',
-    'QSizePolicy', 'QSplitter', 'QTableWidget', 'QTableWidgetItem', 'QTableView',
+    'QSizePolicy', 'QSplitter', 'QTableWidget', 'QTableWidgetItem', 'QTableView', 'QTreeView',
     'QVBoxLayout', 'QWidget',
 ]
