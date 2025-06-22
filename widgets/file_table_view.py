@@ -1207,11 +1207,21 @@ class FileTableView(QTableView):
 
         # CRITICAL: Restore selection after all cleanup is done
         if preserved_selection:
+            # Block all selection events during restoration
+            self._skip_selection_changed = True
+
             # Use immediate restoration instead of timer to avoid race conditions
             self._restore_selection_immediately(preserved_selection)
 
+            # Re-enable selection events after a small delay to ensure restoration is complete
+            def re_enable_selection():
+                self._skip_selection_changed = False
+                logger.debug("[FileTableView] Re-enabled selection events after drag")
+
+            QTimer.singleShot(50, re_enable_selection)
+
         # Force cleanup any remaining visual artifacts
-        schedule_drag_cleanup(self._restore_hover_after_drag, 10)
+        schedule_drag_cleanup(self._restore_hover_after_drag, 100)  # Increased delay to avoid conflicts
 
         logger.debug("[FileTableView] Custom drag operation completed", extra={"dev_only": True})
 
@@ -1350,7 +1360,7 @@ class FileTableView(QTableView):
         parent_window = self._get_parent_with_metadata_tree()
         if parent_window and hasattr(parent_window, 'metadata_manager') and preserved_selection_rows:
             metadata_manager = parent_window.metadata_manager
-            metadata_manager._preserved_selection = preserved_selection_rows
+
             logger.debug(f"[FileTableView] Set preserved selection in metadata manager: {len(preserved_selection_rows)} files", extra={"dev_only": True})
 
         # Force cursor cleanup AFTER we have everything we need

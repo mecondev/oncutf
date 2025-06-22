@@ -51,7 +51,7 @@ class MetadataWaitingDialog(QDialog):
         layout.setSpacing(0)
 
         # CompactWaitingWidget
-        is_extended = getattr(parent, "force_extended_metadata", False)
+        # Use the is_extended parameter passed to the constructor
         if is_extended:
             bar_color = EXTENDED_METADATA_COLOR
             bar_bg_color = EXTENDED_METADATA_BG_COLOR

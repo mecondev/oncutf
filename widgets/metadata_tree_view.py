@@ -1660,8 +1660,11 @@ class MetadataTreeView(QTreeView):
         # Use centralized logic to determine if metadata should be displayed
         if not self.should_display_metadata_for_selection(len(selected_rows)):
             # Multiple files selected - don't show metadata tree
-            self.show_empty_state("Multiple files selected")
-            logger.debug(f"[MetadataTree] Multiple files selected ({len(selected_rows)}) - showing empty state")
+            if len(selected_rows) > 1:
+                self.show_empty_state(f"{len(selected_rows)} files selected")
+            else:
+                self.show_empty_state("No file selected")
+            logger.debug(f"[MetadataTree] Selection count {len(selected_rows)} - showing empty state")
             return
 
         # Single file selected - show its metadata
