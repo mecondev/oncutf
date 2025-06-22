@@ -541,6 +541,10 @@ class MetadataManager:
             logger.warning("[MetadataManager] No items provided for metadata loading")
             return
 
+        # DEBUG: Log what we received
+        logger.warning(f"[DEBUG] METADATA MANAGER RECEIVED: {len(items)} items, extended={use_extended}, source={source}")
+        logger.warning(f"[DEBUG] METADATA MANAGER FILES: {[item.filename for item in items[:3]]}{'...' if len(items) > 3 else ''}")
+
         logger.debug(f"[MetadataManager] Loading metadata for {len(items)} items (extended={use_extended}, source={source})")
 
         # Store current selection to restore later (BEFORE any UI changes)
@@ -598,19 +602,24 @@ class MetadataManager:
                 self.parent_window.file_table_view._skip_selection_changed = False
                 logger.debug("[MetadataManager] Cleared _skip_selection_changed flag in FileTableView (cached)")
 
-            # Still need to handle display logic for cached items
+            # SIMPLIFIED: Always display metadata for cached items too
             if metadata_tree_view and items:
-                # Use centralized logic to determine if metadata should be displayed
-                actual_selection_count = len(items)
+                # Always display metadata - same logic as loaded items
+                display_file = items[0] if len(items) == 1 else items[-1]
+                logger.warning(f"[DEBUG] CACHED ITEMS - Displaying metadata for: {display_file.filename} (from {len(items)} cached)")
+                metadata_tree_view.display_file_metadata(display_file)
 
-                should_display = metadata_tree_view.should_display_metadata_for_selection(actual_selection_count)
+            # ALSO restore selection for cached items
+            if current_selection and self.parent_window and hasattr(self.parent_window, 'file_table_view'):
+                file_table_view = self.parent_window.file_table_view
+                logger.warning(f"[DEBUG] CACHED ITEMS - RESTORING SELECTION: {len(current_selection)} files")
+                if hasattr(file_table_view, '_restore_selection_immediately'):
+                    file_table_view._restore_selection_immediately(current_selection)
 
-                if should_display:
-                    metadata_tree_view.display_file_metadata(items[0])
-                elif actual_selection_count > 1:
-                    metadata_tree_view.show_empty_state("Multiple files selected")
-                else:
-                    metadata_tree_view.show_empty_state("No file selected")
+                # Force viewport update and status update for cached items too
+                file_table_view.viewport().update()
+                if hasattr(self.parent_window, 'update_files_label'):
+                    self.parent_window.update_files_label()
 
             return
 
@@ -714,19 +723,41 @@ class MetadataManager:
             from utils.timer_manager import schedule_dialog_close
             schedule_dialog_close(loading_dialog.close, 500)
 
-                # ALWAYS DISPLAY METADATA: Show metadata for last file even with multiple selection
+        else:
+            logger.warning(f"[DEBUG] LOADING MODE NOT HANDLED: {loading_mode}")
+
+        # Clear flags BEFORE display and selection restoration to avoid conflicts
+        self._skip_selection_changed = False
+        logger.debug("[MetadataManager] Disabled _skip_selection_changed flag BEFORE display")
+
+        # Also clear flag in FileTableView BEFORE display
+        if self.parent_window and hasattr(self.parent_window, 'file_table_view'):
+            self.parent_window.file_table_view._skip_selection_changed = False
+            logger.debug("[MetadataManager] Cleared _skip_selection_changed flag in FileTableView BEFORE display")
+
+        # SIMPLIFIED APPROACH: ALWAYS DISPLAY METADATA
+        # For both single and multiple files, show metadata for the first/last file
         if metadata_tree_view and items:
-            # Always display metadata for the last file in the selection
-            last_file = items[-1]
-            logger.info(f"[MetadataManager] Displaying metadata for file: {last_file.filename} (from {len(items)} selected)")
-            metadata_tree_view.display_file_metadata(last_file)
+            # For single file, use first item; for multiple files, use last item for better UX
+            display_file = items[0] if len(items) == 1 else items[-1]
+            logger.warning(f"[DEBUG] METADATA DISPLAY: Showing metadata for {display_file.filename} (from {len(items)} selected)")
+            logger.info(f"[MetadataManager] Displaying metadata for file: {display_file.filename} (from {len(items)} selected)")
+            metadata_tree_view.display_file_metadata(display_file)
 
         # Restore selection after metadata operations complete
         if current_selection and self.parent_window and hasattr(self.parent_window, 'file_table_view'):
-            # Use immediate restoration instead of timer to avoid race conditions
+            # Use immediate restoration AFTER clearing flags
             file_table_view = self.parent_window.file_table_view
+            logger.warning(f"[DEBUG] RESTORING SELECTION: {len(current_selection)} files")
             if hasattr(file_table_view, '_restore_selection_immediately'):
                 file_table_view._restore_selection_immediately(current_selection)
+
+            # Force viewport update to show selection visually
+            file_table_view.viewport().update()
+
+            # Also update status label to show correct count
+            if hasattr(self.parent_window, 'update_files_label'):
+                self.parent_window.update_files_label()
             else:
                 # Fallback: use the selection store
                 file_table_view._update_selection_store(current_selection, emit_signal=True)

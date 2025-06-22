@@ -770,7 +770,9 @@ class FileTableView(QTableView):
 
             # CRITICAL: Store current selection BEFORE any changes for potential drag
             # This ensures we have the correct selection even if Qt changes it
-            self._drag_start_selection = self._get_current_selection().copy()
+            current_sel = self._get_current_selection()
+            self._drag_start_selection = current_sel.copy()
+            logger.warning(f"[DEBUG] MOUSE PRESS - Stored drag start selection: {len(current_sel)} files")
             # Removed verbose drag debug log
 
             # If clicking on empty space, clear selection
@@ -1221,7 +1223,7 @@ class FileTableView(QTableView):
             QTimer.singleShot(50, re_enable_selection)
 
         # Force cleanup any remaining visual artifacts
-        schedule_drag_cleanup(self._restore_hover_after_drag, 100)  # Increased delay to avoid conflicts
+        schedule_drag_cleanup(self._restore_hover_after_drag, 100) # Increased delay to avoid conflicts
 
         logger.debug("[FileTableView] Custom drag operation completed", extra={"dev_only": True})
 
@@ -1229,8 +1231,10 @@ class FileTableView(QTableView):
         """Restore selection immediately without timers to avoid race conditions"""
         if not preserved_selection:
             logger.debug("[FileTableView] No selection to restore", extra={"dev_only": True})
+            logger.warning("[DEBUG] RESTORE SELECTION - Nothing to restore")
             return
 
+        logger.warning(f"[DEBUG] RESTORE SELECTION - Restoring {len(preserved_selection)} files: {preserved_selection}")
         logger.debug(f"[FileTableView] Immediate selection restore: {len(preserved_selection)} files", extra={"dev_only": True})
 
         # Update our internal state first
@@ -1250,6 +1254,7 @@ class FileTableView(QTableView):
         # Force viewport update to show selection
         self.viewport().update()
 
+        logger.warning(f"[DEBUG] RESTORE SELECTION - COMPLETED: {len(preserved_selection)} files")
         logger.debug(f"[FileTableView] Selection restored immediately: {len(preserved_selection)} files", extra={"dev_only": True})
 
     def _restore_qt_selection(self, preserved_selection: set):
@@ -1311,43 +1316,37 @@ class FileTableView(QTableView):
             logger.debug("[FileTableView] No drag data available for metadata tree drop", extra={"dev_only": True})
             return False
 
-        # CRITICAL: Use preserved selection from drag start IMMEDIATELY
-        # This must happen BEFORE any cleanup that might affect selection
+        # SIMPLIFIED: Always use CURRENT selection for more reliable behavior
+        # This avoids confusion between preserved and current selection
         selected_file_paths = []
-        preserved_selection_rows = None
 
-        if hasattr(self, '_drag_start_selection') and isinstance(self._drag_start_selection, set):
-            selected_rows = self._drag_start_selection
-            preserved_selection_rows = selected_rows.copy()  # Store for metadata manager
-            logger.debug(f"[FileTableView] Using preserved selection for metadata drop: {len(selected_rows)} files", extra={"dev_only": True})
+        # DEBUG: Check current state
+        current_selection = self._get_current_selection()
+        logger.warning(f"[DEBUG] DRAG DROP - Current selection: {len(current_selection)} files")
+        logger.warning(f"[DEBUG] DRAG DROP - Has _drag_start_selection: {hasattr(self, '_drag_start_selection')}")
+        if hasattr(self, '_drag_start_selection'):
+            logger.warning(f"[DEBUG] DRAG DROP - _drag_start_selection: {self._drag_start_selection}")
 
-            # Convert to file paths IMMEDIATELY before any cleanup
+        # Use current selection - this is what the user sees and expects
+        selected_rows = current_selection
+        logger.warning(f"[DEBUG] DRAG DROP - Using CURRENT selection: {len(selected_rows)} files")
+        logger.debug(f"[FileTableView] Using current selection for metadata drop: {len(selected_rows)} files", extra={"dev_only": True})
+
+        if selected_rows:
             try:
                 file_items = [self.model().files[r] for r in selected_rows if 0 <= r < len(self.model().files)]
                 selected_file_paths = [f.full_path for f in file_items if f.full_path]
+                logger.warning(f"[DEBUG] DRAG DROP - Converted to {len(selected_file_paths)} file paths")
                 logger.debug(f"[FileTableView] Converted to {len(selected_file_paths)} file paths", extra={"dev_only": True})
             except (AttributeError, IndexError) as e:
                 logger.error(f"[FileTableView] Error converting selection to paths: {e}")
                 return False
-        else:
-            # Fallback: try to get current selection (though it might be lost)
-            selected_rows = self._get_current_selection()
-            if selected_rows:
-                preserved_selection_rows = selected_rows.copy()
-            logger.debug(f"[FileTableView] Fallback to current selection: {len(selected_rows)} files", extra={"dev_only": True})
-
-            if selected_rows:
-                try:
-                    file_items = [self.model().files[r] for r in selected_rows if 0 <= r < len(self.model().files)]
-                    selected_file_paths = [f.full_path for f in file_items if f.full_path]
-                except (AttributeError, IndexError) as e:
-                    logger.error(f"[FileTableView] Error converting fallback selection to paths: {e}")
-                    return False
 
         if not selected_file_paths:
             logger.warning("[FileTableView] No valid file paths found for metadata tree drop")
             return False
 
+        logger.warning(f"[DEBUG] DRAG DROP - Ready to emit signal with {len(selected_file_paths)} files")
         logger.debug(f"[FileTableView] Ready to emit signal with {len(selected_file_paths)} files", extra={"dev_only": True})
 
         # Store file paths for signal emission (before any cleanup)
@@ -1356,12 +1355,10 @@ class FileTableView(QTableView):
         # Get modifiers BEFORE cleanup (they might change)
         modifiers = QApplication.keyboardModifiers()
 
-        # CRITICAL: Pass preserved selection to metadata manager BEFORE signal emission
+        # Get parent window for signal emission
         parent_window = self._get_parent_with_metadata_tree()
-        if parent_window and hasattr(parent_window, 'metadata_manager') and preserved_selection_rows:
-            metadata_manager = parent_window.metadata_manager
-
-            logger.debug(f"[FileTableView] Set preserved selection in metadata manager: {len(preserved_selection_rows)} files", extra={"dev_only": True})
+        if parent_window and hasattr(parent_window, 'metadata_manager'):
+            logger.debug(f"[FileTableView] Found metadata manager, proceeding with signal emission", extra={"dev_only": True})
 
         # Force cursor cleanup AFTER we have everything we need
         self._force_cursor_cleanup()
