@@ -8,19 +8,14 @@ Centralized metadata management operations extracted from MainWindow.
 Handles metadata loading, progress tracking, thread management, and UI coordination.
 """
 
-import os
 from typing import List, Optional
 
-from core.qt_imports import QApplication, QTimer
 from PyQt5.QtCore import Qt
-from models.file_item import FileItem
-from utils.cursor_helper import wait_cursor
-from utils.logger_factory import get_cached_logger
-from utils.path_utils import find_file_by_path, paths_equal
-from utils.timer_manager import schedule_ui_update
-from widgets.custom_msgdialog import CustomMessageDialog
-from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 
+from core.qt_imports import QApplication
+from models.file_item import FileItem
+from utils.logger_factory import get_cached_logger
+from utils.path_utils import find_file_by_path
 
 logger = get_cached_logger(__name__)
 

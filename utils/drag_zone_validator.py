@@ -8,7 +8,8 @@ This module provides shared logic for validating drop zones during drag operatio
 eliminating code duplication between FileTreeView and FileTableView.
 """
 
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional
+
 from PyQt5.QtGui import QCursor
 from PyQt5.QtWidgets import QApplication
 
@@ -146,5 +147,4 @@ class DragZoneValidator:
     @classmethod
     def _set_cursor_state(cls, state: DropZoneState) -> None:
         """Set the cursor state using the visual manager."""
-        from core.drag_visual_manager import update_drop_zone_state
         update_drop_zone_state(state)

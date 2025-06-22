@@ -10,28 +10,24 @@ Single item selection only - no multi-selection complexity.
 """
 
 import os
-from typing import Optional
 
-from PyQt5.QtCore import QEvent, QPoint, Qt, pyqtSignal, QTimer
+from PyQt5.QtCore import QEvent, Qt, pyqtSignal
 from PyQt5.QtGui import QCursor, QKeyEvent, QMouseEvent
 from PyQt5.QtWidgets import QApplication
-from core.qt_imports import QAbstractItemView, QHeaderView, QTreeView
 
 from config import ALLOWED_EXTENSIONS
 from core.drag_manager import DragManager
 from core.drag_visual_manager import (
     DragVisualManager,
-    DropZoneState,
     end_drag_visual,
     start_drag_visual,
-    update_drop_zone_state,
-    update_modifier_state,
     update_drag_feedback_for_widget,
 )
 from core.modifier_handler import decode_modifiers_to_flags
+from core.qt_imports import QAbstractItemView, QHeaderView, QTreeView
+from utils.drag_zone_validator import DragZoneValidator
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_scroll_adjust
-from utils.drag_zone_validator import DragZoneValidator
 
 logger = get_cached_logger(__name__)
 

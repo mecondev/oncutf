@@ -20,7 +20,6 @@ from core.drag_manager import force_cleanup_drag, is_dragging
 from models.file_item import FileItem
 from utils.cursor_helper import force_restore_cursor, wait_cursor
 from utils.logger_factory import get_cached_logger
-from utils.path_utils import find_file_by_path
 from utils.timer_manager import get_timer_manager
 from widgets.file_loading_dialog import FileLoadingDialog
 

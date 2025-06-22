@@ -30,14 +30,28 @@ Designed for integration with MainWindow and MetadataReader.
 from pathlib import Path
 from typing import Any, Dict, Optional, Set, Union
 
-from core.qt_imports import (
-    QModelIndex, Qt, pyqtSignal, QSortFilterProxyModel, QPoint,
-    QDragEnterEvent, QDragMoveEvent, QDropEvent, QPixmap, QStandardItem,
-    QStandardItemModel, QIcon, QAbstractItemView, QAction, QApplication,
-    QHeaderView, QLabel, QMenu, QTreeView, QWidget
-)
-
 from config import METADATA_TREE_COLUMN_WIDTHS
+from core.qt_imports import (
+    QAbstractItemView,
+    QAction,
+    QApplication,
+    QDragEnterEvent,
+    QDragMoveEvent,
+    QDropEvent,
+    QHeaderView,
+    QLabel,
+    QMenu,
+    QModelIndex,
+    QPixmap,
+    QPoint,
+    QSortFilterProxyModel,
+    QStandardItem,
+    QStandardItemModel,
+    Qt,
+    QTreeView,
+    QWidget,
+    pyqtSignal,
+)
 from utils.logger_factory import get_cached_logger
 from utils.path_utils import paths_equal
 from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust, schedule_ui_update
@@ -606,7 +620,7 @@ class MetadataTreeView(QTreeView):
             # metadata refresh after editing a value.
             if not paths_equal(file_path, previous_file_path) or not self.modified_items:
                 self.modified_items = set()
-                logger.debug(f"[MetadataTreeView] Cleared modifications for new file (no existing modifications)", extra={"dev_only": True})
+                logger.debug("[MetadataTreeView] Cleared modifications for new file (no existing modifications)", extra={"dev_only": True})
 
     def _save_current_scroll_position(self) -> None:
         """Save the current scroll position for the current file."""
@@ -862,7 +876,6 @@ class MetadataTreeView(QTreeView):
         # Normalize rotation key_path to be always "Rotation" (top-level)
         normalized_key_path = "Rotation" if "rotation" in key_path.lower() else key_path
 
-        from widgets.metadata_edit_dialog import MetadataEditDialog
 
         accepted, new_value = MetadataEditDialog.get_value(
             parent=self,
@@ -1119,7 +1132,7 @@ class MetadataTreeView(QTreeView):
                 has_modifications = bool(stored_modifications)
 
             # Update icon based on whether we have modified items
-            old_status = getattr(file_item, 'metadata_status', None)
+            getattr(file_item, 'metadata_status', None)
             if has_modifications:
                 # Set modified icon
                 file_item.metadata_status = "modified"

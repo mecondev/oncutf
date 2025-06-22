@@ -20,7 +20,6 @@ from PyQt5.QtCore import (
     QModelIndex,
     QPoint,
     Qt,
-    QTimer,
     pyqtSignal,
 )
 from PyQt5.QtGui import (
@@ -38,11 +37,8 @@ from core.drag_manager import DragManager
 from core.drag_visual_manager import (
     DragType,
     DragVisualManager,
-    DropZoneState,
     end_drag_visual,
     start_drag_visual,
-    update_drop_zone_state,
-    update_modifier_state,
     update_drag_feedback_for_widget,
 )
 from utils.file_drop_helper import extract_file_paths
@@ -1322,7 +1318,7 @@ class FileTableView(QTableView):
             # PROTECTION: Ignore empty selections that come immediately after SUCCESSFUL metadata drops
             # This prevents Qt's automatic clearSelection() from clearing our metadata display
             if not selected_rows and hasattr(self, '_successful_metadata_drop') and self._successful_metadata_drop:
-                logger.debug(f"[FileTableView] Ignoring empty selection after successful metadata drop", extra={"dev_only": True})
+                logger.debug("[FileTableView] Ignoring empty selection after successful metadata drop", extra={"dev_only": True})
                 # Clear the flag and restore the selection
                 self._successful_metadata_drop = False
                 # Try to restore the selection from SelectionStore
@@ -1337,7 +1333,7 @@ class FileTableView(QTableView):
 
             # Also ignore empty selections during active drag operations
             if not selected_rows and hasattr(self, '_is_dragging') and self._is_dragging:
-                logger.debug(f"[FileTableView] Ignoring empty selection during drag operation", extra={"dev_only": True})
+                logger.debug("[FileTableView] Ignoring empty selection during drag operation", extra={"dev_only": True})
                 return
 
             logger.debug(f"[FileTableView] Selection changed to: {len(selected_rows)} files", extra={"dev_only": True})
