@@ -71,6 +71,7 @@ class DragZoneValidator:
 
         widget_class_name = widget_under_cursor.__class__.__name__
         logger.debug(f"{log_prefix} Widget under cursor: {widget_class_name}", extra={"dev_only": True})
+        logger.debug(f"{log_prefix} Initial widget: {cls._initial_drag_widgets.get(drag_source)}, Has left: {cls._has_left_initial.get(drag_source)}", extra={"dev_only": True})
 
         # Check if this is the initial drag widget
         initial_widget = cls._initial_drag_widgets.get(drag_source)

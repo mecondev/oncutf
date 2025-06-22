@@ -86,6 +86,7 @@ class FileTreeView(QTreeView):
         self._is_dragging = False
         self._drag_path = None
         self._drag_start_pos = None
+        self._drag_feedback_timer_id = None
 
         logger.debug("[FileTreeView] Initialized with Qt built-in drag system", extra={"dev_only": True})
 
@@ -204,6 +205,7 @@ class FileTreeView(QTreeView):
 
     def mouseMoveEvent(self, event):
         """Handle mouse move for custom drag start and real-time drop zone validation"""
+
         # If we're dragging, only handle drag feedback and block all other processing
         if self._is_dragging:
             # Only update drag feedback after the cursor has moved away from the FileTreeView widget
@@ -241,6 +243,7 @@ class FileTreeView(QTreeView):
             return
 
         # Start our custom drag
+        logger.debug("[FileTreeView] About to start custom drag", extra={"dev_only": True})
         self._start_custom_drag()
         # Don't call super().mouseMoveEvent() after starting drag to prevent hover changes
 
@@ -326,27 +329,31 @@ class FileTreeView(QTreeView):
         start_drag_visual(drag_type, clicked_path, "file_tree")
 
         # Set initial drag widget for zone validation
+        logger.debug("[FileTreeView] Setting up initial drag widget for zone validation", extra={"dev_only": True})
         DragZoneValidator.set_initial_drag_widget("file_tree", "FileTreeView")
 
         # Start drag feedback timer for real-time visual updates using timer_manager
-        from utils.timer_manager import schedule_drag_feedback
+        if hasattr(self, '_drag_feedback_timer_id') and self._drag_feedback_timer_id:
+            from utils.timer_manager import cancel_timer
+            cancel_timer(self._drag_feedback_timer_id)
 
-        if hasattr(self, '_drag_feedback_timer') and self._drag_feedback_timer is not None:
-            self._drag_feedback_timer.stop()
-            self._drag_feedback_timer.deleteLater()
-
-        self._drag_feedback_timer = QTimer(self)
-        self._drag_feedback_timer.timeout.connect(self._update_drag_feedback)
-        self._drag_feedback_timer.start(50)  # Update every 50ms
+        # Schedule repeated updates using timer_manager
+        self._start_drag_feedback_loop()
 
         logger.debug(f"[FileTreeView] Custom drag started: {clicked_path}", extra={"dev_only": True})
+
+    def _start_drag_feedback_loop(self):
+        """Start repeated drag feedback updates using timer_manager"""
+        from utils.timer_manager import schedule_ui_update
+        if self._is_dragging:
+            self._update_drag_feedback()
+            # Schedule next update
+            self._drag_feedback_timer_id = schedule_ui_update(self._start_drag_feedback_loop, delay=50)
 
     def _update_drag_feedback(self):
         """Update visual feedback based on current cursor position during drag"""
         if not self._is_dragging:
             return
-
-        logger.debug("[FileTreeView] _update_drag_feedback called", extra={"dev_only": True})
 
         # Update modifier state first (for Ctrl/Shift changes during drag)
         update_modifier_state()
@@ -355,13 +362,31 @@ class FileTreeView(QTreeView):
         widget_under_cursor = QApplication.widgetAt(QCursor.pos())
         if not widget_under_cursor:
             # Cursor is outside application window - terminate drag
-            logger.debug("[FileTreeView] Cursor outside application - terminating drag", extra={"dev_only": True})
             self._end_custom_drag()
             return
 
-        # Use DragZoneValidator for smart zone validation with "left and returned" logic
-        logger.debug("[FileTreeView] Calling DragZoneValidator.validate_drop_zone", extra={"dev_only": True})
-        DragZoneValidator.validate_drop_zone("file_tree", "[FileTreeView]")
+        # Check if cursor is still over this FileTreeView (source widget)
+        current_widget = widget_under_cursor
+        still_over_source = False
+
+        while current_widget:
+            if current_widget is self:
+                still_over_source = True
+                break
+            current_widget = current_widget.parent()
+
+        # If still over source widget, don't change state (keep initial VALID)
+        if still_over_source:
+            return
+
+        # Now check if over valid drop target (FileTableView)
+        visual_manager = DragVisualManager.get_instance()
+        is_valid = visual_manager.is_valid_drop_target(widget_under_cursor, "file_tree")
+
+        if is_valid:
+            update_drop_zone_state(DropZoneState.VALID)
+        else:
+            update_drop_zone_state(DropZoneState.INVALID)
 
     def _end_custom_drag(self):
         """End our custom drag operation with enhanced visual feedback"""
@@ -458,10 +483,10 @@ class FileTreeView(QTreeView):
         self._drag_start_pos = None
 
         # Stop and cleanup drag feedback timer
-        if hasattr(self, '_drag_feedback_timer') and self._drag_feedback_timer is not None:
-            self._drag_feedback_timer.stop()
-            self._drag_feedback_timer.deleteLater()
-            self._drag_feedback_timer = None
+        if hasattr(self, '_drag_feedback_timer_id') and self._drag_feedback_timer_id:
+            from utils.timer_manager import cancel_timer
+            cancel_timer(self._drag_feedback_timer_id)
+            self._drag_feedback_timer_id = None
 
         # Restore mouse tracking to original state
         if hasattr(self, '_original_mouse_tracking'):

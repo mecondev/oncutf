@@ -115,10 +115,17 @@ class DragVisualManager:
         """
         self._drag_type = drag_type
         self._drag_source = drag_source
-        self._drop_zone_state = DropZoneState.NEUTRAL
+
+        # UX: Both FileTree and FileTable start with VALID to show action icons immediately (like File Explorer)
+        # This allows users to see what action will be performed before reaching the target
+        if drag_source in ("file_tree", "file_table"):
+            self._drop_zone_state = DropZoneState.VALID
+        else:
+            self._drop_zone_state = DropZoneState.NEUTRAL
+
         self._modifier_state = self._detect_modifier_state()
 
-        logger.debug(f"[DragVisualManager] Visual drag started: {drag_type.value} from {source_info} (source: {drag_source})")
+        logger.debug(f"[DragVisualManager] Visual drag started: {drag_type.value} from {source_info} (source: {drag_source}) - initial state: {self._drop_zone_state.value}")
 
         # Clear cursor cache when starting new drag operation
         self._clear_cache()
