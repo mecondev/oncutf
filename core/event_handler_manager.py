@@ -593,15 +593,33 @@ class EventHandlerManager:
         logger.info(f"[HashManager] Starting duplicate detection for {len(file_items)} files ({scope})")
 
         try:
-            # Import HashManager and waiting dialog
+            # Import HashManager and waiting widget
             from core.hash_manager import HashManager
-            from widgets.metadata_waiting_dialog import MetadataWaitingDialog
+            from widgets.compact_waiting_widget import CompactWaitingWidget
+            from core.qt_imports import QDialog, QVBoxLayout
 
             # Show progress dialog for operations with many files
             progress_dialog = None
+            progress_widget = None
             if len(file_items) > 5:  # Show progress for more than 5 files
-                progress_dialog = MetadataWaitingDialog(self.parent_window, is_extended=False)
-                progress_dialog.set_status(f"Scanning {len(file_items)} files for duplicates...")
+                progress_dialog = QDialog(self.parent_window)
+                progress_dialog.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
+                progress_dialog.setAttribute(Qt.WA_TranslucentBackground, False)
+                progress_dialog.setModal(True)
+
+                layout = QVBoxLayout(progress_dialog)
+                layout.setContentsMargins(0, 0, 0, 0)
+
+                progress_widget = CompactWaitingWidget(progress_dialog)
+                progress_widget.set_status(f"Scanning {len(file_items)} files for duplicates...")
+                layout.addWidget(progress_widget)
+
+                progress_dialog.setLayout(layout)
+
+                # Setup dialog size and centering
+                from utils.dialog_utils import setup_dialog_size_and_center
+                setup_dialog_size_and_center(progress_dialog, progress_widget)
+
                 progress_dialog.show()
 
             # Create hash manager instance
@@ -665,16 +683,34 @@ class EventHandlerManager:
 
             logger.info(f"[HashManager] Comparing {len(selected_files)} files with {external_folder}")
 
-            # Import HashManager, Path and waiting dialog
+            # Import HashManager, Path and waiting widget
             from core.hash_manager import HashManager
             from pathlib import Path
-            from widgets.metadata_waiting_dialog import MetadataWaitingDialog
+            from widgets.compact_waiting_widget import CompactWaitingWidget
+            from core.qt_imports import QDialog, QVBoxLayout
 
             # Show progress dialog for operations with many files
             progress_dialog = None
+            progress_widget = None
             if len(selected_files) > 3:  # Show progress for more than 3 files
-                progress_dialog = MetadataWaitingDialog(self.parent_window, is_extended=False)
-                progress_dialog.set_status(f"Comparing {len(selected_files)} files with external folder...")
+                progress_dialog = QDialog(self.parent_window)
+                progress_dialog.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
+                progress_dialog.setAttribute(Qt.WA_TranslucentBackground, False)
+                progress_dialog.setModal(True)
+
+                layout = QVBoxLayout(progress_dialog)
+                layout.setContentsMargins(0, 0, 0, 0)
+
+                progress_widget = CompactWaitingWidget(progress_dialog)
+                progress_widget.set_status(f"Comparing {len(selected_files)} files with external folder...")
+                layout.addWidget(progress_widget)
+
+                progress_dialog.setLayout(layout)
+
+                # Setup dialog size and centering
+                from utils.dialog_utils import setup_dialog_size_and_center
+                setup_dialog_size_and_center(progress_dialog, progress_widget)
+
                 progress_dialog.show()
 
             # Create hash manager instance
@@ -743,15 +779,33 @@ class EventHandlerManager:
         logger.info(f"[HashManager] Calculating checksums for {len(selected_files)} files")
 
         try:
-            # Import HashManager and waiting dialog
+            # Import HashManager and waiting widget
             from core.hash_manager import HashManager
-            from widgets.metadata_waiting_dialog import MetadataWaitingDialog
+            from widgets.compact_waiting_widget import CompactWaitingWidget
+            from core.qt_imports import QDialog, QVBoxLayout
 
             # Show progress dialog for operations with many files
             progress_dialog = None
+            progress_widget = None
             if len(selected_files) > 3:  # Show progress for more than 3 files
-                progress_dialog = MetadataWaitingDialog(self.parent_window, is_extended=False)
-                progress_dialog.set_status(f"Calculating checksums for {len(selected_files)} files...")
+                progress_dialog = QDialog(self.parent_window)
+                progress_dialog.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
+                progress_dialog.setAttribute(Qt.WA_TranslucentBackground, False)
+                progress_dialog.setModal(True)
+
+                layout = QVBoxLayout(progress_dialog)
+                layout.setContentsMargins(0, 0, 0, 0)
+
+                progress_widget = CompactWaitingWidget(progress_dialog)
+                progress_widget.set_status(f"Calculating checksums for {len(selected_files)} files...")
+                layout.addWidget(progress_widget)
+
+                progress_dialog.setLayout(layout)
+
+                # Setup dialog size and centering
+                from utils.dialog_utils import setup_dialog_size_and_center
+                setup_dialog_size_and_center(progress_dialog, progress_widget)
+
                 progress_dialog.show()
 
             # Create hash manager instance
@@ -764,10 +818,10 @@ class EventHandlerManager:
             # Calculate hashes
             hash_results = {}
             for i, file_item in enumerate(selected_files, 1):
-                # Update progress dialog
-                if progress_dialog:
-                    progress_dialog.set_progress(i, len(selected_files))
-                    progress_dialog.set_filename(file_item.filename)
+                # Update progress widget
+                if progress_widget:
+                    progress_widget.set_progress(i, len(selected_files))
+                    progress_widget.set_filename(file_item.filename)
 
                 file_hash = hash_manager.calculate_sha256(file_item.full_path)
                 if file_hash is not None:
