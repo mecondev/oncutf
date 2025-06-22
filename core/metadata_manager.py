@@ -547,27 +547,11 @@ class MetadataManager:
 
         logger.debug(f"[MetadataManager] Loading metadata for {len(items)} items (extended={use_extended}, source={source})")
 
-        # Store current selection to restore later (BEFORE any UI changes)
-        current_selection = None
-        if (self.parent_window and
-            hasattr(self.parent_window, 'file_table_view') and
-            hasattr(self.parent_window.file_table_view, '_get_current_selection')):
-            current_selection = self.parent_window.file_table_view._get_current_selection()
-            logger.debug(f"[MetadataManager] Preserved selection of {len(current_selection)} files before metadata operations")
-
-        # Set flag to skip selection changes during metadata operations
-        self._skip_selection_changed = True
-        logger.debug("[MetadataManager] Enabled _skip_selection_changed flag")
-
-        # Also set flag in FileTableView to prevent selection changes
-        if self.parent_window and hasattr(self.parent_window, 'file_table_view'):
-            self.parent_window.file_table_view._skip_selection_changed = True
-            logger.debug("[MetadataManager] Set _skip_selection_changed flag in FileTableView")
+        # SIMPLIFIED: No selection preservation or flag setting needed
 
         # Check what items need loading vs what's already cached
         needs_loading = []
         logger.debug(f"[MetadataManager] Cache check start: items={len(items)}, use_extended={use_extended}")
-        logger.debug(f"[MetadataManager] Preserved selection at start: {current_selection}")
 
         for item in items:
             # Check cache for existing metadata
@@ -593,33 +577,12 @@ class MetadataManager:
         if not needs_loading:
             logger.info(f"[{source}] All {len(items)} files already cached")
 
-            # Clear the flag since we're not doing any loading
-            self._skip_selection_changed = False
-            logger.debug("[MetadataManager] Disabled _skip_selection_changed flag (cached)")
-
-            # Also clear flag in FileTableView
-            if self.parent_window and hasattr(self.parent_window, 'file_table_view'):
-                self.parent_window.file_table_view._skip_selection_changed = False
-                logger.debug("[MetadataManager] Cleared _skip_selection_changed flag in FileTableView (cached)")
-
             # SIMPLIFIED: Always display metadata for cached items too
             if metadata_tree_view and items:
                 # Always display metadata - same logic as loaded items
                 display_file = items[0] if len(items) == 1 else items[-1]
                 logger.warning(f"[DEBUG] CACHED ITEMS - Displaying metadata for: {display_file.filename} (from {len(items)} cached)")
                 metadata_tree_view.display_file_metadata(display_file)
-
-            # ALSO restore selection for cached items
-            if current_selection and self.parent_window and hasattr(self.parent_window, 'file_table_view'):
-                file_table_view = self.parent_window.file_table_view
-                logger.warning(f"[DEBUG] CACHED ITEMS - RESTORING SELECTION: {len(current_selection)} files")
-                if hasattr(file_table_view, '_restore_selection_immediately'):
-                    file_table_view._restore_selection_immediately(current_selection)
-
-                # Force viewport update and status update for cached items too
-                file_table_view.viewport().update()
-                if hasattr(self.parent_window, 'update_files_label'):
-                    self.parent_window.update_files_label()
 
             return
 
@@ -726,15 +689,6 @@ class MetadataManager:
         else:
             logger.warning(f"[DEBUG] LOADING MODE NOT HANDLED: {loading_mode}")
 
-        # Clear flags BEFORE display and selection restoration to avoid conflicts
-        self._skip_selection_changed = False
-        logger.debug("[MetadataManager] Disabled _skip_selection_changed flag BEFORE display")
-
-        # Also clear flag in FileTableView BEFORE display
-        if self.parent_window and hasattr(self.parent_window, 'file_table_view'):
-            self.parent_window.file_table_view._skip_selection_changed = False
-            logger.debug("[MetadataManager] Cleared _skip_selection_changed flag in FileTableView BEFORE display")
-
         # SIMPLIFIED APPROACH: ALWAYS DISPLAY METADATA
         # For both single and multiple files, show metadata for the first/last file
         if metadata_tree_view and items:
@@ -743,27 +697,6 @@ class MetadataManager:
             logger.warning(f"[DEBUG] METADATA DISPLAY: Showing metadata for {display_file.filename} (from {len(items)} selected)")
             logger.info(f"[MetadataManager] Displaying metadata for file: {display_file.filename} (from {len(items)} selected)")
             metadata_tree_view.display_file_metadata(display_file)
-
-        # Restore selection after metadata operations complete
-        if current_selection and self.parent_window and hasattr(self.parent_window, 'file_table_view'):
-            # Use immediate restoration AFTER clearing flags
-            file_table_view = self.parent_window.file_table_view
-            logger.warning(f"[DEBUG] RESTORING SELECTION: {len(current_selection)} files")
-            if hasattr(file_table_view, '_restore_selection_immediately'):
-                file_table_view._restore_selection_immediately(current_selection)
-
-            # Force viewport update to show selection visually
-            file_table_view.viewport().update()
-
-            # Also update status label to show correct count
-            if hasattr(self.parent_window, 'update_files_label'):
-                self.parent_window.update_files_label()
-            else:
-                # Fallback: use the selection store
-                file_table_view._update_selection_store(current_selection, emit_signal=True)
-
-        # Flag already cleared above - no need for double clearing
-        logger.warning("[DEBUG] CLEARED metadata operation flag IMMEDIATELY for {} files".format(len(items)))
 
     def save_metadata_for_selected(self) -> None:
         """

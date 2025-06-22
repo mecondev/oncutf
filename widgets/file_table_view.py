@@ -193,12 +193,19 @@ class FileTableView(QTableView):
         if not selection_model or not self.model():
             return
 
+        # Prevent recursive calls during Qt model synchronization
+        if hasattr(self, '_syncing_qt_model') and self._syncing_qt_model:
+            return
+
         # Get current Qt selection
         current_qt_selection = set(index.row() for index in selection_model.selectedRows())
 
         # Only update if there's a significant difference (avoid unnecessary updates)
         if current_qt_selection != selected_rows:
             logger.debug(f"[FileTableView] Syncing Qt selection: {len(current_qt_selection)} -> {len(selected_rows)} files", extra={"dev_only": True})
+
+            # Set flag to prevent recursive calls
+            self._syncing_qt_model = True
 
             # Block signals to prevent recursive calls
             self.blockSignals(True)
@@ -227,6 +234,8 @@ class FileTableView(QTableView):
 
             finally:
                 self.blockSignals(False)
+                # Clear the flag
+                self._syncing_qt_model = False
 
     def _get_current_selection(self) -> set:
         """Get current selection from SelectionStore or fallback to Qt model."""
@@ -1154,50 +1163,14 @@ class FileTableView(QTableView):
                 update_drop_zone_state(DropZoneState.NEUTRAL)
 
     def _end_custom_drag(self):
-        """End our custom drag operation with enhanced visual feedback"""
+        """End custom drag operation - SIMPLIFIED VERSION"""
         if not self._is_dragging:
             return
 
-        # CRITICAL: Store current selection IMMEDIATELY before any cleanup
-        # This must be the FIRST thing we do to avoid race conditions
-        preserved_selection = None
-        if hasattr(self, '_drag_start_selection') and isinstance(self._drag_start_selection, set):
-            preserved_selection = self._drag_start_selection.copy()
-            logger.debug(f"[FileTableView] Preserving drag start selection: {len(preserved_selection)} files", extra={"dev_only": True})
-        else:
-            # Fallback: try current selection (might be empty due to timing)
-            current_selection = self._get_current_selection()
-            if current_selection:
-                preserved_selection = current_selection.copy()
-                logger.debug(f"[FileTableView] Preserving current selection: {len(preserved_selection)} files", extra={"dev_only": True})
+        logger.debug("[FileTableView] Ending custom drag operation", extra={"dev_only": True})
 
         # Force immediate cursor cleanup
         self._force_cursor_cleanup()
-
-        # Check if drag has been cancelled by external force cleanup
-        drag_manager = DragManager.get_instance()
-        if not drag_manager.is_drag_active():
-            logger.debug("[FileTableView] Drag was cancelled, skipping drop", extra={"dev_only": True})
-            # Clean up drag state without performing drop
-            self._is_dragging = False
-            self._drag_data = None
-
-            # Clear the preserved drag selection
-            if hasattr(self, '_drag_start_selection'):
-                self._drag_start_selection = None
-
-            # Cleanup visual feedback
-            end_drag_visual()
-            drag_manager.end_drag("file_table")
-
-            # Restore selection that was preserved IMMEDIATELY
-            if preserved_selection:
-                logger.debug(f"[FileTableView] Restoring selection after cancelled drag: {len(preserved_selection)} files", extra={"dev_only": True})
-                self._restore_selection_immediately(preserved_selection)
-
-            return
-
-        logger.debug("[FileTableView] Ending custom drag operation", extra={"dev_only": True})
 
         # Get widget under cursor for drop detection
         cursor_pos = QCursor.pos()
@@ -1218,8 +1191,9 @@ class FileTableView(QTableView):
         self._is_dragging = False
         self._drag_data = None
 
-        # Store the drag selection BEFORE clearing it
-        final_preserved_selection = preserved_selection.copy() if preserved_selection else set()
+        # Record drag end time for selection protection
+        import time
+        self._drag_end_time = time.time() * 1000  # Store in milliseconds
 
         # Clear the preserved drag selection
         if hasattr(self, '_drag_start_selection'):
@@ -1229,125 +1203,15 @@ class FileTableView(QTableView):
         end_drag_visual()
 
         # Notify DragManager
+        drag_manager = DragManager.get_instance()
         drag_manager.end_drag("file_table")
 
-        # CRITICAL: Always restore selection after drag
-        if final_preserved_selection:
-            # Block all selection events during restoration
-            self._skip_selection_changed = True
-
-            # Use immediate restoration instead of timer to avoid race conditions
-            self._restore_selection_immediately(final_preserved_selection)
-
-            # Re-enable selection events after a small delay to ensure restoration is complete
-            def re_enable_selection():
-                # Re-enable selection events FIRST
-                self._skip_selection_changed = False
-                logger.debug("[FileTableView] Re-enabled selection events after drag")
-
-                # Process any pending events to ensure clean state
-                QApplication.processEvents()
-
-            schedule_ui_update(re_enable_selection, delay=20)
-
-        # Force cleanup any remaining visual artifacts
-        schedule_drag_cleanup(self._restore_hover_after_drag, 100) # Increased delay to avoid conflicts
+        # Always restore hover after drag ends
+        self._restore_hover_after_drag()
 
         logger.debug("[FileTableView] Custom drag operation completed", extra={"dev_only": True})
 
-    def _restore_selection_immediately(self, preserved_selection: set):
-        """Restore selection immediately without timers to avoid race conditions"""
-        if not preserved_selection:
-            logger.debug("[FileTableView] No selection to restore", extra={"dev_only": True})
-            logger.warning("[DEBUG] RESTORE SELECTION - Nothing to restore")
-            return
 
-        logger.warning(f"[DEBUG] RESTORE SELECTION - Restoring {len(preserved_selection)} files: {preserved_selection}")
-        logger.debug(f"[FileTableView] Immediate selection restore: {len(preserved_selection)} files", extra={"dev_only": True})
-
-        # Update our internal state first
-        self.selected_rows = preserved_selection.copy()
-
-        # Update SelectionStore
-        selection_store = self._get_selection_store()
-        if selection_store and not self._legacy_selection_mode:
-            selection_store.set_selected_rows(preserved_selection, emit_signal=False)  # Don't emit to avoid loops
-
-        # Update Qt selection model immediately
-        self._restore_qt_selection(preserved_selection)
-
-        # Force a complete refresh of the selection display
-        self._force_selection_refresh()
-
-        # Emit our signal after everything is synchronized
-        self.selection_changed.emit(list(preserved_selection))
-
-        # Force viewport update to show selection
-        self.viewport().update()
-
-        logger.warning(f"[DEBUG] RESTORE SELECTION - COMPLETED: {len(preserved_selection)} files")
-        logger.debug(f"[FileTableView] Selection restored immediately: {len(preserved_selection)} files", extra={"dev_only": True})
-
-    def _restore_qt_selection(self, preserved_selection: set):
-        """Restore Qt selection model to match preserved selection"""
-        selection_model = self.selectionModel()
-        if not selection_model or not self.model():
-            return
-
-        # Set flag to ignore selection events during restoration
-        self._restoring_selection = True
-
-        # Block signals to prevent recursive calls during restoration
-        self.blockSignals(True)
-        try:
-            # Clear current selection first
-            selection_model.clearSelection()
-
-            # Select each preserved row
-            if preserved_selection:
-                from PyQt5.QtCore import QItemSelection
-                full_selection = QItemSelection()
-
-                for row in preserved_selection:
-                    if 0 <= row < self.model().rowCount():
-                        left_index = self.model().index(row, 0)
-                        right_index = self.model().index(row, self.model().columnCount() - 1)
-                        if left_index.isValid() and right_index.isValid():
-                            row_selection = QItemSelection(left_index, right_index)
-                            full_selection.merge(row_selection, selection_model.Select)
-
-                if not full_selection.isEmpty():
-                    selection_model.select(full_selection, selection_model.Select)
-
-            logger.debug(f"[FileTableView] Qt selection model updated with {len(preserved_selection)} rows", extra={"dev_only": True})
-        finally:
-            self.blockSignals(False)
-            # Clear the restoration flag
-            self._restoring_selection = False
-
-    def _force_selection_refresh(self):
-        """Force a complete refresh of the selection display"""
-        try:
-            # Force Qt to process any pending selection changes
-            QApplication.processEvents()
-
-            # Force viewport update
-            if hasattr(self, 'viewport'):
-                self.viewport().update()
-
-            # Update the entire table view
-            self.update()
-
-            # Force status update via SelectionStore
-            selection_store = self._get_selection_store()
-            if selection_store and not self._legacy_selection_mode:
-                # Force emit selection changed signal to update status
-                current_selection = self._get_current_selection()
-                selection_store.selection_changed.emit(list(current_selection))
-
-            logger.debug("[FileTableView] Forced complete selection refresh", extra={"dev_only": True})
-        except Exception as e:
-            logger.error(f"[FileTableView] Error in _force_selection_refresh: {e}")
 
 
 
@@ -1384,21 +1248,14 @@ class FileTableView(QTableView):
 
         # DEBUG: Check current state
         current_selection = self._get_current_selection()
-        logger.warning(f"[DEBUG] DRAG DROP - Current selection: {len(current_selection)} files")
-        logger.warning(f"[DEBUG] DRAG DROP - Has _drag_start_selection: {hasattr(self, '_drag_start_selection')}")
-        if hasattr(self, '_drag_start_selection'):
-            logger.warning(f"[DEBUG] DRAG DROP - _drag_start_selection: {self._drag_start_selection}")
-
         # Use current selection - this is what the user sees and expects
         selected_rows = current_selection
-        logger.warning(f"[DEBUG] DRAG DROP - Using CURRENT selection: {len(selected_rows)} files")
         logger.debug(f"[FileTableView] Using current selection for metadata drop: {len(selected_rows)} files", extra={"dev_only": True})
 
         if selected_rows:
             try:
                 file_items = [self.model().files[r] for r in selected_rows if 0 <= r < len(self.model().files)]
                 selected_file_paths = [f.full_path for f in file_items if f.full_path]
-                logger.warning(f"[DEBUG] DRAG DROP - Converted to {len(selected_file_paths)} file paths")
                 logger.debug(f"[FileTableView] Converted to {len(selected_file_paths)} file paths", extra={"dev_only": True})
             except (AttributeError, IndexError) as e:
                 logger.error(f"[FileTableView] Error converting selection to paths: {e}")
@@ -1408,7 +1265,6 @@ class FileTableView(QTableView):
             logger.warning("[FileTableView] No valid file paths found for metadata tree drop")
             return False
 
-        logger.warning(f"[DEBUG] DRAG DROP - Ready to emit signal with {len(selected_file_paths)} files")
         logger.debug(f"[FileTableView] Ready to emit signal with {len(selected_file_paths)} files", extra={"dev_only": True})
 
         # Store file paths for signal emission (before any cleanup)
@@ -1432,6 +1288,11 @@ class FileTableView(QTableView):
             logger.debug(f"[FileTableView] Emitting files_dropped signal with {len(paths_to_emit)} files", extra={"dev_only": True})
             # Emit the signal with the preserved file paths
             metadata_tree.files_dropped.emit(paths_to_emit, modifiers)
+
+            # CRITICAL: Set flag to indicate successful metadata drop
+            # This will help us preserve selection after the drop
+            self._successful_metadata_drop = True
+            logger.debug("[FileTableView] Set successful metadata drop flag to preserve selection", extra={"dev_only": True})
 
             # Force additional cleanup after signal emission
             QApplication.processEvents()  # Allow signal to be processed
@@ -1515,31 +1376,36 @@ class FileTableView(QTableView):
     # =====================================
 
     def selectionChanged(self, selected, deselected) -> None:
+        """SIMPLIFIED selection handling with protection against post-drag empty selections"""
         super().selectionChanged(selected, deselected)
-
-        # Skip processing if we're in the middle of a drag & drop metadata operation
-        # This prevents Qt's automatic selection changes from interfering with our restoration
-        if hasattr(self, '_skip_selection_changed') and self._skip_selection_changed:
-            logger.warning("[DEBUG] SKIPPED selectionChanged (drag & drop metadata operation in progress)")
-            return
-
-        # Skip processing if we're in the middle of selection restoration
-        # This prevents the clearSelection() call from causing empty selection updates
-        if hasattr(self, '_restoring_selection') and self._restoring_selection:
-            logger.warning("[DEBUG] SKIPPED selectionChanged (selection restoration in progress)")
-            return
 
         selection_model = self.selectionModel()
         if selection_model is not None:
             selected_rows = set(index.row() for index in selection_model.selectedRows())
 
-            # Avoid unnecessary updates if selection hasn't actually changed
-            current_selection = self._get_current_selection()
-            if selected_rows != current_selection:
-                logger.debug(f"[FileTableView] Selection changed: {len(current_selection)} -> {len(selected_rows)}", extra={"dev_only": True})
-                self._update_selection_store(selected_rows, emit_signal=True)
-            else:
-                logger.debug(f"[FileTableView] Selection unchanged: {len(selected_rows)} files", extra={"dev_only": True})
+            # PROTECTION: Ignore empty selections that come immediately after SUCCESSFUL metadata drops
+            # This prevents Qt's automatic clearSelection() from clearing our metadata display
+            if not selected_rows and hasattr(self, '_successful_metadata_drop') and self._successful_metadata_drop:
+                logger.debug(f"[FileTableView] Ignoring empty selection after successful metadata drop", extra={"dev_only": True})
+                # Clear the flag and restore the selection
+                self._successful_metadata_drop = False
+                # Try to restore the selection from SelectionStore
+                selection_store = self._get_selection_store()
+                if selection_store and not self._legacy_selection_mode:
+                    stored_selection = selection_store.get_selected_rows()
+                    if stored_selection:
+                        logger.debug(f"[FileTableView] Restoring {len(stored_selection)} files from SelectionStore", extra={"dev_only": True})
+                        self._sync_qt_selection_model(stored_selection)
+                        self.viewport().update()
+                return
+
+            # Also ignore empty selections during active drag operations
+            if not selected_rows and hasattr(self, '_is_dragging') and self._is_dragging:
+                logger.debug(f"[FileTableView] Ignoring empty selection during drag operation", extra={"dev_only": True})
+                return
+
+            logger.debug(f"[FileTableView] Selection changed to: {len(selected_rows)} files", extra={"dev_only": True})
+            self._update_selection_store(selected_rows, emit_signal=True)
 
         if self.context_focused_row is not None:
             self.context_focused_row = None
@@ -1679,25 +1545,13 @@ class FileTableView(QTableView):
             self.viewport().update()
 
     def focusInEvent(self, event) -> None:
+        """SIMPLIFIED focus handling - just sync selection, no special cases"""
         super().focusInEvent(event)
 
-        # Skip selection sync during drag operations or metadata loading to prevent clearing restored selection
-        if hasattr(self, '_skip_selection_changed') and self._skip_selection_changed:
-            logger.debug("[FileTableView] Skipping focusInEvent selection sync during drag/metadata operation", extra={"dev_only": True})
-            self.viewport().update()
-            return
-
-        # Also check if metadata manager is currently loading
-        parent_window = self._get_parent_with_metadata_tree()
-        if parent_window and hasattr(parent_window, 'metadata_manager'):
-            metadata_manager = parent_window.metadata_manager
-            if hasattr(metadata_manager, '_skip_selection_changed') and metadata_manager._skip_selection_changed:
-                logger.debug("[FileTableView] Skipping focusInEvent selection sync during metadata loading", extra={"dev_only": True})
-                self.viewport().update()
-                return
-
+        # Simple sync: update SelectionStore with current Qt selection
         selected_rows = set(index.row() for index in self.selectionModel().selectedRows())
         self._update_selection_store(selected_rows, emit_signal=False)  # Don't emit signal on focus
+
         self.viewport().update()
 
     def wheelEvent(self, event) -> None:
