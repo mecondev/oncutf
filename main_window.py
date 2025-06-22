@@ -237,14 +237,6 @@ class MainWindow(QMainWindow):
         logger.info(f"[MainWindow] load_files_from_folder: {folder_path} (recursive={recursive}, remembered from previous load)")
         self.file_load_manager.load_folder(folder_path, merge_mode=False, recursive=recursive)
 
-    def start_metadata_scan(self, file_paths: list[str]) -> None:
-        """Delegates to MetadataManager for metadata scan initiation."""
-        self.metadata_manager.start_metadata_scan(file_paths)
-
-    def load_metadata_in_thread(self, file_paths: list[str]) -> None:
-        """Delegates to MetadataManager for thread-based metadata loading."""
-        self.metadata_manager.load_metadata_in_thread(file_paths)
-
     def shortcut_load_metadata(self) -> None:
         """Delegates to MetadataManager for shortcut-based metadata loading."""
         self.metadata_manager.shortcut_load_metadata()
@@ -319,17 +311,7 @@ class MainWindow(QMainWindow):
         """Delegates to PreviewManager for preview tables update."""
         self.preview_manager.update_preview_tables_from_pairs(name_pairs)
 
-    def on_metadata_progress(self, current: int, total: int) -> None:
-        """Delegates to MetadataManager for progress updates."""
-        self.metadata_manager.on_metadata_progress(current, total)
 
-    def handle_metadata_finished(self) -> None:
-        """Delegates to MetadataManager for handling completion."""
-        self.metadata_manager.handle_metadata_finished()
-
-    def cleanup_metadata_worker(self) -> None:
-        """Delegates to MetadataManager for worker cleanup."""
-        self.metadata_manager.cleanup_metadata_worker()
 
     def get_selected_rows_files(self) -> list:
         """Delegates to UtilityManager for getting selected rows as files."""
@@ -338,18 +320,6 @@ class MainWindow(QMainWindow):
     def find_fileitem_by_path(self, path: str) -> Optional[FileItem]:
         """Delegates to FileOperationsManager for finding FileItem by path."""
         return self.file_operations_manager.find_fileitem_by_path(self.file_model.files, path)
-
-    def cancel_metadata_loading(self) -> None:
-        """Delegates to MetadataManager for cancellation."""
-        self.metadata_manager.cancel_metadata_loading()
-
-    def on_metadata_error(self, message: str) -> None:
-        """Delegates to MetadataManager for error handling."""
-        self.metadata_manager.on_metadata_error(message)
-
-    def is_running_metadata_task(self) -> bool:
-        """Delegates to MetadataManager to check if metadata task is running."""
-        return self.metadata_manager.is_running_metadata_task()
 
     def on_table_row_clicked(self, index: QModelIndex) -> None:
         """Delegates to EventHandlerManager for table row click handling."""
@@ -489,31 +459,28 @@ class MainWindow(QMainWindow):
         # 1. Save window configuration before cleanup
         self._save_window_config()
 
-        # 2. Stop any running metadata operations
-        self.cleanup_metadata_worker()
-
-        # 3. Clean up any active drag operations
+        # 2. Clean up any active drag operations
         self.drag_cleanup_manager.emergency_drag_cleanup()
 
-        # 4. Clean up any open dialogs
+        # 3. Clean up any open dialogs
         if hasattr(self, 'dialog_manager'):
             self.dialog_manager.cleanup()
 
-        # 5. Clean up application context
+        # 4. Clean up application context
         if hasattr(self, 'context'):
             self.context.cleanup()
 
-        # 6. Stop any running timers
+        # 5. Stop any running timers
         for timer in self.findChildren(QTimer):
             timer.stop()
 
-        # 7. Clean up any remaining Qt resources
+        # 6. Clean up any remaining Qt resources
         QApplication.processEvents()
 
-        # 8. Call parent closeEvent
+        # 7. Call parent closeEvent
         super().closeEvent(event)
 
-        # 9. Force quit the application
+        # 8. Force quit the application
         QApplication.quit()
 
     def _check_for_unsaved_changes(self) -> bool:
@@ -559,8 +526,9 @@ class MainWindow(QMainWindow):
         self.file_load_manager.load_files_from_paths(file_paths, clear=clear)
 
     def load_metadata_from_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
-        """Delegates to FileLoadManager for loading metadata from dropped files."""
-        self.file_load_manager.load_metadata_from_dropped_files(paths, modifiers)
+        """DEPRECATED: This method is no longer used in the new simplified architecture."""
+        logger.warning("[MainWindow] load_metadata_from_dropped_files is deprecated - FileTableView calls MetadataManager directly")
+        # Keep for compatibility but don't actually do anything
 
     def load_files_from_dropped_items(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """Delegates to FileLoadManager for loading files from dropped items."""

@@ -91,7 +91,7 @@ class DragVisualManager:
         """Clear icon and cursor caches to ensure fresh renders."""
         self._icon_cache.clear()
         self._cursor_cache.clear()
-        logger.debug("[DragVisualManager] Cache cleared")
+        logger.debug("[DragVisualManager] Cache cleared", extra={"dev_only": True})
 
     @classmethod
     def get_instance(cls) -> 'DragVisualManager':
@@ -110,89 +110,78 @@ class DragVisualManager:
 
         Args:
             drag_type: Type of content being dragged
-            source_info: Information about the source (e.g., "4 files", "folder_path")
-            drag_source: Source widget name (e.g., "file_table", "file_tree")
+            source_info: Description of the source (e.g., filename, folder path)
+            drag_source: Source widget identifier (e.g., "file_table", "file_tree")
         """
         self._drag_type = drag_type
+        self._drag_source = drag_source
         self._drop_zone_state = DropZoneState.NEUTRAL
         self._modifier_state = self._detect_modifier_state()
-        self._drag_source = drag_source  # Store the drag source
-
-        # Store original cursor
-        self._original_cursor = QApplication.overrideCursor()
-
-        # Set appropriate drag cursor
-        self._update_cursor()
 
         logger.debug(f"[DragVisualManager] Visual drag started: {drag_type.value} from {source_info} (source: {drag_source})")
-        logger.debug(f"[DragVisualManager] Initial state: drop_zone={self._drop_zone_state.value}, modifier={self._modifier_state.value}")
+
+        # Clear cursor cache when starting new drag operation
+        self._clear_cache()
+
+        # Update cursor immediately
+        self._update_cursor()
 
     def end_drag_visual(self) -> None:
         """End visual feedback for drag operation."""
-        if self._drag_type is None:
-            return
+        if self._drag_type is not None:
+            logger.debug("[DragVisualManager] Visual drag ended")
 
-        # Restore original cursor
-        self._restore_cursor()
+            # Restore original cursor
+            self._restore_cursor()
 
-        # Reset state
-        self._drag_type = None
-        self._drop_zone_state = DropZoneState.NEUTRAL
-        self._modifier_state = ModifierState.NORMAL
-        self._original_cursor = None
-        self._drag_source = None
+            # Clear state
+            self._drag_type = None
+            self._drag_source = None
+            self._drop_zone_state = DropZoneState.NEUTRAL
+            self._modifier_state = ModifierState.NORMAL
 
-        # Clear cache to ensure fresh icons next time
-        self._clear_cache()
-
-        logger.debug("[DragVisualManager] Visual drag ended")
+            # Clear cache
+            self._clear_cache()
 
     def update_drop_zone_state(self, state: DropZoneState) -> None:
         """
-        Update the drop zone state and refresh visual feedback.
+        Update drop zone state and refresh cursor.
 
         Args:
             state: New drop zone state
         """
         if self._drop_zone_state != state:
             self._drop_zone_state = state
-            # Clear cursor cache to force recreation with new state
-            self._cursor_cache.clear()
+            self._clear_cache()  # Clear cache when state changes
             self._update_cursor()
-            logger.debug(f"[DragVisualManager] Drop zone state: {state.value}, cache cleared", extra={"dev_only": True})
 
     def update_modifier_state(self) -> None:
-        """Update modifier state based on current keyboard state."""
+        """Update modifier state and refresh cursor if needed."""
         new_state = self._detect_modifier_state()
         if self._modifier_state != new_state:
             self._modifier_state = new_state
-            # Clear cursor cache to force recreation with new modifiers
-            self._cursor_cache.clear()
+            self._clear_cache()  # Clear cache when state changes
             self._update_cursor()
-            logger.debug(f"[DragVisualManager] Modifier state: {new_state.value}, cache cleared", extra={"dev_only": True})
 
     # =====================================
     # Cursor Management
     # =====================================
 
     def _update_cursor(self) -> None:
-        """Update cursor based on current state."""
-        logger.debug(f"[DragVisualManager] _update_cursor called, drag_type={self._drag_type}", extra={"dev_only": True})
+        """Update cursor based on current drag state."""
         if self._drag_type is None:
-            logger.debug("[DragVisualManager] _update_cursor skipped - drag_type is None", extra={"dev_only": True})
             return
 
         cursor_key = self._get_cursor_key()
-        logger.debug(f"[DragVisualManager] _update_cursor called: key={cursor_key}", extra={"dev_only": True})
 
+        # Check cache first
         if cursor_key in self._cursor_cache:
             cursor = self._cursor_cache[cursor_key]
-            logger.debug(f"[DragVisualManager] Using cached cursor for key: {cursor_key}", extra={"dev_only": True})
         else:
             cursor = self._create_cursor()
             self._cursor_cache[cursor_key] = cursor
-            logger.debug(f"[DragVisualManager] Created new cursor for key: {cursor_key}", extra={"dev_only": True})
 
+        # Set cursor
         QApplication.setOverrideCursor(cursor)
 
     def _get_cursor_key(self) -> str:
@@ -212,16 +201,13 @@ class DragVisualManager:
         # Determine if we're dragging to metadata tree (from stored drag source)
         is_metadata_drop = self._drag_source is not None and self._drag_source == "file_table"
 
-        logger.debug(f"[DragVisualManager] _create_cursor: drag_source={self._drag_source}, is_metadata_drop={is_metadata_drop}", extra={"dev_only": True})
-
         # Choose action icon based on context
         if is_metadata_drop:
             # For metadata drops, always show the appropriate icon
             if self._modifier_state == ModifierState.SHIFT:
-                action_icon = "server"  # Extended metadata
+                action_icon = "info"  # Extended metadata (same icon as fast, different color)
             else:
                 action_icon = "info"  # Fast metadata
-            logger.debug(f"[DragVisualManager] Metadata drop: modifier={self._modifier_state.value}, icon={action_icon}", extra={"dev_only": True})
         else:
             # Normal file/folder drops - check drop zone state
             if self._drop_zone_state == DropZoneState.VALID:
@@ -315,7 +301,7 @@ class DragVisualManager:
                     action_pixmap = colored_pixmap
 
                 elif action_icon == "info":
-                    # Green for fast metadata (same as valid operations)
+                    # Color based on modifier state: Green for fast metadata, Orange for extended metadata
                     colored_pixmap = QPixmap(action_pixmap.size())
                     colored_pixmap.fill(Qt.transparent)
 
@@ -325,31 +311,22 @@ class DragVisualManager:
                     # First draw the original icon
                     color_painter.drawPixmap(0, 0, action_pixmap)
 
-                    # Then apply green color overlay
+                    # Choose color based on modifier state
+                    if self._modifier_state == ModifierState.SHIFT:
+                        # Orange for extended metadata (Shift pressed)
+                        color = QColor(255, 140, 0)  # Regular orange
+                    else:
+                        # Green for fast metadata (no Shift)
+                        color = QColor(46, 204, 113)  # User specified green
+
+                    # Apply color overlay
                     color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
-                    color_painter.fillRect(colored_pixmap.rect(), QColor(46, 204, 113))  # User specified green
+                    color_painter.fillRect(colored_pixmap.rect(), color)
                     color_painter.end()
 
                     action_pixmap = colored_pixmap
 
-                elif action_icon == "server":
-                    # Orange for extended metadata
-                    colored_pixmap = QPixmap(action_pixmap.size())
-                    colored_pixmap.fill(Qt.transparent)
 
-                    color_painter = QPainter(colored_pixmap)
-                    color_painter.setRenderHint(QPainter.Antialiasing)
-
-                    # First draw the original icon
-                    color_painter.drawPixmap(0, 0, action_pixmap)
-
-                    # Then apply orange color overlay
-                    color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
-                    # Always use regular orange - dimmed colors were not requested by user
-                    color_painter.fillRect(colored_pixmap.rect(), QColor(255, 140, 0))  # Regular orange
-                    color_painter.end()
-
-                    action_pixmap = colored_pixmap
 
                 painter.drawPixmap(24, 24, action_pixmap)  # Adjusted position for larger icon
 
@@ -393,7 +370,6 @@ class DragVisualManager:
                 result = ModifierState.SHIFT  # Extended metadata
             else:
                 result = ModifierState.NORMAL  # Fast metadata
-            logger.debug(f"[DragVisualManager] Metadata drop modifiers: Shift={is_shift} → {result.value} (Ctrl ignored)", extra={"dev_only": True})
             return result
 
         # Normal drag operations (file/folder drops)
@@ -407,7 +383,6 @@ class DragVisualManager:
         else:
             result = ModifierState.NORMAL      # No modifiers = Replace + Shallow
 
-        logger.debug(f"[DragVisualManager] Modifiers: Ctrl={is_ctrl}, Shift={is_shift} → {result.value}", extra={"dev_only": True})
         return result
 
     def get_drag_type_from_path(self, path: str) -> DragType:
@@ -445,24 +420,19 @@ class DragVisualManager:
         while current_widget:
             widget_class = current_widget.__class__.__name__
 
-            logger.debug(f"[DragVisualManager] Checking widget: {widget_class} for drag_source={drag_source}", extra={"dev_only": True})
-
             # FileTreeView can only drop on FileTableView
             if drag_source == "file_tree":
                 if widget_class == "FileTableView":
-                    logger.debug(f"[DragVisualManager] Valid drop target found: {widget_class}", extra={"dev_only": True})
                     return True
 
             # FileTableView can only drop on MetadataTreeView
             elif drag_source == "file_table":
                 if widget_class == "MetadataTreeView":
-                    logger.debug(f"[DragVisualManager] Valid drop target found: {widget_class}", extra={"dev_only": True})
                     return True
 
             # Move to parent widget
             current_widget = current_widget.parent()
 
-        logger.debug(f"[DragVisualManager] No valid drop target found for drag_source={drag_source}", extra={"dev_only": True})
         return False
 
     # =====================================

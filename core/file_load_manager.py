@@ -166,76 +166,12 @@ class FileLoadManager:
 
     def load_metadata_from_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
-        Handle files dropped onto metadata tree with modifier-based loading.
+        DEPRECATED: This method is no longer used.
+        FileTableView now calls MetadataManager directly for better performance and simpler code.
 
-        Modifier behavior:
-        - No modifiers: Fast metadata with CompactWaitingWidget
-        - Shift: Extended metadata with CompactWaitingWidget
-
-        IMPORTANT: The paths parameter now contains ALL SELECTED FILES from the drag operation,
-        not just the dropped file(s). This ensures consistent behavior with context menu and shortcuts.
-
-        This method now uses the same logic as context menu for consistency.
+        This method is kept for compatibility but should not be called in the new architecture.
         """
-        if not paths:
-            logger.info("[Drop] No files provided for metadata loading.")
-            return
-
-        logger.debug(f"[Drop] Metadata drop started: {len(paths)} files", extra={"dev_only": True})
-
-        # Set flag to prevent metadata tree refresh conflicts
-        self._metadata_operation_in_progress = True
-
-        try:
-            # Convert file paths to FileItem objects by finding them in the current model
-            if not hasattr(self.parent_window, 'file_model'):
-                logger.warning("[Drop] No file_model available")
-                return
-
-            selected_files = []
-            for path in paths:
-                # Find the corresponding FileItem in the model using normalized path comparison
-                file_item = find_file_by_path(self.parent_window.file_model.files, path, 'full_path')
-                if file_item:
-                    selected_files.append(file_item)
-
-            if not selected_files:
-                logger.warning("[Drop] No valid FileItem objects found for the provided paths")
-                return
-
-            # Debug logging
-            selected_filenames = [f.filename for f in selected_files]
-            logger.debug(f"[Drop] Processing {len(selected_files)} selected files: {selected_filenames}", extra={"dev_only": True})
-
-            # Parse modifiers for metadata loading
-            shift = bool(modifiers & Qt.ShiftModifier) # type: ignore
-            ctrl = bool(modifiers & Qt.ControlModifier) # type: ignore
-
-            # Determine loading mode based on modifiers - ONLY SHIFT MATTERS
-            use_extended = shift
-
-            if shift:
-                logger.debug("[Modifiers] Shift detected → Extended metadata")
-            else:
-                logger.debug("[Modifiers] No modifiers → Fast metadata")
-
-            logger.info(f"[Drop] Loading metadata for {len(selected_files)} files (extended={use_extended})")
-
-            # Use the same logic as context menu - call MetadataManager directly
-            if not hasattr(self.parent_window, 'metadata_manager'):
-                logger.error("[Drop] No metadata_manager available")
-                return
-
-            metadata_manager = self.parent_window.metadata_manager
-
-            # Call the unified metadata loading method (same as context menu)
-            metadata_manager.load_metadata_for_items(selected_files, use_extended=use_extended, source="drag_drop")
-
-        finally:
-            # Clear the flag immediately for all cases to avoid race conditions
-            # The metadata manager will handle selection restoration properly
-            self._metadata_operation_in_progress = False
-            logger.debug(f"[Drop] Metadata operation flag cleared for {len(selected_files)} files", extra={"dev_only": True})
+        logger.warning("[FileLoadManager] load_metadata_from_dropped_files is deprecated - FileTableView should call MetadataManager directly")
 
     def _load_folder_with_progress(self, folder_path: str, merge_mode: bool) -> None:
         """Load folder with progress dialog (for recursive operations)."""

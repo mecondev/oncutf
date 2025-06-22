@@ -111,12 +111,11 @@ class MetadataTreeView(QTreeView):
     Includes intelligent scroll position memory per file with smooth animation.
 
     Signals:
-        files_dropped: Emitted when files are dropped from file table
         value_copied: Emitted when a metadata value is copied to clipboard
         value_edited: Emitted when a metadata value is edited
         value_reset: Emitted when a metadata value is reset
     """
-    files_dropped = pyqtSignal(list, Qt.KeyboardModifiers)
+    # NOTE: files_dropped signal removed - FileTableView now calls MetadataManager directly
 
     # Signals for metadata operations
     value_copied = pyqtSignal(str)
@@ -330,7 +329,8 @@ class MetadataTreeView(QTreeView):
             if files:
                 event.acceptProposedAction()
                 self._perform_drag_cleanup(_drag_cancel_filter)
-                self.files_dropped.emit(files, event.keyboardModifiers())
+                # NOTE: No longer emit signal - FileTableView handles metadata loading directly
+                logger.debug(f"[MetadataTreeView] Drop accepted but not processed (handled by FileTableView): {len(files)} files", extra={"dev_only": True})
             else:
                 event.ignore()
                 self._perform_drag_cleanup(_drag_cancel_filter)

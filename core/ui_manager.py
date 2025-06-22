@@ -319,7 +319,7 @@ class UIManager:
 
         # Metadata Tree View
         self.parent_window.metadata_tree_view = MetadataTreeView()
-        self.parent_window.metadata_tree_view.files_dropped.connect(self.parent_window.load_metadata_from_dropped_files)
+        # NOTE: files_dropped signal is no longer connected - FileTableView calls MetadataManager directly
         # Συνδέουμε το proxy model με το tree view
         self.parent_window.metadata_tree_view.setModel(self.parent_window.metadata_proxy_model)
         right_layout.addWidget(self.parent_window.metadata_tree_view)

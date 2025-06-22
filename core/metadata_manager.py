@@ -11,7 +11,7 @@ Handles metadata loading, progress tracking, thread management, and UI coordinat
 import os
 from typing import List, Optional
 
-from core.qt_imports import QApplication, QThread, QTimer
+from core.qt_imports import QApplication, QTimer
 from PyQt5.QtCore import Qt
 from models.file_item import FileItem
 from utils.cursor_helper import wait_cursor
@@ -20,7 +20,7 @@ from utils.path_utils import find_file_by_path, paths_equal
 from utils.timer_manager import schedule_ui_update
 from widgets.custom_msgdialog import CustomMessageDialog
 from widgets.metadata_waiting_dialog import MetadataWaitingDialog
-from widgets.metadata_worker import MetadataWorker
+
 
 logger = get_cached_logger(__name__)
 
@@ -41,16 +41,8 @@ class MetadataManager:
         """Initialize MetadataManager with parent window reference."""
         self.parent_window = parent_window
 
-        # Thread management
-        self.metadata_thread = None
-        self.metadata_worker = None
-        self.loading_dialog = None
-
         # State tracking
         self.force_extended_metadata = False
-        self._original_selection_count = 0  # Track original selection count for metadata tree update
-        self._target_file_path = None  # Track target file for single selection display
-
 
         # Initialize metadata cache and exiftool wrapper
         self._metadata_cache = {}  # Cache for metadata results
@@ -58,342 +50,6 @@ class MetadataManager:
         # Initialize ExifTool wrapper for single file operations
         from utils.exiftool_wrapper import ExifToolWrapper
         self._exiftool_wrapper = ExifToolWrapper()
-
-        # Flag to skip selection changes during metadata operations
-        self._skip_selection_changed = False
-
-    def start_metadata_scan(self, file_paths: List[str]) -> None:
-        """
-        Initiates the metadata scan process for the given file paths.
-
-        Args:
-            file_paths: List of file paths to scan for metadata
-        """
-
-        logger.debug(f"[MetadataScan] Launch with force_extended = {self.force_extended_metadata}")
-
-        # Store current selection count and target file for later use
-        current_selection = None
-        if (self.parent_window and
-            hasattr(self.parent_window, 'file_table_view') and
-            hasattr(self.parent_window.file_table_view, '_get_current_selection')):
-            current_selection = self.parent_window.file_table_view._get_current_selection()
-            self._original_selection_count = len(current_selection)
-            if len(current_selection) == 1 and len(file_paths) == 1:
-                self._target_file_path = file_paths[0]
-            logger.debug(f"[MetadataManager] Selection count before metadata scan: {self._original_selection_count}")
-
-        is_extended = self.force_extended_metadata
-        self.loading_dialog = MetadataWaitingDialog(self.parent_window, is_extended=is_extended)
-        self.loading_dialog.set_status("Reading metadata...")
-        self.loading_dialog.set_filename("")
-        self.loading_dialog.set_progress(0, len(file_paths))
-
-        # Connect cancel (ESC or manual close) to cancel logic
-        self.loading_dialog.rejected.connect(self.cancel_metadata_loading)
-
-        self.loading_dialog.show()
-        QApplication.processEvents()
-
-        self.load_metadata_in_thread(file_paths)
-
-    def load_metadata_in_thread(self, file_paths: List[str]) -> None:
-        """
-        Initializes and starts a metadata loading thread using MetadataWorker.
-
-        This method:
-        - Creates a QThread and assigns a MetadataWorker to it
-        - Passes the list of file paths and extended mode flag to the worker
-        - Connects worker signals (progress, finished) to appropriate slots
-        - Ensures signal `progress` updates the dialog safely via on_metadata_progress()
-        - Starts the thread execution with the run_batch method
-
-        Parameters
-        ----------
-        file_paths : List[str]
-            A list of full file paths to extract metadata from.
-        """
-        logger.info(f"[MetadataManager] Starting metadata thread for {len(file_paths)} files")
-
-        # Create background thread
-        self.metadata_thread = QThread()
-
-        # Get required components from parent window
-        metadata_loader = getattr(self.parent_window, 'metadata_loader', None)
-        metadata_cache = getattr(self.parent_window, 'metadata_cache', None)
-
-        if not metadata_loader or not metadata_cache:
-            logger.error("[MetadataManager] Missing metadata_loader or metadata_cache from parent window")
-            return
-
-        # Create worker object (inherits from QObject)
-        self.metadata_worker = MetadataWorker(
-            reader=metadata_loader,
-            metadata_cache=metadata_cache
-            # No parent to allow moveToThread
-        )
-
-        # Give worker access to main window for FileItem updates
-        self.metadata_worker.main_window = self.parent_window
-
-        # Set the worker's inputs
-        self.metadata_worker.file_path = file_paths
-        self.metadata_worker.use_extended = self.force_extended_metadata
-
-        # Move worker to the thread context
-        self.metadata_worker.moveToThread(self.metadata_thread)
-
-        # Connect signals
-        self.metadata_thread.started.connect(self.metadata_worker.run_batch)
-
-        # update progress bar and message
-        self.metadata_worker.progress.connect(self.on_metadata_progress)
-
-        # Signal when finished
-        self.metadata_worker.finished.connect(self.handle_metadata_finished)
-
-        # Start thread execution
-        self.metadata_thread.start()
-
-
-
-    def on_metadata_progress(self, current: int, total: int) -> None:
-        """
-        Slot connected to the `progress` signal of the MetadataWorker.
-
-        This method updates the loading dialog's progress bar and message label
-        as metadata files are being processed in the background.
-
-        Args:
-            current (int): Number of files analyzed so far (1-based index).
-            total (int): Total number of files to analyze.
-        """
-        if self.metadata_worker is None:
-            logger.warning("Progress signal received after worker was already cleaned up — ignoring.")
-            return
-
-        logger.debug(f"Metadata progress update: {current} of {total}", extra={"dev_only": True})
-
-        if self.loading_dialog:
-            self.loading_dialog.set_progress(current, total)
-
-            # Show filename of current file (current-1 because progress starts at 1)
-            if 0 <= current - 1 < len(self.metadata_worker.file_path):
-                filename = os.path.basename(self.metadata_worker.file_path[current - 1])
-                self.loading_dialog.set_filename(filename)
-            else:
-                self.loading_dialog.set_filename("")
-
-            # Optional: update the label only once at the beginning
-            if current == 1:
-                self.loading_dialog.set_status("Reading metadata...")
-
-            # Force immediate UI refresh
-            QApplication.processEvents()
-        else:
-            logger.warning("Loading dialog not available during progress update — skipping UI update.")
-
-    def handle_metadata_finished(self) -> None:
-        """
-        Slot to handle the completion of metadata loading.
-
-        - Closes the loading dialog
-        - Restores the cursor to default
-        - Updates the UI as needed
-        """
-        logger.info("[MetadataManager] Metadata loading finished")
-
-        # Disconnect the cancel handler to prevent ESC after completion from clearing selection
-        if self.loading_dialog:
-            try:
-                self.loading_dialog.rejected.disconnect()
-                logger.debug("[MetadataManager] Disconnected cancel handler from dialog")
-            except (TypeError, RuntimeError):
-                pass  # Already disconnected or not connected
-            self.loading_dialog.close()
-
-        # Always restore the cursor when metadata loading is finished
-        QApplication.restoreOverrideCursor()
-        logger.debug("[MetadataManager] Cursor explicitly restored after metadata task.")
-
-        # Update metadata tree based on original selection using centralized logic
-        metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
-        should_display = (metadata_tree_view and
-                        hasattr(metadata_tree_view, 'should_display_metadata_for_selection') and
-                        metadata_tree_view.should_display_metadata_for_selection(self._original_selection_count))
-
-        if should_display and self._target_file_path:
-            # Single file was selected - show its metadata
-            metadata_cache = getattr(self.parent_window, 'metadata_cache', None)
-            if metadata_cache:
-                metadata = metadata_cache.get(self._target_file_path)
-                if (metadata and metadata_tree_view and hasattr(metadata_tree_view, 'display_metadata')):
-                    metadata_tree_view.display_metadata(metadata, context="batch_completed")
-                    logger.debug("[MetadataManager] Displayed metadata for single file after batch loading")
-        elif self._original_selection_count > 0:
-            # Multiple files were selected - show appropriate message
-            if (metadata_tree_view and hasattr(metadata_tree_view, 'show_empty_state')):
-                metadata_tree_view.show_empty_state("Multiple files selected")
-                logger.debug(f"[MetadataManager] Showing 'Multiple files selected' after batch loading {self._original_selection_count} files")
-
-        # CRITICAL: Selective UI update for loaded files only
-        # This ensures the metadata icons are updated without causing selection loss
-        if (self.parent_window and
-            hasattr(self.parent_window, 'file_model') and
-            hasattr(self.parent_window, 'file_table_view') and
-            hasattr(self.parent_window.metadata_worker, 'file_path')):
-            # Get the list of files that were loaded
-            loaded_file_paths = self.metadata_worker.file_path
-            file_model = self.parent_window.file_model
-            file_table_view = self.parent_window.file_table_view
-
-            # Update only the rows for files that were loaded
-            for file_path in loaded_file_paths:
-                # Find the file in the model using normalized path comparison
-                for i, file_item in enumerate(file_model.files):
-                    if paths_equal(file_item.full_path, file_path):
-                        # Update all columns for this row
-                        for col in range(file_model.columnCount()):
-                            idx = file_model.index(i, col)
-                            rect = file_table_view.visualRect(idx)
-                            if rect.isValid():
-                                file_table_view.viewport().update(rect)
-                        break
-
-            logger.debug(f"[MetadataManager] Selective viewport update for {len(loaded_file_paths)} files after batch loading")
-
-
-
-        # Reset tracking variables
-        self._original_selection_count = 0
-        self._target_file_path = None
-
-        # CRITICAL: Clear metadata operation flag in FileLoadManager to allow normal UI refresh
-        if (self.parent_window and
-            hasattr(self.parent_window, 'file_load_manager') and
-            hasattr(self.parent_window.file_load_manager, 'clear_metadata_operation_flag')):
-            self.parent_window.file_load_manager.clear_metadata_operation_flag()
-
-        # CRITICAL: Clean up the worker and thread to prevent "already running" issues
-        self.cleanup_metadata_worker()
-        logger.debug("[MetadataManager] Worker and thread cleaned up after metadata loading finished")
-
-    def cleanup_metadata_worker(self) -> None:
-        """
-        Safely shuts down and deletes the metadata worker and its thread.
-
-        This method ensures that:
-        - The thread is properly stopped (using quit + wait)
-        - The worker and thread are deleted using deleteLater
-        - All references are cleared to avoid leaks or crashes
-        """
-        if self.metadata_thread:
-            if self.metadata_thread.isRunning():
-                logger.debug("[MetadataManager] Quitting metadata thread...")
-                self.metadata_thread.quit()
-                self.metadata_thread.wait()
-                logger.debug("[MetadataManager] Metadata thread has stopped.")
-
-            self.metadata_thread.deleteLater()
-            self.metadata_thread = None
-            logger.debug("[MetadataManager] Metadata thread deleted.")
-
-        if self.metadata_worker:
-            self.metadata_worker.deleteLater()
-            self.metadata_worker = None
-            logger.debug("[MetadataManager] Metadata worker deleted.")
-
-        self.force_extended_metadata = False
-        if self.parent_window:
-            self.parent_window.force_extended_metadata = False
-
-        # Reset tracking variables
-        self._original_selection_count = 0
-        self._target_file_path = None
-
-    def cancel_metadata_loading(self) -> None:
-        """
-        Cancels the metadata loading process and ensures the thread is properly terminated.
-        """
-        logger.info("[MetadataManager] Cancelling metadata loading")
-
-        # CRITICAL: Clear metadata operation flag in FileLoadManager
-        if (self.parent_window and
-            hasattr(self.parent_window, 'file_load_manager') and
-            hasattr(self.parent_window.file_load_manager, 'clear_metadata_operation_flag')):
-            self.parent_window.file_load_manager.clear_metadata_operation_flag()
-
-        if hasattr(self, 'metadata_thread') and self.metadata_thread and self.metadata_thread.isRunning():
-            if self.metadata_worker:
-                self.metadata_worker.cancel()  # Use cancel method to stop the worker
-            self.metadata_thread.quit()
-            self.metadata_thread.wait()
-
-        if self.loading_dialog:
-            self.loading_dialog.close()
-
-        # Ensure cursor is restored, even if there were multiple setOverrideCursor calls
-        while QApplication.overrideCursor():
-            QApplication.restoreOverrideCursor()
-
-        logger.debug("[MetadataManager] Cursor fully restored after metadata cancellation.")
-
-        # CRITICAL: Clean up the worker and thread to prevent "already running" issues
-        self.cleanup_metadata_worker()
-        logger.debug("[MetadataManager] Worker and thread cleaned up after metadata cancellation")
-
-    def on_metadata_error(self, message: str) -> None:
-        """
-        Handles unexpected errors during metadata loading.
-
-        - Restores the UI cursor
-        - Closes the progress dialog
-        - Cleans up worker and thread
-        - Shows an error message to the user
-
-        Args:
-            message (str): The error message to display.
-        """
-        logger.error(f"Metadata error: {message}")
-
-        # 1. Restore busy cursor
-        while QApplication.overrideCursor():
-            QApplication.restoreOverrideCursor()
-        logger.debug("[MetadataManager] Cursor fully restored after metadata error.")
-
-        # 2. Close the loading dialog
-        if self.loading_dialog:
-            logger.info("Closing loading dialog due to error.")
-            self.loading_dialog.close()
-            self.loading_dialog = None
-        else:
-            logger.warning("No loading dialog found during error handling.")
-
-        # 3. Clean up worker and thread
-        self.cleanup_metadata_worker()
-
-        # 4. Notify user
-        if self.parent_window:
-            CustomMessageDialog.show_warning(self.parent_window, "Metadata Error", f"Failed to read metadata:\n\n{message}")
-
-    def is_running_metadata_task(self) -> bool:
-        """
-        Returns True if a metadata thread is currently active.
-
-        This helps prevent overlapping metadata scans by checking if
-        a previous background task is still running.
-
-        Returns
-        -------
-        bool
-            True if metadata_thread exists and is running, False otherwise.
-        """
-        running = (
-            self.metadata_thread is not None
-            and self.metadata_thread.isRunning()
-        )
-        logger.debug(f"Metadata task running? {running}")
-        return running
 
     def determine_loading_mode(self, file_count: int, use_extended: bool = False) -> str:
         """
@@ -543,13 +199,13 @@ class MetadataManager:
 
         logger.debug(f"[MetadataManager] Processing {len(items)} items (extended={use_extended}, source={source})", extra={"dev_only": True})
 
-        logger.debug(f"[MetadataManager] Loading metadata for {len(items)} items (extended={use_extended}, source={source})")
+        logger.debug(f"[MetadataManager] Loading metadata for {len(items)} items (extended={use_extended}, source={source})", extra={"dev_only": True})
 
         # SIMPLIFIED: No selection preservation or flag setting needed
 
         # Check what items need loading vs what's already cached
         needs_loading = []
-        logger.debug(f"[MetadataManager] Cache check start: items={len(items)}, use_extended={use_extended}")
+        logger.debug(f"[MetadataManager] Cache check start: items={len(items)}, use_extended={use_extended}", extra={"dev_only": True})
 
         for item in items:
             # Check cache for existing metadata
@@ -564,7 +220,7 @@ class MetadataManager:
             logger.debug(f"[{source}] {item.filename} needs loading (no cache entry)")
             needs_loading.append(item)
 
-        logger.debug(f"[MetadataManager] Cache check result: needs_loading={len(needs_loading)}")
+        logger.debug(f"[MetadataManager] Cache check result: needs_loading={len(needs_loading)}", extra={"dev_only": True})
 
         # Get metadata tree view reference
         metadata_tree_view = (self.parent_window.metadata_tree_view
@@ -586,7 +242,7 @@ class MetadataManager:
 
         # Determine loading mode based on file count and settings
         loading_mode = self.determine_loading_mode(len(needs_loading), use_extended)
-        logger.debug(f"[MetadataManager] Loading mode: {loading_mode}")
+        logger.debug(f"[MetadataManager] Loading mode: {loading_mode}", extra={"dev_only": True})
 
         # Handle different loading modes
         if loading_mode == "single_file_wait_cursor":
@@ -767,25 +423,25 @@ class MetadataManager:
             return
 
         # DEBUG: Log what we got from MetadataTree
-        logger.debug(f"[MetadataManager] Got modifications for {len(all_modified_metadata)} files:")
+        logger.debug(f"[MetadataManager] Got modifications for {len(all_modified_metadata)} files:", extra={"dev_only": True})
         for file_path, modifications in all_modified_metadata.items():
-            logger.debug(f"[MetadataManager]   - {file_path}: {list(modifications.keys())}")
+            logger.debug(f"[MetadataManager]   - {file_path}: {list(modifications.keys())}", extra={"dev_only": True})
 
         # Find FileItems for all files that have modifications
         files_to_save = []
         for file_path, modified_metadata in all_modified_metadata.items():
             if modified_metadata:  # Only files with actual modifications
-                logger.debug(f"[MetadataManager] Looking for FileItem with path: {file_path}")
+                logger.debug(f"[MetadataManager] Looking for FileItem with path: {file_path}", extra={"dev_only": True})
 
                 # Find the corresponding FileItem using normalized path comparison
                 file_item = find_file_by_path(all_files, file_path, 'full_path')
                 if file_item:
                     files_to_save.append(file_item)
-                    logger.debug(f"[MetadataManager] MATCH found for: {file_item.filename}")
+                    logger.debug(f"[MetadataManager] MATCH found for: {file_item.filename}", extra={"dev_only": True})
                 else:
                     logger.warning(f"[MetadataManager] NO MATCH found for path: {file_path}")
 
-        logger.debug(f"[MetadataManager] Found {len(files_to_save)} FileItems to save")
+        logger.debug(f"[MetadataManager] Found {len(files_to_save)} FileItems to save", extra={"dev_only": True})
 
         if not files_to_save:
             logger.info("[MetadataManager] No files with metadata modifications found")

@@ -38,88 +38,54 @@ class ExifToolWrapper:
         self.lock = threading.Lock()  # Ensure thread-safe access
         self.counter = 0  # To generate unique termination tags
 
-    def get_metadata(self, file_path: str, use_extended: bool = False) -> Optional[dict]:
+    def get_metadata(self, file_path: str, use_extended: bool = False) -> dict:
         """
-        Executes an ExifTool query for a single file.
+        Get metadata for a single file using exiftool.
 
         Args:
-            file_path (str): Full path to the media file.
-            use_extended (bool): Whether to include -ee for embedded streams.
+            file_path: Path to the file
+            use_extended: Whether to use extended metadata extraction
 
         Returns:
-            Optional[dict]: Metadata dictionary or None if parsing fails.
+            Dictionary containing metadata
         """
-        logger.debug(f"[ExifToolWrapper] get_metadata() CALLED for: {file_path}, extended={use_extended}")
+        try:
+            result = self._get_metadata_with_exiftool(file_path, use_extended)
+            return result
 
+        except Exception as e:
+            logger.error(f"[ExifToolWrapper] Error getting metadata for {file_path}: {e}")
+            return {}
+
+    def _get_metadata_with_exiftool(self, file_path: str, use_extended: bool = False) -> dict:
+        """Execute exiftool command and parse results."""
         if use_extended:
-            result = self._get_metadata_extended(file_path)
+            return self._get_metadata_extended(file_path)
         else:
-            result = self._get_metadata_fast(file_path)
-
-        if isinstance(result, dict):
-            logger.debug(f"[ExifToolWrapper] Result for {file_path} has {len(result)} keys", extra={"dev_only": True})
-            logger.debug(f"[ExifToolWrapper] FIRST KEYS: {list(result.keys())[:10]}", extra={"dev_only": True})
-        else:
-            logger.warning(f"[ExifToolWrapper] Failed or non-dict result for {file_path}: {type(result)}")
-
-        return result
+            return self._get_metadata_fast(file_path)
 
     def _get_metadata_fast(self, file_path: str) -> Optional[dict]:
         """
-        Uses a persistent exiftool -stay_open process to retrieve metadata.
-        Communicates via stdin/stdout with a custom execute marker.
-
-        Args:
-            file_path (str): Path to the media file.
-
-        Returns:
-            dict or None: Extracted metadata or None on failure.
+        Execute ExifTool with standard options for fast metadata extraction.
         """
-        if not os.path.isfile(file_path):
-            logger.warning(f"[ExifToolWrapper] File not found: {file_path}")
-            return None
-
         self.counter += 1
-        tag = f"{self.counter:05d}"  # zero-padded tag like 00001
-        marker = f"{{ready{tag}}}"
+        tag = f"{self.counter:05d}"
 
-        command = f"-j\n{file_path}\n-execute{tag}\n"
+        cmd = [
+            'exiftool',
+            '-json',
+            '-charset', 'filename=UTF8',
+            f'-execute{tag}',
+            file_path
+        ]
 
-        with self.lock:
-            try:
-                logger.debug(f"[ExifToolWrapper] Sending command (tag={tag}) for: {file_path}")
-                self.process.stdin.write(command)
-                self.process.stdin.flush()
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            return self._parse_exiftool_output(result.stdout, tag)
 
-                output_lines = []
-                start_time = time.time()
-                timeout_seconds = 5
-
-                while True:
-                    if time.time() - start_time > timeout_seconds:
-                        logger.warning(f"[ExifToolWrapper] Timeout waiting for response (tag={tag})")
-                        return None
-
-                    line = self.process.stdout.readline()
-                    if not line:
-                        logger.warning(f"[ExifToolWrapper] Unexpected EOF from exiftool (tag={tag})")
-                        return None
-
-                    stripped = line.strip()
-                    logger.debug(f"[ExifToolWrapper] STDOUT: {stripped}", extra={"dev_only": True})
-                    if stripped == marker:
-                        logger.debug(f"[ExifToolWrapper] Received marker: {marker}", extra={"dev_only": True})
-                        break
-
-                    output_lines.append(line)
-
-                output = ''.join(output_lines)
-                data = json.loads(output)
-                return data[0] if data else None
-
-            except Exception as e:
-                logger.error(f"[ExifToolWrapper] Exception during metadata read: {e}", exc_info=True)
-                return None
+        except Exception as e:
+            logger.error(f"[ExifToolWrapper] Error executing exiftool for {file_path}: {e}")
+            return None
 
     def _get_metadata_extended(self, file_path: str) -> Optional[dict]:
         """

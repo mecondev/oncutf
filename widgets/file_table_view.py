@@ -771,11 +771,9 @@ class FileTableView(QTableView):
             # Store drag start position
             self._drag_start_pos = event.pos()
 
-            # CRITICAL: Store current selection BEFORE any changes for potential drag
-            # This ensures we have the correct selection even if Qt changes it
+            # Store current selection for potential drag operation
             current_sel = self._get_current_selection()
-            logger.debug(f"[FileTableView] Stored drag start selection: {len(current_sel)} files", extra={"dev_only": True})
-            # Removed verbose drag debug log
+            self._drag_start_selection = current_sel.copy()
 
             # If clicking on empty space, clear selection
             if not index.isValid():
@@ -1213,86 +1211,70 @@ class FileTableView(QTableView):
             QApplication.postEvent(self, fake_move_event)
 
     def _handle_drop_on_metadata_tree(self):
-        """Handle drop on metadata tree - send ALL SELECTED files, not just dragged files"""
+        """Handle drop on metadata tree - SIMPLIFIED direct communication"""
         if not self._drag_data:
             logger.debug("[FileTableView] No drag data available for metadata tree drop", extra={"dev_only": True})
             return False
 
-        # SIMPLIFIED: Always use CURRENT selection for more reliable behavior
-        # This avoids confusion between preserved and current selection
-        selected_file_paths = []
-
-        # DEBUG: Check current state
-        current_selection = self._get_current_selection()
-        # Use current selection - this is what the user sees and expects
-        selected_rows = current_selection
+        # Get current selection - this is what the user sees and expects
+        selected_rows = self._get_current_selection()
         logger.debug(f"[FileTableView] Using current selection for metadata drop: {len(selected_rows)} files", extra={"dev_only": True})
 
-        if selected_rows:
-            try:
-                file_items = [self.model().files[r] for r in selected_rows if 0 <= r < len(self.model().files)]
-                selected_file_paths = [f.full_path for f in file_items if f.full_path]
-                logger.debug(f"[FileTableView] Converted to {len(selected_file_paths)} file paths", extra={"dev_only": True})
-            except (AttributeError, IndexError) as e:
-                logger.error(f"[FileTableView] Error converting selection to paths: {e}")
-                return False
-
-        if not selected_file_paths:
-            logger.warning("[FileTableView] No valid file paths found for metadata tree drop")
+        if not selected_rows:
+            logger.warning("[FileTableView] No valid selection found for metadata tree drop")
             return False
 
-        logger.debug(f"[FileTableView] Ready to emit signal with {len(selected_file_paths)} files", extra={"dev_only": True})
+        # Convert to FileItem objects
+        try:
+            file_items = [self.model().files[r] for r in selected_rows if 0 <= r < len(self.model().files)]
+            if not file_items:
+                logger.warning("[FileTableView] No valid file items found for metadata tree drop")
+                return False
+        except (AttributeError, IndexError) as e:
+            logger.error(f"[FileTableView] Error converting selection to file items: {e}")
+            return False
 
-        # Store file paths for signal emission (before any cleanup)
-        paths_to_emit = selected_file_paths.copy()
-
-        # Get modifiers BEFORE cleanup (they might change)
+        # Get modifiers for metadata loading decision
         modifiers = QApplication.keyboardModifiers()
+        use_extended = bool(modifiers & Qt.ShiftModifier) # type: ignore
 
-        # Get parent window for signal emission
+        # Find parent window and call MetadataManager directly
         parent_window = self._get_parent_with_metadata_tree()
-        if parent_window and hasattr(parent_window, 'metadata_manager'):
-            logger.debug(f"[FileTableView] Found metadata manager, proceeding with signal emission", extra={"dev_only": True})
+        if not parent_window or not hasattr(parent_window, 'metadata_manager'):
+            logger.warning("[FileTableView] Could not find parent window or metadata manager")
+            return False
 
-            # Force cursor cleanup AFTER we have everything we need
+        logger.debug(f"[FileTableView] Calling MetadataManager directly with {len(file_items)} files (extended={use_extended})", extra={"dev_only": True})
+
+        # SIMPLIFIED: Call MetadataManager directly - no complex signal chain
+        try:
+            parent_window.metadata_manager.load_metadata_for_items(
+                file_items,
+                use_extended=use_extended,
+                source="drag_drop_direct"
+            )
+
+            # Set flag to indicate successful metadata drop
+            self._successful_metadata_drop = True
+            logger.debug("[FileTableView] Metadata loading initiated successfully", extra={"dev_only": True})
+
+            # Force cursor cleanup after successful operation
             self._force_cursor_cleanup()
 
-            # Find metadata tree view and emit signal
-            if parent_window and hasattr(parent_window, 'metadata_tree_view'):
-                metadata_tree = parent_window.metadata_tree_view
+            # Schedule final status update
+            def final_status_update():
+                current_selection = self._get_current_selection()
+                if current_selection:
+                    selection_store = self._get_selection_store()
+                    if selection_store and not self._legacy_selection_mode:
+                        selection_store.selection_changed.emit(list(current_selection))
+                        logger.debug(f"[FileTableView] Final status update: {len(current_selection)} files", extra={"dev_only": True})
 
-                logger.debug(f"[FileTableView] Emitting files_dropped signal with {len(paths_to_emit)} files", extra={"dev_only": True})
-                # Emit the signal with the preserved file paths
-                metadata_tree.files_dropped.emit(paths_to_emit, modifiers)
+            schedule_ui_update(final_status_update, delay=100)
+            return True
 
-                # CRITICAL: Set flag to indicate successful metadata drop
-                # This will help us preserve selection after the drop
-                self._successful_metadata_drop = True
-                logger.debug("[FileTableView] Set successful metadata drop flag to preserve selection", extra={"dev_only": True})
-
-                # Force additional cleanup after signal emission
-                QApplication.processEvents()  # Allow signal to be processed
-                self._force_cursor_cleanup()  # Clean up any remaining cursor issues
-
-                # Schedule final status update for metadata tree drops
-                def final_status_update_for_metadata_drop():
-                    current_selection = self._get_current_selection()
-                    if current_selection:
-                        selection_store = self._get_selection_store()
-                        if selection_store and not self._legacy_selection_mode:
-                            selection_store.selection_changed.emit(list(current_selection))
-                            logger.debug(f"[FileTableView] Final status update after metadata drop: {len(current_selection)} files", extra={"dev_only": True})
-
-                # Schedule after metadata operations are complete
-                schedule_ui_update(final_status_update_for_metadata_drop, delay=100)
-
-                logger.debug("[FileTableView] Metadata tree drop completed successfully", extra={"dev_only": True})
-                return True
-            else:
-                logger.warning("[FileTableView] Could not find metadata tree view for drop", extra={"dev_only": True})
-                return False
-        else:
-            logger.warning("[FileTableView] Could not find metadata tree view for drop", extra={"dev_only": True})
+        except Exception as e:
+            logger.error(f"[FileTableView] Error calling MetadataManager: {e}")
             return False
 
     def _get_parent_with_metadata_tree(self):
