@@ -203,11 +203,14 @@ class DragVisualManager:
 
         # Choose action icon based on context
         if is_metadata_drop:
-            # For metadata drops, always show the appropriate icon
-            if self._modifier_state == ModifierState.SHIFT:
-                action_icon = "info"  # Extended metadata (same icon as fast, different color)
-            else:
-                action_icon = "info"  # Fast metadata
+            # For metadata drops, check drop zone state first
+            if self._drop_zone_state == DropZoneState.INVALID:
+                action_icon = "x"  # Invalid drop zone - red X
+            elif self._drop_zone_state == DropZoneState.VALID:
+                # Valid metadata drop - show info icon
+                action_icon = "info"  # Both fast and extended metadata use same icon, different colors
+            else:  # NEUTRAL
+                action_icon = None  # No action icon for neutral zones
         else:
             # Normal file/folder drops - check drop zone state
             if self._drop_zone_state == DropZoneState.VALID:

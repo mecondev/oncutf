@@ -47,7 +47,6 @@ from core.drag_visual_manager import (
 from utils.file_drop_helper import extract_file_paths
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import (
-    schedule_drag_cleanup,
     schedule_resize_adjust,
     schedule_ui_update,
 )
@@ -789,13 +788,12 @@ class FileTableView(QTableView):
                 # Check if we're clicking on an already selected item for potential drag
                 current_selection = self._get_current_selection()
                 if index.row() in current_selection and len(current_selection) > 1:
-                    # Don't change selection yet - might be starting a drag
-                    self._preserve_selection_for_drag = True
-                    self._clicked_on_selected = True
-                    logger.debug(f"[FileTableView] Preserving multi-selection for potential drag: {len(current_selection)} files", extra={"dev_only": True})
-                    # IMPORTANT: Still call super() to allow Qt to process the event
-                    super().mousePressEvent(event)
-                    return
+                    # Multi-selection: Preserve current selection for drag
+                    self._drag_start_selection = current_selection.copy()
+                    self._skip_selection_changed = True
+                    schedule_ui_update(self._clear_skip_flag, 50)
+                    return  # Don't change selection - preserve for drag
+
                 else:
                     # Single click - select single row
                     self._set_anchor_row(index.row())
@@ -805,13 +803,13 @@ class FileTableView(QTableView):
                 # Check if we're on a selected item for potential drag
                 current_selection = self._get_current_selection()
                 if index.row() in current_selection:
-                    # Don't change selection yet - might be starting a drag
+                    # Ctrl+click on selected item - prepare for toggle (remove) on mouse release
                     self._preserve_selection_for_drag = True
                     self._clicked_on_selected = True
-                    logger.debug(f"[FileTableView] Preserving Ctrl-selection for potential drag: {len(current_selection)} files", extra={"dev_only": True})
-                    # CRITICAL: Call super() to allow Qt to process the event
-                    super().mousePressEvent(event)
-                    return
+                    self._clicked_index = index
+                    self._drag_start_selection = current_selection.copy()
+                    logger.debug(f"[FileTableView] Ctrl+click on selected row {index.row()} - preparing for toggle", extra={"dev_only": True})
+                    return  # Don't call super() - we'll handle in mouseReleaseEvent
                 else:
                     # Ctrl+click on unselected - add to selection (toggle)
                     current_selection = current_selection.copy()  # Make a copy to avoid modifying the original
@@ -827,12 +825,10 @@ class FileTableView(QTableView):
                 if index.row() in current_selection:
                     # Clicking on already selected item with Shift - preserve selection for drag
                     # This prevents Shift+drag from changing selection
-                    self._preserve_selection_for_drag = True
-                    self._clicked_on_selected = True
-                    logger.debug(f"[FileTableView] Preserving Shift-selection for potential drag: {len(current_selection)} files", extra={"dev_only": True})
-                    # IMPORTANT: Don't call super() and don't change selection
-                    # This prevents Shift+Click from changing selection when starting a drag
-                    return
+                    self._drag_start_selection = current_selection.copy()
+                    self._skip_selection_changed = True
+                    schedule_ui_update(self._clear_skip_flag, 50)
+                    return  # Let Qt handle Shift+click
                 else:
                     # Shift+click on unselected item - select range
                     anchor = self._get_anchor_row()
@@ -1081,6 +1077,16 @@ class FileTableView(QTableView):
         self._is_dragging = True
         self._drag_data = file_paths
 
+        # Start continuous drag feedback updates
+        if hasattr(self, '_drag_feedback_timer') and self._drag_feedback_timer is not None:
+            self._drag_feedback_timer.stop()
+            self._drag_feedback_timer.deleteLater()
+            self._drag_feedback_timer = None
+
+        self._drag_feedback_timer = QTimer(self)
+        self._drag_feedback_timer.timeout.connect(self._update_drag_feedback)
+        self._drag_feedback_timer.start(50)  # Update every 50ms
+
         # Notify DragManager
         drag_manager = DragManager.get_instance()
         drag_manager.start_drag("file_table")
@@ -1104,45 +1110,49 @@ class FileTableView(QTableView):
         logger.debug(f"[FileTableView] Custom drag started with visual feedback: {len(file_paths)} files (type: {drag_type.value})", extra={"dev_only": True})
 
     def _update_drag_feedback(self):
-        """Update visual feedback based on current cursor position during drag"""
+        """Update drag visual feedback based on current cursor position"""
         if not self._is_dragging:
             return
+
+        logger.debug("[FileTableView] _update_drag_feedback called", extra={"dev_only": True})
 
         # Update modifier state first (for Ctrl/Shift changes during drag)
         update_modifier_state()
 
         # Get widget under cursor
-        widget_under_cursor = QApplication.widgetAt(QCursor.pos())
+        cursor_pos = QCursor.pos()
+        widget_under_cursor = QApplication.widgetAt(cursor_pos)
+
         if not widget_under_cursor:
-            # Cursor is outside application window - terminate drag
-            logger.debug("[FileTableView] Cursor outside application - terminating drag", extra={"dev_only": True})
-            self._end_custom_drag()
+            update_drop_zone_state(DropZoneState.NEUTRAL)
             return
 
-        # Use the improved drop target detection from DragVisualManager
-        visual_manager = DragVisualManager.get_instance()
+        # Check for valid drop targets (MetadataTreeView)
+        current_widget = widget_under_cursor
+        valid_found = False
 
-        # Check if current position is a valid drop target (walks up parent hierarchy automatically)
-        if visual_manager.is_valid_drop_target(widget_under_cursor, "file_table"):
-            update_drop_zone_state(DropZoneState.VALID)
-            logger.debug(f"[FileTableView] Valid drop zone detected: {widget_under_cursor.__class__.__name__}", extra={"dev_only": True})
-        else:
-            # Check for explicit invalid targets (policy violations)
-            current_widget = widget_under_cursor
-            invalid_found = False
+        while current_widget and not valid_found:
+            widget_class = current_widget.__class__.__name__
 
-            while current_widget and not invalid_found:
-                widget_class = current_widget.__class__.__name__
-                if widget_class in ['FileTreeView', 'FileTableView']:
-                    update_drop_zone_state(DropZoneState.INVALID)
-                    invalid_found = True
-                    logger.debug(f"[FileTableView] Invalid drop zone: {widget_class}", extra={"dev_only": True})
-                    break
-                current_widget = current_widget.parent()
+            # Valid target: MetadataTreeView
+            if widget_class == 'MetadataTreeView':
+                update_drop_zone_state(DropZoneState.VALID)
+                valid_found = True
+                logger.debug(f"[FileTableView] VALID drop zone detected: {widget_class}")
+                break
 
-            # If no specific invalid target found, neutral state
-            if not invalid_found:
-                update_drop_zone_state(DropZoneState.NEUTRAL)
+            # Invalid targets: FileTreeView, FileTableView, or any other drag-incompatible widgets
+            elif widget_class in ['FileTreeView', 'FileTableView']:
+                update_drop_zone_state(DropZoneState.INVALID)
+                valid_found = True
+                logger.debug(f"[FileTableView] INVALID drop zone detected: {widget_class}")
+                break
+
+            current_widget = current_widget.parent()
+
+        # If no specific target found, neutral state
+        if not valid_found:
+            update_drop_zone_state(DropZoneState.NEUTRAL)
 
     def _end_custom_drag(self):
         """End custom drag operation - SIMPLIFIED VERSION"""
@@ -1150,6 +1160,12 @@ class FileTableView(QTableView):
             return
 
         logger.debug("[FileTableView] Ending custom drag operation", extra={"dev_only": True})
+
+        # Stop drag feedback timer
+        if hasattr(self, '_drag_feedback_timer') and self._drag_feedback_timer is not None:
+            self._drag_feedback_timer.stop()
+            self._drag_feedback_timer.deleteLater()
+            self._drag_feedback_timer = None
 
         # Force immediate cursor cleanup
         self._force_cursor_cleanup()
@@ -1590,3 +1606,7 @@ class FileTableView(QTableView):
         if hasattr(self, 'viewport'):
             self.viewport().update() # type: ignore
         QApplication.processEvents()
+
+    def _clear_skip_flag(self):
+        """Clear the skip selection changed flag."""
+        self._skip_selection_changed = False

@@ -60,31 +60,66 @@ class ExifToolWrapper:
     def _get_metadata_with_exiftool(self, file_path: str, use_extended: bool = False) -> dict:
         """Execute exiftool command and parse results."""
         if use_extended:
-            return self._get_metadata_extended(file_path)
+            result = self._get_metadata_extended(file_path)
         else:
-            return self._get_metadata_fast(file_path)
+            result = self._get_metadata_fast(file_path)
+
+        # Convert None to empty dict for consistency
+        return result if result is not None else {}
 
     def _get_metadata_fast(self, file_path: str) -> Optional[dict]:
         """
         Execute ExifTool with standard options for fast metadata extraction.
         """
-        self.counter += 1
-        tag = f"{self.counter:05d}"
+        if not os.path.isfile(file_path):
+            logger.warning(f"[ExifToolWrapper] File not found: {file_path}")
+            return None
 
         cmd = [
             'exiftool',
             '-json',
             '-charset', 'filename=UTF8',
-            f'-execute{tag}',
             file_path
         ]
 
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
-            return self._parse_exiftool_output(result.stdout, tag)
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=10)
 
+            if result.returncode != 0:
+                logger.warning(f"[ExifToolWrapper] ExifTool returned error code {result.returncode} for {file_path}")
+                if result.stderr:
+                    logger.warning(f"[ExifToolWrapper] ExifTool stderr: {result.stderr}")
+                return None
+
+            return self._parse_json_output(result.stdout)
+
+        except subprocess.TimeoutExpired:
+            logger.error(f"[ExifToolWrapper] Timeout executing exiftool for {file_path}")
+            return None
         except Exception as e:
             logger.error(f"[ExifToolWrapper] Error executing exiftool for {file_path}: {e}")
+            return None
+
+    def _parse_json_output(self, output: str) -> Optional[dict]:
+        """Parse exiftool JSON output and return metadata dictionary."""
+        try:
+            if not output.strip():
+                logger.warning("[ExifToolWrapper] Empty output from exiftool")
+                return None
+
+            data = json.loads(output)
+            if isinstance(data, list) and len(data) > 0:
+                return data[0]
+            else:
+                logger.warning("[ExifToolWrapper] Invalid JSON structure from exiftool")
+                return None
+
+        except json.JSONDecodeError as e:
+            logger.error(f"[ExifToolWrapper] JSON decode error: {e}")
+            logger.debug(f"[ExifToolWrapper] Raw output was: {repr(output)}")
+            return None
+        except Exception as e:
+            logger.error(f"[ExifToolWrapper] Error parsing output: {e}")
             return None
 
     def _get_metadata_extended(self, file_path: str) -> Optional[dict]:
