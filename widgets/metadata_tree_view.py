@@ -1667,8 +1667,8 @@ class MetadataTreeView(QTreeView):
             logger.debug(f"[MetadataTree] Selection count {len(selected_rows)} - showing empty state")
             return
 
-        # Single file selected - show its metadata
-        target_index = selected_rows[0]
+        # Show metadata for the last selected file
+        target_index = selected_rows[-1]
 
         if (hasattr(parent_window, 'file_model') and
             0 <= target_index.row() < len(parent_window.file_model.files)):
@@ -1831,8 +1831,8 @@ class MetadataTreeView(QTreeView):
         Returns:
             bool: True if metadata should be displayed, False if empty state should be shown
         """
-        # Simple rule: Only show metadata for exactly 1 selected file
-        return selected_files_count == 1
+        # Always display metadata (for last file if multiple)
+        return selected_files_count > 0
 
     def smart_display_metadata_or_empty_state(self, metadata: Optional[Dict[str, Any]], selected_count: int, context: str = "") -> None:
         """

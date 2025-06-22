@@ -1205,7 +1205,7 @@ class FileTableView(QTableView):
         # Notify DragManager
         drag_manager.end_drag("file_table")
 
-        # CRITICAL: Restore selection after all cleanup is done
+        # CRITICAL: Always restore selection after drag
         if preserved_selection:
             # Block all selection events during restoration
             self._skip_selection_changed = True
@@ -1539,9 +1539,10 @@ class FileTableView(QTableView):
 
         logger.warning("[FileTableView] *** STARTING SELECTION PROCESS ***")
 
-        # Clear existing selection first
-        logger.warning("[FileTableView] *** CLEARING EXISTING SELECTION ***")
-        self.clearSelection()
+        # Clear existing selection first only if there are modifiers
+        if self.keyboardModifiers() != Qt.NoModifier:
+            logger.warning("[FileTableView] *** CLEARING EXISTING SELECTION ***")
+            self.clearSelection()
 
         # Select the specific rows ALL AT ONCE using range selection
         selection_model = self.selectionModel()

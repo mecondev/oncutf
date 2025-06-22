@@ -714,16 +714,12 @@ class MetadataManager:
             from utils.timer_manager import schedule_dialog_close
             schedule_dialog_close(loading_dialog.close, 500)
 
-        # SIMPLIFIED DISPLAY LOGIC: Show metadata only for single file
-        if metadata_tree_view:
-            if len(items) == 1:
-                # Single file: display metadata
-                logger.info(f"[MetadataManager] Displaying metadata for single file: {items[0].filename}")
-                metadata_tree_view.display_file_metadata(items[0])
-            else:
-                # Multiple files: show count message
-                logger.info(f"[MetadataManager] Multiple files selected ({len(items)}), showing empty state")
-                metadata_tree_view.show_empty_state(f"{len(items)} files selected")
+                # ALWAYS DISPLAY METADATA: Show metadata for last file even with multiple selection
+        if metadata_tree_view and items:
+            # Always display metadata for the last file in the selection
+            last_file = items[-1]
+            logger.info(f"[MetadataManager] Displaying metadata for file: {last_file.filename} (from {len(items)} selected)")
+            metadata_tree_view.display_file_metadata(last_file)
 
         # Restore selection after metadata operations complete
         if current_selection and self.parent_window and hasattr(self.parent_window, 'file_table_view'):
