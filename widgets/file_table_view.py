@@ -100,12 +100,10 @@ class FileTableView(QTableView):
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True) # type: ignore
 
-        # Note: QTableView in PyQt5 doesn't have setRubberBandSelectionMode
-        # We'll implement custom lasso selection with Ctrl+drag
-
-        # Custom drag state tracking
+        # Custom drag state tracking (needed by existing drag implementation)
         self._is_dragging = False
-        self._drag_data = None  # Store selected file data for drag
+        self._drag_data = None
+        self._drag_feedback_timer = None
 
         # Selection preservation for drag operations
         self._preserve_selection_for_drag = False
@@ -1081,12 +1079,12 @@ class FileTableView(QTableView):
         # Set initial drag widget for zone validation
         DragZoneValidator.set_initial_drag_widget("file_table", self.__class__.__name__)
 
-        # Start continuous drag feedback updates
-        if hasattr(self, '_drag_feedback_timer') and self._drag_feedback_timer is not None:
+        # Start drag feedback timer for real-time visual updates
+        if self._drag_feedback_timer is not None:
             self._drag_feedback_timer.stop()
             self._drag_feedback_timer.deleteLater()
-            self._drag_feedback_timer = None
 
+        from PyQt5.QtCore import QTimer
         self._drag_feedback_timer = QTimer(self)
         self._drag_feedback_timer.timeout.connect(self._update_drag_feedback)
         self._drag_feedback_timer.start(50)  # Update every 50ms
@@ -1115,8 +1113,6 @@ class FileTableView(QTableView):
 
     def _update_drag_feedback(self):
         """Update visual feedback based on current cursor position during drag"""
-        logger.debug("[FileTableView] _update_drag_feedback called", extra={"dev_only": True})
-
         if not self._is_dragging:
             return
 

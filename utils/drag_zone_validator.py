@@ -29,23 +29,11 @@ class DragZoneValidator:
     ZONE_RULES: Dict[str, Dict[str, List[str]]] = {
         "file_tree": {
             "valid": ["FileTableView"],
-            "invalid": [
-                "FileTreeView", "MetadataTreeView", "MetadataWidget",
-                "RenameModuleWidget", "RenameModulesArea", "NameTransformWidget",
-                "OriginalNameWidget", "PreviewTableWidget", "PreviewTablesView",
-                "CompactWaitingWidget", "InteractiveHeader", "QLabel",
-                "QSplitter", "QFrame", "QPushButton", "QScrollBar", "QScrollArea"
-            ]
+            "invalid": ["FileTreeView", "MetadataTreeView"]
         },
         "file_table": {
             "valid": ["MetadataTreeView"],
-            "invalid": [
-                "FileTreeView", "FileTableView", "MetadataWidget",
-                "RenameModuleWidget", "RenameModulesArea", "NameTransformWidget",
-                "OriginalNameWidget", "PreviewTableWidget", "PreviewTablesView",
-                "CompactWaitingWidget", "InteractiveHeader", "QLabel",
-                "QSplitter", "QFrame", "QPushButton", "QScrollBar", "QScrollArea"
-            ]
+            "invalid": ["FileTreeView", "FileTableView"]
         }
     }
 
@@ -71,8 +59,6 @@ class DragZoneValidator:
             drag_source: Source of the drag operation ("file_tree" or "file_table")
             log_prefix: Prefix for log messages (e.g., "[FileTreeView]")
         """
-        logger.debug(f"{log_prefix} validate_drop_zone called", extra={"dev_only": True})
-
         # Get widget under cursor
         widget_under_cursor = QApplication.widgetAt(QCursor.pos())
         if not widget_under_cursor:
@@ -84,19 +70,6 @@ class DragZoneValidator:
         if cls._is_initial_drag_widget(drag_source, widget_class_name):
             cls._set_cursor_state(DropZoneState.NEUTRAL)
             return
-
-        # Special case: Allow drops on widgets in placeholder mode
-        # Even if they are normally invalid zones (like QLabel placeholders)
-        if hasattr(widget_under_cursor, 'property') and widget_under_cursor.property("placeholder"):
-            # This is a placeholder widget - check if it's a valid target
-            parent_widget = widget_under_cursor.parent()
-            while parent_widget:
-                parent_class_name = parent_widget.__class__.__name__
-                if parent_class_name in cls.ZONE_RULES[drag_source]["valid"]:
-                    cls._set_cursor_state(DropZoneState.VALID)
-                    logger.debug(f"{log_prefix} VALID drop zone detected: {parent_class_name} (placeholder mode)", extra={"dev_only": True})
-                    return
-                parent_widget = parent_widget.parent()
 
         # Normal validation logic
         rules = cls.ZONE_RULES.get(drag_source, {})
