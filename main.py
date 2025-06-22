@@ -13,10 +13,10 @@ Functions:
     main: Initializes and runs the Batch File Renamer application.
 """
 
-import datetime
 import logging
 import platform
 import sys
+import time
 from pathlib import Path
 
 # Add the project root to the Python path
@@ -37,7 +37,7 @@ ConfigureLogger(log_name="oncutf")
 logger = logging.getLogger()
 
 # Log application start with current date/time
-now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 logger.info(f"Application started at {now}")
 
 logger_effective_level =logger.getEffectiveLevel()

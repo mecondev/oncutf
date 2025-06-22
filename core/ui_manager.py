@@ -16,7 +16,7 @@ from core.qt_imports import *
 from models.file_table_model import FileTableModel
 from utils.icons_loader import get_app_icon, get_menu_icon
 from utils.logger_factory import get_cached_logger
-from utils.timer_manager import schedule_selection_update
+from utils.timer_manager import schedule_selection_update, schedule_ui_update
 from widgets.custom_file_system_model import CustomFileSystemModel
 from widgets.file_table_view import FileTableView
 from widgets.file_tree_view import FileTreeView
@@ -556,8 +556,7 @@ class UIManager:
         self.parent_window.metadata_proxy_model.setFilterRegExp(text)
 
         # Always expand all groups after filtering to keep them open
-        from PyQt5.QtCore import QTimer
-        QTimer.singleShot(10, self.parent_window.metadata_tree_view.expandAll)
+        schedule_ui_update(self.parent_window.metadata_tree_view.expandAll, 10)
 
     def _clear_metadata_search(self):
         """Clear the metadata search field and hide the clear button."""
@@ -567,8 +566,7 @@ class UIManager:
         self.parent_window.metadata_proxy_model.setFilterRegExp("")
 
         # Always expand all groups after clearing filter
-        from PyQt5.QtCore import QTimer
-        QTimer.singleShot(10, self.parent_window.metadata_tree_view.expandAll)
+        schedule_ui_update(self.parent_window.metadata_tree_view.expandAll, 10)
 
     def restore_metadata_search_text(self):
         """Restore the metadata search text from session storage."""

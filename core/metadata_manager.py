@@ -16,6 +16,7 @@ from models.file_item import FileItem
 from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
 from utils.path_utils import find_file_by_path, paths_equal
+from utils.timer_manager import schedule_ui_update
 from widgets.custom_msgdialog import CustomMessageDialog
 from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 from widgets.metadata_worker import MetadataWorker
@@ -272,7 +273,7 @@ class MetadataManager:
                         self.parent_window.file_table_view._skip_selection_changed = False
                         logger.warning("[DEBUG] DISABLED _skip_selection_changed flag (batch loading - delayed)")
 
-                QTimer.singleShot(100, delayed_flag_disable)  # 100ms delay
+                schedule_ui_update(delayed_flag_disable, 100)  # 100ms delay
                 logger.warning("[DEBUG] SCHEDULED delayed disable of _skip_selection_changed flag (batch loading)")
 
             # Clear preserved selection after restoration
@@ -621,9 +622,26 @@ class MetadataManager:
 
             # Use centralized logic to determine if metadata should be displayed
             metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
+
+            # CRITICAL FIX: Get actual selection count from UI, not len(items)
+            # This fixes the issue where drag & drop with 1 file doesn't show metadata
+            actual_selection_count = len(items)  # Default fallback
+            if (self.parent_window and
+                hasattr(self.parent_window, 'file_table_view') and
+                hasattr(self.parent_window.file_table_view, '_get_current_selection')):
+                try:
+                    current_selection = self.parent_window.file_table_view._get_current_selection()
+                    if current_selection:
+                        actual_selection_count = len(current_selection)
+                        logger.debug(f"[MetadataManager] Using actual UI selection count: {actual_selection_count}")
+                    else:
+                        logger.debug(f"[MetadataManager] No current selection, using items count: {len(items)}")
+                except Exception as e:
+                    logger.debug(f"[MetadataManager] Could not get current selection, using items count: {e}")
+
             should_display = (metadata_tree_view and
                             hasattr(metadata_tree_view, 'should_display_metadata_for_selection') and
-                            metadata_tree_view.should_display_metadata_for_selection(len(items)))
+                            metadata_tree_view.should_display_metadata_for_selection(actual_selection_count))
 
             if should_display:
                 # Single file - display metadata
@@ -657,7 +675,7 @@ class MetadataManager:
                         self.parent_window.file_table_view._skip_selection_changed = False
                         logger.warning("[DEBUG] DISABLED _skip_selection_changed flag (early return - delayed)")
 
-                QTimer.singleShot(100, delayed_flag_disable)  # 100ms delay
+                schedule_ui_update(delayed_flag_disable, 100)  # 100ms delay
                 logger.warning("[DEBUG] SCHEDULED delayed disable of _skip_selection_changed flag (early return)")
 
             # Reset preserved selection after restoration
@@ -708,18 +726,40 @@ class MetadataManager:
 
             # Use centralized logic to determine if metadata should be displayed
             metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
+
+            # CRITICAL FIX: Get actual selection count from UI, not len(items)
+            # This fixes the issue where drag & drop with 1 file doesn't show metadata
+            actual_selection_count = len(items)  # Default fallback
+            if (self.parent_window and
+                hasattr(self.parent_window, 'file_table_view') and
+                hasattr(self.parent_window.file_table_view, '_get_current_selection')):
+                try:
+                    current_selection = self.parent_window.file_table_view._get_current_selection()
+                    if current_selection:
+                        actual_selection_count = len(current_selection)
+                        logger.warning(f"[DEBUG] NORMAL LOADING: Using actual UI selection count: {actual_selection_count} (items: {len(items)})")
+                    else:
+                        logger.warning(f"[DEBUG] NORMAL LOADING: No current selection, using items count: {len(items)}")
+                except Exception as e:
+                    logger.warning(f"[DEBUG] NORMAL LOADING: Could not get current selection, using items count: {e}")
+
+            logger.warning(f"[DEBUG] NORMAL LOADING: Final selection count for display logic: {actual_selection_count}")
+
             should_display = (metadata_tree_view and
                             hasattr(metadata_tree_view, 'should_display_metadata_for_selection') and
-                            metadata_tree_view.should_display_metadata_for_selection(len(items)))
+                            metadata_tree_view.should_display_metadata_for_selection(actual_selection_count))
+
+            logger.warning(f"[DEBUG] NORMAL LOADING: should_display = {should_display}")
 
             if should_display:
                 # Single file - display metadata
                 metadata = target_file.metadata or metadata_cache.get(target_file.full_path)
+                logger.warning(f"[DEBUG] NORMAL LOADING: Displaying metadata for {target_file.filename}")
                 if (metadata_tree_view and hasattr(metadata_tree_view, 'display_metadata')):
                     metadata_tree_view.display_metadata(metadata, context=source)
             else:
                 # Multiple files selected - don't show metadata tree
-                logger.debug(f"[{source}] Multiple files selected ({len(items)}) - not updating metadata tree after single file load")
+                logger.warning(f"[DEBUG] NORMAL LOADING: NOT displaying metadata - Multiple files selected ({actual_selection_count}) - not updating metadata tree after single file load")
                 if (metadata_tree_view and hasattr(metadata_tree_view, 'show_empty_state')):
                     metadata_tree_view.show_empty_state("Multiple files selected")
 
