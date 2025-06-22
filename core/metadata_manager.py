@@ -11,7 +11,7 @@ Handles metadata loading, progress tracking, thread management, and UI coordinat
 import os
 from typing import List, Optional
 
-from core.qt_imports import QApplication, QThread
+from core.qt_imports import QApplication, QThread, QTimer
 from models.file_item import FileItem
 from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
@@ -262,10 +262,18 @@ class MetadataManager:
                 self.parent_window.file_table_view._update_selection_store(self._preserved_selection, emit_signal=True)
                 logger.debug("[MetadataManager] Selection restored successfully")
 
-            # CRITICAL: Re-enable selectionChanged events after restoration
+            # CRITICAL: Re-enable selectionChanged events after restoration with delay
+            # Use a timer to ensure Qt's drag end events are processed first
             if hasattr(self.parent_window.file_table_view, '_skip_selection_changed'):
-                self.parent_window.file_table_view._skip_selection_changed = False
-                logger.warning("[DEBUG] DISABLED _skip_selection_changed flag (batch loading)")
+                def delayed_flag_disable():
+                    if (self.parent_window and
+                        hasattr(self.parent_window, 'file_table_view') and
+                        hasattr(self.parent_window.file_table_view, '_skip_selection_changed')):
+                        self.parent_window.file_table_view._skip_selection_changed = False
+                        logger.warning("[DEBUG] DISABLED _skip_selection_changed flag (batch loading - delayed)")
+
+                QTimer.singleShot(100, delayed_flag_disable)  # 100ms delay
+                logger.warning("[DEBUG] SCHEDULED delayed disable of _skip_selection_changed flag (batch loading)")
 
             # Clear preserved selection after restoration
             self._preserved_selection = None
@@ -641,10 +649,16 @@ class MetadataManager:
             else:
                 logger.warning(f"[DEBUG] EARLY RETURN: Could not restore selection - conditions not met")
 
-            # CRITICAL: Re-enable selectionChanged events after restoration
+            # CRITICAL: Re-enable selectionChanged events after restoration with delay
+            # Use a timer to ensure Qt's drag end events are processed first
             if (self.parent_window and hasattr(self.parent_window, 'file_table_view')):
-                self.parent_window.file_table_view._skip_selection_changed = False
-                logger.warning("[DEBUG] DISABLED _skip_selection_changed flag (early return)")
+                def delayed_flag_disable():
+                    if (self.parent_window and hasattr(self.parent_window, 'file_table_view')):
+                        self.parent_window.file_table_view._skip_selection_changed = False
+                        logger.warning("[DEBUG] DISABLED _skip_selection_changed flag (early return - delayed)")
+
+                QTimer.singleShot(100, delayed_flag_disable)  # 100ms delay
+                logger.warning("[DEBUG] SCHEDULED delayed disable of _skip_selection_changed flag (early return)")
 
             # Reset preserved selection after restoration
             self._preserved_selection = None
