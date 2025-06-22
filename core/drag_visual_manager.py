@@ -170,6 +170,51 @@ class DragVisualManager:
             self._clear_cache()  # Clear cache when state changes
             self._update_cursor()
 
+    def update_drag_feedback_for_widget(self, source_widget, drag_source: str) -> bool:
+        """
+        Update drag feedback based on cursor position - common logic for all widgets.
+
+        Args:
+            source_widget: The widget that started the drag (FileTreeView or FileTableView)
+            drag_source: String identifier ("file_tree" or "file_table")
+
+        Returns:
+            bool: True to continue drag, False to end drag
+        """
+        # Update modifier state first (for Ctrl/Shift changes during drag)
+        update_modifier_state()
+
+        # Get widget under cursor
+        widget_under_cursor = QApplication.widgetAt(QCursor.pos())
+        if not widget_under_cursor:
+            # Cursor is outside application window - this should end the drag
+            return False  # Signal to end drag
+
+        # Check if cursor is still over the source widget
+        current_widget = widget_under_cursor
+        still_over_source = False
+
+        while current_widget:
+            if current_widget is source_widget:
+                still_over_source = True
+                break
+            current_widget = current_widget.parent()
+
+        # If still over source widget, show NEUTRAL (can't drop on self)
+        if still_over_source:
+            update_drop_zone_state(DropZoneState.NEUTRAL)
+            return True  # Continue drag
+
+        # Check if over valid drop target
+        is_valid = self.is_valid_drop_target(widget_under_cursor, drag_source)
+
+        if is_valid:
+            update_drop_zone_state(DropZoneState.VALID)
+        else:
+            update_drop_zone_state(DropZoneState.INVALID)
+
+        return True  # Continue drag
+
     # =====================================
     # Cursor Management
     # =====================================
@@ -352,8 +397,6 @@ class DragVisualManager:
 
                     action_pixmap = colored_pixmap
 
-
-
                 painter.drawPixmap(24, 24, action_pixmap)  # Adjusted position for larger icon
 
         painter.end()
@@ -508,3 +551,16 @@ def update_modifier_state() -> None:
 def is_valid_drop_target(widget: QWidget, drag_source: str) -> bool:
     """Check if widget is valid drop target."""
     return DragVisualManager.get_instance().is_valid_drop_target(widget, drag_source)
+
+def update_drag_feedback_for_widget(source_widget, drag_source: str) -> bool:
+    """
+    Update drag feedback for a widget - convenience function.
+
+    Args:
+        source_widget: The widget that started the drag
+        drag_source: String identifier ("file_tree" or "file_table")
+
+    Returns:
+        bool: True to continue drag, False to end drag
+    """
+    return DragVisualManager.get_instance().update_drag_feedback_for_widget(source_widget, drag_source)

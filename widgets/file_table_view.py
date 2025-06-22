@@ -43,6 +43,7 @@ from core.drag_visual_manager import (
     start_drag_visual,
     update_drop_zone_state,
     update_modifier_state,
+    update_drag_feedback_for_widget,
 )
 from utils.file_drop_helper import extract_file_paths
 from utils.logger_factory import get_cached_logger
@@ -1074,12 +1075,10 @@ class FileTableView(QTableView):
         self._is_dragging = True
         self._drag_data = file_paths
 
-        # Start drag feedback timer for real-time visual updates
-        if self._drag_feedback_timer is not None:
-            self._drag_feedback_timer.stop()
-            self._drag_feedback_timer.deleteLater()
-
-        # Timer removed - using Qt built-in drag instead of custom feedback
+        # Stop any existing drag feedback timer
+        if hasattr(self, '_drag_feedback_timer_id') and self._drag_feedback_timer_id:
+            from utils.timer_manager import cancel_timer
+            cancel_timer(self._drag_feedback_timer_id)
 
         # Notify DragManager
         drag_manager = DragManager.get_instance()
@@ -1101,7 +1100,30 @@ class FileTableView(QTableView):
 
         start_drag_visual(drag_type, source_info, "file_table")
 
+        # Start drag feedback loop for real-time visual updates
+        self._start_drag_feedback_loop()
+
         logger.debug(f"[FileTableView] Custom drag started with visual feedback: {len(file_paths)} files (type: {drag_type.value})", extra={"dev_only": True})
+
+    def _start_drag_feedback_loop(self):
+        """Start repeated drag feedback updates using timer_manager"""
+        from utils.timer_manager import schedule_ui_update
+        if self._is_dragging:
+            self._update_drag_feedback()
+            # Schedule next update
+            self._drag_feedback_timer_id = schedule_ui_update(self._start_drag_feedback_loop, delay=50)
+
+    def _update_drag_feedback(self):
+        """Update visual feedback based on current cursor position during drag"""
+        if not self._is_dragging:
+            return
+
+        # Use common drag feedback logic
+        should_continue = update_drag_feedback_for_widget(self, "file_table")
+
+        # If cursor is outside application, end drag
+        if not should_continue:
+            self._end_custom_drag()
 
     def _end_custom_drag(self):
         """End custom drag operation - SIMPLIFIED VERSION"""
@@ -1110,11 +1132,11 @@ class FileTableView(QTableView):
 
         logger.debug("[FileTableView] Ending custom drag operation", extra={"dev_only": True})
 
-        # Stop drag feedback timer
-        if hasattr(self, '_drag_feedback_timer') and self._drag_feedback_timer is not None:
-            self._drag_feedback_timer.stop()
-            self._drag_feedback_timer.deleteLater()
-            self._drag_feedback_timer = None
+        # Stop and cleanup drag feedback timer
+        if hasattr(self, '_drag_feedback_timer_id') and self._drag_feedback_timer_id:
+            from utils.timer_manager import cancel_timer
+            cancel_timer(self._drag_feedback_timer_id)
+            self._drag_feedback_timer_id = None
 
         # Force immediate cursor cleanup
         self._force_cursor_cleanup()

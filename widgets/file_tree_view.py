@@ -26,6 +26,7 @@ from core.drag_visual_manager import (
     start_drag_visual,
     update_drop_zone_state,
     update_modifier_state,
+    update_drag_feedback_for_widget,
 )
 from core.modifier_handler import decode_modifiers_to_flags
 from utils.logger_factory import get_cached_logger
@@ -355,38 +356,12 @@ class FileTreeView(QTreeView):
         if not self._is_dragging:
             return
 
-        # Update modifier state first (for Ctrl/Shift changes during drag)
-        update_modifier_state()
+        # Use common drag feedback logic
+        should_continue = update_drag_feedback_for_widget(self, "file_tree")
 
-        # Get widget under cursor
-        widget_under_cursor = QApplication.widgetAt(QCursor.pos())
-        if not widget_under_cursor:
-            # Cursor is outside application window - terminate drag
+        # If cursor is outside application, end drag
+        if not should_continue:
             self._end_custom_drag()
-            return
-
-        # Check if cursor is still over this FileTreeView (source widget)
-        current_widget = widget_under_cursor
-        still_over_source = False
-
-        while current_widget:
-            if current_widget is self:
-                still_over_source = True
-                break
-            current_widget = current_widget.parent()
-
-        # If still over source widget, don't change state (keep initial VALID)
-        if still_over_source:
-            return
-
-        # Now check if over valid drop target (FileTableView)
-        visual_manager = DragVisualManager.get_instance()
-        is_valid = visual_manager.is_valid_drop_target(widget_under_cursor, "file_tree")
-
-        if is_valid:
-            update_drop_zone_state(DropZoneState.VALID)
-        else:
-            update_drop_zone_state(DropZoneState.INVALID)
 
     def _end_custom_drag(self):
         """End our custom drag operation with enhanced visual feedback"""
