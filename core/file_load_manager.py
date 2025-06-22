@@ -206,7 +206,7 @@ class FileLoadManager:
             logger.debug(f"[Drop] Processing {len(selected_files)} selected files: {selected_filenames}", extra={"dev_only": True})
 
             # Parse modifiers for metadata loading
-            shift = bool(modifiers & Qt.ShiftModifier)
+            shift = bool(modifiers & Qt.ShiftModifier) # type: ignore
 
             # Determine loading mode based on modifiers
             use_extended = shift
@@ -217,6 +217,7 @@ class FileLoadManager:
                 logger.debug("[Modifiers] No modifiers → Fast metadata")
 
             logger.info(f"[Drop] Loading metadata for {len(selected_files)} files (extended={use_extended})")
+            logger.warning(f"[DEBUG] DRAG DROP START: files={len(selected_files)}, extended={use_extended}")
 
             # Use the same logic as context menu - call MetadataManager directly
             if not hasattr(self.parent_window, 'metadata_manager'):
@@ -224,6 +225,10 @@ class FileLoadManager:
                 return
 
             metadata_manager = self.parent_window.metadata_manager
+
+            # Check if metadata_manager has preserved selection
+            preserved_selection = getattr(metadata_manager, '_preserved_selection', None)
+            logger.warning(f"[DEBUG] PRESERVED SELECTION IN METADATA_MANAGER: {preserved_selection}")
 
             # Call the unified metadata loading method (same as context menu)
             metadata_manager.load_metadata_for_items(selected_files, use_extended=use_extended, source="drag_drop")
@@ -469,6 +474,7 @@ class FileLoadManager:
                         self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
                         logger.debug("[FileLoadManager] Refreshed metadata tree", extra={"dev_only": True})
                 else:
+                    logger.warning("[DEBUG] SKIPPED metadata tree refresh (metadata operation in progress)")
                     logger.debug("[FileLoadManager] Skipped metadata tree refresh (metadata operation in progress)", extra={"dev_only": True})
 
             logger.info("[FileLoadManager] UI refresh completed successfully", extra={"dev_only": True})

@@ -262,6 +262,11 @@ class MetadataManager:
                 self.parent_window.file_table_view._update_selection_store(self._preserved_selection, emit_signal=True)
                 logger.debug("[MetadataManager] Selection restored successfully")
 
+            # CRITICAL: Re-enable selectionChanged events after restoration
+            if hasattr(self.parent_window.file_table_view, '_skip_selection_changed'):
+                self.parent_window.file_table_view._skip_selection_changed = False
+                logger.warning("[DEBUG] DISABLED _skip_selection_changed flag (batch loading)")
+
             # Clear preserved selection after restoration
             self._preserved_selection = None
         else:
@@ -560,6 +565,12 @@ class MetadataManager:
             hasattr(self.parent_window, 'file_table_view') and
             hasattr(self.parent_window.file_table_view, '_get_current_selection')):
             self._preserved_selection = self.parent_window.file_table_view._get_current_selection().copy()
+
+            # CRITICAL: Temporarily disable selectionChanged events during drag & drop
+            # This prevents Qt's automatic selection changes from interfering with our restoration
+            self.parent_window.file_table_view._skip_selection_changed = True
+            logger.warning("[DEBUG] ENABLED _skip_selection_changed flag")
+
             logger.debug(f"[MetadataManager] Preserved selection of {len(self._preserved_selection)} files before metadata operations")
 
         # Get required components from parent window
@@ -572,6 +583,9 @@ class MetadataManager:
 
         # Intelligent cache checking - only load what's needed
         needs_loading = []
+        logger.warning(f"[DEBUG] CACHE CHECK START: items={len(items)}, use_extended={use_extended}")
+        logger.warning(f"[DEBUG] PRESERVED SELECTION AT START: {self._preserved_selection}")
+
         for item in items:
             # Get the cached entry (which includes extended status)
             entry = metadata_cache.get_entry(item.full_path)
@@ -588,11 +602,15 @@ class MetadataManager:
             else:
                 logger.debug(f"[{source}] {item.filename} already has {'extended' if entry.is_extended else 'basic'} metadata")
 
+        logger.warning(f"[DEBUG] CACHE CHECK RESULT: needs_loading={len(needs_loading)}")
+
         # Always show metadata for the last file in the list
         target_file = items[-1]
 
         # If all files already have appropriate metadata, just show it for the target file
         if not needs_loading:
+            logger.warning(f"[DEBUG] EARLY RETURN PATH: Restoring selection {self._preserved_selection}")
+
             # Use centralized logic to determine if metadata should be displayed
             metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
             should_display = (metadata_tree_view and
@@ -612,7 +630,23 @@ class MetadataManager:
                     self.parent_window.set_status(f"Metadata already loaded for {len(items)} files.", color="green", auto_reset=True)
                 if (metadata_tree_view and hasattr(metadata_tree_view, 'show_empty_state')):
                     metadata_tree_view.show_empty_state("Multiple files selected")
-            # Reset preserved selection since nothing was loaded
+
+            # CRITICAL: Restore selection even when metadata already exists (especially for drag & drop)
+            if (self._preserved_selection is not None and
+                self.parent_window and
+                hasattr(self.parent_window, 'file_table_view') and
+                hasattr(self.parent_window.file_table_view, '_update_selection_store')):
+                self.parent_window.file_table_view._update_selection_store(self._preserved_selection, emit_signal=False)
+                logger.warning(f"[DEBUG] EARLY RETURN: Actually restored selection of {len(self._preserved_selection)} files")
+            else:
+                logger.warning(f"[DEBUG] EARLY RETURN: Could not restore selection - conditions not met")
+
+            # CRITICAL: Re-enable selectionChanged events after restoration
+            if (self.parent_window and hasattr(self.parent_window, 'file_table_view')):
+                self.parent_window.file_table_view._skip_selection_changed = False
+                logger.warning("[DEBUG] DISABLED _skip_selection_changed flag (early return)")
+
+            # Reset preserved selection after restoration
             self._preserved_selection = None
             return
 
@@ -694,7 +728,14 @@ class MetadataManager:
             # This is especially important for single file drag & drop
             if selection_before_load is not None and hasattr(self.parent_window.file_table_view, '_update_selection_store'):
                 self.parent_window.file_table_view._update_selection_store(selection_before_load, emit_signal=False)
-                logger.debug(f"[MetadataManager] Restored selection of {len(selection_before_load)} files after single file metadata loading")
+                logger.warning(f"[DEBUG] NORMAL LOADING: Actually restored selection of {len(selection_before_load)} files")
+            else:
+                logger.warning(f"[DEBUG] NORMAL LOADING: Could not restore selection - conditions not met")
+
+            # CRITICAL: Re-enable selectionChanged events after restoration
+            if (self.parent_window and hasattr(self.parent_window, 'file_table_view')):
+                self.parent_window.file_table_view._skip_selection_changed = False
+                logger.warning("[DEBUG] DISABLED _skip_selection_changed flag (normal loading)")
 
             # Reset preserved selection after successful restoration
             self._preserved_selection = None

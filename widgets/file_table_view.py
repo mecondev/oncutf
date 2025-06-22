@@ -155,6 +155,10 @@ class FileTableView(QTableView):
 
     def _update_selection_store(self, selected_rows: set, emit_signal: bool = True) -> None:
         """Update SelectionStore with current selection and ensure Qt model is synchronized."""
+        import traceback
+        caller_info = traceback.extract_stack()[-2]
+        logger.warning(f"[DEBUG] _update_selection_store CALLED: rows={selected_rows}, emit={emit_signal}, from={caller_info.filename}:{caller_info.lineno}")
+
         selection_store = self._get_selection_store()
         if selection_store and not self._legacy_selection_mode:
             selection_store.set_selected_rows(selected_rows, emit_signal=emit_signal)
@@ -1421,6 +1425,12 @@ class FileTableView(QTableView):
 
     def selectionChanged(self, selected, deselected) -> None:
         super().selectionChanged(selected, deselected)
+
+        # Skip processing if we're in the middle of a drag & drop metadata operation
+        # This prevents Qt's automatic selection changes from interfering with our restoration
+        if hasattr(self, '_skip_selection_changed') and self._skip_selection_changed:
+            logger.warning("[DEBUG] SKIPPED selectionChanged (drag & drop metadata operation in progress)")
+            return
 
         selection_model = self.selectionModel()
         if selection_model is not None:
