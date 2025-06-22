@@ -541,9 +541,7 @@ class MetadataManager:
             logger.warning("[MetadataManager] No items provided for metadata loading")
             return
 
-        # DEBUG: Log what we received
-        logger.warning(f"[DEBUG] METADATA MANAGER RECEIVED: {len(items)} items, extended={use_extended}, source={source}")
-        logger.warning(f"[DEBUG] METADATA MANAGER FILES: {[item.filename for item in items[:3]]}{'...' if len(items) > 3 else ''}")
+        logger.debug(f"[MetadataManager] Processing {len(items)} items (extended={use_extended}, source={source})", extra={"dev_only": True})
 
         logger.debug(f"[MetadataManager] Loading metadata for {len(items)} items (extended={use_extended}, source={source})")
 
@@ -581,7 +579,7 @@ class MetadataManager:
             if metadata_tree_view and items:
                 # Always display metadata - same logic as loaded items
                 display_file = items[0] if len(items) == 1 else items[-1]
-                logger.warning(f"[DEBUG] CACHED ITEMS - Displaying metadata for: {display_file.filename} (from {len(items)} cached)")
+                logger.debug(f"[MetadataManager] Displaying cached metadata for: {display_file.filename}", extra={"dev_only": True})
                 metadata_tree_view.display_file_metadata(display_file)
 
             return
@@ -687,14 +685,13 @@ class MetadataManager:
             schedule_dialog_close(loading_dialog.close, 500)
 
         else:
-            logger.warning(f"[DEBUG] LOADING MODE NOT HANDLED: {loading_mode}")
+            logger.warning(f"[MetadataManager] Unhandled loading mode: {loading_mode}")
 
         # SIMPLIFIED APPROACH: ALWAYS DISPLAY METADATA
         # For both single and multiple files, show metadata for the first/last file
         if metadata_tree_view and items:
             # For single file, use first item; for multiple files, use last item for better UX
             display_file = items[0] if len(items) == 1 else items[-1]
-            logger.warning(f"[DEBUG] METADATA DISPLAY: Showing metadata for {display_file.filename} (from {len(items)} selected)")
             logger.info(f"[MetadataManager] Displaying metadata for file: {display_file.filename} (from {len(items)} selected)")
             metadata_tree_view.display_file_metadata(display_file)
 

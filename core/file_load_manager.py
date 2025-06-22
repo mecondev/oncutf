@@ -181,9 +181,7 @@ class FileLoadManager:
             logger.info("[Drop] No files provided for metadata loading.")
             return
 
-        # DEBUG: Log what we received
-        logger.warning(f"[DEBUG] METADATA DROP START: {len(paths)} files, modifiers: {modifiers}")
-        logger.warning(f"[DEBUG] METADATA DROP FILES: {[os.path.basename(p) for p in paths[:3]]}{'...' if len(paths) > 3 else ''}")
+        logger.debug(f"[Drop] Metadata drop started: {len(paths)} files", extra={"dev_only": True})
 
         # Set flag to prevent metadata tree refresh conflicts
         self._metadata_operation_in_progress = True
@@ -216,18 +214,12 @@ class FileLoadManager:
             # Determine loading mode based on modifiers - ONLY SHIFT MATTERS
             use_extended = shift
 
-            # DEBUG: Log modifier parsing
-            logger.warning(f"[DEBUG] MODIFIER PARSING: Shift={shift}, Ctrl={ctrl} (ignored), use_extended={use_extended}")
-
             if shift:
                 logger.debug("[Modifiers] Shift detected → Extended metadata")
-                logger.warning("[DEBUG] SHIFT MODE: Extended metadata")
             else:
                 logger.debug("[Modifiers] No modifiers → Fast metadata")
-                logger.warning("[DEBUG] NORMAL MODE: Fast metadata")
 
             logger.info(f"[Drop] Loading metadata for {len(selected_files)} files (extended={use_extended})")
-            logger.warning(f"[DEBUG] DRAG DROP START: files={len(selected_files)}, extended={use_extended}")
 
             # Use the same logic as context menu - call MetadataManager directly
             if not hasattr(self.parent_window, 'metadata_manager'):
@@ -236,10 +228,6 @@ class FileLoadManager:
 
             metadata_manager = self.parent_window.metadata_manager
 
-            # Check if metadata_manager has preserved selection
-            preserved_selection = getattr(metadata_manager, '_preserved_selection', None)
-            logger.warning(f"[DEBUG] PRESERVED SELECTION IN METADATA_MANAGER: {preserved_selection}")
-
             # Call the unified metadata loading method (same as context menu)
             metadata_manager.load_metadata_for_items(selected_files, use_extended=use_extended, source="drag_drop")
 
@@ -247,7 +235,7 @@ class FileLoadManager:
             # Clear the flag immediately for all cases to avoid race conditions
             # The metadata manager will handle selection restoration properly
             self._metadata_operation_in_progress = False
-            logger.warning(f"[DEBUG] CLEARED metadata operation flag IMMEDIATELY for {len(selected_files)} files")
+            logger.debug(f"[Drop] Metadata operation flag cleared for {len(selected_files)} files", extra={"dev_only": True})
 
     def _load_folder_with_progress(self, folder_path: str, merge_mode: bool) -> None:
         """Load folder with progress dialog (for recursive operations)."""
@@ -478,7 +466,6 @@ class FileLoadManager:
                         self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
                         logger.debug("[FileLoadManager] Refreshed metadata tree", extra={"dev_only": True})
                 else:
-                    logger.warning("[DEBUG] SKIPPED metadata tree refresh (metadata operation in progress)")
                     logger.debug("[FileLoadManager] Skipped metadata tree refresh (metadata operation in progress)", extra={"dev_only": True})
 
             logger.info("[FileLoadManager] UI refresh completed successfully", extra={"dev_only": True})
