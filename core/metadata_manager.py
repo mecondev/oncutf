@@ -762,14 +762,8 @@ class MetadataManager:
                 # Fallback: use the selection store
                 file_table_view._update_selection_store(current_selection, emit_signal=True)
 
-        # Always clear the flag at the end
-        self._skip_selection_changed = False
-        logger.warning("[DEBUG] DISABLED _skip_selection_changed flag (normal loading)")
-
-        # Also clear flag in FileTableView
-        if self.parent_window and hasattr(self.parent_window, 'file_table_view'):
-            self.parent_window.file_table_view._skip_selection_changed = False
-            logger.debug("[MetadataManager] Cleared _skip_selection_changed flag in FileTableView")
+        # Flag already cleared above - no need for double clearing
+        logger.warning("[DEBUG] CLEARED metadata operation flag IMMEDIATELY for {} files".format(len(items)))
 
     def save_metadata_for_selected(self) -> None:
         """
