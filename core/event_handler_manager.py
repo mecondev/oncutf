@@ -592,67 +592,158 @@ class EventHandlerManager:
 
         logger.info(f"[HashManager] Starting duplicate detection for {len(file_items)} files ({scope})")
 
-        try:
-            # Import HashManager and waiting widget
+        # Convert FileItem objects to file paths
+        file_paths = [item.full_path for item in file_items]
+
+        if len(file_paths) == 1:
+            # Single file - use wait cursor (like metadata system)
+            from utils.cursor_helper import wait_cursor
             from core.hash_manager import HashManager
-            from widgets.compact_waiting_widget import CompactWaitingWidget
-            from core.qt_imports import QDialog, QVBoxLayout
 
-            # Show progress dialog for operations with many files
-            progress_dialog = None
-            progress_widget = None
-            if len(file_items) > 5:  # Show progress for more than 5 files
-                progress_dialog = QDialog(self.parent_window)
-                progress_dialog.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
-                progress_dialog.setAttribute(Qt.WA_TranslucentBackground, False)
-                progress_dialog.setModal(True)
+            try:
+                with wait_cursor():
+                    hash_manager = HashManager()
+                    duplicates = hash_manager.find_duplicates_in_list(file_paths)
+                    self._show_duplicates_results(duplicates, scope)
+            except Exception as e:
+                logger.error(f"[HashManager] Error finding duplicates: {e}")
+                from widgets.custom_msgdialog import CustomMessageDialog
+                CustomMessageDialog.information(
+                    self.parent_window,
+                    "Error",
+                    f"Failed to find duplicates: {str(e)}"
+                )
+        else:
+            # Multiple files - use worker thread with progress dialog
+            self._start_hash_operation("duplicates", file_paths, scope)
 
-                layout = QVBoxLayout(progress_dialog)
-                layout.setContentsMargins(0, 0, 0, 0)
+    def _start_hash_operation(self, operation_type: str, file_paths: List[str],
+                            scope: str = None, external_folder: str = None) -> None:
+        """Start a hash operation with worker thread and progress dialog."""
+        from core.hash_worker import HashWorker
+        from widgets.metadata_waiting_dialog import MetadataWaitingDialog
 
-                progress_widget = CompactWaitingWidget(progress_dialog)
-                progress_widget.set_status(f"Scanning {len(file_items)} files for duplicates...")
-                layout.addWidget(progress_widget)
+        try:
+            # Create waiting dialog
+            self.hash_dialog = MetadataWaitingDialog(
+                parent=self.parent_window,
+                is_extended=False,
+                cancel_callback=self._cancel_hash_operation
+            )
 
-                progress_dialog.setLayout(layout)
+            # Create and configure worker
+            self.hash_worker = HashWorker(parent=self.parent_window)
 
-                # Setup dialog size and centering
-                from utils.dialog_utils import setup_dialog_size_and_center
-                setup_dialog_size_and_center(progress_dialog, progress_widget)
+            # Connect signals
+            self.hash_worker.progress_updated.connect(self.hash_dialog.set_progress)
+            self.hash_worker.status_updated.connect(self.hash_dialog.set_status)
+            self.hash_worker.file_processing.connect(self.hash_dialog.set_filename)
 
-                progress_dialog.show()
+            # Connect result signals
+            if operation_type == "duplicates":
+                self.hash_worker.duplicates_found.connect(
+                    lambda duplicates: self._on_duplicates_found(duplicates, scope)
+                )
+            elif operation_type == "compare":
+                self.hash_worker.comparison_result.connect(
+                    lambda results: self._on_comparison_result(results, external_folder)
+                )
+            elif operation_type == "checksums":
+                self.hash_worker.checksums_calculated.connect(self._on_checksums_calculated)
 
-            # Create hash manager instance
-            hash_manager = HashManager()
+            # Connect control signals
+            self.hash_worker.finished_processing.connect(self._on_hash_operation_finished)
+            self.hash_worker.error_occurred.connect(self._on_hash_operation_error)
 
-            # Show status in main window too
+            # Setup worker based on operation type
+            if operation_type == "duplicates":
+                self.hash_worker.setup_duplicate_scan(file_paths)
+                initial_status = f"Scanning {len(file_paths)} files for duplicates..."
+            elif operation_type == "compare":
+                self.hash_worker.setup_external_comparison(file_paths, external_folder)
+                initial_status = f"Comparing {len(file_paths)} files with external folder..."
+            elif operation_type == "checksums":
+                self.hash_worker.setup_checksum_calculation(file_paths)
+                initial_status = f"Calculating checksums for {len(file_paths)} files..."
+            else:
+                raise ValueError(f"Unknown operation type: {operation_type}")
+
+            # Show dialog and start worker
+            self.hash_dialog.set_status(initial_status)
+            self.hash_dialog.show()
+
+            # Update main window status
             if hasattr(self.parent_window, 'set_status'):
-                self.parent_window.set_status(f"Scanning {len(file_items)} files for duplicates...", color="blue")
+                self.parent_window.set_status(initial_status, color="blue", auto_reset=False)
 
-            # Find duplicates
-            duplicates = hash_manager.find_duplicates_in_list(file_items)
-
-            # Close progress dialog
-            if progress_dialog:
-                progress_dialog.close()
-
-            # Show results
-            self._show_duplicates_results(duplicates, scope)
+            # Start worker thread
+            self.hash_worker.start()
 
         except Exception as e:
-            logger.error(f"[HashManager] Error finding duplicates: {e}")
+            logger.error(f"[HashManager] Error starting hash operation: {e}")
             from widgets.custom_msgdialog import CustomMessageDialog
             CustomMessageDialog.information(
                 self.parent_window,
                 "Error",
-                f"Failed to find duplicates: {str(e)}"
+                f"Failed to start hash operation: {str(e)}"
             )
-            if hasattr(self.parent_window, 'set_status'):
-                self.parent_window.set_status("Duplicate detection failed", color="red", auto_reset=True)
-        finally:
-            # Always close progress dialog
-            if 'progress_dialog' in locals() and progress_dialog:
-                progress_dialog.close()
+
+    def _cancel_hash_operation(self) -> None:
+        """Cancel the current hash operation."""
+        if hasattr(self, 'hash_worker') and self.hash_worker:
+            logger.info("[HashManager] Cancelling hash operation")
+            self.hash_worker.cancel()
+
+    def _on_duplicates_found(self, duplicates: dict, scope: str) -> None:
+        """Handle duplicates found result."""
+        self._show_duplicates_results(duplicates, scope)
+
+    def _on_comparison_result(self, results: dict, external_folder: str) -> None:
+        """Handle comparison result."""
+        self._show_comparison_results(results, external_folder)
+
+    def _on_checksums_calculated(self, hash_results: dict) -> None:
+        """Handle checksums calculated result."""
+        self._show_hash_results(hash_results)
+
+    def _on_hash_operation_finished(self, success: bool) -> None:
+        """Handle hash operation completion."""
+        if hasattr(self, 'hash_dialog') and self.hash_dialog:
+            # Keep dialog visible for a moment to show completion
+            from utils.timer_manager import schedule_dialog_close
+            schedule_dialog_close(self.hash_dialog.close, 500)
+
+        # Clean up worker
+        if hasattr(self, 'hash_worker') and self.hash_worker:
+            self.hash_worker.quit()
+            self.hash_worker.wait()
+            self.hash_worker = None
+
+    def _on_hash_operation_error(self, error_message: str) -> None:
+        """Handle hash operation error."""
+        logger.error(f"[HashManager] Hash operation error: {error_message}")
+
+        # Close dialog
+        if hasattr(self, 'hash_dialog') and self.hash_dialog:
+            self.hash_dialog.close()
+
+        # Show error message
+        from widgets.custom_msgdialog import CustomMessageDialog
+        CustomMessageDialog.information(
+            self.parent_window,
+            "Error",
+            f"Hash operation failed: {error_message}"
+        )
+
+        # Update status
+        if hasattr(self.parent_window, 'set_status'):
+            self.parent_window.set_status("Hash operation failed", color="red", auto_reset=True)
+
+        # Clean up worker
+        if hasattr(self, 'hash_worker') and self.hash_worker:
+            self.hash_worker.quit()
+            self.hash_worker.wait()
+            self.hash_worker = None
 
     def _handle_compare_external(self, selected_files: List) -> None:
         """
@@ -683,87 +774,58 @@ class EventHandlerManager:
 
             logger.info(f"[HashManager] Comparing {len(selected_files)} files with {external_folder}")
 
-            # Import HashManager, Path and waiting widget
-            from core.hash_manager import HashManager
-            from pathlib import Path
-            from widgets.compact_waiting_widget import CompactWaitingWidget
-            from core.qt_imports import QDialog, QVBoxLayout
+            # Convert FileItem objects to file paths
+            file_paths = [item.full_path for item in selected_files]
 
-            # Show progress dialog for operations with many files
-            progress_dialog = None
-            progress_widget = None
-            if len(selected_files) > 3:  # Show progress for more than 3 files
-                progress_dialog = QDialog(self.parent_window)
-                progress_dialog.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
-                progress_dialog.setAttribute(Qt.WA_TranslucentBackground, False)
-                progress_dialog.setModal(True)
+            if len(file_paths) == 1:
+                # Single file - use wait cursor
+                from utils.cursor_helper import wait_cursor
+                from core.hash_manager import HashManager
+                from pathlib import Path
 
-                layout = QVBoxLayout(progress_dialog)
-                layout.setContentsMargins(0, 0, 0, 0)
+                try:
+                    with wait_cursor():
+                        hash_manager = HashManager()
+                        comparison_results = {}
 
-                progress_widget = CompactWaitingWidget(progress_dialog)
-                progress_widget.set_status(f"Comparing {len(selected_files)} files with external folder...")
-                layout.addWidget(progress_widget)
+                        file_item = selected_files[0]
+                        current_hash = hash_manager.calculate_sha256(file_item.full_path)
+                        if current_hash:
+                            external_file_path = Path(external_folder) / file_item.filename
+                            if external_file_path.exists():
+                                external_hash = hash_manager.calculate_sha256(str(external_file_path))
+                                if external_hash is not None:
+                                    is_same = current_hash == external_hash
+                                    comparison_results[file_item.filename] = {
+                                        'current_path': file_item.full_path,
+                                        'external_path': str(external_file_path),
+                                        'is_same': is_same,
+                                        'current_hash': current_hash,
+                                        'external_hash': external_hash
+                                    }
 
-                progress_dialog.setLayout(layout)
+                        self._show_comparison_results(comparison_results, external_folder)
 
-                # Setup dialog size and centering
-                from utils.dialog_utils import setup_dialog_size_and_center
-                setup_dialog_size_and_center(progress_dialog, progress_widget)
-
-                progress_dialog.show()
-
-            # Create hash manager instance
-            hash_manager = HashManager()
-
-            # Show status in main window too
-            if hasattr(self.parent_window, 'set_status'):
-                self.parent_window.set_status(f"Comparing {len(selected_files)} files with external folder...", color="blue")
-
-            # Prepare comparison results
-            comparison_results = {}
-
-            for file_item in selected_files:
-                # Calculate hash of current file
-                current_hash = hash_manager.calculate_sha256(file_item.full_path)
-                if current_hash is None:
-                    continue
-
-                # Look for file with same name in external folder
-                external_file_path = Path(external_folder) / file_item.filename
-                if external_file_path.exists():
-                    external_hash = hash_manager.calculate_sha256(external_file_path)
-                    if external_hash is not None:
-                        is_same = current_hash == external_hash
-                        comparison_results[file_item.filename] = {
-                            'current_file': file_item,
-                            'external_path': str(external_file_path),
-                            'is_same': is_same,
-                            'current_hash': current_hash,
-                            'external_hash': external_hash
-                        }
-
-            # Close progress dialog
-            if progress_dialog:
-                progress_dialog.close()
-
-            # Show results
-            self._show_comparison_results(comparison_results, external_folder)
+                except Exception as e:
+                    logger.error(f"[HashManager] Error comparing with external folder: {e}")
+                    from widgets.custom_msgdialog import CustomMessageDialog
+                    CustomMessageDialog.information(
+                        self.parent_window,
+                        "Error",
+                        f"Failed to compare with external folder: {str(e)}"
+                    )
+            else:
+                # Multiple files - use worker thread with progress dialog
+                self._start_hash_operation("compare", file_paths, external_folder=external_folder)
 
         except Exception as e:
-            logger.error(f"[HashManager] Error comparing with external folder: {e}")
+            logger.error(f"[HashManager] Error setting up external comparison: {e}")
             from widgets.custom_msgdialog import CustomMessageDialog
             CustomMessageDialog.information(
                 self.parent_window,
                 "Error",
-                f"Failed to compare with external folder: {str(e)}"
+                f"Failed to start external comparison: {str(e)}"
             )
-            if hasattr(self.parent_window, 'set_status'):
-                self.parent_window.set_status("External comparison failed", color="red", auto_reset=True)
-        finally:
-            # Always close progress dialog
-            if 'progress_dialog' in locals() and progress_dialog:
-                progress_dialog.close()
 
     def _handle_calculate_hashes(self, selected_files: List) -> None:
         """
@@ -778,79 +840,37 @@ class EventHandlerManager:
 
         logger.info(f"[HashManager] Calculating checksums for {len(selected_files)} files")
 
-        try:
-            # Import HashManager and waiting widget
+        # Convert FileItem objects to file paths
+        file_paths = [item.full_path for item in selected_files]
+
+        if len(file_paths) == 1:
+            # Single file - use wait cursor
+            from utils.cursor_helper import wait_cursor
             from core.hash_manager import HashManager
-            from widgets.compact_waiting_widget import CompactWaitingWidget
-            from core.qt_imports import QDialog, QVBoxLayout
 
-            # Show progress dialog for operations with many files
-            progress_dialog = None
-            progress_widget = None
-            if len(selected_files) > 3:  # Show progress for more than 3 files
-                progress_dialog = QDialog(self.parent_window)
-                progress_dialog.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
-                progress_dialog.setAttribute(Qt.WA_TranslucentBackground, False)
-                progress_dialog.setModal(True)
+            try:
+                with wait_cursor():
+                    hash_manager = HashManager()
+                    file_item = selected_files[0]
+                    file_hash = hash_manager.calculate_sha256(file_item.full_path)
 
-                layout = QVBoxLayout(progress_dialog)
-                layout.setContentsMargins(0, 0, 0, 0)
+                    hash_results = {}
+                    if file_hash:
+                        hash_results[file_item.full_path] = file_hash
 
-                progress_widget = CompactWaitingWidget(progress_dialog)
-                progress_widget.set_status(f"Calculating checksums for {len(selected_files)} files...")
-                layout.addWidget(progress_widget)
+                    self._show_hash_results(hash_results)
 
-                progress_dialog.setLayout(layout)
-
-                # Setup dialog size and centering
-                from utils.dialog_utils import setup_dialog_size_and_center
-                setup_dialog_size_and_center(progress_dialog, progress_widget)
-
-                progress_dialog.show()
-
-            # Create hash manager instance
-            hash_manager = HashManager()
-
-            # Show status in main window too
-            if hasattr(self.parent_window, 'set_status'):
-                self.parent_window.set_status(f"Calculating checksums for {len(selected_files)} files...", color="blue")
-
-            # Calculate hashes
-            hash_results = {}
-            for i, file_item in enumerate(selected_files, 1):
-                # Update progress widget
-                if progress_widget:
-                    progress_widget.set_progress(i, len(selected_files))
-                    progress_widget.set_filename(file_item.filename)
-
-                file_hash = hash_manager.calculate_sha256(file_item.full_path)
-                if file_hash is not None:
-                    hash_results[file_item.filename] = {
-                        'file_item': file_item,
-                        'hash': file_hash
-                    }
-
-            # Close progress dialog
-            if progress_dialog:
-                progress_dialog.close()
-
-            # Show results
-            self._show_hash_results(hash_results)
-
-        except Exception as e:
-            logger.error(f"[HashManager] Error calculating checksums: {e}")
-            from widgets.custom_msgdialog import CustomMessageDialog
-            CustomMessageDialog.information(
-                self.parent_window,
-                "Error",
-                f"Failed to calculate checksums: {str(e)}"
-            )
-            if hasattr(self.parent_window, 'set_status'):
-                self.parent_window.set_status("Checksum calculation failed", color="red", auto_reset=True)
-        finally:
-            # Always close progress dialog
-            if 'progress_dialog' in locals() and progress_dialog:
-                progress_dialog.close()
+            except Exception as e:
+                logger.error(f"[HashManager] Error calculating checksum: {e}")
+                from widgets.custom_msgdialog import CustomMessageDialog
+                CustomMessageDialog.information(
+                    self.parent_window,
+                    "Error",
+                    f"Failed to calculate checksum: {str(e)}"
+                )
+        else:
+            # Multiple files - use worker thread with progress dialog
+            self._start_hash_operation("checksums", file_paths)
 
     def _show_duplicates_results(self, duplicates: dict, scope: str) -> None:
         """
