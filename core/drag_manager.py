@@ -165,10 +165,35 @@ class DragManager(QObject):
 
         logger.debug(f"[DragManager] Cleanup completed (attempt #{self._cleanup_count})", extra={"dev_only": True})
 
+    def _force_restore_cursor(self) -> None:
+        """Force restore cursor to normal state with extra safety measures."""
+        try:
+            # First, try normal restoration
+            cursor_count = 0
+            while QApplication.overrideCursor() and cursor_count < 10:
+                QApplication.restoreOverrideCursor()
+                cursor_count += 1
+
+            # If we restored cursors, log it
+            if cursor_count > 0:
+                logger.debug(f"[DragManager] Force-restored {cursor_count} override cursors", extra={"dev_only": True})
+
+            # As a last resort, set cursor explicitly to arrow
+            if QApplication.overrideCursor():
+                QApplication.setOverrideCursor(Qt.ArrowCursor)
+                logger.debug("[DragManager] Set explicit arrow cursor as fallback", extra={"dev_only": True})
+
+        except Exception as e:
+            logger.warning(f"[DragManager] Error during cursor restoration: {e}")
+
     def _safety_cleanup(self) -> None:
         """Safety cleanup triggered by timer (only for stuck drags)."""
         if self._drag_active:
             logger.warning(f"[DragManager] Safety cleanup after timeout (source: {self._drag_source})")
+
+            # Force cursor restoration before general cleanup
+            self._force_restore_cursor()
+
             self._perform_cleanup()
 
     def force_cleanup(self) -> None:

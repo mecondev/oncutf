@@ -29,11 +29,23 @@ class DragZoneValidator:
     ZONE_RULES: Dict[str, Dict[str, List[str]]] = {
         "file_tree": {
             "valid": ["FileTableView"],
-            "invalid": ["FileTreeView", "MetadataTreeView"]
+            "invalid": [
+                "FileTreeView", "MetadataTreeView", "MetadataWidget",
+                "RenameModuleWidget", "RenameModulesArea", "NameTransformWidget",
+                "OriginalNameWidget", "PreviewTableWidget", "PreviewTablesView",
+                "CompactWaitingWidget", "InteractiveHeader", "QLabel",
+                "QSplitter", "QFrame", "QPushButton", "QScrollBar", "QScrollArea"
+            ]
         },
         "file_table": {
             "valid": ["MetadataTreeView"],
-            "invalid": ["FileTreeView", "FileTableView"]
+            "invalid": [
+                "FileTreeView", "FileTableView", "MetadataWidget",
+                "RenameModuleWidget", "RenameModulesArea", "NameTransformWidget",
+                "OriginalNameWidget", "PreviewTableWidget", "PreviewTablesView",
+                "CompactWaitingWidget", "InteractiveHeader", "QLabel",
+                "QSplitter", "QFrame", "QPushButton", "QScrollBar", "QScrollArea"
+            ]
         }
     }
 
@@ -51,65 +63,55 @@ class DragZoneValidator:
         cls._initial_drag_widgets.pop(drag_source, None)
 
     @classmethod
-    def validate_drop_zone(cls, drag_source: str, log_prefix: str = "") -> DropZoneState:
+    def validate_drop_zone(cls, drag_source: str, log_prefix: str) -> None:
         """
-        Validate the current drop zone based on widget under cursor.
+        Validate current drop zone and update visual feedback.
 
         Args:
             drag_source: Source of the drag operation ("file_tree" or "file_table")
-            log_prefix: Prefix for debug messages (e.g., "[FileTableView]")
-
-        Returns:
-            DropZoneState: Current drop zone state
+            log_prefix: Prefix for log messages (e.g., "[FileTreeView]")
         """
-        if drag_source not in cls.ZONE_RULES:
-            logger.warning(f"Unknown drag source: {drag_source}")
-            return DropZoneState.NEUTRAL
+        logger.debug(f"{log_prefix} validate_drop_zone called", extra={"dev_only": True})
 
         # Get widget under cursor
-        cursor_pos = QCursor.pos()
-        widget_under_cursor = QApplication.widgetAt(cursor_pos)
-
+        widget_under_cursor = QApplication.widgetAt(QCursor.pos())
         if not widget_under_cursor:
-            update_drop_zone_state(DropZoneState.NEUTRAL)
-            return DropZoneState.NEUTRAL
+            return
 
-        # Get rules for this drag source
-        rules = cls.ZONE_RULES[drag_source]
-        valid_zones = rules["valid"]
-        invalid_zones = rules["invalid"]
+        widget_class_name = widget_under_cursor.__class__.__name__
 
-        # Walk up parent hierarchy to find drop targets
-        current_widget = widget_under_cursor
+        # Check if this is the initial drag widget (neutral zone)
+        if cls._is_initial_drag_widget(drag_source, widget_class_name):
+            cls._set_cursor_state(DropZoneState.NEUTRAL)
+            return
 
-        while current_widget:
-            widget_class = current_widget.__class__.__name__
+        # Special case: Allow drops on widgets in placeholder mode
+        # Even if they are normally invalid zones (like QLabel placeholders)
+        if hasattr(widget_under_cursor, 'property') and widget_under_cursor.property("placeholder"):
+            # This is a placeholder widget - check if it's a valid target
+            parent_widget = widget_under_cursor.parent()
+            while parent_widget:
+                parent_class_name = parent_widget.__class__.__name__
+                if parent_class_name in cls.ZONE_RULES[drag_source]["valid"]:
+                    cls._set_cursor_state(DropZoneState.VALID)
+                    logger.debug(f"{log_prefix} VALID drop zone detected: {parent_class_name} (placeholder mode)", extra={"dev_only": True})
+                    return
+                parent_widget = parent_widget.parent()
 
-            # Check for valid targets
-            if widget_class in valid_zones:
-                update_drop_zone_state(DropZoneState.VALID)
-                if log_prefix:
-                    logger.debug(f"{log_prefix} VALID drop zone detected: {widget_class}")
-                return DropZoneState.VALID
+        # Normal validation logic
+        rules = cls.ZONE_RULES.get(drag_source, {})
+        valid_zones = rules.get("valid", [])
+        invalid_zones = rules.get("invalid", [])
 
-            # Check for invalid targets, but ignore initial drag widget
-            elif widget_class in invalid_zones:
-                # If this is the initial drag widget, treat as neutral instead of invalid
-                initial_widget = cls._initial_drag_widgets.get(drag_source)
-                if initial_widget == widget_class:
-                    update_drop_zone_state(DropZoneState.NEUTRAL)
-                    return DropZoneState.NEUTRAL
-                else:
-                    update_drop_zone_state(DropZoneState.INVALID)
-                    if log_prefix:
-                        logger.debug(f"{log_prefix} INVALID drop zone detected: {widget_class}")
-                    return DropZoneState.INVALID
-
-            current_widget = current_widget.parent()
-
-        # No specific target found - neutral state
-        update_drop_zone_state(DropZoneState.NEUTRAL)
-        return DropZoneState.NEUTRAL
+        if widget_class_name in valid_zones:
+            cls._set_cursor_state(DropZoneState.VALID)
+            logger.debug(f"{log_prefix} VALID drop zone detected: {widget_class_name}", extra={"dev_only": True})
+        elif widget_class_name in invalid_zones:
+            cls._set_cursor_state(DropZoneState.INVALID)
+            logger.debug(f"{log_prefix} INVALID drop zone detected: {widget_class_name}", extra={"dev_only": True})
+        else:
+            # Unknown widget - treat as neutral
+            cls._set_cursor_state(DropZoneState.NEUTRAL)
 
     @classmethod
     def get_valid_zones(cls, drag_source: str) -> List[str]:
@@ -140,3 +142,15 @@ class DragZoneValidator:
             return False
         else:
             return None
+
+    @classmethod
+    def _is_initial_drag_widget(cls, drag_source: str, widget_class_name: str) -> bool:
+        """Check if the widget is the initial drag widget (should be neutral)."""
+        initial_widget = cls._initial_drag_widgets.get(drag_source)
+        return initial_widget == widget_class_name
+
+    @classmethod
+    def _set_cursor_state(cls, state: DropZoneState) -> None:
+        """Set the cursor state using the visual manager."""
+        from core.drag_visual_manager import update_drop_zone_state
+        update_drop_zone_state(state)

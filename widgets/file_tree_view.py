@@ -352,6 +352,8 @@ class FileTreeView(QTreeView):
 
     def _update_drag_feedback(self):
         """Update visual feedback based on current cursor position during drag"""
+        logger.debug("[FileTreeView] _update_drag_feedback called", extra={"dev_only": True})
+
         if not self._is_dragging:
             return
 

@@ -210,11 +210,13 @@ class DragVisualManager:
                 # Valid metadata drop - show info icon
                 action_icon = "info"  # Both fast and extended metadata use same icon, different colors
             else:  # NEUTRAL
-                # Show info icon even in neutral state so user knows what will happen
+                # Show info icon in neutral state so user knows what will happen
                 action_icon = "info"  # Preview of metadata action
         else:
             # Normal file/folder drops - check drop zone state
-            if self._drop_zone_state == DropZoneState.VALID:
+            if self._drop_zone_state == DropZoneState.INVALID:
+                action_icon = "x"  # Invalid drop
+            elif self._drop_zone_state == DropZoneState.VALID:
                 # For file drops, ignore recursive modifiers (Ctrl) since files don't have subdirectories
                 if self._drag_type == DragType.FILE:
                     if self._modifier_state in [ModifierState.SHIFT, ModifierState.CTRL_SHIFT]:
@@ -232,8 +234,6 @@ class DragVisualManager:
                         action_icon = "layers"  # Merge + Recursive (Ctrl+Shift)
                     else:
                         action_icon = "download"  # Replace + Shallow (Normal - no modifiers)
-            elif self._drop_zone_state == DropZoneState.INVALID:
-                action_icon = "x"  # Invalid drop
             else:  # NEUTRAL
                 # Show preview of what will happen when reaching correct drop zone
                 if self._drag_type == DragType.FILE:

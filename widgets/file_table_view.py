@@ -1114,7 +1114,9 @@ class FileTableView(QTableView):
         logger.debug(f"[FileTableView] Custom drag started with visual feedback: {len(file_paths)} files (type: {drag_type.value})", extra={"dev_only": True})
 
     def _update_drag_feedback(self):
-        """Update drag visual feedback based on current cursor position"""
+        """Update visual feedback based on current cursor position during drag"""
+        logger.debug("[FileTableView] _update_drag_feedback called", extra={"dev_only": True})
+
         if not self._is_dragging:
             return
 
