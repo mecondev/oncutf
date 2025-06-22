@@ -253,70 +253,77 @@ class DragVisualManager:
         # Determine if we're dragging to metadata tree (from stored drag source)
         is_metadata_drop = self._drag_source is not None and self._drag_source == "file_table"
 
-        # Choose action icon based on context
+        # Choose action icon(s) based on context
         if is_metadata_drop:
             # For metadata drops, check drop zone state first
             if self._drop_zone_state == DropZoneState.INVALID:
-                action_icon = "x"  # Invalid drop zone - red X
+                action_icons = ["x"]  # Invalid drop zone - red X
             elif self._drop_zone_state == DropZoneState.VALID:
                 # Valid metadata drop - show info icon
-                action_icon = "info"  # Both fast and extended metadata use same icon, different colors
+                action_icons = ["info"]  # Both fast and extended metadata use same icon, different colors
             else:  # NEUTRAL
                 # Show info icon in neutral state so user knows what will happen
-                action_icon = "info"  # Preview of metadata action
+                action_icons = ["info"]  # Preview of metadata action
         else:
             # Normal file/folder drops - check drop zone state
             if self._drop_zone_state == DropZoneState.INVALID:
-                action_icon = "x"  # Invalid drop
+                action_icons = ["x"]  # Invalid drop
             elif self._drop_zone_state == DropZoneState.VALID:
                 # For file drops, ignore recursive modifiers (Ctrl) since files don't have subdirectories
                 if self._drag_type == DragType.FILE:
                     if self._modifier_state in [ModifierState.SHIFT, ModifierState.CTRL_SHIFT]:
-                        action_icon = "plus"  # Merge + Shallow (Shift or Ctrl+Shift - keep merge behavior)
+                        if self._modifier_state == ModifierState.CTRL_SHIFT:
+                            action_icons = ["plus", "layers"]  # Merge + Recursive (both icons)
+                        else:
+                            action_icons = ["plus"]  # Merge + Shallow (Shift only)
                     else:
                         # Normal and Ctrl are treated as normal for files
-                        action_icon = "download"  # Replace + Shallow (Normal/Ctrl same for files)
+                        action_icons = ["download"]  # Replace + Shallow (Normal/Ctrl same for files)
                 else:
                     # For folders and multiple items, all modifiers work normally
                     if self._modifier_state == ModifierState.SHIFT:
-                        action_icon = "plus"  # Merge + Shallow (Shift only)
+                        action_icons = ["plus"]  # Merge + Shallow (Shift only)
                     elif self._modifier_state == ModifierState.CTRL:
-                        action_icon = "download-cloud"  # Replace + Recursive (Ctrl only)
+                        action_icons = ["layers"]  # Replace + Recursive (Ctrl only) - using layers for recursive
                     elif self._modifier_state == ModifierState.CTRL_SHIFT:
-                        action_icon = "layers"  # Merge + Recursive (Ctrl+Shift)
+                        action_icons = ["plus", "layers"]  # Merge + Recursive (both icons)
                     else:
-                        action_icon = "download"  # Replace + Shallow (Normal - no modifiers)
+                        action_icons = ["download"]  # Replace + Shallow (Normal - no modifiers)
             else:  # NEUTRAL
                 # Show preview of what will happen when reaching correct drop zone
                 if self._drag_type == DragType.FILE:
                     if self._modifier_state in [ModifierState.SHIFT, ModifierState.CTRL_SHIFT]:
-                        action_icon = "plus"  # Preview: Merge + Shallow
+                        if self._modifier_state == ModifierState.CTRL_SHIFT:
+                            action_icons = ["plus", "layers"]  # Preview: Merge + Recursive
+                        else:
+                            action_icons = ["plus"]  # Preview: Merge + Shallow
                     else:
-                        action_icon = "download"  # Preview: Replace + Shallow
+                        action_icons = ["download"]  # Preview: Replace + Shallow
                 else:
                     # For folders and multiple items, show preview based on modifiers
                     if self._modifier_state == ModifierState.SHIFT:
-                        action_icon = "plus"  # Preview: Merge + Shallow
+                        action_icons = ["plus"]  # Preview: Merge + Shallow
                     elif self._modifier_state == ModifierState.CTRL:
-                        action_icon = "download-cloud"  # Preview: Replace + Recursive
+                        action_icons = ["layers"]  # Preview: Replace + Recursive
                     elif self._modifier_state == ModifierState.CTRL_SHIFT:
-                        action_icon = "layers"  # Preview: Merge + Recursive
+                        action_icons = ["plus", "layers"]  # Preview: Merge + Recursive
                     else:
-                        action_icon = "download"  # Preview: Replace + Shallow
+                        action_icons = ["download"]  # Preview: Replace + Shallow
 
         # Create composite cursor
-        return self._create_composite_cursor(base_icon, action_icon)
+        return self._create_composite_cursor(base_icon, action_icons)
 
-    def _create_composite_cursor(self, base_icon: str, action_icon: str) -> QCursor:
+    def _create_composite_cursor(self, base_icon: str, action_icons: list) -> QCursor:
         """
         Create a composite cursor with base + action icons.
 
         Args:
             base_icon: Name of base icon (file/folder/copy)
-            action_icon: Name of action icon (check/x/move/file-plus)
+            action_icons: List of action icon names (e.g., ["plus", "layers"])
         """
-        # Create 48x48 pixmap (larger canvas for bigger icons)
-        pixmap = QPixmap(48, 48)
+        # Create wider canvas if we have multiple action icons
+        canvas_width = 48 if len(action_icons) <= 1 else 70  # Increased width for dual icons
+        pixmap = QPixmap(canvas_width, 48)
         pixmap.fill(Qt.transparent)
 
         painter = QPainter(pixmap)
@@ -328,81 +335,96 @@ class DragVisualManager:
             base_pixmap = base_qicon.pixmap(28, 28)  # Increased from 20x20
             painter.drawPixmap(4, 8, base_pixmap)
 
-        # Draw action icon (smaller, bottom-right) only if action_icon is specified
-        if action_icon is not None:
-            action_qicon = get_menu_icon(action_icon)
-            if not action_qicon.isNull():
-                action_pixmap = action_qicon.pixmap(22, 22)  # Increased from 18x18 for better visibility
+        # Draw action icons side by side
+        if action_icons:
+            icon_size = 22  # Keep same size for all icons (no smaller for multiple)
+            start_x = 24 if len(action_icons) <= 1 else 26  # Start more to the right for multiple icons
 
-                # Color the action icons for better visual feedback
-                if action_icon == "x":
-                    # Red for invalid drop zones
-                    colored_pixmap = QPixmap(action_pixmap.size())
-                    colored_pixmap.fill(Qt.transparent)
+            for i, action_icon in enumerate(action_icons):
+                if action_icon is None:
+                    continue
 
-                    color_painter = QPainter(colored_pixmap)
-                    color_painter.setRenderHint(QPainter.Antialiasing)
+                action_qicon = get_menu_icon(action_icon)
+                if not action_qicon.isNull():
+                    action_pixmap = action_qicon.pixmap(icon_size, icon_size)
 
-                    # First draw the original icon
-                    color_painter.drawPixmap(0, 0, action_pixmap)
+                    # Color the action icons for better visual feedback
+                    if action_icon == "x":
+                        # Red for invalid drop zones
+                        colored_pixmap = QPixmap(action_pixmap.size())
+                        colored_pixmap.fill(Qt.transparent)
 
-                    # Then apply red color overlay (brighter red with added green/blue)
-                    color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
-                    color_painter.fillRect(colored_pixmap.rect(), QColor(220, 68, 84))  # Brighter red (+15 green, +15 blue)
+                        color_painter = QPainter(colored_pixmap)
+                        color_painter.setRenderHint(QPainter.Antialiasing)
 
-                    color_painter.end()
-                    action_pixmap = colored_pixmap
+                        # First draw the original icon
+                        color_painter.drawPixmap(0, 0, action_pixmap)
 
-                elif action_icon in ["download", "download-cloud"] and self._drag_source == "file_table":
-                    # Green for valid drop zones (only for metadata drops)
-                    colored_pixmap = QPixmap(action_pixmap.size())
-                    colored_pixmap.fill(Qt.transparent)
+                        # Then apply red color overlay (brighter red with added green/blue)
+                        color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+                        color_painter.fillRect(colored_pixmap.rect(), QColor(220, 68, 84))  # Brighter red (+15 green, +15 blue)
 
-                    color_painter = QPainter(colored_pixmap)
-                    color_painter.setRenderHint(QPainter.Antialiasing)
+                        color_painter.end()
+                        action_pixmap = colored_pixmap
 
-                    # First draw the original icon
-                    color_painter.drawPixmap(0, 0, action_pixmap)
+                    elif action_icon in ["download", "download-cloud"] and self._drag_source == "file_table":
+                        # Green for valid drop zones (only for metadata drops)
+                        colored_pixmap = QPixmap(action_pixmap.size())
+                        colored_pixmap.fill(Qt.transparent)
 
-                    # Then apply green color overlay (bright green)
-                    color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
-                    color_painter.fillRect(colored_pixmap.rect(), QColor(40, 167, 69))  # Bootstrap success green
+                        color_painter = QPainter(colored_pixmap)
+                        color_painter.setRenderHint(QPainter.Antialiasing)
 
-                    color_painter.end()
-                    action_pixmap = colored_pixmap
+                        # First draw the original icon
+                        color_painter.drawPixmap(0, 0, action_pixmap)
 
-                elif action_icon == "info":
-                    # Color based on modifier state: Green for fast metadata, Orange for extended metadata
-                    colored_pixmap = QPixmap(action_pixmap.size())
-                    colored_pixmap.fill(Qt.transparent)
+                        # Then apply green color overlay (bright green)
+                        color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+                        color_painter.fillRect(colored_pixmap.rect(), QColor(40, 167, 69))  # Bootstrap success green
 
-                    color_painter = QPainter(colored_pixmap)
-                    color_painter.setRenderHint(QPainter.Antialiasing)
+                        color_painter.end()
+                        action_pixmap = colored_pixmap
 
-                    # First draw the original icon
-                    color_painter.drawPixmap(0, 0, action_pixmap)
+                    elif action_icon == "info":
+                        # Color based on modifier state: Green for fast metadata, Orange for extended metadata
+                        colored_pixmap = QPixmap(action_pixmap.size())
+                        colored_pixmap.fill(Qt.transparent)
 
-                    # Choose color based on modifier state
-                    if self._modifier_state == ModifierState.SHIFT:
-                        # Orange for extended metadata (Shift pressed)
-                        color = QColor(255, 140, 0)  # Regular orange
+                        color_painter = QPainter(colored_pixmap)
+                        color_painter.setRenderHint(QPainter.Antialiasing)
+
+                        # First draw the original icon
+                        color_painter.drawPixmap(0, 0, action_pixmap)
+
+                        # Choose color based on modifier state
+                        if self._modifier_state == ModifierState.SHIFT:
+                            # Orange for extended metadata (Shift pressed)
+                            color = QColor(255, 140, 0)  # Regular orange
+                        else:
+                            # Green for fast metadata (no Shift)
+                            color = QColor(46, 204, 113)  # User specified green
+
+                        # Apply color overlay
+                        color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+                        color_painter.fillRect(colored_pixmap.rect(), color)
+                        color_painter.end()
+
+                        action_pixmap = colored_pixmap
+
+                    # Position icons side by side with minimal spacing (overlap slightly to reduce padding effect)
+                    if len(action_icons) > 1:
+                        # For multiple icons, overlap them slightly to counteract icon padding
+                        x_pos = start_x + (i * (icon_size - 4))  # Overlap by 4px to reduce visual spacing
                     else:
-                        # Green for fast metadata (no Shift)
-                        color = QColor(46, 204, 113)  # User specified green
-
-                    # Apply color overlay
-                    color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
-                    color_painter.fillRect(colored_pixmap.rect(), color)
-                    color_painter.end()
-
-                    action_pixmap = colored_pixmap
-
-                painter.drawPixmap(24, 24, action_pixmap)  # Adjusted position for larger icon
+                        x_pos = start_x
+                    y_pos = 24
+                    painter.drawPixmap(x_pos, y_pos, action_pixmap)
 
         painter.end()
 
         # Create cursor with hotspot at (12, 12) - adjusted for larger size
-        return QCursor(pixmap, 12, 12)
+        hotspot_x = 12 if canvas_width <= 48 else 16  # Adjust hotspot for wider canvas
+        return QCursor(pixmap, hotspot_x, 12)
 
     def _restore_cursor(self) -> None:
         """Restore the original cursor with aggressive cleanup."""
