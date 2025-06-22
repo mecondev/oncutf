@@ -1682,10 +1682,8 @@ class MetadataTreeView(QTreeView):
                 else:
                     metadata = parent_window.metadata_cache.get(file_item.full_path)
 
-            # Fallback to file_item metadata if cache is empty
-            if not metadata and hasattr(file_item, 'metadata') and file_item.metadata:
-                metadata = file_item.metadata
-
+            # Only display metadata if it exists in cache (i.e., has been loaded via drag & drop)
+            # Don't use file_item.metadata as fallback to avoid instant display
             if isinstance(metadata, dict) and metadata:
                 # Create a fresh copy of the metadata for display
                 display_metadata = dict(metadata)
@@ -1700,6 +1698,9 @@ class MetadataTreeView(QTreeView):
                 self._update_file_icon_status()
                 logger.debug(f"[MetadataTree] Displayed metadata for single file: {file_item.filename}")
                 return
+            else:
+                # No metadata in cache - show message to drag file to load metadata
+                self.show_empty_state("Drag file here to load metadata")
 
         self.clear_view()
 

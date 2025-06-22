@@ -12,6 +12,7 @@ import os
 from typing import List, Optional
 
 from core.qt_imports import QApplication, QThread, QTimer
+from PyQt5.QtCore import Qt
 from models.file_item import FileItem
 from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
@@ -50,7 +51,16 @@ class MetadataManager:
         self._original_selection_count = 0  # Track original selection count for metadata tree update
         self._target_file_path = None  # Track target file for single selection display
         self._preserved_selection = None  # Track selection before metadata loading starts
-        self._preserved_selection = None  # Track selection before metadata loading starts
+
+        # Initialize metadata cache and exiftool wrapper
+        self._metadata_cache = {}  # Cache for metadata results
+
+        # Initialize ExifTool wrapper for single file operations
+        from utils.exiftool_wrapper import ExifToolWrapper
+        self._exiftool_wrapper = ExifToolWrapper()
+
+        # Flag to skip selection changes during metadata operations
+        self._skip_selection_changed = False
 
     def start_metadata_scan(self, file_paths: List[str]) -> None:
         """
@@ -422,6 +432,23 @@ class MetadataManager:
         logger.debug(f"Metadata task running? {running}")
         return running
 
+    def determine_loading_mode(self, file_count: int, use_extended: bool = False) -> str:
+        """
+        Determine the appropriate loading mode based on file count.
+
+        Args:
+            file_count: Number of files to load metadata for
+            use_extended: Whether extended metadata is requested
+
+        Returns:
+            str: Loading mode ("single_file_wait_cursor", "multiple_files_dialog", etc.)
+        """
+        if file_count == 1:
+            return "single_file_wait_cursor"
+        elif file_count <= 10:
+            return "small_batch_wait_cursor"
+        else:
+            return "large_batch_dialog"
 
     def determine_metadata_mode(self, modifier_state=None) -> tuple[bool, bool]:
         """
@@ -539,209 +566,163 @@ class MetadataManager:
             # Use intelligent loading with cache checking and smart UX
             self.load_metadata_for_items(selected, use_extended=True, source="shortcut")
 
-    def load_metadata_for_items(
-        self,
-        items: List[FileItem],
-        use_extended: bool = False,
-        source: str = "unknown"
-    ) -> None:
+    def load_metadata_for_items(self, items: List[FileItem], use_extended: bool = False, source: str = "unknown") -> None:
         """
-        Intelligent metadata loading with cache checking and smart UX.
+        Load metadata for the given FileItem objects.
 
-        Features:
-        - Cache intelligence: Only loads what's needed
-        - Smart UX: Wait cursor for 1 file, dialog for multiple
-        - Extended metadata support: Properly handles basic vs extended
-
-        Parameters:
+        Args:
             items: List of FileItem objects to load metadata for
-            use_extended: Whether to load extended metadata
-            source: Source of the call (for logging)
+            use_extended: Whether to use extended metadata loading
+            source: Source of the request (for logging)
         """
         if not items:
-            if self.parent_window and hasattr(self.parent_window, 'set_status'):
-                self.parent_window.set_status("No files selected.", color="gray", auto_reset=True)
+            logger.warning("[MetadataManager] No items provided for metadata loading")
             return
 
-        if self.is_running_metadata_task():
-            logger.warning(f"[{source}] Metadata scan already running — ignoring request.")
-            return
+        logger.debug(f"[MetadataManager] Loading metadata for {len(items)} items (extended={use_extended}, source={source})")
 
-        # CRITICAL: Store current selection BEFORE any operations
-        # This ensures we can restore it after metadata loading completes
-        self._preserved_selection = None
+        # Store current selection to restore later (BEFORE any UI changes)
+        current_selection = None
         if (self.parent_window and
             hasattr(self.parent_window, 'file_table_view') and
             hasattr(self.parent_window.file_table_view, '_get_current_selection')):
-            self._preserved_selection = self.parent_window.file_table_view._get_current_selection().copy()
+            current_selection = self.parent_window.file_table_view._get_current_selection()
+            logger.debug(f"[MetadataManager] Preserved selection of {len(current_selection)} files before metadata operations")
 
-            # CRITICAL: Temporarily disable selectionChanged events during drag & drop
-            # This prevents Qt's automatic selection changes from interfering with our restoration
-            self.parent_window.file_table_view._skip_selection_changed = True
-            logger.warning("[DEBUG] ENABLED _skip_selection_changed flag")
+        # Set flag to prevent selection changes during metadata operations
+        self._skip_selection_changed = True
+        logger.warning("[DEBUG] ENABLED _skip_selection_changed flag")
 
-            logger.debug(f"[MetadataManager] Preserved selection of {len(self._preserved_selection)} files before metadata operations")
-
-        # Get required components from parent window
-        metadata_cache = getattr(self.parent_window, 'metadata_cache', None)
-        metadata_loader = getattr(self.parent_window, 'metadata_loader', None)
-
-        if not metadata_cache or not metadata_loader:
-            logger.error("[load_metadata_for_items] Missing metadata_cache or metadata_loader from parent window")
-            return
-
-        # Intelligent cache checking - only load what's needed
-        needs_loading = []
-        logger.warning(f"[DEBUG] CACHE CHECK START: items={len(items)}, use_extended={use_extended}")
-        logger.warning(f"[DEBUG] PRESERVED SELECTION AT START: {self._preserved_selection}")
-
-        for item in items:
-            # Get the cached entry (which includes extended status)
-            entry = metadata_cache.get_entry(item.full_path)
-
-            # Add file to loading list if:
-            # 1. No cached entry exists
-            # 2. Extended metadata is requested but entry is not extended
-            if not entry:
-                logger.debug(f"[{source}] {item.filename} needs loading (no cache entry)")
-                needs_loading.append(item)
-            elif use_extended and not entry.is_extended:
-                logger.debug(f"[{source}] {item.filename} needs loading (extended requested but only basic loaded)")
-                needs_loading.append(item)
-            else:
-                logger.debug(f"[{source}] {item.filename} already has {'extended' if entry.is_extended else 'basic'} metadata")
-
-        logger.warning(f"[DEBUG] CACHE CHECK RESULT: needs_loading={len(needs_loading)}")
-
-        # Always show metadata for the last file in the list
-        target_file = items[-1]
-
-        # If all files already have appropriate metadata, just show it for the target file
-        if not needs_loading:
-            logger.warning(f"[DEBUG] EARLY RETURN PATH: Restoring selection {self._preserved_selection}")
-
-            # Use centralized logic to determine if metadata should be displayed
+        try:
+            # Check cache and determine what needs loading
+            needs_loading = []
             metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
 
-            # CRITICAL FIX: Get actual selection count from UI, not len(items)
-            # This fixes the issue where drag & drop with 1 file doesn't show metadata
-            actual_selection_count = len(items)  # Default fallback
-            if (self.parent_window and
-                hasattr(self.parent_window, 'file_table_view') and
-                hasattr(self.parent_window.file_table_view, '_get_current_selection')):
-                try:
-                    current_selection = self.parent_window.file_table_view._get_current_selection()
-                    if current_selection:
-                        actual_selection_count = len(current_selection)
-                        logger.debug(f"[MetadataManager] Using actual UI selection count: {actual_selection_count}")
+            logger.warning(f"[DEBUG] CACHE CHECK START: items={len(items)}, use_extended={use_extended}")
+            logger.warning(f"[DEBUG] PRESERVED SELECTION AT START: {current_selection}")
+
+            for item in items:
+                cache_key = (item.full_path, use_extended)
+                if cache_key not in self._metadata_cache:
+                    needs_loading.append(item)
+                    logger.debug(f"[{source}] {item.filename} needs loading (no cache entry)")
+                else:
+                    logger.debug(f"[{source}] {item.filename} found in cache")
+
+            logger.warning(f"[DEBUG] CACHE CHECK RESULT: needs_loading={len(needs_loading)}")
+
+            # EARLY RETURN PATH: All metadata is cached
+            if not needs_loading:
+                logger.info(f"[{source}] All metadata cached, displaying immediately")
+
+                # Use centralized logic to determine if metadata should be displayed
+                # CRITICAL FIX: Use preserved selection from FileTableView if available
+                actual_selection_count = len(items)  # Default fallback
+
+                # Check if we have preserved selection from drag & drop
+                if hasattr(self, '_preserved_selection') and self._preserved_selection:
+                    actual_selection_count = len(self._preserved_selection)
+                    logger.debug(f"[MetadataManager] Using preserved selection from drag: {actual_selection_count}")
+                elif (self.parent_window and
+                    hasattr(self.parent_window, 'file_table_view') and
+                    hasattr(self.parent_window.file_table_view, '_get_current_selection')):
+                    try:
+                        current_ui_selection = self.parent_window.file_table_view._get_current_selection()
+                        if current_ui_selection:
+                            actual_selection_count = len(current_ui_selection)
+                            logger.debug(f"[MetadataManager] Using actual UI selection count: {actual_selection_count}")
+                    except Exception as e:
+                        logger.debug(f"[MetadataManager] Could not get UI selection: {e}")
+
+                should_display = (metadata_tree_view and
+                                hasattr(metadata_tree_view, 'should_display_metadata_for_selection') and
+                                metadata_tree_view.should_display_metadata_for_selection(actual_selection_count))
+
+                if should_display:
+                    logger.debug(f"[MetadataManager] Displaying cached metadata for {items[0].filename}")
+                    metadata_tree_view.display_file_metadata(items[0])
+                else:
+                    logger.debug(f"[MetadataManager] Not displaying metadata (selection count: {actual_selection_count})")
+
+                # Clear preserved selection after use
+                if hasattr(self, '_preserved_selection'):
+                    delattr(self, '_preserved_selection')
+
+                # Restore selection immediately (don't wait for timer)
+                if current_selection and self.parent_window and hasattr(self.parent_window, 'file_table_view'):
+                    file_table_view = self.parent_window.file_table_view
+                    if hasattr(file_table_view, '_restore_selection_immediately'):
+                        file_table_view._restore_selection_immediately(current_selection)
                     else:
-                        logger.debug(f"[MetadataManager] No current selection, using items count: {len(items)}")
-                except Exception as e:
-                    logger.debug(f"[MetadataManager] Could not get current selection, using items count: {e}")
+                        # Fallback: use the selection store
+                        file_table_view._update_selection_store(current_selection, emit_signal=True)
 
-            should_display = (metadata_tree_view and
-                            hasattr(metadata_tree_view, 'should_display_metadata_for_selection') and
-                            metadata_tree_view.should_display_metadata_for_selection(actual_selection_count))
+                # Clear flag immediately for cached path
+                self._skip_selection_changed = False
+                logger.warning("[DEBUG] DISABLED _skip_selection_changed flag (cached)")
+                return
 
-            if should_display:
-                # Single file - display metadata
-                metadata = target_file.metadata or metadata_cache.get(target_file.full_path)
-                if (metadata_tree_view and hasattr(metadata_tree_view, 'display_metadata')):
-                    metadata_tree_view.display_metadata(metadata, context=f"existing_{source}")
-                if self.parent_window and hasattr(self.parent_window, 'set_status'):
-                    self.parent_window.set_status(f"Metadata already loaded for {target_file.filename}.", color="green", auto_reset=True)
-            else:
-                # Multiple files - don't show metadata tree, just status
-                if self.parent_window and hasattr(self.parent_window, 'set_status'):
-                    self.parent_window.set_status(f"Metadata already loaded for {len(items)} files.", color="green", auto_reset=True)
-                if (metadata_tree_view and hasattr(metadata_tree_view, 'show_empty_state')):
-                    metadata_tree_view.show_empty_state("Multiple files selected")
+            # NORMAL LOADING PATH: Some metadata needs to be loaded
+            logger.info(f"[{source}] Loading metadata for {len(needs_loading)} files")
 
-            # CRITICAL: Restore selection even when metadata already exists (especially for drag & drop)
-            if (self._preserved_selection is not None and
-                self.parent_window and
-                hasattr(self.parent_window, 'file_table_view') and
-                hasattr(self.parent_window.file_table_view, '_update_selection_store')):
-                self.parent_window.file_table_view._update_selection_store(self._preserved_selection, emit_signal=False)
-                logger.warning(f"[DEBUG] EARLY RETURN: Actually restored selection of {len(self._preserved_selection)} files")
-            else:
-                logger.warning(f"[DEBUG] EARLY RETURN: Could not restore selection - conditions not met")
+            # Determine loading mode based on file count and extended flag
+            loading_mode = self.determine_loading_mode(len(needs_loading), use_extended)
+            logger.debug(f"[MetadataManager] Loading mode: {loading_mode}")
 
-            # CRITICAL: Re-enable selectionChanged events after restoration with delay
-            # Use a timer to ensure Qt's drag end events are processed first
-            if (self.parent_window and hasattr(self.parent_window, 'file_table_view')):
-                def delayed_flag_disable():
-                    if (self.parent_window and hasattr(self.parent_window, 'file_table_view')):
-                        self.parent_window.file_table_view._skip_selection_changed = False
-                        logger.warning("[DEBUG] DISABLED _skip_selection_changed flag (early return - delayed)")
+            if loading_mode == "single_file_wait_cursor":
+                logger.info(f"[{source}] Loading metadata for single file with wait_cursor (extended={use_extended})")
 
-                schedule_ui_update(delayed_flag_disable, 100)  # 100ms delay
-                logger.warning("[DEBUG] SCHEDULED delayed disable of _skip_selection_changed flag (early return)")
+                with wait_cursor():
+                    # Load metadata for the single file
+                    file_item = needs_loading[0]
+                    metadata = self._exiftool_wrapper.get_metadata(file_item.full_path, use_extended=use_extended)
 
-            # Reset preserved selection after restoration
-            self._preserved_selection = None
-            return
+                    if metadata:
+                        # Cache the result in both local and parent window caches
+                        cache_key = (file_item.full_path, use_extended)
+                        self._metadata_cache[cache_key] = metadata
 
-        # Check for large files if extended metadata was requested
-        if (use_extended and self.parent_window and
-            hasattr(self.parent_window, 'dialog_manager') and
-            not self.parent_window.dialog_manager.confirm_large_files(needs_loading)):
-            # Reset preserved selection since loading was cancelled
-            self._preserved_selection = None
-            return
+                        # Also save to parent window's metadata_cache for UI display
+                        if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
+                            self.parent_window.metadata_cache.set(file_item.full_path, metadata, is_extended=use_extended)
 
-        # Set extended metadata flag (sync with parent window)
-        self.force_extended_metadata = use_extended
-        if self.parent_window:
-            self.parent_window.force_extended_metadata = use_extended
+                        # Update the file item
+                        file_item.metadata = metadata
 
-        # Store original selection info for metadata tree update after loading
-        self._original_selection_count = len(items)
-        self._target_file_path = target_file.full_path if target_file else None
-
-        # Smart UX: Choose loading method based on number of files
-        if len(needs_loading) > 1:
-            # Multiple files: Use dialog with progress bar for better UX
-            logger.info(f"[{source}] Loading metadata for {len(needs_loading)} files with dialog (extended={use_extended})")
-            # Convert to file paths and use the base metadata scan method
-            file_paths = [item.full_path for item in needs_loading]
-            with wait_cursor(restore_after=False):
-                self.start_metadata_scan(file_paths)
-            # Metadata tree update will be handled in handle_metadata_finished()
-            # Selection restoration will also be handled there
-        else:
-            # Single file: Use simple wait_cursor for faster UX
-            logger.info(f"[{source}] Loading metadata for single file with wait_cursor (extended={use_extended})")
-
-            # Store the selection before the wait cursor
-            selection_before_load = self._preserved_selection
-
-            with wait_cursor():
-                metadata_loader.load(
-                    needs_loading,
-                    force=False,
-                    cache=metadata_cache,
-                    use_extended=use_extended
-                )
+                        # Emit dataChanged signal to update UI
+                        if self.parent_window and hasattr(self.parent_window, 'file_model'):
+                            try:
+                                # Find the row index and emit dataChanged for the entire row
+                                for i, file in enumerate(self.parent_window.file_model.files):
+                                    if file.full_path == file_item.full_path:
+                                        top_left = self.parent_window.file_model.index(i, 0)
+                                        bottom_right = self.parent_window.file_model.index(i, self.parent_window.file_model.columnCount() - 1)
+                                        self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole])
+                                        break
+                            except Exception as e:
+                                logger.warning(f"[Loader] Failed to emit dataChanged for {file_item.filename}: {e}")
 
             # Use centralized logic to determine if metadata should be displayed
-            metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
-
-            # CRITICAL FIX: Get actual selection count from UI, not len(items)
-            # This fixes the issue where drag & drop with 1 file doesn't show metadata
+            # CRITICAL FIX: Use preserved selection from FileTableView if available
             actual_selection_count = len(items)  # Default fallback
-            if (self.parent_window and
+
+            # Check if we have preserved selection from drag & drop
+            if hasattr(self, '_preserved_selection') and self._preserved_selection:
+                actual_selection_count = len(self._preserved_selection)
+                logger.warning(f"[DEBUG] NORMAL LOADING: Using preserved selection count: {actual_selection_count} (items: {len(items)})")
+            elif (self.parent_window and
                 hasattr(self.parent_window, 'file_table_view') and
                 hasattr(self.parent_window.file_table_view, '_get_current_selection')):
                 try:
-                    current_selection = self.parent_window.file_table_view._get_current_selection()
-                    if current_selection:
-                        actual_selection_count = len(current_selection)
+                    current_ui_selection = self.parent_window.file_table_view._get_current_selection()
+                    if current_ui_selection:
+                        actual_selection_count = len(current_ui_selection)
                         logger.warning(f"[DEBUG] NORMAL LOADING: Using actual UI selection count: {actual_selection_count} (items: {len(items)})")
                     else:
                         logger.warning(f"[DEBUG] NORMAL LOADING: No current selection, using items count: {len(items)}")
                 except Exception as e:
-                    logger.warning(f"[DEBUG] NORMAL LOADING: Could not get current selection, using items count: {e}")
+                    logger.debug(f"[MetadataManager] Could not get UI selection: {e}")
+                    logger.warning(f"[DEBUG] NORMAL LOADING: Exception getting selection, using items count: {len(items)}")
 
             logger.warning(f"[DEBUG] NORMAL LOADING: Final selection count for display logic: {actual_selection_count}")
 
@@ -751,48 +732,34 @@ class MetadataManager:
 
             logger.warning(f"[DEBUG] NORMAL LOADING: should_display = {should_display}")
 
-            if should_display:
-                # Single file - display metadata
-                metadata = target_file.metadata or metadata_cache.get(target_file.full_path)
-                logger.warning(f"[DEBUG] NORMAL LOADING: Displaying metadata for {target_file.filename}")
-                if (metadata_tree_view and hasattr(metadata_tree_view, 'display_metadata')):
-                    metadata_tree_view.display_metadata(metadata, context=source)
-            else:
-                # Multiple files selected - don't show metadata tree
-                logger.warning(f"[DEBUG] NORMAL LOADING: NOT displaying metadata - Multiple files selected ({actual_selection_count}) - not updating metadata tree after single file load")
-                if (metadata_tree_view and hasattr(metadata_tree_view, 'show_empty_state')):
+            if should_display and items:
+                logger.warning(f"[DEBUG] NORMAL LOADING: Displaying metadata for {items[0].filename}")
+                metadata_tree_view.display_file_metadata(items[0])
+            elif metadata_tree_view:
+                # Show appropriate empty state for multiple files or no files
+                if actual_selection_count > 1:
                     metadata_tree_view.show_empty_state("Multiple files selected")
+                else:
+                    metadata_tree_view.show_empty_state("No file selected")
 
-            # Update UI for all loaded files
-            if (self.parent_window and
-                hasattr(self.parent_window, 'file_model') and
-                hasattr(self.parent_window, 'file_table_view')):
-                for loaded_file in needs_loading:
-                    try:
-                        row = self.parent_window.file_model.files.index(loaded_file)
-                        for col in range(self.parent_window.file_model.columnCount()):
-                            idx = self.parent_window.file_model.index(row, col)
-                            self.parent_window.file_table_view.viewport().update(
-                                self.parent_window.file_table_view.visualRect(idx)
-                            )
-                    except (ValueError, AttributeError) as e:
-                        logger.debug(f"[MetadataManager] Could not update UI for file: {e}")
+            # Clear preserved selection after use
+            if hasattr(self, '_preserved_selection'):
+                delattr(self, '_preserved_selection')
 
-            # CRITICAL: Restore selection after UI updates and metadata loading
-            # This is especially important for single file drag & drop
-            if selection_before_load is not None and hasattr(self.parent_window.file_table_view, '_update_selection_store'):
-                self.parent_window.file_table_view._update_selection_store(selection_before_load, emit_signal=False)
-                logger.warning(f"[DEBUG] NORMAL LOADING: Actually restored selection of {len(selection_before_load)} files")
-            else:
-                logger.warning(f"[DEBUG] NORMAL LOADING: Could not restore selection - conditions not met")
+            # Restore selection after metadata operations complete
+            if current_selection and self.parent_window and hasattr(self.parent_window, 'file_table_view'):
+                # Use immediate restoration instead of timer to avoid race conditions
+                file_table_view = self.parent_window.file_table_view
+                if hasattr(file_table_view, '_restore_selection_immediately'):
+                    file_table_view._restore_selection_immediately(current_selection)
+                else:
+                    # Fallback: use the selection store
+                    file_table_view._update_selection_store(current_selection, emit_signal=True)
 
-            # CRITICAL: Re-enable selectionChanged events after restoration
-            if (self.parent_window and hasattr(self.parent_window, 'file_table_view')):
-                self.parent_window.file_table_view._skip_selection_changed = False
-                logger.warning("[DEBUG] DISABLED _skip_selection_changed flag (normal loading)")
-
-            # Reset preserved selection after successful restoration
-            self._preserved_selection = None
+        finally:
+            # Always clear the flag in finally block
+            self._skip_selection_changed = False
+            logger.warning("[DEBUG] DISABLED _skip_selection_changed flag (normal loading)")
 
     def save_metadata_for_selected(self) -> None:
         """

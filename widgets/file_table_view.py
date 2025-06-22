@@ -1304,9 +1304,11 @@ class FileTableView(QTableView):
         # CRITICAL: Use preserved selection from drag start IMMEDIATELY
         # This must happen BEFORE any cleanup that might affect selection
         selected_file_paths = []
+        preserved_selection_rows = None
 
         if hasattr(self, '_drag_start_selection') and isinstance(self._drag_start_selection, set):
             selected_rows = self._drag_start_selection
+            preserved_selection_rows = selected_rows.copy()  # Store for metadata manager
             logger.debug(f"[FileTableView] Using preserved selection for metadata drop: {len(selected_rows)} files", extra={"dev_only": True})
 
             # Convert to file paths IMMEDIATELY before any cleanup
@@ -1320,6 +1322,8 @@ class FileTableView(QTableView):
         else:
             # Fallback: try to get current selection (though it might be lost)
             selected_rows = self._get_current_selection()
+            if selected_rows:
+                preserved_selection_rows = selected_rows.copy()
             logger.debug(f"[FileTableView] Fallback to current selection: {len(selected_rows)} files", extra={"dev_only": True})
 
             if selected_rows:
@@ -1342,11 +1346,17 @@ class FileTableView(QTableView):
         # Get modifiers BEFORE cleanup (they might change)
         modifiers = QApplication.keyboardModifiers()
 
+        # CRITICAL: Pass preserved selection to metadata manager BEFORE signal emission
+        parent_window = self._get_parent_with_metadata_tree()
+        if parent_window and hasattr(parent_window, 'metadata_manager') and preserved_selection_rows:
+            metadata_manager = parent_window.metadata_manager
+            metadata_manager._preserved_selection = preserved_selection_rows
+            logger.debug(f"[FileTableView] Set preserved selection in metadata manager: {len(preserved_selection_rows)} files", extra={"dev_only": True})
+
         # Force cursor cleanup AFTER we have everything we need
         self._force_cursor_cleanup()
 
         # Find metadata tree view and emit signal
-        parent_window = self._get_parent_with_metadata_tree()
         if parent_window and hasattr(parent_window, 'metadata_tree_view'):
             metadata_tree = parent_window.metadata_tree_view
 

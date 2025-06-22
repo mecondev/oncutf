@@ -308,3 +308,5 @@ class FileTableModel(QAbstractTableModel):
             # ApplicationContext not ready yet, use legacy approach
             if self.parent_window:
                 self.parent_window.update_files_label()
+
+
