@@ -125,7 +125,7 @@ class PreviewManager:
     def _is_valid_filename_text(self, basename: str) -> bool:
         """Validate filename text."""
         try:
-            from utils.validation import is_valid_filename_text
+            from utils.validate_filename_text import is_valid_filename_text
             return is_valid_filename_text(basename)
         except ImportError:
             return True

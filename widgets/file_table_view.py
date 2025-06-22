@@ -50,7 +50,6 @@ from utils.timer_manager import (
     schedule_resize_adjust,
     schedule_ui_update,
 )
-from utils.drag_zone_validator import DragZoneValidator
 
 from .hover_delegate import HoverItemDelegate
 
@@ -973,9 +972,8 @@ class FileTableView(QTableView):
                         self._start_custom_drag()
                         return
 
-        # Handle real-time drag feedback if dragging
+        # Skip hover updates if dragging (using Qt built-in drag now)
         if self._is_dragging:
-            self._update_drag_feedback()
             return
 
         # Update hover highlighting (only when not dragging)
@@ -995,9 +993,9 @@ class FileTableView(QTableView):
         # Don't handle ESC at all - let it pass through to dialogs and other components
         # Cursor cleanup is handled automatically by other mechanisms
 
-        # Update drag feedback if we're currently dragging
+        # Skip key handling during drag (using Qt built-in drag now)
         if self._is_dragging:
-            self._update_drag_feedback()
+            return
 
         super().keyPressEvent(event)
         if event.matches(QKeySequence.SelectAll) or event.key() in (
@@ -1008,9 +1006,9 @@ class FileTableView(QTableView):
 
     def keyReleaseEvent(self, event) -> None:
         """Handle key release events, including modifier changes during drag."""
-        # Update drag feedback if we're currently dragging
+        # Skip key handling during drag (using Qt built-in drag now)
         if self._is_dragging:
-            self._update_drag_feedback()
+            return
 
         super().keyReleaseEvent(event)
 
@@ -1076,18 +1074,12 @@ class FileTableView(QTableView):
         self._is_dragging = True
         self._drag_data = file_paths
 
-        # Set initial drag widget for zone validation
-        DragZoneValidator.set_initial_drag_widget("file_table", self.__class__.__name__)
-
         # Start drag feedback timer for real-time visual updates
         if self._drag_feedback_timer is not None:
             self._drag_feedback_timer.stop()
             self._drag_feedback_timer.deleteLater()
 
-        from PyQt5.QtCore import QTimer
-        self._drag_feedback_timer = QTimer(self)
-        self._drag_feedback_timer.timeout.connect(self._update_drag_feedback)
-        self._drag_feedback_timer.start(50)  # Update every 50ms
+        # Timer removed - using Qt built-in drag instead of custom feedback
 
         # Notify DragManager
         drag_manager = DragManager.get_instance()
@@ -1110,17 +1102,6 @@ class FileTableView(QTableView):
         start_drag_visual(drag_type, source_info, "file_table")
 
         logger.debug(f"[FileTableView] Custom drag started with visual feedback: {len(file_paths)} files (type: {drag_type.value})", extra={"dev_only": True})
-
-    def _update_drag_feedback(self):
-        """Update visual feedback based on current cursor position during drag"""
-        if not self._is_dragging:
-            return
-
-        # Update modifier state first (for Ctrl/Shift changes during drag)
-        update_modifier_state()
-
-        # Use centralized drag zone validation
-        DragZoneValidator.validate_drop_zone("file_table", "[FileTableView]")
 
     def _end_custom_drag(self):
         """End custom drag operation - SIMPLIFIED VERSION"""
@@ -1156,9 +1137,6 @@ class FileTableView(QTableView):
         # Clean up drag state
         self._is_dragging = False
         self._drag_data = None
-
-        # Clear initial drag widget tracking
-        DragZoneValidator.clear_initial_drag_widget("file_table")
 
         # Record drag end time for selection protection
         import time

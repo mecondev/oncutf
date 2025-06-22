@@ -323,12 +323,14 @@ class FileTreeView(QTreeView):
         # Start enhanced visual feedback
         visual_manager = DragVisualManager.get_instance()
         drag_type = visual_manager.get_drag_type_from_path(clicked_path)
-        start_drag_visual(drag_type, clicked_path)
+        start_drag_visual(drag_type, clicked_path, "file_tree")
 
         # Set initial drag widget for zone validation
-        DragZoneValidator.set_initial_drag_widget("file_tree", self.__class__.__name__)
+        DragZoneValidator.set_initial_drag_widget("file_tree", "FileTreeView")
 
-        # Start drag feedback timer for real-time visual updates
+        # Start drag feedback timer for real-time visual updates using timer_manager
+        from utils.timer_manager import schedule_drag_feedback
+
         if hasattr(self, '_drag_feedback_timer') and self._drag_feedback_timer is not None:
             self._drag_feedback_timer.stop()
             self._drag_feedback_timer.deleteLater()
@@ -357,7 +359,8 @@ class FileTreeView(QTreeView):
             self._end_custom_drag()
             return
 
-        # Use centralized drag zone validation
+        # Use DragZoneValidator for smart zone validation with "left and returned" logic
+        logger.debug("[FileTreeView] Calling DragZoneValidator.validate_drop_zone", extra={"dev_only": True})
         DragZoneValidator.validate_drop_zone("file_tree", "[FileTreeView]")
 
     def _end_custom_drag(self):
@@ -401,8 +404,7 @@ class FileTreeView(QTreeView):
             # End visual feedback
             end_drag_visual()
 
-            # Clear initial drag widget tracking
-            DragZoneValidator.clear_initial_drag_widget("file_tree")
+            # Zone validation tracking removed
 
             # Restore hover state with fake mouse move event
             self._restore_hover_after_drag()

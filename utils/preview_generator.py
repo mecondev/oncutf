@@ -15,7 +15,7 @@ from models.file_item import FileItem
 from modules.metadata_module import MetadataModule
 from modules.original_name_module import OriginalNameModule
 from utils.logger_factory import get_cached_logger
-from utils.validation import is_valid_filename_text
+from utils.validate_filename_text import is_valid_filename_text
 
 logger = get_cached_logger(__name__)
 

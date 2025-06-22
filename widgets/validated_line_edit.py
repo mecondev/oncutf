@@ -165,7 +165,7 @@ class ValidatedLineEdit(QLineEdit):
             return False
 
         # Use existing validation logic
-        from utils.validation import is_valid_filename_text
+        from utils.validate_filename_text import is_valid_filename_text
         return is_valid_filename_text(text)
 
     def _update_styling(self, text: str) -> None:
