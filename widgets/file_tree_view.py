@@ -30,6 +30,7 @@ from core.drag_visual_manager import (
 from core.modifier_handler import decode_modifiers_to_flags
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_scroll_adjust
+from utils.drag_zone_validator import DragZoneValidator
 
 logger = get_cached_logger(__name__)
 
@@ -344,6 +345,9 @@ class FileTreeView(QTreeView):
         drag_type = visual_manager.get_drag_type_from_path(clicked_path)
         start_drag_visual(drag_type, clicked_path)
 
+        # Set initial drag widget for zone validation
+        DragZoneValidator.set_initial_drag_widget("file_tree", self.__class__.__name__)
+
         logger.debug(f"[FileTreeView] Custom drag started: {clicked_path}", extra={"dev_only": True})
 
     def _update_drag_feedback(self):
@@ -362,33 +366,8 @@ class FileTreeView(QTreeView):
             self._end_custom_drag()
             return
 
-        # Check if current position is a valid drop target
-        visual_manager = DragVisualManager.get_instance()
-
-        # Walk up the parent hierarchy to find valid targets
-        parent = widget_under_cursor
-        valid_found = False
-
-        while parent and not valid_found:
-            # Check if this widget is a valid drop target
-            if visual_manager.is_valid_drop_target(parent, "file_tree"):
-                update_drop_zone_state(DropZoneState.VALID)
-                valid_found = True
-                logger.debug(f"[FileTreeView] Valid drop zone: {parent.__class__.__name__}", extra={"dev_only": True})
-                break
-
-            # Check for explicit invalid targets (policy violations)
-            elif parent.__class__.__name__ in ['FileTreeView', 'MetadataTreeView']:
-                update_drop_zone_state(DropZoneState.INVALID)
-                valid_found = True
-                logger.debug(f"[FileTreeView] Invalid drop zone: {parent.__class__.__name__}", extra={"dev_only": True})
-                break
-
-            parent = parent.parent()
-
-        # If no specific target found, neutral state
-        if not valid_found:
-            update_drop_zone_state(DropZoneState.NEUTRAL)
+        # Use centralized drag zone validation
+        DragZoneValidator.validate_drop_zone("file_tree", "[FileTreeView]")
 
     def _end_custom_drag(self):
         """End our custom drag operation with enhanced visual feedback"""
@@ -428,6 +407,9 @@ class FileTreeView(QTreeView):
 
             # End visual feedback
             end_drag_visual()
+
+            # Clear initial drag widget tracking
+            DragZoneValidator.clear_initial_drag_widget("file_tree")
 
             # Restore hover state with fake mouse move event
             self._restore_hover_after_drag()
@@ -505,6 +487,9 @@ class FileTreeView(QTreeView):
 
         # End visual feedback
         end_drag_visual()
+
+        # Clear initial drag widget tracking
+        DragZoneValidator.clear_initial_drag_widget("file_tree")
 
         # Notify DragManager
         drag_manager.end_drag("file_tree")

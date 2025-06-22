@@ -210,7 +210,8 @@ class DragVisualManager:
                 # Valid metadata drop - show info icon
                 action_icon = "info"  # Both fast and extended metadata use same icon, different colors
             else:  # NEUTRAL
-                action_icon = None  # No action icon for neutral zones
+                # Show info icon even in neutral state so user knows what will happen
+                action_icon = "info"  # Preview of metadata action
         else:
             # Normal file/folder drops - check drop zone state
             if self._drop_zone_state == DropZoneState.VALID:
@@ -234,7 +235,22 @@ class DragVisualManager:
             elif self._drop_zone_state == DropZoneState.INVALID:
                 action_icon = "x"  # Invalid drop
             else:  # NEUTRAL
-                action_icon = None  # No action icon - just show base icon
+                # Show preview of what will happen when reaching correct drop zone
+                if self._drag_type == DragType.FILE:
+                    if self._modifier_state in [ModifierState.SHIFT, ModifierState.CTRL_SHIFT]:
+                        action_icon = "plus"  # Preview: Merge + Shallow
+                    else:
+                        action_icon = "download"  # Preview: Replace + Shallow
+                else:
+                    # For folders and multiple items, show preview based on modifiers
+                    if self._modifier_state == ModifierState.SHIFT:
+                        action_icon = "plus"  # Preview: Merge + Shallow
+                    elif self._modifier_state == ModifierState.CTRL:
+                        action_icon = "download-cloud"  # Preview: Replace + Recursive
+                    elif self._modifier_state == ModifierState.CTRL_SHIFT:
+                        action_icon = "layers"  # Preview: Merge + Recursive
+                    else:
+                        action_icon = "download"  # Preview: Replace + Shallow
 
         # Create composite cursor
         return self._create_composite_cursor(base_icon, action_icon)

@@ -50,6 +50,7 @@ from utils.timer_manager import (
     schedule_resize_adjust,
     schedule_ui_update,
 )
+from utils.drag_zone_validator import DragZoneValidator
 
 from .hover_delegate import HoverItemDelegate
 
@@ -1077,6 +1078,9 @@ class FileTableView(QTableView):
         self._is_dragging = True
         self._drag_data = file_paths
 
+        # Set initial drag widget for zone validation
+        DragZoneValidator.set_initial_drag_widget("file_table", self.__class__.__name__)
+
         # Start continuous drag feedback updates
         if hasattr(self, '_drag_feedback_timer') and self._drag_feedback_timer is not None:
             self._drag_feedback_timer.stop()
@@ -1114,45 +1118,11 @@ class FileTableView(QTableView):
         if not self._is_dragging:
             return
 
-        logger.debug("[FileTableView] _update_drag_feedback called", extra={"dev_only": True})
-
         # Update modifier state first (for Ctrl/Shift changes during drag)
         update_modifier_state()
 
-        # Get widget under cursor
-        cursor_pos = QCursor.pos()
-        widget_under_cursor = QApplication.widgetAt(cursor_pos)
-
-        if not widget_under_cursor:
-            update_drop_zone_state(DropZoneState.NEUTRAL)
-            return
-
-        # Check for valid drop targets (MetadataTreeView)
-        current_widget = widget_under_cursor
-        valid_found = False
-
-        while current_widget and not valid_found:
-            widget_class = current_widget.__class__.__name__
-
-            # Valid target: MetadataTreeView
-            if widget_class == 'MetadataTreeView':
-                update_drop_zone_state(DropZoneState.VALID)
-                valid_found = True
-                logger.debug(f"[FileTableView] VALID drop zone detected: {widget_class}")
-                break
-
-            # Invalid targets: FileTreeView, FileTableView, or any other drag-incompatible widgets
-            elif widget_class in ['FileTreeView', 'FileTableView']:
-                update_drop_zone_state(DropZoneState.INVALID)
-                valid_found = True
-                logger.debug(f"[FileTableView] INVALID drop zone detected: {widget_class}")
-                break
-
-            current_widget = current_widget.parent()
-
-        # If no specific target found, neutral state
-        if not valid_found:
-            update_drop_zone_state(DropZoneState.NEUTRAL)
+        # Use centralized drag zone validation
+        DragZoneValidator.validate_drop_zone("file_table", "[FileTableView]")
 
     def _end_custom_drag(self):
         """End custom drag operation - SIMPLIFIED VERSION"""
@@ -1188,6 +1158,9 @@ class FileTableView(QTableView):
         # Clean up drag state
         self._is_dragging = False
         self._drag_data = None
+
+        # Clear initial drag widget tracking
+        DragZoneValidator.clear_initial_drag_widget("file_table")
 
         # Record drag end time for selection protection
         import time
