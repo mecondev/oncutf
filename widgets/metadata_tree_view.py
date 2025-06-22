@@ -1633,7 +1633,8 @@ class MetadataTreeView(QTreeView):
 
     def update_from_parent_selection(self) -> None:
         """
-        Simple metadata display based on current selection - no complex logic.
+        Simple metadata display based on current selection using centralized logic.
+        Uses should_display_metadata_for_selection() to determine behavior.
         """
         parent_window = self._get_parent_with_file_table()
         if not parent_window:
@@ -1656,8 +1657,15 @@ class MetadataTreeView(QTreeView):
             self.clear_view()
             return
 
-        # Always use the last selected row - simple and predictable
-        target_index = selected_rows[-1]
+        # Use centralized logic to determine if metadata should be displayed
+        if not self.should_display_metadata_for_selection(len(selected_rows)):
+            # Multiple files selected - don't show metadata tree
+            self.show_empty_state("Multiple files selected")
+            logger.debug(f"[MetadataTree] Multiple files selected ({len(selected_rows)}) - showing empty state")
+            return
+
+        # Single file selected - show its metadata
+        target_index = selected_rows[0]
 
         if (hasattr(parent_window, 'file_model') and
             0 <= target_index.row() < len(parent_window.file_model.files)):
@@ -1690,6 +1698,7 @@ class MetadataTreeView(QTreeView):
 
                 # Update file icon status after loading metadata
                 self._update_file_icon_status()
+                logger.debug(f"[MetadataTree] Displayed metadata for single file: {file_item.filename}")
                 return
 
         self.clear_view()
@@ -1807,6 +1816,41 @@ class MetadataTreeView(QTreeView):
         except RuntimeError:
             # ApplicationContext not ready yet
             return None
+
+    def should_display_metadata_for_selection(self, selected_files_count: int) -> bool:
+        """
+        Central logic to determine if metadata should be displayed based on selection count.
+
+        Args:
+            selected_files_count: Number of currently selected files
+
+        Returns:
+            bool: True if metadata should be displayed, False if empty state should be shown
+        """
+        # Simple rule: Only show metadata for exactly 1 selected file
+        return selected_files_count == 1
+
+    def smart_display_metadata_or_empty_state(self, metadata: Optional[Dict[str, Any]], selected_count: int, context: str = "") -> None:
+        """
+        Smart helper that displays metadata or empty state based on centralized logic.
+
+        Args:
+            metadata: The metadata to potentially display
+            selected_count: Number of selected files
+            context: Context string for logging
+        """
+        if self.should_display_metadata_for_selection(selected_count):
+            # Single file - display metadata if available
+            if isinstance(metadata, dict) and metadata:
+                self.display_metadata(metadata, context=context)
+            else:
+                self.clear_view()
+        else:
+            # Multiple files or no files - show appropriate empty state
+            if selected_count > 1:
+                self.show_empty_state("Multiple files selected")
+            else:
+                self.show_empty_state("No file selected")
 
     def get_modified_metadata(self) -> Dict[str, str]:
         """

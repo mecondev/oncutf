@@ -93,15 +93,21 @@ class SelectionManager:
             if hasattr(self.parent_window, 'request_preview_update'):
                 self.parent_window.request_preview_update()
 
-            # Step 5: Handle metadata display for the last file (async)
+            # Step 5: Handle metadata display using centralized logic (async)
             def show_metadata_later():
-                last_file = file_model.files[-1]
-                metadata_cache = getattr(self.parent_window, 'metadata_cache', None)
                 metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
-
-                if metadata_cache and metadata_tree_view:
-                    metadata = last_file.metadata or metadata_cache.get(last_file.full_path)
-                    metadata_tree_view.display_metadata(metadata, context="select_all")
+                if metadata_tree_view:
+                    # Use centralized logic - select_all means multiple files, so show empty state
+                    if (hasattr(metadata_tree_view, 'should_display_metadata_for_selection') and
+                        not metadata_tree_view.should_display_metadata_for_selection(len(file_model.files))):
+                        metadata_tree_view.show_empty_state("Multiple files selected")
+                    else:
+                        # Fallback for single file case (shouldn't happen with select_all)
+                        last_file = file_model.files[-1]
+                        metadata_cache = getattr(self.parent_window, 'metadata_cache', None)
+                        if metadata_cache:
+                            metadata = last_file.metadata or metadata_cache.get(last_file.full_path)
+                            metadata_tree_view.display_metadata(metadata, context="select_all")
 
             schedule_metadata_load(show_metadata_later, 15)
 
@@ -202,22 +208,34 @@ class SelectionManager:
             if hasattr(self.parent_window, 'request_preview_update'):
                 self.parent_window.request_preview_update()
 
-            # Handle metadata display
+            # Handle metadata display using centralized logic
             metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
             metadata_cache = getattr(self.parent_window, 'metadata_cache', None)
 
-            if checked_rows and metadata_tree_view and metadata_cache:
-                def show_metadata_later():
-                    last_row = checked_rows[-1]
-                    file_item = file_model.files[last_row]
-                    metadata = file_item.metadata or metadata_cache.get(file_item.full_path)
+            if metadata_tree_view:
+                # Use centralized logic to determine if metadata should be displayed
+                should_display = (hasattr(metadata_tree_view, 'should_display_metadata_for_selection') and
+                                metadata_tree_view.should_display_metadata_for_selection(len(checked_rows)))
+
+                if should_display and checked_rows and metadata_cache:
+                    def show_metadata_later():
+                        last_row = checked_rows[-1]
+                        file_item = file_model.files[last_row]
+                        metadata = file_item.metadata or metadata_cache.get(file_item.full_path)
+                        if hasattr(metadata_tree_view, 'handle_invert_selection'):
+                            metadata_tree_view.handle_invert_selection(metadata)
+                        elif hasattr(metadata_tree_view, 'display_metadata'):
+                            metadata_tree_view.display_metadata(metadata, context="invert_selection")
+                    schedule_metadata_load(show_metadata_later, 20)
+                else:
+                    # Multiple files or no files - show empty state
                     if hasattr(metadata_tree_view, 'handle_invert_selection'):
-                        metadata_tree_view.handle_invert_selection(metadata)
-                    elif hasattr(metadata_tree_view, 'display_metadata'):
-                        metadata_tree_view.display_metadata(metadata, context="invert_selection")
-                schedule_metadata_load(show_metadata_later, 20)
-            elif metadata_tree_view and hasattr(metadata_tree_view, 'handle_invert_selection'):
-                metadata_tree_view.handle_invert_selection(None)
+                        metadata_tree_view.handle_invert_selection(None)
+                    elif hasattr(metadata_tree_view, 'show_empty_state'):
+                        if checked_rows:
+                            metadata_tree_view.show_empty_state("Multiple files selected")
+                        else:
+                            metadata_tree_view.show_empty_state("No file selected")
 
     def update_preview_from_selection(self, selected_rows: List[int]) -> None:
         """
@@ -265,7 +283,7 @@ class SelectionManager:
         if hasattr(self.parent_window, 'request_preview_update'):
             self.parent_window.request_preview_update()
 
-        # Show metadata for last selected file and update current file for context menus
+        # Show metadata using centralized logic and update current file for context menus
         if selected_rows:
             last_row = selected_rows[-1]
             if 0 <= last_row < len(file_model.files):
@@ -275,12 +293,21 @@ class SelectionManager:
                 if rename_modules_area and hasattr(rename_modules_area, 'set_current_file_for_modules'):
                     rename_modules_area.set_current_file_for_modules(file_item)
 
-                if metadata_cache and metadata_tree_view:
-                    metadata = file_item.metadata or metadata_cache.get(file_item.full_path)
-                    if isinstance(metadata, dict) and hasattr(metadata_tree_view, 'display_metadata'):
-                        metadata_tree_view.display_metadata(metadata, context="update_preview_from_selection")
-                    elif metadata_tree_view and hasattr(metadata_tree_view, 'clear_view'):
-                        metadata_tree_view.clear_view()
+                # Use centralized logic to determine if metadata should be displayed
+                if metadata_tree_view:
+                    should_display = (hasattr(metadata_tree_view, 'should_display_metadata_for_selection') and
+                                    metadata_tree_view.should_display_metadata_for_selection(len(selected_rows)))
+
+                    if should_display and metadata_cache:
+                        metadata = file_item.metadata or metadata_cache.get(file_item.full_path)
+                        if isinstance(metadata, dict) and hasattr(metadata_tree_view, 'display_metadata'):
+                            metadata_tree_view.display_metadata(metadata, context="update_preview_from_selection")
+                        elif hasattr(metadata_tree_view, 'clear_view'):
+                            metadata_tree_view.clear_view()
+                    else:
+                        # Multiple files selected - show empty state
+                        if hasattr(metadata_tree_view, 'show_empty_state'):
+                            metadata_tree_view.show_empty_state("Multiple files selected")
         else:
             # Clear current file when no selection
             if rename_modules_area and hasattr(rename_modules_area, 'set_current_file_for_modules'):

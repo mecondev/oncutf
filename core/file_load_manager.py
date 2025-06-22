@@ -35,9 +35,12 @@ class FileLoadManager:
     """
 
     def __init__(self, parent_window=None):
+        """Initialize FileLoadManager with parent window reference."""
         self.parent_window = parent_window
         self.allowed_extensions = set(ALLOWED_EXTENSIONS)
         self.timer_manager = get_timer_manager()
+        # Flag to prevent metadata tree refresh conflicts during metadata operations
+        self._metadata_operation_in_progress = False
         logger.debug("[FileLoadManager] Initialized with unified loading policy")
 
     def load_folder(self, folder_path: str, merge_mode: bool = False, recursive: bool = False) -> None:
@@ -178,48 +181,64 @@ class FileLoadManager:
             logger.info("[Drop] No files provided for metadata loading.")
             return
 
-        # Convert file paths to FileItem objects by finding them in the current model
-        if not hasattr(self.parent_window, 'file_model'):
-            logger.warning("[Drop] No file_model available")
-            return
+        # Set flag to prevent metadata tree refresh conflicts
+        self._metadata_operation_in_progress = True
 
-        selected_files = []
-        for path in paths:
-            # Find the corresponding FileItem in the model using normalized path comparison
-            file_item = find_file_by_path(self.parent_window.file_model.files, path, 'full_path')
-            if file_item:
-                selected_files.append(file_item)
+        try:
+            # Convert file paths to FileItem objects by finding them in the current model
+            if not hasattr(self.parent_window, 'file_model'):
+                logger.warning("[Drop] No file_model available")
+                return
 
-        if not selected_files:
-            logger.warning("[Drop] No valid FileItem objects found for the provided paths")
-            return
+            selected_files = []
+            for path in paths:
+                # Find the corresponding FileItem in the model using normalized path comparison
+                file_item = find_file_by_path(self.parent_window.file_model.files, path, 'full_path')
+                if file_item:
+                    selected_files.append(file_item)
 
-        # Debug logging
-        selected_filenames = [f.filename for f in selected_files]
-        logger.debug(f"[Drop] Processing {len(selected_files)} selected files: {selected_filenames}", extra={"dev_only": True})
+            if not selected_files:
+                logger.warning("[Drop] No valid FileItem objects found for the provided paths")
+                return
 
-        # Parse modifiers for metadata loading
-        shift = bool(modifiers & Qt.ShiftModifier)
+            # Debug logging
+            selected_filenames = [f.filename for f in selected_files]
+            logger.debug(f"[Drop] Processing {len(selected_files)} selected files: {selected_filenames}", extra={"dev_only": True})
 
-        # Determine loading mode based on modifiers
-        use_extended = shift
+            # Parse modifiers for metadata loading
+            shift = bool(modifiers & Qt.ShiftModifier)
 
-        if shift:
-            logger.debug("[Modifiers] Shift detected → Extended metadata")
-        else:
-            logger.debug("[Modifiers] No modifiers → Fast metadata")
+            # Determine loading mode based on modifiers
+            use_extended = shift
 
-        logger.info(f"[Drop] Loading metadata for {len(selected_files)} files (extended={use_extended})")
+            if shift:
+                logger.debug("[Modifiers] Shift detected → Extended metadata")
+            else:
+                logger.debug("[Modifiers] No modifiers → Fast metadata")
 
-        # Use the same logic as context menu - call MetadataManager directly
-        if not hasattr(self.parent_window, 'metadata_manager'):
-            logger.error("[Drop] No metadata_manager available")
-            return
+            logger.info(f"[Drop] Loading metadata for {len(selected_files)} files (extended={use_extended})")
 
-        metadata_manager = self.parent_window.metadata_manager
+            # Use the same logic as context menu - call MetadataManager directly
+            if not hasattr(self.parent_window, 'metadata_manager'):
+                logger.error("[Drop] No metadata_manager available")
+                return
 
-        # Call the unified metadata loading method (same as context menu)
-        metadata_manager.load_metadata_for_items(selected_files, use_extended=use_extended, source="drag_drop")
+            metadata_manager = self.parent_window.metadata_manager
+
+            # Call the unified metadata loading method (same as context menu)
+            metadata_manager.load_metadata_for_items(selected_files, use_extended=use_extended, source="drag_drop")
+
+        finally:
+            # For single files, delay clearing the flag to prevent UI refresh conflicts
+            # For multiple files, the flag will be cleared in handle_metadata_finished()
+            if len(selected_files) <= 1:
+                # Schedule flag clearing after a short delay to allow metadata display to complete
+                def clear_flag_later():
+                    self._metadata_operation_in_progress = False
+                    logger.debug("[FileLoadManager] Delayed clear of metadata operation flag for single file drag")
+
+                from utils.timer_manager import schedule_ui_update
+                schedule_ui_update(clear_flag_later, 50)  # 50ms delay
 
     def _load_folder_with_progress(self, folder_path: str, merge_mode: bool) -> None:
         """Load folder with progress dialog (for recursive operations)."""
@@ -443,9 +462,14 @@ class FileLoadManager:
 
             # Update metadata tree (clear it for new files)
             if hasattr(self.parent_window, 'metadata_tree_view'):
-                if hasattr(self.parent_window.metadata_tree_view, 'refresh_metadata_from_selection'):
-                    self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
-                    logger.debug("[FileLoadManager] Refreshed metadata tree", extra={"dev_only": True})
+                # Only refresh metadata tree if we're not in the middle of a metadata operation
+                # This prevents conflicts with metadata loading operations (drag & drop, context menu, etc.)
+                if not self._metadata_operation_in_progress:
+                    if hasattr(self.parent_window.metadata_tree_view, 'refresh_metadata_from_selection'):
+                        self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
+                        logger.debug("[FileLoadManager] Refreshed metadata tree", extra={"dev_only": True})
+                else:
+                    logger.debug("[FileLoadManager] Skipped metadata tree refresh (metadata operation in progress)", extra={"dev_only": True})
 
             logger.info("[FileLoadManager] UI refresh completed successfully", extra={"dev_only": True})
 
@@ -469,3 +493,8 @@ class FileLoadManager:
         """Update the set of allowed file extensions."""
         self.allowed_extensions = extensions
         logger.info(f"[FileLoadManager] Updated allowed extensions: {extensions}")
+
+    def clear_metadata_operation_flag(self) -> None:
+        """Clear the metadata operation flag. Called after metadata operations complete."""
+        self._metadata_operation_in_progress = False
+        logger.debug("[FileLoadManager] Cleared metadata operation flag")
