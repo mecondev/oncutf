@@ -82,16 +82,13 @@ class DragVisualManager:
         self._icon_cache: Dict[str, QIcon] = {}
         self._cursor_cache: Dict[str, QCursor] = {}
 
-        # Clear cache on initialization to ensure fresh icons
+        # Clear cache on initialization
         self._clear_cache()
 
-        logger.debug("[DragVisualManager] Initialized", extra={"dev_only": True})
-
     def _clear_cache(self) -> None:
-        """Clear icon and cursor caches to ensure fresh renders."""
+        """Clear icon and cursor caches."""
         self._icon_cache.clear()
         self._cursor_cache.clear()
-        logger.debug("[DragVisualManager] Cache cleared", extra={"dev_only": True})
 
     @classmethod
     def get_instance(cls) -> 'DragVisualManager':
@@ -116,8 +113,7 @@ class DragVisualManager:
         self._drag_type = drag_type
         self._drag_source = drag_source
 
-        # UX: Both FileTree and FileTable start with VALID to show action icons immediately (like File Explorer)
-        # This allows users to see what action will be performed before reaching the target
+        # Start with VALID state to show action icons immediately (File Explorer UX)
         if drag_source in ("file_tree", "file_table"):
             self._drop_zone_state = DropZoneState.VALID
         else:
@@ -125,19 +121,13 @@ class DragVisualManager:
 
         self._modifier_state = self._detect_modifier_state()
 
-        logger.debug(f"[DragVisualManager] Visual drag started: {drag_type.value} from {source_info} (source: {drag_source}) - initial state: {self._drop_zone_state.value}")
-
-        # Clear cursor cache when starting new drag operation
+        # Clear cursor cache and update cursor
         self._clear_cache()
-
-        # Update cursor immediately
         self._update_cursor()
 
     def end_drag_visual(self) -> None:
         """End visual feedback for drag operation."""
         if self._drag_type is not None:
-            logger.debug("[DragVisualManager] Visual drag ended")
-
             # Restore original cursor
             self._restore_cursor()
 
@@ -159,7 +149,7 @@ class DragVisualManager:
         """
         if self._drop_zone_state != state:
             self._drop_zone_state = state
-            self._clear_cache()  # Clear cache when state changes
+            self._clear_cache()
             self._update_cursor()
 
     def update_modifier_state(self) -> None:
@@ -167,7 +157,7 @@ class DragVisualManager:
         new_state = self._detect_modifier_state()
         if self._modifier_state != new_state:
             self._modifier_state = new_state
-            self._clear_cache()  # Clear cache when state changes
+            self._clear_cache()
             self._update_cursor()
 
     def update_drag_feedback_for_widget(self, source_widget, drag_source: str) -> bool:
@@ -250,67 +240,58 @@ class DragVisualManager:
         else:  # MULTIPLE
             base_icon = "copy"
 
-        # Determine if we're dragging to metadata tree (from stored drag source)
+        # Check if dragging to metadata tree
         is_metadata_drop = self._drag_source is not None and self._drag_source == "file_table"
 
-        # Choose action icon(s) based on context
+        # Choose action icons based on context
         if is_metadata_drop:
-            # For metadata drops, check drop zone state first
             if self._drop_zone_state == DropZoneState.INVALID:
-                action_icons = ["x"]  # Invalid drop zone - red X
-            elif self._drop_zone_state == DropZoneState.VALID:
-                # Valid metadata drop - show info icon
-                action_icons = ["info"]  # Both fast and extended metadata use same icon, different colors
-            else:  # NEUTRAL
-                # Show info icon in neutral state so user knows what will happen
-                action_icons = ["info"]  # Preview of metadata action
+                action_icons = ["x"]
+            else:  # VALID or NEUTRAL
+                action_icons = ["info"]
         else:
-            # Normal file/folder drops - check drop zone state
+            # Normal file/folder drops
             if self._drop_zone_state == DropZoneState.INVALID:
-                action_icons = ["x"]  # Invalid drop
+                action_icons = ["x"]
             elif self._drop_zone_state == DropZoneState.VALID:
-                # For file drops, ignore recursive modifiers (Ctrl) since files don't have subdirectories
+                # For files, ignore recursive modifiers (no subdirectories)
                 if self._drag_type == DragType.FILE:
                     if self._modifier_state in [ModifierState.SHIFT, ModifierState.CTRL_SHIFT]:
                         if self._modifier_state == ModifierState.CTRL_SHIFT:
-                            action_icons = ["plus", "layers"]  # Merge + Recursive (both icons)
+                            action_icons = ["plus", "layers"]  # Merge + Recursive
                         else:
-                            action_icons = ["plus"]  # Merge + Shallow (Shift only)
+                            action_icons = ["plus"]  # Merge + Shallow
                     else:
-                        # Normal and Ctrl are treated as normal for files
-                        action_icons = ["download"]  # Replace + Shallow (Normal/Ctrl same for files)
+                        action_icons = ["download"]  # Replace + Shallow
                 else:
-                    # For folders and multiple items, all modifiers work normally
+                    # For folders and multiple items
                     if self._modifier_state == ModifierState.SHIFT:
-                        action_icons = ["plus"]  # Merge + Shallow (Shift only)
+                        action_icons = ["plus"]  # Merge + Shallow
                     elif self._modifier_state == ModifierState.CTRL:
-                        action_icons = ["layers"]  # Replace + Recursive (Ctrl only) - using layers for recursive
+                        action_icons = ["layers"]  # Replace + Recursive
                     elif self._modifier_state == ModifierState.CTRL_SHIFT:
-                        action_icons = ["plus", "layers"]  # Merge + Recursive (both icons)
+                        action_icons = ["plus", "layers"]  # Merge + Recursive
                     else:
-                        action_icons = ["download"]  # Replace + Shallow (Normal - no modifiers)
-            else:  # NEUTRAL
-                # Show preview of what will happen when reaching correct drop zone
+                        action_icons = ["download"]  # Replace + Shallow
+            else:  # NEUTRAL - show preview
                 if self._drag_type == DragType.FILE:
                     if self._modifier_state in [ModifierState.SHIFT, ModifierState.CTRL_SHIFT]:
                         if self._modifier_state == ModifierState.CTRL_SHIFT:
-                            action_icons = ["plus", "layers"]  # Preview: Merge + Recursive
+                            action_icons = ["plus", "layers"]
                         else:
-                            action_icons = ["plus"]  # Preview: Merge + Shallow
+                            action_icons = ["plus"]
                     else:
-                        action_icons = ["download"]  # Preview: Replace + Shallow
+                        action_icons = ["download"]
                 else:
-                    # For folders and multiple items, show preview based on modifiers
                     if self._modifier_state == ModifierState.SHIFT:
-                        action_icons = ["plus"]  # Preview: Merge + Shallow
+                        action_icons = ["plus"]
                     elif self._modifier_state == ModifierState.CTRL:
-                        action_icons = ["layers"]  # Preview: Replace + Recursive
+                        action_icons = ["layers"]
                     elif self._modifier_state == ModifierState.CTRL_SHIFT:
-                        action_icons = ["plus", "layers"]  # Preview: Merge + Recursive
+                        action_icons = ["plus", "layers"]
                     else:
-                        action_icons = ["download"]  # Preview: Replace + Shallow
+                        action_icons = ["download"]
 
-        # Create composite cursor
         return self._create_composite_cursor(base_icon, action_icons)
 
     def _create_composite_cursor(self, base_icon: str, action_icons: list) -> QCursor:
@@ -321,24 +302,24 @@ class DragVisualManager:
             base_icon: Name of base icon (file/folder/copy)
             action_icons: List of action icon names (e.g., ["plus", "layers"])
         """
-        # Create wider canvas if we have multiple action icons
-        canvas_width = 48 if len(action_icons) <= 1 else 70  # Increased width for dual icons
+        # Create wider canvas for multiple action icons
+        canvas_width = 48 if len(action_icons) <= 1 else 70
         pixmap = QPixmap(canvas_width, 48)
         pixmap.fill(Qt.transparent)
 
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        # Draw base icon (larger, center-left)
+        # Draw base icon
         base_qicon = get_menu_icon(base_icon)
         if not base_qicon.isNull():
-            base_pixmap = base_qicon.pixmap(28, 28)  # Increased from 20x20
+            base_pixmap = base_qicon.pixmap(28, 28)
             painter.drawPixmap(4, 8, base_pixmap)
 
         # Draw action icons side by side
         if action_icons:
-            icon_size = 22  # Keep same size for all icons (no smaller for multiple)
-            start_x = 24 if len(action_icons) <= 1 else 26  # Start more to the right for multiple icons
+            icon_size = 22
+            start_x = 24 if len(action_icons) <= 1 else 26
 
             for i, action_icon in enumerate(action_icons):
                 if action_icon is None:
@@ -348,73 +329,55 @@ class DragVisualManager:
                 if not action_qicon.isNull():
                     action_pixmap = action_qicon.pixmap(icon_size, icon_size)
 
-                    # Color the action icons for better visual feedback
+                    # Apply color overlays for visual feedback
                     if action_icon == "x":
-                        # Red for invalid drop zones
+                        # Red for invalid zones
                         colored_pixmap = QPixmap(action_pixmap.size())
                         colored_pixmap.fill(Qt.transparent)
 
                         color_painter = QPainter(colored_pixmap)
                         color_painter.setRenderHint(QPainter.Antialiasing)
-
-                        # First draw the original icon
                         color_painter.drawPixmap(0, 0, action_pixmap)
-
-                        # Then apply red color overlay (brighter red with added green/blue)
                         color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
-                        color_painter.fillRect(colored_pixmap.rect(), QColor(220, 68, 84))  # Brighter red (+15 green, +15 blue)
-
+                        color_painter.fillRect(colored_pixmap.rect(), QColor(220, 68, 84))
                         color_painter.end()
                         action_pixmap = colored_pixmap
 
                     elif action_icon in ["download", "download-cloud"] and self._drag_source == "file_table":
-                        # Green for valid drop zones (only for metadata drops)
+                        # Green for metadata drops
                         colored_pixmap = QPixmap(action_pixmap.size())
                         colored_pixmap.fill(Qt.transparent)
 
                         color_painter = QPainter(colored_pixmap)
                         color_painter.setRenderHint(QPainter.Antialiasing)
-
-                        # First draw the original icon
                         color_painter.drawPixmap(0, 0, action_pixmap)
-
-                        # Then apply green color overlay (bright green)
                         color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
-                        color_painter.fillRect(colored_pixmap.rect(), QColor(40, 167, 69))  # Bootstrap success green
-
+                        color_painter.fillRect(colored_pixmap.rect(), QColor(40, 167, 69))
                         color_painter.end()
                         action_pixmap = colored_pixmap
 
                     elif action_icon == "info":
-                        # Color based on modifier state: Green for fast metadata, Orange for extended metadata
+                        # Color based on modifier state
                         colored_pixmap = QPixmap(action_pixmap.size())
                         colored_pixmap.fill(Qt.transparent)
 
                         color_painter = QPainter(colored_pixmap)
                         color_painter.setRenderHint(QPainter.Antialiasing)
-
-                        # First draw the original icon
                         color_painter.drawPixmap(0, 0, action_pixmap)
 
-                        # Choose color based on modifier state
                         if self._modifier_state == ModifierState.SHIFT:
-                            # Orange for extended metadata (Shift pressed)
-                            color = QColor(255, 140, 0)  # Regular orange
+                            color = QColor(255, 140, 0)  # Orange for extended metadata
                         else:
-                            # Green for fast metadata (no Shift)
-                            color = QColor(46, 204, 113)  # User specified green
+                            color = QColor(46, 204, 113)  # Green for fast metadata
 
-                        # Apply color overlay
                         color_painter.setCompositionMode(QPainter.CompositionMode_SourceAtop)
                         color_painter.fillRect(colored_pixmap.rect(), color)
                         color_painter.end()
-
                         action_pixmap = colored_pixmap
 
-                    # Position icons side by side with minimal spacing (overlap slightly to reduce padding effect)
+                    # Position icons with minimal spacing
                     if len(action_icons) > 1:
-                        # For multiple icons, overlap them slightly to counteract icon padding
-                        x_pos = start_x + (i * (icon_size - 4))  # Overlap by 4px to reduce visual spacing
+                        x_pos = start_x + (i * (icon_size - 4))  # Overlap to reduce visual spacing
                     else:
                         x_pos = start_x
                     y_pos = 24
@@ -422,26 +385,22 @@ class DragVisualManager:
 
         painter.end()
 
-        # Create cursor with hotspot at (12, 12) - adjusted for larger size
-        hotspot_x = 12 if canvas_width <= 48 else 16  # Adjust hotspot for wider canvas
+        # Create cursor with adjusted hotspot
+        hotspot_x = 12 if canvas_width <= 48 else 16
         return QCursor(pixmap, hotspot_x, 12)
 
     def _restore_cursor(self) -> None:
-        """Restore the original cursor with aggressive cleanup."""
-        # Remove all override cursors aggressively
+        """Restore the original cursor with cleanup."""
+        # Remove all override cursors
         cursor_count = 0
-        while QApplication.overrideCursor() and cursor_count < 10:  # Increased limit
+        while QApplication.overrideCursor() and cursor_count < 10:
             QApplication.restoreOverrideCursor()
             cursor_count += 1
-
-        if cursor_count > 0:
-            logger.debug(f"[DragVisualManager] Restored {cursor_count} override cursors")
 
         # Force set to default cursor if still stuck
         if QApplication.overrideCursor():
             QApplication.setOverrideCursor(QCursor(Qt.ArrowCursor))
             QApplication.restoreOverrideCursor()
-            logger.debug("[DragVisualManager] Force-restored stuck cursor")
 
     # =====================================
     # State Detection

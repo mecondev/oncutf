@@ -183,8 +183,6 @@ class FileTableView(QTableView):
 
         # Only update if there's a significant difference (avoid unnecessary updates)
         if current_qt_selection != selected_rows:
-            logger.debug(f"[FileTableView] Syncing Qt selection: {len(current_qt_selection)} -> {len(selected_rows)} files", extra={"dev_only": True})
-
             # Set flag to prevent recursive calls
             self._syncing_qt_model = True
 
@@ -513,7 +511,6 @@ class FileTableView(QTableView):
                 self._programmatic_resize = True
                 self.setColumnWidth(1, new_width)
                 self._programmatic_resize = False
-                logger.debug(f"[FileTableView] Vertical scrollbar appeared - reduced filename column: {current_width}px → {new_width}px", extra={"dev_only": True})
         else:
             # Scrollbar not needed - restore filename column to base width
             if self._filename_base_width > 0:
@@ -523,7 +520,6 @@ class FileTableView(QTableView):
                     self._programmatic_resize = True
                     self.setColumnWidth(1, new_width)
                     self._programmatic_resize = False
-                    logger.debug(f"[FileTableView] Vertical scrollbar disappeared - restored filename column: {current_width}px → {new_width}px", extra={"dev_only": True})
 
                 # Reset base width for next cycle
                 self._filename_base_width = 0
@@ -580,32 +576,30 @@ class FileTableView(QTableView):
                 # No manual preference - just fill available space
                 new_filename_width = max(self._filename_min_width, available_width)
 
-            # Only resize if there's a meaningful difference (avoid micro-adjustments)
-            size_difference = abs(new_filename_width - current_filename_width)
-            should_resize = size_difference > 5  # Much smaller threshold for smoother behavior
+                # Only resize if there's a meaningful difference (avoid micro-adjustments)
+                size_difference = abs(new_filename_width - current_filename_width)
+                should_resize = size_difference > 5  # Much smaller threshold for smoother behavior
 
-            if should_resize:
-                # Use batch updates to prevent scrollbar flickering during column resize
-                self.setUpdatesEnabled(False)
+                if should_resize:
+                    # Use batch updates to prevent scrollbar flickering during column resize
+                    self.setUpdatesEnabled(False)
 
-                try:
-                    # Set flag to indicate this is a programmatic resize
-                    self._programmatic_resize = True
-                    self.setColumnWidth(1, new_filename_width)
-                    self._programmatic_resize = False
+                    try:
+                        # Set flag to indicate this is a programmatic resize
+                        self._programmatic_resize = True
+                        self.setColumnWidth(1, new_filename_width)
+                        self._programmatic_resize = False
 
-                    # Update scrollbar visibility intelligently after column resize
-                    self._update_scrollbar_visibility()
+                        # Update scrollbar visibility intelligently after column resize
+                        self._update_scrollbar_visibility()
 
-                    logger.debug(f"[FileTableView] Column resized with anti-flickering: {current_filename_width}px → {new_filename_width}px", extra={"dev_only": True})
+                    finally:
+                        # Re-enable updates and force a single refresh
+                        self.setUpdatesEnabled(True)
+                        self.viewport().update()
 
-                finally:
-                    # Re-enable updates and force a single refresh
-                    self.setUpdatesEnabled(True)
-                    self.viewport().update()
-
-                    # Check if vertical scrollbar visibility changed after column resize
-                    schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 10)
+                        # Check if vertical scrollbar visibility changed after column resize
+                        schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 10)
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement."""
@@ -645,7 +639,6 @@ class FileTableView(QTableView):
 
                 # Re-enable scrollbar policy based on content
                 self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-                logger.debug("[FileTableView] Placeholder hidden - content mode restored with anti-flickering", extra={"dev_only": True})
 
                 # Re-enable interactions when hiding placeholder
                 header = self.horizontalHeader()
@@ -797,7 +790,6 @@ class FileTableView(QTableView):
                     # Single click - select single row
                     self._set_anchor_row(index.row())
                     self._update_selection_store({index.row()})
-                    logger.debug(f"[FileTableView] Single selection: row {index.row()}", extra={"dev_only": True})
             elif modifiers == Qt.ControlModifier:
                 # Check if we're on a selected item for potential drag
                 current_selection = self._get_current_selection()
@@ -807,7 +799,6 @@ class FileTableView(QTableView):
                     self._clicked_on_selected = True
                     self._clicked_index = index
                     self._drag_start_selection = current_selection.copy()
-                    logger.debug(f"[FileTableView] Ctrl+click on selected row {index.row()} - preparing for toggle", extra={"dev_only": True})
                     return  # Don't call super() - we'll handle in mouseReleaseEvent
                 else:
                     # Ctrl+click on unselected - add to selection (toggle)
@@ -815,7 +806,6 @@ class FileTableView(QTableView):
                     current_selection.add(index.row())
                     self._set_anchor_row(index.row())  # Set anchor for future range selections
                     self._update_selection_store(current_selection)
-                    logger.debug(f"[FileTableView] Ctrl+click toggle: added row {index.row()}, total: {len(current_selection)}", extra={"dev_only": True})
                     # Don't call super() - we handled the selection ourselves
                     return
             elif modifiers == Qt.ShiftModifier:
@@ -833,7 +823,6 @@ class FileTableView(QTableView):
                     anchor = self._get_anchor_row()
                     if anchor is not None:
                         self.select_rows_range(anchor, index.row())
-                        logger.debug(f"[FileTableView] Shift+click range: {anchor} to {index.row()}", extra={"dev_only": True})
                     else:
                         self._set_anchor_row(index.row())
                         self._update_selection_store({index.row()})
@@ -907,11 +896,10 @@ class FileTableView(QTableView):
                             else:
                                 self._set_anchor_row(None)  # No selection left
                             self._update_selection_store(current_selection)
-                            logger.debug(f"[FileTableView] Ctrl+click toggle: removed row {row}, remaining: {len(current_selection)}", extra={"dev_only": True})
                 elif modifiers == Qt.ShiftModifier:
                     # Shift+click on selected item without drag - preserve current selection
                     # Don't change selection when Shift is held and we clicked on a selected item
-                    logger.debug("[FileTableView] Shift+click on selected item without drag - preserving selection", extra={"dev_only": True})
+                    pass
                 elif modifiers == Qt.NoModifier:
                     # Regular click on selected item without drag - clear selection and select only this
                     if hasattr(self, '_clicked_index') and self._clicked_index and self._clicked_index.isValid():

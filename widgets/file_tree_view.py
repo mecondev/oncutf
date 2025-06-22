@@ -89,8 +89,6 @@ class FileTreeView(QTreeView):
         self._drag_start_pos = None
         self._drag_feedback_timer_id = None
 
-        logger.debug("[FileTreeView] Initialized with Qt built-in drag system", extra={"dev_only": True})
-
     def selectionChanged(self, selected, deselected) -> None:
         """Override to emit custom signal with selected path (single item only)"""
         super().selectionChanged(selected, deselected)
@@ -104,14 +102,12 @@ class FileTreeView(QTreeView):
             if path:
                 selected_path = path
 
-        logger.debug(f"[FileTreeView] Selection changed: {selected_path if selected_path else 'None'}", extra={"dev_only": True})
         self.selection_changed.emit(selected_path)
 
     def setModel(self, model) -> None:
         """Override to configure header when model is set"""
         super().setModel(model)
         self._configure_header()
-        logger.debug(f"[FileTreeView] Model set: {type(model).__name__ if model else 'None'}", extra={"dev_only": True})
 
     def resizeEvent(self, event) -> None:
         """Handle resize to adjust column width for optimal horizontal scrolling"""
