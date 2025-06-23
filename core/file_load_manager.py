@@ -4,10 +4,10 @@ file_load_manager.py
 Author: Michael Economou
 Date: 2025-05-01
 
-Unified file loading manager with optimized policy:
-- All folder loading: wait_cursor only (fast, synchronous like external drops)
-- Import button: FileLoadingDialog with progress bar (multi-path operations)
-- Consistent behavior between internal and external drag operations
+Unified file loading manager with fully optimized policy:
+- All operations: wait_cursor only (fast, synchronous)
+- Consistent behavior between drag, import, and external operations
+- No progress dialogs, just fast os.walk() for everything
 """
 
 import os
@@ -21,16 +21,16 @@ from models.file_item import FileItem
 from utils.cursor_helper import force_restore_cursor, wait_cursor
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import get_timer_manager
-from widgets.file_loading_dialog import FileLoadingDialog
+
 
 logger = get_cached_logger(__name__)
 
 class FileLoadManager:
     """
-    Unified file loading manager with optimized policy:
-    - All folder operations: wait_cursor only (fast, like external drops)
-    - Import button: progress dialog (multi-path operations)
-    - Consistent behavior between internal and external drag
+    Unified file loading manager with fully optimized policy:
+    - All operations: wait_cursor only (fast, synchronous)
+    - Same behavior for drag, import, and external operations
+    - No complex progress dialogs, just simple and fast loading
     """
 
     def __init__(self, parent_window=None):
@@ -62,7 +62,6 @@ class FileLoadManager:
             logger.info(f"[FileLoadManager] Stored recursive state: {recursive}", extra={"dev_only": True})
 
         # CRITICAL: Force cleanup any active drag state immediately
-        # This ensures ESC key works properly in FileLoadingDialog
         if is_dragging():
             logger.debug("[FileLoadManager] Active drag detected, forcing cleanup before loading")
             force_cleanup_drag()
@@ -91,7 +90,7 @@ class FileLoadManager:
     def load_files_from_paths(self, paths: List[str], clear: bool = True) -> None:
         """
         Load files from multiple paths (used by import button).
-        Always uses progress dialog since it can handle multiple paths.
+        Now uses same fast approach as drag operations for consistency.
         """
         logger.info(f"[FileLoadManager] load_files_from_paths: {len(paths)} paths", extra={"dev_only": True})
 
@@ -100,14 +99,22 @@ class FileLoadManager:
             logger.debug("[FileLoadManager] Active drag detected during import, forcing cleanup")
             force_cleanup_drag()
 
-        def on_files_loaded(file_paths: List[str]):
-            logger.info(f"[FileLoadManager] Loaded {len(file_paths)} files from paths", extra={"dev_only": True})
-            self._update_ui_with_files(file_paths, clear=clear)
+        # Process all paths with fast wait cursor approach (same as drag operations)
+        all_file_paths = []
 
-        # Always use progress dialog for multi-path operations
-        dialog = FileLoadingDialog(self.parent_window, on_files_loaded)
-        dialog.load_files_with_options(paths, self.allowed_extensions, recursive=True)
-        dialog.exec_()
+        with wait_cursor():
+            for path in paths:
+                if os.path.isfile(path):
+                    if self._is_allowed_extension(path):
+                        all_file_paths.append(path)
+                elif os.path.isdir(path):
+                    # Always recursive for import button (user selected folders deliberately)
+                    folder_files = self._get_files_from_folder(path, recursive=True)
+                    all_file_paths.extend(folder_files)
+
+        # Update UI with all collected files
+        if all_file_paths:
+            self._update_ui_with_files(all_file_paths, clear=clear)
 
     def load_single_item_from_drop(self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
@@ -169,27 +176,7 @@ class FileLoadManager:
         if all_file_paths:
             self._update_ui_with_files(all_file_paths, clear=not merge_mode)
 
-    def load_metadata_from_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
-        """
-        DEPRECATED: This method is no longer used.
-        FileTableView now calls MetadataManager directly for better performance and simpler code.
 
-        This method is kept for compatibility but should not be called in the new architecture.
-        """
-        logger.warning("[FileLoadManager] load_metadata_from_dropped_files is deprecated - FileTableView should call MetadataManager directly")
-
-    def _load_folder_with_progress(self, folder_path: str, merge_mode: bool) -> None:
-        """Load folder with progress dialog (for recursive operations)."""
-        logger.debug(f"[FileLoadManager] Loading folder with progress: {folder_path}")
-
-        def on_files_loaded(file_paths: List[str]):
-            logger.info(f"[FileLoadManager] Progress loading completed: {len(file_paths)} files")
-            self._update_ui_with_files(file_paths, clear=not merge_mode)
-
-        # Show progress dialog
-        dialog = FileLoadingDialog(self.parent_window, on_files_loaded)
-        dialog.load_files_with_options([folder_path], self.allowed_extensions, recursive=True)
-        dialog.exec_()
 
     def _load_folder_with_wait_cursor(self, folder_path: str, merge_mode: bool, recursive: bool = False) -> None:
         """Load folder with wait cursor only (fast approach for all operations)."""
@@ -198,23 +185,6 @@ class FileLoadManager:
         with wait_cursor():
             file_paths = self._get_files_from_folder(folder_path, recursive)
             self._update_ui_with_files(file_paths, clear=not merge_mode)
-
-    def _count_files_in_folder(self, folder_path: str, recursive: bool = False) -> int:
-        """
-        Count total number of valid files in folder.
-        Returns accurate count for progress bar decision.
-        """
-        count = 0
-        if recursive:
-            for root, _, filenames in os.walk(folder_path):
-                count += sum(1 for f in filenames if self._is_allowed_extension(f))
-        else:
-            try:
-                filenames = os.listdir(folder_path)
-                count = sum(1 for f in filenames if self._is_allowed_extension(f))
-            except OSError:
-                pass
-        return count
 
     def _get_files_from_folder(self, folder_path: str, recursive: bool = False) -> List[str]:
         """

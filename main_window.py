@@ -26,7 +26,7 @@ from core.drag_cleanup_manager import DragCleanupManager
 from core.drag_manager import DragManager
 from core.event_handler_manager import EventHandlerManager
 from core.file_load_manager import FileLoadManager
-from core.file_loader import FileLoader
+
 from core.file_operations_manager import FileOperationsManager
 from core.initialization_manager import InitializationManager
 from core.preview_manager import PreviewManager
@@ -69,8 +69,7 @@ class MainWindow(QMainWindow):
         # --- Initialize DragManager ---
         self.drag_manager = DragManager.get_instance()
 
-        # --- Initialize FileLoader ---
-        self.file_loader = FileLoader(parent_window=self)
+
 
         # --- Initialize PreviewManager ---
         self.preview_manager = PreviewManager(parent_window=self)
@@ -466,22 +465,121 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'dialog_manager'):
             self.dialog_manager.cleanup()
 
-        # 4. Clean up application context
+        # 4. Force cleanup any background workers/threads
+        self._force_cleanup_background_workers()
+
+        # 5. Clean up application context
         if hasattr(self, 'context'):
             self.context.cleanup()
 
-        # 5. Stop any running timers
-        for timer in self.findChildren(QTimer):
-            timer.stop()
+        # 6. Stop any running timers
+        # First stop TimerManager timers (which include scheduled operations)
+        try:
+            from utils.timer_manager import cleanup_all_timers
+            cleaned_timers = cleanup_all_timers()
+            if cleaned_timers > 0:
+                logger.info(f"[CloseEvent] Cleaned up {cleaned_timers} scheduled timers")
+        except Exception as e:
+            logger.warning(f"[CloseEvent] Error cleaning TimerManager: {e}")
 
-        # 6. Clean up any remaining Qt resources
+        # Then find and stop any remaining QTimer instances
+        remaining_timers = self.findChildren(QTimer)
+        for timer in remaining_timers:
+            if timer.isActive():
+                timer.stop()
+                logger.debug(f"[CloseEvent] Stopped QTimer: {timer.objectName() or 'unnamed'}")
+
+        if remaining_timers:
+            logger.info(f"[CloseEvent] Stopped {len(remaining_timers)} QTimer instances")
+
+        # 7. Force close any active progress dialogs
+        self._force_close_progress_dialogs()
+
+        # 8. Clean up any remaining Qt resources
         QApplication.processEvents()
 
-        # 7. Call parent closeEvent
+        # 9. Call parent closeEvent
         super().closeEvent(event)
 
-        # 8. Force quit the application
+        # 10. Final cleanup - force terminate any remaining background processes
+        import sys
+        import os
+        logger.info("[CloseEvent] Final cleanup - forcing application termination")
+
+        # Force quit the application immediately
         QApplication.quit()
+
+        # If we're still here after a short delay, force exit
+        from PyQt5.QtCore import QTimer
+        def force_exit():
+            logger.warning("[CloseEvent] Application did not quit gracefully, forcing exit")
+            os._exit(0)  # Force exit without cleanup
+
+        # Schedule force exit after 2 seconds if app doesn't quit normally
+        QTimer.singleShot(2000, force_exit)
+
+    def _force_cleanup_background_workers(self) -> None:
+        """Force cleanup of any background workers/threads."""
+        logger.info("[CloseEvent] Cleaning up background workers...")
+
+        # 1. Cleanup HashWorker if it exists
+        if hasattr(self, 'event_handler_manager') and hasattr(self.event_handler_manager, 'hash_worker'):
+            hash_worker = self.event_handler_manager.hash_worker
+            if hash_worker and hash_worker.isRunning():
+                logger.info("[CloseEvent] Cancelling and terminating HashWorker...")
+                hash_worker.cancel()
+                if not hash_worker.wait(1000):  # Wait max 1 second
+                    logger.warning("[CloseEvent] HashWorker did not stop gracefully, terminating...")
+                    hash_worker.terminate()
+                    hash_worker.wait(500)  # Wait another 500ms for termination
+
+        # 2. Find and terminate any other QThread instances
+        from PyQt5.QtCore import QThread
+        threads = self.findChildren(QThread)
+        for thread in threads:
+            if thread.isRunning():
+                logger.info(f"[CloseEvent] Terminating QThread: {thread.__class__.__name__}")
+                thread.quit()
+                if not thread.wait(1000):  # Wait max 1 second
+                    thread.terminate()
+                    thread.wait(500)
+
+        # 3. Clean up metadata manager operations
+        if hasattr(self, 'metadata_manager'):
+            try:
+                # Force stop any ongoing metadata operations
+                if hasattr(self.metadata_manager, '_running_operations'):
+                    self.metadata_manager._running_operations = False
+                logger.debug("[CloseEvent] Cleaned up metadata manager")
+            except Exception as e:
+                logger.warning(f"[CloseEvent] Error cleaning metadata manager: {e}")
+
+    def _force_close_progress_dialogs(self) -> None:
+        """Force close any active progress dialogs."""
+        from utils.progress_dialog import ProgressDialog
+        from widgets.metadata_waiting_dialog import MetadataWaitingDialog
+
+        # Find and close any active progress dialogs
+        dialogs_closed = 0
+
+        # Close ProgressDialog instances
+        progress_dialogs = self.findChildren(ProgressDialog)
+        for dialog in progress_dialogs:
+            if dialog.isVisible():
+                logger.info(f"[CloseEvent] Force closing ProgressDialog")
+                dialog.reject()  # Force close without waiting
+                dialogs_closed += 1
+
+        # Close MetadataWaitingDialog instances
+        metadata_dialogs = self.findChildren(MetadataWaitingDialog)
+        for dialog in metadata_dialogs:
+            if dialog.isVisible():
+                logger.info(f"[CloseEvent] Force closing MetadataWaitingDialog")
+                dialog.reject()  # Force close without waiting
+                dialogs_closed += 1
+
+        if dialogs_closed > 0:
+            logger.info(f"[CloseEvent] Force closed {dialogs_closed} progress dialogs")
 
     def _check_for_unsaved_changes(self) -> bool:
         """
@@ -524,11 +622,6 @@ class MainWindow(QMainWindow):
     def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> None:
         """Delegates to FileLoadManager for loading files from paths."""
         self.file_load_manager.load_files_from_paths(file_paths, clear=clear)
-
-    def load_metadata_from_dropped_files(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
-        """DEPRECATED: This method is no longer used in the new simplified architecture."""
-        logger.warning("[MainWindow] load_metadata_from_dropped_files is deprecated - FileTableView calls MetadataManager directly")
-        # Keep for compatibility but don't actually do anything
 
     def load_files_from_dropped_items(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """Delegates to FileLoadManager for loading files from dropped items."""
