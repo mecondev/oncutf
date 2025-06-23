@@ -26,7 +26,7 @@ sys.path.insert(0, str(project_root))
 
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QStyleFactory, QSplashScreen
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QColor
 
 from main_window import MainWindow
 from utils.fonts import _get_inter_fonts
@@ -88,19 +88,49 @@ def main() -> int:
 
         app.setStyleSheet(load_stylesheet())
 
-        splash = QSplashScreen(QPixmap("resources/splash.png"))
-        splash.show()
+        # Create splash screen with absolute path
+        splash_path = project_root / "resources" / "images" / "splash.png"
+        if splash_path.exists():
+            logger.debug(f"Loading splash screen from: {splash_path}", extra={"dev_only": True})
+            splash_pixmap = QPixmap(str(splash_path))
+            if not splash_pixmap.isNull():
+                splash = QSplashScreen(splash_pixmap)
+                # Set window flags to keep splash on top and make it more visible
+                splash.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.SplashScreen | Qt.FramelessWindowHint)
 
-        # Initialize app
-        window = MainWindow()
+                # Center the splash screen on the screen
+                splash.show()
+                splash.raise_()  # Bring to front
+                splash.activateWindow()  # Activate the window
+                app.processEvents()  # Force paint of splash
 
-        # Delay main window show + close splash
-        QTimer.singleShot(0, lambda: (
-            splash.close(),
+                # Add a visible message on the splash
+                splash.showMessage("Starting OnCutF...", Qt.AlignBottom | Qt.AlignCenter, QColor(255, 255, 255))
+                app.processEvents()  # Update with message
+
+                logger.debug("Splash screen displayed", extra={"dev_only": True})
+
+                # Initialize app
+                window = MainWindow()
+
+                # Show main window and close splash
+                def show_main():
+                    logger.debug("Hiding splash screen and showing main window", extra={"dev_only": True})
+                    splash.finish(window)
+                    window.show()
+
+                # Delay main window show + close splash (increased delay for better visibility)
+                QTimer.singleShot(2500, show_main) # type: ignore
+            else:
+                logger.error(f"Failed to load splash image from: {splash_path}")
+                # Initialize app without splash
+                window = MainWindow()
+                window.show()
+        else:
+            logger.warning(f"Splash image not found at: {splash_path}")
+            # Initialize app without splash
+            window = MainWindow()
             window.show()
-        ))
-
-
 
         # Run the app
         exit_code = app.exec_()

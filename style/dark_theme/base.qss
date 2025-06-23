@@ -1,24 +1,18 @@
-QApplication {
-    background-color: #161a1d;
-    font-size: 10pt;
-}
-
 QWidget {
     background-color: #212121;
     color: #f0ebd8;
-    font-size: 10pt;
+    font-size: 9pt;
 }
 
 QMainWindow {
     background-color: #212121;
-    font-size: 10pt;
+    font-size: 9pt;
 }
 
 QLabel {
     background-color: transparent !important;
     color: #f0ebd8;
-    font-size: 10pt;
-    font-family: 'Inter', sans-serif;
+    font-size: 9pt;
     border: none !important;
     border-radius: 0px !important;
     padding: 2px;
@@ -228,91 +222,5 @@ QWidget[objectName="RenameModulesArea"] QFrame {
 QWidget[objectName="RenameModulesArea"] QLabel {
     background-color: transparent !important;
     color: #f0ebd8;
-}
-
-QLineEdit {
-    color: #f0ebd8;
-    background-color: #1f2329;
-    border: 2px solid #3a3b40;
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 9pt;
-    font-family: 'Inter', sans-serif;
-    font-weight: 400;
-    selection-background-color: #64b5f6;
-}
-
-QLineEdit:focus {
-    border: 2px solid #64b5f6;
-    background-color: #252932;
-}
-
-QLineEdit:hover {
-    border: 2px solid #526069;
-    background-color: #252932;
-}
-
-QLineEdit:disabled {
-    color: #6c757d;
-    background-color: #15181c;
-    border: 2px solid #2a2d32;
-}
-
-QTextEdit {
-    color: #f0ebd8;
-    background-color: #1f2329;
-    border: 2px solid #3a3b40;
-    border-radius: 8px;
-    padding: 8px;
-    font-size: 9pt;
-    font-family: 'Inter', sans-serif;
-    selection-background-color: #64b5f6;
-}
-
-QTextEdit:focus {
-    border: 2px solid #64b5f6;
-}
-
-QScrollArea {
-    background-color: #161a1d;
-    border: none;
-}
-
-QCheckBox {
-    color: #f0ebd8;
-    font-size: 9pt;
-    font-family: 'Inter', sans-serif;
-    spacing: 8px;
-}
-
-QCheckBox::indicator {
-    width: 18px;
-    height: 18px;
-    border: 2px solid #3a3b40;
-    border-radius: 4px;
-    background-color: #1f2329;
-}
-
-QCheckBox::indicator:checked {
-    background-color: #64b5f6;
-    border: 2px solid #64b5f6;
-}
-
-QCheckBox::indicator:hover {
-    border: 2px solid #526069;
-}
-
-QCheckBox::indicator:disabled {
-    background-color: #15181c;
-    border: 2px solid #2a2d32;
-}
-
-QSpinBox, QDoubleSpinBox {
-    color: #f0ebd8;
-    background-color: #1f2329;
-    border: 2px solid #3a3b40;
-    border-radius: 8px;
-    padding: 6px 8px;
-    font-size: 10pt;
 }
 
