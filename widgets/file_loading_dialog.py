@@ -13,7 +13,7 @@ Uses UnifiedFileWorker for consistent file loading behavior.
 from typing import Callable, List, Set
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QDialog, QVBoxLayout
 
 from core.unified_file_worker import UnifiedFileWorker
 from utils.cursor_helper import force_restore_cursor
@@ -86,15 +86,18 @@ class FileLoadingDialog(QDialog):
             self.timer_manager.cancel(self._cancellation_timer_id)
             self._cancellation_timer_id = None
 
-        # Set wait cursor on both parent and dialog immediately
+        # Set wait cursor globally to prevent drag cursors from showing
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+
+        # Also set wait cursor on both parent and dialog
         if self.parent():
             self.parent().setCursor(Qt.WaitCursor)
         self.setCursor(Qt.WaitCursor)
 
-        # Update UI immediately before starting worker
+        # Update UI immediately before starting worker - show animated progress during counting
         self.waiting_widget.set_status("Counting files...")
         self.waiting_widget.set_filename("Scanning directories...")
-        self.waiting_widget.set_progress(0, 100)
+        self.waiting_widget.set_indeterminate_mode()  # Show animated progress bar during counting phase
 
         # Force UI update
         self.repaint()
@@ -122,6 +125,10 @@ class FileLoadingDialog(QDialog):
 
     def _update_progress(self, current: int, total: int):
         """Update progress display."""
+        # Switch to determinate mode when we get the first real progress update
+        if self.waiting_widget.progress_bar.maximum() == 0:  # Currently in indeterminate mode
+            self.waiting_widget.set_determinate_mode()
+
         self.waiting_widget.set_progress(current, total)
         logger.debug(f"[FileLoadingDialog] Progress: {current}/{total}")
 
@@ -164,6 +171,10 @@ class FileLoadingDialog(QDialog):
         # Force cleanup of all override cursors (including drag cursors)
         force_restore_cursor()
 
+        # Also restore any global override cursors
+        while QApplication.overrideCursor():
+            QApplication.restoreOverrideCursor()
+
         # Set normal cursor on parent and dialog
         if self.parent():
             self.parent().setCursor(Qt.ArrowCursor)
@@ -199,37 +210,23 @@ class FileLoadingDialog(QDialog):
 
             # Update UI immediately to show cancellation
             self.waiting_widget.set_status("Cancelling...")
-            self.waiting_widget.set_filename("Please wait...")
+            self.waiting_widget.set_filename("Stopping file scan...")
             self.repaint()  # Force immediate UI update
 
             # Restore cursors immediately
             self._restore_cursors()
 
-            # Schedule dialog close with very short delay using Timer Manager
-            self._cancellation_timer_id = self.timer_manager.schedule(
-                callback=lambda: self._finalize_cancellation(),
-                priority=TimerPriority.HIGH,  # High priority for immediate response
-                timer_type=TimerType.UI_UPDATE,
-                timer_id="cancellation_finalize"
-            )
+            # Close immediately - don't wait for worker to finish
+            # Worker cleanup will happen in background
+            self.reject()
         else:
             # No worker running, just close immediately
             self._restore_cursors()
             self.reject()
 
     def _finalize_cancellation(self):
-        """Finalize cancellation and close dialog."""
-        logger.debug("[FileLoadingDialog] Finalizing cancellation")
-
-        # Force worker to stop if still running
-        if self.worker and self.worker.isRunning():
-            self.worker.wait(50)  # Very brief wait
-
-        # Clear timer reference
-        self._cancellation_timer_id = None
-
-        # Close dialog
-        self.reject()
+        """DEPRECATED: No longer used - cancellation is now immediate."""
+        pass
 
     def keyPressEvent(self, event):
         """Handle ESC key with enhanced cancellation using Timer Manager."""

@@ -236,6 +236,20 @@ class ProgressWidget(QWidget):
             border-radius: 2px;
             margin: 1px;
         }}
+
+        /* Enhanced styling for indeterminate/animated mode */
+        QProgressBar#progress_bar[indeterminate="true"] {{
+            background-color: {self.bar_bg_color};
+            border: 1px solid {self.bar_color}40;  /* Semi-transparent border */
+            border-radius: 3px;
+        }}
+
+        QProgressBar#progress_bar[indeterminate="true"]::chunk {{
+            background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
+                stop: 0 {self.bar_color}60, stop: 0.5 {self.bar_color}, stop: 1 {self.bar_color}60);
+            border-radius: 2px;
+            margin: 1px;
+        }}
         """
 
         # Add enhanced info styling if needed
@@ -340,6 +354,43 @@ class ProgressWidget(QWidget):
     def set_count(self, current: int, total: int):
         """Set count display."""
         self.count_label.setText(f"{current} of {total}")
+
+    def set_indeterminate_mode(self):
+        """Set progress bar to indeterminate/animated mode for scanning phase."""
+        self.progress_bar.setRange(0, 0)  # This creates animated/busy indicator
+        self.progress_bar.setProperty("indeterminate", True)  # For CSS styling
+        self.percentage_label.setText("...")  # Show dots instead of percentage
+        self.count_label.setText("Scanning...")  # Clear count during scanning
+        self.progress_bar.show()
+        self.percentage_label.show()
+        # Force style refresh
+        self.progress_bar.style().unpolish(self.progress_bar)
+        self.progress_bar.style().polish(self.progress_bar)
+        logger.debug("[ProgressWidget] Progress bar set to indeterminate mode (animated)")
+
+    def set_determinate_mode(self):
+        """Set progress bar back to normal determinate mode with percentage."""
+        self.progress_bar.setRange(0, 100)  # Return to normal progress mode
+        self.progress_bar.setProperty("indeterminate", False)  # Remove indeterminate styling
+        self.progress_bar.setValue(0)
+        self.percentage_label.setText("0%")
+        self.count_label.setText("0 of 0")  # Reset count display
+        # Force style refresh
+        self.progress_bar.style().unpolish(self.progress_bar)
+        self.progress_bar.style().polish(self.progress_bar)
+        logger.debug("[ProgressWidget] Progress bar set to determinate mode")
+
+    def hide_progress(self):
+        """Hide the progress bar during scanning phase."""
+        self.progress_bar.hide()
+        self.percentage_label.hide()
+        logger.debug("[ProgressWidget] Progress bar hidden")
+
+    def show_progress(self):
+        """Show the progress bar when actual progress begins."""
+        self.progress_bar.show()
+        self.percentage_label.show()
+        logger.debug("[ProgressWidget] Progress bar shown")
 
     # Enhanced tracking methods (only work if enabled)
     def start_enhanced_tracking(self, total_size: int = 0):

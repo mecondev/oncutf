@@ -76,6 +76,7 @@ class UnifiedFileWorker(QThread):
         # Enhanced cancellation tracking
         self._cancel_check_counter = 0
         self._cancel_check_frequency = 1  # Check every 1 operation for immediate response
+        self._operations_counter = 0  # Track total operations for frequent cancellation checks
 
     def setup_scan(self,
                    paths: Union[str, List[str]],
@@ -185,6 +186,8 @@ class UnifiedFileWorker(QThread):
 
             # Phase 2: Collect files with detailed progress and enhanced cancellation
             self.status_updated.emit("Loading files...")
+            # Signal to show progress bar now that we know the total
+            self.progress_updated.emit(0, total_files)  # This will trigger show_progress()
             self._cancel_check_counter = 0  # Reset counter for phase 2
 
             for path in paths:
@@ -218,6 +221,10 @@ class UnifiedFileWorker(QThread):
                     all_files.extend(found_files)
                     current_file += len(found_files)
 
+                    # Update progress after processing each directory
+                    self.progress_updated.emit(current_file, total_files)
+                    logger.debug(f"[DEBUG] Updated progress after directory: {current_file}/{total_files}")
+
             if not self.is_cancelled():
                 logger.debug(f"[UnifiedFileWorker] Scan completed: {len(all_files)} files found")
                 self.status_updated.emit(f"Loaded {len(all_files)} files")
@@ -236,6 +243,7 @@ class UnifiedFileWorker(QThread):
         """Count total files in directory for progress calculation with cancellation support."""
         logger.debug(f"[DEBUG] _count_files_in_directory started for: {directory} (recursive={recursive})")
         count = 0
+        processed_dirs = 0
 
         try:
             if recursive:
@@ -243,22 +251,39 @@ class UnifiedFileWorker(QThread):
                 walk_count = 0
                 for root, _, files in os.walk(directory):
                     walk_count += 1
+                    processed_dirs += 1
                     logger.debug(f"[DEBUG] Walking directory #{walk_count}: {root}, found {len(files)} files")
+
+                    # Update status with current directory for user feedback
+                    relative_path = os.path.relpath(root, directory)
+                    if relative_path != ".":
+                        self.status_updated.emit(f"Counting files in: {relative_path}")
+                    else:
+                        self.status_updated.emit(f"Counting files in: {os.path.basename(directory)}")
+
                     if self.is_cancelled():
                         logger.debug(f"[DEBUG] Cancelled during os.walk at directory: {root}")
                         break
 
                     for file in files:
-                        if self.is_cancelled():
-                            logger.debug(f"[DEBUG] Cancelled during file processing in: {root}")
-                            break
+                        # More frequent cancellation checks
+                        self._operations_counter += 1
+                        if self._operations_counter % 10 == 0:  # Check every 10 files
+                            if self.is_cancelled():
+                                logger.debug(f"[DEBUG] Cancelled during file processing in: {root}")
+                                break
+
                         if self._is_allowed_extension(file, allowed_extensions):
                             count += 1
 
-                    if walk_count % 10 == 0:  # Log every 10 directories to avoid spam
+                    # Update progress more frequently during counting
+                    if walk_count % 5 == 0:  # Every 5 directories instead of 10
                         logger.debug(f"[DEBUG] Processed {walk_count} directories, count so far: {count}")
+                        # Don't emit progress during counting - it's misleading since we don't know total yet
+                        # Just emit status updates for user feedback
             else:
                 logger.debug(f"[DEBUG] Using non-recursive listdir for directory: {directory}")
+                self.status_updated.emit(f"Counting files in: {os.path.basename(directory)}")
                 files = os.listdir(directory)
                 logger.debug(f"[DEBUG] Found {len(files)} items in directory")
                 for file in files:

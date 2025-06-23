@@ -67,8 +67,17 @@ class FileLoadManager:
             logger.debug("[FileLoadManager] Active drag detected, forcing cleanup before loading")
             force_cleanup_drag()
 
-        # Clear any existing cursors immediately
+        # Clear any existing cursors immediately and stop all drag visuals
         force_restore_cursor()
+
+        # Force stop any drag visual feedback
+        from core.drag_visual_manager import end_drag_visual
+        end_drag_visual()
+
+        # Clear drag zone validator for all possible sources
+        from utils.drag_zone_validator import DragZoneValidator
+        DragZoneValidator.clear_initial_drag_widget("file_tree")
+        DragZoneValidator.clear_initial_drag_widget("file_table")
 
         if recursive:
             # Recursive: Use progress dialog for potentially long operations
