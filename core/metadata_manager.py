@@ -92,7 +92,6 @@ class MetadataManager:
         ctrl = bool(modifiers & Qt.ControlModifier) # type: ignore
         shift = bool(modifiers & Qt.ShiftModifier) # type: ignore
 
-        # New logic:
         # - No modifiers: skip metadata
         # - With Ctrl: load basic metadata
         # - With Ctrl+Shift: load extended metadata
