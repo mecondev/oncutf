@@ -621,13 +621,12 @@ class EventHandlerManager:
                             scope: str = None, external_folder: str = None) -> None:
         """Start a hash operation with worker thread and progress dialog."""
         from core.hash_worker import HashWorker
-        from widgets.metadata_waiting_dialog import MetadataWaitingDialog
+        from widgets.progress_dialog import ProgressDialog
 
         try:
             # Create waiting dialog
-            self.hash_dialog = MetadataWaitingDialog(
+            self.hash_dialog = ProgressDialog.create_hash_dialog(
                 parent=self.parent_window,
-                is_extended=False,
                 cancel_callback=self._cancel_hash_operation
             )
 

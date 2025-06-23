@@ -4,6 +4,7 @@ from core.unified_file_loader import UnifiedFileLoader
 from utils.logger_factory import get_cached_logger
 
 from .file_loading_dialog import FileLoadingDialog
+from .file_loading_progress_dialog import FileLoadingProgressDialog
 
 logger = get_cached_logger(__name__)
 
@@ -26,7 +27,8 @@ class FileLoadManager:
         Load files from the given paths using a worker thread.
         Shows a progress dialog and allows cancellation.
         """
-        dialog = FileLoadingDialog(self.parent, on_files_loaded)
+        # Use the new ProgressDialog-based file loading dialog
+        dialog = FileLoadingProgressDialog(self.parent, on_files_loaded)
         dialog.load_files(paths, self.allowed_extensions)
         dialog.exec_()
 

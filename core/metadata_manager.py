@@ -276,11 +276,11 @@ class MetadataManager:
         elif loading_mode == "multiple_files_dialog":
             logger.info(f"[{source}] Loading metadata for {len(needs_loading)} files with dialog (extended={use_extended})")
 
-            # Use metadata waiting dialog for large batches
-            from widgets.metadata_waiting_dialog import MetadataWaitingDialog
+            # Use progress dialog for large batches
+            from widgets.progress_dialog import ProgressDialog
 
             # Create loading dialog
-            loading_dialog = MetadataWaitingDialog(
+            loading_dialog = ProgressDialog.create_metadata_dialog(
                 parent=self.parent_window,
                 is_extended=use_extended,
                 cancel_callback=None  # No cancellation for now
@@ -479,11 +479,11 @@ class MetadataManager:
                             logger.error(f"[MetadataManager] Failed to save metadata to: {file_item.filename}")
                             failed_files.append(file_item.filename)
             else:
-                # Multiple files: Use waiting dialog
-                from widgets.metadata_waiting_dialog import MetadataWaitingDialog
+                # Multiple files: Use progress dialog
+                from widgets.progress_dialog import ProgressDialog
 
                 # Create save dialog
-                save_dialog = MetadataWaitingDialog(
+                save_dialog = ProgressDialog.create_metadata_dialog(
                     parent=self.parent_window,
                     is_extended=False,  # Save operation, not extended metadata
                     cancel_callback=None  # No cancellation for save operations
