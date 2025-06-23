@@ -127,7 +127,9 @@ class UnifiedFileWorker(QThread):
     def run(self):
         """Main thread execution - scan for files with enhanced cancellation."""
         try:
+            logger.debug(f"[DEBUG] UnifiedFileWorker.run() started")
             if self.is_cancelled():
+                logger.debug(f"[DEBUG] Worker was already cancelled, exiting")
                 self.finished_scanning.emit(False)
                 return
 
@@ -137,6 +139,7 @@ class UnifiedFileWorker(QThread):
                 allowed_extensions = self._allowed_extensions.copy()
                 recursive = self._recursive
 
+            logger.debug(f"[DEBUG] Worker configuration: paths={paths}, recursive={recursive}, extensions={allowed_extensions}")
             logger.debug(f"[UnifiedFileWorker] Starting scan: {len(paths)} paths (recursive={recursive})")
 
             all_files = []
@@ -144,19 +147,28 @@ class UnifiedFileWorker(QThread):
             current_file = 0
 
             # Phase 1: Count total files for accurate progress
+            logger.debug(f"[DEBUG] Starting Phase 1: Counting files...")
             self.status_updated.emit("Counting files...")
 
             for path in paths:
+                logger.debug(f"[DEBUG] Processing path in Phase 1: {path}")
                 if self.is_cancelled():
                     logger.debug("[UnifiedFileWorker] Cancelled during phase 1 (counting)")
                     self.finished_scanning.emit(False)
                     return
 
                 if os.path.isfile(path):
+                    logger.debug(f"[DEBUG] Path is file: {path}")
                     if self._is_allowed_extension(path, allowed_extensions):
                         total_files += 1
+                        logger.debug(f"[DEBUG] File has allowed extension, total_files now: {total_files}")
                 elif os.path.isdir(path):
-                    total_files += self._count_files_in_directory(path, allowed_extensions, recursive)
+                    logger.debug(f"[DEBUG] Path is directory: {path}, starting count...")
+                    count = self._count_files_in_directory(path, allowed_extensions, recursive)
+                    total_files += count
+                    logger.debug(f"[DEBUG] Directory count completed: {count} files, total_files now: {total_files}")
+                else:
+                    logger.debug(f"[DEBUG] Path is neither file nor directory: {path}")
 
             if self.is_cancelled():
                 logger.debug("[UnifiedFileWorker] Cancelled after phase 1 (counting)")
@@ -222,23 +234,36 @@ class UnifiedFileWorker(QThread):
 
     def _count_files_in_directory(self, directory: str, allowed_extensions: Set[str], recursive: bool) -> int:
         """Count total files in directory for progress calculation with cancellation support."""
+        logger.debug(f"[DEBUG] _count_files_in_directory started for: {directory} (recursive={recursive})")
         count = 0
 
         try:
             if recursive:
+                logger.debug(f"[DEBUG] Using recursive os.walk for directory: {directory}")
+                walk_count = 0
                 for root, _, files in os.walk(directory):
+                    walk_count += 1
+                    logger.debug(f"[DEBUG] Walking directory #{walk_count}: {root}, found {len(files)} files")
                     if self.is_cancelled():
+                        logger.debug(f"[DEBUG] Cancelled during os.walk at directory: {root}")
                         break
 
                     for file in files:
                         if self.is_cancelled():
+                            logger.debug(f"[DEBUG] Cancelled during file processing in: {root}")
                             break
                         if self._is_allowed_extension(file, allowed_extensions):
                             count += 1
+
+                    if walk_count % 10 == 0:  # Log every 10 directories to avoid spam
+                        logger.debug(f"[DEBUG] Processed {walk_count} directories, count so far: {count}")
             else:
+                logger.debug(f"[DEBUG] Using non-recursive listdir for directory: {directory}")
                 files = os.listdir(directory)
+                logger.debug(f"[DEBUG] Found {len(files)} items in directory")
                 for file in files:
                     if self.is_cancelled():
+                        logger.debug(f"[DEBUG] Cancelled during non-recursive file processing")
                         break
                     file_path = os.path.join(directory, file)
                     if os.path.isfile(file_path) and self._is_allowed_extension(file, allowed_extensions):
@@ -246,7 +271,9 @@ class UnifiedFileWorker(QThread):
 
         except (OSError, PermissionError) as e:
             logger.warning(f"[UnifiedFileWorker] Cannot access directory {directory}: {e}")
+            logger.debug(f"[DEBUG] Exception during directory access: {e}")
 
+        logger.debug(f"[DEBUG] _count_files_in_directory completed for {directory}: {count} files")
         return count
 
     def _scan_directory_with_enhanced_cancellation(self, directory: str, allowed_extensions: Set[str],

@@ -35,7 +35,7 @@ class CustomSplashScreen(QSplashScreen):
         """
         # Calculate 16:9 aspect ratio dimensions
         self.splash_height = 400
-        self.splash_width = int(self.splash_height * 16 / 9)  # 711px
+        self.splash_width = int(self.splash_height * 3 / 2)  # 600px
 
         # Load and scale the pixmap
         original_pixmap = QPixmap(pixmap_path)

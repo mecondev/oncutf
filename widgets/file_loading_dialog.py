@@ -76,6 +76,9 @@ class FileLoadingDialog(QDialog):
     def load_files_with_options(self, paths: List[str], allowed_extensions: Set[str], recursive: bool = True):
         """Start loading files with enhanced cancellation support."""
         logger.info(f"[FileLoadingDialog] Starting to load {len(paths)} paths (recursive={recursive})")
+        logger.debug(f"[DEBUG] FileLoadingDialog.load_files_with_options called with paths: {paths}")
+        logger.debug(f"[DEBUG] FileLoadingDialog allowed_extensions: {allowed_extensions}")
+        logger.debug(f"[DEBUG] FileLoadingDialog recursive: {recursive}")
 
         # Reset cancellation state
         self._is_cancelling = False
@@ -97,8 +100,11 @@ class FileLoadingDialog(QDialog):
         self.repaint()
 
         # Create and setup unified worker
+        logger.debug(f"[DEBUG] Creating UnifiedFileWorker...")
         self.worker = UnifiedFileWorker()
+        logger.debug(f"[DEBUG] Setting up worker scan with paths: {paths}")
         self.worker.setup_scan(paths, allowed_extensions, recursive)
+        logger.debug(f"[DEBUG] Worker setup completed")
 
         # Connect signals - map unified worker signals to dialog methods
         self.worker.progress_updated.connect(self._update_progress)
@@ -107,14 +113,12 @@ class FileLoadingDialog(QDialog):
         self.worker.files_found.connect(self._on_loading_finished)  # files_found -> finished
         self.worker.error_occurred.connect(self._on_error)
         self.worker.finished_scanning.connect(self._on_worker_finished)  # Handle worker completion
+        logger.debug(f"[DEBUG] All worker signals connected")
 
-        # Start loading with minimal delay using Timer Manager
-        self.timer_manager.schedule(
-            callback=self.worker.start,
-            priority=TimerPriority.IMMEDIATE,
-            timer_type=TimerType.UI_UPDATE,
-            timer_id="file_loading_start"
-        )
+        # Start loading immediately - no timer delay needed
+        logger.debug(f"[DEBUG] Starting worker immediately...")
+        self.worker.start()
+        logger.debug(f"[DEBUG] Worker.start() called")
 
     def _update_progress(self, current: int, total: int):
         """Update progress display."""
