@@ -11,6 +11,7 @@ import logging
 import os
 import re
 import sys
+from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
 from config import ENABLE_DEBUG_LOG_FILE
@@ -71,8 +72,11 @@ class ConfigureLogger:
 
         if not self.logger.hasHandlers():
             os.makedirs(log_dir, exist_ok=True)
-            log_file_path = os.path.join(log_dir, f"{log_name}.log")
-            debug_file_path = os.path.join(log_dir, f"{log_name}_debug.log")
+
+            # Add timestamp to log filename for unique sessions
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            log_file_path = os.path.join(log_dir, f"{log_name}_{timestamp}.log")
+            debug_file_path = os.path.join(log_dir, f"{log_name}_debug_{timestamp}.log")
 
             self._setup_console_handler(console_level)
             self._setup_file_handler(log_file_path, file_level, max_bytes, backup_count)

@@ -22,6 +22,7 @@ from core.qt_imports import (
     Qt, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QProgressBar,
     QSizePolicy, QSize
 )
+from PyQt5.QtCore import QPropertyAnimation, QEasingCurve, QTimer
 from config import (
     QLABEL_PRIMARY_TEXT, QLABEL_SECONDARY_TEXT, QLABEL_TERTIARY_TEXT,
     QLABEL_WHITE_TEXT, QLABEL_BORDER_GRAY
@@ -73,6 +74,13 @@ class ProgressWidget(QWidget):
         self.progress_estimator = None
         if self.show_size_info or self.show_time_info:
             self.progress_estimator = ProgressEstimator()
+
+        # Animation components for smooth bounce effect
+        self._bounce_animation = None
+        self._bounce_timer = QTimer()
+        self._bounce_timer.setSingleShot(False)
+        self._bounce_direction = 1  # 1 for forward, -1 for backward
+        self._bounce_position = 0
 
         # Set fixed width for consistent layout
         self.setFixedWidth(fixed_width)
@@ -236,20 +244,6 @@ class ProgressWidget(QWidget):
             border-radius: 2px;
             margin: 1px;
         }}
-
-        /* Enhanced styling for indeterminate/animated mode */
-        QProgressBar#progress_bar[indeterminate="true"] {{
-            background-color: {self.bar_bg_color};
-            border: 1px solid {self.bar_color}40;  /* Semi-transparent border */
-            border-radius: 3px;
-        }}
-
-        QProgressBar#progress_bar[indeterminate="true"]::chunk {{
-            background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
-                stop: 0 {self.bar_color}60, stop: 0.5 {self.bar_color}, stop: 1 {self.bar_color}60);
-            border-radius: 2px;
-            margin: 1px;
-        }}
         """
 
         # Add enhanced info styling if needed
@@ -356,28 +350,33 @@ class ProgressWidget(QWidget):
         self.count_label.setText(f"{current} of {total}")
 
     def set_indeterminate_mode(self):
-        """Set progress bar to indeterminate/animated mode for scanning phase."""
-        self.progress_bar.setRange(0, 0)  # This creates animated/busy indicator
-        self.progress_bar.setProperty("indeterminate", True)  # For CSS styling
-        self.percentage_label.setText("...")  # Show dots instead of percentage
-        self.count_label.setText("Scanning...")  # Clear count during scanning
+        """Set progress bar to indeterminate/animated mode with smooth bounce effect."""
+        # Stop any existing animation
+        self._stop_bounce_animation()
+
+        # Set up for custom bounce animation
+        self.progress_bar.setRange(0, 100)  # Use determinate range for custom animation
+        self.progress_bar.setValue(0)
+        self.percentage_label.setText("")  # Hide percentage during scanning
+        self.count_label.setText("")  # Clear count during scanning (no duplicate "Scanning")
         self.progress_bar.show()
-        self.percentage_label.show()
-        # Force style refresh
-        self.progress_bar.style().unpolish(self.progress_bar)
-        self.progress_bar.style().polish(self.progress_bar)
-        logger.debug("[ProgressWidget] Progress bar set to indeterminate mode (animated)")
+        self.percentage_label.hide()  # Hide percentage label during scanning
+
+        # Start smooth bounce animation
+        self._start_bounce_animation()
+        logger.debug("[ProgressWidget] Progress bar set to indeterminate mode with bounce animation")
 
     def set_determinate_mode(self):
         """Set progress bar back to normal determinate mode with percentage."""
+        # Stop bounce animation
+        self._stop_bounce_animation()
+
+        # Set up normal progress mode
         self.progress_bar.setRange(0, 100)  # Return to normal progress mode
-        self.progress_bar.setProperty("indeterminate", False)  # Remove indeterminate styling
         self.progress_bar.setValue(0)
         self.percentage_label.setText("0%")
+        self.percentage_label.show()  # Show percentage label again
         self.count_label.setText("0 of 0")  # Reset count display
-        # Force style refresh
-        self.progress_bar.style().unpolish(self.progress_bar)
-        self.progress_bar.style().polish(self.progress_bar)
         logger.debug("[ProgressWidget] Progress bar set to determinate mode")
 
     def hide_progress(self):
@@ -391,6 +390,81 @@ class ProgressWidget(QWidget):
         self.progress_bar.show()
         self.percentage_label.show()
         logger.debug("[ProgressWidget] Progress bar shown")
+
+    def _start_bounce_animation(self):
+        """Start smooth bounce animation for indeterminate mode using custom styling."""
+        # Stop any existing animation
+        self._stop_bounce_animation()
+
+        # Set progress bar to show a small sliding indicator
+        self.progress_bar.setValue(0)
+        self.progress_bar.setRange(0, 100)
+
+        # Apply custom styling for bounce effect
+        bounce_style = f"""
+        QProgressBar#progress_bar {{
+            background-color: {self.bar_bg_color};
+            border: 1px solid #2c3e50;
+            border-radius: 4px;
+            text-align: center;
+        }}
+
+        QProgressBar#progress_bar::chunk {{
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+                stop:0 transparent, stop:0.3 {self.bar_color}, stop:0.7 {self.bar_color}, stop:1 transparent);
+            border-radius: 3px;
+            margin: 1px;
+            width: 20px;  /* Fixed width chunk for sliding effect */
+        }}
+        """
+
+        self.progress_bar.setStyleSheet(bounce_style)
+
+        # Use timer-based animation for smooth sliding effect
+        self._bounce_timer.timeout.connect(self._update_bounce_position)
+        self._bounce_timer.start(50)  # Update every 50ms for smooth movement
+        self._bounce_position = 0
+        self._bounce_direction = 2  # Pixels to move per update
+
+        logger.debug("[ProgressWidget] Bounce animation started with sliding effect")
+
+    def _stop_bounce_animation(self):
+        """Stop bounce animation cleanly."""
+        # Stop timer
+        if self._bounce_timer.isActive():
+            self._bounce_timer.stop()
+            self._bounce_timer.timeout.disconnect()
+            logger.debug("[ProgressWidget] Bounce animation stopped")
+
+        # Reset progress bar style to normal
+        self.progress_bar.setStyleSheet("")  # Clear custom styling
+
+        # Clean up old property animation if exists
+        if self._bounce_animation and self._bounce_animation.state() == QPropertyAnimation.Running:
+            self._bounce_animation.stop()
+
+        if self._bounce_animation:
+            self._bounce_animation.deleteLater()
+            self._bounce_animation = None
+
+    def _update_bounce_position(self):
+        """Update bounce position for sliding effect."""
+        # Update position
+        self._bounce_position += self._bounce_direction
+
+        # Bounce off the edges (assuming 100 width units)
+        if self._bounce_position >= 80:  # Leave room for chunk width
+            self._bounce_direction = -2
+        elif self._bounce_position <= 0:
+            self._bounce_direction = 2
+
+        # Set progress bar value to create sliding effect
+        self.progress_bar.setValue(self._bounce_position)
+
+    def _on_bounce_finished(self):
+        """Handle bounce animation cycle completion."""
+        # This shouldn't be called with infinite loop, but just in case
+        logger.debug("[ProgressWidget] Bounce cycle completed")
 
     # Enhanced tracking methods (only work if enabled)
     def start_enhanced_tracking(self, total_size: int = 0):
@@ -485,6 +559,9 @@ class ProgressWidget(QWidget):
 
     def reset(self):
         """Reset all progress tracking."""
+        # Stop any animations first
+        self._stop_bounce_animation()
+
         self.set_progress(0, 100)
         self.set_status("Ready...")
         self.set_filename("")
