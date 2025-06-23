@@ -2,7 +2,7 @@
 progress_dialog.py
 
 Author: Michael Economou
-Date: 2025-01-01
+Date: 2025-06-23
 
 Unified progress dialog for all background operations in the oncutf application.
 Consolidates MetadataWaitingDialog and FileLoadingDialog functionality.
@@ -16,14 +16,16 @@ Features:
 
 from typing import Callable, Optional
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QWidget
-
+from core.qt_imports import Qt, QDialog, QVBoxLayout, QWidget
 from config import (
     EXTENDED_METADATA_BG_COLOR,
     EXTENDED_METADATA_COLOR,
     FAST_METADATA_BG_COLOR,
     FAST_METADATA_COLOR,
+    FILE_LOADING_COLOR,
+    FILE_LOADING_BG_COLOR,
+    HASH_CALCULATION_COLOR,
+    HASH_CALCULATION_BG_COLOR,
 )
 from utils.cursor_helper import force_restore_cursor
 from utils.dialog_utils import setup_dialog_size_and_center
@@ -55,12 +57,12 @@ class ProgressDialog(QDialog):
             'bar_bg_color': EXTENDED_METADATA_BG_COLOR
         },
         'file_loading': {
-            'bar_color': "#64b5f6",  # blue
-            'bar_bg_color': "#0a1a2a"  # darker blue bg
+            'bar_color': FILE_LOADING_COLOR,
+            'bar_bg_color': FILE_LOADING_BG_COLOR
         },
         'hash_calculation': {
-            'bar_color': "#9c27b0",  # purple
-            'bar_bg_color': "#2a1a2a"  # darker purple bg
+            'bar_color': HASH_CALCULATION_COLOR,
+            'bar_bg_color': HASH_CALCULATION_BG_COLOR
         }
     }
 

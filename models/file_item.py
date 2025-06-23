@@ -99,11 +99,7 @@ class FileItem:
     def get_human_readable_size(self) -> str:
         """
         Returns a human-readable string for the file size, e.g. '1.2 GB', '540 MB', '999 KB'.
+        Uses cross-platform formatting that respects system locale and conventions.
         """
-        size = self.size
-        units = ["B", "KB", "MB", "GB", "TB"]
-        index = 0
-        while size >= 1024 and index < len(units) - 1:
-            size /= 1024.0
-            index += 1
-        return f"{size:.1f} {units[index]}"
+        from utils.file_size_formatter import format_file_size_system_compatible
+        return format_file_size_system_compatible(self.size)

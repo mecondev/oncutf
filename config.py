@@ -96,12 +96,23 @@ LARGE_FOLDER_WARNING_THRESHOLD = 150 # Number when to prompt QuestionDialog to l
 EXTENDED_METADATA_SIZE_LIMIT_MB = 500  # Over this size, warn user before attempting extended scan
 
 # ----------------------------
-# Metadata Settings
+# Progress Dialog Colors
 # ----------------------------
-EXTENDED_METADATA_COLOR = "#ffb74d"  # pal orange
-EXTENDED_METADATA_BG_COLOR = "#2c1810"  # darker orange bg
-FAST_METADATA_COLOR = "#64b5f6"  # pal blue
-FAST_METADATA_BG_COLOR = "#0a1a2a"  # darker blue bg
+# Metadata colors (basic/fast metadata operations)
+FAST_METADATA_COLOR = "#64b5f6"        # Pale blue
+FAST_METADATA_BG_COLOR = "#0a1a2a"     # Darker blue bg
+
+# Metadata colors (extended metadata operations)
+EXTENDED_METADATA_COLOR = "#ffb74d"    # Pale orange
+EXTENDED_METADATA_BG_COLOR = "#2c1810" # Darker orange bg
+
+# File loading colors
+FILE_LOADING_COLOR = "#64b5f6"         # Blue
+FILE_LOADING_BG_COLOR = "#0a1a2a"      # Darker blue bg
+
+# Hash calculation colors
+HASH_CALCULATION_COLOR = "#9c27b0"     # Purple
+HASH_CALCULATION_BG_COLOR = "#2a1a2a"  # Darker purple bg
 
 # ----------------------------
 # File Table Settings
@@ -164,6 +175,14 @@ INVALID_FILENAME_CHARS = '<>:"/\\|?*'
 INVALID_TRAILING_CHARS = ' .'
 # Validation error marker (unique string that users won't intentionally use)
 INVALID_FILENAME_MARKER = "__VALIDATION_ERROR__"
+
+# ----------------------------
+# File Size Formatting Settings
+# ----------------------------
+# Use SI decimal units (1000) vs Binary units (1024)
+USE_BINARY_UNITS = False  # False = SI units (1000), True = Binary units (1024)
+# Auto-detect locale for decimal separator (. vs ,)
+USE_LOCALE_DECIMAL_SEPARATOR = True
 
 # ----------------------------
 # Theme Colors (Dark Theme)

@@ -46,6 +46,17 @@ class MetadataManager:
         from utils.exiftool_wrapper import ExifToolWrapper
         self._exiftool_wrapper = ExifToolWrapper()
 
+    def is_running_metadata_task(self) -> bool:
+        """
+        Check if there's currently a metadata task running.
+
+        Returns:
+            bool: True if a metadata task is running, False otherwise
+        """
+        # For now, return False as we don't have complex async metadata loading
+        # This method can be enhanced later if we add async metadata workers
+        return False
+
     def determine_loading_mode(self, file_count: int, use_extended: bool = False) -> str:
         """
         Determine the appropriate loading mode based on file count.

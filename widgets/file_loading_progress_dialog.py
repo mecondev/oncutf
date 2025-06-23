@@ -2,7 +2,7 @@
 file_loading_progress_dialog.py
 
 Author: Michael Economou
-Date: 2025-01-01
+Date: 2025-06-23
 
 Modernized file loading dialog that uses the new ProgressDialog.
 This will eventually replace FileLoadingDialog to consolidate the codebase.
