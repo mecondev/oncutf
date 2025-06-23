@@ -3,23 +3,23 @@
    ============================= */
 
 QTableView, QTableWidget {
-    background-color: #181818;
+    background-color: #161a1d;
     color: #f0ebd8;
-    font-size: 9pt;
-    alternate-background-color: #232323;
-    gridline-color: transparent;
-    border: none;
+    font-size: 10pt;
+    alternate-background-color: #1c2025;
+    gridline-color: #2a2d32;
+    border: 1px solid #3a3b40;
     border-radius: 8px;
-    selection-background-color: #748cab;
-    selection-color: #0d1321;
+    selection-background-color: #64b5f6;
+    selection-color: #ffffff;
     show-decoration-selected: 0;
     outline: none;
 }
 
 QTableView::item, QTableWidget::item {
+    padding: 4px 8px;
     border: none;
     background-color: transparent;
-    padding: 2px 4px;
     border-radius: 6px;
     min-height: 16px;
 }
@@ -31,14 +31,13 @@ QTableWidget::item:alternate {
 
 /* Hover effect per cell - let delegate handle this for QTableView, but enable for QTableWidget */
 QTableView::item:hover, QTableWidget::item:hover {
-    background-color: transparent;
-    color: #f0ebd8;
+    background-color: #1f4b6b;
 }
 
 /* Selected cell - let delegate handle this for QTableView, but enable for QTableWidget */
 QTableView::item:selected, QTableWidget::item:selected {
-    background-color: transparent;
-    color: #0d1321;
+    background-color: #64b5f6;
+    color: #ffffff;
     border: none;
 }
 
@@ -50,8 +49,8 @@ QTableView::item:selected:hover, QTableWidget::item:selected:hover {
 
 /* Focused selected item - let delegate handle this for QTableView, but enable for QTableWidget */
 QTableView::item:selected:focus, QTableWidget::item:selected:focus {
-    background-color: transparent;
-    color: #0d1321;
+    background-color: #64b5f6;
+    color: #ffffff;
     outline: none;
 }
 
@@ -61,16 +60,47 @@ QTableWidget {
 }
 
 /* Header styling */
-QHeaderView::section {
-    background-color: #181818;
+QHeaderView {
+    background-color: #212529;
     color: #f0ebd8;
-    font-size: 9pt;
-    padding: 4px;
     border: none;
-    border-radius: 8px;
+    font-weight: 600;
+}
+
+QHeaderView::section {
+    background-color: #212529;
+    color: #f0ebd8;
+    padding: 8px 12px;
+    border: none;
+    border-right: 1px solid #3a3b40;
+    border-bottom: 1px solid #3a3b40;
+    font-weight: 600;
 }
 
 QHeaderView::section:hover {
-    background-color: #4a6fa5;
+    background-color: #2a2f35;
+}
+
+QHeaderView::section:pressed {
+    background-color: #1a1e22;
+}
+
+QTableCornerButton::section {
+    background-color: #212529;
     border: none;
+    border-right: 1px solid #3a3b40;
+    border-bottom: 1px solid #3a3b40;
+}
+
+QTableView QLineEdit {
+    background-color: #1f2329;
+    color: #f0ebd8;
+    border: 2px solid #64b5f6;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 10pt;
+}
+
+QTableView QLineEdit:focus {
+    border: 2px solid #90caf9;
 }

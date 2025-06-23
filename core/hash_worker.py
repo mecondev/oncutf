@@ -46,6 +46,7 @@ class HashWorker(QThread):
 
     # Signals for different operations
     progress_updated = pyqtSignal(int, int)  # current, total
+    enhanced_progress_updated = pyqtSignal(int, int, int)  # current, total, current_size
     status_updated = pyqtSignal(str)  # status message
     file_processing = pyqtSignal(str)  # current filename being processed
 
@@ -161,6 +162,7 @@ class HashWorker(QThread):
         hash_manager = HashManager()
         hash_cache = {}
         total_files = len(file_paths)
+        processed_size = 0
 
         self.status_updated.emit("Calculating file hashes for duplicate detection...")
 
@@ -170,8 +172,16 @@ class HashWorker(QThread):
                 self.finished_processing.emit(False)
                 return
 
-            # Update progress
+            # Get file size for enhanced progress
+            try:
+                file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
+                processed_size += file_size
+            except OSError:
+                file_size = 0
+
+            # Update progress with size tracking
             self.progress_updated.emit(i, total_files)
+            self.enhanced_progress_updated.emit(i, total_files, processed_size)
             self.file_processing.emit(os.path.basename(file_path))
 
             # Calculate hash

@@ -287,6 +287,10 @@ class MetadataManager:
         elif loading_mode == "multiple_files_dialog":
             logger.info(f"[{source}] Loading metadata for {len(needs_loading)} files with dialog (extended={use_extended})")
 
+            # Calculate total size for enhanced progress tracking
+            from utils.file_size_calculator import calculate_files_total_size
+            total_size = calculate_files_total_size(needs_loading)
+
             # Use progress dialog for large batches
             from utils.progress_dialog import ProgressDialog
 
@@ -297,12 +301,19 @@ class MetadataManager:
                 cancel_callback=None  # No cancellation for now
             )
             loading_dialog.set_status("Loading metadata..." if not use_extended else "Loading extended metadata...")
+
+            # Start enhanced tracking with total size
+            loading_dialog.start_progress_tracking(total_size)
             loading_dialog.show()
 
             # Process each file
             for i, file_item in enumerate(needs_loading):
-                # Update progress
-                loading_dialog.set_progress(i, len(needs_loading))
+                # Calculate processed size for enhanced progress
+                from utils.file_size_calculator import calculate_processed_size
+                processed_size = calculate_processed_size(needs_loading, i)
+
+                # Update progress with size tracking
+                loading_dialog.update_enhanced_progress(i, len(needs_loading), processed_size)
                 loading_dialog.set_filename(file_item.filename)
 
                 # Process events to update the dialog
@@ -493,6 +504,10 @@ class MetadataManager:
                 # Multiple files: Use progress dialog
                 from utils.progress_dialog import ProgressDialog
 
+                # Calculate total size for enhanced progress tracking
+                from utils.file_size_calculator import calculate_files_total_size
+                total_size = calculate_files_total_size(files_to_save)
+
                 # Create save dialog
                 save_dialog = ProgressDialog.create_metadata_dialog(
                     parent=self.parent_window,
@@ -500,12 +515,19 @@ class MetadataManager:
                     cancel_callback=None  # No cancellation for save operations
                 )
                 save_dialog.set_status("Saving metadata...")
+
+                # Start enhanced tracking with total size
+                save_dialog.start_progress_tracking(total_size)
                 save_dialog.show()
 
                 # Process each file
                 for i, file_item in enumerate(files_to_save):
-                    # Update progress
-                    save_dialog.set_progress(i, len(files_to_save))
+                    # Calculate processed size for enhanced progress
+                    from utils.file_size_calculator import calculate_processed_size
+                    processed_size = calculate_processed_size(files_to_save, i)
+
+                    # Update progress with size tracking
+                    save_dialog.update_enhanced_progress(i, len(files_to_save), processed_size)
                     save_dialog.set_filename(file_item.filename)
 
                     # Process events to update the dialog

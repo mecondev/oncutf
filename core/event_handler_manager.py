@@ -624,17 +624,34 @@ class EventHandlerManager:
         from utils.progress_dialog import ProgressDialog
 
         try:
+            # Calculate total size for enhanced progress tracking
+            from utils.file_size_calculator import calculate_files_total_size
+
+            # Convert paths to FileItem-like objects for size calculation
+            file_items = []
+            for path in file_paths:
+                class PathWrapper:
+                    def __init__(self, path):
+                        self.full_path = path
+                file_items.append(PathWrapper(path))
+
+            total_size = calculate_files_total_size(file_items)
+
             # Create waiting dialog
             self.hash_dialog = ProgressDialog.create_hash_dialog(
                 parent=self.parent_window,
                 cancel_callback=self._cancel_hash_operation
             )
 
+            # Start enhanced tracking with total size
+            self.hash_dialog.start_progress_tracking(total_size)
+
             # Create and configure worker
             self.hash_worker = HashWorker(parent=self.parent_window)
 
             # Connect signals
             self.hash_worker.progress_updated.connect(self.hash_dialog.set_progress)
+            self.hash_worker.enhanced_progress_updated.connect(self.hash_dialog.update_enhanced_progress)
             self.hash_worker.status_updated.connect(self.hash_dialog.set_status)
             self.hash_worker.file_processing.connect(self.hash_dialog.set_filename)
 

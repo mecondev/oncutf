@@ -24,6 +24,41 @@ from utils.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 
+# Global locale setup flag to avoid repeated initialization
+_locale_initialized = False
+_locale_setup_attempted = False
+
+def _ensure_locale_setup():
+    """Ensure locale is set up only once globally."""
+    global _locale_initialized, _locale_setup_attempted
+
+    if _locale_setup_attempted:
+        return _locale_initialized
+
+    _locale_setup_attempted = True
+
+    try:
+        # Try to use system locale
+        if platform.system() == "Windows":
+            # Windows locale setup
+            locale.setlocale(locale.LC_ALL, '')
+        else:
+            # Unix/Linux locale setup
+            locale.setlocale(locale.LC_ALL, '')
+        logger.debug(f"[FileSizeFormatter] Locale set to: {locale.getlocale()}")
+        _locale_initialized = True
+    except locale.Error as e:
+        logger.warning(f"[FileSizeFormatter] Failed to set locale: {e}, using default")
+        # Fallback to C locale
+        try:
+            locale.setlocale(locale.LC_ALL, 'C')
+            _locale_initialized = True
+        except locale.Error:
+            _locale_initialized = False  # Use whatever is available
+
+    return _locale_initialized
+
+
 class FileSizeFormatter:
     """
     Cross-platform file size formatter with configurable units and locale support.
@@ -49,28 +84,9 @@ class FileSizeFormatter:
         self.use_locale = USE_LOCALE_DECIMAL_SEPARATOR if use_locale is None else use_locale
         self.use_legacy_labels = use_legacy_labels
 
-        # Initialize locale if needed
+        # Initialize locale if needed (done only once globally)
         if self.use_locale:
-            self._setup_locale()
-
-    def _setup_locale(self):
-        """Setup locale for decimal separator detection."""
-        try:
-            # Try to use system locale
-            if platform.system() == "Windows":
-                # Windows locale setup
-                locale.setlocale(locale.LC_ALL, '')
-            else:
-                # Unix/Linux locale setup
-                locale.setlocale(locale.LC_ALL, '')
-            logger.debug(f"[FileSizeFormatter] Locale set to: {locale.getlocale()}")
-        except locale.Error as e:
-            logger.warning(f"[FileSizeFormatter] Failed to set locale: {e}, using default")
-            # Fallback to C locale
-            try:
-                locale.setlocale(locale.LC_ALL, 'C')
-            except locale.Error:
-                pass  # Use whatever is available
+            _ensure_locale_setup()
 
     def format_size(self, size_bytes: Union[int, float]) -> str:
         """
@@ -105,7 +121,7 @@ class FileSizeFormatter:
             unit_index += 1
 
         # Format number with locale-aware decimal separator
-        if self.use_locale and unit_index > 0:  # Only for non-byte sizes
+        if self.use_locale and unit_index > 0 and _locale_initialized:  # Only for non-byte sizes
             try:
                 formatted_number = locale.format_string("%.1f", size)
             except (locale.Error, ValueError):
@@ -122,7 +138,7 @@ class FileSizeFormatter:
 
     def get_decimal_separator(self) -> str:
         """Get the current locale's decimal separator."""
-        if not self.use_locale:
+        if not self.use_locale or not _locale_initialized:
             return "."
 
         try:

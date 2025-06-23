@@ -30,7 +30,7 @@ from config import (
 from utils.cursor_helper import force_restore_cursor
 from utils.dialog_utils import setup_dialog_size_and_center
 from utils.logger_factory import get_cached_logger
-from widgets.progress_widget import CompactProgressWidget, CompactEnhancedProgressWidget
+from widgets.progress_widget import ProgressWidget
 
 logger = get_cached_logger(__name__)
 
@@ -107,24 +107,15 @@ class ProgressDialog(QDialog):
         # Get color scheme for operation type
         color_scheme = self.COLOR_SCHEMES.get(self.operation_type, self.COLOR_SCHEMES['metadata_basic'])
 
-        # Create the appropriate waiting widget
-        if self.show_enhanced_info:
-            # Use enhanced widget with size/time tracking
-            self.waiting_widget = CompactEnhancedProgressWidget(
-                parent=self,
-                bar_color=color_scheme['bar_color'],
-                bar_bg_color=color_scheme['bar_bg_color'],
-                show_size_info=True,
-                show_time_info=True,
-                layout_style="bottom"
-            )
-        else:
-            # Use standard compact widget
-            self.waiting_widget = CompactProgressWidget(
-                parent=self,
-                bar_color=color_scheme['bar_color'],
-                bar_bg_color=color_scheme['bar_bg_color']
-            )
+        # Create the unified progress widget
+        self.waiting_widget = ProgressWidget(
+            parent=self,
+            bar_color=color_scheme['bar_color'],
+            bar_bg_color=color_scheme['bar_bg_color'],
+            show_size_info=self.show_enhanced_info,
+            show_time_info=self.show_enhanced_info,
+            fixed_width=400  # Original compact width
+        )
 
         layout.addWidget(self.waiting_widget)
 
@@ -224,14 +215,14 @@ class ProgressDialog(QDialog):
     # Enhanced progress methods (only available with enhanced widget)
     def start_progress_tracking(self, total_size: int = 0) -> None:
         """Start enhanced progress tracking with optional total size."""
-        if hasattr(self.waiting_widget, 'start_progress'):
-            self.waiting_widget.start_progress(total_size)
+        if hasattr(self.waiting_widget, 'start_enhanced_tracking'):
+            self.waiting_widget.start_enhanced_tracking(total_size)
             logger.debug(f"[ProgressDialog] Started enhanced tracking (total_size: {total_size})")
 
     def update_enhanced_progress(self, current: int, total: int, current_size: int = 0) -> None:
         """Update progress with size tracking."""
-        if hasattr(self.waiting_widget, 'update_progress'):
-            self.waiting_widget.update_progress(current, total, current_size)
+        if hasattr(self.waiting_widget, 'update_enhanced_progress'):
+            self.waiting_widget.update_enhanced_progress(current, total, current_size)
         else:
             # Fallback to standard progress update
             self.set_progress(current, total)
