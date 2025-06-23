@@ -346,6 +346,10 @@ class ProgressWidget(QWidget):
 
         self.progress_estimator.start(total_size)
 
+        # Store total size for percentage calculation
+        self.progress_estimator.total_size = total_size
+        self.progress_estimator.current_size = 0
+
         if self.show_size_info:
             if total_size > 0:
                 self.size_label.setText("0 B/calculating...")
@@ -359,12 +363,17 @@ class ProgressWidget(QWidget):
 
     def update_enhanced_progress(self, current: int, total: int, current_size: int = 0):
         """Update progress with enhanced size/time tracking."""
-        # Update basic progress first
-        self.set_progress(current, total)
-
-        # Update enhanced tracking if enabled
+        # Update enhanced tracking first (before progress bar)
         if self.progress_estimator:
             self.progress_estimator.update(current, total, current_size)
+            # Store current size in estimator for percentage calculation
+            self.progress_estimator.current_size = current_size
+
+        # Update basic progress (which will now use size-based percentage if available)
+        self.set_progress(current, total)
+
+        # Update enhanced displays
+        if self.progress_estimator:
             self._update_enhanced_displays()
 
     def _update_enhanced_displays(self):
