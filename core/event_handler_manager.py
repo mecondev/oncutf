@@ -826,23 +826,11 @@ class EventHandlerManager:
         # Convert FileItem objects to file paths
         file_paths = [item.full_path for item in selected_files]
 
-        # Use different approach based on file size for optimal UX
         if len(file_paths) == 1:
-            # Single file - check size to decide approach
-            file_path = file_paths[0]
-            try:
-                file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
-                size_mb = file_size / (1024 * 1024)
-
-                if size_mb < 100:  # Small file - use fast wait cursor
-                    self._calculate_single_file_hash_fast(selected_files[0])
-                else:  # Large file - use worker with progress dialog for cancellation
-                    self._start_hash_operation("checksums", file_paths)
-            except OSError:
-                # If we can't get file size, assume it's small
-                self._calculate_single_file_hash_fast(selected_files[0])
+            # Single file - use wait cursor (fast, simple)
+            self._calculate_single_file_hash_fast(selected_files[0])
         else:
-            # Multiple files - always use worker thread with progress dialog
+            # Multiple files - use worker thread with progress dialog
             self._start_hash_operation("checksums", file_paths)
 
     def _calculate_single_file_hash_fast(self, file_item) -> None:
@@ -854,7 +842,6 @@ class EventHandlerManager:
         """
         from utils.cursor_helper import wait_cursor
         from core.hash_manager import HashManager
-        import os
 
         try:
             hash_results = {}
@@ -864,14 +851,6 @@ class EventHandlerManager:
 
                 if file_hash:
                     hash_results[file_item.full_path] = file_hash
-
-                # Log file size for debugging
-                try:
-                    file_size = os.path.getsize(file_item.full_path)
-                    size_mb = file_size / (1024 * 1024)
-                    logger.debug(f"[HashManager] Fast calculation for {file_item.filename} ({size_mb:.1f} MB)")
-                except OSError:
-                    logger.debug(f"[HashManager] Fast calculation for {file_item.filename} (size unknown)")
 
             # Show results after cursor is restored
             self._show_hash_results(hash_results)
