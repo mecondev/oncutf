@@ -4,10 +4,10 @@ file_load_manager.py
 Author: Michael Economou
 Date: 2025-05-01
 
-Unified file loading manager with simplified policy:
-- Non-recursive folder loading: wait_cursor only (fast, no progress bar)
-- Recursive folder loading: FileLoadingDialog with progress bar
-- Consistent behavior between drag-and-drop and import button
+Unified file loading manager with optimized policy:
+- All folder loading: wait_cursor only (fast, synchronous like external drops)
+- Import button: FileLoadingDialog with progress bar (multi-path operations)
+- Consistent behavior between internal and external drag operations
 """
 
 import os
@@ -27,10 +27,10 @@ logger = get_cached_logger(__name__)
 
 class FileLoadManager:
     """
-    Unified file loading manager with simplified policy:
-    - Non-recursive: wait_cursor only (fast)
-    - Recursive: progress dialog (for large operations)
-    - Same behavior for drag and import
+    Unified file loading manager with optimized policy:
+    - All folder operations: wait_cursor only (fast, like external drops)
+    - Import button: progress dialog (multi-path operations)
+    - Consistent behavior between internal and external drag
     """
 
     def __init__(self, parent_window=None):
@@ -46,9 +46,9 @@ class FileLoadManager:
         """
         Unified folder loading method for both drag and import operations.
 
-        Policy:
-        - Non-recursive: wait_cursor only (fast, synchronous)
-        - Recursive: FileLoadingDialog with progress bar
+        New Policy:
+        - All operations: wait_cursor only (fast, synchronous like external drops)
+        - Consistent behavior between internal and external drag operations
         """
         logger.info(f"[FileLoadManager] load_folder: {folder_path} (merge={merge_mode}, recursive={recursive})", extra={"dev_only": True})
 
@@ -79,12 +79,9 @@ class FileLoadManager:
         DragZoneValidator.clear_initial_drag_widget("file_tree")
         DragZoneValidator.clear_initial_drag_widget("file_table")
 
-        if recursive:
-            # Recursive: Use progress dialog for potentially long operations
-            self._load_folder_with_progress(folder_path, merge_mode)
-        else:
-            # Non-recursive: Simple wait cursor for fast operations
-            self._load_folder_with_wait_cursor(folder_path, merge_mode)
+        # Always use fast wait cursor approach (same as external drops)
+        # This makes internal and external drag behavior consistent
+        self._load_folder_with_wait_cursor(folder_path, merge_mode, recursive)
 
     # Legacy method name for compatibility
     def handle_folder_drop(self, folder_path: str, merge_mode: bool = False, recursive: bool = False) -> None:
@@ -194,12 +191,12 @@ class FileLoadManager:
         dialog.load_files_with_options([folder_path], self.allowed_extensions, recursive=True)
         dialog.exec_()
 
-    def _load_folder_with_wait_cursor(self, folder_path: str, merge_mode: bool) -> None:
-        """Load folder with wait cursor only (for non-recursive operations)."""
-        logger.debug(f"[FileLoadManager] Loading folder with wait cursor: {folder_path}", extra={"dev_only": True})
+    def _load_folder_with_wait_cursor(self, folder_path: str, merge_mode: bool, recursive: bool = False) -> None:
+        """Load folder with wait cursor only (fast approach for all operations)."""
+        logger.debug(f"[FileLoadManager] Loading folder with wait cursor: {folder_path} (recursive={recursive})", extra={"dev_only": True})
 
         with wait_cursor():
-            file_paths = self._get_files_from_folder(folder_path, recursive=False)
+            file_paths = self._get_files_from_folder(folder_path, recursive)
             self._update_ui_with_files(file_paths, clear=not merge_mode)
 
     def _count_files_in_folder(self, folder_path: str, recursive: bool = False) -> int:

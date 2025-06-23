@@ -115,6 +115,9 @@ def main() -> int:
                 logger.debug("Hiding splash screen and showing main window", extra={"dev_only": True})
                 splash.finish(window)
                 window.show()
+                window.raise_()  # Bring main window to front
+                window.activateWindow()  # Activate the main window
+                app.processEvents()  # Force UI update
                 # Restore normal cursor
                 app.restoreOverrideCursor()
 
@@ -127,6 +130,8 @@ def main() -> int:
             app.restoreOverrideCursor()
             window = MainWindow()
             window.show()
+            window.raise_()  # Bring main window to front
+            window.activateWindow()  # Activate the main window
 
         # Run the app
         exit_code = app.exec_()
