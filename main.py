@@ -88,7 +88,7 @@ def main() -> int:
         logger.debug("Initializing Inter fonts...", extra={"dev_only": True})
         _get_inter_fonts()
 
-                app.setStyleSheet(load_stylesheet())
+        app.setStyleSheet(load_stylesheet())
 
         # Create custom splash screen
         splash_path = project_root / "resources" / "images" / "splash.png"
