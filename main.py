@@ -25,13 +25,15 @@ sys.path.insert(0, str(project_root))
 
 
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtWidgets import QApplication, QStyleFactory, QSplashScreen
-from PyQt5.QtGui import QPixmap, QColor
+from PyQt5.QtWidgets import QApplication, QStyleFactory
+from PyQt5.QtGui import QColor
 
+from config import APP_VERSION, SPLASH_SCREEN_DURATION
 from main_window import MainWindow
 from utils.fonts import _get_inter_fonts
 from utils.logger_setup import ConfigureLogger
 from utils.theme import load_stylesheet
+from widgets.custom_splash_screen import CustomSplashScreen
 
 # Configure logging first
 ConfigureLogger(log_name="oncutf")
@@ -86,49 +88,43 @@ def main() -> int:
         logger.debug("Initializing Inter fonts...", extra={"dev_only": True})
         _get_inter_fonts()
 
-        app.setStyleSheet(load_stylesheet())
+                app.setStyleSheet(load_stylesheet())
 
-        # Create splash screen with absolute path
+        # Create custom splash screen
         splash_path = project_root / "resources" / "images" / "splash.png"
-        if splash_path.exists():
-            logger.debug(f"Loading splash screen from: {splash_path}", extra={"dev_only": True})
-            splash_pixmap = QPixmap(str(splash_path))
-            if not splash_pixmap.isNull():
-                splash = QSplashScreen(splash_pixmap)
-                # Set window flags to keep splash on top and make it more visible
-                splash.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.SplashScreen | Qt.FramelessWindowHint)
+        logger.debug(f"Loading custom splash screen from: {splash_path}", extra={"dev_only": True})
 
-                # Center the splash screen on the screen
-                splash.show()
-                splash.raise_()  # Bring to front
-                splash.activateWindow()  # Activate the window
-                app.processEvents()  # Force paint of splash
+        # Set application-wide wait cursor
+        app.setOverrideCursor(Qt.WaitCursor)
 
-                # Add a visible message on the splash
-                splash.showMessage("Starting OnCutF...", Qt.AlignBottom | Qt.AlignCenter, QColor(255, 255, 255))
-                app.processEvents()  # Update with message
+        try:
+            # Create custom splash screen
+            splash = CustomSplashScreen(str(splash_path))
+            splash.show()
+            splash.raise_()  # Bring to front
+            splash.activateWindow()  # Activate the window
+            app.processEvents()  # Force paint of splash
 
-                logger.debug("Splash screen displayed", extra={"dev_only": True})
+            logger.debug(f"Custom splash screen displayed (size: {splash.splash_width}x{splash.splash_height})", extra={"dev_only": True})
 
-                # Initialize app
-                window = MainWindow()
+            # Initialize app
+            window = MainWindow()
 
-                # Show main window and close splash
-                def show_main():
-                    logger.debug("Hiding splash screen and showing main window", extra={"dev_only": True})
-                    splash.finish(window)
-                    window.show()
-
-                # Delay main window show + close splash (increased delay for better visibility)
-                QTimer.singleShot(2500, show_main) # type: ignore
-            else:
-                logger.error(f"Failed to load splash image from: {splash_path}")
-                # Initialize app without splash
-                window = MainWindow()
+            # Show main window and close splash
+            def show_main():
+                logger.debug("Hiding splash screen and showing main window", extra={"dev_only": True})
+                splash.finish(window)
                 window.show()
-        else:
-            logger.warning(f"Splash image not found at: {splash_path}")
-            # Initialize app without splash
+                # Restore normal cursor
+                app.restoreOverrideCursor()
+
+            # Use configurable delay for splash screen
+            QTimer.singleShot(SPLASH_SCREEN_DURATION, show_main) # type: ignore
+
+        except Exception as e:
+            logger.error(f"Error creating custom splash screen: {e}")
+            # Fallback: Initialize app without splash
+            app.restoreOverrideCursor()
             window = MainWindow()
             window.show()
 

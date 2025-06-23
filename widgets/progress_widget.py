@@ -22,6 +22,10 @@ from core.qt_imports import (
     Qt, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QProgressBar,
     QSizePolicy, QSize
 )
+from config import (
+    QLABEL_PRIMARY_TEXT, QLABEL_SECONDARY_TEXT, QLABEL_TERTIARY_TEXT,
+    QLABEL_WHITE_TEXT, QLABEL_BORDER_GRAY
+)
 from utils.logger_factory import get_cached_logger
 from utils.time_formatter import ProgressEstimator
 
@@ -168,8 +172,8 @@ class ProgressWidget(QWidget):
         """Apply styling to all components."""
         style = f"""
         QLabel#status_label {{
-            color: #f0ebd8;
-            font-size: 13px;
+            color: {QLABEL_PRIMARY_TEXT};
+            font-size: 14px;
             font-family: 'Inter', sans-serif;
             font-weight: 500;
             background-color: transparent;
@@ -177,40 +181,40 @@ class ProgressWidget(QWidget):
         }}
 
         QLabel#count_label {{
-            color: #90a4ae;
-            font-size: 12px;
+            color: {QLABEL_SECONDARY_TEXT};
+            font-size: 13px;
             font-family: 'Inter', sans-serif;
             background-color: transparent;
             border: none;
         }}
 
         QLabel#percentage_label {{
-            color: #90a4ae;
-            font-size: 11px;
+            color: {QLABEL_SECONDARY_TEXT};
+            font-size: 12px;
             font-family: 'Inter', sans-serif;
             background-color: transparent;
             border: none;
         }}
 
         QLabel#filename_label {{
-            color: #b0bec5;
-            font-size: 11px;
+            color: {QLABEL_TERTIARY_TEXT};
+            font-size: 12px;
             font-family: 'Inter', sans-serif;
             background-color: transparent;
             border: none;
         }}
 
         QLabel#size_info_label {{
-            color: #b0bec5;
-            font-size: 10px;
+            color: {QLABEL_TERTIARY_TEXT};
+            font-size: 11px;
             font-family: 'Inter', sans-serif;
             background-color: transparent;
             border: none;
         }}
 
         QLabel#time_info_label {{
-            color: #b0bec5;
-            font-size: 10px;
+            color: {QLABEL_TERTIARY_TEXT};
+            font-size: 11px;
             font-family: 'Inter', sans-serif;
             background-color: transparent;
             border: none;
@@ -218,11 +222,11 @@ class ProgressWidget(QWidget):
 
         QProgressBar#progress_bar {{
             background-color: {self.bar_bg_color};
-            border: 1px solid #3a3a3a;
+            border: 1px solid {QLABEL_BORDER_GRAY};
             border-radius: 3px;
             text-align: center;
-            color: white;
-            font-size: 8px;
+            color: {QLABEL_WHITE_TEXT};
+            font-size: 9px;
         }}
 
         QProgressBar#progress_bar::chunk {{
@@ -236,14 +240,14 @@ class ProgressWidget(QWidget):
 
         # Add enhanced info styling if needed
         if self.show_size_info or self.show_time_info:
-            enhanced_style = """
-            QLabel#size_info_label, QLabel#time_info_label {
-                color: #90a4ae;
-                font-size: 9px;
+            enhanced_style = f"""
+            QLabel#size_info_label, QLabel#time_info_label {{
+                color: {QLABEL_SECONDARY_TEXT};
+                font-size: 10px;
                 font-family: 'Inter', sans-serif;
                 background-color: transparent;
                 border: none;
-            }
+            }}
             """
             style += enhanced_style
 

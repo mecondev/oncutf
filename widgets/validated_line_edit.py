@@ -19,6 +19,7 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QLineEdit, QWidget
 
+from config import QLABEL_INFO_TEXT, QLABEL_DARK_BORDER, QLABEL_DARK_BG, QLABEL_ERROR_TEXT, QLABEL_ERROR_BG
 from utils.filename_validator import (
     clean_filename_text,
     get_validation_error_message,
@@ -178,7 +179,7 @@ class ValidatedLineEdit(QLineEdit):
         try:
             if len(text) >= self.maxLength() and self.maxLength() > 0:
                 # At character limit - darker gray styling
-                self.setStyleSheet("border: 2px solid #555555; background-color: #3a3a3a; color: #bbbbbb;")
+                self.setStyleSheet(f"border: 2px solid {QLABEL_DARK_BORDER}; background-color: {QLABEL_DARK_BG}; color: {QLABEL_INFO_TEXT};")
             elif not text and self._has_had_content:
                 # Empty after having content - darker orange styling
                 self.setStyleSheet("border: 2px solid #cc6600;")
@@ -187,7 +188,7 @@ class ValidatedLineEdit(QLineEdit):
                 self.setStyleSheet("")
             elif not self._is_valid:
                 # Invalid text - red styling
-                self.setStyleSheet("border: 2px solid #ff0000;")
+                self.setStyleSheet(f"border: 2px solid {QLABEL_ERROR_TEXT};")
             else:
                 # Valid - default styling
                 self.setStyleSheet("")
@@ -200,7 +201,7 @@ class ValidatedLineEdit(QLineEdit):
         try:
 
             # Apply error style
-            self.setStyleSheet("border: 2px solid #ff4444; background-color: #3a2222;")
+            self.setStyleSheet(f"border: 2px solid {QLABEL_ERROR_TEXT}; background-color: {QLABEL_ERROR_BG};")
 
             # Reset style after a short delay
             from utils.timer_manager import schedule_ui_update

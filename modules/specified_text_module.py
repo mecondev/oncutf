@@ -16,6 +16,7 @@ from typing import Optional
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QAction, QLabel, QMenu, QVBoxLayout, QWidget
 
+from config import QLABEL_INFO_TEXT, QLABEL_DARK_BORDER, QLABEL_DARK_BG, QLABEL_ERROR_TEXT
 from modules.base_module import BaseRenameModule
 from utils.filename_validator import validate_filename_part
 from utils.icons_loader import get_menu_icon
@@ -170,7 +171,7 @@ class SpecifiedTextModule(BaseRenameModule):
         # Determine validation state and apply appropriate styling
         if len(text) >= 240:
             # At character limit - darker gray styling
-            self.text_input.setStyleSheet("border: 2px solid #555555; background-color: #3a3a3a; color: #bbbbbb;")
+            self.text_input.setStyleSheet(f"border: 2px solid {QLABEL_DARK_BORDER}; background-color: {QLABEL_DARK_BG}; color: {QLABEL_INFO_TEXT};")
         elif not text and self._has_had_content:
             # Empty after having content - darker orange styling
             self.text_input.setStyleSheet("border: 2px solid #cc6600;")
@@ -182,7 +183,7 @@ class SpecifiedTextModule(BaseRenameModule):
             is_valid, _ = validate_filename_part(text)
             if not is_valid:
                 # Invalid characters - red styling
-                self.text_input.setStyleSheet("border: 2px solid #ff0000;")
+                self.text_input.setStyleSheet(f"border: 2px solid {QLABEL_ERROR_TEXT};")
             else:
                 # Valid - default styling
                 self.text_input.setStyleSheet("")

@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from config import QLABEL_PRIMARY_TEXT, QLABEL_MUTED_TEXT
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -47,13 +48,13 @@ class BulkRotationDialog(QDialog):
                 font-size: 9pt;
                 border-radius: 8px;
             }
-            QLabel {
+            QLabel {{
                 background-color: transparent;
-                color: #f0ebd8;
+                color: {QLABEL_PRIMARY_TEXT};
                 font-size: 9pt;
                 border: none;
                 padding: 2px;
-            }
+            }}
             QCheckBox {
                 color: #f0ebd8;
                 font-size: 9pt;
@@ -126,7 +127,7 @@ class BulkRotationDialog(QDialog):
         # Info label
         self.info_label = QLabel()
         self.info_label.setWordWrap(True)
-        self.info_label.setStyleSheet("color: #888888; font-size: 8pt;")
+        self.info_label.setStyleSheet(f"color: {QLABEL_MUTED_TEXT}; font-size: 8pt;")
         layout.addWidget(self.info_label)
 
         # Buttons

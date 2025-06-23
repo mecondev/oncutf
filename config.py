@@ -30,6 +30,9 @@ DEFAULT_SKIP_METADATA = True
 APP_NAME = "oncutf"
 APP_VERSION = "1.1"
 
+# Splash Screen Settings
+SPLASH_SCREEN_DURATION = 3000  # Duration in milliseconds (3 seconds)
+
 # Window
 WINDOW_TITLE = "Batch File Renamer"
 WINDOW_WIDTH = 1200
@@ -183,6 +186,26 @@ INVALID_FILENAME_MARKER = "__VALIDATION_ERROR__"
 USE_BINARY_UNITS = False  # False = SI units (1000), True = Binary units (1024)
 # Auto-detect locale for decimal separator (. vs ,)
 USE_LOCALE_DECIMAL_SEPARATOR = True
+
+# ----------------------------
+# QLabel Text Colors
+# ----------------------------
+# Progress Widget Colors
+QLABEL_PRIMARY_TEXT = "#f0ebd8"      # Primary text color (status labels)
+QLABEL_SECONDARY_TEXT = "#90a4ae"    # Secondary text color (count, percentage)
+QLABEL_TERTIARY_TEXT = "#b0bec5"     # Tertiary text color (filename, info)
+QLABEL_MUTED_TEXT = "#888888"        # Muted text color (info labels)
+
+# Widget Colors
+QLABEL_INFO_TEXT = "#bbbbbb"         # Info text color
+QLABEL_ERROR_TEXT = "#ff4444"        # Error text color
+QLABEL_WHITE_TEXT = "white"          # White text color
+
+# Background Colors
+QLABEL_BORDER_GRAY = "#3a3a3a"       # Gray border color
+QLABEL_DARK_BORDER = "#555555"       # Dark border color
+QLABEL_ERROR_BG = "#3a2222"          # Error background color
+QLABEL_DARK_BG = "#3a3a3a"           # Dark background color
 
 # ----------------------------
 # Theme Colors (Dark Theme)
