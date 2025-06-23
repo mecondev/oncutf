@@ -776,8 +776,10 @@ class FileTableView(QTableView):
                 # Check if we're clicking on an already selected item for potential drag
                 current_selection = self._get_current_selection()
                 if index.row() in current_selection and len(current_selection) > 1:
-                    # Multi-selection: Preserve current selection for drag
+                    # Multi-selection: Preserve current selection for drag, but allow deselection on release
                     self._drag_start_selection = current_selection.copy()
+                    self._preserve_selection_for_drag = True
+                    self._clicked_on_selected = True
                     self._skip_selection_changed = True
                     schedule_ui_update(self._clear_skip_flag, 50)
                     return  # Don't change selection - preserve for drag

@@ -1003,9 +1003,11 @@ class EventHandlerManager:
             f"SHA-256 Checksums for {len(hash_results)} files:\n"
         ]
 
-        for filename, data in hash_results.items():
+        for file_path, hash_value in hash_results.items():
+            import os
+            filename = os.path.basename(file_path)
             message_lines.append(f"{filename}:")
-            message_lines.append(f"  {data['hash']}\n")
+            message_lines.append(f"  {hash_value}\n")
 
         # Show results dialog
         from widgets.custom_msgdialog import CustomMessageDialog

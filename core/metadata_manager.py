@@ -15,7 +15,7 @@ from PyQt5.QtCore import Qt
 from core.qt_imports import QApplication
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
-from utils.path_utils import find_file_by_path
+from utils.path_utils import find_file_by_path, paths_equal
 
 logger = get_cached_logger(__name__)
 
@@ -266,7 +266,7 @@ class MetadataManager:
                         try:
                             # Find the row index and emit dataChanged for the entire row
                             for i, file in enumerate(self.parent_window.file_model.files):
-                                if file.full_path == file_item.full_path:
+                                if paths_equal(file.full_path, file_item.full_path):
                                     top_left = self.parent_window.file_model.index(i, 0)
                                     bottom_right = self.parent_window.file_model.index(i, self.parent_window.file_model.columnCount() - 1)
                                     self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole])
@@ -318,7 +318,7 @@ class MetadataManager:
                         try:
                             # Find the row index and emit dataChanged for the entire row
                             for i, file in enumerate(self.parent_window.file_model.files):
-                                if file.full_path == file_item.full_path:
+                                if paths_equal(file.full_path, file_item.full_path):
                                     top_left = self.parent_window.file_model.index(i, 0)
                                     bottom_right = self.parent_window.file_model.index(i, self.parent_window.file_model.columnCount() - 1)
                                     self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole])
