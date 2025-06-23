@@ -23,8 +23,10 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QStyleFactory
+
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtWidgets import QApplication, QStyleFactory, QSplashScreen
+from PyQt5.QtGui import QPixmap
 
 from main_window import MainWindow
 from utils.fonts import _get_inter_fonts
@@ -86,9 +88,19 @@ def main() -> int:
 
         app.setStyleSheet(load_stylesheet())
 
-        # Create and show main window
+        splash = QSplashScreen(QPixmap("resources/splash.png"))
+        splash.show()
+
+        # Initialize app
         window = MainWindow()
-        window.show()
+
+        # Delay main window show + close splash
+        QTimer.singleShot(0, lambda: (
+            splash.close(),
+            window.show()
+        ))
+
+
 
         # Run the app
         exit_code = app.exec_()

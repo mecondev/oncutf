@@ -151,7 +151,7 @@ class MainWindow(QMainWindow):
         # --- Preview update debouncing timer ---
         self.preview_update_timer = QTimer(self)
         self.preview_update_timer.setSingleShot(True)
-        self.preview_update_timer.setInterval(100)  # milliseconds (reduced from 250ms for better performance)
+        self.preview_update_timer.setInterval(100)  # milliseconds
         self.preview_update_timer.timeout.connect(self.generate_preview_names)
 
     # --- Method definitions ---
