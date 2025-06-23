@@ -30,8 +30,7 @@ from config import (
 from utils.cursor_helper import force_restore_cursor
 from utils.dialog_utils import setup_dialog_size_and_center
 from utils.logger_factory import get_cached_logger
-from widgets.compact_waiting_widget import CompactWaitingWidget
-from widgets.enhanced_progress_widget import CompactEnhancedProgressWidget
+from widgets.progress_widget import CompactProgressWidget, CompactEnhancedProgressWidget
 
 logger = get_cached_logger(__name__)
 
@@ -121,7 +120,7 @@ class ProgressDialog(QDialog):
             )
         else:
             # Use standard compact widget
-            self.waiting_widget = CompactWaitingWidget(
+            self.waiting_widget = CompactProgressWidget(
                 parent=self,
                 bar_color=color_scheme['bar_color'],
                 bar_bg_color=color_scheme['bar_bg_color']

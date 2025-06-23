@@ -21,7 +21,7 @@ from config import (
 )
 from utils.dialog_utils import setup_dialog_size_and_center
 from utils.logger_factory import get_cached_logger
-from widgets.compact_waiting_widget import CompactWaitingWidget
+from widgets.progress_widget import CompactProgressWidget
 
 logger = get_cached_logger(__name__)
 
@@ -58,7 +58,7 @@ class MetadataWaitingDialog(QDialog):
         else:
             bar_color = FAST_METADATA_COLOR
             bar_bg_color = FAST_METADATA_BG_COLOR
-        self.waiting_widget = CompactWaitingWidget(self, bar_color=bar_color, bar_bg_color=bar_bg_color)
+        self.waiting_widget = CompactProgressWidget(self, bar_color=bar_color, bar_bg_color=bar_bg_color)
 
         layout.addWidget(self.waiting_widget)
 

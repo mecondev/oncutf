@@ -288,7 +288,7 @@ class MetadataManager:
             logger.info(f"[{source}] Loading metadata for {len(needs_loading)} files with dialog (extended={use_extended})")
 
             # Use progress dialog for large batches
-            from widgets.progress_dialog import ProgressDialog
+            from utils.progress_dialog import ProgressDialog
 
             # Create loading dialog
             loading_dialog = ProgressDialog.create_metadata_dialog(
@@ -491,7 +491,7 @@ class MetadataManager:
                             failed_files.append(file_item.filename)
             else:
                 # Multiple files: Use progress dialog
-                from widgets.progress_dialog import ProgressDialog
+                from utils.progress_dialog import ProgressDialog
 
                 # Create save dialog
                 save_dialog = ProgressDialog.create_metadata_dialog(

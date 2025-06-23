@@ -63,6 +63,7 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QMainWindow,
     QMenu,
+    QProgressBar,
     QPushButton,
     QShortcut,
     QSizePolicy,
@@ -90,7 +91,7 @@ __all__ = [
     # Widgets
     'QAbstractItemView', 'QAction', 'QApplication', 'QDesktopWidget', 'QDialog', 'QFileDialog',
     'QFileSystemModel', 'QFrame', 'QGraphicsOpacityEffect', 'QHBoxLayout',
-    'QHeaderView', 'QLabel', 'QLineEdit', 'QMainWindow', 'QMenu', 'QPushButton', 'QShortcut',
+    'QHeaderView', 'QLabel', 'QLineEdit', 'QMainWindow', 'QMenu', 'QProgressBar', 'QPushButton', 'QShortcut',
     'QSizePolicy', 'QSplitter', 'QTableWidget', 'QTableWidgetItem', 'QTableView', 'QTreeView',
     'QVBoxLayout', 'QWidget',
 ]

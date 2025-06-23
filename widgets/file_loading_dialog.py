@@ -21,7 +21,7 @@ from utils.dialog_utils import setup_dialog_size_and_center
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import TimerPriority, TimerType, get_timer_manager
 
-from .compact_waiting_widget import CompactWaitingWidget
+from .progress_widget import CompactProgressWidget
 
 logger = get_cached_logger(__name__)
 
@@ -53,7 +53,7 @@ class FileLoadingDialog(QDialog):
         layout.setContentsMargins(0, 0, 0, 0)  # No margins - let widget handle its own spacing
         layout.setSpacing(0)
 
-        self.waiting_widget = CompactWaitingWidget(
+        self.waiting_widget = CompactProgressWidget(
             self,
             bar_color="#64b5f6",  # blue
             bar_bg_color="#0a1a2a"  # darker blue bg

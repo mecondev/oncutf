@@ -20,7 +20,7 @@ from models.file_item import FileItem
 from utils.cursor_helper import wait_cursor
 from utils.dialog_utils import center_widget_on_parent
 from utils.logger_factory import get_cached_logger
-from widgets.compact_waiting_widget import CompactWaitingWidget
+from widgets.progress_widget import CompactProgressWidget
 
 logger = get_cached_logger(__name__)
 

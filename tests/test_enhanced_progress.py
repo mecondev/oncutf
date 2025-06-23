@@ -19,7 +19,7 @@ sys.path.insert(0, str(project_root))
 
 try:
     from core.qt_imports import QApplication, QTimer
-    from widgets.progress_dialog import ProgressDialog
+    from utils.progress_dialog import ProgressDialog
     from utils.time_formatter import ProgressEstimator, format_duration
 
     def demo_enhanced_progress():
@@ -122,7 +122,7 @@ try:
     def test_enhanced_widget_standalone():
         """Test enhanced widget in standalone mode."""
 
-        from widgets.enhanced_progress_widget import CompactEnhancedProgressWidget
+        from widgets.progress_widget import CompactEnhancedProgressWidget
 
         app = QApplication(sys.argv)
 
