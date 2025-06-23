@@ -197,36 +197,52 @@ class FileLoadingDialog(QDialog):
         # User can press ESC to close
 
     def _handle_cancellation_immediate(self):
-        """Handle immediate cancellation with enhanced responsiveness."""
+        """Handle immediate cancellation with enhanced UX feedback."""
         if self._is_cancelling:
             return  # Already cancelling
 
         self._is_cancelling = True
         logger.info("[FileLoadingDialog] User cancelled loading - immediate response")
 
+        # Immediate UX feedback: Set progress to 100% and show "Canceling..."
+        self.waiting_widget.set_determinate_mode()  # Ensure we're not in indeterminate mode
+        self.waiting_widget.set_progress(100, 100)  # Show 100% completion
+        self.waiting_widget.set_status("Canceling...")
+        self.waiting_widget.set_filename("Stopping file scan...")
+        self.repaint()  # Force immediate UI update
+
         if self.worker and self.worker.isRunning():
             # Cancel worker immediately
             self.worker.cancel()
 
-            # Update UI immediately to show cancellation
-            self.waiting_widget.set_status("Cancelling...")
-            self.waiting_widget.set_filename("Stopping file scan...")
-            self.repaint()  # Force immediate UI update
-
-            # Restore cursors immediately
-            self._restore_cursors()
-
-            # Close immediately - don't wait for worker to finish
-            # Worker cleanup will happen in background
-            self.reject()
+            # Show cancellation feedback for a brief moment (300ms) before closing
+            self._cancellation_timer_id = self.timer_manager.schedule(
+                self._finalize_cancellation_with_cleanup,
+                delay=300,
+                timer_type=TimerType.GENERIC
+            )
         else:
-            # No worker running, just close immediately
-            self._restore_cursors()
-            self.reject()
+            # No worker running, just close immediately after brief feedback
+            self._cancellation_timer_id = self.timer_manager.schedule(
+                self._finalize_cancellation_with_cleanup,
+                delay=200,
+                timer_type=TimerType.GENERIC
+            )
 
     def _finalize_cancellation(self):
         """DEPRECATED: No longer used - cancellation is now immediate."""
         pass
+
+    def _finalize_cancellation_with_cleanup(self):
+        """Complete the cancellation process after showing UX feedback."""
+        # Clear the timer reference
+        self._cancellation_timer_id = None
+
+        # Restore cursors
+        self._restore_cursors()
+
+        # Close the dialog
+        self.reject()
 
     def keyPressEvent(self, event):
         """Handle ESC key with enhanced cancellation using Timer Manager."""

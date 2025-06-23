@@ -33,6 +33,7 @@ import os
 from typing import List, Optional, Set, Union
 
 from PyQt5.QtCore import QMutex, QMutexLocker, QThread, pyqtSignal
+from PyQt5.QtWidgets import QApplication
 
 from config import ALLOWED_EXTENSIONS
 from utils.logger_factory import get_cached_logger
@@ -77,6 +78,9 @@ class UnifiedFileWorker(QThread):
         self._cancel_check_counter = 0
         self._cancel_check_frequency = 1  # Check every 1 operation for immediate response
         self._operations_counter = 0  # Track total operations for frequent cancellation checks
+
+        # Make cancellation even more responsive - check every 5 files during counting
+        self._counting_check_frequency = 5
 
     def setup_scan(self,
                    paths: Union[str, List[str]],
@@ -254,6 +258,11 @@ class UnifiedFileWorker(QThread):
                     processed_dirs += 1
                     logger.debug(f"[DEBUG] Walking directory #{walk_count}: {root}, found {len(files)} files")
 
+                    # Check cancellation at directory level for immediate response
+                    if self.is_cancelled():
+                        logger.debug(f"[DEBUG] Cancelled during os.walk at directory: {root}")
+                        break
+
                     # Update status with current directory for user feedback
                     relative_path = os.path.relpath(root, directory)
                     if relative_path != ".":
@@ -261,14 +270,13 @@ class UnifiedFileWorker(QThread):
                     else:
                         self.status_updated.emit(f"Counting files in: {os.path.basename(directory)}")
 
-                    if self.is_cancelled():
-                        logger.debug(f"[DEBUG] Cancelled during os.walk at directory: {root}")
-                        break
+                    # Force UI processing to make ESC key more responsive
+                    QApplication.processEvents()
 
                     for file in files:
-                        # More frequent cancellation checks
+                        # More frequent cancellation checks - every 5 files during counting
                         self._operations_counter += 1
-                        if self._operations_counter % 10 == 0:  # Check every 10 files
+                        if self._operations_counter % self._counting_check_frequency == 0:
                             if self.is_cancelled():
                                 logger.debug(f"[DEBUG] Cancelled during file processing in: {root}")
                                 break
