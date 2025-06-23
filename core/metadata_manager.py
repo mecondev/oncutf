@@ -38,6 +38,7 @@ class MetadataManager:
 
         # State tracking
         self.force_extended_metadata = False
+        self._metadata_cancelled = False  # Cancellation flag for metadata loading
 
         # Initialize metadata cache and exiftool wrapper
         self._metadata_cache = {}  # Cache for metadata results
@@ -56,6 +57,10 @@ class MetadataManager:
         # For now, return False as we don't have complex async metadata loading
         # This method can be enhanced later if we add async metadata workers
         return False
+
+    def reset_cancellation_flag(self) -> None:
+        """Reset the metadata cancellation flag."""
+        self._metadata_cancelled = False
 
     def determine_loading_mode(self, file_count: int, use_extended: bool = False) -> str:
         """
@@ -202,6 +207,9 @@ class MetadataManager:
             logger.warning("[MetadataManager] No items provided for metadata loading")
             return
 
+        # Reset cancellation flag for new metadata loading operation
+        self.reset_cancellation_flag()
+
         logger.debug(f"[MetadataManager] Processing {len(items)} items (extended={use_extended}, source={source})", extra={"dev_only": True})
 
         logger.debug(f"[MetadataManager] Loading metadata for {len(items)} items (extended={use_extended}, source={source})", extra={"dev_only": True})
@@ -294,11 +302,18 @@ class MetadataManager:
             # Use progress dialog for large batches
             from utils.progress_dialog import ProgressDialog
 
+            # Cancellation support
+            self._metadata_cancelled = False
+
+            def cancel_metadata_loading():
+                self._metadata_cancelled = True
+                logger.info("[MetadataManager] Metadata loading cancelled by user")
+
             # Create loading dialog
             loading_dialog = ProgressDialog.create_metadata_dialog(
                 parent=self.parent_window,
                 is_extended=use_extended,
-                cancel_callback=None  # No cancellation for now
+                cancel_callback=cancel_metadata_loading
             )
             loading_dialog.set_status("Loading metadata..." if not use_extended else "Loading extended metadata...")
 
@@ -308,6 +323,12 @@ class MetadataManager:
 
             # Process each file
             for i, file_item in enumerate(needs_loading):
+                # Check for cancellation before processing each file
+                if self._metadata_cancelled:
+                    logger.info(f"[MetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}")
+                    loading_dialog.close()
+                    return
+
                 # Calculate processed size for enhanced progress
                 from utils.file_size_calculator import calculate_processed_size
                 processed_size = calculate_processed_size(needs_loading, i)
@@ -316,9 +337,15 @@ class MetadataManager:
                 loading_dialog.update_enhanced_progress(i, len(needs_loading), processed_size)
                 loading_dialog.set_filename(file_item.filename)
 
-                # Process events to update the dialog
+                # Process events to update the dialog and handle cancellation
                 from PyQt5.QtWidgets import QApplication
                 QApplication.processEvents()
+
+                # Check again after processing events (user might have pressed ESC)
+                if self._metadata_cancelled:
+                    logger.info(f"[MetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}")
+                    loading_dialog.close()
+                    return
 
                 metadata = self._exiftool_wrapper.get_metadata(file_item.full_path, use_extended=use_extended)
 

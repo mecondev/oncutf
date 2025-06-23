@@ -483,6 +483,7 @@ class MainWindow(QMainWindow):
             logger.warning(f"[CloseEvent] Error cleaning TimerManager: {e}")
 
         # Then find and stop any remaining QTimer instances
+        from PyQt5.QtCore import QTimer
         remaining_timers = self.findChildren(QTimer)
         for timer in remaining_timers:
             if timer.isActive():

@@ -720,6 +720,10 @@ class EventHandlerManager:
 
     def _on_checksums_calculated(self, hash_results: dict) -> None:
         """Handle checksums calculated result."""
+        # Force restore cursor before showing results dialog
+        from utils.cursor_helper import force_restore_cursor
+        force_restore_cursor()
+
         self._show_hash_results(hash_results)
 
     def _on_hash_operation_finished(self, success: bool) -> None:
@@ -793,46 +797,9 @@ class EventHandlerManager:
             # Convert FileItem objects to file paths
             file_paths = [item.full_path for item in selected_files]
 
-            if len(file_paths) == 1:
-                # Single file - use wait cursor
-                from utils.cursor_helper import wait_cursor
-                from core.hash_manager import HashManager
-                from pathlib import Path
-
-                try:
-                    with wait_cursor():
-                        hash_manager = HashManager()
-                        comparison_results = {}
-
-                        file_item = selected_files[0]
-                        current_hash = hash_manager.calculate_sha256(file_item.full_path)
-                        if current_hash:
-                            external_file_path = Path(external_folder) / file_item.filename
-                            if external_file_path.exists():
-                                external_hash = hash_manager.calculate_sha256(str(external_file_path))
-                                if external_hash is not None:
-                                    is_same = current_hash == external_hash
-                                    comparison_results[file_item.filename] = {
-                                        'current_path': file_item.full_path,
-                                        'external_path': str(external_file_path),
-                                        'is_same': is_same,
-                                        'current_hash': current_hash,
-                                        'external_hash': external_hash
-                                    }
-
-                        self._show_comparison_results(comparison_results, external_folder)
-
-                except Exception as e:
-                    logger.error(f"[HashManager] Error comparing with external folder: {e}")
-                    from widgets.custom_msgdialog import CustomMessageDialog
-                    CustomMessageDialog.information(
-                        self.parent_window,
-                        "Error",
-                        f"Failed to compare with external folder: {str(e)}"
-                    )
-            else:
-                # Multiple files - use worker thread with progress dialog
-                self._start_hash_operation("compare", file_paths, external_folder=external_folder)
+            # Always use worker thread with progress dialog for cancellation support
+            # This is especially important for large files (videos) that may take time
+            self._start_hash_operation("compare", file_paths, external_folder=external_folder)
 
         except Exception as e:
             logger.error(f"[HashManager] Error setting up external comparison: {e}")
@@ -859,34 +826,64 @@ class EventHandlerManager:
         # Convert FileItem objects to file paths
         file_paths = [item.full_path for item in selected_files]
 
+        # Use different approach based on file size for optimal UX
         if len(file_paths) == 1:
-            # Single file - use wait cursor
-            from utils.cursor_helper import wait_cursor
-            from core.hash_manager import HashManager
-
+            # Single file - check size to decide approach
+            file_path = file_paths[0]
             try:
-                with wait_cursor():
-                    hash_manager = HashManager()
-                    file_item = selected_files[0]
-                    file_hash = hash_manager.calculate_sha256(file_item.full_path)
+                file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
+                size_mb = file_size / (1024 * 1024)
 
-                    hash_results = {}
-                    if file_hash:
-                        hash_results[file_item.full_path] = file_hash
-
-                    self._show_hash_results(hash_results)
-
-            except Exception as e:
-                logger.error(f"[HashManager] Error calculating checksum: {e}")
-                from widgets.custom_msgdialog import CustomMessageDialog
-                CustomMessageDialog.information(
-                    self.parent_window,
-                    "Error",
-                    f"Failed to calculate checksum: {str(e)}"
-                )
+                if size_mb < 100:  # Small file - use fast wait cursor
+                    self._calculate_single_file_hash_fast(selected_files[0])
+                else:  # Large file - use worker with progress dialog for cancellation
+                    self._start_hash_operation("checksums", file_paths)
+            except OSError:
+                # If we can't get file size, assume it's small
+                self._calculate_single_file_hash_fast(selected_files[0])
         else:
-            # Multiple files - use worker thread with progress dialog
+            # Multiple files - always use worker thread with progress dialog
             self._start_hash_operation("checksums", file_paths)
+
+    def _calculate_single_file_hash_fast(self, file_item) -> None:
+        """
+        Calculate hash for a single small file using wait cursor (fast, no cancellation).
+
+        Args:
+            file_item: FileItem object to calculate hash for
+        """
+        from utils.cursor_helper import wait_cursor
+        from core.hash_manager import HashManager
+        import os
+
+        try:
+            hash_results = {}
+            with wait_cursor():
+                hash_manager = HashManager()
+                file_hash = hash_manager.calculate_sha256(file_item.full_path)
+
+                if file_hash:
+                    hash_results[file_item.full_path] = file_hash
+
+                # Log file size for debugging
+                try:
+                    file_size = os.path.getsize(file_item.full_path)
+                    size_mb = file_size / (1024 * 1024)
+                    logger.debug(f"[HashManager] Fast calculation for {file_item.filename} ({size_mb:.1f} MB)")
+                except OSError:
+                    logger.debug(f"[HashManager] Fast calculation for {file_item.filename} (size unknown)")
+
+            # Show results after cursor is restored
+            self._show_hash_results(hash_results)
+
+        except Exception as e:
+            logger.error(f"[HashManager] Error calculating checksum: {e}")
+            from widgets.custom_msgdialog import CustomMessageDialog
+            CustomMessageDialog.information(
+                self.parent_window,
+                "Error",
+                f"Failed to calculate checksum: {str(e)}"
+            )
 
     def _show_duplicates_results(self, duplicates: dict, scope: str) -> None:
         """
