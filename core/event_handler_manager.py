@@ -650,6 +650,11 @@ class EventHandlerManager:
             # Create and configure worker
             self.hash_worker = HashWorker(parent=self.parent_window)
 
+            # Initialize cumulative progress tracking
+            self._total_processed_bytes = 0
+            self._total_size_bytes = 0
+            self._previous_file_size = 0
+
             # Connect signals
             self.hash_worker.progress_updated.connect(self._on_hash_progress_updated)
             self.hash_worker.file_progress.connect(self._on_file_progress_updated)
@@ -684,12 +689,25 @@ class EventHandlerManager:
             else:
                 raise ValueError(f"Unknown operation type: {operation_type}")
 
+                        # Calculate total size of all files for accurate progress
+            try:
+                from utils.file_size_calculator import FileSizeCalculator
+                size_calculator = FileSizeCalculator()
+                self._total_size_bytes = size_calculator.calculate_total([
+                    PathWrapper(path) if not hasattr(path, 'full_path') else path
+                    for path in file_paths
+                ])
+                logger.debug(f"[HashManager] Total size calculated: {self._total_size_bytes} bytes")
+            except Exception as e:
+                logger.warning(f"[HashManager] Could not calculate total size: {e}")
+                self._total_size_bytes = 0
+
             # Show dialog and start worker
             self.hash_dialog.set_status(initial_status)
 
-            # Start progress tracking for size and time info
+            # Start progress tracking for size and time info with total size
             if hasattr(self.hash_dialog, 'start_progress_tracking'):
-                self.hash_dialog.start_progress_tracking()
+                self.hash_dialog.start_progress_tracking(self._total_size_bytes)
 
             self.hash_dialog.show()
 
@@ -723,12 +741,25 @@ class EventHandlerManager:
             self.hash_dialog.set_count(current_file, total_files)
             self.hash_dialog.set_filename(filename)
 
+            # When starting a new file, add the previous file's size to total processed
+            if current_file > 1:  # Not the first file
+                if hasattr(self, '_previous_file_size'):
+                    self._total_processed_bytes += self._previous_file_size
+
+            # Reset previous file size for new file
+            self._previous_file_size = 0
+
     def _on_file_progress_updated(self, bytes_processed: int, file_size: int) -> None:
-        """Handle individual file progress updates for size tracking."""
+        """Handle individual file progress updates for cumulative size tracking."""
         if hasattr(self, 'hash_dialog') and self.hash_dialog:
-            # Update size information in the progress widget
-            # The ProgressDialog delegates to waiting_widget which is the ProgressWidget
-            self.hash_dialog.set_size_info(bytes_processed, file_size)
+            # Store current file size for later addition to total
+            self._previous_file_size = file_size
+
+            # Calculate cumulative processed bytes (all completed files + current file progress)
+            cumulative_processed = self._total_processed_bytes + bytes_processed
+
+            # Update size information with cumulative progress
+            self.hash_dialog.set_size_info(cumulative_processed, self._total_size_bytes)
 
     def _on_duplicates_found(self, duplicates: dict, scope: str) -> None:
         """Handle duplicates found result."""

@@ -21,7 +21,7 @@ from config import (
 )
 from utils.dialog_utils import setup_dialog_size_and_center
 from utils.logger_factory import get_cached_logger
-from widgets.progress_widget import CompactProgressWidget
+from widgets.progress_widget import ProgressWidget
 
 logger = get_cached_logger(__name__)
 
@@ -42,8 +42,8 @@ class MetadataWaitingDialog(QDialog):
         self.cancel_callback = cancel_callback
 
         # Frameless and styled externally
-        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
-        self.setAttribute(Qt.WA_TranslucentBackground, False)
+        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint) # type: ignore
+        self.setAttribute(Qt.WA_TranslucentBackground, False) # type: ignore
         self.setModal(True)
 
         layout = QVBoxLayout(self)
@@ -58,7 +58,14 @@ class MetadataWaitingDialog(QDialog):
         else:
             bar_color = FAST_METADATA_COLOR
             bar_bg_color = FAST_METADATA_BG_COLOR
-        self.waiting_widget = CompactProgressWidget(self, bar_color=bar_color, bar_bg_color=bar_bg_color)
+        self.waiting_widget = ProgressWidget(
+            parent=self,
+            bar_color=bar_color,
+            bar_bg_color=bar_bg_color,
+            show_size_info=False,
+            show_time_info=False,
+            fixed_width=400
+        )
 
         layout.addWidget(self.waiting_widget)
 
@@ -69,7 +76,7 @@ class MetadataWaitingDialog(QDialog):
 
     def keyPressEvent(self, event):
         """Handle ESC key to cancel metadata loading."""
-        if event.key() == Qt.Key_Escape:
+        if event.key() == Qt.Key_Escape: # type: ignore
             logger.info("[MetadataWaitingDialog] User cancelled metadata loading")
             self.waiting_widget.set_status("Cancelling...")
 

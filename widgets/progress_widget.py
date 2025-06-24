@@ -384,18 +384,41 @@ class ProgressWidget(QWidget):
         self.size_label.setText(size_text)
 
     def _update_time_display(self):
-        """Update time information display."""
+        """Update time information display with elapsed and estimated time."""
         if not self.start_time:
             return
 
         elapsed = time.time() - self.start_time
-        minutes = int(elapsed // 60)
-        seconds = int(elapsed % 60)
 
-        if minutes > 0:
-            time_text = f"{minutes}m {seconds}s"
+        # Calculate estimated time if we have progress data
+        if self.total_size > 0 and self.processed_size > 0 and elapsed > 1:
+            # Calculate processing rate (bytes per second)
+            rate = self.processed_size / elapsed
+
+            # Estimate remaining time
+            remaining_bytes = self.total_size - self.processed_size
+            if rate > 0:
+                estimated_remaining = remaining_bytes / rate
+                total_estimated = estimated_remaining + elapsed
+
+                # Format estimated time
+                est_minutes = int(total_estimated // 60)
+                est_seconds = int(total_estimated % 60)
+
+                if est_minutes > 0:
+                    time_text = f"{est_minutes}m {est_seconds}s est."
+                else:
+                    time_text = f"{est_seconds}s est."
+            else:
+                # Fallback to elapsed time
+                minutes = int(elapsed // 60)
+                seconds = int(elapsed % 60)
+                time_text = f"{minutes}m {seconds}s" if minutes > 0 else f"{seconds}s"
         else:
-            time_text = f"{seconds}s"
+            # Show elapsed time when no progress data available
+            minutes = int(elapsed // 60)
+            seconds = int(elapsed % 60)
+            time_text = f"{minutes}m {seconds}s" if minutes > 0 else f"{seconds}s"
 
         self.time_label.setText(time_text)
 
@@ -409,6 +432,10 @@ class ProgressWidget(QWidget):
             self.total_size = total_size
 
         self._update_size_display()
+
+        # Also trigger time display update for estimated time calculation
+        if self.show_time_info:
+            self._update_time_display()
 
     def set_time_info(self, elapsed: float):
         """Manually set time information."""
