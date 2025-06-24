@@ -19,11 +19,11 @@ Contains:
 from PyQt5.QtCore import Qt
 
 # Debugging Set to False to disable debug.log output
-SHOW_DEV_ONLY_IN_CONSOLE = False
+SHOW_DEV_ONLY_IN_CONSOLE = False  # Disabled for performance
 ENABLE_DEBUG_LOG_FILE = True
 
 # Which key skips the metadata scan when held down
-SKIP_METADATA_MODIFIER = Qt.ControlModifier
+SKIP_METADATA_MODIFIER = Qt.ControlModifier # type: ignore
 DEFAULT_SKIP_METADATA = True
 
 # App info
@@ -156,11 +156,11 @@ METADATA_TREE_COLUMN_WIDTHS = {
 # ----------------------------
 STATUS_COLORS = {
     "ready": "",                    # Default color (no override)
-    "error": "#ff6b6b",            # Light red (was "red")
-    "success": "#51cf66",          # Light green (was "green")
-    "warning": "#ffa726",          # Light orange (was "orange")
-    "info": "#74c0fc",             # Light blue/cyan (was "blue" - now more cyan/light blue)
-    "loading": "#adb5bd",          # Light gray (was "gray")
+    "error": "#ff6b6b",            # Light red
+    "success": "#51cf66",          # Light green
+    "warning": "#ffa726",          # Light orange
+    "info": "#74c0fc",             # Light blue/cyan
+    "loading": "#adb5bd",          # Light gray
     "metadata_skipped": "#adb5bd", # Light gray for skipped metadata
     "metadata_extended": "#ff8a65", # Light orange-red for extended metadata
     "metadata_basic": "#74c0fc"    # Light blue/cyan for basic metadata

@@ -287,13 +287,13 @@ class ProgressWidget(QWidget):
         self.progress_bar.setValue(value)
 
         # Calculate percentage based on size if enhanced tracking enabled, otherwise use count
-        if self.progress_estimator and hasattr(self.progress_estimator, 'current_size') and hasattr(self.progress_estimator, 'total_size'):
+        if self.progress_estimator and hasattr(self.progress_estimator, 'processed_size') and hasattr(self.progress_estimator, 'total_size'):
             # Calculate percentage based on file size
-            current_size = getattr(self.progress_estimator, 'current_size', 0)
+            processed_size = getattr(self.progress_estimator, 'processed_size', 0)
             total_size = getattr(self.progress_estimator, 'total_size', 0)
 
             if total_size > 0:
-                percent = int(100 * current_size / total_size)
+                percent = int(100 * processed_size / total_size)
             else:
                 percent = int(100 * value / total) if total else 0
         else:
@@ -385,9 +385,8 @@ class ProgressWidget(QWidget):
 
         self.progress_estimator.start(total_size)
 
-        # Store total size for percentage calculation
-        self.progress_estimator.total_size = total_size
-        self.progress_estimator.current_size = 0
+        # Initialize processed size for percentage calculation
+        self.progress_estimator.processed_size = 0
 
         if self.show_size_info:
             if total_size > 0:
@@ -405,8 +404,6 @@ class ProgressWidget(QWidget):
         # Update enhanced tracking first (before progress bar)
         if self.progress_estimator:
             self.progress_estimator.update(current, total, current_size)
-            # Store current size in estimator for percentage calculation
-            self.progress_estimator.current_size = current_size
 
         # Update basic progress (which will now use size-based percentage if available)
         self.set_progress(current, total)
