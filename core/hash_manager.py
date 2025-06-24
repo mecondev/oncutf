@@ -5,8 +5,7 @@ Author: Michael Economou
 Date: 2025-06-21
 
 Manages file hashing operations, duplicate detection, and file integrity checking.
-Provides CRC32 hash calculations and folder/file comparison utilities.
-Optimized for speed and efficiency in file operations.
+Provides CRC32 hash calculations optimized for speed and efficiency.
 """
 
 import zlib
@@ -24,7 +23,7 @@ class HashManager:
     Manages file hashing operations and duplicate detection.
 
     Provides functionality for:
-    - CRC32 hash calculation with error handling (10x faster than SHA-256)
+    - CRC32 hash calculation with progress tracking (10x faster than SHA-256)
     - File and folder comparison
     - Duplicate detection in file lists
     - Hash caching for performance optimization
@@ -40,7 +39,7 @@ class HashManager:
 
     def calculate_hash(self, file_path: Union[str, Path], progress_callback=None) -> Optional[str]:
         """
-        Calculate the CRC32 hash of a file with error handling.
+        Calculate the CRC32 hash of a file with error handling and progress tracking.
 
         Args:
             file_path: Path to the file to hash
@@ -67,7 +66,7 @@ class HashManager:
                 logger.warning(f"[HashManager] Path is not a file: {file_path}")
                 return None
 
-                        # Calculate CRC32 with optimized memory buffer for better performance
+            # Calculate CRC32 with optimized memory buffer for better performance
             crc = 0
             # Use bytearray buffer to avoid memory allocations on each read
             buffer = bytearray(262144)  # 256KB buffer for optimal performance
@@ -79,6 +78,7 @@ class HashManager:
                     bytes_read = f.readinto(buffer)
                     if not bytes_read:
                         break
+
                     # Use memoryview slice to avoid copying data
                     chunk_view = mv[:bytes_read]
                     crc = zlib.crc32(chunk_view, crc)
@@ -106,19 +106,6 @@ class HashManager:
         except Exception as e:
             logger.error(f"[HashManager] Unexpected error hashing file {file_path}: {e}")
             return None
-
-    def calculate_crc32(self, file_path: Union[str, Path], progress_callback=None) -> Optional[str]:
-        """
-        Calculate the CRC32 hash of a file.
-
-        Args:
-            file_path: Path to the file to hash
-            progress_callback: Optional callback function(bytes_processed) for progress tracking
-
-        Returns:
-            str: CRC32 hash in hexadecimal format (8 characters), or None if error occurred
-        """
-        return self.calculate_hash(file_path, progress_callback)
 
     def compare_folders(self, folder1: Union[str, Path], folder2: Union[str, Path]) -> Dict[str, Tuple[bool, str, str]]:
         """
@@ -258,20 +245,6 @@ class HashManager:
 
 # Convenience functions for simple usage
 def calculate_crc32(file_path: Union[str, Path]) -> Optional[str]:
-    """
-    Calculate the CRC32 hash of a file (convenience function).
-
-    Args:
-        file_path: Path to the file to hash
-
-    Returns:
-        str: CRC32 hash in hexadecimal format, or None if error occurred
-    """
-    manager = HashManager()
-    return manager.calculate_hash(file_path)
-
-
-def calculate_hash(file_path: Union[str, Path]) -> Optional[str]:
     """
     Calculate the CRC32 hash of a file (convenience function).
 

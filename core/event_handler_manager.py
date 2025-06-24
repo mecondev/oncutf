@@ -652,7 +652,7 @@ class EventHandlerManager:
 
             # Connect signals
             self.hash_worker.progress_updated.connect(self._on_hash_progress_updated)
-            self.hash_worker.file_progress.connect(self.hash_dialog.set_progress)
+            self.hash_worker.file_progress.connect(self._on_file_progress_updated)
             self.hash_worker.status_updated.connect(self.hash_dialog.set_status)
 
             # Connect result signals
@@ -686,6 +686,11 @@ class EventHandlerManager:
 
             # Show dialog and start worker
             self.hash_dialog.set_status(initial_status)
+
+            # Start progress tracking for size and time info
+            if hasattr(self.hash_dialog, 'start_progress_tracking'):
+                self.hash_dialog.start_progress_tracking()
+
             self.hash_dialog.show()
 
             # Update main window status
@@ -713,8 +718,17 @@ class EventHandlerManager:
     def _on_hash_progress_updated(self, current_file: int, total_files: int, filename: str) -> None:
         """Handle hash worker progress updates."""
         if hasattr(self, 'hash_dialog') and self.hash_dialog:
+            # Set the overall progress (current file out of total files)
+            self.hash_dialog.set_progress(current_file, total_files)
             self.hash_dialog.set_count(current_file, total_files)
             self.hash_dialog.set_filename(filename)
+
+    def _on_file_progress_updated(self, bytes_processed: int, file_size: int) -> None:
+        """Handle individual file progress updates for size tracking."""
+        if hasattr(self, 'hash_dialog') and self.hash_dialog:
+            # Update size information in the progress widget
+            # The ProgressDialog delegates to waiting_widget which is the ProgressWidget
+            self.hash_dialog.set_size_info(bytes_processed, file_size)
 
     def _on_duplicates_found(self, duplicates: dict, scope: str) -> None:
         """Handle duplicates found result."""

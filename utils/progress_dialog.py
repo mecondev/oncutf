@@ -214,15 +214,15 @@ class ProgressDialog(QDialog):
 
     # Enhanced progress methods (only available with enhanced widget)
     def start_progress_tracking(self, total_size: int = 0) -> None:
-        """Start enhanced progress tracking with optional total size."""
-        if hasattr(self.waiting_widget, 'start_enhanced_tracking'):
-            self.waiting_widget.start_enhanced_tracking(total_size)
-            logger.debug(f"[ProgressDialog] Started enhanced tracking (total_size: {total_size})")
+        """Start progress tracking with optional total size."""
+        if hasattr(self.waiting_widget, 'start_progress_tracking'):
+            self.waiting_widget.start_progress_tracking(total_size)
+            logger.debug(f"[ProgressDialog] Started progress tracking (total_size: {total_size})")
 
-    def update_enhanced_progress(self, current: int, total: int, current_size: int = 0) -> None:
+    def update_progress_with_size(self, current: int, total: int, current_size: int = 0) -> None:
         """Update progress with size tracking."""
-        if hasattr(self.waiting_widget, 'update_enhanced_progress'):
-            self.waiting_widget.update_enhanced_progress(current, total, current_size)
+        if hasattr(self.waiting_widget, 'update_progress_with_size'):
+            self.waiting_widget.update_progress_with_size(current, total, current_size)
         else:
             # Fallback to standard progress update
             self.set_progress(current, total)

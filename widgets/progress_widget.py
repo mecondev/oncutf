@@ -87,6 +87,9 @@ class ProgressWidget(QWidget):
         # Throttling to prevent flickering
         self._last_update_time = 0
 
+        # Timer for time updates
+        self._time_timer = None
+
         # Setup UI
         self._setup_ui()
         self._apply_styling()
@@ -333,12 +336,18 @@ class ProgressWidget(QWidget):
 
         if self.show_size_info and hasattr(self, 'size_label'):
             if total_size > 0:
-                self.size_label.setText("Starting...")
+                from utils.file_size_formatter import format_file_size_system_compatible
+                total_str = format_file_size_system_compatible(total_size)
+                self.size_label.setText(f"0 B/{total_str}")
             else:
                 self.size_label.setText("0 B")
 
         if self.show_time_info and hasattr(self, 'time_label'):
-            self.time_label.setText("Starting...")
+            self.time_label.setText("0s")
+            # Start timer to update time display every second
+            self._time_timer = QTimer(self)
+            self._time_timer.timeout.connect(self._update_time_display)
+            self._time_timer.start(1000)  # Update every second
 
         logger.debug(f"[ProgressWidget] Started tracking (total_size: {total_size})")
 
@@ -426,6 +435,11 @@ class ProgressWidget(QWidget):
         self.start_time = None
         self.total_size = 0
         self.processed_size = 0
+
+        # Stop timer if running
+        if self._time_timer and self._time_timer.isActive():
+            self._time_timer.stop()
+            self._time_timer = None
 
         if self.show_size_info and hasattr(self, 'size_label'):
             self.size_label.setText("Ready...")

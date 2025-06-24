@@ -335,7 +335,7 @@ class MetadataManager:
                 processed_size = calculate_processed_size(needs_loading, i)
 
                 # Update progress with size tracking
-                loading_dialog.update_enhanced_progress(i, len(needs_loading), processed_size)
+                loading_dialog.update_progress_with_size(i, len(needs_loading), processed_size)
                 loading_dialog.set_filename(file_item.filename)
 
                 # Process events to update the dialog and handle cancellation
@@ -554,7 +554,7 @@ class MetadataManager:
                     processed_size = calculate_processed_size(files_to_save, i)
 
                     # Update progress with size tracking
-                    save_dialog.update_enhanced_progress(i, len(files_to_save), processed_size)
+                    save_dialog.update_progress_with_size(i, len(files_to_save), processed_size)
                     save_dialog.set_filename(file_item.filename)
 
                     # Process events to update the dialog
