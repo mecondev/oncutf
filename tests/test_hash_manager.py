@@ -359,3 +359,83 @@ class TestErrorHandling:
         with patch.object(manager, 'calculate_hash', side_effect=Exception("Hash error")):
             result = manager.find_duplicates_in_list(files)
             assert result == {}
+
+
+class TestPerformance:
+    """Test cases for performance optimizations."""
+
+    def test_large_file_performance(self):
+        """Test CRC32 calculation performance with optimized buffer."""
+        import time
+
+        manager = HashManager()
+
+        # Create a moderately large test file (1MB)
+        test_data = b'Performance test data for CRC32 optimization with memoryview and bytearray' * 13500
+
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            f.write(test_data)
+            temp_path = f.name
+
+        try:
+            # Measure calculation time
+            start_time = time.perf_counter()
+            result = manager.calculate_crc32(temp_path)
+            end_time = time.perf_counter()
+
+            calculation_time = end_time - start_time
+            file_size_mb = len(test_data) / (1024 * 1024)
+            throughput = file_size_mb / calculation_time if calculation_time > 0 else 0
+
+            # Verify result is valid
+            assert result is not None
+            assert len(result) == 8  # CRC32 should be 8 hex characters
+
+            # Performance should be reasonable (at least 100 MB/s on most systems)
+            assert throughput > 100, f"Performance too slow: {throughput:.1f} MB/s"
+
+            print(f"\nPerformance test: {file_size_mb:.1f} MB processed in {calculation_time:.4f}s ({throughput:.1f} MB/s)")
+
+        finally:
+            Path(temp_path).unlink()
+
+    def test_progress_callback(self):
+        """Test that progress callback is called during hash calculation."""
+        manager = HashManager()
+
+        # Create a test file with enough data to trigger multiple buffer reads
+        test_data = b'Progress callback test data' * 20000  # ~500KB
+
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            f.write(test_data)
+            temp_path = f.name
+
+        try:
+            # Track progress calls
+            progress_calls = []
+
+            def progress_callback(bytes_processed):
+                progress_calls.append(bytes_processed)
+
+            # Calculate hash with progress tracking
+            result = manager.calculate_crc32(temp_path, progress_callback)
+
+            # Verify result is valid
+            assert result is not None
+            assert len(result) == 8  # CRC32 should be 8 hex characters
+
+            # Verify progress was tracked
+            assert len(progress_calls) > 0, "Progress callback should have been called"
+
+            # Verify progress values make sense
+            assert progress_calls[0] > 0, "First progress call should be > 0"
+            assert progress_calls[-1] == len(test_data), f"Final progress should equal file size: {progress_calls[-1]} vs {len(test_data)}"
+
+            # Verify progress is monotonically increasing
+            for i in range(1, len(progress_calls)):
+                assert progress_calls[i] >= progress_calls[i-1], "Progress should be monotonically increasing"
+
+            print(f"\nProgress test: {len(progress_calls)} callbacks, final: {progress_calls[-1]:,} bytes")
+
+        finally:
+            Path(temp_path).unlink()

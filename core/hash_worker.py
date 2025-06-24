@@ -176,22 +176,29 @@ class HashWorker(QThread):
             # Get file size for enhanced progress
             try:
                 file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
-                processed_size += file_size
             except OSError:
                 file_size = 0
 
-            # Update progress with size tracking
+            # Update progress with file-level tracking
             self.progress_updated.emit(i, total_files)
-            self.enhanced_progress_updated.emit(i, total_files, processed_size)
             self.file_processing.emit(os.path.basename(file_path))
 
-            # Calculate hash
-            file_hash = hash_manager.calculate_hash(file_path)
+            # Create progress callback for within-file tracking
+            file_start_size = processed_size
+            def progress_callback(bytes_read):
+                current_processed = file_start_size + bytes_read
+                self.enhanced_progress_updated.emit(i, total_files, current_processed)
+
+            # Calculate hash with progress tracking
+            file_hash = hash_manager.calculate_hash(file_path, progress_callback)
             if file_hash:
                 if file_hash in hash_cache:
                     hash_cache[file_hash].append(file_path)
                 else:
                     hash_cache[file_hash] = [file_path]
+
+            # Update final processed size after file completion
+            processed_size += file_size
 
         # Complete progress
         self.progress_updated.emit(total_files, total_files)
@@ -214,19 +221,32 @@ class HashWorker(QThread):
 
         self.status_updated.emit(f"Comparing files with {os.path.basename(external_folder)}...")
 
+        processed_size = 0
         for i, file_path in enumerate(file_paths):
             if self._check_cancellation():
                 logger.debug("[HashWorker] External comparison cancelled")
                 self.finished_processing.emit(False)
                 return
 
+            # Get file size for enhanced progress
+            try:
+                file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
+            except OSError:
+                file_size = 0
+
             # Update progress
             self.progress_updated.emit(i, total_files)
             filename = os.path.basename(file_path)
             self.file_processing.emit(filename)
 
-                        # Calculate hash of current file
-            current_hash = hash_manager.calculate_hash(file_path)
+            # Create progress callback for within-file tracking
+            file_start_size = processed_size
+            def progress_callback(bytes_read):
+                current_processed = file_start_size + bytes_read
+                self.enhanced_progress_updated.emit(i, total_files, current_processed)
+
+            # Calculate hash of current file with progress tracking
+            current_hash = hash_manager.calculate_hash(file_path, progress_callback)
             if current_hash is None:
                 continue
 
@@ -243,6 +263,9 @@ class HashWorker(QThread):
                         'current_hash': current_hash,
                         'external_hash': external_hash
                     }
+
+            # Update processed size after file completion
+            processed_size += file_size
 
         # Complete progress
         self.progress_updated.emit(total_files, total_files)
@@ -262,20 +285,36 @@ class HashWorker(QThread):
 
         self.status_updated.emit("Calculating checksums...")
 
+        processed_size = 0
         for i, file_path in enumerate(file_paths):
             if self._check_cancellation():
                 logger.debug("[HashWorker] Checksum calculation cancelled")
                 self.finished_processing.emit(False)
                 return
 
+            # Get file size for enhanced progress
+            try:
+                file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
+            except OSError:
+                file_size = 0
+
             # Update progress
             self.progress_updated.emit(i, total_files)
             self.file_processing.emit(os.path.basename(file_path))
 
-            # Calculate hash
-            file_hash = hash_manager.calculate_hash(file_path)
+            # Create progress callback for within-file tracking
+            file_start_size = processed_size
+            def progress_callback(bytes_read):
+                current_processed = file_start_size + bytes_read
+                self.enhanced_progress_updated.emit(i, total_files, current_processed)
+
+            # Calculate hash with progress tracking
+            file_hash = hash_manager.calculate_hash(file_path, progress_callback)
             if file_hash:
                 hash_results[file_path] = file_hash
+
+            # Update processed size after file completion
+            processed_size += file_size
 
         # Complete progress
         self.progress_updated.emit(total_files, total_files)

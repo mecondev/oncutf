@@ -38,12 +38,13 @@ class HashManager:
         self._hash_cache: Dict[str, str] = {}
         logger.debug("[HashManager] Initialized with CRC32 hashing", extra={"dev_only": True})
 
-    def calculate_hash(self, file_path: Union[str, Path]) -> Optional[str]:
+    def calculate_hash(self, file_path: Union[str, Path], progress_callback=None) -> Optional[str]:
         """
         Calculate the CRC32 hash of a file with error handling.
 
         Args:
             file_path: Path to the file to hash
+            progress_callback: Optional callback function(bytes_processed) for progress tracking
 
         Returns:
             str: CRC32 hash in hexadecimal format (8 characters), or None if error occurred
@@ -66,11 +67,26 @@ class HashManager:
                 logger.warning(f"[HashManager] Path is not a file: {file_path}")
                 return None
 
-            # Calculate CRC32 with larger chunks for better performance
+                        # Calculate CRC32 with optimized memory buffer for better performance
             crc = 0
+            # Use bytearray buffer to avoid memory allocations on each read
+            buffer = bytearray(262144)  # 256KB buffer for optimal performance
+            mv = memoryview(buffer)     # Zero-copy view for slicing
+            bytes_processed = 0
+
             with file_path.open("rb") as f:
-                for chunk in iter(lambda: f.read(65536), b""):  # 64KB chunks for speed
-                    crc = zlib.crc32(chunk, crc)
+                while True:
+                    bytes_read = f.readinto(buffer)
+                    if not bytes_read:
+                        break
+                    # Use memoryview slice to avoid copying data
+                    chunk_view = mv[:bytes_read]
+                    crc = zlib.crc32(chunk_view, crc)
+
+                    # Update progress if callback is provided
+                    bytes_processed += bytes_read
+                    if progress_callback:
+                        progress_callback(bytes_processed)
 
             # Convert to unsigned 32-bit and format as hex
             hash_result = f"{crc & 0xffffffff:08x}"
@@ -91,17 +107,18 @@ class HashManager:
             logger.error(f"[HashManager] Unexpected error hashing file {file_path}: {e}")
             return None
 
-    def calculate_crc32(self, file_path: Union[str, Path]) -> Optional[str]:
+    def calculate_crc32(self, file_path: Union[str, Path], progress_callback=None) -> Optional[str]:
         """
         Calculate the CRC32 hash of a file.
 
         Args:
             file_path: Path to the file to hash
+            progress_callback: Optional callback function(bytes_processed) for progress tracking
 
         Returns:
             str: CRC32 hash in hexadecimal format (8 characters), or None if error occurred
         """
-        return self.calculate_hash(file_path)
+        return self.calculate_hash(file_path, progress_callback)
 
     def compare_folders(self, folder1: Union[str, Path], folder2: Union[str, Path]) -> Dict[str, Tuple[bool, str, str]]:
         """
