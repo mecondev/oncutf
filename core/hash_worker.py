@@ -12,7 +12,7 @@ Simplified design for better performance and reliability.
 Key Features:
 - Thread-safe with QMutex protection
 - Support for multiple hash operations (duplicates, comparison, checksums)
-- Accurate CRC32 progress tracking
+- Accurate CRC32 progress tracking with total size calculation
 - Graceful cancellation support
 - Optimized for large file operations
 
@@ -26,6 +26,7 @@ Usage:
 import os
 from pathlib import Path
 from typing import List
+import time
 
 from PyQt5.QtCore import QMutexLocker
 
@@ -45,9 +46,10 @@ class HashWorker(QThread):
     3. Calculate checksums for files
     """
 
-    # Unified signals for all operations
+    # Enhanced unified signals for all operations
     progress_updated = pyqtSignal(int, int, str)  # current_file, total_files, current_filename
     file_progress = pyqtSignal(int, int)  # bytes_processed, file_size (for individual file progress)
+    size_progress = pyqtSignal(int, int)  # total_bytes_processed, total_bytes_size (for overall size progress)
     status_updated = pyqtSignal(str)  # status message
 
     # Result signals
@@ -73,6 +75,10 @@ class HashWorker(QThread):
         self._cancel_check_counter = 0
         self._cancel_check_frequency = 5  # Check every 5 operations
 
+        # Size tracking for enhanced progress
+        self._total_bytes = 0
+        self._processed_bytes = 0
+
     def setup_duplicate_scan(self, file_paths: List[str]) -> None:
         """Configure worker for duplicate detection."""
         with QMutexLocker(self._mutex):
@@ -81,6 +87,8 @@ class HashWorker(QThread):
             self._external_folder = None
             self._cancelled = False
             self._cancel_check_counter = 0
+            self._total_bytes = 0
+            self._processed_bytes = 0
 
     def setup_external_comparison(self, file_paths: List[str], external_folder: str) -> None:
         """Configure worker for external folder comparison."""
@@ -90,6 +98,8 @@ class HashWorker(QThread):
             self._external_folder = external_folder
             self._cancelled = False
             self._cancel_check_counter = 0
+            self._total_bytes = 0
+            self._processed_bytes = 0
 
     def setup_checksum_calculation(self, file_paths: List[str]) -> None:
         """Configure worker for checksum calculation."""
@@ -99,6 +109,14 @@ class HashWorker(QThread):
             self._external_folder = None
             self._cancelled = False
             self._cancel_check_counter = 0
+            self._total_bytes = 0
+            self._processed_bytes = 0
+
+    def set_total_size(self, total_size: int) -> None:
+        """Set the total size from external calculation to avoid duplicate work."""
+        with QMutexLocker(self._mutex):
+            self._total_bytes = total_size
+            logger.debug(f"[HashWorker] Total size set to: {total_size:,} bytes")
 
     def cancel(self) -> None:
         """Cancel the current operation."""
@@ -119,12 +137,69 @@ class HashWorker(QThread):
             return self.is_cancelled()
         return False
 
-    def _create_file_progress_callback(self, file_size: int):
-        """Create a simple progress callback for individual file processing."""
+    def _calculate_total_size(self, file_paths: List[str]) -> int:
+        """Calculate total size of all files for accurate progress tracking."""
+        total_size = 0
+        files_counted = 0
+
+        self.status_updated.emit("Calculating total file size...")
+
+        for i, file_path in enumerate(file_paths):
+            # Check for cancellation more frequently during size calculation
+            if i % 10 == 0 and self.is_cancelled():
+                logger.debug("[HashWorker] Size calculation cancelled")
+                return 0
+
+            try:
+                if os.path.exists(file_path) and os.path.isfile(file_path):
+                    size = os.path.getsize(file_path)
+                    total_size += size
+                    files_counted += 1
+
+                    # Update progress during size calculation
+                    if i % 50 == 0:  # Update every 50 files
+                        progress = int((i / len(file_paths)) * 100)
+                        self.status_updated.emit(f"Calculating total size... {progress}% ({i}/{len(file_paths)})")
+
+            except (OSError, PermissionError) as e:
+                logger.debug(f"[HashWorker] Could not get size for {file_path}: {e}")
+                continue
+
+        logger.info(f"[HashWorker] Total size calculated: {total_size:,} bytes for {files_counted} files")
+        return total_size
+
+    def _create_file_progress_callback(self, file_size: int, file_start_bytes: int):
+        """Create a progress callback that tracks both individual file and total progress."""
+        last_update_time = 0
+        update_interval = 0.1  # Update every 100ms to avoid UI flooding
+
         def progress_callback(bytes_processed: int):
-            if not self.is_cancelled():
-                self.file_progress.emit(bytes_processed, file_size)
+            nonlocal last_update_time
+
+            if self.is_cancelled():
+                return
+
+            # Throttle updates to avoid UI flooding
+            current_time = time.time()
+            if current_time - last_update_time < update_interval:
+                return
+
+            last_update_time = current_time
+
+            # Individual file progress
+            self.file_progress.emit(bytes_processed, file_size)
+
+            # Overall size progress (no mutex needed for read-only operations)
+            total_processed = file_start_bytes + bytes_processed
+            self.size_progress.emit(total_processed, self._total_bytes)
+
         return progress_callback
+
+    def _update_processed_bytes_for_completed_file(self, file_size: int):
+        """Update processed bytes when a file is completed."""
+        with QMutexLocker(self._mutex):
+            self._processed_bytes += file_size
+            self.size_progress.emit(self._processed_bytes, self._total_bytes)
 
     def run(self) -> None:
         """Main thread execution."""
@@ -150,6 +225,10 @@ class HashWorker(QThread):
             if operation_type == "duplicates":
                 self._find_duplicates(file_paths)
             elif operation_type == "compare":
+                if external_folder is None:
+                    self.error_occurred.emit("External folder not specified for comparison")
+                    self.finished_processing.emit(False)
+                    return
                 self._compare_external(file_paths, external_folder)
             elif operation_type == "checksums":
                 self._calculate_checksums(file_paths)
@@ -172,6 +251,8 @@ class HashWorker(QThread):
 
         self.status_updated.emit("Calculating CRC32 checksums...")
 
+        file_start_bytes = 0
+
         for i, file_path in enumerate(file_paths):
             if self._check_cancellation():
                 logger.debug("[HashWorker] Checksum calculation cancelled")
@@ -190,12 +271,15 @@ class HashWorker(QThread):
                 file_size = 0
 
             # Create progress callback for this file
-            progress_callback = self._create_file_progress_callback(file_size)
+            progress_callback = self._create_file_progress_callback(file_size, file_start_bytes)
 
             # Calculate hash with progress tracking
             file_hash = hash_manager.calculate_hash(file_path, progress_callback)
             if file_hash:
                 hash_results[file_path] = file_hash
+
+            # Update start bytes for next file
+            file_start_bytes += file_size
 
         # Complete progress
         self.progress_updated.emit(total_files, total_files, "Complete")
@@ -215,6 +299,8 @@ class HashWorker(QThread):
 
         self.status_updated.emit("Calculating CRC32 hashes for duplicate detection...")
 
+        file_start_bytes = 0
+
         for i, file_path in enumerate(file_paths):
             if self._check_cancellation():
                 logger.debug("[HashWorker] Duplicate scan cancelled")
@@ -233,7 +319,7 @@ class HashWorker(QThread):
                 file_size = 0
 
             # Create progress callback for this file
-            progress_callback = self._create_file_progress_callback(file_size)
+            progress_callback = self._create_file_progress_callback(file_size, file_start_bytes)
 
             # Calculate hash with progress tracking
             file_hash = hash_manager.calculate_hash(file_path, progress_callback)
@@ -242,6 +328,9 @@ class HashWorker(QThread):
                     hash_cache[file_hash].append(file_path)
                 else:
                     hash_cache[file_hash] = [file_path]
+
+            # Update start bytes for next file
+            file_start_bytes += file_size
 
         # Complete progress
         self.progress_updated.emit(total_files, total_files, "Complete")
@@ -264,6 +353,8 @@ class HashWorker(QThread):
 
         self.status_updated.emit(f"Comparing files with {os.path.basename(external_folder)}...")
 
+        file_start_bytes = 0
+
         for i, file_path in enumerate(file_paths):
             if self._check_cancellation():
                 logger.debug("[HashWorker] External comparison cancelled")
@@ -282,11 +373,13 @@ class HashWorker(QThread):
                 file_size = 0
 
             # Create progress callback for this file
-            progress_callback = self._create_file_progress_callback(file_size)
+            progress_callback = self._create_file_progress_callback(file_size, file_start_bytes)
 
             # Calculate hash of current file with progress tracking
             current_hash = hash_manager.calculate_hash(file_path, progress_callback)
             if current_hash is None:
+                # Update start bytes even if hash failed
+                file_start_bytes += file_size
                 continue
 
             # Look for file with same name in external folder
@@ -302,6 +395,9 @@ class HashWorker(QThread):
                         'current_hash': current_hash,
                         'external_hash': external_hash
                     }
+
+            # Update start bytes for next file
+            file_start_bytes += file_size
 
         # Complete progress
         self.progress_updated.emit(total_files, total_files, "Complete")

@@ -35,7 +35,7 @@ class TestHashManager:
             temp_path = f.name
 
         try:
-            result = manager.calculate_crc32(temp_path)
+            result = manager.calculate_hash(temp_path)
             expected = "d87f7e0c"  # CRC32 of "test"
             assert result == expected
         finally:
@@ -51,11 +51,11 @@ class TestHashManager:
 
         try:
             # First call
-            result1 = manager.calculate_crc32(temp_path)
+            result1 = manager.calculate_hash(temp_path)
 
             # Second call should use cache
             with patch('builtins.open') as mock_open:
-                result2 = manager.calculate_crc32(temp_path)
+                result2 = manager.calculate_hash(temp_path)
                 mock_open.assert_not_called()  # File should not be opened again
                 assert result1 == result2
         finally:
@@ -64,14 +64,14 @@ class TestHashManager:
     def test_calculate_crc32_file_not_exists(self):
         """Test handling of non-existent files."""
         manager = HashManager()
-        result = manager.calculate_crc32("/non/existent.txt")
+        result = manager.calculate_hash("/non/existent.txt")
         assert result is None
 
     def test_calculate_crc32_directory(self):
         """Test handling of directories."""
         manager = HashManager()
         with tempfile.TemporaryDirectory() as temp_dir:
-            result = manager.calculate_crc32(temp_dir)
+            result = manager.calculate_hash(temp_dir)
             assert result is None
 
     def test_calculate_crc32_permission_error(self):
@@ -81,7 +81,7 @@ class TestHashManager:
         with patch('pathlib.Path.open', side_effect=PermissionError("Access denied")):
             with patch('pathlib.Path.exists', return_value=True):
                 with patch('pathlib.Path.is_file', return_value=True):
-                    result = manager.calculate_crc32("/mock/path/file.txt")
+                    result = manager.calculate_hash("/mock/path/file.txt")
                     assert result is None
 
     def test_calculate_crc32_string_path(self):
@@ -94,7 +94,7 @@ class TestHashManager:
 
         try:
             # Test with string path
-            result = manager.calculate_crc32(temp_path)
+            result = manager.calculate_hash(temp_path)
             expected_hash = "cb1bffb9"  # CRC32 of "string path test"
             assert result == expected_hash
         finally:
@@ -332,7 +332,7 @@ class TestEventHandlerIntegration:
 
         # This is a basic integration test
         manager = HashManager()
-        assert hasattr(manager, 'calculate_crc32')
+        assert hasattr(manager, 'calculate_hash')
         assert hasattr(manager, 'find_duplicates_in_list')
         assert hasattr(manager, 'compare_folders')
 
@@ -347,7 +347,7 @@ class TestErrorHandling:
         with patch('pathlib.Path.open', side_effect=Exception("Unexpected error")):
             with patch('pathlib.Path.exists', return_value=True):
                 with patch('pathlib.Path.is_file', return_value=True):
-                    result = manager.calculate_crc32("/mock/path")
+                    result = manager.calculate_hash("/mock/path")
                     assert result is None
 
     def test_find_duplicates_with_exception(self):
@@ -380,7 +380,7 @@ class TestPerformance:
         try:
             # Measure calculation time
             start_time = time.perf_counter()
-            result = manager.calculate_crc32(temp_path)
+            result = manager.calculate_hash(temp_path)
             end_time = time.perf_counter()
 
             calculation_time = end_time - start_time
@@ -418,7 +418,7 @@ class TestPerformance:
                 progress_calls.append(bytes_processed)
 
             # Calculate hash with progress tracking
-            result = manager.calculate_crc32(temp_path, progress_callback)
+            result = manager.calculate_hash(temp_path, progress_callback)
 
             # Verify result is valid
             assert result is not None

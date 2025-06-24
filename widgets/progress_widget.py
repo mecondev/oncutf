@@ -384,56 +384,77 @@ class ProgressWidget(QWidget):
         self.size_label.setText(size_text)
 
     def _update_time_display(self):
-        """Update time information display with elapsed and estimated time."""
-        if not self.start_time:
+        """Update time display with elapsed and estimated time."""
+        if not self.show_time_info or not hasattr(self, 'time_label'):
             return
 
+        if self.start_time is None:
+            self.time_label.setText("Ready...")
+            return
+
+        # Calculate elapsed time
         elapsed = time.time() - self.start_time
 
-        # Calculate estimated time if we have progress data
-        if self.total_size > 0 and self.processed_size > 0 and elapsed > 1:
-            # Calculate processing rate (bytes per second)
-            rate = self.processed_size / elapsed
+        # Calculate estimated time based on progress
+        if self.processed_size > 0 and self.total_size > 0:
+            progress_ratio = self.processed_size / self.total_size
+            if progress_ratio > 0:
+                estimated_total = elapsed / progress_ratio
+                estimated_remaining = max(0, estimated_total - elapsed)
 
-            # Estimate remaining time
-            remaining_bytes = self.total_size - self.processed_size
-            if rate > 0:
-                estimated_remaining = remaining_bytes / rate
-                total_estimated = estimated_remaining + elapsed
+                # Format times
+                elapsed_str = self._format_time(elapsed)
+                estimated_total_str = self._format_time(estimated_total)
 
-                # Format estimated time
-                est_minutes = int(total_estimated // 60)
-                est_seconds = int(total_estimated % 60)
-
-                if est_minutes > 0:
-                    time_text = f"{est_minutes}m {est_seconds}s est."
-                else:
-                    time_text = f"{est_seconds}s est."
+                self.time_label.setText(f"{elapsed_str} / {estimated_total_str}")
             else:
-                # Fallback to elapsed time
-                minutes = int(elapsed // 60)
-                seconds = int(elapsed % 60)
-                time_text = f"{minutes}m {seconds}s" if minutes > 0 else f"{seconds}s"
+                elapsed_str = self._format_time(elapsed)
+                self.time_label.setText(f"{elapsed_str} / calculating...")
         else:
-            # Show elapsed time when no progress data available
-            minutes = int(elapsed // 60)
-            seconds = int(elapsed % 60)
-            time_text = f"{minutes}m {seconds}s" if minutes > 0 else f"{seconds}s"
+            elapsed_str = self._format_time(elapsed)
+            self.time_label.setText(f"{elapsed_str}")
 
-        self.time_label.setText(time_text)
+    def _format_time(self, seconds: float) -> str:
+        """Format time in a human-readable format."""
+        if seconds < 1:
+            return "0s"
+        elif seconds < 60:
+            return f"{int(seconds)}s"
+        elif seconds < 3600:
+            minutes = int(seconds // 60)
+            remaining_seconds = int(seconds % 60)
+            if remaining_seconds == 0:
+                return f"{minutes}m"
+            else:
+                return f"{minutes}m {remaining_seconds}s"
+        else:
+            hours = int(seconds // 3600)
+            remaining_minutes = int((seconds % 3600) // 60)
+            if remaining_minutes == 0:
+                return f"{hours}h"
+            else:
+                return f"{hours}h {remaining_minutes}m"
 
     def set_size_info(self, processed_size: int, total_size: int = 0):
-        """Manually set size information."""
-        if not self.show_size_info:
+        """
+        Update size information display.
+
+        Args:
+            processed_size: Number of bytes processed
+            total_size: Total bytes to process (optional, uses stored value if 0)
+        """
+        if not self.show_size_info or not hasattr(self, 'size_label'):
             return
 
+        # Update stored values
         self.processed_size = processed_size
         if total_size > 0:
             self.total_size = total_size
 
+        # Update display
         self._update_size_display()
 
-        # Also trigger time display update for estimated time calculation
+        # Also update time display since it depends on size progress
         if self.show_time_info:
             self._update_time_display()
 
