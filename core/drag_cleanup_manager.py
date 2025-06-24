@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 
+from config import STATUS_COLORS
 from core.drag_manager import DragManager
 from utils.logger_factory import get_cached_logger
 
@@ -75,7 +76,7 @@ class DragCleanupManager:
 
         # Report what was cleaned
         if cursor_count > 0 or has_active_drag:
-            self.main_window.set_status("Drag cancelled", color="blue", auto_reset=True, reset_delay=1000)
+            self.main_window.set_status("Drag cancelled", color=STATUS_COLORS["drag_action"], auto_reset=True, reset_delay=1000)
             logger.info(f"[MainWindow] FORCE CLEANUP: Cleaned {cursor_count} cursors, drag_active={has_active_drag}")
         else:
             logger.info("[MainWindow] FORCE CLEANUP: Nothing to clean")
@@ -145,7 +146,7 @@ class DragCleanupManager:
             if self.main_window._stuck_cursor_count >= 2:
                 logger.warning(f"[Emergency] Stuck drag cursor detected for {self.main_window._stuck_cursor_count * 5}s, forcing cleanup")
                 drag_manager.force_cleanup()
-                self.main_window.set_status("Stuck cursor fixed", color="green", auto_reset=True, reset_delay=1000)
+                self.main_window.set_status("Stuck cursor fixed", color=STATUS_COLORS["operation_success"], auto_reset=True, reset_delay=1000)
                 self.main_window._stuck_cursor_count = 0
             else:
                 logger.debug(f"[Emergency] Suspicious cursor detected ({self.main_window._stuck_cursor_count}/2)")

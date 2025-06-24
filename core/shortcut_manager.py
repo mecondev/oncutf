@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import Qt
 
+from config import STATUS_COLORS
 from utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:
@@ -48,7 +49,7 @@ class ShortcutManager:
 
         if not self.main_window.file_model.files:
             logger.info("[MainWindow] CLEAR TABLE: No files to clear")
-            self.main_window.set_status("No files to clear", color="gray", auto_reset=True, reset_delay=1000)
+            self.main_window.set_status("No files to clear", color=STATUS_COLORS["no_action"], auto_reset=True, reset_delay=1000)
             return
 
         # Clear the file table
@@ -57,7 +58,7 @@ class ShortcutManager:
         self.main_window.current_folder_is_recursive = False  # Reset recursive state
         self.main_window.current_sort_column = 1  # Reset to filename column
         self.main_window.current_sort_order = Qt.AscendingOrder  # Reset to ascending
-        self.main_window.set_status("File table cleared", color="blue", auto_reset=True, reset_delay=1000)
+        self.main_window.set_status("File table cleared", color=STATUS_COLORS["file_cleared"], auto_reset=True, reset_delay=1000)
         logger.info("[MainWindow] CLEAR TABLE: File table cleared successfully")
 
 

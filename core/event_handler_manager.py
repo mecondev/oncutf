@@ -14,6 +14,7 @@ from typing import List
 from PyQt5.QtCore import QModelIndex, Qt
 from PyQt5.QtWidgets import QApplication, QFileDialog, QMenu
 
+from config import STATUS_COLORS
 from core.modifier_handler import decode_modifiers_to_flags
 from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
@@ -535,13 +536,13 @@ class EventHandlerManager:
                     else:
                         status_msg = f"Set rotation to 0° for {modified_count} file(s)"
 
-                    self.parent_window.set_status(status_msg, color="green", auto_reset=True)
+                    self.parent_window.set_status(status_msg, color=STATUS_COLORS["operation_success"], auto_reset=True)
 
                 logger.info(f"[BulkRotation] Successfully applied rotation to {modified_count} files, skipped {skipped_count} files")
             else:
                 logger.info("[BulkRotation] No files needed rotation changes")
                 if hasattr(self.parent_window, 'set_status'):
-                    self.parent_window.set_status("All selected files already have 0° rotation", color="gray", auto_reset=True)
+                    self.parent_window.set_status("All selected files already have 0° rotation", color=STATUS_COLORS["neutral_info"], auto_reset=True)
 
         except Exception as e:
             logger.exception(f"[BulkRotation] Error applying rotation: {e}")
@@ -650,10 +651,9 @@ class EventHandlerManager:
             self.hash_worker = HashWorker(parent=self.parent_window)
 
             # Connect signals
-            self.hash_worker.progress_updated.connect(self.hash_dialog.set_progress)
-            self.hash_worker.enhanced_progress_updated.connect(self.hash_dialog.update_enhanced_progress)
+            self.hash_worker.progress_updated.connect(self._on_hash_progress_updated)
+            self.hash_worker.file_progress.connect(self.hash_dialog.set_progress)
             self.hash_worker.status_updated.connect(self.hash_dialog.set_status)
-            self.hash_worker.file_processing.connect(self.hash_dialog.set_filename)
 
             # Connect result signals
             if operation_type == "duplicates":
@@ -690,7 +690,7 @@ class EventHandlerManager:
 
             # Update main window status
             if hasattr(self.parent_window, 'set_status'):
-                self.parent_window.set_status(initial_status, color="blue", auto_reset=False)
+                self.parent_window.set_status(initial_status, color=STATUS_COLORS["action_completed"], auto_reset=False)
 
             # Start worker thread
             self.hash_worker.start()
@@ -709,6 +709,12 @@ class EventHandlerManager:
         if hasattr(self, 'hash_worker') and self.hash_worker:
             logger.info("[HashManager] Cancelling hash operation")
             self.hash_worker.cancel()
+
+    def _on_hash_progress_updated(self, current_file: int, total_files: int, filename: str) -> None:
+        """Handle hash worker progress updates."""
+        if hasattr(self, 'hash_dialog') and self.hash_dialog:
+            self.hash_dialog.set_count(current_file, total_files)
+            self.hash_dialog.set_filename(filename)
 
     def _on_duplicates_found(self, duplicates: dict, scope: str) -> None:
         """Handle duplicates found result."""
@@ -757,7 +763,7 @@ class EventHandlerManager:
 
         # Update status
         if hasattr(self.parent_window, 'set_status'):
-            self.parent_window.set_status("Hash operation failed", color="red", auto_reset=True)
+            self.parent_window.set_status("Hash operation failed", color=STATUS_COLORS["critical_error"], auto_reset=True)
 
         # Clean up worker
         if hasattr(self, 'hash_worker') and self.hash_worker:
@@ -880,7 +886,7 @@ class EventHandlerManager:
                 f"No duplicates found in {scope} files."
             )
             if hasattr(self.parent_window, 'set_status'):
-                self.parent_window.set_status(f"No duplicates found in {scope} files", color="green", auto_reset=True)
+                self.parent_window.set_status(f"No duplicates found in {scope} files", color=STATUS_COLORS["operation_success"], auto_reset=True)
             return
 
         # Build results message
@@ -908,7 +914,7 @@ class EventHandlerManager:
 
         # Update status
         if hasattr(self.parent_window, 'set_status'):
-            self.parent_window.set_status(f"Found {duplicate_count} duplicates in {duplicate_groups} groups", color="orange", auto_reset=True)
+            self.parent_window.set_status(f"Found {duplicate_count} duplicates in {duplicate_groups} groups", color=STATUS_COLORS["duplicate_found"], auto_reset=True)
 
         logger.info(f"[HashManager] Showed duplicate results: {duplicate_count} files in {duplicate_groups} groups")
 
@@ -928,7 +934,7 @@ class EventHandlerManager:
                 f"No matching files found in:\n{external_folder}"
             )
             if hasattr(self.parent_window, 'set_status'):
-                self.parent_window.set_status("No matching files found", color="gray", auto_reset=True)
+                self.parent_window.set_status("No matching files found", color=STATUS_COLORS["no_action"], auto_reset=True)
             return
 
         # Count matches and differences
@@ -966,9 +972,9 @@ class EventHandlerManager:
         # Update status
         if hasattr(self.parent_window, 'set_status'):
             if differences > 0:
-                self.parent_window.set_status(f"Found {differences} different files, {matches} identical", color="orange", auto_reset=True)
+                self.parent_window.set_status(f"Found {differences} different files, {matches} identical", color=STATUS_COLORS["alert_notice"], auto_reset=True)
             else:
-                self.parent_window.set_status(f"All {matches} files are identical", color="green", auto_reset=True)
+                self.parent_window.set_status(f"All {matches} files are identical", color=STATUS_COLORS["operation_success"], auto_reset=True)
 
         logger.info(f"[HashManager] Showed comparison results: {matches} identical, {differences} different")
 
@@ -987,7 +993,7 @@ class EventHandlerManager:
                 "No checksums could be calculated."
             )
             if hasattr(self.parent_window, 'set_status'):
-                self.parent_window.set_status("No checksums calculated", color="gray", auto_reset=True)
+                self.parent_window.set_status("No checksums calculated", color=STATUS_COLORS["no_action"], auto_reset=True)
             return
 
         # Build results message
@@ -1011,6 +1017,6 @@ class EventHandlerManager:
 
         # Update status
         if hasattr(self.parent_window, 'set_status'):
-            self.parent_window.set_status(f"Calculated checksums for {len(hash_results)} files", color="green", auto_reset=True)
+            self.parent_window.set_status(f"Calculated checksums for {len(hash_results)} files", color=STATUS_COLORS["hash_success"], auto_reset=True)
 
         logger.info(f"[HashManager] Showed checksum results for {len(hash_results)} files")

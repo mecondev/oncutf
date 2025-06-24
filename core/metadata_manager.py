@@ -12,6 +12,7 @@ from typing import List, Optional
 
 from PyQt5.QtCore import Qt
 
+from config import STATUS_COLORS
 from core.qt_imports import QApplication
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
@@ -635,7 +636,7 @@ class MetadataManager:
                     status_msg = f"Saved metadata changes to {success_count} files"
 
                 if hasattr(self.parent_window, 'set_status'):
-                    self.parent_window.set_status(status_msg, color="green", auto_reset=True)
+                    self.parent_window.set_status(status_msg, color=STATUS_COLORS["metadata_success"], auto_reset=True)
         elif failed_files:
             # Show error dialog only for failures
             from utils.dialog_utils import show_error_message

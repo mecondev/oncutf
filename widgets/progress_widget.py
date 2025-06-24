@@ -5,15 +5,13 @@ Author: Michael Economou
 Date: 2025-06-20
 
 Unified progress widget supporting both basic and enhanced progress tracking.
-Combines the functionality of CompactProgressWidget and CompactWaitingWidget
-into a single, configurable component.
+Simplified and cleaned up design with proper naming conventions.
 
 Features:
 - Basic progress display (percentage, count, filename)
-- Enhanced tracking (file size, time estimation)
+- Optional size and time tracking
 - Compact layout optimized for dialog usage
 - Customizable appearance and behavior
-- Legacy compatibility through factory functions
 """
 
 import os
@@ -40,7 +38,6 @@ from core.qt_imports import (
     QWidget,
 )
 from utils.logger_factory import get_cached_logger
-from utils.time_formatter import ProgressEstimator
 
 logger = get_cached_logger(__name__)
 
@@ -51,10 +48,8 @@ class ProgressWidget(QWidget):
 
     Handles all progress display needs:
     - Basic progress (file counting, metadata loading)
-    - Enhanced progress (with size and time tracking)
+    - Optional size and time tracking
     - Optimized layout for long paths and recursive imports
-
-    Parameters control behavior rather than separate classes.
     """
 
     def __init__(self,
@@ -85,20 +80,12 @@ class ProgressWidget(QWidget):
         self.bar_bg_color = bar_bg_color
 
         # Simple progress tracking
-        self.progress_estimator = None
-        if show_time_info:  # Only create if we need time tracking
-            from utils.time_formatter import ProgressEstimator
-            self.progress_estimator = ProgressEstimator()
+        self.start_time = None
+        self.total_size = 0
+        self.processed_size = 0
 
         # Throttling to prevent flickering
         self._last_update_time = 0
-
-        # Animation components for smooth bounce effect
-        self._bounce_animation = None
-        self._bounce_timer = QTimer()
-        self._bounce_timer.setSingleShot(False)
-        self._bounce_direction = 1  # 1 for forward, -1 for backward
-        self._bounce_position = 0
 
         # Setup UI
         self._setup_ui()
@@ -110,8 +97,8 @@ class ProgressWidget(QWidget):
         """Setup the UI components with compact layout."""
         # Main layout with compact settings
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(6, 6, 6, 6)  # Original compact margins
-        self.main_layout.setSpacing(4)  # Original compact spacing
+        self.main_layout.setContentsMargins(6, 6, 6, 6)
+        self.main_layout.setSpacing(4)
 
         # First row: status label and count (horizontal layout)
         status_row = QHBoxLayout()
@@ -126,7 +113,7 @@ class ProgressWidget(QWidget):
         self.count_label = QLabel("")
         self.count_label.setObjectName("count_label")
         self.count_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        self.count_label.setFixedWidth(90)  # Original width for large numbers
+        self.count_label.setFixedWidth(90)
 
         status_row.addWidget(self.status_label)
         status_row.addWidget(self.count_label)
@@ -138,7 +125,7 @@ class ProgressWidget(QWidget):
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
         self.progress_bar.setTextVisible(False)
-        self.progress_bar.setFixedHeight(8)  # Original thin height
+        self.progress_bar.setFixedHeight(8)
         self.main_layout.addWidget(self.progress_bar)
 
         # Third row: percentage and filename (horizontal layout)
@@ -170,11 +157,11 @@ class ProgressWidget(QWidget):
     def _setup_enhanced_info_row(self):
         """Setup additional row for size and time information."""
         enhanced_row = QHBoxLayout()
-        enhanced_row.setContentsMargins(0, 2, 0, 0)  # Small top margin
+        enhanced_row.setContentsMargins(0, 2, 0, 0)
         enhanced_row.setSpacing(10)
 
         if self.show_size_info:
-            self.size_label = QLabel("Calculating size...")
+            self.size_label = QLabel("Ready...")
             self.size_label.setObjectName("size_info_label")
             self.size_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
             self.size_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -184,7 +171,7 @@ class ProgressWidget(QWidget):
             enhanced_row.addStretch()
 
         if self.show_time_info:
-            self.time_label = QLabel("Calculating time...")
+            self.time_label = QLabel("Ready...")
             self.time_label.setObjectName("time_info_label")
             self.time_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
             self.time_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -198,131 +185,99 @@ class ProgressWidget(QWidget):
         QLabel#status_label {{
             color: {QLABEL_PRIMARY_TEXT};
             font-size: 14px;
-            font-family: 'Inter', sans-serif;
             font-weight: 500;
-            background-color: transparent;
-            border: none;
+            margin: 2px 0px;
         }}
 
         QLabel#count_label {{
             color: {QLABEL_SECONDARY_TEXT};
-            font-size: 13px;
-            font-family: 'Inter', sans-serif;
-            background-color: transparent;
-            border: none;
+            font-size: 12px;
+            font-weight: 400;
+            margin: 2px 0px;
         }}
 
         QLabel#percentage_label {{
             color: {QLABEL_SECONDARY_TEXT};
             font-size: 12px;
-            font-family: 'Inter', sans-serif;
-            background-color: transparent;
-            border: none;
+            font-weight: 400;
+            margin: 2px 0px;
         }}
 
         QLabel#filename_label {{
             color: {QLABEL_TERTIARY_TEXT};
-            font-size: 12px;
-            font-family: 'Inter', sans-serif;
-            background-color: transparent;
-            border: none;
+            font-size: 11px;
+            font-weight: 400;
+            margin: 2px 0px;
         }}
 
         QLabel#size_info_label {{
-            color: {QLABEL_TERTIARY_TEXT};
+            color: {QLABEL_SECONDARY_TEXT};
             font-size: 11px;
-            font-family: 'Inter', sans-serif;
-            background-color: transparent;
-            border: none;
+            font-weight: 400;
+            margin: 1px 0px;
         }}
 
         QLabel#time_info_label {{
-            color: {QLABEL_TERTIARY_TEXT};
+            color: {QLABEL_SECONDARY_TEXT};
             font-size: 11px;
-            font-family: 'Inter', sans-serif;
-            background-color: transparent;
-            border: none;
+            font-weight: 400;
+            margin: 1px 0px;
         }}
 
         QProgressBar#progress_bar {{
-            background-color: {self.bar_bg_color};
             border: 1px solid {QLABEL_BORDER_GRAY};
-            border-radius: 3px;
+            border-radius: 4px;
+            background-color: {self.bar_bg_color};
             text-align: center;
-            color: {QLABEL_WHITE_TEXT};
-            font-size: 9px;
         }}
 
         QProgressBar#progress_bar::chunk {{
-            background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
-                                      stop: 0 {self.bar_color},
-                                      stop: 1 {self.bar_color});
-            border-radius: 2px;
+            background-color: {self.bar_color};
+            border-radius: 3px;
             margin: 1px;
         }}
         """
-
-        # Add enhanced info styling if needed
-        if self.show_size_info or self.show_time_info:
-            enhanced_style = f"""
-            QLabel#size_info_label, QLabel#time_info_label {{
-                color: {QLABEL_SECONDARY_TEXT};
-                font-size: 10px;
-                font-family: 'Inter', sans-serif;
-                background-color: transparent;
-                border: none;
-            }}
-            """
-            style += enhanced_style
-
         self.setStyleSheet(style)
 
     def sizeHint(self):
-        """Return the preferred size for this widget."""
-        height = super().sizeHint().height()
+        """Return preferred size hint."""
+        height = 80  # Base height for basic progress
+        if self.show_size_info or self.show_time_info:
+            height += 20  # Additional height for enhanced info
         return QSize(self.width(), height)
 
-    # Core progress methods
     def set_progress(self, value: int, total: int):
-        """Set progress bar value and total - simple version."""
-        # Update progress bar
-        self.progress_bar.setMaximum(total)
-        self.progress_bar.setValue(value)
+        """Set progress bar value and total."""
+        if total <= 0:
+            percentage = 0
+        else:
+            percentage = int((value / total) * 100)
+            percentage = max(0, min(100, percentage))
 
-        # Simple count-based percentage
-        percent = int(100 * value / total) if total else 0
-        percent = max(0, min(100, percent))
-        self.percentage_label.setText(f"{percent}%")
-
-        # Update count display
-        self.set_count(value, total)
-
-        # Update enhanced tracking if enabled
-        if self.progress_estimator:
-            self.progress_estimator.update(value, total)
-            self._update_enhanced_displays()
+        self.progress_bar.setValue(percentage)
+        self.percentage_label.setText(f"{percentage}%")
 
     def set_status(self, text: str):
-        """Set status with intelligent truncation for long messages."""
-        logger.debug(f"[ProgressWidget] Set status: {text.strip()}")
+        """
+        Set status text with intelligent truncation for long messages.
 
+        Args:
+            text: Status message to display
+        """
         if not text:
-            self.status_label.setText("")
+            self.status_label.setText("Ready...")
             return
 
-        # Intelligent truncation for paths and long messages
-        max_length = 50
+        # Intelligent truncation for very long status messages
+        max_length = 80
         if len(text) > max_length:
-            if "/" in text or "\\" in text:  # Path-like text
-                parts = text.replace("\\", "/").split("/")
-                if len(parts) > 2:
-                    truncated_text = f"{parts[0]}/.../{parts[-1]}"
-                    if len(truncated_text) <= max_length:
-                        self.status_label.setText(truncated_text)
-                        return
-
-            # Fallback: simple truncation
-            self.status_label.setText(text[:max_length] + "...")
+            # Try to truncate at last space before limit
+            truncate_pos = text.rfind(' ', 0, max_length - 3)
+            if truncate_pos > max_length // 2:  # Only if we find a reasonable break point
+                truncated_text = text[:truncate_pos] + "..."
+            else:
+                truncated_text = text[:max_length - 3] + "..."
+            self.status_label.setText(truncated_text)
         else:
             self.status_label.setText(text)
 
@@ -351,9 +306,10 @@ class ProgressWidget(QWidget):
     def set_count(self, current: int, total: int):
         """Set count display."""
         self.count_label.setText(f"{current} of {total}")
+
     def set_indeterminate_mode(self):
         """Set progress bar to indeterminate/animated mode."""
-        self.progress_bar.setRange(0, 0)  # Qt built-in indeterminate mode
+        self.progress_bar.setRange(0, 0)
         self.percentage_label.setText("")
         self.count_label.setText("")
         self.progress_bar.show()
@@ -369,131 +325,112 @@ class ProgressWidget(QWidget):
         self.count_label.setText("0 of 0")
         logger.debug("[ProgressWidget] Progress bar set to determinate mode")
 
-    def start_enhanced_tracking(self, total_size: int = 0):
-        """Start simple progress tracking."""
-        if self.progress_estimator:
-            self.progress_estimator.start(total_size)
+    def start_progress_tracking(self, total_size: int = 0):
+        """Start progress tracking with optional size tracking."""
+        self.start_time = time.time()
+        self.total_size = total_size
+        self.processed_size = 0
 
         if self.show_size_info and hasattr(self, 'size_label'):
-            self.size_label.setText("0 B/calculating...")
+            if total_size > 0:
+                self.size_label.setText("Starting...")
+            else:
+                self.size_label.setText("0 B")
 
         if self.show_time_info and hasattr(self, 'time_label'):
             self.time_label.setText("Starting...")
 
-        logger.debug(f"[ProgressWidget] Started simple tracking (total_size: {total_size})")
+        logger.debug(f"[ProgressWidget] Started tracking (total_size: {total_size})")
 
-    def update_enhanced_progress(self, current: int, total: int, current_size: int = 0):
-        """Update progress - very simple version."""
-        import time
-
+    def update_progress_with_size(self, current: int, total: int, current_size: int = 0):
+        """Update progress with size tracking."""
         # Update much less frequently to avoid flickering
         current_time = time.time()
-        if current_time - self._last_update_time < 0.5:  # Update every 500ms only
+        if current_time - self._last_update_time < 0.3:  # Update every 300ms only
             return
         self._last_update_time = current_time
 
         # Update basic progress
         self.set_progress(current, total)
+        self.processed_size = current_size
 
-        # Simple size display
+        # Update size display
         if self.show_size_info and hasattr(self, 'size_label'):
-            from utils.file_size_formatter import format_file_size_system_compatible
+            self._update_size_display()
 
-            processed_str = format_file_size_system_compatible(current_size)
-            if self.progress_estimator and self.progress_estimator.total_size > 0:
-                total_str = format_file_size_system_compatible(self.progress_estimator.total_size)
-                size_text = f"{processed_str}/{total_str}"
-            else:
-                size_text = processed_str
-            self.size_label.setText(size_text)
-
-        # Very simple time display - just elapsed time
+        # Update time display
         if self.show_time_info and hasattr(self, 'time_label'):
-            if self.progress_estimator:
-                elapsed = self.progress_estimator.time_tracker.get_elapsed_time()
-                minutes = int(elapsed // 60)
-                seconds = int(elapsed % 60)
-                if minutes > 0:
-                    time_text = f"{minutes}m {seconds}s"
-                else:
-                    time_text = f"{seconds}s"
-                self.time_label.setText(time_text)
-            else:
-                self.time_label.setText("Processing...")
+            self._update_time_display()
 
-    def _update_enhanced_displays(self):
-        """Update enhanced size and time displays."""
-        if not self.progress_estimator:
+    def _update_size_display(self):
+        """Update size information display."""
+        from utils.file_size_formatter import format_file_size_system_compatible
+
+        processed_str = format_file_size_system_compatible(self.processed_size)
+        if self.total_size > 0:
+            total_str = format_file_size_system_compatible(self.total_size)
+            size_text = f"{processed_str}/{total_str}"
+        else:
+            size_text = processed_str
+        self.size_label.setText(size_text)
+
+    def _update_time_display(self):
+        """Update time information display."""
+        if not self.start_time:
             return
 
-        summary = self.progress_estimator.get_progress_summary()
+        elapsed = time.time() - self.start_time
+        minutes = int(elapsed // 60)
+        seconds = int(elapsed % 60)
 
-        if self.show_size_info:
-            size_text = summary.get('size_range', 'Processing...')
-            if not size_text or size_text == "0 B":
-                size_text = "Processing..."
-            self.size_label.setText(size_text)
+        if minutes > 0:
+            time_text = f"{minutes}m {seconds}s"
+        else:
+            time_text = f"{seconds}s"
 
-        if self.show_time_info:
-            time_text = summary.get('time_range', 'Calculating...')
-            if not time_text or time_text == "0''":
-                time_text = "Calculating..."
-            self.time_label.setText(time_text)
+        self.time_label.setText(time_text)
 
     def set_size_info(self, processed_size: int, total_size: int = 0):
         """Manually set size information."""
         if not self.show_size_info:
             return
 
-        from utils.file_size_formatter import format_file_size_system_compatible
-
-        processed_str = format_file_size_system_compatible(processed_size)
-
+        self.processed_size = processed_size
         if total_size > 0:
-            total_str = format_file_size_system_compatible(total_size)
-            size_text = f"{processed_str}/{total_str}"
-        else:
-            size_text = processed_str
+            self.total_size = total_size
 
-        self.size_label.setText(size_text)
+        self._update_size_display()
 
-    def set_time_info(self, elapsed: float, estimated_total: Optional[float] = None):
+    def set_time_info(self, elapsed: float):
         """Manually set time information."""
         if not self.show_time_info:
             return
 
-        from utils.time_formatter import format_time_range
+        minutes = int(elapsed // 60)
+        seconds = int(elapsed % 60)
 
-        time_text = format_time_range(elapsed, estimated_total)
+        if minutes > 0:
+            time_text = f"{minutes}m {seconds}s"
+        else:
+            time_text = f"{seconds}s"
+
         self.time_label.setText(time_text)
-
-    def get_progress_summary(self) -> dict:
-        """Get comprehensive progress summary (if enhanced tracking enabled)."""
-        if self.progress_estimator:
-            return self.progress_estimator.get_progress_summary()
-        return {}
-
-    def _stop_bounce_animation(self):
-        """Placeholder for bounce animation cleanup (not used in simple mode)."""
-        pass
 
     def reset(self):
         """Reset all progress tracking."""
-        # Stop any animations first
-        self._stop_bounce_animation()
-
         self.set_progress(0, 100)
         self.set_status("Ready...")
         self.set_filename("")
         self.set_count(0, 0)
 
-        if self.progress_estimator:
-            self.progress_estimator = ProgressEstimator()
+        self.start_time = None
+        self.total_size = 0
+        self.processed_size = 0
 
-        if self.show_size_info:
+        if self.show_size_info and hasattr(self, 'size_label'):
             self.size_label.setText("Ready...")
 
-        if self.show_time_info:
+        if self.show_time_info and hasattr(self, 'time_label'):
             self.time_label.setText("Ready...")
 
 
@@ -502,25 +439,14 @@ def create_basic_progress_widget(parent=None, **kwargs):
     """Create a basic progress widget (no enhanced tracking)."""
     return ProgressWidget(parent, show_size_info=False, show_time_info=False, **kwargs)
 
-def create_enhanced_progress_widget(parent=None, **kwargs):
-    """Create an enhanced progress widget (with size and time tracking)."""
-    return ProgressWidget(parent, show_size_info=True, show_time_info=True, **kwargs)
-
-def create_size_only_progress_widget(parent=None, **kwargs):
-    """Create a progress widget with only size tracking."""
+def create_size_tracking_widget(parent=None, **kwargs):
+    """Create a progress widget with size tracking."""
     return ProgressWidget(parent, show_size_info=True, show_time_info=False, **kwargs)
 
-def create_time_only_progress_widget(parent=None, **kwargs):
-    """Create a progress widget with only time tracking."""
+def create_time_tracking_widget(parent=None, **kwargs):
+    """Create a progress widget with time tracking."""
     return ProgressWidget(parent, show_size_info=False, show_time_info=True, **kwargs)
 
-
-# Legacy compatibility aliases
-CompactWaitingWidget = ProgressWidget  # For backward compatibility
-CompactProgressWidget = ProgressWidget
-def CompactEnhancedProgressWidget(*args, **kwargs):
-    """Legacy compatibility alias for enhanced progress widget."""
-    # Set defaults for enhanced mode if not explicitly provided
-    kwargs.setdefault('show_size_info', True)
-    kwargs.setdefault('show_time_info', True)
-    return ProgressWidget(*args, **kwargs)
+def create_full_tracking_widget(parent=None, **kwargs):
+    """Create a progress widget with both size and time tracking."""
+    return ProgressWidget(parent, show_size_info=True, show_time_info=True, **kwargs)

@@ -10,6 +10,7 @@ Manages file operations like rename, validation, and conflict resolution.
 import os
 from typing import List, Optional
 
+from config import STATUS_COLORS
 from core.qt_imports import QDesktopServices, QUrl
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
@@ -39,12 +40,12 @@ class FileOperationsManager:
         """Execute batch rename process."""
         if not current_folder_path:
             if self.parent_window:
-                self.parent_window.set_status("No folder selected.", color="orange")
+                self.parent_window.set_status("No folder selected.", color=STATUS_COLORS["alert_notice"])
             return 0
 
         if not selected_files:
             if self.parent_window:
-                self.parent_window.set_status("No files selected.", color="gray")
+                self.parent_window.set_status("No files selected.", color=STATUS_COLORS["no_action"])
                 CustomMessageDialog.show_warning(
                     self.parent_window, "Rename Warning", "No files are selected for renaming."
                 )
@@ -81,7 +82,7 @@ class FileOperationsManager:
                 logger.error(f"[Rename] Error: {result.old_path} — {result.error}")
 
         if self.parent_window:
-            self.parent_window.set_status(f"Renamed {renamed_count} file(s).", color="green", auto_reset=True)
+            self.parent_window.set_status(f"Renamed {renamed_count} file(s).", color=STATUS_COLORS["rename_success"], auto_reset=True)
 
         logger.info(f"[Rename] Completed: {renamed_count} renamed out of {len(results)} total")
 

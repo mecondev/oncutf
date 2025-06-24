@@ -79,7 +79,7 @@ class UtilityManager:
         self.main_window.modifier_state = QApplication.keyboardModifiers()
 
         if not self.main_window.current_folder_path:
-            self.main_window.set_status("No folder loaded.", color="gray", auto_reset=True)
+            self.main_window.set_status("No folder loaded.", color=STATUS_COLORS["no_action"], auto_reset=True)
             return
 
         from widgets.custom_msgdialog import CustomMessageDialog

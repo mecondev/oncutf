@@ -10,6 +10,7 @@ Handles file table selection operations, preview updates, and metadata synchroni
 
 from typing import List
 
+from config import STATUS_COLORS
 from core.qt_imports import QElapsedTimer
 from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
@@ -161,7 +162,7 @@ class SelectionManager:
 
         if not file_model or not file_table_view or not file_model.files:
             if hasattr(self.parent_window, 'set_status'):
-                self.parent_window.set_status("No files to invert selection.", color="gray", auto_reset=True)
+                self.parent_window.set_status("No files to invert selection.", color=STATUS_COLORS["no_action"], auto_reset=True)
             return
 
         with wait_cursor():

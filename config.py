@@ -155,15 +155,35 @@ METADATA_TREE_COLUMN_WIDTHS = {
 # Status Label Colors
 # ----------------------------
 STATUS_COLORS = {
+    # Basic status states
     "ready": "",                    # Default color (no override)
     "error": "#ff6b6b",            # Light red
     "success": "#51cf66",          # Light green
     "warning": "#ffa726",          # Light orange
     "info": "#74c0fc",             # Light blue/cyan
     "loading": "#adb5bd",          # Light gray
+
+    # Metadata specific
     "metadata_skipped": "#adb5bd", # Light gray for skipped metadata
     "metadata_extended": "#ff8a65", # Light orange-red for extended metadata
-    "metadata_basic": "#74c0fc"    # Light blue/cyan for basic metadata
+    "metadata_basic": "#74c0fc",   # Light blue/cyan for basic metadata
+
+    # Action categories (pale and bright colors)
+    "action_completed": "#87ceeb", # Pale bright blue - for completed actions like clearing table
+    "neutral_info": "#d3d3d3",     # Pale bright gray - for neutral information
+    "operation_success": "#90ee90", # Pale bright green - for successful operations
+    "alert_notice": "#ffd700",     # Pale bright orange/yellow - for alerts and notices
+    "critical_error": "#ffb6c1",   # Pale bright red - for critical errors
+
+    # Specific use cases
+    "file_cleared": "#87ceeb",     # Pale blue for file table cleared
+    "no_action": "#d3d3d3",        # Pale gray for "no files to clear" etc
+    "rename_success": "#90ee90",   # Pale green for successful renames
+    "validation_error": "#ffb6c1", # Pale red for validation errors
+    "drag_action": "#87ceeb",      # Pale blue for drag operations
+    "hash_success": "#90ee90",     # Pale green for hash operations
+    "duplicate_found": "#ffd700",  # Pale yellow for duplicate warnings
+    "metadata_success": "#90ee90", # Pale green for metadata operations
 }
 
 # ----------------------------

@@ -20,6 +20,7 @@ from typing import Optional
 from core.application_context import ApplicationContext
 
 # Import all config constants from centralized module
+from config import STATUS_COLORS
 from core.config_imports import *
 from core.dialog_manager import DialogManager
 from core.drag_cleanup_manager import DragCleanupManager
@@ -693,7 +694,7 @@ class MainWindow(QMainWindow):
         logger.info(f"[MetadataEdit] Value changed: {key_path} = '{old_value}' -> '{new_value}'")
 
         # Update status to show the change
-        self.set_status(f"Modified {key_path}: {old_value} → {new_value}", color="blue", auto_reset=True)
+        self.set_status(f"Modified {key_path}: {old_value} → {new_value}", color=STATUS_COLORS["action_completed"], auto_reset=True)
 
         # The file icon status update is already handled by MetadataTreeView._update_file_icon_status()
         # Just log the change for debugging
@@ -709,7 +710,7 @@ class MainWindow(QMainWindow):
         logger.info(f"[MetadataEdit] Value reset: {key_path}")
 
         # Update status to show the reset
-        self.set_status(f"Reset {key_path} to original value", color="orange", auto_reset=True)
+        self.set_status(f"Reset {key_path} to original value", color=STATUS_COLORS["alert_notice"], auto_reset=True)
 
         # The file icon status update is already handled by MetadataTreeView._update_file_icon_status()
         logger.debug(f"[MetadataEdit] Reset metadata field: {key_path}")
@@ -724,7 +725,7 @@ class MainWindow(QMainWindow):
         logger.debug(f"[MetadataEdit] Value copied to clipboard: {value}")
 
         # Show a brief status message
-        self.set_status(f"Copied '{value}' to clipboard", color="green", auto_reset=True, reset_delay=2000)
+        self.set_status(f"Copied '{value}' to clipboard", color=STATUS_COLORS["operation_success"], auto_reset=True, reset_delay=2000)
 
     # =====================================
     # Window Configuration Management
