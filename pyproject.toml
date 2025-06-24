@@ -53,7 +53,7 @@ exclude = ["backups", ".cache", "temp", "reports"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N"]
-ignore = ["E501", "N802", "F403", "F405"]
+ignore = ["E501", "N802", "F403", "F405", "E402"]
 
 [tool.ruff.lint.isort]
 force-single-line = false

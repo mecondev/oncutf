@@ -186,7 +186,7 @@ class HashWorker(QThread):
             self.file_processing.emit(os.path.basename(file_path))
 
             # Calculate hash
-            file_hash = hash_manager.calculate_sha256(file_path)
+            file_hash = hash_manager.calculate_hash(file_path)
             if file_hash:
                 if file_hash in hash_cache:
                     hash_cache[file_hash].append(file_path)
@@ -226,14 +226,14 @@ class HashWorker(QThread):
             self.file_processing.emit(filename)
 
                         # Calculate hash of current file
-            current_hash = hash_manager.calculate_sha256(file_path)
+            current_hash = hash_manager.calculate_hash(file_path)
             if current_hash is None:
                 continue
 
             # Look for file with same name in external folder
             external_file_path = Path(external_folder) / filename
             if external_file_path.exists():
-                external_hash = hash_manager.calculate_sha256(str(external_file_path))
+                external_hash = hash_manager.calculate_hash(str(external_file_path))
                 if external_hash is not None:
                     is_same = current_hash == external_hash
                     comparison_results[filename] = {
@@ -273,7 +273,7 @@ class HashWorker(QThread):
             self.file_processing.emit(os.path.basename(file_path))
 
             # Calculate hash
-            file_hash = hash_manager.calculate_sha256(file_path)
+            file_hash = hash_manager.calculate_hash(file_path)
             if file_hash:
                 hash_results[file_path] = file_hash
 

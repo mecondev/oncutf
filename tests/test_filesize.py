@@ -41,7 +41,7 @@ class TestFileSizeComparison(unittest.TestCase):
             ls_output = subprocess.check_output(['ls', '-l', filepath], text=True)
             ls_size = int(ls_output.split()[4])
             results['ls'] = ls_size
-        except:
+        except (subprocess.CalledProcessError, ValueError, IndexError):
             results['ls'] = "Error"
 
         try:
@@ -49,7 +49,7 @@ class TestFileSizeComparison(unittest.TestCase):
             stat_output = subprocess.check_output(['stat', '-c', '%s', filepath], text=True)
             stat_size = int(stat_output.strip())
             results['stat'] = stat_size
-        except:
+        except (subprocess.CalledProcessError, ValueError):
             results['stat'] = "Error"
 
         try:
@@ -57,7 +57,7 @@ class TestFileSizeComparison(unittest.TestCase):
             du_output = subprocess.check_output(['du', '-b', filepath], text=True)
             du_size = int(du_output.split()[0])
             results['du'] = du_size
-        except:
+        except (subprocess.CalledProcessError, ValueError, IndexError):
             results['du'] = "Error"
 
         try:
@@ -65,7 +65,7 @@ class TestFileSizeComparison(unittest.TestCase):
             wc_output = subprocess.check_output(['wc', '-c', filepath], text=True)
             wc_size = int(wc_output.split()[0])
             results['wc'] = wc_size
-        except:
+        except (subprocess.CalledProcessError, ValueError, IndexError):
             results['wc'] = "Error"
 
         return results

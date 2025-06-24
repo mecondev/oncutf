@@ -19,13 +19,12 @@ import sys
 import time
 from pathlib import Path
 
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtWidgets import QApplication, QStyleFactory
+
 # Add the project root to the Python path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
-
-
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtWidgets import QApplication, QStyleFactory
 
 from config import SPLASH_SCREEN_DURATION
 from main_window import MainWindow

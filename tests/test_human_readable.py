@@ -30,7 +30,7 @@ def get_system_human_sizes(filepath):
         ls_output = subprocess.check_output(['ls', '-lh', filepath], text=True)
         ls_size = ls_output.split()[4]
         results['ls_h'] = ls_size
-    except:
+    except (subprocess.CalledProcessError, IndexError):
         results['ls_h'] = "Error"
 
     try:
@@ -38,7 +38,7 @@ def get_system_human_sizes(filepath):
         du_output = subprocess.check_output(['du', '-h', filepath], text=True)
         du_size = du_output.split()[0]
         results['du_h'] = du_size
-    except:
+    except (subprocess.CalledProcessError, IndexError):
         results['du_h'] = "Error"
 
     return results

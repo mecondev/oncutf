@@ -847,7 +847,7 @@ class EventHandlerManager:
             hash_results = {}
             with wait_cursor():
                 hash_manager = HashManager()
-                file_hash = hash_manager.calculate_sha256(file_item.full_path)
+                file_hash = hash_manager.calculate_hash(file_item.full_path)
 
                 if file_hash:
                     hash_results[file_item.full_path] = file_hash
@@ -992,7 +992,7 @@ class EventHandlerManager:
 
         # Build results message
         message_lines = [
-            f"SHA-256 Checksums for {len(hash_results)} files:\n"
+            f"CRC32 Checksums for {len(hash_results)} files:\n"
         ]
 
         for file_path, hash_value in hash_results.items():

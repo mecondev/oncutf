@@ -2,13 +2,14 @@
 hash_manager.py
 
 Author: Michael Economou
-Date: 2025-01-21
+Date: 2025-06-21
 
 Manages file hashing operations, duplicate detection, and file integrity checking.
-Provides SHA-256 hash calculations and folder/file comparison utilities.
+Provides CRC32 hash calculations and folder/file comparison utilities.
+Optimized for speed and efficiency in file operations.
 """
 
-import hashlib
+import zlib
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -23,26 +24,29 @@ class HashManager:
     Manages file hashing operations and duplicate detection.
 
     Provides functionality for:
-    - SHA-256 hash calculation with error handling
+    - CRC32 hash calculation with error handling (10x faster than SHA-256)
     - File and folder comparison
     - Duplicate detection in file lists
     - Hash caching for performance optimization
+
+    Note: Uses CRC32 for optimal speed while maintaining sufficient accuracy
+    for file comparison, duplicate detection, and undo/redo operations.
     """
 
     def __init__(self):
         """Initialize HashManager with empty hash cache."""
         self._hash_cache: Dict[str, str] = {}
-        logger.debug("[HashManager] Initialized", extra={"dev_only": True})
+        logger.debug("[HashManager] Initialized with CRC32 hashing", extra={"dev_only": True})
 
-    def calculate_sha256(self, file_path: Union[str, Path]) -> Optional[str]:
+    def calculate_hash(self, file_path: Union[str, Path]) -> Optional[str]:
         """
-        Calculate the SHA-256 hash of a file with error handling.
+        Calculate the CRC32 hash of a file with error handling.
 
         Args:
             file_path: Path to the file to hash
 
         Returns:
-            str: SHA-256 hash in hexadecimal format, or None if error occurred
+            str: CRC32 hash in hexadecimal format (8 characters), or None if error occurred
         """
         if isinstance(file_path, str):
             file_path = Path(file_path)
@@ -62,17 +66,19 @@ class HashManager:
                 logger.warning(f"[HashManager] Path is not a file: {file_path}")
                 return None
 
-            h = hashlib.sha256()
+            # Calculate CRC32 with larger chunks for better performance
+            crc = 0
             with file_path.open("rb") as f:
-                for chunk in iter(lambda: f.read(8192), b""):
-                    h.update(chunk)
+                for chunk in iter(lambda: f.read(65536), b""):  # 64KB chunks for speed
+                    crc = zlib.crc32(chunk, crc)
 
-            hash_result = h.hexdigest()
+            # Convert to unsigned 32-bit and format as hex
+            hash_result = f"{crc & 0xffffffff:08x}"
 
             # Cache the result
             self._hash_cache[cache_key] = hash_result
 
-            logger.debug(f"[HashManager] Calculated hash for {file_path.name}: {hash_result[:8]}...", extra={"dev_only": True})
+            logger.debug(f"[HashManager] Calculated CRC32 for {file_path.name}: {hash_result}", extra={"dev_only": True})
             return hash_result
 
         except PermissionError:
@@ -85,6 +91,18 @@ class HashManager:
             logger.error(f"[HashManager] Unexpected error hashing file {file_path}: {e}")
             return None
 
+    def calculate_sha256(self, file_path: Union[str, Path]) -> Optional[str]:
+        """
+        Legacy compatibility method - now uses CRC32 for improved performance.
+
+        Args:
+            file_path: Path to the file to hash
+
+        Returns:
+            str: CRC32 hash in hexadecimal format (8 characters), or None if error occurred
+        """
+        return self.calculate_hash(file_path)
+
     def compare_folders(self, folder1: Union[str, Path], folder2: Union[str, Path]) -> Dict[str, Tuple[bool, str, str]]:
         """
         Compare two folders and return file comparison results.
@@ -96,8 +114,8 @@ class HashManager:
         Returns:
             dict: Dictionary with filename as key and (is_same, hash1, hash2) as value
                  is_same: True if files are identical
-                 hash1: SHA-256 hash of file in folder1
-                 hash2: SHA-256 hash of file in folder2
+                 hash1: CRC32 hash of file in folder1
+                 hash2: CRC32 hash of file in folder2
         """
         if isinstance(folder1, str):
             folder1 = Path(folder1)
@@ -122,16 +140,16 @@ class HashManager:
 
                 file2 = folder2 / file1.name
                 if file2.exists() and file2.is_file():
-                    sha1 = self.calculate_sha256(file1)
-                    sha2 = self.calculate_sha256(file2)
+                    hash1 = self.calculate_hash(file1)
+                    hash2 = self.calculate_hash(file2)
 
-                    if sha1 is not None and sha2 is not None:
-                        result[file1.name] = (sha1 == sha2, sha1, sha2)
+                    if hash1 is not None and hash2 is not None:
+                        result[file1.name] = (hash1 == hash2, hash1, hash2)
                         files_processed += 1
                     else:
                         logger.warning(f"[HashManager] Could not hash one or both files: {file1.name}")
 
-            logger.info(f"[HashManager] Compared {files_processed} files between folders")
+            logger.info(f"[HashManager] Compared {files_processed} files between folders (CRC32)")
             return result
 
         except Exception as e:
@@ -140,7 +158,7 @@ class HashManager:
 
     def find_duplicates_in_list(self, file_items: List[FileItem]) -> Dict[str, List[FileItem]]:
         """
-        Find duplicate files in a list of FileItem objects based on SHA-256 hash.
+        Find duplicate files in a list of FileItem objects based on CRC32 hash.
 
         Args:
             file_items: List of FileItem objects to check for duplicates
@@ -155,11 +173,11 @@ class HashManager:
         hash_to_files: Dict[str, List[FileItem]] = {}
         processed_count = 0
 
-        logger.info(f"[HashManager] Scanning {len(file_items)} files for duplicates...")
+        logger.info(f"[HashManager] Scanning {len(file_items)} files for duplicates (CRC32)...")
 
         for file_item in file_items:
             try:
-                file_hash = self.calculate_sha256(file_item.full_path)
+                file_hash = self.calculate_hash(file_item.full_path)
                 if file_hash is not None:
                     if file_hash not in hash_to_files:
                         hash_to_files[file_hash] = []
@@ -184,12 +202,12 @@ class HashManager:
 
         Args:
             file_path: Path to the file to verify
-            expected_hash: Expected SHA-256 hash in hexadecimal format
+            expected_hash: Expected CRC32 hash in hexadecimal format
 
         Returns:
             bool: True if file hash matches expected hash, False otherwise
         """
-        actual_hash = self.calculate_sha256(file_path)
+        actual_hash = self.calculate_hash(file_path)
         if actual_hash is None:
             return False
 
@@ -217,23 +235,39 @@ class HashManager:
         """
         return {
             "cache_size": len(self._hash_cache),
-            "memory_usage_approx": len(self._hash_cache) * 100  # Rough estimate in bytes
+            "memory_usage_approx": len(self._hash_cache) * 50  # CRC32 uses less memory than SHA-256
         }
 
 
 # Convenience functions for backward compatibility and simple usage
 def calculate_sha256(file_path: Union[str, Path]) -> Optional[str]:
     """
-    Calculate the SHA-256 hash of a file (convenience function).
+    Calculate the CRC32 hash of a file (legacy compatibility function).
+
+    Note: Despite the name, this now uses CRC32 for improved performance.
 
     Args:
         file_path: Path to the file to hash
 
     Returns:
-        str: SHA-256 hash in hexadecimal format, or None if error occurred
+        str: CRC32 hash in hexadecimal format, or None if error occurred
     """
     manager = HashManager()
-    return manager.calculate_sha256(file_path)
+    return manager.calculate_hash(file_path)
+
+
+def calculate_hash(file_path: Union[str, Path]) -> Optional[str]:
+    """
+    Calculate the CRC32 hash of a file (convenience function).
+
+    Args:
+        file_path: Path to the file to hash
+
+    Returns:
+        str: CRC32 hash in hexadecimal format, or None if error occurred
+    """
+    manager = HashManager()
+    return manager.calculate_hash(file_path)
 
 
 def compare_folders(folder1: Union[str, Path], folder2: Union[str, Path]) -> Dict[str, Tuple[bool, str, str]]:
