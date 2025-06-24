@@ -18,6 +18,7 @@ Features:
 
 import os
 from typing import Optional
+import time
 
 from PyQt5.QtCore import QTimer
 
@@ -64,27 +65,33 @@ class ProgressWidget(QWidget):
                  show_time_info: bool = False,
                  fixed_width: int = 400):
         """
-        Initialize the unified progress widget.
+        Initialize the progress widget.
 
         Args:
             parent: Parent widget
             bar_color: Progress bar color
             bar_bg_color: Progress bar background color
-            show_size_info: Whether to show file size tracking
-            show_time_info: Whether to show time estimation
-            fixed_width: Fixed width in pixels (400 for compact layout)
+            show_size_info: Whether to show size information
+            show_time_info: Whether to show time information
+            fixed_width: Fixed width for the widget
         """
         super().__init__(parent)
+        self.setFixedWidth(fixed_width)
 
-        self.bar_color = bar_color
-        self.bar_bg_color = bar_bg_color
+        # Configuration
         self.show_size_info = show_size_info
         self.show_time_info = show_time_info
+        self.bar_color = bar_color
+        self.bar_bg_color = bar_bg_color
 
-        # Enhanced tracking components
+        # Simple progress tracking
         self.progress_estimator = None
-        if self.show_size_info or self.show_time_info:
+        if show_time_info:  # Only create if we need time tracking
+            from utils.time_formatter import ProgressEstimator
             self.progress_estimator = ProgressEstimator()
+
+        # Throttling to prevent flickering
+        self._last_update_time = 0
 
         # Animation components for smooth bounce effect
         self._bounce_animation = None
@@ -93,9 +100,7 @@ class ProgressWidget(QWidget):
         self._bounce_direction = 1  # 1 for forward, -1 for backward
         self._bounce_position = 0
 
-        # Set fixed width for consistent layout
-        self.setFixedWidth(fixed_width)
-
+        # Setup UI
         self._setup_ui()
         self._apply_styling()
 
@@ -279,27 +284,14 @@ class ProgressWidget(QWidget):
 
     # Core progress methods
     def set_progress(self, value: int, total: int):
-        """Set progress bar value and total."""
-        logger.debug(f"[ProgressWidget] Set progress: {value}/{total}", extra={"dev_only": True})
-
+        """Set progress bar value and total - simple version."""
         # Update progress bar
         self.progress_bar.setMaximum(total)
         self.progress_bar.setValue(value)
 
-        # Calculate percentage based on size if enhanced tracking enabled, otherwise use count
-        if self.progress_estimator and hasattr(self.progress_estimator, 'processed_size') and hasattr(self.progress_estimator, 'total_size'):
-            # Calculate percentage based on file size
-            processed_size = getattr(self.progress_estimator, 'processed_size', 0)
-            total_size = getattr(self.progress_estimator, 'total_size', 0)
-
-            if total_size > 0:
-                percent = int(100 * processed_size / total_size)
-            else:
-                percent = int(100 * value / total) if total else 0
-        else:
-            # Fallback to count-based percentage
-            percent = int(100 * value / total) if total else 0
-
+        # Simple count-based percentage
+        percent = int(100 * value / total) if total else 0
+        percent = max(0, min(100, percent))
         self.percentage_label.setText(f"{percent}%")
 
         # Update count display
@@ -378,39 +370,56 @@ class ProgressWidget(QWidget):
         logger.debug("[ProgressWidget] Progress bar set to determinate mode")
 
     def start_enhanced_tracking(self, total_size: int = 0):
-        """Start enhanced progress tracking with size information."""
-        if not self.progress_estimator:
-            logger.warning("[ProgressWidget] Enhanced tracking not enabled")
-            return
+        """Start simple progress tracking."""
+        if self.progress_estimator:
+            self.progress_estimator.start(total_size)
 
-        self.progress_estimator.start(total_size)
+        if self.show_size_info and hasattr(self, 'size_label'):
+            self.size_label.setText("0 B/calculating...")
 
-        # Initialize processed size for percentage calculation
-        self.progress_estimator.processed_size = 0
-
-        if self.show_size_info:
-            if total_size > 0:
-                self.size_label.setText("0 B/calculating...")
-            else:
-                self.size_label.setText("Processing...")
-
-        if self.show_time_info:
+        if self.show_time_info and hasattr(self, 'time_label'):
             self.time_label.setText("Starting...")
 
-        logger.debug(f"[ProgressWidget] Started enhanced tracking (total_size: {total_size})")
+        logger.debug(f"[ProgressWidget] Started simple tracking (total_size: {total_size})")
 
     def update_enhanced_progress(self, current: int, total: int, current_size: int = 0):
-        """Update progress with enhanced size/time tracking."""
-        # Update enhanced tracking first (before progress bar)
-        if self.progress_estimator:
-            self.progress_estimator.update(current, total, current_size)
+        """Update progress - very simple version."""
+        import time
 
-        # Update basic progress (which will now use size-based percentage if available)
+        # Update much less frequently to avoid flickering
+        current_time = time.time()
+        if current_time - self._last_update_time < 0.5:  # Update every 500ms only
+            return
+        self._last_update_time = current_time
+
+        # Update basic progress
         self.set_progress(current, total)
 
-        # Update enhanced displays
-        if self.progress_estimator:
-            self._update_enhanced_displays()
+        # Simple size display
+        if self.show_size_info and hasattr(self, 'size_label'):
+            from utils.file_size_formatter import format_file_size_system_compatible
+
+            processed_str = format_file_size_system_compatible(current_size)
+            if self.progress_estimator and self.progress_estimator.total_size > 0:
+                total_str = format_file_size_system_compatible(self.progress_estimator.total_size)
+                size_text = f"{processed_str}/{total_str}"
+            else:
+                size_text = processed_str
+            self.size_label.setText(size_text)
+
+        # Very simple time display - just elapsed time
+        if self.show_time_info and hasattr(self, 'time_label'):
+            if self.progress_estimator:
+                elapsed = self.progress_estimator.time_tracker.get_elapsed_time()
+                minutes = int(elapsed // 60)
+                seconds = int(elapsed % 60)
+                if minutes > 0:
+                    time_text = f"{minutes}m {seconds}s"
+                else:
+                    time_text = f"{seconds}s"
+                self.time_label.setText(time_text)
+            else:
+                self.time_label.setText("Processing...")
 
     def _update_enhanced_displays(self):
         """Update enhanced size and time displays."""

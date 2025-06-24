@@ -35,19 +35,19 @@ from utils.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 
-class ProgressTracker:
-    """Helper class to track progress within a file operation."""
+class ProgressCallback:
+    """Simple callback class to track progress correctly."""
 
-    def __init__(self, worker, file_index, total_files, base_processed_size):
+    def __init__(self, worker, file_index, total_files, base_bytes):
         self.worker = worker
         self.file_index = file_index
         self.total_files = total_files
-        self.base_processed_size = base_processed_size
+        self.base_bytes = base_bytes
 
-    def update_progress(self, bytes_read):
-        """Update progress with current bytes read from the file."""
-        current_processed = self.base_processed_size + bytes_read
-        self.worker.enhanced_progress_updated.emit(self.file_index, self.total_files, current_processed)
+    def __call__(self, bytes_read):
+        """Called when hash calculation progresses."""
+        current_total = self.base_bytes + bytes_read
+        self.worker.enhanced_progress_updated.emit(self.file_index, self.total_files, current_total)
 
 
 class HashWorker(QThread):
@@ -171,6 +171,52 @@ class HashWorker(QThread):
             self.error_occurred.emit(str(e))
             self.finished_processing.emit(False)
 
+    def _calculate_checksums(self, file_paths: List[str]) -> None:
+        """Calculate checksums for files."""
+        from core.hash_manager import HashManager
+
+        hash_manager = HashManager()
+        hash_results = {}
+        total_files = len(file_paths)
+        total_processed_bytes = 0
+
+        self.status_updated.emit("Calculating checksums...")
+
+        for i, file_path in enumerate(file_paths):
+            if self._check_cancellation():
+                logger.debug("[HashWorker] Checksum calculation cancelled")
+                self.finished_processing.emit(False)
+                return
+
+            # Get file size
+            try:
+                file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
+            except OSError:
+                file_size = 0
+
+            # Update basic progress
+            self.progress_updated.emit(i, total_files)
+            self.file_processing.emit(os.path.basename(file_path))
+
+            # Create stable progress callback
+            progress_callback = ProgressCallback(self, i, total_files, total_processed_bytes)
+
+            # Calculate hash with progress tracking
+            file_hash = hash_manager.calculate_hash(file_path, progress_callback)
+            if file_hash:
+                hash_results[file_path] = file_hash
+
+            # Update total processed bytes after file completion
+            total_processed_bytes += file_size
+
+        # Complete progress
+        self.progress_updated.emit(total_files, total_files)
+        self.status_updated.emit("Checksums calculated!")
+
+        logger.info(f"[HashWorker] Calculated checksums for {len(hash_results)} files")
+        self.checksums_calculated.emit(hash_results)
+        self.finished_processing.emit(True)
+
     def _find_duplicates(self, file_paths: List[str]) -> None:
         """Find duplicate files by comparing hashes."""
         from core.hash_manager import HashManager
@@ -178,7 +224,7 @@ class HashWorker(QThread):
         hash_manager = HashManager()
         hash_cache = {}
         total_files = len(file_paths)
-        processed_size = 0
+        total_processed_bytes = 0
 
         self.status_updated.emit("Calculating file hashes for duplicate detection...")
 
@@ -188,29 +234,29 @@ class HashWorker(QThread):
                 self.finished_processing.emit(False)
                 return
 
-            # Get file size for enhanced progress
+            # Get file size
             try:
                 file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
             except OSError:
                 file_size = 0
 
-            # Update progress with file-level tracking
+            # Update progress
             self.progress_updated.emit(i, total_files)
             self.file_processing.emit(os.path.basename(file_path))
 
-            # Create progress tracker for within-file tracking
-            progress_tracker = ProgressTracker(self, i, total_files, processed_size)
+            # Create stable progress callback
+            progress_callback = ProgressCallback(self, i, total_files, total_processed_bytes)
 
             # Calculate hash with progress tracking
-            file_hash = hash_manager.calculate_hash(file_path, progress_tracker.update_progress)
+            file_hash = hash_manager.calculate_hash(file_path, progress_callback)
             if file_hash:
                 if file_hash in hash_cache:
                     hash_cache[file_hash].append(file_path)
                 else:
                     hash_cache[file_hash] = [file_path]
 
-            # Update final processed size after file completion
-            processed_size += file_size
+            # Update total processed bytes after file completion
+            total_processed_bytes += file_size
 
         # Complete progress
         self.progress_updated.emit(total_files, total_files)
@@ -230,17 +276,17 @@ class HashWorker(QThread):
         hash_manager = HashManager()
         comparison_results = {}
         total_files = len(file_paths)
+        total_processed_bytes = 0
 
         self.status_updated.emit(f"Comparing files with {os.path.basename(external_folder)}...")
 
-        processed_size = 0
         for i, file_path in enumerate(file_paths):
             if self._check_cancellation():
                 logger.debug("[HashWorker] External comparison cancelled")
                 self.finished_processing.emit(False)
                 return
 
-            # Get file size for enhanced progress
+            # Get file size
             try:
                 file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
             except OSError:
@@ -251,11 +297,11 @@ class HashWorker(QThread):
             filename = os.path.basename(file_path)
             self.file_processing.emit(filename)
 
-            # Create progress tracker for within-file tracking
-            progress_tracker = ProgressTracker(self, i, total_files, processed_size)
+            # Create stable progress callback
+            progress_callback = ProgressCallback(self, i, total_files, total_processed_bytes)
 
             # Calculate hash of current file with progress tracking
-            current_hash = hash_manager.calculate_hash(file_path, progress_tracker.update_progress)
+            current_hash = hash_manager.calculate_hash(file_path, progress_callback)
             if current_hash is None:
                 continue
 
@@ -273,8 +319,8 @@ class HashWorker(QThread):
                         'external_hash': external_hash
                     }
 
-            # Update processed size after file completion
-            processed_size += file_size
+            # Update total processed bytes after file completion
+            total_processed_bytes += file_size
 
         # Complete progress
         self.progress_updated.emit(total_files, total_files)
@@ -282,50 +328,4 @@ class HashWorker(QThread):
 
         logger.info(f"[HashWorker] Compared {len(file_paths)} files with external folder")
         self.comparison_result.emit(comparison_results)
-        self.finished_processing.emit(True)
-
-    def _calculate_checksums(self, file_paths: List[str]) -> None:
-        """Calculate checksums for files."""
-        from core.hash_manager import HashManager
-
-        hash_manager = HashManager()
-        hash_results = {}
-        total_files = len(file_paths)
-
-        self.status_updated.emit("Calculating checksums...")
-
-        processed_size = 0
-        for i, file_path in enumerate(file_paths):
-            if self._check_cancellation():
-                logger.debug("[HashWorker] Checksum calculation cancelled")
-                self.finished_processing.emit(False)
-                return
-
-            # Get file size for enhanced progress
-            try:
-                file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
-            except OSError:
-                file_size = 0
-
-            # Update progress
-            self.progress_updated.emit(i, total_files)
-            self.file_processing.emit(os.path.basename(file_path))
-
-            # Create progress tracker for within-file tracking
-            progress_tracker = ProgressTracker(self, i, total_files, processed_size)
-
-            # Calculate hash with progress tracking
-            file_hash = hash_manager.calculate_hash(file_path, progress_tracker.update_progress)
-            if file_hash:
-                hash_results[file_path] = file_hash
-
-            # Update processed size after file completion
-            processed_size += file_size
-
-        # Complete progress
-        self.progress_updated.emit(total_files, total_files)
-        self.status_updated.emit("Checksums calculated!")
-
-        logger.info(f"[HashWorker] Calculated checksums for {len(hash_results)} files")
-        self.checksums_calculated.emit(hash_results)
         self.finished_processing.emit(True)
