@@ -14,7 +14,7 @@ import zlib
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from core.hash_manager import HashManager, calculate_crc32, calculate_sha256, compare_folders
+from core.hash_manager import HashManager, calculate_crc32, compare_folders
 from tests.mocks import MockFileItem
 
 
@@ -97,21 +97,6 @@ class TestHashManager:
             result = manager.calculate_crc32(temp_path)
             expected_hash = "cb1bffb9"  # CRC32 of "string path test"
             assert result == expected_hash
-        finally:
-            Path(temp_path).unlink()
-
-    def test_calculate_sha256_method_deprecated(self):
-        """Test that the deprecated calculate_sha256 method still works."""
-        manager = HashManager()
-
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
-            f.write("deprecated method test")
-            temp_path = f.name
-
-        try:
-            result = manager.calculate_sha256(temp_path)
-            expected = f"{zlib.crc32(b'deprecated method test') & 0xffffffff:08x}"
-            assert result == expected
         finally:
             Path(temp_path).unlink()
 
@@ -306,21 +291,6 @@ class TestConvenienceFunctions:
         finally:
             Path(temp_path).unlink()
 
-    def test_calculate_sha256_function_deprecated(self):
-        """Test that the deprecated calculate_sha256 function still works."""
-        from core.hash_manager import calculate_sha256
-
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
-            f.write("deprecated test")
-            temp_path = f.name
-
-        try:
-            result = calculate_sha256(temp_path)
-            expected_hash = f"{zlib.crc32(b'deprecated test') & 0xffffffff:08x}"
-            assert result == expected_hash
-        finally:
-            Path(temp_path).unlink()
-
     def test_compare_folders_function(self):
         """Test standalone compare_folders function."""
         with tempfile.TemporaryDirectory() as temp_dir1:
@@ -362,7 +332,7 @@ class TestEventHandlerIntegration:
 
         # This is a basic integration test
         manager = HashManager()
-        assert hasattr(manager, 'calculate_sha256')
+        assert hasattr(manager, 'calculate_crc32')
         assert hasattr(manager, 'find_duplicates_in_list')
         assert hasattr(manager, 'compare_folders')
 
@@ -377,7 +347,7 @@ class TestErrorHandling:
         with patch('pathlib.Path.open', side_effect=Exception("Unexpected error")):
             with patch('pathlib.Path.exists', return_value=True):
                 with patch('pathlib.Path.is_file', return_value=True):
-                    result = manager.calculate_sha256("/mock/path")
+                    result = manager.calculate_crc32("/mock/path")
                     assert result is None
 
     def test_find_duplicates_with_exception(self):
@@ -386,6 +356,6 @@ class TestErrorHandling:
 
         files = [MockFileItem(filename="error_file.txt")]
 
-        with patch.object(manager, 'calculate_sha256', side_effect=Exception("Hash error")):
+        with patch.object(manager, 'calculate_hash', side_effect=Exception("Hash error")):
             result = manager.find_duplicates_in_list(files)
             assert result == {}
