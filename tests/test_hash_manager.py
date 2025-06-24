@@ -10,10 +10,11 @@ Test module for hash calculation functionality.
 
 import hashlib
 import tempfile
+import zlib
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from core.hash_manager import HashManager, calculate_sha256, compare_folders
+from core.hash_manager import HashManager, calculate_crc32, calculate_sha256, compare_folders
 from tests.mocks import MockFileItem
 
 
@@ -25,8 +26,8 @@ class TestHashManager:
         manager = HashManager()
         assert manager._hash_cache == {}
 
-    def test_calculate_sha256_success(self):
-        """Test successful SHA-256 calculation."""
+    def test_calculate_crc32_success(self):
+        """Test successful CRC32 calculation."""
         manager = HashManager()
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
@@ -34,13 +35,13 @@ class TestHashManager:
             temp_path = f.name
 
         try:
-            result = manager.calculate_sha256(temp_path)
-            expected = hashlib.sha256(b"test").hexdigest()
+            result = manager.calculate_crc32(temp_path)
+            expected = "d87f7e0c"  # CRC32 of "test"
             assert result == expected
         finally:
             Path(temp_path).unlink()
 
-    def test_calculate_sha256_cached(self):
+    def test_calculate_crc32_cached(self):
         """Test that cached hashes are returned."""
         manager = HashManager()
 
@@ -50,41 +51,41 @@ class TestHashManager:
 
         try:
             # First call
-            result1 = manager.calculate_sha256(temp_path)
+            result1 = manager.calculate_crc32(temp_path)
 
             # Second call should use cache
             with patch('builtins.open') as mock_open:
-                result2 = manager.calculate_sha256(temp_path)
+                result2 = manager.calculate_crc32(temp_path)
                 mock_open.assert_not_called()  # File should not be opened again
                 assert result1 == result2
         finally:
             Path(temp_path).unlink()
 
-    def test_calculate_sha256_file_not_exists(self):
+    def test_calculate_crc32_file_not_exists(self):
         """Test handling of non-existent files."""
         manager = HashManager()
-        result = manager.calculate_sha256("/non/existent.txt")
+        result = manager.calculate_crc32("/non/existent.txt")
         assert result is None
 
-    def test_calculate_sha256_directory(self):
+    def test_calculate_crc32_directory(self):
         """Test handling of directories."""
         manager = HashManager()
         with tempfile.TemporaryDirectory() as temp_dir:
-            result = manager.calculate_sha256(temp_dir)
+            result = manager.calculate_crc32(temp_dir)
             assert result is None
 
-    def test_calculate_sha256_permission_error(self):
+    def test_calculate_crc32_permission_error(self):
         """Test handling of permission errors."""
         manager = HashManager()
 
         with patch('pathlib.Path.open', side_effect=PermissionError("Access denied")):
             with patch('pathlib.Path.exists', return_value=True):
                 with patch('pathlib.Path.is_file', return_value=True):
-                    result = manager.calculate_sha256("/mock/path/file.txt")
+                    result = manager.calculate_crc32("/mock/path/file.txt")
                     assert result is None
 
-    def test_calculate_sha256_string_path(self):
-        """Test SHA-256 calculation with string path."""
+    def test_calculate_crc32_string_path(self):
+        """Test CRC32 calculation with string path."""
         manager = HashManager()
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
@@ -93,9 +94,24 @@ class TestHashManager:
 
         try:
             # Test with string path
-            result = manager.calculate_sha256(temp_path)
-            expected_hash = hashlib.sha256(b"string path test").hexdigest()
+            result = manager.calculate_crc32(temp_path)
+            expected_hash = "cb1bffb9"  # CRC32 of "string path test"
             assert result == expected_hash
+        finally:
+            Path(temp_path).unlink()
+
+    def test_calculate_sha256_method_deprecated(self):
+        """Test that the deprecated calculate_sha256 method still works."""
+        manager = HashManager()
+
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+            f.write("deprecated method test")
+            temp_path = f.name
+
+        try:
+            result = manager.calculate_sha256(temp_path)
+            expected = f"{zlib.crc32(b'deprecated method test') & 0xffffffff:08x}"
+            assert result == expected
         finally:
             Path(temp_path).unlink()
 
@@ -103,7 +119,7 @@ class TestHashManager:
         """Test duplicate detection with no duplicates."""
         manager = HashManager()
 
-        with patch.object(manager, 'calculate_sha256') as mock_calc:
+        with patch.object(manager, 'calculate_hash') as mock_calc:
             mock_calc.side_effect = ["hash1", "hash2"]
 
             files = [
@@ -123,7 +139,7 @@ class TestHashManager:
             MockFileItem(filename="file2.txt")
         ]
 
-        with patch.object(manager, 'calculate_sha256') as mock_calc:
+        with patch.object(manager, 'calculate_hash') as mock_calc:
             mock_calc.side_effect = ["same_hash", "same_hash"]
 
             result = manager.find_duplicates_in_list(files)
@@ -144,7 +160,7 @@ class TestHashManager:
 
         files = [MockFileItem(filename="file1.txt")]
 
-        with patch.object(manager, 'calculate_sha256', return_value=None):
+        with patch.object(manager, 'calculate_hash', return_value=None):
             result = manager.find_duplicates_in_list(files)
             assert result == {}
 
@@ -210,7 +226,7 @@ class TestHashManager:
         assert result == {}
 
     def test_verify_file_integrity_success(self):
-        """Test successful file integrity verification."""
+        """Test successful file integrity verification with CRC32."""
         manager = HashManager()
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
@@ -218,7 +234,7 @@ class TestHashManager:
             temp_path = f.name
 
         try:
-            expected_hash = hashlib.sha256(b"integrity test").hexdigest()
+            expected_hash = "2fd0365e"  # CRC32 of "integrity test"
             result = manager.verify_file_integrity(temp_path, expected_hash)
             assert result is True
         finally:
@@ -240,7 +256,7 @@ class TestHashManager:
             Path(temp_path).unlink()
 
     def test_verify_file_integrity_case_insensitive(self):
-        """Test file integrity verification is case insensitive."""
+        """Test file integrity verification is case insensitive with CRC32."""
         manager = HashManager()
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
@@ -248,7 +264,7 @@ class TestHashManager:
             temp_path = f.name
 
         try:
-            expected_hash = hashlib.sha256(b"case test").hexdigest()
+            expected_hash = "22e5d3a1"  # CRC32 of "case test"
             upper_hash = expected_hash.upper()
 
             result = manager.verify_file_integrity(temp_path, upper_hash)
@@ -277,15 +293,30 @@ class TestHashManager:
 class TestConvenienceFunctions:
     """Test cases for convenience functions."""
 
-    def test_calculate_sha256_function(self):
-        """Test standalone calculate_sha256 function."""
+    def test_calculate_crc32_function(self):
+        """Test standalone calculate_crc32 function."""
         with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
             f.write("convenience test")
             temp_path = f.name
 
         try:
+            result = calculate_crc32(temp_path)
+            expected_hash = "217a34d5"  # CRC32 of "convenience test"
+            assert result == expected_hash
+        finally:
+            Path(temp_path).unlink()
+
+    def test_calculate_sha256_function_deprecated(self):
+        """Test that the deprecated calculate_sha256 function still works."""
+        from core.hash_manager import calculate_sha256
+
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+            f.write("deprecated test")
+            temp_path = f.name
+
+        try:
             result = calculate_sha256(temp_path)
-            expected_hash = hashlib.sha256(b"convenience test").hexdigest()
+            expected_hash = f"{zlib.crc32(b'deprecated test') & 0xffffffff:08x}"
             assert result == expected_hash
         finally:
             Path(temp_path).unlink()

@@ -91,9 +91,22 @@ class HashManager:
             logger.error(f"[HashManager] Unexpected error hashing file {file_path}: {e}")
             return None
 
+    def calculate_crc32(self, file_path: Union[str, Path]) -> Optional[str]:
+        """
+        Calculate the CRC32 hash of a file.
+
+        Args:
+            file_path: Path to the file to hash
+
+        Returns:
+            str: CRC32 hash in hexadecimal format (8 characters), or None if error occurred
+        """
+        return self.calculate_hash(file_path)
+
     def calculate_sha256(self, file_path: Union[str, Path]) -> Optional[str]:
         """
-        Legacy compatibility method - now uses CRC32 for improved performance.
+        DEPRECATED: Legacy compatibility method - now uses CRC32 for improved performance.
+        Use calculate_crc32() instead.
 
         Args:
             file_path: Path to the file to hash
@@ -240,9 +253,24 @@ class HashManager:
 
 
 # Convenience functions for backward compatibility and simple usage
+def calculate_crc32(file_path: Union[str, Path]) -> Optional[str]:
+    """
+    Calculate the CRC32 hash of a file (convenience function).
+
+    Args:
+        file_path: Path to the file to hash
+
+    Returns:
+        str: CRC32 hash in hexadecimal format, or None if error occurred
+    """
+    manager = HashManager()
+    return manager.calculate_hash(file_path)
+
+
 def calculate_sha256(file_path: Union[str, Path]) -> Optional[str]:
     """
-    Calculate the CRC32 hash of a file (legacy compatibility function).
+    DEPRECATED: Calculate the CRC32 hash of a file (legacy compatibility function).
+    Use calculate_crc32() instead.
 
     Note: Despite the name, this now uses CRC32 for improved performance.
 
