@@ -35,6 +35,21 @@ from utils.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 
+class ProgressTracker:
+    """Helper class to track progress within a file operation."""
+
+    def __init__(self, worker, file_index, total_files, base_processed_size):
+        self.worker = worker
+        self.file_index = file_index
+        self.total_files = total_files
+        self.base_processed_size = base_processed_size
+
+    def update_progress(self, bytes_read):
+        """Update progress with current bytes read from the file."""
+        current_processed = self.base_processed_size + bytes_read
+        self.worker.enhanced_progress_updated.emit(self.file_index, self.total_files, current_processed)
+
+
 class HashWorker(QThread):
     """
     Background worker for hash calculation operations.
@@ -183,14 +198,11 @@ class HashWorker(QThread):
             self.progress_updated.emit(i, total_files)
             self.file_processing.emit(os.path.basename(file_path))
 
-            # Create progress callback for within-file tracking
-            file_start_size = processed_size
-            def progress_callback(bytes_read):
-                current_processed = file_start_size + bytes_read
-                self.enhanced_progress_updated.emit(i, total_files, current_processed)
+            # Create progress tracker for within-file tracking
+            progress_tracker = ProgressTracker(self, i, total_files, processed_size)
 
             # Calculate hash with progress tracking
-            file_hash = hash_manager.calculate_hash(file_path, progress_callback)
+            file_hash = hash_manager.calculate_hash(file_path, progress_tracker.update_progress)
             if file_hash:
                 if file_hash in hash_cache:
                     hash_cache[file_hash].append(file_path)
@@ -239,14 +251,11 @@ class HashWorker(QThread):
             filename = os.path.basename(file_path)
             self.file_processing.emit(filename)
 
-            # Create progress callback for within-file tracking
-            file_start_size = processed_size
-            def progress_callback(bytes_read):
-                current_processed = file_start_size + bytes_read
-                self.enhanced_progress_updated.emit(i, total_files, current_processed)
+            # Create progress tracker for within-file tracking
+            progress_tracker = ProgressTracker(self, i, total_files, processed_size)
 
             # Calculate hash of current file with progress tracking
-            current_hash = hash_manager.calculate_hash(file_path, progress_callback)
+            current_hash = hash_manager.calculate_hash(file_path, progress_tracker.update_progress)
             if current_hash is None:
                 continue
 
@@ -302,14 +311,11 @@ class HashWorker(QThread):
             self.progress_updated.emit(i, total_files)
             self.file_processing.emit(os.path.basename(file_path))
 
-            # Create progress callback for within-file tracking
-            file_start_size = processed_size
-            def progress_callback(bytes_read):
-                current_processed = file_start_size + bytes_read
-                self.enhanced_progress_updated.emit(i, total_files, current_processed)
+            # Create progress tracker for within-file tracking
+            progress_tracker = ProgressTracker(self, i, total_files, processed_size)
 
             # Calculate hash with progress tracking
-            file_hash = hash_manager.calculate_hash(file_path, progress_callback)
+            file_hash = hash_manager.calculate_hash(file_path, progress_tracker.update_progress)
             if file_hash:
                 hash_results[file_path] = file_hash
 
