@@ -529,10 +529,9 @@ class MetadataManager:
                             failed_files.append(file_item.filename)
             else:
                 # Multiple files: Use progress dialog
-                from utils.progress_dialog import ProgressDialog
-
                 # Calculate total size for enhanced progress tracking
                 from utils.file_size_calculator import calculate_files_total_size
+                from utils.progress_dialog import ProgressDialog
                 total_size = calculate_files_total_size(files_to_save)
 
                 # Create save dialog

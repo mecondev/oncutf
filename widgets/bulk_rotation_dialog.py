@@ -21,7 +21,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from config import QLABEL_PRIMARY_TEXT, QLABEL_MUTED_TEXT
+from config import QLABEL_MUTED_TEXT
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

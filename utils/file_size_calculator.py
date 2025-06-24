@@ -9,8 +9,8 @@ Used by progress dialogs to show size information during operations.
 """
 
 import os
-from typing import List, Union
 from pathlib import Path
+from typing import List, Union
 
 from utils.logger_factory import get_cached_logger
 

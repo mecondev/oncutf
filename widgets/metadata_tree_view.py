@@ -27,7 +27,6 @@ Expected usage:
 Designed for integration with MainWindow and MetadataReader.
 """
 
-from pathlib import Path
 from typing import Any, Dict, Optional, Set, Union
 
 from config import METADATA_TREE_COLUMN_WIDTHS
@@ -166,7 +165,8 @@ class MetadataTreeView(QTreeView):
         self.placeholder_label.setAlignment(Qt.AlignCenter)
         self.placeholder_label.setVisible(False)
 
-        icon_path = Path(__file__).parent.parent / "resources/images/metadata_tree_placeholder.png"
+        from utils.path_utils import get_images_dir
+        icon_path = get_images_dir() / "metadata_tree_placeholder.png"
         self.placeholder_icon = QPixmap(str(icon_path))
 
         if not self.placeholder_icon.isNull():

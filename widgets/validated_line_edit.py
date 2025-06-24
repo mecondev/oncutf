@@ -19,7 +19,13 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QLineEdit, QWidget
 
-from config import QLABEL_INFO_TEXT, QLABEL_DARK_BORDER, QLABEL_DARK_BG, QLABEL_ERROR_TEXT, QLABEL_ERROR_BG
+from config import (
+    QLABEL_DARK_BG,
+    QLABEL_DARK_BORDER,
+    QLABEL_ERROR_BG,
+    QLABEL_ERROR_TEXT,
+    QLABEL_INFO_TEXT,
+)
 from utils.filename_validator import (
     clean_filename_text,
     get_validation_error_message,

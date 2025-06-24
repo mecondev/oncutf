@@ -597,8 +597,8 @@ class EventHandlerManager:
 
         if len(file_paths) == 1:
             # Single file - use wait cursor (like metadata system)
-            from utils.cursor_helper import wait_cursor
             from core.hash_manager import HashManager
+            from utils.cursor_helper import wait_cursor
 
             try:
                 with wait_cursor():
@@ -840,8 +840,8 @@ class EventHandlerManager:
         Args:
             file_item: FileItem object to calculate hash for
         """
-        from utils.cursor_helper import wait_cursor
         from core.hash_manager import HashManager
+        from utils.cursor_helper import wait_cursor
 
         try:
             hash_results = {}

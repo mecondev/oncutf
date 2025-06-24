@@ -1,31 +1,42 @@
 """
-progress_widget.py
+Module: progress_widget.py
 
 Author: Michael Economou
-Date: 2025-06-23
+Date: 2025-06-20
 
-Unified progress widget system for the oncutf application.
-Single flexible class that handles all progress display needs.
+Unified progress widget supporting both basic and enhanced progress tracking.
+Combines the functionality of CompactProgressWidget and CompactWaitingWidget
+into a single, configurable component.
 
 Features:
-- Compact layout optimized for long paths (400px fixed width)
-- Optional enhanced tracking with size and time estimation
-- Intelligent path truncation for recursive imports
-- Configurable colors for different operation types
-- Single class with flexible parameters instead of multiple inheritance
+- Basic progress display (percentage, count, filename)
+- Enhanced tracking (file size, time estimation)
+- Compact layout optimized for dialog usage
+- Customizable appearance and behavior
+- Legacy compatibility through factory functions
 """
 
 import os
 from typing import Optional
 
-from core.qt_imports import (
-    Qt, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QProgressBar,
-    QSizePolicy, QSize
-)
-from PyQt5.QtCore import QPropertyAnimation, QEasingCurve, QTimer
+from PyQt5.QtCore import QTimer
+
 from config import (
-    QLABEL_PRIMARY_TEXT, QLABEL_SECONDARY_TEXT, QLABEL_TERTIARY_TEXT,
-    QLABEL_WHITE_TEXT, QLABEL_BORDER_GRAY
+    QLABEL_BORDER_GRAY,
+    QLABEL_PRIMARY_TEXT,
+    QLABEL_SECONDARY_TEXT,
+    QLABEL_TERTIARY_TEXT,
+    QLABEL_WHITE_TEXT,
+)
+from core.qt_imports import (
+    QHBoxLayout,
+    QLabel,
+    QProgressBar,
+    QSize,
+    QSizePolicy,
+    Qt,
+    QVBoxLayout,
+    QWidget,
 )
 from utils.logger_factory import get_cached_logger
 from utils.time_formatter import ProgressEstimator
@@ -501,4 +512,9 @@ def create_time_only_progress_widget(parent=None, **kwargs):
 # Legacy compatibility aliases
 CompactWaitingWidget = ProgressWidget  # For backward compatibility
 CompactProgressWidget = ProgressWidget
-CompactEnhancedProgressWidget = lambda *args, **kwargs: ProgressWidget(*args, show_size_info=True, show_time_info=True, **kwargs)
+def CompactEnhancedProgressWidget(*args, **kwargs):
+    """Legacy compatibility alias for enhanced progress widget."""
+    # Set defaults for enhanced mode if not explicitly provided
+    kwargs.setdefault('show_size_info', True)
+    kwargs.setdefault('show_time_info', True)
+    return ProgressWidget(*args, **kwargs)

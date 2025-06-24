@@ -25,7 +25,10 @@ def load_stylesheet() -> str:
     """
     Loads the stylesheet based on THEME_NAME defined in config.py.
     """
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "style", f"{THEME_NAME}_theme"))
+    from utils.path_utils import get_project_root, get_theme_dir
+    base_dir = str(get_theme_dir(THEME_NAME))
+    project_root = str(get_project_root())
+
     qss_files = [
         "base.qss",
         "buttons.qss",
@@ -43,6 +46,11 @@ def load_stylesheet() -> str:
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as f:
                 qss = f.read()
+
+                # Replace relative paths with absolute paths for resources
+                # This fixes issues when running the app from different directories
+                qss = qss.replace("url(resources/", f"url({project_root}/resources/")
+
                 full_style += qss + "\n"
                 logger.debug(f"Loaded {filename} ({len(qss)} characters)", extra={"dev_only": True})
         else:

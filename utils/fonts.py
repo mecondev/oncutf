@@ -44,13 +44,14 @@ class InterFonts:
         import os
 
         from config import USE_EMBEDDED_FONTS
+        from utils.path_utils import get_fonts_dir
 
         if USE_EMBEDDED_FONTS:
             # Use QRC embedded fonts
             self._load_from_qresource()
         else:
             # Try to load from filesystem first (more stable)
-            fonts_dir = "resources/fonts/inter"
+            fonts_dir = str(get_fonts_dir())
 
             if os.path.exists(fonts_dir):
                 for font_key, font_file in self.FONT_FILES.items():

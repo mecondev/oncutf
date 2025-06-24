@@ -15,7 +15,6 @@ Features:
 - Custom table widgets with resize signal handling
 """
 
-from pathlib import Path
 from typing import Tuple
 
 from PyQt5.QtCore import Qt, pyqtSignal
@@ -196,7 +195,8 @@ class PreviewTablesView(QWidget):
         self.old_names_placeholder.setAlignment(Qt.AlignCenter)
         self.old_names_placeholder.setVisible(False)
 
-        old_icon_path = Path(__file__).parent.parent / "resources/images/old_names-preview_placeholder.png"
+        from utils.path_utils import get_images_dir
+        old_icon_path = get_images_dir() / "old_names-preview_placeholder.png"
         self.old_names_placeholder_icon = QPixmap(str(old_icon_path))
 
         if not self.old_names_placeholder_icon.isNull():
@@ -216,7 +216,7 @@ class PreviewTablesView(QWidget):
         self.new_names_placeholder.setAlignment(Qt.AlignCenter)
         self.new_names_placeholder.setVisible(False)
 
-        new_icon_path = Path(__file__).parent.parent / "resources/images/new_names-preview_placeholder.png"
+        new_icon_path = get_images_dir() / "new_names-preview_placeholder.png"
         self.new_names_placeholder_icon = QPixmap(str(new_icon_path))
 
         if not self.new_names_placeholder_icon.isNull():

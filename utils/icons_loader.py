@@ -27,16 +27,21 @@ from utils.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 
-def load_metadata_icons(base_dir: str = "resources/icons") -> dict[str, QPixmap]:
+def load_metadata_icons(base_dir: str = None) -> dict[str, QPixmap]:
     """
     Loads metadata status icons for the file table's first column.
 
     Args:
-        base_dir: Base directory where icon files are stored
+        base_dir: Base directory where icon files are stored (optional, defaults to project icons dir)
 
     Returns:
         Dictionary mapping status names to QPixmap objects
     """
+    from utils.path_utils import get_icons_dir
+
+    if base_dir is None:
+        base_dir = str(get_icons_dir())
+
     icon_files = {
         'loaded': "info_loaded.png",
         'extended': "info_extended.png",
@@ -84,11 +89,8 @@ class ThemeIconLoader:
 
     def _get_base_dir(self) -> str:
         """Returns the base directory for icon resources."""
-        # Get the directory where this module is located
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        # Go up one level to get project root
-        project_root = os.path.dirname(current_dir)
-        return os.path.join(project_root, "resources", "icons")
+        from utils.path_utils import get_icons_dir
+        return str(get_icons_dir())
 
     def get_icon_path(self, name: str, theme: Optional[str] = None) -> str:
         """
@@ -177,14 +179,12 @@ class ThemeIconLoader:
         Returns:
             QIcon object for the application icon
         """
-        # Get the project root directory
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        project_root = os.path.dirname(current_dir)
-        favicon_path = os.path.join(project_root, "assets", "favicon.ico")
+        from utils.path_utils import get_assets_dir
+        favicon_path = get_assets_dir() / "favicon.ico"
 
-        if os.path.exists(favicon_path):
+        if os.path.exists(str(favicon_path)):
             logger.debug(f"[IconLoader] Loading app icon from: {favicon_path}")
-            return QIcon(favicon_path)
+            return QIcon(str(favicon_path))
         else:
             logger.warning(f"[IconLoader] App icon not found at: {favicon_path}")
             return QIcon()

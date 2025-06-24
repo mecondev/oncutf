@@ -9,7 +9,6 @@ Test script to compare file size calculations between our application
 and system commands (ls, stat, du) on Linux.
 """
 
-import os
 import subprocess
 import sys
 import unittest
@@ -20,6 +19,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from models.file_item import FileItem
+
 
 class TestFileSizeComparison(unittest.TestCase):
     """Test file size calculations against system commands."""

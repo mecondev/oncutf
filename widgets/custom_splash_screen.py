@@ -13,10 +13,10 @@ Features:
 """
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QPainter, QPen, QFont, QFontMetrics
-from PyQt5.QtWidgets import QSplashScreen, QApplication
+from PyQt5.QtGui import QFont, QFontMetrics, QPainter, QPen, QPixmap
+from PyQt5.QtWidgets import QApplication, QSplashScreen
 
-from config import APP_VERSION, QLABEL_PRIMARY_TEXT, QLABEL_SECONDARY_TEXT
+from config import APP_VERSION
 
 
 class CustomSplashScreen(QSplashScreen):
@@ -136,7 +136,7 @@ class CustomSplashScreen(QSplashScreen):
         painter.setPen(QPen(Qt.white))
 
         version_text = f"v{APP_VERSION}"
-        version_rect = QFontMetrics(version_font).boundingRect(version_text)
+        QFontMetrics(version_font).boundingRect(version_text)
 
         version_x = 15  # 15px from left edge
         version_y = self.splash_height - 15  # 15px from bottom

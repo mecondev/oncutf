@@ -25,10 +25,11 @@ Usage:
 
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import List
+
+from PyQt5.QtCore import QMutexLocker
 
 from core.qt_imports import QMutex, QThread, pyqtSignal
-from PyQt5.QtCore import QMutexLocker
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

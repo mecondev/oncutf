@@ -289,11 +289,14 @@ class UIManager:
         self.parent_window.metadata_search_field.setObjectName("metadataSearchField")  # For QSS styling
 
         # Add search icon as QAction (always last)
-        self.parent_window.search_action = QAction(QIcon("resources/icons/feather_icons/search_dark.svg"), "Search", self.parent_window.metadata_search_field)
+        from utils.path_utils import get_icons_dir
+        search_icon_path = get_icons_dir() / "feather_icons" / "search_dark.svg"
+        self.parent_window.search_action = QAction(QIcon(str(search_icon_path)), "Search", self.parent_window.metadata_search_field)
         self.parent_window.metadata_search_field.addAction(self.parent_window.search_action, QLineEdit.TrailingPosition)
 
         # Add clear icon (X) as QAction - Trailing, πριν το φακό
-        self.parent_window.clear_search_action = QAction(QIcon("resources/icons/feather_icons/x_dark.svg"), "Clear", self.parent_window.metadata_search_field)
+        clear_icon_path = get_icons_dir() / "feather_icons" / "x_dark.svg"
+        self.parent_window.clear_search_action = QAction(QIcon(str(clear_icon_path)), "Clear", self.parent_window.metadata_search_field)
         self.parent_window.clear_search_action.triggered.connect(self._clear_metadata_search)
         # Προσθέτουμε το Χ πριν το search icon (Trailing, αλλά μπαίνει πρώτο)
         self.parent_window.metadata_search_field.addAction(self.parent_window.clear_search_action, QLineEdit.TrailingPosition)

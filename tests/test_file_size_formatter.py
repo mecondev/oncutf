@@ -20,7 +20,7 @@ sys.path.insert(0, str(project_root))
 from utils.file_size_formatter import (
     FileSizeFormatter,
     format_file_size,
-    format_file_size_system_compatible
+    format_file_size_system_compatible,
 )
 
 

@@ -22,13 +22,12 @@ from utils.cursor_helper import force_restore_cursor, wait_cursor
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import get_timer_manager
 
-
 logger = get_cached_logger(__name__)
 
 class FileLoadManager:
     """
     Unified file loading manager with fully optimized policy:
-    - All operations: wait_cursor only (fast, synchronous)
+    - All operations: wait_cursor only (fast, synchronous like external drops)
     - Same behavior for drag, import, and external operations
     - No complex progress dialogs, just simple and fast loading
     """
@@ -175,8 +174,6 @@ class FileLoadManager:
         # Update UI with all collected files
         if all_file_paths:
             self._update_ui_with_files(all_file_paths, clear=not merge_mode)
-
-
 
     def _load_folder_with_wait_cursor(self, folder_path: str, merge_mode: bool, recursive: bool = False) -> None:
         """Load folder with wait cursor only (fast approach for all operations)."""

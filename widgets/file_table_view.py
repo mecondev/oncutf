@@ -10,7 +10,6 @@ Custom QTableView with Windows Explorer-like behavior:
 - Drag & drop support with custom MIME types
 - Hover highlighting and visual feedback
 '''
-from pathlib import Path
 from typing import Optional
 
 from PyQt5.QtCore import (
@@ -111,7 +110,8 @@ class FileTableView(QTableView):
         self.placeholder_label.setAlignment(Qt.AlignCenter) # type: ignore
         self.placeholder_label.setVisible(False)
 
-        icon_path = Path(__file__).parent.parent / "resources/images/File_table_placeholder.png"
+        from utils.path_utils import get_images_dir
+        icon_path = get_images_dir() / "File_table_placeholder.png"
         self.placeholder_icon = QPixmap(str(icon_path))
 
         if not self.placeholder_icon.isNull():

@@ -16,7 +16,7 @@ from typing import Optional
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QAction, QLabel, QMenu, QVBoxLayout, QWidget
 
-from config import QLABEL_INFO_TEXT, QLABEL_DARK_BORDER, QLABEL_DARK_BG, QLABEL_ERROR_TEXT
+from config import QLABEL_DARK_BG, QLABEL_DARK_BORDER, QLABEL_ERROR_TEXT, QLABEL_INFO_TEXT
 from modules.base_module import BaseRenameModule
 from utils.filename_validator import validate_filename_part
 from utils.icons_loader import get_menu_icon

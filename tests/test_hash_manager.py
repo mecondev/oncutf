@@ -1,19 +1,17 @@
+#!/usr/bin/env python3
 """
 test_hash_manager.py
 
 Author: Michael Economou
-Date: 2025-01-21
+Date: 2025-05-22
 
-Tests for HashManager class and hash-related functionality.
-Covers SHA-256 calculation, duplicate detection, folder comparison, and caching.
+Test module for hash calculation functionality.
 """
 
 import hashlib
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
-
-import pytest
+from unittest.mock import Mock, patch
 
 from core.hash_manager import HashManager, calculate_sha256, compare_folders
 from tests.mocks import MockFileItem

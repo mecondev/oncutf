@@ -34,16 +34,20 @@ ICON_NAMES = ["valid", "unchanged", "invalid", "duplicate"]
 ICON_PATHS = {}
 
 
-def prepare_status_icons(base_dir: str = "resources/icons") -> dict[str, str]:
+def prepare_status_icons(base_dir: str = None) -> dict[str, str]:
     """
     Prepares and caches status icons by creating colored icons if they do not exist.
 
     Args:
-        base_dir (str): The base directory where icons will be stored. Defaults to "resources/icons".
+        base_dir (str): The base directory where icons will be stored. Defaults to project icons dir.
 
     Returns:
         dict[str, str]: A dictionary mapping icon names to their file paths.
     """
+    from utils.path_utils import get_icons_dir
+
+    if base_dir is None:
+        base_dir = str(get_icons_dir())
 
     os.makedirs(base_dir, exist_ok=True)
 

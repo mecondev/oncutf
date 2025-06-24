@@ -26,9 +26,8 @@ sys.path.insert(0, str(project_root))
 
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QStyleFactory
-from PyQt5.QtGui import QColor
 
-from config import APP_VERSION, SPLASH_SCREEN_DURATION
+from config import SPLASH_SCREEN_DURATION
 from main_window import MainWindow
 from utils.fonts import _get_inter_fonts
 from utils.logger_setup import ConfigureLogger
@@ -91,7 +90,8 @@ def main() -> int:
         app.setStyleSheet(load_stylesheet())
 
         # Create custom splash screen
-        splash_path = project_root / "resources" / "images" / "splash.png"
+        from utils.path_utils import get_images_dir
+        splash_path = get_images_dir() / "splash.png"
         logger.debug(f"Loading custom splash screen from: {splash_path}", extra={"dev_only": True})
 
         # Set application-wide wait cursor

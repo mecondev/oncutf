@@ -26,7 +26,6 @@ from core.drag_cleanup_manager import DragCleanupManager
 from core.drag_manager import DragManager
 from core.event_handler_manager import EventHandlerManager
 from core.file_load_manager import FileLoadManager
-
 from core.file_operations_manager import FileOperationsManager
 from core.initialization_manager import InitializationManager
 from core.preview_manager import PreviewManager
@@ -503,7 +502,6 @@ class MainWindow(QMainWindow):
         super().closeEvent(event)
 
         # 10. Final cleanup - force terminate any remaining background processes
-        import sys
         import os
         logger.info("[CloseEvent] Final cleanup - forcing application termination")
 
@@ -567,7 +565,7 @@ class MainWindow(QMainWindow):
         progress_dialogs = self.findChildren(ProgressDialog)
         for dialog in progress_dialogs:
             if dialog.isVisible():
-                logger.info(f"[CloseEvent] Force closing ProgressDialog")
+                logger.info("[CloseEvent] Force closing ProgressDialog")
                 dialog.reject()  # Force close without waiting
                 dialogs_closed += 1
 
@@ -575,7 +573,7 @@ class MainWindow(QMainWindow):
         metadata_dialogs = self.findChildren(MetadataWaitingDialog)
         for dialog in metadata_dialogs:
             if dialog.isVisible():
-                logger.info(f"[CloseEvent] Force closing MetadataWaitingDialog")
+                logger.info("[CloseEvent] Force closing MetadataWaitingDialog")
                 dialog.reject()  # Force close without waiting
                 dialogs_closed += 1
 

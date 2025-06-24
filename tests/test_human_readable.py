@@ -12,7 +12,6 @@ between our application and system commands like ls -lh.
 import os
 import subprocess
 import sys
-import unittest
 from pathlib import Path
 
 # Add project root to path for imports
@@ -20,6 +19,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from models.file_item import FileItem
+
 
 def get_system_human_sizes(filepath):
     """Get human-readable file sizes using system commands."""

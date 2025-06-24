@@ -119,55 +119,20 @@ try:
 
             time.sleep(0.1)  # Simulate work
 
-    def test_enhanced_widget_standalone():
-        """Test enhanced widget in standalone mode."""
-
-        from widgets.progress_widget import CompactEnhancedProgressWidget
-
-        app = QApplication(sys.argv)
-
-        # Create standalone enhanced widget
-        widget = CompactEnhancedProgressWidget(
-            show_size_info=True,
-            show_time_info=True,
-            layout_style="bottom"
-        )
-
-        widget.setWindowTitle("Enhanced Progress Widget Test")
-        widget.show()
-
-        # Demo progression
-        widget.start_progress(500 * 1024 * 1024)  # 500MB
-
-        for i in range(101):
-            current_size = i * 5 * 1024 * 1024  # 5MB per step
-            widget.update_progress(i, 100, current_size)
-            widget.set_filename(f"processing_file_{i:03d}.dat")
-
-            app.processEvents()
-            time.sleep(0.02)
-
-        widget.set_status("Complete!")
-
-        return app.exec_()
-
     if __name__ == "__main__":
         if len(sys.argv) > 1:
             command = sys.argv[1]
 
             if command == "dialog":
                 demo_enhanced_progress()
-            elif command == "widget":
-                test_enhanced_widget_standalone()
             elif command == "time":
                 demo_time_formatter()
             else:
-                print("Usage: python test_enhanced_progress.py [dialog|widget|time]")
+                print("Usage: python test_enhanced_progress.py [dialog|time]")
         else:
             print("Enhanced Progress System Demo")
             print("Available commands:")
             print("  dialog - Demo enhanced progress dialog")
-            print("  widget - Demo enhanced progress widget")
             print("  time   - Demo time formatting")
             print()
             print("Example: python test_enhanced_progress.py dialog")

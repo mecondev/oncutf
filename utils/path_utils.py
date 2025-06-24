@@ -6,10 +6,133 @@ Date: 2025-06-20
 
 Utility functions for robust path operations across different operating systems.
 Handles path normalization to resolve issues with mixed path separators (especially on Windows).
+Also provides centralized project path management to ensure resources are loaded correctly
+regardless of current working directory.
 """
 
 import os
+from pathlib import Path
 from typing import Optional
+
+
+def get_project_root() -> Path:
+    """
+    Get the project root directory based on the location of main.py.
+
+    This ensures that resource paths work correctly regardless of the
+    current working directory when the application is launched.
+
+    Returns:
+        Path: The project root directory as a Path object
+    """
+    # Get the directory where this file is located (utils/)
+    current_file_dir = Path(__file__).parent
+    # Go up one level to get project root
+    project_root = current_file_dir.parent
+    return project_root.resolve()
+
+
+def get_resources_dir() -> Path:
+    """
+    Get the resources directory path.
+
+    Returns:
+        Path: The resources directory path
+    """
+    return get_project_root() / "resources"
+
+
+def get_assets_dir() -> Path:
+    """
+    Get the assets directory path.
+
+    Returns:
+        Path: The assets directory path
+    """
+    return get_project_root() / "assets"
+
+
+def get_style_dir() -> Path:
+    """
+    Get the style directory path.
+
+    Returns:
+        Path: The style directory path
+    """
+    return get_project_root() / "style"
+
+
+def get_fonts_dir() -> Path:
+    """
+    Get the fonts directory path.
+
+    Returns:
+        Path: The fonts directory path (resources/fonts/inter)
+    """
+    return get_resources_dir() / "fonts" / "inter"
+
+
+def get_icons_dir() -> Path:
+    """
+    Get the icons directory path.
+
+    Returns:
+        Path: The icons directory path (resources/icons)
+    """
+    return get_resources_dir() / "icons"
+
+
+def get_images_dir() -> Path:
+    """
+    Get the images directory path.
+
+    Returns:
+        Path: The images directory path (resources/images)
+    """
+    return get_resources_dir() / "images"
+
+
+def get_theme_dir(theme_name: str) -> Path:
+    """
+    Get the theme directory path for a specific theme.
+
+    Args:
+        theme_name: The theme name (e.g., 'dark', 'light')
+
+    Returns:
+        Path: The theme directory path (style/{theme_name}_theme)
+    """
+    return get_style_dir() / f"{theme_name}_theme"
+
+
+def get_resource_path(relative_path: str) -> Path:
+    """
+    Get the full path to a resource file based on relative path from project root.
+
+    Args:
+        relative_path: Relative path from project root (e.g., 'resources/icons/info.png')
+
+    Returns:
+        Path: The full path to the resource
+
+    Example:
+        >>> get_resource_path('resources/icons/info.png')
+        Path('/full/path/to/project/resources/icons/info.png')
+    """
+    return get_project_root() / relative_path
+
+
+def resource_exists(relative_path: str) -> bool:
+    """
+    Check if a resource file exists.
+
+    Args:
+        relative_path: Relative path from project root
+
+    Returns:
+        bool: True if the resource exists, False otherwise
+    """
+    return get_resource_path(relative_path).exists()
 
 
 def normalize_path(path: str) -> str:
