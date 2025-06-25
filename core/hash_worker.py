@@ -199,8 +199,6 @@ class HashWorker(QThread):
 
         return progress_callback
 
-
-
     def run(self) -> None:
         """Main thread execution."""
         try:
@@ -277,18 +275,21 @@ class HashWorker(QThread):
             except OSError:
                 file_size = 0
 
-            # Create unified progress callback - uses instance variable for consistency
-            progress_callback = self._create_unified_progress_callback(i, total_files, filename, self._cumulative_processed_bytes)
+            # Store the current cumulative bytes before processing this file
+            current_cumulative_bytes = self._cumulative_processed_bytes
+
+            # Create unified progress callback - uses current cumulative bytes as baseline
+            progress_callback = self._create_unified_progress_callback(i, total_files, filename, current_cumulative_bytes)
 
             # Calculate hash with continuous progress tracking
             file_hash = hash_manager.calculate_hash(file_path, progress_callback)
             if file_hash:
                 hash_results[file_path] = file_hash
 
-            # Critical: Update cumulative bytes AFTER processing each file
+            # Update cumulative bytes AFTER processing each file (no double emission here)
             with QMutexLocker(self._mutex):
-                self._cumulative_processed_bytes += file_size
-                # Send progress update immediately after each file completion
+                self._cumulative_processed_bytes = current_cumulative_bytes + file_size
+                # Only emit final progress for this file to avoid backwards progress
                 self.size_progress.emit(self._cumulative_processed_bytes, self._total_bytes)
 
         # Complete progress - final update
@@ -336,8 +337,11 @@ class HashWorker(QThread):
             except OSError:
                 file_size = 0
 
-            # Create unified progress callback with consistent instance variable
-            progress_callback = self._create_unified_progress_callback(i, total_files, filename, self._cumulative_processed_bytes)
+            # Store the current cumulative bytes before processing this file
+            current_cumulative_bytes = self._cumulative_processed_bytes
+
+            # Create unified progress callback with current cumulative bytes as baseline
+            progress_callback = self._create_unified_progress_callback(i, total_files, filename, current_cumulative_bytes)
 
             # Calculate hash with smooth progress updates
             file_hash = hash_manager.calculate_hash(file_path, progress_callback)
@@ -347,10 +351,10 @@ class HashWorker(QThread):
                 else:
                     hash_cache[file_hash] = [file_path]
 
-            # Critical: Update cumulative progress AFTER each file
+            # Update cumulative progress AFTER each file (no double emission here)
             with QMutexLocker(self._mutex):
-                self._cumulative_processed_bytes += file_size
-                # Send progress update immediately after each file completion
+                self._cumulative_processed_bytes = current_cumulative_bytes + file_size
+                # Only emit final progress for this file to avoid backwards progress
                 self.size_progress.emit(self._cumulative_processed_bytes, self._total_bytes)
 
         # Complete progress with final updates
@@ -401,15 +405,18 @@ class HashWorker(QThread):
             except OSError:
                 file_size = 0
 
-            # Create unified progress callback with consistent instance variable
-            progress_callback = self._create_unified_progress_callback(i, total_files, filename, self._cumulative_processed_bytes)
+            # Store the current cumulative bytes before processing this file
+            current_cumulative_bytes = self._cumulative_processed_bytes
+
+            # Create unified progress callback with current cumulative bytes as baseline
+            progress_callback = self._create_unified_progress_callback(i, total_files, filename, current_cumulative_bytes)
 
             # Calculate hash of current file with smooth progress updates
             current_hash = hash_manager.calculate_hash(file_path, progress_callback)
             if current_hash is None:
                 # Still update cumulative bytes even if hash failed
                 with QMutexLocker(self._mutex):
-                    self._cumulative_processed_bytes += file_size
+                    self._cumulative_processed_bytes = current_cumulative_bytes + file_size
                     self.size_progress.emit(self._cumulative_processed_bytes, self._total_bytes)
                 continue
 
@@ -427,10 +434,10 @@ class HashWorker(QThread):
                         'external_hash': external_hash
                     }
 
-            # Critical: Update cumulative progress AFTER each file
+            # Update cumulative progress AFTER each file (no double emission here)
             with QMutexLocker(self._mutex):
-                self._cumulative_processed_bytes += file_size
-                # Send progress update immediately after each file completion
+                self._cumulative_processed_bytes = current_cumulative_bytes + file_size
+                # Only emit final progress for this file to avoid backwards progress
                 self.size_progress.emit(self._cumulative_processed_bytes, self._total_bytes)
 
         # Complete progress with final updates

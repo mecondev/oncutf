@@ -200,6 +200,46 @@ class HashManager:
 
         return duplicates
 
+    def find_duplicates_in_paths(self, file_paths: List[str]) -> Dict[str, List[str]]:
+        """
+        Find duplicate files in a list of file paths based on CRC32 hash.
+
+        Args:
+            file_paths: List of file paths (strings) to check for duplicates
+
+        Returns:
+            dict: Dictionary with hash as key and list of duplicate file paths as value
+                 Only includes hashes that have multiple files
+        """
+        if not file_paths:
+            return {}
+
+        hash_to_paths: Dict[str, List[str]] = {}
+        processed_count = 0
+
+        logger.info(f"[HashManager] Scanning {len(file_paths)} files for duplicates (CRC32)...")
+
+        for file_path in file_paths:
+            try:
+                file_hash = self.calculate_hash(file_path)
+                if file_hash is not None:
+                    if file_hash not in hash_to_paths:
+                        hash_to_paths[file_hash] = []
+                    hash_to_paths[file_hash].append(file_path)
+                    processed_count += 1
+            except Exception as e:
+                logger.error(f"[HashManager] Error processing file {file_path}: {e}")
+
+        # Filter to only return groups with duplicates
+        duplicates = {hash_val: paths for hash_val, paths in hash_to_paths.items() if len(paths) > 1}
+
+        duplicate_count = sum(len(paths) for paths in duplicates.values())
+        duplicate_groups = len(duplicates)
+
+        logger.info(f"[HashManager] Found {duplicate_count} duplicate files in {duplicate_groups} groups")
+
+        return duplicates
+
     def verify_file_integrity(self, file_path: Union[str, Path], expected_hash: str) -> bool:
         """
         Verify file integrity by comparing its hash with an expected hash.
