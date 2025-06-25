@@ -352,10 +352,15 @@ class ProgressWidget(QWidget):
         logger.debug(f"[ProgressWidget] Started tracking (total_size: {total_size})")
 
     def update_progress_with_size(self, current: int, total: int, current_size: int = 0):
-        """Update progress with size tracking."""
-        # Update much less frequently to avoid flickering
+        """
+        Update progress with size tracking.
+
+        Optimized throttling (2025): 100ms updates instead of 300ms provide
+        smoother progress without UI flooding - better than old approach.
+        """
+        # Faster throttling for better UX - old 300ms was too slow for hash operations
         current_time = time.time()
-        if current_time - self._last_update_time < 0.3:  # Update every 300ms only
+        if current_time - self._last_update_time < 0.1:  # Update every 100ms now
             return
         self._last_update_time = current_time
 
@@ -384,7 +389,12 @@ class ProgressWidget(QWidget):
         self.size_label.setText(size_text)
 
     def _update_time_display(self):
-        """Update time display with elapsed and estimated time."""
+        """
+        Update time display with elapsed and estimated time.
+
+        Improved estimation (2025): More stable time calculation that doesn't reset
+        between files - better than old approach that lost estimation accuracy.
+        """
         if not self.show_time_info or not hasattr(self, 'time_label'):
             return
 
@@ -395,10 +405,11 @@ class ProgressWidget(QWidget):
         # Calculate elapsed time
         elapsed = time.time() - self.start_time
 
-        # Calculate estimated time based on progress
+        # Stable estimation based on cumulative progress - no more resets between files
         if self.processed_size > 0 and self.total_size > 0:
             progress_ratio = self.processed_size / self.total_size
-            if progress_ratio > 0:
+            # Only show estimation if we have meaningful progress (>1%)
+            if progress_ratio > 0.01:
                 estimated_total = elapsed / progress_ratio
                 estimated_remaining = max(0, estimated_total - elapsed)
 
@@ -408,6 +419,7 @@ class ProgressWidget(QWidget):
 
                 self.time_label.setText(f"{elapsed_str} / {estimated_total_str}")
             else:
+                # Early stage - just show elapsed time until we have stable estimation
                 elapsed_str = self._format_time(elapsed)
                 self.time_label.setText(f"{elapsed_str} / calculating...")
         else:
@@ -437,24 +449,27 @@ class ProgressWidget(QWidget):
 
     def set_size_info(self, processed_size: int, total_size: int = 0):
         """
-        Update size information display.
+        Update size information display with cumulative tracking.
+
+        Improved handling (2025): Accepts cumulative processed_size that continuously
+        increases - no more reset issues between files like the old approach.
 
         Args:
-            processed_size: Number of bytes processed
+            processed_size: Cumulative bytes processed (always increasing)
             total_size: Total bytes to process (optional, uses stored value if 0)
         """
         if not self.show_size_info or not hasattr(self, 'size_label'):
             return
 
-        # Update stored values
+        # Store cumulative values - these should only increase, never reset
         self.processed_size = processed_size
         if total_size > 0:
             self.total_size = total_size
 
-        # Update display
+        # Update display with cumulative progress
         self._update_size_display()
 
-        # Also update time display since it depends on size progress
+        # Update time estimation based on stable cumulative progress
         if self.show_time_info:
             self._update_time_display()
 

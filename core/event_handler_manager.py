@@ -665,7 +665,7 @@ class EventHandlerManager:
             # Initialize cumulative progress tracking (simplified)
             self._total_processed_bytes = 0
 
-            # Connect signals
+            # Connect signals - simplified approach (2025): fewer connections are now more reliable
             self.hash_worker.progress_updated.connect(self._on_hash_progress_updated)
             self.hash_worker.size_progress.connect(self._on_size_progress_updated)
             self.hash_worker.status_updated.connect(self.hash_dialog.set_status)
@@ -742,8 +742,23 @@ class EventHandlerManager:
             self.hash_dialog.set_filename(filename)
 
     def _on_size_progress_updated(self, total_processed: int, total_size: int) -> None:
-        """Handle overall size progress updates from hash worker."""
+        """
+        Handle overall size progress updates from hash worker.
+
+        Debug tracking (2025): Added logging to monitor cumulative progress issues.
+        """
         if hasattr(self, 'hash_dialog') and self.hash_dialog:
+            # Debug: Track progress to identify reset issues
+            if hasattr(self, '_last_processed_bytes'):
+                if total_processed < self._last_processed_bytes:
+                    logger.warning(f"[HashProgress] Progress went backwards! {total_processed} < {self._last_processed_bytes}")
+                elif total_processed > self._last_processed_bytes:
+                    logger.debug(f"[HashProgress] Progress update: {total_processed}/{total_size} bytes", extra={"dev_only": True})
+            else:
+                logger.debug(f"[HashProgress] Starting progress tracking: {total_processed}/{total_size} bytes", extra={"dev_only": True})
+
+            self._last_processed_bytes = total_processed
+
             # Use the accurate size progress from the worker
             self.hash_dialog.set_size_info(total_processed, total_size)
 

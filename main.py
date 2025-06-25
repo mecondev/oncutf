@@ -94,7 +94,7 @@ def main() -> int:
         logger.debug(f"Loading custom splash screen from: {splash_path}", extra={"dev_only": True})
 
         # Set application-wide wait cursor
-        app.setOverrideCursor(Qt.WaitCursor)
+        app.setOverrideCursor(Qt.WaitCursor) # type: ignore[attr-defined]
 
         try:
             # Create custom splash screen

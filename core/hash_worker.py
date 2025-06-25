@@ -44,12 +44,14 @@ class HashWorker(QThread):
     1. Find duplicates in file list
     2. Compare files with external folder
     3. Calculate checksums for files
+
+    Simplified progress tracking (2025): Single unified signal instead of separate
+    file_progress and size_progress signals for better performance and accuracy.
     """
 
-    # Enhanced unified signals for all operations
+    # Unified progress signals - simplified approach is now better than complex dual tracking
     progress_updated = pyqtSignal(int, int, str)  # current_file, total_files, current_filename
-    file_progress = pyqtSignal(int, int)  # bytes_processed, file_size (for individual file progress)
-    size_progress = pyqtSignal(int, int)  # total_bytes_processed, total_bytes_size (for overall size progress)
+    size_progress = pyqtSignal(int, int)  # total_bytes_processed, total_bytes_size (unified tracking)
     status_updated = pyqtSignal(str)  # status message
 
     # Result signals
@@ -71,13 +73,13 @@ class HashWorker(QThread):
         self._file_paths = []
         self._external_folder = None
 
-        # Progress tracking
+        # Simplified progress tracking - unified approach is now more reliable
         self._cancel_check_counter = 0
         self._cancel_check_frequency = 5  # Check every 5 operations
 
-        # Size tracking for enhanced progress
+        # Unified size tracking - no more separate file/total tracking complexity
         self._total_bytes = 0
-        self._processed_bytes = 0
+        self._cumulative_processed_bytes = 0  # Continuously increases, never resets per file
 
     def setup_duplicate_scan(self, file_paths: List[str]) -> None:
         """Configure worker for duplicate detection."""
@@ -88,7 +90,7 @@ class HashWorker(QThread):
             self._cancelled = False
             self._cancel_check_counter = 0
             self._total_bytes = 0
-            self._processed_bytes = 0
+            self._cumulative_processed_bytes = 0
 
     def setup_external_comparison(self, file_paths: List[str], external_folder: str) -> None:
         """Configure worker for external folder comparison."""
@@ -99,7 +101,7 @@ class HashWorker(QThread):
             self._cancelled = False
             self._cancel_check_counter = 0
             self._total_bytes = 0
-            self._processed_bytes = 0
+            self._cumulative_processed_bytes = 0
 
     def setup_checksum_calculation(self, file_paths: List[str]) -> None:
         """Configure worker for checksum calculation."""
@@ -110,7 +112,7 @@ class HashWorker(QThread):
             self._cancelled = False
             self._cancel_check_counter = 0
             self._total_bytes = 0
-            self._processed_bytes = 0
+            self._cumulative_processed_bytes = 0
 
     def set_total_size(self, total_size: int) -> None:
         """Set the total size from external calculation to avoid duplicate work."""
@@ -168,10 +170,15 @@ class HashWorker(QThread):
         logger.info(f"[HashWorker] Total size calculated: {total_size:,} bytes for {files_counted} files")
         return total_size
 
-    def _create_file_progress_callback(self, file_size: int, file_start_bytes: int):
-        """Create a progress callback that tracks both individual file and total progress."""
+    def _create_unified_progress_callback(self, file_index: int, total_files: int, filename: str, file_start_bytes: int):
+        """
+        Create unified progress callback that properly tracks cumulative progress.
+
+        Simplified approach (2025): Single callback is now more reliable than
+        separate file/size tracking which caused progress resets.
+        """
         last_update_time = 0
-        update_interval = 0.1  # Update every 100ms to avoid UI flooding
+        update_interval = 0.05  # 50ms updates - faster than old 100ms for better UX
 
         def progress_callback(bytes_processed: int):
             nonlocal last_update_time
@@ -186,20 +193,13 @@ class HashWorker(QThread):
 
             last_update_time = current_time
 
-            # Individual file progress
-            self.file_progress.emit(bytes_processed, file_size)
-
-            # Overall size progress (no mutex needed for read-only operations)
+            # Cumulative progress - never goes backwards, always increases
             total_processed = file_start_bytes + bytes_processed
             self.size_progress.emit(total_processed, self._total_bytes)
 
         return progress_callback
 
-    def _update_processed_bytes_for_completed_file(self, file_size: int):
-        """Update processed bytes when a file is completed."""
-        with QMutexLocker(self._mutex):
-            self._processed_bytes += file_size
-            self.size_progress.emit(self._processed_bytes, self._total_bytes)
+
 
     def run(self) -> None:
         """Main thread execution."""
@@ -242,7 +242,12 @@ class HashWorker(QThread):
             self.finished_processing.emit(False)
 
     def _calculate_checksums(self, file_paths: List[str]) -> None:
-        """Calculate checksums for files with accurate progress tracking."""
+        """
+        Calculate checksums with simplified cumulative progress tracking.
+
+        Fixed approach (2025): Use only instance variable for cumulative tracking
+        instead of mixing local and instance variables which caused resets.
+        """
         from core.hash_manager import HashManager
 
         hash_manager = HashManager()
@@ -251,7 +256,9 @@ class HashWorker(QThread):
 
         self.status_updated.emit("Calculating CRC32 checksums...")
 
-        file_start_bytes = 0
+        # Reset cumulative tracking at start
+        with QMutexLocker(self._mutex):
+            self._cumulative_processed_bytes = 0
 
         for i, file_path in enumerate(file_paths):
             if self._check_cancellation():
@@ -264,25 +271,29 @@ class HashWorker(QThread):
             # Update progress with current file info
             self.progress_updated.emit(i + 1, total_files, filename)
 
-            # Get file size for individual progress tracking
+            # Get file size for progress tracking
             try:
                 file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
             except OSError:
                 file_size = 0
 
-            # Create progress callback for this file
-            progress_callback = self._create_file_progress_callback(file_size, file_start_bytes)
+            # Create unified progress callback - uses instance variable for consistency
+            progress_callback = self._create_unified_progress_callback(i, total_files, filename, self._cumulative_processed_bytes)
 
-            # Calculate hash with progress tracking
+            # Calculate hash with continuous progress tracking
             file_hash = hash_manager.calculate_hash(file_path, progress_callback)
             if file_hash:
                 hash_results[file_path] = file_hash
 
-            # Update start bytes for next file
-            file_start_bytes += file_size
+            # Critical: Update cumulative bytes AFTER processing each file
+            with QMutexLocker(self._mutex):
+                self._cumulative_processed_bytes += file_size
+                # Send progress update immediately after each file completion
+                self.size_progress.emit(self._cumulative_processed_bytes, self._total_bytes)
 
-        # Complete progress
+        # Complete progress - final update
         self.progress_updated.emit(total_files, total_files, "Complete")
+        self.size_progress.emit(self._total_bytes, self._total_bytes)  # Ensure 100% completion
         self.status_updated.emit(f"CRC32 checksums calculated for {len(hash_results)} files!")
 
         logger.info(f"[HashWorker] Calculated checksums for {len(hash_results)} files")
@@ -290,7 +301,12 @@ class HashWorker(QThread):
         self.finished_processing.emit(True)
 
     def _find_duplicates(self, file_paths: List[str]) -> None:
-        """Find duplicate files by comparing hashes with accurate progress tracking."""
+        """
+        Find duplicates with simplified cumulative progress tracking.
+
+        Fixed approach (2025): Use instance variable consistently for cumulative
+        progress instead of local variables that caused progress resets.
+        """
         from core.hash_manager import HashManager
 
         hash_manager = HashManager()
@@ -299,7 +315,9 @@ class HashWorker(QThread):
 
         self.status_updated.emit("Calculating CRC32 hashes for duplicate detection...")
 
-        file_start_bytes = 0
+        # Reset cumulative tracking at start
+        with QMutexLocker(self._mutex):
+            self._cumulative_processed_bytes = 0
 
         for i, file_path in enumerate(file_paths):
             if self._check_cancellation():
@@ -312,16 +330,16 @@ class HashWorker(QThread):
             # Update progress with current file info
             self.progress_updated.emit(i + 1, total_files, filename)
 
-            # Get file size for individual progress tracking
+            # Get file size for progress tracking
             try:
                 file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
             except OSError:
                 file_size = 0
 
-            # Create progress callback for this file
-            progress_callback = self._create_file_progress_callback(file_size, file_start_bytes)
+            # Create unified progress callback with consistent instance variable
+            progress_callback = self._create_unified_progress_callback(i, total_files, filename, self._cumulative_processed_bytes)
 
-            # Calculate hash with progress tracking
+            # Calculate hash with smooth progress updates
             file_hash = hash_manager.calculate_hash(file_path, progress_callback)
             if file_hash:
                 if file_hash in hash_cache:
@@ -329,11 +347,15 @@ class HashWorker(QThread):
                 else:
                     hash_cache[file_hash] = [file_path]
 
-            # Update start bytes for next file
-            file_start_bytes += file_size
+            # Critical: Update cumulative progress AFTER each file
+            with QMutexLocker(self._mutex):
+                self._cumulative_processed_bytes += file_size
+                # Send progress update immediately after each file completion
+                self.size_progress.emit(self._cumulative_processed_bytes, self._total_bytes)
 
-        # Complete progress
+        # Complete progress with final updates
         self.progress_updated.emit(total_files, total_files, "Complete")
+        self.size_progress.emit(self._total_bytes, self._total_bytes)  # Ensure 100% completion
         self.status_updated.emit("Duplicate analysis complete!")
 
         # Find duplicates
@@ -344,7 +366,12 @@ class HashWorker(QThread):
         self.finished_processing.emit(True)
 
     def _compare_external(self, file_paths: List[str], external_folder: str) -> None:
-        """Compare files with external folder with accurate progress tracking."""
+        """
+        Compare files with external folder using unified progress tracking.
+
+        Fixed approach (2025): Consistent instance variable usage eliminates
+        progress resets caused by mixing local and instance variables.
+        """
         from core.hash_manager import HashManager
 
         hash_manager = HashManager()
@@ -353,7 +380,9 @@ class HashWorker(QThread):
 
         self.status_updated.emit(f"Comparing files with {os.path.basename(external_folder)}...")
 
-        file_start_bytes = 0
+        # Reset cumulative tracking at start
+        with QMutexLocker(self._mutex):
+            self._cumulative_processed_bytes = 0
 
         for i, file_path in enumerate(file_paths):
             if self._check_cancellation():
@@ -366,20 +395,22 @@ class HashWorker(QThread):
             # Update progress with current file info
             self.progress_updated.emit(i + 1, total_files, filename)
 
-            # Get file size for individual progress tracking
+            # Get file size for progress tracking
             try:
                 file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
             except OSError:
                 file_size = 0
 
-            # Create progress callback for this file
-            progress_callback = self._create_file_progress_callback(file_size, file_start_bytes)
+            # Create unified progress callback with consistent instance variable
+            progress_callback = self._create_unified_progress_callback(i, total_files, filename, self._cumulative_processed_bytes)
 
-            # Calculate hash of current file with progress tracking
+            # Calculate hash of current file with smooth progress updates
             current_hash = hash_manager.calculate_hash(file_path, progress_callback)
             if current_hash is None:
-                # Update start bytes even if hash failed
-                file_start_bytes += file_size
+                # Still update cumulative bytes even if hash failed
+                with QMutexLocker(self._mutex):
+                    self._cumulative_processed_bytes += file_size
+                    self.size_progress.emit(self._cumulative_processed_bytes, self._total_bytes)
                 continue
 
             # Look for file with same name in external folder
@@ -396,11 +427,15 @@ class HashWorker(QThread):
                         'external_hash': external_hash
                     }
 
-            # Update start bytes for next file
-            file_start_bytes += file_size
+            # Critical: Update cumulative progress AFTER each file
+            with QMutexLocker(self._mutex):
+                self._cumulative_processed_bytes += file_size
+                # Send progress update immediately after each file completion
+                self.size_progress.emit(self._cumulative_processed_bytes, self._total_bytes)
 
-        # Complete progress
+        # Complete progress with final updates
         self.progress_updated.emit(total_files, total_files, "Complete")
+        self.size_progress.emit(self._total_bytes, self._total_bytes)  # Ensure 100% completion
         self.status_updated.emit("File comparison complete!")
 
         logger.info(f"[HashWorker] Compared {len(file_paths)} files with external folder")
