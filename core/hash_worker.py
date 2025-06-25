@@ -255,8 +255,9 @@ class HashWorker(QThread):
             # Update cumulative bytes AFTER each file is completed
             with QMutexLocker(self._mutex):
                 self._cumulative_processed_bytes += file_size
-                # Simple, reliable progress based on completed files
-                logger.debug(f"[HashWorker] File {i+1}/{total_files} completed. Added {file_size} bytes. Total: {self._cumulative_processed_bytes}/{self._total_bytes}")
+                # Only log every 10 files to reduce spam
+                if (i + 1) % 10 == 0 or (i + 1) == total_files:
+                    logger.debug(f"[HashWorker] Progress: {i+1}/{total_files} files, {self._cumulative_processed_bytes:,}/{self._total_bytes:,} bytes")
                 self.size_progress.emit(self._cumulative_processed_bytes, self._total_bytes)
 
         # Complete progress - final update
@@ -316,8 +317,9 @@ class HashWorker(QThread):
             # Update cumulative bytes AFTER each file is completed
             with QMutexLocker(self._mutex):
                 self._cumulative_processed_bytes += file_size
-                # Simple, reliable progress based on completed files
-                logger.debug(f"[HashWorker] File {i+1}/{total_files} completed. Added {file_size} bytes. Total: {self._cumulative_processed_bytes}/{self._total_bytes}")
+                # Only log every 10 files to reduce spam
+                if (i + 1) % 10 == 0 or (i + 1) == total_files:
+                    logger.debug(f"[HashWorker] Progress: {i+1}/{total_files} files, {self._cumulative_processed_bytes:,}/{self._total_bytes:,} bytes")
                 self.size_progress.emit(self._cumulative_processed_bytes, self._total_bytes)
 
         # Complete progress with final updates
@@ -395,8 +397,9 @@ class HashWorker(QThread):
             # Update cumulative bytes AFTER each file is completed
             with QMutexLocker(self._mutex):
                 self._cumulative_processed_bytes += file_size
-                # Simple, reliable progress based on completed files
-                logger.debug(f"[HashWorker] File {i+1}/{total_files} completed. Added {file_size} bytes. Total: {self._cumulative_processed_bytes}/{self._total_bytes}")
+                # Only log every 10 files to reduce spam
+                if (i + 1) % 10 == 0 or (i + 1) == total_files:
+                    logger.debug(f"[HashWorker] Progress: {i+1}/{total_files} files, {self._cumulative_processed_bytes:,}/{self._total_bytes:,} bytes")
                 self.size_progress.emit(self._cumulative_processed_bytes, self._total_bytes)
 
         # Complete progress with final updates

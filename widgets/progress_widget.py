@@ -408,10 +408,27 @@ class ProgressWidget(QWidget):
         # Stable estimation based on cumulative progress - no more resets between files
         if self.processed_size > 0 and self.total_size > 0:
             progress_ratio = self.processed_size / self.total_size
+
+            # Store previous estimation for stability check
+            if not hasattr(self, '_last_progress_ratio'):
+                self._last_progress_ratio = 0.0
+            if not hasattr(self, '_last_estimation'):
+                self._last_estimation = None
+
+            # Only update estimation if progress has changed significantly (>0.5%)
+            progress_change = abs(progress_ratio - self._last_progress_ratio)
+
             # Only show estimation if we have meaningful progress (>1%)
             if progress_ratio > 0.01:
+                # Calculate new estimation
                 estimated_total = elapsed / progress_ratio
-                estimated_remaining = max(0, estimated_total - elapsed)
+
+                # Use previous estimation if change is too small (prevents jumping)
+                if self._last_estimation is not None and progress_change < 0.005:
+                    estimated_total = self._last_estimation
+                else:
+                    self._last_estimation = estimated_total
+                    self._last_progress_ratio = progress_ratio
 
                 # Format times
                 elapsed_str = self._format_time(elapsed)
@@ -463,23 +480,57 @@ class ProgressWidget(QWidget):
         if not self.show_size_info or not hasattr(self, 'size_label'):
             return
 
-        # Add throttling to prevent UI flooding (same as update_progress_with_size)
-        current_time = time.time()
-        if current_time - self._last_update_time < 0.1:  # Update every 100ms
-            # Still update the internal values even if we skip UI updates
-            self.processed_size = processed_size
-            if total_size > 0:
-                self.total_size = total_size
-            return
+        # Always update internal values first
+        old_processed = self.processed_size
+        old_total = self.total_size
 
-        self._last_update_time = current_time
-
-        # Store cumulative values - these should only increase, never reset
         self.processed_size = processed_size
         if total_size > 0:
             self.total_size = total_size
 
-        # Update display with cumulative progress
+        # Debug logging to track what's happening - improved logic
+        import logging
+        logger = logging.getLogger()
+
+        # Only log significant changes to avoid spam
+        should_log = False
+        log_message = ""
+
+        # Check for backwards progress (potential problem)
+        if processed_size < old_processed:
+            # This is always worth logging as it indicates a problem
+            should_log = True
+            log_message = f"[ProgressWidget] WARNING: Processed size went backwards! {processed_size} < {old_processed} (diff: {old_processed - processed_size})"
+            logger.warning(log_message)
+
+        # Check for total size changes
+        elif total_size > 0 and total_size != old_total:
+            should_log = True
+            log_message = f"[ProgressWidget] Total size updated: {old_total} -> {total_size}"
+            logger.debug(log_message)
+
+        # Check for large progress jumps (>50MB)
+        elif processed_size > old_processed + 50_000_000:
+            should_log = True
+            log_message = f"[ProgressWidget] Large progress jump: {old_processed} -> {processed_size} (+{processed_size - old_processed:,} bytes)"
+            logger.debug(log_message)
+
+        # Check if we need to force an update (significant change or new total_size)
+        force_update = False
+        if total_size > 0 and total_size != old_total:
+            force_update = True  # New total size - always update UI
+        elif processed_size > old_processed and ((processed_size - old_processed) > 10_000_000):  # >10MB change
+            force_update = True  # Significant progress - update UI
+
+        # Apply throttling only if no force update needed
+        if not force_update:
+            current_time = time.time()
+            if current_time - self._last_update_time < 0.1:  # Update every 100ms
+                return
+
+        self._last_update_time = time.time()
+
+        # Update display with current values
         self._update_size_display()
 
         # Update time estimation based on stable cumulative progress
@@ -511,6 +562,12 @@ class ProgressWidget(QWidget):
         self.start_time = None
         self.total_size = 0
         self.processed_size = 0
+
+        # Reset time estimation tracking variables
+        if hasattr(self, '_last_progress_ratio'):
+            self._last_progress_ratio = 0.0
+        if hasattr(self, '_last_estimation'):
+            self._last_estimation = None
 
         # Stop timer if running
         if self._time_timer and self._time_timer.isActive():

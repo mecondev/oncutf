@@ -662,8 +662,9 @@ class EventHandlerManager:
                 logger.warning(f"[HashManager] Could not calculate total size: {e}")
                 self._total_size_bytes = 0
 
-            # Initialize cumulative progress tracking (simplified)
+            # Initialize cumulative progress tracking (simplified) - ensure clean start
             self._total_processed_bytes = 0
+            self._last_processed_bytes = 0  # Initialize tracking variable
 
             # Connect signals - simplified approach (2025): fewer connections are now more reliable
             self.hash_worker.progress_updated.connect(self._on_hash_progress_updated)
@@ -749,7 +750,7 @@ class EventHandlerManager:
         Fixed integer overflow handling for large file operations (37GB+).
         """
         if hasattr(self, 'hash_dialog') and self.hash_dialog:
-            # Debug: Track progress to identify reset issues
+            # Debug: Track progress to identify reset issues - reduced logging
             if hasattr(self, '_last_processed_bytes'):
                 if total_processed < 0:
                     # Integer overflow detected - this is handled in the worker now
@@ -759,10 +760,8 @@ class EventHandlerManager:
                     diff = self._last_processed_bytes - total_processed
                     if diff > 1000000:  # Only warn for >1MB backwards movement
                         logger.warning(f"[HashProgress] Significant progress regression: {total_processed} < {self._last_processed_bytes} (diff: {diff} bytes)")
-                    else:
-                        logger.debug(f"[HashProgress] Minor progress adjustment: {total_processed}/{total_size} bytes", extra={"dev_only": True})
-                elif total_processed > self._last_processed_bytes:
-                    logger.debug(f"[HashProgress] Progress update: {total_processed}/{total_size} bytes", extra={"dev_only": True})
+                    # Remove minor progress adjustment logging to reduce spam
+                # Remove regular progress update logging to reduce spam - only log issues
             else:
                 logger.debug(f"[HashProgress] Starting progress tracking: {total_processed}/{total_size} bytes", extra={"dev_only": True})
 
