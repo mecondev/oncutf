@@ -256,7 +256,7 @@ class HashWorker(QThread):
             with QMutexLocker(self._mutex):
                 self._cumulative_processed_bytes += file_size
                 # Simple, reliable progress based on completed files
-                logger.debug(f"[HashWorker] File {i+1}/{total_files} completed. Added {file_size} bytes. Total: {self._cumulative_processed_bytes}/{self._total_bytes}", extra={"dev_only": True})
+                logger.debug(f"[HashWorker] File {i+1}/{total_files} completed. Added {file_size} bytes. Total: {self._cumulative_processed_bytes}/{self._total_bytes}")
                 self.size_progress.emit(self._cumulative_processed_bytes, self._total_bytes)
 
         # Complete progress - final update
@@ -317,7 +317,7 @@ class HashWorker(QThread):
             with QMutexLocker(self._mutex):
                 self._cumulative_processed_bytes += file_size
                 # Simple, reliable progress based on completed files
-                logger.debug(f"[HashWorker] File {i+1}/{total_files} completed. Added {file_size} bytes. Total: {self._cumulative_processed_bytes}/{self._total_bytes}", extra={"dev_only": True})
+                logger.debug(f"[HashWorker] File {i+1}/{total_files} completed. Added {file_size} bytes. Total: {self._cumulative_processed_bytes}/{self._total_bytes}")
                 self.size_progress.emit(self._cumulative_processed_bytes, self._total_bytes)
 
         # Complete progress with final updates
@@ -396,7 +396,7 @@ class HashWorker(QThread):
             with QMutexLocker(self._mutex):
                 self._cumulative_processed_bytes += file_size
                 # Simple, reliable progress based on completed files
-                logger.debug(f"[HashWorker] File {i+1}/{total_files} completed. Added {file_size} bytes. Total: {self._cumulative_processed_bytes}/{self._total_bytes}", extra={"dev_only": True})
+                logger.debug(f"[HashWorker] File {i+1}/{total_files} completed. Added {file_size} bytes. Total: {self._cumulative_processed_bytes}/{self._total_bytes}")
                 self.size_progress.emit(self._cumulative_processed_bytes, self._total_bytes)
 
         # Complete progress with final updates

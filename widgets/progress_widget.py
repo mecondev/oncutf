@@ -454,12 +454,25 @@ class ProgressWidget(QWidget):
         Improved handling (2025): Accepts cumulative processed_size that continuously
         increases - no more reset issues between files like the old approach.
 
+        Added throttling to prevent UI flooding and time estimation resets.
+
         Args:
             processed_size: Cumulative bytes processed (always increasing)
             total_size: Total bytes to process (optional, uses stored value if 0)
         """
         if not self.show_size_info or not hasattr(self, 'size_label'):
             return
+
+        # Add throttling to prevent UI flooding (same as update_progress_with_size)
+        current_time = time.time()
+        if current_time - self._last_update_time < 0.1:  # Update every 100ms
+            # Still update the internal values even if we skip UI updates
+            self.processed_size = processed_size
+            if total_size > 0:
+                self.total_size = total_size
+            return
+
+        self._last_update_time = current_time
 
         # Store cumulative values - these should only increase, never reset
         self.processed_size = processed_size
