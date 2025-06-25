@@ -377,20 +377,72 @@ class ProgressWidget(QWidget):
             self._update_time_display()
 
     def _update_size_display(self):
-        """Update size information display."""
-        from utils.file_size_formatter import format_file_size_system_compatible
+        """Update size information display with stable formatting."""
+        # Use custom stable formatting instead of the system formatter
+        # to avoid constantly changing decimal values that hurt UX
 
-        processed_str = format_file_size_system_compatible(self.processed_size)
+        processed_str = self._format_size_stable(self.processed_size)
         if self.total_size > 0:
-            total_str = format_file_size_system_compatible(self.total_size)
+            total_str = self._format_size_stable(self.total_size)
             size_text = f"{processed_str}/{total_str}"
         else:
             size_text = processed_str
         self.size_label.setText(size_text)
 
+    def _format_size_stable(self, size_bytes: int) -> str:
+        """
+        Format file size with stable display for better UX.
+
+        Uses rounded values without decimals to prevent constant flickering
+        of the display during progress updates.
+
+        Args:
+            size_bytes: File size in bytes
+
+        Returns:
+            Formatted size string (e.g., "1 MB", "15 GB")
+        """
+        if size_bytes < 0:
+            return "0 B"
+
+        # Use binary units (1024) for consistency with most systems
+        units = ["B", "KB", "MB", "GB", "TB", "PB"]
+        base = 1024
+
+        size = float(size_bytes)
+        unit_index = 0
+
+        while size >= base and unit_index < len(units) - 1:
+            size /= base
+            unit_index += 1
+
+        # For bytes, show exact value
+        if unit_index == 0:
+            return f"{int(size)} B"
+
+        # For larger units, use rounded values for stable display
+        # This prevents the constant flickering of decimal values
+        if size >= 100:
+            # For values >= 100, show no decimals (e.g., "156 MB")
+            return f"{int(round(size))} {units[unit_index]}"
+        elif size >= 10:
+            # For values 10-99, show one decimal only if significant (e.g., "15 MB", "15.5 MB")
+            rounded = round(size, 1)
+            if rounded == int(rounded):
+                return f"{int(rounded)} {units[unit_index]}"
+            else:
+                return f"{rounded:.1f} {units[unit_index]}"
+        else:
+            # For values < 10, show one decimal (e.g., "1.5 MB", "9.8 MB")
+            rounded = round(size, 1)
+            if rounded == int(rounded):
+                return f"{int(rounded)} {units[unit_index]}"
+            else:
+                return f"{rounded:.1f} {units[unit_index]}"
+
     def _update_time_display(self):
         """
-        Update time display with elapsed and estimated time.
+        Update time display with elapsed and estimated time in HH:MM:SS format.
 
         Improved estimation (2025): More stable time calculation that doesn't reset
         between files - better than old approach that lost estimation accuracy.
@@ -430,21 +482,48 @@ class ProgressWidget(QWidget):
                     self._last_estimation = estimated_total
                     self._last_progress_ratio = progress_ratio
 
-                # Format times
-                elapsed_str = self._format_time(elapsed)
-                estimated_total_str = self._format_time(estimated_total)
+                # Format times in HH:MM:SS format
+                elapsed_str = self._format_time_hms(elapsed)
+                estimated_total_str = self._format_time_hms(estimated_total)
 
                 self.time_label.setText(f"{elapsed_str} / {estimated_total_str}")
             else:
                 # Early stage - just show elapsed time until we have stable estimation
-                elapsed_str = self._format_time(elapsed)
+                elapsed_str = self._format_time_hms(elapsed)
                 self.time_label.setText(f"{elapsed_str} / calculating...")
         else:
-            elapsed_str = self._format_time(elapsed)
+            elapsed_str = self._format_time_hms(elapsed)
             self.time_label.setText(f"{elapsed_str}")
 
+    def _format_time_hms(self, seconds: float) -> str:
+        """
+        Format time in HH:MM:SS format for consistent display.
+
+        Args:
+            seconds: Time in seconds
+
+        Returns:
+            Formatted time string (e.g., "00:01:30", "01:23:45")
+        """
+        if seconds < 0:
+            return "00:00:00"
+
+        # Convert to integers
+        total_seconds = int(seconds)
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        secs = total_seconds % 60
+
+        # Format as HH:MM:SS
+        return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+
     def _format_time(self, seconds: float) -> str:
-        """Format time in a human-readable format."""
+        """
+        Format time in a human-readable format (legacy method).
+
+        Note: This method is kept for compatibility but _format_time_hms
+        should be used for new implementations.
+        """
         if seconds < 1:
             return "0s"
         elif seconds < 60:
@@ -471,14 +550,18 @@ class ProgressWidget(QWidget):
         Improved handling (2025): Accepts cumulative processed_size that continuously
         increases - no more reset issues between files like the old approach.
 
-        Added throttling to prevent UI flooding and time estimation resets.
+        Added 64-bit integer support and overflow protection for large files (>24GB).
 
         Args:
-            processed_size: Cumulative bytes processed (always increasing)
-            total_size: Total bytes to process (optional, uses stored value if 0)
+            processed_size: Cumulative bytes processed (always increasing, 64-bit)
+            total_size: Total bytes to process (optional, uses stored value if 0, 64-bit)
         """
         if not self.show_size_info or not hasattr(self, 'size_label'):
             return
+
+        # Convert to Python integers to handle 64-bit values properly
+        processed_size = int(processed_size)
+        total_size = int(total_size) if total_size > 0 else 0
 
         # Always update internal values first
         old_processed = self.processed_size
@@ -496,36 +579,56 @@ class ProgressWidget(QWidget):
         should_log = False
         log_message = ""
 
-        # Check for backwards progress (potential problem)
+        # Check for backwards progress (potential problem) - with overflow protection
         if processed_size < old_processed:
-            # This is always worth logging as it indicates a problem
-            should_log = True
-            log_message = f"[ProgressWidget] WARNING: Processed size went backwards! {processed_size} < {old_processed} (diff: {old_processed - processed_size})"
-            logger.warning(log_message)
+            # Check if this might be an overflow (large negative number)
+            if processed_size < 0 and old_processed > 0:
+                should_log = True
+                log_message = f"[ProgressWidget] INTEGER OVERFLOW detected! processed_size={processed_size}, old_processed={old_processed}"
+                logger.error(log_message)
+                # Reset to prevent further issues
+                self.processed_size = old_processed
+                return
+            else:
+                # Regular backwards movement
+                should_log = True
+                log_message = f"[ProgressWidget] WARNING: Processed size went backwards! {processed_size} < {old_processed} (diff: {old_processed - processed_size})"
+                logger.warning(log_message)
 
         # Check for total size changes
         elif total_size > 0 and total_size != old_total:
             should_log = True
-            log_message = f"[ProgressWidget] Total size updated: {old_total} -> {total_size}"
+            log_message = f"[ProgressWidget] Total size updated: {old_total:,} -> {total_size:,}"
             logger.debug(log_message)
 
         # Check for large progress jumps (>50MB)
         elif processed_size > old_processed + 50_000_000:
             should_log = True
-            log_message = f"[ProgressWidget] Large progress jump: {old_processed} -> {processed_size} (+{processed_size - old_processed:,} bytes)"
+            log_message = f"[ProgressWidget] Large progress jump: {old_processed:,} -> {processed_size:,} (+{processed_size - old_processed:,} bytes)"
             logger.debug(log_message)
 
         # Check if we need to force an update (significant change or new total_size)
         force_update = False
         if total_size > 0 and total_size != old_total:
             force_update = True  # New total size - always update UI
-        elif processed_size > old_processed and ((processed_size - old_processed) > 10_000_000):  # >10MB change
-            force_update = True  # Significant progress - update UI
+        elif processed_size > old_processed:
+            # For small files: lower threshold to ensure updates are visible
+            # For large operations: higher threshold to avoid UI flooding
+            if self.total_size > 0:
+                progress_change_ratio = (processed_size - old_processed) / self.total_size
+                # Force update if progress changed by more than 1% OR more than 1MB
+                if progress_change_ratio > 0.01 or (processed_size - old_processed) > 1_000_000:
+                    force_update = True
+            else:
+                # No total size known - update for any significant change (>1MB)
+                if (processed_size - old_processed) > 1_000_000:
+                    force_update = True
 
-        # Apply throttling only if no force update needed
+        # Apply more relaxed throttling for better responsiveness with small files
         if not force_update:
             current_time = time.time()
-            if current_time - self._last_update_time < 0.1:  # Update every 100ms
+            # Shorter throttling interval for better small file handling
+            if current_time - self._last_update_time < 0.05:  # Update every 50ms instead of 100ms
                 return
 
         self._last_update_time = time.time()
@@ -538,18 +641,12 @@ class ProgressWidget(QWidget):
             self._update_time_display()
 
     def set_time_info(self, elapsed: float):
-        """Manually set time information."""
+        """Manually set time information in HH:MM:SS format."""
         if not self.show_time_info:
             return
 
-        minutes = int(elapsed // 60)
-        seconds = int(elapsed % 60)
-
-        if minutes > 0:
-            time_text = f"{minutes}m {seconds}s"
-        else:
-            time_text = f"{seconds}s"
-
+        # Use the new HH:MM:SS format for consistency
+        time_text = self._format_time_hms(elapsed)
         self.time_label.setText(time_text)
 
     def reset(self):

@@ -748,22 +748,29 @@ class EventHandlerManager:
 
         Debug tracking (2025): Added logging to monitor cumulative progress issues.
         Fixed integer overflow handling for large file operations (37GB+).
+        Now supports 64-bit integers from hash worker.
         """
         if hasattr(self, 'hash_dialog') and self.hash_dialog:
+            # Convert to Python integers to handle 64-bit values from Qt signals
+            total_processed = int(total_processed)
+            total_size = int(total_size)
+
             # Debug: Track progress to identify reset issues - reduced logging
             if hasattr(self, '_last_processed_bytes'):
                 if total_processed < 0:
-                    # Integer overflow detected - this is handled in the worker now
-                    logger.debug(f"[HashProgress] Integer overflow in progress (handled by worker): {total_processed}", extra={"dev_only": True})
+                    # Integer overflow detected - log error and reset
+                    logger.error(f"[HashProgress] Integer overflow detected: {total_processed}")
+                    # Don't update with negative values
+                    return
                 elif total_processed < self._last_processed_bytes:
                     # Only warn if it's a significant backwards movement (not overflow)
                     diff = self._last_processed_bytes - total_processed
                     if diff > 1000000:  # Only warn for >1MB backwards movement
-                        logger.warning(f"[HashProgress] Significant progress regression: {total_processed} < {self._last_processed_bytes} (diff: {diff} bytes)")
+                        logger.warning(f"[HashProgress] Significant progress regression: {total_processed:,} < {self._last_processed_bytes:,} (diff: {diff:,} bytes)")
                     # Remove minor progress adjustment logging to reduce spam
                 # Remove regular progress update logging to reduce spam - only log issues
             else:
-                logger.debug(f"[HashProgress] Starting progress tracking: {total_processed}/{total_size} bytes", extra={"dev_only": True})
+                logger.debug(f"[HashProgress] Starting progress tracking: {total_processed:,}/{total_size:,} bytes", extra={"dev_only": True})
 
             self._last_processed_bytes = total_processed
 
