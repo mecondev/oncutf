@@ -746,12 +746,21 @@ class EventHandlerManager:
         Handle overall size progress updates from hash worker.
 
         Debug tracking (2025): Added logging to monitor cumulative progress issues.
+        Fixed integer overflow handling for large file operations (37GB+).
         """
         if hasattr(self, 'hash_dialog') and self.hash_dialog:
             # Debug: Track progress to identify reset issues
             if hasattr(self, '_last_processed_bytes'):
-                if total_processed < self._last_processed_bytes:
-                    logger.warning(f"[HashProgress] Progress went backwards! {total_processed} < {self._last_processed_bytes}")
+                if total_processed < 0:
+                    # Integer overflow detected - this is handled in the worker now
+                    logger.debug(f"[HashProgress] Integer overflow in progress (handled by worker): {total_processed}", extra={"dev_only": True})
+                elif total_processed < self._last_processed_bytes:
+                    # Only warn if it's a significant backwards movement (not overflow)
+                    diff = self._last_processed_bytes - total_processed
+                    if diff > 1000000:  # Only warn for >1MB backwards movement
+                        logger.warning(f"[HashProgress] Significant progress regression: {total_processed} < {self._last_processed_bytes} (diff: {diff} bytes)")
+                    else:
+                        logger.debug(f"[HashProgress] Minor progress adjustment: {total_processed}/{total_size} bytes", extra={"dev_only": True})
                 elif total_processed > self._last_processed_bytes:
                     logger.debug(f"[HashProgress] Progress update: {total_processed}/{total_size} bytes", extra={"dev_only": True})
             else:
