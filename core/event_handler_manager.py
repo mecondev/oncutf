@@ -1192,7 +1192,7 @@ class EventHandlerManager:
         format_layout.addWidget(QLabel("Export Format:"))
 
         format_combo = QComboBox()
-        format_combo.addItems(["JSON (Structured)", "Markdown (Human Readable)", "CSV (Spreadsheet)"])
+        format_combo.addItems(["JSON (Structured)", "Markdown (Human Readable)"])
         format_layout.addWidget(format_combo)
 
         layout.addLayout(format_layout)
@@ -1221,8 +1221,7 @@ class EventHandlerManager:
         # Get format
         format_map = {
             0: "json",
-            1: "markdown",
-            2: "csv"
+            1: "markdown"
         }
         format_type = format_map.get(format_combo.currentIndex(), "json")
 
