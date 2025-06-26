@@ -80,6 +80,24 @@ class MetadataExporter:
 
         return self._export_files(all_files, output_dir, format_type, "all")
 
+    def export_files(self, files: List[Any], output_dir: str, format_type: str = "json") -> bool:
+        """
+        Export metadata for a specific list of files.
+
+        Args:
+            files: List of file items to export
+            output_dir: Directory to save export files
+            format_type: Export format ("json", "markdown", "csv")
+
+        Returns:
+            bool: True if export successful
+        """
+        if not files:
+            logger.warning("[MetadataExporter] No files provided for export")
+            return False
+
+        return self._export_files(files, output_dir, format_type, "custom")
+
     def _get_selected_files(self) -> List[Any]:
         """Get currently selected files from file table."""
         if not (hasattr(self.parent_window, 'file_table_view') and

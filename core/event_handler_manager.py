@@ -204,8 +204,35 @@ class EventHandlerManager:
         else:
             action_save_all.setToolTip("No metadata modifications to save")
 
-        # --- Enable/disable logic with enhanced debugging ---
+        menu.addSeparator()
+
+        # --- Export actions ---
+        action_export_sel = menu.addAction(get_menu_icon("download"), "Export metadata for selected file(s)")
+        action_export_all = menu.addAction(get_menu_icon("download"), "Export metadata for all files")
+
+        # Check metadata availability for export
         has_selection = len(selected_files) > 0
+        selected_has_metadata = self._check_selected_files_have_metadata(selected_files)
+        all_files_have_metadata = self._check_any_files_have_metadata()
+
+        # Enable/disable export actions based on metadata availability
+        action_export_sel.setEnabled(has_selection and selected_has_metadata)
+        action_export_all.setEnabled(all_files_have_metadata)
+
+        # Update tooltips
+        if has_selection and selected_has_metadata:
+            action_export_sel.setToolTip(f"Export metadata for {len(selected_files)} selected file(s)")
+        elif has_selection:
+            action_export_sel.setToolTip("Selected files have no metadata to export")
+        else:
+            action_export_sel.setToolTip("Select files first to export their metadata")
+
+        if all_files_have_metadata:
+            action_export_all.setToolTip(f"Export metadata for all files in folder")
+        else:
+            action_export_all.setToolTip("No files have metadata to export")
+
+        # --- Enable/disable logic with enhanced debugging ---
         logger.debug(f"[ContextMenu] Selection state: {has_selection} ({len(selected_files)} files)", extra={"dev_only": True})
 
         if not has_selection:
@@ -299,6 +326,14 @@ class EventHandlerManager:
         elif action == action_calculate_hashes:
             # Calculate checksums for selected files
             self._handle_calculate_hashes(selected_files)
+
+        elif action == action_export_sel:
+            # Handle metadata export for selected files
+            self._handle_export_metadata(selected_files, "selected")
+
+        elif action == action_export_all:
+            # Handle metadata export for all files
+            self._handle_export_metadata(self.parent_window.file_model.files, "all")
 
     def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
@@ -1093,3 +1128,147 @@ class EventHandlerManager:
             self.parent_window.set_status(f"Calculated checksums for {len(hash_results)} files", color=STATUS_COLORS["hash_success"], auto_reset=True)
 
         logger.info(f"[HashManager] Showed checksum results for {len(hash_results)} files")
+
+    def _check_selected_files_have_metadata(self, selected_files: list) -> bool:
+        """Check if any of the selected files have metadata."""
+        if not selected_files:
+            return False
+
+        # Check if any selected file has metadata
+        for file_item in selected_files:
+            if self._file_has_metadata(file_item):
+                return True
+
+        return False
+
+    def _check_any_files_have_metadata(self) -> bool:
+        """Check if any file in the current folder has metadata."""
+        # Check if any file has metadata
+        for file_item in self.parent_window.file_model.files:
+            if self._file_has_metadata(file_item):
+                return True
+
+        return False
+
+    def _file_has_metadata(self, file_item) -> bool:
+        """Check if a specific file has metadata."""
+        try:
+            # Check metadata cache first
+            if hasattr(self.parent_window, 'metadata_cache'):
+                cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+                if cache_entry and hasattr(cache_entry, 'data') and cache_entry.data:
+                    # Check if metadata has actual content (not just empty dict)
+                    metadata = cache_entry.data
+                    # Filter out internal markers and check for real metadata
+                    real_metadata = {k: v for k, v in metadata.items() if not k.startswith('__')}
+                    return len(real_metadata) > 0
+
+            # Fallback to file item metadata
+            if hasattr(file_item, 'metadata') and file_item.metadata:
+                metadata = file_item.metadata
+                real_metadata = {k: v for k, v in metadata.items() if not k.startswith('__')}
+                return len(real_metadata) > 0
+
+            return False
+
+        except Exception as e:
+            logger.debug(f"[EventHandler] Error checking metadata for {getattr(file_item, 'filename', 'unknown')}: {e}")
+            return False
+
+    def _handle_export_metadata(self, file_items: list, scope: str) -> None:
+        """Handle metadata export dialog and process."""
+        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QFileDialog, QMessageBox
+
+        # Create export dialog
+        dialog = QDialog(self.parent_window)
+        dialog.setWindowTitle(f"Export Metadata - {scope.title()} Files")
+        dialog.setModal(True)
+        dialog.resize(400, 200)
+
+        layout = QVBoxLayout(dialog)
+
+        # Format selection
+        format_layout = QHBoxLayout()
+        format_layout.addWidget(QLabel("Export Format:"))
+
+        format_combo = QComboBox()
+        format_combo.addItems(["JSON (Structured)", "Markdown (Human Readable)", "CSV (Spreadsheet)"])
+        format_layout.addWidget(format_combo)
+
+        layout.addLayout(format_layout)
+
+        # Buttons
+        button_layout = QHBoxLayout()
+
+        cancel_button = QPushButton("Cancel")
+        cancel_button.clicked.connect(dialog.reject)
+        button_layout.addWidget(cancel_button)
+
+        export_button = QPushButton("Export...")
+        export_button.clicked.connect(lambda: self._execute_export(dialog, format_combo, file_items, scope))
+        export_button.setDefault(True)
+        button_layout.addWidget(export_button)
+
+        layout.addLayout(button_layout)
+
+        # Show dialog
+        dialog.exec_()
+
+    def _execute_export(self, dialog: 'QDialog', format_combo: 'QComboBox', file_items: list, scope: str) -> None:
+        """Execute the actual export process."""
+        from PyQt5.QtWidgets import QFileDialog, QMessageBox
+
+        # Get format
+        format_map = {
+            0: "json",
+            1: "markdown",
+            2: "csv"
+        }
+        format_type = format_map.get(format_combo.currentIndex(), "json")
+
+        # Get output directory
+        output_dir = QFileDialog.getExistingDirectory(
+            dialog,
+            f"Select Export Directory - {scope.title()} Files",
+            "",
+            QFileDialog.ShowDirsOnly
+        )
+
+        if not output_dir:
+            return
+
+        dialog.accept()
+
+        # Perform export
+        try:
+            from utils.metadata_exporter import MetadataExporter
+
+            exporter = MetadataExporter(self.parent_window)
+
+            # Export based on scope
+            if scope == "selected":
+                success = exporter.export_files(file_items, output_dir, format_type)
+            else:
+                success = exporter.export_all_files(output_dir, format_type)
+
+            # Show result
+            if success:
+                QMessageBox.information(
+                    self.parent_window,
+                    "Export Successful",
+                    f"Metadata exported successfully to:\n{output_dir}"
+                )
+            else:
+                QMessageBox.warning(
+                    self.parent_window,
+                    "Export Failed",
+                    "Failed to export metadata. Check the logs for details."
+                )
+
+        except Exception as e:
+            logger.exception(f"[EventHandler] Export error: {e}")
+            QMessageBox.critical(
+                self.parent_window,
+                "Export Error",
+                f"An error occurred during export:\n{str(e)}"
+            )
