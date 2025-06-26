@@ -237,6 +237,27 @@ class ProgressDialog(QDialog):
         if hasattr(self.waiting_widget, 'set_time_info'):
             self.waiting_widget.set_time_info(elapsed, estimated_total)
 
+    def update_progress(self, file_count: int = 0, total_files: int = 0,
+                       processed_bytes: int = 0, total_bytes: int = 0) -> None:
+        """
+        Unified method to update progress regardless of mode.
+
+        This method automatically selects the appropriate progress calculation
+        based on the progress widget's current mode setting.
+
+        Args:
+            file_count: Current number of files processed
+            total_files: Total number of files to process
+            processed_bytes: Current bytes processed (cumulative)
+            total_bytes: Total bytes to process (optional, uses stored value if 0)
+        """
+        if hasattr(self.waiting_widget, 'update_progress'):
+            self.waiting_widget.update_progress(file_count, total_files, processed_bytes, total_bytes)
+        else:
+            # Fallback to standard progress update
+            if total_files > 0:
+                self.set_progress(file_count, total_files)
+
     def get_progress_summary(self) -> dict:
         """Get comprehensive progress summary (enhanced widget only)."""
         if hasattr(self.waiting_widget, 'get_progress_summary'):
@@ -283,7 +304,8 @@ class ProgressDialog(QDialog):
     @classmethod
     def create_hash_dialog(cls, parent: Optional[QWidget] = None,
                          cancel_callback: Optional[Callable] = None,
-                         show_enhanced_info: bool = True) -> 'ProgressDialog':
+                         show_enhanced_info: bool = True,
+                         use_size_based_progress: bool = True) -> 'ProgressDialog':
         """
         Create a progress dialog for hash/checksum operations.
 
@@ -291,8 +313,17 @@ class ProgressDialog(QDialog):
             parent: Parent widget
             cancel_callback: Function to call when user cancels
             show_enhanced_info: Whether to show enhanced size/time tracking
+            use_size_based_progress: Whether to use size-based progress bar (recommended for hash operations)
 
         Returns:
-            ProgressDialog configured for hash operations
+            ProgressDialog configured for hash operations with optional size-based progress
         """
-        return cls(parent=parent, operation_type='hash_calculation', cancel_callback=cancel_callback, show_enhanced_info=show_enhanced_info)
+        dialog = cls(parent=parent, operation_type='hash_calculation',
+                    cancel_callback=cancel_callback, show_enhanced_info=show_enhanced_info)
+
+        # If size-based progress is requested, update the progress widget mode
+        if use_size_based_progress and hasattr(dialog.waiting_widget, 'set_progress_mode'):
+            dialog.waiting_widget.set_progress_mode("size")
+            logger.debug("[ProgressDialog] Hash dialog configured with size-based progress")
+
+        return dialog

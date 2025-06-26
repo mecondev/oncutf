@@ -12,6 +12,27 @@ Features:
 - Optional size and time tracking
 - Compact layout optimized for dialog usage
 - Customizable appearance and behavior
+- Progress bar modes: file count based or data volume based
+
+Usage Examples:
+
+1. Basic file count progress:
+    widget = ProgressWidget()
+    widget.set_progress(50, 100)  # 50%
+
+2. Size-based progress for hash operations:
+    widget = ProgressWidget(progress_mode="size", show_size_info=True, show_time_info=True)
+    widget.start_progress_tracking(total_size=1000000000)  # 1GB total
+    widget.update_progress(processed_bytes=500000000)     # 50% complete
+
+3. Factory function for hash operations:
+    widget = create_size_based_progress_widget()
+    # Automatically configured with size-based progress and full tracking
+
+4. Dynamic mode switching:
+    widget = ProgressWidget()
+    widget.set_progress_mode("size")  # Switch to size-based progress
+    widget.set_progress_mode("count") # Switch back to count-based
 """
 
 import os
@@ -58,7 +79,8 @@ class ProgressWidget(QWidget):
                  bar_bg_color: str = "#0a1a2a",
                  show_size_info: bool = False,
                  show_time_info: bool = False,
-                 fixed_width: int = 400):
+                 fixed_width: int = 400,
+                 progress_mode: str = "count"):
         """
         Initialize the progress widget.
 
@@ -69,6 +91,7 @@ class ProgressWidget(QWidget):
             show_size_info: Whether to show size information
             show_time_info: Whether to show time information
             fixed_width: Fixed width for the widget
+            progress_mode: Progress bar mode - "count" for file count, "size" for data volume
         """
         super().__init__(parent)
         self.setFixedWidth(fixed_width)
@@ -78,6 +101,7 @@ class ProgressWidget(QWidget):
         self.show_time_info = show_time_info
         self.bar_color = bar_color
         self.bar_bg_color = bar_bg_color
+        self.progress_mode = progress_mode  # "count" or "size"
 
         # Simple progress tracking
         self.start_time = None
@@ -94,7 +118,7 @@ class ProgressWidget(QWidget):
         self._setup_ui()
         self._apply_styling()
 
-        logger.debug(f"[ProgressWidget] Initialized (size_info: {show_size_info}, time_info: {show_time_info})")
+        logger.debug(f"[ProgressWidget] Initialized (size_info: {show_size_info}, time_info: {show_time_info}, progress_mode: {progress_mode})")
 
     def _setup_ui(self):
         """Setup the UI components with compact layout."""
@@ -260,6 +284,33 @@ class ProgressWidget(QWidget):
         self.progress_bar.setValue(percentage)
         self.percentage_label.setText(f"{percentage}%")
 
+    def set_progress_by_size(self, processed_bytes: int, total_bytes: int):
+        """
+        Set progress bar value based on data volume instead of file count.
+
+        Args:
+            processed_bytes: Bytes processed so far
+            total_bytes: Total bytes to process
+        """
+        if total_bytes <= 0:
+            percentage = 0
+        else:
+            # Convert to 64-bit integers to handle large files
+            processed_bytes = int(processed_bytes)
+            total_bytes = int(total_bytes)
+
+            # Calculate percentage with overflow protection
+            if processed_bytes >= total_bytes:
+                percentage = 100
+            else:
+                percentage = int((processed_bytes * 100) // total_bytes)
+                percentage = max(0, min(100, percentage))
+
+        self.progress_bar.setValue(percentage)
+        self.percentage_label.setText(f"{percentage}%")
+
+        logger.debug(f"[ProgressWidget] Progress by size: {processed_bytes:,}/{total_bytes:,} bytes = {percentage}%")
+
     def set_status(self, text: str):
         """
         Set status text with intelligent truncation for long messages.
@@ -328,6 +379,27 @@ class ProgressWidget(QWidget):
         self.count_label.setText("0 of 0")
         logger.debug("[ProgressWidget] Progress bar set to determinate mode")
 
+    def set_progress_mode(self, mode: str):
+        """
+        Set the progress mode dynamically.
+
+        Args:
+            mode: "count" for file count progress, "size" for data volume progress
+        """
+        if mode not in ["count", "size"]:
+            logger.warning(f"[ProgressWidget] Invalid progress mode: {mode}. Using 'count' instead.")
+            mode = "count"
+
+        old_mode = self.progress_mode
+        self.progress_mode = mode
+
+        if old_mode != mode:
+            logger.debug(f"[ProgressWidget] Progress mode changed: {old_mode} -> {mode}")
+
+            # If switching to size mode but no total size is set, warn user
+            if mode == "size" and self.total_size <= 0:
+                logger.warning("[ProgressWidget] Switched to size mode but no total size is set. Progress may not work correctly.")
+
     def start_progress_tracking(self, total_size: int = 0):
         """Start progress tracking with optional size tracking."""
         self.start_time = time.time()
@@ -357,6 +429,11 @@ class ProgressWidget(QWidget):
 
         Optimized throttling (2025): 100ms updates instead of 300ms provide
         smoother progress without UI flooding - better than old approach.
+
+        Args:
+            current: Current file count
+            total: Total file count
+            current_size: Current processed bytes (cumulative)
         """
         # Faster throttling for better UX - old 300ms was too slow for hash operations
         current_time = time.time()
@@ -364,8 +441,14 @@ class ProgressWidget(QWidget):
             return
         self._last_update_time = current_time
 
-        # Update basic progress
-        self.set_progress(current, total)
+        # Update progress based on selected mode
+        if self.progress_mode == "size" and self.total_size > 0:
+            # Progress based on data volume
+            self.set_progress_by_size(current_size, self.total_size)
+        else:
+            # Progress based on file count (default)
+            self.set_progress(current, total)
+
         self.processed_size = current_size
 
         # Update size display
@@ -393,17 +476,17 @@ class ProgressWidget(QWidget):
         """
         Format file size with stable display for better UX.
 
-        Uses rounded values without decimals to prevent constant flickering
-        of the display during progress updates.
+        Uses fixed-width formatting to prevent visual "jumping" when text length changes.
+        All formatted strings have the same width (8 characters) for perfect alignment.
 
         Args:
             size_bytes: File size in bytes
 
         Returns:
-            Formatted size string (e.g., "1 MB", "15 GB")
+            Formatted size string with consistent width (e.g., " 1.5 GB ", "999 MB  ")
         """
         if size_bytes < 0:
-            return "0 B"
+            return "   0 B  "  # Fixed width: 8 characters
 
         # Use binary units (1024) for consistency with most systems
         units = ["B", "KB", "MB", "GB", "TB", "PB"]
@@ -416,29 +499,50 @@ class ProgressWidget(QWidget):
             size /= base
             unit_index += 1
 
-        # For bytes, show exact value
-        if unit_index == 0:
-            return f"{int(size)} B"
+        # Additional check: if we have a 4-digit number (>=1000), promote to next unit
+        # This prevents "1000 MB" and goes straight to "1.0 GB"
+        if size >= 1000 and unit_index < len(units) - 1:
+            size /= base
+            unit_index += 1
 
-        # For larger units, use rounded values for stable display
-        # This prevents the constant flickering of decimal values
-        if size >= 100:
-            # For values >= 100, show no decimals (e.g., "156 MB")
-            return f"{int(round(size))} {units[unit_index]}"
-        elif size >= 10:
-            # For values 10-99, show one decimal only if significant (e.g., "15 MB", "15.5 MB")
-            rounded = round(size, 1)
-            if rounded == int(rounded):
-                return f"{int(rounded)} {units[unit_index]}"
+        # Format with consistent 8-character width
+        if unit_index == 0:
+            # Bytes: right-align the number, left-align the unit
+            if size < 10:
+                return f"   {int(size)} B  "     # "   5 B  "
+            elif size < 100:
+                return f"  {int(size)} B  "      # "  99 B  "
+            elif size < 1000:
+                return f" {int(size)} B  "       # " 999 B  "
             else:
-                return f"{rounded:.1f} {units[unit_index]}"
+                return f"{int(size)} B  "        # "1023 B  "
         else:
-            # For values < 10, show one decimal (e.g., "1.5 MB", "9.8 MB")
-            rounded = round(size, 1)
-            if rounded == int(rounded):
-                return f"{int(rounded)} {units[unit_index]}"
+            # Other units: format consistently
+            if size >= 100:
+                # Large values: no decimals, right-aligned
+                num_str = f"{int(round(size))}"
+                unit_str = units[unit_index]
+                total_len = len(num_str) + 1 + len(unit_str)  # number + space + unit
+                padding = 8 - total_len
+                return f"{' ' * padding}{num_str} {unit_str}{' ' * max(0, 8 - len(f'{num_str} {unit_str}') - padding)}"
             else:
-                return f"{rounded:.1f} {units[unit_index]}"
+                # Small values: one decimal, right-aligned
+                rounded = round(size, 1)
+                if rounded == int(rounded):
+                    # Whole number, but show as decimal for consistency
+                    num_str = f"{int(rounded)}.0"
+                else:
+                    num_str = f"{rounded:.1f}"
+
+                unit_str = units[unit_index]
+                total_content = f"{num_str} {unit_str}"
+
+                # Pad to exactly 8 characters
+                if len(total_content) < 8:
+                    padding = 8 - len(total_content)
+                    return f"{' ' * padding}{total_content}"
+                else:
+                    return total_content[:8]  # Truncate if somehow too long
 
     def _update_time_display(self):
         """
@@ -677,6 +781,46 @@ class ProgressWidget(QWidget):
         if self.show_time_info and hasattr(self, 'time_label'):
             self.time_label.setText("Ready...")
 
+    def update_progress(self, file_count: int = 0, total_files: int = 0,
+                       processed_bytes: int = 0, total_bytes: int = 0):
+        """
+        Unified method to update progress regardless of mode.
+
+        This method automatically selects the appropriate progress calculation
+        based on the current progress_mode setting.
+
+        Args:
+            file_count: Current number of files processed
+            total_files: Total number of files to process
+            processed_bytes: Current bytes processed (cumulative)
+            total_bytes: Total bytes to process (optional, uses stored value if 0)
+        """
+        # Update internal size tracking
+        if processed_bytes > 0:
+            self.processed_size = processed_bytes
+        if total_bytes > 0:
+            self.total_size = total_bytes
+
+        # Update progress based on mode
+        if self.progress_mode == "size" and self.total_size > 0:
+            # Size-based progress
+            self.set_progress_by_size(self.processed_size, self.total_size)
+        else:
+            # Count-based progress (default)
+            if total_files > 0:
+                self.set_progress(file_count, total_files)
+            else:
+                # If no file count provided, try to calculate from size
+                if self.total_size > 0:
+                    self.set_progress_by_size(self.processed_size, self.total_size)
+
+        # Update displays
+        if self.show_size_info and hasattr(self, 'size_label'):
+            self._update_size_display()
+
+        if self.show_time_info and hasattr(self, 'time_label'):
+            self._update_time_display()
+
 
 # Factory functions for easy creation with preset configurations
 def create_basic_progress_widget(parent=None, **kwargs):
@@ -694,3 +838,7 @@ def create_time_tracking_widget(parent=None, **kwargs):
 def create_full_tracking_widget(parent=None, **kwargs):
     """Create a progress widget with both size and time tracking."""
     return ProgressWidget(parent, show_size_info=True, show_time_info=True, **kwargs)
+
+def create_size_based_progress_widget(parent=None, **kwargs):
+    """Create a progress widget with size-based progress bar and full tracking."""
+    return ProgressWidget(parent, show_size_info=True, show_time_info=True, progress_mode="size", **kwargs)
