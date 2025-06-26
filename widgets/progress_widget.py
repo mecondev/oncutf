@@ -54,10 +54,10 @@ from core.qt_imports import (
     QProgressBar,
     QSize,
     QSizePolicy,
-    Qt,
     QVBoxLayout,
     QWidget,
 )
+from PyQt5.QtCore import Qt
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -423,39 +423,43 @@ class ProgressWidget(QWidget):
 
         logger.debug(f"[ProgressWidget] Started tracking (total_size: {total_size})")
 
-    def update_progress_with_size(self, current: int, total: int, current_size: int = 0):
+    def update_progress(self, file_count: int = 0, total_files: int = 0,
+                       processed_bytes: int = 0, total_bytes: int = 0):
         """
-        Update progress with size tracking.
+        Unified method to update progress regardless of mode.
 
-        Optimized throttling (2025): 100ms updates instead of 300ms provide
-        smoother progress without UI flooding - better than old approach.
+        This method automatically selects the appropriate progress calculation
+        based on the current progress_mode setting.
 
         Args:
-            current: Current file count
-            total: Total file count
-            current_size: Current processed bytes (cumulative)
+            file_count: Current number of files processed
+            total_files: Total number of files to process
+            processed_bytes: Current bytes processed (cumulative)
+            total_bytes: Total bytes to process (optional, uses stored value if 0)
         """
-        # Faster throttling for better UX - old 300ms was too slow for hash operations
-        current_time = time.time()
-        if current_time - self._last_update_time < 0.1:  # Update every 100ms now
-            return
-        self._last_update_time = current_time
+        # Update internal size tracking
+        if processed_bytes > 0:
+            self.processed_size = processed_bytes
+        if total_bytes > 0:
+            self.total_size = total_bytes
 
-        # Update progress based on selected mode
+        # Update progress based on mode
         if self.progress_mode == "size" and self.total_size > 0:
-            # Progress based on data volume
-            self.set_progress_by_size(current_size, self.total_size)
+            # Size-based progress
+            self.set_progress_by_size(self.processed_size, self.total_size)
         else:
-            # Progress based on file count (default)
-            self.set_progress(current, total)
+            # Count-based progress (default)
+            if total_files > 0:
+                self.set_progress(file_count, total_files)
+            else:
+                # If no file count provided, try to calculate from size
+                if self.total_size > 0:
+                    self.set_progress_by_size(self.processed_size, self.total_size)
 
-        self.processed_size = current_size
-
-        # Update size display
+        # Update displays
         if self.show_size_info and hasattr(self, 'size_label'):
             self._update_size_display()
 
-        # Update time display
         if self.show_time_info and hasattr(self, 'time_label'):
             self._update_time_display()
 
@@ -781,63 +785,11 @@ class ProgressWidget(QWidget):
         if self.show_time_info and hasattr(self, 'time_label'):
             self.time_label.setText("Ready...")
 
-    def update_progress(self, file_count: int = 0, total_files: int = 0,
-                       processed_bytes: int = 0, total_bytes: int = 0):
-        """
-        Unified method to update progress regardless of mode.
 
-        This method automatically selects the appropriate progress calculation
-        based on the current progress_mode setting.
-
-        Args:
-            file_count: Current number of files processed
-            total_files: Total number of files to process
-            processed_bytes: Current bytes processed (cumulative)
-            total_bytes: Total bytes to process (optional, uses stored value if 0)
-        """
-        # Update internal size tracking
-        if processed_bytes > 0:
-            self.processed_size = processed_bytes
-        if total_bytes > 0:
-            self.total_size = total_bytes
-
-        # Update progress based on mode
-        if self.progress_mode == "size" and self.total_size > 0:
-            # Size-based progress
-            self.set_progress_by_size(self.processed_size, self.total_size)
-        else:
-            # Count-based progress (default)
-            if total_files > 0:
-                self.set_progress(file_count, total_files)
-            else:
-                # If no file count provided, try to calculate from size
-                if self.total_size > 0:
-                    self.set_progress_by_size(self.processed_size, self.total_size)
-
-        # Update displays
-        if self.show_size_info and hasattr(self, 'size_label'):
-            self._update_size_display()
-
-        if self.show_time_info and hasattr(self, 'time_label'):
-            self._update_time_display()
-
-
-# Factory functions for easy creation with preset configurations
+# Simplified factory functions - only keep the essential ones
 def create_basic_progress_widget(parent=None, **kwargs):
     """Create a basic progress widget (no enhanced tracking)."""
     return ProgressWidget(parent, show_size_info=False, show_time_info=False, **kwargs)
-
-def create_size_tracking_widget(parent=None, **kwargs):
-    """Create a progress widget with size tracking."""
-    return ProgressWidget(parent, show_size_info=True, show_time_info=False, **kwargs)
-
-def create_time_tracking_widget(parent=None, **kwargs):
-    """Create a progress widget with time tracking."""
-    return ProgressWidget(parent, show_size_info=False, show_time_info=True, **kwargs)
-
-def create_full_tracking_widget(parent=None, **kwargs):
-    """Create a progress widget with both size and time tracking."""
-    return ProgressWidget(parent, show_size_info=True, show_time_info=True, **kwargs)
 
 def create_size_based_progress_widget(parent=None, **kwargs):
     """Create a progress widget with size-based progress bar and full tracking."""
