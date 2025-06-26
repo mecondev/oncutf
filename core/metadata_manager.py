@@ -421,17 +421,15 @@ class MetadataManager:
             logger.warning("[MetadataManager] No files selected for metadata save")
             return
 
-        # Get file paths of selected files for filtering
-        selected_file_paths = {file_item.full_path for file_item in selected_files}
-
-        # Find files that have modifications AND are selected
+        # Find files that have modifications AND are selected using path-aware comparison
         files_to_save = []
         for file_path, modified_metadata in all_modified_metadata.items():
-            if file_path in selected_file_paths and modified_metadata:
-                # Find the corresponding FileItem using normalized path comparison
+            if modified_metadata:  # Only files with actual modifications
+                # Use path-aware lookup to find corresponding FileItem
                 file_item = find_file_by_path(selected_files, file_path, 'full_path')
                 if file_item:
                     files_to_save.append(file_item)
+                    logger.debug(f"[MetadataManager] Selected file with modifications: {file_item.filename}", extra={"dev_only": True})
 
         if not files_to_save:
             logger.info("[MetadataManager] No selected files have metadata modifications")
@@ -469,13 +467,13 @@ class MetadataManager:
         for file_path, modifications in all_modified_metadata.items():
             logger.debug(f"[MetadataManager]   - {file_path}: {list(modifications.keys())}", extra={"dev_only": True})
 
-        # Find FileItems for all files that have modifications
+        # Find FileItems for all files that have modifications using path-aware comparison
         files_to_save = []
         for file_path, modified_metadata in all_modified_metadata.items():
             if modified_metadata:  # Only files with actual modifications
                 logger.debug(f"[MetadataManager] Looking for FileItem with path: {file_path}", extra={"dev_only": True})
 
-                # Find the corresponding FileItem using normalized path comparison
+                # Use path-aware lookup to find corresponding FileItem
                 file_item = find_file_by_path(all_files, file_path, 'full_path')
                 if file_item:
                     files_to_save.append(file_item)
@@ -491,6 +489,28 @@ class MetadataManager:
 
         logger.info(f"[MetadataManager] Saving metadata for ALL {len(files_to_save)} modified file(s)")
         self._save_metadata_files(files_to_save, all_modified_metadata)
+
+    def _get_modified_metadata_for_file(self, file_path: str, all_modified_metadata: dict) -> dict:
+        """
+        Get modified metadata for a file using path-aware lookup.
+
+        Args:
+            file_path: Path of the file to get metadata for
+            all_modified_metadata: Dictionary with all modified metadata
+
+        Returns:
+            dict: Modified metadata for the file, or empty dict if not found
+        """
+        # First try direct lookup (fastest)
+        if file_path in all_modified_metadata:
+            return all_modified_metadata[file_path]
+
+        # If not found, try normalized path comparison
+        for stored_path, metadata in all_modified_metadata.items():
+            if paths_equal(file_path, stored_path):
+                return metadata
+
+        return {}
 
     def _save_metadata_files(self, files_to_save: list, all_modified_metadata: dict) -> None:
         """
@@ -513,10 +533,11 @@ class MetadataManager:
                 from utils.cursor_helper import wait_cursor
                 with wait_cursor():
                     file_item = files_to_save[0]
-                    modified_metadata = all_modified_metadata.get(file_item.full_path, {})
+                    modified_metadata = self._get_modified_metadata_for_file(file_item.full_path, all_modified_metadata)
 
                     if modified_metadata:
                         logger.info(f"[MetadataManager] Saving metadata for: {file_item.filename}")
+                        logger.debug(f"[MetadataManager] Metadata to save: {list(modified_metadata.keys())}", extra={"dev_only": True})
                         success = exiftool.write_metadata(file_item.full_path, modified_metadata)
 
                         if success:
@@ -526,6 +547,8 @@ class MetadataManager:
                         else:
                             logger.error(f"[MetadataManager] Failed to save metadata to: {file_item.filename}")
                             failed_files.append(file_item.filename)
+                    else:
+                        logger.warning(f"[MetadataManager] No modified metadata found for: {file_item.filename}")
             else:
                 # Multiple files: Use progress dialog
                 # Calculate total size for enhanced progress tracking
@@ -551,13 +574,11 @@ class MetadataManager:
 
                 # Process each file
                 for i, file_item in enumerate(files_to_save):
-                    # Add current file size to processed total (incremental approach for O(1) performance)
+                    # Use cached file size if available to avoid repeated os.path.getsize() calls
                     try:
                         if hasattr(file_item, 'file_size') and file_item.file_size is not None:
-                            # Use cached size if available
                             current_file_size = file_item.file_size
                         elif hasattr(file_item, 'full_path') and os.path.exists(file_item.full_path):
-                            # Get size from filesystem
                             current_file_size = os.path.getsize(file_item.full_path)
                             # Cache it for future use
                             if hasattr(file_item, 'file_size'):
@@ -569,7 +590,7 @@ class MetadataManager:
                     except (OSError, AttributeError):
                         current_file_size = 0
 
-                    # Update progress using unified method (supports both count and size modes)
+                    # Update progress using unified method
                     save_dialog.update_progress(
                         file_count=i + 1,
                         total_files=len(files_to_save),
@@ -579,17 +600,20 @@ class MetadataManager:
                     save_dialog.set_filename(file_item.filename)
                     save_dialog.set_count(i + 1, len(files_to_save))
 
-                    # Process events to update the dialog (throttled for better performance)
-                    # Only process events every 5 files or for large files (>10MB) to reduce UI overhead
+                    # Reduced frequency of processEvents() for better performance
+                    # Only process events every 5 files or for large files (>10MB)
                     if (i + 1) % 5 == 0 or current_file_size > 10 * 1024 * 1024:
                         from PyQt5.QtWidgets import QApplication
                         QApplication.processEvents()
 
-                    modified_metadata = all_modified_metadata.get(file_item.full_path, {})
+                    # Use path-aware lookup for modified metadata
+                    modified_metadata = self._get_modified_metadata_for_file(file_item.full_path, all_modified_metadata)
                     if not modified_metadata:
+                        logger.warning(f"[MetadataManager] No modified metadata found for: {file_item.filename}")
                         continue
 
                     logger.info(f"[MetadataManager] Saving metadata for: {file_item.filename}")
+                    logger.debug(f"[MetadataManager] Metadata to save: {list(modified_metadata.keys())}", extra={"dev_only": True})
 
                     # Write metadata to file
                     success = exiftool.write_metadata(file_item.full_path, modified_metadata)
