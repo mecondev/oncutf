@@ -212,15 +212,8 @@ class MetadataManager:
         # Reset cancellation flag for new metadata loading operation
         self.reset_cancellation_flag()
 
-        logger.debug(f"[MetadataManager] Processing {len(items)} items (extended={use_extended}, source={source})", extra={"dev_only": True})
-
-        logger.debug(f"[MetadataManager] Loading metadata for {len(items)} items (extended={use_extended}, source={source})", extra={"dev_only": True})
-
-        # SIMPLIFIED: No selection preservation or flag setting needed
-
         # Check what items need loading vs what's already cached
         needs_loading = []
-        logger.debug(f"[MetadataManager] Cache check start: items={len(items)}, use_extended={use_extended}", extra={"dev_only": True})
 
         for item in items:
             # Check cache for existing metadata
@@ -229,13 +222,9 @@ class MetadataManager:
             if cache_entry and hasattr(cache_entry, 'is_extended'):
                 # If we have cache and it matches the requested type, skip loading
                 if cache_entry.is_extended == use_extended:
-                    logger.debug(f"[{source}] {item.filename} already cached (extended={use_extended})")
                     continue
 
-            logger.debug(f"[{source}] {item.filename} needs loading (no cache entry)")
             needs_loading.append(item)
-
-        logger.debug(f"[MetadataManager] Cache check result: needs_loading={len(needs_loading)}", extra={"dev_only": True})
 
         # Get metadata tree view reference
         metadata_tree_view = (self.parent_window.metadata_tree_view
@@ -246,18 +235,16 @@ class MetadataManager:
         if not needs_loading:
             logger.info(f"[{source}] All {len(items)} files already cached")
 
-            # SIMPLIFIED: Always display metadata for cached items too
+            # Always display metadata for cached items too
             if metadata_tree_view and items:
                 # Always display metadata - same logic as loaded items
                 display_file = items[0] if len(items) == 1 else items[-1]
-                logger.debug(f"[MetadataManager] Displaying cached metadata for: {display_file.filename}", extra={"dev_only": True})
                 metadata_tree_view.display_file_metadata(display_file)
 
             return
 
         # Determine loading mode based on file count and settings
         loading_mode = self.determine_loading_mode(len(needs_loading), use_extended)
-        logger.debug(f"[MetadataManager] Loading mode: {loading_mode}", extra={"dev_only": True})
 
         # Handle different loading modes
         if loading_mode == "single_file_wait_cursor":
@@ -334,13 +321,11 @@ class MetadataManager:
                     loading_dialog.close()
                     return
 
-                # Add current file size to processed total (incremental approach for O(1) performance)
+                # Add current file size to processed total
                 try:
                     if hasattr(file_item, 'file_size') and file_item.file_size is not None:
-                        # Use cached size if available
                         current_file_size = file_item.file_size
                     elif hasattr(file_item, 'full_path') and os.path.exists(file_item.full_path):
-                        # Get size from filesystem
                         current_file_size = os.path.getsize(file_item.full_path)
                         # Cache it for future use
                         if hasattr(file_item, 'file_size'):
@@ -352,7 +337,7 @@ class MetadataManager:
                 except (OSError, AttributeError):
                     current_file_size = 0
 
-                # Update progress using unified method (supports both count and size modes)
+                # Update progress using unified method
                 loading_dialog.update_progress(
                     file_count=i + 1,
                     total_files=len(needs_loading),
@@ -362,13 +347,12 @@ class MetadataManager:
                 loading_dialog.set_filename(file_item.filename)
                 loading_dialog.set_count(i + 1, len(needs_loading))
 
-                # Process events to update the dialog and handle cancellation (throttled for better performance)
-                # Only process events every 10 files or for large files (>10MB) to reduce UI overhead
+                # Process events to update the dialog and handle cancellation
                 if (i + 1) % 10 == 0 or current_file_size > 10 * 1024 * 1024:
                     from PyQt5.QtWidgets import QApplication
                     QApplication.processEvents()
 
-                # Check again after processing events (user might have pressed ESC)
+                # Check again after processing events
                 if self._metadata_cancelled:
                     logger.info(f"[MetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}")
                     loading_dialog.close()
@@ -401,24 +385,12 @@ class MetadataManager:
                         except Exception as e:
                             logger.warning(f"[Loader] Failed to emit dataChanged for {file_item.filename}: {e}")
 
-            # Complete progress and close dialog
-            loading_dialog.set_progress(len(needs_loading), len(needs_loading))
-            loading_dialog.set_status("Loading complete!")
-            QApplication.processEvents()
+            # Close the dialog
+            loading_dialog.close()
 
-            # Keep dialog visible for a moment to show completion
-            from utils.timer_manager import schedule_dialog_close
-            schedule_dialog_close(loading_dialog.close, 500)
-
-        else:
-            logger.warning(f"[MetadataManager] Unhandled loading mode: {loading_mode}")
-
-        # SIMPLIFIED APPROACH: ALWAYS DISPLAY METADATA
-        # For both single and multiple files, show metadata for the first/last file
-        if metadata_tree_view and items:
-            # For single file, use first item; for multiple files, use last item for better UX
-            display_file = items[0] if len(items) == 1 else items[-1]
-            logger.info(f"[MetadataManager] Displaying metadata for file: {display_file.filename} (from {len(items)} selected)")
+        # Display metadata for the appropriate file
+        if metadata_tree_view and needs_loading:
+            display_file = needs_loading[0] if len(needs_loading) == 1 else needs_loading[-1]
             metadata_tree_view.display_file_metadata(display_file)
 
     def save_metadata_for_selected(self) -> None:

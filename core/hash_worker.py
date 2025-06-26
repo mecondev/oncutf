@@ -7,7 +7,6 @@ Date: 2025-06-23
 QThread worker for background hash calculation operations.
 
 This module provides thread-safe, cancellable hash operations with accurate progress updates.
-Simplified design for better performance and reliability.
 
 Key Features:
 - Thread-safe with QMutex protection
@@ -44,12 +43,9 @@ class HashWorker(QThread):
     1. Find duplicates in file list
     2. Compare files with external folder
     3. Calculate checksums for files
-
-    Simplified progress tracking (2025): Single unified signal instead of separate
-    file_progress and size_progress signals for better performance and accuracy.
     """
 
-    # Unified progress signals - simplified approach is now better than complex dual tracking
+    # Progress signals
     progress_updated = pyqtSignal(int, int, str)  # current_file, total_files, current_filename
     size_progress = pyqtSignal('qint64', 'qint64')  # total_bytes_processed, total_bytes_size (64-bit integers)
     status_updated = pyqtSignal(str)  # status message
@@ -73,11 +69,11 @@ class HashWorker(QThread):
         self._file_paths = []
         self._external_folder = None
 
-        # Simplified progress tracking - unified approach is now more reliable
+        # Progress tracking
         self._cancel_check_counter = 0
         self._cancel_check_frequency = 5  # Check every 5 operations
 
-        # Unified size tracking - no more separate file/total tracking complexity
+        # Size tracking
         self._total_bytes = 0
         self._cumulative_processed_bytes = 0  # Continuously increases, never resets per file
 
@@ -210,16 +206,56 @@ class HashWorker(QThread):
             self.error_occurred.emit(str(e))
             self.finished_processing.emit(False)
 
-    def _calculate_checksums(self, file_paths: List[str]) -> None:
+    def _process_file_with_progress(self, file_path: str, i: int, total_files: int) -> tuple[str | None, int]:
         """
-        Calculate checksums with simplified file-by-file progress tracking.
+        Helper method to process a single file with progress tracking.
 
-        Simplified approach (2025): No more real-time byte tracking during hash calculation.
-        Only track completed files to avoid all overflow and backwards progress issues.
+        Returns:
+            tuple: (file_hash, file_size) or (None, file_size) if hash failed
         """
+        filename = os.path.basename(file_path)
+        self.progress_updated.emit(i + 1, total_files, filename)
+
+        # Get file size for progress tracking
+        try:
+            file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
+        except OSError:
+            file_size = 0
+
+        # For large files (>100MB), use real-time progress callback
+        progress_callback = None
+        if file_size > 100_000_000:  # 100MB threshold
+            def update_progress(bytes_processed_in_file):
+                """Real-time progress callback for large files."""
+                with QMutexLocker(self._mutex):
+                    current_total = self._cumulative_processed_bytes + bytes_processed_in_file
+                    self.size_progress.emit(int(current_total), int(self._total_bytes))
+
+            progress_callback = update_progress
+
+        # Calculate hash with optional real-time progress for large files
         from core.hash_manager import HashManager
-
         hash_manager = HashManager()
+        file_hash = hash_manager.calculate_hash(file_path, progress_callback=progress_callback)
+
+        # Update cumulative bytes AFTER each file is completed
+        with QMutexLocker(self._mutex):
+            if file_size > 0:
+                new_cumulative = self._cumulative_processed_bytes + file_size
+                # Check for potential overflow (stay within safe 64-bit range)
+                if new_cumulative > self._cumulative_processed_bytes:  # No overflow
+                    self._cumulative_processed_bytes = new_cumulative
+                else:
+                    # Overflow detected - cap at current value and log warning
+                    logger.warning(f"[HashWorker] Size overflow detected, capping progress at {self._cumulative_processed_bytes:,} bytes")
+
+            # Emit with explicit 64-bit integers to prevent overflow
+            self.size_progress.emit(int(self._cumulative_processed_bytes), int(self._total_bytes))
+
+        return file_hash, file_size
+
+    def _calculate_checksums(self, file_paths: List[str]) -> None:
+        """Calculate checksums with file-by-file progress tracking."""
         hash_results = {}
         total_files = len(file_paths)
 
@@ -231,61 +267,16 @@ class HashWorker(QThread):
 
         for i, file_path in enumerate(file_paths):
             if self._check_cancellation():
-                logger.debug("[HashWorker] Checksum calculation cancelled")
                 self.finished_processing.emit(False)
                 return
 
-            filename = os.path.basename(file_path)
-
-            # Update progress with current file info
-            self.progress_updated.emit(i + 1, total_files, filename)
-
-            # Get file size for progress tracking
-            try:
-                file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
-            except OSError:
-                file_size = 0
-
-            # For large files (>100MB), use real-time progress callback
-            progress_callback = None
-            if file_size > 100_000_000:  # 100MB threshold
-                def update_progress(bytes_processed_in_file):
-                    """Real-time progress callback for large files."""
-                    with QMutexLocker(self._mutex):
-                        # Calculate current total progress
-                        current_total = self._cumulative_processed_bytes + bytes_processed_in_file
-                        # Emit progress update (throttled by the progress widget)
-                        self.size_progress.emit(int(current_total), int(self._total_bytes))
-
-                progress_callback = update_progress
-
-            # Calculate hash with optional real-time progress for large files
-            file_hash = hash_manager.calculate_hash(file_path, progress_callback=progress_callback)
+            file_hash, file_size = self._process_file_with_progress(file_path, i, total_files)
             if file_hash:
                 hash_results[file_path] = file_hash
 
-            # Update cumulative bytes AFTER each file is completed
-            with QMutexLocker(self._mutex):
-                # Add overflow protection for large files (>2GB per file or >24GB total)
-                if file_size > 0:
-                    new_cumulative = self._cumulative_processed_bytes + file_size
-                    # Check for potential overflow (stay within safe 64-bit range)
-                    if new_cumulative > self._cumulative_processed_bytes:  # No overflow
-                        self._cumulative_processed_bytes = new_cumulative
-                    else:
-                        # Overflow detected - cap at current value and log warning
-                        logger.warning(f"[HashWorker] Size overflow detected, capping progress at {self._cumulative_processed_bytes:,} bytes")
-
-                # Only log every 10 files to reduce spam
-                if (i + 1) % 10 == 0 or (i + 1) == total_files:
-                    logger.debug(f"[HashWorker] Progress: {i+1}/{total_files} files, {self._cumulative_processed_bytes:,}/{self._total_bytes:,} bytes")
-
-                # Emit with explicit 64-bit integers to prevent overflow
-                self.size_progress.emit(int(self._cumulative_processed_bytes), int(self._total_bytes))
-
         # Complete progress - final update
         self.progress_updated.emit(total_files, total_files, "Complete")
-        self.size_progress.emit(int(self._total_bytes), int(self._total_bytes))  # Ensure 100% completion with 64-bit
+        self.size_progress.emit(int(self._total_bytes), int(self._total_bytes))
         self.status_updated.emit(f"CRC32 checksums calculated for {len(hash_results)} files!")
 
         logger.info(f"[HashWorker] Calculated checksums for {len(hash_results)} files")
@@ -293,15 +284,7 @@ class HashWorker(QThread):
         self.finished_processing.emit(True)
 
     def _find_duplicates(self, file_paths: List[str]) -> None:
-        """
-        Find duplicates with simplified file-by-file progress tracking.
-
-        Simplified approach (2025): No more real-time byte tracking during hash calculation.
-        Only track completed files to avoid all overflow and backwards progress issues.
-        """
-        from core.hash_manager import HashManager
-
-        hash_manager = HashManager()
+        """Find duplicates with file-by-file progress tracking."""
         hash_cache = {}
         total_files = len(file_paths)
 
@@ -313,64 +296,19 @@ class HashWorker(QThread):
 
         for i, file_path in enumerate(file_paths):
             if self._check_cancellation():
-                logger.debug("[HashWorker] Duplicate scan cancelled")
                 self.finished_processing.emit(False)
                 return
 
-            filename = os.path.basename(file_path)
-
-            # Update progress with current file info
-            self.progress_updated.emit(i + 1, total_files, filename)
-
-            # Get file size for progress tracking
-            try:
-                file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
-            except OSError:
-                file_size = 0
-
-            # For large files (>100MB), use real-time progress callback
-            progress_callback = None
-            if file_size > 100_000_000:  # 100MB threshold
-                def update_progress(bytes_processed_in_file):
-                    """Real-time progress callback for large files."""
-                    with QMutexLocker(self._mutex):
-                        # Calculate current total progress
-                        current_total = self._cumulative_processed_bytes + bytes_processed_in_file
-                        # Emit progress update (throttled by the progress widget)
-                        self.size_progress.emit(int(current_total), int(self._total_bytes))
-
-                progress_callback = update_progress
-
-            # Calculate hash with optional real-time progress for large files
-            file_hash = hash_manager.calculate_hash(file_path, progress_callback=progress_callback)
+            file_hash, file_size = self._process_file_with_progress(file_path, i, total_files)
             if file_hash:
                 if file_hash in hash_cache:
                     hash_cache[file_hash].append(file_path)
                 else:
                     hash_cache[file_hash] = [file_path]
 
-            # Update cumulative bytes AFTER each file is completed
-            with QMutexLocker(self._mutex):
-                # Add overflow protection for large files (>2GB per file or >24GB total)
-                if file_size > 0:
-                    new_cumulative = self._cumulative_processed_bytes + file_size
-                    # Check for potential overflow (stay within safe 64-bit range)
-                    if new_cumulative > self._cumulative_processed_bytes:  # No overflow
-                        self._cumulative_processed_bytes = new_cumulative
-                    else:
-                        # Overflow detected - cap at current value and log warning
-                        logger.warning(f"[HashWorker] Size overflow detected, capping progress at {self._cumulative_processed_bytes:,} bytes")
-
-                # Only log every 10 files to reduce spam
-                if (i + 1) % 10 == 0 or (i + 1) == total_files:
-                    logger.debug(f"[HashWorker] Progress: {i+1}/{total_files} files, {self._cumulative_processed_bytes:,}/{self._total_bytes:,} bytes")
-
-                # Emit with explicit 64-bit integers to prevent overflow
-                self.size_progress.emit(int(self._cumulative_processed_bytes), int(self._total_bytes))
-
         # Complete progress with final updates
         self.progress_updated.emit(total_files, total_files, "Complete")
-        self.size_progress.emit(int(self._total_bytes), int(self._total_bytes))  # Ensure 100% completion with 64-bit
+        self.size_progress.emit(int(self._total_bytes), int(self._total_bytes))
         self.status_updated.emit("Duplicate analysis complete!")
 
         # Find duplicates
@@ -381,12 +319,7 @@ class HashWorker(QThread):
         self.finished_processing.emit(True)
 
     def _compare_external(self, file_paths: List[str], external_folder: str) -> None:
-        """
-        Compare files with external folder using simplified file-by-file progress tracking.
-
-        Simplified approach (2025): No more real-time byte tracking during hash calculation.
-        Only track completed files to avoid all overflow and backwards progress issues.
-        """
+        """Compare files with external folder using file-by-file progress tracking."""
         from core.hash_manager import HashManager
 
         hash_manager = HashManager()
@@ -401,41 +334,13 @@ class HashWorker(QThread):
 
         for i, file_path in enumerate(file_paths):
             if self._check_cancellation():
-                logger.debug("[HashWorker] External comparison cancelled")
                 self.finished_processing.emit(False)
                 return
 
             filename = os.path.basename(file_path)
+            current_hash, file_size = self._process_file_with_progress(file_path, i, total_files)
 
-            # Update progress with current file info
-            self.progress_updated.emit(i + 1, total_files, filename)
-
-            # Get file size for progress tracking
-            try:
-                file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
-            except OSError:
-                file_size = 0
-
-            # For large files (>100MB), use real-time progress callback
-            progress_callback = None
-            if file_size > 100_000_000:  # 100MB threshold
-                def update_progress(bytes_processed_in_file):
-                    """Real-time progress callback for large files."""
-                    with QMutexLocker(self._mutex):
-                        # Calculate current total progress
-                        current_total = self._cumulative_processed_bytes + bytes_processed_in_file
-                        # Emit progress update (throttled by the progress widget)
-                        self.size_progress.emit(int(current_total), int(self._total_bytes))
-
-                progress_callback = update_progress
-
-            # Calculate hash with optional real-time progress for large files
-            current_hash = hash_manager.calculate_hash(file_path, progress_callback=progress_callback)
             if current_hash is None:
-                # Still update cumulative bytes even if hash failed
-                with QMutexLocker(self._mutex):
-                    self._cumulative_processed_bytes += file_size
-                    self.size_progress.emit(self._cumulative_processed_bytes, self._total_bytes)
                 continue
 
             # Look for file with same name in external folder
@@ -452,28 +357,9 @@ class HashWorker(QThread):
                         'external_hash': external_hash
                     }
 
-            # Update cumulative bytes AFTER each file is completed
-            with QMutexLocker(self._mutex):
-                # Add overflow protection for large files (>2GB per file or >24GB total)
-                if file_size > 0:
-                    new_cumulative = self._cumulative_processed_bytes + file_size
-                    # Check for potential overflow (stay within safe 64-bit range)
-                    if new_cumulative > self._cumulative_processed_bytes:  # No overflow
-                        self._cumulative_processed_bytes = new_cumulative
-                    else:
-                        # Overflow detected - cap at current value and log warning
-                        logger.warning(f"[HashWorker] Size overflow detected, capping progress at {self._cumulative_processed_bytes:,} bytes")
-
-                # Only log every 10 files to reduce spam
-                if (i + 1) % 10 == 0 or (i + 1) == total_files:
-                    logger.debug(f"[HashWorker] Progress: {i+1}/{total_files} files, {self._cumulative_processed_bytes:,}/{self._total_bytes:,} bytes")
-
-                # Emit with explicit 64-bit integers to prevent overflow
-                self.size_progress.emit(int(self._cumulative_processed_bytes), int(self._total_bytes))
-
         # Complete progress with final updates
         self.progress_updated.emit(total_files, total_files, "Complete")
-        self.size_progress.emit(int(self._total_bytes), int(self._total_bytes))  # Ensure 100% completion with 64-bit
+        self.size_progress.emit(int(self._total_bytes), int(self._total_bytes))
         self.status_updated.emit("File comparison complete!")
 
         logger.info(f"[HashWorker] Compared {len(file_paths)} files with external folder")

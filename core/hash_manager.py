@@ -23,19 +23,15 @@ class HashManager:
     Manages file hashing operations and duplicate detection.
 
     Provides functionality for:
-    - CRC32 hash calculation with progress tracking (10x faster than SHA-256)
+    - CRC32 hash calculation with progress tracking
     - File and folder comparison
     - Duplicate detection in file lists
     - Hash caching for performance optimization
-
-    Note: Uses CRC32 for optimal speed while maintaining sufficient accuracy
-    for file comparison, duplicate detection, and undo/redo operations.
     """
 
     def __init__(self):
         """Initialize HashManager with empty hash cache."""
         self._hash_cache: Dict[str, str] = {}
-        logger.debug("[HashManager] Initialized with CRC32 hashing", extra={"dev_only": True})
 
     def calculate_hash(self, file_path: Union[str, Path], progress_callback=None) -> Optional[str]:
         """
@@ -54,7 +50,6 @@ class HashManager:
         # Check cache first
         cache_key = str(file_path.resolve())
         if cache_key in self._hash_cache:
-            logger.debug(f"[HashManager] Using cached hash for {file_path.name}", extra={"dev_only": True})
             return self._hash_cache[cache_key]
 
         try:
@@ -66,11 +61,19 @@ class HashManager:
                 logger.warning(f"[HashManager] Path is not a file: {file_path}")
                 return None
 
-            # Calculate CRC32 with optimized memory buffer for better performance
+            # Adaptive buffer sizing based on file size
+            file_size = file_path.stat().st_size
+            if file_size < 64 * 1024:  # Files < 64KB
+                buffer_size = min(file_size, 8 * 1024)  # 8KB max for small files
+            elif file_size < 10 * 1024 * 1024:  # Files < 10MB
+                buffer_size = 64 * 1024  # 64KB for medium files
+            else:  # Large files >= 10MB
+                buffer_size = 256 * 1024  # 256KB for large files
+
+            # Calculate CRC32 with optimized memory buffer
             crc = 0
-            # Use bytearray buffer to avoid memory allocations on each read
-            buffer = bytearray(262144)  # 256KB buffer for optimal performance
-            mv = memoryview(buffer)     # Zero-copy view for slicing
+            buffer = bytearray(buffer_size)
+            mv = memoryview(buffer)
             bytes_processed = 0
 
             with file_path.open("rb") as f:
@@ -79,11 +82,9 @@ class HashManager:
                     if not bytes_read:
                         break
 
-                    # Use memoryview slice to avoid copying data
                     chunk_view = mv[:bytes_read]
                     crc = zlib.crc32(chunk_view, crc)
 
-                    # Update progress if callback is provided
                     bytes_processed += bytes_read
                     if progress_callback:
                         progress_callback(bytes_processed)
@@ -94,7 +95,6 @@ class HashManager:
             # Cache the result
             self._hash_cache[cache_key] = hash_result
 
-            logger.debug(f"[HashManager] Calculated CRC32 for {file_path.name}: {hash_result}", extra={"dev_only": True})
             return hash_result
 
         except PermissionError:
@@ -117,9 +117,6 @@ class HashManager:
 
         Returns:
             dict: Dictionary with filename as key and (is_same, hash1, hash2) as value
-                 is_same: True if files are identical
-                 hash1: CRC32 hash of file in folder1
-                 hash2: CRC32 hash of file in folder2
         """
         if isinstance(folder1, str):
             folder1 = Path(folder1)
@@ -153,7 +150,7 @@ class HashManager:
                     else:
                         logger.warning(f"[HashManager] Could not hash one or both files: {file1.name}")
 
-            logger.info(f"[HashManager] Compared {files_processed} files between folders (CRC32)")
+            logger.info(f"[HashManager] Compared {files_processed} files between folders")
             return result
 
         except Exception as e:
@@ -169,7 +166,6 @@ class HashManager:
 
         Returns:
             dict: Dictionary with hash as key and list of duplicate FileItem objects as value
-                 Only includes hashes that have multiple files
         """
         if not file_items:
             return {}
@@ -177,7 +173,7 @@ class HashManager:
         hash_to_files: Dict[str, List[FileItem]] = {}
         processed_count = 0
 
-        logger.info(f"[HashManager] Scanning {len(file_items)} files for duplicates (CRC32)...")
+        logger.info(f"[HashManager] Scanning {len(file_items)} files for duplicates...")
 
         for file_item in file_items:
             try:
@@ -209,7 +205,6 @@ class HashManager:
 
         Returns:
             dict: Dictionary with hash as key and list of duplicate file paths as value
-                 Only includes hashes that have multiple files
         """
         if not file_paths:
             return {}
@@ -217,7 +212,7 @@ class HashManager:
         hash_to_paths: Dict[str, List[str]] = {}
         processed_count = 0
 
-        logger.info(f"[HashManager] Scanning {len(file_paths)} files for duplicates (CRC32)...")
+        logger.info(f"[HashManager] Scanning {len(file_paths)} files for duplicates...")
 
         for file_path in file_paths:
             try:
@@ -257,18 +252,14 @@ class HashManager:
 
         matches = actual_hash.lower() == expected_hash.lower()
 
-        if matches:
-            logger.debug(f"[HashManager] File integrity verified: {Path(file_path).name}", extra={"dev_only": True})
-        else:
+        if not matches:
             logger.warning(f"[HashManager] File integrity check failed: {Path(file_path).name}")
 
         return matches
 
     def clear_cache(self) -> None:
         """Clear the internal hash cache."""
-        cache_size = len(self._hash_cache)
         self._hash_cache.clear()
-        logger.debug(f"[HashManager] Cleared hash cache ({cache_size} entries)", extra={"dev_only": True})
 
     def get_cache_info(self) -> Dict[str, int]:
         """
@@ -279,7 +270,7 @@ class HashManager:
         """
         return {
             "cache_size": len(self._hash_cache),
-            "memory_usage_approx": len(self._hash_cache) * 50  # CRC32 uses less memory than SHA-256
+            "memory_usage_approx": len(self._hash_cache) * 50
         }
 
 
