@@ -1506,7 +1506,22 @@ class MetadataTreeView(QTreeView):
             # Try to determine file path for scroll position memory
             self._set_current_file_from_metadata(metadata)
 
-            tree_model = build_metadata_tree_model(display_data, self.modified_items)
+                        # Determine if we have extended metadata and which keys are extended-only
+            extended_keys = set()
+            if metadata.get('__extended__'):
+                # This metadata came from extended loading
+                # For a proper implementation, we would need to compare with fast metadata
+                # For now, we'll use a heuristic based on key patterns that are typically extended-only
+                for key in display_data.keys():
+                    key_lower = key.lower()
+                    # Mark keys that are typically only available in extended metadata
+                    if any(pattern in key_lower for pattern in [
+                        'accelerometer', 'gyro', 'pitch', 'roll', 'yaw',
+                        'segment', 'embedded', 'extended'
+                    ]):
+                        extended_keys.add(key)
+
+            tree_model = build_metadata_tree_model(display_data, self.modified_items, extended_keys)
 
             # Use proxy model for filtering instead of setting model directly
             parent_window = self._get_parent_with_file_table()

@@ -257,6 +257,12 @@ class MetadataManager:
                 metadata = self._exiftool_wrapper.get_metadata(file_item.full_path, use_extended=use_extended)
 
                 if metadata:
+                    # Mark metadata with loading mode for UI indicators
+                    if use_extended and '__extended__' not in metadata:
+                        metadata['__extended__'] = True
+                    elif not use_extended and '__extended__' in metadata:
+                        del metadata['__extended__']
+
                     # Cache the result in both local and parent window caches
                     cache_key = (file_item.full_path, use_extended)
                     self._metadata_cache[cache_key] = metadata
@@ -361,6 +367,12 @@ class MetadataManager:
                 metadata = self._exiftool_wrapper.get_metadata(file_item.full_path, use_extended=use_extended)
 
                 if metadata:
+                    # Mark metadata with loading mode for UI indicators
+                    if use_extended and '__extended__' not in metadata:
+                        metadata['__extended__'] = True
+                    elif not use_extended and '__extended__' in metadata:
+                        del metadata['__extended__']
+
                     # Cache the result in both local and parent window caches
                     cache_key = (file_item.full_path, use_extended)
                     self._metadata_cache[cache_key] = metadata
