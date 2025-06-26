@@ -57,10 +57,27 @@ CONTENT_MARGINS = {
     "right": 8,
 }
 
-# Allowed file extensions
+# Allowed file extensions - organized by category for better maintenance
 ALLOWED_EXTENSIONS = {
-    "jpg", "jpeg", "png", "mp3", "mp4", "mov", "mts", "nef", "raw", "rw2", "thm", "arw", "cr2", "cr3",
-    "wav", "txt", "csv", "xml", "pdf", "doc", "docx", "xls", "xlsx", "avi", "mkv"
+    # Image formats
+    "jpg", "jpeg", "png", "tiff", "tif", "bmp", "gif", "webp", "svg",
+    "heic", "heif",  # Apple formats
+
+    # RAW image formats
+    "nef", "raw", "rw2", "arw", "cr2", "cr3", "dng", "orf",
+
+    # Audio formats
+    "mp3", "wav", "flac", "aac", "ogg", "m4a", "wma", "aiff",
+
+    # Video formats
+    "mp4", "mov", "mts", "avi", "mkv", "wmv", "flv", "webm", "m4v", "3gp", "ts", "vob",
+
+        # Document formats
+    "txt", "csv", "xml", "json", "rtf",
+    "pdf",
+
+    # Thumbnail formats
+    "tmp"
 }
 
 # Regex pattern for Windows-safe names
