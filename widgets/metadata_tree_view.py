@@ -2079,18 +2079,22 @@ class MetadataTreeView(QTreeView):
         Returns:
             bool: True if any file has modifications
         """
-        # Save current file's modifications first
+        # CRITICAL: Always save current file's modifications first before checking
         if self._current_file_path and self.modified_items:
+            logger.debug(f"[MetadataTree] Saving current modifications for: {self._current_file_path} (count: {len(self.modified_items)})", extra={"dev_only": True})
             self._set_in_path_dict(self._current_file_path, self.modified_items.copy(), self.modified_items_per_file)
 
         # Check current file modifications
         if self.modified_items:
+            logger.debug(f"[MetadataTree] Found current file modifications: {len(self.modified_items)}", extra={"dev_only": True})
             return True
 
         # Check stored modifications for all files
+        total_modifications = 0
         for file_path, modifications in self.modified_items_per_file.items():
             if modifications:  # Non-empty set
-                return True
+                total_modifications += len(modifications)
 
-        return False
+        logger.debug(f"[MetadataTree] Total stored modifications across all files: {total_modifications}", extra={"dev_only": True})
+        return total_modifications > 0
 

@@ -141,15 +141,14 @@ def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extende
         group = classify_key(key)
         grouped.setdefault(group, []).append((key, value))
 
-    # Sort groups with Camera Settings and Sensor Data at the top for extended metadata
+    # Sort groups with File Info first, then alphabetically
     def group_sort_key(group_name):
-        priority_groups = ["Camera Settings", "Sensor Data", "GPS & Location"]
-        if group_name in priority_groups:
-            return (0, priority_groups.index(group_name))
+        if group_name == "File Info":
+            return (0, "File Info")  # Always first
         elif group_name == "Other":
-            return (2, group_name)
+            return (2, group_name)  # Always last
         else:
-            return (1, group_name)
+            return (1, group_name)  # Alphabetical order for everything else
 
     ordered_groups = sorted(grouped.keys(), key=group_sort_key)
 

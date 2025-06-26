@@ -96,7 +96,38 @@ class CustomSplashScreen(QSplashScreen):
         self.setCursor(Qt.WaitCursor)
 
     def _center_on_screen(self):
-        """Center the splash screen on the screen."""
+        """Center the splash screen on the screen, considering saved main window position."""
+        try:
+            # Try to get the saved main window position from config
+            from utils.json_config_manager import get_app_config_manager
+            config_manager = get_app_config_manager()
+            window_config = config_manager.get_category('window')
+
+            if window_config:
+                geometry = window_config.get('geometry')
+                if geometry:
+                    # Calculate center of the saved main window position
+                    main_window_center_x = geometry['x'] + geometry['width'] // 2
+                    main_window_center_y = geometry['y'] + geometry['height'] // 2
+
+                    # Position splash screen at the center of where main window will appear
+                    x = main_window_center_x - self.splash_width // 2
+                    y = main_window_center_y - self.splash_height // 2
+
+                    # Make sure splash screen stays within screen bounds
+                    screen = QApplication.primaryScreen()
+                    screen_geometry = screen.availableGeometry()
+
+                    x = max(0, min(x, screen_geometry.width() - self.splash_width))
+                    y = max(0, min(y, screen_geometry.height() - self.splash_height))
+
+                    self.move(x, y)
+                    return
+        except Exception as e:
+            # If anything goes wrong, fall back to default centering
+            pass
+
+        # Default centering on screen
         screen = QApplication.primaryScreen()
         screen_geometry = screen.availableGeometry()
 

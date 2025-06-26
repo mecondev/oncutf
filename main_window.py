@@ -744,6 +744,9 @@ class MainWindow(QMainWindow):
                     geometry['width'], geometry['height']
                 )
                 logger.debug(f"[Config] Loaded window geometry: {geometry}", extra={"dev_only": True})
+            else:
+                # No saved geometry - set smart defaults based on screen size
+                self._set_smart_default_geometry()
 
             # Load window state
             window_state = window_config.get('window_state', 'normal')
@@ -764,6 +767,63 @@ class MainWindow(QMainWindow):
 
         except Exception as e:
             logger.error(f"[Config] Failed to load window configuration: {e}")
+            # If config loading fails, still set smart defaults
+            self._set_smart_default_geometry()
+
+    def _set_smart_default_geometry(self) -> None:
+        """Set smart default window geometry based on screen size and aspect ratio."""
+        try:
+            from core.qt_imports import QDesktopWidget
+
+            # Get available screen geometry (excluding taskbars, etc.)
+            desktop = QDesktopWidget()
+            screen_geometry = desktop.availableGeometry()
+
+            screen_width = screen_geometry.width()
+            screen_height = screen_geometry.height()
+            screen_aspect = screen_width / screen_height if screen_height > 0 else 1.0
+
+            logger.debug(f"[Config] Screen: {screen_width}x{screen_height} (aspect: {screen_aspect:.2f})")
+
+            # Calculate smart window dimensions based on screen size
+            if screen_width >= 2560:  # 4K or ultrawide
+                # Large screens: use 75% of screen, minimum 1400x900
+                window_width = max(int(screen_width * 0.75), 1400)
+                window_height = max(int(screen_height * 0.75), 900)
+            elif screen_width >= 1920:  # Full HD
+                # Standard large screens: use 80% of screen
+                window_width = int(screen_width * 0.80)
+                window_height = int(screen_height * 0.80)
+            elif screen_width >= 1366:  # Common laptop resolution
+                # Medium screens: use 85% of screen
+                window_width = int(screen_width * 0.85)
+                window_height = int(screen_height * 0.85)
+            else:  # Small screens (1024x768 or smaller)
+                # Small screens: use 90% of screen, but ensure minimum usability
+                window_width = max(int(screen_width * 0.90), 1000)
+                window_height = max(int(screen_height * 0.90), 700)
+
+            # Ensure minimum dimensions for usability
+            window_width = max(window_width, 1000)
+            window_height = max(window_height, 700)
+
+            # Ensure window doesn't exceed screen bounds
+            window_width = min(window_width, screen_width - 100)
+            window_height = min(window_height, screen_height - 100)
+
+            # Calculate centered position
+            x = (screen_width - window_width) // 2
+            y = (screen_height - window_height) // 2
+
+            # Apply the geometry
+            self.setGeometry(x, y, window_width, window_height)
+
+            logger.info(f"[Config] Set smart default geometry: {window_width}x{window_height} at ({x}, {y})")
+
+        except Exception as e:
+            logger.error(f"[Config] Failed to set smart default geometry: {e}")
+            # Ultimate fallback - fixed reasonable size
+            self.setGeometry(100, 100, 1200, 800)
 
     def _save_window_config(self) -> None:
         """Save current window state to config manager."""

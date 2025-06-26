@@ -28,7 +28,10 @@ DEFAULT_SKIP_METADATA = True
 
 # App info
 APP_NAME = "oncutf"
-APP_VERSION = "1.1"
+APP_VERSION = "v1.2"
+
+# Export settings
+EXPORT_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"  # Format for export timestamps
 
 # Splash Screen Settings
 SPLASH_SCREEN_DURATION = 3000  # Duration in milliseconds (3 seconds)

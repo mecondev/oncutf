@@ -11,10 +11,8 @@ Handles metadata loading, progress tracking, thread management, and UI coordinat
 from typing import List, Optional
 import os
 
-from PyQt5.QtCore import Qt
-
 from config import STATUS_COLORS
-from core.qt_imports import QApplication
+from core.qt_imports import QApplication, Qt
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
 from utils.path_utils import find_file_by_path, paths_equal
@@ -95,8 +93,6 @@ class MetadataManager:
             - skip_metadata = False & use_extended = False ➜ Fast scan (Ctrl)
             - skip_metadata = False & use_extended = True ➜ Extended scan (Ctrl+Shift)
         """
-        from core.qt_imports import Qt
-
         modifiers = modifier_state
         if modifiers is None:
             if self.parent_window and hasattr(self.parent_window, 'modifier_state'):
@@ -133,8 +129,6 @@ class MetadataManager:
         Args:
             modifier_state: Qt.KeyboardModifiers to use, or None for current state
         """
-        from core.qt_imports import Qt
-
         modifiers = modifier_state
         if modifiers is None:
             if self.parent_window and hasattr(self.parent_window, 'modifier_state'):
@@ -458,8 +452,14 @@ class MetadataManager:
             logger.warning("[MetadataManager] No metadata tree view available")
             return
 
+        # CRITICAL: Ensure current file's modifications are saved to per-file storage BEFORE getting all modifications
+        tree_view = self.parent_window.metadata_tree_view
+        if tree_view._current_file_path and tree_view.modified_items:
+            logger.debug(f"[MetadataManager] Saving current file modifications before collecting all: {tree_view._current_file_path}", extra={"dev_only": True})
+            tree_view._set_in_path_dict(tree_view._current_file_path, tree_view.modified_items.copy(), tree_view.modified_items_per_file)
+
         # Get all modified metadata for all files
-        all_modified_metadata = self.parent_window.metadata_tree_view.get_all_modified_metadata_for_files()
+        all_modified_metadata = tree_view.get_all_modified_metadata_for_files()
 
         if not all_modified_metadata:
             logger.info("[MetadataManager] No metadata modifications to save")
@@ -615,7 +615,7 @@ class MetadataManager:
                     # Reduced frequency of processEvents() for better performance
                     # Only process events every 5 files or for large files (>10MB)
                     if (i + 1) % 5 == 0 or current_file_size > 10 * 1024 * 1024:
-                        from PyQt5.QtWidgets import QApplication
+                        from core.qt_imports import QApplication
                         QApplication.processEvents()
 
                     # Use path-aware lookup for modified metadata
@@ -641,6 +641,7 @@ class MetadataManager:
                 # Complete progress and close dialog
                 save_dialog.set_progress(len(files_to_save), len(files_to_save))
                 save_dialog.set_status("Save complete!")
+                from core.qt_imports import QApplication
                 QApplication.processEvents()
 
                 # Keep dialog visible for a moment to show completion
@@ -671,7 +672,7 @@ class MetadataManager:
             try:
                 row = self.parent_window.file_model.files.index(file_item)
                 icon_index = self.parent_window.file_model.index(row, 0)
-                from PyQt5.QtCore import Qt
+                from core.qt_imports import Qt
                 self.parent_window.file_model.dataChanged.emit(
                     icon_index,
                     icon_index,
