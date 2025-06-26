@@ -9,6 +9,7 @@ Handles metadata loading, progress tracking, thread management, and UI coordinat
 """
 
 from typing import List, Optional
+import os
 
 from PyQt5.QtCore import Qt
 
@@ -288,7 +289,7 @@ class MetadataManager:
                                 if paths_equal(file.full_path, file_item.full_path):
                                     top_left = self.parent_window.file_model.index(i, 0)
                                     bottom_right = self.parent_window.file_model.index(i, self.parent_window.file_model.columnCount() - 1)
-                                    self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole])
+                                    self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]) # type: ignore
                                     break
                         except Exception as e:
                             logger.warning(f"[Loader] Failed to emit dataChanged for {file_item.filename}: {e}")
@@ -322,6 +323,9 @@ class MetadataManager:
             loading_dialog.start_progress_tracking(total_size)
             loading_dialog.show()
 
+            # Initialize incremental size tracking for better performance
+            processed_size = 0
+
             # Process each file
             for i, file_item in enumerate(needs_loading):
                 # Check for cancellation before processing each file
@@ -330,17 +334,39 @@ class MetadataManager:
                     loading_dialog.close()
                     return
 
-                # Calculate processed size for enhanced progress
-                from utils.file_size_calculator import calculate_processed_size
-                processed_size = calculate_processed_size(needs_loading, i)
+                # Add current file size to processed total (incremental approach for O(1) performance)
+                try:
+                    if hasattr(file_item, 'file_size') and file_item.file_size is not None:
+                        # Use cached size if available
+                        current_file_size = file_item.file_size
+                    elif hasattr(file_item, 'full_path') and os.path.exists(file_item.full_path):
+                        # Get size from filesystem
+                        current_file_size = os.path.getsize(file_item.full_path)
+                        # Cache it for future use
+                        if hasattr(file_item, 'file_size'):
+                            file_item.file_size = current_file_size
+                    else:
+                        current_file_size = 0
 
-                # Update progress with size tracking
-                loading_dialog.update_progress_with_size(i, len(needs_loading), processed_size)
+                    processed_size += current_file_size
+                except (OSError, AttributeError):
+                    current_file_size = 0
+
+                # Update progress using unified method (supports both count and size modes)
+                loading_dialog.update_progress(
+                    file_count=i + 1,
+                    total_files=len(needs_loading),
+                    processed_bytes=processed_size,
+                    total_bytes=total_size
+                )
                 loading_dialog.set_filename(file_item.filename)
+                loading_dialog.set_count(i + 1, len(needs_loading))
 
-                # Process events to update the dialog and handle cancellation
-                from PyQt5.QtWidgets import QApplication
-                QApplication.processEvents()
+                # Process events to update the dialog and handle cancellation (throttled for better performance)
+                # Only process events every 10 files or for large files (>10MB) to reduce UI overhead
+                if (i + 1) % 10 == 0 or current_file_size > 10 * 1024 * 1024:
+                    from PyQt5.QtWidgets import QApplication
+                    QApplication.processEvents()
 
                 # Check again after processing events (user might have pressed ESC)
                 if self._metadata_cancelled:
@@ -370,7 +396,7 @@ class MetadataManager:
                                 if paths_equal(file.full_path, file_item.full_path):
                                     top_left = self.parent_window.file_model.index(i, 0)
                                     bottom_right = self.parent_window.file_model.index(i, self.parent_window.file_model.columnCount() - 1)
-                                    self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole])
+                                    self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]) # type: ignore
                                     break
                         except Exception as e:
                             logger.warning(f"[Loader] Failed to emit dataChanged for {file_item.filename}: {e}")
@@ -535,11 +561,12 @@ class MetadataManager:
                 from utils.progress_dialog import ProgressDialog
                 total_size = calculate_files_total_size(files_to_save)
 
-                # Create save dialog
+                # Create save dialog with size-based progress
                 save_dialog = ProgressDialog.create_metadata_dialog(
                     parent=self.parent_window,
                     is_extended=False,  # Save operation, not extended metadata
-                    cancel_callback=None  # No cancellation for save operations
+                    cancel_callback=None,  # No cancellation for save operations
+                    use_size_based_progress=True  # Use size-based progress for consistency
                 )
                 save_dialog.set_status("Saving metadata...")
 
@@ -547,19 +574,44 @@ class MetadataManager:
                 save_dialog.start_progress_tracking(total_size)
                 save_dialog.show()
 
+                # Initialize incremental size tracking for better performance
+                processed_size = 0
+
                 # Process each file
                 for i, file_item in enumerate(files_to_save):
-                    # Calculate processed size for enhanced progress
-                    from utils.file_size_calculator import calculate_processed_size
-                    processed_size = calculate_processed_size(files_to_save, i)
+                    # Add current file size to processed total (incremental approach for O(1) performance)
+                    try:
+                        if hasattr(file_item, 'file_size') and file_item.file_size is not None:
+                            # Use cached size if available
+                            current_file_size = file_item.file_size
+                        elif hasattr(file_item, 'full_path') and os.path.exists(file_item.full_path):
+                            # Get size from filesystem
+                            current_file_size = os.path.getsize(file_item.full_path)
+                            # Cache it for future use
+                            if hasattr(file_item, 'file_size'):
+                                file_item.file_size = current_file_size
+                        else:
+                            current_file_size = 0
 
-                    # Update progress with size tracking
-                    save_dialog.update_progress_with_size(i, len(files_to_save), processed_size)
+                        processed_size += current_file_size
+                    except (OSError, AttributeError):
+                        current_file_size = 0
+
+                    # Update progress using unified method (supports both count and size modes)
+                    save_dialog.update_progress(
+                        file_count=i + 1,
+                        total_files=len(files_to_save),
+                        processed_bytes=processed_size,
+                        total_bytes=total_size
+                    )
                     save_dialog.set_filename(file_item.filename)
+                    save_dialog.set_count(i + 1, len(files_to_save))
 
-                    # Process events to update the dialog
-                    from PyQt5.QtWidgets import QApplication
-                    QApplication.processEvents()
+                    # Process events to update the dialog (throttled for better performance)
+                    # Only process events every 5 files or for large files (>10MB) to reduce UI overhead
+                    if (i + 1) % 5 == 0 or current_file_size > 10 * 1024 * 1024:
+                        from PyQt5.QtWidgets import QApplication
+                        QApplication.processEvents()
 
                     modified_metadata = all_modified_metadata.get(file_item.full_path, {})
                     if not modified_metadata:
@@ -615,7 +667,7 @@ class MetadataManager:
                 self.parent_window.file_model.dataChanged.emit(
                     icon_index,
                     icon_index,
-                    [Qt.DecorationRole]
+                    [Qt.DecorationRole] # type: ignore
                 )
             except ValueError:
                 pass  # File not in model

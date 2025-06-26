@@ -19,7 +19,7 @@ logger = get_cached_logger(__name__)
 
 def calculate_files_total_size(file_items: List) -> int:
     """
-    Calculate total size of a list of file items.
+    Calculate total size of a list of file items with optimized caching.
 
     Args:
         file_items: List of FileItem objects or file paths
@@ -28,33 +28,39 @@ def calculate_files_total_size(file_items: List) -> int:
         Total size in bytes
     """
     total_size = 0
+    files_checked = 0
+    files_cached = 0
 
     for item in file_items:
         try:
-            # Handle both FileItem objects and path strings
+            # Handle FileItem objects with cached size first (fastest path)
+            if hasattr(item, 'file_size') and item.file_size is not None:
+                total_size += item.file_size
+                files_cached += 1
+                continue
+
+            # Handle full_path attribute
             if hasattr(item, 'full_path'):
                 file_path = item.full_path
-            elif hasattr(item, 'file_size') and item.file_size is not None:
-                # FileItem already has cached size
-                total_size += item.file_size
-                continue
             else:
                 file_path = str(item)
 
-            # Get file size
+            # Get file size from filesystem (slower path)
             if os.path.exists(file_path) and os.path.isfile(file_path):
                 size = os.path.getsize(file_path)
                 total_size += size
+                files_checked += 1
 
-                # Cache size in FileItem if available
-                if hasattr(item, 'file_size') and item.file_size is None:
+                # Cache size in FileItem if available and attribute exists
+                if hasattr(item, 'file_size'):
                     item.file_size = size
 
         except (OSError, AttributeError) as e:
             logger.debug(f"[FileSizeCalculator] Error getting size for {item}: {e}")
             continue
 
-    logger.debug(f"[FileSizeCalculator] Total size calculated: {total_size} bytes for {len(file_items)} files")
+    logger.debug(f"[FileSizeCalculator] Total size: {total_size} bytes for {len(file_items)} files "
+                f"({files_cached} cached, {files_checked} checked)")
     return total_size
 
 

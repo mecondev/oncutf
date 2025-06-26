@@ -737,8 +737,20 @@ class EventHandlerManager:
     def _on_hash_progress_updated(self, current_file: int, total_files: int, filename: str) -> None:
         """Handle hash worker progress updates."""
         if hasattr(self, 'hash_dialog') and self.hash_dialog:
-            # Set the overall progress (current file out of total files)
-            self.hash_dialog.set_progress(current_file, total_files)
+            # Use the unified progress method that respects the progress mode
+            # For size-based progress, this will use the size data; for count-based, it will use file count
+            if hasattr(self.hash_dialog, 'update_progress'):
+                # Pass both file count and size data - the widget will choose based on its mode
+                self.hash_dialog.update_progress(
+                    file_count=current_file,
+                    total_files=total_files,
+                    processed_bytes=getattr(self, '_last_processed_bytes', 0),
+                    total_bytes=getattr(self, '_total_size_bytes', 0)
+                )
+            else:
+                # Fallback to old method
+                self.hash_dialog.set_progress(current_file, total_files)
+
             self.hash_dialog.set_count(current_file, total_files)
             self.hash_dialog.set_filename(filename)
 

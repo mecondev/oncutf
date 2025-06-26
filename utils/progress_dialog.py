@@ -268,7 +268,8 @@ class ProgressDialog(QDialog):
     def create_metadata_dialog(cls, parent: Optional[QWidget] = None,
                              is_extended: bool = False,
                              cancel_callback: Optional[Callable] = None,
-                             show_enhanced_info: bool = True) -> 'ProgressDialog':
+                             show_enhanced_info: bool = True,
+                             use_size_based_progress: bool = True) -> 'ProgressDialog':
         """
         Create a progress dialog for metadata operations.
 
@@ -277,12 +278,21 @@ class ProgressDialog(QDialog):
             is_extended: True for extended metadata, False for basic
             cancel_callback: Function to call when user cancels
             show_enhanced_info: Whether to show enhanced size/time tracking
+            use_size_based_progress: Whether to use size-based progress bar (recommended for consistency)
 
         Returns:
-            ProgressDialog configured for metadata operations
+            ProgressDialog configured for metadata operations with optional size-based progress
         """
         operation_type = 'metadata_extended' if is_extended else 'metadata_basic'
-        return cls(parent=parent, operation_type=operation_type, cancel_callback=cancel_callback, show_enhanced_info=show_enhanced_info)
+        dialog = cls(parent=parent, operation_type=operation_type,
+                    cancel_callback=cancel_callback, show_enhanced_info=show_enhanced_info)
+
+        # If size-based progress is requested, update the progress widget mode
+        if use_size_based_progress and hasattr(dialog.waiting_widget, 'set_progress_mode'):
+            dialog.waiting_widget.set_progress_mode("size")
+            logger.debug(f"[ProgressDialog] Metadata dialog configured with size-based progress (extended: {is_extended})")
+
+        return dialog
 
     @classmethod
     def create_file_loading_dialog(cls, parent: Optional[QWidget] = None,
