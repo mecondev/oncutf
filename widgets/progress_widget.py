@@ -133,13 +133,13 @@ class ProgressWidget(QWidget):
 
         self.status_label = QLabel("Please wait...")
         self.status_label.setObjectName("status_label")
-        self.status_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.status_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter) # type: ignore
         self.status_label.setWordWrap(True)
         self.status_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         self.count_label = QLabel("")
         self.count_label.setObjectName("count_label")
-        self.count_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.count_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter) # type: ignore
         self.count_label.setFixedWidth(90)
 
         status_row.addWidget(self.status_label)
@@ -163,11 +163,11 @@ class ProgressWidget(QWidget):
         self.percentage_label = QLabel("0%")
         self.percentage_label.setObjectName("percentage_label")
         self.percentage_label.setFixedWidth(40)
-        self.percentage_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.percentage_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter) # type: ignore
 
         self.filename_label = QLabel("")
         self.filename_label.setObjectName("filename_label")
-        self.filename_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.filename_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter) # type: ignore
         self.filename_label.setWordWrap(True)
         self.filename_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
@@ -190,7 +190,7 @@ class ProgressWidget(QWidget):
         if self.show_size_info:
             self.size_label = QLabel("Ready...")
             self.size_label.setObjectName("size_info_label")
-            self.size_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            self.size_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter) # type: ignore
             self.size_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
             enhanced_row.addWidget(self.size_label)
 
@@ -200,7 +200,7 @@ class ProgressWidget(QWidget):
         if self.show_time_info:
             self.time_label = QLabel("Ready...")
             self.time_label.setObjectName("time_info_label")
-            self.time_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            self.time_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter) # type: ignore
             self.time_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
             enhanced_row.addWidget(self.time_label)
 
@@ -286,16 +286,22 @@ class ProgressWidget(QWidget):
 
     def set_progress_by_size(self, processed_bytes: int, total_bytes: int):
         """
-        Set progress bar value based on data volume instead of file count.
+        Set progress based on data volume (bytes processed).
 
         Args:
-            processed_bytes: Bytes processed so far
-            total_bytes: Total bytes to process
+            processed_bytes: Number of bytes processed so far
+            total_bytes: Total number of bytes to process
         """
+        # Throttling to prevent excessive updates (max 20 updates per second)
+        current_time = time.time()
+        if current_time - self._last_update_time < 0.05:  # 50ms = 20 FPS
+            return
+        self._last_update_time = current_time
+
         if total_bytes <= 0:
             percentage = 0
         else:
-            # Convert to 64-bit integers to handle large files
+            # Convert to integers to prevent overflow issues
             processed_bytes = int(processed_bytes)
             total_bytes = int(total_bytes)
 
@@ -309,7 +315,10 @@ class ProgressWidget(QWidget):
         self.progress_bar.setValue(percentage)
         self.percentage_label.setText(f"{percentage}%")
 
-        logger.debug(f"[ProgressWidget] Progress by size: {processed_bytes:,}/{total_bytes:,} bytes = {percentage}%")
+        # Only log significant progress milestones (every 5%) to reduce spam
+        if percentage % 5 == 0 and percentage != getattr(self, '_last_logged_percentage', -1):
+            logger.debug(f"[ProgressWidget] Progress milestone: {percentage}% ({processed_bytes:,}/{total_bytes:,} bytes)")
+            self._last_logged_percentage = percentage
 
     def set_status(self, text: str):
         """

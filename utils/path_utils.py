@@ -156,15 +156,21 @@ def normalize_path(path: str) -> str:
     """
     if not path:
         return path
-    return os.path.normpath(path)
+
+    # First normalize separators to forward slashes for cross-platform compatibility
+    normalized = path.replace('\\', '/')
+
+    # Then use os.path.normpath for final normalization
+    return os.path.normpath(normalized)
 
 
 def paths_equal(path1: str, path2: str) -> bool:
     """
     Compare two file paths for equality after normalizing both.
 
-    This ensures that paths with different separator styles are compared correctly.
-    For example, on Windows: "C:/folder\\file.txt" == "C:\\folder/file.txt"
+    This ensures that paths with different separator styles are compared correctly
+    across different operating systems. Works correctly even when comparing Windows
+    paths on Linux systems.
 
     Args:
         path1 (str): First path to compare
@@ -182,7 +188,21 @@ def paths_equal(path1: str, path2: str) -> bool:
     if not path1 or not path2:
         return path1 == path2
 
-    return normalize_path(path1) == normalize_path(path2)
+    # Normalize both paths to use forward slashes for comparison
+    norm1 = path1.replace('\\', '/').replace('//', '/')
+    norm2 = path2.replace('\\', '/').replace('//', '/')
+
+    # Remove trailing slashes for consistent comparison (except for root)
+    if len(norm1) > 1 and norm1.endswith('/'):
+        norm1 = norm1.rstrip('/')
+    if len(norm2) > 1 and norm2.endswith('/'):
+        norm2 = norm2.rstrip('/')
+
+    # Case-insensitive comparison for Windows-style paths
+    if ':' in norm1 or ':' in norm2:  # Likely Windows paths
+        return norm1.lower() == norm2.lower()
+    else:
+        return norm1 == norm2
 
 
 def find_file_by_path(files: list, target_path: str, path_attr: str = 'full_path') -> Optional[object]:
