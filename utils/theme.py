@@ -36,7 +36,8 @@ def load_stylesheet() -> str:
         "scrollbars.qss",
         "table_view.qss",
         "tree_view.qss",
-        "tooltip.qss"
+        "tooltip.qss",
+        "dialogs.qss"
         # Add more QSS files here if needed
     ]
 

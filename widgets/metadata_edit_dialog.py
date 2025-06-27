@@ -25,7 +25,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
-from config import QLABEL_MUTED_TEXT
+
 from utils.logger_factory import get_cached_logger
 from utils.metadata_field_validators import MetadataFieldValidator
 
@@ -81,75 +81,9 @@ class MetadataEditDialog(QDialog):
             self._setup_single_file_ui()
 
     def _setup_styles(self):
-        """Set up dialog styling."""
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #212121;
-                color: #f0ebd8;
-                font-size: 9pt;
-                border-radius: 8px;
-            }
-            QLabel {
-                background-color: transparent;
-                color: #f0ebd8;
-                font-size: 9pt;
-                border: none;
-                padding: 2px;
-            }
-            QLineEdit {
-                background-color: #2c2c2c;
-                color: #f0ebd8;
-                font-size: 9pt;
-                border: 1px solid #555555;
-                border-radius: 4px;
-                padding: 6px;
-                selection-background-color: #748cab;
-            }
-            QLineEdit:focus {
-                border-color: #748cab;
-            }
-            QTextEdit {
-                background-color: #2c2c2c;
-                color: #f0ebd8;
-                font-size: 9pt;
-                border: 1px solid #555555;
-                border-radius: 4px;
-                padding: 6px;
-                selection-background-color: #748cab;
-            }
-            QTextEdit:focus {
-                border-color: #748cab;
-            }
-            QCheckBox {
-                color: #f0ebd8;
-                font-size: 9pt;
-                spacing: 8px;
-            }
-            QCheckBox::indicator {
-                width: 16px;
-                height: 16px;
-                border: 1px solid #555555;
-                border-radius: 3px;
-                background-color: #2c2c2c;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #748cab;
-                border-color: #748cab;
-            }
-            QFrame {
-                background-color: #181818;
-                border: 1px solid #444444;
-                border-radius: 8px;
-            }
-            QScrollArea {
-                background-color: #181818;
-                border: 1px solid #444444;
-                border-radius: 8px;
-            }
-            QScrollArea QWidget {
-                background-color: transparent;
-            }
-        """)
+        """Set up dialog styling using theme system."""
+        # All styling now handled by the QSS theme system
+        pass
 
     def _setup_ui(self):
         """Set up the main UI layout."""
@@ -179,7 +113,9 @@ class MetadataEditDialog(QDialog):
         # Info label
         self.info_label = QLabel()
         self.info_label.setWordWrap(True)
-        self.info_label.setStyleSheet(f"color: {QLABEL_MUTED_TEXT}; font-size: 8pt;")
+        from utils.theme import get_theme_color
+        muted_color = get_theme_color('text')  # Use theme text color
+        self.info_label.setStyleSheet(f"color: {muted_color}; font-size: 8pt; opacity: 0.7;")
         layout.addWidget(self.info_label)
 
         # Buttons
@@ -197,45 +133,13 @@ class MetadataEditDialog(QDialog):
         self.cancel_button.setFocus()
         self.cancel_button.clicked.connect(self.reject)
 
-        self.cancel_button.setStyleSheet("""
-            QPushButton {
-                background-color: #2a2a2a;
-                color: #f0ebd8;
-                font-size: 9pt;
-                border: none;
-                border-radius: 8px;
-                padding: 4px 12px 4px 8px;
-                min-width: 70px;
-            }
-            QPushButton:hover {
-                background-color: #3a3a3a;
-            }
-            QPushButton:pressed {
-                background-color: #1a1a1a;
-            }
-        """)
+
 
         # OK button
         self.ok_button = QPushButton("OK")
         self.ok_button.clicked.connect(self._validate_and_accept)
 
-        self.ok_button.setStyleSheet("""
-            QPushButton {
-                background-color: #2a2a2a;
-                color: #f0ebd8;
-                font-size: 9pt;
-                border: none;
-                border-radius: 8px;
-                padding: 4px 12px 4px 8px;
-                min-width: 70px;
-            }
-            QPushButton:hover {
-                background-color: #748cab;
-            }
-            QPushButton:pressed {
-                background-color: #5a6b7a;
-            }
-        """)
+
 
         button_layout.addStretch()
         button_layout.addWidget(self.cancel_button)
@@ -489,7 +393,9 @@ class MetadataEditDialog(QDialog):
         if not is_valid:
             # Show error in info label
             self.info_label.setText(f"Error: {error_message}")
-            self.info_label.setStyleSheet("color: #ff6b6b; font-size: 8pt;")
+            from utils.theme import get_theme_color
+            error_color = get_theme_color('text')  # Use theme-based error color
+            self.info_label.setStyleSheet(f"color: #ff6b6b; font-size: 8pt;")
             return
 
         # Store the validated value

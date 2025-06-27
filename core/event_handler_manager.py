@@ -1799,10 +1799,6 @@ class EventHandlerManager:
                     # Refresh the metadata display to show the changes
                     self.parent_window.metadata_tree_view.update_from_parent_selection()
 
-                # Update preview tables to reflect the changes
-                if hasattr(self.parent_window, 'request_preview_update'):
-                    self.parent_window.request_preview_update()
-
                 logger.info(f"[MetadataEdit] Successfully applied {field_name} to {modified_count} files")
             else:
                 logger.warning(f"[MetadataEdit] No files were actually modified for {field_name}")
