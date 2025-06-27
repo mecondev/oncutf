@@ -375,6 +375,38 @@ class MainWindow(QMainWindow):
         if event.type() == QEvent.WindowStateChange:  # type: ignore
             self._handle_window_state_change()
 
+    def resizeEvent(self, event) -> None:
+        """Handle window resize events to update splitter ratios for wide screens."""
+        super().resizeEvent(event)
+
+        # Only update splitters if UI is fully initialized and window is visible
+        if (hasattr(self, 'ui_manager') and
+            hasattr(self, 'horizontal_splitter') and
+            self.isVisible() and
+            not self.isMinimized()):
+
+            # Get new window width
+            new_width = self.width()
+
+            # Calculate new optimal splitter sizes
+            optimal_sizes = self.ui_manager._calculate_optimal_splitter_sizes(new_width)
+
+            # Only update if the sizes would be significantly different
+            current_sizes = self.horizontal_splitter.sizes()
+            if len(current_sizes) == 3 and len(optimal_sizes) == 3:
+                # Check if any panel size differs by more than 50px
+                size_differences = [abs(current - optimal) for current, optimal in zip(current_sizes, optimal_sizes)]
+                if any(diff > 50 for diff in size_differences):
+                    # Update splitter sizes with smooth transition
+                    from utils.timer_manager import schedule_resize_adjust
+
+                    def update_splitters():
+                        self.horizontal_splitter.setSizes(optimal_sizes)
+                        logger.debug(f"[ResizeEvent] Updated splitter sizes for {new_width}px: {optimal_sizes}")
+
+                    # Schedule the update to avoid conflicts with other resize operations
+                    schedule_resize_adjust(update_splitters, 50)
+
     def _handle_window_state_change(self) -> None:
         """Handle maximize/restore geometry and file table refresh."""
         # Handle maximize: store appropriate geometry for restore

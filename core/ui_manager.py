@@ -128,10 +128,24 @@ class UIManager:
         self.parent_window.main_layout = QVBoxLayout(self.parent_window.central_widget)
 
     def _calculate_optimal_splitter_sizes(self, window_width: int):
-        """Calculate optimal splitter sizes based on window width using percentage-based approach."""
-        # Base percentages derived from good 4:3 ratios (230px sides on 1177px = ~19.5% each)
-        left_percentage = 0.195   # ~19.5% for left panel
-        right_percentage = 0.195  # ~19.5% for right panel
+        """Calculate optimal splitter sizes based on window width with smart adaptation for wide screens."""
+        # Smart percentage calculation based on screen width
+        if window_width >= 2560:  # 4K/Ultrawide screens
+            # Wide screens: Give more space to center panel, keep side panels reasonable
+            left_percentage = 0.12   # ~12% for left panel (smaller percentage, but still usable)
+            right_percentage = 0.18  # ~18% for right panel (metadata needs more space)
+        elif window_width >= 1920:  # Full HD and above
+            # Large screens: Balanced approach with more center space
+            left_percentage = 0.15   # ~15% for left panel
+            right_percentage = 0.20  # ~20% for right panel
+        elif window_width >= 1366:  # Common laptop resolution
+            # Medium screens: Standard approach
+            left_percentage = 0.18   # ~18% for left panel
+            right_percentage = 0.22  # ~22% for right panel
+        else:  # Small screens (1024x768 or smaller)
+            # Small screens: Give more relative space to side panels for usability
+            left_percentage = 0.20   # ~20% for left panel
+            right_percentage = 0.25  # ~25% for right panel
 
         # Calculate sizes based on percentages
         left_width = int(window_width * left_percentage)
@@ -150,6 +164,21 @@ class UIManager:
         # Recalculate center if minimums were applied
         center_width = window_width - left_width - right_width
         center_width = max(center_width, center_min)
+
+        # For very wide screens, cap the side panels to prevent them from being too wide
+        if window_width >= 2560:
+            left_max = 300   # Maximum 300px for left panel on wide screens
+            right_max = 450  # Maximum 450px for right panel on wide screens
+
+            if left_width > left_max:
+                extra_left = left_width - left_max
+                left_width = left_max
+                center_width += extra_left
+
+            if right_width > right_max:
+                extra_right = right_width - right_max
+                right_width = right_max
+                center_width += extra_right
 
         optimal_sizes = [left_width, center_width, right_width]
 
