@@ -20,8 +20,8 @@ behavior, and styling.
 
 from typing import Optional
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (
+from core.qt_imports import (
+    Qt,
     QApplication,
     QCheckBox,
     QDialog,

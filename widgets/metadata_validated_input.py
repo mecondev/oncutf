@@ -16,8 +16,7 @@ Contains:
 import logging
 from typing import Optional, Set, Tuple
 
-from core.qt_imports import Qt, QKeyEvent, QWidget, QLineEdit, pyqtSignal
-from PyQt5.QtWidgets import QTextEdit
+from core.qt_imports import Qt, QKeyEvent, QWidget, QLineEdit, pyqtSignal, QTextEdit
 
 from utils.metadata_field_validators import MetadataFieldValidator
 from widgets.base_validated_input import BaseValidatedInput

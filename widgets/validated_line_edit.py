@@ -15,8 +15,7 @@ Contains:
 import logging
 from typing import Optional, Set, Tuple
 
-from PyQt5.QtGui import QKeyEvent
-from PyQt5.QtWidgets import QLineEdit, QWidget
+from core.qt_imports import pyqtSignal, QKeyEvent, QLineEdit, QWidget
 
 from config import INVALID_FILENAME_CHARS
 from utils.filename_validator import (
@@ -40,6 +39,9 @@ class ValidatedLineEdit(QLineEdit, BaseValidatedInput):
     - Cleans pasted text automatically
     """
 
+    # Signal emitted when validation state changes
+    validation_changed = pyqtSignal(bool)  # True if valid, False if invalid
+
     def __init__(self, parent: Optional[QWidget] = None):
         QLineEdit.__init__(self, parent)
         BaseValidatedInput.__init__(self)
@@ -47,6 +49,10 @@ class ValidatedLineEdit(QLineEdit, BaseValidatedInput):
     def _setup_validation_signals(self) -> None:
         """Setup internal signal connections"""
         self.textChanged.connect(self._on_text_changed)
+
+    def emit_validation_changed(self, is_valid: bool) -> None:
+        """Emit validation changed signal."""
+        self.validation_changed.emit(is_valid)
 
     def get_blocked_characters(self) -> Set[str]:
         """

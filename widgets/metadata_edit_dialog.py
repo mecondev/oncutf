@@ -10,9 +10,9 @@ Based on bulk_rotation_dialog.py but made flexible for different field types.
 
 from typing import List, Optional, Dict, Any
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (
+from core.qt_imports import (
+    Qt,
+    QFont,
     QCheckBox,
     QDialog,
     QFrame,
@@ -299,15 +299,13 @@ class MetadataEditDialog(QDialog):
     def eventFilter(self, obj, event):
         """Handle keyboard events for input field."""
         if obj == self.input_field and event.type() == event.KeyPress:
-            from PyQt5.QtCore import Qt
-
             # Handle Enter/Return key
-            if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            if event.key() in (Qt.Key_Return, Qt.Key_Enter): # type: ignore
                 modifiers = event.modifiers()
 
                 # For multiline fields (QTextEdit)
                 if self.is_multiline:
-                    if modifiers & Qt.ShiftModifier:
+                    if modifiers & Qt.ShiftModifier: # type: ignore
                         # Shift+Enter: Insert new line (default behavior)
                         return False  # Let QTextEdit handle it
                     else:
@@ -320,7 +318,7 @@ class MetadataEditDialog(QDialog):
                     return True  # Event handled
 
             # Handle Escape key
-            elif event.key() == Qt.Key_Escape:
+            elif event.key() == Qt.Key_Escape: # type: ignore
                 self.reject()
                 return True  # Event handled
 

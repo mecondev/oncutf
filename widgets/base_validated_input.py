@@ -13,7 +13,6 @@ Contains:
 """
 
 import logging
-from abc import ABCMeta, abstractmethod
 from typing import Optional, Tuple, Set
 
 from core.qt_imports import QKeyEvent, QWidget
@@ -30,7 +29,7 @@ from utils.tooltip_helper import show_error_tooltip
 logger = logging.getLogger(__name__)
 
 
-class BaseValidatedInput(metaclass=ABCMeta):
+class BaseValidatedInput:
     """
     Abstract base class for validated input widgets.
 
@@ -50,40 +49,33 @@ class BaseValidatedInput(metaclass=ABCMeta):
         # Setup initial state
         self._setup_validation_signals()
 
-    @abstractmethod
     def _setup_validation_signals(self) -> None:
         """Setup internal signal connections. Must be implemented by subclasses."""
-        pass
+        raise NotImplementedError("Subclasses must implement _setup_validation_signals")
 
-    @abstractmethod
     def text(self) -> str:
         """Get current text content. Must be implemented by subclasses."""
-        pass
+        raise NotImplementedError("Subclasses must implement text")
 
-    @abstractmethod
     def setText(self, text: str) -> None:
         """Set text content. Must be implemented by subclasses."""
-        pass
+        raise NotImplementedError("Subclasses must implement setText")
 
-    @abstractmethod
     def insert(self, text: str) -> None:
         """Insert text at current position. Must be implemented by subclasses."""
-        pass
+        raise NotImplementedError("Subclasses must implement insert")
 
-    @abstractmethod
     def setStyleSheet(self, style: str) -> None:
         """Set widget stylesheet. Must be implemented by subclasses."""
-        pass
+        raise NotImplementedError("Subclasses must implement setStyleSheet")
 
-    @abstractmethod
     def maxLength(self) -> int:
         """Get maximum length. Must be implemented by subclasses."""
-        pass
+        raise NotImplementedError("Subclasses must implement maxLength")
 
-    @abstractmethod
     def emit_validation_changed(self, is_valid: bool) -> None:
         """Emit validation changed signal. Must be implemented by subclasses."""
-        pass
+        raise NotImplementedError("Subclasses must implement emit_validation_changed")
 
     def get_blocked_characters(self) -> Set[str]:
         """
@@ -246,11 +238,12 @@ class BaseValidatedInput(metaclass=ABCMeta):
         try:
             # Determine styling based on state
             if not self._is_valid:
-                # Invalid state - red styling
+                # Invalid state - red border only, normal background
                 style = f"""
-                    border: 2px solid {QLABEL_ERROR_BG};
-                    background-color: {QLABEL_ERROR_BG};
-                    color: {QLABEL_ERROR_TEXT};
+                    border: 2px solid #ff4444;
+                    background-color: {QLABEL_DARK_BG};
+                    color: {QLABEL_INFO_TEXT};
+                    font-weight: normal;
                 """
             elif not text and self._has_had_content:
                 # Empty after having content - orange/warning styling
@@ -258,6 +251,7 @@ class BaseValidatedInput(metaclass=ABCMeta):
                     border: 2px solid #FFA500;
                     background-color: {QLABEL_DARK_BG};
                     color: {QLABEL_INFO_TEXT};
+                    font-weight: normal;
                 """
             elif self.maxLength() > 0 and len(text) >= self.maxLength():
                 # At character limit - gray styling
@@ -265,12 +259,15 @@ class BaseValidatedInput(metaclass=ABCMeta):
                     border: 2px solid #808080;
                     background-color: {QLABEL_DARK_BG};
                     color: {QLABEL_INFO_TEXT};
+                    font-weight: normal;
                 """
             else:
                 # Valid state - default styling
                 style = f"""
                     border: 1px solid {QLABEL_DARK_BORDER};
                     background-color: {QLABEL_DARK_BG};
+                    color: {QLABEL_INFO_TEXT};
+                    font-weight: normal;
                 """
 
             self.setStyleSheet(style)
@@ -283,11 +280,12 @@ class BaseValidatedInput(metaclass=ABCMeta):
         try:
             from utils.timer_manager import schedule_ui_update
 
-            # Apply error style immediately
+            # Apply error style immediately - red border only
             error_style = f"""
-                border: 2px solid {QLABEL_ERROR_BG};
-                background-color: {QLABEL_ERROR_BG};
-                color: {QLABEL_ERROR_TEXT};
+                border: 2px solid #ff4444;
+                background-color: {QLABEL_DARK_BG};
+                color: {QLABEL_INFO_TEXT};
+                font-weight: normal;
             """
             self.setStyleSheet(error_style)
 
