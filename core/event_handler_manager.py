@@ -143,7 +143,6 @@ class EventHandlerManager:
 
         # --- Other actions ---
         action_reload = menu.addAction(get_menu_icon("refresh-cw"), "Reload folder (Ctrl+R)")
-        action_browse = menu.addAction(get_menu_icon("folder"), "Browse folder (Ctrl+O)")
         action_clear_table = menu.addAction(get_menu_icon("x"), "Clear file table (Ctrl+Escape)")
 
         menu.addSeparator()
@@ -302,7 +301,6 @@ class EventHandlerManager:
         action_load_ext_all.setEnabled(total_files > 0)
         action_select_all.setEnabled(total_files > 0)
         action_reload.setEnabled(total_files > 0)
-        action_browse.setEnabled(True)
         action_clear_table.setEnabled(total_files > 0)
 
         # Hash actions enable/disable logic
@@ -344,9 +342,6 @@ class EventHandlerManager:
 
         elif action == action_reload:
             self.parent_window.force_reload()
-
-        elif action == action_browse:
-            self.parent_window.handle_browse()
 
         elif action == action_clear_table:
             self.parent_window.clear_file_table_shortcut()

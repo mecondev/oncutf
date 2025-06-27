@@ -78,7 +78,7 @@ class RenameModulesArea(QWidget):
 
         # Final transformation + controls
         footer_layout = QHBoxLayout()
-        footer_layout.setContentsMargins(2, 10, 2, 2)
+        footer_layout.setContentsMargins(2, 4, 2, 2)
         footer_layout.setSpacing(12)
 
         # Left side: name transform

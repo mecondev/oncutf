@@ -223,6 +223,7 @@ class UIManager:
         self.parent_window.browse_folder_button = QPushButton("  Browse")
         self.parent_window.browse_folder_button.setIcon(get_menu_icon("folder-plus"))
         self.parent_window.browse_folder_button.setFixedWidth(100)
+        self.parent_window.browse_folder_button.setToolTip("Browse folder (Ctrl+O)")
 
         # Add buttons with fixed positioning - no stretching
         btn_layout.addWidget(self.parent_window.select_folder_button)
@@ -387,7 +388,7 @@ class UIManager:
         self.parent_window.bottom_frame = QFrame()
         self.parent_window.bottom_layout = QVBoxLayout(self.parent_window.bottom_frame)
         self.parent_window.bottom_layout.setSpacing(0)
-        self.parent_window.bottom_layout.setContentsMargins(0, 0, 0, 0)
+        self.parent_window.bottom_layout.setContentsMargins(0, 4, 0, 0)  # Add small top margin
 
         content_layout = QHBoxLayout()
 
@@ -420,6 +421,7 @@ class UIManager:
         # Create preview frame
         self.parent_window.preview_frame = QFrame()
         preview_layout = QVBoxLayout(self.parent_window.preview_frame)
+        preview_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
         preview_layout.addWidget(self.parent_window.preview_tables_view)
         preview_layout.addLayout(controls_layout)
 
@@ -432,10 +434,12 @@ class UIManager:
         footer_separator = QFrame()
         footer_separator.setFrameShape(QFrame.HLine)
         footer_separator.setFrameShadow(QFrame.Sunken)
+        # Add color for testing
+        footer_separator.setStyleSheet("QFrame { background-color: #3498db; min-height: 2px; max-height: 2px; }")
 
         footer_widget = QWidget()
         footer_layout = QHBoxLayout(footer_widget)
-        footer_layout.setContentsMargins(10, 4, 10, 4)
+        footer_layout.setContentsMargins(10, 2, 10, 2)
 
         self.parent_window.version_label = QLabel()
         self.parent_window.version_label.setText(f"{APP_NAME} v{APP_VERSION}")
@@ -443,6 +447,7 @@ class UIManager:
         self.parent_window.version_label.setAlignment(Qt.AlignLeft)
         footer_layout.addWidget(self.parent_window.version_label)
         footer_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        footer_widget.setFixedHeight(24)  # Reduce footer height
 
         self.parent_window.vertical_splitter.addWidget(self.parent_window.horizontal_splitter)
         self.parent_window.vertical_splitter.addWidget(self.parent_window.bottom_frame)
