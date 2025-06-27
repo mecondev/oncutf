@@ -199,6 +199,57 @@ class MetadataFieldValidator:
         return True, ""
 
     @staticmethod
+    def validate_rotation(value: str) -> Tuple[bool, str]:
+        """
+        Validate rotation field.
+
+        Rules:
+        - Can be empty (defaults to 0)
+        - Must be one of the standard rotation values: 0, 90, 180, 270
+        - Accepts values with or without degree symbol
+
+        Args:
+            value: Rotation string to validate
+
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        if not isinstance(value, str):
+            return False, "Rotation must be a string"
+
+        stripped_value = value.strip()
+
+        # Rotation can be empty (defaults to 0)
+        if not stripped_value:
+            return True, ""
+
+        # Clean the value - remove degree symbol and extra spaces
+        clean_value = stripped_value.replace("°", "").replace(" ", "")
+
+        # Valid rotation values
+        valid_rotations = {"0", "90", "180", "270"}
+
+        # Check if it's one of the valid rotation values
+        if clean_value in valid_rotations:
+            return True, ""
+
+        # Try to parse as number and check if it's close to a valid rotation
+        try:
+            rotation_num = float(clean_value)
+            # Normalize to 0-359 range
+            normalized = rotation_num % 360
+
+            # Check if it's close to a standard rotation (within 1 degree)
+            for valid_rot in valid_rotations:
+                if abs(normalized - float(valid_rot)) < 1:
+                    return False, f"Rotation must be exactly {valid_rot}°. Use one of: 0°, 90°, 180°, 270°"
+
+            return False, "Rotation must be one of: 0°, 90°, 180°, 270°"
+
+        except ValueError:
+            return False, "Rotation must be a valid number (0, 90, 180, or 270)"
+
+    @staticmethod
     def parse_keywords(value: str) -> List[str]:
         """
         Parse and clean keywords string into a list.
@@ -256,6 +307,7 @@ class MetadataFieldValidator:
             "Copyright": MetadataFieldValidator.validate_copyright,
             "Description": MetadataFieldValidator.validate_description,
             "Keywords": MetadataFieldValidator.validate_keywords,
+            "Rotation": MetadataFieldValidator.validate_rotation,
         }
 
         return validators.get(field_name)

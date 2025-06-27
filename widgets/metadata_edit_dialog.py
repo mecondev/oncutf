@@ -333,7 +333,8 @@ class MetadataEditDialog(QDialog):
             "Author": "Enter author name...",
             "Copyright": "Enter copyright information...",
             "Description": "Enter description...",
-            "Keywords": "Enter keywords (comma-separated)..."
+            "Keywords": "Enter keywords (comma-separated)...",
+            "Rotation": "Select rotation angle..."
         }
         return placeholders.get(self.field_name, "")
 
@@ -357,6 +358,8 @@ class MetadataEditDialog(QDialog):
             self.info_label.setText("The title is required and cannot contain special characters.")
         elif self.field_name == "Keywords":
             self.info_label.setText("Separate keywords with commas. Maximum 50 keywords.")
+        elif self.field_name == "Rotation":
+            self.info_label.setText("Select from standard rotation angles: 0°, 90°, 180°, 270°.")
         else:
             max_length = getattr(MetadataFieldValidator, f'MAX_{self.field_name.upper()}_LENGTH', None)
             if max_length:
@@ -440,7 +443,8 @@ class MetadataEditDialog(QDialog):
             "Author": ["XMP:Creator", "IPTC:By-line", "EXIF:Artist"],
             "Copyright": ["XMP:Rights", "IPTC:CopyrightNotice", "EXIF:Copyright"],
             "Description": ["XMP:Description", "IPTC:Caption-Abstract", "EXIF:ImageDescription"],
-            "Keywords": ["XMP:Keywords", "IPTC:Keywords"]
+            "Keywords": ["XMP:Keywords", "IPTC:Keywords"],
+            "Rotation": ["Rotation", "EXIF:Orientation", "XMP:Orientation"]
         }
         return field_standards.get(self.field_name, [])
 

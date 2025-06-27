@@ -732,15 +732,15 @@ class MetadataTreeView(QTreeView):
         selected_files = self._get_current_selection()
         has_multiple_selection = len(selected_files) > 1
 
-        # Check if this field can be edited (only Rotation fields)
-        is_rotation_field = "rotation" in key_path.lower()
+        # Check if this field can be edited (standard metadata fields)
+        is_editable_field = self._is_editable_metadata_field(key_path)
 
         # Check if current file has modifications for this field
         has_modifications = False
-        current_rotation_value = None
+        current_field_value = None
         if self._current_file_path:
-            # Check current modifications
-            normalized_key_path = "Rotation" if is_rotation_field else key_path
+            # Normalize key path for standard metadata fields
+            normalized_key_path = self._normalize_metadata_field_name(key_path)
             has_modifications = normalized_key_path in self.modified_items
 
             # Also check stored modifications for this file
@@ -748,65 +748,64 @@ class MetadataTreeView(QTreeView):
                 stored_modifications = self._get_from_path_dict(self._current_file_path, self.modified_items_per_file)
                 has_modifications = normalized_key_path in (stored_modifications or set())
 
-            # Get current rotation value for "Set to 0°" action
-            if is_rotation_field:
-                selected_files = self._get_current_selection()
-                if selected_files:
-                    file_item = selected_files[0]
-                    # Check cache first (for any pending modifications)
-                    metadata_cache = self._get_metadata_cache()
-                    if metadata_cache:
-                        cache_entry = metadata_cache.get_entry(file_item.full_path)
-                        if cache_entry and hasattr(cache_entry, 'data'):
-                            current_rotation_value = cache_entry.data.get("Rotation")
+            # Get current field value
+            selected_files = self._get_current_selection()
+            if selected_files:
+                file_item = selected_files[0]
+                # Check cache first (for any pending modifications)
+                metadata_cache = self._get_metadata_cache()
+                if metadata_cache:
+                    cache_entry = metadata_cache.get_entry(file_item.full_path)
+                    if cache_entry and hasattr(cache_entry, 'data'):
+                        current_field_value = cache_entry.data.get(normalized_key_path)
 
-                    # Fallback to file item metadata if not in cache
-                    if current_rotation_value is None and hasattr(file_item, 'metadata') and file_item.metadata:
-                        current_rotation_value = self._get_value_from_metadata_dict(file_item.metadata, key_path)
+                # Fallback to file item metadata if not in cache
+                if current_field_value is None and hasattr(file_item, 'metadata') and file_item.metadata:
+                    current_field_value = self._get_value_from_metadata_dict(file_item.metadata, key_path)
 
-                    # Default to "0" if no rotation found
-                    if current_rotation_value is None:
-                        current_rotation_value = "0"
+                # Default to empty string if no value found
+                if current_field_value is None:
+                    current_field_value = ""
 
         # Create menu
         menu = QMenu(self)
         self._current_menu = menu
 
-        # Edit action - enabled only for rotation fields with single selection
+        # Edit action - enabled for editable metadata fields with single selection
         edit_action = QAction("Edit Value", menu)
         edit_action.setIcon(self._get_menu_icon("edit"))
         edit_action.triggered.connect(lambda: self.edit_value(key_path, value))
-        edit_action.setEnabled(not has_multiple_selection and is_rotation_field)
+        edit_action.setEnabled(not has_multiple_selection and is_editable_field)
         menu.addAction(edit_action)
 
-        # Reset action - enabled only for rotation fields with modifications
+        # Reset action - enabled for editable fields with modifications
         reset_action = QAction("Reset Value", menu)
         reset_action.setIcon(self._get_menu_icon("rotate-ccw"))
         reset_action.triggered.connect(lambda: self.reset_value(key_path))
-        reset_action.setEnabled(not has_multiple_selection and is_rotation_field and has_modifications)
+        reset_action.setEnabled(not has_multiple_selection and is_editable_field and has_modifications)
         menu.addAction(reset_action)
 
-        # Set to 0° action - enabled only for rotation fields with non-zero values
-        set_zero_action = QAction("Set Rotation to 0°", menu)
-        set_zero_action.setIcon(self._get_menu_icon("rotate-ccw"))
-        set_zero_action.triggered.connect(lambda: self.set_rotation_to_zero(key_path))
+        # Special action for rotation fields - Set to 0°
+        is_rotation_field = "rotation" in key_path.lower()
+        if is_rotation_field:
+            set_zero_action = QAction("Set Rotation to 0°", menu)
+            set_zero_action.setIcon(self._get_menu_icon("rotate-ccw"))
+            set_zero_action.triggered.connect(lambda: self.set_rotation_to_zero(key_path))
 
-        # Enable only if: single selection + rotation field + current value is not "0"
-        is_zero_rotation = str(current_rotation_value) == "0" if current_rotation_value is not None else False
-        set_zero_enabled = not has_multiple_selection and is_rotation_field and not is_zero_rotation
-        set_zero_action.setEnabled(set_zero_enabled)
+            # Enable only if: single selection + rotation field + current value is not "0"
+            is_zero_rotation = str(current_field_value) == "0" if current_field_value is not None else False
+            set_zero_enabled = not has_multiple_selection and not is_zero_rotation
+            set_zero_action.setEnabled(set_zero_enabled)
 
-        # Update tooltip based on current state
-        if has_multiple_selection:
-            set_zero_action.setToolTip("Single file selection required")
-        elif not is_rotation_field:
-            set_zero_action.setToolTip("Only available for rotation fields")
-        elif is_zero_rotation:
-            set_zero_action.setToolTip("Rotation is already set to 0°")
-        else:
-            set_zero_action.setToolTip(f"Set rotation to 0° (current: {current_rotation_value}°)")
+            # Update tooltip based on current state
+            if has_multiple_selection:
+                set_zero_action.setToolTip("Single file selection required")
+            elif is_zero_rotation:
+                set_zero_action.setToolTip("Rotation is already set to 0°")
+            else:
+                set_zero_action.setToolTip(f"Set rotation to 0° (current: {current_field_value}°)")
 
-        menu.addAction(set_zero_action)
+            menu.addAction(set_zero_action)
 
         menu.addSeparator()
 
@@ -834,6 +833,58 @@ class MetadataTreeView(QTreeView):
             return get_menu_icon(icon_name)
         except ImportError:
             return None
+
+    def _is_editable_metadata_field(self, key_path: str) -> bool:
+        """Check if a metadata field can be edited directly."""
+        # Standard metadata fields that can be edited
+        editable_fields = {
+            # Rotation field
+            "rotation",
+            # Basic metadata fields
+            "title", "artist", "author", "creator", "copyright", "description", "keywords",
+            # Common EXIF/XMP/IPTC fields
+            "headline", "imagedescription", "by-line", "copyrightnotice", "caption-abstract",
+            "rights", "creator", "keywords"
+        }
+
+        # Check if key_path contains any editable field name
+        key_lower = key_path.lower()
+        return any(field in key_lower for field in editable_fields)
+
+    def _normalize_metadata_field_name(self, key_path: str) -> str:
+        """Normalize metadata field names to standard form."""
+        key_lower = key_path.lower()
+
+        # Rotation field
+        if "rotation" in key_lower:
+            return "Rotation"
+
+        # Title fields
+        if any(field in key_lower for field in ["title", "headline", "imagedescription"]):
+            return "Title"
+
+        # Artist/Creator fields
+        if any(field in key_lower for field in ["artist", "creator", "by-line"]):
+            return "Artist"
+
+        # Author fields (same as Artist for now)
+        if "author" in key_lower:
+            return "Author"
+
+        # Copyright fields
+        if any(field in key_lower for field in ["copyright", "rights", "copyrightnotice"]):
+            return "Copyright"
+
+        # Description fields
+        if any(field in key_lower for field in ["description", "caption-abstract"]):
+            return "Description"
+
+        # Keywords
+        if "keywords" in key_lower:
+            return "Keywords"
+
+        # Return as-is if no match (fallback)
+        return key_path
 
     def get_key_path(self, index: QModelIndex) -> str:
         """
@@ -873,13 +924,23 @@ class MetadataTreeView(QTreeView):
 
     def edit_value(self, key_path: str, current_value: Any) -> None:
         """Open a dialog to edit the value of a metadata field."""
-        # Normalize rotation key_path to be always "Rotation" (top-level)
-        normalized_key_path = "Rotation" if "rotation" in key_path.lower() else key_path
+        # Get selected files and metadata cache
+        selected_files = self._get_current_selection()
+        metadata_cache = self._get_metadata_cache()
 
+        if not selected_files:
+            logger.warning("[MetadataTree] No files selected for editing")
+            return
 
-        accepted, new_value = MetadataEditDialog.get_value(
+        # Normalize key path for standard metadata fields
+        normalized_key_path = self._normalize_metadata_field_name(key_path)
+
+        # Use the static method from MetadataEditDialog
+        accepted, new_value, files_to_modify = MetadataEditDialog.edit_metadata_field(
             parent=self,
-            key_path=normalized_key_path,
+            selected_files=selected_files,
+            metadata_cache=metadata_cache,
+            field_name=normalized_key_path,
             current_value=str(current_value)
         )
 
@@ -887,8 +948,17 @@ class MetadataTreeView(QTreeView):
             # Mark as modified
             self.modified_items.add(normalized_key_path)
 
-            # Update metadata in cache
-            self._update_metadata_in_cache(normalized_key_path, new_value)
+            # Update metadata in cache for all files to modify
+            for file_item in files_to_modify:
+                if metadata_cache:
+                    cache_entry = metadata_cache.get_entry(file_item.full_path)
+                    if cache_entry and hasattr(cache_entry, 'data'):
+                        cache_entry.data[normalized_key_path] = new_value
+                        # Mark the cache entry as modified
+                        cache_entry.modified = True
+
+                # Update the file item's metadata status
+                file_item.metadata_status = "modified"
 
             # Update the file icon status immediately
             self._update_file_icon_status()
@@ -967,8 +1037,8 @@ class MetadataTreeView(QTreeView):
         if hasattr(file_item, 'metadata') and file_item.metadata:
             current_value = self._get_value_from_metadata_dict(file_item.metadata, key_path)
 
-        # Normalize rotation key_path to be always "Rotation" (top-level)
-        normalized_key_path = "Rotation" if "rotation" in key_path.lower() else key_path
+        # Normalize key path for rotation field
+        normalized_key_path = self._normalize_metadata_field_name(key_path)
 
         new_value = "0"
 
@@ -980,8 +1050,12 @@ class MetadataTreeView(QTreeView):
         # Mark as modified
         self.modified_items.add(normalized_key_path)
 
-        # Update metadata in cache
+        # Update metadata in cache and file item status
         self._update_metadata_in_cache(normalized_key_path, new_value)
+
+        # Update the file item's metadata status
+        for file_item in selected_files:
+            file_item.metadata_status = "modified"
 
         # Update the file icon status immediately
         self._update_file_icon_status()
@@ -1000,8 +1074,8 @@ class MetadataTreeView(QTreeView):
 
     def reset_value(self, key_path: str) -> None:
         """Reset the value to its original state."""
-        # Normalize rotation key_path to be always "Rotation" (top-level)
-        normalized_key_path = "Rotation" if "rotation" in key_path.lower() else key_path
+        # Normalize key path for standard metadata fields
+        normalized_key_path = self._normalize_metadata_field_name(key_path)
 
         # Get the original value before resetting
         original_value = self._get_original_value_from_cache(normalized_key_path)
@@ -1123,16 +1197,26 @@ class MetadataTreeView(QTreeView):
             # Check if this specific file has modified items
             file_path = file_item.full_path
 
-            # Check both current modified items and stored ones
+            # Check if this file has modifications
             has_modifications = False
+
+            # Check current modified items (for currently selected file)
             if paths_equal(file_path, self._current_file_path) and self.modified_items:
                 has_modifications = True
+
+            # Check stored modifications for this file
             elif self._path_in_dict(file_path, self.modified_items_per_file):
                 stored_modifications = self._get_from_path_dict(file_path, self.modified_items_per_file)
                 has_modifications = bool(stored_modifications)
 
+            # Also check metadata cache for modified flag
+            metadata_cache = self._get_metadata_cache()
+            if metadata_cache:
+                cache_entry = metadata_cache.get_entry(file_path)
+                if cache_entry and hasattr(cache_entry, 'modified') and cache_entry.modified:
+                    has_modifications = True
+
             # Update icon based on whether we have modified items
-            getattr(file_item, 'metadata_status', None)
             if has_modifications:
                 # Set modified icon
                 file_item.metadata_status = "modified"

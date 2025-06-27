@@ -627,7 +627,11 @@ class MainWindow(QMainWindow):
             # Force save current file modifications to per-file storage first
             if hasattr(self.metadata_tree_view, '_current_file_path') and self.metadata_tree_view._current_file_path:
                 if self.metadata_tree_view.modified_items:
-                    self.metadata_tree_view.modified_items_per_file[self.metadata_tree_view._current_file_path] = self.metadata_tree_view.modified_items.copy()
+                    self.metadata_tree_view._set_in_path_dict(
+                        self.metadata_tree_view._current_file_path,
+                        self.metadata_tree_view.modified_items.copy(),
+                        self.metadata_tree_view.modified_items_per_file
+                    )
 
             # Get all modified metadata for all files
             all_modifications = self.metadata_tree_view.get_all_modified_metadata_for_files()

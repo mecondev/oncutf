@@ -16,7 +16,7 @@ Contains:
 import logging
 from typing import Optional, Set, Tuple
 
-from core.qt_imports import Qt, QKeyEvent, QWidget, QLineEdit, pyqtSignal, QTextEdit
+from core.qt_imports import Qt, QKeyEvent, QWidget, QLineEdit, QComboBox, pyqtSignal, QTextEdit
 
 from utils.metadata_field_validators import MetadataFieldValidator
 from widgets.base_validated_input import BaseValidatedInput
@@ -267,6 +267,89 @@ class MetadataValidatedTextEdit(QTextEdit, BaseValidatedInput):
         self.update_validation_state(self.text())
 
 
+class MetadataRotationComboBox(QComboBox):
+    """
+    Specialized combo box for rotation values.
+
+    Features:
+    - Predefined rotation values (0°, 90°, 180°, 270°)
+    - Automatic validation (always valid since values are predefined)
+    - Compatible interface with other metadata input widgets
+    """
+
+    # Signal emitted when validation state changes (always True for combo box)
+    validation_changed = pyqtSignal(bool)
+
+    def __init__(self, parent: Optional[QWidget] = None):
+        super().__init__(parent)
+
+        # Setup rotation values
+        self.rotation_values = ["0", "90", "180", "270"]
+        self.rotation_labels = ["0° (No rotation)", "90° (Clockwise)", "180° (Upside down)", "270° (Counter-clockwise)"]
+
+        # Populate combo box
+        for i, (value, label) in enumerate(zip(self.rotation_values, self.rotation_labels)):
+            self.addItem(label, value)
+
+        # Set default to 0°
+        self.setCurrentIndex(0)
+
+        # Connect signals
+        self.currentTextChanged.connect(self._on_selection_changed)
+
+        # Set fixed height to match other input widgets
+        self.setFixedHeight(20)
+
+    def _on_selection_changed(self, text: str) -> None:
+        """Handle selection changes - always emit valid state."""
+        self.validation_changed.emit(True)
+
+    def text(self) -> str:
+        """Get current rotation value as text."""
+        return self.currentData() or "0"
+
+    def setText(self, text: str) -> None:
+        """Set rotation value from text."""
+        # Clean the input - remove degree symbol and extra spaces
+        clean_text = text.strip().replace("°", "").replace(" ", "")
+
+        # Try to find matching value
+        try:
+            # Find the index of the matching rotation value
+            if clean_text in self.rotation_values:
+                index = self.rotation_values.index(clean_text)
+                self.setCurrentIndex(index)
+            else:
+                # Try to parse as number and find closest match
+                rotation_num = float(clean_text) % 360  # Normalize to 0-359
+
+                # Find closest standard rotation
+                closest_value = min(self.rotation_values,
+                                  key=lambda x: abs(float(x) - rotation_num))
+                index = self.rotation_values.index(closest_value)
+                self.setCurrentIndex(index)
+
+        except (ValueError, TypeError):
+            # If parsing fails, default to 0°
+            self.setCurrentIndex(0)
+
+    def is_valid(self) -> bool:
+        """Rotation combo box is always valid since values are predefined."""
+        return True
+
+    def get_validation_error_message(self) -> str:
+        """No error messages for combo box since it's always valid."""
+        return ""
+
+    def setPlaceholderText(self, text: str) -> None:
+        """Placeholder text not applicable for combo box."""
+        pass  # No-op for combo box
+
+    def selectAll(self) -> None:
+        """Select all not applicable for combo box."""
+        pass  # No-op for combo box
+
+
 def create_metadata_input_widget(field_name: str, is_multiline: bool = False, parent: Optional[QWidget] = None):
     """
     Factory function to create appropriate metadata input widget.
@@ -277,14 +360,20 @@ def create_metadata_input_widget(field_name: str, is_multiline: bool = False, pa
         parent: Parent widget
 
     Returns:
-        MetadataValidatedLineEdit or MetadataValidatedTextEdit
+        MetadataValidatedLineEdit, MetadataValidatedTextEdit, or MetadataRotationComboBox
     """
+    # Special case for Rotation field - use combo box
+    if field_name == "Rotation":
+        return MetadataRotationComboBox(parent)
+
+    # Multi-line text fields
     if is_multiline:
         widget = MetadataValidatedTextEdit(field_name, parent)
         # Set reasonable size for text edit
         widget.setMaximumHeight(100)
         widget.setMinimumHeight(80)
     else:
+        # Single-line text fields
         widget = MetadataValidatedLineEdit(field_name, parent)
         widget.setFixedHeight(20)
 
