@@ -171,8 +171,8 @@ class MetadataEditDialog(QDialog):
 
         # OK button
         self.ok_button = QPushButton("OK")
-        self.ok_button.setDefault(False)  # Prevent default button behavior
-        self.ok_button.setAutoDefault(False)  # Prevent auto-default behavior
+        self.ok_button.setDefault(True)  # Make it default for Enter key
+        self.ok_button.setAutoDefault(True)  # Allow auto-default behavior
         self.ok_button.clicked.connect(self._validate_and_accept)
 
         button_layout.addStretch()
@@ -273,6 +273,9 @@ class MetadataEditDialog(QDialog):
         if placeholder:
             self.input_field.setPlaceholderText(placeholder)
 
+        # Install event filter for keyboard shortcuts
+        self.input_field.installEventFilter(self)
+
     def mousePressEvent(self, event):
         """Handle mouse press for dragging."""
         if event.button() == Qt.LeftButton: # type: ignore
@@ -284,6 +287,37 @@ class MetadataEditDialog(QDialog):
         if event.buttons() == Qt.LeftButton and self._drag_position: # type: ignore
             self.move(event.globalPos() - self._drag_position)
             event.accept()
+
+    def eventFilter(self, obj, event):
+        """Handle keyboard events for input field."""
+        if obj == self.input_field and event.type() == event.KeyPress:
+            from PyQt5.QtCore import Qt
+
+            # Handle Enter/Return key
+            if event.key() in (Qt.Key_Return, Qt.Key_Enter):
+                modifiers = event.modifiers()
+
+                # For multiline fields (QTextEdit)
+                if self.is_multiline:
+                    if modifiers & Qt.ShiftModifier:
+                        # Shift+Enter: Insert new line (default behavior)
+                        return False  # Let QTextEdit handle it
+                    else:
+                        # Enter: Accept dialog
+                        self._validate_and_accept()
+                        return True  # Event handled
+                else:
+                    # For single line fields (QLineEdit): Enter always accepts
+                    self._validate_and_accept()
+                    return True  # Event handled
+
+            # Handle Escape key
+            elif event.key() == Qt.Key_Escape:
+                self.reject()
+                return True  # Event handled
+
+        # Let parent handle other events
+        return super().eventFilter(obj, event)
 
     def _get_field_placeholder(self) -> str:
         """Get placeholder text for the field."""
