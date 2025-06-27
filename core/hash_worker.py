@@ -25,7 +25,6 @@ Usage:
 import os
 from pathlib import Path
 from typing import List
-import time
 
 from PyQt5.QtCore import QMutexLocker
 

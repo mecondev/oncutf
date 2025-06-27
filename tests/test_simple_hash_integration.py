@@ -7,6 +7,7 @@ Tests the actual fix for cumulative progress tracking.
 
 import os
 import tempfile
+
 from core.hash_manager import HashManager
 
 

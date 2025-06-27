@@ -12,8 +12,9 @@ Comprehensive pytest tests for the metadata validation system including:
 - Character blocking and paste cleaning
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
 
 from utils.metadata_field_validators import MetadataFieldValidator
 
@@ -32,7 +33,7 @@ class TestMetadataFieldValidator:
 
         for title in valid_titles:
             is_valid, error = MetadataFieldValidator.validate_title(title)
-            assert is_valid == True, f"Title '{title}' should be valid but got error: {error}"
+            assert is_valid is True, f"Title '{title}' should be valid but got error: {error}"
             assert error == "", f"Valid title should have no error message: {error}"
 
     def test_title_validation_invalid_cases(self):
@@ -52,7 +53,7 @@ class TestMetadataFieldValidator:
 
         for title, expected_error_keyword in invalid_cases:
             is_valid, error = MetadataFieldValidator.validate_title(title)
-            assert is_valid == False, f"Title '{title}' should be invalid"
+            assert is_valid is False, f"Title '{title}' should be invalid"
             assert expected_error_keyword.lower() in error.lower(), f"Error should contain '{expected_error_keyword}': {error}"
 
     def test_artist_validation_valid_cases(self):
@@ -67,7 +68,7 @@ class TestMetadataFieldValidator:
 
         for artist in valid_artists:
             is_valid, error = MetadataFieldValidator.validate_artist(artist)
-            assert is_valid == True, f"Artist '{artist}' should be valid but got error: {error}"
+            assert is_valid is True, f"Artist '{artist}' should be valid but got error: {error}"
             assert error == "", f"Valid artist should have no error message: {error}"
 
     def test_artist_validation_invalid_cases(self):
@@ -78,7 +79,7 @@ class TestMetadataFieldValidator:
 
         for artist, expected_error_keyword in invalid_cases:
             is_valid, error = MetadataFieldValidator.validate_artist(artist)
-            assert is_valid == False, f"Artist '{artist}' should be invalid"
+            assert is_valid is False, f"Artist '{artist}' should be invalid"
             assert expected_error_keyword.lower() in error.lower(), f"Error should contain '{expected_error_keyword}': {error}"
 
     def test_keywords_validation_valid_cases(self):
@@ -94,7 +95,7 @@ class TestMetadataFieldValidator:
 
         for keywords in valid_keywords:
             is_valid, error = MetadataFieldValidator.validate_keywords(keywords)
-            assert is_valid == True, f"Keywords '{keywords}' should be valid but got error: {error}"
+            assert is_valid is True, f"Keywords '{keywords}' should be valid but got error: {error}"
             assert error == "", f"Valid keywords should have no error message: {error}"
 
     def test_keywords_validation_invalid_cases(self):
@@ -106,7 +107,7 @@ class TestMetadataFieldValidator:
 
         for keywords, expected_error_keyword in invalid_cases:
             is_valid, error = MetadataFieldValidator.validate_keywords(keywords)
-            assert is_valid == False, f"Keywords '{keywords}' should be invalid"
+            assert is_valid is False, f"Keywords '{keywords}' should be invalid"
             assert expected_error_keyword.lower() in error.lower(), f"Error should contain '{expected_error_keyword}': {error}"
 
     def test_description_validation_valid_cases(self):
@@ -121,7 +122,7 @@ class TestMetadataFieldValidator:
 
         for description in valid_descriptions:
             is_valid, error = MetadataFieldValidator.validate_description(description)
-            assert is_valid == True, f"Description should be valid but got error: {error}"
+            assert is_valid is True, f"Description should be valid but got error: {error}"
             assert error == "", f"Valid description should have no error message: {error}"
 
     def test_description_validation_invalid_cases(self):
@@ -132,7 +133,7 @@ class TestMetadataFieldValidator:
 
         for description, expected_error_keyword in invalid_cases:
             is_valid, error = MetadataFieldValidator.validate_description(description)
-            assert is_valid == False, f"Description should be invalid"
+            assert is_valid is False, "Description should be invalid"
             assert expected_error_keyword.lower() in error.lower(), f"Error should contain '{expected_error_keyword}': {error}"
 
     def test_copyright_validation(self):
@@ -141,12 +142,12 @@ class TestMetadataFieldValidator:
         valid_cases = ["© 2025 Test", "", "Copyright notice"]
         for copyright_text in valid_cases:
             is_valid, error = MetadataFieldValidator.validate_copyright(copyright_text)
-            assert is_valid == True, f"Copyright '{copyright_text}' should be valid: {error}"
+            assert is_valid is True, f"Copyright '{copyright_text}' should be valid: {error}"
 
         # Invalid cases
         long_copyright = "A" * 201
         is_valid, error = MetadataFieldValidator.validate_copyright(long_copyright)
-        assert is_valid == False, "Too long copyright should be invalid"
+        assert is_valid is False, "Too long copyright should be invalid"
         assert "too long" in error.lower()
 
     def test_field_validator_mapping(self):
@@ -166,9 +167,9 @@ class TestMetadataFieldValidator:
 
             if should_be_valid:
                 if field_name != "UnknownField":
-                    assert is_valid == True, f"Field '{field_name}' with value '{value}' should be valid: {error}"
+                    assert is_valid is True, f"Field '{field_name}' with value '{value}' should be valid: {error}"
             else:
-                assert is_valid == False, f"Field '{field_name}' should be invalid"
+                assert is_valid is False, f"Field '{field_name}' should be invalid"
                 if field_name == "UnknownField":
                     assert "validator" in error.lower(), f"Unknown field error should mention validator: {error}"
 
@@ -231,13 +232,14 @@ class TestMetadataFieldValidator:
 
 # PyQt5 widget tests (only run if PyQt5 is available)
 try:
-    from PyQt5.QtWidgets import QApplication
     from PyQt5.QtCore import Qt
     from PyQt5.QtGui import QKeyEvent
+    from PyQt5.QtWidgets import QApplication
+
     from widgets.metadata_validated_input import (
         MetadataValidatedLineEdit,
         MetadataValidatedTextEdit,
-        create_metadata_input_widget
+        create_metadata_input_widget,
     )
 
     PYQT5_AVAILABLE = True
@@ -310,12 +312,12 @@ class TestMetadataValidatedWidgets:
         # Test valid input
         title_widget.setText("Valid Title")
         title_widget.update_validation_state("Valid Title")
-        assert title_widget.is_valid() == True
+        assert title_widget.is_valid() is True
 
         # Test invalid input
         title_widget.setText("Invalid<Title>")
         title_widget.update_validation_state("Invalid<Title>")
-        assert title_widget.is_valid() == False
+        assert title_widget.is_valid() is False
 
         error_msg = title_widget.get_validation_error_message()
         assert error_msg != ""
@@ -336,18 +338,18 @@ class TestMetadataValidatedWidgets:
     def test_validation_state_tracking(self, title_widget):
         """Test validation state tracking and signals."""
         # Initially should be valid and have no content
-        assert title_widget.is_valid() == True
-        assert title_widget.has_had_content() == False
+        assert title_widget.is_valid() is True
+        assert title_widget.has_had_content() is False
 
         # After setting text, should track content
         title_widget.setText("Test")
         title_widget.update_validation_state("Test")
-        assert title_widget.has_had_content() == True
+        assert title_widget.has_had_content() is True
 
         # Reset should clear state
         title_widget.reset_validation_state()
-        assert title_widget.is_valid() == True
-        assert title_widget.has_had_content() == False
+        assert title_widget.is_valid() is True
+        assert title_widget.has_had_content() is False
 
     def test_field_name_change(self, qapp):
         """Test changing field name updates validation rules."""
@@ -391,7 +393,7 @@ class TestMetadataValidatedWidgets:
 
         # Should block the character and show tooltip
         should_process = title_widget.handle_key_press_validation(key_event)
-        assert should_process == False
+        assert should_process is False
 
         # Should have attempted to call show_error_tooltip
         # Note: This might not work perfectly due to widget type issues, but tests the logic
@@ -431,7 +433,7 @@ class TestValidationIntegration:
 
         for field_name, test_value, expected_keyword in error_test_cases:
             is_valid, error = MetadataFieldValidator.validate_field(field_name, test_value)
-            assert is_valid == False, f"Test case should be invalid: {field_name} = '{test_value}'"
+            assert is_valid is False, f"Test case should be invalid: {field_name} = '{test_value}'"
             assert expected_keyword.lower() in error.lower(), f"Error message should contain '{expected_keyword}': {error}"
             assert len(error) > 0, "Error message should not be empty"
             assert error[0].isupper() or error[0].isdigit(), "Error message should start with capital letter or digit"

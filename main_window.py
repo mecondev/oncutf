@@ -16,11 +16,11 @@ Many of the linter warnings are false positives and can be safely ignored.
 import os
 from typing import Optional
 
-# Core application modules
-from core.application_context import ApplicationContext
-
 # Import all config constants from centralized module
 from config import STATUS_COLORS
+
+# Core application modules
+from core.application_context import ApplicationContext
 from core.config_imports import *
 from core.dialog_manager import DialogManager
 from core.drag_cleanup_manager import DragCleanupManager
@@ -809,7 +809,7 @@ class MainWindow(QMainWindow):
     def _set_smart_default_geometry(self) -> None:
         """Set smart default window geometry based on screen size and aspect ratio."""
         try:
-            from core.qt_imports import QDesktopWidget, QApplication
+            from core.qt_imports import QDesktopWidget
 
             # Get the primary screen geometry instead of total desktop
             # This fixes dual monitor issues where total desktop is too wide

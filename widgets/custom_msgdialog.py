@@ -21,7 +21,6 @@ behavior, and styling.
 from typing import Optional
 
 from core.qt_imports import (
-    Qt,
     QApplication,
     QCheckBox,
     QDialog,
@@ -29,6 +28,7 @@ from core.qt_imports import (
     QLabel,
     QProgressBar,
     QPushButton,
+    Qt,
     QVBoxLayout,
     QWidget,
 )

@@ -8,7 +8,6 @@ Date: 2025-06-04
 """
 
 from core.qt_imports import QCheckBox, QHBoxLayout, QVBoxLayout
-
 from modules.base_module import BaseRenameModule  # NEW
 from utils.logger_factory import get_cached_logger
 

@@ -8,25 +8,16 @@ Generic dialog for editing metadata fields.
 Based on bulk_rotation_dialog.py but made flexible for different field types.
 """
 
-from typing import List, Optional, Dict, Any
 
 from core.qt_imports import (
-    Qt,
-    QFont,
     QCheckBox,
     QDialog,
-    QFrame,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QPushButton,
-    QScrollArea,
-    QTextEdit,
+    Qt,
     QVBoxLayout,
-    QWidget,
 )
-
-
 from utils.logger_factory import get_cached_logger
 from utils.metadata_field_validators import MetadataFieldValidator
 from widgets.metadata_validated_input import create_metadata_input_widget

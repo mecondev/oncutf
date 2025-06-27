@@ -36,17 +36,16 @@ Usage Examples:
 """
 
 import os
-from typing import Optional
 import time
+from typing import Optional
 
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import Qt, QTimer
 
 from config import (
     QLABEL_BORDER_GRAY,
     QLABEL_PRIMARY_TEXT,
     QLABEL_SECONDARY_TEXT,
     QLABEL_TERTIARY_TEXT,
-    QLABEL_WHITE_TEXT,
 )
 from core.qt_imports import (
     QHBoxLayout,
@@ -57,7 +56,6 @@ from core.qt_imports import (
     QVBoxLayout,
     QWidget,
 )
-from PyQt5.QtCore import Qt
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -693,14 +691,12 @@ class ProgressWidget(QWidget):
         logger = logging.getLogger()
 
         # Only log significant changes to avoid spam
-        should_log = False
         log_message = ""
 
         # Check for backwards progress (potential problem) - with overflow protection
         if processed_size < old_processed:
             # Check if this might be an overflow (large negative number)
             if processed_size < 0 and old_processed > 0:
-                should_log = True
                 log_message = f"[ProgressWidget] INTEGER OVERFLOW detected! processed_size={processed_size}, old_processed={old_processed}"
                 logger.error(log_message)
                 # Reset to prevent further issues
@@ -708,19 +704,16 @@ class ProgressWidget(QWidget):
                 return
             else:
                 # Regular backwards movement
-                should_log = True
                 log_message = f"[ProgressWidget] WARNING: Processed size went backwards! {processed_size} < {old_processed} (diff: {old_processed - processed_size})"
                 logger.warning(log_message)
 
         # Check for total size changes
         elif total_size > 0 and total_size != old_total:
-            should_log = True
             log_message = f"[ProgressWidget] Total size updated: {old_total:,} -> {total_size:,}"
             logger.debug(log_message)
 
         # Check for large progress jumps (>50MB)
         elif processed_size > old_processed + 50_000_000:
-            should_log = True
             log_message = f"[ProgressWidget] Large progress jump: {old_processed:,} -> {processed_size:,} (+{processed_size - old_processed:,} bytes)"
             logger.debug(log_message)
 

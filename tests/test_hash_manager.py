@@ -8,9 +8,7 @@ Date: 2025-05-22
 Test module for hash calculation functionality.
 """
 
-import hashlib
 import tempfile
-import zlib
 from pathlib import Path
 from unittest.mock import Mock, patch
 

@@ -127,22 +127,24 @@ class EventHandlerManager:
         menu = QMenu(self.parent_window)
 
         # --- Metadata actions ---
-        action_load_sel = menu.addAction(get_menu_icon("file"), "Load metadata for selected file(s)")
+        action_load_sel = menu.addAction(get_menu_icon("file"), "Load metadata for selected file(s) (Ctrl+M)")
         action_load_all = menu.addAction(get_menu_icon("folder"), "Load metadata for all files")
-        action_load_ext_sel = menu.addAction(get_menu_icon("file-plus"), "Load extended metadata for selected file(s)")
+        action_load_ext_sel = menu.addAction(get_menu_icon("file-plus"), "Load extended metadata for selected file(s) (Ctrl+E)")
         action_load_ext_all = menu.addAction(get_menu_icon("folder-plus"), "Load extended metadata for all files")
 
         menu.addSeparator()
 
         # --- Selection actions ---
-        action_invert = menu.addAction(get_menu_icon("refresh-cw"), "Invert selection (Ctrl+I)")
         action_select_all = menu.addAction(get_menu_icon("check-square"), "Select all (Ctrl+A)")
-        action_deselect_all = menu.addAction(get_menu_icon("square"), "Deselect all")
+        action_invert = menu.addAction(get_menu_icon("refresh-cw"), "Invert selection (Ctrl+I)")
+        action_deselect_all = menu.addAction(get_menu_icon("square"), "Deselect all (Ctrl+Shift+A)")
 
         menu.addSeparator()
 
         # --- Other actions ---
         action_reload = menu.addAction(get_menu_icon("refresh-cw"), "Reload folder (Ctrl+R)")
+        action_browse = menu.addAction(get_menu_icon("folder"), "Browse folder (Ctrl+O)")
+        action_clear_table = menu.addAction(get_menu_icon("x"), "Clear file table (Ctrl+Escape)")
 
         menu.addSeparator()
 
@@ -178,8 +180,8 @@ class EventHandlerManager:
         menu.addSeparator()
 
         # --- Save actions ---
-        action_save_sel = menu.addAction(get_menu_icon("save"), "Save metadata for selected file(s)")
-        action_save_all = menu.addAction(get_menu_icon("save"), "Save ALL modified metadata")
+        action_save_sel = menu.addAction(get_menu_icon("save"), "Save metadata for selected file(s) (Ctrl+S)")
+        action_save_all = menu.addAction(get_menu_icon("save"), "Save ALL modified metadata (Ctrl+Shift+S)")
 
         # Check for modifications using the new methods
         has_selected_modifications = False
@@ -279,7 +281,7 @@ class EventHandlerManager:
             action_export_sel.setToolTip("Select files first to export their metadata")
 
         if all_files_have_metadata:
-            action_export_all.setToolTip(f"Export metadata for all files in folder")
+            action_export_all.setToolTip("Export metadata for all files in folder")
         else:
             action_export_all.setToolTip("No files have metadata to export")
 
@@ -300,6 +302,8 @@ class EventHandlerManager:
         action_load_ext_all.setEnabled(total_files > 0)
         action_select_all.setEnabled(total_files > 0)
         action_reload.setEnabled(total_files > 0)
+        action_browse.setEnabled(True)
+        action_clear_table.setEnabled(total_files > 0)
 
         # Hash actions enable/disable logic
         action_find_duplicates_sel.setEnabled(len(selected_files) >= 2)  # Need at least 2 files to find duplicates
@@ -340,6 +344,12 @@ class EventHandlerManager:
 
         elif action == action_reload:
             self.parent_window.force_reload()
+
+        elif action == action_browse:
+            self.parent_window.handle_browse()
+
+        elif action == action_clear_table:
+            self.parent_window.clear_file_table_shortcut()
 
         elif action == action_deselect_all:
             self.parent_window.clear_all_selection()
@@ -1252,7 +1262,14 @@ class EventHandlerManager:
 
     def _handle_export_metadata(self, file_items: list, scope: str) -> None:
         """Handle metadata export dialog and process."""
-        from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton, QFileDialog, QMessageBox
+        from PyQt5.QtWidgets import (
+            QComboBox,
+            QDialog,
+            QHBoxLayout,
+            QLabel,
+            QPushButton,
+            QVBoxLayout,
+        )
 
         # Create export dialog
         dialog = QDialog(self.parent_window)
@@ -1289,7 +1306,7 @@ class EventHandlerManager:
         # Show dialog
         dialog.exec_()
 
-    def _execute_export(self, dialog: 'QDialog', format_combo: 'QComboBox', file_items: list, scope: str) -> None:
+    def _execute_export(self, dialog, format_combo, file_items: list, scope: str) -> None:
         """Execute the actual export process."""
         from PyQt5.QtWidgets import QFileDialog, QMessageBox
 

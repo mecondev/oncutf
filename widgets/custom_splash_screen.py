@@ -12,12 +12,13 @@ Features:
 - Custom styling and positioning
 """
 
+import logging
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QFontMetrics, QPainter, QPen, QPixmap
 from PyQt5.QtWidgets import QApplication, QSplashScreen
 
 from config import APP_VERSION
-import logging
 
 logger = logging.getLogger(__name__)
 

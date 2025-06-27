@@ -8,8 +8,8 @@ Centralized metadata management operations extracted from MainWindow.
 Handles metadata loading, progress tracking, thread management, and UI coordination.
 """
 
-from typing import List, Optional
 import os
+from typing import List, Optional
 
 from config import STATUS_COLORS
 from core.qt_imports import QApplication, Qt

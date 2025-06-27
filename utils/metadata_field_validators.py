@@ -8,8 +8,7 @@ Validation system for metadata field editing.
 Provides validation rules and error messages for different metadata field types.
 """
 
-from typing import Tuple, List
-import re
+from typing import List, Tuple
 
 
 class MetadataFieldValidator:

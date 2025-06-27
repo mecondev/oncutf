@@ -34,11 +34,12 @@ Usage Examples:
     manager.update_progress(processed_bytes=250000000)
 """
 
-from typing import Optional, Union
+from typing import Optional
+
 from PyQt5.QtWidgets import QWidget
 
-from widgets.progress_widget import ProgressWidget, create_size_based_progress_widget
 from utils.logger_factory import get_cached_logger
+from widgets.progress_widget import ProgressWidget, create_size_based_progress_widget
 
 logger = get_cached_logger(__name__)
 

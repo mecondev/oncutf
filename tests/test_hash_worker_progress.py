@@ -7,8 +7,9 @@ Ensures that progress never goes backwards and accumulates correctly.
 
 import os
 import tempfile
-import pytest
 import time
+
+import pytest
 from PyQt5.QtCore import QCoreApplication
 
 from core.hash_worker import HashWorker

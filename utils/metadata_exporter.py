@@ -10,15 +10,13 @@ Exports metadata with proper grouping, hash information, and application brandin
 
 import json
 import os
-from datetime import datetime
-from pathlib import Path
-from typing import Dict, List, Any, Optional, Set
 from collections import defaultdict
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from utils.logger_factory import get_cached_logger
-from utils.build_metadata_tree_model import classify_key
-from utils.path_utils import normalize_path
 from config import APP_NAME, APP_VERSION, EXPORT_DATE_FORMAT
+from utils.build_metadata_tree_model import classify_key
+from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 

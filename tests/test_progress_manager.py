@@ -6,9 +6,12 @@ Tests for the new unified ProgressManager.
 
 import pytest
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import QCoreApplication
 
-from widgets.progress_manager import ProgressManager, create_hash_progress_manager, create_metadata_progress_manager
+from widgets.progress_manager import (
+    ProgressManager,
+    create_hash_progress_manager,
+    create_metadata_progress_manager,
+)
 
 
 class TestProgressManager:

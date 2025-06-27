@@ -13,17 +13,14 @@ Contains:
 """
 
 import logging
-from typing import Optional, Tuple, Set
-
-from core.qt_imports import QKeyEvent, QWidget
+from typing import Set, Tuple
 
 from config import (
     QLABEL_DARK_BG,
     QLABEL_DARK_BORDER,
-    QLABEL_ERROR_BG,
-    QLABEL_ERROR_TEXT,
     QLABEL_INFO_TEXT,
 )
+from core.qt_imports import QKeyEvent
 from utils.tooltip_helper import show_error_tooltip
 
 logger = logging.getLogger(__name__)
