@@ -111,13 +111,17 @@ QDialog QLineEdit {
     color: #f0ebd8;
     border: 1px solid #3a3b40;
     border-radius: 4px;
-    padding: 6px;
+    padding: 6px 8px;
+    min-height: 30px;
+    max-height: 34px;
+    font-size: 9pt;
     selection-background-color: #748cab;
     selection-color: #0d1321;
 }
 
 QDialog QLineEdit:focus {
     border-color: #748cab;
+    background-color: #1a1a1a;
 }
 
 QDialog QTextEdit {
@@ -125,13 +129,15 @@ QDialog QTextEdit {
     color: #f0ebd8;
     border: 1px solid #3a3b40;
     border-radius: 4px;
-    padding: 6px;
+    padding: 6px 8px;
+    font-size: 9pt;
     selection-background-color: #748cab;
     selection-color: #0d1321;
 }
 
 QDialog QTextEdit:focus {
     border-color: #748cab;
+    background-color: #1a1a1a;
 }
 
 /* Dialog QLabel styling - ensure consistent appearance */
@@ -149,4 +155,38 @@ QDialog QWidget QLabel, QDialog QFrame QLabel, QDialog QScrollArea QLabel {
     background-color: transparent !important;
     border: none !important;
     border-radius: 0px !important;
+}
+
+/* MetadataEditDialog specific styling - compact layout */
+MetadataEditDialog {
+    background-color: #1a1a1a;
+}
+
+MetadataEditDialog QLabel {
+    color: #f0ebd8;
+    font-size: 9pt;
+    margin: 1px 0px 2px 0px;
+    padding: 0px;
+}
+
+MetadataEditDialog QLineEdit {
+    background-color: #181818;
+    color: #f0ebd8;
+    border: 1px solid #3a3b40;
+    border-radius: 4px;
+    padding: 6px 8px;
+    min-height: 32px;
+    max-height: 36px;
+    font-size: 9pt;
+    margin: 4px 0px;
+}
+
+MetadataEditDialog QTextEdit {
+    background-color: #181818;
+    color: #f0ebd8;
+    border: 1px solid #3a3b40;
+    border-radius: 4px;
+    padding: 6px;
+    font-size: 9pt;
+    margin: 2px 0px;
 }

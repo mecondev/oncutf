@@ -9,6 +9,7 @@ Based on bulk_rotation_dialog.py but made flexible for different field types.
 """
 
 from typing import List, Optional, Dict, Any
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
@@ -63,13 +64,13 @@ class MetadataEditDialog(QDialog):
         # Adjust size based on field type and number of files
         if len(self.selected_files) > 1:
             # Multi-file mode - larger dialog
-            self.setFixedSize(600, 500)
+            self.setFixedSize(550, 450)
         else:
             # Single file mode - smaller dialog
             if self.is_multiline:
-                self.setFixedSize(450, 300)
+                self.setFixedSize(420, 280)
             else:
-                self.setFixedSize(400, 200)
+                self.setFixedSize(380, 180)
 
         self._setup_styles()
         self._setup_ui()
@@ -88,8 +89,8 @@ class MetadataEditDialog(QDialog):
     def _setup_ui(self):
         """Set up the main UI layout."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(16)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(8)
 
         # Title
         self.title_label = QLabel(f"Edit {self.field_name}")
@@ -108,6 +109,7 @@ class MetadataEditDialog(QDialog):
         # Content area (either input field or scroll area for file groups)
         self.content_widget = QWidget()
         self.content_layout = QVBoxLayout(self.content_widget)
+        self.content_layout.setSpacing(4)  # Tighter spacing for content
         layout.addWidget(self.content_widget)
 
         # Info label
@@ -124,7 +126,7 @@ class MetadataEditDialog(QDialog):
     def _setup_buttons(self, parent_layout):
         """Set up OK/Cancel buttons."""
         button_layout = QHBoxLayout()
-        button_layout.setSpacing(12)
+        button_layout.setSpacing(8)
 
         # Cancel button
         self.cancel_button = QPushButton("Cancel")
@@ -159,10 +161,13 @@ class MetadataEditDialog(QDialog):
         if self.is_multiline:
             self.input_field = QTextEdit()
             self.input_field.setPlainText(self.field_value)
-            self.input_field.setMaximumHeight(120)
+            self.input_field.setMaximumHeight(100)
+            self.input_field.setMinimumHeight(80)
         else:
             self.input_field = QLineEdit()
             self.input_field.setText(self.field_value)
+            self.input_field.setMinimumHeight(34)
+            self.input_field.setMaximumHeight(38)
             self.input_field.selectAll()
 
         # Add field-specific placeholder text
