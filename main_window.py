@@ -809,57 +809,81 @@ class MainWindow(QMainWindow):
     def _set_smart_default_geometry(self) -> None:
         """Set smart default window geometry based on screen size and aspect ratio."""
         try:
-            from core.qt_imports import QDesktopWidget
+            from core.qt_imports import QDesktopWidget, QApplication
 
-            # Get available screen geometry (excluding taskbars, etc.)
+            # Get the primary screen geometry instead of total desktop
+            # This fixes dual monitor issues where total desktop is too wide
             desktop = QDesktopWidget()
-            screen_geometry = desktop.availableGeometry()
+            primary_screen = desktop.primaryScreen()
+            screen_geometry = desktop.availableGeometry(primary_screen)
 
             screen_width = screen_geometry.width()
             screen_height = screen_geometry.height()
             screen_aspect = screen_width / screen_height if screen_height > 0 else 1.0
 
-            logger.debug(f"[Config] Screen: {screen_width}x{screen_height} (aspect: {screen_aspect:.2f})")
+            logger.info(f"[Config] Primary screen detected: {screen_width}x{screen_height} (aspect: {screen_aspect:.2f})")
 
-            # Calculate smart window dimensions based on screen size
-            if screen_width >= 2560:  # 4K or ultrawide
+            # Log total desktop for debugging dual monitor setups
+            total_desktop = desktop.availableGeometry()
+            if total_desktop.width() != screen_width or total_desktop.height() != screen_height:
+                logger.info(f"[Config] Total desktop: {total_desktop.width()}x{total_desktop.height()} (multi-monitor detected)")
+
+            # Calculate smart window dimensions based on single screen size
+            if screen_width >= 2560:  # 4K or large single screen
                 # Large screens: use 75% of screen, minimum 1400x900
                 window_width = max(int(screen_width * 0.75), 1400)
                 window_height = max(int(screen_height * 0.75), 900)
-            elif screen_width >= 1920:  # Full HD
+                logger.info(f"[Config] Large screen detected (>=2560px), using 75%: {window_width}x{window_height}")
+            elif screen_width >= 1920:  # Full HD single screen
                 # Standard large screens: use 80% of screen
                 window_width = int(screen_width * 0.80)
                 window_height = int(screen_height * 0.80)
+                logger.info(f"[Config] Full HD screen detected (>=1920px), using 80%: {window_width}x{window_height}")
             elif screen_width >= 1366:  # Common laptop resolution
                 # Medium screens: use 85% of screen
                 window_width = int(screen_width * 0.85)
                 window_height = int(screen_height * 0.85)
+                logger.info(f"[Config] Medium screen detected (>=1366px), using 85%: {window_width}x{window_height}")
             else:  # Small screens (1024x768 or smaller)
                 # Small screens: use 90% of screen, but ensure minimum usability
                 window_width = max(int(screen_width * 0.90), 1000)
                 window_height = max(int(screen_height * 0.90), 700)
+                logger.info(f"[Config] Small screen detected (<1366px), using 90%: {window_width}x{window_height}")
 
             # Ensure minimum dimensions for usability
+            original_width, original_height = window_width, window_height
             window_width = max(window_width, 1000)
             window_height = max(window_height, 700)
+            if window_width != original_width or window_height != original_height:
+                logger.info(f"[Config] Applied minimum constraints: {original_width}x{original_height} -> {window_width}x{window_height}")
 
-            # Ensure window doesn't exceed screen bounds
+            # Ensure window doesn't exceed primary screen bounds
+            original_width, original_height = window_width, window_height
             window_width = min(window_width, screen_width - 100)
             window_height = min(window_height, screen_height - 100)
+            if window_width != original_width or window_height != original_height:
+                logger.info(f"[Config] Applied screen bounds: {original_width}x{original_height} -> {window_width}x{window_height}")
 
-            # Calculate centered position
-            x = (screen_width - window_width) // 2
-            y = (screen_height - window_height) // 2
+            # Calculate centered position on primary screen
+            x = screen_geometry.x() + (screen_width - window_width) // 2
+            y = screen_geometry.y() + (screen_height - window_height) // 2
 
             # Apply the geometry
+            logger.info(f"[Config] Setting geometry: {window_width}x{window_height} at ({x}, {y}) on primary screen")
             self.setGeometry(x, y, window_width, window_height)
 
-            logger.info(f"[Config] Set smart default geometry: {window_width}x{window_height} at ({x}, {y})")
+            # Verify what was actually set (some window managers might override)
+            actual_geo = self.geometry()
+            if actual_geo.width() != window_width or actual_geo.height() != window_height or actual_geo.x() != x or actual_geo.y() != y:
+                logger.warning(f"[Config] Window manager overrode geometry! Requested: {window_width}x{window_height} at ({x}, {y}), Got: {actual_geo.width()}x{actual_geo.height()} at ({actual_geo.x()}, {actual_geo.y()})")
+            else:
+                logger.info(f"[Config] Geometry set successfully: {window_width}x{window_height} at ({x}, {y})")
 
         except Exception as e:
             logger.error(f"[Config] Failed to set smart default geometry: {e}")
             # Ultimate fallback - fixed reasonable size
             self.setGeometry(100, 100, 1200, 800)
+            logger.info("[Config] Used fallback geometry: 1200x800 at (100, 100)")
 
     def _save_window_config(self) -> None:
         """Save current window state to config manager."""

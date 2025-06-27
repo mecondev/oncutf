@@ -1787,6 +1787,10 @@ class MetadataTreeView(QTreeView):
 
             file_item = parent_window.file_model.files[target_index.row()]
 
+            # CRITICAL: Always set current file path first to save any previous modifications
+            # This must happen before checking metadata cache or displaying new metadata
+            self.set_current_file_path(file_item.full_path)
+
             # Get metadata from cache first (to preserve modifications), then fallback to file_item
             metadata = None
             if hasattr(parent_window, 'metadata_cache'):
@@ -1803,9 +1807,6 @@ class MetadataTreeView(QTreeView):
                 # Create a fresh copy of the metadata for display
                 display_metadata = dict(metadata)
                 display_metadata["FileName"] = file_item.filename
-
-                # Set current file path for scroll position memory
-                self.set_current_file_path(file_item.full_path)
 
                 self.display_metadata(display_metadata, context="update_from_parent_selection")
 
@@ -2054,16 +2055,24 @@ class MetadataTreeView(QTreeView):
                 continue
 
             metadata_entry = metadata_cache.get_entry(file_path)
-            if not metadata_entry or not hasattr(metadata_entry, 'data'):
-                continue
-
             file_modifications = {}
 
             for key_path in modified_keys:
+                # If no metadata entry exists, we still need to record the modification
+                # but we can't get the current value. This can happen if metadata
+                # was edited but not yet saved or if cache was cleared.
+                if not metadata_entry or not hasattr(metadata_entry, 'data'):
+                    # Use a placeholder value to indicate modification exists
+                    file_modifications[key_path] = "[MODIFIED]"
+                    logger.warning(f"[MetadataTree] No cache data for {file_path}, using placeholder for {key_path}")
+                    continue
+
                 # Special handling for rotation - it's always top-level
                 if key_path.lower() == "rotation":
                     if "Rotation" in metadata_entry.data:
                         file_modifications["Rotation"] = str(metadata_entry.data["Rotation"])
+                    else:
+                        file_modifications["Rotation"] = "[MODIFIED]"
                     continue
 
                 # Handle other fields normally
@@ -2073,12 +2082,18 @@ class MetadataTreeView(QTreeView):
                     # Top-level key
                     if parts[0] in metadata_entry.data:
                         file_modifications[key_path] = str(metadata_entry.data[parts[0]])
+                    else:
+                        file_modifications[key_path] = "[MODIFIED]"
                 elif len(parts) == 2:
                     # Nested key (group/key)
                     group, key = parts
                     if group in metadata_entry.data and isinstance(metadata_entry.data[group], dict):
                         if key in metadata_entry.data[group]:
                             file_modifications[key_path] = str(metadata_entry.data[group][key])
+                        else:
+                            file_modifications[key_path] = "[MODIFIED]"
+                    else:
+                        file_modifications[key_path] = "[MODIFIED]"
 
             if file_modifications:
                 all_modifications[file_path] = file_modifications
