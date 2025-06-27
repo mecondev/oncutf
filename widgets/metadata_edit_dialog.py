@@ -57,9 +57,12 @@ class MetadataEditDialog(QDialog):
         # Determine if this is a multi-line field
         self.is_multiline = field_name in ["Description"]
 
-        # Set up dialog properties
-        self.setWindowFlags(Qt.Dialog | Qt.CustomizeWindowHint)
+        # Set up dialog properties - frameless but draggable
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self.setModal(True)
+
+        # Add drag functionality
+        self._drag_position = None
 
         # Adjust size based on field type and number of files
         if len(self.selected_files) > 1:
@@ -92,15 +95,6 @@ class MetadataEditDialog(QDialog):
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(8)
 
-        # Title
-        self.title_label = QLabel(f"Edit {self.field_name}")
-        title_font = QFont()
-        title_font.setBold(True)
-        title_font.setPointSize(11)
-        self.title_label.setFont(title_font)
-        self.title_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.title_label)
-
         # Description (will be set differently for single vs multi-file)
         self.desc_label = QLabel()
         self.desc_label.setWordWrap(True)
@@ -109,7 +103,8 @@ class MetadataEditDialog(QDialog):
         # Content area (either input field or scroll area for file groups)
         self.content_widget = QWidget()
         self.content_layout = QVBoxLayout(self.content_widget)
-        self.content_layout.setSpacing(4)  # Tighter spacing for content
+        self.content_layout.setSpacing(2)  # Very tight spacing for content
+        self.content_layout.setContentsMargins(0, 0, 0, 0)  # No margins
         layout.addWidget(self.content_widget)
 
         # Info label
@@ -166,8 +161,7 @@ class MetadataEditDialog(QDialog):
         else:
             self.input_field = QLineEdit()
             self.input_field.setText(self.field_value)
-            self.input_field.setMinimumHeight(34)
-            self.input_field.setMaximumHeight(38)
+            self.input_field.setFixedHeight(20)  # Match specified text module height
             self.input_field.selectAll()
 
         # Add field-specific placeholder text
@@ -185,6 +179,18 @@ class MetadataEditDialog(QDialog):
 
         # Update info with validation info
         self._update_validation_info()
+
+    def mousePressEvent(self, event):
+        """Handle mouse press for dragging."""
+        if event.button() == Qt.LeftButton:
+            self._drag_position = event.globalPos() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def mouseMoveEvent(self, event):
+        """Handle mouse move for dragging."""
+        if event.buttons() == Qt.LeftButton and self._drag_position:
+            self.move(event.globalPos() - self._drag_position)
+            event.accept()
 
     def _analyze_files(self):
         """Analyze files for multi-file editing (similar to bulk rotation)."""

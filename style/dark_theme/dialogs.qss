@@ -157,30 +157,64 @@ QDialog QWidget QLabel, QDialog QFrame QLabel, QDialog QScrollArea QLabel {
     border-radius: 0px !important;
 }
 
-/* MetadataEditDialog specific styling - compact layout */
+/* MetadataEditDialog specific styling - widget-like appearance */
 MetadataEditDialog {
-    background-color: #1a1a1a;
+    background-color: #212121;  /* Main window color */
+    border: 1px solid #3a3b40;
+    border-radius: 8px;
 }
 
+/* Label styling */
 MetadataEditDialog QLabel {
     color: #f0ebd8;
     font-size: 9pt;
-    margin: 1px 0px 2px 0px;
+    margin: 0px;
     padding: 0px;
+    background-color: transparent;
 }
 
-MetadataEditDialog QLineEdit {
-    background-color: #181818;
+/* Dialog action buttons (OK/Cancel) */
+MetadataEditDialog QPushButton {
+    background-color: #2a2a2a;
     color: #f0ebd8;
-    border: 1px solid #3a3b40;
-    border-radius: 4px;
-    padding: 6px 8px;
-    min-height: 32px;
-    max-height: 36px;
     font-size: 9pt;
-    margin: 4px 0px;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 16px;
+    min-width: 60px;
 }
 
+MetadataEditDialog QPushButton:hover {
+    background-color: #3e5c76;
+    color: #f0ebd8;
+}
+
+MetadataEditDialog QPushButton:pressed {
+    background-color: #748cab;
+    color: #0d1321;
+}
+
+MetadataEditDialog QPushButton:default {
+    background-color: #3e5c76;
+}
+
+/* QLineEdit - no border, like specified text module */
+MetadataEditDialog QLineEdit {
+    background-color: #181818;  /* Keep darker for input fields */
+    color: #f0ebd8;
+    border: none;  /* No border like specified text */
+    border-radius: 4px;
+    padding: 2px 6px;
+    height: 20px;  /* Match specified text height */
+    font-size: 9pt;
+    margin: 0px;
+}
+
+MetadataEditDialog QLineEdit:focus {
+    background-color: #1a1a1a;  /* Slightly lighter on focus */
+}
+
+/* QTextEdit for multiline fields */
 MetadataEditDialog QTextEdit {
     background-color: #181818;
     color: #f0ebd8;
@@ -188,5 +222,10 @@ MetadataEditDialog QTextEdit {
     border-radius: 4px;
     padding: 6px;
     font-size: 9pt;
-    margin: 2px 0px;
+    margin: 0px;
+}
+
+MetadataEditDialog QTextEdit:focus {
+    border-color: #748cab;
+    background-color: #1a1a1a;
 }
