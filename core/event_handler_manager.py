@@ -206,14 +206,65 @@ class EventHandlerManager:
 
         menu.addSeparator()
 
-        # --- Export actions ---
-        action_export_sel = menu.addAction(get_menu_icon("download"), "Export metadata for selected file(s)")
-        action_export_all = menu.addAction(get_menu_icon("download"), "Export metadata for all files")
+        # --- Metadata editing actions ---
+        action_edit_title = menu.addAction(get_menu_icon("edit"), "Edit Title...")
+        action_edit_artist = menu.addAction(get_menu_icon("user"), "Edit Artist...")
+        action_edit_copyright = menu.addAction(get_menu_icon("shield"), "Edit Copyright...")
+        action_edit_description = menu.addAction(get_menu_icon("file-text"), "Edit Description...")
+        action_edit_keywords = menu.addAction(get_menu_icon("tag"), "Edit Keywords...")
 
-        # Check metadata availability for export
+        # Check metadata availability for actions (used by both metadata editing and export)
         has_selection = len(selected_files) > 0
         selected_has_metadata = self._check_selected_files_have_metadata(selected_files)
         all_files_have_metadata = self._check_any_files_have_metadata()
+
+        # Enable/disable metadata editing actions based on compatibility
+        action_edit_title.setEnabled(
+            has_selection and selected_has_metadata and
+            self._check_metadata_field_compatibility(selected_files, "Title")
+        )
+        action_edit_artist.setEnabled(
+            has_selection and selected_has_metadata and
+            self._check_metadata_field_compatibility(selected_files, "Artist")
+        )
+        action_edit_copyright.setEnabled(
+            has_selection and selected_has_metadata and
+            self._check_metadata_field_compatibility(selected_files, "Copyright")
+        )
+        action_edit_description.setEnabled(
+            has_selection and selected_has_metadata and
+            self._check_metadata_field_compatibility(selected_files, "Description")
+        )
+        action_edit_keywords.setEnabled(
+            has_selection and selected_has_metadata and
+            self._check_metadata_field_compatibility(selected_files, "Keywords")
+        )
+
+        # Update tooltips for metadata editing actions
+        if has_selection and selected_has_metadata:
+            action_edit_title.setToolTip(f"Edit title for {len(selected_files)} selected file(s)")
+            action_edit_artist.setToolTip(f"Edit artist for {len(selected_files)} selected file(s)")
+            action_edit_copyright.setToolTip(f"Edit copyright for {len(selected_files)} selected file(s)")
+            action_edit_description.setToolTip(f"Edit description for {len(selected_files)} selected file(s)")
+            action_edit_keywords.setToolTip(f"Edit keywords for {len(selected_files)} selected file(s)")
+        elif has_selection:
+            action_edit_title.setToolTip("Selected files have no metadata or don't support this field")
+            action_edit_artist.setToolTip("Selected files have no metadata or don't support this field")
+            action_edit_copyright.setToolTip("Selected files have no metadata or don't support this field")
+            action_edit_description.setToolTip("Selected files have no metadata or don't support this field")
+            action_edit_keywords.setToolTip("Selected files have no metadata or don't support this field")
+        else:
+            action_edit_title.setToolTip("Select files first to edit title")
+            action_edit_artist.setToolTip("Select files first to edit artist")
+            action_edit_copyright.setToolTip("Select files first to edit copyright")
+            action_edit_description.setToolTip("Select files first to edit description")
+            action_edit_keywords.setToolTip("Select files first to edit keywords")
+
+        menu.addSeparator()
+
+        # --- Export actions ---
+        action_export_sel = menu.addAction(get_menu_icon("download"), "Export metadata for selected file(s)")
+        action_export_all = menu.addAction(get_menu_icon("download"), "Export metadata for all files")
 
         # Enable/disable export actions based on metadata availability
         action_export_sel.setEnabled(has_selection and selected_has_metadata)
@@ -334,6 +385,26 @@ class EventHandlerManager:
         elif action == action_export_all:
             # Handle metadata export for all files
             self._handle_export_metadata(self.parent_window.file_model.files, "all")
+
+        elif action == action_edit_title:
+            # Handle title editing
+            self._handle_metadata_field_edit(selected_files, "Title")
+
+        elif action == action_edit_artist:
+            # Handle artist editing
+            self._handle_metadata_field_edit(selected_files, "Artist")
+
+        elif action == action_edit_copyright:
+            # Handle copyright editing
+            self._handle_metadata_field_edit(selected_files, "Copyright")
+
+        elif action == action_edit_description:
+            # Handle description editing
+            self._handle_metadata_field_edit(selected_files, "Description")
+
+        elif action == action_edit_keywords:
+            # Handle keywords editing
+            self._handle_metadata_field_edit(selected_files, "Keywords")
 
     def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
         """
@@ -563,6 +634,10 @@ class EventHandlerManager:
 
                     # Refresh the metadata display to show the changes
                     self.parent_window.metadata_tree_view.update_from_parent_selection()
+
+                # Update preview tables to reflect the changes
+                if hasattr(self.parent_window, 'request_preview_update'):
+                    self.parent_window.request_preview_update()
 
                 # Show status message
                 if hasattr(self.parent_window, 'set_status'):
@@ -1512,3 +1587,231 @@ class EventHandlerManager:
         except Exception as e:
             logger.debug(f"[FieldStandard] Error getting preferred standard: {e}")
             return None
+
+    # === Metadata Field Editing Handlers ===
+
+    def _handle_metadata_field_edit(self, selected_files: list, field_name: str) -> None:
+        """
+        Handle metadata field editing for selected files.
+
+        Args:
+            selected_files: List of FileItem objects to edit
+            field_name: Name of the field to edit (Title, Artist, etc.)
+        """
+        if not selected_files:
+            logger.warning(f"[MetadataEdit] No files selected for {field_name} editing")
+            return
+
+        logger.info(f"[MetadataEdit] Starting {field_name} editing for {len(selected_files)} files")
+
+        try:
+            # Get current value (for single file editing)
+            current_value = ""
+            if len(selected_files) == 1:
+                current_value = self._get_current_field_value(selected_files[0], field_name) or ""
+
+            # Import and show the metadata edit dialog
+            from widgets.metadata_edit_dialog import MetadataEditDialog
+
+            success, new_value, files_to_modify = MetadataEditDialog.edit_metadata_field(
+                parent=self.parent_window,
+                selected_files=selected_files,
+                metadata_cache=self.parent_window.metadata_cache,
+                field_name=field_name,
+                current_value=current_value
+            )
+
+            if not success:
+                logger.debug(f"[MetadataEdit] User cancelled {field_name} editing")
+                return
+
+            if not files_to_modify:
+                logger.debug(f"[MetadataEdit] No files selected for {field_name} modification")
+                return
+
+            # Apply the changes
+            self._apply_metadata_field_changes(files_to_modify, field_name, new_value)
+
+            # Update status
+            if hasattr(self.parent_window, 'set_status'):
+                from config import STATUS_COLORS
+                status_msg = f"Updated {field_name} for {len(files_to_modify)} file(s)"
+                self.parent_window.set_status(status_msg, color=STATUS_COLORS["operation_success"], auto_reset=True)
+
+            logger.info(f"[MetadataEdit] Successfully updated {field_name} for {len(files_to_modify)} files")
+
+        except ImportError as e:
+            logger.error(f"[MetadataEdit] Failed to import MetadataEditDialog: {e}")
+            from utils.dialog_utils import show_error_message
+            show_error_message(
+                self.parent_window,
+                "Error",
+                "Metadata editing dialog is not available. Please check the installation."
+            )
+        except Exception as e:
+            logger.exception(f"[MetadataEdit] Unexpected error during {field_name} editing: {e}")
+            from utils.dialog_utils import show_error_message
+            show_error_message(
+                self.parent_window,
+                "Error",
+                f"An error occurred during {field_name} editing: {str(e)}"
+            )
+
+    def _get_current_field_value(self, file_item, field_name: str) -> str:
+        """
+        Get the current value of a metadata field for a file.
+
+        Args:
+            file_item: FileItem object
+            field_name: Name of the field
+
+        Returns:
+            str: Current value or empty string if not found
+        """
+        try:
+            if not self.parent_window.metadata_cache:
+                return ""
+
+            # Check metadata cache first
+            cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+            if cache_entry and hasattr(cache_entry, 'data'):
+                # Try different field standards based on field name
+                standards = self._get_field_standards_for_reading(field_name)
+                for standard in standards:
+                    value = cache_entry.data.get(standard)
+                    if value:
+                        return str(value)
+
+            # Fallback to file metadata
+            if hasattr(file_item, 'metadata') and file_item.metadata:
+                standards = self._get_field_standards_for_reading(field_name)
+                for standard in standards:
+                    value = file_item.metadata.get(standard)
+                    if value:
+                        return str(value)
+
+            return ""
+
+        except Exception as e:
+            logger.debug(f"[MetadataEdit] Error getting current {field_name} value: {e}")
+            return ""
+
+    def _get_field_standards_for_reading(self, field_name: str) -> list:
+        """Get the metadata standards for reading a field (in priority order)."""
+        field_standards = {
+            "Title": ["XMP:Title", "IPTC:Headline", "EXIF:ImageDescription"],
+            "Artist": ["XMP:Creator", "IPTC:By-line", "EXIF:Artist"],
+            "Author": ["XMP:Creator", "IPTC:By-line", "EXIF:Artist"],
+            "Copyright": ["XMP:Rights", "IPTC:CopyrightNotice", "EXIF:Copyright"],
+            "Description": ["XMP:Description", "IPTC:Caption-Abstract", "EXIF:ImageDescription"],
+            "Keywords": ["XMP:Keywords", "IPTC:Keywords"]
+        }
+        return field_standards.get(field_name, [])
+
+    def _apply_metadata_field_changes(self, files_to_modify: list, field_name: str, new_value: str) -> None:
+        """
+        Apply metadata field changes to the specified files.
+
+        Args:
+            files_to_modify: List of FileItem objects to modify
+            field_name: Name of the field to modify
+            new_value: New value to set
+        """
+        if not files_to_modify:
+            return
+
+        logger.info(f"[MetadataEdit] Applying {field_name} changes to {len(files_to_modify)} files")
+
+        try:
+            modified_count = 0
+
+            for file_item in files_to_modify:
+                # Get the preferred metadata standard for this file
+                preferred_standard = self._get_preferred_field_standard(file_item, field_name)
+                if not preferred_standard:
+                    logger.debug(f"[MetadataEdit] No preferred standard for {field_name} in {file_item.filename}")
+                    continue
+
+                # Get or create metadata cache entry
+                cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+                if not cache_entry:
+                    # Create a new cache entry if none exists
+                    metadata_dict = getattr(file_item, 'metadata', {}) or {}
+                    self.parent_window.metadata_cache.set(file_item.full_path, metadata_dict)
+                    cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+
+                if cache_entry and hasattr(cache_entry, 'data'):
+                    # Set the field value using the preferred standard
+                    if new_value.strip():
+                        cache_entry.data[preferred_standard] = new_value.strip()
+                    else:
+                        # Remove field if empty value
+                        cache_entry.data.pop(preferred_standard, None)
+
+                    cache_entry.modified = True
+
+                    # Update file item metadata too
+                    if not hasattr(file_item, 'metadata') or file_item.metadata is None:
+                        file_item.metadata = {}
+
+                    if new_value.strip():
+                        file_item.metadata[preferred_standard] = new_value.strip()
+                    else:
+                        file_item.metadata.pop(preferred_standard, None)
+
+                    # Mark file as modified
+                    file_item.metadata_status = "modified"
+                    modified_count += 1
+
+                    logger.debug(f"[MetadataEdit] Set {preferred_standard}='{new_value}' for {file_item.filename}")
+
+            # Update UI to reflect changes
+            if modified_count > 0:
+                # Update file table icons
+                self.parent_window.file_model.layoutChanged.emit()
+
+                # CRITICAL: Update metadata tree view to mark items as modified
+                if hasattr(self.parent_window, 'metadata_tree_view'):
+                    # For each modified file, mark the field as modified in tree view
+                    for file_item in files_to_modify:
+                        if file_item.metadata_status == "modified":
+                            # Add to modified items for this file path
+                            if not self.parent_window.metadata_tree_view._path_in_dict(file_item.full_path, self.parent_window.metadata_tree_view.modified_items_per_file):
+                                self.parent_window.metadata_tree_view._set_in_path_dict(file_item.full_path, set(), self.parent_window.metadata_tree_view.modified_items_per_file)
+
+                            existing_modifications = self.parent_window.metadata_tree_view._get_from_path_dict(file_item.full_path, self.parent_window.metadata_tree_view.modified_items_per_file)
+                            if existing_modifications is None:
+                                existing_modifications = set()
+
+                            # Add the preferred standard to modifications
+                            preferred_standard = self._get_preferred_field_standard(file_item, field_name)
+                            if preferred_standard:
+                                existing_modifications.add(preferred_standard)
+                                self.parent_window.metadata_tree_view._set_in_path_dict(file_item.full_path, existing_modifications, self.parent_window.metadata_tree_view.modified_items_per_file)
+
+                            # If this is the currently displayed file, update current modified items too
+                            if (hasattr(self.parent_window.metadata_tree_view, '_current_file_path') and
+                                hasattr(self.parent_window.metadata_tree_view, 'modified_items') and
+                                self.parent_window.metadata_tree_view._current_file_path == file_item.full_path):
+                                if preferred_standard:
+                                    self.parent_window.metadata_tree_view.modified_items.add(preferred_standard)
+
+                    # Refresh the metadata display to show the changes
+                    self.parent_window.metadata_tree_view.update_from_parent_selection()
+
+                # Update preview tables to reflect the changes
+                if hasattr(self.parent_window, 'request_preview_update'):
+                    self.parent_window.request_preview_update()
+
+                logger.info(f"[MetadataEdit] Successfully applied {field_name} to {modified_count} files")
+            else:
+                logger.warning(f"[MetadataEdit] No files were actually modified for {field_name}")
+
+        except Exception as e:
+            logger.exception(f"[MetadataEdit] Error applying {field_name} changes: {e}")
+            from utils.dialog_utils import show_error_message
+            show_error_message(
+                self.parent_window,
+                "Error",
+                f"Failed to apply {field_name} changes: {str(e)}"
+            )

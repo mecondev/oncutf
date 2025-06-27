@@ -53,15 +53,15 @@ class MetadataFieldValidator:
         stripped_value = value.strip()
 
         if not stripped_value:
-            return False, "Ο τίτλος δεν μπορεί να είναι κενός"
+            return False, "Title cannot be empty"
 
         if len(stripped_value) > MetadataFieldValidator.MAX_TITLE_LENGTH:
-            return False, f"Ο τίτλος είναι πολύ μεγάλος (μέγιστο {MetadataFieldValidator.MAX_TITLE_LENGTH} χαρακτήρες)"
+            return False, f"Title is too long (maximum {MetadataFieldValidator.MAX_TITLE_LENGTH} characters)"
 
         # Check for invalid filename characters
         invalid_chars_found = [char for char in MetadataFieldValidator.INVALID_FILENAME_CHARS if char in stripped_value]
         if invalid_chars_found:
-            return False, f"Ο τίτλος περιέχει μη έγκυρους χαρακτήρες: {''.join(invalid_chars_found)}"
+            return False, f"Title contains invalid characters: {''.join(invalid_chars_found)}"
 
         return True, ""
 
@@ -91,7 +91,7 @@ class MetadataFieldValidator:
             return True, ""
 
         if len(stripped_value) > MetadataFieldValidator.MAX_ARTIST_LENGTH:
-            return False, f"Το όνομα καλλιτέχνη είναι πολύ μεγάλο (μέγιστο {MetadataFieldValidator.MAX_ARTIST_LENGTH} χαρακτήρες)"
+            return False, f"Artist name is too long (maximum {MetadataFieldValidator.MAX_ARTIST_LENGTH} characters)"
 
         return True, ""
 
@@ -121,7 +121,7 @@ class MetadataFieldValidator:
             return True, ""
 
         if len(stripped_value) > MetadataFieldValidator.MAX_COPYRIGHT_LENGTH:
-            return False, f"Το copyright είναι πολύ μεγάλο (μέγιστο {MetadataFieldValidator.MAX_COPYRIGHT_LENGTH} χαρακτήρες)"
+            return False, f"Copyright is too long (maximum {MetadataFieldValidator.MAX_COPYRIGHT_LENGTH} characters)"
 
         return True, ""
 
@@ -151,7 +151,7 @@ class MetadataFieldValidator:
             return True, ""
 
         if len(stripped_value) > MetadataFieldValidator.MAX_DESCRIPTION_LENGTH:
-            return False, f"Η περιγραφή είναι πολύ μεγάλη (μέγιστο {MetadataFieldValidator.MAX_DESCRIPTION_LENGTH} χαρακτήρες)"
+            return False, f"Description is too long (maximum {MetadataFieldValidator.MAX_DESCRIPTION_LENGTH} characters)"
 
         return True, ""
 
@@ -189,12 +189,12 @@ class MetadataFieldValidator:
         keywords = [keyword for keyword in keywords if keyword]
 
         if len(keywords) > MetadataFieldValidator.MAX_KEYWORDS_COUNT:
-            return False, f"Πάρα πολλές λέξεις-κλειδιά (μέγιστο {MetadataFieldValidator.MAX_KEYWORDS_COUNT})"
+            return False, f"Too many keywords (maximum {MetadataFieldValidator.MAX_KEYWORDS_COUNT})"
 
         # Check individual keyword length
         for keyword in keywords:
             if len(keyword) > MetadataFieldValidator.MAX_KEYWORD_LENGTH:
-                return False, f"Η λέξη-κλειδί '{keyword}' είναι πολύ μεγάλη (μέγιστο {MetadataFieldValidator.MAX_KEYWORD_LENGTH} χαρακτήρες)"
+                return False, f"Keyword '{keyword}' is too long (maximum {MetadataFieldValidator.MAX_KEYWORD_LENGTH} characters)"
 
         return True, ""
 

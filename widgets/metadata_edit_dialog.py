@@ -191,7 +191,7 @@ class MetadataEditDialog(QDialog):
         button_layout.setSpacing(12)
 
         # Cancel button
-        self.cancel_button = QPushButton("Άκυρο")
+        self.cancel_button = QPushButton("Cancel")
         self.cancel_button.setDefault(False)
         self.cancel_button.setAutoDefault(False)
         self.cancel_button.setFocus()
@@ -247,9 +247,9 @@ class MetadataEditDialog(QDialog):
         # Update description
         if self.selected_files:
             filename = self.selected_files[0].filename
-            self.desc_label.setText(f"Επεξεργασία {self.field_name} για: {filename}")
+            self.desc_label.setText(f"Edit {self.field_name} for: {filename}")
         else:
-            self.desc_label.setText(f"Επεξεργασία {self.field_name}")
+            self.desc_label.setText(f"Edit {self.field_name}")
 
         # Create input field based on field type
         if self.is_multiline:
@@ -280,11 +280,11 @@ class MetadataEditDialog(QDialog):
     def _analyze_files(self):
         """Analyze files for multi-file editing (similar to bulk rotation)."""
         if not self.selected_files:
-            self.info_label.setText("Δεν επιλέχθηκαν αρχεία.")
+            self.info_label.setText("No files selected.")
             return
 
         # Update description for multi-file
-        self.desc_label.setText(f"Ορισμός {self.field_name} για επιλεγμένα αρχεία:")
+        self.desc_label.setText(f"Set {self.field_name} for selected files:")
 
         # Group files by type and existing field values
         file_types = {}
@@ -335,7 +335,7 @@ class MetadataEditDialog(QDialog):
 
         # Add input field for new value
         input_layout = QVBoxLayout()
-        input_label = QLabel(f"Νέα τιμή για {self.field_name}:")
+        input_label = QLabel(f"New value for {self.field_name}:")
         input_layout.addWidget(input_label)
 
         if self.is_multiline:
@@ -355,9 +355,9 @@ class MetadataEditDialog(QDialog):
         self.content_layout.addLayout(input_layout)
 
         # Update info label
-        info_text = f"{total_files} αρχεία επιλέχθηκαν"
+        info_text = f"{total_files} files selected"
         if files_with_existing_values > 0:
-            info_text += f" ({files_with_existing_values} έχουν ήδη τιμή)"
+            info_text += f" ({files_with_existing_values} already have values)"
         self.info_label.setText(info_text)
 
         # Set focus to input field
@@ -420,12 +420,12 @@ class MetadataEditDialog(QDialog):
     def _get_field_placeholder(self) -> str:
         """Get placeholder text for the field."""
         placeholders = {
-            "Title": "Εισάγετε τίτλο...",
-            "Artist": "Εισάγετε όνομα καλλιτέχνη...",
-            "Author": "Εισάγετε όνομα συγγραφέα...",
-            "Copyright": "Εισάγετε πληροφορίες copyright...",
-            "Description": "Εισάγετε περιγραφή...",
-            "Keywords": "Εισάγετε λέξεις-κλειδιά (διαχωρισμένες με κόμματα)..."
+            "Title": "Enter title...",
+            "Artist": "Enter artist name...",
+            "Author": "Enter author name...",
+            "Copyright": "Enter copyright information...",
+            "Description": "Enter description...",
+            "Keywords": "Enter keywords (comma-separated)..."
         }
         return placeholders.get(self.field_name, "")
 
@@ -450,7 +450,7 @@ class MetadataEditDialog(QDialog):
         # Label with file count
         extensions_text = ", ".join(extensions)
         file_count = len(all_files)
-        label_text = f"{file_type} ({file_count} αρχεία): {extensions_text}"
+        label_text = f"{file_type} ({file_count} files): {extensions_text}"
 
         label = QLabel(label_text)
         label.setWordWrap(True)
@@ -467,13 +467,13 @@ class MetadataEditDialog(QDialog):
     def _update_validation_info(self):
         """Update info label with validation information."""
         if self.field_name == "Title":
-            self.info_label.setText("Ο τίτλος είναι υποχρεωτικός και δεν μπορεί να περιέχει ειδικούς χαρακτήρες.")
+            self.info_label.setText("The title is required and cannot contain special characters.")
         elif self.field_name == "Keywords":
-            self.info_label.setText("Διαχωρίστε τις λέξεις-κλειδιά με κόμματα. Μέγιστο 50 λέξεις-κλειδιά.")
+            self.info_label.setText("Separate keywords with commas. Maximum 50 keywords.")
         else:
             max_length = getattr(MetadataFieldValidator, f'MAX_{self.field_name.upper()}_LENGTH', None)
             if max_length:
-                self.info_label.setText(f"Μέγιστο {max_length} χαρακτήρες.")
+                self.info_label.setText(f"Maximum {max_length} characters.")
 
     def _validate_and_accept(self):
         """Validate input and accept dialog if valid."""
@@ -488,7 +488,7 @@ class MetadataEditDialog(QDialog):
 
         if not is_valid:
             # Show error in info label
-            self.info_label.setText(f"Σφάλμα: {error_message}")
+            self.info_label.setText(f"Error: {error_message}")
             self.info_label.setStyleSheet("color: #ff6b6b; font-size: 8pt;")
             return
 
