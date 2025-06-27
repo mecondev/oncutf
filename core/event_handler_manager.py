@@ -1271,3 +1271,244 @@ class EventHandlerManager:
                 "Export Error",
                 f"An error occurred during export:\n{str(e)}"
             )
+
+    # === Metadata Field Compatibility Detection ===
+
+    def _check_metadata_field_compatibility(self, selected_files: list, field_name: str) -> bool:
+        """
+        Check if all selected files support a specific metadata field.
+        Uses exiftool metadata to determine compatibility.
+
+        Args:
+            selected_files: List of FileItem objects to check
+            field_name: Name of the metadata field to check support for
+
+        Returns:
+            bool: True if ALL selected files support the field, False otherwise
+        """
+        if not selected_files:
+            logger.debug(f"[FieldCompatibility] No files provided for {field_name} compatibility check")
+            return False
+
+        # Check if all files have metadata loaded
+        files_with_metadata = [f for f in selected_files if self._file_has_metadata(f)]
+        if len(files_with_metadata) != len(selected_files):
+            logger.debug(f"[FieldCompatibility] Not all files have metadata loaded for {field_name} check")
+            return False
+
+        # Check if all files support the specific field
+        supported_count = 0
+        for file_item in selected_files:
+            if self._file_supports_field(file_item, field_name):
+                supported_count += 1
+
+        # Enable only if ALL selected files support the field
+        result = supported_count == len(selected_files)
+        logger.debug(f"[FieldCompatibility] {field_name} support: {supported_count}/{len(selected_files)} files, enabled: {result}")
+
+        return result
+
+    def _file_supports_field(self, file_item, field_name: str) -> bool:
+        """
+        Check if a file supports a specific metadata field.
+        Uses exiftool's field availability information from metadata cache.
+
+        Args:
+            file_item: FileItem object to check
+            field_name: Name of the metadata field
+
+        Returns:
+            bool: True if the file supports the field, False otherwise
+        """
+        try:
+            # Get metadata from cache
+            cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+            if not cache_entry or not hasattr(cache_entry, 'data') or not cache_entry.data:
+                logger.debug(f"[FieldSupport] No metadata cache for {file_item.filename}")
+                return False
+
+            # Field support mapping based on exiftool output
+            field_support_map = {
+                "Title": ["EXIF:ImageDescription", "XMP:Title", "IPTC:Headline", "XMP:Description"],
+                "Artist": ["EXIF:Artist", "XMP:Creator", "IPTC:By-line", "XMP:Author"],
+                "Author": ["EXIF:Artist", "XMP:Creator", "IPTC:By-line", "XMP:Author"],  # Same as Artist
+                "Copyright": ["EXIF:Copyright", "XMP:Rights", "IPTC:CopyrightNotice", "XMP:UsageTerms"],
+                "Description": ["EXIF:ImageDescription", "XMP:Description", "IPTC:Caption-Abstract", "XMP:Title"],
+                "Keywords": ["XMP:Keywords", "IPTC:Keywords", "XMP:Subject"],
+                "Rotation": ["EXIF:Orientation"]  # Images/Videos only
+            }
+
+            # Get supported fields for this field name
+            supported_fields = field_support_map.get(field_name, [])
+            if not supported_fields:
+                logger.debug(f"[FieldSupport] Unknown field name: {field_name}")
+                return False
+
+            # Check if any of the supported fields exist in metadata OR could be written
+            metadata = cache_entry.data
+
+            # Check existing fields
+            for field in supported_fields:
+                if field in metadata:
+                    logger.debug(f"[FieldSupport] {file_item.filename} supports {field_name} via existing {field}")
+                    return True
+
+            # For files with metadata, we can generally write standard fields
+            # Check if file type supports the field category
+            file_type_support = self._get_file_type_field_support(file_item, metadata)
+
+            supports_field = field_name in file_type_support
+            if supports_field:
+                logger.debug(f"[FieldSupport] {file_item.filename} supports {field_name} via file type compatibility")
+            else:
+                logger.debug(f"[FieldSupport] {file_item.filename} does not support {field_name}")
+
+            return supports_field
+
+        except Exception as e:
+            logger.debug(f"[FieldSupport] Error checking field support for {getattr(file_item, 'filename', 'unknown')}: {e}")
+            return False
+
+    def _get_file_type_field_support(self, file_item, metadata: dict) -> set:
+        """
+        Determine which metadata fields a file type supports based on its metadata.
+
+        Args:
+            file_item: FileItem object
+            metadata: Metadata dictionary from exiftool
+
+        Returns:
+            set: Set of supported field names
+        """
+        try:
+            # Basic fields that most files with metadata support
+            basic_fields = {"Title", "Description", "Keywords"}
+
+            # Check for image/video specific fields
+            image_video_fields = {"Artist", "Author", "Copyright", "Rotation"}
+
+            # Determine file type from metadata or extension
+            is_image = self._is_image_file(file_item, metadata)
+            is_video = self._is_video_file(file_item, metadata)
+            is_audio = self._is_audio_file(file_item, metadata)
+            is_document = self._is_document_file(file_item, metadata)
+
+            supported_fields = basic_fields.copy()
+
+            if is_image or is_video:
+                # Images and videos support creative fields and rotation
+                supported_fields.update(image_video_fields)
+            elif is_audio:
+                # Audio files support creative fields but not rotation
+                supported_fields.update({"Artist", "Author", "Copyright"})
+            elif is_document:
+                # Documents support author and copyright but not rotation
+                supported_fields.update({"Author", "Copyright"})
+
+            return supported_fields
+
+        except Exception as e:
+            logger.debug(f"[FileTypeSupport] Error determining file type support: {e}")
+            # Return basic fields as fallback
+            return {"Title", "Description", "Keywords"}
+
+    def _is_image_file(self, file_item, metadata: dict) -> bool:
+        """Check if file is an image based on metadata and extension."""
+        # Check metadata for image indicators
+        if any(key.startswith(('EXIF:', 'JFIF:', 'PNG:', 'GIF:')) for key in metadata.keys()):
+            return True
+
+        # Check file extension as fallback
+        if hasattr(file_item, 'filename'):
+            ext = file_item.filename.lower().split('.')[-1] if '.' in file_item.filename else ''
+            return ext in {'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'tif', 'webp', 'heic', 'raw', 'cr2', 'nef', 'arw'}
+
+        return False
+
+    def _is_video_file(self, file_item, metadata: dict) -> bool:
+        """Check if file is a video based on metadata and extension."""
+        # Check metadata for video indicators
+        if any(key.startswith(('QuickTime:', 'Matroska:', 'RIFF:', 'MPEG:')) for key in metadata.keys()):
+            return True
+
+        # Check file extension as fallback
+        if hasattr(file_item, 'filename'):
+            ext = file_item.filename.lower().split('.')[-1] if '.' in file_item.filename else ''
+            return ext in {'mp4', 'avi', 'mkv', 'mov', 'wmv', 'flv', 'webm', 'm4v', '3gp', 'mpg', 'mpeg'}
+
+        return False
+
+    def _is_audio_file(self, file_item, metadata: dict) -> bool:
+        """Check if file is an audio file based on metadata and extension."""
+        # Check metadata for audio indicators
+        if any(key.startswith(('ID3:', 'FLAC:', 'Vorbis:', 'APE:')) for key in metadata.keys()):
+            return True
+
+        # Check file extension as fallback
+        if hasattr(file_item, 'filename'):
+            ext = file_item.filename.lower().split('.')[-1] if '.' in file_item.filename else ''
+            return ext in {'mp3', 'flac', 'wav', 'ogg', 'aac', 'm4a', 'wma', 'opus'}
+
+        return False
+
+    def _is_document_file(self, file_item, metadata: dict) -> bool:
+        """Check if file is a document based on metadata and extension."""
+        # Check metadata for document indicators
+        if any(key.startswith(('PDF:', 'XMP-pdf:', 'XMP-x:')) for key in metadata.keys()):
+            return True
+
+        # Check file extension as fallback
+        if hasattr(file_item, 'filename'):
+            ext = file_item.filename.lower().split('.')[-1] if '.' in file_item.filename else ''
+            return ext in {'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'odt', 'ods', 'odp'}
+
+        return False
+
+    def _get_preferred_field_standard(self, file_item, field_name: str) -> str:
+        """
+        Get the preferred metadata standard for a field based on file type and existing metadata.
+        Uses exiftool's field hierarchy and existing field availability.
+
+        Args:
+            file_item: FileItem object
+            field_name: Name of the metadata field
+
+        Returns:
+            str: Preferred field standard name (e.g., "XMP:Title") or None if not supported
+        """
+        try:
+            cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+            if not cache_entry or not hasattr(cache_entry, 'data'):
+                return None
+
+            # Priority order (exiftool's preference: XMP > IPTC > EXIF)
+            field_priorities = {
+                "Title": ["XMP:Title", "IPTC:Headline", "EXIF:ImageDescription", "XMP:Description"],
+                "Artist": ["XMP:Creator", "IPTC:By-line", "EXIF:Artist", "XMP:Author"],
+                "Author": ["XMP:Creator", "IPTC:By-line", "EXIF:Artist", "XMP:Author"],
+                "Copyright": ["XMP:Rights", "IPTC:CopyrightNotice", "EXIF:Copyright", "XMP:UsageTerms"],
+                "Description": ["XMP:Description", "IPTC:Caption-Abstract", "EXIF:ImageDescription"],
+                "Keywords": ["XMP:Keywords", "IPTC:Keywords", "XMP:Subject"],
+                "Rotation": ["EXIF:Orientation"]
+            }
+
+            priorities = field_priorities.get(field_name, [])
+            if not priorities:
+                return None
+
+            metadata = cache_entry.data
+
+            # Return the first existing field
+            for field in priorities:
+                if field in metadata:
+                    logger.debug(f"[FieldStandard] Using existing {field} for {field_name} in {file_item.filename}")
+                    return field
+
+            # Return preferred default if none exist (first in priority list)
+            preferred = priorities[0]
+            logger.debug(f"[FieldStandard] Using preferred {preferred} for {field_name} in {file_item.filename}")
+            return preferred
+
+        except Exception as e:
+            logger.debug(f"[FieldStandard] Error getting preferred standard: {e}")
+            return None

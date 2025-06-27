@@ -2,134 +2,534 @@
 metadata_edit_dialog.py
 
 Author: Michael Economou
-Date: 2025-06-07
+Date: 2025-01-28
 
-This module provides a dialog for editing metadata values.
-It supports validation based on field type and shows appropriate error messages.
+Generic dialog for editing metadata fields.
+Based on bulk_rotation_dialog.py but made flexible for different field types.
 """
 
-from typing import Tuple
-
+from typing import List, Optional, Dict, Any
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
-    QComboBox,
+    QCheckBox,
     QDialog,
-    QDialogButtonBox,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QPushButton,
+    QScrollArea,
+    QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 
+from config import QLABEL_MUTED_TEXT
 from utils.logger_factory import get_cached_logger
-from utils.metadata_validators import get_validator_for_key
+from utils.metadata_field_validators import MetadataFieldValidator
 
 logger = get_cached_logger(__name__)
 
+
 class MetadataEditDialog(QDialog):
     """
-    Dialog for editing metadata values with validation.
+    Generic dialog for editing metadata fields.
+
+    Supports:
+    - Single field editing (Title, Artist, Copyright, etc.)
+    - Multi-file operations with file type grouping
+    - Field validation using MetadataFieldValidator
+    - Dynamic UI based on field type (single-line vs multi-line)
     """
 
-    def __init__(self, parent=None, key_path: str = "", current_value: str = ""):
+    def __init__(self, parent=None, selected_files=None, metadata_cache=None,
+                 field_name: str = "Title", field_value: str = ""):
         super().__init__(parent)
+        self.selected_files = selected_files or []
+        self.metadata_cache = metadata_cache
+        self.field_name = field_name
+        self.field_value = field_value
+        self.file_groups = {}
+        self.checkboxes = {}
 
-        self.key_path = key_path
-        self.current_value = str(current_value)
-        self.new_value = None
-        self.validator = get_validator_for_key(key_path)
+        # Determine if this is a multi-line field
+        self.is_multiline = field_name in ["Description"]
 
-        self.setWindowTitle("Edit Value")
-        self.resize(350, 150)
+        # Set up dialog properties
+        self.setWindowFlags(Qt.Dialog | Qt.CustomizeWindowHint)
+        self.setModal(True)
 
-        self.setup_ui()
-
-    def setup_ui(self):
-        """Set up the dialog UI elements."""
-        layout = QVBoxLayout(self)
-
-        # Field name
-        key_label = QLabel(f"Field: {self.key_path}")
-        key_label.setStyleSheet("font-weight: bold;")
-        layout.addWidget(key_label)
-
-        # Current value
-        current_layout = QHBoxLayout()
-        current_layout.addWidget(QLabel("Current value:"))
-        current_value_label = QLabel(self.current_value)
-        current_value_label.setStyleSheet("font-style: italic;")
-        current_layout.addWidget(current_value_label)
-        current_layout.addStretch()
-        layout.addLayout(current_layout)
-
-        # New value input - combo box for rotation, line edit for others
-        value_layout = QHBoxLayout()
-        value_layout.addWidget(QLabel("New value:"))
-
-        if "Rotation" in self.key_path:
-            self.value_input = QComboBox()
-            self.value_input.addItems(["0", "90", "180", "270"])
-            self.value_input.setCurrentText(self.current_value if self.current_value in ["0", "90", "180", "270"] else "0")
+        # Adjust size based on field type and number of files
+        if len(self.selected_files) > 1:
+            # Multi-file mode - larger dialog
+            self.setFixedSize(600, 500)
         else:
-            self.value_input = QLineEdit(self.current_value)
+            # Single file mode - smaller dialog
+            if self.is_multiline:
+                self.setFixedSize(450, 300)
+            else:
+                self.setFixedSize(400, 200)
 
-        value_layout.addWidget(self.value_input)
-        layout.addLayout(value_layout)
+        self._setup_styles()
+        self._setup_ui()
 
-        # Error message (initially hidden)
-        self.error_label = QLabel("")
-        self.error_label.setStyleSheet("color: red;")
-        self.error_label.setVisible(False)
-        layout.addWidget(self.error_label)
+        # Analyze files only for multi-file operations
+        if len(self.selected_files) > 1:
+            self._analyze_files()
+        else:
+            self._setup_single_file_ui()
+
+    def _setup_styles(self):
+        """Set up dialog styling."""
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #212121;
+                color: #f0ebd8;
+                font-size: 9pt;
+                border-radius: 8px;
+            }
+            QLabel {
+                background-color: transparent;
+                color: #f0ebd8;
+                font-size: 9pt;
+                border: none;
+                padding: 2px;
+            }
+            QLineEdit {
+                background-color: #2c2c2c;
+                color: #f0ebd8;
+                font-size: 9pt;
+                border: 1px solid #555555;
+                border-radius: 4px;
+                padding: 6px;
+                selection-background-color: #748cab;
+            }
+            QLineEdit:focus {
+                border-color: #748cab;
+            }
+            QTextEdit {
+                background-color: #2c2c2c;
+                color: #f0ebd8;
+                font-size: 9pt;
+                border: 1px solid #555555;
+                border-radius: 4px;
+                padding: 6px;
+                selection-background-color: #748cab;
+            }
+            QTextEdit:focus {
+                border-color: #748cab;
+            }
+            QCheckBox {
+                color: #f0ebd8;
+                font-size: 9pt;
+                spacing: 8px;
+            }
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+                border: 1px solid #555555;
+                border-radius: 3px;
+                background-color: #2c2c2c;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #748cab;
+                border-color: #748cab;
+            }
+            QFrame {
+                background-color: #181818;
+                border: 1px solid #444444;
+                border-radius: 8px;
+            }
+            QScrollArea {
+                background-color: #181818;
+                border: 1px solid #444444;
+                border-radius: 8px;
+            }
+            QScrollArea QWidget {
+                background-color: transparent;
+            }
+        """)
+
+    def _setup_ui(self):
+        """Set up the main UI layout."""
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(16)
+
+        # Title
+        self.title_label = QLabel(f"Edit {self.field_name}")
+        title_font = QFont()
+        title_font.setBold(True)
+        title_font.setPointSize(11)
+        self.title_label.setFont(title_font)
+        self.title_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.title_label)
+
+        # Description (will be set differently for single vs multi-file)
+        self.desc_label = QLabel()
+        self.desc_label.setWordWrap(True)
+        layout.addWidget(self.desc_label)
+
+        # Content area (either input field or scroll area for file groups)
+        self.content_widget = QWidget()
+        self.content_layout = QVBoxLayout(self.content_widget)
+        layout.addWidget(self.content_widget)
+
+        # Info label
+        self.info_label = QLabel()
+        self.info_label.setWordWrap(True)
+        self.info_label.setStyleSheet(f"color: {QLABEL_MUTED_TEXT}; font-size: 8pt;")
+        layout.addWidget(self.info_label)
 
         # Buttons
-        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        button_box.accepted.connect(self.validate_and_accept)
-        button_box.rejected.connect(self.reject)
-        layout.addWidget(button_box)
+        self._setup_buttons(layout)
 
-    def validate_and_accept(self):
-        """Validate the input and accept if valid."""
-        if isinstance(self.value_input, QComboBox):
-            value = self.value_input.currentText()
-            self.new_value = value
-            self.accept()
+    def _setup_buttons(self, parent_layout):
+        """Set up OK/Cancel buttons."""
+        button_layout = QHBoxLayout()
+        button_layout.setSpacing(12)
+
+        # Cancel button
+        self.cancel_button = QPushButton("Άκυρο")
+        self.cancel_button.setDefault(False)
+        self.cancel_button.setAutoDefault(False)
+        self.cancel_button.setFocus()
+        self.cancel_button.clicked.connect(self.reject)
+
+        self.cancel_button.setStyleSheet("""
+            QPushButton {
+                background-color: #2a2a2a;
+                color: #f0ebd8;
+                font-size: 9pt;
+                border: none;
+                border-radius: 8px;
+                padding: 4px 12px 4px 8px;
+                min-width: 70px;
+            }
+            QPushButton:hover {
+                background-color: #3a3a3a;
+            }
+            QPushButton:pressed {
+                background-color: #1a1a1a;
+            }
+        """)
+
+        # OK button
+        self.ok_button = QPushButton("OK")
+        self.ok_button.clicked.connect(self._validate_and_accept)
+
+        self.ok_button.setStyleSheet("""
+            QPushButton {
+                background-color: #2a2a2a;
+                color: #f0ebd8;
+                font-size: 9pt;
+                border: none;
+                border-radius: 8px;
+                padding: 4px 12px 4px 8px;
+                min-width: 70px;
+            }
+            QPushButton:hover {
+                background-color: #748cab;
+            }
+            QPushButton:pressed {
+                background-color: #5a6b7a;
+            }
+        """)
+
+        button_layout.addStretch()
+        button_layout.addWidget(self.cancel_button)
+        button_layout.addWidget(self.ok_button)
+        parent_layout.addLayout(button_layout)
+
+    def _setup_single_file_ui(self):
+        """Set up UI for single file editing."""
+        # Update description
+        if self.selected_files:
+            filename = self.selected_files[0].filename
+            self.desc_label.setText(f"Επεξεργασία {self.field_name} για: {filename}")
+        else:
+            self.desc_label.setText(f"Επεξεργασία {self.field_name}")
+
+        # Create input field based on field type
+        if self.is_multiline:
+            self.input_field = QTextEdit()
+            self.input_field.setPlainText(self.field_value)
+            self.input_field.setMaximumHeight(120)
+        else:
+            self.input_field = QLineEdit()
+            self.input_field.setText(self.field_value)
+            self.input_field.selectAll()
+
+        # Add field-specific placeholder text
+        placeholder = self._get_field_placeholder()
+        if placeholder:
+            if self.is_multiline:
+                self.input_field.setPlaceholderText(placeholder)
+            else:
+                self.input_field.setPlaceholderText(placeholder)
+
+        self.content_layout.addWidget(self.input_field)
+
+        # Set focus to input field
+        self.input_field.setFocus()
+
+        # Update info with validation info
+        self._update_validation_info()
+
+    def _analyze_files(self):
+        """Analyze files for multi-file editing (similar to bulk rotation)."""
+        if not self.selected_files:
+            self.info_label.setText("Δεν επιλέχθηκαν αρχεία.")
             return
 
-        value = self.value_input.text()
+        # Update description for multi-file
+        self.desc_label.setText(f"Ορισμός {self.field_name} για επιλεγμένα αρχεία:")
 
-        if self.validator:
-            is_valid, normalized_value, error_msg = self.validator(value)
+        # Group files by type and existing field values
+        file_types = {}
+        total_files = len(self.selected_files)
+        files_with_existing_values = 0
 
-            if is_valid:
-                self.new_value = normalized_value
-                self.accept()
-            else:
-                self.error_label.setText(error_msg)
-                self.error_label.setVisible(True)
+        for file_item in self.selected_files:
+            # Determine file type
+            file_type = self._get_file_type_category(file_item)
+
+            if file_type not in file_types:
+                file_types[file_type] = {
+                    'all_files': [],
+                    'extensions': set()
+                }
+
+            file_types[file_type]['all_files'].append(file_item)
+
+            # Get extension for display
+            ext = file_item.filename.split('.')[-1].upper() if '.' in file_item.filename else 'UNKNOWN'
+            file_types[file_type]['extensions'].add(ext)
+
+            # Check if file has existing value for this field
+            if self._get_current_field_value(file_item):
+                files_with_existing_values += 1
+
+        # Create scroll area for file groups
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll.setMinimumHeight(200)
+
+        # Content widget for scroll area
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setContentsMargins(10, 10, 10, 10)
+        scroll_layout.setSpacing(12)
+
+        # Create groups
+        for file_type, data in file_types.items():
+            all_files = data['all_files']
+            extensions = sorted(data['extensions'])
+            self._create_group_widget(scroll_layout, file_type, all_files, extensions)
+
+        scroll.setWidget(scroll_content)
+        self.content_layout.addWidget(scroll)
+
+        # Add input field for new value
+        input_layout = QVBoxLayout()
+        input_label = QLabel(f"Νέα τιμή για {self.field_name}:")
+        input_layout.addWidget(input_label)
+
+        if self.is_multiline:
+            self.input_field = QTextEdit()
+            self.input_field.setPlainText(self.field_value)
+            self.input_field.setMaximumHeight(80)
         else:
-            # No validator, accept as is
-            self.new_value = value
-            self.accept()
+            self.input_field = QLineEdit()
+            self.input_field.setText(self.field_value)
+
+        # Add placeholder
+        placeholder = self._get_field_placeholder()
+        if placeholder:
+            self.input_field.setPlaceholderText(placeholder)
+
+        input_layout.addWidget(self.input_field)
+        self.content_layout.addLayout(input_layout)
+
+        # Update info label
+        info_text = f"{total_files} αρχεία επιλέχθηκαν"
+        if files_with_existing_values > 0:
+            info_text += f" ({files_with_existing_values} έχουν ήδη τιμή)"
+        self.info_label.setText(info_text)
+
+        # Set focus to input field
+        self.input_field.setFocus()
+
+    def _get_file_type_category(self, file_item) -> str:
+        """Get file type category for grouping."""
+        if not hasattr(file_item, 'filename'):
+            return "Other"
+
+        ext = file_item.filename.lower().split('.')[-1] if '.' in file_item.filename else ''
+
+        if ext in ['jpg', 'jpeg', 'png', 'tiff', 'tif', 'bmp', 'gif', 'webp', 'heic']:
+            return "Images"
+        elif ext in ['mp4', 'avi', 'mov', 'mkv', 'wmv', 'flv', 'm4v', 'webm']:
+            return "Videos"
+        elif ext in ['mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg', 'opus']:
+            return "Audio"
+        elif ext in ['pdf', 'doc', 'docx', 'txt']:
+            return "Documents"
+        else:
+            return "Other"
+
+    def _get_current_field_value(self, file_item) -> Optional[str]:
+        """Get current value of the field for a file."""
+        if not self.metadata_cache:
+            return None
+
+        # Check metadata cache first
+        metadata_entry = self.metadata_cache.get_entry(file_item.full_path)
+        if metadata_entry and hasattr(metadata_entry, 'data'):
+            # Try different field standards
+            standards = self._get_field_standards()
+            for standard in standards:
+                value = metadata_entry.data.get(standard)
+                if value:
+                    return str(value)
+
+        # Fallback to file metadata
+        if hasattr(file_item, 'metadata') and file_item.metadata:
+            for standard in self._get_field_standards():
+                value = file_item.metadata.get(standard)
+                if value:
+                    return str(value)
+
+        return None
+
+    def _get_field_standards(self) -> List[str]:
+        """Get the metadata standards for current field."""
+        field_standards = {
+            "Title": ["XMP:Title", "IPTC:Headline", "EXIF:ImageDescription"],
+            "Artist": ["XMP:Creator", "IPTC:By-line", "EXIF:Artist"],
+            "Author": ["XMP:Creator", "IPTC:By-line", "EXIF:Artist"],
+            "Copyright": ["XMP:Rights", "IPTC:CopyrightNotice", "EXIF:Copyright"],
+            "Description": ["XMP:Description", "IPTC:Caption-Abstract", "EXIF:ImageDescription"],
+            "Keywords": ["XMP:Keywords", "IPTC:Keywords"]
+        }
+        return field_standards.get(self.field_name, [])
+
+    def _get_field_placeholder(self) -> str:
+        """Get placeholder text for the field."""
+        placeholders = {
+            "Title": "Εισάγετε τίτλο...",
+            "Artist": "Εισάγετε όνομα καλλιτέχνη...",
+            "Author": "Εισάγετε όνομα συγγραφέα...",
+            "Copyright": "Εισάγετε πληροφορίες copyright...",
+            "Description": "Εισάγετε περιγραφή...",
+            "Keywords": "Εισάγετε λέξεις-κλειδιά (διαχωρισμένες με κόμματα)..."
+        }
+        return placeholders.get(self.field_name, "")
+
+    def _create_group_widget(self, parent_layout, file_type: str, all_files: List, extensions: List[str]):
+        """Create a widget for a file type group."""
+        frame = QFrame()
+        frame.setFrameStyle(QFrame.StyledPanel)
+
+        layout = QVBoxLayout(frame)
+        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setSpacing(8)
+
+        # Header with checkbox
+        header_layout = QHBoxLayout()
+        header_layout.setSpacing(12)
+
+        # Checkbox
+        checkbox = QCheckBox()
+        checkbox.setChecked(True)  # Default to checked
+        self.checkboxes[file_type] = checkbox
+
+        # Label with file count
+        extensions_text = ", ".join(extensions)
+        file_count = len(all_files)
+        label_text = f"{file_type} ({file_count} αρχεία): {extensions_text}"
+
+        label = QLabel(label_text)
+        label.setWordWrap(True)
+
+        header_layout.addWidget(checkbox)
+        header_layout.addWidget(label, 1)
+        layout.addLayout(header_layout)
+
+        parent_layout.addWidget(frame)
+
+        # Store files for this group
+        self.file_groups[file_type] = all_files
+
+    def _update_validation_info(self):
+        """Update info label with validation information."""
+        if self.field_name == "Title":
+            self.info_label.setText("Ο τίτλος είναι υποχρεωτικός και δεν μπορεί να περιέχει ειδικούς χαρακτήρες.")
+        elif self.field_name == "Keywords":
+            self.info_label.setText("Διαχωρίστε τις λέξεις-κλειδιά με κόμματα. Μέγιστο 50 λέξεις-κλειδιά.")
+        else:
+            max_length = getattr(MetadataFieldValidator, f'MAX_{self.field_name.upper()}_LENGTH', None)
+            if max_length:
+                self.info_label.setText(f"Μέγιστο {max_length} χαρακτήρες.")
+
+    def _validate_and_accept(self):
+        """Validate input and accept dialog if valid."""
+        # Get the input value
+        if self.is_multiline:
+            value = self.input_field.toPlainText()
+        else:
+            value = self.input_field.text()
+
+        # Validate using MetadataFieldValidator
+        is_valid, error_message = MetadataFieldValidator.validate_field(self.field_name, value)
+
+        if not is_valid:
+            # Show error in info label
+            self.info_label.setText(f"Σφάλμα: {error_message}")
+            self.info_label.setStyleSheet("color: #ff6b6b; font-size: 8pt;")
+            return
+
+        # Store the validated value
+        self.validated_value = value.strip()
+        self.accept()
+
+    def get_validated_value(self) -> str:
+        """Get the validated input value."""
+        return getattr(self, 'validated_value', '')
+
+    def get_selected_files(self) -> List:
+        """Get list of files that should be modified (for multi-file mode)."""
+        if len(self.selected_files) <= 1:
+            return self.selected_files
+
+        # Return files from checked groups
+        selected = []
+        for file_type, checkbox in self.checkboxes.items():
+            if checkbox.isChecked():
+                selected.extend(self.file_groups[file_type])
+        return selected
 
     @staticmethod
-    def get_value(parent=None, key_path: str = "", current_value: str = "") -> Tuple[bool, str]:
+    def edit_metadata_field(parent, selected_files, metadata_cache, field_name: str, current_value: str = ""):
         """
-        Static method to create the dialog and return the result.
+        Static method to show metadata edit dialog and return results.
 
         Args:
             parent: Parent widget
-            key_path: The metadata key path (e.g. "EXIF/Rotation")
-            current_value: The current value of the field
+            selected_files: List of FileItem objects
+            metadata_cache: Metadata cache instance
+            field_name: Name of field to edit
+            current_value: Current value (for single file editing)
 
         Returns:
-            Tuple containing:
-            - bool: True if user accepted, False if canceled
-            - str: The new value if accepted, empty string if canceled
+            Tuple of (success: bool, value: str, files_to_modify: List)
         """
-        dialog = MetadataEditDialog(parent, key_path, current_value)
-        result = dialog.exec_()
+        dialog = MetadataEditDialog(parent, selected_files, metadata_cache, field_name, current_value)
 
-        if result == QDialog.Accepted and dialog.new_value is not None:
-            return True, dialog.new_value
+        if dialog.exec_() == QDialog.Accepted:
+            return True, dialog.get_validated_value(), dialog.get_selected_files()
 
-        return False, ""
+        return False, "", []
