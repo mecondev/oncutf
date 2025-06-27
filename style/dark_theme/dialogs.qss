@@ -204,8 +204,10 @@ MetadataEditDialog QLineEdit {
     color: #f0ebd8;
     border: none;  /* No border like specified text */
     border-radius: 4px;
-    padding: 2px 6px;
-    height: 20px;  /* Match specified text height */
+    padding: 0px 4px;  /* Minimal padding like specified text */
+    height: 18px;  /* Exact height like specified text */
+    min-height: 18px;
+    max-height: 18px;
     font-size: 9pt;
     margin: 0px;
 }
@@ -214,18 +216,17 @@ MetadataEditDialog QLineEdit:focus {
     background-color: #1a1a1a;  /* Slightly lighter on focus */
 }
 
-/* QTextEdit for multiline fields */
+/* QTextEdit for multiline fields - no border for description */
 MetadataEditDialog QTextEdit {
     background-color: #181818;
     color: #f0ebd8;
-    border: 1px solid #3a3b40;
+    border: none;  /* Remove border */
     border-radius: 4px;
-    padding: 6px;
+    padding: 0px 4px;  /* Match QLineEdit padding */
     font-size: 9pt;
     margin: 0px;
 }
 
 MetadataEditDialog QTextEdit:focus {
-    border-color: #748cab;
     background-color: #1a1a1a;
 }
