@@ -29,6 +29,7 @@ from PyQt5.QtWidgets import (
 
 from utils.logger_factory import get_cached_logger
 from utils.metadata_field_validators import MetadataFieldValidator
+from widgets.metadata_validated_input import create_metadata_input_widget
 
 logger = get_cached_logger(__name__)
 
@@ -249,7 +250,7 @@ class MetadataEditDialog(QDialog):
             return "Other"
 
     def _create_input_field(self):
-        """Create the input field (QLineEdit or QTextEdit) based on field type."""
+        """Create the input field using validated input widgets."""
         # For multi-file, start with empty field unless all files have same value
         if self.is_multi_file:
             common_value = self._get_common_field_value()
@@ -257,21 +258,28 @@ class MetadataEditDialog(QDialog):
         else:
             field_value = self.field_value
 
-        if self.is_multiline:
-            self.input_field = QTextEdit()
-            self.input_field.setPlainText(field_value)
-            self.input_field.setMaximumHeight(100)
-            self.input_field.setMinimumHeight(80)
-        else:
-            self.input_field = QLineEdit()
-            self.input_field.setText(field_value)
-            if not self.is_multi_file:  # Only select all for single file
-                self.input_field.selectAll()
+        # Create validated input widget
+        self.input_field = create_metadata_input_widget(
+            field_name=self.field_name,
+            is_multiline=self.is_multiline,
+            parent=self
+        )
+
+        # Set the initial value
+        self.input_field.setText(field_value)
+
+        # Select all text for single file editing
+        if not self.is_multi_file and hasattr(self.input_field, 'selectAll'):
+            self.input_field.selectAll()
 
         # Add field-specific placeholder text
         placeholder = self._get_field_placeholder()
         if placeholder:
             self.input_field.setPlaceholderText(placeholder)
+
+        # Connect validation state changes to update info display
+        if hasattr(self.input_field, 'validation_changed'):
+            self.input_field.validation_changed.connect(self._on_validation_state_changed)
 
         # Install event filter for keyboard shortcuts
         self.input_field.installEventFilter(self)
@@ -331,6 +339,20 @@ class MetadataEditDialog(QDialog):
         }
         return placeholders.get(self.field_name, "")
 
+    def _on_validation_state_changed(self, is_valid: bool) -> None:
+        """Handle validation state changes from the input widget."""
+        if not is_valid:
+            # Get error message from the input widget
+            if hasattr(self.input_field, 'get_validation_error_message'):
+                error_message = self.input_field.get_validation_error_message()
+                if error_message:
+                    self.info_label.setText(f"Error: {error_message}")
+                    self.info_label.setStyleSheet("color: #ff6b6b; font-size: 8pt;")
+                    return
+
+        # Reset to normal validation info if valid
+        self._update_validation_info()
+
     def _update_validation_info(self):
         """Update info label with validation information."""
         if self.field_name == "Title":
@@ -345,20 +367,25 @@ class MetadataEditDialog(QDialog):
     def _validate_and_accept(self):
         """Validate input and accept dialog if valid."""
         # Get the input value
-        if self.is_multiline:
-            value = self.input_field.toPlainText()
-        else:
-            value = self.input_field.text()
+        value = self.input_field.text()
 
-        # Validate using MetadataFieldValidator
+        # Check if the input widget is valid
+        if hasattr(self.input_field, 'is_valid') and not self.input_field.is_valid():
+            # Get error message from the input widget
+            if hasattr(self.input_field, 'get_validation_error_message'):
+                error_message = self.input_field.get_validation_error_message()
+                if error_message:
+                    self.info_label.setText(f"Error: {error_message}")
+                    self.info_label.setStyleSheet("color: #ff6b6b; font-size: 8pt;")
+                    return
+
+        # Additional validation using MetadataFieldValidator
         is_valid, error_message = MetadataFieldValidator.validate_field(self.field_name, value)
 
         if not is_valid:
             # Show error in info label
             self.info_label.setText(f"Error: {error_message}")
-            from utils.theme import get_theme_color
-            error_color = get_theme_color('text')  # Use theme-based error color
-            self.info_label.setStyleSheet(f"color: #ff6b6b; font-size: 8pt;")
+            self.info_label.setStyleSheet("color: #ff6b6b; font-size: 8pt;")
             return
 
         # Store the validated value

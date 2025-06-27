@@ -13,31 +13,23 @@ Contains:
 """
 
 import logging
-from typing import Optional
+from typing import Optional, Set, Tuple
 
-from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWidgets import QLineEdit, QWidget
 
-from config import (
-    QLABEL_DARK_BG,
-    QLABEL_DARK_BORDER,
-    QLABEL_ERROR_BG,
-    QLABEL_ERROR_TEXT,
-    QLABEL_INFO_TEXT,
-)
+from config import INVALID_FILENAME_CHARS
 from utils.filename_validator import (
-    clean_filename_text,
     get_validation_error_message,
     is_validation_error_marker,
-    should_allow_character_input,
+    validate_filename_part,
 )
-from utils.tooltip_helper import show_error_tooltip
+from widgets.base_validated_input import BaseValidatedInput
 
 logger = logging.getLogger(__name__)
 
 
-class ValidatedLineEdit(QLineEdit):
+class ValidatedLineEdit(QLineEdit, BaseValidatedInput):
     """
     Custom QLineEdit with filename validation and input filtering.
 
@@ -48,75 +40,58 @@ class ValidatedLineEdit(QLineEdit):
     - Cleans pasted text automatically
     """
 
-    # Signal emitted when validation state changes
-    validation_changed = pyqtSignal(bool)  # True if valid, False if invalid
-
     def __init__(self, parent: Optional[QWidget] = None):
-        super().__init__(parent)
+        QLineEdit.__init__(self, parent)
+        BaseValidatedInput.__init__(self)
 
-        # Validation state tracking
-        self._is_valid = True
-        self._has_had_content = False
-
-        # Setup initial state
-        self._setup_signals()
-
-    def _setup_signals(self) -> None:
+    def _setup_validation_signals(self) -> None:
         """Setup internal signal connections"""
         self.textChanged.connect(self._on_text_changed)
 
-    def keyPressEvent(self, event: QKeyEvent) -> None:
+    def get_blocked_characters(self) -> Set[str]:
         """
-        Handle key press events with validation
+        Get set of characters that should be blocked for filename input.
+
+        Returns:
+            Set of characters to block
+        """
+        return set(INVALID_FILENAME_CHARS)
+
+    def validate_text_content(self, text: str) -> Tuple[bool, str]:
+        """
+        Validate text content using filename validation.
 
         Args:
-            event: The key press event
+            text: Text to validate
+
+        Returns:
+            Tuple of (is_valid, error_message)
         """
-        try:
-            # Allow control characters (backspace, delete, arrow keys, etc.)
-            if event.text() == '' or len(event.text()) == 0:
-                super().keyPressEvent(event)
-                return
+        if not text:
+            return True, ""  # Empty text is valid
 
-            # Check if character is allowed
-            if not should_allow_character_input(event.text()):
-                # Show error tooltip for invalid character
-                error_msg = f"Character '{event.text()}' is not allowed in filenames"
-                show_error_tooltip(self, error_msg)
+        # Check for validation error marker
+        if is_validation_error_marker(text):
+            return False, "Invalid filename"
 
-                # Also apply error styling temporarily
-                self._apply_temporary_error_style()
+        # Use filename validation
+        is_valid, result = validate_filename_part(text)
+        if not is_valid:
+            return False, get_validation_error_message(text)
 
-                logger.debug(f"[ValidatedLineEdit] Blocked invalid character: '{event.text()}'")
-                return  # Don't call super() - character is blocked
+        return True, ""
 
-            # Allow the character
-            super().keyPressEvent(event)
-
-        except Exception as e:
-            logger.error(f"[ValidatedLineEdit] Error in keyPressEvent: {e}")
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        """Handle key press events with validation."""
+        if self.handle_key_press_validation(event):
             super().keyPressEvent(event)
 
     def insertFromMimeData(self, source) -> None:
-        """
-        Handle paste operations with validation and cleaning
-
-        Args:
-            source: The mime data source
-        """
+        """Handle paste operations with validation and cleaning."""
         try:
             if source.hasText():
-                text = source.text()
-                cleaned_text = clean_filename_text(text)
-
-                if cleaned_text != text:
-                    # Show tooltip about cleaned characters
-                    removed_chars = ''.join(set(text) - set(cleaned_text))
-                    if removed_chars:
-                        error_msg = f"Removed invalid characters: {removed_chars}"
-                        show_error_tooltip(self, error_msg)
-
-                    logger.debug(f"[ValidatedLineEdit] Cleaned pasted text: '{text}' → '{cleaned_text}'")
+                original_text = source.text()
+                cleaned_text = self.handle_paste_validation(original_text)
 
                 # Insert the cleaned text
                 self.insert(cleaned_text)
@@ -128,117 +103,5 @@ class ValidatedLineEdit(QLineEdit):
             super().insertFromMimeData(source)
 
     def _on_text_changed(self, text: str) -> None:
-        """
-        Handle text changes and update validation state
-
-        Args:
-            text: The new text content
-        """
-        try:
-            # Track if field has ever had content
-            if text and not self._has_had_content:
-                self._has_had_content = True
-
-            # Validate the text
-            old_valid_state = self._is_valid
-            self._is_valid = self._validate_text(text)
-
-            # Update styling
-            self._update_styling(text)
-
-            # Emit signal if validation state changed
-            if old_valid_state != self._is_valid:
-                self.validation_changed.emit(self._is_valid)
-                logger.debug(f"[ValidatedLineEdit] Validation state changed: {self._is_valid}")
-
-        except Exception as e:
-            logger.error(f"[ValidatedLineEdit] Error in _on_text_changed: {e}")
-
-    def _validate_text(self, text: str) -> bool:
-        """
-        Validate the current text content
-
-        Args:
-            text: Text to validate
-
-        Returns:
-            bool: True if text is valid
-        """
-        if not text:
-            return True  # Empty text is considered valid
-
-        # Check for validation error marker
-        if is_validation_error_marker(text):
-            return False
-
-        # Use existing validation logic
-        from utils.validate_filename_text import is_valid_filename_text
-        return is_valid_filename_text(text)
-
-    def _update_styling(self, text: str) -> None:
-        """
-        Update widget styling based on validation state
-
-        Args:
-            text: Current text content
-        """
-        try:
-            if len(text) >= self.maxLength() and self.maxLength() > 0:
-                # At character limit - darker gray styling
-                self.setStyleSheet(f"border: 2px solid {QLABEL_DARK_BORDER}; background-color: {QLABEL_DARK_BG}; color: {QLABEL_INFO_TEXT};")
-            elif not text and self._has_had_content:
-                # Empty after having content - darker orange styling
-                self.setStyleSheet("border: 2px solid #cc6600;")
-            elif not text:
-                # Empty initially - no special styling
-                self.setStyleSheet("")
-            elif not self._is_valid:
-                # Invalid text - red styling
-                self.setStyleSheet(f"border: 2px solid {QLABEL_ERROR_TEXT};")
-            else:
-                # Valid - default styling
-                self.setStyleSheet("")
-
-        except Exception as e:
-            logger.error(f"[ValidatedLineEdit] Error in _update_styling: {e}")
-
-    def _apply_temporary_error_style(self) -> None:
-        """Apply temporary error styling for blocked characters"""
-        try:
-
-            # Apply error style
-            self.setStyleSheet(f"border: 2px solid {QLABEL_ERROR_TEXT}; background-color: {QLABEL_ERROR_BG};")
-
-            # Reset style after a short delay
-            from utils.timer_manager import schedule_ui_update
-            schedule_ui_update(lambda: self._update_styling(self.text()), 500)
-
-        except Exception as e:
-            logger.error(f"[ValidatedLineEdit] Error in _apply_temporary_error_style: {e}")
-
-    def is_valid(self) -> bool:
-        """
-        Get current validation state
-
-        Returns:
-            bool: True if current text is valid
-        """
-        return self._is_valid
-
-    def reset_validation_state(self) -> None:
-        """Reset validation tracking state"""
-        self._has_had_content = False
-        self._is_valid = True
-        self.setStyleSheet("")
-
-    def get_validation_error_message(self) -> str:
-        """
-        Get validation error message for current text
-
-        Returns:
-            str: Error message, empty if valid
-        """
-        if self._is_valid:
-            return ""
-
-        return get_validation_error_message(self.text())
+        """Handle text changes and update validation state."""
+        self.update_validation_state(text)
