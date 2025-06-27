@@ -52,21 +52,34 @@ class MetadataEditDialog(QDialog):
         self.field_name = field_name
         self.field_value = field_value
 
+        # Multi-file support
+        self.file_groups = {}
+        self.checkboxes = {}
+        self.is_multi_file = len(self.selected_files) > 1
+
         # Determine if this is a multi-line field
         self.is_multiline = field_name in ["Description"]
 
         # Set up dialog properties - frameless but draggable
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog) # type: ignore
         self.setModal(True)
 
         # Add drag functionality
         self._drag_position = None
 
-        # Adjust size based on field type (single file only)
-        if self.is_multiline:
-            self.setFixedSize(420, 200)
+        # Adjust size based on mode and field type
+        if self.is_multi_file:
+            # Multi-file mode - taller for checkboxes
+            if self.is_multiline:
+                self.setFixedSize(450, 280)
+            else:
+                self.setFixedSize(450, 220)
         else:
-            self.setFixedSize(380, 140)
+            # Single file mode
+            if self.is_multiline:
+                self.setFixedSize(420, 200)
+            else:
+                self.setFixedSize(380, 140)
 
         self._setup_styles()
         self._setup_ui()
@@ -86,8 +99,14 @@ class MetadataEditDialog(QDialog):
         self.field_label = QLabel(f"{self.field_name}:")
         layout.addWidget(self.field_label)
 
-        # Small space between label and input
+        # Small space between label and checkboxes/input
         layout.addSpacing(2)
+
+        # Add file group checkboxes for multi-file mode
+        if self.is_multi_file:
+            self._create_file_group_checkboxes(layout)
+            # Small space between checkboxes and input
+            layout.addSpacing(4)
 
         # Input field (QLineEdit or QTextEdit)
         self._create_input_field()
@@ -110,8 +129,34 @@ class MetadataEditDialog(QDialog):
         # Larger space before buttons
         layout.addSpacing(20)
 
-        # Buttons
+                # Buttons
         self._setup_buttons(layout)
+
+        # Setup tab order after all widgets are created
+        self._setup_tab_order()
+
+        # Set focus to input field after all widgets are created (works for both single and multi-file)
+        self.input_field.setFocus()
+
+    def _setup_tab_order(self):
+        """Setup proper tab order: text_field -> OK -> Cancel -> checkboxes -> back to text_field"""
+        tab_widgets = []
+
+        # Start with input field
+        tab_widgets.append(self.input_field)
+
+        # Then buttons
+        tab_widgets.append(self.ok_button)
+        tab_widgets.append(self.cancel_button)
+
+        # Then checkboxes (if multi-file mode)
+        if self.is_multi_file:
+            for checkbox in self.checkboxes.values():
+                tab_widgets.append(checkbox)
+
+        # Set tab order
+        for i in range(len(tab_widgets) - 1):
+            self.setTabOrder(tab_widgets[i], tab_widgets[i + 1])
 
     def _setup_buttons(self, parent_layout):
         """Set up OK/Cancel buttons."""
@@ -122,51 +167,121 @@ class MetadataEditDialog(QDialog):
         self.cancel_button = QPushButton("Cancel")
         self.cancel_button.setDefault(False)
         self.cancel_button.setAutoDefault(False)
-        self.cancel_button.setFocus()
         self.cancel_button.clicked.connect(self.reject)
-
-
 
         # OK button
         self.ok_button = QPushButton("OK")
+        self.ok_button.setDefault(False)  # Prevent default button behavior
+        self.ok_button.setAutoDefault(False)  # Prevent auto-default behavior
         self.ok_button.clicked.connect(self._validate_and_accept)
-
-
 
         button_layout.addStretch()
         button_layout.addWidget(self.cancel_button)
         button_layout.addWidget(self.ok_button)
         parent_layout.addLayout(button_layout)
 
+    def _create_file_group_checkboxes(self, layout):
+        """Create checkboxes for file groups in multi-file mode."""
+        # Group files by type
+        self._group_files_by_type()
+
+        # Create checkboxes for each file type
+        for file_type, file_data in self.file_groups.items():
+            files_list = file_data['files']
+            extensions = sorted(file_data['extensions'])
+
+            # Create checkbox
+            checkbox = QCheckBox()
+            checkbox.setChecked(True)  # Default to checked
+            self.checkboxes[file_type] = checkbox
+
+            # Create label text
+            file_count = len(files_list)
+            extensions_text = ", ".join(extensions)
+            label_text = f"{file_type} ({file_count} files): {extensions_text}"
+
+            # Create horizontal layout for checkbox + label
+            checkbox_layout = QHBoxLayout()
+            checkbox_layout.setContentsMargins(0, 0, 0, 0)
+            checkbox_layout.setSpacing(8)
+
+            checkbox_layout.addWidget(checkbox)
+
+            label = QLabel(label_text)
+            label.setWordWrap(True)
+            checkbox_layout.addWidget(label, 1)
+
+            layout.addLayout(checkbox_layout)
+
+    def _group_files_by_type(self):
+        """Group selected files by their type."""
+        for file_item in self.selected_files:
+            file_type = self._get_file_type_category(file_item)
+
+            if file_type not in self.file_groups:
+                self.file_groups[file_type] = {
+                    'files': [],
+                    'extensions': set()
+                }
+
+            self.file_groups[file_type]['files'].append(file_item)
+
+            # Get extension for display
+            ext = file_item.filename.split('.')[-1].upper() if '.' in file_item.filename else 'UNKNOWN'
+            self.file_groups[file_type]['extensions'].add(ext)
+
+    def _get_file_type_category(self, file_item) -> str:
+        """Get file type category for grouping."""
+        if not hasattr(file_item, 'filename'):
+            return "Other"
+
+        ext = file_item.filename.lower().split('.')[-1] if '.' in file_item.filename else ''
+
+        if ext in ['jpg', 'jpeg', 'png', 'tiff', 'tif', 'bmp', 'gif', 'webp', 'heic', 'arw', 'nef', 'cr2', 'cr3', 'dng', 'raf', 'orf', 'rw2']:
+            return "Images"
+        elif ext in ['mp4', 'avi', 'mov', 'mkv', 'wmv', 'flv', 'm4v', 'webm']:
+            return "Videos"
+        elif ext in ['mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg', 'opus']:
+            return "Audio"
+        elif ext in ['pdf', 'doc', 'docx', 'txt']:
+            return "Documents"
+        else:
+            return "Other"
+
     def _create_input_field(self):
         """Create the input field (QLineEdit or QTextEdit) based on field type."""
+        # For multi-file, start with empty field unless all files have same value
+        if self.is_multi_file:
+            common_value = self._get_common_field_value()
+            field_value = common_value if common_value is not None else ""
+        else:
+            field_value = self.field_value
+
         if self.is_multiline:
             self.input_field = QTextEdit()
-            self.input_field.setPlainText(self.field_value)
+            self.input_field.setPlainText(field_value)
             self.input_field.setMaximumHeight(100)
             self.input_field.setMinimumHeight(80)
         else:
             self.input_field = QLineEdit()
-            self.input_field.setText(self.field_value)
-            self.input_field.selectAll()
+            self.input_field.setText(field_value)
+            if not self.is_multi_file:  # Only select all for single file
+                self.input_field.selectAll()
 
         # Add field-specific placeholder text
         placeholder = self._get_field_placeholder()
         if placeholder:
             self.input_field.setPlaceholderText(placeholder)
 
-        # Set focus to input field
-        self.input_field.setFocus()
-
     def mousePressEvent(self, event):
         """Handle mouse press for dragging."""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton: # type: ignore
             self._drag_position = event.globalPos() - self.frameGeometry().topLeft()
             event.accept()
 
     def mouseMoveEvent(self, event):
         """Handle mouse move for dragging."""
-        if event.buttons() == Qt.LeftButton and self._drag_position:
+        if event.buttons() == Qt.LeftButton and self._drag_position: # type: ignore
             self.move(event.globalPos() - self._drag_position)
             event.accept()
 
@@ -219,6 +334,68 @@ class MetadataEditDialog(QDialog):
     def get_validated_value(self) -> str:
         """Get the validated input value."""
         return getattr(self, 'validated_value', '')
+
+    def _get_common_field_value(self):
+        """Get common field value if all selected files have the same value."""
+        if not self.selected_files:
+            return None
+
+        values = set()
+        for file_item in self.selected_files:
+            value = self._get_current_field_value(file_item)
+            values.add(value or "")  # Convert None to empty string
+
+        # Return common value only if all files have the same value
+        return list(values)[0] if len(values) == 1 else None
+
+    def _get_current_field_value(self, file_item) -> str:
+        """Get current value of the field for a file."""
+        if not self.metadata_cache:
+            return ""
+
+        # Check metadata cache first
+        cache_entry = self.metadata_cache.get_entry(file_item.full_path)
+        if cache_entry and hasattr(cache_entry, 'data'):
+            # Try different field standards
+            standards = self._get_field_standards()
+            for standard in standards:
+                value = cache_entry.data.get(standard)
+                if value:
+                    return str(value)
+
+        # Fallback to file metadata
+        if hasattr(file_item, 'metadata') and file_item.metadata:
+            standards = self._get_field_standards()
+            for standard in standards:
+                value = file_item.metadata.get(standard)
+                if value:
+                    return str(value)
+
+        return ""
+
+    def _get_field_standards(self) -> list:
+        """Get the metadata standards for current field."""
+        field_standards = {
+            "Title": ["XMP:Title", "IPTC:Headline", "EXIF:ImageDescription"],
+            "Artist": ["XMP:Creator", "IPTC:By-line", "EXIF:Artist"],
+            "Author": ["XMP:Creator", "IPTC:By-line", "EXIF:Artist"],
+            "Copyright": ["XMP:Rights", "IPTC:CopyrightNotice", "EXIF:Copyright"],
+            "Description": ["XMP:Description", "IPTC:Caption-Abstract", "EXIF:ImageDescription"],
+            "Keywords": ["XMP:Keywords", "IPTC:Keywords"]
+        }
+        return field_standards.get(self.field_name, [])
+
+    def get_selected_files(self) -> list:
+        """Get list of files that should be modified."""
+        if not self.is_multi_file:
+            return self.selected_files
+
+        # Return files from checked groups
+        selected = []
+        for file_type, checkbox in self.checkboxes.items():
+            if checkbox.isChecked():
+                selected.extend(self.file_groups[file_type]['files'])
+        return selected
 
 
 
