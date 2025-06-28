@@ -218,6 +218,11 @@ class UtilityManager:
 
         # Get rename data and modules
         rename_data = self.main_window.rename_modules_area.get_all_data()
+
+        # Add post_transform data from final transform container
+        post_transform_data = self.main_window.final_transform_container.get_data()
+        rename_data["post_transform"] = post_transform_data
+
         all_modules = self.main_window.rename_modules_area.get_all_module_instances()
 
         # Use PreviewManager to generate previews

@@ -44,6 +44,9 @@ from .rename_module_widget import RenameModuleWidget
 from .rename_modules_area import RenameModulesArea
 from .validated_line_edit import ValidatedLineEdit
 
+# Final transform container
+from .final_transform_container import FinalTransformContainer
+
 __all__ = [
     # Progress
     'ProgressWidget',
@@ -81,4 +84,7 @@ __all__ = [
 
     # Worker widgets
     'MetadataWorker',
+
+    # Final transform container
+    'FinalTransformContainer',
 ]

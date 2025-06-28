@@ -52,8 +52,13 @@ class RenameManager:
         """
         selected_files = self.main_window.get_selected_files()
         rename_data = self.main_window.rename_modules_area.get_all_data()
-        modules_data = rename_data.get("modules", [])
+
+        # Add post_transform data from final transform container
+        post_transform_data = self.main_window.final_transform_container.get_data()
+        rename_data["post_transform"] = post_transform_data
+
         post_transform = rename_data.get("post_transform", {})
+        modules_data = rename_data.get("modules", [])
 
         # Store checked paths for restoration
         checked_paths = {f.full_path for f in self.main_window.file_model.files if f.checked}
@@ -145,7 +150,16 @@ class RenameManager:
             Dictionary containing modules data and post_transform settings
         """
         if hasattr(self.main_window, 'rename_modules_area'):
-            return self.main_window.rename_modules_area.get_all_data()
+            rename_data = self.main_window.rename_modules_area.get_all_data()
+
+            # Add post_transform data from final transform container
+            if hasattr(self.main_window, 'final_transform_container'):
+                post_transform_data = self.main_window.final_transform_container.get_data()
+                rename_data["post_transform"] = post_transform_data
+            else:
+                rename_data["post_transform"] = {}
+
+            return rename_data
         return {"modules": [], "post_transform": {}}
 
     def get_selected_files_for_rename(self) -> List[FileItem]:

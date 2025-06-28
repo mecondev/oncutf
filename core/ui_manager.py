@@ -391,10 +391,22 @@ class UIManager:
         self.parent_window.bottom_layout.setContentsMargins(0, 4, 0, 0)  # Add small top margin
 
         content_layout = QHBoxLayout()
-        content_layout.setSpacing(5)  
+        content_layout.setSpacing(5)
 
-        # === Left: Rename modules ===
-        self.parent_window.rename_modules_area = RenameModulesArea(parent=self.parent_window, parent_window=self.parent_window)
+        # === Left side: Two vertical containers ===
+        left_container = QWidget()
+        left_layout = QVBoxLayout(left_container)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(4)
+
+        # Top container: Rename modules area (takes most space)
+        self.parent_window.rename_modules_area = RenameModulesArea(parent=left_container, parent_window=self.parent_window)
+        left_layout.addWidget(self.parent_window.rename_modules_area, stretch=1)
+
+        # Bottom container: Final transform container
+        from widgets.final_transform_container import FinalTransformContainer
+        self.parent_window.final_transform_container = FinalTransformContainer(parent=left_container)
+        left_layout.addWidget(self.parent_window.final_transform_container)
 
         # === Right: Preview tables view ===
         self.parent_window.preview_tables_view = PreviewTablesView(parent=self.parent_window)
@@ -426,7 +438,7 @@ class UIManager:
         preview_layout.addWidget(self.parent_window.preview_tables_view)
         preview_layout.addLayout(controls_layout)
 
-        content_layout.addWidget(self.parent_window.rename_modules_area, stretch=1)
+        content_layout.addWidget(left_container, stretch=1)
         content_layout.addWidget(self.parent_window.preview_frame, stretch=3)
         self.parent_window.bottom_layout.addLayout(content_layout)
 
@@ -508,6 +520,18 @@ class UIManager:
 
         # --- Connect the updated signal of RenameModulesArea to generate_preview_names ---
         self.parent_window.rename_modules_area.updated.connect(self.parent_window.request_preview_update)
+
+        # --- Connect the FinalTransformContainer signals ---
+        self.parent_window.final_transform_container.updated.connect(self.parent_window.request_preview_update)
+        self.parent_window.final_transform_container.add_module_requested.connect(self.parent_window.rename_modules_area.add_module)
+        self.parent_window.final_transform_container.remove_module_requested.connect(self.parent_window.rename_modules_area.remove_last_module)
+
+        # Update remove button state when modules change
+        self.parent_window.rename_modules_area.updated.connect(
+            lambda: self.parent_window.final_transform_container.set_remove_button_enabled(
+                len(self.parent_window.rename_modules_area.module_widgets) > 1
+            )
+        )
 
         # Enable SelectionStore mode in FileTableView after signals are connected
         schedule_selection_update(self.parent_window._enable_selection_store_mode, 100)

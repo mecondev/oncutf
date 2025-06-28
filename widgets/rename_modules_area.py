@@ -17,20 +17,14 @@ from typing import Optional
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from PyQt5.QtWidgets import (
     QHBoxLayout,
-    QLabel,
-    QPushButton,
     QScrollArea,
-    QSizePolicy,
-    QSpacerItem,
     QVBoxLayout,
     QWidget,
 )
 
 from modules.base_module import BaseRenameModule
-from utils.icons_loader import get_menu_icon
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_scroll_adjust
-from widgets.name_transform_widget import NameTransformWidget
 from widgets.rename_module_widget import RenameModuleWidget
 
 # ApplicationContext integration
@@ -79,83 +73,7 @@ class RenameModulesArea(QWidget):
         self.scroll_area.setWidget(self.scroll_content)
         main_layout.addWidget(self.scroll_area)
 
-        # Extra large space to push final transform down to align with status label bottom
-        main_layout.addSpacing(30)
-
-        # Final transformation + controls
-        footer_layout = QHBoxLayout()
-        footer_layout.setContentsMargins(2, 0, 2, 2)  # Remove top margin for more compact look
-        footer_layout.setSpacing(10)
-
-        # Left side: name transform
-        self.name_transform_label = QLabel("Final Transform:")
-        self.name_transform_widget = NameTransformWidget()
-        self.name_transform_widget.updated.connect(self.updated.emit)
-
-        name_transform_layout = QVBoxLayout()
-        name_transform_layout.setContentsMargins(0, 0, 0, 0)
-        name_transform_layout.setSpacing(4)  # More space between label and widget to push label down
-        name_transform_layout.addWidget(self.name_transform_label)
-        name_transform_layout.addWidget(self.name_transform_widget)
-
-        # Middle spacer
-        spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
-
-        # Right side: buttons positioned to align with specific transform rows
-        # Create a layout that matches the structure of name_transform_widget
-        buttons_container = QWidget()
-        buttons_container_layout = QVBoxLayout(buttons_container)
-        buttons_container_layout.setContentsMargins(0, 0, 0, 0)
-        buttons_container_layout.setSpacing(0)
-
-        # Space to align with "Final Transform:" label (22px label height + 4px spacing)
-        buttons_container_layout.addSpacing(26)
-
-        # Space to align with Greeklish row (20px row height + 3px spacing)
-        buttons_container_layout.addSpacing(23)
-
-        # Add button - aligns with Case row (2nd row)
-        case_button_layout = QHBoxLayout()
-        case_button_layout.setContentsMargins(0, 0, 0, 0)
-        case_button_layout.addStretch()
-
-        self.add_button = QPushButton()
-        self.add_button.setIcon(get_menu_icon("plus"))
-        self.add_button.setFixedSize(28, 28)
-        self.add_button.setToolTip("Add new module")
-        self.add_button.clicked.connect(self.add_module)
-
-        case_button_layout.addWidget(self.add_button)
-        buttons_container_layout.addLayout(case_button_layout)
-
-        # Space between Case and Separator rows (3px spacing)
-        buttons_container_layout.addSpacing(3)
-
-        # Remove button - aligns with Separator row (3rd row) - this should align with status label bottom
-        separator_button_layout = QHBoxLayout()
-        separator_button_layout.setContentsMargins(0, 0, 0, 0)
-        separator_button_layout.addStretch()
-
-        self.remove_button = QPushButton()
-        self.remove_button.setIcon(get_menu_icon("minus"))
-        self.remove_button.setFixedSize(28, 28)
-        self.remove_button.setToolTip("Remove last module")
-        self.remove_button.clicked.connect(self.remove_last_module)
-
-        separator_button_layout.addWidget(self.remove_button)
-        buttons_container_layout.addLayout(separator_button_layout)
-
-        # Add remaining stretch
-        buttons_container_layout.addStretch()
-
-        footer_layout.addLayout(name_transform_layout)
-        footer_layout.addItem(spacer)
-        footer_layout.addWidget(buttons_container)
-
-        main_layout.addLayout(footer_layout)
-
         self.add_module()  # Start with one by default
-        self._update_remove_button_state()  # Set initial button state
 
         # Update timer for debouncing
         self._update_timer = QTimer()
@@ -204,7 +122,6 @@ class RenameModulesArea(QWidget):
             self.scroll_layout.addWidget(separator)
 
         self.scroll_layout.addWidget(module)
-        self._update_remove_button_state()
 
         # Schedule scroll to new module
         schedule_scroll_adjust(lambda: self._scroll_to_show_new_module(module), 50)
@@ -233,7 +150,6 @@ class RenameModulesArea(QWidget):
             self.scroll_layout.removeWidget(module)
             module.setParent(None)
             module.deleteLater()
-            self._update_remove_button_state()
 
             # If only one module remains, scroll to top
             if len(self.module_widgets) == 1:
@@ -244,16 +160,11 @@ class RenameModulesArea(QWidget):
             self.updated.emit()
 
     def remove_last_module(self):
-        # Ensure at least one module always remains
+        """Remove the last module if more than one exists."""
         if len(self.module_widgets) > 1:
             self.remove_module(self.module_widgets[-1])
         else:
             logger.debug("[RenameModulesArea] Cannot remove last module - minimum 1 required", extra={"dev_only": True})
-
-    def _update_remove_button_state(self):
-        """Enable/disable remove button based on number of modules."""
-        self.remove_button.setEnabled(len(self.module_widgets) > 1)
-        logger.debug(f"[RenameModulesArea] Remove button {'enabled' if len(self.module_widgets) > 1 else 'disabled'} - {len(self.module_widgets)} modules", extra={"dev_only": True})
 
     def _scroll_to_show_new_module(self, new_module):
         """Scroll to ensure the newly added module is visible."""
@@ -293,11 +204,11 @@ class RenameModulesArea(QWidget):
 
     def get_all_data(self) -> dict:
         """
-        Collects data from all modules and final transform.
+        Collects data from all modules.
+        Note: post_transform data is now handled by FinalTransformContainer.
         """
         return {
-            "modules": [m.to_dict() for m in self.module_widgets],
-            "post_transform": self.name_transform_widget.get_data()
+            "modules": [m.to_dict() for m in self.module_widgets]
         }
 
     def get_all_module_instances(self) -> list[BaseRenameModule]:
