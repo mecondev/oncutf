@@ -403,6 +403,9 @@ class UIManager:
         self.parent_window.rename_modules_area = RenameModulesArea(parent=left_container, parent_window=self.parent_window)
         left_layout.addWidget(self.parent_window.rename_modules_area, stretch=1)
 
+        # Add spacer to push final transform container down
+        left_layout.addSpacing(8)
+
         # Bottom container: Final transform container
         from widgets.final_transform_container import FinalTransformContainer
         self.parent_window.final_transform_container = FinalTransformContainer(parent=left_container)
