@@ -44,40 +44,6 @@ class FinalTransformContainer(QWidget):
         main_layout.setContentsMargins(6, 6, 6, 6)
         main_layout.setSpacing(0)  # Remove spacing since we removed the title
 
-        # Apply checkbox styling to match metadata edit dialog
-        self.setStyleSheet("""
-            QCheckBox {
-                color: #f0ebd8;
-                font-size: 9pt;
-                spacing: 8px;
-            }
-            QCheckBox::indicator {
-                width: 16px;
-                height: 16px;
-                border: 1px solid #3a3b40;
-                border-radius: 3px;
-                background-color: #181818;
-            }
-            QCheckBox::indicator:unchecked {
-                image: url(resources/icons/feather_icons/square.svg);
-                background-color: #181818;
-                border-color: #3a3b40;
-            }
-            QCheckBox::indicator:checked {
-                image: url(resources/icons/feather_icons/check-square.svg);
-                background-color: #181818;
-                border-color: #3a3b40;
-            }
-            QCheckBox::indicator:hover {
-                border-color: #555555;
-                background-color: #232323;
-            }
-            QCheckBox::indicator:focus {
-                border-color: #666666;
-                background-color: #2a2a2a;
-            }
-        """)
-
         # Greeklish row (alone, touching left)
         greeklish_layout = QHBoxLayout()
         greeklish_layout.setContentsMargins(0, 0, 0, 0)
