@@ -224,3 +224,11 @@ QWidget[objectName="RenameModulesArea"] QLabel {
     color: #f0ebd8;
 }
 
+/* Footer separator styling */
+QFrame[objectName="footerSeparator"] {
+    background-color: #444444;
+    border: none;
+    min-height: 4px;
+    max-height: 4px;
+}
+

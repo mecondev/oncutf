@@ -434,17 +434,34 @@ class UIManager:
         footer_separator = QFrame()
         footer_separator.setFrameShape(QFrame.HLine)
         footer_separator.setFrameShadow(QFrame.Sunken)
-        # Add color for testing
-        footer_separator.setStyleSheet("QFrame { background-color: #3498db; min-height: 2px; max-height: 2px; }")
+        footer_separator.setObjectName("footerSeparator")
 
         footer_widget = QWidget()
         footer_layout = QHBoxLayout(footer_widget)
         footer_layout.setContentsMargins(10, 2, 10, 2)
 
+        # Menu button
+        self.parent_window.menu_button = QPushButton()
+        self.parent_window.menu_button.setIcon(get_menu_icon("menu"))
+        self.parent_window.menu_button.setFixedSize(20, 20)  # Square button
+        self.parent_window.menu_button.setToolTip("Menu")
+        self.parent_window.menu_button.setObjectName("menuButton")
+        # Override round corners for small button and center icon
+        self.parent_window.menu_button.setStyleSheet("""
+            QPushButton#menuButton {
+                border-radius: 3px;
+                padding: 0px;
+                text-align: center;
+            }
+        """)
+
         self.parent_window.version_label = QLabel()
         self.parent_window.version_label.setText(f"{APP_NAME} v{APP_VERSION}")
         self.parent_window.version_label.setObjectName("versionLabel")
         self.parent_window.version_label.setAlignment(Qt.AlignLeft)
+
+        footer_layout.addWidget(self.parent_window.menu_button)
+        footer_layout.addSpacing(8)  # Small space between button and label
         footer_layout.addWidget(self.parent_window.version_label)
         footer_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         footer_widget.setFixedHeight(24)  # Reduce footer height

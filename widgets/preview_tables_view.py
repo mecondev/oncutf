@@ -120,9 +120,11 @@ class PreviewTablesView(QWidget):
         """Setup the UI layout and tables."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)  # Reduce spacing between labels and tables
 
         # Labels
         labels_layout = QHBoxLayout()
+        labels_layout.setContentsMargins(0, 2, 0, 0)  # Add 2px top margin
         self.old_label = QLabel("Old file(s) name(s)")
         self.new_label = QLabel("New file(s) name(s)")
 
@@ -222,7 +224,7 @@ class PreviewTablesView(QWidget):
         if not self.new_names_placeholder_icon.isNull():
             scaled_new = self.new_names_placeholder_icon.scaled(
                 self.PLACEHOLDER_SIZE, self.PLACEHOLDER_SIZE,
-                Qt.KeepAspectRatio, Qt.SmoothTransformation
+                Qt.KeepAspectRatio, Qt.SmoothTransformation # type: ignore
             )
             self.new_names_placeholder.setPixmap(scaled_new)
             # Store the actual scaled size for accurate centering
