@@ -50,7 +50,6 @@ from utils.icons import create_colored_icon
 from utils.icons_loader import icons_loader, load_metadata_icons
 from utils.json_config_manager import get_app_config_manager
 from utils.logger_factory import get_cached_logger
-from utils.metadata_cache import MetadataCache
 from utils.metadata_loader import MetadataLoader
 
 # UI widgets and custom components
@@ -86,7 +85,6 @@ class MainWindow(QMainWindow):
         # --- Database System Initialization ---
         from core.database_manager import initialize_database
         from core.persistent_metadata_cache import get_persistent_metadata_cache
-        from core.persistent_hash_cache import get_persistent_hash_cache
         from core.rename_history_manager import get_rename_history_manager
 
         # Initialize database system
@@ -97,8 +95,6 @@ class MainWindow(QMainWindow):
         self.metadata_worker = None
         # Use persistent metadata cache instead of memory-only cache
         self.metadata_cache = get_persistent_metadata_cache()
-        # Initialize persistent hash cache
-        self.hash_cache = get_persistent_hash_cache()
         # Initialize rename history manager
         self.rename_history_manager = get_rename_history_manager()
 

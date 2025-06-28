@@ -24,7 +24,6 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 # Logger setup
 from utils.logger_factory import get_cached_logger
-from utils.metadata_cache import MetadataCache
 from utils.metadata_loader import MetadataLoader
 
 logger = get_cached_logger(__name__)
@@ -37,7 +36,7 @@ class MetadataWorker(QObject):
 
     Attributes:
         reader (MetadataLoader): The metadata reader instance.
-        metadata_cache (MetadataCache): Cache for storing and checking metadata.
+        metadata_cache: Cache for storing and checking metadata.
         file_path (list[str]): List of file paths to process.
         use_extended (bool): Whether to request extended metadata.
     """
@@ -45,7 +44,7 @@ class MetadataWorker(QObject):
     finished = pyqtSignal()
     progress = pyqtSignal(int, int)
 
-    def __init__(self, *, reader: MetadataLoader, metadata_cache: MetadataCache, parent: Optional[QObject] = None):
+    def __init__(self, *, reader: MetadataLoader, metadata_cache, parent: Optional[QObject] = None):
         super().__init__(parent)
         logger.debug("[Worker] __init__ called")
         self.main_window = parent

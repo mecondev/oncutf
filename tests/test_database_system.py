@@ -279,7 +279,7 @@ class TestPersistentHashCache(unittest.TestCase):
 
         # Legacy methods
         self.assertEqual(self.cache.get(self.test_file1), test_hash)
-        self.assertTrue(self.cache.set(self.test_file2, 'efgh5678'))
+        self.assertTrue(self.cache.store_hash(self.test_file2, 'efgh5678'))
 
     def test_duplicate_detection(self):
         """Test duplicate file detection."""

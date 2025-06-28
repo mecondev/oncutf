@@ -34,7 +34,7 @@ from utils.icons_loader import load_metadata_icons
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
-from utils.metadata_cache import MetadataEntry
+from core.persistent_metadata_cache import MetadataEntry
 
 logger = get_cached_logger(__name__)
 
@@ -58,7 +58,7 @@ class FileTableModel(QAbstractTableModel):
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
         return 5  # Info, Filename, Filesize, Type, Modified
 
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> QVariant:
+    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> QVariant: # type: ignore
         if not index.isValid():
             return QVariant()
 
@@ -66,15 +66,15 @@ class FileTableModel(QAbstractTableModel):
         col = index.column()
 
         if not self.files:
-            if role == Qt.DisplayRole and col == 1:
+            if role == Qt.DisplayRole and col == 1: # type: ignore
                 return ""
-            if role == Qt.TextAlignmentRole:
+            if role == Qt.TextAlignmentRole: # type: ignore
                 return Qt.AlignCenter
             return QVariant()
 
         file = self.files[row]
 
-        if role == Qt.BackgroundRole:
+        if role == Qt.BackgroundRole: # type: ignore
             status = getattr(file, "status", None)
             if status == "conflict":
                 return QColor("#662222")
@@ -84,7 +84,7 @@ class FileTableModel(QAbstractTableModel):
                 return QColor("#223344")
             return QVariant()
 
-        if role == Qt.DisplayRole:
+        if role == Qt.DisplayRole: # type: ignore
             if col == 0:
                 return " "
             elif col == 1:
@@ -99,7 +99,7 @@ class FileTableModel(QAbstractTableModel):
                     return file.modified.strftime("%Y-%m-%d %H:%M:%S")
                 return str(file.modified)
 
-        if role == Qt.ToolTipRole and col == 1:
+        if role == Qt.ToolTipRole and col == 1: # type: ignore
             entry = self.parent_window.metadata_cache.get_entry(file.full_path) if self.parent_window else None
             if entry and entry.data:
                 metadata_count = len(entry.data)
@@ -110,7 +110,7 @@ class FileTableModel(QAbstractTableModel):
             else:
                 return "Metadata not loaded"
 
-        if role == Qt.DecorationRole and index.column() == 0:
+        if role == Qt.DecorationRole and index.column() == 0: # type: ignore
             entry = self.parent_window.metadata_cache.get_entry(file.full_path) if self.parent_window else None
             if entry:
                 # Check if metadata has been modified
@@ -120,16 +120,16 @@ class FileTableModel(QAbstractTableModel):
                     return QIcon(self.metadata_icons.get("extended"))
                 return QIcon(self.metadata_icons.get("loaded"))
 
-        if col == 0 and role == Qt.UserRole:
+        if col == 0 and role == Qt.UserRole: # type: ignore
             entry = self.parent_window.metadata_cache.get_entry(file.full_path) if self.parent_window else None
             if isinstance(entry, MetadataEntry):
                 return 'extended' if entry.is_extended else 'loaded'
             return 'missing'
 
-        elif role == Qt.CheckStateRole and col == 0:
+        elif role == Qt.CheckStateRole and col == 0: # type: ignore
             return QVariant()
 
-        elif role == Qt.TextAlignmentRole:
+        elif role == Qt.TextAlignmentRole: # type: ignore
             if col == 0:
                 return Qt.AlignVCenter | Qt.AlignCenter
             elif col == 2:
@@ -138,7 +138,7 @@ class FileTableModel(QAbstractTableModel):
 
         return QVariant()
 
-    def setData(self, index: QModelIndex, value, role: int = Qt.EditRole) -> bool:
+    def setData(self, index: QModelIndex, value, role: int = Qt.EditRole) -> bool: # type: ignore
         if not index.isValid() or not self.files:
             return False
 
@@ -146,7 +146,7 @@ class FileTableModel(QAbstractTableModel):
         col = index.column()
         file = self.files[row]
 
-        if role == Qt.CheckStateRole and col == 0:
+        if role == Qt.CheckStateRole and col == 0: # type: ignore
             new_checked = (value == Qt.Checked)
             if file.checked == new_checked:
                 return False  # Don't do anything if it didn't change
@@ -182,19 +182,19 @@ class FileTableModel(QAbstractTableModel):
 
         return False
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+    def flags(self, index: QModelIndex) -> Qt.ItemFlags: # type: ignore
         if not index.isValid() or not self.files:
             return Qt.NoItemFlags
         return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
-    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole):
+    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole): # type: ignore
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             headers = ["", "Filename", "Size", "Type", "Modified"]
             if 0 <= section < len(headers):
                 return headers[section]
         return super().headerData(section, orientation, role)
 
-    def sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None:
+    def sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None: # type: ignore
         if not self.files:
             return
 

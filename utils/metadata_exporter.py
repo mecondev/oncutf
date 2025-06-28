@@ -312,17 +312,19 @@ class MetadataExporter:
                     'value': file_item.file_hash
                 }
 
-            # Try to get from parent window's hash cache
-            if (self.parent_window and
-                hasattr(self.parent_window, 'hash_cache') and
-                hasattr(file_item, 'full_path')):
-
-                hash_value = self.parent_window.hash_cache.get(file_item.full_path)
-                if hash_value:
-                    return {
-                        'algorithm': 'CRC32',
-                        'value': hash_value
-                    }
+            # Use HashManager to get hash (supports persistent cache)
+            if hasattr(file_item, 'full_path'):
+                try:
+                    from core.hash_manager import HashManager
+                    hash_manager = HashManager()
+                    hash_value = hash_manager.calculate_hash(file_item.full_path)
+                    if hash_value:
+                        return {
+                            'algorithm': 'CRC32',
+                            'value': hash_value
+                        }
+                except Exception as e:
+                    logger.debug(f"[MetadataExporter] HashManager error: {e}")
 
             return None
 

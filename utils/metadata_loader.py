@@ -25,7 +25,6 @@ from PyQt5.QtCore import Qt
 from models.file_item import FileItem
 from utils.exiftool_wrapper import ExifToolWrapper
 from utils.logger_factory import get_cached_logger
-from utils.metadata_cache import MetadataCache
 
 logger = get_cached_logger(__name__)
 
@@ -49,7 +48,7 @@ class MetadataLoader:
         files: list[FileItem],
         force: bool = False,
         use_extended: bool = False,
-        cache: Optional[MetadataCache] = None
+        cache = None
     ) -> None:
         logger.debug(f"[Loader] load() final params: use_extended={use_extended}, force={force}", extra={"dev_only": True})
         updated_count = 0
@@ -88,7 +87,7 @@ class MetadataLoader:
                 try:
                     row = self.model.files.index(file)
                     index = self.model.index(row, 0)
-                    self.model.dataChanged.emit(index, index, [Qt.DecorationRole])
+                    self.model.dataChanged.emit(index, index, [Qt.DecorationRole]) # type: ignore
                 except Exception as e:
                     logger.warning(f"[Loader] Failed to emit dataChanged for {file.filename}: {e}")
 
@@ -141,7 +140,7 @@ class MetadataLoader:
     def read(self, filepath: str, use_extended: bool = False) -> Dict[str, str]:
         return self.read_metadata(filepath, use_extended=use_extended) or {}
 
-    def has_extended(self, file_path: str, cache: MetadataCache) -> bool:
+    def has_extended(self, file_path: str, cache) -> bool:
         entry = cache.get_entry(file_path)
         return entry.is_extended if entry else False
 
