@@ -63,9 +63,8 @@ class RenameModulesArea(QWidget):
         main_layout.setContentsMargins(6, 6, 6, 6)
         main_layout.setSpacing(0)  # Control spacing manually like metadata dialog
 
-        # Minimal spacing at the top to align with preview labels
-        # This aligns the modules with the preview tables labels
-        main_layout.addSpacing(2)
+        # No spacing at the top for testing - direct alignment with preview labels
+        # main_layout.addSpacing(0)  # Commented out for zero spacing
 
         # Scrollable module container
         self.scroll_area = QScrollArea()
@@ -80,8 +79,8 @@ class RenameModulesArea(QWidget):
         self.scroll_area.setWidget(self.scroll_content)
         main_layout.addWidget(self.scroll_area)
 
-        # More space between scroll area and footer to push final transform down
-        main_layout.addSpacing(12)
+        # Extra large space to push final transform down to align with status label bottom
+        main_layout.addSpacing(30)
 
         # Final transformation + controls
         footer_layout = QHBoxLayout()
@@ -95,7 +94,7 @@ class RenameModulesArea(QWidget):
 
         name_transform_layout = QVBoxLayout()
         name_transform_layout.setContentsMargins(0, 0, 0, 0)
-        name_transform_layout.setSpacing(1)  # Very small space between label and widget
+        name_transform_layout.setSpacing(4)  # More space between label and widget to push label down
         name_transform_layout.addWidget(self.name_transform_label)
         name_transform_layout.addWidget(self.name_transform_widget)
 
@@ -109,8 +108,8 @@ class RenameModulesArea(QWidget):
         buttons_container_layout.setContentsMargins(0, 0, 0, 0)
         buttons_container_layout.setSpacing(0)
 
-        # Space to align with "Final Transform:" label (22px label height + 2px spacing)
-        buttons_container_layout.addSpacing(24)
+        # Space to align with "Final Transform:" label (22px label height + 4px spacing)
+        buttons_container_layout.addSpacing(26)
 
         # Space to align with Greeklish row (20px row height + 3px spacing)
         buttons_container_layout.addSpacing(23)
@@ -132,7 +131,7 @@ class RenameModulesArea(QWidget):
         # Space between Case and Separator rows (3px spacing)
         buttons_container_layout.addSpacing(3)
 
-        # Remove button - aligns with Separator row (3rd row)
+        # Remove button - aligns with Separator row (3rd row) - this should align with status label bottom
         separator_button_layout = QHBoxLayout()
         separator_button_layout.setContentsMargins(0, 0, 0, 0)
         separator_button_layout.addStretch()

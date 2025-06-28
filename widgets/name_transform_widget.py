@@ -22,7 +22,7 @@ class NameTransformWidget(BaseRenameModule):
     Emits 'updated' signal only when the configuration changes.
     """
 
-    LABEL_WIDTH = 80  # Consistent label width for alignment
+    LABEL_WIDTH = 70  # Reduce label width to bring controls more to the left
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
@@ -59,7 +59,7 @@ class NameTransformWidget(BaseRenameModule):
         case_label.setFixedWidth(self.LABEL_WIDTH)
         self.case_combo = QComboBox()
         self.case_combo.addItems(["original", "lower", "UPPER", "Capitalize"])
-        self.case_combo.setFixedWidth(160)  # Make combobox longer and consistent
+        self.case_combo.setFixedWidth(200)  # Make combobox larger (~2.5 characters more)
         self.case_combo.currentIndexChanged.connect(self._on_value_change)
 
         case_layout.addWidget(case_label)
@@ -79,7 +79,7 @@ class NameTransformWidget(BaseRenameModule):
         sep_label.setFixedWidth(self.LABEL_WIDTH)
         self.sep_combo = QComboBox()
         self.sep_combo.addItems(["as-is", "snake_case", "kebab-case", "space"])
-        self.sep_combo.setFixedWidth(160)  # Make combobox longer and consistent
+        self.sep_combo.setFixedWidth(200)  # Make combobox larger (~2.5 characters more)
         self.sep_combo.currentIndexChanged.connect(self._on_value_change)
 
         sep_layout.addWidget(sep_label)
