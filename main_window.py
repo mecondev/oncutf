@@ -83,10 +83,25 @@ class MainWindow(QMainWindow):
         # --- Initialize MetadataManager ---
         self.metadata_manager = None  # Will be initialized after metadata components
 
+        # --- Database System Initialization ---
+        from core.database_manager import initialize_database
+        from core.persistent_metadata_cache import get_persistent_metadata_cache
+        from core.persistent_hash_cache import get_persistent_hash_cache
+        from core.rename_history_manager import get_rename_history_manager
+
+        # Initialize database system
+        self.db_manager = initialize_database()
+
         # --- Attributes initialization ---
         self.metadata_thread = None
         self.metadata_worker = None
-        self.metadata_cache = MetadataCache()
+        # Use persistent metadata cache instead of memory-only cache
+        self.metadata_cache = get_persistent_metadata_cache()
+        # Initialize persistent hash cache
+        self.hash_cache = get_persistent_hash_cache()
+        # Initialize rename history manager
+        self.rename_history_manager = get_rename_history_manager()
+
         self.metadata_icon_map = load_metadata_icons()
         self.preview_icons = load_preview_status_icons()
         self.force_extended_metadata = False
@@ -546,6 +561,14 @@ class MainWindow(QMainWindow):
         def force_exit():
             logger.warning("[CloseEvent] Application did not quit gracefully, forcing exit")
             os._exit(0)  # Force exit without cleanup
+
+        # Close database connections
+        if hasattr(self, 'db_manager'):
+            try:
+                self.db_manager.close()
+                logger.info("[CloseEvent] Database connections closed")
+            except Exception as e:
+                logger.warning(f"[CloseEvent] Error closing database: {e}")
 
         # Schedule force exit after 2 seconds if app doesn't quit normally
         QTimer.singleShot(2000, force_exit)

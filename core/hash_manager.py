@@ -30,8 +30,16 @@ class HashManager:
     """
 
     def __init__(self):
-        """Initialize HashManager with empty hash cache."""
-        self._hash_cache: Dict[str, str] = {}
+        """Initialize HashManager with persistent hash cache."""
+        # Use persistent hash cache for better performance and persistence
+        try:
+            from core.persistent_hash_cache import get_persistent_hash_cache
+            self._persistent_cache = get_persistent_hash_cache()
+            self._use_persistent_cache = True
+        except ImportError:
+            # Fallback to memory-only cache if persistent cache not available
+            self._hash_cache: Dict[str, str] = {}
+            self._use_persistent_cache = False
 
     def calculate_hash(self, file_path: Union[str, Path], progress_callback=None) -> Optional[str]:
         """
@@ -47,10 +55,15 @@ class HashManager:
         if isinstance(file_path, str):
             file_path = Path(file_path)
 
-        # Check cache first
+        # Check cache first (persistent or memory)
         cache_key = str(file_path.resolve())
-        if cache_key in self._hash_cache:
-            return self._hash_cache[cache_key]
+        if self._use_persistent_cache:
+            cached_hash = self._persistent_cache.get_hash(cache_key)
+            if cached_hash:
+                return cached_hash
+        else:
+            if cache_key in self._hash_cache:
+                return self._hash_cache[cache_key]
 
         try:
             if not file_path.exists():
@@ -92,8 +105,11 @@ class HashManager:
             # Convert to unsigned 32-bit and format as hex
             hash_result = f"{crc & 0xffffffff:08x}"
 
-            # Cache the result
-            self._hash_cache[cache_key] = hash_result
+            # Cache the result (persistent or memory)
+            if self._use_persistent_cache:
+                self._persistent_cache.store_hash(cache_key, hash_result)
+            else:
+                self._hash_cache[cache_key] = hash_result
 
             return hash_result
 
@@ -259,7 +275,10 @@ class HashManager:
 
     def clear_cache(self) -> None:
         """Clear the internal hash cache."""
-        self._hash_cache.clear()
+        if self._use_persistent_cache:
+            self._persistent_cache.clear_memory_cache()
+        else:
+            self._hash_cache.clear()
 
     def get_cache_info(self) -> Dict[str, int]:
         """
@@ -268,10 +287,13 @@ class HashManager:
         Returns:
             dict: Dictionary with cache statistics
         """
-        return {
-            "cache_size": len(self._hash_cache),
-            "memory_usage_approx": len(self._hash_cache) * 50
-        }
+        if self._use_persistent_cache:
+            return self._persistent_cache.get_cache_stats()
+        else:
+            return {
+                "cache_size": len(self._hash_cache),
+                "memory_usage_approx": len(self._hash_cache) * 50
+            }
 
 
 # Convenience functions for simple usage

@@ -72,6 +72,34 @@ class RenameManager:
             current_folder_path=self.main_window.current_folder_path
         )
 
+        # Record rename operation in history for undo functionality
+        if renamed_count > 0:
+            try:
+                # Collect actual rename operations that succeeded
+                rename_pairs = []
+                for file_item in selected_files:
+                    if hasattr(file_item, 'original_path') and file_item.original_path:
+                        # File was renamed, record the operation
+                        rename_pairs.append((file_item.original_path, file_item.full_path))
+                    else:
+                        # Fallback: assume rename based on current path and modules
+                        old_path = file_item.full_path  # This might not be accurate
+                        new_path = file_item.full_path  # Current path after rename
+                        if old_path != new_path:
+                            rename_pairs.append((old_path, new_path))
+
+                if rename_pairs and hasattr(self.main_window, 'rename_history_manager'):
+                    operation_id = self.main_window.rename_history_manager.record_rename_batch(
+                        renames=rename_pairs,
+                        modules_data=modules_data,
+                        post_transform_data=post_transform
+                    )
+                    if operation_id:
+                        logger.info(f"[RenameManager] Recorded rename operation {operation_id[:8]}... for undo")
+
+            except Exception as e:
+                logger.warning(f"[RenameManager] Failed to record rename history: {e}")
+
         if renamed_count == 0:
             return
 

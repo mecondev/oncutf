@@ -259,7 +259,8 @@ class DatabaseManager:
             try:
                 if os.path.exists(file_path):
                     stat = os.stat(file_path)
-                    modified_time = datetime.fromtimestamp(stat.st_mtime)
+                    # Use ISO format string instead of datetime object to avoid warnings
+                    modified_time = datetime.fromtimestamp(stat.st_mtime).isoformat()
                     if file_size is None:
                         file_size = stat.st_size
             except OSError:
