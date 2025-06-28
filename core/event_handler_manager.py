@@ -927,6 +927,12 @@ class EventHandlerManager:
             from utils.timer_manager import schedule_dialog_close
             schedule_dialog_close(self.hash_dialog.close, 500)
 
+        # Refresh file table icons to show new hash status
+        if hasattr(self.parent_window, 'file_table_model') and self.parent_window.file_table_model:
+            if hasattr(self.parent_window.file_table_model, 'refresh_icons'):
+                self.parent_window.file_table_model.refresh_icons()
+                logger.debug("[EventHandler] Refreshed file table icons after hash operation")
+
         # Clean up worker
         if hasattr(self, 'hash_worker') and self.hash_worker:
             self.hash_worker.quit()

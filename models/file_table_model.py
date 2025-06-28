@@ -15,6 +15,8 @@ Classes:
 '''
 
 from datetime import datetime
+import os
+from typing import Optional
 
 from PyQt5.QtCore import (
     QAbstractTableModel,
@@ -26,15 +28,16 @@ from PyQt5.QtCore import (
     QVariant,
     pyqtSignal,
 )
-from PyQt5.QtGui import QColor, QIcon
+from PyQt5.QtGui import QColor, QIcon, QPixmap, QPainter
 
 from core.application_context import get_app_context
 from models.file_item import FileItem
 from utils.icons_loader import load_metadata_icons
+from utils.svg_icon_generator import generate_hash_icon
+from core.persistent_metadata_cache import MetadataEntry
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
-from core.persistent_metadata_cache import MetadataEntry
 
 logger = get_cached_logger(__name__)
 
@@ -43,6 +46,7 @@ class FileTableModel(QAbstractTableModel):
     """
     Table model for displaying and managing a list of FileItem objects
     in a QTableView. Supports row selection (blue highlighting), sorting, and preview updates.
+    Now supports displaying both metadata and hash icons in column 0.
     """
     sort_changed = pyqtSignal()  # Emitted when sort() is called
 
@@ -51,6 +55,58 @@ class FileTableModel(QAbstractTableModel):
         self.files: list[FileItem] = []  # List of file entries
         self.parent_window = parent_window  # Needed for triggering updates
         self.metadata_icons = load_metadata_icons()
+        self.hash_icon = generate_hash_icon(size=16)  # Generate hash icon
+
+    def _has_hash_cached(self, file_path: str) -> bool:
+        """
+        Check if a file has a hash stored in the persistent cache.
+
+        Args:
+            file_path: Full path to the file
+
+        Returns:
+            bool: True if file has a cached hash, False otherwise
+        """
+        try:
+            from core.persistent_hash_cache import get_persistent_hash_cache
+            cache = get_persistent_hash_cache()
+            return cache.has_hash(file_path)
+        except (ImportError, Exception) as e:
+            logger.debug(f"[FileTableModel] Could not check hash cache: {e}")
+            return False
+
+    def _create_combined_icon(self, metadata_icon: QPixmap, show_hash: bool) -> QIcon:
+        """
+        Create a combined icon showing metadata status and optionally hash status.
+
+        Args:
+            metadata_icon: The metadata status icon
+            show_hash: Whether to show the hash icon
+
+        Returns:
+            QIcon: Combined icon with metadata and optionally hash
+        """
+        if not show_hash:
+            return QIcon(metadata_icon)
+
+        # Create a wider pixmap to hold both icons
+        combined_width = 32  # Space for two 16px icons
+        combined_height = 16
+        combined_pixmap = QPixmap(combined_width, combined_height)
+        combined_pixmap.fill(QColor(0, 0, 0, 0))
+
+        painter = QPainter(combined_pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        # Draw metadata icon on the left
+        painter.drawPixmap(0, 0, metadata_icon)
+
+        # Draw hash icon on the right
+        painter.drawPixmap(16, 0, self.hash_icon)
+
+        painter.end()
+
+        return QIcon(combined_pixmap)
 
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         return len(self.files) if self.files else 1
@@ -69,7 +125,7 @@ class FileTableModel(QAbstractTableModel):
             if role == Qt.DisplayRole and col == 1: # type: ignore
                 return ""
             if role == Qt.TextAlignmentRole: # type: ignore
-                return Qt.AlignCenter
+                return Qt.AlignHCenter
             return QVariant()
 
         file = self.files[row]
@@ -112,13 +168,33 @@ class FileTableModel(QAbstractTableModel):
 
         if role == Qt.DecorationRole and index.column() == 0: # type: ignore
             entry = self.parent_window.metadata_cache.get_entry(file.full_path) if self.parent_window else None
+
+            # Determine metadata icon
+            metadata_pixmap = None
             if entry:
                 # Check if metadata has been modified
                 if hasattr(entry, 'modified') and entry.modified:
-                    return QIcon(self.metadata_icons.get("modified"))
+                    metadata_pixmap = self.metadata_icons.get("modified")
                 elif entry.is_extended:
-                    return QIcon(self.metadata_icons.get("extended"))
-                return QIcon(self.metadata_icons.get("loaded"))
+                    metadata_pixmap = self.metadata_icons.get("extended")
+                else:
+                    metadata_pixmap = self.metadata_icons.get("loaded")
+            else:
+                metadata_pixmap = self.metadata_icons.get("basic")
+
+            # Check if file has hash cached
+            has_hash = self._has_hash_cached(file.full_path)
+
+            # Create combined icon if we have a metadata pixmap
+            if metadata_pixmap:
+                return self._create_combined_icon(metadata_pixmap, has_hash)
+
+            # Fallback to basic icon
+            basic_pixmap = self.metadata_icons.get("basic")
+            if basic_pixmap:
+                return self._create_combined_icon(basic_pixmap, has_hash)
+
+            return QIcon()
 
         if col == 0 and role == Qt.UserRole: # type: ignore
             entry = self.parent_window.metadata_cache.get_entry(file.full_path) if self.parent_window else None
@@ -308,5 +384,28 @@ class FileTableModel(QAbstractTableModel):
             # ApplicationContext not ready yet, use legacy approach
             if self.parent_window:
                 self.parent_window.update_files_label()
+
+    def refresh_icons(self):
+        """
+        Refresh all icons in column 0.
+        Call this after hash operations to update hash icon display.
+        """
+        if not self.files:
+            return
+
+        # Emit dataChanged for the entire first column to refresh icons
+        top_left = self.index(0, 0)
+        bottom_right = self.index(len(self.files) - 1, 0)
+        self.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole])
+        logger.debug(f"[FileTableModel] Refreshed icons for {len(self.files)} files")
+
+    def get_checked_files(self) -> list[FileItem]:
+        """
+        Returns a list of all checked files.
+
+        Returns:
+            list[FileItem]: List of checked FileItem objects
+        """
+        return [f for f in self.files if f.checked]
 
 

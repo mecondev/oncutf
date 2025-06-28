@@ -27,39 +27,31 @@ from utils.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 
-def load_metadata_icons(base_dir: str = None) -> dict[str, QPixmap]:
+def load_metadata_icons(base_dir: Optional[str] = None) -> dict[str, QPixmap]:
     """
     Loads metadata status icons for the file table's first column.
 
+    Now uses SVG-based icons with proper theming instead of PNG files.
+
     Args:
-        base_dir: Base directory where icon files are stored (optional, defaults to project icons dir)
+        base_dir: Base directory where icon files are stored (optional, kept for compatibility)
 
     Returns:
         Dictionary mapping status names to QPixmap objects
     """
-    from utils.path_utils import get_icons_dir
+    from utils.svg_icon_generator import generate_metadata_icons
 
-    if base_dir is None:
-        base_dir = str(get_icons_dir())
+    logger.debug("[IconLoader] Loading SVG metadata icons", extra={"dev_only": True})
 
-    icon_files = {
-        'loaded': "info_loaded.png",
-        'extended': "info_extended.png",
-        'partial': "info_partial.png",
-        'invalid': "info_invalid.png",
-        'modified': "info_modified.png",
-    }
+    # Generate SVG icons with proper colors
+    icon_map = generate_metadata_icons(size=16)
 
-    logger.debug("[IconLoader] Loading metadata icons", extra={"dev_only": True})
+    # Add basic info icon (not included in generate_metadata_icons by default)
+    from utils.svg_icon_generator import SVGIconGenerator
+    generator = SVGIconGenerator(size=16)
+    icon_map['basic'] = generator.generate_icon('basic')
 
-    icon_map = {}
-    for status, filename in icon_files.items():
-        path = os.path.join(base_dir, filename)
-        pixmap = QPixmap(path)
-        if pixmap.isNull():
-            logger.warning(f"[IconLoader] Failed to load icon for '{status}' from {path}")
-        icon_map[status] = pixmap
-
+    logger.debug(f"[IconLoader] Generated {len(icon_map)} SVG metadata icons", extra={"dev_only": True})
     return icon_map
 
 

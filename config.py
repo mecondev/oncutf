@@ -137,6 +137,19 @@ HASH_CALCULATION_COLOR = "#9c27b0"     # Purple
 HASH_CALCULATION_BG_COLOR = "#2a1a2a"  # Darker purple bg
 
 # ----------------------------
+# Metadata Status Icon Colors (SVG-based system)
+# ----------------------------
+METADATA_ICON_COLORS = {
+    'basic': '#e8f4fd',        # Almost white with slight blue tint
+    'extended': EXTENDED_METADATA_COLOR,  # Orange like progress bar (#ffb74d)
+    'invalid': '#ff6b6b',      # Light red
+    'loaded': '#51cf66',       # Light green
+    'modified': '#ffd755',     # Yellow
+    'partial': '#888888',      # Gray
+    'hash': HASH_CALCULATION_COLOR,  # Purple like progress bar (#9c27b0)
+}
+
+# ----------------------------
 # File Table Settings
 # ----------------------------
 MAX_LABEL_LENGTH = 30
@@ -150,7 +163,7 @@ TREE_EXPAND_MODE = "double"  # Options: "single" or "double". Default: double cl
 # File Table Column Widths
 # ----------------------------
 FILE_TABLE_COLUMN_WIDTHS = {
-    "STATUS_COLUMN": 23,     # Column 0: Status/info icon column
+    "STATUS_COLUMN": 40,     # Column 0: Status/info icon column (increased for metadata + hash icons)
     "FILENAME_COLUMN": 345,  # Column 1: Filename column (set to 345px)
     "FILESIZE_COLUMN": 80,   # Column 2: File size column
     "EXTENSION_COLUMN": 60,  # Column 3: File extension column
