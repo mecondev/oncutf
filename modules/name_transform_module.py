@@ -24,7 +24,7 @@ class NameTransformModule:
         Applies transformation options to the given base name.
 
         Args:
-            data (dict): Contains 'case' and 'separator'
+            data (dict): Contains 'case', 'separator', and 'greeklish'
             base_name (str): Input string to transform
 
         Returns:
@@ -33,12 +33,20 @@ class NameTransformModule:
         original = base_name
         case = data.get("case", "original")
         sep = data.get("separator", "as-is")
+        greeklish = data.get("greeklish", False)
 
-        logger.debug(f"[NameTransformModule] Input: {base_name} | case: {case} | sep: {sep}")
+        logger.debug(f"[NameTransformModule] Input: {base_name} | case: {case} | sep: {sep} | greeklish: {greeklish}")
 
+        # Apply Greeklish first (if enabled)
+        if greeklish:
+            base_name = apply_transform(base_name, "greeklish")
+            logger.debug(f"[NameTransformModule] After Greeklish: {base_name}")
+
+        # Apply case transformation
         if case in ("lower", "UPPER", "Capitalize", "camelCase", "PascalCase", "Title Case"):
             base_name = apply_transform(base_name, case)
 
+        # Apply separator transformation
         if sep in ("snake_case", "kebab-case", "space"):
             base_name = apply_transform(base_name, sep)
 
@@ -55,5 +63,6 @@ class NameTransformModule:
         """
         return (
             data.get("case", "original") != "original" or
-            data.get("separator", "as-is") != "as-is"
+            data.get("separator", "as-is") != "as-is" or
+            data.get("greeklish", False)
         )
