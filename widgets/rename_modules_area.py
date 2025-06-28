@@ -63,9 +63,9 @@ class RenameModulesArea(QWidget):
         main_layout.setContentsMargins(6, 6, 6, 6)
         main_layout.setSpacing(0)  # Control spacing manually like metadata dialog
 
-        # Small spacing at the top to align with preview labels
+        # Minimal spacing at the top to align with preview labels
         # This aligns the modules with the preview tables labels
-        main_layout.addSpacing(4)
+        main_layout.addSpacing(2)
 
         # Scrollable module container
         self.scroll_area = QScrollArea()
@@ -80,12 +80,12 @@ class RenameModulesArea(QWidget):
         self.scroll_area.setWidget(self.scroll_content)
         main_layout.addWidget(self.scroll_area)
 
-        # Small space between scroll area and footer
-        main_layout.addSpacing(4)
+        # More space between scroll area and footer to push final transform down
+        main_layout.addSpacing(12)
 
         # Final transformation + controls
         footer_layout = QHBoxLayout()
-        footer_layout.setContentsMargins(2, 2, 2, 2)
+        footer_layout.setContentsMargins(2, 0, 2, 2)  # Remove top margin for more compact look
         footer_layout.setSpacing(10)
 
         # Left side: name transform
@@ -95,7 +95,7 @@ class RenameModulesArea(QWidget):
 
         name_transform_layout = QVBoxLayout()
         name_transform_layout.setContentsMargins(0, 0, 0, 0)
-        name_transform_layout.setSpacing(2)  # Small space between label and widget
+        name_transform_layout.setSpacing(1)  # Very small space between label and widget
         name_transform_layout.addWidget(self.name_transform_label)
         name_transform_layout.addWidget(self.name_transform_widget)
 
@@ -112,8 +112,8 @@ class RenameModulesArea(QWidget):
         # Space to align with "Final Transform:" label (22px label height + 2px spacing)
         buttons_container_layout.addSpacing(24)
 
-        # Space to align with Greeklish row (20px row height + 6px spacing)
-        buttons_container_layout.addSpacing(26)
+        # Space to align with Greeklish row (20px row height + 3px spacing)
+        buttons_container_layout.addSpacing(23)
 
         # Add button - aligns with Case row (2nd row)
         case_button_layout = QHBoxLayout()
@@ -129,8 +129,8 @@ class RenameModulesArea(QWidget):
         case_button_layout.addWidget(self.add_button)
         buttons_container_layout.addLayout(case_button_layout)
 
-        # Space between Case and Separator rows (6px spacing)
-        buttons_container_layout.addSpacing(6)
+        # Space between Case and Separator rows (3px spacing)
+        buttons_container_layout.addSpacing(3)
 
         # Remove button - aligns with Separator row (3rd row)
         separator_button_layout = QHBoxLayout()
