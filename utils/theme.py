@@ -52,12 +52,40 @@ def load_stylesheet() -> str:
                 # This fixes issues when running the app from different directories
                 qss = qss.replace("url(resources/", f"url({project_root}/resources/")
 
+                # Debug: Check if SVG files exist for tree view icons
+                if filename == "tree_view.qss":
+                    _debug_svg_paths(qss, project_root)
+
                 full_style += qss + "\n"
                 logger.debug(f"Loaded {filename} ({len(qss)} characters)", extra={"dev_only": True})
         else:
             logger.warning(f"QSS file not found: {filename}")
 
     return full_style
+
+
+def _debug_svg_paths(qss_content: str, project_root: str) -> None:
+    """Debug function to check if SVG paths in QSS exist."""
+    import re
+
+    # Find all url() references in the QSS
+    url_pattern = r'url\(([^)]+)\)'
+    urls = re.findall(url_pattern, qss_content)
+
+    for url in urls:
+        # Remove quotes if present
+        clean_url = url.strip('"\'')
+
+        # Convert to absolute path if it starts with project root
+        if clean_url.startswith(project_root):
+            file_path = clean_url
+        else:
+            file_path = os.path.join(project_root, clean_url)
+
+        if os.path.exists(file_path):
+            logger.debug(f"✓ SVG icon found: {file_path}", extra={"dev_only": True})
+        else:
+            logger.warning(f"✗ SVG icon missing: {file_path}")
 
 
 def get_theme_color(color_key: str, theme_name: Optional[str] = None) -> str:

@@ -243,11 +243,11 @@ QTreeView::branch:!has-children:!has-siblings:adjoins-item:selected:hover {
 }
 */
 
-/* Hide connection lines between branches - Now with feather icons */
+/* Hide connection lines between branches - PNG icons for Windows compatibility */
 QTreeView::branch:has-children:!has-siblings:closed,
 QTreeView::branch:closed:has-children:has-siblings {
     border-image: none;
-    image: url(resources/icons/feather_icons/chevron-right.svg);
+    image: url(resources/icons/chevron-right.png);
     background: #181818;  /* Default background */
     width: 16px;
     height: 16px;
@@ -257,7 +257,7 @@ QTreeView::branch:closed:has-children:has-siblings {
 QTreeView::branch:open:has-children:!has-siblings,
 QTreeView::branch:open:has-children:has-siblings {
     border-image: none;
-    image: url(resources/icons/feather_icons/chevron-down.svg);
+    image: url(resources/icons/chevron-down.png);
     background: #181818;  /* Default background */
     width: 16px;
     height: 16px;

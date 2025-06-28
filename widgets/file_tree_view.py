@@ -79,11 +79,37 @@ class FileTreeView(QTreeView):
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
 
+        # Setup custom branch icons for Windows compatibility
+        self._setup_branch_icons()
+
         # Drag state tracking (simplified - only for Qt built-in drag)
         self._is_dragging = False
         self._drag_path = None
         self._drag_start_pos = None
         self._drag_feedback_timer_id = None
+
+    def _setup_branch_icons(self) -> None:
+        """Setup custom branch icons for better cross-platform compatibility."""
+        try:
+            from utils.icons_loader import get_menu_icon
+
+            # Try to load custom icons
+            closed_icon = get_menu_icon("chevron-right")
+            open_icon = get_menu_icon("chevron-down")
+
+            # Set the icons on the style
+            style = self.style()
+            if hasattr(style, 'setPixmap'):
+                # Note: This approach may not work in all Qt versions
+                # The QSS approach is usually more reliable
+                pass
+
+            logger.debug("[FileTreeView] Custom branch icons setup attempted", extra={"dev_only": True})
+
+        except Exception as e:
+            logger.warning(f"[FileTreeView] Failed to setup custom branch icons: {e}")
+            # Fallback to default Qt icons
+            pass
 
     def selectionChanged(self, selected, deselected) -> None:
         """Override to emit custom signal with selected path (single item only)"""

@@ -553,7 +553,7 @@ class PreviewTablesView(QWidget):
             self.new_names_table.setUpdatesEnabled(True)
             self.icon_table.setUpdatesEnabled(True)
 
-    def handle_splitter_moved(self):
+    def handle_splitter_moved(self, pos=None, index=None):
         """Handle parent splitter movement to adjust table widths."""
         self._handle_table_resize()
 

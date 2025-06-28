@@ -391,6 +391,7 @@ class UIManager:
         self.parent_window.bottom_layout.setContentsMargins(0, 4, 0, 0)  # Add small top margin
 
         content_layout = QHBoxLayout()
+        content_layout.setSpacing(5)  
 
         # === Left: Rename modules ===
         self.parent_window.rename_modules_area = RenameModulesArea(parent=self.parent_window, parent_window=self.parent_window)
@@ -446,14 +447,6 @@ class UIManager:
         self.parent_window.menu_button.setFixedSize(20, 20)  # Square button
         self.parent_window.menu_button.setToolTip("Menu")
         self.parent_window.menu_button.setObjectName("menuButton")
-        # Override round corners for small button and center icon
-        self.parent_window.menu_button.setStyleSheet("""
-            QPushButton#menuButton {
-                border-radius: 3px;
-                padding: 0px;
-                text-align: center;
-            }
-        """)
 
         self.parent_window.version_label = QLabel()
         self.parent_window.version_label.setText(f"{APP_NAME} v{APP_VERSION}")
