@@ -15,7 +15,7 @@ Features:
 import logging
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont, QFontMetrics, QPainter, QPen, QPixmap
+from PyQt5.QtGui import QFont, QFontMetrics, QPainter, QPen, QPixmap, QColor
 from PyQt5.QtWidgets import QApplication, QSplashScreen
 
 from config import APP_VERSION
@@ -235,9 +235,9 @@ class CustomSplashScreen(QSplashScreen):
 
         # Draw version in bottom left
         painter.setFont(version_font)
-        painter.setPen(QPen(Qt.white))
+        painter.setPen(QColor(255, 255, 255, 180))  # Semi-transparent white
 
-        version_text = f"v{APP_VERSION}"
+        version_text = APP_VERSION  # Already contains "v" prefix
         QFontMetrics(version_font).boundingRect(version_text)
 
         version_x = 15  # 15px from left edge
@@ -275,3 +275,18 @@ class CustomSplashScreen(QSplashScreen):
         self.setCursor(Qt.ArrowCursor)
         QApplication.restoreOverrideCursor()
         super().close()
+
+    def mousePressEvent(self, event):
+        """Override mouse press to prevent cursor changes."""
+        # Ignore mouse events to keep wait cursor
+        event.ignore()
+
+    def mouseReleaseEvent(self, event):
+        """Override mouse release to prevent cursor changes."""
+        # Ignore mouse events to keep wait cursor
+        event.ignore()
+
+    def mouseMoveEvent(self, event):
+        """Override mouse move to prevent cursor changes."""
+        # Ignore mouse events to keep wait cursor
+        event.ignore()
