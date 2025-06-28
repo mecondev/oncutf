@@ -68,6 +68,7 @@ from PyQt5.QtWidgets import (
     QFileSystemModel,
     QFrame,
     QGraphicsOpacityEffect,
+    QGridLayout,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -107,7 +108,7 @@ __all__ = [
 
     # Widgets
     'QAbstractItemView', 'QAction', 'QApplication', 'QCheckBox', 'QComboBox', 'QDesktopWidget', 'QDialog', 'QFileDialog',
-    'QFileSystemModel', 'QFrame', 'QGraphicsOpacityEffect', 'QHBoxLayout',
+    'QFileSystemModel', 'QFrame', 'QGraphicsOpacityEffect', 'QGridLayout', 'QHBoxLayout',
     'QHeaderView', 'QLabel', 'QLineEdit', 'QMainWindow', 'QMenu', 'QProgressBar', 'QPushButton', 'QScrollArea', 'QShortcut',
     'QSizePolicy', 'QSplashScreen', 'QSplitter', 'QStyle', 'QStyledItemDelegate', 'QStyleOptionViewItem', 'QTableWidget', 'QTableWidgetItem', 'QTableView', 'QTextEdit', 'QTreeView',
     'QVBoxLayout', 'QWidget',

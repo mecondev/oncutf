@@ -54,7 +54,7 @@ class RenameModulesArea(QWidget):
         self.setObjectName("RenameModulesArea")
 
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(6, 6, 6, 6)
+        main_layout.setContentsMargins(6, 2, 6, 2)  # Reduced bottom margin from 6 to 2
         main_layout.setSpacing(0)  # Control spacing manually like metadata dialog
 
         # No spacing at the top for testing - direct alignment with preview labels
@@ -67,8 +67,8 @@ class RenameModulesArea(QWidget):
 
         self.scroll_content = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_content)
-        self.scroll_layout.setContentsMargins(4, 4, 4, 4)
-        self.scroll_layout.setSpacing(8)  # Reduce spacing between modules
+        self.scroll_layout.setContentsMargins(4, 2, 4, 2)  # Reduced bottom padding from 4 to 2
+        self.scroll_layout.setSpacing(6)  # Reduced spacing between modules from 8 to 6
 
         self.scroll_area.setWidget(self.scroll_content)
         main_layout.addWidget(self.scroll_area)
