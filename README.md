@@ -1,6 +1,6 @@
 # oncutf
 
-**oncutf** is a comprehensive file renaming tool that combines the power of [ExifTool](https://exiftool.org/) with an intuitive PyQt5 GUI. Designed for photographers, content creators, and digital archivists who need precise control over their file naming workflows.
+**oncutf** is a comprehensive file renaming tool with an intuitive PyQt5 GUI. Designed for photographers, content creators, and digital archivists who need precise control over their file naming workflows.
 
 <p align="center">
   <img src="assets/oncut_logo_white_w_dark_BG.png" alt="oncut logo" width="150"/>
@@ -14,8 +14,9 @@
 - **Original Name**: Preserve original filename with optional Greek-to-Greeklish conversion
 - **Specified Text**: Add custom text with context menu shortcuts and original name insertion
 - **Counter**: Sequential numbering with configurable start, step, and padding
-- **Metadata**: Extract file dates or EXIF/metadata fields for filename generation
+- **Metadata**: Extract file dates or metadata fields for filename generation
 - **Name Transform**: Apply case transformations (lower, UPPER, Capitalize) and separator styles (snake_case, kebab-case, space)
+- **Final Transform**: Post-processing options for case, separator, and Greek-to-Greeklish conversion
 
 ### Advanced File Management
 - **Drag & Drop Interface**:
@@ -24,8 +25,7 @@
   - Multi-selection support with visual feedback
 - **Intelligent Metadata Loading**:
   - Fast metadata scanning for common fields
-  - Extended metadata extraction for comprehensive EXIF data
-  - Persistent ExifTool process for optimal performance
+  - Extended metadata extraction for comprehensive data
   - Smart caching system to avoid redundant operations
 
 ### Professional UI/UX
@@ -38,7 +38,7 @@
 
 ### Metadata Integration
 - **File Dates**: Last modified in various formats (ISO, European, US, year-only, etc.)
-- **EXIF Data**: Camera settings, GPS coordinates, creation dates, and technical metadata
+- **Metadata Fields**: Camera settings, GPS coordinates, creation dates, and technical metadata
 - **Dynamic Field Discovery**: Automatically detects available metadata fields from loaded files
 - **Metadata Tree View**: Hierarchical display with copy/edit/reset capabilities
 
@@ -50,26 +50,58 @@
 - **[ExifTool](https://exiftool.org/)** - Must be installed and available in system PATH
 - **PyQt5** - GUI framework
 
-Install Python dependencies:
+### Installing ExifTool
 
+**Windows:**
+1. Download from [ExifTool website](https://exiftool.org/)
+2. Extract to a folder (e.g., `C:\exiftool`)
+3. Add the folder to your system PATH
+
+**Linux (Ubuntu/Debian):**
 ```bash
-pip install -r requirements.txt
+sudo apt-get install exiftool
+```
+
+**macOS:**
+```bash
+brew install exiftool
+```
+
+**Manual Installation:**
+1. Download from [ExifTool website](https://exiftool.org/)
+2. Extract and add to PATH
+
+**Verify Installation:**
+```bash
+exiftool -ver
 ```
 
 ---
 
 ## Installation & Usage
 
+### Quick Start
+
 ```bash
 # Clone the repository
 git clone https://github.com/mecondev/oncutf.git
 cd oncutf
 
-# Install dependencies
+# Install Python dependencies
 pip install -r requirements.txt
 
 # Run the application
 python main.py
+```
+
+### Alternative Installation
+
+```bash
+# Install in development mode
+pip install -e .
+
+# Run with specific Python version
+python3.9 main.py
 ```
 
 ### Basic Workflow
@@ -82,11 +114,15 @@ python main.py
 ### Keyboard Shortcuts & Modifiers
 
 - **Ctrl+A**: Select all files
-- **Ctrl+D**: Clear selection
+- **Ctrl+Shift+A**: Clear all selection
 - **Ctrl+I**: Invert selection
+- **Ctrl+O**: Browse for files
 - **Ctrl+R**: Force reload current folder
-- **F5**: Load basic metadata for selected files
-- **Ctrl+F5**: Load extended metadata for selected files
+- **Ctrl+M**: Load basic metadata for selected files
+- **Ctrl+E**: Load extended metadata for selected files
+- **Ctrl+S**: Save selected metadata
+- **Ctrl+Shift+S**: Save all metadata
+- **Escape**: Cancel drag operations
 
 **Drag & Drop Modifiers:**
 - No modifier: Skip metadata loading (folders) / Fast metadata (file-to-metadata)
@@ -96,36 +132,60 @@ python main.py
 
 ---
 
-## Development
-
-### Project Architecture
+## Project Structure
 
 ```
 oncutf/
 ├── main.py                 # Application entry point
 ├── main_window.py          # Main window and core logic
-├── models/                 # Data structures (FileItem, etc.)
+├── config.py               # Global configuration constants
+├── core/                   # Core application components
+│   ├── application_context.py  # Application-wide context management
+│   ├── ui_manager.py       # UI setup and management
+│   ├── metadata_manager.py # Metadata operations
+│   ├── rename_manager.py   # File renaming logic
+│   └── event_handler_manager.py # Event handling
+├── models/                 # Data structures
+│   ├── file_item.py        # File representation model
+│   └── file_table_model.py # Table data model
 ├── modules/                # Rename logic modules
-│   ├── base_module.py      # Base class with signal optimization
+│   ├── base_module.py      # Base class for rename modules
 │   ├── counter_module.py   # Sequential numbering
 │   ├── specified_text_module.py  # Custom text insertion
-│   ├── metadata_module.py  # File dates and EXIF extraction
-│   └── name_transform_module.py   # Case and separator transforms
+│   ├── metadata_module.py  # File dates and metadata extraction
+│   ├── original_name_module.py   # Original name preservation
+│   └── name_transform_module.py  # Case and separator transforms
 ├── widgets/                # PyQt5 UI components
 │   ├── file_tree_view.py   # Folder navigation with drag support
 │   ├── file_table_view.py  # File list with multi-selection
 │   ├── metadata_tree_view.py      # Hierarchical metadata display
 │   ├── rename_modules_area.py     # Module container and management
+│   ├── final_transform_container.py # Post-processing options
 │   └── preview_tables_view.py     # Before/after filename preview
 ├── utils/                  # Helper utilities
-│   ├── exiftool_wrapper.py # Persistent ExifTool integration
+│   ├── exiftool_wrapper.py # ExifTool integration
 │   ├── metadata_loader.py  # Threaded metadata processing
 │   ├── metadata_cache.py   # Intelligent caching system
 │   ├── json_config_manager.py     # JSON configuration system
 │   ├── path_utils.py       # Cross-platform path utilities
 │   └── drag_visual_manager.py     # Advanced drag & drop feedback
-└── tests/                  # Comprehensive test suite
+├── style/                  # QSS styling files
+│   ├── dark_theme/         # Dark theme stylesheets
+│   └── light_theme/        # Light theme stylesheets
+├── resources/              # Application resources
+│   ├── icons/              # Application icons
+│   ├── fonts/              # Embedded fonts
+│   └── images/             # UI images
+├── assets/                 # Project assets
+├── tests/                  # Comprehensive test suite
+├── docs/                   # Documentation
+├── examples/               # Usage examples
+└── scripts/                # Utility scripts
 ```
+
+---
+
+## Development
 
 ### Running Tests
 
@@ -134,10 +194,10 @@ oncutf/
 pytest tests/ -v
 
 # Run with coverage report
-pytest tests/ --cov=widgets --cov=modules --cov=utils --cov=main_window --cov-report=term-missing
+pytest tests/ --cov=widgets --cov=modules --cov=utils --cov=core --cov-report=term-missing
 
 # Run specific test modules
-pytest tests/test_custom_msgdialog.py -v
+pytest tests/test_rename_logic.py -v
 ```
 
 ### Code Quality

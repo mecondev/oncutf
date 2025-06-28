@@ -237,7 +237,7 @@ class CustomSplashScreen(QSplashScreen):
         painter.setFont(version_font)
         painter.setPen(QColor(255, 255, 255, 180))  # Semi-transparent white
 
-        version_text = APP_VERSION  # Already contains "v" prefix
+        version_text = f"v{APP_VERSION}"
         QFontMetrics(version_font).boundingRect(version_text)
 
         version_x = 15  # 15px from left edge

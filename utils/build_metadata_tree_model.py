@@ -92,7 +92,7 @@ def classify_key(key: str) -> str:
 
     # Technical/System
     if any(term in key_lower for term in [
-        'exiftool', 'version', 'software', 'firmware', 'make', 'model',
+        'version', 'software', 'firmware', 'make', 'model',
         'serial', 'uuid', 'id'
     ]):
         return "Technical Info"

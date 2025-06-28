@@ -30,7 +30,7 @@ class MetadataExporter:
     def __init__(self, parent_window=None):
         self.parent_window = parent_window
         self.app_name = APP_NAME
-        self.app_version = APP_VERSION
+        self.app_version = f"v{APP_VERSION}"
 
     def _get_export_timestamp(self) -> str:
         """Get formatted timestamp for export operations."""

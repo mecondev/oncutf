@@ -210,7 +210,7 @@ class JSONConfigManager:
 
                 data['_metadata'] = {
                     'last_saved': datetime.now().isoformat(),
-                    'version': APP_VERSION,
+                    'version': f"v{APP_VERSION}",
                     'app_name': self.app_name
                 }
 
