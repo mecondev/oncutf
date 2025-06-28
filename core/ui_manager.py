@@ -397,7 +397,7 @@ class UIManager:
         left_container = QWidget()
         left_layout = QVBoxLayout(left_container)
         left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(4)
+        left_layout.setSpacing(4)  # Back to original spacing
 
         # Top container: Rename modules area (takes most space)
         self.parent_window.rename_modules_area = RenameModulesArea(parent=left_container, parent_window=self.parent_window)
