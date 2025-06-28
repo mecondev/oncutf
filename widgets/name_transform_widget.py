@@ -2,7 +2,7 @@
 name_transform_widget.py
 
 UI widget for configuring NameTransformModule.
-Provides dropdowns for case and separator transformation options.
+Provides options for Greek to Greeklish conversion, case and separator transformation.
 
 Uses BaseRenameModule to prevent duplicate emits.
 
@@ -12,15 +12,17 @@ Date: 2025-06-04
 
 from typing import Optional
 
-from core.qt_imports import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from core.qt_imports import QCheckBox, QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from modules.base_module import BaseRenameModule  # Debounced signal base
 
 
 class NameTransformWidget(BaseRenameModule):
     """
-    UI component for selecting case and separator transformations.
+    UI component for selecting Greek to Greeklish conversion, case and separator transformations.
     Emits 'updated' signal only when the configuration changes.
     """
+
+    LABEL_WIDTH = 80  # Consistent label width for alignment
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
@@ -28,33 +30,64 @@ class NameTransformWidget(BaseRenameModule):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)
-        layout.setSpacing(8)
+        layout.setSpacing(0)  # Control spacing manually like metadata dialog
+
+        # --- Greek to Greeklish conversion ---
+        greeklish_layout = QHBoxLayout()
+        greeklish_layout.setContentsMargins(0, 0, 0, 0)
+        greeklish_layout.setSpacing(8)
+
+        greeklish_label = QLabel("Greeklish:")
+        greeklish_label.setFixedWidth(self.LABEL_WIDTH)
+        self.greeklish_checkbox = QCheckBox("Convert Greek to Greeklish")
+        self.greeklish_checkbox.toggled.connect(self._on_value_change)
+
+        greeklish_layout.addWidget(greeklish_label)
+        greeklish_layout.addWidget(self.greeklish_checkbox)
+        greeklish_layout.addStretch()
+        layout.addLayout(greeklish_layout)
+
+        # Space between greeklish and case
+        layout.addSpacing(6)
 
         # --- Case transformation ---
         case_layout = QHBoxLayout()
+        case_layout.setContentsMargins(0, 0, 0, 0)
+        case_layout.setSpacing(8)
+
         case_label = QLabel("Case:")
+        case_label.setFixedWidth(self.LABEL_WIDTH)
         self.case_combo = QComboBox()
         self.case_combo.addItems(["original", "lower", "UPPER", "Capitalize"])
         self.case_combo.currentIndexChanged.connect(self._on_value_change)
 
         case_layout.addWidget(case_label)
         case_layout.addWidget(self.case_combo)
+        case_layout.addStretch()
         layout.addLayout(case_layout)
+
+        # Space between case and separator
+        layout.addSpacing(6)
 
         # --- Separator transformation ---
         sep_layout = QHBoxLayout()
+        sep_layout.setContentsMargins(0, 0, 0, 0)
+        sep_layout.setSpacing(8)
+
         sep_label = QLabel("Separator:")
+        sep_label.setFixedWidth(self.LABEL_WIDTH)
         self.sep_combo = QComboBox()
         self.sep_combo.addItems(["as-is", "snake_case", "kebab-case", "space"])
         self.sep_combo.currentIndexChanged.connect(self._on_value_change)
 
         sep_layout.addWidget(sep_label)
         sep_layout.addWidget(self.sep_combo)
+        sep_layout.addStretch()
         layout.addLayout(sep_layout)
 
     def _on_value_change(self) -> None:
         """
-        Triggered when either combo box changes.
+        Triggered when any control changes.
         Emits update only if the new configuration differs from the last.
         """
         current_data = str(self.get_data())
@@ -65,17 +98,19 @@ class NameTransformWidget(BaseRenameModule):
         Returns the current name transformation configuration.
         """
         return {
+            "greeklish": self.greeklish_checkbox.isChecked(),
             "case": self.case_combo.currentText(),
             "separator": self.sep_combo.currentText(),
         }
 
     def set_data(self, data: dict) -> None:
         """
-        Sets the current state of the combo boxes from saved configuration.
+        Sets the current state of the controls from saved configuration.
 
         Args:
-            data (dict): Should include keys 'case' and 'separator'.
+            data (dict): Should include keys 'greeklish', 'case' and 'separator'.
         """
+        self.greeklish_checkbox.setChecked(data.get("greeklish", False))
         self.case_combo.setCurrentText(data.get("case", "original"))
         self.sep_combo.setCurrentText(data.get("separator", "as-is"))
         self._last_value = str(self.get_data())  # Update internal cache

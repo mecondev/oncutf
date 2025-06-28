@@ -61,7 +61,11 @@ class RenameModulesArea(QWidget):
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(6, 6, 6, 6)
-        main_layout.setSpacing(8)
+        main_layout.setSpacing(0)  # Control spacing manually like metadata dialog
+
+        # Add spacing at the top to align module container with status label
+        # This pushes the modules down to align with the bottom status area
+        main_layout.addSpacing(40)
 
         # Scrollable module container
         self.scroll_area = QScrollArea()
@@ -71,10 +75,13 @@ class RenameModulesArea(QWidget):
         self.scroll_content = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_content)
         self.scroll_layout.setContentsMargins(4, 4, 4, 4)
-        self.scroll_layout.setSpacing(10)
+        self.scroll_layout.setSpacing(10)  # Keep spacing between modules
 
         self.scroll_area.setWidget(self.scroll_content)
         main_layout.addWidget(self.scroll_area)
+
+        # Space between scroll area and footer
+        main_layout.addSpacing(8)
 
         # Final transformation + controls
         footer_layout = QHBoxLayout()
@@ -87,34 +94,64 @@ class RenameModulesArea(QWidget):
         self.name_transform_widget.updated.connect(self.updated.emit)
 
         name_transform_layout = QVBoxLayout()
+        name_transform_layout.setContentsMargins(0, 0, 0, 0)
+        name_transform_layout.setSpacing(2)  # Small space between label and widget
         name_transform_layout.addWidget(self.name_transform_label)
         name_transform_layout.addWidget(self.name_transform_widget)
 
         # Middle spacer
         spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
-        # Right side: buttons with icons
-        self.add_button = QPushButton()
-        self.remove_button = QPushButton()
-        self.add_button.setIcon(get_menu_icon("plus"))
-        self.remove_button.setIcon(get_menu_icon("minus"))
-        self.add_button.setFixedSize(28, 28)
-        self.remove_button.setFixedSize(28, 28)
-        self.add_button.setToolTip("Add new module")
-        self.remove_button.setToolTip("Remove last module")
+        # Right side: buttons positioned to align with specific transform rows
+        # Create a layout that matches the structure of name_transform_widget
+        buttons_container = QWidget()
+        buttons_container_layout = QVBoxLayout(buttons_container)
+        buttons_container_layout.setContentsMargins(0, 0, 0, 0)
+        buttons_container_layout.setSpacing(0)
 
+        # Space to align with "Final Transform:" label
+        buttons_container_layout.addSpacing(20)  # Label height + spacing
+
+        # Space to align with Greeklish row (1st row)
+        buttons_container_layout.addSpacing(20)  # Greeklish row height + spacing
+
+        # Add button - aligns with Case row (2nd row)
+        case_button_layout = QHBoxLayout()
+        case_button_layout.setContentsMargins(0, 0, 0, 0)
+        case_button_layout.addStretch()
+
+        self.add_button = QPushButton()
+        self.add_button.setIcon(get_menu_icon("plus"))
+        self.add_button.setFixedSize(28, 28)
+        self.add_button.setToolTip("Add new module")
         self.add_button.clicked.connect(self.add_module)
+
+        case_button_layout.addWidget(self.add_button)
+        buttons_container_layout.addLayout(case_button_layout)
+
+        # Space between Case and Separator rows
+        buttons_container_layout.addSpacing(6)
+
+        # Remove button - aligns with Separator row (3rd row)
+        separator_button_layout = QHBoxLayout()
+        separator_button_layout.setContentsMargins(0, 0, 0, 0)
+        separator_button_layout.addStretch()
+
+        self.remove_button = QPushButton()
+        self.remove_button.setIcon(get_menu_icon("minus"))
+        self.remove_button.setFixedSize(28, 28)
+        self.remove_button.setToolTip("Remove last module")
         self.remove_button.clicked.connect(self.remove_last_module)
 
-        buttons_layout = QVBoxLayout()
-        buttons_layout.addStretch()
-        buttons_layout.addWidget(self.add_button)
-        buttons_layout.addWidget(self.remove_button)
-        buttons_layout.addStretch()
+        separator_button_layout.addWidget(self.remove_button)
+        buttons_container_layout.addLayout(separator_button_layout)
+
+        # Add remaining stretch
+        buttons_container_layout.addStretch()
 
         footer_layout.addLayout(name_transform_layout)
         footer_layout.addItem(spacer)
-        footer_layout.addLayout(buttons_layout)
+        footer_layout.addWidget(buttons_container)
 
         main_layout.addLayout(footer_layout)
 

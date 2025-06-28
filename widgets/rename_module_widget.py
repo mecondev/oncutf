@@ -58,6 +58,8 @@ class RenameModuleWidget(QWidget):
     remove_requested = pyqtSignal(QWidget)
     updated = pyqtSignal(QWidget)
 
+    LABEL_WIDTH = 80  # Consistent label width for alignment
+
     def __init__(self, parent: Optional[QWidget] = None, parent_window: Optional[QWidget] = None) -> None:
         super().__init__(parent)
 
@@ -84,13 +86,17 @@ class RenameModuleWidget(QWidget):
         # --- Layout setup ---
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(4, 4, 4, 4)
-        self.main_layout.setSpacing(6)
+        self.main_layout.setSpacing(0)  # Control spacing manually like metadata dialog
 
         # --- Top layout (type selection + module area) ---
 
         # Row for "Type" label and combo box
         type_row = QHBoxLayout()
+        type_row.setContentsMargins(0, 0, 0, 0)
+        type_row.setSpacing(8)
+
         type_label = QLabel("Type:")
+        type_label.setFixedWidth(self.LABEL_WIDTH)
         self.type_combo = QComboBox()
         self.type_combo.addItems(self.module_instances.keys())
         self.type_combo.setMaximumWidth(140)
@@ -101,6 +107,9 @@ class RenameModuleWidget(QWidget):
         type_row.addWidget(self.type_combo)
         type_row.addStretch()
         self.main_layout.addLayout(type_row)
+
+        # Small space between type selection and module content
+        self.main_layout.addSpacing(4)
 
         # Module content container
         self.content_container_widget = QWidget()
