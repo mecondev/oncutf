@@ -75,10 +75,10 @@ class RenameModuleWidget(QWidget):
         }
 
         self.module_heights = {
-            "Original Name": 50,
-            "Specified Text": 90,
-            "Counter": 130,
-            "Metadata": 120
+            "Original Name": 45,
+            "Specified Text": 80,
+            "Counter": 120,
+            "Metadata": 110
         }
 
         self.current_module_widget = None
@@ -109,12 +109,12 @@ class RenameModuleWidget(QWidget):
         self.main_layout.addLayout(type_row)
 
         # Small space between type selection and module content
-        self.main_layout.addSpacing(4)
+        self.main_layout.addSpacing(2)
 
         # Module content container
         self.content_container_widget = QWidget()
         self.content_container_layout = QVBoxLayout(self.content_container_widget)
-        self.content_container_layout.setContentsMargins(4, 4, 4, 4)
+        self.content_container_layout.setContentsMargins(2, 2, 2, 2)
         self.content_container_layout.setSpacing(2)
         self.main_layout.addWidget(self.content_container_widget)
 

@@ -48,7 +48,7 @@ class NameTransformWidget(BaseRenameModule):
         layout.addLayout(greeklish_layout)
 
         # Space between greeklish and case
-        layout.addSpacing(6)
+        layout.addSpacing(4)
 
         # --- Case transformation ---
         case_layout = QHBoxLayout()
@@ -67,7 +67,7 @@ class NameTransformWidget(BaseRenameModule):
         layout.addLayout(case_layout)
 
         # Space between case and separator
-        layout.addSpacing(6)
+        layout.addSpacing(4)
 
         # --- Separator transformation ---
         sep_layout = QHBoxLayout()
