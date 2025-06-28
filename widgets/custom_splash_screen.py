@@ -76,9 +76,14 @@ class CustomSplashScreen(QSplashScreen):
 
             painter = QPainter(fallback_pixmap)
             painter.setRenderHint(QPainter.Antialiasing)
-            painter.setPen(QPen(Qt.white))
+            painter.setPen(QPen(Qt.white)) # type: ignore
 
-            font = QFont("Inter", 24, QFont.Bold)
+            # Use our custom InterDisplay-SemiBold for title
+            from utils.fonts import get_inter_font
+            try:
+                font = get_inter_font('titles', 24)  # Uses InterDisplay-SemiBold
+            except:
+                font = QFont("Inter", 24, QFont.Bold)  # Fallback
             painter.setFont(font)
             painter.drawText(
                 fallback_pixmap.rect(),
@@ -229,9 +234,15 @@ class CustomSplashScreen(QSplashScreen):
         """
         painter.setRenderHint(QPainter.Antialiasing)
 
-        # Set up fonts
-        version_font = QFont("Inter", 11, QFont.Normal)
-        init_font = QFont("Inter", 9, QFont.Normal)
+        # Set up fonts using our custom font system
+        from utils.fonts import get_inter_font
+        try:
+            version_font = get_inter_font('base', 11)  # Uses Inter-Regular
+            init_font = get_inter_font('base', 9)     # Uses Inter-Regular
+        except:
+            # Fallback to system fonts
+            version_font = QFont("Inter", 11, QFont.Normal)
+            init_font = QFont("Inter", 9, QFont.Normal)
 
         # Draw version in bottom left
         painter.setFont(version_font)
