@@ -889,6 +889,8 @@ class MainWindow(QMainWindow):
 
             # Import screen size configuration from config
             from core.config_imports import (
+                DEV_SIMULATE_SCREEN,
+                DEV_SIMULATED_SCREEN,
                 SCREEN_SIZE_BREAKPOINTS,
                 SCREEN_SIZE_PERCENTAGES,
                 WINDOW_MIN_SMART_WIDTH,
@@ -897,31 +899,45 @@ class MainWindow(QMainWindow):
                 LARGE_SCREEN_MIN_HEIGHT
             )
 
+            # Check if we should simulate a different screen size (DEV ONLY)
+            if DEV_SIMULATE_SCREEN:
+                screen_width = DEV_SIMULATED_SCREEN["width"]
+                screen_height = DEV_SIMULATED_SCREEN["height"]
+                screen_name = DEV_SIMULATED_SCREEN["name"]
+                logger.warning(f"[Config] 🚧 DEV MODE: Simulating screen: {screen_name} - {screen_width}x{screen_height}")
+                # Override the real screen values for testing
+                screen_geometry = type('MockGeometry', (), {
+                    'x': lambda: 0,
+                    'y': lambda: 0,
+                    'width': lambda: screen_width,
+                    'height': lambda: screen_height
+                })()
+
             # Calculate smart window dimensions based on primary screen size using configurable breakpoints
             if screen_width >= SCREEN_SIZE_BREAKPOINTS["large_4k"]:  # 4K or large single screen
-                # Large screens: use configurable percentage, with configurable minimum
-                percentage = SCREEN_SIZE_PERCENTAGES["large_4k"]
-                window_width = max(int(screen_width * percentage), LARGE_SCREEN_MIN_WIDTH)
-                window_height = max(int(screen_height * percentage), LARGE_SCREEN_MIN_HEIGHT)
-                logger.info(f"[Config] Large screen detected (>={SCREEN_SIZE_BREAKPOINTS['large_4k']}px), using {percentage*100}%: {window_width}x{window_height}")
+                # Large screens: use configurable percentages, with configurable minimum
+                percentages = SCREEN_SIZE_PERCENTAGES["large_4k"]
+                window_width = max(int(screen_width * percentages["width"]), LARGE_SCREEN_MIN_WIDTH)
+                window_height = max(int(screen_height * percentages["height"]), LARGE_SCREEN_MIN_HEIGHT)
+                logger.info(f"[Config] Large screen detected (>={SCREEN_SIZE_BREAKPOINTS['large_4k']}px), using {percentages['width']*100}%x{percentages['height']*100}%: {window_width}x{window_height}")
             elif screen_width >= SCREEN_SIZE_BREAKPOINTS["full_hd"]:  # Full HD single screen
-                # Standard large screens: use configurable percentage
-                percentage = SCREEN_SIZE_PERCENTAGES["full_hd"]
-                window_width = int(screen_width * percentage)
-                window_height = int(screen_height * percentage)
-                logger.info(f"[Config] Full HD screen detected (>={SCREEN_SIZE_BREAKPOINTS['full_hd']}px), using {percentage*100}%: {window_width}x{window_height}")
+                # Standard large screens: use configurable percentages
+                percentages = SCREEN_SIZE_PERCENTAGES["full_hd"]
+                window_width = int(screen_width * percentages["width"])
+                window_height = int(screen_height * percentages["height"])
+                logger.info(f"[Config] Full HD screen detected (>={SCREEN_SIZE_BREAKPOINTS['full_hd']}px), using {percentages['width']*100}%x{percentages['height']*100}%: {window_width}x{window_height}")
             elif screen_width >= SCREEN_SIZE_BREAKPOINTS["laptop"]:  # Common laptop resolution
-                # Medium screens: use configurable percentage
-                percentage = SCREEN_SIZE_PERCENTAGES["laptop"]
-                window_width = int(screen_width * percentage)
-                window_height = int(screen_height * percentage)
-                logger.info(f"[Config] Medium screen detected (>={SCREEN_SIZE_BREAKPOINTS['laptop']}px), using {percentage*100}%: {window_width}x{window_height}")
+                # Medium screens: use configurable percentages
+                percentages = SCREEN_SIZE_PERCENTAGES["laptop"]
+                window_width = int(screen_width * percentages["width"])
+                window_height = int(screen_height * percentages["height"])
+                logger.info(f"[Config] Medium screen detected (>={SCREEN_SIZE_BREAKPOINTS['laptop']}px), using {percentages['width']*100}%x{percentages['height']*100}%: {window_width}x{window_height}")
             else:  # Small screens (below laptop breakpoint)
-                # Small screens: use configurable percentage, but ensure minimum usability
-                percentage = SCREEN_SIZE_PERCENTAGES["small"]
-                window_width = max(int(screen_width * percentage), WINDOW_MIN_SMART_WIDTH)
-                window_height = max(int(screen_height * percentage), WINDOW_MIN_SMART_HEIGHT)
-                logger.info(f"[Config] Small screen detected (<{SCREEN_SIZE_BREAKPOINTS['laptop']}px), using {percentage*100}%: {window_width}x{window_height}")
+                # Small screens: use configurable percentages, but ensure minimum usability
+                percentages = SCREEN_SIZE_PERCENTAGES["small"]
+                window_width = max(int(screen_width * percentages["width"]), WINDOW_MIN_SMART_WIDTH)
+                window_height = max(int(screen_height * percentages["height"]), WINDOW_MIN_SMART_HEIGHT)
+                logger.info(f"[Config] Small screen detected (<{SCREEN_SIZE_BREAKPOINTS['laptop']}px), using {percentages['width']*100}%x{percentages['height']*100}%: {window_width}x{window_height}")
 
             # Ensure minimum dimensions for usability
             original_width, original_height = window_width, window_height

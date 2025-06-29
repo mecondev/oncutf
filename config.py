@@ -52,12 +52,12 @@ SCREEN_SIZE_BREAKPOINTS = {
     # Everything below 1366px is considered "small"
 }
 
-# Window sizing percentages for each screen category
+# Window sizing percentages for each screen category (separate width/height control)
 SCREEN_SIZE_PERCENTAGES = {
-    "large_4k": 0.75,      # 4K screens: 75% of screen
-    "full_hd": 0.80,       # Full HD screens: 80% of screen
-    "laptop": 0.85,        # Laptop screens: 85% of screen
-    "small": 0.90          # Small screens: 90% of screen
+    "large_4k": {"width": 0.75, "height": 0.75},      # 4K screens: 75% of screen
+    "full_hd": {"width": 0.80, "height": 0.80},       # Full HD screens: 80% of screen
+    "laptop": {"width": 0.85, "height": 0.85},        # Laptop screens: 85% of screen
+    "small": {"width": 0.90, "height": 0.90}          # Small screens: 90% of screen
 }
 
 # Minimum window dimensions for usability
@@ -67,6 +67,26 @@ WINDOW_MIN_SMART_HEIGHT = 700
 # Minimum dimensions for large screens
 LARGE_SCREEN_MIN_WIDTH = 1400
 LARGE_SCREEN_MIN_HEIGHT = 900
+
+# ----------------------------
+# Development/Testing Settings
+# ----------------------------
+# Set to True to simulate different screen sizes for testing (DEV ONLY)
+DEV_SIMULATE_SCREEN = True
+
+# Simulated screen dimensions (only used when DEV_SIMULATE_SCREEN is True)
+DEV_SIMULATED_SCREEN = {
+    "width": 1280,
+    "height": 1024,
+    "name": "Simulated 4K Screen"
+}
+
+# Common screen sizes for quick testing:
+# 4K: {"width": 2560, "height": 1440, "name": "Simulated 4K"}
+# Full HD: {"width": 1920, "height": 1080, "name": "Simulated Full HD"}
+# Laptop: {"width": 1366, "height": 768, "name": "Simulated Laptop"}
+# Small: {"width": 1024, "height": 768, "name": "Simulated Small"}
+# Ultrawide: {"width": 3440, "height": 1440, "name": "Simulated Ultrawide"}
 
 # Splitter sizes
 TOP_BOTTOM_SPLIT_RATIO = [500, 400]

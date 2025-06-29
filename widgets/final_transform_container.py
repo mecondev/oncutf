@@ -54,7 +54,7 @@ class FinalTransformContainer(QWidget):
         greeklish_text_label = QLabel("Convert Greek to Greeklish")
 
         # Checkbox for Greek to Greeklish conversion
-        self.greeklish_checkbox = QCheckBox("Greeklish")
+        self.greeklish_checkbox = QCheckBox()  # Removed "Greeklish" text
         self.greeklish_checkbox.setChecked(False)
         # Setup custom tooltip for greeklish checkbox
         setup_tooltip(self.greeklish_checkbox, "Toggle Greek to Greeklish conversion", TooltipType.INFO)
@@ -149,10 +149,17 @@ class FinalTransformContainer(QWidget):
         main_layout.addLayout(greeklish_layout)
         main_layout.addLayout(grid_layout)
 
+        # 🚧 TEMPORARY DEV LOGGING - Log widget dimensions and positions
+        self._log_widget_dimensions()
+
     def _on_value_change(self):
         """Handle value changes and emit update signal if data changed."""
         current_data = str(self.get_data())
         if current_data != self._last_value:
+            # 🚧 TEMPORARY DEV LOGGING - Log value changes
+            print(f"🔄 Final Transform value changed: {current_data}")
+            self._log_widget_dimensions()  # Log dimensions on each change
+
             self._last_value = current_data
             self.updated.emit()
 
@@ -174,3 +181,52 @@ class FinalTransformContainer(QWidget):
     def set_remove_button_enabled(self, enabled: bool):
         """Enable/disable the remove button."""
         self.remove_button.setEnabled(enabled)
+
+    def _log_widget_dimensions(self):
+        """🚧 TEMPORARY DEV LOGGING - Log widget dimensions and positions for fixing layout."""
+        print("\n" + "="*60)
+        print("🚧 FINAL TRANSFORM CONTAINER - WIDGET DIMENSIONS")
+        print("="*60)
+
+        # Container dimensions
+        container_size = self.size()
+        print(f"📦 Container: {container_size.width()}x{container_size.height()}")
+
+        # Checkbox dimensions
+        checkbox_size = self.greeklish_checkbox.size()
+        checkbox_pos = self.greeklish_checkbox.pos()
+        print(f"☑️  Greeklish Checkbox: {checkbox_size.width()}x{checkbox_size.height()} at ({checkbox_pos.x()}, {checkbox_pos.y()})")
+
+        # Case combo dimensions
+        case_combo_size = self.case_combo.size()
+        case_combo_pos = self.case_combo.pos()
+        print(f"📋 Case Combo: {case_combo_size.width()}x{case_combo_size.height()} at ({case_combo_pos.x()}, {case_combo_pos.y()})")
+        print(f"   Fixed size set to: {self.case_combo.minimumWidth()}x{self.case_combo.minimumHeight()}")
+
+        # Separator combo dimensions
+        sep_combo_size = self.separator_combo.size()
+        sep_combo_pos = self.separator_combo.pos()
+        print(f"📋 Separator Combo: {sep_combo_size.width()}x{sep_combo_size.height()} at ({sep_combo_pos.x()}, {sep_combo_pos.y()})")
+        print(f"   Fixed size set to: {self.separator_combo.minimumWidth()}x{self.separator_combo.minimumHeight()}")
+
+        # Button dimensions
+        add_btn_size = self.add_button.size()
+        add_btn_pos = self.add_button.pos()
+        print(f"➕ Add Button: {add_btn_size.width()}x{add_btn_size.height()} at ({add_btn_pos.x()}, {add_btn_pos.y()})")
+
+        remove_btn_size = self.remove_button.size()
+        remove_btn_pos = self.remove_button.pos()
+        print(f"➖ Remove Button: {remove_btn_size.width()}x{remove_btn_size.height()} at ({remove_btn_pos.x()}, {remove_btn_pos.y()})")
+
+        # Label dimensions
+        case_label_size = self.case_label.size()
+        case_label_pos = self.case_label.pos()
+        print(f"🏷️  Case Label: {case_label_size.width()}x{case_label_size.height()} at ({case_label_pos.x()}, {case_label_pos.y()})")
+
+        sep_label_size = self.separator_label.size()
+        sep_label_pos = self.separator_label.pos()
+        print(f"🏷️  Separator Label: {sep_label_size.width()}x{sep_label_size.height()} at ({sep_label_pos.x()}, {sep_label_pos.y()})")
+
+        print("="*60)
+        print("💡 Use these values to set fixed dimensions in config!")
+        print("="*60 + "\n")
