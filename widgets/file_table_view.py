@@ -1643,11 +1643,23 @@ class FileTableView(QTableView):
                     FILE_TABLE_COLUMN_WIDTHS["DATE_COLUMN"]
                 )
 
-                # Check for vertical scrollbar
+                # Check for vertical scrollbar - but only if table has content
                 vertical_scrollbar = self.verticalScrollBar()
                 scrollbar_margin = 0
-                if vertical_scrollbar and vertical_scrollbar.isVisible():
+
+                # Only consider scrollbar if table is not empty
+                model = self.model()
+                has_content = model and model.rowCount() > 0
+
+                logger.debug(f"[CalcFilenameWidth] Model exists: {model is not None}, rowCount: {model.rowCount() if model else 0}, has_content: {has_content}", extra={"dev_only": True})
+
+                if has_content and vertical_scrollbar and vertical_scrollbar.isVisible():
                     scrollbar_margin = SCROLLBAR_MARGIN
+                    logger.debug(f"[CalcFilenameWidth] Table has content, scrollbar visible: margin={scrollbar_margin}", extra={"dev_only": True})
+                elif has_content:
+                    logger.debug(f"[CalcFilenameWidth] Table has content, no scrollbar needed", extra={"dev_only": True})
+                else:
+                    logger.debug(f"[CalcFilenameWidth] Table is empty, no scrollbar consideration", extra={"dev_only": True})
 
                 # Calculate available width for filename column
                 available_width = center_panel_width - other_columns_width - scrollbar_margin
@@ -1660,10 +1672,19 @@ class FileTableView(QTableView):
                     target_width = available_width
                     logger.debug(f"[CalcFilenameWidth] Using available_width {available_width} (source was {source_width})", extra={"dev_only": True})
                 else:
-                    # Use config default, but constrain to available space
-                    config_width = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
-                    target_width = min(config_width, available_width)
-                    logger.debug(f"[CalcFilenameWidth] Using config_width {config_width}, constrained to {target_width}", extra={"dev_only": True})
+                    # For empty table or initial load, always use all available space
+                    if not has_content:
+                        target_width = available_width  # Use all space for empty table
+                        logger.debug(f"[CalcFilenameWidth] Empty table: using full available_width {available_width}", extra={"dev_only": True})
+                    else:
+                        # Table has content - use available space but be reasonable
+                        config_width = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
+                        if available_width > config_width + 100:  # If we have much more space than config
+                            target_width = available_width  # Use all available space
+                            logger.debug(f"[CalcFilenameWidth] Using available_width {available_width} (config {config_width} + buffer)", extra={"dev_only": True})
+                        else:
+                            target_width = available_width  # Still use available space, not config
+                            logger.debug(f"[CalcFilenameWidth] Using available_width {available_width} (within config range)", extra={"dev_only": True})
             else:
                 # Fallback when width calculation fails
                 target_width = source_width if source_width is not None else FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
