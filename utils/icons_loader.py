@@ -1,19 +1,17 @@
 """
-icons_loader.py
+Icons Loader Module
 
-Author: Michael Economou
-Date: 2025-05-20
-
-This utility provides helper functions to load various types of icons:
-- Metadata status icons for use in the metadata icon delegate
-- Theme-aware SVG icons for menus and buttons
+This module provides unified icon loading functionality for the application.
+It handles different types of icons:
+- Metadata status icons
+- Menu icons (from Feather icon set)
+- Application icons
 - Preview status icons
 
 Each icon type has its own loading function and caching mechanism.
 
 Usage:
     from utils.icons_loader import load_metadata_icons, get_menu_icon
-    icon_map = load_metadata_icons()
     menu_icon = get_menu_icon("file")
 """
 
@@ -26,12 +24,16 @@ from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
+# Cache for metadata icons to avoid regeneration
+_metadata_icons_cache: Optional[dict[str, QPixmap]] = None
+
 
 def load_metadata_icons(base_dir: Optional[str] = None) -> dict[str, QPixmap]:
     """
     Loads metadata status icons for the file table's first column.
 
     Now uses SVG-based icons with proper theming instead of PNG files.
+    Implements caching to avoid regenerating icons on every call.
 
     Args:
         base_dir: Base directory where icon files are stored (optional, kept for compatibility)
@@ -39,6 +41,13 @@ def load_metadata_icons(base_dir: Optional[str] = None) -> dict[str, QPixmap]:
     Returns:
         Dictionary mapping status names to QPixmap objects
     """
+    global _metadata_icons_cache
+
+    # Return cached icons if available
+    if _metadata_icons_cache is not None:
+        logger.debug("[IconLoader] Using cached metadata icons", extra={"dev_only": True})
+        return _metadata_icons_cache
+
     from utils.svg_icon_generator import generate_metadata_icons
 
     logger.debug("[IconLoader] Loading SVG metadata icons", extra={"dev_only": True})
@@ -52,6 +61,10 @@ def load_metadata_icons(base_dir: Optional[str] = None) -> dict[str, QPixmap]:
     icon_map['basic'] = generator.generate_icon('basic')
 
     logger.debug(f"[IconLoader] Generated {len(icon_map)} SVG metadata icons", extra={"dev_only": True})
+
+    # Cache the result
+    _metadata_icons_cache = icon_map
+
     return icon_map
 
 

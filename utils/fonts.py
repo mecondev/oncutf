@@ -17,9 +17,8 @@ class InterFonts:
     # Font file mappings
     FONT_FILES = {
         'regular': 'Inter-Regular.ttf',
-        'extralight': 'Inter-ExtraLight.ttf',
         'medium': 'Inter-Medium.ttf',
-        'semibold': 'Inter-SemiBold.ttf',
+        'semibold': 'InterDisplay-SemiBold.ttf',
         'italic': 'Inter-Italic.ttf',
         'display_semibold': 'InterDisplay-SemiBold.ttf'
     }
@@ -27,7 +26,6 @@ class InterFonts:
     # CSS weight mappings for styling
     CSS_WEIGHTS = {
         'regular': 400,
-        'extralight': 200,
         'medium': 500,
         'semibold': 600,
         'italic': 400,
@@ -163,8 +161,8 @@ class InterFonts:
         """
         font_mapping = {
             'base': 'regular',
-            'buttons': 'extralight',
-            'interface': 'extralight',
+            'buttons': 'medium',
+            'interface': 'medium',
             'medium': 'medium',
             'headers': 'semibold',
             'emphasis': 'italic',
@@ -190,8 +188,8 @@ class InterFonts:
         """Get CSS font-weight value for use case"""
         font_mapping = {
             'base': 'regular',
-            'buttons': 'extralight',
-            'interface': 'extralight',
+            'buttons': 'medium',
+            'interface': 'medium',
             'medium': 'medium',
             'headers': 'semibold',
             'emphasis': 'italic',
@@ -205,8 +203,8 @@ class InterFonts:
         """Get font family name for use case"""
         font_mapping = {
             'base': 'regular',
-            'buttons': 'extralight',
-            'interface': 'extralight',
+            'buttons': 'medium',
+            'interface': 'medium',
             'medium': 'medium',
             'headers': 'semibold',
             'emphasis': 'italic',

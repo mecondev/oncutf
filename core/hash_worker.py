@@ -14,6 +14,7 @@ Key Features:
 - Accurate CRC32 progress tracking with total size calculation
 - Graceful cancellation support
 - Optimized for large file operations
+- Smart cache checking to avoid redundant hash calculations
 
 Usage:
     worker = HashWorker()
@@ -58,10 +59,17 @@ class HashWorker(QThread):
     finished_processing = pyqtSignal(bool)  # success flag
     error_occurred = pyqtSignal(str)  # error message
 
+    # Real-time UI update signals
+    file_hash_calculated = pyqtSignal(str)  # file_path - emitted when individual file hash is calculated
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._mutex = QMutex()
         self._cancelled = False
+
+        # Shared hash manager instance for better cache utilization
+        from core.hash_manager import HashManager
+        self._hash_manager = HashManager()
 
         # Operation configuration
         self._operation_type = None  # "duplicates", "compare", "checksums"
@@ -76,6 +84,10 @@ class HashWorker(QThread):
         self._total_bytes = 0
         self._cumulative_processed_bytes = 0  # Continuously increases, never resets per file
 
+        # Cache statistics
+        self._cache_hits = 0
+        self._cache_misses = 0
+
     def setup_duplicate_scan(self, file_paths: List[str]) -> None:
         """Configure worker for duplicate detection."""
         with QMutexLocker(self._mutex):
@@ -86,6 +98,8 @@ class HashWorker(QThread):
             self._cancel_check_counter = 0
             self._total_bytes = 0
             self._cumulative_processed_bytes = 0
+            self._cache_hits = 0
+            self._cache_misses = 0
 
     def setup_external_comparison(self, file_paths: List[str], external_folder: str) -> None:
         """Configure worker for external folder comparison."""
@@ -97,6 +111,8 @@ class HashWorker(QThread):
             self._cancel_check_counter = 0
             self._total_bytes = 0
             self._cumulative_processed_bytes = 0
+            self._cache_hits = 0
+            self._cache_misses = 0
 
     def setup_checksum_calculation(self, file_paths: List[str]) -> None:
         """Configure worker for checksum calculation."""
@@ -108,6 +124,8 @@ class HashWorker(QThread):
             self._cancel_check_counter = 0
             self._total_bytes = 0
             self._cumulative_processed_bytes = 0
+            self._cache_hits = 0
+            self._cache_misses = 0
 
     def set_total_size(self, total_size: int) -> None:
         """Set the total size from external calculation to avoid duplicate work."""
@@ -205,9 +223,33 @@ class HashWorker(QThread):
             self.error_occurred.emit(str(e))
             self.finished_processing.emit(False)
 
+    def _check_cache_before_calculation(self, file_path: str) -> str | None:
+        """
+        Check if hash exists in cache before calculating.
+
+        Returns:
+            str: Cached hash if found, None if not in cache
+        """
+        try:
+            # Use HashManager's built-in cache checking methods
+            cached_hash = self._hash_manager.get_cached_hash(file_path)
+            if cached_hash:
+                self._cache_hits += 1
+                logger.debug(f"[HashWorker] Cache hit for: {os.path.basename(file_path)}")
+                return cached_hash
+
+            self._cache_misses += 1
+            return None
+
+        except Exception as e:
+            logger.debug(f"[HashWorker] Error checking cache for {file_path}: {e}")
+            self._cache_misses += 1
+            return None
+
     def _process_file_with_progress(self, file_path: str, i: int, total_files: int) -> tuple[str | None, int]:
         """
         Helper method to process a single file with progress tracking.
+        Checks cache first before calculating hash.
 
         Returns:
             tuple: (file_hash, file_size) or (None, file_size) if hash failed
@@ -221,6 +263,27 @@ class HashWorker(QThread):
         except OSError:
             file_size = 0
 
+        # Check cache first before calculating
+        file_hash = self._check_cache_before_calculation(file_path)
+
+        if file_hash is not None:
+            # Hash found in cache - update progress and return
+            with QMutexLocker(self._mutex):
+                if file_size > 0:
+                    new_cumulative = self._cumulative_processed_bytes + file_size
+                    if new_cumulative > self._cumulative_processed_bytes:
+                        self._cumulative_processed_bytes = new_cumulative
+                    else:
+                        logger.warning(f"[HashWorker] Size overflow detected, capping progress at {self._cumulative_processed_bytes:,} bytes")
+
+                self.size_progress.emit(int(self._cumulative_processed_bytes), int(self._total_bytes))
+
+            # Note: No signal emission for cache hits - icon should already be correct
+            return file_hash, file_size
+
+        # Hash not in cache - need to calculate
+        logger.debug(f"[HashWorker] Calculating hash for: {filename}")
+
         # For large files (>100MB), use real-time progress callback
         progress_callback = None
         if file_size > 100_000_000:  # 100MB threshold
@@ -233,9 +296,7 @@ class HashWorker(QThread):
             progress_callback = update_progress
 
         # Calculate hash with optional real-time progress for large files
-        from core.hash_manager import HashManager
-        hash_manager = HashManager()
-        file_hash = hash_manager.calculate_hash(file_path, progress_callback=progress_callback)
+        file_hash = self._hash_manager.calculate_hash(file_path, progress_callback=progress_callback)
 
         # Update cumulative bytes AFTER each file is completed
         with QMutexLocker(self._mutex):
@@ -251,10 +312,15 @@ class HashWorker(QThread):
             # Emit with explicit 64-bit integers to prevent overflow
             self.size_progress.emit(int(self._cumulative_processed_bytes), int(self._total_bytes))
 
+        # Emit signal for real-time UI update only when hash is newly calculated (not from cache)
+        if file_hash is not None:
+            self.file_hash_calculated.emit(file_path)
+            logger.debug(f"[HashWorker] Emitted file_hash_calculated signal for: {filename}")
+
         return file_hash, file_size
 
     def _calculate_checksums(self, file_paths: List[str]) -> None:
-        """Calculate checksums with file-by-file progress tracking."""
+        """Calculate checksums with file-by-file progress tracking and smart cache usage."""
         hash_results = {}
         total_files = len(file_paths)
 
@@ -276,15 +342,19 @@ class HashWorker(QThread):
         # Complete progress - final update
         self.progress_updated.emit(total_files, total_files, "Complete")
         self.size_progress.emit(int(self._total_bytes), int(self._total_bytes))
-        self.status_updated.emit(f"CRC32 checksums calculated for {len(hash_results)} files!")
+
+        # Report cache statistics
+        cache_hit_rate = (self._cache_hits / (self._cache_hits + self._cache_misses) * 100) if (self._cache_hits + self._cache_misses) > 0 else 0
+        self.status_updated.emit(f"CRC32 checksums calculated for {len(hash_results)} files! Cache hit rate: {cache_hit_rate:.1f}%")
 
         logger.info(f"[HashWorker] Calculated checksums for {len(hash_results)} files")
+        logger.info(f"[HashWorker] Cache performance - Hits: {self._cache_hits}, Misses: {self._cache_misses}, Hit rate: {cache_hit_rate:.1f}%")
         self.checksums_calculated.emit(hash_results)
         self.finished_processing.emit(True)
 
     def _find_duplicates(self, file_paths: List[str]) -> None:
-        """Find duplicates with file-by-file progress tracking."""
-        hash_cache = {}
+        """Find duplicates with file-by-file progress tracking and smart cache usage."""
+        hash_to_files = {}  # Use more descriptive name
         total_files = len(file_paths)
 
         self.status_updated.emit("Calculating CRC32 hashes for duplicate detection...")
@@ -300,28 +370,29 @@ class HashWorker(QThread):
 
             file_hash, file_size = self._process_file_with_progress(file_path, i, total_files)
             if file_hash:
-                if file_hash in hash_cache:
-                    hash_cache[file_hash].append(file_path)
+                if file_hash in hash_to_files:
+                    hash_to_files[file_hash].append(file_path)
                 else:
-                    hash_cache[file_hash] = [file_path]
+                    hash_to_files[file_hash] = [file_path]
 
         # Complete progress with final updates
         self.progress_updated.emit(total_files, total_files, "Complete")
         self.size_progress.emit(int(self._total_bytes), int(self._total_bytes))
-        self.status_updated.emit("Duplicate analysis complete!")
+
+        # Report cache statistics
+        cache_hit_rate = (self._cache_hits / (self._cache_hits + self._cache_misses) * 100) if (self._cache_hits + self._cache_misses) > 0 else 0
+        self.status_updated.emit(f"Duplicate analysis complete! Cache hit rate: {cache_hit_rate:.1f}%")
 
         # Find duplicates
-        duplicates = {hash_val: paths for hash_val, paths in hash_cache.items() if len(paths) > 1}
+        duplicates = {hash_val: paths for hash_val, paths in hash_to_files.items() if len(paths) > 1}
 
         logger.info(f"[HashWorker] Found {len(duplicates)} duplicate groups from {total_files} files")
+        logger.info(f"[HashWorker] Cache performance - Hits: {self._cache_hits}, Misses: {self._cache_misses}, Hit rate: {cache_hit_rate:.1f}%")
         self.duplicates_found.emit(duplicates)
         self.finished_processing.emit(True)
 
     def _compare_external(self, file_paths: List[str], external_folder: str) -> None:
         """Compare files with external folder using file-by-file progress tracking."""
-        from core.hash_manager import HashManager
-
-        hash_manager = HashManager()
         comparison_results = {}
         total_files = len(file_paths)
 
@@ -345,7 +416,12 @@ class HashWorker(QThread):
             # Look for file with same name in external folder
             external_file_path = Path(external_folder) / filename
             if external_file_path.exists():
-                external_hash = hash_manager.calculate_hash(str(external_file_path))
+                # Check cache for external file too
+                external_hash = self._check_cache_before_calculation(str(external_file_path))
+                if external_hash is None:
+                    # Calculate if not in cache
+                    external_hash = self._hash_manager.calculate_hash(str(external_file_path))
+
                 if external_hash is not None:
                     is_same = current_hash == external_hash
                     comparison_results[filename] = {
@@ -359,8 +435,12 @@ class HashWorker(QThread):
         # Complete progress with final updates
         self.progress_updated.emit(total_files, total_files, "Complete")
         self.size_progress.emit(int(self._total_bytes), int(self._total_bytes))
-        self.status_updated.emit("File comparison complete!")
+
+        # Report cache statistics
+        cache_hit_rate = (self._cache_hits / (self._cache_hits + self._cache_misses) * 100) if (self._cache_hits + self._cache_misses) > 0 else 0
+        self.status_updated.emit(f"File comparison complete! Cache hit rate: {cache_hit_rate:.1f}%")
 
         logger.info(f"[HashWorker] Compared {len(file_paths)} files with external folder")
+        logger.info(f"[HashWorker] Cache performance - Hits: {self._cache_hits}, Misses: {self._cache_misses}, Hit rate: {cache_hit_rate:.1f}%")
         self.comparison_result.emit(comparison_results)
         self.finished_processing.emit(True)

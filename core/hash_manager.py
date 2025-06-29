@@ -41,9 +41,50 @@ class HashManager:
             self._hash_cache: Dict[str, str] = {}
             self._use_persistent_cache = False
 
+    def has_cached_hash(self, file_path: Union[str, Path]) -> bool:
+        """
+        Check if a hash exists in cache without calculating it.
+
+        Args:
+            file_path: Path to the file to check
+
+        Returns:
+            bool: True if hash exists in cache, False otherwise
+        """
+        if isinstance(file_path, str):
+            file_path = Path(file_path)
+
+        cache_key = str(file_path.resolve())
+
+        if self._use_persistent_cache:
+            return self._persistent_cache.has_hash(cache_key)
+        else:
+            return cache_key in self._hash_cache
+
+    def get_cached_hash(self, file_path: Union[str, Path]) -> Optional[str]:
+        """
+        Get hash from cache without calculating it.
+
+        Args:
+            file_path: Path to the file
+
+        Returns:
+            str: Cached hash if found, None otherwise
+        """
+        if isinstance(file_path, str):
+            file_path = Path(file_path)
+
+        cache_key = str(file_path.resolve())
+
+        if self._use_persistent_cache:
+            return self._persistent_cache.get_hash(cache_key)
+        else:
+            return self._hash_cache.get(cache_key)
+
     def calculate_hash(self, file_path: Union[str, Path], progress_callback=None) -> Optional[str]:
         """
         Calculate the CRC32 hash of a file with error handling and progress tracking.
+        Checks cache first before calculating.
 
         Args:
             file_path: Path to the file to hash
@@ -60,10 +101,15 @@ class HashManager:
         if self._use_persistent_cache:
             cached_hash = self._persistent_cache.get_hash(cache_key)
             if cached_hash:
+                logger.debug(f"[HashManager] Cache hit for: {file_path.name}")
                 return cached_hash
         else:
             if cache_key in self._hash_cache:
+                logger.debug(f"[HashManager] Cache hit for: {file_path.name}")
                 return self._hash_cache[cache_key]
+
+        # Cache miss - need to calculate hash
+        logger.debug(f"[HashManager] Cache miss, calculating hash for: {file_path.name}")
 
         try:
             if not file_path.exists():
@@ -273,27 +319,43 @@ class HashManager:
 
         return matches
 
-    def clear_cache(self) -> None:
-        """Clear the internal hash cache."""
-        if self._use_persistent_cache:
-            self._persistent_cache.clear_memory_cache()
-        else:
-            self._hash_cache.clear()
-
-    def get_cache_info(self) -> Dict[str, int]:
+    def get_cache_info(self) -> Dict[str, Union[str, int, float]]:
         """
-        Get information about the current hash cache.
+        Get cache performance and size information.
 
         Returns:
             dict: Dictionary with cache statistics
         """
         if self._use_persistent_cache:
-            return self._persistent_cache.get_cache_stats()
-        else:
+            # Get persistent cache stats
+            persistent_stats = self._persistent_cache.get_cache_stats()
             return {
-                "cache_size": len(self._hash_cache),
-                "memory_usage_approx": len(self._hash_cache) * 50
+                'cache_type': 'persistent',
+                'memory_entries': persistent_stats.get('memory_entries', 0),
+                'cache_hits': persistent_stats.get('cache_hits', 0),
+                'cache_misses': persistent_stats.get('cache_misses', 0),
+                'hit_rate_percent': persistent_stats.get('hit_rate_percent', 0.0)
             }
+        else:
+            # Memory cache only
+            return {
+                'cache_type': 'memory',
+                'memory_entries': len(self._hash_cache),
+                'cache_hits': 0,  # Not tracked in memory-only mode
+                'cache_misses': 0,  # Not tracked in memory-only mode
+                'hit_rate_percent': 0.0
+            }
+
+    def clear_cache(self) -> None:
+        """
+        Clear hash cache (memory and/or persistent).
+        """
+        if self._use_persistent_cache:
+            self._persistent_cache.clear_memory_cache()
+            logger.info("[HashManager] Persistent cache memory cleared")
+        else:
+            self._hash_cache.clear()
+            logger.info("[HashManager] Memory cache cleared")
 
 
 # Convenience functions for simple usage

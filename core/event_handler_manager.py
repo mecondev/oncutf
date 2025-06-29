@@ -785,6 +785,9 @@ class EventHandlerManager:
             self.hash_worker.size_progress.connect(self._on_size_progress_updated)
             self.hash_worker.status_updated.connect(self.hash_dialog.set_status)
 
+            # Connect real-time UI update signal
+            self.hash_worker.file_hash_calculated.connect(self._on_file_hash_calculated)
+
             # Connect result signals
             if operation_type == "duplicates":
                 self.hash_worker.duplicates_found.connect(
@@ -902,6 +905,22 @@ class EventHandlerManager:
 
             # Use the accurate size progress from the worker
             self.hash_dialog.set_size_info(total_processed, total_size)
+
+    def _on_file_hash_calculated(self, file_path: str) -> None:
+        """Handle individual file hash calculation for real-time UI updates."""
+        try:
+            # Update file table icon for this specific file
+            if hasattr(self.parent_window, 'file_model') and self.parent_window.file_model:
+                # Find the file in the model and update its icon
+                for i, file_item in enumerate(self.parent_window.file_model.files):
+                    if file_item.full_path == file_path:
+                        # Emit dataChanged signal for the first column (icon column) only
+                        index = self.parent_window.file_model.index(i, 0)
+                        self.parent_window.file_model.dataChanged.emit(index, index, [Qt.DecorationRole, Qt.ToolTipRole]) # type: ignore
+                        logger.debug(f"[HashWorker] Updated icon for: {os.path.basename(file_path)}")
+                        break
+        except Exception as e:
+            logger.warning(f"[HashWorker] Error updating icon for {file_path}: {e}")
 
     def _on_duplicates_found(self, duplicates: dict, scope: str) -> None:
         """Handle duplicates found result."""

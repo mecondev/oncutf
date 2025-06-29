@@ -388,13 +388,13 @@ class ProgressWidget(QWidget):
 
     def set_progress_mode(self, mode: str):
         """
-        Set the progress mode dynamically.
+        Set progress calculation mode.
 
         Args:
-            mode: "count" for file count progress, "size" for data volume progress
+            mode: Either "count" (file count based) or "size" (byte size based)
         """
         if mode not in ["count", "size"]:
-            logger.warning(f"[ProgressWidget] Invalid progress mode: {mode}. Using 'count' instead.")
+            logger.warning(f"[ProgressWidget] Invalid progress mode: {mode}, using 'count'")
             mode = "count"
 
         old_mode = self.progress_mode
@@ -403,9 +403,10 @@ class ProgressWidget(QWidget):
         if old_mode != mode:
             logger.debug(f"[ProgressWidget] Progress mode changed: {old_mode} -> {mode}")
 
-            # If switching to size mode but no total size is set, warn user
+            # Only warn if switching to size mode and no total size will be set
+            # (This warning is mainly for debugging, not a real problem)
             if mode == "size" and self.total_size <= 0:
-                logger.warning("[ProgressWidget] Switched to size mode but no total size is set. Progress may not work correctly.")
+                logger.debug("[ProgressWidget] Switched to size mode without total size. Size will be set via start_progress_tracking().")
 
     def start_progress_tracking(self, total_size: int = 0):
         """Start progress tracking with optional size tracking."""
