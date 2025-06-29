@@ -429,6 +429,17 @@ class MainWindow(QMainWindow):
                     # Schedule the update to avoid conflicts with other resize operations
                     schedule_resize_adjust(update_splitters, 50)
 
+            # Also trigger column adjustment when window resizes
+            if hasattr(self, 'file_table_view'):
+                from utils.timer_manager import schedule_resize_adjust
+
+                def trigger_column_adjustment():
+                    if hasattr(self.file_table_view, '_trigger_column_adjustment'):
+                        self.file_table_view._trigger_column_adjustment()
+
+                # Schedule column adjustment after splitter update
+                schedule_resize_adjust(trigger_column_adjustment, 75)
+
     def _handle_window_state_change(self) -> None:
         """Handle maximize/restore geometry and file table refresh."""
         # Handle maximize: store appropriate geometry for restore

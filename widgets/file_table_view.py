@@ -254,6 +254,10 @@ class FileTableView(QTableView):
         # Use a small delay to ensure scrollbar state is updated
         schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 10)
 
+        # Also trigger column adjustment when table is resized
+        # This ensures filename column adapts when window size changes
+        schedule_resize_adjust(self._trigger_column_adjustment, 15)
+
     def showEvent(self, event) -> None:
         """Handle show events to ensure proper display after visibility changes."""
         super().showEvent(event)
@@ -551,12 +555,19 @@ class FileTableView(QTableView):
             # Calculate available width for filename column
             other_columns_width = (self.columnWidth(0) + self.columnWidth(2) +
                                   self.columnWidth(3) + self.columnWidth(4))
-            available_width = center_panel_width - other_columns_width - SCROLLBAR_MARGIN
+
+            # Check if vertical scrollbar is actually visible
+            vertical_scrollbar = self.verticalScrollBar()
+            scrollbar_margin = 0
+            if vertical_scrollbar and vertical_scrollbar.isVisible():
+                scrollbar_margin = SCROLLBAR_MARGIN
+
+            available_width = center_panel_width - other_columns_width - scrollbar_margin
 
             current_filename_width = self.columnWidth(1)
 
             logger.debug(f"[ColumnAdjust] Column widths: Status={self.columnWidth(0)}, Filename={current_filename_width}, Size={self.columnWidth(2)}, Ext={self.columnWidth(3)}, Date={self.columnWidth(4)}", extra={"dev_only": True})
-            logger.debug(f"[ColumnAdjust] Other columns total: {other_columns_width}, Available width: {available_width}, SCROLLBAR_MARGIN: {SCROLLBAR_MARGIN}", extra={"dev_only": True})
+            logger.debug(f"[ColumnAdjust] Other columns total: {other_columns_width}, Available width: {available_width}, Scrollbar visible: {vertical_scrollbar.isVisible() if vertical_scrollbar else False}, Margin: {scrollbar_margin}", extra={"dev_only": True})
 
             # Simple logic: Check if user has manually resized the column
             if getattr(self, '_has_manual_preference', False):
@@ -568,11 +579,16 @@ class FileTableView(QTableView):
                 else:
                     # Use their preferred width (or minimum if space is constrained)
                     new_filename_width = max(target_width, self._filename_min_width)
-            else:
-                # No manual preference - just fill available space
-                new_filename_width = max(self._filename_min_width, available_width)
 
-                logger.debug(f"[ColumnAdjust] No manual preference. Min width: {self._filename_min_width}, Calculated width: {new_filename_width}", extra={"dev_only": True})
+                logger.debug(f"[ColumnAdjust] Manual preference: {self._user_preferred_width}. Target: {target_width}, Calculated width: {new_filename_width}", extra={"dev_only": True})
+            else:
+                # No manual preference - use most of available space but leave small buffer
+                # Use available space minus small buffer (20px) for better visual balance
+                buffer_space = 20
+                target_width = max(available_width - buffer_space, self._filename_min_width)
+                new_filename_width = target_width
+
+                logger.debug(f"[ColumnAdjust] Auto-sizing: {available_width} - {buffer_space} buffer = {target_width}. Min width: {self._filename_min_width}, Calculated width: {new_filename_width}", extra={"dev_only": True})
 
                 # Only resize if there's a meaningful difference (avoid micro-adjustments)
                 size_difference = abs(new_filename_width - current_filename_width)
