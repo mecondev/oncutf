@@ -637,12 +637,26 @@ class MainWindow(QMainWindow):
                     thread.terminate()
                     thread.wait(500)
 
-        # 3. Clean up metadata manager operations
+        # 3. Clean up metadata manager operations and ExifTool
         if hasattr(self, 'metadata_manager'):
             try:
                 # Force stop any ongoing metadata operations
                 if hasattr(self.metadata_manager, '_running_operations'):
                     self.metadata_manager._running_operations = False
+
+                # Close ExifTool wrapper if it exists
+                if hasattr(self.metadata_manager, '_exiftool_wrapper') and self.metadata_manager._exiftool_wrapper:
+                    logger.info("[CloseEvent] Closing ExifTool wrapper...")
+                    self.metadata_manager._exiftool_wrapper.close()
+                    logger.info("[CloseEvent] ExifTool wrapper closed")
+
+                # Also close metadata loader ExifTool if it exists
+                if hasattr(self.metadata_manager, 'metadata_loader') and self.metadata_manager.metadata_loader:
+                    if hasattr(self.metadata_manager.metadata_loader, 'exiftool'):
+                        logger.info("[CloseEvent] Closing metadata loader ExifTool...")
+                        self.metadata_manager.metadata_loader.close()
+                        logger.info("[CloseEvent] Metadata loader ExifTool closed")
+
                 logger.debug("[CloseEvent] Cleaned up metadata manager")
             except Exception as e:
                 logger.warning(f"[CloseEvent] Error cleaning metadata manager: {e}")

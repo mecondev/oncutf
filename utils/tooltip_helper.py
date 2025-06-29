@@ -68,7 +68,11 @@ class CustomTooltip(QLabel):
 
         self.setProperty("class", style_classes)
         self.setWordWrap(True)
-        self.setMargin(8)
+        self.setMargin(2)  # Reduced from 3 to 2 pixels
+
+        # Set size constraints for better text layout
+        self.setMinimumWidth(180)  # Increased from 120 to 180 pixels for longer lines
+        self.setMaximumWidth(400)  # Maximum width to prevent too wide tooltips
 
         # Make sure tooltip adjusts to content
         self.adjustSize()
@@ -351,7 +355,7 @@ class TooltipHelper:
 # Global Convenience Functions
 # =====================================
 
-def show_tooltip(widget: QWidget, message: str, tooltip_type: str = TooltipType.DEFAULT, duration: int = None) -> None:
+def show_tooltip(widget: QWidget, message: str, tooltip_type: str = TooltipType.DEFAULT, duration: Optional[int] = None) -> None:
     """Global convenience function to show tooltip"""
     TooltipHelper.show_tooltip(widget, message, tooltip_type, duration)
 

@@ -6,7 +6,7 @@ QToolTip {
     color: #f0ebd8;
     border: 1px solid #555555;
     border-radius: 6px;
-    padding: 6px 8px;
+    padding: 2px 4px;
     font-size: 9pt;
 }
 
@@ -16,7 +16,7 @@ QToolTip {
     color: #ffaaaa;            /* Light red text */
     border: 1px solid #cc4444;  /* Red border */
     border-radius: 6px;
-    padding: 6px 8px;
+    padding: 2px 4px;
     font-size: 9pt;
     font-weight: normal;
 }
@@ -27,7 +27,7 @@ QToolTip {
     color: #ffffaa;            /* Light yellow text */
     border: 1px solid #cccc44;  /* Yellow border */
     border-radius: 6px;
-    padding: 6px 8px;
+    padding: 2px 4px;
     font-size: 9pt;
     font-weight: normal;
 }
@@ -38,7 +38,7 @@ QToolTip {
     color: #aaccff;            /* Light blue text */
     border: 1px solid #4488cc;  /* Blue border */
     border-radius: 6px;
-    padding: 6px 8px;
+    padding: 2px 4px;
     font-size: 9pt;
     font-weight: normal;
 }
@@ -49,7 +49,7 @@ QToolTip {
     color: #aaffaa;            /* Light green text */
     border: 1px solid #44cc44;  /* Green border */
     border-radius: 6px;
-    padding: 6px 8px;
+    padding: 2px 4px;
     font-size: 9pt;
     font-weight: normal;
 }

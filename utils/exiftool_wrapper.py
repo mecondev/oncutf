@@ -37,6 +37,13 @@ class ExifToolWrapper:
         self.lock = threading.Lock()  # Ensure thread-safe access
         self.counter = 0  # To generate unique termination tags
 
+    def __del__(self) -> None:
+        """Destructor to ensure ExifTool process is cleaned up."""
+        try:
+            self.close()
+        except Exception:
+            pass  # Ignore errors during cleanup
+
     def get_metadata(self, file_path: str, use_extended: bool = False) -> dict:
         """
         Get metadata for a single file using exiftool.
@@ -233,13 +240,41 @@ class ExifToolWrapper:
 
     def close(self) -> None:
         """Shuts down the persistent ExifTool process cleanly."""
+        if not self.process:
+            return
+
         try:
-            if self.process and self.process.stdin:
+            # First try to close gracefully
+            if self.process.stdin and not self.process.stdin.closed:
                 self.process.stdin.write("-stay_open\nFalse\n")
                 self.process.stdin.flush()
-                self.process.communicate(timeout=5)
-        except Exception:
-            # print(f"[ExifToolWrapper] Shutdown error: {e}")
-            pass
+                self.process.stdin.close()
+
+            # Wait for process to terminate gracefully
+            try:
+                self.process.wait(timeout=3)
+                logger.debug("[ExifToolWrapper] Process terminated gracefully")
+            except subprocess.TimeoutExpired:
+                # Force terminate if it doesn't close gracefully
+                logger.warning("[ExifToolWrapper] Process didn't terminate gracefully, forcing termination")
+                self.process.terminate()
+                try:
+                    self.process.wait(timeout=2)
+                except subprocess.TimeoutExpired:
+                    # Last resort: kill the process
+                    logger.warning("[ExifToolWrapper] Force killing ExifTool process")
+                    self.process.kill()
+                    self.process.wait()
+
+        except Exception as e:
+            logger.warning(f"[ExifToolWrapper] Error during shutdown: {e}")
+            # Force kill as last resort
+            try:
+                if self.process and self.process.poll() is None:
+                    self.process.kill()
+                    self.process.wait()
+            except Exception:
+                pass
         finally:
             self.process = None
+            logger.debug("[ExifToolWrapper] ExifTool wrapper closed")

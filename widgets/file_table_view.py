@@ -6,9 +6,10 @@ Date: 2025-05-25
 
 Custom QTableView with Windows Explorer-like behavior:
 - Full-row selection with anchor handling
-- Intelligent column width management
+- Intelligent column width management with automatic viewport fitting
 - Drag & drop support with custom MIME types
 - Hover highlighting and visual feedback
+- Automatic vertical scrollbar detection and filename column adjustment
 '''
 from typing import Optional
 
@@ -69,10 +70,7 @@ class FileTableView(QTableView):
         self._user_preferred_width: Optional[int] = None  # User's preferred filename column width
         self._programmatic_resize: bool = False  # Flag to indicate programmatic resize in progress
 
-        # Vertical scrollbar tracking for filename column adjustment
-        self._vertical_scrollbar_visible: bool = False
-        self._filename_base_width: int = 0  # Store the base width before scrollbar adjustment
-        self._scrollbar_adjustment: int = 12  # How much to reduce filename column when scrollbar appears
+        # Note: Vertical scrollbar handling is now integrated into _calculate_filename_width
 
         # Configure table behavior
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -255,18 +253,13 @@ class FileTableView(QTableView):
             current_filename_width = self.columnWidth(1)
             new_filename_width = self._calculate_filename_width()
 
-            logger.debug(f"[ResizeEvent] Current filename width: {current_filename_width}, calculated: {new_filename_width}", extra={"dev_only": True})
-
-            # Only resize if there's a meaningful difference
-            if abs(new_filename_width - current_filename_width) > 5:
-                logger.debug(f"[ResizeEvent] Resizing filename column from {current_filename_width} to {new_filename_width}", extra={"dev_only": True})
+            # Always resize for immediate response (no threshold)
+            if abs(new_filename_width - current_filename_width) > 0:
+                self._programmatic_resize = True
                 self.setColumnWidth(1, new_filename_width)
-            else:
-                logger.debug(f"[ResizeEvent] No resize needed, difference: {abs(new_filename_width - current_filename_width)}", extra={"dev_only": True})
+                self._programmatic_resize = False
 
-        # Check if vertical scrollbar visibility changed after resize
-        # Use a small delay to ensure scrollbar state is updated
-        schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 10)
+        # Note: Vertical scrollbar handling is now integrated into _calculate_filename_width
 
     def showEvent(self, event) -> None:
         """Handle show events to ensure proper display after visibility changes."""
@@ -300,7 +293,7 @@ class FileTableView(QTableView):
         """
         # Reset manual column preferences when loading new files
         self._has_manual_preference = False
-        self._user_preferred_width = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
+        self._user_preferred_width = None
 
         # Clear selection and reset checked state
         for file_item in file_items:
@@ -331,9 +324,7 @@ class FileTableView(QTableView):
         self.viewport().update()
         self._update_scrollbar_visibility()
 
-        # Check vertical scrollbar visibility and adjust filename column if needed
-        # Use a timer to ensure the scrollbar visibility is properly updated after model reset
-        schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 50)
+        # Note: Vertical scrollbar handling is now integrated into _calculate_filename_width
 
     # =====================================
     # Column Management & Scrollbar Optimization
@@ -383,23 +374,11 @@ class FileTableView(QTableView):
         # Filename column - Interactive with minimum width protection and dynamic sizing
         filename_min = font_metrics.horizontalAdvance("Long_Filename_Example_2024.jpeg") + 30
 
-        # Check if column width has already been set from config
-        current_filename_width = self.columnWidth(1)
-        if current_filename_width > 0 and current_filename_width != FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]:
-            # Column width was already set from config - use that value
-            filename_width = self._calculate_filename_width(current_filename_width)
-            logger.debug(f"[ConfigureColumns] Using config-loaded width: {current_filename_width} -> {filename_width}", extra={"dev_only": True})
-        elif hasattr(self, '_has_manual_preference') and self._has_manual_preference:
-            # User has manually resized - use their preference
-            filename_width = self._calculate_filename_width(self._user_preferred_width)
-        else:
-            # Use config default with central calculation
-            filename_width = self._calculate_filename_width()
+        # Calculate optimal filename width using new centralized logic
+        filename_width = self._calculate_filename_width()
 
         header.setSectionResizeMode(1, QHeaderView.Interactive)
         self.setColumnWidth(1, filename_width)
-
-        logger.debug(f"[ConfigureColumns] Set initial filename column width to {filename_width} (config: {FILE_TABLE_COLUMN_WIDTHS['FILENAME_COLUMN']}, min: {filename_min})", extra={"dev_only": True})
 
         # File size column - Fixed width, cannot be resized
         filesize_width = FILE_TABLE_COLUMN_WIDTHS["FILESIZE_COLUMN"]
@@ -432,8 +411,6 @@ class FileTableView(QTableView):
 
         # Connect signal to enforce filename column minimum width
         header.sectionResized.connect(self._on_filename_resized)
-
-        logger.debug(f"[ConfigureColumns] Final setup - filename width: {filename_width}, min: {self._filename_min_width}, user pref: {self._user_preferred_width}", extra={"dev_only": True})
 
         # Adjust filename column width to available space after initial configuration
         schedule_resize_adjust(self._trigger_column_adjustment, 10)
@@ -471,126 +448,30 @@ class FileTableView(QTableView):
         elif not is_empty and current_policy != Qt.ScrollBarAsNeeded:
             self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
-    def _check_vertical_scrollbar_visibility(self) -> None:
-        """Check if vertical scrollbar is needed and adjust filename column accordingly."""
-        if not self.model():
-            return
-
-        # Check if vertical scrollbar is needed by comparing content height with viewport height
-        model = self.model()
-        row_count = model.rowCount()
-
-        if row_count == 0:
-            return
-
-        # Calculate if scrollbar is needed
-        viewport_height = self.viewport().height()
-        row_height = self.rowHeight(0) if row_count > 0 else 25  # fallback height
-        total_content_height = row_count * row_height
-        header_height = self.horizontalHeader().height() if self.horizontalHeader() else 0
-
-        # Add some margin for safety
-        is_scrollbar_needed = (total_content_height + header_height) > viewport_height
-
-        # Also check the actual scrollbar visibility as backup
-        vertical_scrollbar = self.verticalScrollBar()
-        is_actually_visible = vertical_scrollbar.isVisible()
-
-        # Use the calculated need or actual visibility (whichever indicates scrollbar is needed)
-        is_visible = is_scrollbar_needed or is_actually_visible
-
-        # Only proceed if visibility state has changed
-        if is_visible == self._vertical_scrollbar_visible:
-            return
-
-        self._vertical_scrollbar_visible = is_visible
-
-        # Get current filename column width
-        current_width = self.columnWidth(1)
-
-        if is_visible:
-            # Scrollbar needed - reduce filename column by adjustment amount
-            if self._filename_base_width == 0:
-                # Store the current width as base width
-                self._filename_base_width = current_width
-
-            new_width = max(self._filename_base_width - self._scrollbar_adjustment, self._filename_min_width)
-
-            if new_width != current_width:
-                self._programmatic_resize = True
-                self.setColumnWidth(1, new_width)
-                self._programmatic_resize = False
-        else:
-            # Scrollbar not needed - restore filename column to base width
-            if self._filename_base_width > 0:
-                new_width = max(self._filename_base_width, self._filename_min_width)
-
-                if new_width != current_width:
-                    self._programmatic_resize = True
-                    self.setColumnWidth(1, new_width)
-                    self._programmatic_resize = False
-
-                # Reset base width for next cycle
-                self._filename_base_width = 0
-
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
-        """Handle horizontal splitter movement - simplified with central calculation."""
+        """Handle horizontal splitter movement with optimized filename column sizing."""
         if not hasattr(self, '_filename_min_width'):
             return
 
-        logger.debug(f"[SplitterMoved] Called with pos: {pos}, index: {index}", extra={"dev_only": True})
-
-        # Check if table is empty
-        model = self.model()
-        has_content = model and model.rowCount() > 0
-
-        # Also check if table is in placeholder mode (cleared but model still has data)
-        is_placeholder_visible = hasattr(self, 'placeholder_label') and self.placeholder_label.isVisible()
-        has_content = has_content and not is_placeholder_visible
-
-        # Get current filename width and calculate new width
+        # Get current filename width and calculate new optimal width
         current_filename_width = self.columnWidth(1)
+        new_filename_width = self._calculate_filename_width()
 
-        if has_content:
-            # Table has content - use user preference if available, otherwise use current width
-            source_width = self._user_preferred_width if hasattr(self, '_has_manual_preference') and self._has_manual_preference else current_filename_width
-            logger.debug(f"[SplitterMoved] Table has content - Current filename width: {current_filename_width}, source_width: {source_width}", extra={"dev_only": True})
-            # Calculate new width using central method
-            new_filename_width = self._calculate_filename_width(source_width)
-        else:
-            # Table is empty - use no source_width to trigger empty table logic
-            logger.debug(f"[SplitterMoved] Table is empty - Current filename width: {current_filename_width}, using no source_width", extra={"dev_only": True})
-            # Calculate new width using central method without source_width
-            new_filename_width = self._calculate_filename_width()
-
-        # Only resize if there's a meaningful difference
+        # Always resize for immediate response (no threshold)
         size_difference = abs(new_filename_width - current_filename_width)
-        should_resize = size_difference > 5
-
-        logger.debug(f"[SplitterMoved] New width: {new_filename_width}, difference: {size_difference}, should_resize: {should_resize}", extra={"dev_only": True})
+        should_resize = size_difference > 0  # Resize even for 1px difference
 
         if should_resize:
-            # Use batch updates to prevent scrollbar flickering
-            self.setUpdatesEnabled(False)
+            # Set flag to indicate this is a programmatic resize
+            self._programmatic_resize = True
+            self.setColumnWidth(1, new_filename_width)
+            self._programmatic_resize = False
 
-            try:
-                # Set flag to indicate this is a programmatic resize
-                self._programmatic_resize = True
-                self.setColumnWidth(1, new_filename_width)
-                self._programmatic_resize = False
+            # Force immediate viewport update to prevent scrollbar flicker
+            self.viewport().update()
 
-                logger.debug(f"[SplitterMoved] Resized filename column to {new_filename_width}", extra={"dev_only": True})
-
-                # Update scrollbar visibility after column resize
-                self._update_scrollbar_visibility()
-
-            finally:
-                # Re-enable updates and force refresh
-                self.setUpdatesEnabled(True)
-                self.viewport().update()
-
-                # Check vertical scrollbar visibility
-                schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 10)
+            # Update scrollbar visibility after column resize
+            self._update_scrollbar_visibility()
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement."""
@@ -1025,7 +906,6 @@ class FileTableView(QTableView):
 
         # Get selected file data using safe method
         selected_rows = self._get_current_selection_safe()
-        logger.debug(f"[FileTableView] Using selection for drag: {len(selected_rows)} files", extra={"dev_only": True})
 
         if not selected_rows:
             return
@@ -1084,8 +964,6 @@ class FileTableView(QTableView):
         # Start drag feedback loop for real-time visual updates
         self._start_drag_feedback_loop()
 
-        logger.debug(f"[FileTableView] Custom drag started with visual feedback: {len(file_paths)} files (type: {drag_type.value})", extra={"dev_only": True})
-
     def _start_drag_feedback_loop(self):
         """Start repeated drag feedback updates using timer_manager"""
         from utils.timer_manager import schedule_ui_update
@@ -1110,8 +988,6 @@ class FileTableView(QTableView):
         """End custom drag operation - SIMPLIFIED VERSION"""
         if not self._is_dragging:
             return
-
-        logger.debug("[FileTableView] Ending custom drag operation", extra={"dev_only": True})
 
         # Stop and cleanup drag feedback timer
         if hasattr(self, '_drag_feedback_timer_id') and self._drag_feedback_timer_id:
@@ -1155,8 +1031,6 @@ class FileTableView(QTableView):
         # Always restore hover after drag ends
         self._restore_hover_after_drag()
 
-        logger.debug("[FileTableView] Custom drag operation completed", extra={"dev_only": True})
-
     def _restore_hover_after_drag(self):
         """Restore hover state after drag ends by sending a fake mouse move event"""
         if not hasattr(self, 'hover_delegate'):
@@ -1186,7 +1060,6 @@ class FileTableView(QTableView):
 
         # Get current selection - this is what the user sees and expects
         selected_rows = self._get_current_selection()
-        logger.debug(f"[FileTableView] Using current selection for metadata drop: {len(selected_rows)} files", extra={"dev_only": True})
 
         if not selected_rows:
             logger.warning("[FileTableView] No valid selection found for metadata tree drop")
@@ -1211,8 +1084,6 @@ class FileTableView(QTableView):
         if not parent_window or not hasattr(parent_window, 'metadata_manager'):
             logger.warning("[FileTableView] Could not find parent window or metadata manager")
             return False
-
-        logger.debug(f"[FileTableView] Calling MetadataManager directly with {len(file_items)} files (extended={use_extended})", extra={"dev_only": True})
 
         # SIMPLIFIED: Call MetadataManager directly - no complex signal chain
         try:
@@ -1333,7 +1204,6 @@ class FileTableView(QTableView):
                 logger.debug("[FileTableView] Ignoring empty selection during drag operation", extra={"dev_only": True})
                 return
 
-            logger.debug(f"[FileTableView] Selection changed to: {len(selected_rows)} files", extra={"dev_only": True})
             self._update_selection_store(selected_rows, emit_signal=True)
 
         if self.context_focused_row is not None:
@@ -1375,7 +1245,6 @@ class FileTableView(QTableView):
 
     def select_dropped_files(self, file_paths: Optional[list[str]] = None) -> None:
         """Select specific files that were just dropped/loaded in the table."""
-        logger.debug(f"[FileTableView] Selecting dropped files: {len(file_paths) if file_paths else 0} paths", extra={"dev_only": True})
 
         model = self.model()
         if not model or not hasattr(model, 'files'):
@@ -1397,8 +1266,6 @@ class FileTableView(QTableView):
         for i, file_item in enumerate(model.files):
             if file_item.full_path in file_paths:
                 rows_to_select.append(i)
-
-        logger.debug(f"[FileTableView] Found {len(rows_to_select)} matching files to select", extra={"dev_only": True})
 
         if not rows_to_select:
             logger.debug("[FileTableView] No matching files found", extra={"dev_only": True})
@@ -1442,10 +1309,6 @@ class FileTableView(QTableView):
         if hasattr(self, 'viewport'):
             self.viewport().update()
 
-        # Final verification
-        final_selection = set(index.row() for index in self.selectionModel().selectedRows()) if self.selectionModel() else set()
-        logger.debug(f"[FileTableView] Selection completed: {len(final_selection)} rows selected", extra={"dev_only": True})
-
     def is_empty(self) -> bool:
         return not getattr(self.model(), "files", [])
 
@@ -1483,9 +1346,7 @@ class FileTableView(QTableView):
                         row_rect = self.visualRect(left).united(self.visualRect(right))
                         self.viewport().update(row_rect) # type: ignore
 
-        # Check if vertical scrollbar visibility changed after wheel scroll
-        # Use a small delay to ensure scrollbar state is updated
-        schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 10)
+        # Note: Vertical scrollbar handling is now integrated into _calculate_filename_width
 
     def scrollTo(self, index, hint=None) -> None:
         """
@@ -1565,7 +1426,7 @@ class FileTableView(QTableView):
 
     def _trigger_column_adjustment(self):
         """Trigger filename column adjustment to available space after initial configuration."""
-        logger.debug("[TriggerColumnAdjust] Starting column adjustment trigger", extra={"dev_only": True})
+
 
         # Try to get horizontal splitter to trigger column adjustment
         try:
@@ -1578,142 +1439,131 @@ class FileTableView(QTableView):
             if parent_window and hasattr(parent_window, 'horizontal_splitter'):
                 horizontal_splitter = parent_window.horizontal_splitter # type: ignore
                 sizes = horizontal_splitter.sizes()
-                logger.debug(f"[TriggerColumnAdjust] Found splitter with sizes: {sizes}", extra={"dev_only": True})
                 if len(sizes) > 1:
                     # Trigger the existing column adjustment logic
-                    logger.debug(f"[TriggerColumnAdjust] Triggering adjustment with center panel size: {sizes[1]}", extra={"dev_only": True})
                     self.on_horizontal_splitter_moved(sizes[1], 1)
-            else:
-                logger.debug("[TriggerColumnAdjust] Cannot find horizontal splitter for column adjustment", extra={"dev_only": True})
         except RuntimeError:
             # ApplicationContext not ready yet, use legacy approach
-            logger.debug("[TriggerColumnAdjust] Using legacy approach", extra={"dev_only": True})
             parent_window = self.parent()
             while parent_window and not hasattr(parent_window, 'horizontal_splitter'):
                 parent_window = parent_window.parent()
 
             if parent_window and hasattr(parent_window, 'horizontal_splitter'):
-                horizontal_splitter = parent_window.horizontal_splitter
+                horizontal_splitter = parent_window.horizontal_splitter # type: ignore
                 sizes = horizontal_splitter.sizes()
-                logger.debug(f"[TriggerColumnAdjust] Legacy - Found splitter with sizes: {sizes}", extra={"dev_only": True})
                 if len(sizes) > 1:
                     # Trigger the existing column adjustment logic
-                    logger.debug(f"[TriggerColumnAdjust] Legacy - Triggering adjustment with center panel size: {sizes[1]}", extra={"dev_only": True})
                     self.on_horizontal_splitter_moved(sizes[1], 1)
 
     def _calculate_filename_width(self, source_width: Optional[int] = None) -> int:
         """
-        Central method to calculate optimal filename column width.
-        Responds dynamically to splitter and window changes.
+        Calculate optimal filename column width based on available space.
+
+        This method:
+        1. Calculates available viewport space
+        2. Determines if vertical scrollbar is needed
+        3. Adjusts filename column to fill remaining space without causing horizontal scrollbar
 
         Args:
-            source_width: Optional source width (from config, manual preference, etc.)
-                         If None, uses config default
+            source_width: Optional source width (ignored - we always use available space)
 
         Returns:
-            Calculated width that prevents horizontal scrollbar
+            Calculated width that optimally fills available space
         """
         # Get minimum width
         if not hasattr(self, '_filename_min_width'):
             self._filename_min_width = 250
 
-        logger.debug(f"[CalcFilenameWidth] Called with source_width: {source_width}", extra={"dev_only": True})
-
-        # Calculate available space first
         try:
-            # Get horizontal splitter for center panel width
-            horizontal_splitter = None
-            try:
-                get_app_context()
-                parent_window = self.parent()
-                while parent_window and not hasattr(parent_window, 'horizontal_splitter'):
-                    parent_window = parent_window.parent()
-                if parent_window:
-                    horizontal_splitter = parent_window.horizontal_splitter
-            except RuntimeError:
-                parent_window = self.parent()
-                while parent_window and not hasattr(parent_window, 'horizontal_splitter'):
-                    parent_window = parent_window.parent()
-                if parent_window:
-                    horizontal_splitter = parent_window.horizontal_splitter
+            # Get the actual viewport width (this is what we need to fill)
+            viewport_width = self.viewport().width()
 
-            if horizontal_splitter:
-                sizes = horizontal_splitter.sizes()
-                center_panel_width = sizes[1] if len(sizes) > 1 else self.width()
-                logger.debug(f"[CalcFilenameWidth] Splitter sizes: {sizes}, center_panel_width: {center_panel_width}", extra={"dev_only": True})
-            else:
-                center_panel_width = self.width()
-                logger.debug(f"[CalcFilenameWidth] No splitter found, using table width: {center_panel_width}", extra={"dev_only": True})
+            # If viewport is not ready yet, use fallback
+            if viewport_width <= 0:
+                viewport_width = self.width()
+                if viewport_width <= 0:
+                    return max(FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"], self._filename_min_width)
 
-            if center_panel_width > 0:
-                # Use config widths for other columns (not current widths)
-                # This ensures we respond to actual available space changes
-                other_columns_width = (
-                    FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"] +
-                    FILE_TABLE_COLUMN_WIDTHS["FILESIZE_COLUMN"] +
-                    FILE_TABLE_COLUMN_WIDTHS["EXTENSION_COLUMN"] +
-                    FILE_TABLE_COLUMN_WIDTHS["DATE_COLUMN"]
-                )
+            # Calculate space used by other columns (using config values for consistency)
+            other_columns_width = (
+                FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"] +
+                FILE_TABLE_COLUMN_WIDTHS["FILESIZE_COLUMN"] +
+                FILE_TABLE_COLUMN_WIDTHS["EXTENSION_COLUMN"] +
+                FILE_TABLE_COLUMN_WIDTHS["DATE_COLUMN"]
+            )
 
-                # Check for vertical scrollbar - but only if table has content
-                vertical_scrollbar = self.verticalScrollBar()
-                scrollbar_margin = 0
+            # Check if we need vertical scrollbar
+            needs_vertical_scrollbar = self._needs_vertical_scrollbar()
+            scrollbar_width = self._get_scrollbar_width() if needs_vertical_scrollbar else 0
 
-                # Only consider scrollbar if table is not empty
-                model = self.model()
-                has_content = model and model.rowCount() > 0
+            # Calculate available width for filename column
+            # Leave minimal margin to prevent horizontal scrollbar
+            margin = 1 if needs_vertical_scrollbar else 2  # Even smaller margin when no scrollbar
+            available_width = viewport_width - other_columns_width - scrollbar_width - margin
 
-                # Also check if table is in placeholder mode (cleared but model still has data)
-                is_placeholder_visible = hasattr(self, 'placeholder_label') and self.placeholder_label.isVisible()
-                has_content = has_content and not is_placeholder_visible
+            # Ensure we don't go below minimum
+            final_width = max(available_width, self._filename_min_width)
+            return final_width
 
-                logger.debug(f"[CalcFilenameWidth] Model exists: {model is not None}, rowCount: {model.rowCount() if model else 0}, placeholder_visible: {is_placeholder_visible}, has_content: {has_content}", extra={"dev_only": True})
+        except Exception:
+            # Fallback to config default
+            return max(FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"], self._filename_min_width)
 
-                if has_content and vertical_scrollbar and vertical_scrollbar.isVisible():
-                    scrollbar_margin = SCROLLBAR_MARGIN
-                    logger.debug(f"[CalcFilenameWidth] Table has content, scrollbar visible: margin={scrollbar_margin}", extra={"dev_only": True})
-                elif has_content:
-                    logger.debug(f"[CalcFilenameWidth] Table has content, no scrollbar needed", extra={"dev_only": True})
-                else:
-                    logger.debug(f"[CalcFilenameWidth] Table is empty, no scrollbar consideration", extra={"dev_only": True})
+    def _needs_vertical_scrollbar(self) -> bool:
+        """
+        Determine if vertical scrollbar is needed based on content height vs viewport height.
 
-                # Calculate available width for filename column
-                available_width = center_panel_width - other_columns_width - scrollbar_margin
+        Returns:
+            True if vertical scrollbar is needed, False otherwise
+        """
+        model = self.model()
+        if not model:
+            return False
 
-                logger.debug(f"[CalcFilenameWidth] other_columns: {other_columns_width}, scrollbar_margin: {scrollbar_margin}, available: {available_width}", extra={"dev_only": True})
+        row_count = model.rowCount()
+        if row_count == 0:
+            return False
 
-                # Now decide what width to use
-                if source_width is not None:
-                    # Use all available space when we have a source width (user interaction)
-                    target_width = available_width
-                    logger.debug(f"[CalcFilenameWidth] Using available_width {available_width} (source was {source_width})", extra={"dev_only": True})
-                else:
-                    # For empty table or initial load, always use all available space
-                    if not has_content:
-                        target_width = available_width  # Use all space for empty table
-                        logger.debug(f"[CalcFilenameWidth] Empty table: using full available_width {available_width}", extra={"dev_only": True})
-                    else:
-                        # Table has content - use available space but be reasonable
-                        config_width = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
-                        if available_width > config_width + 100:  # If we have much more space than config
-                            target_width = available_width  # Use all available space
-                            logger.debug(f"[CalcFilenameWidth] Using available_width {available_width} (config {config_width} + buffer)", extra={"dev_only": True})
-                        else:
-                            target_width = available_width  # Still use available space, not config
-                            logger.debug(f"[CalcFilenameWidth] Using available_width {available_width} (within config range)", extra={"dev_only": True})
-            else:
-                # Fallback when width calculation fails
-                target_width = source_width if source_width is not None else FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
-                logger.debug(f"[CalcFilenameWidth] Fallback - using {target_width}", extra={"dev_only": True})
+        # Get actual dimensions
+        viewport_height = self.viewport().height()
+        if viewport_height <= 0:
+            return False
 
-        except Exception as e:
-            # Fallback on any error
-            target_width = source_width if source_width is not None else FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
-            logger.debug(f"[CalcFilenameWidth] Exception fallback - using {target_width}, error: {e}", extra={"dev_only": True})
+        # Calculate content height
+        # Use actual row height if available, otherwise estimate
+        if row_count > 0:
+            first_row_height = self.rowHeight(0)
+            row_height = first_row_height if first_row_height > 0 else 25  # fallback
+        else:
+            row_height = 25
 
-        # Apply single 20px reduction for optimal fit and ensure minimum
-        final_width = max(target_width - 20, self._filename_min_width, 250)
+        total_content_height = row_count * row_height
 
-        logger.debug(f"[CalcFilenameWidth] Final calculation: target={target_width} - 20 = {final_width} (min: {self._filename_min_width})", extra={"dev_only": True})
+        # Add header height
+        header = self.horizontalHeader()
+        header_height = header.height() if header else 0
 
-        return final_width
+        # Check if content exceeds viewport (with small buffer for safety)
+        total_needed_height = total_content_height + header_height
+        buffer = 5  # Small buffer to account for borders and margins
+        needs_scrollbar = total_needed_height > (viewport_height - buffer)
+
+        return needs_scrollbar
+
+    def _get_scrollbar_width(self) -> int:
+        """
+        Get the actual width of the vertical scrollbar.
+
+        Returns:
+            Width of the vertical scrollbar in pixels
+        """
+        vertical_scrollbar = self.verticalScrollBar()
+        if vertical_scrollbar and vertical_scrollbar.isVisible():
+            # Get actual scrollbar width
+            actual_width = vertical_scrollbar.width()
+            if actual_width > 0:
+                return actual_width
+
+        # Fallback to estimated width based on style
+        # Most modern themes use 12-16px scrollbars
+        return 14  # Conservative estimate
