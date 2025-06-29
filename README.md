@@ -147,6 +147,7 @@ oncutf/
 ├── config.py               # Global configuration constants
 ├── core/                   # Core application components
 │   ├── application_context.py  # Application-wide context management
+│   ├── backup_manager.py   # Automatic database backup system
 │   ├── ui_manager.py       # UI setup and management
 │   ├── metadata_manager.py # Metadata operations
 │   ├── rename_manager.py   # File renaming logic
@@ -236,6 +237,12 @@ mypy main_window.py
 - **Signal Debouncing**: Prevents excessive UI updates during rapid changes
 - **Cross-Platform Path Handling**: Normalized path operations for Windows/Linux compatibility
 
+### Data Protection & Backup System
+- **Automatic Database Backups**: Scheduled backups every 15 minutes + shutdown backups
+- **Backup Rotation**: Configurable backup count with automatic cleanup of old backups
+- **Persistent Storage**: SQLite database with WAL mode for better concurrency
+- **Data Recovery**: Comprehensive backup system with timestamp-based file naming
+
 ### Advanced Drag & Drop System
 - **Multi-Selection Aware**: Handles complex selection scenarios with modifier keys
 - **Visual Feedback**: Real-time drop zone highlighting and cursor changes
@@ -246,6 +253,7 @@ mypy main_window.py
 - **Graceful Degradation**: Continues operation even when ExifTool encounters issues
 - **User-Friendly Messages**: Clear error reporting without technical jargon
 - **Recovery Mechanisms**: Automatic cleanup and state restoration after failures
+- **Qt Object Lifecycle Management**: Enhanced tooltip system with proper cleanup and error recovery
 
 ---
 
