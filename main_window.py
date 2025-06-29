@@ -85,6 +85,7 @@ class MainWindow(QMainWindow):
         # --- Database System Initialization ---
         from core.database_manager import initialize_database
         from core.persistent_metadata_cache import get_persistent_metadata_cache
+        from core.persistent_hash_cache import get_persistent_hash_cache
         from core.rename_history_manager import get_rename_history_manager
 
         # Initialize database system
@@ -95,6 +96,8 @@ class MainWindow(QMainWindow):
         self.metadata_worker = None
         # Use persistent metadata cache instead of memory-only cache
         self.metadata_cache = get_persistent_metadata_cache()
+        # Initialize persistent hash cache for hash persistence across restarts
+        self.hash_cache = get_persistent_hash_cache()
         # Initialize rename history manager
         self.rename_history_manager = get_rename_history_manager()
 

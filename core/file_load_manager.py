@@ -359,6 +359,11 @@ class FileLoadManager:
                 # Force refresh of the table view
                 self.parent_window.file_table_view.viewport().update()
 
+                # Refresh icons to show any cached metadata/hash status
+                if hasattr(self.parent_window.file_model, 'refresh_icons'):
+                    self.parent_window.file_model.refresh_icons()
+                    logger.debug("[FileLoadManager] Refreshed file table icons", extra={"dev_only": True})
+
                 # Reset selection state to ensure clicks work
                 if hasattr(self.parent_window.file_table_view, '_sync_selection_safely'):
                     self.parent_window.file_table_view._sync_selection_safely()
