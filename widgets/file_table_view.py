@@ -413,6 +413,9 @@ class FileTableView(QTableView):
         # Connect signal to enforce filename column minimum width
         header.sectionResized.connect(self._on_filename_resized)
 
+        # Adjust filename column width to available space after initial configuration
+        schedule_resize_adjust(self._trigger_column_adjustment, 10)
+
     def _on_filename_resized(self, logical_index: int, old_size: int, new_size: int) -> None:
         """Enforce minimum width and track manual user preferences for filename column (column 1)."""
         if logical_index == 1 and hasattr(self, '_filename_min_width'):
@@ -1555,3 +1558,34 @@ class FileTableView(QTableView):
     def _clear_skip_flag(self):
         """Clear the skip selection changed flag."""
         self._skip_selection_changed = False
+
+    def _trigger_column_adjustment(self):
+        """Trigger filename column adjustment to available space after initial configuration."""
+        # Try to get horizontal splitter to trigger column adjustment
+        try:
+            get_app_context()
+            # Try to get main window through context for splitter access
+            parent_window = self.parent()
+            while parent_window and not hasattr(parent_window, 'horizontal_splitter'):
+                parent_window = parent_window.parent()
+
+            if parent_window and hasattr(parent_window, 'horizontal_splitter'):
+                horizontal_splitter = parent_window.horizontal_splitter
+                sizes = horizontal_splitter.sizes()
+                if len(sizes) > 1:
+                    # Trigger the existing column adjustment logic
+                    self.on_horizontal_splitter_moved(sizes[1], 1)
+            else:
+                logger.debug("[FileTableView] Cannot find horizontal splitter for column adjustment", extra={"dev_only": True})
+        except RuntimeError:
+            # ApplicationContext not ready yet, use legacy approach
+            parent_window = self.parent()
+            while parent_window and not hasattr(parent_window, 'horizontal_splitter'):
+                parent_window = parent_window.parent()
+
+            if parent_window and hasattr(parent_window, 'horizontal_splitter'):
+                horizontal_splitter = parent_window.horizontal_splitter
+                sizes = horizontal_splitter.sizes()
+                if len(sizes) > 1:
+                    # Trigger the existing column adjustment logic
+                    self.on_horizontal_splitter_moved(sizes[1], 1)
