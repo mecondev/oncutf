@@ -259,21 +259,28 @@ class DatabaseManager:
             try:
                 if os.path.exists(file_path):
                     stat = os.stat(file_path)
-                    # Use ISO format string instead of datetime object to avoid warnings
+                    # Use ISO format string instead to avoid warnings
                     modified_time = datetime.fromtimestamp(stat.st_mtime).isoformat()
                     if file_size is None:
                         file_size = stat.st_size
             except OSError:
                 pass
 
-            # Insert or update file record
+            # First try to insert new file (will fail if exists due to UNIQUE constraint)
             cursor.execute("""
-                INSERT OR REPLACE INTO files
+                INSERT OR IGNORE INTO files
                 (file_path, filename, file_size, modified_time, updated_at)
                 VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
             """, (file_path, filename, file_size, modified_time))
 
-            # Get the file ID
+            # Then update existing file (this preserves the original ID)
+            cursor.execute("""
+                UPDATE files
+                SET filename = ?, file_size = ?, modified_time = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE file_path = ?
+            """, (filename, file_size, modified_time, file_path))
+
+            # Get the file ID (this will be the original ID if file existed)
             cursor.execute("SELECT id FROM files WHERE file_path = ?", (file_path,))
             row = cursor.fetchone()
             file_id = row['id'] if row else cursor.lastrowid
