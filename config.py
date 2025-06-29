@@ -28,7 +28,7 @@ DEFAULT_SKIP_METADATA = True
 
 # App info
 APP_NAME = "oncutf"
-APP_VERSION = "1.2"
+APP_VERSION = "1.3"
 
 # Export settings
 EXPORT_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"  # Format for export timestamps

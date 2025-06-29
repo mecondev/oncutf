@@ -22,6 +22,7 @@ from core.qt_imports import Qt, pyqtSignal, QPixmap, QAbstractItemView, QHBoxLay
 from utils.filename_validator import get_validation_error_message, is_validation_error_marker
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_scroll_adjust, schedule_ui_update
+from utils.tooltip_helper import setup_tooltip, TooltipType
 
 logger = get_cached_logger(__name__)
 
@@ -495,6 +496,7 @@ class PreviewTablesView(QWidget):
                 icon = preview_icons.get(status)
                 if icon:
                     icon_item.setIcon(icon)
+                # Use setToolTip for QTableWidgetItem (not a QWidget, so can't use setup_tooltip)
                 icon_item.setToolTip(tooltip)
 
                 # Insert items into corresponding tables

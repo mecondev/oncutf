@@ -24,6 +24,7 @@ from core.qt_imports import (
 from core.rename_history_manager import get_rename_history_manager
 from utils.logger_factory import get_cached_logger
 from widgets.custom_msgdialog import CustomMessageDialog
+from utils.tooltip_helper import setup_tooltip, TooltipType
 
 logger = get_cached_logger(__name__)
 
@@ -178,7 +179,7 @@ class RenameHistoryDialog(QDialog):
                 else:
                     status_item = QTableWidgetItem("Cannot Undo")
                     status_item.setForeground(Qt.darkRed)
-                    status_item.setToolTip(reason)
+                    setup_tooltip(status_item, reason, TooltipType.INFO)
 
                 status_item.setTextAlignment(Qt.AlignCenter)
                 self.operations_table.setItem(row, 2, status_item)

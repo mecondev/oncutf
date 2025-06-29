@@ -18,6 +18,7 @@ from core.qt_imports import QEvent, Qt, QApplication, QDesktopWidget
 
 from config import STATUS_COLORS
 from utils.logger_factory import get_cached_logger
+from utils.tooltip_helper import setup_tooltip, TooltipType
 
 if TYPE_CHECKING:
     from main_window import MainWindow
@@ -241,7 +242,7 @@ class UtilityManager:
         if not has_changes:
             # Modules exist but inactive → show identity mapping
             self.main_window.rename_button.setEnabled(False)
-            self.main_window.rename_button.setToolTip("No changes to apply")
+            setup_tooltip(self.main_window.rename_button, "No changes to apply", TooltipType.WARNING)
             self.main_window.update_preview_tables_from_pairs(name_pairs)
             self.main_window.set_status("Rename modules present but inactive.", color=STATUS_COLORS["loading"], auto_reset=True)
             return
@@ -264,11 +265,14 @@ class UtilityManager:
         if has_validation_errors:
             error_count = sum(1 for _, new_name in name_pairs if is_validation_error_marker(new_name))
             tooltip_msg = f"Cannot rename: {error_count} validation error(s) found"
+            tooltip_type = TooltipType.ERROR
         elif valid_pairs:
             tooltip_msg = f"{len(valid_pairs)} files will be renamed."
+            tooltip_type = TooltipType.SUCCESS
         else:
             tooltip_msg = "No changes to apply"
+            tooltip_type = TooltipType.WARNING
 
-        self.main_window.rename_button.setToolTip(tooltip_msg)
+        setup_tooltip(self.main_window.rename_button, tooltip_msg, tooltip_type)
 
 

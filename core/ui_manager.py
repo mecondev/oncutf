@@ -24,6 +24,7 @@ from widgets.interactive_header import InteractiveHeader
 from widgets.metadata_tree_view import MetadataTreeView
 from widgets.preview_tables_view import PreviewTablesView
 from widgets.rename_modules_area import RenameModulesArea
+from utils.tooltip_helper import setup_tooltip, TooltipType
 
 if TYPE_CHECKING:
     from main_window import MainWindow
@@ -223,7 +224,7 @@ class UIManager:
         self.parent_window.browse_folder_button = QPushButton("  Browse")
         self.parent_window.browse_folder_button.setIcon(get_menu_icon("folder-plus"))
         self.parent_window.browse_folder_button.setFixedWidth(100)
-        self.parent_window.browse_folder_button.setToolTip("Browse folder (Ctrl+O)")
+        setup_tooltip(self.parent_window.browse_folder_button, "Browse folder (Ctrl+O)", TooltipType.INFO)
 
         # Add buttons with fixed positioning - no stretching
         btn_layout.addWidget(self.parent_window.select_folder_button)
@@ -460,7 +461,7 @@ class UIManager:
         self.parent_window.menu_button = QPushButton()
         self.parent_window.menu_button.setIcon(get_menu_icon("menu"))
         self.parent_window.menu_button.setFixedSize(20, 20)  # Square button
-        self.parent_window.menu_button.setToolTip("Menu")
+        setup_tooltip(self.parent_window.menu_button, "Menu", TooltipType.INFO)
         self.parent_window.menu_button.setObjectName("menuButton")
 
         self.parent_window.version_label = QLabel()

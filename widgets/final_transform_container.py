@@ -14,6 +14,7 @@ from core.qt_imports import pyqtSignal, QCheckBox, QComboBox, QHBoxLayout, QLabe
 from modules.base_module import BaseRenameModule
 from utils.icons_loader import get_menu_icon
 from utils.logger_factory import get_cached_logger
+from utils.tooltip_helper import setup_tooltip, TooltipType
 
 logger = get_cached_logger(__name__)
 
@@ -53,8 +54,10 @@ class FinalTransformContainer(QWidget):
         greeklish_text_label = QLabel("Convert Greek to Greeklish")
 
         # Checkbox for Greek to Greeklish conversion
-        self.greeklish_checkbox = QCheckBox()
-        self.greeklish_checkbox.setToolTip("Toggle Greek to Greeklish conversion")
+        self.greeklish_checkbox = QCheckBox("Greeklish")
+        self.greeklish_checkbox.setChecked(False)
+        # Setup custom tooltip for greeklish checkbox
+        setup_tooltip(self.greeklish_checkbox, "Toggle Greek to Greeklish conversion", TooltipType.INFO)
         self.greeklish_checkbox.toggled.connect(self._on_value_change)
 
         greeklish_layout.addWidget(greeklish_text_label)
@@ -95,24 +98,28 @@ class FinalTransformContainer(QWidget):
         self.add_button.setIcon(get_menu_icon("plus"))
         self.add_button.setFixedSize(30, 30)
         self.add_button.setIconSize(QSize(16, 16))  # Increased icon size from default to 16x16
-        self.add_button.setToolTip("Add new module")
         self.add_button.clicked.connect(self.add_module_requested.emit)
         # Remove any padding/margins that might affect centering
         self.add_button.setContentsMargins(0, 0, 0, 0)
         # Add right padding to center the icon properly
         self.add_button.setStyleSheet("QPushButton { padding-right: 5px; }")
 
+        # Setup custom tooltip for add button
+        setup_tooltip(self.add_button, "Add new module", TooltipType.INFO)
+
         # Centered remove button
         self.remove_button = QPushButton()
         self.remove_button.setIcon(get_menu_icon("minus"))
         self.remove_button.setFixedSize(30, 30)
         self.remove_button.setIconSize(QSize(16, 16))  # Increased icon size from default to 16x16
-        self.remove_button.setToolTip("Remove last module")
         self.remove_button.clicked.connect(self.remove_module_requested.emit)
         # Remove any padding/margins that might affect centering
         self.remove_button.setContentsMargins(0, 0, 0, 0)
         # Add right padding to center the icon properly
         self.remove_button.setStyleSheet("QPushButton { padding-right: 5px; }")
+
+        # Setup custom tooltip for remove button
+        setup_tooltip(self.remove_button, "Remove last module", TooltipType.INFO)
 
         buttons_layout.addWidget(self.add_button, alignment=Qt.AlignCenter)
         buttons_layout.addWidget(self.remove_button, alignment=Qt.AlignCenter)

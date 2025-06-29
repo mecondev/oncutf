@@ -15,6 +15,7 @@ from core.qt_imports import Qt, pyqtSignal, QIntValidator, QHBoxLayout, QLabel, 
 
 from modules.base_module import BaseRenameModule
 from utils.icons_loader import get_menu_icon
+from utils.tooltip_helper import setup_tooltip, TooltipType
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
@@ -105,8 +106,10 @@ class CounterModule(BaseRenameModule):
         btn_plus.setIcon(get_menu_icon("plus"))
         btn_minus.setFixedSize(24, 24)
         btn_plus.setFixedSize(24, 24)
-        btn_minus.setToolTip("Decrease value")
-        btn_plus.setToolTip("Increase value")
+
+        # Setup custom tooltips for plus/minus buttons
+        setup_tooltip(btn_minus, "Decrease value", TooltipType.INFO)
+        setup_tooltip(btn_plus, "Increase value", TooltipType.INFO)
 
         # Adjust helper
         def adjust(delta: int) -> None:
