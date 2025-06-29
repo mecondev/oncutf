@@ -1924,6 +1924,9 @@ class MetadataTreeView(QTreeView):
         else:
             self.clear_view()
 
+        # Update file icon status after metadata loading to refresh both metadata and hash icons
+        self._update_file_icon_status()
+
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
         if get_app_context is None:

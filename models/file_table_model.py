@@ -4,31 +4,32 @@ file_table_model.py
 Author: Michael Economou
 Date: 2025-05-01
 
-This module defines the FileTableModel class, which is a PyQt5 QAbstractTableModel
-for managing and displaying a list of FileItem objects in a QTableView. The model
-supports functionalities such as row selection (blue highlighting), sorting by different
-columns, and updating previews based on user interactions. It emits signals to
-notify changes in sorting and interacts with a parent window for UI updates.
+This module defines the FileTableModel class, which is a custom QAbstractTableModel
+for displaying file data in a table view. The model manages file items, supports
+sorting, and provides metadata status icons.
 
 Classes:
-    FileTableModel: A table model for displaying and managing file entries.
+    FileTableModel: Custom table model for file management.
 '''
 
-from datetime import datetime
 import os
+from datetime import datetime
 from typing import Optional
 
-from PyQt5.QtCore import (
+from core.qt_imports import (
     QAbstractTableModel,
     QItemSelection,
     QItemSelectionModel,
     QItemSelectionRange,
     QModelIndex,
-    Qt,
     QVariant,
+    Qt,
     pyqtSignal,
+    QColor,
+    QIcon,
+    QPixmap,
+    QPainter
 )
-from PyQt5.QtGui import QColor, QIcon, QPixmap, QPainter
 
 from core.application_context import get_app_context
 from models.file_item import FileItem
@@ -169,7 +170,10 @@ class FileTableModel(QAbstractTableModel):
         if role == Qt.DecorationRole and index.column() == 0: # type: ignore
             entry = self.parent_window.metadata_cache.get_entry(file.full_path) if self.parent_window else None
 
-            # Determine metadata icon
+            # Check if file has hash cached first
+            has_hash = self._has_hash_cached(file.full_path)
+
+            # Determine metadata icon - only show if metadata exists
             metadata_pixmap = None
             if entry:
                 # Check if metadata has been modified
@@ -179,22 +183,21 @@ class FileTableModel(QAbstractTableModel):
                     metadata_pixmap = self.metadata_icons.get("extended")
                 else:
                     metadata_pixmap = self.metadata_icons.get("loaded")
-            else:
-                metadata_pixmap = self.metadata_icons.get("basic")
+            # No else clause - if no metadata entry, no metadata icon
 
-            # Check if file has hash cached
-            has_hash = self._has_hash_cached(file.full_path)
-
-            # Create combined icon if we have a metadata pixmap
-            if metadata_pixmap:
+            # Handle different combinations
+            if metadata_pixmap and has_hash:
+                # Both metadata and hash - show combined
                 return self._create_combined_icon(metadata_pixmap, has_hash)
-
-            # Fallback to basic icon
-            basic_pixmap = self.metadata_icons.get("basic")
-            if basic_pixmap:
-                return self._create_combined_icon(basic_pixmap, has_hash)
-
-            return QIcon()
+            elif metadata_pixmap:
+                # Only metadata - show just metadata icon
+                return QIcon(metadata_pixmap)
+            elif has_hash:
+                # Only hash - show just hash icon
+                return QIcon(self.hash_icon)
+            else:
+                # Neither metadata nor hash - show nothing
+                return QIcon()
 
         if col == 0 and role == Qt.UserRole: # type: ignore
             entry = self.parent_window.metadata_cache.get_entry(file.full_path) if self.parent_window else None

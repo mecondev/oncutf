@@ -19,8 +19,8 @@ import sys
 import time
 from pathlib import Path
 
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtWidgets import QApplication, QStyleFactory
+from qt_imports import Qt, QTimer
+from qt_imports import QApplication, QStyleFactory
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent

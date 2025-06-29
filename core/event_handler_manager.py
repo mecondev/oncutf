@@ -2,22 +2,21 @@
 event_handler_manager.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-08
 
-Manages all event handling operations for the application.
-Centralizes UI event handlers, user interactions, and widget callbacks.
+Handles UI events for the main window including file operations, context menus,
+and user interactions. Centralizes event handling logic to keep the main window clean.
 """
 
 import os
-from typing import List
+from typing import List, Optional
 
-from PyQt5.QtCore import QModelIndex, Qt
-from PyQt5.QtWidgets import QApplication, QFileDialog, QMenu
-
+from core.qt_imports import QModelIndex, Qt, QApplication, QFileDialog, QMenu
+from core.file_item import FileItem
 from config import STATUS_COLORS
+from utils.logger_factory import get_cached_logger
 from core.modifier_handler import decode_modifiers_to_flags
 from utils.cursor_helper import wait_cursor
-from utils.logger_factory import get_cached_logger
 from utils.path_utils import paths_equal
 
 logger = get_cached_logger(__name__)

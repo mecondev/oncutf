@@ -10,12 +10,14 @@ Groups related Qt classes together for better organization.
 
 # Core Qt classes
 from PyQt5.QtCore import (
+    QAbstractTableModel,
     QDir,
     QEasingCurve,
     QElapsedTimer,
     QEvent,
     QItemSelection,
     QItemSelectionModel,
+    QItemSelectionRange,
     QMimeData,
     QModelIndex,
     QMutex,
@@ -28,6 +30,7 @@ from PyQt5.QtCore import (
     QThread,
     QTimer,
     QUrl,
+    QVariant,
     pyqtSignal,
     pyqtSlot,
 )
@@ -84,6 +87,7 @@ from PyQt5.QtWidgets import (
     QSplitter,
     QStyle,
     QStyledItemDelegate,
+    QStyleFactory,
     QStyleOptionViewItem,
     QTableView,
     QTableWidget,
@@ -97,9 +101,9 @@ from PyQt5.QtWidgets import (
 # Re-export all imports for easy access
 __all__ = [
     # Core
-    'QDir', 'QEasingCurve', 'QElapsedTimer', 'QEvent', 'QItemSelection', 'QItemSelectionModel',
-    'QMimeData', 'QModelIndex', 'QMutex', 'QObject', 'QPoint', 'QPropertyAnimation', 'QSize', 'QSortFilterProxyModel', 'Qt', 'QThread',
-    'QTimer', 'QUrl', 'pyqtSignal', 'pyqtSlot',
+    'QAbstractTableModel', 'QDir', 'QEasingCurve', 'QElapsedTimer', 'QEvent', 'QItemSelection', 'QItemSelectionModel',
+    'QItemSelectionRange', 'QMimeData', 'QModelIndex', 'QMutex', 'QObject', 'QPoint', 'QPropertyAnimation', 'QSize', 'QSortFilterProxyModel', 'Qt', 'QThread',
+    'QTimer', 'QUrl', 'QVariant', 'pyqtSignal', 'pyqtSlot',
 
     # GUI
     'QColor', 'QCursor', 'QDesktopServices', 'QDrag', 'QDragEnterEvent', 'QDragMoveEvent', 'QDropEvent', 'QFont', 'QFontMetrics', 'QIcon', 'QKeyEvent',
@@ -110,6 +114,6 @@ __all__ = [
     'QAbstractItemView', 'QAction', 'QApplication', 'QCheckBox', 'QComboBox', 'QDesktopWidget', 'QDialog', 'QFileDialog',
     'QFileSystemModel', 'QFrame', 'QGraphicsOpacityEffect', 'QGridLayout', 'QHBoxLayout',
     'QHeaderView', 'QLabel', 'QLineEdit', 'QMainWindow', 'QMenu', 'QProgressBar', 'QPushButton', 'QScrollArea', 'QShortcut',
-    'QSizePolicy', 'QSplashScreen', 'QSplitter', 'QStyle', 'QStyledItemDelegate', 'QStyleOptionViewItem', 'QTableWidget', 'QTableWidgetItem', 'QTableView', 'QTextEdit', 'QTreeView',
+    'QSizePolicy', 'QSplashScreen', 'QSplitter', 'QStyle', 'QStyledItemDelegate', 'QStyleFactory', 'QStyleOptionViewItem', 'QTableWidget', 'QTableWidgetItem', 'QTableView', 'QTextEdit', 'QTreeView',
     'QVBoxLayout', 'QWidget',
 ]
