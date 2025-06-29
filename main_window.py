@@ -82,23 +82,23 @@ class MainWindow(QMainWindow):
         # --- Initialize MetadataManager ---
         self.metadata_manager = None  # Will be initialized after metadata components
 
-        # --- Database System Initialization ---
+        # --- Database System Initialization (V2 Architecture) ---
         from core.database_manager import initialize_database
         from core.persistent_metadata_cache import get_persistent_metadata_cache
         from core.persistent_hash_cache import get_persistent_hash_cache
         from core.rename_history_manager import get_rename_history_manager
 
-        # Initialize database system
+        # Initialize V2 database system with improved architecture
         self.db_manager = initialize_database()
 
         # --- Attributes initialization ---
         self.metadata_thread = None
         self.metadata_worker = None
-        # Use persistent metadata cache instead of memory-only cache
+        # Use V2 persistent metadata cache with improved separation of concerns
         self.metadata_cache = get_persistent_metadata_cache()
-        # Initialize persistent hash cache for hash persistence across restarts
+        # Initialize V2 persistent hash cache with dedicated hash table
         self.hash_cache = get_persistent_hash_cache()
-        # Initialize rename history manager
+        # Initialize rename history manager (will be migrated to V2 later)
         self.rename_history_manager = get_rename_history_manager()
 
         self.metadata_icon_map = load_metadata_icons()

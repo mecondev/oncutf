@@ -1,26 +1,23 @@
 """
-database_manager.py
+database_manager_v2.py
 
 Author: Michael Economou
 Date: 2025-01-27
 
-Comprehensive database management system for oncutf application.
-Handles metadata storage, hash caching, and rename history tracking.
+Enhanced database management with improved architecture.
+Separates concerns into dedicated tables while maintaining referential integrity.
 
-Features:
-- SQLite backend for persistent storage
-- Metadata caching with extended/fast mode tracking
-- File hash storage with CRC32 algorithm support
-- Rename history tracking for undo/redo operations
-- Automatic schema migrations and maintenance
-- Thread-safe operations with connection pooling
+New Architecture:
+- file_paths: Central table for file path management
+- file_metadata: Dedicated metadata storage
+- file_hashes: Dedicated hash storage
+- file_rename_history: Dedicated rename history
+- Future: file_thumbnails, file_tags, etc.
 """
 
 import json
 import os
 import sqlite3
-import threading
-import time
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
@@ -31,134 +28,114 @@ from utils.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 
-class DatabaseManager:
+class DatabaseManagerV2:
     """
-    Centralized database management for oncutf application.
+    Enhanced database management with improved separation of concerns.
 
-    Manages three main data types:
-    1. File metadata (EXIF, extended metadata)
-    2. File hashes (CRC32 checksums)
-    3. Rename history (for undo/redo operations)
+    Architecture:
+    - file_paths: Central registry of all file paths
+    - file_metadata: Metadata storage (references file_paths)
+    - file_hashes: Hash storage (references file_paths)
+    - file_rename_history: Rename history (references file_paths)
+
+    Benefits:
+    - Better separation of concerns
+    - Easier to add new features (thumbnails, tags, etc.)
+    - More maintainable and extensible
+    - Better performance with focused tables
     """
 
     # Database schema version for migrations
-    SCHEMA_VERSION = 1
+    SCHEMA_VERSION = 2
 
     def __init__(self, db_path: Optional[str] = None):
         """
-        Initialize DatabaseManager with SQLite backend.
+        Initialize database manager.
 
         Args:
-            db_path: Custom database path, defaults to user data directory
+            db_path: Optional custom database path
         """
-        self._lock = threading.RLock()
-        self._connections = {}  # Thread-local connections
-
-        # Set up database path
         if db_path:
             self.db_path = Path(db_path)
         else:
-            # Default to user data directory
+            # Use user data directory
             data_dir = self._get_user_data_directory()
+            data_dir.mkdir(parents=True, exist_ok=True)
             self.db_path = data_dir / "oncutf_data.db"
 
-        # Ensure directory exists
-        self.db_path.parent.mkdir(parents=True, exist_ok=True)
-
-        # Initialize database
         self._initialize_database()
-
-        logger.info(f"[DatabaseManager] Initialized with database: {self.db_path}")
+        logger.info(f"[DatabaseManagerV2] Initialized with database: {self.db_path}")
 
     def _get_user_data_directory(self) -> Path:
-        """Get appropriate user data directory for the current OS."""
+        """Get user data directory for storing database."""
         if os.name == 'nt':  # Windows
-            data_dir = Path(os.environ.get('APPDATA', '')) / 'oncutf'
+            data_dir = Path.home() / "AppData" / "Local" / "oncutf"
         else:  # Linux/macOS
-            home = Path.home()
-            data_dir = home / '.local' / 'share' / 'oncutf'
-
+            data_dir = Path.home() / ".local" / "share" / "oncutf"
         return data_dir
 
     @contextmanager
     def _get_connection(self):
-        """Get thread-safe database connection with automatic cleanup."""
-        thread_id = threading.current_thread().ident
-
-        with self._lock:
-            if thread_id not in self._connections:
-                conn = sqlite3.connect(
-                    str(self.db_path),
-                    check_same_thread=False,
-                    timeout=30.0
-                )
-                conn.row_factory = sqlite3.Row  # Enable dict-like access
-                conn.execute("PRAGMA foreign_keys = ON")  # Enable foreign keys
-                conn.execute("PRAGMA journal_mode = WAL")  # Better concurrency
-                self._connections[thread_id] = conn
-
-            conn = self._connections[thread_id]
-
+        """Get database connection with proper configuration."""
+        conn = None
         try:
+            conn = sqlite3.connect(
+                str(self.db_path),
+                timeout=30.0,
+                check_same_thread=False
+            )
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA foreign_keys = ON")
+            conn.execute("PRAGMA journal_mode = WAL")
+            conn.execute("PRAGMA synchronous = NORMAL")
+            conn.execute("PRAGMA cache_size = -64000")  # 64MB cache
+            conn.execute("PRAGMA temp_store = MEMORY")
             yield conn
-        except Exception:
-            conn.rollback()
-            raise
         finally:
-            conn.commit()
+            if conn:
+                conn.close()
 
     def _initialize_database(self):
-        """Initialize database schema and perform migrations."""
+        """Initialize database with schema."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
-            # Create schema version table first
+            # Check current schema version
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS schema_info (
-                    key TEXT PRIMARY KEY,
-                    value TEXT NOT NULL,
+                    version INTEGER PRIMARY KEY,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
 
-            # Check current schema version
-            cursor.execute("SELECT value FROM schema_info WHERE key = 'version'")
+            cursor.execute("SELECT version FROM schema_info ORDER BY version DESC LIMIT 1")
             row = cursor.fetchone()
-            current_version = int(row['value']) if row else 0
+            current_version = row['version'] if row else 0
 
-            # Perform migrations if needed
             if current_version < self.SCHEMA_VERSION:
-                self._migrate_schema(cursor, current_version)
+                if current_version == 0:
+                    self._create_schema_v2(cursor)
+                else:
+                    self._migrate_schema(cursor, current_version)
 
                 # Update schema version
                 cursor.execute("""
-                    INSERT OR REPLACE INTO schema_info (key, value)
-                    VALUES ('version', ?)
-                """, (str(self.SCHEMA_VERSION),))
+                    INSERT OR REPLACE INTO schema_info (version, updated_at)
+                    VALUES (?, CURRENT_TIMESTAMP)
+                """, (self.SCHEMA_VERSION,))
 
-            # Create indexes for performance
             self._create_indexes(cursor)
+            conn.commit()
 
-            logger.debug(f"[DatabaseManager] Schema initialized (version {self.SCHEMA_VERSION})")
+        logger.debug(f"[DatabaseManagerV2] Schema initialized (version {self.SCHEMA_VERSION})")
 
-    def _migrate_schema(self, cursor: sqlite3.Cursor, from_version: int):
-        """Perform database schema migrations."""
-        logger.info(f"[DatabaseManager] Migrating schema from version {from_version} to {self.SCHEMA_VERSION}")
+    def _create_schema_v2(self, cursor: sqlite3.Cursor):
+        """Create the new v2 schema with separated tables."""
 
-        if from_version == 0:
-            # Initial schema creation
-            self._create_initial_schema(cursor)
-
-        # Add future migration steps here as needed
-        # if from_version < 2:
-        #     self._migrate_to_version_2(cursor)
-
-    def _create_initial_schema(self, cursor: sqlite3.Cursor):
-        """Create initial database schema."""
-
-        # Files table - tracks all files we've seen
+        # 1. Central file paths table
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS files (
+            CREATE TABLE IF NOT EXISTS file_paths (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 file_path TEXT NOT NULL UNIQUE,
                 filename TEXT NOT NULL,
@@ -169,146 +146,157 @@ class DatabaseManager:
             )
         """)
 
-        # Metadata table - stores file metadata
+        # 2. Dedicated metadata table
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS metadata (
+            CREATE TABLE IF NOT EXISTS file_metadata (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                file_id INTEGER NOT NULL,
-                metadata_type TEXT NOT NULL DEFAULT 'fast',  -- 'fast' or 'extended'
-                metadata_json TEXT NOT NULL,  -- JSON blob of metadata
-                is_modified BOOLEAN DEFAULT FALSE,  -- User modifications flag
+                path_id INTEGER NOT NULL,
+                metadata_type TEXT NOT NULL DEFAULT 'fast',
+                metadata_json TEXT NOT NULL,
+                is_modified BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (file_id) REFERENCES files (id) ON DELETE CASCADE
+                FOREIGN KEY (path_id) REFERENCES file_paths (id) ON DELETE CASCADE
             )
         """)
 
-        # Hashes table - stores file hashes
+        # 3. Dedicated hash table
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS hashes (
+            CREATE TABLE IF NOT EXISTS file_hashes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                file_id INTEGER NOT NULL,
+                path_id INTEGER NOT NULL,
                 algorithm TEXT NOT NULL DEFAULT 'CRC32',
                 hash_value TEXT NOT NULL,
-                file_size_at_hash INTEGER,  -- File size when hash was calculated
+                file_size_at_hash INTEGER,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (file_id) REFERENCES files (id) ON DELETE CASCADE
+                FOREIGN KEY (path_id) REFERENCES file_paths (id) ON DELETE CASCADE
             )
         """)
 
-        # Rename history table - tracks rename operations for undo/redo
+        # 4. Dedicated rename history table
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS rename_history (
+            CREATE TABLE IF NOT EXISTS file_rename_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                operation_id TEXT NOT NULL,  -- UUID for grouping related renames
-                file_id INTEGER NOT NULL,
+                operation_id TEXT NOT NULL,
+                path_id INTEGER NOT NULL,
                 old_path TEXT NOT NULL,
                 new_path TEXT NOT NULL,
                 old_filename TEXT NOT NULL,
                 new_filename TEXT NOT NULL,
-                operation_type TEXT NOT NULL DEFAULT 'rename',  -- 'rename', 'undo', 'redo'
-                modules_data TEXT,  -- JSON of modules used for this rename
-                post_transform_data TEXT,  -- JSON of post-transform settings
+                operation_type TEXT NOT NULL DEFAULT 'rename',
+                modules_data TEXT,
+                post_transform_data TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (file_id) REFERENCES files (id) ON DELETE CASCADE
+                FOREIGN KEY (path_id) REFERENCES file_paths (id) ON DELETE CASCADE
             )
         """)
 
-        logger.debug("[DatabaseManager] Initial schema created")
+        logger.debug("[DatabaseManagerV2] Schema v2 created")
+
+    def _migrate_schema(self, cursor: sqlite3.Cursor, from_version: int):
+        """Migrate from older schema versions."""
+        # Future migrations will go here
+        logger.info(f"[DatabaseManagerV2] Migrating from version {from_version} to {self.SCHEMA_VERSION}")
 
     def _create_indexes(self, cursor: sqlite3.Cursor):
         """Create database indexes for performance."""
         indexes = [
-            "CREATE INDEX IF NOT EXISTS idx_files_path ON files (file_path)",
-            "CREATE INDEX IF NOT EXISTS idx_files_filename ON files (filename)",
-            "CREATE INDEX IF NOT EXISTS idx_metadata_file_id ON metadata (file_id)",
-            "CREATE INDEX IF NOT EXISTS idx_metadata_type ON metadata (metadata_type)",
-            "CREATE INDEX IF NOT EXISTS idx_hashes_file_id ON hashes (file_id)",
-            "CREATE INDEX IF NOT EXISTS idx_hashes_algorithm ON hashes (algorithm)",
-            "CREATE INDEX IF NOT EXISTS idx_rename_history_operation_id ON rename_history (operation_id)",
-            "CREATE INDEX IF NOT EXISTS idx_rename_history_file_id ON rename_history (file_id)",
-            "CREATE INDEX IF NOT EXISTS idx_rename_history_created_at ON rename_history (created_at)",
+            # File paths indexes
+            "CREATE INDEX IF NOT EXISTS idx_file_paths_path ON file_paths (file_path)",
+            "CREATE INDEX IF NOT EXISTS idx_file_paths_filename ON file_paths (filename)",
+
+            # Metadata indexes
+            "CREATE INDEX IF NOT EXISTS idx_file_metadata_path_id ON file_metadata (path_id)",
+            "CREATE INDEX IF NOT EXISTS idx_file_metadata_type ON file_metadata (metadata_type)",
+
+            # Hash indexes
+            "CREATE INDEX IF NOT EXISTS idx_file_hashes_path_id ON file_hashes (path_id)",
+            "CREATE INDEX IF NOT EXISTS idx_file_hashes_algorithm ON file_hashes (algorithm)",
+            "CREATE INDEX IF NOT EXISTS idx_file_hashes_value ON file_hashes (hash_value)",
+
+            # Rename history indexes
+            "CREATE INDEX IF NOT EXISTS idx_file_rename_history_operation_id ON file_rename_history (operation_id)",
+            "CREATE INDEX IF NOT EXISTS idx_file_rename_history_path_id ON file_rename_history (path_id)",
+            "CREATE INDEX IF NOT EXISTS idx_file_rename_history_created_at ON file_rename_history (created_at)",
         ]
 
         for index_sql in indexes:
             cursor.execute(index_sql)
 
-        logger.debug("[DatabaseManager] Database indexes created")
+        logger.debug("[DatabaseManagerV2] Database indexes created")
 
     # =====================================
-    # File Management
+    # File Path Management
     # =====================================
 
-    def add_or_update_file(self, file_path: str, filename: str, file_size: Optional[int] = None) -> int:
+    def get_or_create_path_id(self, file_path: str) -> int:
         """
-        Add or update file record in database.
+        Get path_id for a file, creating record if needed.
+
+        This is the core method that ensures every file path has an ID.
+        All other operations use this ID to reference files.
 
         Args:
-            file_path: Full path to the file
-            filename: Base filename
-            file_size: File size in bytes
+            file_path: Path to the file
 
         Returns:
-            File ID in database
+            path_id for the file
         """
+        norm_path = self._normalize_path(file_path)
+        filename = os.path.basename(norm_path)
+
         with self._get_connection() as conn:
             cursor = conn.cursor()
 
-            # Get file modification time
+            # Try to get existing path_id
+            cursor.execute("SELECT id FROM file_paths WHERE file_path = ?", (norm_path,))
+            row = cursor.fetchone()
+            if row:
+                return row['id']
+
+            # Create new path record
+            file_size = None
             modified_time = None
             try:
-                if os.path.exists(file_path):
-                    stat = os.stat(file_path)
-                    # Use ISO format string instead to avoid warnings
+                if os.path.exists(norm_path):
+                    stat = os.stat(norm_path)
+                    file_size = stat.st_size
                     modified_time = datetime.fromtimestamp(stat.st_mtime).isoformat()
-                    if file_size is None:
-                        file_size = stat.st_size
             except OSError:
                 pass
 
-            # First try to insert new file (will fail if exists due to UNIQUE constraint)
             cursor.execute("""
-                INSERT OR IGNORE INTO files
+                INSERT INTO file_paths
                 (file_path, filename, file_size, modified_time, updated_at)
                 VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-            """, (file_path, filename, file_size, modified_time))
+            """, (norm_path, filename, file_size, modified_time))
 
-            # Then update existing file (this preserves the original ID)
-            cursor.execute("""
-                UPDATE files
-                SET filename = ?, file_size = ?, modified_time = ?, updated_at = CURRENT_TIMESTAMP
-                WHERE file_path = ?
-            """, (filename, file_size, modified_time, file_path))
+            # Make sure to commit the transaction
+            conn.commit()
 
-            # Get the file ID (this will be the original ID if file existed)
-            cursor.execute("SELECT id FROM files WHERE file_path = ?", (file_path,))
-            row = cursor.fetchone()
-            file_id = row['id'] if row else cursor.lastrowid
+            path_id = cursor.lastrowid
+            if path_id is None:
+                raise RuntimeError(f"Failed to create path record for: {norm_path}")
 
-            return file_id
+            return path_id
 
-    def get_file_id(self, file_path: str) -> Optional[int]:
-        """Get file ID for a given path."""
+    def _normalize_path(self, file_path: str) -> str:
+        """Normalize file path for consistent storage."""
+        try:
+            abs_path = os.path.abspath(file_path)
+            return os.path.normpath(abs_path)
+        except Exception:
+            return os.path.normpath(file_path)
+
+    def get_path_id(self, file_path: str) -> Optional[int]:
+        """Get path_id for a file without creating it."""
+        norm_path = self._normalize_path(file_path)
+
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id FROM files WHERE file_path = ?", (file_path,))
+            cursor.execute("SELECT id FROM file_paths WHERE file_path = ?", (norm_path,))
             row = cursor.fetchone()
             return row['id'] if row else None
-
-    def remove_file(self, file_path: str) -> bool:
-        """
-        Remove file and all associated data from database.
-
-        Args:
-            file_path: Path to the file to remove
-
-        Returns:
-            True if file was removed, False if not found
-        """
-        with self._get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM files WHERE file_path = ?", (file_path,))
-            return cursor.rowcount > 0
 
     # =====================================
     # Metadata Management
@@ -316,70 +304,52 @@ class DatabaseManager:
 
     def store_metadata(self, file_path: str, metadata: Dict[str, Any],
                       is_extended: bool = False, is_modified: bool = False) -> bool:
-        """
-        Store metadata for a file.
-
-        Args:
-            file_path: Path to the file
-            metadata: Metadata dictionary
-            is_extended: Whether this is extended metadata
-            is_modified: Whether metadata has been modified by user
-
-        Returns:
-            True if stored successfully
-        """
+        """Store metadata for a file."""
         try:
-            # Ensure file exists in database
-            filename = os.path.basename(file_path)
-            file_id = self.add_or_update_file(file_path, filename)
+            path_id = self.get_or_create_path_id(file_path)
 
             with self._get_connection() as conn:
                 cursor = conn.cursor()
 
-                # Remove existing metadata for this file
-                cursor.execute("DELETE FROM metadata WHERE file_id = ?", (file_id,))
+                # Remove existing metadata for this path
+                cursor.execute("DELETE FROM file_metadata WHERE path_id = ?", (path_id,))
 
                 # Store new metadata
                 metadata_type = 'extended' if is_extended else 'fast'
                 metadata_json = json.dumps(metadata, ensure_ascii=False, indent=None)
 
                 cursor.execute("""
-                    INSERT INTO metadata
-                    (file_id, metadata_type, metadata_json, is_modified)
+                    INSERT INTO file_metadata
+                    (path_id, metadata_type, metadata_json, is_modified)
                     VALUES (?, ?, ?, ?)
-                """, (file_id, metadata_type, metadata_json, is_modified))
+                """, (path_id, metadata_type, metadata_json, is_modified))
 
-                logger.debug(f"[DatabaseManager] Stored {metadata_type} metadata for: {filename}")
+                # Commit the transaction
+                conn.commit()
+
+                logger.debug(f"[DatabaseManagerV2] Stored {metadata_type} metadata for: {os.path.basename(file_path)}")
                 return True
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error storing metadata for {file_path}: {e}")
+            logger.error(f"[DatabaseManagerV2] Error storing metadata for {file_path}: {e}")
             return False
 
     def get_metadata(self, file_path: str) -> Optional[Dict[str, Any]]:
-        """
-        Retrieve metadata for a file.
-
-        Args:
-            file_path: Path to the file
-
-        Returns:
-            Metadata dictionary or None if not found
-        """
+        """Retrieve metadata for a file."""
         try:
-            file_id = self.get_file_id(file_path)
-            if not file_id:
+            path_id = self.get_path_id(file_path)
+            if not path_id:
                 return None
 
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
                     SELECT metadata_json, metadata_type, is_modified
-                    FROM metadata
-                    WHERE file_id = ?
+                    FROM file_metadata
+                    WHERE path_id = ?
                     ORDER BY updated_at DESC
                     LIMIT 1
-                """, (file_id,))
+                """, (path_id,))
 
                 row = cursor.fetchone()
                 if not row:
@@ -396,23 +366,14 @@ class DatabaseManager:
                 return metadata
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error retrieving metadata for {file_path}: {e}")
+            logger.error(f"[DatabaseManagerV2] Error retrieving metadata for {file_path}: {e}")
             return None
 
     def has_metadata(self, file_path: str, metadata_type: Optional[str] = None) -> bool:
-        """
-        Check if file has metadata stored.
-
-        Args:
-            file_path: Path to the file
-            metadata_type: Optional filter by 'fast' or 'extended'
-
-        Returns:
-            True if metadata exists
-        """
+        """Check if file has metadata stored."""
         try:
-            file_id = self.get_file_id(file_path)
-            if not file_id:
+            path_id = self.get_path_id(file_path)
+            if not path_id:
                 return False
 
             with self._get_connection() as conn:
@@ -420,51 +381,21 @@ class DatabaseManager:
 
                 if metadata_type:
                     cursor.execute("""
-                        SELECT 1 FROM metadata
-                        WHERE file_id = ? AND metadata_type = ?
+                        SELECT 1 FROM file_metadata
+                        WHERE path_id = ? AND metadata_type = ?
                         LIMIT 1
-                    """, (file_id, metadata_type))
+                    """, (path_id, metadata_type))
                 else:
                     cursor.execute("""
-                        SELECT 1 FROM metadata
-                        WHERE file_id = ?
+                        SELECT 1 FROM file_metadata
+                        WHERE path_id = ?
                         LIMIT 1
-                    """, (file_id,))
+                    """, (path_id,))
 
                 return cursor.fetchone() is not None
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error checking metadata for {file_path}: {e}")
-            return False
-
-    def update_metadata_modified_flag(self, file_path: str, is_modified: bool) -> bool:
-        """
-        Update the modified flag for file metadata.
-
-        Args:
-            file_path: Path to the file
-            is_modified: New modified state
-
-        Returns:
-            True if updated successfully
-        """
-        try:
-            file_id = self.get_file_id(file_path)
-            if not file_id:
-                return False
-
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    UPDATE metadata
-                    SET is_modified = ?, updated_at = CURRENT_TIMESTAMP
-                    WHERE file_id = ?
-                """, (is_modified, file_id))
-
-                return cursor.rowcount > 0
-
-        except Exception as e:
-            logger.error(f"[DatabaseManager] Error updating metadata flag for {file_path}: {e}")
+            logger.error(f"[DatabaseManagerV2] Error checking metadata for {file_path}: {e}")
             return False
 
     # =====================================
@@ -472,20 +403,11 @@ class DatabaseManager:
     # =====================================
 
     def store_hash(self, file_path: str, hash_value: str, algorithm: str = 'CRC32') -> bool:
-        """
-        Store file hash.
-
-        Args:
-            file_path: Path to the file
-            hash_value: Calculated hash value
-            algorithm: Hash algorithm used
-
-        Returns:
-            True if stored successfully
-        """
+        """Store file hash."""
         try:
-            # Ensure file exists in database
-            filename = os.path.basename(file_path)
+            path_id = self.get_or_create_path_id(file_path)
+
+            # Get current file size
             file_size = None
             try:
                 if os.path.exists(file_path):
@@ -493,275 +415,90 @@ class DatabaseManager:
             except OSError:
                 pass
 
-            file_id = self.add_or_update_file(file_path, filename, file_size)
-
             with self._get_connection() as conn:
                 cursor = conn.cursor()
 
-                # Remove existing hash for this file and algorithm
+                # Remove existing hash for this path and algorithm
                 cursor.execute("""
-                    DELETE FROM hashes
-                    WHERE file_id = ? AND algorithm = ?
-                """, (file_id, algorithm))
+                    DELETE FROM file_hashes
+                    WHERE path_id = ? AND algorithm = ?
+                """, (path_id, algorithm))
 
                 # Store new hash
                 cursor.execute("""
-                    INSERT INTO hashes
-                    (file_id, algorithm, hash_value, file_size_at_hash)
+                    INSERT INTO file_hashes
+                    (path_id, algorithm, hash_value, file_size_at_hash)
                     VALUES (?, ?, ?, ?)
-                """, (file_id, algorithm, hash_value, file_size))
+                """, (path_id, algorithm, hash_value, file_size))
 
-                logger.debug(f"[DatabaseManager] Stored {algorithm} hash for: {filename}")
+                # Commit the transaction
+                conn.commit()
+
+                logger.debug(f"[DatabaseManagerV2] Stored {algorithm} hash for: {os.path.basename(file_path)}")
                 return True
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error storing hash for {file_path}: {e}")
+            logger.error(f"[DatabaseManagerV2] Error storing hash for {file_path}: {e}")
             return False
 
     def get_hash(self, file_path: str, algorithm: str = 'CRC32') -> Optional[str]:
-        """
-        Retrieve file hash.
-
-        Args:
-            file_path: Path to the file
-            algorithm: Hash algorithm
-
-        Returns:
-            Hash value or None if not found
-        """
+        """Retrieve file hash."""
         try:
-            file_id = self.get_file_id(file_path)
-            if not file_id:
+            path_id = self.get_path_id(file_path)
+            if not path_id:
                 return None
 
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
-                    SELECT hash_value FROM hashes
-                    WHERE file_id = ? AND algorithm = ?
+                    SELECT hash_value FROM file_hashes
+                    WHERE path_id = ? AND algorithm = ?
                     ORDER BY created_at DESC
                     LIMIT 1
-                """, (file_id, algorithm))
+                """, (path_id, algorithm))
 
                 row = cursor.fetchone()
                 return row['hash_value'] if row else None
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error retrieving hash for {file_path}: {e}")
+            logger.error(f"[DatabaseManagerV2] Error retrieving hash for {file_path}: {e}")
             return None
 
     def has_hash(self, file_path: str, algorithm: str = 'CRC32') -> bool:
-        """
-        Check if file has hash stored.
-
-        Args:
-            file_path: Path to the file
-            algorithm: Hash algorithm
-
-        Returns:
-            True if hash exists
-        """
+        """Check if file has hash stored."""
         try:
-            file_id = self.get_file_id(file_path)
-            if not file_id:
+            path_id = self.get_path_id(file_path)
+            if not path_id:
                 return False
 
             with self._get_connection() as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
-                    SELECT 1 FROM hashes
-                    WHERE file_id = ? AND algorithm = ?
+                    SELECT 1 FROM file_hashes
+                    WHERE path_id = ? AND algorithm = ?
                     LIMIT 1
-                """, (file_id, algorithm))
+                """, (path_id, algorithm))
 
                 return cursor.fetchone() is not None
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error checking hash for {file_path}: {e}")
+            logger.error(f"[DatabaseManagerV2] Error checking hash for {file_path}: {e}")
             return False
 
     # =====================================
-    # Rename History Management
+    # Utility Methods
     # =====================================
-
-    def record_rename_operation(self, operation_id: str, renames: List[Tuple[str, str]],
-                              modules_data: Optional[List[Dict]] = None,
-                              post_transform_data: Optional[Dict] = None) -> bool:
-        """
-        Record a batch rename operation for undo/redo functionality.
-
-        Args:
-            operation_id: Unique ID for this batch operation
-            renames: List of (old_path, new_path) tuples
-            modules_data: Modules configuration used
-            post_transform_data: Post-transform settings used
-
-        Returns:
-            True if recorded successfully
-        """
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-
-                # Convert data to JSON
-                modules_json = json.dumps(modules_data) if modules_data else None
-                post_transform_json = json.dumps(post_transform_data) if post_transform_data else None
-
-                for old_path, new_path in renames:
-                    # Ensure both old and new paths are in files table
-                    old_filename = os.path.basename(old_path)
-                    new_filename = os.path.basename(new_path)
-
-                    old_file_id = self.add_or_update_file(old_path, old_filename)
-
-                    # Record the rename operation
-                    cursor.execute("""
-                        INSERT INTO rename_history
-                        (operation_id, file_id, old_path, new_path, old_filename, new_filename,
-                         operation_type, modules_data, post_transform_data)
-                        VALUES (?, ?, ?, ?, ?, ?, 'rename', ?, ?)
-                    """, (operation_id, old_file_id, old_path, new_path,
-                         old_filename, new_filename, modules_json, post_transform_json))
-
-                logger.info(f"[DatabaseManager] Recorded rename operation {operation_id} with {len(renames)} files")
-                return True
-
-        except Exception as e:
-            logger.error(f"[DatabaseManager] Error recording rename operation: {e}")
-            return False
-
-    def get_rename_history(self, limit: int = 50) -> List[Dict[str, Any]]:
-        """
-        Get recent rename operations for undo functionality.
-
-        Args:
-            limit: Maximum number of operations to return
-
-        Returns:
-            List of operation dictionaries
-        """
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT DISTINCT operation_id,
-                           MIN(created_at) as operation_time,
-                           COUNT(*) as file_count,
-                           operation_type
-                    FROM rename_history
-                    GROUP BY operation_id
-                    ORDER BY operation_time DESC
-                    LIMIT ?
-                """, (limit,))
-
-                operations = []
-                for row in cursor.fetchall():
-                    operations.append({
-                        'operation_id': row['operation_id'],
-                        'operation_time': row['operation_time'],
-                        'file_count': row['file_count'],
-                        'operation_type': row['operation_type']
-                    })
-
-                return operations
-
-        except Exception as e:
-            logger.error(f"[DatabaseManager] Error retrieving rename history: {e}")
-            return []
-
-    def get_operation_details(self, operation_id: str) -> List[Dict[str, Any]]:
-        """
-        Get detailed information about a specific rename operation.
-
-        Args:
-            operation_id: ID of the operation
-
-        Returns:
-            List of rename details
-        """
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    SELECT old_path, new_path, old_filename, new_filename,
-                           modules_data, post_transform_data, created_at
-                    FROM rename_history
-                    WHERE operation_id = ?
-                    ORDER BY created_at
-                """, (operation_id,))
-
-                details = []
-                for row in cursor.fetchall():
-                    modules_data = json.loads(row['modules_data']) if row['modules_data'] else None
-                    post_transform_data = json.loads(row['post_transform_data']) if row['post_transform_data'] else None
-
-                    details.append({
-                        'old_path': row['old_path'],
-                        'new_path': row['new_path'],
-                        'old_filename': row['old_filename'],
-                        'new_filename': row['new_filename'],
-                        'modules_data': modules_data,
-                        'post_transform_data': post_transform_data,
-                        'created_at': row['created_at']
-                    })
-
-                return details
-
-        except Exception as e:
-            logger.error(f"[DatabaseManager] Error retrieving operation details: {e}")
-            return []
-
-    # =====================================
-    # Maintenance and Utilities
-    # =====================================
-
-    def cleanup_orphaned_records(self) -> int:
-        """
-        Clean up database records for files that no longer exist.
-
-        Returns:
-            Number of records cleaned up
-        """
-        try:
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-
-                # Get all file paths
-                cursor.execute("SELECT id, file_path FROM files")
-                files = cursor.fetchall()
-
-                orphaned_ids = []
-                for file_row in files:
-                    if not os.path.exists(file_row['file_path']):
-                        orphaned_ids.append(file_row['id'])
-
-                if orphaned_ids:
-                    # Delete orphaned files (cascade will handle related records)
-                    placeholders = ','.join('?' * len(orphaned_ids))
-                    cursor.execute(f"DELETE FROM files WHERE id IN ({placeholders})", orphaned_ids)
-
-                    logger.info(f"[DatabaseManager] Cleaned up {len(orphaned_ids)} orphaned records")
-
-                return len(orphaned_ids)
-
-        except Exception as e:
-            logger.error(f"[DatabaseManager] Error during cleanup: {e}")
-            return 0
 
     def get_database_stats(self) -> Dict[str, int]:
-        """
-        Get database statistics.
-
-        Returns:
-            Dictionary with record counts
-        """
+        """Get database statistics."""
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
 
                 stats = {}
-                tables = ['files', 'metadata', 'hashes', 'rename_history']
 
+                # Count records in each table
+                tables = ['file_paths', 'file_metadata', 'file_hashes', 'file_rename_history']
                 for table in tables:
                     cursor.execute(f"SELECT COUNT(*) as count FROM {table}")
                     row = cursor.fetchone()
@@ -770,36 +507,30 @@ class DatabaseManager:
                 return stats
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error getting database stats: {e}")
+            logger.error(f"[DatabaseManagerV2] Error getting database stats: {e}")
             return {}
 
     def close(self):
-        """Close all database connections."""
-        with self._lock:
-            for conn in self._connections.values():
-                try:
-                    conn.close()
-                except Exception:
-                    pass
-            self._connections.clear()
-
-        logger.debug("[DatabaseManager] All connections closed")
+        """Close database connections."""
+        # Connection pooling cleanup would go here if needed
+        logger.debug("[DatabaseManagerV2] Database connections closed")
 
 
-# Global instance for easy access
-_db_manager: Optional[DatabaseManager] = None
+# =====================================
+# Global Instance Management
+# =====================================
 
+_db_manager_v2_instance = None
 
-def get_database_manager() -> DatabaseManager:
-    """Get global DatabaseManager instance."""
-    global _db_manager
-    if _db_manager is None:
-        _db_manager = DatabaseManager()
-    return _db_manager
+def get_database_manager() -> DatabaseManagerV2:
+    """Get global database manager instance."""
+    global _db_manager_v2_instance
+    if _db_manager_v2_instance is None:
+        _db_manager_v2_instance = DatabaseManagerV2()
+    return _db_manager_v2_instance
 
-
-def initialize_database(db_path: Optional[str] = None) -> DatabaseManager:
-    """Initialize global DatabaseManager with custom path."""
-    global _db_manager
-    _db_manager = DatabaseManager(db_path)
-    return _db_manager
+def initialize_database(db_path: Optional[str] = None) -> DatabaseManagerV2:
+    """Initialize database manager with custom path."""
+    global _db_manager_v2_instance
+    _db_manager_v2_instance = DatabaseManagerV2(db_path)
+    return _db_manager_v2_instance
