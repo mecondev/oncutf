@@ -250,13 +250,23 @@ class FileTableView(QTableView):
             self.placeholder_label.resize(self.viewport().size())
             self.placeholder_label.move(0, 0)
 
+        # Update filename column width when table resizes
+        if hasattr(self, '_filename_min_width'):
+            current_filename_width = self.columnWidth(1)
+            new_filename_width = self._calculate_filename_width()
+
+            logger.debug(f"[ResizeEvent] Current filename width: {current_filename_width}, calculated: {new_filename_width}", extra={"dev_only": True})
+
+            # Only resize if there's a meaningful difference
+            if abs(new_filename_width - current_filename_width) > 5:
+                logger.debug(f"[ResizeEvent] Resizing filename column from {current_filename_width} to {new_filename_width}", extra={"dev_only": True})
+                self.setColumnWidth(1, new_filename_width)
+            else:
+                logger.debug(f"[ResizeEvent] No resize needed, difference: {abs(new_filename_width - current_filename_width)}", extra={"dev_only": True})
+
         # Check if vertical scrollbar visibility changed after resize
         # Use a small delay to ensure scrollbar state is updated
         schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 10)
-
-        # Also trigger column adjustment when table is resized
-        # This ensures filename column adapts when window size changes
-        schedule_resize_adjust(self._trigger_column_adjustment, 15)
 
     def showEvent(self, event) -> None:
         """Handle show events to ensure proper display after visibility changes."""
@@ -528,11 +538,15 @@ class FileTableView(QTableView):
         if not hasattr(self, '_filename_min_width'):
             return
 
+        logger.debug(f"[SplitterMoved] Called with pos: {pos}, index: {index}", extra={"dev_only": True})
+
         # Get current filename width and calculate new width
         current_filename_width = self.columnWidth(1)
 
         # Use user preference if available, otherwise use current width
         source_width = self._user_preferred_width if hasattr(self, '_has_manual_preference') and self._has_manual_preference else current_filename_width
+
+        logger.debug(f"[SplitterMoved] Current filename width: {current_filename_width}, source_width: {source_width}", extra={"dev_only": True})
 
         # Calculate new width using central method
         new_filename_width = self._calculate_filename_width(source_width)
@@ -540,6 +554,8 @@ class FileTableView(QTableView):
         # Only resize if there's a meaningful difference
         size_difference = abs(new_filename_width - current_filename_width)
         should_resize = size_difference > 5
+
+        logger.debug(f"[SplitterMoved] New width: {new_filename_width}, difference: {size_difference}, should_resize: {should_resize}", extra={"dev_only": True})
 
         if should_resize:
             # Use batch updates to prevent scrollbar flickering
@@ -550,6 +566,8 @@ class FileTableView(QTableView):
                 self._programmatic_resize = True
                 self.setColumnWidth(1, new_filename_width)
                 self._programmatic_resize = False
+
+                logger.debug(f"[SplitterMoved] Resized filename column to {new_filename_width}", extra={"dev_only": True})
 
                 # Update scrollbar visibility after column resize
                 self._update_scrollbar_visibility()
@@ -1571,10 +1589,10 @@ class FileTableView(QTableView):
                     logger.debug(f"[TriggerColumnAdjust] Legacy - Triggering adjustment with center panel size: {sizes[1]}", extra={"dev_only": True})
                     self.on_horizontal_splitter_moved(sizes[1], 1)
 
-    def _calculate_filename_width(self, source_width: int = None) -> int:
+    def _calculate_filename_width(self, source_width: Optional[int] = None) -> int:
         """
         Central method to calculate optimal filename column width.
-        Always applies buffer and -20px adjustment for optimal fit.
+        Responds dynamically to splitter and window changes.
 
         Args:
             source_width: Optional source width (from config, manual preference, etc.)
@@ -1587,11 +1605,9 @@ class FileTableView(QTableView):
         if not hasattr(self, '_filename_min_width'):
             self._filename_min_width = 250
 
-        # Get source width (config, preference, or default)
-        if source_width is None:
-            source_width = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
+        logger.debug(f"[CalcFilenameWidth] Called with source_width: {source_width}", extra={"dev_only": True})
 
-        # Calculate available space
+        # Calculate available space first
         try:
             # Get horizontal splitter for center panel width
             horizontal_splitter = None
@@ -1612,13 +1628,20 @@ class FileTableView(QTableView):
             if horizontal_splitter:
                 sizes = horizontal_splitter.sizes()
                 center_panel_width = sizes[1] if len(sizes) > 1 else self.width()
+                logger.debug(f"[CalcFilenameWidth] Splitter sizes: {sizes}, center_panel_width: {center_panel_width}", extra={"dev_only": True})
             else:
                 center_panel_width = self.width()
+                logger.debug(f"[CalcFilenameWidth] No splitter found, using table width: {center_panel_width}", extra={"dev_only": True})
 
             if center_panel_width > 0:
-                # Calculate space used by other columns
-                other_columns_width = (self.columnWidth(0) + self.columnWidth(2) +
-                                     self.columnWidth(3) + self.columnWidth(4))
+                # Use config widths for other columns (not current widths)
+                # This ensures we respond to actual available space changes
+                other_columns_width = (
+                    FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"] +
+                    FILE_TABLE_COLUMN_WIDTHS["FILESIZE_COLUMN"] +
+                    FILE_TABLE_COLUMN_WIDTHS["EXTENSION_COLUMN"] +
+                    FILE_TABLE_COLUMN_WIDTHS["DATE_COLUMN"]
+                )
 
                 # Check for vertical scrollbar
                 vertical_scrollbar = self.verticalScrollBar()
@@ -1626,21 +1649,34 @@ class FileTableView(QTableView):
                 if vertical_scrollbar and vertical_scrollbar.isVisible():
                     scrollbar_margin = SCROLLBAR_MARGIN
 
-                # Calculate available width with buffer
-                buffer_space = 20  # Always use buffer
-                available_width = center_panel_width - other_columns_width - scrollbar_margin - buffer_space
+                # Calculate available width for filename column
+                available_width = center_panel_width - other_columns_width - scrollbar_margin
 
-                # Use the smaller of source_width and available_width
-                target_width = min(source_width, available_width)
+                logger.debug(f"[CalcFilenameWidth] other_columns: {other_columns_width}, scrollbar_margin: {scrollbar_margin}, available: {available_width}", extra={"dev_only": True})
+
+                # Now decide what width to use
+                if source_width is not None:
+                    # Use all available space when we have a source width (user interaction)
+                    target_width = available_width
+                    logger.debug(f"[CalcFilenameWidth] Using available_width {available_width} (source was {source_width})", extra={"dev_only": True})
+                else:
+                    # Use config default, but constrain to available space
+                    config_width = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
+                    target_width = min(config_width, available_width)
+                    logger.debug(f"[CalcFilenameWidth] Using config_width {config_width}, constrained to {target_width}", extra={"dev_only": True})
             else:
                 # Fallback when width calculation fails
-                target_width = source_width
+                target_width = source_width if source_width is not None else FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
+                logger.debug(f"[CalcFilenameWidth] Fallback - using {target_width}", extra={"dev_only": True})
 
-        except Exception:
+        except Exception as e:
             # Fallback on any error
-            target_width = source_width
+            target_width = source_width if source_width is not None else FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
+            logger.debug(f"[CalcFilenameWidth] Exception fallback - using {target_width}, error: {e}", extra={"dev_only": True})
 
-        # Always subtract 20px for optimal fit and ensure minimum
+        # Apply single 20px reduction for optimal fit and ensure minimum
         final_width = max(target_width - 20, self._filename_min_width, 250)
+
+        logger.debug(f"[CalcFilenameWidth] Final calculation: target={target_width} - 20 = {final_width} (min: {self._filename_min_width})", extra={"dev_only": True})
 
         return final_width
