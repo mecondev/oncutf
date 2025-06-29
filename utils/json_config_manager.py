@@ -144,7 +144,7 @@ class JSONConfigManager:
         self.app_name = app_name
         self.config_dir = Path(config_dir or self._get_default_config_dir())
         self.config_file = self.config_dir / 'config.json'
-        self.backup_file = self.config_dir / 'config.json.backup'
+        self.backup_file = self.config_dir / 'config.json.bak'
 
         self._lock = threading.RLock()
         self._categories: Dict[str, ConfigCategory] = {}

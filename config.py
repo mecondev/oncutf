@@ -19,7 +19,7 @@ Contains:
 from core.qt_imports import Qt
 
 # Debugging Set to False to disable debug.log output
-SHOW_DEV_ONLY_IN_CONSOLE = True   # Enabled for debugging column width issues
+SHOW_DEV_ONLY_IN_CONSOLE = False   # Enabled for debugging column width issues
 ENABLE_DEBUG_LOG_FILE = True
 
 # Which key skips the metadata scan when held down
@@ -72,7 +72,7 @@ LARGE_SCREEN_MIN_HEIGHT = 900
 # Development/Testing Settings
 # ----------------------------
 # Set to True to simulate different screen sizes for testing (DEV ONLY)
-DEV_SIMULATE_SCREEN = True
+DEV_SIMULATE_SCREEN = False
 
 # Simulated screen dimensions (only used when DEV_SIMULATE_SCREEN is True)
 DEV_SIMULATED_SCREEN = {
