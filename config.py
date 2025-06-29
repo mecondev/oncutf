@@ -72,7 +72,7 @@ LARGE_SCREEN_MIN_HEIGHT = 900
 # Development/Testing Settings
 # ----------------------------
 # Set to True to simulate different screen sizes for testing (DEV ONLY)
-DEV_SIMULATE_SCREEN = False
+DEV_SIMULATE_SCREEN = True
 
 # Simulated screen dimensions (only used when DEV_SIMULATE_SCREEN is True)
 DEV_SIMULATED_SCREEN = {
