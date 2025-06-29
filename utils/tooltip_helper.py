@@ -18,8 +18,7 @@ Contains:
 
 import logging
 
-from PyQt5.QtCore import QPoint, Qt, QTimer
-from PyQt5.QtWidgets import QApplication, QLabel, QWidget
+from core.qt_imports import QPoint, Qt, QTimer, QApplication, QLabel, QWidget
 
 logger = logging.getLogger(__name__)
 

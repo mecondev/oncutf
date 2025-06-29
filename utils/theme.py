@@ -124,5 +124,5 @@ def get_qcolor(color_key: str, theme_name: Optional[str] = None) -> str:
     Returns:
         QColor object
     """
-    from PyQt5.QtGui import QColor
+    from core.qt_imports import QColor
     return QColor(get_theme_color(color_key, theme_name))

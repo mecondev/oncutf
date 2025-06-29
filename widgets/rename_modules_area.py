@@ -14,13 +14,7 @@ Now supports ApplicationContext for optimized access patterns.
 
 from typing import Optional
 
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal
-from PyQt5.QtWidgets import (
-    QHBoxLayout,
-    QScrollArea,
-    QVBoxLayout,
-    QWidget,
-)
+from core.qt_imports import Qt, QTimer, pyqtSignal, QHBoxLayout, QScrollArea, QVBoxLayout, QWidget
 
 from modules.base_module import BaseRenameModule
 from utils.logger_factory import get_cached_logger
@@ -179,7 +173,7 @@ class RenameModulesArea(QWidget):
 
     def _create_separator(self):
         """Create a visual separator between modules."""
-        from PyQt5.QtWidgets import QFrame
+        from core.qt_imports import QFrame
         separator = QFrame()
         separator.setFrameShape(QFrame.HLine)
         separator.setFrameShadow(QFrame.Plain)

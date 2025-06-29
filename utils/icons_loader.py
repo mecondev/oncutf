@@ -20,7 +20,7 @@ Usage:
 import os
 from typing import Dict, Optional
 
-from PyQt5.QtGui import QIcon, QPixmap
+from core.qt_imports import QIcon, QPixmap
 
 from utils.logger_factory import get_cached_logger
 

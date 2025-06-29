@@ -18,9 +18,7 @@ Usage:
 import os
 from typing import Dict, Optional
 
-from core.qt_imports import QPixmap, QPainter, QColor
-from PyQt5.QtCore import QByteArray
-from PyQt5.QtSvg import QSvgRenderer
+from core.qt_imports import QPixmap, QPainter, QColor, QByteArray, QSvgRenderer
 
 from config import METADATA_ICON_COLORS
 from utils.logger_factory import get_cached_logger

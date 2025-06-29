@@ -12,15 +12,7 @@ Custom QTableView with Windows Explorer-like behavior:
 '''
 from typing import Optional
 
-from PyQt5.QtCore import (
-    QEvent,
-    QItemSelection,
-    QItemSelectionModel,
-    QModelIndex,
-    QPoint,
-    Qt,
-    pyqtSignal,
-)
+from core.qt_imports import QEvent, QItemSelection, QItemSelectionModel, QModelIndex, QPoint, Qt, pyqtSignal
 from PyQt5.QtGui import (
     QCursor,
     QDropEvent,
@@ -190,7 +182,7 @@ class FileTableView(QTableView):
 
                 # Select the new rows
                 if selected_rows:
-                    from PyQt5.QtCore import QItemSelection
+                    from core.qt_imports import QItemSelection
                     full_selection = QItemSelection()
 
                     for row in selected_rows:
@@ -1422,7 +1414,7 @@ class FileTableView(QTableView):
         self.blockSignals(True)
 
         # Create a single selection for all rows
-        from PyQt5.QtCore import QItemSelection
+        from core.qt_imports import QItemSelection
         full_selection = QItemSelection()
 
         for row in rows_to_select:

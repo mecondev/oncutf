@@ -10,8 +10,7 @@ Provides a clean, minimal UI for displaying metadata loading progress.
 
 from typing import Callable, Optional
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QWidget
+from core.qt_imports import Qt, QDialog, QVBoxLayout, QWidget
 
 from config import (
     EXTENDED_METADATA_BG_COLOR,

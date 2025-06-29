@@ -21,9 +21,7 @@ import os
 from enum import Enum
 from typing import Dict, Optional
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QCursor, QIcon, QPainter, QPixmap
-from PyQt5.QtWidgets import QApplication, QWidget
+from core.qt_imports import Qt, QColor, QCursor, QIcon, QPainter, QPixmap, QApplication, QWidget
 
 from utils.icons_loader import get_menu_icon
 from utils.logger_factory import get_cached_logger

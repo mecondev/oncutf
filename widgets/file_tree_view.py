@@ -11,9 +11,7 @@ Single item selection only - no multi-selection complexity.
 
 import os
 
-from PyQt5.QtCore import QEvent, Qt, pyqtSignal
-from PyQt5.QtGui import QCursor, QKeyEvent, QMouseEvent
-from PyQt5.QtWidgets import QApplication
+from core.qt_imports import QEvent, Qt, pyqtSignal, QCursor, QKeyEvent, QMouseEvent, QApplication
 
 from config import ALLOWED_EXTENSIONS
 from core.drag_manager import DragManager

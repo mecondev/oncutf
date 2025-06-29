@@ -10,7 +10,7 @@ Provides centralized logic for common dialog operations like centering.
 
 from typing import Optional
 
-from PyQt5.QtWidgets import QWidget
+from core.qt_imports import QWidget
 
 
 def center_widget_on_parent(widget: QWidget, parent: Optional[QWidget] = None) -> None:

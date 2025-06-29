@@ -16,7 +16,7 @@ Contains:
 - File extension filters
 - Paths to resources and stylesheets
 """
-from PyQt5.QtCore import Qt
+from core.qt_imports import Qt
 
 # Debugging Set to False to disable debug.log output
 SHOW_DEV_ONLY_IN_CONSOLE = False  # Disabled for performance

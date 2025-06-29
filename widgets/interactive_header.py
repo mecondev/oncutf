@@ -13,8 +13,7 @@ Features:
 - Prevents accidental sort when resizing (Explorer-like behavior)
 """
 
-from PyQt5.QtCore import QPoint, Qt
-from PyQt5.QtWidgets import QAction, QHeaderView, QMenu
+from core.qt_imports import QPoint, Qt, QAction, QHeaderView, QMenu
 
 # ApplicationContext integration
 try:

@@ -17,7 +17,7 @@ Features:
 import time
 from typing import Any, Dict, Optional, Set
 
-from PyQt5.QtCore import QObject, QTimer, pyqtSignal
+from core.qt_imports import QObject, QTimer, pyqtSignal
 
 from utils.logger_factory import get_cached_logger
 

@@ -12,7 +12,7 @@ triggers custom dialogs (recursive, rejected files), and returns results for the
 import os
 from typing import Dict, List, Literal, Tuple
 
-from PyQt5.QtCore import QMimeData
+from core.qt_imports import QMimeData
 
 from config import ALLOWED_EXTENSIONS
 
@@ -92,7 +92,7 @@ def show_rejected_dialog(rejected: list[str], imported_count: int = 0, parent=No
         CustomMessageDialog.information(parent, "Some files were skipped", message)
     else:
         # Show summary and scrollable list
-        from PyQt5.QtWidgets import QDialog, QLabel, QPushButton, QTextEdit, QVBoxLayout
+        from core.qt_imports import QDialog, QLabel, QPushButton, QTextEdit, QVBoxLayout
         dialog = QDialog(parent)
         dialog.setWindowTitle("Some files were skipped")
         layout = QVBoxLayout(dialog)

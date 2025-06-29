@@ -26,7 +26,7 @@ import os
 from pathlib import Path
 from typing import List
 
-from PyQt5.QtCore import QMutexLocker
+from core.qt_imports import QMutexLocker
 
 from core.qt_imports import QMutex, QThread, pyqtSignal
 from utils.logger_factory import get_cached_logger

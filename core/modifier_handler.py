@@ -11,7 +11,7 @@ Provides consistent logic across all file loading contexts (import, browse, drag
 from enum import Enum
 from typing import Tuple
 
-from PyQt5.QtCore import Qt
+from core.qt_imports import Qt
 
 
 class ModifierAction(Enum):

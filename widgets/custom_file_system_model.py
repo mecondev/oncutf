@@ -12,9 +12,7 @@ for folders, files, and expand/collapse indicators.
 import os
 from typing import Any
 
-from PyQt5.QtCore import QModelIndex, Qt
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QFileSystemModel
+from core.qt_imports import QModelIndex, Qt, QIcon, QFileSystemModel
 
 from config import ALLOWED_EXTENSIONS
 from utils.icons_loader import get_menu_icon

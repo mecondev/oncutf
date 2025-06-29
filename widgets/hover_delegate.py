@@ -9,9 +9,7 @@ Author: Michael Economou
 Date: 2025-05-21
 """
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QIcon, QPalette, QPen
-from PyQt5.QtWidgets import QStyle, QStyledItemDelegate, QStyleOptionViewItem, QTableView
+from core.qt_imports import Qt, QColor, QIcon, QPalette, QPen, QStyle, QStyledItemDelegate, QStyleOptionViewItem, QTableView
 
 from utils.theme import get_qcolor, get_theme_color
 

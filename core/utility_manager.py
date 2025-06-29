@@ -14,8 +14,7 @@ This manager centralizes utility functions including:
 
 from typing import TYPE_CHECKING
 
-from PyQt5.QtCore import QEvent, Qt
-from PyQt5.QtWidgets import QApplication, QDesktopWidget
+from core.qt_imports import QEvent, Qt, QApplication, QDesktopWidget
 
 from config import STATUS_COLORS
 from utils.logger_factory import get_cached_logger
@@ -153,8 +152,6 @@ class UtilityManager:
         selected = len(self.main_window.get_selected_files()) if total else 0
 
         self.main_window.status_manager.update_files_label(self.main_window.files_label, total, selected)
-
-
 
     def get_selected_rows_files(self) -> list:
         """

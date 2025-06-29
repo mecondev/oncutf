@@ -11,7 +11,7 @@ Centralizes dialog creation, validation logic, and user confirmations.
 import os
 from typing import List, Tuple
 
-from PyQt5.QtWidgets import QApplication, QFileDialog, QWidget
+from core.qt_imports import QApplication, QFileDialog, QWidget
 
 from utils.logger_factory import get_cached_logger
 

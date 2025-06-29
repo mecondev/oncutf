@@ -36,7 +36,7 @@ Usage Examples:
 
 from typing import Optional
 
-from PyQt5.QtWidgets import QWidget
+from core.qt_imports import QWidget
 
 from utils.logger_factory import get_cached_logger
 from widgets.progress_widget import ProgressWidget, create_size_based_progress_widget

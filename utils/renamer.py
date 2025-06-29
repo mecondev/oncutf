@@ -1,7 +1,7 @@
 import os
 from typing import Callable, List, Optional
 
-from PyQt5.QtWidgets import QWidget
+from core.qt_imports import QWidget
 
 from models.file_item import FileItem
 from modules.name_transform_module import NameTransformModule

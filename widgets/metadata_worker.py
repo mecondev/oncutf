@@ -20,7 +20,7 @@ import threading
 import time
 from typing import Optional
 
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
+from core.qt_imports import QObject, pyqtSignal, pyqtSlot
 
 # Logger setup
 from utils.logger_factory import get_cached_logger

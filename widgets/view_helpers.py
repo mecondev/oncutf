@@ -12,7 +12,7 @@ Currently includes:
 - update_info_icon: visually refreshes the icon cell in column 0 for a given file.
 """
 
-from PyQt5.QtWidgets import QTableView
+from core.qt_imports import QTableView
 
 from utils.path_utils import paths_equal
 

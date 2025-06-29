@@ -7,19 +7,7 @@ Dialog for bulk rotation operations.
 from pathlib import Path
 from typing import List, Optional
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (
-    QCheckBox,
-    QDialog,
-    QFrame,
-    QHBoxLayout,
-    QLabel,
-    QPushButton,
-    QScrollArea,
-    QVBoxLayout,
-    QWidget,
-)
+from core.qt_imports import Qt, QFont, QCheckBox, QDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QPushButton, QRadioButton, QScrollArea, QVBoxLayout, QWidget
 
 from config import QLABEL_MUTED_TEXT
 from utils.logger_factory import get_cached_logger

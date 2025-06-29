@@ -11,9 +11,7 @@ sequential file names based on configurable start value, step, and padding.
 
 from typing import Optional
 
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QIntValidator
-from PyQt5.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
+from core.qt_imports import Qt, pyqtSignal, QIntValidator, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
 
 from modules.base_module import BaseRenameModule
 from utils.icons_loader import get_menu_icon

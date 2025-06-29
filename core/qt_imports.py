@@ -11,6 +11,7 @@ Groups related Qt classes together for better organization.
 # Core Qt classes
 from PyQt5.QtCore import (
     QAbstractTableModel,
+    QByteArray,
     QDir,
     QEasingCurve,
     QElapsedTimer,
@@ -21,9 +22,11 @@ from PyQt5.QtCore import (
     QMimeData,
     QModelIndex,
     QMutex,
+    QMutexLocker,
     QObject,
     QPoint,
     QPropertyAnimation,
+    QResource,
     QSize,
     QSortFilterProxyModel,
     Qt,
@@ -45,8 +48,10 @@ from PyQt5.QtGui import (
     QDragMoveEvent,
     QDropEvent,
     QFont,
+    QFontDatabase,
     QFontMetrics,
     QIcon,
+    QIntValidator,
     QKeyEvent,
     QKeySequence,
     QMouseEvent,
@@ -58,11 +63,20 @@ from PyQt5.QtGui import (
     QStandardItemModel,
 )
 
+# SVG support
+try:
+    from PyQt5.QtSvg import QSvgRenderer
+    SVG_AVAILABLE = True
+except ImportError:
+    QSvgRenderer = None
+    SVG_AVAILABLE = False
+
 # Widget classes for UI components
 from PyQt5.QtWidgets import (
     QAbstractItemView,
     QAction,
     QApplication,
+    QButtonGroup,
     QCheckBox,
     QComboBox,
     QDesktopWidget,
@@ -72,14 +86,17 @@ from PyQt5.QtWidgets import (
     QFrame,
     QGraphicsOpacityEffect,
     QGridLayout,
+    QGroupBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
     QLineEdit,
     QMainWindow,
     QMenu,
+    QMessageBox,
     QProgressBar,
     QPushButton,
+    QRadioButton,
     QScrollArea,
     QShortcut,
     QSizePolicy,
@@ -101,19 +118,22 @@ from PyQt5.QtWidgets import (
 # Re-export all imports for easy access
 __all__ = [
     # Core
-    'QAbstractTableModel', 'QDir', 'QEasingCurve', 'QElapsedTimer', 'QEvent', 'QItemSelection', 'QItemSelectionModel',
-    'QItemSelectionRange', 'QMimeData', 'QModelIndex', 'QMutex', 'QObject', 'QPoint', 'QPropertyAnimation', 'QSize', 'QSortFilterProxyModel', 'Qt', 'QThread',
+    'QAbstractTableModel', 'QByteArray', 'QDir', 'QEasingCurve', 'QElapsedTimer', 'QEvent', 'QItemSelection', 'QItemSelectionModel',
+    'QItemSelectionRange', 'QMimeData', 'QModelIndex', 'QMutex', 'QMutexLocker', 'QObject', 'QPoint', 'QPropertyAnimation', 'QResource', 'QSize', 'QSortFilterProxyModel', 'Qt', 'QThread',
     'QTimer', 'QUrl', 'QVariant', 'pyqtSignal', 'pyqtSlot',
 
     # GUI
-    'QColor', 'QCursor', 'QDesktopServices', 'QDrag', 'QDragEnterEvent', 'QDragMoveEvent', 'QDropEvent', 'QFont', 'QFontMetrics', 'QIcon', 'QKeyEvent',
+    'QColor', 'QCursor', 'QDesktopServices', 'QDrag', 'QDragEnterEvent', 'QDragMoveEvent', 'QDropEvent', 'QFont', 'QFontDatabase', 'QFontMetrics', 'QIcon', 'QIntValidator', 'QKeyEvent',
     'QKeySequence', 'QMouseEvent', 'QPainter', 'QPalette', 'QPen', 'QPixmap', 'QStandardItem',
     'QStandardItemModel',
 
+    # SVG
+    'QSvgRenderer', 'SVG_AVAILABLE',
+
     # Widgets
-    'QAbstractItemView', 'QAction', 'QApplication', 'QCheckBox', 'QComboBox', 'QDesktopWidget', 'QDialog', 'QFileDialog',
-    'QFileSystemModel', 'QFrame', 'QGraphicsOpacityEffect', 'QGridLayout', 'QHBoxLayout',
-    'QHeaderView', 'QLabel', 'QLineEdit', 'QMainWindow', 'QMenu', 'QProgressBar', 'QPushButton', 'QScrollArea', 'QShortcut',
+    'QAbstractItemView', 'QAction', 'QApplication', 'QButtonGroup', 'QCheckBox', 'QComboBox', 'QDesktopWidget', 'QDialog', 'QFileDialog',
+    'QFileSystemModel', 'QFrame', 'QGraphicsOpacityEffect', 'QGridLayout', 'QGroupBox', 'QHBoxLayout',
+    'QHeaderView', 'QLabel', 'QLineEdit', 'QMainWindow', 'QMenu', 'QMessageBox', 'QProgressBar', 'QPushButton', 'QRadioButton', 'QScrollArea', 'QShortcut',
     'QSizePolicy', 'QSplashScreen', 'QSplitter', 'QStyle', 'QStyledItemDelegate', 'QStyleFactory', 'QStyleOptionViewItem', 'QTableWidget', 'QTableWidgetItem', 'QTableView', 'QTextEdit', 'QTreeView',
     'QVBoxLayout', 'QWidget',
 ]

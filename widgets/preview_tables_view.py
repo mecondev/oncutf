@@ -17,18 +17,7 @@ Features:
 
 from typing import Tuple
 
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import (
-    QAbstractItemView,
-    QHBoxLayout,
-    QHeaderView,
-    QLabel,
-    QTableWidget,
-    QTableWidgetItem,
-    QVBoxLayout,
-    QWidget,
-)
+from core.qt_imports import Qt, pyqtSignal, QPixmap, QAbstractItemView, QHBoxLayout, QHeaderView, QLabel, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
 
 from utils.filename_validator import get_validation_error_message, is_validation_error_marker
 from utils.logger_factory import get_cached_logger

@@ -13,7 +13,7 @@ Unified file loading manager with fully optimized policy:
 import os
 from typing import List, Set
 
-from PyQt5.QtCore import Qt
+from core.qt_imports import Qt
 
 from config import ALLOWED_EXTENSIONS
 from core.drag_manager import force_cleanup_drag, is_dragging

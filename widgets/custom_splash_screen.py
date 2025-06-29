@@ -14,9 +14,7 @@ Features:
 
 import logging
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont, QFontMetrics, QPainter, QPen, QPixmap, QColor
-from PyQt5.QtWidgets import QApplication, QSplashScreen
+from core.qt_imports import Qt, QFont, QFontMetrics, QPainter, QPen, QPixmap, QColor, QApplication, QSplashScreen
 
 from config import APP_VERSION
 

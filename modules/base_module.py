@@ -1,9 +1,8 @@
-"""Base class for rename modules with signal optimization helpers."""
+"""Base module for all rename modules."""
 
+from abc import ABC, abstractmethod
+from core.qt_imports import pyqtSignal, QWidget
 import logging
-
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import QWidget
 
 logger = logging.getLogger(__name__)
 

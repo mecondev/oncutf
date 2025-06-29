@@ -13,8 +13,7 @@ Used in the oncutf application as one of the modular renaming components.
 import os
 from typing import Optional
 
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QAction, QLabel, QMenu, QVBoxLayout, QWidget
+from core.qt_imports import Qt, pyqtSignal, QAction, QLabel, QMenu, QVBoxLayout, QWidget
 
 from config import QLABEL_DARK_BG, QLABEL_DARK_BORDER, QLABEL_ERROR_TEXT, QLABEL_INFO_TEXT
 from modules.base_module import BaseRenameModule

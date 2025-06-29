@@ -18,7 +18,7 @@ import glob
 import os
 from typing import Any, Dict, List, Optional, Set
 
-from PyQt5.QtCore import QElapsedTimer, QObject, pyqtSignal
+from core.qt_imports import QElapsedTimer, QObject, pyqtSignal
 
 from config import ALLOWED_EXTENSIONS
 from models.file_item import FileItem

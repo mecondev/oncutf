@@ -1,4 +1,3 @@
-
 """
 Module: icons.py
 
@@ -17,8 +16,7 @@ Supports:
 - Compatibility with oncutf UI components
 """
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QPainter, QPen, QPixmap
+from core.qt_imports import Qt, QColor, QPainter, QPen, QPixmap
 
 # Initialize Logger
 from utils.logger_factory import get_cached_logger

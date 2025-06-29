@@ -11,8 +11,7 @@ Enhanced with better metadata grouping and extended metadata indicators.
 
 import re
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QFont, QStandardItem, QStandardItemModel
+from core.qt_imports import Qt, QColor, QFont, QStandardItem, QStandardItemModel
 
 # Initialize Logger
 from utils.logger_factory import get_cached_logger
