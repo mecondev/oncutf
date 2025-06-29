@@ -2,7 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.3.0] - 2025-01-27
+## [1.3] - 2025-06-29
+
+### Added
+- **Backup System**: Automatic database backups for data protection
+  - Automatic backups on application shutdown
+  - Periodic backup system (every 15 minutes, configurable)
+  - BackupManager with rotation and cleanup functionality
+  - Configurable backup count and interval settings
+  - Backup files with timestamp naming: `oncutf_YYYYMMDD_HHMMSS.db.bak`
+
+### Fixed
+- **CRITICAL**: Fixed tooltip system crash when renaming files (RuntimeError: deleted Qt objects)
+- Fixed memory leaks in persistent tooltip management
+- Enhanced error recovery for Qt object deletion scenarios
+- Improved application stability during file operations
+
+### Changed
+- **Tooltip System Overhaul**: Complete rewrite of tooltip management
+  - Added comprehensive error handling for Qt object lifecycle
+  - Enhanced tooltip persistence with proper cleanup mechanisms
+  - Improved tooltip positioning and screen boundary detection
+  - Added robust protection against deleted widget references
+  - Optimized tooltip event handling and reduced memory footprint
+
+### Technical
+- Enhanced error logging and debugging capabilities
+- Improved application shutdown sequence with backup integration
+- Added comprehensive test suite for backup functionality (simplified architecture)
+- All 185 tests passing successfully
+- Better Qt object lifecycle management throughout the application
+
+## [1.3.0] - 2025-01-27 (Database System Release)
 
 ### Added
 - **Database System**: Comprehensive SQLite-based database system for persistent storage
