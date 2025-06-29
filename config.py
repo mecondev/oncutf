@@ -19,7 +19,7 @@ Contains:
 from core.qt_imports import Qt
 
 # Debugging Set to False to disable debug.log output
-SHOW_DEV_ONLY_IN_CONSOLE = False  # Disabled for performance
+SHOW_DEV_ONLY_IN_CONSOLE = True   # Enabled for debugging column width issues
 ENABLE_DEBUG_LOG_FILE = True
 
 # Which key skips the metadata scan when held down
@@ -209,7 +209,7 @@ TREE_EXPAND_MODE = "double"  # Options: "single" or "double". Default: double cl
 # ----------------------------
 FILE_TABLE_COLUMN_WIDTHS = {
     "STATUS_COLUMN": 40,     # Column 0: Status/info icon column (increased for metadata + hash icons)
-    "FILENAME_COLUMN": 345,  # Column 1: Filename column (set to 345px)
+    "FILENAME_COLUMN": 400,  # Column 1: Filename column (increased to 400px for testing)
     "FILESIZE_COLUMN": 80,   # Column 2: File size column
     "EXTENSION_COLUMN": 60,  # Column 3: File extension column
     "DATE_COLUMN": 130       # Column 4: Modified date column

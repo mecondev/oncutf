@@ -381,6 +381,8 @@ class FileTableView(QTableView):
         header.setSectionResizeMode(1, QHeaderView.Interactive)
         self.setColumnWidth(1, filename_width)
 
+        logger.debug(f"[ConfigureColumns] Set initial filename column width to {filename_width} (config: {FILE_TABLE_COLUMN_WIDTHS['FILENAME_COLUMN']}, min: {filename_min})", extra={"dev_only": True})
+
         # File size column - Fixed width, cannot be resized
         filesize_width = FILE_TABLE_COLUMN_WIDTHS["FILESIZE_COLUMN"]
         header.setSectionResizeMode(2, QHeaderView.Fixed)
@@ -412,6 +414,8 @@ class FileTableView(QTableView):
 
         # Connect signal to enforce filename column minimum width
         header.sectionResized.connect(self._on_filename_resized)
+
+        logger.debug(f"[ConfigureColumns] Final setup - filename width: {filename_width}, min: {self._filename_min_width}, user pref: {self._user_preferred_width}", extra={"dev_only": True})
 
         # Adjust filename column width to available space after initial configuration
         schedule_resize_adjust(self._trigger_column_adjustment, 10)
@@ -541,6 +545,8 @@ class FileTableView(QTableView):
         sizes = horizontal_splitter.sizes()
         center_panel_width = sizes[1]
 
+        logger.debug(f"[ColumnAdjust] Splitter sizes: {sizes}, center panel: {center_panel_width}", extra={"dev_only": True})
+
         if center_panel_width > 0 and hasattr(self, '_filename_min_width'):
             # Calculate available width for filename column
             other_columns_width = (self.columnWidth(0) + self.columnWidth(2) +
@@ -548,6 +554,9 @@ class FileTableView(QTableView):
             available_width = center_panel_width - other_columns_width - SCROLLBAR_MARGIN
 
             current_filename_width = self.columnWidth(1)
+
+            logger.debug(f"[ColumnAdjust] Column widths: Status={self.columnWidth(0)}, Filename={current_filename_width}, Size={self.columnWidth(2)}, Ext={self.columnWidth(3)}, Date={self.columnWidth(4)}", extra={"dev_only": True})
+            logger.debug(f"[ColumnAdjust] Other columns total: {other_columns_width}, Available width: {available_width}, SCROLLBAR_MARGIN: {SCROLLBAR_MARGIN}", extra={"dev_only": True})
 
             # Simple logic: Check if user has manually resized the column
             if getattr(self, '_has_manual_preference', False):
@@ -563,11 +572,17 @@ class FileTableView(QTableView):
                 # No manual preference - just fill available space
                 new_filename_width = max(self._filename_min_width, available_width)
 
+                logger.debug(f"[ColumnAdjust] No manual preference. Min width: {self._filename_min_width}, Calculated width: {new_filename_width}", extra={"dev_only": True})
+
                 # Only resize if there's a meaningful difference (avoid micro-adjustments)
                 size_difference = abs(new_filename_width - current_filename_width)
                 should_resize = size_difference > 5  # Much smaller threshold for smoother behavior
 
+                logger.debug(f"[ColumnAdjust] Size difference: {size_difference}, Should resize: {should_resize}", extra={"dev_only": True})
+
                 if should_resize:
+                    logger.debug(f"[ColumnAdjust] Resizing filename column from {current_filename_width} to {new_filename_width}", extra={"dev_only": True})
+
                     # Use batch updates to prevent scrollbar flickering during column resize
                     self.setUpdatesEnabled(False)
 
@@ -587,6 +602,8 @@ class FileTableView(QTableView):
 
                         # Check if vertical scrollbar visibility changed after column resize
                         schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 10)
+                else:
+                    logger.debug(f"[ColumnAdjust] Skipping resize - difference too small", extra={"dev_only": True})
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement."""
@@ -1561,6 +1578,8 @@ class FileTableView(QTableView):
 
     def _trigger_column_adjustment(self):
         """Trigger filename column adjustment to available space after initial configuration."""
+        logger.debug("[TriggerColumnAdjust] Starting column adjustment trigger", extra={"dev_only": True})
+
         # Try to get horizontal splitter to trigger column adjustment
         try:
             get_app_context()
@@ -1570,15 +1589,18 @@ class FileTableView(QTableView):
                 parent_window = parent_window.parent()
 
             if parent_window and hasattr(parent_window, 'horizontal_splitter'):
-                horizontal_splitter = parent_window.horizontal_splitter
+                horizontal_splitter = parent_window.horizontal_splitter # type: ignore
                 sizes = horizontal_splitter.sizes()
+                logger.debug(f"[TriggerColumnAdjust] Found splitter with sizes: {sizes}", extra={"dev_only": True})
                 if len(sizes) > 1:
                     # Trigger the existing column adjustment logic
+                    logger.debug(f"[TriggerColumnAdjust] Triggering adjustment with center panel size: {sizes[1]}", extra={"dev_only": True})
                     self.on_horizontal_splitter_moved(sizes[1], 1)
             else:
-                logger.debug("[FileTableView] Cannot find horizontal splitter for column adjustment", extra={"dev_only": True})
+                logger.debug("[TriggerColumnAdjust] Cannot find horizontal splitter for column adjustment", extra={"dev_only": True})
         except RuntimeError:
             # ApplicationContext not ready yet, use legacy approach
+            logger.debug("[TriggerColumnAdjust] Using legacy approach", extra={"dev_only": True})
             parent_window = self.parent()
             while parent_window and not hasattr(parent_window, 'horizontal_splitter'):
                 parent_window = parent_window.parent()
@@ -1586,6 +1608,8 @@ class FileTableView(QTableView):
             if parent_window and hasattr(parent_window, 'horizontal_splitter'):
                 horizontal_splitter = parent_window.horizontal_splitter
                 sizes = horizontal_splitter.sizes()
+                logger.debug(f"[TriggerColumnAdjust] Legacy - Found splitter with sizes: {sizes}", extra={"dev_only": True})
                 if len(sizes) > 1:
                     # Trigger the existing column adjustment logic
+                    logger.debug(f"[TriggerColumnAdjust] Legacy - Triggering adjustment with center panel size: {sizes[1]}", extra={"dev_only": True})
                     self.on_horizontal_splitter_moved(sizes[1], 1)

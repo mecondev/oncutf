@@ -164,6 +164,11 @@ class MainWindow(QMainWindow):
         # --- Apply UI configuration after UI is initialized ---
         self._apply_loaded_config()
 
+        # --- Ensure column widths are properly initialized ---
+        # This handles cases where no config exists (fresh start) or when config is deleted
+        from utils.timer_manager import schedule_resize_adjust
+        schedule_resize_adjust(self._ensure_initial_column_sizing, 50)
+
         # --- Preview update debouncing timer ---
         self.preview_update_timer = QTimer(self)
         self.preview_update_timer.setSingleShot(True)
@@ -1091,6 +1096,13 @@ class MainWindow(QMainWindow):
 
         except Exception as e:
             logger.error(f"[Config] Failed to apply UI configuration: {e}")
+
+    def _ensure_initial_column_sizing(self) -> None:
+        """Ensure column widths are properly sized on startup, especially when no config exists."""
+        if hasattr(self, 'file_table_view') and self.file_table_view.model():
+            # Trigger column adjustment using the existing logic
+            self.file_table_view._trigger_column_adjustment()
+            logger.debug("[Config] Ensured initial column sizing", extra={"dev_only": True})
 
     def restore_last_folder_if_available(self) -> None:
         """Restore the last folder if available and user wants it."""
