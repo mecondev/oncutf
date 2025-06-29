@@ -52,10 +52,10 @@ class CustomTooltip(QLabel):
         # Set window flags for tooltip behavior
         if self.persistent:
             # Persistent tooltips behave like Qt standard tooltips
-            self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint)
+            self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint) # type: ignore[attr-defined]
         else:
             # Temporary tooltips with auto-hide
-            self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+            self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint) # type: ignore[attr-defined]
 
         # Apply styling based on tooltip type
         style_classes = {
@@ -130,8 +130,15 @@ class TooltipHelper:
         # Create new tooltip
         tooltip = CustomTooltip(widget.window(), message, tooltip_type, persistent=False)
 
-        # Calculate position
-        global_pos = widget.mapToGlobal(widget.rect().bottomLeft())
+                        # Calculate position relative to cursor for better UX
+        from PyQt5.QtGui import QCursor
+        try:
+            # Get current cursor position
+            global_pos = QCursor.pos()
+        except:
+            # Fallback to widget position if cursor position not available
+            global_pos = widget.mapToGlobal(widget.rect().center())
+
         offset_x, offset_y = TOOLTIP_POSITION_OFFSET
         tooltip_pos = QPoint(global_pos.x() + offset_x, global_pos.y() + offset_y)
 
@@ -203,8 +210,15 @@ class TooltipHelper:
             if widget not in cls._persistent_tooltips or cls._persistent_tooltips[widget] != tooltip:
                 return
 
-            # Calculate position
-            global_pos = widget.mapToGlobal(widget.rect().bottomLeft())
+            # Calculate position relative to cursor for better UX
+            from PyQt5.QtGui import QCursor
+            try:
+                # Get current cursor position
+                global_pos = QCursor.pos()
+            except:
+                # Fallback to widget position if cursor position not available
+                global_pos = widget.mapToGlobal(widget.rect().center())
+
             offset_x, offset_y = TOOLTIP_POSITION_OFFSET
             tooltip_pos = QPoint(global_pos.x() + offset_x, global_pos.y() + offset_y)
 
@@ -302,14 +316,14 @@ class TooltipHelper:
 
             # Find the screen containing the tooltip position
             target_screen = None
-            for screen in app.screens():
+            for screen in app.screens(): # type: ignore[attr-defined]
                 if screen.geometry().contains(position):
                     target_screen = screen
                     break
 
             # If not found on any screen, use primary screen
             if not target_screen:
-                target_screen = app.primaryScreen()
+                target_screen = app.primaryScreen() # type: ignore[attr-defined]
                 if not target_screen:
                     return position
 

@@ -72,7 +72,7 @@ LARGE_SCREEN_MIN_HEIGHT = 900
 # Development/Testing Settings
 # ----------------------------
 # Set to True to simulate different screen sizes for testing (DEV ONLY)
-DEV_SIMULATE_SCREEN = True
+DEV_SIMULATE_SCREEN = False
 
 # Simulated screen dimensions (only used when DEV_SIMULATE_SCREEN is True)
 DEV_SIMULATED_SCREEN = {
@@ -267,7 +267,7 @@ STATUS_COLORS = {
 # Tooltip Settings
 # ----------------------------
 TOOLTIP_DURATION = 2000  # Duration in milliseconds (2 seconds)
-TOOLTIP_POSITION_OFFSET = (10, -25)  # (x, y) offset from widget position
+TOOLTIP_POSITION_OFFSET = (25, -35)  # (x, y) offset from widget position - positioned above and to the right
 
 # Invalid filename characters for input filtering
 INVALID_FILENAME_CHARS = '<>:"/\\|?*'

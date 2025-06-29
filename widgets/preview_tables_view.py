@@ -140,23 +140,25 @@ class PreviewTablesView(QWidget):
         self.new_names_table.setObjectName("newNamesTable")
         self.icon_table.setObjectName("iconTable")
 
-        # Configure preview tables
+        # Configure preview tables - make them non-interactive (no hover/select)
         for table in [self.old_names_table, self.new_names_table]:
             table.setAlternatingRowColors(True)
             table.setSelectionBehavior(QAbstractItemView.SelectRows)
-            table.setSelectionMode(QAbstractItemView.SingleSelection)
-            table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            table.setSelectionMode(QAbstractItemView.NoSelection)  # No selection allowed
+            table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff) # type: ignore[attr-defined]
+            table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded) # type: ignore[attr-defined]
             table.setWordWrap(False)
             table.setShowGrid(False)
-            table.verticalHeader().setVisible(False)
-            table.horizontalHeader().setVisible(False)
-            table.setFocusPolicy(Qt.NoFocus)
+            table.verticalHeader().setVisible(False) # type: ignore
+            table.horizontalHeader().setVisible(False) # type: ignore
+            table.setMouseTracking(False)  # Disable mouse tracking to prevent hover
             # Set same row height as icon table
-            table.verticalHeader().setDefaultSectionSize(22)
+            table.verticalHeader().setDefaultSectionSize(22) # type: ignore
             # Reduce flickering during updates
             table.setUpdatesEnabled(True)
-            table.viewport().setUpdatesEnabled(True)
+            table.viewport().setUpdatesEnabled(True) # type: ignore
+            # Disable hover highlighting
+            table.setStyleSheet("QTableWidget::item:hover { background-color: transparent; }")
 
         # Configure icon table
         self.icon_table.setFixedWidth(24)
