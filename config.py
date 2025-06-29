@@ -260,6 +260,22 @@ QLABEL_ERROR_BG = "#3a2222"          # Error background color
 QLABEL_DARK_BG = "#3a3a3a"           # Dark background color
 
 # ----------------------------
+# Database Backup Settings
+# ----------------------------
+# Backup count (how many backup files to keep)
+DEFAULT_BACKUP_COUNT = 2  # Keep 2 backup files by default
+
+# Periodic backup interval in seconds (15 minutes = 900 seconds)
+DEFAULT_BACKUP_INTERVAL = 900  # 15 minutes
+
+# Backup filename format: oncutf_YYYYMMDD_HHMMSS.db.bak
+BACKUP_FILENAME_FORMAT = "{basename}_{timestamp}.db.bak"
+BACKUP_TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
+
+# Whether periodic backups are enabled by default
+DEFAULT_PERIODIC_BACKUP_ENABLED = True
+
+# ----------------------------
 # Theme Colors (Dark Theme)
 # ----------------------------
 THEME_COLORS = {

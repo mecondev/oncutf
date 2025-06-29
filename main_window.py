@@ -87,6 +87,7 @@ class MainWindow(QMainWindow):
         from core.persistent_metadata_cache import get_persistent_metadata_cache
         from core.persistent_hash_cache import get_persistent_hash_cache
         from core.rename_history_manager import get_rename_history_manager
+        from core.backup_manager import get_backup_manager
 
         # Initialize V2 database system with improved architecture
         self.db_manager = initialize_database()
@@ -100,6 +101,8 @@ class MainWindow(QMainWindow):
         self.hash_cache = get_persistent_hash_cache()
         # Initialize rename history manager (will be migrated to V2 later)
         self.rename_history_manager = get_rename_history_manager()
+        # Initialize backup manager for database backups
+        self.backup_manager = get_backup_manager(self.db_manager.db_path)
 
         self.metadata_icon_map = load_metadata_icons()
         self.preview_icons = load_preview_status_icons()
