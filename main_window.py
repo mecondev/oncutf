@@ -102,7 +102,7 @@ class MainWindow(QMainWindow):
         # Initialize rename history manager (will be migrated to V2 later)
         self.rename_history_manager = get_rename_history_manager()
         # Initialize backup manager for database backups
-        self.backup_manager = get_backup_manager(self.db_manager.db_path)
+        self.backup_manager = get_backup_manager(str(self.db_manager.db_path))
 
         self.metadata_icon_map = load_metadata_icons()
         self.preview_icons = load_preview_status_icons()
@@ -504,10 +504,21 @@ class MainWindow(QMainWindow):
                     )
             # If reply == "close_without_saving", we just continue with closing
 
-        # 1. Save window configuration before cleanup
+        # 1. Create database backup before cleanup
+        if hasattr(self, 'backup_manager'):
+            try:
+                backup_path = self.backup_manager.backup_on_shutdown()
+                if backup_path:
+                    logger.info(f"[CloseEvent] Database backup created: {backup_path}")
+                else:
+                    logger.warning("[CloseEvent] Failed to create database backup")
+            except Exception as e:
+                logger.error(f"[CloseEvent] Error creating database backup: {e}")
+
+        # 2. Save window configuration before cleanup
         self._save_window_config()
 
-        # 2. Clean up any active drag operations
+        # 3. Clean up any active drag operations
         self.drag_cleanup_manager.emergency_drag_cleanup()
 
         # 3. Clean up any open dialogs
@@ -571,6 +582,15 @@ class MainWindow(QMainWindow):
                 logger.info("[CloseEvent] Database connections closed")
             except Exception as e:
                 logger.warning(f"[CloseEvent] Error closing database: {e}")
+
+        # Clean up backup manager
+        if hasattr(self, 'backup_manager'):
+            try:
+                from core.backup_manager import cleanup_backup_manager
+                cleanup_backup_manager()
+                logger.info("[CloseEvent] Backup manager cleaned up")
+            except Exception as e:
+                logger.warning(f"[CloseEvent] Error cleaning backup manager: {e}")
 
         # Schedule force exit after 2 seconds if app doesn't quit normally
         QTimer.singleShot(2000, force_exit)
