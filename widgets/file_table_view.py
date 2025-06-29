@@ -373,8 +373,13 @@ class FileTableView(QTableView):
         # Filename column - Interactive with minimum width protection and dynamic sizing
         filename_min = font_metrics.horizontalAdvance("Long_Filename_Example_2024.jpeg") + 30
 
-                        # Determine filename width based on user preference or calculate from available space
-        if hasattr(self, '_has_manual_preference') and self._has_manual_preference:
+        # Check if column width has already been set from config
+        current_filename_width = self.columnWidth(1)
+        if current_filename_width > 0 and current_filename_width != FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]:
+            # Column width was already set from config - use that value but ensure minimum
+            filename_width = max(current_filename_width, filename_min, 250)
+            logger.debug(f"[ConfigureColumns] Using config-loaded width: {current_filename_width}", extra={"dev_only": True})
+        elif hasattr(self, '_has_manual_preference') and self._has_manual_preference:
             # User has manually resized - use their preference but ensure minimum
             filename_width = max(self._user_preferred_width, filename_min)
         else:
@@ -389,19 +394,19 @@ class FileTableView(QTableView):
                                          FILE_TABLE_COLUMN_WIDTHS["EXTENSION_COLUMN"] +
                                          FILE_TABLE_COLUMN_WIDTHS["DATE_COLUMN"])
 
-                    # Leave buffer for scrollbar and margins
-                    available_width = table_width - other_columns_width - 60  # 60px buffer
+                    # Leave buffer for scrollbar and margins - extra buffer for initialization
+                    available_width = table_width - other_columns_width - 80  # 80px buffer for initialization
 
-                    # Use config default but reduce by 20px for better initial fit
-                    config_default = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"] - 20
+                    # Use config default
+                    config_default = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
                     filename_width = max(min(config_default, available_width), filename_min, 250)
                 else:
-                    # Fallback to config default reduced by 20px if table width not available
-                    config_default = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"] - 20
+                    # Fallback to config default if table width not available
+                    config_default = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
                     filename_width = max(config_default, filename_min, 250)
             except Exception:
-                # Fallback to config default reduced by 20px on any error
-                config_default = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"] - 20
+                # Fallback to config default on any error
+                config_default = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
                 filename_width = max(config_default, filename_min, 250)
 
         header.setSectionResizeMode(1, QHeaderView.Interactive)
