@@ -376,38 +376,15 @@ class FileTableView(QTableView):
         # Check if column width has already been set from config
         current_filename_width = self.columnWidth(1)
         if current_filename_width > 0 and current_filename_width != FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]:
-            # Column width was already set from config - use that value but ensure minimum
-            filename_width = max(current_filename_width, filename_min, 250)
-            logger.debug(f"[ConfigureColumns] Using config-loaded width: {current_filename_width}", extra={"dev_only": True})
+            # Column width was already set from config - use that value
+            filename_width = self._calculate_filename_width(current_filename_width)
+            logger.debug(f"[ConfigureColumns] Using config-loaded width: {current_filename_width} -> {filename_width}", extra={"dev_only": True})
         elif hasattr(self, '_has_manual_preference') and self._has_manual_preference:
-            # User has manually resized - use their preference but ensure minimum
-            filename_width = max(self._user_preferred_width, filename_min)
+            # User has manually resized - use their preference
+            filename_width = self._calculate_filename_width(self._user_preferred_width)
         else:
-            # Calculate available space for smarter initial sizing
-            try:
-                # Get current table width
-                table_width = self.width()
-                if table_width > 0:
-                    # Calculate space for other columns
-                    other_columns_width = (FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"] +
-                                         FILE_TABLE_COLUMN_WIDTHS["FILESIZE_COLUMN"] +
-                                         FILE_TABLE_COLUMN_WIDTHS["EXTENSION_COLUMN"] +
-                                         FILE_TABLE_COLUMN_WIDTHS["DATE_COLUMN"])
-
-                    # Leave buffer for scrollbar and margins - extra buffer for initialization
-                    available_width = table_width - other_columns_width - 80  # 80px buffer for initialization
-
-                    # Use config default
-                    config_default = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
-                    filename_width = max(min(config_default, available_width), filename_min, 250)
-                else:
-                    # Fallback to config default if table width not available
-                    config_default = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
-                    filename_width = max(config_default, filename_min, 250)
-            except Exception:
-                # Fallback to config default on any error
-                config_default = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
-                filename_width = max(config_default, filename_min, 250)
+            # Use config default with central calculation
+            filename_width = self._calculate_filename_width()
 
         header.setSectionResizeMode(1, QHeaderView.Interactive)
         self.setColumnWidth(1, filename_width)
@@ -547,114 +524,43 @@ class FileTableView(QTableView):
                 self._filename_base_width = 0
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
-        """Handle horizontal splitter movement - use user preference as base, expand if more space available."""
-        # Try to get splitter from ApplicationContext, fallback to parent traversal
-        horizontal_splitter = None
-        try:
-            get_app_context()
-            # Try to get main window through context for splitter access
-            # This is a transitional approach until we fully migrate splitter handling
-            parent_window = self.parent()
-            while parent_window and not hasattr(parent_window, 'horizontal_splitter'):
-                parent_window = parent_window.parent()
+        """Handle horizontal splitter movement - simplified with central calculation."""
+        if not hasattr(self, '_filename_min_width'):
+            return
 
-            if parent_window:
-                horizontal_splitter = parent_window.horizontal_splitter
-            else:
-                return
-        except RuntimeError:
-            # ApplicationContext not ready yet, use legacy approach
-            parent_window = self.parent()
-            while parent_window and not hasattr(parent_window, 'horizontal_splitter'):
-                parent_window = parent_window.parent()
+        # Get current filename width and calculate new width
+        current_filename_width = self.columnWidth(1)
 
-            if not parent_window:
-                return
+        # Use user preference if available, otherwise use current width
+        source_width = self._user_preferred_width if hasattr(self, '_has_manual_preference') and self._has_manual_preference else current_filename_width
 
-            horizontal_splitter = parent_window.horizontal_splitter
+        # Calculate new width using central method
+        new_filename_width = self._calculate_filename_width(source_width)
 
-        sizes = horizontal_splitter.sizes()
-        center_panel_width = sizes[1]
+        # Only resize if there's a meaningful difference
+        size_difference = abs(new_filename_width - current_filename_width)
+        should_resize = size_difference > 5
 
-        logger.debug(f"[ColumnAdjust] Splitter sizes: {sizes}, center panel: {center_panel_width}", extra={"dev_only": True})
+        if should_resize:
+            # Use batch updates to prevent scrollbar flickering
+            self.setUpdatesEnabled(False)
 
-        if center_panel_width > 0 and hasattr(self, '_filename_min_width'):
-            # Set flag to indicate this is manual splitter movement
-            self._manual_splitter_movement = True
+            try:
+                # Set flag to indicate this is a programmatic resize
+                self._programmatic_resize = True
+                self.setColumnWidth(1, new_filename_width)
+                self._programmatic_resize = False
 
-            # Calculate available width for filename column
-            other_columns_width = (self.columnWidth(0) + self.columnWidth(2) +
-                                  self.columnWidth(3) + self.columnWidth(4))
+                # Update scrollbar visibility after column resize
+                self._update_scrollbar_visibility()
 
-            # Check if vertical scrollbar is actually visible
-            vertical_scrollbar = self.verticalScrollBar()
-            scrollbar_margin = 0
-            if vertical_scrollbar and vertical_scrollbar.isVisible():
-                scrollbar_margin = SCROLLBAR_MARGIN
+            finally:
+                # Re-enable updates and force refresh
+                self.setUpdatesEnabled(True)
+                self.viewport().update()
 
-            available_width = center_panel_width - other_columns_width - scrollbar_margin
-
-            current_filename_width = self.columnWidth(1)
-
-            # Debug logs removed for better performance
-
-            # Simple logic: Check if user has manually resized the column
-            if getattr(self, '_has_manual_preference', False):
-                # User has manually resized - use their preferred width, but expand to fill space if needed
-                target_width = max(self._user_preferred_width, self._filename_min_width)
-                if available_width > target_width:
-                    # Expand to fill available space
-                    new_filename_width = available_width
-                else:
-                    # Use their preferred width (or minimum if space is constrained)
-                    new_filename_width = max(target_width, self._filename_min_width)
-
-                # Manual preference logic applied
-            else:
-                # No manual preference - determine if this is from manual splitter movement or window resize
-                # For manual splitter movement, use all available space
-                # For window resize, leave small buffer for visual balance
-                is_manual_splitter = getattr(self, '_manual_splitter_movement', False)
-
-                if is_manual_splitter:
-                    # Manual splitter movement - use all available space
-                    target_width = max(available_width, self._filename_min_width)
-                else:
-                    # Window resize - use buffer for visual balance
-                    buffer_space = 20
-                    target_width = max(available_width - buffer_space, self._filename_min_width)
-
-                new_filename_width = target_width
-
-                # Only resize if there's a meaningful difference (avoid micro-adjustments)
-                size_difference = abs(new_filename_width - current_filename_width)
-                should_resize = size_difference > 5  # Much smaller threshold for smoother behavior
-
-                if should_resize:
-
-                    # Use batch updates to prevent scrollbar flickering during column resize
-                    self.setUpdatesEnabled(False)
-
-                    try:
-                        # Set flag to indicate this is a programmatic resize
-                        self._programmatic_resize = True
-                        self.setColumnWidth(1, new_filename_width)
-                        self._programmatic_resize = False
-
-                        # Update scrollbar visibility intelligently after column resize
-                        self._update_scrollbar_visibility()
-
-                    finally:
-                        # Re-enable updates and force a single refresh
-                        self.setUpdatesEnabled(True)
-                        self.viewport().update()
-
-                        # Check if vertical scrollbar visibility changed after column resize
-                        schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 10)
-                # else: skip resize if difference is too small
-
-            # Clear flag after processing
-            self._manual_splitter_movement = False
+                # Check vertical scrollbar visibility
+                schedule_resize_adjust(self._check_vertical_scrollbar_visibility, 10)
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement."""
@@ -1664,3 +1570,77 @@ class FileTableView(QTableView):
                     # Trigger the existing column adjustment logic
                     logger.debug(f"[TriggerColumnAdjust] Legacy - Triggering adjustment with center panel size: {sizes[1]}", extra={"dev_only": True})
                     self.on_horizontal_splitter_moved(sizes[1], 1)
+
+    def _calculate_filename_width(self, source_width: int = None) -> int:
+        """
+        Central method to calculate optimal filename column width.
+        Always applies buffer and -20px adjustment for optimal fit.
+
+        Args:
+            source_width: Optional source width (from config, manual preference, etc.)
+                         If None, uses config default
+
+        Returns:
+            Calculated width that prevents horizontal scrollbar
+        """
+        # Get minimum width
+        if not hasattr(self, '_filename_min_width'):
+            self._filename_min_width = 250
+
+        # Get source width (config, preference, or default)
+        if source_width is None:
+            source_width = FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
+
+        # Calculate available space
+        try:
+            # Get horizontal splitter for center panel width
+            horizontal_splitter = None
+            try:
+                get_app_context()
+                parent_window = self.parent()
+                while parent_window and not hasattr(parent_window, 'horizontal_splitter'):
+                    parent_window = parent_window.parent()
+                if parent_window:
+                    horizontal_splitter = parent_window.horizontal_splitter
+            except RuntimeError:
+                parent_window = self.parent()
+                while parent_window and not hasattr(parent_window, 'horizontal_splitter'):
+                    parent_window = parent_window.parent()
+                if parent_window:
+                    horizontal_splitter = parent_window.horizontal_splitter
+
+            if horizontal_splitter:
+                sizes = horizontal_splitter.sizes()
+                center_panel_width = sizes[1] if len(sizes) > 1 else self.width()
+            else:
+                center_panel_width = self.width()
+
+            if center_panel_width > 0:
+                # Calculate space used by other columns
+                other_columns_width = (self.columnWidth(0) + self.columnWidth(2) +
+                                     self.columnWidth(3) + self.columnWidth(4))
+
+                # Check for vertical scrollbar
+                vertical_scrollbar = self.verticalScrollBar()
+                scrollbar_margin = 0
+                if vertical_scrollbar and vertical_scrollbar.isVisible():
+                    scrollbar_margin = SCROLLBAR_MARGIN
+
+                # Calculate available width with buffer
+                buffer_space = 20  # Always use buffer
+                available_width = center_panel_width - other_columns_width - scrollbar_margin - buffer_space
+
+                # Use the smaller of source_width and available_width
+                target_width = min(source_width, available_width)
+            else:
+                # Fallback when width calculation fails
+                target_width = source_width
+
+        except Exception:
+            # Fallback on any error
+            target_width = source_width
+
+        # Always subtract 20px for optimal fit and ensure minimum
+        final_width = max(target_width - 20, self._filename_min_width, 250)
+
+        return final_width
