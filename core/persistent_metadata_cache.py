@@ -62,9 +62,20 @@ class PersistentMetadataCache:
         logger.info("[PersistentMetadataCache] Initialized with database backend")
 
     def _normalize_path(self, file_path: str) -> str:
-        """Normalize file path for consistent storage."""
+        """
+        Normalize file path for consistent storage.
+
+        Converts to absolute path and normalizes to ensure consistent
+        storage and retrieval regardless of how the path was specified.
+        """
         import os
-        return os.path.normpath(file_path)
+        try:
+            # Convert to absolute path first, then normalize
+            abs_path = os.path.abspath(file_path)
+            return os.path.normpath(abs_path)
+        except Exception:
+            # Fallback to basic normalization if abspath fails
+            return os.path.normpath(file_path)
 
     def set(self, file_path: str, metadata: dict, is_extended: bool = False, modified: bool = False) -> None:
         """

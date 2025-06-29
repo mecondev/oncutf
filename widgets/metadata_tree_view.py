@@ -676,7 +676,7 @@ class MetadataTreeView(QTreeView):
         if hasattr(self, '_scroll_animation'):
             self._scroll_animation.stop()
 
-        from PyQt5.QtCore import QEasingCurve, QPropertyAnimation
+        from core.qt_imports import QEasingCurve, QPropertyAnimation
 
         self._scroll_animation = QPropertyAnimation(scrollbar, b"value")
         self._scroll_animation.setDuration(duration)

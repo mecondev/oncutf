@@ -39,7 +39,7 @@ import os
 import time
 from typing import Optional
 
-from PyQt5.QtCore import Qt, QTimer
+from core.qt_imports import Qt, QTimer
 
 from config import (
     QLABEL_BORDER_GRAY,

@@ -21,14 +21,7 @@ Features:
 
 from typing import Optional
 
-from PyQt5.QtCore import pyqtSignal
-from PyQt5.QtWidgets import (
-    QComboBox,
-    QHBoxLayout,
-    QLabel,
-    QVBoxLayout,
-    QWidget,
-)
+from core.qt_imports import pyqtSignal, QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from modules.counter_module import CounterModule
 from modules.specified_text_module import SpecifiedTextModule

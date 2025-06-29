@@ -12,15 +12,11 @@ Custom QTableView with Windows Explorer-like behavior:
 '''
 from typing import Optional
 
-from core.qt_imports import QEvent, QItemSelection, QItemSelectionModel, QModelIndex, QPoint, Qt, pyqtSignal
-from PyQt5.QtGui import (
-    QCursor,
-    QDropEvent,
-    QKeySequence,
-    QMouseEvent,
-    QPixmap,
+from core.qt_imports import (
+    QEvent, QItemSelection, QItemSelectionModel, QModelIndex, QPoint, Qt, pyqtSignal,
+    QCursor, QDropEvent, QKeySequence, QMouseEvent, QPixmap,
+    QAbstractItemView, QApplication, QHeaderView, QLabel, QTableView
 )
-from PyQt5.QtWidgets import QAbstractItemView, QApplication, QHeaderView, QLabel, QTableView
 
 from config import FILE_TABLE_COLUMN_WIDTHS
 from core.application_context import get_app_context

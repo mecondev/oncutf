@@ -40,9 +40,28 @@ class PersistentHashCache:
 
         logger.info("[PersistentHashCache] Initialized with database backend")
 
+        # Migrate any existing relative paths to absolute paths
+        try:
+            migrated = self.migrate_relative_paths()
+            if migrated > 0:
+                logger.info(f"[PersistentHashCache] Migrated {migrated} paths from relative to absolute")
+        except Exception as e:
+            logger.warning(f"[PersistentHashCache] Path migration failed: {e}")
+
     def _normalize_path(self, file_path: str) -> str:
-        """Normalize file path for consistent storage."""
-        return os.path.normpath(file_path)
+        """
+        Normalize file path for consistent storage.
+
+        Converts to absolute path and normalizes to ensure consistent
+        storage and retrieval regardless of how the path was specified.
+        """
+        try:
+            # Convert to absolute path first, then normalize
+            abs_path = os.path.abspath(file_path)
+            return os.path.normpath(abs_path)
+        except Exception:
+            # Fallback to basic normalization if abspath fails
+            return os.path.normpath(file_path)
 
     def store_hash(self, file_path: str, hash_value: str, algorithm: str = 'CRC32') -> bool:
         """
@@ -257,6 +276,67 @@ class PersistentHashCache:
             'hit_rate_percent': round(hit_rate, 2),
             'database_stats': self._db_manager.get_database_stats()
         }
+
+    def migrate_relative_paths(self) -> int:
+        """
+        Migrate existing relative paths to absolute paths in the database.
+
+        This is needed when upgrading from the old normalization method
+        that only used os.path.normpath() to the new method that uses
+        absolute paths.
+
+        Returns:
+            int: Number of records migrated
+        """
+        migrated_count = 0
+
+        try:
+            with self._db_manager._get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Get all file paths from the database
+                cursor.execute("""
+                    SELECT DISTINCT f.file_path, f.id
+                    FROM files f
+                    JOIN hashes h ON f.id = h.file_id
+                    WHERE f.file_path NOT LIKE '/%'  -- Not already absolute (Unix)
+                    AND f.file_path NOT LIKE '_:/%'  -- Not already absolute (Windows)
+                """)
+
+                relative_paths = cursor.fetchall()
+
+                for row in relative_paths:
+                    old_path = row['file_path']
+                    file_id = row['id']
+
+                    # Try to convert to absolute path
+                    try:
+                        new_path = os.path.abspath(old_path)
+                        new_path = os.path.normpath(new_path)
+
+                        # Only update if the path actually changed
+                        if old_path != new_path:
+                            # Check if the file actually exists at the new path
+                            if os.path.exists(new_path):
+                                cursor.execute("""
+                                    UPDATE files
+                                    SET file_path = ?
+                                    WHERE id = ?
+                                """, (new_path, file_id))
+
+                                migrated_count += 1
+                                logger.debug(f"[PersistentHashCache] Migrated path: {old_path} -> {new_path}")
+
+                    except Exception as e:
+                        logger.warning(f"[PersistentHashCache] Could not migrate path {old_path}: {e}")
+                        continue
+
+                logger.info(f"[PersistentHashCache] Migrated {migrated_count} relative paths to absolute paths")
+
+        except Exception as e:
+            logger.error(f"[PersistentHashCache] Error during path migration: {e}")
+
+        return migrated_count
 
     def cleanup_orphaned_records(self) -> int:
         """

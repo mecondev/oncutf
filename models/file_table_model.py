@@ -76,6 +76,25 @@ class FileTableModel(QAbstractTableModel):
             logger.debug(f"[FileTableModel] Could not check hash cache: {e}")
             return False
 
+    def _get_hash_value(self, file_path: str) -> str:
+        """
+        Get the hash value for a file from the persistent cache.
+
+        Args:
+            file_path: Full path to the file
+
+        Returns:
+            str: Hash value if found, empty string otherwise
+        """
+        try:
+            from core.persistent_hash_cache import get_persistent_hash_cache
+            cache = get_persistent_hash_cache()
+            hash_value = cache.get_hash(file_path)
+            return hash_value if hash_value else ""
+        except (ImportError, Exception) as e:
+            logger.debug(f"[FileTableModel] Could not get hash value: {e}")
+            return ""
+
     def _create_combined_icon(self, metadata_icon: QPixmap, show_hash: bool) -> QIcon:
         """
         Create a combined icon showing metadata status and optionally hash status.
@@ -157,15 +176,25 @@ class FileTableModel(QAbstractTableModel):
                 return str(file.modified)
 
         if role == Qt.ToolTipRole and col == 1: # type: ignore
+            tooltip_parts = []
+
+            # Add metadata info
             entry = self.parent_window.metadata_cache.get_entry(file.full_path) if self.parent_window else None
             if entry and entry.data:
                 metadata_count = len(entry.data)
                 if entry.is_extended:
-                    return f"Extended Metadata Loaded: {metadata_count} values"
+                    tooltip_parts.append(f"Extended Metadata Loaded: {metadata_count} values")
                 else:
-                    return f"Metadata loaded: {metadata_count} values"
+                    tooltip_parts.append(f"Metadata loaded: {metadata_count} values")
             else:
-                return "Metadata not loaded"
+                tooltip_parts.append("Metadata not loaded")
+
+            # Add hash info only if hash exists
+            hash_value = self._get_hash_value(file.full_path)
+            if hash_value:
+                tooltip_parts.append(f"Hash: {hash_value}")
+
+            return "\n".join(tooltip_parts)
 
         if role == Qt.DecorationRole and index.column() == 0: # type: ignore
             entry = self.parent_window.metadata_cache.get_entry(file.full_path) if self.parent_window else None
