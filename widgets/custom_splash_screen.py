@@ -188,28 +188,30 @@ class CustomSplashScreen(QSplashScreen):
         except Exception as e:
             logger.debug(f"[Splash] Error with multi-screen positioning: {e}")
 
-        # Ultimate fallback: use deprecated QDesktopWidget for older Qt versions
+        # Ultimate fallback: use modern QScreen API instead of deprecated QDesktopWidget
         try:
-            from core.qt_imports import QDesktopWidget
-            desktop = QDesktopWidget()
+            app = QApplication.instance()
+            if app and hasattr(app, 'primaryScreen'):
+                primary_screen = app.primaryScreen() # type: ignore[attr-defined]
+                if primary_screen:
+                    screen_geometry = primary_screen.availableGeometry()
 
-            # Try to get primary screen geometry instead of total desktop
-            primary_screen = desktop.primaryScreen()
-            screen_geometry = desktop.availableGeometry(primary_screen)
+                    logger.debug(f"[Splash] Fallback using QScreen API primary screen: {screen_geometry.width()}x{screen_geometry.height()}")
 
-            logger.debug(f"[Splash] Fallback using QDesktopWidget primary screen: {screen_geometry.width()}x{screen_geometry.height()}")
+                    # Calculate center position on primary screen
+                    x = screen_geometry.x() + (screen_geometry.width() - self.splash_width) // 2
+                    y = screen_geometry.y() + (screen_geometry.height() - self.splash_height) // 2
 
-            # Calculate center position on primary screen
-            x = screen_geometry.x() + (screen_geometry.width() - self.splash_width) // 2
-            y = screen_geometry.y() + (screen_geometry.height() - self.splash_height) // 2
-
-            self.move(x, y)
-            logger.debug(f"[Splash] Fallback positioning: {x}, {y}")
+                    self.move(x, y)
+                    logger.debug(f"[Splash] Positioned using QScreen API: {x}, {y}")
+                    return
 
         except Exception as e:
-            logger.warning(f"[Splash] All positioning methods failed: {e}")
-            # Last resort: position at 100, 100
-            self.move(100, 100)
+            logger.debug(f"[Splash] Error with QScreen API positioning: {e}")
+
+        # Final fallback: fixed position
+        logger.debug("[Splash] Using fixed fallback position")
+        self.move(100, 100)
 
     def showMessage(self, message: str, alignment: int = Qt.AlignBottom | Qt.AlignCenter, color=None):
         """

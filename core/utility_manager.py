@@ -14,7 +14,7 @@ This manager centralizes utility functions including:
 
 from typing import TYPE_CHECKING
 
-from core.qt_imports import QEvent, Qt, QApplication, QDesktopWidget
+from core.qt_imports import QEvent, Qt, QApplication
 
 from config import STATUS_COLORS
 from utils.logger_factory import get_cached_logger
@@ -127,19 +127,47 @@ class UtilityManager:
         Returns:
             None
         """
-        # Get current geometry of the window
-        window_geometry = self.main_window.frameGeometry()
+        try:
+            # Use modern QScreen API instead of deprecated QDesktopWidget
+            app = QApplication.instance()
+            if not app or not hasattr(app, 'screens'):
+                logger.warning("No QApplication instance found for centering window")
+                return
 
-        # Get the center point of the available screen
-        screen_center = QDesktopWidget().availableGeometry().center()
+            # Get current geometry of the window
+            window_geometry = self.main_window.frameGeometry()
 
-        # Move the window geometry so that its center aligns with screen center
-        window_geometry.moveCenter(screen_center)
+            # Try to find the screen that contains the window center
+            window_center = window_geometry.center()
+            target_screen = None
 
-        # Reposition the window's top-left corner to match the new centered geometry
-        self.main_window.move(window_geometry.topLeft())
+            for screen in app.screens():
+                if screen.geometry().contains(window_center):
+                    target_screen = screen
+                    break
 
-        logger.debug("Main window centered on screen.", extra={"dev_only": True})
+            # If window is not on any screen, use primary screen
+            if not target_screen:
+                target_screen = app.primaryScreen()
+                if not target_screen:
+                    logger.warning("No primary screen found for centering window")
+                    return
+
+            # Get the center point of the available screen area
+            screen_center = target_screen.availableGeometry().center()
+
+            # Move the window geometry so that its center aligns with screen center
+            window_geometry.moveCenter(screen_center)
+
+            # Reposition the window's top-left corner to match the new centered geometry
+            self.main_window.move(window_geometry.topLeft())
+
+            logger.debug(f"Main window centered on screen {target_screen.name()}", extra={"dev_only": True})
+
+        except Exception as e:
+            logger.error(f"Failed to center window: {e}")
+            # Fallback to simple positioning
+            self.main_window.move(100, 100)
 
     def update_files_label(self) -> None:
         """

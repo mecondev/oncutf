@@ -152,14 +152,14 @@ class MainWindow(QMainWindow):
         self.ui_manager = UIManager(parent_window=self)
         self.ui_manager.setup_all_ui()
 
-        # Store initial geometry for proper restore behavior
-        self._initial_geometry = self.geometry()
-
         # --- Initialize JSON Config Manager ---
         self.config_manager = get_app_config_manager()
 
         # --- Load and apply window configuration ---
         self._load_window_config()
+
+        # Store initial geometry AFTER smart sizing for proper restore behavior
+        self._initial_geometry = self.geometry()
 
         # --- Apply UI configuration after UI is initialized ---
         self._apply_loaded_config()
@@ -819,14 +819,17 @@ class MainWindow(QMainWindow):
 
             # Load geometry
             geometry = window_config.get('geometry')
+            logger.debug(f"[Config] Loaded geometry from config: {geometry}", extra={"dev_only": True})
+
             if geometry:
                 self.setGeometry(
                     geometry['x'], geometry['y'],
                     geometry['width'], geometry['height']
                 )
-                logger.debug(f"[Config] Loaded window geometry: {geometry}", extra={"dev_only": True})
+                logger.info(f"[Config] Applied saved window geometry: {geometry}")
             else:
                 # No saved geometry - set smart defaults based on screen size
+                logger.info("[Config] No saved geometry found, applying smart defaults")
                 self._set_smart_default_geometry()
 
             # Load window state
@@ -849,56 +852,81 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.error(f"[Config] Failed to load window configuration: {e}")
             # If config loading fails, still set smart defaults
+            logger.info("[Config] Exception occurred, applying smart defaults as fallback")
             self._set_smart_default_geometry()
 
     def _set_smart_default_geometry(self) -> None:
         """Set smart default window geometry based on screen size and aspect ratio."""
         try:
-            from core.qt_imports import QDesktopWidget
+            # Use modern QScreen API instead of deprecated QDesktopWidget
+            app = QApplication.instance()
+            if not app:
+                raise RuntimeError("No QApplication instance found")
 
-            # Get the primary screen geometry instead of total desktop
-            # This fixes dual monitor issues where total desktop is too wide
-            desktop = QDesktopWidget()
-            primary_screen = desktop.primaryScreen()
-            screen_geometry = desktop.availableGeometry(primary_screen)
+            # Get the primary screen using modern API
+            primary_screen = app.primaryScreen() # type: ignore[attr-defined]
+            if not primary_screen:
+                raise RuntimeError("No primary screen found")
 
+            # Get screen geometry (available area excluding taskbars, docks, etc.)
+            screen_geometry = primary_screen.availableGeometry()
             screen_width = screen_geometry.width()
             screen_height = screen_geometry.height()
             screen_aspect = screen_width / screen_height if screen_height > 0 else 1.0
 
             logger.info(f"[Config] Primary screen detected: {screen_width}x{screen_height} (aspect: {screen_aspect:.2f})")
+            logger.info(f"[Config] Screen name: {primary_screen.name()}, DPI: {primary_screen.logicalDotsPerInch():.1f}")
 
-            # Log total desktop for debugging dual monitor setups
-            total_desktop = desktop.availableGeometry()
-            if total_desktop.width() != screen_width or total_desktop.height() != screen_height:
-                logger.info(f"[Config] Total desktop: {total_desktop.width()}x{total_desktop.height()} (multi-monitor detected)")
+            # Log all available screens for debugging multi-monitor setups
+            all_screens = app.screens() # type: ignore[attr-defined]
+            if len(all_screens) > 1:
+                total_width = sum(screen.geometry().width() for screen in all_screens)
+                total_height = max(screen.geometry().height() for screen in all_screens)
+                logger.info(f"[Config] Multi-monitor setup detected: {len(all_screens)} screens, total desktop: {total_width}x{total_height}")
+                for i, screen in enumerate(all_screens):
+                    geo = screen.geometry()
+                    logger.debug(f"[Config] Screen {i}: {screen.name()} - {geo.width()}x{geo.height()} at ({geo.x()}, {geo.y()})")
 
-            # Calculate smart window dimensions based on single screen size
-            if screen_width >= 2560:  # 4K or large single screen
-                # Large screens: use 75% of screen, minimum 1400x900
-                window_width = max(int(screen_width * 0.75), 1400)
-                window_height = max(int(screen_height * 0.75), 900)
-                logger.info(f"[Config] Large screen detected (>=2560px), using 75%: {window_width}x{window_height}")
-            elif screen_width >= 1920:  # Full HD single screen
-                # Standard large screens: use 80% of screen
-                window_width = int(screen_width * 0.80)
-                window_height = int(screen_height * 0.80)
-                logger.info(f"[Config] Full HD screen detected (>=1920px), using 80%: {window_width}x{window_height}")
-            elif screen_width >= 1366:  # Common laptop resolution
-                # Medium screens: use 85% of screen
-                window_width = int(screen_width * 0.85)
-                window_height = int(screen_height * 0.85)
-                logger.info(f"[Config] Medium screen detected (>=1366px), using 85%: {window_width}x{window_height}")
-            else:  # Small screens (1024x768 or smaller)
-                # Small screens: use 90% of screen, but ensure minimum usability
-                window_width = max(int(screen_width * 0.90), 1000)
-                window_height = max(int(screen_height * 0.90), 700)
-                logger.info(f"[Config] Small screen detected (<1366px), using 90%: {window_width}x{window_height}")
+            # Import screen size configuration from config
+            from core.config_imports import (
+                SCREEN_SIZE_BREAKPOINTS,
+                SCREEN_SIZE_PERCENTAGES,
+                WINDOW_MIN_SMART_WIDTH,
+                WINDOW_MIN_SMART_HEIGHT,
+                LARGE_SCREEN_MIN_WIDTH,
+                LARGE_SCREEN_MIN_HEIGHT
+            )
+
+            # Calculate smart window dimensions based on primary screen size using configurable breakpoints
+            if screen_width >= SCREEN_SIZE_BREAKPOINTS["large_4k"]:  # 4K or large single screen
+                # Large screens: use configurable percentage, with configurable minimum
+                percentage = SCREEN_SIZE_PERCENTAGES["large_4k"]
+                window_width = max(int(screen_width * percentage), LARGE_SCREEN_MIN_WIDTH)
+                window_height = max(int(screen_height * percentage), LARGE_SCREEN_MIN_HEIGHT)
+                logger.info(f"[Config] Large screen detected (>={SCREEN_SIZE_BREAKPOINTS['large_4k']}px), using {percentage*100}%: {window_width}x{window_height}")
+            elif screen_width >= SCREEN_SIZE_BREAKPOINTS["full_hd"]:  # Full HD single screen
+                # Standard large screens: use configurable percentage
+                percentage = SCREEN_SIZE_PERCENTAGES["full_hd"]
+                window_width = int(screen_width * percentage)
+                window_height = int(screen_height * percentage)
+                logger.info(f"[Config] Full HD screen detected (>={SCREEN_SIZE_BREAKPOINTS['full_hd']}px), using {percentage*100}%: {window_width}x{window_height}")
+            elif screen_width >= SCREEN_SIZE_BREAKPOINTS["laptop"]:  # Common laptop resolution
+                # Medium screens: use configurable percentage
+                percentage = SCREEN_SIZE_PERCENTAGES["laptop"]
+                window_width = int(screen_width * percentage)
+                window_height = int(screen_height * percentage)
+                logger.info(f"[Config] Medium screen detected (>={SCREEN_SIZE_BREAKPOINTS['laptop']}px), using {percentage*100}%: {window_width}x{window_height}")
+            else:  # Small screens (below laptop breakpoint)
+                # Small screens: use configurable percentage, but ensure minimum usability
+                percentage = SCREEN_SIZE_PERCENTAGES["small"]
+                window_width = max(int(screen_width * percentage), WINDOW_MIN_SMART_WIDTH)
+                window_height = max(int(screen_height * percentage), WINDOW_MIN_SMART_HEIGHT)
+                logger.info(f"[Config] Small screen detected (<{SCREEN_SIZE_BREAKPOINTS['laptop']}px), using {percentage*100}%: {window_width}x{window_height}")
 
             # Ensure minimum dimensions for usability
             original_width, original_height = window_width, window_height
-            window_width = max(window_width, 1000)
-            window_height = max(window_height, 700)
+            window_width = max(window_width, WINDOW_MIN_SMART_WIDTH)
+            window_height = max(window_height, WINDOW_MIN_SMART_HEIGHT)
             if window_width != original_width or window_height != original_height:
                 logger.info(f"[Config] Applied minimum constraints: {original_width}x{original_height} -> {window_width}x{window_height}")
 

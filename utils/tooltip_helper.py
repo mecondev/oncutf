@@ -19,7 +19,7 @@ Classes:
 
 from typing import Optional, Tuple
 from PyQt5.QtCore import QPoint, QTimer, Qt, QEvent
-from PyQt5.QtWidgets import QApplication, QLabel, QWidget, QDesktopWidget
+from PyQt5.QtWidgets import QApplication, QLabel, QWidget
 
 from config import TOOLTIP_DURATION, TOOLTIP_POSITION_OFFSET
 from utils.logger_helper import get_logger
@@ -295,23 +295,37 @@ class TooltipHelper:
     def _adjust_position_to_screen(cls, position: QPoint, tooltip_size) -> QPoint:
         """Adjust tooltip position to stay within screen bounds"""
         try:
-            desktop = QApplication.desktop()
-            if desktop:
-                screen = desktop.screenGeometry()
-            else:
+            # Use modern QScreen API instead of deprecated QDesktopWidget
+            app = QApplication.instance()
+            if not app or not hasattr(app, 'primaryScreen'):
                 return position
 
+            # Find the screen containing the tooltip position
+            target_screen = None
+            for screen in app.screens():
+                if screen.geometry().contains(position):
+                    target_screen = screen
+                    break
+
+            # If not found on any screen, use primary screen
+            if not target_screen:
+                target_screen = app.primaryScreen()
+                if not target_screen:
+                    return position
+
+            screen_geometry = target_screen.availableGeometry()
+
             # Adjust X position
-            if position.x() + tooltip_size.width() > screen.right():
-                position.setX(screen.right() - tooltip_size.width())
-            if position.x() < screen.left():
-                position.setX(screen.left())
+            if position.x() + tooltip_size.width() > screen_geometry.right():
+                position.setX(screen_geometry.right() - tooltip_size.width())
+            if position.x() < screen_geometry.left():
+                position.setX(screen_geometry.left())
 
             # Adjust Y position
-            if position.y() + tooltip_size.height() > screen.bottom():
+            if position.y() + tooltip_size.height() > screen_geometry.bottom():
                 position.setY(position.y() - tooltip_size.height() - 30)  # Show above widget
-            if position.y() < screen.top():
-                position.setY(screen.top())
+            if position.y() < screen_geometry.top():
+                position.setY(screen_geometry.top())
 
             return position
         except Exception as e:

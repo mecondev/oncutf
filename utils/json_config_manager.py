@@ -63,7 +63,7 @@ class WindowConfig(ConfigCategory):
 
     def __init__(self):
         defaults = {
-            'geometry': {'x': 100, 'y': 100, 'width': WINDOW_WIDTH, 'height': WINDOW_HEIGHT},
+            'geometry': None,  # No default geometry - will trigger smart sizing
             'window_state': 'normal',
             'splitter_states': {
                 'horizontal': [250, 674, 250],

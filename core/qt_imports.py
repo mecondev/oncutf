@@ -79,7 +79,6 @@ from PyQt5.QtWidgets import (
     QButtonGroup,
     QCheckBox,
     QComboBox,
-    QDesktopWidget,
     QDialog,
     QFileDialog,
     QFileSystemModel,
@@ -131,7 +130,7 @@ __all__ = [
     'QSvgRenderer', 'SVG_AVAILABLE',
 
     # Widgets
-    'QAbstractItemView', 'QAction', 'QApplication', 'QButtonGroup', 'QCheckBox', 'QComboBox', 'QDesktopWidget', 'QDialog', 'QFileDialog',
+    'QAbstractItemView', 'QAction', 'QApplication', 'QButtonGroup', 'QCheckBox', 'QComboBox', 'QDialog', 'QFileDialog',
     'QFileSystemModel', 'QFrame', 'QGraphicsOpacityEffect', 'QGridLayout', 'QGroupBox', 'QHBoxLayout',
     'QHeaderView', 'QLabel', 'QLineEdit', 'QMainWindow', 'QMenu', 'QMessageBox', 'QProgressBar', 'QPushButton', 'QRadioButton', 'QScrollArea', 'QShortcut',
     'QSizePolicy', 'QSplashScreen', 'QSplitter', 'QStyle', 'QStyledItemDelegate', 'QStyleFactory', 'QStyleOptionViewItem', 'QTableWidget', 'QTableWidgetItem', 'QTableView', 'QTextEdit', 'QTreeView',

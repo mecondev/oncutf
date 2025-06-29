@@ -43,6 +43,31 @@ WINDOW_HEIGHT = 900
 WINDOW_MIN_WIDTH = 800
 WINDOW_MIN_HEIGHT = 500
 
+# Smart Window Sizing Configuration
+# Screen size breakpoints (in pixels) - defines the categories
+SCREEN_SIZE_BREAKPOINTS = {
+    "large_4k": 2560,      # 4K screens and above
+    "full_hd": 1920,       # Full HD screens and above
+    "laptop": 1366,        # Common laptop resolution and above
+    # Everything below 1366px is considered "small"
+}
+
+# Window sizing percentages for each screen category
+SCREEN_SIZE_PERCENTAGES = {
+    "large_4k": 0.75,      # 4K screens: 75% of screen
+    "full_hd": 0.80,       # Full HD screens: 80% of screen
+    "laptop": 0.85,        # Laptop screens: 85% of screen
+    "small": 0.90          # Small screens: 90% of screen
+}
+
+# Minimum window dimensions for usability
+WINDOW_MIN_SMART_WIDTH = 1000
+WINDOW_MIN_SMART_HEIGHT = 700
+
+# Minimum dimensions for large screens
+LARGE_SCREEN_MIN_WIDTH = 1400
+LARGE_SCREEN_MIN_HEIGHT = 900
+
 # Splitter sizes
 TOP_BOTTOM_SPLIT_RATIO = [500, 400]
 LEFT_CENTER_RIGHT_SPLIT_RATIO = [250, 674, 250]
