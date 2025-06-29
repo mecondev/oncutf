@@ -540,16 +540,28 @@ class FileTableView(QTableView):
 
         logger.debug(f"[SplitterMoved] Called with pos: {pos}, index: {index}", extra={"dev_only": True})
 
+        # Check if table is empty
+        model = self.model()
+        has_content = model and model.rowCount() > 0
+
+        # Also check if table is in placeholder mode (cleared but model still has data)
+        is_placeholder_visible = hasattr(self, 'placeholder_label') and self.placeholder_label.isVisible()
+        has_content = has_content and not is_placeholder_visible
+
         # Get current filename width and calculate new width
         current_filename_width = self.columnWidth(1)
 
-        # Use user preference if available, otherwise use current width
-        source_width = self._user_preferred_width if hasattr(self, '_has_manual_preference') and self._has_manual_preference else current_filename_width
-
-        logger.debug(f"[SplitterMoved] Current filename width: {current_filename_width}, source_width: {source_width}", extra={"dev_only": True})
-
-        # Calculate new width using central method
-        new_filename_width = self._calculate_filename_width(source_width)
+        if has_content:
+            # Table has content - use user preference if available, otherwise use current width
+            source_width = self._user_preferred_width if hasattr(self, '_has_manual_preference') and self._has_manual_preference else current_filename_width
+            logger.debug(f"[SplitterMoved] Table has content - Current filename width: {current_filename_width}, source_width: {source_width}", extra={"dev_only": True})
+            # Calculate new width using central method
+            new_filename_width = self._calculate_filename_width(source_width)
+        else:
+            # Table is empty - use no source_width to trigger empty table logic
+            logger.debug(f"[SplitterMoved] Table is empty - Current filename width: {current_filename_width}, using no source_width", extra={"dev_only": True})
+            # Calculate new width using central method without source_width
+            new_filename_width = self._calculate_filename_width()
 
         # Only resize if there's a meaningful difference
         size_difference = abs(new_filename_width - current_filename_width)
@@ -1651,7 +1663,11 @@ class FileTableView(QTableView):
                 model = self.model()
                 has_content = model and model.rowCount() > 0
 
-                logger.debug(f"[CalcFilenameWidth] Model exists: {model is not None}, rowCount: {model.rowCount() if model else 0}, has_content: {has_content}", extra={"dev_only": True})
+                # Also check if table is in placeholder mode (cleared but model still has data)
+                is_placeholder_visible = hasattr(self, 'placeholder_label') and self.placeholder_label.isVisible()
+                has_content = has_content and not is_placeholder_visible
+
+                logger.debug(f"[CalcFilenameWidth] Model exists: {model is not None}, rowCount: {model.rowCount() if model else 0}, placeholder_visible: {is_placeholder_visible}, has_content: {has_content}", extra={"dev_only": True})
 
                 if has_content and vertical_scrollbar and vertical_scrollbar.isVisible():
                     scrollbar_margin = SCROLLBAR_MARGIN
