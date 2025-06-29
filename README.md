@@ -18,6 +18,12 @@
 - **Name Transform**: Apply case transformations (lower, UPPER, Capitalize) and separator styles (snake_case, kebab-case, space)
 - **Final Transform**: Post-processing options for case, separator, and Greek-to-Greeklish conversion
 
+### Data Protection & Reliability
+- **Automatic Backup System**: Database backups on shutdown and periodic intervals (every 15 minutes)
+- **Persistent Storage**: SQLite-based database for metadata, hashes, and rename history
+- **Enhanced Stability**: Robust error handling and recovery mechanisms for Qt object lifecycle
+- **Data Integrity**: Backup rotation with configurable retention and timestamp naming
+
 ### Advanced File Management
 - **Drag & Drop Interface**:
   - File tree to table: Import files/folders with modifier-based metadata loading
