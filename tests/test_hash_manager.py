@@ -285,7 +285,7 @@ class TestHashManager:
         if hasattr(manager, '_persistent_cache'):
             # With persistent cache, the return format is different
             info = manager.get_cache_info()
-            assert "memory_cache_size" in info
+            assert "memory_entries" in info
             assert "cache_hits" in info
             assert "cache_misses" in info
         else:
