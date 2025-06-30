@@ -51,6 +51,7 @@ def load_stylesheet() -> str:
                 # Replace relative paths with absolute paths for resources
                 # This fixes issues when running the app from different directories
                 qss = qss.replace("url(resources/", f"url({project_root}/resources/")
+                # qss = qss.replace("url(resources/", f"url(\"{project_root.replace(os.sep, '/')}/resources/")
 
                 # Debug: Check if SVG files exist for tree view icons
                 if filename == "tree_view.qss":
@@ -60,6 +61,9 @@ def load_stylesheet() -> str:
                 logger.debug(f"Loaded {filename} ({len(qss)} characters)", extra={"dev_only": True})
         else:
             logger.warning(f"QSS file not found: {filename}")
+
+        # logger.debug(f"Total stylesheet length: {len(full_style)}", extra={"dev_only": True})
+        # logger.debug(full_style[:1000], extra={"dev_only": True})  # debug the first 1000 characters of the stylesheet
 
     return full_style
 
