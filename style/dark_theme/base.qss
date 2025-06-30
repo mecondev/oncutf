@@ -70,7 +70,7 @@ QSplitter::handle {
 QMenu {
     background-color: #232323;
     color: #f0ebd8;
-    border: none;  /* Remove border */
+    border: none;  /* Remove border */;
     border-radius: 8px;
 }
 
@@ -78,25 +78,25 @@ QMenu::item {
     background-color: transparent;
     color: #f0ebd8;
     font-size: 9pt;
-    padding: 6px 16px 6px 16px;  /* More balanced padding for better icon spacing */
+    padding: 6px 16px 6px 16px;  /* More balanced padding for better icon spacing */;
     border-radius: 6px;
     margin: 1px;
 }
 
 QMenu::item:hover {
-    background-color: #3e5c76;  /* Match tree/table hover color */
+    background-color: #3e5c76;  /* Match tree/table hover color */;
     color: #f0ebd8;
     border-radius: 6px;
 }
 
 QMenu::item:selected {
-    background-color: #748cab;  /* Match tree/table selection color */
+    background-color: #748cab;  /* Match tree/table selection color */;
     color: #0d1321;
     border-radius: 6px;
 }
 
 QMenu::item:pressed {
-    background-color: #748cab;  /* Match tree/table selection color */
+    background-color: #748cab;  /* Match tree/table selection color */;
     color: #0d1321;
     border-radius: 6px;
 }
@@ -107,7 +107,7 @@ QMenu::item:disabled {
 }
 
 QMenu::separator {
-    background-color: #5a5a5a;  /* Brighter than default for better visibility */
+    background-color: #5a5a5a;  /* Brighter than default for better visibility */;
     height: 1px;
     margin: 2px 8px;
 }
@@ -231,80 +231,29 @@ QLineEdit {
 
 /* RenameModulesArea scroll area styling */
 QWidget[objectName="RenameModulesArea"] QScrollArea {
-    border: 2px solid #333333;  /* Same color as separator */
+    border: 2px solid #333333;  /* Same color as separator */;
     border-radius: 8px;
-    background-color: #181818;  /* Same as input fields for consistency */
+    background-color: #212121;
 }
 
-/* Scroll area viewport (the actual content area) - keep background for empty space */
-QWidget[objectName="RenameModulesArea"] QScrollArea > QWidget {
-    background-color: #181818;  /* Same as input fields for empty scroll area */
+/* Separators between modules (using QFrame as separator) */
+QFrame[accessibleName="module_separator"] {
+    background-color: #333333;  /* Brighter separator - more visible */;
+    border: none;
+    margin: 4px 0px;
+    min-height: 2px;  /* Make separator 2px tall */;
+    max-height: 2px;
 }
 
-/* RenameModuleWidget styling for better visual separation - try more specific selector */
-RenameModuleWidget {
-    background-color: #232323;  /* Module background - different from scroll area */
-    border: 2px solid #ff0000;  /* Temporary red border to test if it works */
-    border-radius: 6px;
-    margin: 8px;  /* Increased space around each module to show scroll area background */
-}
-
-/* Alternative selector using objectName */
-QWidget[objectName="RenameModuleWidget"] {
-    background-color: #232323;  /* Module background - different from scroll area */
-    border: 2px solid #00ff00;  /* Temporary green border to test alternative selector */
-    border-radius: 6px;
-    margin: 8px;  /* Increased space around each module to show scroll area background */
+/* Fallback for any generic separator lines in module area */
+QWidget[objectName="RenameModulesArea"] QFrame {
+    background-color: #333333;  /* Consistent separator color */;
 }
 
 /* Fix labels in module area to have consistent background */
 QWidget[objectName="RenameModulesArea"] QLabel {
     background-color: transparent !important;
     color: #f0ebd8;
-}
-
-/* Module content containers */
-QWidget[objectName="RenameModuleWidget"] QWidget {
-    background-color: transparent;
-}
-
-/* Type combo box in modules */
-QWidget[objectName="RenameModuleWidget"] QComboBox {
-    background-color: #181818;
-    border: 1px solid #3a3b40;
-    border-radius: 4px;
-    color: #f0ebd8;
-    padding: 2px 8px;
-}
-
-/* Input fields in modules */
-QWidget[objectName="RenameModuleWidget"] QLineEdit {
-    background-color: #181818;
-    border: 1px solid #3a3b40;
-    border-radius: 4px;
-    color: #f0ebd8;
-    padding: 2px 6px;
-    selection-background-color: #748cab;
-    selection-color: #0d1321;
-}
-
-/* Buttons in modules */
-QWidget[objectName="RenameModuleWidget"] QPushButton {
-    background-color: #2a2a2a;
-    border: 1px solid #3a3b40;
-    border-radius: 4px;
-    color: #f0ebd8;
-    padding: 2px;
-}
-
-QWidget[objectName="RenameModuleWidget"] QPushButton:hover {
-    background-color: #3e5c76;
-    border-color: #748cab;
-}
-
-QWidget[objectName="RenameModuleWidget"] QPushButton:pressed {
-    background-color: #748cab;
-    color: #0d1321;
 }
 
 /* Footer separator styling */
@@ -321,4 +270,3 @@ QPushButton#menuButton {
     padding: 0px;
     text-align: center;
 }
-
