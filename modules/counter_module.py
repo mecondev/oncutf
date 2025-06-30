@@ -91,7 +91,7 @@ class CounterModule(BaseRenameModule):
         # Label with fixed width and right alignment
         label = QLabel(label_text)
         label.setFixedWidth(self.LABEL_WIDTH)
-        label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        label.setAlignment(Qt.AlignRight | Qt.AlignVCenter) # type: ignore
 
         # Input field with integer validator
         input_field = QLineEdit(str(initial_value))

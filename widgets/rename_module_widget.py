@@ -118,6 +118,9 @@ class RenameModuleWidget(QWidget):
         logger.debug(f"[RenameModuleWidget] Before QTimer.singleShot: content_container_layout is {'initialized' if hasattr(self, 'content_container_layout') else 'not initialized'}")
         schedule_ui_update(lambda: self.update_module_content(self.type_combo.currentText()), 0)
 
+        # Apply styling after a delay to ensure it's not overridden by main app stylesheet
+        schedule_ui_update(lambda: self._apply_module_styling(), 100)
+
         logger.debug(f"[RenameModuleWidget] Before update_module_content: content_container_layout is {'initialized' if hasattr(self, 'content_container_layout') else 'not initialized'}")
 
     def _get_app_context(self):
@@ -129,6 +132,24 @@ class RenameModuleWidget(QWidget):
         except RuntimeError:
             # ApplicationContext not ready yet
             return None
+
+    def _apply_module_styling(self):
+        """Apply module styling after main app stylesheet is loaded."""
+        # Use a more specific approach - target only this widget directly
+        style = """
+            QWidget {
+                background-color: #232323;
+                border: 3px solid #ff0000;
+                border-radius: 6px;
+                margin: 8px;
+            }
+            QWidget > QWidget {
+                border: none;
+                margin: 0px;
+                background-color: transparent;
+            }
+        """
+        self.setStyleSheet(style)
 
     def connect_signals_for_module(self, module_widget: QWidget) -> None:
         if hasattr(module_widget, "updated"):

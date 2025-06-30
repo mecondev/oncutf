@@ -241,12 +241,20 @@ QWidget[objectName="RenameModulesArea"] QScrollArea > QWidget {
     background-color: #181818;  /* Same as input fields for empty scroll area */
 }
 
-/* RenameModuleWidget styling for better visual separation */
+/* RenameModuleWidget styling for better visual separation - try more specific selector */
+RenameModuleWidget {
+    background-color: #232323;  /* Module background - different from scroll area */
+    border: 2px solid #ff0000;  /* Temporary red border to test if it works */
+    border-radius: 6px;
+    margin: 8px;  /* Increased space around each module to show scroll area background */
+}
+
+/* Alternative selector using objectName */
 QWidget[objectName="RenameModuleWidget"] {
     background-color: #232323;  /* Module background - different from scroll area */
-    border: 1px solid #333333;
+    border: 2px solid #00ff00;  /* Temporary green border to test alternative selector */
     border-radius: 6px;
-    margin: 2px;  /* Space around each module */
+    margin: 8px;  /* Increased space around each module to show scroll area background */
 }
 
 /* Fix labels in module area to have consistent background */
