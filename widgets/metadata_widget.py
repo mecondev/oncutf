@@ -41,16 +41,20 @@ class MetadataWidget(QWidget):
 
     def setup_ui(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setSpacing(6)
+        layout.setContentsMargins(6, 6, 6, 6)  # Match final transformer margins
+        layout.setSpacing(0)  # Match final transformer spacing
 
         # Row 1: Category
         category_row = QHBoxLayout()
+        category_row.setContentsMargins(0, 0, 0, 0)
+        category_row.setSpacing(8)  # Match final transformer spacing between label and control
         category_label = QLabel("Category:")
-        category_label.setFixedWidth(80)
+        category_label.setFixedWidth(45)  # Match final transformer label width
         self.category_combo = QComboBox()
         self.category_combo.addItem("File Dates", userData="file_dates")
         self.category_combo.addItem("EXIF/Metadata", userData="metadata_keys")
-        self.category_combo.setFixedWidth(120)
+        self.category_combo.setFixedWidth(130)  # Match final transformer combo width
+        self.category_combo.setFixedHeight(22)  # Match final transformer combo height
         category_row.addWidget(category_label)
         category_row.addWidget(self.category_combo)
         category_row.addStretch()
@@ -58,10 +62,13 @@ class MetadataWidget(QWidget):
 
         # Row 2: Field
         options_row = QHBoxLayout()
+        options_row.setContentsMargins(0, 0, 0, 0)
+        options_row.setSpacing(8)  # Match final transformer spacing between label and control
         options_label = QLabel("Field:")
-        options_label.setFixedWidth(80)
+        options_label.setFixedWidth(45)  # Match final transformer label width
         self.options_combo = QComboBox()
-        self.options_combo.setFixedWidth(200)
+        self.options_combo.setFixedWidth(130)  # Match final transformer combo width
+        self.options_combo.setFixedHeight(22)  # Match final transformer combo height
         options_row.addWidget(options_label)
         options_row.addWidget(self.options_combo)
         options_row.addStretch()

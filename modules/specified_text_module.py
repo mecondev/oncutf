@@ -40,15 +40,13 @@ class SpecifiedTextModule(BaseRenameModule):
         self._current_file = None
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
+        layout.setContentsMargins(6, 6, 6, 6)  # Match final transformer margins
+        layout.setSpacing(0)  # Match final transformer spacing
 
-        self.text_label = QLabel("Text")
-        self.text_label.setMaximumHeight(20)
         self.text_input = ValidatedLineEdit()
         self.text_input.setPlaceholderText("Enter custom text")
         self.text_input.setMaxLength(240)
-        self.text_input.setFixedHeight(20)
+        self.text_input.setFixedHeight(22)  # Match final transformer combo height
         self._last_value = ""  # Initialize to prevent first empty emit
         self.text_input.textChanged.connect(self.validate_input)
 
@@ -59,7 +57,6 @@ class SpecifiedTextModule(BaseRenameModule):
         self.text_input.setContextMenuPolicy(Qt.CustomContextMenu)
         self.text_input.customContextMenuRequested.connect(self._show_context_menu)
 
-        layout.addWidget(self.text_label)
         layout.addWidget(self.text_input)
 
         # Track if field has ever had content to control empty styling

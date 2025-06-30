@@ -31,15 +31,15 @@ class CounterModule(BaseRenameModule):
 
     updated = pyqtSignal(object)
 
-    LABEL_WIDTH = 100  # pixels
+    LABEL_WIDTH = 80  # pixels - reduced to match overall spacing
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.setProperty("module", True)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        layout.setContentsMargins(6, 6, 6, 6)  # Match final transformer margins
+        layout.setSpacing(0)  # Match final transformer spacing
 
         # Row 1: Start Number
         self.start_input, row1 = self._create_row(

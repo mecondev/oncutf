@@ -28,12 +28,12 @@ class OriginalNameWidget(BaseRenameModule):
 
     def setup_ui(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setContentsMargins(6, 6, 6, 6)  # Match final transformer margins
+        layout.setSpacing(0)  # Match final transformer spacing
 
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
-        row.setSpacing(6)
+        row.setSpacing(0)  # Reduce spacing
 
         # Simple label explaining what this module does
         self.label = QLabel("Uses the original filename")
@@ -42,7 +42,6 @@ class OriginalNameWidget(BaseRenameModule):
         row.addWidget(self.label)
         row.addStretch()
         layout.addLayout(row)
-        layout.addStretch()
 
         # Initialize _last_value
         self._last_value = str(self.get_data())

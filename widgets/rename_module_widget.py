@@ -68,17 +68,17 @@ class RenameModuleWidget(QWidget):
         }
 
         self.module_heights = {
-            "Original Name": 45,
-            "Specified Text": 80,
-            "Counter": 120,
-            "Metadata": 110
+            "Original Name": 34,  # Reduced: just one line with minimal padding
+            "Specified Text": 34,  # Reduced: just input field with minimal padding
+            "Counter": 78,  # Reduced: 3 rows with minimal spacing
+            "Metadata": 56   # Reduced: 2 rows with minimal spacing, matching final transformer
         }
 
         self.current_module_widget = None
 
         # --- Layout setup ---
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(4, 4, 4, 4)
+        self.main_layout.setContentsMargins(2, 2, 2, 2)  # Reduced margins for compactness
         self.main_layout.setSpacing(0)  # Control spacing manually like metadata dialog
 
         # --- Top layout (type selection + module area) ---
