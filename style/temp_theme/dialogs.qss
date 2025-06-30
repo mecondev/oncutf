@@ -1,0 +1,232 @@
+/* =============================
+   Dialog Styling (Dark Theme)
+   Specific styles for dialog widgets
+   ============================= */
+
+/* Dialog buttons with minimum width */
+QDialog QPushButton {
+    background-color: #2a2a2a;
+    color: #f0ebd8;
+    font-size: 9pt;
+    border: none;
+    border-radius: 8px;
+    padding: 4px 12px 4px 8px;
+    min-width: 70px;
+}
+
+QDialog QPushButton:hover {
+    background-color: #3e5c76;
+    color: #f0ebd8;
+    border: none;
+}
+
+QDialog QPushButton:pressed {
+    background-color: #8a9bb4;
+    color: #0d1321;
+    border: none;
+}
+
+QDialog QPushButton:focus {
+    background-color: #3e5c76;
+    color: #f0ebd8;
+    border: none;
+    outline: none;
+}
+
+QDialog QPushButton:focus:hover {
+    background-color: #748cab;
+    color: #0d1321;
+    border: none;
+}
+
+QDialog QPushButton:disabled {
+    background-color: #232323;
+    color: #888888;
+    border: none;
+}
+
+/* Dialog CheckBox with Feather icons - subtle styling */
+QDialog QCheckBox {
+    color: #f0ebd8;
+    font-size: 9pt;
+    spacing: 8px;
+}
+
+QDialog QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #3a3b40;
+    border-radius: 3px;
+    background-color: #181818;
+}
+
+QDialog QCheckBox::indicator:unchecked {
+    image: url(resources/icons/feather_icons/square.svg);
+    background-color: #181818;
+    border-color: #3a3b40;
+}
+
+QDialog QCheckBox::indicator:checked {
+    image: url(resources/icons/feather_icons/check-square.svg);
+    background-color: #181818;  /* Keep same background */;
+    border-color: #3a3b40;      /* Keep same border */;
+}
+
+QDialog QCheckBox::indicator:hover {
+    border-color: #555555;      /* Slightly brighter border on hover */;
+    background-color: #232323;  /* Slightly brighter background on hover */;
+}
+
+QDialog QCheckBox::indicator:focus {
+    border-color: #666666;      /* Even brighter border on focus */;
+    background-color: #2a2a2a;  /* Even brighter background on focus */;
+}
+
+/* Text styling for focus state */
+QDialog QCheckBox:focus {
+    font-weight: bold;          /* Bold text when focused */;
+}
+
+/* Dialog ScrollArea styling */
+QDialog QScrollArea {
+    background-color: #181818;
+    border: 1px solid #3a3b40;
+    border-radius: 8px;
+}
+
+QDialog QScrollArea QWidget {
+    background-color: transparent;
+}
+
+/* Dialog QFrame styling */
+QDialog QFrame {
+    background-color: #181818;
+    border: 1px solid #3a3b40;
+    border-radius: 8px;
+}
+
+/* Dialog QLineEdit and QTextEdit styling */
+QDialog QLineEdit {
+    background-color: #181818;
+    color: #f0ebd8;
+    border: 1px solid #3a3b40;
+    border-radius: 4px;
+    padding: 6px 8px;
+    min-height: 30px;
+    max-height: 34px;
+    font-size: 9pt;
+    selection-background-color: #748cab;
+    selection-color: #0d1321;
+}
+
+QDialog QLineEdit:focus {
+    border-color: #748cab;
+    background-color: #1a1a1a;
+}
+
+QDialog QTextEdit {
+    background-color: #181818;
+    color: #f0ebd8;
+    border: 1px solid #3a3b40;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 9pt;
+    selection-background-color: #748cab;
+    selection-color: #0d1321;
+}
+
+QDialog QTextEdit:focus {
+    border-color: #748cab;
+    background-color: #1a1a1a;
+}
+
+/* Dialog QLabel styling - ensure consistent appearance */
+QDialog QLabel {
+    background-color: transparent !important;
+    color: #f0ebd8;
+    font-size: 9pt;
+    border: none !important;
+    border-radius: 0px !important;
+    padding: 2px;
+}
+
+/* Ensure all nested labels in dialogs have transparent background */
+QDialog QWidget QLabel, QDialog QFrame QLabel, QDialog QScrollArea QLabel {
+    background-color: transparent !important;
+    border: none !important;
+    border-radius: 0px !important;
+}
+
+/* MetadataEditDialog specific styling - widget-like appearance */
+MetadataEditDialog {
+    background-color: #212121;  /* Main window color */;
+    border: 1px solid #3a3b40;
+    border-radius: 8px;
+}
+
+/* Label styling */
+MetadataEditDialog QLabel {
+    color: #f0ebd8;
+    font-size: 9pt;
+    margin: 0px;
+    padding: 0px;
+    background-color: transparent;
+}
+
+/* Dialog action buttons (OK/Cancel) */
+MetadataEditDialog QPushButton {
+    background-color: #2a2a2a;
+    color: #f0ebd8;
+    font-size: 9pt;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 16px;
+    min-width: 60px;
+}
+
+MetadataEditDialog QPushButton:hover {
+    background-color: #3e5c76;
+    color: #f0ebd8;
+}
+
+MetadataEditDialog QPushButton:pressed {
+    background-color: #748cab;
+    color: #0d1321;
+}
+
+MetadataEditDialog QPushButton:default {
+    background-color: #3e5c76;
+}
+
+/* QLineEdit - no border, like specified text module */
+MetadataEditDialog QLineEdit {
+    background-color: #181818;  /* Keep darker for input fields */;
+    color: #f0ebd8;
+    border: none;  /* No border like specified text */;
+    border-radius: 4px;
+    padding: 0px 4px;  /* Minimal padding like specified text */;
+    height: 18px;  /* Exact height like specified text */;
+    min-height: 18px;
+    max-height: 18px;
+    font-size: 9pt;
+    margin: 0px;
+}
+
+MetadataEditDialog QLineEdit:focus {
+    background-color: #1a1a1a;  /* Slightly lighter on focus */;
+}
+
+/* QTextEdit for multiline fields - no border for description */
+MetadataEditDialog QTextEdit {
+    background-color: #181818;
+    color: #f0ebd8;
+    border: none;  /* Remove border */;
+    border-radius: 4px;
+    padding: 0px 4px;  /* Match QLineEdit padding */;
+    font-size: 9pt;
+    margin: 0px;
+}
+
+MetadataEditDialog QTextEdit:focus {
+    background-color: #1a1a1a;
+}

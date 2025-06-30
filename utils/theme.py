@@ -31,13 +31,13 @@ def load_stylesheet() -> str:
 
     qss_files = [
         "base.qss",
-        "buttons.qss",
-        "combo_box.qss",
-        "scrollbars.qss",
-        "table_view.qss",
-        "tree_view.qss",
-        "tooltip.qss",
-        "dialogs.qss"
+        # "buttons.qss",
+        # "combo_box.qss",
+        # "scrollbars.qss",
+        # "table_view.qss",
+        # "tree_view.qss",
+        # "tooltip.qss",
+        # "dialogs.qss"
         # Add more QSS files here if needed
     ]
 
@@ -87,9 +87,9 @@ def _debug_svg_paths(qss_content: str, project_root: str) -> None:
             file_path = os.path.join(project_root, clean_url)
 
         if os.path.exists(file_path):
-            logger.debug(f"✓ SVG icon found: {file_path}", extra={"dev_only": True})
+            logger.debug(f"SVG icon found: {file_path}", extra={"dev_only": True})
         else:
-            logger.warning(f"✗ SVG icon missing: {file_path}")
+            logger.warning(f"SVG icon missing: {file_path}")
 
 
 def get_theme_color(color_key: str, theme_name: Optional[str] = None) -> str:

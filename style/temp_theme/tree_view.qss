@@ -1,0 +1,344 @@
+QTreeView {
+    background-color: #181818;
+    color: #f0ebd8;
+    font-size: 10pt;
+    alternate-background-color: #232323;
+    border: none;
+    show-decoration-selected: 1;
+    /* Force override of OS selection colors */
+    selection-background-color: #748cab;
+    selection-color: #0d1321;
+    /* Remove all OS styling from indentation area */
+    outline: none;
+}
+
+/* Alternative row styling */
+QTreeView::item:alternate {
+    background-color: #232323;
+}
+
+QTreeView::item:hover {
+    background-color: #3e5c76;
+    color: #f0ebd8;
+    border: none;
+}
+
+QTreeView::item:selected {
+    background-color: #748cab;
+    color: #0d1321;
+    border: none;
+}
+
+QTreeView::item:selected:hover {
+    background-color: #8a9bb4;  /* Slightly lighter than selection - matches delegate */;
+    color: #0d1321;  /* Keep dark text for selected items */;
+    border: none;
+}
+
+QTreeView::item:selected:focus {
+    background-color: #748cab;
+    color: #0d1321;
+    border: none;
+    outline: none;
+}
+
+/* FileTreeView specific styling to ensure consistent behavior */
+FileTreeView::item:hover {
+    background-color: #3e5c76;
+    color: #f0ebd8;
+    border: none;
+}
+
+FileTreeView::item:selected {
+    background-color: #748cab;
+    color: #0d1321;
+    border: none;
+}
+
+FileTreeView::item:selected:hover {
+    background-color: #8a9bb4;  /* Slightly lighter than selection - matches delegate */;
+    color: #0d1321;  /* Keep dark text for selected items */;
+    border: none;
+}
+
+/* FileTreeView branch styling */
+FileTreeView::branch:hover {
+    background-color: #3e5c76 !important;
+    color: transparent !important;
+    border: none !important;
+}
+
+FileTreeView::branch:selected {
+    background-color: #748cab !important;
+    color: transparent !important;
+    border: none !important;
+}
+
+FileTreeView::branch:selected:hover {
+    background-color: #8a9bb4 !important;  /* Slightly lighter than selection - matches delegate */;
+    color: transparent !important;
+    border: none !important;
+}
+
+/* MetadataTreeView normal content styles */
+MetadataTreeView {
+    color: #f0ebd8;  /* Light color for normal content */;
+    background-color: #181818;
+}
+
+/* MetadataTreeView normal mode (not placeholder) - force bright colors */
+MetadataTreeView[placeholder="false"] {
+    color: #f0ebd8 !important;  /* Force bright color globally */;
+    background-color: #181818 !important;
+}
+
+MetadataTreeView[placeholder="false"]::item {
+    color: #f0ebd8 !important;  /* Force bright color for items */;
+    background-color: transparent;
+}
+
+MetadataTreeView[placeholder="false"]::item:hover {
+    background-color: #3e5c76 !important;
+    color: #f0ebd8 !important;  /* Normal light text on hover */;
+    border: none;
+}
+
+MetadataTreeView[placeholder="false"]::item:selected {
+    background-color: #748cab !important;
+    color: #0d1321 !important;  /* Dark color for selected items - same as table */;
+    border: none;
+}
+
+MetadataTreeView[placeholder="false"]::item:selected:hover {
+    background-color: #8a9bb4 !important;  /* Slightly lighter than selection - matches delegate */;
+    color: #0d1321 !important;  /* Keep dark text for selected items */;
+    border: none;
+}
+
+/* MetadataTreeView placeholder styles */
+MetadataTreeView[placeholder="true"]::item {
+    color: gray;
+    selection-background-color: transparent;
+    background-color: transparent;
+}
+
+MetadataTreeView[placeholder="true"]::item:hover {
+    background-color: transparent !important;
+    color: gray !important;
+    border: none !important;
+}
+
+MetadataTreeView[placeholder="true"]::item:selected {
+    background-color: transparent !important;
+    color: gray !important;
+    border: none !important;
+}
+
+/* Tree view branch styling - remove OS colors completely */
+QTreeView::branch {
+    background-color: #181818 !important;  /* Force background to match tree view */;
+    color: transparent !important;
+    border: none !important;
+    /* Remove branch decorations completely */
+    outline: 0;
+}
+
+QTreeView::branch:selected {
+    background-color: #748cab !important;  /* Match table selection color exactly */;
+    color: transparent !important;
+    border: none !important;
+}
+
+QTreeView::branch:hover {
+    background-color: #3e5c76 !important;  /* Match table hover color exactly */;
+    color: transparent !important;
+    border: none !important;
+}
+
+QTreeView::branch:selected:hover {
+    background-color: #8a9bb4 !important;  /* Slightly lighter than selection - matches delegate */;
+    color: transparent !important;
+    border: none !important;
+}
+
+/* Complete hiding of branch connection lines */
+QTreeView::branch:has-siblings:!adjoins-item {
+    border-image: none;
+    image: none;
+    background: #181818;  /* Default background */;
+}
+
+QTreeView::branch:has-siblings:adjoins-item {
+    border-image: none;
+    image: none;
+    background: #181818;  /* Default background */;
+}
+
+QTreeView::branch:!has-children:!has-siblings:adjoins-item {
+    border-image: none;
+    image: none;
+    background: #181818;  /* Default background */;
+}
+
+/* Branch connection lines hover states */
+/*
+QTreeView::branch:has-siblings:!adjoins-item:hover {
+    border-image: none;
+    image: none;
+    background: #3e5c76 !important;  // Hover color;
+}
+
+QTreeView::branch:has-siblings:adjoins-item:hover {
+    border-image: none;
+    image: none;
+    background: #3e5c76 !important;  // Hover color;
+}
+
+QTreeView::branch:!has-children:!has-siblings:adjoins-item:hover {
+    border-image: none;
+    image: none;
+    background: #3e5c76 !important;  // Hover color;
+}
+*/
+
+/* Branch connection lines selected states */
+/*
+QTreeView::branch:has-siblings:!adjoins-item:selected {
+    border-image: none;
+    image: none;
+    background: #748cab !important;  // Selection color;
+}
+
+QTreeView::branch:has-siblings:adjoins-item:selected {
+    border-image: none;
+    image: none;
+    background: #748cab !important;  // Selection color;
+}
+
+QTreeView::branch:!has-children:!has-siblings:adjoins-item:selected {
+    border-image: none;
+    image: none;
+    background: #748cab !important;  // Selection color;
+}
+*/
+
+/* Branch connection lines selected+hover states */
+/*
+QTreeView::branch:has-siblings:!adjoins-item:selected:hover {
+    border-image: none;
+    image: none;
+    background: #8a9bb4 !important;  // Selected+hover color;
+}
+
+QTreeView::branch:has-siblings:adjoins-item:selected:hover {
+    border-image: none;
+    image: none;
+    background: #8a9bb4 !important;  // Selected+hover color;
+}
+
+QTreeView::branch:!has-children:!has-siblings:adjoins-item:selected:hover {
+    border-image: none;
+    image: none;
+    background: #8a9bb4 !important;  // Selected+hover color;
+}
+*/
+
+/* Hide connection lines between branches - PNG icons for Windows compatibility */
+QTreeView::branch:has-children:!has-siblings:closed,;
+QTreeView::branch:closed:has-children:has-siblings {
+    border-image: none;
+    image: url(resources/icons/chevron-right.png);
+    background: #181818;  /* Default background */;
+    width: 16px;
+    height: 16px;
+    margin: 2px;
+}
+
+QTreeView::branch:open:has-children:!has-siblings,;
+QTreeView::branch:open:has-children:has-siblings {
+    border-image: none;
+    image: url(resources/icons/chevron-down.png);
+    background: #181818;  /* Default background */;
+    width: 16px;
+    height: 16px;
+    margin: 2px;
+}
+
+/* Branch icon hover states */
+/*
+QTreeView::branch:has-children:!has-siblings:closed:hover,;
+QTreeView::branch:closed:has-children:has-siblings:hover {
+    border-image: none;
+    image: url(resources/icons/feather_icons/chevron-right.svg);
+    background: #3e5c76 !important;  // Hover color;
+    width: 16px;
+    height: 16px;
+    margin: 2px;
+}
+
+QTreeView::branch:open:has-children:!has-siblings:hover,;
+QTreeView::branch:open:has-children:has-siblings:hover {
+    border-image: none;
+    image: url(resources/icons/feather_icons/chevron-down.svg);
+    background: #3e5c76 !important;  // Hover color;
+    width: 16px;
+    height: 16px;
+    margin: 2px;
+}
+*/
+
+/* Branch icon selected states */
+/*
+QTreeView::branch:has-children:!has-siblings:closed:selected,;
+QTreeView::branch:closed:has-children:has-siblings:selected {
+    border-image: none;
+    image: url(resources/icons/feather_icons/chevron-right.svg);
+    background: #748cab !important;  // Selection color;
+    width: 16px;
+    height: 16px;
+    margin: 2px;
+}
+
+QTreeView::branch:open:has-children:!has-siblings:selected,;
+QTreeView::branch:open:has-children:has-siblings:selected {
+    border-image: none;
+    image: url(resources/icons/feather_icons/chevron-down.svg);
+    background: #748cab !important;  // Selection color;
+    width: 16px;
+    height: 16px;
+    margin: 2px;
+}
+*/
+
+/* Branch icon selected+hover states */
+/*
+QTreeView::branch:has-children:!has-siblings:closed:selected:hover,;
+QTreeView::branch:closed:has-children:has-siblings:selected:hover {
+    border-image: none;
+    image: url(resources/icons/feather_icons/chevron-right.svg);
+    background: #8a9bb4 !important;  // Selected+hover color;
+    width: 16px;
+    height: 16px;
+    margin: 2px;
+}
+
+QTreeView::branch:open:has-children:!has-siblings:selected:hover,;
+QTreeView::branch:open:has-children:has-siblings:selected:hover {
+    border-image: none;
+    image: url(resources/icons/feather_icons/chevron-down.svg);
+    background: #8a9bb4 !important;  // Selected+hover color;
+    width: 16px;
+    height: 16px;
+    margin: 2px;
+}
+*/
+
+/* Force override of any remaining OS indentation styling */
+QTreeView QAbstractScrollArea, QTreeView::viewport {
+    background-color: #181818 !important;
+}
+
+/* Remove any possible OS styling from tree indentation */
+QTreeView::indent {
+    background-color: #181818 !important;
+}
