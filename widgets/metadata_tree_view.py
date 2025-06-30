@@ -178,6 +178,9 @@ class MetadataTreeView(QTreeView):
         # Setup standard view properties
         self._setup_tree_view_properties()
 
+        # Setup icon delegate for selected state icon changes
+        self._setup_icon_delegate()
+
         # Timer for update debouncing
         self._update_timer_id = None
 
@@ -191,6 +194,20 @@ class MetadataTreeView(QTreeView):
         self.viewport().setAcceptDrops(True)
         self.setDragDropMode(QAbstractItemView.DropOnly)
         self.setAlternatingRowColors(True)
+
+    def _setup_icon_delegate(self) -> None:
+        """Setup icon delegate for changing icon colors on selection."""
+        try:
+            from .tree_icon_delegate import TreeViewIconDelegate
+
+            self.icon_delegate = TreeViewIconDelegate(self)
+            self.setItemDelegate(self.icon_delegate)
+
+            logger.debug("[MetadataTreeView] Icon delegate setup completed", extra={"dev_only": True})
+
+        except Exception as e:
+            logger.warning(f"[MetadataTreeView] Failed to setup icon delegate: {e}")
+            # Continue without delegate - icons will remain normal color
 
     # =====================================
     # Path-Safe Dictionary Operations

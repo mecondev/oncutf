@@ -57,7 +57,7 @@ class ComprehensiveThemeColors:
         'table_selection_background': '#748cab',
         'table_selection_text': '#0d1321',
         'table_header_background': '#232323',
-        'table_hover_background': '#4a6fa5',
+        'table_hover_background': '#3e5c76',
 
         # Scroll area colors
         'scroll_area_background': '#181818',

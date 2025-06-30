@@ -80,6 +80,9 @@ class FileTreeView(QTreeView):
         # Setup custom branch icons for Windows compatibility
         self._setup_branch_icons()
 
+        # Setup icon delegate for selected state icon changes
+        self._setup_icon_delegate()
+
         # Drag state tracking (simplified - only for Qt built-in drag)
         self._is_dragging = False
         self._drag_path = None
@@ -108,6 +111,20 @@ class FileTreeView(QTreeView):
             logger.warning(f"[FileTreeView] Failed to setup custom branch icons: {e}")
             # Fallback to default Qt icons
             pass
+
+    def _setup_icon_delegate(self) -> None:
+        """Setup icon delegate for changing icon colors on selection."""
+        try:
+            from .tree_icon_delegate import TreeViewIconDelegate
+
+            self.icon_delegate = TreeViewIconDelegate(self)
+            self.setItemDelegate(self.icon_delegate)
+
+            logger.debug("[FileTreeView] Icon delegate setup completed", extra={"dev_only": True})
+
+        except Exception as e:
+            logger.warning(f"[FileTreeView] Failed to setup icon delegate: {e}")
+            # Continue without delegate - icons will remain normal color
 
     def selectionChanged(self, selected, deselected) -> None:
         """Override to emit custom signal with selected path (single item only)"""

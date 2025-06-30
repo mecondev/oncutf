@@ -481,59 +481,174 @@ class ThemeEngine:
             QTreeView {{
                 background-color: {self.colors['table_background']};
                 color: {self.colors['table_text']};
+                font-size: 10pt;
+                alternate-background-color: {self.colors['table_alternate_background']};
+                border: none;
+                show-decoration-selected: 1;
                 selection-background-color: {self.colors['table_selection_background']};
                 selection-color: {self.colors['table_selection_text']};
-                alternate-background-color: {self.colors['table_alternate_background']};
-                border: 1px solid {self.colors['border_color']};
-                border-radius: 4px;
-                show-decoration-selected: 1;
-                font-size: 10pt;
+                outline: none;
             }}
 
-            QTreeView::item {{
-                padding: 2px 4px;
-                border: none;
-                min-height: 18px;
-                max-height: 20px;
+            QTreeView::item:alternate {{
+                background-color: {self.colors['table_alternate_background']};
             }}
 
             QTreeView::item:hover {{
                 background-color: {self.colors['table_hover_background']};
                 color: {self.colors['table_text']};
+                border: none;
             }}
 
             QTreeView::item:selected {{
                 background-color: {self.colors['table_selection_background']};
                 color: {self.colors['table_selection_text']};
+                border: none;
             }}
 
-            QTreeView::item:selected:active {{
+            QTreeView::item:selected:hover {{
+                background-color: #8a9bb4;
+                color: {self.colors['table_selection_text']};
+                border: none;
+            }}
+
+            QTreeView::item:selected:focus {{
                 background-color: {self.colors['table_selection_background']};
                 color: {self.colors['table_selection_text']};
+                border: none;
+                outline: none;
             }}
 
-            QTreeView::item:selected:!active {{
-                background-color: {self.colors['table_alternate_background']};
+            /* FileTreeView specific styling */
+            FileTreeView::item:hover {{
+                background-color: {self.colors['table_hover_background']};
                 color: {self.colors['table_text']};
+                border: none;
+            }}
+
+            FileTreeView::item:selected {{
+                background-color: {self.colors['table_selection_background']};
+                color: {self.colors['table_selection_text']};
+                border: none;
+            }}
+
+            FileTreeView::item:selected:hover {{
+                background-color: #8a9bb4;
+                color: {self.colors['table_selection_text']};
+                border: none;
+            }}
+
+            FileTreeView::branch:hover {{
+                background-color: {self.colors['table_hover_background']};
+                color: transparent;
+                border: none;
+            }}
+
+            FileTreeView::branch:selected {{
+                background-color: {self.colors['table_selection_background']};
+                color: transparent;
+                border: none;
+            }}
+
+            FileTreeView::branch:selected:hover {{
+                background-color: #8a9bb4;
+                color: transparent;
+                border: none;
+            }}
+
+            /* MetadataTreeView specific styling */
+            MetadataTreeView {{
+                color: {self.colors['table_text']};
+                background-color: {self.colors['table_background']};
+            }}
+
+            MetadataTreeView[placeholder="false"] {{
+                color: {self.colors['table_text']};
+                background-color: {self.colors['table_background']};
+            }}
+
+            MetadataTreeView[placeholder="false"]::item {{
+                color: {self.colors['table_text']};
+                background-color: transparent;
+            }}
+
+            MetadataTreeView[placeholder="false"]::item:hover {{
+                background-color: {self.colors['table_hover_background']};
+                color: {self.colors['table_text']};
+                border: none;
+            }}
+
+            MetadataTreeView[placeholder="false"]::item:selected {{
+                background-color: {self.colors['table_selection_background']};
+                color: {self.colors['table_selection_text']};
+                border: none;
+            }}
+
+            MetadataTreeView[placeholder="false"]::item:selected:hover {{
+                background-color: #8a9bb4;
+                color: {self.colors['table_selection_text']};
+                border: none;
+            }}
+
+            MetadataTreeView[placeholder="true"]::item {{
+                color: gray;
+                selection-background-color: transparent;
+                background-color: transparent;
+            }}
+
+            MetadataTreeView[placeholder="true"]::item:hover {{
+                background-color: transparent;
+                color: gray;
+                border: none;
+            }}
+
+            MetadataTreeView[placeholder="true"]::item:selected {{
+                background-color: transparent;
+                color: gray;
+                border: none;
             }}
 
             QTreeView::branch {{
-                background-color: transparent;
+                background-color: {self.colors['table_background']};
+                color: transparent;
+                border: none;
+                outline: 0;
+            }}
+
+            QTreeView::branch:selected {{
+                background-color: {self.colors['table_selection_background']};
+                color: transparent;
+                border: none;
+            }}
+
+            QTreeView::branch:hover {{
+                background-color: {self.colors['table_hover_background']};
+                color: transparent;
+                border: none;
+            }}
+
+            QTreeView::branch:selected:hover {{
+                background-color: #8a9bb4;
+                color: transparent;
+                border: none;
             }}
 
             QTreeView::branch:has-siblings:!adjoins-item {{
                 border-image: none;
-                border: none;
+                image: none;
+                background: {self.colors['table_background']};
             }}
 
             QTreeView::branch:has-siblings:adjoins-item {{
                 border-image: none;
-                border: none;
+                image: none;
+                background: {self.colors['table_background']};
             }}
 
             QTreeView::branch:!has-children:!has-siblings:adjoins-item {{
                 border-image: none;
-                border: none;
+                image: none;
+                background: {self.colors['table_background']};
             }}
 
             QTreeView::branch:has-children:!has-siblings:closed,

@@ -13,6 +13,7 @@ from .custom_splash_screen import CustomSplashScreen
 from .file_table_view import FileTableView
 from .file_tree_view import FileTreeView
 from .hover_delegate import HoverItemDelegate
+from .tree_icon_delegate import TreeViewIconDelegate
 from .interactive_header import InteractiveHeader
 from .metadata_edit_dialog import MetadataEditDialog
 from .metadata_tree_view import MetadataTreeView
@@ -46,6 +47,9 @@ from .validated_line_edit import ValidatedLineEdit
 
 # Final transform container
 from .final_transform_container import FinalTransformContainer
+
+# New imports
+from .simple_icon_inverter import SimpleIconInverter, get_dark_icon_for_selection
 
 __all__ = [
     # Progress
@@ -81,10 +85,15 @@ __all__ = [
     'ValidatedLineEdit',
     'InteractiveHeader',
     'HoverItemDelegate',
+    'TreeViewIconDelegate',
 
     # Worker widgets
     'MetadataWorker',
 
     # Final transform container
     'FinalTransformContainer',
+
+    # New imports
+    'SimpleIconInverter',
+    'get_dark_icon_for_selection',
 ]
