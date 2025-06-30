@@ -19,7 +19,9 @@ from core.qt_imports import Qt, QTimer, pyqtSignal, QHBoxLayout, QScrollArea, QV
 from modules.base_module import BaseRenameModule
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_scroll_adjust
+from utils.theme_proxy_style import RenameModuleStyleHelper
 from widgets.rename_module_widget import RenameModuleWidget
+import config
 
 # ApplicationContext integration
 try:
@@ -56,8 +58,12 @@ class RenameModulesArea(QWidget):
 
         # Scrollable module container
         self.scroll_area = QScrollArea()
+        self.scroll_area.setObjectName("rename_modules_scroll")
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        # Apply scroll area background styling
+        RenameModuleStyleHelper.apply_scroll_area_background(self.scroll_area, theme=config.THEME_NAME)
 
         self.scroll_content = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_content)
@@ -66,6 +72,9 @@ class RenameModulesArea(QWidget):
 
         self.scroll_area.setWidget(self.scroll_content)
         main_layout.addWidget(self.scroll_area)
+
+        # Current theme (set before add_module)
+        self.current_theme = config.THEME_NAME
 
         self.add_module()  # Start with one by default
 
@@ -109,6 +118,9 @@ class RenameModulesArea(QWidget):
         module.remove_requested.connect(lambda m=module: self.remove_module(m))
         module.updated.connect(lambda: self._on_module_updated())
         self.module_widgets.append(module)
+
+        # Apply module background styling
+        RenameModuleStyleHelper.apply_module_background(module, theme=self.current_theme)
 
         # Remove separator creation - using margins instead
         self.scroll_layout.addWidget(module)
@@ -206,3 +218,21 @@ class RenameModulesArea(QWidget):
         logger.debug("[Preview] Effective check: %s", [m.is_effective() for m in self.module_widgets], extra={"dev_only": True})
 
         return self.module_widgets
+
+    def set_theme(self, theme: str):
+        """
+        Change the theme for the rename modules area.
+
+        Args:
+            theme: 'dark' or 'light'
+        """
+        self.current_theme = theme
+
+        # Update scroll area background
+        RenameModuleStyleHelper.apply_scroll_area_background(self.scroll_area, theme=theme)
+
+        # Update all existing modules
+        for module_widget in self.module_widgets:
+            RenameModuleStyleHelper.apply_module_background(module_widget, theme=theme)
+
+        logger.debug(f"[RenameModulesArea] Theme changed to: {theme}", extra={"dev_only": True})

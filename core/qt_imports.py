@@ -26,6 +26,7 @@ from PyQt5.QtCore import (
     QObject,
     QPoint,
     QPropertyAnimation,
+    QRect,
     QResource,
     QSize,
     QSortFilterProxyModel,
@@ -101,7 +102,9 @@ from PyQt5.QtWidgets import (
     QSizePolicy,
     QSplashScreen,
     QSplitter,
+    QProxyStyle,
     QStyle,
+    QStyleOption,
     QStyledItemDelegate,
     QStyleFactory,
     QStyleOptionViewItem,
@@ -118,7 +121,7 @@ from PyQt5.QtWidgets import (
 __all__ = [
     # Core
     'QAbstractTableModel', 'QByteArray', 'QDir', 'QEasingCurve', 'QElapsedTimer', 'QEvent', 'QItemSelection', 'QItemSelectionModel',
-    'QItemSelectionRange', 'QMimeData', 'QModelIndex', 'QMutex', 'QMutexLocker', 'QObject', 'QPoint', 'QPropertyAnimation', 'QResource', 'QSize', 'QSortFilterProxyModel', 'Qt', 'QThread',
+    'QItemSelectionRange', 'QMimeData', 'QModelIndex', 'QMutex', 'QMutexLocker', 'QObject', 'QPoint', 'QPropertyAnimation', 'QRect', 'QResource', 'QSize', 'QSortFilterProxyModel', 'Qt', 'QThread',
     'QTimer', 'QUrl', 'QVariant', 'pyqtSignal', 'pyqtSlot',
 
     # GUI
@@ -133,6 +136,6 @@ __all__ = [
     'QAbstractItemView', 'QAction', 'QApplication', 'QButtonGroup', 'QCheckBox', 'QComboBox', 'QDialog', 'QFileDialog',
     'QFileSystemModel', 'QFrame', 'QGraphicsOpacityEffect', 'QGridLayout', 'QGroupBox', 'QHBoxLayout',
     'QHeaderView', 'QLabel', 'QLineEdit', 'QMainWindow', 'QMenu', 'QMessageBox', 'QProgressBar', 'QPushButton', 'QRadioButton', 'QScrollArea', 'QShortcut',
-    'QSizePolicy', 'QSplashScreen', 'QSplitter', 'QStyle', 'QStyledItemDelegate', 'QStyleFactory', 'QStyleOptionViewItem', 'QTableWidget', 'QTableWidgetItem', 'QTableView', 'QTextEdit', 'QTreeView',
+    'QProxyStyle', 'QSizePolicy', 'QSplashScreen', 'QSplitter', 'QStyle', 'QStyleOption', 'QStyledItemDelegate', 'QStyleFactory', 'QStyleOptionViewItem', 'QTableWidget', 'QTableWidgetItem', 'QTableView', 'QTextEdit', 'QTreeView',
     'QVBoxLayout', 'QWidget',
 ]
