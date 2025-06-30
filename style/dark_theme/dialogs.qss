@@ -68,23 +68,23 @@ QDialog QCheckBox::indicator:unchecked {
 
 QDialog QCheckBox::indicator:checked {
     image: url(resources/icons/feather_icons/check-square.svg);
-    background-color: #181818;  /* Keep same background */
-    border-color: #3a3b40;      /* Keep same border */
+    background-color: #181818;  /* Keep same background */;
+    border-color: #3a3b40;      /* Keep same border */;
 }
 
 QDialog QCheckBox::indicator:hover {
-    border-color: #555555;      /* Slightly brighter border on hover */
-    background-color: #232323;  /* Slightly brighter background on hover */
+    border-color: #555555;      /* Slightly brighter border on hover */;
+    background-color: #232323;  /* Slightly brighter background on hover */;
 }
 
 QDialog QCheckBox::indicator:focus {
-    border-color: #666666;      /* Even brighter border on focus */
-    background-color: #2a2a2a;  /* Even brighter background on focus */
+    border-color: #666666;      /* Even brighter border on focus */;
+    background-color: #2a2a2a;  /* Even brighter background on focus */;
 }
 
 /* Text styling for focus state */
 QDialog QCheckBox:focus {
-    font-weight: bold;          /* Bold text when focused */
+    font-weight: bold;          /* Bold text when focused */;
 }
 
 /* Dialog ScrollArea styling */
@@ -159,7 +159,7 @@ QDialog QWidget QLabel, QDialog QFrame QLabel, QDialog QScrollArea QLabel {
 
 /* MetadataEditDialog specific styling - widget-like appearance */
 MetadataEditDialog {
-    background-color: #212121;  /* Main window color */
+    background-color: #212121;  /* Main window color */;
     border: 1px solid #3a3b40;
     border-radius: 8px;
 }
@@ -200,12 +200,12 @@ MetadataEditDialog QPushButton:default {
 
 /* QLineEdit - no border, like specified text module */
 MetadataEditDialog QLineEdit {
-    background-color: #181818;  /* Keep darker for input fields */
+    background-color: #181818;  /* Keep darker for input fields */;
     color: #f0ebd8;
-    border: none;  /* No border like specified text */
+    border: none;  /* No border like specified text */;
     border-radius: 4px;
-    padding: 0px 4px;  /* Minimal padding like specified text */
-    height: 18px;  /* Exact height like specified text */
+    padding: 0px 4px;  /* Minimal padding like specified text */;
+    height: 18px;  /* Exact height like specified text */;
     min-height: 18px;
     max-height: 18px;
     font-size: 9pt;
@@ -213,16 +213,16 @@ MetadataEditDialog QLineEdit {
 }
 
 MetadataEditDialog QLineEdit:focus {
-    background-color: #1a1a1a;  /* Slightly lighter on focus */
+    background-color: #1a1a1a;  /* Slightly lighter on focus */;
 }
 
 /* QTextEdit for multiline fields - no border for description */
 MetadataEditDialog QTextEdit {
     background-color: #181818;
     color: #f0ebd8;
-    border: none;  /* Remove border */
+    border: none;  /* Remove border */;
     border-radius: 4px;
-    padding: 0px 4px;  /* Match QLineEdit padding */
+    padding: 0px 4px;  /* Match QLineEdit padding */;
     font-size: 9pt;
     margin: 0px;
 }

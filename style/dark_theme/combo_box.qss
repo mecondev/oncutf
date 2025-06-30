@@ -8,23 +8,23 @@ QComboBox {
 }
 
 QComboBox:hover {
-    background-color: #3e5c76;  /* Match tree/table hover color */
+    background-color: #3e5c76;  /* Match tree/table hover color */;
     color: #f0ebd8;
 }
 
 QComboBox:pressed {
-    background-color: #8a9bb4;  /* Brightest color - selected+hover from tree view */
+    background-color: #8a9bb4;  /* Brightest color - selected+hover from tree view */;
     color: #0d1321;
 }
 
 QComboBox:focus {
-    background-color: #3e5c76;  /* Dark color - hover */
+    background-color: #3e5c76;  /* Dark color - hover */;
     color: #f0ebd8;
     outline: none;
 }
 
 QComboBox:focus:hover {
-    background-color: #748cab;  /* Intermediate color - selection */
+    background-color: #748cab;  /* Intermediate color - selection */;
     color: #0d1321;
 }
 
@@ -36,12 +36,12 @@ QComboBox:!focus:!hover {
 
 /* Dropdown styling - matches the dropdown list appearance */
 QComboBox QAbstractItemView {
-    background-color: #181818;  /* Match tree/table background */
+    background-color: #181818;  /* Match tree/table background */;
     color: #f0ebd8;
     font-size: 9pt;
-    border: none;  /* Remove border */
+    border: none;  /* Remove border */;
     border-radius: 8px;
-    selection-background-color: #748cab;  /* Match tree/table selection */
+    selection-background-color: #748cab;  /* Match tree/table selection */;
     selection-color: #0d1321;
     outline: none;
 }
@@ -56,17 +56,17 @@ QComboBox QAbstractItemView::item {
 }
 
 QComboBox QAbstractItemView::item:hover {
-    background-color: #3e5c76;  /* Match tree/table hover color */
+    background-color: #3e5c76;  /* Match tree/table hover color */;
     color: #f0ebd8;
 }
 
 QComboBox QAbstractItemView::item:selected {
-    background-color: #748cab;  /* Match tree/table selection color */
+    background-color: #748cab;  /* Match tree/table selection color */;
     color: #0d1321;
 }
 
 QComboBox QAbstractItemView::item:selected:hover {
-    background-color: #8a9bb4;  /* Match tree/table selected+hover color */
+    background-color: #8a9bb4;  /* Match tree/table selected+hover color */;
     color: #0d1321;
 }
 
@@ -79,7 +79,7 @@ QComboBox::drop-down {
 }
 
 QComboBox::drop-down:hover {
-    background-color: #3e5c76;  /* Match hover color */
+    background-color: #3e5c76;  /* Match hover color */;
 }
 
 QComboBox::down-arrow {
