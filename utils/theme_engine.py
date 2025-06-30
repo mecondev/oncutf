@@ -427,42 +427,77 @@ class ThemeEngine:
     def _apply_table_view_styling(self, parent: QWidget):
         """Apply table view styling (replaces table_view.qss)."""
         table_style = f"""
-            QTableView {{
+            QTableView, QTableWidget {{
                 background-color: {self.colors['table_background']};
                 color: {self.colors['table_text']};
-                gridline-color: {self.colors['border_color']};
+                font-size: 9pt;
+                alternate-background-color: {self.colors['table_alternate_background']};
+                gridline-color: transparent;
+                border: none;
+                border-radius: 8px;
                 selection-background-color: {self.colors['table_selection_background']};
                 selection-color: {self.colors['table_selection_text']};
-                alternate-background-color: {self.colors['table_alternate_background']};
-                border: 1px solid {self.colors['border_color']};
-                border-radius: 4px;
+                show-decoration-selected: 0;
+                outline: none;
             }}
 
-            QTableView::item {{
-                padding: 4px;
+            QTableView::item, QTableWidget::item {{
+                border: none;
+                background-color: transparent;
+                padding: 2px 4px;
+                border-radius: 6px;
+                min-height: 16px;
+            }}
+
+            /* Alternative row styling for QTableWidget (preview tables) */
+            QTableWidget::item:alternate {{
+                background-color: {self.colors['table_alternate_background']};
+            }}
+
+            /* Hover effect per cell - let delegate handle this for QTableView, but enable for QTableWidget */
+            QTableView::item:hover, QTableWidget::item:hover {{
+                background-color: transparent;
+                color: {self.colors['table_text']};
+            }}
+
+            /* Selected cell - let delegate handle this for QTableView, but enable for QTableWidget */
+            QTableView::item:selected, QTableWidget::item:selected {{
+                background-color: transparent;
+                color: {self.colors['table_selection_text']};
                 border: none;
             }}
 
-            QTableView::item:hover {{
-                background-color: {self.colors['table_hover_background']};
-                color: {self.colors['table_text']};
-            }}
-
-            QTableView::item:selected {{
-                background-color: {self.colors['table_selection_background']};
+            /* Selected hover - let delegate handle this for QTableView, but enable for QTableWidget */
+            QTableView::item:selected:hover, QTableWidget::item:selected:hover {{
+                background-color: transparent;
                 color: {self.colors['table_selection_text']};
             }}
 
+            /* Focused selected item - let delegate handle this for QTableView, but enable for QTableWidget */
+            QTableView::item:selected:focus, QTableWidget::item:selected:focus {{
+                background-color: transparent;
+                color: {self.colors['table_selection_text']};
+                outline: none;
+            }}
+
+            /* Enable proper alternate colors for QTableWidget */
+            QTableWidget {{
+                alternate-background-color: {self.colors['table_alternate_background']};
+            }}
+
+            /* Header styling */
             QHeaderView::section {{
-                background-color: {self.colors['table_header_background']};
+                background-color: {self.colors['table_background']};
                 color: {self.colors['table_text']};
-                border: 1px solid {self.colors['border_color']};
-                padding: 6px 8px;
-                font-weight: 600;
+                font-size: 9pt;
+                padding: 4px;
+                border: none;
+                border-radius: 8px;
             }}
 
             QHeaderView::section:hover {{
-                background-color: {self.colors['button_background_hover']};
+                background-color: {self.colors['table_hover_background']};
+                border: none;
             }}
 
             QHeaderView::section:pressed {{

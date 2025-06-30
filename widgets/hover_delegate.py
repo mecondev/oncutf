@@ -27,7 +27,7 @@ class HoverItemDelegate(QStyledItemDelegate):
         self.hovered_row: int = -1
 
         # Get colors from theme system
-        self.hover_color: QColor = get_qcolor("hover")
+        self.hover_color: QColor = get_qcolor("table_hover_background")
 
     def update_hover_row(self, row: int) -> None:
         """
@@ -72,16 +72,16 @@ class HoverItemDelegate(QStyledItemDelegate):
         background_color = None
         if is_selected and is_hovered:
             # Selected + hovered: slightly lighter than normal selection
-            background_color = QColor(get_theme_color("selected_hover"))
+            background_color = QColor(get_theme_color("highlight_light_blue"))
         elif is_selected:
             # Normal selection color
-            background_color = QColor(get_theme_color("selected"))
+            background_color = QColor(get_theme_color("table_selection_background"))
         elif is_hovered:
             # Hover color - paint over alternate background
             background_color = self.hover_color
         elif row % 2 == 1:
             # Alternate row color for odd rows (only if not selected/hovered)
-            background_color = QColor(get_theme_color("alternate_row"))
+            background_color = QColor(get_theme_color("table_alternate_background"))
         # For even rows, use default background (no painting needed)
 
         if background_color:
@@ -92,7 +92,7 @@ class HoverItemDelegate(QStyledItemDelegate):
         # Draw border for selected rows (only on the last column to avoid overlaps)
         if is_selected and model and column == model.columnCount() - 1:
             painter.save()
-            border_color = QColor(get_theme_color("selected")).darker(130)
+            border_color = QColor(get_theme_color("table_selection_background")).darker(130)
             painter.setPen(QPen(border_color, 1))
 
             # Calculate full row rect
@@ -120,9 +120,9 @@ class HoverItemDelegate(QStyledItemDelegate):
         # For all other columns, set appropriate text color and let default painting handle the rest
         text_option = QStyleOptionViewItem(option)
         if is_selected:
-            text_option.palette.setColor(QPalette.Text, QColor(get_theme_color("text_selected")))
+            text_option.palette.setColor(QPalette.Text, QColor(get_theme_color("table_selection_text")))
         else:
-            text_option.palette.setColor(QPalette.Text, QColor(get_theme_color("text")))
+            text_option.palette.setColor(QPalette.Text, QColor(get_theme_color("table_text")))
 
         # Let default painting handle text (will paint over our background)
         super().paint(painter, text_option, index)

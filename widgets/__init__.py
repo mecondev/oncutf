@@ -1,99 +1,57 @@
 """
-Widgets module for ONCUTF application.
+widgets package initialization
 
-This module contains all custom widgets used throughout the application.
+This package contains all custom widgets used in the OnCutF application.
 """
 
-# Progress widgets
-# Utility widgets
 from .custom_msgdialog import CustomMessageDialog
+from .progress_manager import ProgressManager
+from .progress_widget import ProgressWidget
+from .validated_line_edit import ValidatedLineEdit
+from .base_validated_input import BaseValidatedInput
 from .custom_splash_screen import CustomSplashScreen
-
-# File widgets
 from .file_table_view import FileTableView
 from .file_tree_view import FileTreeView
-from .hover_delegate import HoverItemDelegate
-from .tree_icon_delegate import TreeViewIconDelegate
-from .interactive_header import InteractiveHeader
-from .metadata_edit_dialog import MetadataEditDialog
 from .metadata_tree_view import MetadataTreeView
-
-# Metadata widgets
+from .preview_tables_view import PreviewTablesView
+from .rename_module_widget import RenameModuleWidget
+from .rename_modules_area import RenameModulesArea
 from .metadata_widget import MetadataWidget
-
-# Worker widgets
-from .metadata_worker import MetadataWorker
+from .metadata_edit_dialog import MetadataEditDialog
+from .bulk_rotation_dialog import BulkRotationDialog
+from .rename_history_dialog import RenameHistoryDialog
+from .metadata_waiting_dialog import MetadataWaitingDialog
+from .custom_file_system_model import CustomFileSystemModel
+from .final_transform_container import FinalTransformContainer
 from .name_transform_widget import NameTransformWidget
 from .original_name_widget import OriginalNameWidget
-
-# Preview widgets
-from .preview_tables_view import PreviewTablesView
-from .progress_manager import (
-    ProgressManager,
-    create_copy_progress_manager,
-    create_hash_progress_manager,
-    create_metadata_progress_manager,
-)
-from .progress_widget import (
-    ProgressWidget,
-    create_basic_progress_widget,
-    create_size_based_progress_widget,
-)
-from .rename_module_widget import RenameModuleWidget
-
-# Rename widgets
-from .rename_modules_area import RenameModulesArea
-from .validated_line_edit import ValidatedLineEdit
-
-# Final transform container
-from .final_transform_container import FinalTransformContainer
-
-# New imports
-from .simple_icon_inverter import SimpleIconInverter, get_dark_icon_for_selection
+from .interactive_header import InteractiveHeader
+from .hover_delegate import HoverItemDelegate
+from .metadata_worker import MetadataWorker
 
 __all__ = [
-    # Progress
-    'ProgressWidget',
+    'CustomMessageDialog',
     'ProgressManager',
-    'create_basic_progress_widget',
-    'create_size_based_progress_widget',
-    'create_hash_progress_manager',
-    'create_metadata_progress_manager',
-    'create_copy_progress_manager',
-
-    # File widgets
+    'ProgressWidget',
+    'ValidatedLineEdit',
+    'BaseValidatedInput',
+    'CustomSplashScreen',
     'FileTableView',
     'FileTreeView',
-
-    # Metadata widgets
-    'MetadataWidget',
     'MetadataTreeView',
-    'MetadataEditDialog',
-
-    # Rename widgets
-    'RenameModulesArea',
+    'PreviewTablesView',
     'RenameModuleWidget',
+    'RenameModulesArea',
+    'MetadataWidget',
+    'MetadataEditDialog',
+    'BulkRotationDialog',
+    'RenameHistoryDialog',
+    'MetadataWaitingDialog',
+    'CustomFileSystemModel',
+    'FinalTransformContainer',
     'NameTransformWidget',
     'OriginalNameWidget',
-
-    # Preview widgets
-    'PreviewTablesView',
-
-    # Utility widgets
-    'CustomMessageDialog',
-    'CustomSplashScreen',
-    'ValidatedLineEdit',
     'InteractiveHeader',
     'HoverItemDelegate',
-    'TreeViewIconDelegate',
-
-    # Worker widgets
     'MetadataWorker',
-
-    # Final transform container
-    'FinalTransformContainer',
-
-    # New imports
-    'SimpleIconInverter',
-    'get_dark_icon_for_selection',
 ]

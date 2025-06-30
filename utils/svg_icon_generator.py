@@ -214,62 +214,18 @@ class SVGIconGenerator:
 
     def generate_inverted_icon(self, icon_name: str, size: Optional[int] = None) -> QPixmap:
         """
-        Generate an inverted (dark) icon for selected states.
-
-        Args:
-            icon_name: Name of the feather icon (without .svg extension)
-            size: Icon size override (default: use instance size)
-
-        Returns:
-            QPixmap with dark colored icon for selected states
+        Generate an inverted (dark) version of an icon for selection states.
+        REMOVED: This functionality was too complex and not needed.
         """
-        if size is None:
-            size = self.size
-
-        # Use dark color for selected text (#0d1321)
-        dark_color = "#0d1321"
-
-        # Load and colorize SVG
-        svg_content = self._load_svg_content(icon_name)
-        if not svg_content:
-            return self._create_fallback_pixmap(size)
-
-        colored_svg = self._colorize_svg(svg_content, dark_color)
-
-        # Render to pixmap
-        return self._render_svg_to_pixmap(colored_svg, size)
+        return QPixmap()
 
     def generate_icon_pair(self, icon_name: str, size: Optional[int] = None) -> tuple[QPixmap, QPixmap]:
         """
         Generate both normal and inverted versions of an icon.
-
-        Args:
-            icon_name: Name of the feather icon (without .svg extension)
-            size: Icon size override (default: use instance size)
-
-        Returns:
-            Tuple of (normal_icon, inverted_icon) QPixmap objects
+        REMOVED: This functionality was too complex and not needed.
         """
-        if size is None:
-            size = self.size
-
-        # Normal icon with light color (#f0ebd8)
-        normal_color = "#f0ebd8"
-
-        # Load SVG once
-        svg_content = self._load_svg_content(icon_name)
-        if not svg_content:
-            fallback = self._create_fallback_pixmap(size)
-            return fallback, fallback
-
-        # Generate both versions
-        normal_svg = self._colorize_svg(svg_content, normal_color)
-        inverted_svg = self._colorize_svg(svg_content, "#0d1321")
-
-        normal_pixmap = self._render_svg_to_pixmap(normal_svg, size)
-        inverted_pixmap = self._render_svg_to_pixmap(inverted_svg, size)
-
-        return normal_pixmap, inverted_pixmap
+        normal = self.generate_icon(icon_name, size)
+        return normal, QPixmap()
 
 
 # Convenience functions for backward compatibility
