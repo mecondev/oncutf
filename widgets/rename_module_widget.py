@@ -135,18 +135,33 @@ class RenameModuleWidget(QWidget):
 
     def _apply_module_styling(self):
         """Apply module styling after main app stylesheet is loaded."""
-        # Use a more specific approach - target only this widget directly
+        # Apply styling only to this specific widget using its objectName
         style = """
-            QWidget {
+            QWidget[objectName="RenameModuleWidget"] {
                 background-color: #232323;
                 border: 3px solid #ff0000;
                 border-radius: 6px;
                 margin: 8px;
             }
-            QWidget > QWidget {
-                border: none;
-                margin: 0px;
+            /* Preserve original styling for children widgets */
+            QWidget[objectName="RenameModuleWidget"] QComboBox {
+                background-color: #181818;
+                border: 1px solid #3a3b40;
+                border-radius: 4px;
+                color: #f0ebd8;
+                padding: 2px 8px;
+            }
+            QWidget[objectName="RenameModuleWidget"] QLineEdit {
+                background-color: #181818;
+                border: 1px solid #3a3b40;
+                border-radius: 4px;
+                color: #f0ebd8;
+                padding: 2px 6px;
+            }
+            QWidget[objectName="RenameModuleWidget"] QLabel {
                 background-color: transparent;
+                color: #f0ebd8;
+                border: none;
             }
         """
         self.setStyleSheet(style)
