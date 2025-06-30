@@ -233,35 +233,26 @@ QLineEdit {
 QWidget[objectName="RenameModulesArea"] QScrollArea {
     border: 2px solid #333333;  /* Same color as separator */
     border-radius: 8px;
-    background-color: #212121;
+    background-color: #181818;  /* Same as input fields for consistency */
 }
 
-/* Separators between modules (using QFrame as separator) */
-QFrame[accessibleName="module_separator"] {
-    background-color: #333333;  /* Brighter separator - more visible */
-    border: none;
-    margin: 4px 0px;
-    min-height: 2px;  /* Make separator 2px tall */
-    max-height: 2px;
+/* Scroll area viewport (the actual content area) - keep background for empty space */
+QWidget[objectName="RenameModulesArea"] QScrollArea > QWidget {
+    background-color: #181818;  /* Same as input fields for empty scroll area */
 }
 
-/* Fallback for any generic separator lines in module area */
-QWidget[objectName="RenameModulesArea"] QFrame {
-    background-color: #333333;  /* Consistent separator color */
+/* RenameModuleWidget styling for better visual separation */
+QWidget[objectName="RenameModuleWidget"] {
+    background-color: #232323;  /* Module background - different from scroll area */
+    border: 1px solid #333333;
+    border-radius: 6px;
+    margin: 2px;  /* Space around each module */
 }
 
 /* Fix labels in module area to have consistent background */
 QWidget[objectName="RenameModulesArea"] QLabel {
     background-color: transparent !important;
     color: #f0ebd8;
-}
-
-/* RenameModuleWidget styling for better visual separation */
-QWidget[objectName="RenameModuleWidget"] {
-    background-color: #232323;
-    border: 1px solid #333333;
-    border-radius: 6px;
-    margin: 1px;
 }
 
 /* Module content containers */

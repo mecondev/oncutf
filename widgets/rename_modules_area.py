@@ -62,7 +62,7 @@ class RenameModulesArea(QWidget):
         self.scroll_content = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_content)
         self.scroll_layout.setContentsMargins(2, 2, 2, 2)  # Further reduced for compactness
-        self.scroll_layout.setSpacing(4)  # Further reduced spacing between modules
+        self.scroll_layout.setSpacing(0)  # No spacing between modules - using margins instead
 
         self.scroll_area.setWidget(self.scroll_content)
         main_layout.addWidget(self.scroll_area)
@@ -110,12 +110,11 @@ class RenameModulesArea(QWidget):
         module.updated.connect(lambda: self._on_module_updated())
         self.module_widgets.append(module)
 
-        # Add separator if this is not the first module
-        if len(self.module_widgets) > 1:
-            separator = self._create_separator()
-            self.scroll_layout.addWidget(separator)
-
+        # Remove separator creation - using margins instead
         self.scroll_layout.addWidget(module)
+
+        # Update layout stretch to prevent modules from expanding
+        self._update_layout_stretch()
 
         # Schedule scroll to new module
         schedule_scroll_adjust(lambda: self._scroll_to_show_new_module(module), 50)
@@ -129,21 +128,14 @@ class RenameModulesArea(QWidget):
             return
 
         if module in self.module_widgets:
-            # Find and remove any separator associated with this module
-            module_index = self.scroll_layout.indexOf(module)
-            if module_index > 0:  # Check if there's a separator before this module
-                previous_widget = self.scroll_layout.itemAt(module_index - 1)
-                if previous_widget and hasattr(previous_widget.widget(), 'accessibleName'):
-                    if previous_widget.widget().accessibleName() == "module_separator":
-                        separator = previous_widget.widget()
-                        self.scroll_layout.removeWidget(separator)
-                        separator.setParent(None)
-                        separator.deleteLater()
-
+            # Remove separator handling since we're using margins now
             self.module_widgets.remove(module)
             self.scroll_layout.removeWidget(module)
             module.setParent(None)
             module.deleteLater()
+
+            # Update layout stretch to maintain proper layout
+            self._update_layout_stretch()
 
             # If only one module remains, scroll to top
             if len(self.module_widgets) == 1:
@@ -171,16 +163,16 @@ class RenameModulesArea(QWidget):
             self.scroll_area.ensureWidgetVisible(new_module, 50, 50)
             logger.debug(f"[RenameModulesArea] Scrolled to show new module ({len(self.module_widgets)} total)", extra={"dev_only": True})
 
-    def _create_separator(self):
-        """Create a visual separator between modules."""
-        from core.qt_imports import QFrame
-        separator = QFrame()
-        separator.setFrameShape(QFrame.HLine)
-        separator.setFrameShadow(QFrame.Plain)
-        separator.setAccessibleName("module_separator")  # For QSS targeting
-        separator.setFixedHeight(2)  # Make separator 2px tall
-        separator.setContentsMargins(10, 0, 10, 0)  # Add some horizontal margin
-        return separator
+    def _update_layout_stretch(self):
+        """Update stretch to prevent modules from expanding to fill container."""
+        # Remove any existing stretch items first
+        for i in reversed(range(self.scroll_layout.count())):
+            item = self.scroll_layout.itemAt(i)
+            if item and item.spacerItem():
+                self.scroll_layout.removeItem(item)
+
+        # Add stretch at the end to push modules to top
+        self.scroll_layout.addStretch()
 
     def set_current_file_for_modules(self, file_item) -> None:
         """
