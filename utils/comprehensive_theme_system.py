@@ -106,13 +106,21 @@ class ComprehensiveThemeColors:
         'border_color': '#3a3b40',
         'border_hover': '#555555',
         'border_focus': '#666666',
+
+        # Extra colors found in QSS files
+        'very_dark_background': '#0d1321',
+        'medium_background': '#2c2c2c',
+        'bright_background': '#5a5a5a',
+        'light_border': '#666666',
+        'disabled_background': '#232323',
+        'disabled_text': '#888888',
     }
 
 
 class ComprehensiveThemeApplier:
     """Applies comprehensive theming to all UI elements."""
 
-    def __init__(self, theme_name: str = None):
+    def __init__(self, theme_name: str = "dark"):
         self.theme_name = theme_name or config.THEME_NAME
         self.colors = ComprehensiveThemeColors.DARK  # Only dark for now
 
@@ -278,3 +286,9 @@ class ComprehensiveThemeApplier:
                 color: {self.colors['app_text']};
             }}
         """)
+
+    def set_theme(self, theme_name: str):
+        """Change theme (for future expansion)."""
+        self.theme_name = theme_name
+        # For now only dark theme supported
+        self.colors = ComprehensiveThemeColors.DARK

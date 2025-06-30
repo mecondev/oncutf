@@ -29,7 +29,7 @@ from config import SPLASH_SCREEN_DURATION
 from main_window import MainWindow
 from utils.fonts import _get_inter_fonts
 from utils.logger_setup import ConfigureLogger
-from utils.theme import load_stylesheet
+from utils.theme_engine import ThemeEngine
 from widgets.custom_splash_screen import CustomSplashScreen
 
 # Configure logging first
@@ -57,35 +57,27 @@ def main() -> int:
         # Qt.AA_UseHighDpiPixmaps is defined in PyQt5, but linter may not resolve C++-level attributes
         app.setAttribute(Qt.AA_UseHighDpiPixmaps) # type: ignore[attr-defined]
 
-        # Set native style for proper system cursor integration (simplified logging)
+        # Set native style for better system integration
         system = platform.system()
-        available_styles = QStyleFactory.keys()
-
-        if system == "Windows" and "windowsvista" in available_styles:
-            app.setStyle("windowsvista")
-            logger.debug("Using Windows Vista style", extra={"dev_only": True})
-        elif system == "Windows" and "Windows" in available_styles:
-            app.setStyle("Windows")
-            logger.debug("Using Windows style", extra={"dev_only": True})
-        elif system == "Darwin":  # macOS
-            logger.debug("Using default macOS style", extra={"dev_only": True})
+        if system == "Windows":
+            available_styles = QStyleFactory.keys()
+            if "windowsvista" in available_styles:
+                app.setStyle("windowsvista")
         elif system == "Linux":
-            # Try to use native style if available
+            available_styles = QStyleFactory.keys()
             for style in available_styles:
                 if "gtk" in style.lower():
                     app.setStyle(style)
-                    logger.debug(f"Using {style} style on Linux", extra={"dev_only": True})
                     break
-            else:
-                logger.debug("Using Fusion style on Linux", extra={"dev_only": True})
-
-        logger.debug(f"Qt style: {app.style().objectName()}", extra={"dev_only": True}) # type: ignore
 
         # Load Inter fonts
         logger.debug("Initializing Inter fonts...", extra={"dev_only": True})
         _get_inter_fonts()
 
-        app.setStyleSheet(load_stylesheet())
+        # Initialize theme engine
+        theme_manager = ThemeEngine()
+
+        # We'll apply the theme after creating the main window
 
         # Create custom splash screen
         from utils.path_utils import get_images_dir
@@ -107,6 +99,9 @@ def main() -> int:
 
             # Initialize app
             window = MainWindow()
+
+            # Apply programmatic theme to the entire application
+            theme_manager.apply_complete_theme(app, window)
 
             # Show main window and close splash
             def show_main():
