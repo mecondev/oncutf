@@ -118,8 +118,7 @@ class RenameModuleWidget(QWidget):
         logger.debug(f"[RenameModuleWidget] Before QTimer.singleShot: content_container_layout is {'initialized' if hasattr(self, 'content_container_layout') else 'not initialized'}")
         schedule_ui_update(lambda: self.update_module_content(self.type_combo.currentText()), 0)
 
-        # Apply styling after a delay to ensure it's not overridden by main app stylesheet
-        schedule_ui_update(lambda: self._apply_module_styling(), 100)
+        # CSS styling is now applied via external stylesheet
 
         logger.debug(f"[RenameModuleWidget] Before update_module_content: content_container_layout is {'initialized' if hasattr(self, 'content_container_layout') else 'not initialized'}")
 
@@ -133,38 +132,7 @@ class RenameModuleWidget(QWidget):
             # ApplicationContext not ready yet
             return None
 
-    def _apply_module_styling(self):
-        """Apply module styling after main app stylesheet is loaded."""
-        # Apply styling only to this specific widget using its objectName
-        style = """
-            QWidget[objectName="RenameModuleWidget"] {
-                background-color: #232323;
-                border: 3px solid #ff0000;
-                border-radius: 6px;
-                margin: 8px;
-            }
-            /* Preserve original styling for children widgets */
-            QWidget[objectName="RenameModuleWidget"] QComboBox {
-                background-color: #181818;
-                border: 1px solid #3a3b40;
-                border-radius: 4px;
-                color: #f0ebd8;
-                padding: 2px 8px;
-            }
-            QWidget[objectName="RenameModuleWidget"] QLineEdit {
-                background-color: #181818;
-                border: 1px solid #3a3b40;
-                border-radius: 4px;
-                color: #f0ebd8;
-                padding: 2px 6px;
-            }
-            QWidget[objectName="RenameModuleWidget"] QLabel {
-                background-color: transparent;
-                color: #f0ebd8;
-                border: none;
-            }
-        """
-        self.setStyleSheet(style)
+
 
     def connect_signals_for_module(self, module_widget: QWidget) -> None:
         if hasattr(module_widget, "updated"):

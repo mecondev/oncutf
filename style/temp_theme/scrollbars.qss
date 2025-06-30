@@ -32,11 +32,11 @@ QScrollBar::handle:vertical:pressed, QScrollBar::handle:horizontal:pressed {
 
 /* === Remove scrollbar arrows (step buttons) === */
 /* These are the buttons at the ends of scrollbars — we hide them */
-QScrollBar::sub-line,;
-QScrollBar::add-line,;
-QScrollBar::sub-line:vertical,;
-QScrollBar::add-line:vertical,;
-QScrollBar::sub-line:horizontal,;
+QScrollBar::sub-line,
+QScrollBar::add-line,
+QScrollBar::sub-line:vertical,
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:horizontal,
 QScrollBar::add-line:horizontal {
     background: none;
     border: none;
@@ -46,16 +46,16 @@ QScrollBar::add-line:horizontal {
 
 /* === Remove page step background === */
 /* This disables styling for the blank space before/after the handle */
-QScrollBar::add-page:vertical,;
-QScrollBar::sub-page:vertical,;
-QScrollBar::add-page:horizontal,;
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical,
+QScrollBar::add-page:horizontal,
 QScrollBar::sub-page:horizontal {
     background: none;
 }
 
 /* === Specific settings for vertical scrollbars === */
 QScrollBar:vertical {
-    width: 12px;           /* Thickness of vertical scrollbar */;
+    width: 12px;           /* Thickness of vertical scrollbar */
     background: #2c2c2c;
     margin: 22px 0px 22px 0px;
     border-radius: 6px;
@@ -63,7 +63,7 @@ QScrollBar:vertical {
 
 /* === Specific settings for horizontal scrollbars === */
 QScrollBar:horizontal {
-    height: 12px;          /* Thickness of horizontal scrollbar */;
+    height: 12px;          /* Thickness of horizontal scrollbar */
     background: #2c2c2c;
     margin: 0px 22px 0px 22px;
     border-radius: 6px;
