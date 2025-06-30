@@ -502,6 +502,9 @@ class FileTableView(QTableView):
             self.setSelectionMode(QAbstractItemView.NoSelection)
             self.setContextMenuPolicy(Qt.NoContextMenu)
 
+            # Set placeholder property for styling
+            self.setProperty("placeholder", True)
+
         else:
             # Use batch updates to prevent flickering when re-enabling content
             self.setUpdatesEnabled(False)
@@ -521,6 +524,9 @@ class FileTableView(QTableView):
 
                 self.setSelectionMode(QAbstractItemView.ExtendedSelection)
                 self.setContextMenuPolicy(Qt.CustomContextMenu)
+
+                # Clear placeholder property
+                self.setProperty("placeholder", False)
 
             finally:
                 # Re-enable updates and force a single refresh

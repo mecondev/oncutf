@@ -365,16 +365,15 @@ class ThemeEngine:
 
             QScrollBar:vertical {{
                 background: {self.colors['scroll_track_background']};
-                width: 14px;
-                border-radius: 7px;
-                margin: 0px;
+                width: 12px;
+                border-radius: 6px;
+                margin: 22px 0px 22px 0px;
             }}
 
             QScrollBar::handle:vertical {{
                 background: {self.colors['scroll_handle_background']};
                 min-height: 20px;
-                border-radius: 7px;
-                margin: 2px;
+                border-radius: 6px;
             }}
 
             QScrollBar::handle:vertical:hover {{
@@ -388,21 +387,21 @@ class ThemeEngine:
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
                 border: none;
                 background: none;
-                height: 0px;
+                height: 22px;
+                border-radius: 6px;
             }}
 
             QScrollBar:horizontal {{
                 background: {self.colors['scroll_track_background']};
-                height: 14px;
-                border-radius: 7px;
-                margin: 0px;
+                height: 12px;
+                border-radius: 6px;
+                margin: 0px 22px 0px 22px;
             }}
 
             QScrollBar::handle:horizontal {{
                 background: {self.colors['scroll_handle_background']};
                 min-width: 20px;
-                border-radius: 7px;
-                margin: 2px;
+                border-radius: 6px;
             }}
 
             QScrollBar::handle:horizontal:hover {{
@@ -416,7 +415,14 @@ class ThemeEngine:
             QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
                 border: none;
                 background: none;
-                width: 0px;
+                width: 22px;
+                border-radius: 6px;
+            }}
+
+            /* Remove page step background */
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
+            QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
+                background: none;
             }}
         """
 
@@ -485,8 +491,26 @@ class ThemeEngine:
                 alternate-background-color: {self.colors['table_alternate_background']};
             }}
 
-            /* Header styling */
-            QHeaderView::section {{
+            /* FileTableView placeholder mode styling */
+            FileTableView[placeholder="true"] {{
+                background-color: {self.colors['very_dark_background']};
+            }}
+
+            FileTableView[placeholder="true"]::item {{
+                color: transparent;
+                background-color: transparent;
+            }}
+
+            FileTableView[placeholder="true"]::item:hover {{
+                background-color: transparent;
+            }}
+
+            FileTableView[placeholder="true"]::item:selected {{
+                background-color: transparent;
+            }}
+
+            /* Table Header styling */
+            QTableView QHeaderView::section {{
                 background-color: {self.colors['table_background']};
                 color: {self.colors['table_text']};
                 font-size: 9pt;
@@ -495,12 +519,12 @@ class ThemeEngine:
                 border-radius: 8px;
             }}
 
-            QHeaderView::section:hover {{
+            QTableView QHeaderView::section:hover {{
                 background-color: {self.colors['table_hover_background']};
                 border: none;
             }}
 
-            QHeaderView::section:pressed {{
+            QTableView QHeaderView::section:pressed {{
                 background-color: {self.colors['accent_color']};
                 color: {self.colors['input_selection_text']};
             }}
@@ -602,6 +626,10 @@ class ThemeEngine:
                 background-color: {self.colors['table_background']};
             }}
 
+            MetadataTreeView[placeholder="true"] {{
+                background-color: {self.colors['very_dark_background']};
+            }}
+
             MetadataTreeView[placeholder="false"]::item {{
                 color: {self.colors['table_text']};
                 background-color: transparent;
@@ -700,12 +728,13 @@ class ThemeEngine:
                 height: 12px;
             }}
 
-            QHeaderView::section {{
-                background-color: {self.colors['table_header_background']};
+            QTreeView QHeaderView::section {{
+                background-color: {self.colors['table_background']};
                 color: {self.colors['table_text']};
-                border: 1px solid {self.colors['border_color']};
-                padding: 6px 8px;
-                font-weight: 600;
+                border: none;
+                padding: 4px;
+                border-radius: 8px;
+                font-size: 10pt;
             }}
         """
 

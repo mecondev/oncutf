@@ -21,6 +21,7 @@ from core.qt_imports import Qt, pyqtSignal, QPixmap, QAbstractItemView, QHBoxLay
 
 from utils.filename_validator import get_validation_error_message, is_validation_error_marker
 from utils.logger_factory import get_cached_logger
+from utils.theme import get_theme_color
 from utils.timer_manager import schedule_scroll_adjust, schedule_ui_update
 from utils.tooltip_helper import setup_tooltip, TooltipType
 
@@ -173,7 +174,10 @@ class PreviewTablesView(QWidget):
         self.icon_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.icon_table.setShowGrid(False)
         self.icon_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
-        self.icon_table.setStyleSheet("background-color: #212121;")
+        # Set background color to match main application
+        from utils.theme import get_theme_color
+        bg_color = get_theme_color("medium_background")
+        self.icon_table.setStyleSheet(f"background-color: {bg_color};")
         self.icon_table.verticalHeader().setDefaultSectionSize(22)
 
         tables_layout.addWidget(self.old_names_table)
@@ -184,10 +188,16 @@ class PreviewTablesView(QWidget):
 
     def _setup_placeholders(self):
         """Setup placeholder labels for the preview tables."""
+        # Get background color for placeholders
+        bg_color = get_theme_color("medium_background")
+
         # Setup old names placeholder
         self.old_names_placeholder = QLabel(self.old_names_table.viewport())
         self.old_names_placeholder.setAlignment(Qt.AlignCenter)
         self.old_names_placeholder.setVisible(False)
+
+        # Set background color to match main application
+        self.old_names_placeholder.setStyleSheet(f"background-color: {bg_color};")
 
         from utils.path_utils import get_images_dir
         old_icon_path = get_images_dir() / "old_names-preview_placeholder.png"
@@ -209,6 +219,9 @@ class PreviewTablesView(QWidget):
         self.new_names_placeholder = QLabel(self.new_names_table.viewport())
         self.new_names_placeholder.setAlignment(Qt.AlignCenter)
         self.new_names_placeholder.setVisible(False)
+
+        # Set background color to match main application
+        self.new_names_placeholder.setStyleSheet(f"background-color: {bg_color};")
 
         new_icon_path = get_images_dir() / "new_names-preview_placeholder.png"
         self.new_names_placeholder_icon = QPixmap(str(new_icon_path))
