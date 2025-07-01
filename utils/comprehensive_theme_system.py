@@ -23,7 +23,7 @@ class ComprehensiveThemeColors:
         'input_border': '#3a3b40',
         'input_border_hover': '#555555',
         'input_border_focus': '#748cab',
-        'input_background_hover': '#232323',
+        'input_background_hover': '#1f1f1f',
         'input_background_focus': '#1a1a1a',
         'input_selection_bg': '#748cab',
         'input_selection_text': '#0d1321',
@@ -53,10 +53,10 @@ class ComprehensiveThemeColors:
         # Table/Tree view colors
         'table_background': '#181818',
         'table_text': '#f0ebd8',
-        'table_alternate_background': '#232323',
+        'table_alternate_background': '#1f1f1f',
         'table_selection_background': '#748cab',
         'table_selection_text': '#0d1321',
-        'table_header_background': '#232323',
+        'table_header_background': '#181818',
         'table_hover_background': '#3e5c76',
 
         # Scroll area colors
