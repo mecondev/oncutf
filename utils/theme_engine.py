@@ -526,7 +526,9 @@ class ThemeEngine:
             QTableView, QTableWidget {{
                 background-color: {self.colors['table_background']};
                 color: {self.colors['table_text']};
-                font-size: 9pt;
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['base_size']};
+                font-weight: {self.fonts['base_weight']};
                 alternate-background-color: {self.colors['table_alternate_background']};
                 gridline-color: transparent;
                 border: none;
@@ -540,6 +542,7 @@ class ThemeEngine:
             QTableView::item, QTableWidget::item {{
                 border: none;
                 background-color: transparent;
+                color: {self.colors['table_text']};
                 padding: 2px 4px;
                 border-radius: 6px;
                 min-height: 16px;
@@ -548,6 +551,7 @@ class ThemeEngine:
             /* Alternative row styling for QTableWidget (preview tables) */
             QTableWidget::item:alternate {{
                 background-color: {self.colors['table_alternate_background']};
+                color: {self.colors['table_text']};
             }}
 
             /* Hover effect per cell - let delegate handle this for QTableView, but enable for QTableWidget */
@@ -581,9 +585,35 @@ class ThemeEngine:
                 alternate-background-color: {self.colors['table_alternate_background']};
             }}
 
-            /* FileTableView placeholder mode styling */
+            /* FileTableView normal mode styling - ensure text is visible */
+            FileTableView[placeholder="false"] {{
+                background-color: {self.colors['table_background']};
+                color: {self.colors['table_text']};
+            }}
+
+            FileTableView[placeholder="false"]::item {{
+                color: {self.colors['table_text']};
+                background-color: transparent;
+            }}
+
+            FileTableView[placeholder="false"]::item:alternate {{
+                background-color: {self.colors['table_alternate_background']};
+                color: {self.colors['table_text']};
+            }}
+
+            FileTableView[placeholder="false"]::item:hover {{
+                background-color: {self.colors['table_hover_background']};
+                color: {self.colors['table_text']};
+            }}
+
+            FileTableView[placeholder="false"]::item:selected {{
+                background-color: {self.colors['table_selection_background']};
+                color: {self.colors['table_selection_text']};
+            }}
+
+            /* FileTableView placeholder mode styling - keep normal background */
             FileTableView[placeholder="true"] {{
-                background-color: {self.colors['very_dark_background']};
+                background-color: {self.colors['table_background']};
             }}
 
             FileTableView[placeholder="true"]::item {{
@@ -603,7 +633,9 @@ class ThemeEngine:
             QTableView QHeaderView::section {{
                 background-color: {self.colors['table_background']};
                 color: {self.colors['table_text']};
-                font-size: 9pt;
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['base_size']};
+                font-weight: {self.fonts['base_weight']};
                 padding: 4px;
                 border: none;
                 border-radius: 8px;
@@ -630,7 +662,9 @@ class ThemeEngine:
             QTreeView {{
                 background-color: {self.colors['table_background']};
                 color: {self.colors['table_text']};
-                font-size: 10pt;
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['tree_size']};
+                font-weight: {self.fonts['base_weight']};
                 alternate-background-color: {self.colors['table_alternate_background']};
                 border: none;
                 show-decoration-selected: 1;
@@ -717,7 +751,7 @@ class ThemeEngine:
             }}
 
             MetadataTreeView[placeholder="true"] {{
-                background-color: {self.colors['very_dark_background']};
+                background-color: {self.colors['table_background']};
             }}
 
             MetadataTreeView[placeholder="false"]::item {{
@@ -824,7 +858,9 @@ class ThemeEngine:
                 border: none;
                 padding: 4px;
                 border-radius: 8px;
-                font-size: 10pt;
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['tree_size']};
+                font-weight: {self.fonts['base_weight']};
             }}
         """
 

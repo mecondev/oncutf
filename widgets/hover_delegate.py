@@ -119,10 +119,26 @@ class HoverItemDelegate(QStyledItemDelegate):
 
         # For all other columns, set appropriate text color and let default painting handle the rest
         text_option = QStyleOptionViewItem(option)
+
+        # Set text colors for all palette roles to ensure visibility
         if is_selected:
-            text_option.palette.setColor(QPalette.Text, QColor(get_theme_color("table_selection_text")))
+            # Selected items: use selection text color
+            selection_text_color = QColor(get_theme_color("table_selection_text"))
+            text_option.palette.setColor(QPalette.Text, selection_text_color)
+            text_option.palette.setColor(QPalette.WindowText, selection_text_color)
+            text_option.palette.setColor(QPalette.BrightText, selection_text_color)
+            text_option.palette.setColor(QPalette.ButtonText, selection_text_color)
         else:
-            text_option.palette.setColor(QPalette.Text, QColor(get_theme_color("table_text")))
+            # Non-selected items: use normal text color - FORCE it for all roles
+            normal_text_color = QColor(get_theme_color("table_text"))
+            text_option.palette.setColor(QPalette.Text, normal_text_color)
+            text_option.palette.setColor(QPalette.WindowText, normal_text_color)
+            text_option.palette.setColor(QPalette.BrightText, normal_text_color)
+            text_option.palette.setColor(QPalette.ButtonText, normal_text_color)
+            text_option.palette.setColor(QPalette.HighlightedText, normal_text_color)
+
+            # Force the foreground role as well
+            text_option.palette.setColor(QPalette.Foreground, normal_text_color)
 
         # Let default painting handle text (will paint over our background)
         super().paint(painter, text_option, index)

@@ -81,6 +81,13 @@ class MetadataEditDialog(QDialog):
         # All styling now handled by the QSS theme system
         pass
 
+    def _apply_info_label_style(self, color: str, opacity: str = "1.0"):
+        """Apply consistent font styling to info label."""
+        from utils.fonts import get_inter_family, get_inter_css_weight
+        font_family = get_inter_family('base')
+        font_weight = get_inter_css_weight('base')
+        self.info_label.setStyleSheet(f"color: {color}; font-family: '{font_family}', Arial, sans-serif; font-size: 8pt; font-weight: {font_weight}; opacity: {opacity};")
+
     def _setup_ui(self):
         """Set up the main UI layout."""
         layout = QVBoxLayout(self)
@@ -112,7 +119,8 @@ class MetadataEditDialog(QDialog):
         self.info_label.setWordWrap(True)
         from utils.theme import get_theme_color
         muted_color = get_theme_color('text')
-        self.info_label.setStyleSheet(f"color: {muted_color}; font-size: 8pt; opacity: 0.7;")
+        from utils.fonts import get_inter_family, get_inter_css_weight
+        self._apply_info_label_style(muted_color, opacity="0.7")
         layout.addWidget(self.info_label)
 
         # Update validation info
@@ -337,7 +345,7 @@ class MetadataEditDialog(QDialog):
                 error_message = self.input_field.get_validation_error_message()
                 if error_message:
                     self.info_label.setText(f"Error: {error_message}")
-                    self.info_label.setStyleSheet("color: #ff6b6b; font-size: 8pt;")
+                    self._apply_info_label_style("#ff6b6b")
                     return
 
         # Reset to normal validation info if valid
@@ -368,7 +376,7 @@ class MetadataEditDialog(QDialog):
                 error_message = self.input_field.get_validation_error_message()
                 if error_message:
                     self.info_label.setText(f"Error: {error_message}")
-                    self.info_label.setStyleSheet("color: #ff6b6b; font-size: 8pt;")
+                    self._apply_info_label_style("#ff6b6b")
                     return
 
         # Additional validation using MetadataFieldValidator
@@ -377,7 +385,7 @@ class MetadataEditDialog(QDialog):
         if not is_valid:
             # Show error in info label
             self.info_label.setText(f"Error: {error_message}")
-            self.info_label.setStyleSheet("color: #ff6b6b; font-size: 8pt;")
+            self._apply_info_label_style("#ff6b6b")
             return
 
         # Store the validated value

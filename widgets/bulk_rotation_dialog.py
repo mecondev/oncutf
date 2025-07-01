@@ -33,19 +33,19 @@ class BulkRotationDialog(QDialog):
             QDialog {
                 background-color: #212121;
                 color: #f0ebd8;
-                font-size: 9pt;
+                font-size: 9pt; font-family: "Inter", "Segoe UI", Arial, sans-serif; font-weight: 500;
                 border-radius: 8px;
             }
             QLabel {{
                 background-color: transparent;
                 color: {QLABEL_PRIMARY_TEXT};
-                font-size: 9pt;
+                font-size: 9pt; font-family: "Inter", "Segoe UI", Arial, sans-serif; font-weight: 500;
                 border: none;
                 padding: 2px;
             }}
             QCheckBox {
                 color: #f0ebd8;
-                font-size: 9pt;
+                font-size: 9pt; font-family: "Inter", "Segoe UI", Arial, sans-serif; font-weight: 500;
                 spacing: 8px;
             }
             QCheckBox::indicator {
@@ -76,6 +76,13 @@ class BulkRotationDialog(QDialog):
 
         self._setup_ui()
         self._analyze_files()
+
+    def _apply_info_label_style(self, color: str, opacity: str = "1.0"):
+        """Apply consistent font styling to info label."""
+        from utils.fonts import get_inter_family, get_inter_css_weight
+        font_family = get_inter_family('base')
+        font_weight = get_inter_css_weight('base')
+        self.info_label.setStyleSheet(f"color: {color}; font-family: '{font_family}', Arial, sans-serif; font-size: 8pt; font-weight: {font_weight}; opacity: {opacity};")
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -115,7 +122,7 @@ class BulkRotationDialog(QDialog):
         # Info label
         self.info_label = QLabel()
         self.info_label.setWordWrap(True)
-        self.info_label.setStyleSheet(f"color: {QLABEL_MUTED_TEXT}; font-size: 8pt;")
+        self._apply_info_label_style(QLABEL_MUTED_TEXT)
         layout.addWidget(self.info_label)
 
         # Buttons
@@ -133,7 +140,7 @@ class BulkRotationDialog(QDialog):
             QPushButton {
                 background-color: #2a2a2a;
                 color: #f0ebd8;
-                font-size: 9pt;
+                font-size: 9pt; font-family: "Inter", "Segoe UI", Arial, sans-serif; font-weight: 500;
                 border: none;
                 border-radius: 8px;
                 padding: 4px 12px 4px 8px;
@@ -155,7 +162,7 @@ class BulkRotationDialog(QDialog):
             QPushButton {
                 background-color: #2a2a2a;
                 color: #f0ebd8;
-                font-size: 9pt;
+                font-size: 9pt; font-family: "Inter", "Segoe UI", Arial, sans-serif; font-weight: 500;
                 border: none;
                 border-radius: 8px;
                 padding: 4px 12px 4px 8px;
