@@ -381,6 +381,15 @@ class FileLoadManager:
                 else:
                     logger.debug("[FileLoadManager] Skipped metadata tree refresh (metadata operation in progress)", extra={"dev_only": True})
 
+            # Enable metadata search field when files are loaded
+            if hasattr(self.parent_window, 'metadata_search_field'):
+                if total_files > 0:
+                    self.parent_window.metadata_search_field.setEnabled(True)
+                    logger.debug("[FileLoadManager] Enabled metadata search field", extra={"dev_only": True})
+                else:
+                    self.parent_window.metadata_search_field.setEnabled(False)
+                    logger.debug("[FileLoadManager] Disabled metadata search field", extra={"dev_only": True})
+
             logger.info("[FileLoadManager] UI refresh completed successfully", extra={"dev_only": True})
 
         except Exception as e:

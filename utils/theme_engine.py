@@ -248,6 +248,44 @@ class ThemeEngine:
                 border-color: {self.colors['border_color']};
             }}
 
+            /* Specific styling for metadata search field */
+            QLineEdit#metadataSearchField {{
+                background-color: {self.colors['input_background']};
+                border: 1px solid {self.colors['input_border']};
+                border-radius: 4px;
+                color: {self.colors['input_text']};
+                padding: 2px 8px;
+                min-height: 16px;
+                max-height: 18px;
+                margin-top: 0px;
+                margin-bottom: 2px;
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['interface_size']};
+                font-weight: {self.fonts['base_weight']};
+            }}
+
+            QLineEdit#metadataSearchField:enabled:hover {{
+                background-color: {self.colors['input_background_hover']};
+                border-color: {self.colors['input_border_hover']};
+            }}
+
+            QLineEdit#metadataSearchField:enabled:focus {{
+                border-color: {self.colors['input_border_focus']};
+                background-color: {self.colors['input_background_focus']};
+            }}
+
+            QLineEdit#metadataSearchField:disabled {{
+                background-color: {self.colors['disabled_background']};
+                color: {self.colors['disabled_text']};
+                border-color: {self.colors['border_color']};
+            }}
+
+            QLineEdit#metadataSearchField:disabled:hover {{
+                background-color: {self.colors['disabled_background']};
+                color: {self.colors['disabled_text']};
+                border-color: {self.colors['border_color']};
+            }}
+
             QTextEdit, QPlainTextEdit {{
                 background-color: {self.colors['input_background']};
                 color: {self.colors['input_text']};
@@ -316,6 +354,40 @@ class ThemeEngine:
             QPushButton:default:hover {{
                 background-color: {self.colors['highlight_blue']};
                 border-color: {self.colors['highlight_blue']};
+            }}
+
+            /* Specific styling for FinalTransformContainer buttons */
+            FinalTransformContainer QPushButton {{
+                background-color: {self.colors['button_background']};
+                border: none;
+                border-radius: 6px;
+                color: {self.colors['button_text']};
+                padding: 2px;
+                margin: 0px;
+                font-family: "{self.fonts['medium_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['interface_size']};
+                font-weight: {self.fonts['medium_weight']};
+                min-width: 30px;
+                max-width: 30px;
+                min-height: 30px;
+                max-height: 30px;
+            }}
+
+            FinalTransformContainer QPushButton:hover {{
+                background-color: {self.colors['button_background_hover']};
+                border: none;
+            }}
+
+            FinalTransformContainer QPushButton:pressed {{
+                background-color: {self.colors['button_background_pressed']};
+                color: {self.colors['button_text_pressed']};
+                border: none;
+            }}
+
+            FinalTransformContainer QPushButton:disabled {{
+                background-color: {self.colors['button_background_disabled']};
+                color: {self.colors['button_text_disabled']};
+                border: none;
             }}
 
             QCheckBox {{
@@ -1006,8 +1078,74 @@ class ThemeEngine:
 
     def _apply_tooltip_styling(self):
         """Apply tooltip styling (replaces tooltip.qss)."""
-        # Tooltip styling is handled globally by Qt
-        pass
+        # Apply global tooltip styling to the application
+        tooltip_style = f"""
+            /* Enhanced standard tooltip */
+            QToolTip {{
+                background-color: {self.colors['tooltip_background']};
+                color: {self.colors['tooltip_text']};
+                border: 1px solid {self.colors['tooltip_border']};
+                border-radius: 6px;
+                padding: 2px 4px;
+                font-size: {self.fonts['interface_size']};
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-weight: {self.fonts['base_weight']};
+            }}
+
+            /* Custom Error Tooltip */
+            .ErrorTooltip {{
+                background-color: {self.colors['tooltip_error_background']};
+                color: {self.colors['tooltip_error_text']};
+                border: 1px solid {self.colors['tooltip_error_border']};
+                border-radius: 6px;
+                padding: 2px 4px;
+                font-size: {self.fonts['interface_size']};
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-weight: {self.fonts['base_weight']};
+            }}
+
+            /* Custom Warning Tooltip */
+            .WarningTooltip {{
+                background-color: {self.colors['tooltip_warning_background']};
+                color: {self.colors['tooltip_warning_text']};
+                border: 1px solid {self.colors['tooltip_warning_border']};
+                border-radius: 6px;
+                padding: 2px 4px;
+                font-size: {self.fonts['interface_size']};
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-weight: {self.fonts['base_weight']};
+            }}
+
+            /* Custom Info Tooltip */
+            .InfoTooltip {{
+                background-color: {self.colors['tooltip_info_background']};
+                color: {self.colors['tooltip_info_text']};
+                border: 1px solid {self.colors['tooltip_info_border']};
+                border-radius: 6px;
+                padding: 2px 4px;
+                font-size: {self.fonts['interface_size']};
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-weight: {self.fonts['base_weight']};
+            }}
+
+            /* Custom Success Tooltip */
+            .SuccessTooltip {{
+                background-color: {self.colors['tooltip_success_background']};
+                color: {self.colors['tooltip_success_text']};
+                border: 1px solid {self.colors['tooltip_success_border']};
+                border-radius: 6px;
+                padding: 2px 4px;
+                font-size: {self.fonts['interface_size']};
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-weight: {self.fonts['base_weight']};
+            }}
+        """
+
+        # Get current application and add tooltip styling
+        app = QApplication.instance()
+        if app and isinstance(app, QApplication):
+            current_style = app.styleSheet()
+            app.setStyleSheet(current_style + "\n" + tooltip_style)
 
     def apply_to_widget(self, widget: QWidget, component_type: str = "auto"):
         """Apply styling to a specific widget."""

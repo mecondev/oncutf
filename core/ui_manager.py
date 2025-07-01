@@ -314,10 +314,12 @@ class UIManager:
 
         # Search layout
         search_layout = QHBoxLayout()
+        search_layout.setContentsMargins(0, 0, 0, 2)  # Add small bottom margin to align with table
         self.parent_window.metadata_search_field = QLineEdit()
         self.parent_window.metadata_search_field.setPlaceholderText("Search metadata...")
-        self.parent_window.metadata_search_field.setFixedHeight(20)  # Same height as rename module combo boxes
+        self.parent_window.metadata_search_field.setFixedHeight(18)  # Smaller height for better alignment
         self.parent_window.metadata_search_field.setObjectName("metadataSearchField")  # For QSS styling
+        self.parent_window.metadata_search_field.setEnabled(False)  # Initially disabled
 
         # Add search icon as QAction (always last)
         from utils.path_utils import get_icons_dir
@@ -325,11 +327,11 @@ class UIManager:
         self.parent_window.search_action = QAction(QIcon(str(search_icon_path)), "Search", self.parent_window.metadata_search_field)
         self.parent_window.metadata_search_field.addAction(self.parent_window.search_action, QLineEdit.TrailingPosition)
 
-        # Add clear icon (X) as QAction - Trailing, πριν το φακό
+        # Add clear icon (X) as QAction - Trailing, before the search icon
         clear_icon_path = get_icons_dir() / "feather_icons" / "x_dark.svg"
         self.parent_window.clear_search_action = QAction(QIcon(str(clear_icon_path)), "Clear", self.parent_window.metadata_search_field)
         self.parent_window.clear_search_action.triggered.connect(self._clear_metadata_search)
-        # Προσθέτουμε το Χ πριν το search icon (Trailing, αλλά μπαίνει πρώτο)
+        # Add the X before the search icon (Trailing, but added first)
         self.parent_window.metadata_search_field.addAction(self.parent_window.clear_search_action, QLineEdit.TrailingPosition)
         self.parent_window.clear_search_action.setVisible(False)  # Initially hidden
 
@@ -339,13 +341,13 @@ class UIManager:
             lambda pos: self._show_search_context_menu(pos, self.parent_window.metadata_search_field)
         )
 
-        # QSortFilterProxyModel για το metadata tree
+        # QSortFilterProxyModel for the metadata tree
         from widgets.metadata_tree_view import MetadataProxyModel
         self.parent_window.metadata_proxy_model = MetadataProxyModel()
         self.parent_window.metadata_proxy_model.setFilterCaseSensitivity(Qt.CaseInsensitive)
-        self.parent_window.metadata_proxy_model.setFilterKeyColumn(-1)  # Όλα τα columns
+        self.parent_window.metadata_proxy_model.setFilterKeyColumn(-1)  # All columns
 
-        # Συνδέουμε το QLineEdit με το proxy model
+        # Connect the QLineEdit to the proxy model
         self.parent_window.metadata_search_field.textChanged.connect(self._on_metadata_search_text_changed)
 
         search_layout.addWidget(self.parent_window.metadata_search_field)
@@ -354,7 +356,7 @@ class UIManager:
         # Metadata Tree View
         self.parent_window.metadata_tree_view = MetadataTreeView()
         # NOTE: files_dropped signal is no longer connected - FileTableView calls MetadataManager directly
-        # Συνδέουμε το proxy model με το tree view
+        # Connect the proxy model to the tree view
         self.parent_window.metadata_tree_view.setModel(self.parent_window.metadata_proxy_model)
         right_layout.addWidget(self.parent_window.metadata_tree_view)
         logger.debug("[UIManager] MetadataTreeView widget added to layout", extra={"dev_only": True})

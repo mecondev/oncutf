@@ -71,8 +71,6 @@ class FinalTransformContainer(QWidget):
         self.add_button.setFixedSize(30, 30)
         self.add_button.setIconSize(QSize(16, 16))
         self.add_button.clicked.connect(self.add_module_requested.emit)
-        self.add_button.setContentsMargins(0, 0, 0, 0)
-        self.add_button.setStyleSheet("QPushButton { padding: 0px; margin: 0px; }")
         self.add_button.setCursor(Qt.PointingHandCursor)  # type: ignore
         setup_tooltip(self.add_button, "Add new module", TooltipType.INFO)
 
@@ -82,8 +80,6 @@ class FinalTransformContainer(QWidget):
         self.remove_button.setFixedSize(30, 30)
         self.remove_button.setIconSize(QSize(16, 16))
         self.remove_button.clicked.connect(self.remove_module_requested.emit)
-        self.remove_button.setContentsMargins(0, 0, 0, 0)
-        self.remove_button.setStyleSheet("QPushButton { padding: 0px; margin: 0px; }")
         self.remove_button.setCursor(Qt.PointingHandCursor)  # type: ignore
         setup_tooltip(self.remove_button, "Remove last module", TooltipType.INFO)
 
