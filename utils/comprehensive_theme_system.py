@@ -14,7 +14,7 @@ class ComprehensiveThemeColors:
     # All colors extracted from dark theme QSS files
     DARK = {
         # Base application colors
-        'app_background': '#212121',
+        'app_background': '#181818',
         'app_text': '#f0ebd8',
 
         # Input field colors

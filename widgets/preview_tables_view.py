@@ -189,7 +189,7 @@ class PreviewTablesView(QWidget):
     def _setup_placeholders(self):
         """Setup placeholder labels for the preview tables."""
         # Get background color for placeholders
-        bg_color = get_theme_color("medium_background")
+        bg_color = get_theme_color("table_background")
 
         # Setup old names placeholder
         self.old_names_placeholder = QLabel(self.old_names_table.viewport())

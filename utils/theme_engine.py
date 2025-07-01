@@ -53,8 +53,8 @@ class ThemeEngine:
         self._apply_input_styling(main_window)
         self._apply_button_styling(main_window)
         self._apply_combo_box_styling(main_window)
-        self._apply_table_view_styling(main_window)
-        self._apply_tree_view_styling(main_window)
+        self._apply_table_view_styling_globally(app)
+        self._apply_tree_view_styling_globally(app)
         self._apply_scroll_area_styling(main_window)
         self._apply_dialog_styling(main_window)
         self._apply_tooltip_styling()
@@ -76,6 +76,11 @@ class ThemeEngine:
                 font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
                 font-size: {self.fonts['base_size']};
                 font-weight: {self.fonts['base_weight']};
+            }}
+
+            /* Ensure QTableView and QTreeView use their specific background */
+            QTableView, QTreeView {{
+                background-color: {self.colors['table_background']} !important;
             }}
 
             QLabel {{
@@ -625,7 +630,7 @@ class ThemeEngine:
 
             /* Table Header styling */
             QTableView QHeaderView::section {{
-                background-color: {self.colors['table_background']};
+                background-color: {self.colors['table_header_background']};
                 color: {self.colors['table_text']};
                 font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
                 font-size: {self.fonts['base_size']};
@@ -646,9 +651,45 @@ class ThemeEngine:
             }}
         """
 
-        # Apply to all table views
+                        # Apply to all table views with specific priority
         for widget in parent.findChildren(QTableView):
             widget.setStyleSheet(table_style)
+
+    def _apply_table_view_styling_globally(self, app: QApplication):
+        """Apply table view styling globally to override base styling."""
+        table_style = f"""
+            QTableView, QTableWidget, FileTableView {{
+                background-color: {self.colors['table_background']} !important;
+                color: {self.colors['table_text']};
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['base_size']};
+                font-weight: {self.fonts['base_weight']};
+                alternate-background-color: {self.colors['table_alternate_background']};
+                gridline-color: transparent;
+                border: none;
+                border-radius: 8px;
+                selection-background-color: {self.colors['table_selection_background']};
+                selection-color: {self.colors['table_selection_text']};
+                show-decoration-selected: 0;
+                outline: none;
+            }}
+
+            /* Table Header styling */
+            QTableView QHeaderView::section, FileTableView QHeaderView::section {{
+                background-color: {self.colors['table_header_background']} !important;
+                color: {self.colors['table_text']};
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['base_size']};
+                font-weight: {self.fonts['base_weight']};
+                padding: 4px;
+                border: none;
+                border-radius: 8px;
+            }}
+        """
+
+        # Apply globally to ensure it overrides base styling
+        current_style = app.styleSheet()
+        app.setStyleSheet(current_style + "\n" + table_style)
 
     def _apply_tree_view_styling(self, parent: QWidget):
         """Apply tree view styling (replaces tree_view.qss)."""
@@ -861,6 +902,39 @@ class ThemeEngine:
         # Apply to all tree views
         for widget in parent.findChildren(QTreeView):
             widget.setStyleSheet(tree_style)
+
+    def _apply_tree_view_styling_globally(self, app: QApplication):
+        """Apply tree view styling globally to override base styling."""
+        tree_style = f"""
+            QTreeView, FileTreeView, MetadataTreeView {{
+                background-color: {self.colors['table_background']} !important;
+                color: {self.colors['table_text']};
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['tree_size']};
+                font-weight: {self.fonts['base_weight']};
+                alternate-background-color: {self.colors['table_alternate_background']};
+                border: none;
+                show-decoration-selected: 1;
+                selection-background-color: {self.colors['table_selection_background']};
+                selection-color: {self.colors['table_selection_text']};
+                outline: none;
+            }}
+
+            QTreeView QHeaderView::section, FileTreeView QHeaderView::section, MetadataTreeView QHeaderView::section {{
+                background-color: {self.colors['table_background']} !important;
+                color: {self.colors['table_text']};
+                border: none;
+                padding: 4px;
+                border-radius: 8px;
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['tree_size']};
+                font-weight: {self.fonts['base_weight']};
+            }}
+        """
+
+        # Apply globally to ensure it overrides base styling
+        current_style = app.styleSheet()
+        app.setStyleSheet(current_style + "\n" + tree_style)
 
     def _apply_dialog_styling(self, parent: QWidget):
         """Apply dialog styling (replaces dialogs.qss)."""
