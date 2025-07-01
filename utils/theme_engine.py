@@ -87,6 +87,7 @@ class ThemeEngine:
                 border: none;
                 border-radius: 0px;
                 padding: 2px;
+                margin: 0px;
             }}
 
             QFrame {{
@@ -279,11 +280,10 @@ class ThemeEngine:
         button_style = f"""
             QPushButton {{
                 background-color: {self.colors['button_background']};
-                border: 1px solid {self.colors['button_border']};
-                border-radius: 4px;
+                border: none;
+                border-radius: 8px;
                 color: {self.colors['button_text']};
-                padding: 6px 12px;
-                min-height: 24px;
+                padding: 4px 12px 4px 8px;
                 font-family: "{self.fonts['medium_family']}", "Segoe UI", Arial, sans-serif;
                 font-size: {self.fonts['interface_size']};
                 font-weight: {self.fonts['medium_weight']};
@@ -291,18 +291,19 @@ class ThemeEngine:
 
             QPushButton:hover {{
                 background-color: {self.colors['button_background_hover']};
-                border-color: {self.colors['input_border_focus']};
+                border: none;
             }}
 
             QPushButton:pressed {{
                 background-color: {self.colors['button_background_pressed']};
                 color: {self.colors['button_text_pressed']};
+                border: none;
             }}
 
             QPushButton:disabled {{
                 background-color: {self.colors['button_background_disabled']};
                 color: {self.colors['button_text_disabled']};
-                border-color: {self.colors['border_color']};
+                border: none;
             }}
 
             QPushButton:default {{
@@ -628,9 +629,9 @@ class ThemeEngine:
                 background-color: {self.colors['table_header_background']};
                 color: {self.colors['table_text']};
                 font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
-                font-size: {self.fonts['base_size']};
+                font-size: 10pt;
                 font-weight: {self.fonts['base_weight']};
-                padding: 4px;
+                padding: 2px 4px;
                 border: none;
                 border-radius: 8px;
             }}
@@ -673,7 +674,10 @@ class ThemeEngine:
             QTableView QHeaderView::section, FileTableView QHeaderView::section {{
                 background-color: {self.colors['table_header_background']} !important;
                 color: {self.colors['table_text']} !important;
-                padding: 4px;
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: 10pt;
+                font-weight: {self.fonts['base_weight']};
+                padding: 2px 4px;
                 border: none;
                 border-radius: 8px;
             }}
@@ -883,10 +887,10 @@ class ThemeEngine:
                 background-color: {self.colors['table_background']};
                 color: {self.colors['table_text']};
                 border: none;
-                padding: 4px;
+                padding: 2px 4px;
                 border-radius: 8px;
                 font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
-                font-size: {self.fonts['tree_size']};
+                font-size: 10pt;
                 font-weight: {self.fonts['base_weight']};
             }}
         """
@@ -916,10 +920,10 @@ class ThemeEngine:
                 background-color: {self.colors['table_background']} !important;
                 color: {self.colors['table_text']};
                 border: none;
-                padding: 4px;
+                padding: 2px 4px;
                 border-radius: 8px;
                 font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
-                font-size: {self.fonts['tree_size']};
+                font-size: 10pt;
                 font-weight: {self.fonts['base_weight']};
             }}
         """

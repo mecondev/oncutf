@@ -200,7 +200,7 @@ class PreviewTablesView(QWidget):
         self.old_names_placeholder.setStyleSheet(f"background-color: {bg_color};")
 
         from utils.path_utils import get_images_dir
-        old_icon_path = get_images_dir() / "old_names-preview_placeholder_enhanced.png"
+        old_icon_path = get_images_dir() / "old_names-preview_placeholder.png"
         self.old_names_placeholder_icon = QPixmap(str(old_icon_path))
 
         if not self.old_names_placeholder_icon.isNull():
@@ -223,7 +223,7 @@ class PreviewTablesView(QWidget):
         # Set background color to match main application
         self.new_names_placeholder.setStyleSheet(f"background-color: {bg_color};")
 
-        new_icon_path = get_images_dir() / "new_names-preview_placeholder_enhanced.png"
+        new_icon_path = get_images_dir() / "new_names-preview_placeholder.png"
         self.new_names_placeholder_icon = QPixmap(str(new_icon_path))
 
         if not self.new_names_placeholder_icon.isNull():
