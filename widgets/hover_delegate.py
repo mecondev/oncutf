@@ -110,13 +110,46 @@ class HoverItemDelegate(QStyledItemDelegate):
             # Get the icon from the model's DecorationRole
             icon_data = model.data(index, Qt.DecorationRole)
             if icon_data and isinstance(icon_data, QIcon):
-                # Paint icon centered in the cell
-                icon_rect = option.rect.adjusted(2, 2, -2, -2)  # Small padding
+                # Check if this is a combined icon (wider than tall) or single icon
+                icon_size = icon_data.actualSize(option.rect.size())
+
+                if icon_size.width() > icon_size.height():
+                    # Combined icon - use wider rect with minimal padding
+                    icon_rect = option.rect.adjusted(1, 2, -1, -2)
+                else:
+                    # Single icon - use square rect with normal padding
+                    icon_rect = option.rect.adjusted(2, 2, -2, -2)
+
                 icon_data.paint(painter, icon_rect, Qt.AlignCenter)
 
             # Don't call super().paint() for column 0 since we handled the icon ourselves
             return
 
-        # For all other columns, just use default painting without modifying colors
-        # The theme engine should handle text colors via QSS
-        super().paint(painter, option, index)
+                # For all other columns, paint everything manually - no super().paint()
+        display_text = model.data(index, Qt.DisplayRole) if model else ""
+        if display_text:
+            # Determine text color based on selection and hover state
+            if is_selected and is_hovered:
+                # Selected + hovered: dark text for light blue background
+                text_color = QColor(get_theme_color("table_selection_text"))
+            elif is_selected:
+                # Selected: dark text for dark background
+                text_color = QColor(get_theme_color("table_selection_text"))
+            else:
+                # Normal or hover: light text
+                text_color = QColor(get_theme_color("table_text"))
+
+            # Paint text manually
+            painter.save()
+            painter.setPen(text_color)
+
+            # Calculate text rect with proper alignment
+            text_rect = option.rect.adjusted(4, 0, -4, 0)  # Small horizontal padding
+
+            # Get alignment from model
+            alignment = model.data(index, Qt.TextAlignmentRole) if model else Qt.AlignLeft | Qt.AlignVCenter
+            if not alignment:
+                alignment = Qt.AlignLeft | Qt.AlignVCenter
+
+            painter.drawText(text_rect, alignment, str(display_text))
+            painter.restore()

@@ -548,28 +548,13 @@ class ThemeEngine:
                 min-height: 16px;
             }}
 
-            /* QTableView items: normal styling - QSS works! */
+            /* QTableView items: basic text color only - delegate handles backgrounds */
             QTableView::item {{
-                color: {self.colors['table_text']} !important;
+                color: {self.colors['table_text']};
                 background-color: transparent;
                 border: none;
                 padding: 2px 4px;
                 min-height: 16px;
-            }}
-
-            QTableView::item:hover {{
-                background-color: {self.colors['table_hover_background']};
-                color: {self.colors['table_text']} !important;
-            }}
-
-            QTableView::item:selected {{
-                background-color: {self.colors['table_selection_background']};
-                color: {self.colors['table_selection_text']} !important;
-            }}
-
-            QTableView::item:selected:hover {{
-                background-color: {self.colors['table_selection_background']};
-                color: {self.colors['table_selection_text']} !important;
             }}
 
             /* Alternative row styling for QTableWidget (preview tables) */
@@ -612,27 +597,12 @@ class ThemeEngine:
                 color: {self.colors['table_text']};
             }}
 
-            /* FileTableView items: inherit from QTableView::item */
+            /* FileTableView items: basic text color only - delegate handles backgrounds */
             FileTableView[placeholder="false"]::item {{
-                color: {self.colors['table_text']} !important;
+                color: {self.colors['table_text']};
                 background-color: transparent;
                 border: none;
                 padding: 2px 4px;
-            }}
-
-            FileTableView[placeholder="false"]::item:hover {{
-                background-color: {self.colors['table_hover_background']};
-                color: {self.colors['table_text']} !important;
-            }}
-
-            FileTableView[placeholder="false"]::item:selected {{
-                background-color: {self.colors['table_selection_background']};
-                color: {self.colors['table_selection_text']} !important;
-            }}
-
-            FileTableView[placeholder="false"]::item:selected:hover {{
-                background-color: {self.colors['table_selection_background']};
-                color: {self.colors['table_selection_text']} !important;
             }}
 
             /* FileTableView placeholder mode styling - keep normal background */
@@ -641,7 +611,7 @@ class ThemeEngine:
             }}
 
             FileTableView[placeholder="true"]::item {{
-                color: transparent;
+                color: {self.colors['table_text']} !important;  /* FORCE TEXT VISIBLE EVEN IN PLACEHOLDER */
                 background-color: transparent;
             }}
 
