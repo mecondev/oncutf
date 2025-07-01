@@ -132,11 +132,8 @@ class HoverItemDelegate(QStyledItemDelegate):
             if is_selected and is_hovered:
                 # Selected + hovered: dark text for light blue background
                 text_color = QColor(get_theme_color("table_selection_text"))
-            elif is_selected:
-                # Selected: dark text for dark background
-                text_color = QColor(get_theme_color("table_selection_text"))
             else:
-                # Normal or hover: light text
+                # All other cases (normal, hover only, selected only): light text
                 text_color = QColor(get_theme_color("table_text"))
 
             # Paint text manually

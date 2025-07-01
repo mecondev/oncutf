@@ -1504,6 +1504,9 @@ class MetadataTreeView(QTreeView):
             # Fallback: set model directly if proxy model is not available
             self.setModel(model)
 
+        # Disable search field when showing empty state
+        self._update_search_field_state(False)
+
     def clear_view(self) -> None:
         """
         Clears the metadata tree view and shows a placeholder message.
