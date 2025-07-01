@@ -11,7 +11,7 @@ sequential file names based on configurable start value, step, and padding.
 
 from typing import Optional
 
-from core.qt_imports import Qt, pyqtSignal, QIntValidator, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget
+from core.qt_imports import Qt, pyqtSignal, QIntValidator, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget, QSize
 
 from modules.base_module import BaseRenameModule
 from utils.icons_loader import get_menu_icon
@@ -104,8 +104,10 @@ class CounterModule(BaseRenameModule):
         btn_plus = QPushButton()
         btn_minus.setIcon(get_menu_icon("minus"))
         btn_plus.setIcon(get_menu_icon("plus"))
-        btn_minus.setFixedSize(24, 24)
-        btn_plus.setFixedSize(24, 24)
+        btn_minus.setFixedSize(22, 22)
+        btn_plus.setFixedSize(22, 22)
+        btn_minus.setIconSize(QSize(12, 12))
+        btn_plus.setIconSize(QSize(12, 12))
 
         # Setup custom tooltips for plus/minus buttons
         setup_tooltip(btn_minus, "Decrease value", TooltipType.INFO)
@@ -136,12 +138,13 @@ class CounterModule(BaseRenameModule):
 
         # Build row layout
         row_layout = QHBoxLayout()
-        row_layout.setContentsMargins(0, 0, 0, 0)
-        row_layout.setSpacing(4)
-        row_layout.addWidget(label)
-        row_layout.addWidget(input_field)
-        row_layout.addWidget(btn_minus)
-        row_layout.addWidget(btn_plus)
+        row_layout.setContentsMargins(4, 2, 4, 2)  # Add padding around the row
+        row_layout.setSpacing(8)  # Increased spacing between elements
+        row_layout.addWidget(label, 0, Qt.AlignVCenter)  # type: ignore
+        row_layout.addWidget(input_field, 0, Qt.AlignVCenter)  # type: ignore
+        row_layout.addSpacing(4)  # Extra space before buttons
+        row_layout.addWidget(btn_minus, 0, Qt.AlignVCenter)  # type: ignore
+        row_layout.addWidget(btn_plus, 0, Qt.AlignVCenter)  # type: ignore
         row_layout.addStretch()
 
         return input_field, row_layout

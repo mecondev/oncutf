@@ -34,6 +34,10 @@ class FinalTransformContainer(QWidget):
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.setObjectName("FinalTransformContainer")
+
+        # Set transparent background to avoid white borders around rounded corners
+        self.setAttribute(Qt.WA_TranslucentBackground, True)  # type: ignore
+
         self._setup_ui()
 
         # Initialize last value for change detection
@@ -90,19 +94,20 @@ class FinalTransformContainer(QWidget):
 
         self.case_label = QLabel("Case")
         self.case_label.setFixedWidth(45)
+        self.case_label.setAlignment(Qt.AlignVCenter)  # type: ignore
 
         self.case_combo = QComboBox()
         self.case_combo.addItems(["original", "lower", "UPPER", "Capitalize"])
-        self.case_combo.setFixedWidth(130)
-        self.case_combo.setFixedHeight(22)
+        self.case_combo.setFixedWidth(126)
+        self.case_combo.setFixedHeight(18)
         self.case_combo.currentIndexChanged.connect(self._on_value_change)
 
         # Add to case row: Label + Combo (left), Stretch (middle), Add Button (right)
-        case_row_layout.addWidget(self.case_label)
+        case_row_layout.addWidget(self.case_label, 0, Qt.AlignVCenter)  # type: ignore
         case_row_layout.addSpacing(8)  # Space between label and combo
-        case_row_layout.addWidget(self.case_combo)
+        case_row_layout.addWidget(self.case_combo, 0, Qt.AlignVCenter)  # type: ignore
         case_row_layout.addStretch()  # This pushes add button to the right
-        case_row_layout.addWidget(self.add_button)
+        case_row_layout.addWidget(self.add_button, 0, Qt.AlignVCenter)  # type: ignore
 
         # Separator row - HBoxLayout: [Label][Combo] --- STRETCH --- [Remove Button]
         separator_row_layout = QHBoxLayout()
@@ -111,19 +116,20 @@ class FinalTransformContainer(QWidget):
 
         self.separator_label = QLabel("Separator")
         self.separator_label.setFixedWidth(45)
+        self.separator_label.setAlignment(Qt.AlignVCenter)  # type: ignore
 
         self.separator_combo = QComboBox()
         self.separator_combo.addItems(["as-is", "snake_case", "kebab-case", "space"])
-        self.separator_combo.setFixedWidth(130)
-        self.separator_combo.setFixedHeight(22)
+        self.separator_combo.setFixedWidth(126)
+        self.separator_combo.setFixedHeight(18)
         self.separator_combo.currentIndexChanged.connect(self._on_value_change)
 
         # Add to separator row: Label + Combo (left), Stretch (middle), Remove Button (right)
-        separator_row_layout.addWidget(self.separator_label)
+        separator_row_layout.addWidget(self.separator_label, 0, Qt.AlignVCenter)  # type: ignore
         separator_row_layout.addSpacing(8)  # Space between label and combo
-        separator_row_layout.addWidget(self.separator_combo)
+        separator_row_layout.addWidget(self.separator_combo, 0, Qt.AlignVCenter)  # type: ignore
         separator_row_layout.addStretch()  # This pushes remove button to the right
-        separator_row_layout.addWidget(self.remove_button)
+        separator_row_layout.addWidget(self.remove_button, 0, Qt.AlignVCenter)  # type: ignore
 
         # Add all to main layout
         main_layout.addLayout(greeklish_layout)

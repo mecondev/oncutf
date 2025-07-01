@@ -180,19 +180,33 @@ class TooltipHelper:
         # Setup hover events
         widget.setMouseTracking(True)
 
-        # Store original event handlers
+                # Store original event handlers
         original_enter = getattr(widget, 'enterEvent', None)
         original_leave = getattr(widget, 'leaveEvent', None)
+
+        # Store timer ID for cleanup
+        tooltip._timer_id = None
 
         def enter_event(event: QEvent):
             if original_enter:
                 original_enter(event)
-            cls._show_persistent_tooltip(widget, tooltip)
+            # Schedule tooltip show with 600ms delay using global timer manager
+            from utils.timer_manager import schedule_ui_update
+            tooltip._timer_id = schedule_ui_update(
+                lambda: cls._show_persistent_tooltip(widget, tooltip),
+                delay=600,
+                timer_id=f"tooltip_show_{id(widget)}"
+            )
 
         def leave_event(event: QEvent):
             try:
                 if original_leave:
                     original_leave(event)
+                # Cancel the timer if still running
+                if hasattr(tooltip, '_timer_id') and tooltip._timer_id:
+                    from utils.timer_manager import cancel_timer
+                    cancel_timer(tooltip._timer_id)
+                    tooltip._timer_id = None
                 # Check if tooltip still exists before trying to hide it
                 if widget in cls._persistent_tooltips and cls._persistent_tooltips[widget] == tooltip:
                     tooltip.hide()
@@ -280,6 +294,10 @@ class TooltipHelper:
         if widget in cls._persistent_tooltips:
             tooltip = cls._persistent_tooltips[widget]
             try:
+                # Cancel any pending timer
+                if hasattr(tooltip, '_timer_id') and tooltip._timer_id:
+                    from utils.timer_manager import cancel_timer
+                    cancel_timer(tooltip._timer_id)
                 tooltip.hide()
                 tooltip.deleteLater()
             except RuntimeError:
@@ -302,6 +320,10 @@ class TooltipHelper:
         # Clear persistent tooltips
         try:
             for tooltip in cls._persistent_tooltips.values():
+                # Cancel any pending timer
+                if hasattr(tooltip, '_timer_id') and tooltip._timer_id:
+                    from utils.timer_manager import cancel_timer
+                    cancel_timer(tooltip._timer_id)
                 tooltip.hide()
                 tooltip.deleteLater()
         except RuntimeError:

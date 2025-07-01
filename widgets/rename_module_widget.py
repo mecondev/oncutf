@@ -21,7 +21,7 @@ Features:
 
 from typing import Optional
 
-from core.qt_imports import pyqtSignal, QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from core.qt_imports import pyqtSignal, QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget, Qt
 
 from modules.counter_module import CounterModule
 from modules.specified_text_module import SpecifiedTextModule
@@ -59,6 +59,9 @@ class RenameModuleWidget(QWidget):
         self.parent_window = parent_window  # Keep for backward compatibility
         self.setObjectName("RenameModuleWidget")
         self.setProperty("module", True)
+
+        # Set transparent background to avoid white borders around rounded corners
+        self.setAttribute(Qt.WA_TranslucentBackground, True)  # type: ignore
 
         self.module_instances = {
             "Original Name": OriginalNameWidget,
