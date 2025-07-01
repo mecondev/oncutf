@@ -109,6 +109,69 @@ class ThemeEngine:
             QTabBar::tab:hover:!selected {{
                 background-color: {self.colors['button_background_hover']};
             }}
+
+            /* Global scrollbar styling for all widgets */
+            QScrollBar:vertical {{
+                background: {self.colors['scroll_track_background']};
+                width: 12px;
+                border-radius: 6px;
+                margin: 22px 0px 22px 0px;
+            }}
+
+            QScrollBar::handle:vertical {{
+                background: {self.colors['scroll_handle_background']};
+                min-height: 20px;
+                border-radius: 6px;
+            }}
+
+            QScrollBar::handle:vertical:hover {{
+                background: {self.colors['scroll_handle_hover']};
+            }}
+
+            QScrollBar::handle:vertical:pressed {{
+                background: {self.colors['scroll_handle_pressed']};
+            }}
+
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                border: none;
+                background: none;
+                height: 22px;
+                border-radius: 6px;
+            }}
+
+            QScrollBar:horizontal {{
+                background: {self.colors['scroll_track_background']};
+                height: 12px;
+                border-radius: 6px;
+                margin: 0px 22px 0px 22px;
+            }}
+
+            QScrollBar::handle:horizontal {{
+                background: {self.colors['scroll_handle_background']};
+                min-width: 20px;
+                border-radius: 6px;
+            }}
+
+            QScrollBar::handle:horizontal:hover {{
+                background: {self.colors['scroll_handle_hover']};
+            }}
+
+            QScrollBar::handle:horizontal:pressed {{
+                background: {self.colors['scroll_handle_pressed']};
+            }}
+
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
+                border: none;
+                background: none;
+                width: 22px;
+                border-radius: 6px;
+            }}
+
+            /* Remove page step background */
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
+            QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
+                background: none;
+            }}
         """
 
         app.setStyleSheet(base_style)
