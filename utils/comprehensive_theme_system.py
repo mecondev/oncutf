@@ -14,7 +14,7 @@ class ComprehensiveThemeColors:
     # All colors extracted from dark theme QSS files
     DARK = {
         # Base application colors
-        'app_background': '#181818',
+        'app_background': '#232323',
         'app_text': '#f0ebd8',
 
         # Input field colors
@@ -51,12 +51,12 @@ class ComprehensiveThemeColors:
         'combo_border': '#3a3b40',
 
         # Table/Tree view colors
-        'table_background': '#181818',
+        'table_background': '#232323',
         'table_text': '#f0ebd8',
-        'table_alternate_background': '#1f1f1f',
+        'table_alternate_background': '#2a2a2a',
         'table_selection_background': '#748cab',
         'table_selection_text': '#0d1321',
-        'table_header_background': '#181818',
+        'table_header_background': '#232323',
         'table_hover_background': '#3e5c76',
 
         # Scroll area colors

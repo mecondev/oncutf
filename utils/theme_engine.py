@@ -49,12 +49,12 @@ class ThemeEngine:
         # Apply base application styling
         self._apply_base_styling(app, main_window)
 
-        # Apply component-specific styling
+                # Apply component-specific styling
         self._apply_input_styling(main_window)
         self._apply_button_styling(main_window)
         self._apply_combo_box_styling(main_window)
-        self._apply_table_view_styling_globally(app)
-        self._apply_tree_view_styling_globally(app)
+        self._apply_table_view_styling(main_window)
+        self._apply_tree_view_styling(main_window)
         self._apply_scroll_area_styling(main_window)
         self._apply_dialog_styling(main_window)
         self._apply_tooltip_styling()
@@ -70,17 +70,12 @@ class ThemeEngine:
                 font-weight: {self.fonts['base_weight']};
             }}
 
-            QWidget {{
+                        QWidget {{
                 background-color: {self.colors['app_background']};
                 color: {self.colors['app_text']};
                 font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
                 font-size: {self.fonts['base_size']};
                 font-weight: {self.fonts['base_weight']};
-            }}
-
-            /* Ensure QTableView and QTreeView use their specific background */
-            QTableView, QTreeView {{
-                background-color: {self.colors['table_background']} !important;
             }}
 
             QLabel {{
@@ -658,29 +653,26 @@ class ThemeEngine:
     def _apply_table_view_styling_globally(self, app: QApplication):
         """Apply table view styling globally to override base styling."""
         table_style = f"""
-            QTableView, QTableWidget, FileTableView {{
+            /* Force table background with highest priority */
+            QTableView {{
                 background-color: {self.colors['table_background']} !important;
-                color: {self.colors['table_text']};
-                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
-                font-size: {self.fonts['base_size']};
-                font-weight: {self.fonts['base_weight']};
-                alternate-background-color: {self.colors['table_alternate_background']};
-                gridline-color: transparent;
-                border: none;
-                border-radius: 8px;
-                selection-background-color: {self.colors['table_selection_background']};
-                selection-color: {self.colors['table_selection_text']};
-                show-decoration-selected: 0;
-                outline: none;
+                color: {self.colors['table_text']} !important;
+            }}
+
+            QTableWidget {{
+                background-color: {self.colors['table_background']} !important;
+                color: {self.colors['table_text']} !important;
+            }}
+
+            FileTableView {{
+                background-color: {self.colors['table_background']} !important;
+                color: {self.colors['table_text']} !important;
             }}
 
             /* Table Header styling */
             QTableView QHeaderView::section, FileTableView QHeaderView::section {{
                 background-color: {self.colors['table_header_background']} !important;
-                color: {self.colors['table_text']};
-                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
-                font-size: {self.fonts['base_size']};
-                font-weight: {self.fonts['base_weight']};
+                color: {self.colors['table_text']} !important;
                 padding: 4px;
                 border: none;
                 border-radius: 8px;
@@ -1036,6 +1028,23 @@ class ThemeEngine:
     def get_color(self, color_key: str) -> str:
         """Get a specific color from the theme."""
         return self.colors.get(color_key, "#ffffff")
+
+    def _fix_table_backgrounds(self, parent: QWidget):
+        """Fix table and tree view backgrounds using palette."""
+        from core.qt_imports import QColor, QTableView, QTreeView
+
+        # Find all table and tree views and set their background programmatically
+        for widget in parent.findChildren(QTableView):
+            palette = widget.palette()
+            palette.setColor(widget.backgroundRole(), QColor(self.colors['table_background']))
+            widget.setPalette(palette)
+            widget.setAutoFillBackground(True)
+
+        for widget in parent.findChildren(QTreeView):
+            palette = widget.palette()
+            palette.setColor(widget.backgroundRole(), QColor(self.colors['table_background']))
+            widget.setPalette(palette)
+            widget.setAutoFillBackground(True)
 
     def set_theme(self, theme_name: str):
         """Change theme (for future expansion)."""
