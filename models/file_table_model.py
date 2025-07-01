@@ -164,11 +164,11 @@ class FileTableModel(QAbstractTableModel):
             if col == 0:
                 return " "
             elif col == 1:
-                return file.filename
+                return str(file.filename)
             elif col == 2:
-                return file.get_human_readable_size()  # assumes method exists
+                return str(file.get_human_readable_size())
             elif col == 3:
-                return file.extension
+                return str(file.extension)
             elif col == 4:
                 # Format the datetime for better display
                 if isinstance(file.modified, datetime):

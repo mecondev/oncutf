@@ -95,9 +95,11 @@ class FileTableView(QTableView):
         self.placeholder_label = QLabel(self.viewport())
         self.placeholder_label.setAlignment(Qt.AlignCenter) # type: ignore
         self.placeholder_label.setVisible(False)
+        # Set background color to match table background (needed even with transparent PNG)
+        self.placeholder_label.setStyleSheet("background-color: #181818;")
 
         from utils.path_utils import get_images_dir
-        icon_path = get_images_dir() / "File_table_placeholder.png"
+        icon_path = get_images_dir() / "File_table_placeholder_fixed.png"
         self.placeholder_icon = QPixmap(str(icon_path))
 
         if not self.placeholder_icon.isNull():

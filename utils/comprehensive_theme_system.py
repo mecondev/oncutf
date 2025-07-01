@@ -13,8 +13,8 @@ class ComprehensiveThemeColors:
 
     # All colors extracted from dark theme QSS files
     DARK = {
-        # Base application colors
-        'app_background': '#232323',
+                # Base application colors
+        'app_background': '#212121',
         'app_text': '#f0ebd8',
 
         # Input field colors
@@ -51,12 +51,12 @@ class ComprehensiveThemeColors:
         'combo_border': '#3a3b40',
 
         # Table/Tree view colors
-        'table_background': '#232323',
+        'table_background': '#181818',
         'table_text': '#f0ebd8',
-        'table_alternate_background': '#2a2a2a',
+        'table_alternate_background': '#1f1f1f',
         'table_selection_background': '#748cab',
         'table_selection_text': '#0d1321',
-        'table_header_background': '#232323',
+        'table_header_background': '#181818',
         'table_hover_background': '#3e5c76',
 
         # Scroll area colors
@@ -67,7 +67,7 @@ class ComprehensiveThemeColors:
         'scroll_handle_pressed': '#748cab',
 
         # Module/Card colors
-        'module_background': '#232323',
+        'module_background': '#181818',
         'module_border': '#3a3b40',
         'module_border_hover': '#555555',
         'module_border_focus': '#748cab',
@@ -112,7 +112,7 @@ class ComprehensiveThemeColors:
         'medium_background': '#2c2c2c',
         'bright_background': '#5a5a5a',
         'light_border': '#666666',
-        'disabled_background': '#232323',
+        'disabled_background': '#181818',
         'disabled_text': '#888888',
     }
 
