@@ -10,6 +10,7 @@ from core.qt_imports import (
     QGroupBox, QCheckBox, QFrame
 )
 from utils.comprehensive_theme_system import ComprehensiveThemeColors
+from utils.fonts import get_inter_family, get_inter_css_weight
 import config
 
 
@@ -22,6 +23,22 @@ class ThemeEngine:
     def __init__(self, theme_name: str = "dark"):
         self.theme_name = theme_name or config.THEME_NAME
         self.colors = ComprehensiveThemeColors.DARK  # Only dark for now
+
+        # Font definitions using Inter fonts
+        self.fonts = {
+            'base_family': get_inter_family('base'),
+            'medium_family': get_inter_family('medium'),
+            'semibold_family': get_inter_family('headers'),
+            'base_weight': get_inter_css_weight('base'),
+            'medium_weight': get_inter_css_weight('medium'),
+            'semibold_weight': get_inter_css_weight('headers'),
+            'base_size': '9pt',
+            'interface_size': '9pt',
+            'tree_size': '10pt',
+            'small_size': '8pt',
+            'large_size': '11pt',
+            'title_size': '14pt'
+        }
 
     def apply_complete_theme(self, app: QApplication, main_window: QMainWindow):
         """Apply complete theming to the entire application."""
@@ -48,17 +65,34 @@ class ThemeEngine:
             QMainWindow {{
                 background-color: {self.colors['app_background']};
                 color: {self.colors['app_text']};
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['base_size']};
+                font-weight: {self.fonts['base_weight']};
             }}
 
             QWidget {{
                 background-color: {self.colors['app_background']};
                 color: {self.colors['app_text']};
-                font-family: "Inter", "Segoe UI", Arial, sans-serif;
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['base_size']};
+                font-weight: {self.fonts['base_weight']};
+            }}
+
+            QLabel {{
+                background-color: transparent;
+                color: {self.colors['app_text']};
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['base_size']};
+                font-weight: {self.fonts['base_weight']};
+                border: none;
+                border-radius: 0px;
+                padding: 2px;
             }}
 
             QFrame {{
                 border: none;
                 background-color: {self.colors['app_background']};
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
             }}
 
             QSplitter {{
@@ -86,6 +120,7 @@ class ThemeEngine:
             QTabWidget::pane {{
                 border: 1px solid {self.colors['border_color']};
                 background-color: {self.colors['app_background']};
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
             }}
 
             QTabWidget::tab-bar {{
@@ -98,6 +133,9 @@ class ThemeEngine:
                 border: 1px solid {self.colors['border_color']};
                 padding: 6px 12px;
                 margin-right: 2px;
+                font-family: "{self.fonts['medium_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['interface_size']};
+                font-weight: {self.fonts['medium_weight']};
             }}
 
             QTabBar::tab:selected {{
@@ -188,6 +226,9 @@ class ThemeEngine:
                 selection-background-color: {self.colors['input_selection_bg']};
                 selection-color: {self.colors['input_selection_text']};
                 min-height: 20px;
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['interface_size']};
+                font-weight: {self.fonts['base_weight']};
             }}
 
             QLineEdit:hover {{
@@ -203,52 +244,29 @@ class ThemeEngine:
             QLineEdit:disabled {{
                 background-color: {self.colors['disabled_background']};
                 color: {self.colors['disabled_text']};
-                border-color: {self.colors['separator_dark']};
+                border-color: {self.colors['border_color']};
             }}
 
             QTextEdit, QPlainTextEdit {{
                 background-color: {self.colors['input_background']};
-                border: 1px solid {self.colors['input_border']};
-                border-radius: 4px;
                 color: {self.colors['input_text']};
-                padding: 4px;
+                border: 1px solid {self.colors['input_border']};
+                border-radius: 8px;
                 selection-background-color: {self.colors['input_selection_bg']};
                 selection-color: {self.colors['input_selection_text']};
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['interface_size']};
+                font-weight: {self.fonts['base_weight']};
             }}
 
             QTextEdit:hover, QPlainTextEdit:hover {{
+                background-color: {self.colors['input_background_hover']};
                 border-color: {self.colors['input_border_hover']};
             }}
 
             QTextEdit:focus, QPlainTextEdit:focus {{
                 border-color: {self.colors['input_border_focus']};
-            }}
-
-            QSpinBox {{
-                background-color: {self.colors['input_background']};
-                border: 1px solid {self.colors['input_border']};
-                border-radius: 4px;
-                color: {self.colors['input_text']};
-                padding: 2px 4px;
-                min-height: 20px;
-            }}
-
-            QSpinBox:hover {{
-                border-color: {self.colors['input_border_hover']};
-            }}
-
-            QSpinBox:focus {{
-                border-color: {self.colors['input_border_focus']};
-            }}
-
-            QSpinBox::up-button, QSpinBox::down-button {{
-                background-color: {self.colors['button_background']};
-                border: 1px solid {self.colors['input_border']};
-                width: 16px;
-            }}
-
-            QSpinBox::up-button:hover, QSpinBox::down-button:hover {{
-                background-color: {self.colors['button_background_hover']};
+                background-color: {self.colors['input_background_focus']};
             }}
         """
 
@@ -266,7 +284,9 @@ class ThemeEngine:
                 color: {self.colors['button_text']};
                 padding: 6px 12px;
                 min-height: 24px;
-                font-weight: 500;
+                font-family: "{self.fonts['medium_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['interface_size']};
+                font-weight: {self.fonts['medium_weight']};
             }}
 
             QPushButton:hover {{
@@ -282,13 +302,14 @@ class ThemeEngine:
             QPushButton:disabled {{
                 background-color: {self.colors['button_background_disabled']};
                 color: {self.colors['button_text_disabled']};
-                border-color: {self.colors['separator_dark']};
+                border-color: {self.colors['border_color']};
             }}
 
             QPushButton:default {{
                 border: 2px solid {self.colors['accent_color']};
                 background-color: {self.colors['accent_color']};
                 color: {self.colors['input_selection_text']};
+                font-weight: {self.fonts['semibold_weight']};
             }}
 
             QPushButton:default:hover {{
@@ -299,6 +320,9 @@ class ThemeEngine:
             QCheckBox {{
                 color: {self.colors['app_text']};
                 spacing: 8px;
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['interface_size']};
+                font-weight: {self.fonts['base_weight']};
             }}
 
             QCheckBox::indicator {{
@@ -343,6 +367,9 @@ class ThemeEngine:
                 min-height: 20px;
                 selection-background-color: {self.colors['input_selection_bg']};
                 selection-color: {self.colors['input_selection_text']};
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['interface_size']};
+                font-weight: {self.fonts['base_weight']};
             }}
 
             QComboBox:hover {{
