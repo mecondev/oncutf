@@ -116,7 +116,8 @@ class FileTableView(QTableView):
 
         # Enable hover visuals
         self.hover_delegate = HoverItemDelegate(self)
-        self.setItemDelegate(self.hover_delegate)
+        # TEMPORARILY DISABLE DELEGATE TO TEST STYLING
+        # self.setItemDelegate(self.hover_delegate)
 
                 # Selection store integration (with fallback to legacy selection handling)
         self._legacy_selection_mode = True  # Start in legacy mode for compatibility
@@ -317,7 +318,8 @@ class FileTableView(QTableView):
 
         # Reset hover delegate state
         if hasattr(self, 'hover_delegate'):
-            self.setItemDelegate(self.hover_delegate)
+            # TEMPORARILY DISABLE DELEGATE TO TEST STYLING
+            # self.setItemDelegate(self.hover_delegate)
             self.hover_delegate.hovered_row = -1
 
         # Update UI
