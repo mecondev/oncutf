@@ -1551,13 +1551,33 @@ class MetadataTreeView(QTreeView):
             search_field.setEnabled(True)
             search_field.setReadOnly(False)
             search_field.setToolTip("Search metadata...")
-            # Clear any custom styling to let theme handle enabled state
-            search_field.setStyleSheet("")
             # Enable action icons
             if hasattr(parent_window, 'search_action'):
                 parent_window.search_action.setEnabled(True)
             if hasattr(parent_window, 'clear_search_action'):
                 parent_window.clear_search_action.setEnabled(True)
+            # Apply complete enabled styling to ensure consistency
+            search_field.setStyleSheet("""
+                QLineEdit#metadataSearchField {
+                    background-color: #181818;
+                    border: 1px solid #3a3b40;
+                    border-radius: 4px;
+                    color: #f0ebd8;
+                    padding: 2px 8px;
+                    min-height: 16px;
+                    max-height: 18px;
+                    margin-top: 0px;
+                    margin-bottom: 2px;
+                }
+                QLineEdit#metadataSearchField:hover {
+                    background-color: #1f1f1f;
+                    border-color: #555555;
+                }
+                QLineEdit#metadataSearchField:focus {
+                    border-color: #748cab;
+                    background-color: #1a1a1a;
+                }
+            """)
             # Restore any saved search text
             if hasattr(parent_window, 'ui_manager'):
                 parent_window.ui_manager.restore_metadata_search_text()
@@ -1571,8 +1591,7 @@ class MetadataTreeView(QTreeView):
                 parent_window.search_action.setEnabled(False)
             if hasattr(parent_window, 'clear_search_action'):
                 parent_window.clear_search_action.setEnabled(False)
-            # Apply disabled styling that preserves all theme properties
-            # Only change colors while maintaining dimensions, padding, fonts, etc.
+            # Apply disabled styling with same dimensions to prevent layout shifts
             search_field.setStyleSheet("""
                 QLineEdit#metadataSearchField:disabled {
                     background-color: #181818;

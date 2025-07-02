@@ -341,6 +341,20 @@ class UIManager:
             lambda pos: self._show_search_context_menu(pos, self.parent_window.metadata_search_field)
         )
 
+        # Setup QCompleter for smart metadata suggestions
+        from core.qt_imports import QCompleter, QStringListModel
+        self.parent_window.metadata_search_completer = QCompleter()
+        self.parent_window.metadata_search_completer.setCaseSensitivity(Qt.CaseInsensitive)
+        self.parent_window.metadata_search_completer.setFilterMode(Qt.MatchContains)
+        self.parent_window.metadata_search_completer.setCompletionMode(QCompleter.PopupCompletion)
+
+        # Create initial empty model
+        self.parent_window.metadata_suggestions_model = QStringListModel()
+        self.parent_window.metadata_search_completer.setModel(self.parent_window.metadata_suggestions_model)
+
+        # Connect completer to search field
+        self.parent_window.metadata_search_field.setCompleter(self.parent_window.metadata_search_completer)
+
         # QSortFilterProxyModel for the metadata tree
         from widgets.metadata_tree_view import MetadataProxyModel
         self.parent_window.metadata_proxy_model = MetadataProxyModel()
