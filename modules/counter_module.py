@@ -39,7 +39,7 @@ class CounterModule(BaseRenameModule):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)  # Match final transformer margins
-        layout.setSpacing(0)  # Match final transformer spacing
+        layout.setSpacing(2)  # Increased spacing between rows by 2px
 
         # Row 1: Start Number
         self.start_input, row1 = self._create_row(
@@ -105,8 +105,8 @@ class CounterModule(BaseRenameModule):
         btn_plus = QPushButton()
         btn_minus.setIcon(get_menu_icon("minus"))
         btn_plus.setIcon(get_menu_icon("plus"))
-        btn_minus.setFixedSize(26, 26)  # Even larger buttons
-        btn_plus.setFixedSize(26, 26)   # Even larger buttons
+        btn_minus.setFixedSize(24, 24)  # Reduced by 2px (1px each side)
+        btn_plus.setFixedSize(24, 24)   # Reduced by 2px (1px each side)
         btn_minus.setIconSize(QSize(16, 16))  # Even larger icons
         btn_plus.setIconSize(QSize(16, 16))   # Even larger icons
 
@@ -139,7 +139,7 @@ class CounterModule(BaseRenameModule):
 
         # Build row layout
         row_layout = QHBoxLayout()
-        row_layout.setContentsMargins(4, 3, 4, 3)  # Increased vertical padding
+        row_layout.setContentsMargins(4, 4, 4, 4)  # Increased vertical padding by 1px
         row_layout.setSpacing(8)  # Increased spacing between elements
         row_layout.addWidget(label, 0, Qt.AlignVCenter)  # type: ignore
         row_layout.addWidget(input_field, 0, Qt.AlignVCenter)  # type: ignore

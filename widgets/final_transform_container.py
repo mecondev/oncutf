@@ -73,7 +73,7 @@ class FinalTransformContainer(QWidget):
         self.add_button = QPushButton()
         self.add_button.setIcon(get_menu_icon("plus"))
         self.add_button.setFixedSize(30, 30)
-        self.add_button.setIconSize(QSize(16, 16))
+        self.add_button.setIconSize(QSize(24, 24))
         self.add_button.clicked.connect(self.add_module_requested.emit)
         self.add_button.setCursor(Qt.PointingHandCursor)  # type: ignore
         setup_tooltip(self.add_button, "Add new module", TooltipType.INFO)
@@ -82,7 +82,7 @@ class FinalTransformContainer(QWidget):
         self.remove_button = QPushButton()
         self.remove_button.setIcon(get_menu_icon("minus"))
         self.remove_button.setFixedSize(30, 30)
-        self.remove_button.setIconSize(QSize(16, 16))
+        self.remove_button.setIconSize(QSize(24, 24))
         self.remove_button.clicked.connect(self.remove_module_requested.emit)
         self.remove_button.setCursor(Qt.PointingHandCursor)  # type: ignore
         setup_tooltip(self.remove_button, "Remove last module", TooltipType.INFO)
@@ -93,12 +93,12 @@ class FinalTransformContainer(QWidget):
         case_row_layout.setContentsMargins(0, 0, 0, 0)
 
         self.case_label = QLabel("Case")
-        self.case_label.setFixedWidth(45)
-        self.case_label.setAlignment(Qt.AlignVCenter)  # type: ignore
+        self.case_label.setFixedWidth(65)  # Increased by 20px
+        self.case_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
 
         self.case_combo = QComboBox()
         self.case_combo.addItems(["original", "lower", "UPPER", "Capitalize"])
-        self.case_combo.setFixedWidth(126)
+        self.case_combo.setFixedWidth(116)  # Reduced by 10px
         self.case_combo.setFixedHeight(18)
         self.case_combo.currentIndexChanged.connect(self._on_value_change)
 
@@ -115,12 +115,12 @@ class FinalTransformContainer(QWidget):
         separator_row_layout.setContentsMargins(0, 0, 0, 0)
 
         self.separator_label = QLabel("Separator")
-        self.separator_label.setFixedWidth(45)
-        self.separator_label.setAlignment(Qt.AlignVCenter)  # type: ignore
+        self.separator_label.setFixedWidth(65)  # Increased by 20px
+        self.separator_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
 
         self.separator_combo = QComboBox()
         self.separator_combo.addItems(["as-is", "snake_case", "kebab-case", "space"])
-        self.separator_combo.setFixedWidth(126)
+        self.separator_combo.setFixedWidth(116)  # Reduced by 10px
         self.separator_combo.setFixedHeight(18)
         self.separator_combo.currentIndexChanged.connect(self._on_value_change)
 

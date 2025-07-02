@@ -946,7 +946,14 @@ class ThemeEngine:
 
             /* RENAME MODULES AREA - Original QSS styling */
             RenameModulesArea {{
-                border: 2px solid #333333;
+                border: 4px solid #444444 !important;
+                border-radius: 8px;
+                background-color: {self.colors['scroll_area_background']};
+            }}
+
+            /* Make sure the scroll area inside RenameModulesArea also has the border */
+            RenameModulesArea QScrollArea {{
+                border: 4px solid #444444 !important;
                 border-radius: 8px;
                 background-color: {self.colors['scroll_area_background']};
             }}

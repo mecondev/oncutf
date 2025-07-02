@@ -42,19 +42,19 @@ class MetadataWidget(QWidget):
     def setup_ui(self) -> None:
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)  # Match final transformer margins
-        layout.setSpacing(12)  # Increased spacing between rows
+        layout.setSpacing(4)  # Set spacing to 4px
 
         # Row 1: Category
         category_row = QHBoxLayout()
-        category_row.setContentsMargins(0, 2, 0, 2)  # Added vertical margins
+        category_row.setContentsMargins(0, 0, 0, 0)  # Removed vertical margins to allow spacing control
         category_row.setSpacing(8)  # Match final transformer spacing between label and control
-        category_label = QLabel("Category:")
-        category_label.setFixedWidth(60)  # Increased width for better text fit
+        category_label = QLabel("Category")
+        category_label.setFixedWidth(70)  # Increased width by 10px
         category_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter) # type: ignore
         self.category_combo = QComboBox()
         self.category_combo.addItem("File Dates", userData="file_dates")
         self.category_combo.addItem("EXIF/Metadata", userData="metadata_keys")
-        self.category_combo.setFixedWidth(130)  # Match final transformer combo width
+        self.category_combo.setFixedWidth(120)  # Reduced width by 10px
         self.category_combo.setFixedHeight(22)  # Match final transformer combo height
         category_row.addWidget(category_label)
         category_row.addWidget(self.category_combo)
@@ -63,13 +63,13 @@ class MetadataWidget(QWidget):
 
         # Row 2: Field
         options_row = QHBoxLayout()
-        options_row.setContentsMargins(0, 2, 0, 2)  # Added vertical margins
+        options_row.setContentsMargins(0, 0, 0, 0)  # Removed vertical margins to allow spacing control
         options_row.setSpacing(8)  # Match final transformer spacing between label and control
-        options_label = QLabel("Field:")
-        options_label.setFixedWidth(60)  # Increased width for better text fit
+        options_label = QLabel("Field")
+        options_label.setFixedWidth(70)  # Increased width by 10px
         options_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter) # type: ignore
         self.options_combo = QComboBox()
-        self.options_combo.setFixedWidth(130)  # Match final transformer combo width
+        self.options_combo.setFixedWidth(120)  # Reduced width by 10px
         self.options_combo.setFixedHeight(22)  # Match final transformer combo height
         options_row.addWidget(options_label)
         options_row.addWidget(self.options_combo)
