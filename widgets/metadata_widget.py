@@ -46,10 +46,10 @@ class MetadataWidget(QWidget):
 
         # Row 1: Category
         category_row = QHBoxLayout()
-        category_row.setContentsMargins(0, 0, 0, 0)
+        category_row.setContentsMargins(0, 2, 0, 2)  # Added vertical margins
         category_row.setSpacing(8)  # Match final transformer spacing between label and control
         category_label = QLabel("Category:")
-        category_label.setFixedWidth(45)  # Match final transformer label width
+        category_label.setFixedWidth(60)  # Increased width for better text fit
         self.category_combo = QComboBox()
         self.category_combo.addItem("File Dates", userData="file_dates")
         self.category_combo.addItem("EXIF/Metadata", userData="metadata_keys")
@@ -62,10 +62,10 @@ class MetadataWidget(QWidget):
 
         # Row 2: Field
         options_row = QHBoxLayout()
-        options_row.setContentsMargins(0, 0, 0, 0)
+        options_row.setContentsMargins(0, 2, 0, 2)  # Added vertical margins
         options_row.setSpacing(8)  # Match final transformer spacing between label and control
         options_label = QLabel("Field:")
-        options_label.setFixedWidth(45)  # Match final transformer label width
+        options_label.setFixedWidth(60)  # Increased width for better text fit
         self.options_combo = QComboBox()
         self.options_combo.setFixedWidth(130)  # Match final transformer combo width
         self.options_combo.setFixedHeight(22)  # Match final transformer combo height

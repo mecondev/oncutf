@@ -29,7 +29,7 @@ class ThemeEngine:
             'input_border_hover': '#555555',
             'input_border_focus': '#748cab',
             'input_background_hover': '#1f1f1f',
-            'input_background_focus': '#1a1a1a',
+            'input_background_focus': '#181818',
             'input_selection_bg': '#748cab',
             'input_selection_text': '#0d1321',
 
@@ -166,71 +166,74 @@ class ThemeEngine:
             }}
 
             /* INPUT FIELDS */
-            QLineEdit {
-                background-color: #2b2b2b;
-                border: 2px solid #3e3e3e;
-                border-radius: 3px;
+            QLineEdit {{
+                background-color: {self.colors['input_background']};
+                border: 1px solid {self.colors['input_border']};
+                border-radius: 4px;
+                color: {self.colors['input_text']};
                 padding: 2px 6px;
-                color: #e0e0e0;
-                font-size: 9pt;
-                font-weight: 400;
-                height: 18px;
-                margin: 2px;
-            }
+                selection-background-color: {self.colors['input_selection_bg']};
+                selection-color: {self.colors['input_selection_text']};
+                min-height: 18px;
+                font-size: {self.fonts['interface_size']};
+            }}
 
-            QLineEdit:focus {
-                border: 2px solid #4a9eff;
-            }
+            QLineEdit:hover {{
+                background-color: {self.colors['input_background_hover']};
+                border-color: {self.colors['input_border_hover']};
+            }}
 
-            QLineEdit:hover:!focus {
-                border: 2px solid #5a5a5a;
-            }
+            QLineEdit:focus {{
+                border-color: {self.colors['input_border_focus']};
+                background-color: {self.colors['input_background_focus']};
+            }}
 
-            /* Error state for QLineEdit - maintain same border width to prevent shifting */
-            QLineEdit[error="true"] {
-                border: 2px solid #ff4444 !important;
+            QLineEdit:disabled {{
+                background-color: {self.colors['disabled_background']};
+                color: {self.colors['disabled_text']};
+                border-color: {self.colors['input_border']};
+            }}
+
+            /* ValidatedLineEdit with consistent border width to prevent shifting */
+            ValidatedLineEdit {{
+                background-color: {self.colors['input_background']};
+                border: 1px solid {self.colors['input_border']};
+                border-radius: 4px;
+                color: {self.colors['input_text']};
+                padding: 2px 6px;
+                selection-background-color: {self.colors['input_selection_bg']};
+                selection-color: {self.colors['input_selection_text']};
+                min-height: 18px;
+                font-size: {self.fonts['interface_size']};
+            }}
+
+            ValidatedLineEdit:hover {{
+                background-color: {self.colors['input_background_hover']};
+                border-color: {self.colors['input_border_hover']};
+            }}
+
+            ValidatedLineEdit:focus {{
+                border-color: {self.colors['input_border_focus']};
+                background-color: {self.colors['input_background_focus']};
+            }}
+
+            ValidatedLineEdit[error="true"] {{
+                border: 1px solid #ff4444 !important;
                 background-color: #332222 !important;
                 color: #ff8888 !important;
-            }
+            }}
 
-            /* ValidatedLineEdit specific styling to override inline styles */
-            ValidatedLineEdit {
-                background-color: #2b2b2b !important;
-                border: 2px solid #3e3e3e !important;
-                border-radius: 3px !important;
-                padding: 2px 6px !important;
-                color: #e0e0e0 !important;
-                font-size: 9pt !important;
-                font-weight: 400 !important;
-                height: 18px !important;
-                margin: 2px !important;
-            }
-
-            ValidatedLineEdit:focus {
-                border: 2px solid #4a9eff !important;
-            }
-
-            ValidatedLineEdit:hover:!focus {
-                border: 2px solid #5a5a5a !important;
-            }
-
-            ValidatedLineEdit[error="true"] {
-                border: 2px solid #ff4444 !important;
-                background-color: #332222 !important;
-                color: #ff8888 !important;
-            }
-
-            ValidatedLineEdit[warning="true"] {
-                border: 2px solid #cc6600 !important;
+            ValidatedLineEdit[warning="true"] {{
+                border: 1px solid #cc6600 !important;
                 background-color: #332200 !important;
                 color: #ffaa44 !important;
-            }
+            }}
 
-            ValidatedLineEdit[info="true"] {
-                border: 2px solid #4a9eff !important;
+            ValidatedLineEdit[info="true"] {{
+                border: 1px solid #4a9eff !important;
                 background-color: #223344 !important;
                 color: #88ccff !important;
-            }
+            }}
 
             /* LAYOUT SPACING */
             QHBoxLayout {{

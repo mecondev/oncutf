@@ -302,7 +302,7 @@ QLABEL_WHITE_TEXT = "white"          # White text color
 QLABEL_BORDER_GRAY = "#3a3a3a"       # Gray border color
 QLABEL_DARK_BORDER = "#555555"       # Dark border color
 QLABEL_ERROR_BG = "#3a2222"          # Error background color
-QLABEL_DARK_BG = "#3a3a3a"           # Dark background color
+QLABEL_DARK_BG = "#181818"           # Dark background color
 
 # ----------------------------
 # Database Backup Settings

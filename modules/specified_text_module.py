@@ -46,7 +46,7 @@ class SpecifiedTextModule(BaseRenameModule):
         self.text_input = ValidatedLineEdit()
         self.text_input.setPlaceholderText("Enter custom text")
         self.text_input.setMaxLength(240)
-        self.text_input.setFixedHeight(22)  # Match final transformer combo height
+        # Remove fixed height to prevent clipping
         self._last_value = ""  # Initialize to prevent first empty emit
         self.text_input.textChanged.connect(self.validate_input)
 
@@ -57,7 +57,10 @@ class SpecifiedTextModule(BaseRenameModule):
         self.text_input.setContextMenuPolicy(Qt.CustomContextMenu)
         self.text_input.customContextMenuRequested.connect(self._show_context_menu)
 
-        layout.addWidget(self.text_input)
+        # Add widget with vertical centering
+        layout.addStretch()  # Top stretch for centering
+        layout.addWidget(self.text_input, 0, Qt.AlignVCenter)
+        layout.addStretch()  # Bottom stretch for centering
 
         # Track if field has ever had content to control empty styling
         self._has_had_content = False

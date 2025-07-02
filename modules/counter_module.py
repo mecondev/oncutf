@@ -31,7 +31,7 @@ class CounterModule(BaseRenameModule):
 
     updated = pyqtSignal(object)
 
-    LABEL_WIDTH = 80  # pixels - reduced to match overall spacing
+    LABEL_WIDTH = 100  # pixels - increased to fit longer text
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
@@ -138,7 +138,7 @@ class CounterModule(BaseRenameModule):
 
         # Build row layout
         row_layout = QHBoxLayout()
-        row_layout.setContentsMargins(4, 2, 4, 2)  # Add padding around the row
+        row_layout.setContentsMargins(4, 3, 4, 3)  # Increased vertical padding
         row_layout.setSpacing(8)  # Increased spacing between elements
         row_layout.addWidget(label, 0, Qt.AlignVCenter)  # type: ignore
         row_layout.addWidget(input_field, 0, Qt.AlignVCenter)  # type: ignore

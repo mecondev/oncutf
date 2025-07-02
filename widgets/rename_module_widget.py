@@ -24,7 +24,7 @@ from typing import Optional
 from core.qt_imports import pyqtSignal, QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget, Qt
 
 from modules.counter_module import CounterModule
-from modules.specified_text_module import SpecifiedTextModule
+# Lazy import to avoid circular import: from modules.specified_text_module import SpecifiedTextModule
 
 # Initialize Logger
 from utils.logger_factory import get_cached_logger
@@ -63,6 +63,9 @@ class RenameModuleWidget(QWidget):
         # Set transparent background to avoid white borders around rounded corners
         self.setAttribute(Qt.WA_TranslucentBackground, True)  # type: ignore
 
+        # Lazy import to avoid circular import
+        from modules.specified_text_module import SpecifiedTextModule
+
         self.module_instances = {
             "Original Name": OriginalNameWidget,
             "Specified Text": SpecifiedTextModule,
@@ -72,9 +75,9 @@ class RenameModuleWidget(QWidget):
 
         self.module_heights = {
             "Original Name": 34,  # Reduced: just one line with minimal padding
-            "Specified Text": 34,  # Reduced: just input field with minimal padding
-            "Counter": 78,  # Reduced: 3 rows with minimal spacing
-            "Metadata": 56   # Reduced: 2 rows with minimal spacing, matching final transformer
+            "Specified Text": 37,  # Increased: 3px more space to prevent clipping
+            "Counter": 84,  # Increased: 6px more space for better label visibility
+            "Metadata": 62   # Increased: 6px more space for better label visibility
         }
 
         self.current_module_widget = None
