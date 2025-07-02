@@ -342,7 +342,6 @@ class UIManager:
         )
 
         # Setup QCompleter for smart metadata suggestions
-        from core.qt_imports import QCompleter, QStringListModel
         self.parent_window.metadata_search_completer = QCompleter()
         self.parent_window.metadata_search_completer.setCaseSensitivity(Qt.CaseInsensitive)
         self.parent_window.metadata_search_completer.setFilterMode(Qt.MatchContains)

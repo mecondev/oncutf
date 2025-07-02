@@ -1556,6 +1556,9 @@ class MetadataTreeView(QTreeView):
                 parent_window.search_action.setEnabled(True)
             if hasattr(parent_window, 'clear_search_action'):
                 parent_window.clear_search_action.setEnabled(True)
+            # Enable completer
+            if hasattr(parent_window, 'metadata_search_completer'):
+                parent_window.metadata_search_completer.setCompletionMode(parent_window.metadata_search_completer.PopupCompletion)
             # Apply complete enabled styling to ensure consistency
             search_field.setStyleSheet("""
                 QLineEdit#metadataSearchField {
@@ -1578,6 +1581,8 @@ class MetadataTreeView(QTreeView):
                     background-color: #1a1a1a;
                 }
             """)
+            # Update suggestions when enabled
+            self._update_search_suggestions()
             # Restore any saved search text
             if hasattr(parent_window, 'ui_manager'):
                 parent_window.ui_manager.restore_metadata_search_text()
@@ -1591,6 +1596,9 @@ class MetadataTreeView(QTreeView):
                 parent_window.search_action.setEnabled(False)
             if hasattr(parent_window, 'clear_search_action'):
                 parent_window.clear_search_action.setEnabled(False)
+            # Disable completer
+            if hasattr(parent_window, 'metadata_search_completer'):
+                parent_window.metadata_search_completer.setCompletionMode(parent_window.metadata_search_completer.UnfilteredPopupCompletion)
             # Apply disabled styling with same dimensions to prevent layout shifts
             search_field.setStyleSheet("""
                 QLineEdit#metadataSearchField:disabled {
@@ -1612,7 +1620,117 @@ class MetadataTreeView(QTreeView):
             """)
             # Don't clear the search text - preserve it for when metadata is available again
 
+    def _update_search_suggestions(self):
+        """Update search suggestions from currently displayed metadata only."""
+        parent_window = self._get_parent_with_file_table()
+        if not parent_window or not hasattr(parent_window, 'metadata_suggestions_model'):
+            return
 
+        suggestions = set()
+
+        # Get metadata from the currently displayed file only
+        current_model = self.model()
+        if current_model and hasattr(current_model, 'sourceModel'):
+            source_model = current_model.sourceModel()
+            if source_model:
+                # Extract metadata from the current tree model
+                self._collect_suggestions_from_tree_model(source_model, suggestions)
+
+        # Convert to sorted list and update model
+        suggestions_list = sorted(list(suggestions))
+        parent_window.metadata_suggestions_model.setStringList(suggestions_list)
+
+        logger.debug(f"[MetadataTreeView] Updated search suggestions from current file: {len(suggestions_list)} items", extra={"dev_only": True})
+
+    def _collect_suggestions_from_tree_model(self, model, suggestions: set):
+        """Collect search suggestions from the current tree model."""
+        if not model:
+            return
+
+        # Traverse the tree model to collect keys and values
+        root_item = model.invisibleRootItem()
+        if not root_item:
+            return
+
+        for i in range(root_item.rowCount()):
+            group_item = root_item.child(i)
+            if not group_item:
+                continue
+
+            group_name = group_item.text()
+
+            # Collect from group children
+            for j in range(group_item.rowCount()):
+                key_item = group_item.child(j, 0)  # Key column
+                value_item = group_item.child(j, 1)  # Value column
+
+                if key_item and value_item:
+                    key = key_item.text()
+                    value = value_item.text()
+
+                    # Skip empty or internal keys
+                    if not key or key.startswith('__'):
+                        continue
+
+                    # Add the key itself
+                    suggestions.add(key)
+
+                    # Add group:key format for grouped items
+                    if group_name and group_name != "Other":
+                        suggestions.add(f"{group_name}:{key}")
+
+                    # Add values for simple strings (not too long)
+                    if isinstance(value, str) and len(value) < 100 and value not in ["-", "", "N/A"]:
+                        # Add key=value format
+                        suggestions.add(f"{key}={value}")
+
+                        # Also add group:key=value for grouped items
+                        if group_name and group_name != "Other":
+                            suggestions.add(f"{group_name}:{key}={value}")
+
+    def _collect_suggestions_from_metadata(self, metadata: dict, suggestions: set):
+        """Collect search suggestions from a metadata dictionary."""
+        if not isinstance(metadata, dict):
+            return
+
+        for key, value in metadata.items():
+            # Skip internal keys
+            if key.startswith('__'):
+                continue
+
+            # Add the key itself
+            suggestions.add(key)
+
+            # Handle nested dictionaries (groups)
+            if isinstance(value, dict):
+                for nested_key, nested_value in value.items():
+                    # Add group:key format
+                    suggestions.add(f"{key}:{nested_key}")
+
+                    # Add values for nested items (if they're simple strings)
+                    if isinstance(nested_value, str) and len(nested_value) < 100:
+                        # Add key=value format for easier searching
+                        suggestions.add(f"{key}:{nested_key}={nested_value}")
+
+            # Add values for top-level items (if they're simple strings)
+            elif isinstance(value, str) and len(value) < 100:
+                # Add key=value format
+                suggestions.add(f"{key}={value}")
+
+            # Add numeric values as strings
+            elif isinstance(value, (int, float)) and abs(value) < 1000000:
+                suggestions.add(f"{key}={value}")
+
+    def _get_all_loaded_files(self):
+        """Get all currently loaded files from the parent window."""
+        parent_window = self._get_parent_with_file_table()
+        if not parent_window or not hasattr(parent_window, 'file_model'):
+            return []
+
+        if parent_window.file_model and hasattr(parent_window.file_model, 'files'):
+            return parent_window.file_model.files
+
+        return []
 
     def _render_metadata_view(self, metadata: Dict[str, Any]) -> None:
         """

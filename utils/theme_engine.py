@@ -12,6 +12,7 @@ from core.qt_imports import (
 from utils.comprehensive_theme_system import ComprehensiveThemeColors
 from utils.fonts import get_inter_family, get_inter_css_weight
 import config
+import platform
 
 
 class ThemeEngine:
@@ -24,20 +25,36 @@ class ThemeEngine:
         self.theme_name = theme_name or config.THEME_NAME
         self.colors = ComprehensiveThemeColors.DARK  # Only dark for now
 
-        # Font definitions using Inter fonts
+        # Font definitions using Inter fonts with platform-specific adjustments
+        is_windows = platform.system() == "Windows"
+
+        # Adjust font sizes and weights for Windows compatibility
+        base_size = '8pt' if is_windows else '9pt'
+        tree_size = '9pt' if is_windows else '10pt'
+        base_weight = 300 if is_windows else get_inter_css_weight('base')  # Lighter on Windows
+
+        # Font family with Windows-specific fallbacks
+        base_family = get_inter_family('base')
+        if is_windows:
+            # Add Windows-specific fallbacks for better rendering
+            font_fallback = f'"{base_family}", "Segoe UI", "Tahoma", "Arial", sans-serif'
+        else:
+            font_fallback = f'"{base_family}", "Segoe UI", "Arial", sans-serif'
+
         self.fonts = {
-            'base_family': get_inter_family('base'),
+            'base_family': base_family,
+            'font_fallback': font_fallback,
             'medium_family': get_inter_family('medium'),
             'semibold_family': get_inter_family('headers'),
-            'base_weight': get_inter_css_weight('base'),
+            'base_weight': base_weight,
             'medium_weight': get_inter_css_weight('medium'),
             'semibold_weight': get_inter_css_weight('headers'),
-            'base_size': '9pt',
-            'interface_size': '9pt',
-            'tree_size': '10pt',
-            'small_size': '8pt',
-            'large_size': '11pt',
-            'title_size': '14pt'
+            'base_size': base_size,
+            'interface_size': base_size,
+            'tree_size': tree_size,
+            'small_size': '7pt' if is_windows else '8pt',
+            'large_size': '10pt' if is_windows else '11pt',
+            'title_size': '13pt' if is_windows else '14pt'
         }
 
     def apply_complete_theme(self, app: QApplication, main_window: QMainWindow):
@@ -59,6 +76,9 @@ class ThemeEngine:
         self._apply_dialog_styling(main_window)
         self._apply_context_menu_styling()
         self._apply_tooltip_styling()
+
+        # Apply Windows-specific font fixes
+        self.apply_windows_font_fixes(main_window)
 
     def _apply_base_styling(self, app: QApplication, main_window: QMainWindow):
         """Apply base application and main window styling (replaces base.qss)."""
@@ -183,8 +203,8 @@ class ThemeEngine:
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
                 border: none;
                 background: none;
-                height: 22px;
-                border-radius: 6px;
+                height: 0px;
+                border-radius: 0px;
             }}
 
             QScrollBar:horizontal {{
@@ -211,8 +231,8 @@ class ThemeEngine:
             QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
                 border: none;
                 background: none;
-                width: 22px;
-                border-radius: 6px;
+                width: 0px;
+                border-radius: 0px;
             }}
 
             /* Remove page step background */
@@ -452,6 +472,7 @@ class ThemeEngine:
                 font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
                 font-size: {self.fonts['interface_size']};
                 font-weight: {self.fonts['base_weight']};
+                margin: 0px;
             }}
 
             QComboBox:hover {{
@@ -494,6 +515,8 @@ class ThemeEngine:
                 border: 1px solid {self.colors['input_border']};
                 border-radius: 4px;
                 outline: none;
+                margin: 0px;
+                padding: 0px;
             }}
 
             QComboBox QAbstractItemView::item {{
@@ -522,56 +545,52 @@ class ThemeEngine:
                 color: {self.colors['input_selection_text']};
             }}
 
-            /* Global combo box dropdown styling to ensure selected items are always visible */
-            QComboBox QAbstractItemView::item:selected {{
-                background-color: {self.colors['combo_item_background_selected']} !important;
-                color: {self.colors['input_selection_text']} !important;
-            }}
-
-            QComboBox QAbstractItemView::item:selected:hover {{
-                background-color: {self.colors['combo_background_selected_hover']} !important;
-                color: {self.colors['input_selection_text']} !important;
-            }}
-
-            QComboBox QAbstractItemView::item:selected:focus {{
-                background-color: {self.colors['combo_item_background_selected']} !important;
-                color: {self.colors['input_selection_text']} !important;
-            }}
-
-            /* Force all combo box dropdown items to have proper colors */
+            /* Comprehensive combo box dropdown styling with proper selection handling */
             QComboBox QAbstractItemView {{
-                background-color: {self.colors['combo_dropdown_background']} !important;
-                color: {self.colors['combo_text']} !important;
-                selection-background-color: {self.colors['combo_item_background_selected']} !important;
-                selection-color: {self.colors['input_selection_text']} !important;
+                background-color: {self.colors['combo_dropdown_background']};
+                color: {self.colors['combo_text']};
+                selection-background-color: {self.colors['combo_item_background_selected']};
+                selection-color: {self.colors['input_selection_text']};
+                show-decoration-selected: 1;
             }}
 
             QComboBox QAbstractItemView::item {{
-                background-color: transparent !important;
-                color: {self.colors['combo_text']} !important;
-                padding: 4px 6px !important;
-                border: none !important;
-                min-height: 16px !important;
+                background-color: transparent;
+                color: {self.colors['combo_text']};
+                padding: 4px 8px;
+                border: none;
+                min-height: 18px;
             }}
 
             QComboBox QAbstractItemView::item:hover {{
-                background-color: {self.colors['combo_item_background_hover']} !important;
-                color: {self.colors['combo_text']} !important;
+                background-color: {self.colors['combo_item_background_hover']};
+                color: {self.colors['combo_text']};
             }}
 
+            /* Current selected item (the one that shows in the closed ComboBox) */
             QComboBox QAbstractItemView::item:selected {{
-                background-color: {self.colors['combo_item_background_selected']} !important;
-                color: {self.colors['input_selection_text']} !important;
+                background-color: {self.colors['combo_item_background_selected']};
+                color: {self.colors['input_selection_text']};
             }}
 
+            /* Current item when hovering over it */
             QComboBox QAbstractItemView::item:selected:hover {{
-                background-color: {self.colors['combo_background_selected_hover']} !important;
-                color: {self.colors['input_selection_text']} !important;
+                background-color: {self.colors['highlight_light_blue']};
+                color: {self.colors['input_selection_text']};
             }}
 
-            QComboBox QAbstractItemView::item:selected:focus {{
-                background-color: {self.colors['combo_item_background_selected']} !important;
-                color: {self.colors['input_selection_text']} !important;
+            /* Ensure current item remains visible when not hovering */
+            QComboBox QAbstractItemView::item:current {{
+                background-color: {self.colors['combo_item_background_selected']};
+                color: {self.colors['input_selection_text']};
+                border: 1px solid {self.colors['accent_color']};
+            }}
+
+            /* Current item when hovering */
+            QComboBox QAbstractItemView::item:current:hover {{
+                background-color: {self.colors['highlight_light_blue']};
+                color: {self.colors['input_selection_text']};
+                border: 1px solid {self.colors['accent_color']};
             }}
 
             /* Specific styling for FinalTransformContainer combo boxes */
@@ -602,41 +621,73 @@ class ThemeEngine:
                 background-color: transparent !important;
             }}
 
-            /* Force all child widgets to be transparent */
-            FinalTransformContainer * {{
-                background-color: transparent !important;
-            }}
-
             /* Ensure combo boxes have proper background without white corners */
             FinalTransformContainer QComboBox {{
-                background-color: {self.colors['combo_background']} !important;
-                border: 1px solid {self.colors['combo_border']} !important;
-                border-radius: 4px !important;
-                color: {self.colors['combo_text']} !important;
-                padding: 2px 6px !important;
-                min-height: 18px !important;
-                max-height: 18px !important;
-                min-width: 126px !important;
-                max-width: 126px !important;
-                selection-background-color: {self.colors['input_selection_bg']} !important;
-                selection-color: {self.colors['input_selection_text']} !important;
-                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif !important;
-                font-size: {self.fonts['interface_size']} !important;
-                font-weight: {self.fonts['base_weight']} !important;
+                background-color: {self.colors['combo_background']};
+                border: 1px solid {self.colors['combo_border']};
+                border-radius: 4px;
+                color: {self.colors['combo_text']};
+                padding: 2px 6px;
+                min-height: 18px;
+                max-height: 18px;
+                min-width: 126px;
+                max-width: 126px;
+                selection-background-color: {self.colors['input_selection_bg']};
+                selection-color: {self.colors['input_selection_text']};
+                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts['interface_size']};
+                font-weight: {self.fonts['base_weight']};
             }}
 
-            /* Force combo box background to be solid */
-            FinalTransformContainer QComboBox {{
-                background-color: {self.colors['combo_background']} !important;
+            /* Comprehensive fix for ComboBox white corners and proper background handling */
+            QComboBox {{
+                background-clip: padding-box;
+                background-origin: padding-box;
+                background-attachment: scroll;
             }}
 
-            /* Override any inherited transparent backgrounds */
-            FinalTransformContainer QComboBox:enabled {{
-                background-color: {self.colors['combo_background']} !important;
+            /* Specific styling for rename module widgets to prevent white corners */
+            QWidget[objectName="RenameModuleWidget"] {{
+                background-color: {self.colors['module_background']};
+                border: 1px solid {self.colors['module_border']};
+                border-radius: 6px;
+                margin: 4px;
+                padding: 2px;
             }}
 
-            FinalTransformContainer QComboBox:disabled {{
-                background-color: {self.colors['disabled_background']} !important;
+            QWidget[objectName="RenameModuleWidget"] QComboBox {{
+                background-color: {self.colors['combo_background']};
+                border: 1px solid {self.colors['combo_border']};
+                border-radius: 4px;
+                color: {self.colors['combo_text']};
+                padding: 2px 6px;
+                margin: 0px;
+                background-clip: padding-box;
+                background-origin: padding-box;
+                background-attachment: scroll;
+            }}
+
+            /* Force ComboBox to have solid background without inheritance issues */
+            QComboBox:enabled {{
+                background-color: {self.colors['combo_background']};
+            }}
+
+            QComboBox:hover {{
+                background-color: {self.colors['combo_background_hover']};
+            }}
+
+            QComboBox:disabled {{
+                background-color: {self.colors['disabled_background']};
+            }}
+
+            /* Ensure scroll area content widget has proper background */
+            QScrollArea > QWidget {{
+                background-color: {self.colors['scroll_area_background']};
+            }}
+
+            /* Specific fix for scroll areas containing ComboBoxes */
+            QScrollArea {{
+                background-color: {self.colors['scroll_area_background']};
             }}
 
             FinalTransformContainer QComboBox::drop-down {{
@@ -927,7 +978,7 @@ class ThemeEngine:
                 background: {self.colors['scroll_track_background']};
                 width: 12px;
                 border-radius: 6px;
-                margin: 22px 0px 22px 0px;
+                margin: 0px;
             }}
 
             QScrollBar::handle:vertical {{
@@ -947,8 +998,8 @@ class ThemeEngine:
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
                 border: none;
                 background: none;
-                height: 22px;
-                border-radius: 6px;
+                height: 0px;
+                border-radius: 0px;
             }}
 
             QScrollBar:horizontal {{
@@ -975,8 +1026,8 @@ class ThemeEngine:
             QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
                 border: none;
                 background: none;
-                width: 22px;
-                border-radius: 6px;
+                width: 0px;
+                border-radius: 0px;
             }}
 
             /* Remove page step background */
@@ -1148,7 +1199,7 @@ class ThemeEngine:
             /* Table Header styling */
             QTableView QHeaderView::section, FileTableView QHeaderView::section {{
                 background-color: {self.colors['table_header_background']} !important;
-                color: {self.colors['table_text']} !important;
+                color: {self.colors['table_text']};
                 font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
                 font-size: 10pt;
                 font-weight: {self.fonts['base_weight']};
@@ -1168,7 +1219,7 @@ class ThemeEngine:
             QTreeView {{
                 background-color: {self.colors['table_background']};
                 color: {self.colors['table_text']};
-                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                font-family: {self.fonts['font_fallback']};
                 font-size: {self.fonts['tree_size']};
                 font-weight: {self.fonts['base_weight']};
                 alternate-background-color: {self.colors['table_alternate_background']};
@@ -1655,3 +1706,33 @@ class ThemeEngine:
         self.theme_name = theme_name
         # For now only dark theme supported
         self.colors = ComprehensiveThemeColors.DARK
+
+    def apply_windows_font_fixes(self, main_window: QMainWindow):
+        """Apply Windows-specific font fixes for better cross-platform compatibility."""
+        if platform.system() != "Windows":
+            return
+
+        # Apply Windows-specific metadata tree styling
+        windows_tree_style = f"""
+            QTreeView {{
+                font-family: "Segoe UI", "Tahoma", "Arial", sans-serif;
+                font-size: 9pt;
+                font-weight: 300;
+            }}
+
+            MetadataTreeView {{
+                font-family: "Segoe UI", "Tahoma", "Arial", sans-serif;
+                font-size: 9pt;
+                font-weight: 300;
+            }}
+
+            QStandardItem {{
+                font-family: "Segoe UI", "Tahoma", "Arial", sans-serif;
+                font-size: 9pt;
+                font-weight: 300;
+            }}
+        """
+
+        # Apply the Windows-specific styling
+        current_style = main_window.styleSheet()
+        main_window.setStyleSheet(current_style + windows_tree_style)

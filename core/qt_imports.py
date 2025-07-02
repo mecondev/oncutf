@@ -30,6 +30,7 @@ from PyQt5.QtCore import (
     QResource,
     QSize,
     QSortFilterProxyModel,
+    QStringListModel,
     Qt,
     QThread,
     QTimer,
@@ -80,6 +81,7 @@ from PyQt5.QtWidgets import (
     QButtonGroup,
     QCheckBox,
     QComboBox,
+    QCompleter,
     QDialog,
     QDialogButtonBox,
     QFileDialog,
@@ -122,7 +124,7 @@ from PyQt5.QtWidgets import (
 __all__ = [
     # Core
     'QAbstractTableModel', 'QByteArray', 'QDir', 'QEasingCurve', 'QElapsedTimer', 'QEvent', 'QItemSelection', 'QItemSelectionModel',
-    'QItemSelectionRange', 'QMimeData', 'QModelIndex', 'QMutex', 'QMutexLocker', 'QObject', 'QPoint', 'QPropertyAnimation', 'QRect', 'QResource', 'QSize', 'QSortFilterProxyModel', 'Qt', 'QThread',
+    'QItemSelectionRange', 'QMimeData', 'QModelIndex', 'QMutex', 'QMutexLocker', 'QObject', 'QPoint', 'QPropertyAnimation', 'QRect', 'QResource', 'QSize', 'QSortFilterProxyModel', 'QStringListModel', 'Qt', 'QThread',
     'QTimer', 'QUrl', 'QVariant', 'pyqtSignal', 'pyqtSlot',
 
     # GUI
@@ -134,7 +136,7 @@ __all__ = [
     'QSvgRenderer', 'SVG_AVAILABLE',
 
     # Widgets
-    'QAbstractItemView', 'QAction', 'QApplication', 'QButtonGroup', 'QCheckBox', 'QComboBox', 'QDialog', 'QDialogButtonBox', 'QFileDialog',
+    'QAbstractItemView', 'QAction', 'QApplication', 'QButtonGroup', 'QCheckBox', 'QComboBox', 'QCompleter', 'QDialog', 'QDialogButtonBox', 'QFileDialog',
     'QFileSystemModel', 'QFrame', 'QGraphicsOpacityEffect', 'QGridLayout', 'QGroupBox', 'QHBoxLayout',
     'QHeaderView', 'QLabel', 'QLineEdit', 'QMainWindow', 'QMenu', 'QMessageBox', 'QProgressBar', 'QPushButton', 'QRadioButton', 'QScrollArea', 'QShortcut',
     'QProxyStyle', 'QSizePolicy', 'QSplashScreen', 'QSplitter', 'QStyle', 'QStyleOption', 'QStyledItemDelegate', 'QStyleFactory', 'QStyleOptionViewItem', 'QTableWidget', 'QTableWidgetItem', 'QTableView', 'QTextEdit', 'QTreeView',
