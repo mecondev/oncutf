@@ -1551,23 +1551,44 @@ class MetadataTreeView(QTreeView):
             search_field.setEnabled(True)
             search_field.setReadOnly(False)
             search_field.setToolTip("Search metadata...")
-            # Clear any custom styling for enabled state
+            # Clear any custom styling to let theme handle enabled state
             search_field.setStyleSheet("")
+            # Enable action icons
+            if hasattr(parent_window, 'search_action'):
+                parent_window.search_action.setEnabled(True)
+            if hasattr(parent_window, 'clear_search_action'):
+                parent_window.clear_search_action.setEnabled(True)
             # Restore any saved search text
             if hasattr(parent_window, 'ui_manager'):
                 parent_window.ui_manager.restore_metadata_search_text()
         else:
-            # Don't disable the entire field - just make it read-only
-            # This prevents the search icon from becoming lighter
-            search_field.setEnabled(True)
+            # Properly disable the field to prevent hover/click reactions
+            search_field.setEnabled(False)
             search_field.setReadOnly(True)
             search_field.setToolTip("No metadata available")
-            # Apply custom styling to show it's disabled but keep icons normal
+            # Disable action icons to make them appear dimmed
+            if hasattr(parent_window, 'search_action'):
+                parent_window.search_action.setEnabled(False)
+            if hasattr(parent_window, 'clear_search_action'):
+                parent_window.clear_search_action.setEnabled(False)
+            # Apply disabled styling that preserves all theme properties
+            # Only change colors while maintaining dimensions, padding, fonts, etc.
             search_field.setStyleSheet("""
-                QLineEdit[readOnly="true"] {
-                    color: #666;
-                    background-color: #2b2b2b;
-                    border: 1px solid #555;
+                QLineEdit#metadataSearchField:disabled {
+                    background-color: #181818;
+                    border: 1px solid #3a3b40;
+                    border-radius: 4px;
+                    color: #666666;
+                    padding: 2px 8px;
+                    min-height: 16px;
+                    max-height: 18px;
+                    margin-top: 0px;
+                    margin-bottom: 2px;
+                }
+                QLineEdit#metadataSearchField:disabled:hover {
+                    background-color: #181818;
+                    color: #666666;
+                    border: 1px solid #3a3b40;
                 }
             """)
             # Don't clear the search text - preserve it for when metadata is available again
