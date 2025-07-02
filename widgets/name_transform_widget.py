@@ -12,7 +12,7 @@ Date: 2025-06-04
 
 from typing import Optional
 
-from core.qt_imports import QCheckBox, QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from core.qt_imports import Qt, QCheckBox, QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from modules.base_module import BaseRenameModule  # Debounced signal base
 
 
@@ -39,6 +39,7 @@ class NameTransformWidget(BaseRenameModule):
 
         greeklish_label = QLabel("Greeklish:")
         greeklish_label.setFixedWidth(self.LABEL_WIDTH)
+        greeklish_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.greeklish_checkbox = QCheckBox("Convert Greek to Greeklish")
         self.greeklish_checkbox.toggled.connect(self._on_value_change)
 
@@ -57,6 +58,7 @@ class NameTransformWidget(BaseRenameModule):
 
         case_label = QLabel("Case:")
         case_label.setFixedWidth(self.LABEL_WIDTH)
+        case_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.case_combo = QComboBox()
         self.case_combo.addItems(["original", "lower", "UPPER", "Capitalize"])
         self.case_combo.setFixedWidth(200)  # Make combobox larger (~2.5 characters more)
@@ -77,6 +79,7 @@ class NameTransformWidget(BaseRenameModule):
 
         sep_label = QLabel("Separator:")
         sep_label.setFixedWidth(self.LABEL_WIDTH)
+        sep_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter) # type: ignore
         self.sep_combo = QComboBox()
         self.sep_combo.addItems(["as-is", "snake_case", "kebab-case", "space"])
         self.sep_combo.setFixedWidth(200)  # Make combobox larger (~2.5 characters more)

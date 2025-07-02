@@ -9,7 +9,7 @@ Widget for metadata selection (file dates or EXIF), with optimized signal emissi
 
 from typing import Optional, Set
 
-from core.qt_imports import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget, pyqtSignal
+from core.qt_imports import Qt, QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget, pyqtSignal
 from utils.logger_factory import get_cached_logger
 from core.persistent_metadata_cache import MetadataEntry
 from utils.timer_manager import schedule_ui_update
@@ -42,7 +42,7 @@ class MetadataWidget(QWidget):
     def setup_ui(self) -> None:
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)  # Match final transformer margins
-        layout.setSpacing(0)  # Match final transformer spacing
+        layout.setSpacing(12)  # Increased spacing between rows
 
         # Row 1: Category
         category_row = QHBoxLayout()
@@ -50,6 +50,7 @@ class MetadataWidget(QWidget):
         category_row.setSpacing(8)  # Match final transformer spacing between label and control
         category_label = QLabel("Category:")
         category_label.setFixedWidth(60)  # Increased width for better text fit
+        category_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter) # type: ignore
         self.category_combo = QComboBox()
         self.category_combo.addItem("File Dates", userData="file_dates")
         self.category_combo.addItem("EXIF/Metadata", userData="metadata_keys")
@@ -66,6 +67,7 @@ class MetadataWidget(QWidget):
         options_row.setSpacing(8)  # Match final transformer spacing between label and control
         options_label = QLabel("Field:")
         options_label.setFixedWidth(60)  # Increased width for better text fit
+        options_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter) # type: ignore
         self.options_combo = QComboBox()
         self.options_combo.setFixedWidth(130)  # Match final transformer combo width
         self.options_combo.setFixedHeight(22)  # Match final transformer combo height

@@ -31,7 +31,7 @@ class CounterModule(BaseRenameModule):
 
     updated = pyqtSignal(object)
 
-    LABEL_WIDTH = 100  # pixels - increased to fit longer text
+    LABEL_WIDTH = 110  # pixels - increased by 10px for better text fit
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
@@ -96,6 +96,7 @@ class CounterModule(BaseRenameModule):
         # Input field with integer validator
         input_field = QLineEdit(str(initial_value))
         input_field.setFixedWidth(60)
+        input_field.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # Right align for numbers
         validator = QIntValidator(min_val, max_val, self)
         input_field.setValidator(validator)
 
@@ -104,10 +105,10 @@ class CounterModule(BaseRenameModule):
         btn_plus = QPushButton()
         btn_minus.setIcon(get_menu_icon("minus"))
         btn_plus.setIcon(get_menu_icon("plus"))
-        btn_minus.setFixedSize(22, 22)
-        btn_plus.setFixedSize(22, 22)
-        btn_minus.setIconSize(QSize(12, 12))
-        btn_plus.setIconSize(QSize(12, 12))
+        btn_minus.setFixedSize(26, 26)  # Even larger buttons
+        btn_plus.setFixedSize(26, 26)   # Even larger buttons
+        btn_minus.setIconSize(QSize(16, 16))  # Even larger icons
+        btn_plus.setIconSize(QSize(16, 16))   # Even larger icons
 
         # Setup custom tooltips for plus/minus buttons
         setup_tooltip(btn_minus, "Decrease value", TooltipType.INFO)

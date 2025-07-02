@@ -303,6 +303,39 @@ class ThemeEngine:
                 color: {self.colors['button_text_disabled']};
             }}
 
+            /* COUNTER MODULE SPECIFIC */
+            CounterModule QLineEdit {{
+                text-align: right;
+                qproperty-alignment: AlignRight;
+            }}
+
+            /* COUNTER MODULE BUTTONS - Improved icon positioning */
+            CounterModule QPushButton {{
+                background-color: {self.colors['button_background']};
+                border: none;
+                border-radius: 4px;
+                color: {self.colors['button_text']};
+                padding: 0px;
+                margin: 0px;
+                text-align: center;
+                icon-size: 16px 16px;
+                qproperty-iconSize: 16px 16px;
+            }}
+
+            CounterModule QPushButton:hover {{
+                background-color: {self.colors['button_background_hover']};
+            }}
+
+            CounterModule QPushButton:pressed {{
+                background-color: {self.colors['button_background_pressed']};
+                color: {self.colors['button_text_pressed']};
+            }}
+
+            CounterModule QPushButton:disabled {{
+                background-color: {self.colors['button_background_disabled']};
+                color: {self.colors['button_text_disabled']};
+            }}
+
             /* COMBOBOX */
             QComboBox {{
                 background-color: {self.colors['combo_background']};
@@ -863,6 +896,31 @@ class ThemeEngine:
                 font-size: {self.fonts['interface_size']};
             }}
 
+            /* COUNTER MODULE INPUT FIELDS - Right aligned for numbers */
+            CounterModule QLineEdit {{
+                background-color: {self.colors['input_background']};
+                border: 1px solid {self.colors['input_border']};
+                border-radius: 4px;
+                color: {self.colors['input_text']};
+                padding: 2px 6px;
+                selection-background-color: {self.colors['input_selection_bg']};
+                selection-color: {self.colors['input_selection_text']};
+                min-height: 18px;
+                font-size: {self.fonts['interface_size']};
+                text-align: right;
+                qproperty-alignment: AlignRight;
+            }}
+
+            CounterModule QLineEdit:hover {{
+                background-color: {self.colors['input_background_hover']};
+                border-color: {self.colors['input_border_hover']};
+            }}
+
+            CounterModule QLineEdit:focus {{
+                border-color: {self.colors['input_border_focus']};
+                background-color: {self.colors['input_background_focus']};
+            }}
+
             /* SPLITTERS */
             QSplitter {{
                 background-color: {self.colors['app_background']};
@@ -884,6 +942,21 @@ class ThemeEngine:
 
             QSplitter::handle:hover {{
                 background-color: {self.colors['separator_light']};
+            }}
+
+            /* RENAME MODULES AREA - Match splitter border color */
+            RenameModulesArea {{
+                border: 1px solid {self.colors['separator_background']};
+                border-radius: 6px;
+                background-color: {self.colors['scroll_area_background']};
+            }}
+
+            /* FOOTER SEPARATOR - Match splitter color */
+            QFrame[objectName="footer_separator"] {{
+                background-color: {self.colors['separator_background']};
+                border: none;
+                max-height: 1px;
+                min-height: 1px;
             }}
 
             /* TOOLTIPS */

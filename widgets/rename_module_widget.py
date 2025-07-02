@@ -76,8 +76,8 @@ class RenameModuleWidget(QWidget):
         self.module_heights = {
             "Original Name": 34,  # Reduced: just one line with minimal padding
             "Specified Text": 37,  # Increased: 3px more space to prevent clipping
-            "Counter": 84,  # Increased: 6px more space for better label visibility
-            "Metadata": 62   # Increased: 6px more space for better label visibility
+            "Counter": 88,  # Increased: 4px more space to prevent focus border clipping
+            "Metadata": 74   # Increased: 12px more space for increased row spacing
         }
 
         self.current_module_widget = None

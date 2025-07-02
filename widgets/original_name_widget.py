@@ -37,7 +37,7 @@ class OriginalNameWidget(BaseRenameModule):
 
         # Simple label explaining what this module does
         self.label = QLabel("Uses the original filename")
-        self.label.setStyleSheet("color: #666; font-style: italic;")
+        self.label.setStyleSheet("color: #999; font-style: italic;")
 
         row.addWidget(self.label)
         row.addStretch()
