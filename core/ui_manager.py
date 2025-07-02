@@ -545,10 +545,10 @@ class UIManager:
         self.parent_window.final_transform_container.add_module_requested.connect(self.parent_window.rename_modules_area.add_module)
         self.parent_window.final_transform_container.remove_module_requested.connect(self.parent_window.rename_modules_area.remove_last_module)
 
-        # Update remove button state when modules change
+        # Update remove button state when modules change - allow removal of all modules
         self.parent_window.rename_modules_area.updated.connect(
             lambda: self.parent_window.final_transform_container.set_remove_button_enabled(
-                len(self.parent_window.rename_modules_area.module_widgets) > 1
+                len(self.parent_window.rename_modules_area.module_widgets) > 0
             )
         )
 

@@ -64,6 +64,7 @@ class RenameModulesArea(QWidget):
         # Theme styling is now handled by the global theme engine
 
         self.scroll_content = QWidget()
+        self.scroll_content.setObjectName("scroll_content_widget")
         self.scroll_layout = QVBoxLayout(self.scroll_content)
         self.scroll_layout.setContentsMargins(2, 2, 2, 2)  # Further reduced for compactness
         self.scroll_layout.setSpacing(0)  # No spacing between modules - using margins instead
@@ -131,11 +132,7 @@ class RenameModulesArea(QWidget):
         self.updated.emit()
 
     def remove_module(self, module: RenameModuleWidget):
-        # Ensure at least one module always remains
-        if len(self.module_widgets) <= 1:
-            logger.debug("[RenameModulesArea] Cannot remove module - minimum 1 required", extra={"dev_only": True})
-            return
-
+        # Allow removal of all modules to see scroll area background
         if module in self.module_widgets:
             # Remove separator handling since we're using margins now
             self.module_widgets.remove(module)
@@ -146,20 +143,20 @@ class RenameModulesArea(QWidget):
             # Update layout stretch to maintain proper layout
             self._update_layout_stretch()
 
-            # If only one module remains, scroll to top
-            if len(self.module_widgets) == 1:
+            # If one or no modules remain, scroll to top
+            if len(self.module_widgets) <= 1:
                 # Schedule scroll to top
                 schedule_scroll_adjust(lambda: self.scroll_area.verticalScrollBar().setValue(0), 50)
-                logger.debug("[RenameModulesArea] Scrolled to top after removal (single module remains)", extra={"dev_only": True})
+                logger.debug(f"[RenameModulesArea] Scrolled to top after removal ({len(self.module_widgets)} modules remain)", extra={"dev_only": True})
 
             self.updated.emit()
 
     def remove_last_module(self):
-        """Remove the last module if more than one exists."""
-        if len(self.module_widgets) > 1:
+        """Remove the last module (allows removal of all modules)."""
+        if len(self.module_widgets) > 0:
             self.remove_module(self.module_widgets[-1])
         else:
-            logger.debug("[RenameModulesArea] Cannot remove last module - minimum 1 required", extra={"dev_only": True})
+            logger.debug("[RenameModulesArea] No modules to remove", extra={"dev_only": True})
 
     def _scroll_to_show_new_module(self, new_module):
         """Scroll to ensure the newly added module is visible."""

@@ -944,18 +944,21 @@ class ThemeEngine:
                 background-color: {self.colors['separator_light']};
             }}
 
-            /* RENAME MODULES AREA - Original QSS styling */
-            RenameModulesArea {{
+            /* RENAME MODULES AREA - CLEAN APPROACH WITH VIEWPORT TARGETING */
+            QScrollArea[objectName="rename_modules_scroll"] {{
                 border: 4px solid #444444 !important;
                 border-radius: 8px;
-                background-color: {self.colors['scroll_area_background']};
+                background-color: #0066cc !important;
             }}
 
-            /* Make sure the scroll area inside RenameModulesArea also has the border */
-            RenameModulesArea QScrollArea {{
-                border: 4px solid #444444 !important;
-                border-radius: 8px;
-                background-color: {self.colors['scroll_area_background']};
+            /* Target the viewport specifically - this is what shows when empty */
+            QScrollArea[objectName="rename_modules_scroll"] QAbstractScrollArea::viewport {{
+                background-color: #0066cc !important;
+            }}
+
+            /* Keep content widget transparent so modules show normally */
+            QWidget[objectName="scroll_content_widget"] {{
+                background-color: transparent;
             }}
 
             /* FOOTER SEPARATOR - Original QSS styling */
