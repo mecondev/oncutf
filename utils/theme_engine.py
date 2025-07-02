@@ -944,19 +944,19 @@ class ThemeEngine:
                 background-color: {self.colors['separator_light']};
             }}
 
-            /* RENAME MODULES AREA - Match splitter border color */
+            /* RENAME MODULES AREA - Original QSS styling */
             RenameModulesArea {{
-                border: 1px solid {self.colors['separator_background']};
-                border-radius: 6px;
+                border: 2px solid #333333;
+                border-radius: 8px;
                 background-color: {self.colors['scroll_area_background']};
             }}
 
-            /* FOOTER SEPARATOR - Match splitter color */
-            QFrame[objectName="footer_separator"] {{
+            /* FOOTER SEPARATOR - Original QSS styling */
+            QFrame[objectName="footerSeparator"] {{
                 background-color: {self.colors['separator_background']};
                 border: none;
-                max-height: 1px;
-                min-height: 1px;
+                max-height: 4px;
+                min-height: 4px;
             }}
 
             /* TOOLTIPS */
