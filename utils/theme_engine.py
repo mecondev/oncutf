@@ -57,7 +57,7 @@ class ThemeEngine:
             # Table/Tree view colors
             'table_background': '#181818',
             'table_text': '#f0ebd8',
-            'table_alternate_background': '#1f1f1f',
+            'table_alternate_background': '#232323',
             'table_selection_background': '#748cab',
             'table_selection_text': '#0d1321',
             'table_header_background': '#181818',
@@ -82,6 +82,18 @@ class ThemeEngine:
             'tooltip_background': '#2b2b2b',
             'tooltip_text': '#f0ebd8',
             'tooltip_border': '#555555',
+            'tooltip_error_background': '#3d1e1e',
+            'tooltip_error_text': '#ffaaaa',
+            'tooltip_error_border': '#cc4444',
+            'tooltip_warning_background': '#3d3d1e',
+            'tooltip_warning_text': '#ffffaa',
+            'tooltip_warning_border': '#cccc44',
+            'tooltip_info_background': '#1e2d3d',
+            'tooltip_info_text': '#aaccff',
+            'tooltip_info_border': '#4488cc',
+            'tooltip_success_background': '#1e3d1e',
+            'tooltip_success_text': '#aaffaa',
+            'tooltip_success_border': '#44cc44',
 
             # Special colors
             'highlight_blue': '#4a6fa5',
@@ -244,20 +256,48 @@ class ThemeEngine:
                 min-height: 20px;
                 margin: 0px;
                 font-size: {self.fonts['interface_size']};
+                selection-background-color: {self.colors['input_selection_bg']};
+                selection-color: {self.colors['input_selection_text']};
             }}
 
             QComboBox:hover {{
                 background-color: {self.colors['combo_background_hover']};
                 border-color: {self.colors['input_border_hover']};
+                color: {self.colors['combo_text']};
             }}
 
             QComboBox:focus {{
                 border-color: {self.colors['input_border_focus']};
+                background-color: {self.colors['combo_background_hover']};
+                color: {self.colors['combo_text']};
+                outline: none;
+            }}
+
+            QComboBox:focus:hover {{
+                background-color: {self.colors['combo_background_pressed']};
+                color: {self.colors['combo_text_pressed']};
             }}
 
             QComboBox:on {{
                 background-color: {self.colors['combo_background_pressed']};
                 color: {self.colors['combo_text_pressed']};
+                border-color: {self.colors['input_border_focus']};
+            }}
+
+            QComboBox:pressed {{
+                background-color: {self.colors['highlight_light_blue']};
+                color: {self.colors['combo_text_pressed']};
+            }}
+
+            QComboBox:disabled {{
+                background-color: {self.colors['disabled_background']};
+                color: {self.colors['disabled_text']};
+                border-color: {self.colors['input_border']};
+            }}
+
+            QComboBox:!focus:!hover {{
+                background-color: {self.colors['combo_background']};
+                color: {self.colors['combo_text']};
             }}
 
             QComboBox::drop-down {{
@@ -268,14 +308,26 @@ class ThemeEngine:
                 subcontrol-position: center right;
             }}
 
+            QComboBox::drop-down:hover {{
+                background-color: transparent;
+            }}
+
             QComboBox::down-arrow {{
-                image: url(resources/icons/feather_icons/chevron-down.svg);
-                width: 12px;
-                height: 12px;
+                image: url(resources/icons/feather_icons/chevrons-down.svg);
+                width: 14px;
+                height: 14px;
             }}
 
             QComboBox::down-arrow:on {{
-                image: url(resources/icons/feather_icons/chevron-up.svg);
+                image: url(resources/icons/feather_icons/chevrons-up.svg);
+            }}
+
+            QComboBox::down-arrow:disabled {{
+                opacity: 0.5;
+            }}
+
+            QComboBox::down-arrow:hover {{
+                opacity: 1.0;
             }}
 
             /* COMBOBOX DROPDOWN */
@@ -287,6 +339,8 @@ class ThemeEngine:
                 outline: none;
                 selection-background-color: {self.colors['combo_item_background_selected']};
                 selection-color: {self.colors['input_selection_text']};
+                alternate-background-color: {self.colors['table_alternate_background']};
+                font-size: {self.fonts['interface_size']};
             }}
 
             QComboBox QAbstractItemView::item {{
@@ -294,21 +348,39 @@ class ThemeEngine:
                 color: {self.colors['combo_text']};
                 padding: 6px 8px;
                 border: none;
-                min-height: 20px;
+                min-height: 18px;
+                border-radius: 2px;
+                margin: 1px;
             }}
 
             QComboBox QAbstractItemView::item:hover {{
-                background-color: {self.colors['combo_item_background_hover']};
-                color: {self.colors['combo_text']};
+                background-color: {self.colors['combo_item_background_hover']} !important;
+                color: {self.colors['combo_text']} !important;
+                border-radius: 2px;
             }}
 
             QComboBox QAbstractItemView::item:selected {{
                 background-color: {self.colors['combo_item_background_selected']} !important;
                 color: {self.colors['input_selection_text']} !important;
+                border-radius: 2px;
             }}
 
             QComboBox QAbstractItemView::item:selected:hover {{
                 background-color: {self.colors['highlight_light_blue']} !important;
+                color: {self.colors['input_selection_text']} !important;
+                border-radius: 2px;
+            }}
+
+            QComboBox QAbstractItemView::item:alternate {{
+                background-color: {self.colors['table_alternate_background']};
+            }}
+
+            QComboBox QAbstractItemView::item:alternate:hover {{
+                background-color: {self.colors['combo_item_background_hover']} !important;
+            }}
+
+            QComboBox QAbstractItemView::item:alternate:selected {{
+                background-color: {self.colors['combo_item_background_selected']} !important;
                 color: {self.colors['input_selection_text']} !important;
             }}
 
@@ -417,11 +489,13 @@ class ThemeEngine:
             QTreeView {{
                 background-color: {self.colors['table_background']};
                 color: {self.colors['table_text']};
+                alternate-background-color: {self.colors['table_alternate_background']};
                 font-size: {self.fonts['tree_size']};
                 border: none;
                 outline: none;
                 selection-background-color: {self.colors['table_selection_background']};
                 selection-color: {self.colors['table_selection_text']};
+                show-decoration-selected: 1;
             }}
 
             QTreeView::item {{
@@ -432,13 +506,175 @@ class ThemeEngine:
                 min-height: 18px;
             }}
 
+            QTreeView::item:alternate {{
+                background-color: {self.colors['table_alternate_background']};
+            }}
+
             QTreeView::item:hover {{
                 background-color: {self.colors['table_hover_background']};
+                color: {self.colors['table_text']};
+                border: none;
             }}
 
             QTreeView::item:selected {{
                 background-color: {self.colors['table_selection_background']};
                 color: {self.colors['table_selection_text']};
+                border: none;
+            }}
+
+            QTreeView::item:selected:hover {{
+                background-color: {self.colors['highlight_light_blue']};
+                color: {self.colors['table_selection_text']};
+                border: none;
+            }}
+
+            QTreeView::item:selected:focus {{
+                background-color: {self.colors['table_selection_background']};
+                color: {self.colors['table_selection_text']};
+                border: none;
+                outline: none;
+            }}
+
+            /* Tree view branch styling - ensure selection spans entire row */
+            QTreeView::branch {{
+                background-color: {self.colors['table_background']};
+                color: transparent;
+                border: none;
+                outline: 0;
+            }}
+
+            QTreeView::branch:selected {{
+                background-color: {self.colors['table_selection_background']};
+                color: transparent;
+                border: none;
+            }}
+
+            QTreeView::branch:hover {{
+                background-color: {self.colors['table_hover_background']};
+                color: transparent;
+                border: none;
+            }}
+
+            QTreeView::branch:selected:hover {{
+                background-color: {self.colors['highlight_light_blue']};
+                color: transparent;
+                border: none;
+            }}
+
+            QTreeView::branch:has-siblings:!adjoins-item {{
+                border-image: none;
+                image: none;
+            }}
+
+            QTreeView::branch:has-siblings:adjoins-item {{
+                border-image: none;
+                image: none;
+            }}
+
+            QTreeView::branch:!has-children:!has-siblings:adjoins-item {{
+                border-image: none;
+                image: none;
+            }}
+
+            QTreeView::branch:has-children:!has-siblings:closed,
+            QTreeView::branch:closed:has-children:has-siblings {{
+                image: url(resources/icons/feather_icons/chevron-right.svg);
+                padding: 2px;
+            }}
+
+            QTreeView::branch:open:has-children:!has-siblings,
+            QTreeView::branch:open:has-children:has-siblings {{
+                image: url(resources/icons/feather_icons/chevron-down.svg);
+                padding: 2px;
+            }}
+
+            /* FileTreeView specific styling */
+            FileTreeView::item:hover {{
+                background-color: {self.colors['table_hover_background']};
+                color: {self.colors['table_text']};
+                border: none;
+            }}
+
+            FileTreeView::item:selected {{
+                background-color: {self.colors['table_selection_background']};
+                color: {self.colors['table_selection_text']};
+                border: none;
+            }}
+
+            FileTreeView::item:selected:hover {{
+                background-color: {self.colors['highlight_light_blue']};
+                color: {self.colors['table_selection_text']};
+                border: none;
+            }}
+
+            FileTreeView::branch:hover {{
+                background-color: {self.colors['table_hover_background']} !important;
+                color: transparent !important;
+                border: none !important;
+            }}
+
+            FileTreeView::branch:selected {{
+                background-color: {self.colors['table_selection_background']} !important;
+                color: transparent !important;
+                border: none !important;
+            }}
+
+            FileTreeView::branch:selected:hover {{
+                background-color: {self.colors['highlight_light_blue']} !important;
+                color: transparent !important;
+                border: none !important;
+            }}
+
+            /* MetadataTreeView specific styling */
+            MetadataTreeView {{
+                color: {self.colors['table_text']};
+                background-color: {self.colors['table_background']};
+            }}
+
+            MetadataTreeView[placeholder="false"] {{
+                color: {self.colors['table_text']} !important;
+                background-color: {self.colors['table_background']} !important;
+            }}
+
+            MetadataTreeView[placeholder="false"]::item {{
+                color: {self.colors['table_text']} !important;
+                background-color: transparent;
+            }}
+
+            MetadataTreeView[placeholder="false"]::item:hover {{
+                background-color: {self.colors['table_hover_background']} !important;
+                color: {self.colors['table_text']} !important;
+                border: none;
+            }}
+
+            MetadataTreeView[placeholder="false"]::item:selected {{
+                background-color: {self.colors['table_selection_background']} !important;
+                color: {self.colors['table_selection_text']} !important;
+                border: none;
+            }}
+
+            MetadataTreeView[placeholder="false"]::item:selected:hover {{
+                background-color: {self.colors['highlight_light_blue']} !important;
+                color: {self.colors['table_selection_text']} !important;
+                border: none;
+            }}
+
+            MetadataTreeView[placeholder="true"]::item {{
+                color: gray;
+                selection-background-color: transparent;
+                background-color: transparent;
+            }}
+
+            MetadataTreeView[placeholder="true"]::item:hover {{
+                background-color: transparent !important;
+                color: gray !important;
+                border: none !important;
+            }}
+
+            MetadataTreeView[placeholder="true"]::item:selected {{
+                background-color: transparent !important;
+                color: gray !important;
+                border: none !important;
             }}
 
             /* CHECKBOXES */
@@ -494,34 +730,101 @@ class ThemeEngine:
                 background-color: {self.colors['tooltip_background']};
                 color: {self.colors['tooltip_text']};
                 border: 1px solid {self.colors['tooltip_border']};
-                border-radius: 4px;
-                padding: 4px 8px;
+                border-radius: 6px;
+                padding: 2px 4px;
                 font-size: {self.fonts['interface_size']};
+            }}
+
+            /* Custom Error Tooltip */
+            .ErrorTooltip {{
+                background-color: {self.colors['tooltip_error_background']};
+                color: {self.colors['tooltip_error_text']};
+                border: 1px solid {self.colors['tooltip_error_border']};
+                border-radius: 6px;
+                padding: 2px 4px;
+                font-size: {self.fonts['interface_size']};
+                font-weight: normal;
+            }}
+
+            /* Custom Warning Tooltip */
+            .WarningTooltip {{
+                background-color: {self.colors['tooltip_warning_background']};
+                color: {self.colors['tooltip_warning_text']};
+                border: 1px solid {self.colors['tooltip_warning_border']};
+                border-radius: 6px;
+                padding: 2px 4px;
+                font-size: {self.fonts['interface_size']};
+                font-weight: normal;
+            }}
+
+            /* Custom Info Tooltip */
+            .InfoTooltip {{
+                background-color: {self.colors['tooltip_info_background']};
+                color: {self.colors['tooltip_info_text']};
+                border: 1px solid {self.colors['tooltip_info_border']};
+                border-radius: 6px;
+                padding: 2px 4px;
+                font-size: {self.fonts['interface_size']};
+                font-weight: normal;
+            }}
+
+            /* Custom Success Tooltip */
+            .SuccessTooltip {{
+                background-color: {self.colors['tooltip_success_background']};
+                color: {self.colors['tooltip_success_text']};
+                border: 1px solid {self.colors['tooltip_success_border']};
+                border-radius: 6px;
+                padding: 2px 4px;
+                font-size: {self.fonts['interface_size']};
+                font-weight: normal;
             }}
 
             /* CONTEXT MENUS */
             QMenu {{
-                background-color: {self.colors['dialog_background']};
+                background-color: #232323;
                 color: {self.colors['dialog_text']};
-                border: 1px solid {self.colors['border_color']};
-                border-radius: 4px;
+                border: none;
+                border-radius: 8px;
                 padding: 4px;
+                font-size: {self.fonts['interface_size']};
             }}
 
             QMenu::item {{
                 background-color: transparent;
                 color: {self.colors['dialog_text']};
-                padding: 4px 8px;
-                border-radius: 2px;
+                padding: 6px 16px;
+                border-radius: 6px;
+                margin: 1px;
+                font-size: {self.fonts['interface_size']};
             }}
 
             QMenu::item:hover {{
-                background-color: {self.colors['button_background_hover']};
+                background-color: {self.colors['table_hover_background']};
+                color: {self.colors['dialog_text']};
+                border-radius: 6px;
             }}
 
             QMenu::item:selected {{
-                background-color: {self.colors['accent_color']};
+                background-color: {self.colors['table_selection_background']};
                 color: {self.colors['input_selection_text']};
+                border-radius: 6px;
+            }}
+
+            QMenu::item:pressed {{
+                background-color: {self.colors['table_selection_background']};
+                color: {self.colors['input_selection_text']};
+                border-radius: 6px;
+            }}
+
+            QMenu::item:disabled {{
+                color: #555555;
+                background-color: transparent;
+            }}
+
+            QMenu::separator {{
+                background-color: #5a5a5a;
+                height: 1px;
+                margin: 2px 8px;
             }}
 
             /* DIALOGS */
