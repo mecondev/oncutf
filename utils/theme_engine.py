@@ -166,31 +166,85 @@ class ThemeEngine:
             }}
 
             /* INPUT FIELDS */
-            QLineEdit {{
-                background-color: {self.colors['input_background']};
-                border: 1px solid {self.colors['input_border']};
-                border-radius: 4px;
-                color: {self.colors['input_text']};
-                padding: 4px 8px;
-                selection-background-color: {self.colors['input_selection_bg']};
-                selection-color: {self.colors['input_selection_text']};
-                min-height: 20px;
+            QLineEdit {
+                background-color: #2b2b2b;
+                border: 2px solid #3e3e3e;
+                border-radius: 3px;
+                padding: 2px 6px;
+                color: #e0e0e0;
+                font-size: 9pt;
+                font-weight: 400;
+                height: 18px;
+                margin: 2px;
+            }
+
+            QLineEdit:focus {
+                border: 2px solid #4a9eff;
+            }
+
+            QLineEdit:hover:!focus {
+                border: 2px solid #5a5a5a;
+            }
+
+            /* Error state for QLineEdit - maintain same border width to prevent shifting */
+            QLineEdit[error="true"] {
+                border: 2px solid #ff4444 !important;
+                background-color: #332222 !important;
+                color: #ff8888 !important;
+            }
+
+            /* ValidatedLineEdit specific styling to override inline styles */
+            ValidatedLineEdit {
+                background-color: #2b2b2b !important;
+                border: 2px solid #3e3e3e !important;
+                border-radius: 3px !important;
+                padding: 2px 6px !important;
+                color: #e0e0e0 !important;
+                font-size: 9pt !important;
+                font-weight: 400 !important;
+                height: 18px !important;
+                margin: 2px !important;
+            }
+
+            ValidatedLineEdit:focus {
+                border: 2px solid #4a9eff !important;
+            }
+
+            ValidatedLineEdit:hover:!focus {
+                border: 2px solid #5a5a5a !important;
+            }
+
+            ValidatedLineEdit[error="true"] {
+                border: 2px solid #ff4444 !important;
+                background-color: #332222 !important;
+                color: #ff8888 !important;
+            }
+
+            ValidatedLineEdit[warning="true"] {
+                border: 2px solid #cc6600 !important;
+                background-color: #332200 !important;
+                color: #ffaa44 !important;
+            }
+
+            ValidatedLineEdit[info="true"] {
+                border: 2px solid #4a9eff !important;
+                background-color: #223344 !important;
+                color: #88ccff !important;
+            }
+
+            /* LAYOUT SPACING */
+            QHBoxLayout {{
+                spacing: 1px;
+                margin: 2px;
             }}
 
-            QLineEdit:hover {{
-                background-color: {self.colors['input_background_hover']};
-                border-color: {self.colors['input_border_hover']};
+            QVBoxLayout {{
+                spacing: 2px;
+                margin: 2px;
             }}
 
-            QLineEdit:focus {{
-                border-color: {self.colors['input_border_focus']};
-                background-color: {self.colors['input_background_focus']};
-            }}
-
-            QLineEdit:disabled {{
-                background-color: {self.colors['disabled_background']};
-                color: {self.colors['disabled_text']};
-                border-color: {self.colors['input_border']};
+            QWidget {{
+                margin: 0px;
             }}
 
             /* BUTTONS */
@@ -252,8 +306,8 @@ class ThemeEngine:
                 border: 1px solid {self.colors['combo_border']};
                 border-radius: 4px;
                 color: {self.colors['combo_text']};
-                padding: 4px 8px;
-                min-height: 20px;
+                padding: 2px 6px;
+                min-height: 18px;
                 margin: 0px;
                 font-size: {self.fonts['interface_size']};
                 selection-background-color: {self.colors['input_selection_bg']};
@@ -303,7 +357,7 @@ class ThemeEngine:
             QComboBox::drop-down {{
                 border: none;
                 background-color: transparent;
-                width: 20px;
+                width: 18px;
                 subcontrol-origin: padding;
                 subcontrol-position: center right;
             }}
@@ -314,8 +368,8 @@ class ThemeEngine:
 
             QComboBox::down-arrow {{
                 image: url(resources/icons/feather_icons/chevrons-down.svg);
-                width: 14px;
-                height: 14px;
+                width: 12px;
+                height: 12px;
             }}
 
             QComboBox::down-arrow:on {{
@@ -692,14 +746,118 @@ class ThemeEngine:
                 background-color: {self.colors['input_background']};
             }}
 
+            QCheckBox::indicator:unchecked {{
+                image: url(resources/icons/feather_icons/square.svg);
+                background-color: {self.colors['input_background']};
+                border-color: {self.colors['input_border']};
+            }}
+
+            QCheckBox::indicator:checked {{
+                image: url(resources/icons/feather_icons/check-square.svg);
+                background-color: {self.colors['input_background']};
+                border-color: {self.colors['input_border']};
+            }}
+
             QCheckBox::indicator:hover {{
                 border-color: {self.colors['input_border_hover']};
                 background-color: {self.colors['input_background_hover']};
             }}
 
-            QCheckBox::indicator:checked {{
-                background-color: {self.colors['accent_color']};
-                border-color: {self.colors['accent_color']};
+            QCheckBox::indicator:focus {{
+                border-color: {self.colors['input_border_focus']};
+                background-color: {self.colors['input_background_focus']};
+            }}
+
+            /* FinalTransformContainer specific checkbox styling */
+            FinalTransformContainer QCheckBox {{
+                color: {self.colors['app_text']};
+                font-size: {self.fonts['interface_size']};
+                spacing: 8px;
+            }}
+
+            FinalTransformContainer QCheckBox::indicator {{
+                width: 16px;
+                height: 16px;
+                border: 1px solid {self.colors['input_border']};
+                border-radius: 3px;
+                background-color: {self.colors['input_background']};
+            }}
+
+            FinalTransformContainer QCheckBox::indicator:unchecked {{
+                image: url(resources/icons/feather_icons/square.svg);
+                background-color: {self.colors['input_background']};
+                border-color: {self.colors['input_border']};
+            }}
+
+            FinalTransformContainer QCheckBox::indicator:checked {{
+                image: url(resources/icons/feather_icons/check-square.svg);
+                background-color: {self.colors['input_background']};
+                border-color: {self.colors['input_border']};
+            }}
+
+            FinalTransformContainer QCheckBox::indicator:hover {{
+                border-color: {self.colors['input_border_hover']};
+                background-color: {self.colors['input_background_hover']};
+            }}
+
+            /* Greeklish checkbox - no focus styling */
+            FinalTransformContainer QCheckBox[objectName="greeklish_checkbox"]::indicator:focus {{
+                border-color: {self.colors['input_border']};
+                background-color: {self.colors['input_background']};
+            }}
+
+            /* SPECIFIED TEXT AND COUNTER MODULE STYLING */
+            /* Fix QLineEdit border clipping and add proper spacing */
+            QWidget[objectName*="SpecifiedText"] QLineEdit,
+            QWidget[objectName*="Counter"] QLineEdit {{
+                background-color: {self.colors['input_background']};
+                border: 2px solid {self.colors['input_border']};
+                border-radius: 4px;
+                color: {self.colors['input_text']};
+                padding: 3px 8px;
+                selection-background-color: {self.colors['input_selection_bg']};
+                selection-color: {self.colors['input_selection_text']};
+                min-height: 18px;
+                font-size: {self.fonts['interface_size']};
+                margin: 1px;
+            }}
+
+            QWidget[objectName*="SpecifiedText"] QLineEdit:hover,
+            QWidget[objectName*="Counter"] QLineEdit:hover {{
+                background-color: {self.colors['input_background_hover']};
+                border-color: {self.colors['input_border_hover']};
+            }}
+
+            QWidget[objectName*="SpecifiedText"] QLineEdit:focus,
+            QWidget[objectName*="Counter"] QLineEdit:focus {{
+                border-color: {self.colors['input_border_focus']};
+                background-color: {self.colors['input_background_focus']};
+            }}
+
+            /* Error state for specified text */
+            QWidget[objectName*="SpecifiedText"] QLineEdit[error="true"],
+            QWidget[objectName*="Counter"] QLineEdit[error="true"] {{
+                border: 2px solid #cc4444;
+                background-color: #3d1e1e;
+                color: #ffaaaa;
+                margin: 1px;
+            }}
+
+            /* Counter and Metadata module HBox spacing */
+            QWidget[objectName*="Counter"] QHBoxLayout,
+            QWidget[objectName*="Metadata"] QHBoxLayout {{
+                spacing: 4px;
+                margin: 3px;
+            }}
+
+            /* Counter module label fixes */
+            QWidget[objectName*="Counter"] QLabel {{
+                background-color: transparent;
+                color: {self.colors['app_text']};
+                border: none;
+                padding: 2px 4px;
+                margin: 1px;
+                font-size: {self.fonts['interface_size']};
             }}
 
             /* SPLITTERS */
@@ -829,7 +987,7 @@ class ThemeEngine:
 
             /* DIALOGS */
             QDialog {{
-                background-color: {self.colors['dialog_background']};
+                background-color: #232323;
                 color: {self.colors['dialog_text']};
             }}
 

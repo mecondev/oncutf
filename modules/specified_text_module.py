@@ -13,7 +13,7 @@ Used in the oncutf application as one of the modular renaming components.
 import os
 from typing import Optional
 
-from core.qt_imports import Qt, pyqtSignal, QAction, QLabel, QMenu, QVBoxLayout, QWidget
+from core.qt_imports import Qt, pyqtSignal, QAction, QLabel, QMenu, QVBoxLayout, QWidget, QApplication
 
 from config import QLABEL_DARK_BG, QLABEL_DARK_BORDER, QLABEL_ERROR_TEXT, QLABEL_INFO_TEXT
 from modules.base_module import BaseRenameModule
@@ -164,25 +164,41 @@ class SpecifiedTextModule(BaseRenameModule):
         if text and not self._has_had_content:
             self._has_had_content = True
 
-        # Determine validation state and apply appropriate styling
+        # Determine validation state and apply appropriate styling using properties
         if len(text) >= 240:
-            # At character limit - darker gray styling
-            self.text_input.setStyleSheet(f"border: 2px solid {QLABEL_DARK_BORDER}; background-color: {QLABEL_DARK_BG}; color: {QLABEL_INFO_TEXT};")
+            # At character limit - info styling
+            self.text_input.setProperty("error", False)
+            self.text_input.setProperty("warning", True)
+            self.text_input.setProperty("info", True)
         elif not text and self._has_had_content:
-            # Empty after having content - darker orange styling
-            self.text_input.setStyleSheet("border: 2px solid #cc6600;")
+            # Empty after having content - warning styling
+            self.text_input.setProperty("error", False)
+            self.text_input.setProperty("warning", True)
+            self.text_input.setProperty("info", False)
         elif not text:
             # Empty initially - no special styling
-            self.text_input.setStyleSheet("")
+            self.text_input.setProperty("error", False)
+            self.text_input.setProperty("warning", False)
+            self.text_input.setProperty("info", False)
         else:
             # Check validation using new system
             is_valid, _ = validate_filename_part(text)
             if not is_valid:
-                # Invalid characters - red styling
-                self.text_input.setStyleSheet(f"border: 2px solid {QLABEL_ERROR_TEXT};")
+                # Invalid characters - error styling
+                self.text_input.setProperty("error", True)
+                self.text_input.setProperty("warning", False)
+                self.text_input.setProperty("info", False)
             else:
                 # Valid - default styling
-                self.text_input.setStyleSheet("")
+                self.text_input.setProperty("error", False)
+                self.text_input.setProperty("warning", False)
+                self.text_input.setProperty("info", False)
+
+        # Force style update
+        style = QApplication.instance().style()
+        if style:
+            style.unpolish(self.text_input)
+            style.polish(self.text_input)
 
         # Always emit the signal (like CounterModule does)
         logger.debug(f"[SpecifiedText] Text changed to: '{text}' (len={len(text)}), emitting signal", extra={"dev_only": True})
