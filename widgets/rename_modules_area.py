@@ -19,7 +19,6 @@ from core.qt_imports import Qt, QTimer, pyqtSignal, QHBoxLayout, QScrollArea, QV
 from modules.base_module import BaseRenameModule
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_scroll_adjust
-from utils.theme_proxy_style import RenameModuleStyleHelper
 from widgets.rename_module_widget import RenameModuleWidget
 import config
 
@@ -62,8 +61,7 @@ class RenameModulesArea(QWidget):
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        # Apply scroll area background styling
-        RenameModuleStyleHelper.apply_scroll_area_background(self.scroll_area, theme=config.THEME_NAME)
+        # Theme styling is now handled by the global theme engine
 
         self.scroll_content = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_content)
@@ -119,8 +117,7 @@ class RenameModulesArea(QWidget):
         module.updated.connect(lambda: self._on_module_updated())
         self.module_widgets.append(module)
 
-        # Apply module background styling
-        RenameModuleStyleHelper.apply_module_background(module, theme=self.current_theme)
+        # Theme styling is now handled by the global theme engine
 
         # Remove separator creation - using margins instead
         self.scroll_layout.addWidget(module)
@@ -227,12 +224,5 @@ class RenameModulesArea(QWidget):
             theme: 'dark' or 'light'
         """
         self.current_theme = theme
-
-        # Update scroll area background
-        RenameModuleStyleHelper.apply_scroll_area_background(self.scroll_area, theme=theme)
-
-        # Update all existing modules
-        for module_widget in self.module_widgets:
-            RenameModuleStyleHelper.apply_module_background(module_widget, theme=theme)
-
+        # Theme styling is now handled by the global theme engine
         logger.debug(f"[RenameModulesArea] Theme changed to: {theme}", extra={"dev_only": True})
