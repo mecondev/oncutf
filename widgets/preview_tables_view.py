@@ -174,9 +174,9 @@ class PreviewTablesView(QWidget):
         self.icon_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.icon_table.setShowGrid(False)
         self.icon_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
-        # Set background color to match main application
+        # Set background color to match main application (#232323)
         from utils.theme import get_theme_color
-        bg_color = get_theme_color("medium_background")
+        bg_color = get_theme_color("button_background_disabled")
         self.icon_table.setStyleSheet(f"background-color: {bg_color};")
         self.icon_table.verticalHeader().setDefaultSectionSize(22)
 

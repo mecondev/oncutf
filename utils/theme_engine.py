@@ -106,17 +106,25 @@ class ThemeEngine:
             }}
 
             QSplitter::handle:horizontal {{
-                width: 2px;
-                margin: 2px 0px;
+                width: 6px;
+                margin: 0px;
             }}
 
             QSplitter::handle:vertical {{
-                height: 2px;
-                margin: 0px 2px;
+                height: 6px;
+                margin: 0px;
             }}
 
             QSplitter::handle:hover {{
                 background-color: {self.colors['separator_light']};
+            }}
+
+            /* Footer separator styling */
+            QFrame[objectName="footerSeparator"] {{
+                background-color: {self.colors['separator_background']};
+                border: none;
+                min-height: 4px;
+                max-height: 4px;
             }}
 
             QTabWidget::pane {{
@@ -155,7 +163,7 @@ class ThemeEngine:
                 background: {self.colors['scroll_track_background']};
                 width: 12px;
                 border-radius: 6px;
-                margin: 22px 0px 22px 0px;
+                margin: 0px;
             }}
 
             QScrollBar::handle:vertical {{
@@ -183,7 +191,7 @@ class ThemeEngine:
                 background: {self.colors['scroll_track_background']};
                 height: 12px;
                 border-radius: 6px;
-                margin: 0px 22px 0px 22px;
+                margin: 0px;
             }}
 
             QScrollBar::handle:horizontal {{
@@ -947,7 +955,7 @@ class ThemeEngine:
                 background: {self.colors['scroll_track_background']};
                 height: 12px;
                 border-radius: 6px;
-                margin: 0px 22px 0px 22px;
+                margin: 0px;
             }}
 
             QScrollBar::handle:horizontal {{
@@ -1051,6 +1059,12 @@ class ThemeEngine:
             /* Enable proper alternate colors for QTableWidget */
             QTableWidget {{
                 alternate-background-color: {self.colors['table_alternate_background']};
+            }}
+
+            /* Icon table specific styling (third preview table) */
+            QTableWidget[objectName="iconTable"] {{
+                background-color: {self.colors['button_background_disabled']};
+                border: none;
             }}
 
             /* FileTableView normal mode styling - basic background only */

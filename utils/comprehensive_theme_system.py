@@ -139,7 +139,7 @@ class ComprehensiveThemeApplier:
                 background: {self.colors['scroll_track_background']};
                 width: 12px;
                 border-radius: 6px;
-                margin: 22px 0px 22px 0px;
+                margin: 0px;
             }}
             QScrollArea QScrollBar::handle:vertical {{
                 background: {self.colors['scroll_handle_background']};
