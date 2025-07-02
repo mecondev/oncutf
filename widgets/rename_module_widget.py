@@ -82,12 +82,58 @@ class RenameModuleWidget(QWidget):
 
         self.current_module_widget = None
 
-        # --- Layout setup ---
+                # --- Layout setup ---
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(2, 2, 2, 2)  # Reduced margins for compactness
-        self.main_layout.setSpacing(0)  # Control spacing manually like metadata dialog
+        self.main_layout.setContentsMargins(2, 2, 2, 2)  # 2px margins around the plate
+        self.main_layout.setSpacing(0)
 
-        # --- Top layout (type selection + module area) ---
+                # Get colors from theme engine
+        from utils.theme_engine import ThemeEngine
+        theme = ThemeEngine()
+        app_background = theme.get_color('app_background')
+        drag_handle_background = theme.get_color('module_drag_handle')
+
+        # --- Main plate container ---
+        self.plate_widget = QWidget()
+        self.plate_widget.setObjectName("module_plate")
+        # Apply plate styling: app background, rounded corners
+        self.plate_widget.setStyleSheet(f"""
+            QWidget[objectName="module_plate"] {{
+                background-color: {app_background};
+                border-radius: 8px;
+            }}
+        """)
+
+        # Plate layout with drag handle + content
+        plate_layout = QHBoxLayout(self.plate_widget)
+        plate_layout.setContentsMargins(0, 0, 0, 0)
+        plate_layout.setSpacing(0)
+
+        # --- Drag Handle Area ---
+        from utils.icons_loader import get_menu_icon
+        self.drag_handle = QLabel()
+        self.drag_handle.setFixedWidth(30)
+        self.drag_handle.setAlignment(Qt.AlignCenter)  # type: ignore
+        # Subtle background for handle area
+        self.drag_handle.setStyleSheet(f"""
+            QLabel {{
+                background-color: {drag_handle_background};
+                border-top-left-radius: 8px;
+                border-bottom-left-radius: 8px;
+            }}
+        """)
+
+        # Set drag handle icon
+        drag_icon = get_menu_icon("more-vertical")
+        self.drag_handle.setPixmap(drag_icon.pixmap(16, 16))
+
+        plate_layout.addWidget(self.drag_handle)
+
+        # --- Content Area ---
+        content_widget = QWidget()
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setContentsMargins(8, 6, 3, 6)  # Padding inside content area (reduced right margin for more space)
+        content_layout.setSpacing(4)
 
         # Row for "Type" label and combo box
         type_row = QHBoxLayout()
@@ -96,27 +142,27 @@ class RenameModuleWidget(QWidget):
 
         type_label = QLabel("Type:")
         type_label.setFixedWidth(self.LABEL_WIDTH)
-        type_label.setAlignment(Qt.AlignVCenter)  # Vertical center alignment
+        type_label.setAlignment(Qt.AlignVCenter)  # type: ignore
         self.type_combo = QComboBox()
         self.type_combo.addItems(self.module_instances.keys())
         self.type_combo.setMaximumWidth(140)
         self.type_combo.setFixedHeight(20)
         self.type_combo.currentTextChanged.connect(self.update_module_content)
 
-        type_row.addWidget(type_label, 0, Qt.AlignVCenter)  # Center align the label
-        type_row.addWidget(self.type_combo, 0, Qt.AlignVCenter)  # Center align the combobox
+        type_row.addWidget(type_label, 0, Qt.AlignVCenter)  # type: ignore
+        type_row.addWidget(self.type_combo, 0, Qt.AlignVCenter)  # type: ignore
         type_row.addStretch()
-        self.main_layout.addLayout(type_row)
-
-        # Small space between type selection and module content
-        self.main_layout.addSpacing(2)
+        content_layout.addLayout(type_row)
 
         # Module content container
         self.content_container_widget = QWidget()
         self.content_container_layout = QVBoxLayout(self.content_container_widget)
-        self.content_container_layout.setContentsMargins(2, 2, 2, 2)
-        self.content_container_layout.setSpacing(2)
-        self.main_layout.addWidget(self.content_container_widget)
+        self.content_container_layout.setContentsMargins(0, 0, 0, 0)
+        self.content_container_layout.setSpacing(0)
+        content_layout.addWidget(self.content_container_widget)
+
+        plate_layout.addWidget(content_widget)
+        self.main_layout.addWidget(self.plate_widget)
 
         # Set default module AFTER layout initialization
         self.type_combo.setCurrentText('Specified Text')

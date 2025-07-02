@@ -73,6 +73,7 @@ class ThemeEngine:
             # Module/Card colors
             'module_background': '#181818',
             'module_border': '#3a3b40',
+            'module_drag_handle': '#2a2a2a',
 
             # Dialog colors
             'dialog_background': '#2a2a2a',
@@ -472,6 +473,87 @@ class ThemeEngine:
             QComboBox QAbstractItemView::item:alternate:selected {{
                 background-color: {self.colors['combo_item_background_selected']} !important;
                 color: {self.colors['input_selection_text']} !important;
+            }}
+
+            /* MODULE PLATE SPECIFIC STYLING */
+            QWidget[objectName="module_plate"] QComboBox {{
+                background-color: {self.colors['combo_background']} !important;
+                border: 1px solid {self.colors['combo_border']} !important;
+                border-radius: 4px !important;
+                color: {self.colors['combo_text']} !important;
+                padding: 2px 6px !important;
+                min-height: 16px !important;
+                font-size: {self.fonts['interface_size']} !important;
+            }}
+
+            QWidget[objectName="module_plate"] QComboBox:hover {{
+                background-color: {self.colors['combo_background_hover']} !important;
+                border-color: {self.colors['input_border_hover']} !important;
+            }}
+
+            QWidget[objectName="module_plate"] QComboBox:pressed {{
+                background-color: {self.colors['combo_background_pressed']} !important;
+            }}
+
+            QWidget[objectName="module_plate"] QComboBox:disabled {{
+                background-color: {self.colors['disabled_background']} !important;
+                color: {self.colors['disabled_text']} !important;
+                border-color: {self.colors['combo_border']} !important;
+            }}
+
+            QWidget[objectName="module_plate"] QComboBox::drop-down {{
+                subcontrol-origin: padding !important;
+                subcontrol-position: top right !important;
+                width: 20px !important;
+                border-left-width: 1px !important;
+                border-left-color: {self.colors['combo_border']} !important;
+                border-left-style: solid !important;
+                border-top-right-radius: 4px !important;
+                border-bottom-right-radius: 4px !important;
+                background-color: transparent !important;
+            }}
+
+            QWidget[objectName="module_plate"] QComboBox::drop-down:hover {{
+                background-color: transparent !important;
+            }}
+
+            QWidget[objectName="module_plate"] QComboBox::down-arrow {{
+                image: url(resources/icons/feather_icons/chevrons-down.svg) !important;
+                width: 12px !important;
+                height: 12px !important;
+            }}
+
+            QWidget[objectName="module_plate"] QComboBox::down-arrow:on {{
+                image: url(resources/icons/feather_icons/chevrons-up.svg) !important;
+            }}
+
+            /* MODULE PLATE LINEEDIT STYLING */
+            QWidget[objectName="module_plate"] QLineEdit {{
+                background-color: {self.colors['input_background']} !important;
+                border: 1px solid {self.colors['input_border']} !important;
+                border-radius: 4px !important;
+                color: {self.colors['input_text']} !important;
+                padding: 2px 6px !important;
+                selection-background-color: {self.colors['input_selection_bg']} !important;
+                selection-color: {self.colors['input_selection_text']} !important;
+                min-height: 18px !important;
+                font-size: {self.fonts['interface_size']} !important;
+            }}
+
+            QWidget[objectName="module_plate"] QLineEdit:hover {{
+                background-color: {self.colors['input_background_hover']} !important;
+                border-color: {self.colors['input_border_hover']} !important;
+            }}
+
+            QWidget[objectName="module_plate"] QLineEdit:focus {{
+                border-color: {self.colors['input_border_focus']} !important;
+                background-color: {self.colors['input_background_focus']} !important;
+            }}
+
+            QWidget[objectName="module_plate"] QLineEdit:disabled {{
+                background-color: {self.colors['disabled_background']} !important;
+                color: {self.colors['disabled_text']} !important;
+                border-color: {self.colors['input_border']} !important;
             }}
 
             /* SCROLLBARS */
@@ -948,12 +1030,12 @@ class ThemeEngine:
             QScrollArea[objectName="rename_modules_scroll"] {{
                 border: 4px solid #444444 !important;
                 border-radius: 8px;
-                background-color: #0066cc !important;
+                background-color: {self.colors['scroll_area_background']} !important;
             }}
 
             /* Target the viewport specifically - this is what shows when empty */
             QScrollArea[objectName="rename_modules_scroll"] QAbstractScrollArea::viewport {{
-                background-color: #0066cc !important;
+                background-color: {self.colors['scroll_area_background']} !important;
             }}
 
             /* Keep content widget transparent so modules show normally */

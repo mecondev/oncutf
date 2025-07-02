@@ -132,8 +132,8 @@ class RenameModulesArea(QWidget):
         self.updated.emit()
 
     def remove_module(self, module: RenameModuleWidget):
-        # Allow removal of all modules to see scroll area background
-        if module in self.module_widgets:
+        # Prevent removal of the last module (keep at least one)
+        if len(self.module_widgets) > 1 and module in self.module_widgets:
             # Remove separator handling since we're using margins now
             self.module_widgets.remove(module)
             self.scroll_layout.removeWidget(module)
