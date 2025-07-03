@@ -166,9 +166,33 @@ class FinalTransformContainer(QWidget):
         if enabled:
             # Re-enable tooltip when button is enabled
             setup_tooltip(self.remove_button, "Remove last module", TooltipType.INFO)
+            # Set normal icon
+            self.remove_button.setIcon(get_menu_icon("minus"))
         else:
             # Clear tooltip when button is disabled
             from utils.tooltip_helper import TooltipHelper
             TooltipHelper.clear_tooltips_for_widget(self.remove_button)
             # Remove the tooltip completely by setting empty tooltip
             self.remove_button.setToolTip("")
+
+            # Create disabled icon with reduced opacity
+            from PyQt5.QtGui import QPixmap, QPainter
+            from PyQt5.QtCore import Qt
+
+            # Get the original icon
+            original_icon = get_menu_icon("minus")
+            original_pixmap = original_icon.pixmap(24, 24)
+
+            # Create a new pixmap with reduced opacity
+            disabled_pixmap = QPixmap(original_pixmap.size())
+            disabled_pixmap.fill(Qt.transparent)  # type: ignore
+
+            painter = QPainter(disabled_pixmap)
+            painter.setOpacity(0.3)  # 30% opacity for disabled state
+            painter.drawPixmap(0, 0, original_pixmap)
+            painter.end()
+
+            # Set the disabled icon
+            from PyQt5.QtGui import QIcon
+            disabled_icon = QIcon(disabled_pixmap)
+            self.remove_button.setIcon(disabled_icon)

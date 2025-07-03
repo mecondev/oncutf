@@ -282,14 +282,7 @@ class ThemeEngine:
                 color: {self.colors['button_text_disabled']} !important;
             }}
 
-            /* Cursor styling for buttons */
-            QPushButton {{
-                cursor: pointer;
-            }}
 
-            QPushButton:disabled {{
-                cursor: not-allowed;
-            }}
 
             /* FINAL TRANSFORM CONTAINER BUTTONS */
             FinalTransformContainer QPushButton {{
@@ -318,7 +311,11 @@ class ThemeEngine:
                 background-color: {self.colors['button_background_disabled']} !important;
                 color: {self.colors['button_text_disabled']} !important;
                 border: none !important;
-                opacity: 0.5 !important;
+                opacity: 0.4 !important;
+            }}
+
+            FinalTransformContainer QPushButton:disabled QIcon {{
+                opacity: 0.4 !important;
             }}
 
             FinalTransformContainer QPushButton:disabled:hover {{
@@ -326,14 +323,7 @@ class ThemeEngine:
                 color: {self.colors['button_text_disabled']} !important;
             }}
 
-            /* Cursor styling for final transform buttons */
-            FinalTransformContainer QPushButton {{
-                cursor: pointer;
-            }}
 
-            FinalTransformContainer QPushButton:disabled {{
-                cursor: not-allowed;
-            }}
 
             /* COUNTER MODULE SPECIFIC */
             CounterModule QLineEdit {{
@@ -457,60 +447,79 @@ class ThemeEngine:
                 background-color: {self.colors['combo_dropdown_background']};
                 color: {self.colors['combo_text']};
                 border: 1px solid {self.colors['input_border']};
-                border-radius: 4px;
+                border-radius: 6px;
                 outline: none;
                 selection-background-color: {self.colors['combo_item_background_selected']};
                 selection-color: {self.colors['input_selection_text']};
                 alternate-background-color: {self.colors['table_alternate_background']};
                 font-size: {self.fonts['interface_size']};
+                margin: 0px;
+                padding: 2px;
             }}
 
             QComboBox QAbstractItemView::item {{
-                background-color: transparent;
-                color: {self.colors['combo_text']};
-                padding: 6px 8px;
-                border: none;
-                min-height: 18px;
-                border-radius: 2px;
-                margin: 1px;
+                background-color: transparent !important;
+                color: {self.colors['combo_text']} !important;
+                padding: 6px 8px !important;
+                border: none !important;
+                min-height: 18px !important;
+                border-radius: 3px !important;
+                margin: 1px !important;
             }}
 
             QComboBox QAbstractItemView::item:hover {{
                 background-color: {self.colors['combo_item_background_hover']} !important;
                 color: {self.colors['combo_text']} !important;
-                border-radius: 2px;
+                border-radius: 3px !important;
             }}
 
             QComboBox QAbstractItemView::item:selected {{
                 background-color: {self.colors['combo_item_background_selected']} !important;
                 color: {self.colors['input_selection_text']} !important;
-                border-radius: 2px;
+                border-radius: 3px !important;
             }}
 
-            QComboBox QAbstractItemView::item:selected:hover {{
-                background-color: {self.colors['highlight_light_blue']} !important;
-                color: {self.colors['input_selection_text']} !important;
-                border-radius: 2px;
+            /* MODULE PLATE COMBOBOX DROPDOWN - Fix white margins and rounded corners */
+            QWidget[objectName="module_plate"] QComboBox QAbstractItemView {{
+                background-color: {self.colors['combo_dropdown_background']} !important;
+                color: {self.colors['combo_text']} !important;
+                border: 1px solid {self.colors['input_border']} !important;
+                border-radius: 6px !important;
+                outline: none !important;
+                selection-background-color: {self.colors['combo_item_background_selected']} !important;
+                selection-color: {self.colors['input_selection_text']} !important;
+                font-size: {self.fonts['interface_size']} !important;
+                margin: 0px !important;
+                padding: 2px !important;
+                /* Force no white margins around dropdown */
+                background-clip: padding-box !important;
             }}
 
-            QComboBox QAbstractItemView::item:alternate {{
-                background-color: {self.colors['table_alternate_background']};
+            /* Additional aggressive selector for module plate dropdowns */
+            QWidget[objectName="module_plate"] * QComboBox QAbstractItemView {{
+                background-color: {self.colors['combo_dropdown_background']} !important;
+                border: 1px solid {self.colors['input_border']} !important;
+                border-radius: 6px !important;
+                margin: 0px !important;
+                padding: 2px !important;
+                background-clip: padding-box !important;
             }}
 
-            QComboBox QAbstractItemView::item:alternate:hover {{
-                background-color: {self.colors['combo_item_background_hover']} !important;
-            }}
-
-            QComboBox QAbstractItemView::item:alternate:selected {{
-                background-color: {self.colors['combo_item_background_selected']} !important;
-                color: {self.colors['input_selection_text']} !important;
+            QWidget[objectName="module_plate"] QComboBox QAbstractItemView::item {{
+                background-color: transparent !important;
+                color: {self.colors['combo_text']} !important;
+                padding: 6px 8px !important;
+                border: none !important;
+                min-height: 18px !important;
+                border-radius: 3px !important;
+                margin: 1px !important;
             }}
 
             /* MODULE PLATE SPECIFIC STYLING - More aggressive selectors */
             QWidget[objectName="module_plate"] > * > QComboBox,
             QWidget[objectName="module_plate"] QWidget QComboBox,
             QWidget[objectName="module_plate"] QComboBox {{
-                background-color: {self.colors['combo_background']} !important;
+                background-color: {self.colors['app_background']} !important;
                 border: 1px solid {self.colors['combo_border']} !important;
                 border-radius: 4px !important;
                 color: {self.colors['combo_text']} !important;
@@ -518,6 +527,10 @@ class ThemeEngine:
                 min-height: 16px !important;
                 font-size: {self.fonts['interface_size']} !important;
                 outline: none !important;
+                /* Fix for white corners visible with rounded borders */
+                background-clip: padding-box !important;
+                /* Ensure no white margins/padding around combobox */
+                margin: 0px !important;
             }}
 
             /* Force remove any white/light borders on combobox */
@@ -525,6 +538,11 @@ class ThemeEngine:
             QWidget[objectName="module_plate"] * QComboBox {{
                 border: 1px solid {self.colors['combo_border']} !important;
                 outline: none !important;
+            }}
+
+            /* Ensure parent containers of combobox have matching background */
+            QWidget[objectName="module_plate"] QWidget:has(QComboBox) {{
+                background-color: {self.colors['app_background']} !important;
             }}
 
             /* Additional aggressive selectors to override any inherited white borders */
@@ -578,9 +596,9 @@ class ThemeEngine:
                 subcontrol-origin: padding !important;
                 subcontrol-position: top right !important;
                 width: 20px !important;
-                border-left-width: 1px !important;
-                border-left-color: {self.colors['combo_border']} !important;
-                border-left-style: solid !important;
+                border-left-width: 0px !important;
+                border-left-color: transparent !important;
+                border-left-style: none !important;
                 border-top-right-radius: 4px !important;
                 border-bottom-right-radius: 4px !important;
                 background-color: transparent !important;
@@ -598,6 +616,7 @@ class ThemeEngine:
                 image: url(resources/icons/feather_icons/chevrons-down.svg) !important;
                 width: 12px !important;
                 height: 12px !important;
+                right: 4px !important;
             }}
 
             QWidget[objectName="module_plate"] > * > QComboBox::down-arrow:on,
@@ -1270,6 +1289,8 @@ class ThemeEngine:
             QTabBar::tab:hover:!selected {{
                 background-color: {self.colors['button_background_hover']};
             }}
+
+
         """
 
     def get_color(self, color_key: str) -> str:
