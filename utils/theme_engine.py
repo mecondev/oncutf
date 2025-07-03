@@ -109,13 +109,14 @@ class ThemeEngine:
 
         # Font definitions (platform-specific)
         if self.is_windows:
+            # Use Inter fonts on Windows too (same as Linux)
             self.fonts = {
-                'base_family': 'Segoe UI',
-                'base_size': '8pt',
-                'base_weight': '300',
-                'interface_size': '8pt',
-                'tree_size': '9pt',
-                'medium_weight': '400',
+                'base_family': 'Inter',
+                'base_size': '9pt',
+                'base_weight': '400',
+                'interface_size': '9pt',
+                'tree_size': '10pt',
+                'medium_weight': '500',
                 'semibold_weight': '600',
             }
         else:
@@ -442,7 +443,7 @@ class ThemeEngine:
                 opacity: 1.0;
             }}
 
-            /* COMBOBOX DROPDOWN */
+            /* COMBOBOX DROPDOWN - Enhanced styling */
             QComboBox QAbstractItemView {{
                 background-color: {self.colors['combo_dropdown_background']};
                 color: {self.colors['combo_text']};
@@ -451,216 +452,51 @@ class ThemeEngine:
                 outline: none;
                 selection-background-color: {self.colors['combo_item_background_selected']};
                 selection-color: {self.colors['input_selection_text']};
-                alternate-background-color: {self.colors['table_alternate_background']};
                 font-size: {self.fonts['interface_size']};
                 margin: 0px;
-                padding: 2px;
+                padding: 4px;
+                /* Force proper background and remove any white lines */
+                background-clip: border-box;
+                /* Remove any default styling that might cause white lines */
+                border-top: 1px solid {self.colors['input_border']};
+                border-bottom: 1px solid {self.colors['input_border']};
+                border-left: 1px solid {self.colors['input_border']};
+                border-right: 1px solid {self.colors['input_border']};
             }}
 
             QComboBox QAbstractItemView::item {{
-                background-color: transparent !important;
-                color: {self.colors['combo_text']} !important;
-                padding: 6px 8px !important;
-                border: none !important;
-                min-height: 18px !important;
-                border-radius: 3px !important;
-                margin: 1px !important;
+                background-color: transparent;
+                color: {self.colors['combo_text']};
+                padding: 8px 12px;
+                border: none;
+                min-height: 20px;
+                border-radius: 4px;
+                margin: 2px;
             }}
 
             QComboBox QAbstractItemView::item:hover {{
                 background-color: {self.colors['combo_item_background_hover']} !important;
                 color: {self.colors['combo_text']} !important;
-                border-radius: 3px !important;
+                border-radius: 4px;
+                border: none;
             }}
 
             QComboBox QAbstractItemView::item:selected {{
                 background-color: {self.colors['combo_item_background_selected']} !important;
                 color: {self.colors['input_selection_text']} !important;
-                border-radius: 3px !important;
+                border-radius: 4px;
+                border: none;
             }}
 
-            /* MODULE PLATE COMBOBOX DROPDOWN - Fix white margins and rounded corners */
-            QWidget[objectName="module_plate"] QComboBox QAbstractItemView {{
-                background-color: {self.colors['combo_dropdown_background']} !important;
-                color: {self.colors['combo_text']} !important;
-                border: 1px solid {self.colors['input_border']} !important;
-                border-radius: 6px !important;
-                outline: none !important;
-                selection-background-color: {self.colors['combo_item_background_selected']} !important;
-                selection-color: {self.colors['input_selection_text']} !important;
-                font-size: {self.fonts['interface_size']} !important;
-                margin: 0px !important;
-                padding: 2px !important;
-                /* Force no white margins around dropdown */
-                background-clip: padding-box !important;
+            QComboBox QAbstractItemView::item:selected:hover {{
+                background-color: {self.colors['highlight_light_blue']} !important;
+                color: {self.colors['input_selection_text']} !important;
+                border-radius: 4px;
+                border: none;
             }}
 
-            /* Additional aggressive selector for module plate dropdowns */
-            QWidget[objectName="module_plate"] * QComboBox QAbstractItemView {{
-                background-color: {self.colors['combo_dropdown_background']} !important;
-                border: 1px solid {self.colors['input_border']} !important;
-                border-radius: 6px !important;
-                margin: 0px !important;
-                padding: 2px !important;
-                background-clip: padding-box !important;
-            }}
 
-            QWidget[objectName="module_plate"] QComboBox QAbstractItemView::item {{
-                background-color: transparent !important;
-                color: {self.colors['combo_text']} !important;
-                padding: 6px 8px !important;
-                border: none !important;
-                min-height: 18px !important;
-                border-radius: 3px !important;
-                margin: 1px !important;
-            }}
 
-            /* MODULE PLATE SPECIFIC STYLING - More aggressive selectors */
-            QWidget[objectName="module_plate"] > * > QComboBox,
-            QWidget[objectName="module_plate"] QWidget QComboBox,
-            QWidget[objectName="module_plate"] QComboBox {{
-                background-color: {self.colors['app_background']} !important;
-                border: 1px solid {self.colors['combo_border']} !important;
-                border-radius: 4px !important;
-                color: {self.colors['combo_text']} !important;
-                padding: 2px 6px !important;
-                min-height: 16px !important;
-                font-size: {self.fonts['interface_size']} !important;
-                outline: none !important;
-                /* Fix for white corners visible with rounded borders */
-                background-clip: padding-box !important;
-                /* Ensure no white margins/padding around combobox */
-                margin: 0px !important;
-            }}
-
-            /* Force remove any white/light borders on combobox */
-            QWidget[objectName="module_plate"] QComboBox,
-            QWidget[objectName="module_plate"] * QComboBox {{
-                border: 1px solid {self.colors['combo_border']} !important;
-                outline: none !important;
-            }}
-
-            /* Ensure parent containers of combobox have matching background */
-            QWidget[objectName="module_plate"] QWidget:has(QComboBox) {{
-                background-color: {self.colors['app_background']} !important;
-            }}
-
-            /* Additional aggressive selectors to override any inherited white borders */
-            QWidget[objectName="module_plate"] QComboBox *,
-            QWidget[objectName="module_plate"] * QComboBox *,
-            QWidget[objectName="module_plate"] QComboBox::drop-down,
-            QWidget[objectName="module_plate"] * QComboBox::drop-down {{
-                border: none !important;
-                outline: none !important;
-            }}
-
-            /* Override any focus rings or outlines */
-            QWidget[objectName="module_plate"] QComboBox:focus,
-            QWidget[objectName="module_plate"] * QComboBox:focus {{
-                border: 1px solid {self.colors['input_border_focus']} !important;
-                outline: none !important;
-            }}
-
-            QWidget[objectName="module_plate"] > * > QComboBox:hover,
-            QWidget[objectName="module_plate"] QWidget QComboBox:hover,
-            QWidget[objectName="module_plate"] QComboBox:hover {{
-                background-color: {self.colors['combo_background_hover']} !important;
-                border-color: {self.colors['input_border_hover']} !important;
-            }}
-
-            QWidget[objectName="module_plate"] > * > QComboBox:focus,
-            QWidget[objectName="module_plate"] QWidget QComboBox:focus,
-            QWidget[objectName="module_plate"] QComboBox:focus {{
-                border-color: {self.colors['input_border_focus']} !important;
-                background-color: {self.colors['combo_background_hover']} !important;
-                outline: none !important;
-            }}
-
-            QWidget[objectName="module_plate"] > * > QComboBox:pressed,
-            QWidget[objectName="module_plate"] QWidget QComboBox:pressed,
-            QWidget[objectName="module_plate"] QComboBox:pressed {{
-                background-color: {self.colors['combo_background_pressed']} !important;
-            }}
-
-            QWidget[objectName="module_plate"] > * > QComboBox:disabled,
-            QWidget[objectName="module_plate"] QWidget QComboBox:disabled,
-            QWidget[objectName="module_plate"] QComboBox:disabled {{
-                background-color: {self.colors['disabled_background']} !important;
-                color: {self.colors['disabled_text']} !important;
-                border-color: {self.colors['combo_border']} !important;
-            }}
-
-            QWidget[objectName="module_plate"] > * > QComboBox::drop-down,
-            QWidget[objectName="module_plate"] QWidget QComboBox::drop-down,
-            QWidget[objectName="module_plate"] QComboBox::drop-down {{
-                subcontrol-origin: padding !important;
-                subcontrol-position: top right !important;
-                width: 20px !important;
-                border-left-width: 0px !important;
-                border-left-color: transparent !important;
-                border-left-style: none !important;
-                border-top-right-radius: 4px !important;
-                border-bottom-right-radius: 4px !important;
-                background-color: transparent !important;
-            }}
-
-            QWidget[objectName="module_plate"] > * > QComboBox::drop-down:hover,
-            QWidget[objectName="module_plate"] QWidget QComboBox::drop-down:hover,
-            QWidget[objectName="module_plate"] QComboBox::drop-down:hover {{
-                background-color: transparent !important;
-            }}
-
-            QWidget[objectName="module_plate"] > * > QComboBox::down-arrow,
-            QWidget[objectName="module_plate"] QWidget QComboBox::down-arrow,
-            QWidget[objectName="module_plate"] QComboBox::down-arrow {{
-                image: url(resources/icons/feather_icons/chevrons-down.svg) !important;
-                width: 12px !important;
-                height: 12px !important;
-                right: 4px !important;
-            }}
-
-            QWidget[objectName="module_plate"] > * > QComboBox::down-arrow:on,
-            QWidget[objectName="module_plate"] QWidget QComboBox::down-arrow:on,
-            QWidget[objectName="module_plate"] QComboBox::down-arrow:on {{
-                image: url(resources/icons/feather_icons/chevrons-up.svg) !important;
-            }}
-
-            /* MODULE PLATE LINEEDIT STYLING - More aggressive selectors */
-            QWidget[objectName="module_plate"] > * > QLineEdit,
-            QWidget[objectName="module_plate"] QWidget QLineEdit,
-            QWidget[objectName="module_plate"] QLineEdit {{
-                background-color: {self.colors['input_background']} !important;
-                border: 1px solid {self.colors['input_border']} !important;
-                border-radius: 4px !important;
-                color: {self.colors['input_text']} !important;
-                padding: 2px 6px !important;
-                selection-background-color: {self.colors['input_selection_bg']} !important;
-                selection-color: {self.colors['input_selection_text']} !important;
-                min-height: 18px !important;
-                font-size: {self.fonts['interface_size']} !important;
-            }}
-
-            QWidget[objectName="module_plate"] > * > QLineEdit:hover,
-            QWidget[objectName="module_plate"] QWidget QLineEdit:hover,
-            QWidget[objectName="module_plate"] QLineEdit:hover {{
-                background-color: {self.colors['input_background_hover']} !important;
-                border-color: {self.colors['input_border_hover']} !important;
-            }}
-
-            QWidget[objectName="module_plate"] > * > QLineEdit:focus,
-            QWidget[objectName="module_plate"] QWidget QLineEdit:focus,
-            QWidget[objectName="module_plate"] QLineEdit:focus {{
-                border-color: {self.colors['input_border_focus']} !important;
-                background-color: {self.colors['input_background_focus']} !important;
-            }}
-
-            QWidget[objectName="module_plate"] > * > QLineEdit:disabled,
-            QWidget[objectName="module_plate"] QWidget QLineEdit:disabled,
-            QWidget[objectName="module_plate"] QLineEdit:disabled {{
-                background-color: {self.colors['disabled_background']} !important;
-                color: {self.colors['disabled_text']} !important;
-                border-color: {self.colors['input_border']} !important;
-            }}
 
             /* SCROLLBARS */
             QScrollBar:vertical {{
@@ -866,6 +702,60 @@ class ThemeEngine:
                 padding: 2px;
             }}
 
+            /* HEADER VIEWS */
+            QHeaderView {{
+                background-color: {self.colors['table_header_background']};
+                color: {self.colors['table_text']};
+                border: none;
+                border-bottom: 1px solid {self.colors['border_color']};
+                font-size: {self.fonts['interface_size']};
+                font-weight: {self.fonts['medium_weight']};
+                padding: 0px;
+            }}
+
+            QHeaderView::section {{
+                background-color: {self.colors['table_header_background']};
+                color: {self.colors['table_text']};
+                border: none;
+                border-right: 1px solid {self.colors['border_color']};
+                padding: 4px 8px;
+                font-size: {self.fonts['interface_size']};
+                font-weight: {self.fonts['medium_weight']};
+                text-align: left;
+            }}
+
+            QHeaderView::section:hover {{
+                background-color: {self.colors['table_hover_background']};
+                color: {self.colors['table_text']};
+            }}
+
+            QHeaderView::section:pressed {{
+                background-color: {self.colors['table_selection_background']};
+                color: {self.colors['table_selection_text']};
+            }}
+
+            QHeaderView::section:first {{
+                border-left: none;
+            }}
+
+            QHeaderView::section:last {{
+                border-right: none;
+            }}
+
+            QHeaderView::down-arrow {{
+                image: url(resources/icons/feather_icons/chevron-down.svg);
+                width: 12px;
+                height: 12px;
+                padding-right: 4px;
+            }}
+
+            QHeaderView::up-arrow {{
+                image: url(resources/icons/feather_icons/chevron-up.svg);
+                width: 12px;
+                height: 12px;
+                padding-right: 4px;
+            }}
+
             /* FileTreeView specific styling */
             FileTreeView::item:hover {{
                 background-color: {self.colors['table_hover_background']};
@@ -990,6 +880,70 @@ class ThemeEngine:
             QCheckBox::indicator:focus {{
                 border-color: {self.colors['input_border_focus']};
                 background-color: {self.colors['input_background_focus']};
+            }}
+
+            /* FINAL TRANSFORM CONTAINER COMBOBOX STYLING */
+            FinalTransformContainer QComboBox {{
+                background-color: {self.colors['combo_background']};
+                border: 1px solid {self.colors['combo_border']};
+                border-radius: 4px;
+                color: {self.colors['combo_text']};
+                padding: 2px 6px;
+                min-height: 18px;
+                margin: 0px;
+                font-size: {self.fonts['interface_size']};
+                selection-background-color: {self.colors['input_selection_bg']};
+                selection-color: {self.colors['input_selection_text']};
+            }}
+
+            FinalTransformContainer QComboBox:hover {{
+                background-color: {self.colors['combo_background_hover']};
+                border-color: {self.colors['input_border_hover']};
+            }}
+
+            FinalTransformContainer QComboBox:focus {{
+                border-color: {self.colors['input_border_focus']};
+                background-color: {self.colors['combo_background_hover']};
+                outline: none;
+            }}
+
+            FinalTransformContainer QComboBox QAbstractItemView {{
+                background-color: {self.colors['combo_dropdown_background']};
+                color: {self.colors['combo_text']};
+                border: 1px solid {self.colors['input_border']};
+                border-radius: 6px;
+                outline: none;
+                selection-background-color: {self.colors['combo_item_background_selected']};
+                selection-color: {self.colors['input_selection_text']};
+                font-size: {self.fonts['interface_size']};
+                margin: 0px;
+                padding: 0px;
+                /* Ensure proper rounded corners without white lines */
+                background-clip: border-box;
+                padding-top: 0px;
+                padding-bottom: 0px;
+            }}
+
+            FinalTransformContainer QComboBox QAbstractItemView::item {{
+                background-color: transparent;
+                color: {self.colors['combo_text']};
+                padding: 6px 8px;
+                border: none;
+                min-height: 18px;
+                border-radius: 3px;
+                margin: 1px;
+            }}
+
+            FinalTransformContainer QComboBox QAbstractItemView::item:hover {{
+                background-color: {self.colors['combo_item_background_hover']};
+                color: {self.colors['combo_text']};
+                border-radius: 3px;
+            }}
+
+            FinalTransformContainer QComboBox QAbstractItemView::item:selected {{
+                background-color: {self.colors['combo_item_background_selected']};
+                color: {self.colors['input_selection_text']};
+                border-radius: 3px;
             }}
 
             /* FinalTransformContainer specific checkbox styling */
