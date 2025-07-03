@@ -272,8 +272,23 @@ class ThemeEngine:
             }}
 
             QPushButton:disabled {{
-                background-color: {self.colors['button_background_disabled']};
-                color: {self.colors['button_text_disabled']};
+                background-color: {self.colors['button_background_disabled']} !important;
+                color: {self.colors['button_text_disabled']} !important;
+                opacity: 0.6 !important;
+            }}
+
+            QPushButton:disabled:hover {{
+                background-color: {self.colors['button_background_disabled']} !important;
+                color: {self.colors['button_text_disabled']} !important;
+            }}
+
+            /* Cursor styling for buttons */
+            QPushButton {{
+                cursor: pointer;
+            }}
+
+            QPushButton:disabled {{
+                cursor: not-allowed;
             }}
 
             /* FINAL TRANSFORM CONTAINER BUTTONS */
@@ -300,8 +315,24 @@ class ThemeEngine:
             }}
 
             FinalTransformContainer QPushButton:disabled {{
-                background-color: {self.colors['button_background_disabled']};
-                color: {self.colors['button_text_disabled']};
+                background-color: {self.colors['button_background_disabled']} !important;
+                color: {self.colors['button_text_disabled']} !important;
+                border: none !important;
+                opacity: 0.5 !important;
+            }}
+
+            FinalTransformContainer QPushButton:disabled:hover {{
+                background-color: {self.colors['button_background_disabled']} !important;
+                color: {self.colors['button_text_disabled']} !important;
+            }}
+
+            /* Cursor styling for final transform buttons */
+            FinalTransformContainer QPushButton {{
+                cursor: pointer;
+            }}
+
+            FinalTransformContainer QPushButton:disabled {{
+                cursor: not-allowed;
             }}
 
             /* COUNTER MODULE SPECIFIC */
@@ -475,7 +506,9 @@ class ThemeEngine:
                 color: {self.colors['input_selection_text']} !important;
             }}
 
-            /* MODULE PLATE SPECIFIC STYLING */
+            /* MODULE PLATE SPECIFIC STYLING - More aggressive selectors */
+            QWidget[objectName="module_plate"] > * > QComboBox,
+            QWidget[objectName="module_plate"] QWidget QComboBox,
             QWidget[objectName="module_plate"] QComboBox {{
                 background-color: {self.colors['combo_background']} !important;
                 border: 1px solid {self.colors['combo_border']} !important;
@@ -484,23 +517,63 @@ class ThemeEngine:
                 padding: 2px 6px !important;
                 min-height: 16px !important;
                 font-size: {self.fonts['interface_size']} !important;
+                outline: none !important;
             }}
 
+            /* Force remove any white/light borders on combobox */
+            QWidget[objectName="module_plate"] QComboBox,
+            QWidget[objectName="module_plate"] * QComboBox {{
+                border: 1px solid {self.colors['combo_border']} !important;
+                outline: none !important;
+            }}
+
+            /* Additional aggressive selectors to override any inherited white borders */
+            QWidget[objectName="module_plate"] QComboBox *,
+            QWidget[objectName="module_plate"] * QComboBox *,
+            QWidget[objectName="module_plate"] QComboBox::drop-down,
+            QWidget[objectName="module_plate"] * QComboBox::drop-down {{
+                border: none !important;
+                outline: none !important;
+            }}
+
+            /* Override any focus rings or outlines */
+            QWidget[objectName="module_plate"] QComboBox:focus,
+            QWidget[objectName="module_plate"] * QComboBox:focus {{
+                border: 1px solid {self.colors['input_border_focus']} !important;
+                outline: none !important;
+            }}
+
+            QWidget[objectName="module_plate"] > * > QComboBox:hover,
+            QWidget[objectName="module_plate"] QWidget QComboBox:hover,
             QWidget[objectName="module_plate"] QComboBox:hover {{
                 background-color: {self.colors['combo_background_hover']} !important;
                 border-color: {self.colors['input_border_hover']} !important;
             }}
 
+            QWidget[objectName="module_plate"] > * > QComboBox:focus,
+            QWidget[objectName="module_plate"] QWidget QComboBox:focus,
+            QWidget[objectName="module_plate"] QComboBox:focus {{
+                border-color: {self.colors['input_border_focus']} !important;
+                background-color: {self.colors['combo_background_hover']} !important;
+                outline: none !important;
+            }}
+
+            QWidget[objectName="module_plate"] > * > QComboBox:pressed,
+            QWidget[objectName="module_plate"] QWidget QComboBox:pressed,
             QWidget[objectName="module_plate"] QComboBox:pressed {{
                 background-color: {self.colors['combo_background_pressed']} !important;
             }}
 
+            QWidget[objectName="module_plate"] > * > QComboBox:disabled,
+            QWidget[objectName="module_plate"] QWidget QComboBox:disabled,
             QWidget[objectName="module_plate"] QComboBox:disabled {{
                 background-color: {self.colors['disabled_background']} !important;
                 color: {self.colors['disabled_text']} !important;
                 border-color: {self.colors['combo_border']} !important;
             }}
 
+            QWidget[objectName="module_plate"] > * > QComboBox::drop-down,
+            QWidget[objectName="module_plate"] QWidget QComboBox::drop-down,
             QWidget[objectName="module_plate"] QComboBox::drop-down {{
                 subcontrol-origin: padding !important;
                 subcontrol-position: top right !important;
@@ -513,21 +586,29 @@ class ThemeEngine:
                 background-color: transparent !important;
             }}
 
+            QWidget[objectName="module_plate"] > * > QComboBox::drop-down:hover,
+            QWidget[objectName="module_plate"] QWidget QComboBox::drop-down:hover,
             QWidget[objectName="module_plate"] QComboBox::drop-down:hover {{
                 background-color: transparent !important;
             }}
 
+            QWidget[objectName="module_plate"] > * > QComboBox::down-arrow,
+            QWidget[objectName="module_plate"] QWidget QComboBox::down-arrow,
             QWidget[objectName="module_plate"] QComboBox::down-arrow {{
                 image: url(resources/icons/feather_icons/chevrons-down.svg) !important;
                 width: 12px !important;
                 height: 12px !important;
             }}
 
+            QWidget[objectName="module_plate"] > * > QComboBox::down-arrow:on,
+            QWidget[objectName="module_plate"] QWidget QComboBox::down-arrow:on,
             QWidget[objectName="module_plate"] QComboBox::down-arrow:on {{
                 image: url(resources/icons/feather_icons/chevrons-up.svg) !important;
             }}
 
-            /* MODULE PLATE LINEEDIT STYLING */
+            /* MODULE PLATE LINEEDIT STYLING - More aggressive selectors */
+            QWidget[objectName="module_plate"] > * > QLineEdit,
+            QWidget[objectName="module_plate"] QWidget QLineEdit,
             QWidget[objectName="module_plate"] QLineEdit {{
                 background-color: {self.colors['input_background']} !important;
                 border: 1px solid {self.colors['input_border']} !important;
@@ -540,16 +621,22 @@ class ThemeEngine:
                 font-size: {self.fonts['interface_size']} !important;
             }}
 
+            QWidget[objectName="module_plate"] > * > QLineEdit:hover,
+            QWidget[objectName="module_plate"] QWidget QLineEdit:hover,
             QWidget[objectName="module_plate"] QLineEdit:hover {{
                 background-color: {self.colors['input_background_hover']} !important;
                 border-color: {self.colors['input_border_hover']} !important;
             }}
 
+            QWidget[objectName="module_plate"] > * > QLineEdit:focus,
+            QWidget[objectName="module_plate"] QWidget QLineEdit:focus,
             QWidget[objectName="module_plate"] QLineEdit:focus {{
                 border-color: {self.colors['input_border_focus']} !important;
                 background-color: {self.colors['input_background_focus']} !important;
             }}
 
+            QWidget[objectName="module_plate"] > * > QLineEdit:disabled,
+            QWidget[objectName="module_plate"] QWidget QLineEdit:disabled,
             QWidget[objectName="module_plate"] QLineEdit:disabled {{
                 background-color: {self.colors['disabled_background']} !important;
                 color: {self.colors['disabled_text']} !important;

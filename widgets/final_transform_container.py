@@ -161,3 +161,14 @@ class FinalTransformContainer(QWidget):
     def set_remove_button_enabled(self, enabled: bool):
         """Enable/disable the remove button."""
         self.remove_button.setEnabled(enabled)
+
+        # Handle tooltip based on enabled state
+        if enabled:
+            # Re-enable tooltip when button is enabled
+            setup_tooltip(self.remove_button, "Remove last module", TooltipType.INFO)
+        else:
+            # Clear tooltip when button is disabled
+            from utils.tooltip_helper import TooltipHelper
+            TooltipHelper.clear_tooltips_for_widget(self.remove_button)
+            # Remove the tooltip completely by setting empty tooltip
+            self.remove_button.setToolTip("")
