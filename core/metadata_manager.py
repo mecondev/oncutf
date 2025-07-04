@@ -292,6 +292,12 @@ class MetadataManager:
 
     def _load_files_with_worker(self, files_to_load: List[FileItem], use_extended: bool, metadata_tree_view) -> None:
         """Load metadata for multiple files or extended metadata using MetadataWorker."""
+
+        # First, clean up any existing metadata worker/thread to prevent conflicts
+        if hasattr(self, 'metadata_worker') and self.metadata_worker:
+            logger.debug("[MetadataManager] Cleaning up existing metadata worker before starting new one...")
+            self._cleanup_metadata_worker_and_thread()
+
         # Calculate total size for enhanced progress tracking
         from utils.file_size_calculator import calculate_files_total_size
         total_size = calculate_files_total_size(files_to_load)
@@ -420,9 +426,46 @@ class MetadataManager:
             display_file = files_to_load[0] if len(files_to_load) == 1 else files_to_load[-1]
             metadata_tree_view.display_file_metadata(display_file)
 
-        # Clean up
-        self.metadata_worker = None
-        self.metadata_thread = None
+        # Clean up thread and worker properly
+        self._cleanup_metadata_worker_and_thread()
+
+    def _cleanup_metadata_worker_and_thread(self) -> None:
+        """
+        Properly clean up the metadata worker and thread.
+        This ensures the thread is stopped before clearing references.
+        """
+        try:
+            # Clean up the thread first
+            if hasattr(self, 'metadata_thread') and self.metadata_thread:
+                logger.debug("[MetadataManager] Cleaning up metadata thread...")
+
+                # Wait for thread to finish naturally (it should quit after finished signal)
+                if self.metadata_thread.isRunning():
+                    try:
+                        if not self.metadata_thread.wait(1000):  # Wait max 1 second
+                            logger.warning("[MetadataManager] Metadata thread did not finish, terminating...")
+                            # Use a more careful approach to terminate
+                            try:
+                                self.metadata_thread.terminate()
+                                if not self.metadata_thread.wait(500):  # Wait for termination
+                                    logger.warning("[MetadataManager] Thread termination timed out")
+                            except RuntimeError as e:
+                                logger.warning(f"[MetadataManager] Thread termination failed: {e}")
+                    except Exception as thread_error:
+                        logger.warning(f"[MetadataManager] Error during thread cleanup: {thread_error}")
+
+                # Clear reference
+                self.metadata_thread = None
+
+            # Clean up the worker
+            if hasattr(self, 'metadata_worker') and self.metadata_worker:
+                logger.debug("[MetadataManager] Cleaning up metadata worker...")
+
+                # The worker should be deleted by deleteLater(), but clear our reference
+                self.metadata_worker = None
+
+        except Exception as e:
+            logger.warning(f"[MetadataManager] Error during worker/thread cleanup: {e}")
 
     def save_metadata_for_selected(self) -> None:
         """
@@ -777,11 +820,9 @@ class MetadataManager:
             # 1. Cancel any running metadata operations
             self._metadata_cancelled = True
 
-            # 2. Clean up metadata worker and thread
+            # 2. Cancel the worker if it exists
             if hasattr(self, 'metadata_worker') and self.metadata_worker:
-                logger.info("[MetadataManager] Cleaning up metadata worker...")
-
-                # Cancel the worker
+                logger.info("[MetadataManager] Cancelling metadata worker...")
                 self.metadata_worker.cancel()
 
                 # Close the ExifToolWrapper in the worker's MetadataLoader
@@ -793,22 +834,8 @@ class MetadataManager:
                     except Exception as e:
                         logger.warning(f"[MetadataManager] Error closing MetadataWorker ExifTool: {e}")
 
-                # Clear reference
-                self.metadata_worker = None
-
-            # 3. Clean up metadata thread
-            if hasattr(self, 'metadata_thread') and self.metadata_thread:
-                logger.info("[MetadataManager] Cleaning up metadata thread...")
-
-                # First try graceful quit
-                self.metadata_thread.quit()
-                if not self.metadata_thread.wait(2000):  # Wait max 2 seconds
-                    logger.warning("[MetadataManager] Metadata thread did not quit gracefully, terminating...")
-                    self.metadata_thread.terminate()
-                    self.metadata_thread.wait(500)  # Wait for termination
-
-                # Clear reference
-                self.metadata_thread = None
+            # 3. Clean up metadata worker and thread properly
+            self._cleanup_metadata_worker_and_thread()
 
             # 4. Close the main ExifTool wrapper
             if hasattr(self, '_exiftool_wrapper') and self._exiftool_wrapper:

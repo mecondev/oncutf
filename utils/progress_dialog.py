@@ -182,6 +182,11 @@ class ProgressDialog(QDialog):
         """Handle dialog close event with proper cleanup."""
         if not self._is_cancelling:
             self._restore_cursors()
+
+        # Clean up progress widget timer to prevent orphaned timers
+        if hasattr(self.waiting_widget, 'reset'):
+            self.waiting_widget.reset()
+
         super().closeEvent(event)
 
     def accept(self) -> None:

@@ -8,13 +8,14 @@ Custom splash screen widget for the oncutf application.
 Features:
 - Custom size (16:9 aspect ratio with 400px height)
 - Version display in bottom left
-- Initialize text in bottom center
+- Initialize text in bottom center with animated dots
 - Custom styling and positioning
+- Blocks application interaction until closed
 """
 
 import logging
 
-from core.qt_imports import Qt, QFont, QFontMetrics, QPainter, QPen, QPixmap, QColor, QApplication, QSplashScreen
+from core.qt_imports import Qt, QFont, QFontMetrics, QPainter, QPen, QPixmap, QColor, QApplication, QSplashScreen, QTimer
 
 from config import APP_VERSION
 
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 class CustomSplashScreen(QSplashScreen):
     """
-    Custom splash screen with version info and initialize text.
+    Custom splash screen with version info and animated initialize text.
 
     Size: 16:9 aspect ratio with 400px height (711x400)
     """
@@ -38,6 +39,15 @@ class CustomSplashScreen(QSplashScreen):
         # Calculate 16:9 aspect ratio dimensions
         self.splash_height = 400
         self.splash_width = int(self.splash_height * 3 / 2)  # 600px
+
+        # Animation state for dots
+        self.dots_count = 0
+        self.max_dots = 3
+
+        # Timer for dots animation
+        self.dots_timer = QTimer()
+        self.dots_timer.timeout.connect(self._animate_dots)
+        self.dots_timer.start(500)  # 500ms interval
 
         # Load and scale the pixmap
         original_pixmap = QPixmap(pixmap_path)
@@ -92,9 +102,12 @@ class CustomSplashScreen(QSplashScreen):
 
             super().__init__(fallback_pixmap)
 
-        # Set window properties
+        # Set window properties to block interaction with main application
         self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.SplashScreen | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground, False)
+
+        # Make splash screen modal to block interaction with other windows
+        self.setWindowModality(Qt.ApplicationModal)
 
         # Center on screen
         self._center_on_screen()
@@ -213,6 +226,11 @@ class CustomSplashScreen(QSplashScreen):
         logger.debug("[Splash] Using fixed fallback position")
         self.move(100, 100)
 
+    def _animate_dots(self) -> None:
+        """Animate the dots in the initialize text."""
+        self.dots_count = (self.dots_count + 1) % (self.max_dots + 1)
+        self.repaint()  # Force repaint to show new dots
+
     def showMessage(self, message: str, alignment: int = Qt.AlignBottom | Qt.AlignCenter, color=None):
         """
         Override showMessage to add custom text rendering.
@@ -261,28 +279,43 @@ class CustomSplashScreen(QSplashScreen):
         painter.setPen(QPen(Qt.white))
 
         init_text = "initialize"
-        init_metrics = QFontMetrics(init_font)
-        init_rect = init_metrics.boundingRect(init_text)
 
-        init_x = (self.splash_width - init_rect.width()) // 2
+        # Add animated dots to the initialize text
+        dots = "." * self.dots_count
+        init_text_with_dots = f"{init_text}{dots}"
+
+        # Calculate position to keep text centered based on base text width
+        init_metrics = QFontMetrics(init_font)
+        base_text_width = init_metrics.boundingRect(init_text).width()
+
+        # Center based on the base text width (without dots)
+        init_x = (self.splash_width - base_text_width) // 2
         init_y = self.splash_height - 25  # 25px from bottom
 
-        painter.drawText(init_x, init_y, init_text)
+        painter.drawText(init_x, init_y, init_text_with_dots)
 
     def finish(self, widget):
         """
-        Override finish to restore cursor.
+        Override finish to restore cursor and stop animation.
 
         Args:
             widget: Widget to finish splash for
         """
+        # Stop the dots animation timer
+        if hasattr(self, 'dots_timer'):
+            self.dots_timer.stop()
+
         # Restore cursor before finishing
         self.setCursor(Qt.ArrowCursor)
         QApplication.restoreOverrideCursor()
         super().finish(widget)
 
     def close(self):
-        """Override close to restore cursor."""
+        """Override close to restore cursor and stop animation."""
+        # Stop the dots animation timer
+        if hasattr(self, 'dots_timer'):
+            self.dots_timer.stop()
+
         self.setCursor(Qt.ArrowCursor)
         QApplication.restoreOverrideCursor()
         super().close()
