@@ -82,12 +82,12 @@ class WindowConfig(ConfigCategory):
 
 
 class FileHashConfig(ConfigCategory):
-    """File SHA/hash tracking configuration category."""
+    """File hash tracking configuration category."""
 
     def __init__(self):
         defaults = {
             'enabled': True,
-            'algorithm': 'sha256',
+            'algorithm': 'CRC32',
             'cache_size_limit': 10000,
             'auto_cleanup_days': 30,
             'hashes': {}

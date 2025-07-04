@@ -142,6 +142,10 @@ class ThemeEngine:
         # Apply the complete stylesheet globally
         app.setStyleSheet(global_style)
 
+        # Apply Windows-specific ComboBox fixes if on Windows
+        if self.is_windows:
+            self._apply_windows_combobox_fixes(app)
+
     def _get_complete_stylesheet(self) -> str:
         """Get the complete stylesheet for the application."""
         return f"""
@@ -283,8 +287,6 @@ class ThemeEngine:
                 color: {self.colors['button_text_disabled']} !important;
             }}
 
-
-
             /* FINAL TRANSFORM CONTAINER BUTTONS */
             FinalTransformContainer QPushButton {{
                 background-color: {self.colors['button_background']};
@@ -323,8 +325,6 @@ class ThemeEngine:
                 background-color: {self.colors['button_background_disabled']} !important;
                 color: {self.colors['button_text_disabled']} !important;
             }}
-
-
 
             /* COUNTER MODULE SPECIFIC */
             CounterModule QLineEdit {{
@@ -443,60 +443,61 @@ class ThemeEngine:
                 opacity: 1.0;
             }}
 
-            /* COMBOBOX DROPDOWN - Enhanced styling */
+            /* COMBOBOX DROPDOWN - Simplified cross-platform styling */
             QComboBox QAbstractItemView {{
                 background-color: {self.colors['combo_dropdown_background']};
                 color: {self.colors['combo_text']};
                 border: 1px solid {self.colors['input_border']};
-                border-radius: 6px;
+                border-radius: 0px;
                 outline: none;
                 selection-background-color: {self.colors['combo_item_background_selected']};
                 selection-color: {self.colors['input_selection_text']};
                 font-size: {self.fonts['interface_size']};
                 margin: 0px;
-                padding: 4px;
-                /* Force proper background and remove any white lines */
+                padding: 0px;
                 background-clip: border-box;
-                /* Remove any default styling that might cause white lines */
-                border-top: 1px solid {self.colors['input_border']};
-                border-bottom: 1px solid {self.colors['input_border']};
-                border-left: 1px solid {self.colors['input_border']};
-                border-right: 1px solid {self.colors['input_border']};
+                show-decoration-selected: 1;
+                alternate-background-color: {self.colors['combo_dropdown_background']};
+                spacing: 0px;
             }}
 
             QComboBox QAbstractItemView::item {{
-                background-color: transparent;
+                background-color: {self.colors['combo_dropdown_background']};
                 color: {self.colors['combo_text']};
-                padding: 8px 12px;
+                padding: 6px 8px;
                 border: none;
-                min-height: 20px;
-                border-radius: 4px;
-                margin: 2px;
+                min-height: 16px;
+                border-radius: 0px;
+                margin: 0px;
             }}
 
             QComboBox QAbstractItemView::item:hover {{
                 background-color: {self.colors['combo_item_background_hover']} !important;
                 color: {self.colors['combo_text']} !important;
-                border-radius: 4px;
                 border: none;
             }}
 
             QComboBox QAbstractItemView::item:selected {{
                 background-color: {self.colors['combo_item_background_selected']} !important;
                 color: {self.colors['input_selection_text']} !important;
-                border-radius: 4px;
-                border: none;
             }}
 
             QComboBox QAbstractItemView::item:selected:hover {{
                 background-color: {self.colors['highlight_light_blue']} !important;
                 color: {self.colors['input_selection_text']} !important;
-                border-radius: 4px;
                 border: none;
             }}
 
+            QComboBox QAbstractItemView::item:alternate {{
+                background-color: {self.colors['combo_dropdown_background']};
+            }}
 
-
+            QComboBox QAbstractItemView::item:focus {{
+                background-color: {self.colors['combo_item_background_selected']};
+                color: {self.colors['input_selection_text']};
+                border: none;
+                outline: none;
+            }}
 
             /* SCROLLBARS */
             QScrollBar:vertical {{
@@ -1258,3 +1259,68 @@ class ThemeEngine:
     def apply_windows_font_fixes(self, main_window: QMainWindow):
         """Apply Windows-specific font fixes (already handled in constructor)."""
         pass  # Font fixes are already applied in the constructor based on platform detection
+
+    def _apply_windows_combobox_fixes(self, app: QApplication):
+        """Apply Windows-specific ComboBox dropdown fixes."""
+        from core.qt_imports import QComboBox
+
+        # Find all ComboBox widgets and apply forced styling
+        for widget in app.allWidgets():
+            if isinstance(widget, QComboBox):
+                # Force the dropdown to use our simplified styling
+                widget.setStyleSheet(f"""
+                    QComboBox {{
+                        background-color: {self.colors['combo_background']};
+                        border: 1px solid {self.colors['combo_border']};
+                        border-radius: 4px;
+                        color: {self.colors['combo_text']};
+                        padding: 2px 6px;
+                        min-height: 18px;
+                        font-size: {self.fonts['interface_size']};
+                    }}
+
+                    QComboBox:hover {{
+                        background-color: {self.colors['combo_background_hover']};
+                        border-color: {self.colors['input_border_hover']};
+                    }}
+
+                    QComboBox:focus {{
+                        border-color: {self.colors['input_border_focus']};
+                        background-color: {self.colors['combo_background_hover']};
+                    }}
+
+                    QComboBox QAbstractItemView {{
+                        background-color: {self.colors['combo_dropdown_background']} !important;
+                        color: {self.colors['combo_text']} !important;
+                        border: 1px solid {self.colors['input_border']} !important;
+                        border-radius: 0px !important;
+                        outline: none !important;
+                        selection-background-color: {self.colors['combo_item_background_selected']} !important;
+                        selection-color: {self.colors['input_selection_text']} !important;
+                        font-size: {self.fonts['interface_size']} !important;
+                        margin: 0px !important;
+                        padding: 0px !important;
+                        background-clip: border-box !important;
+                        spacing: 0px !important;
+                    }}
+
+                    QComboBox QAbstractItemView::item {{
+                        background-color: {self.colors['combo_dropdown_background']} !important;
+                        color: {self.colors['combo_text']} !important;
+                        padding: 6px 8px !important;
+                        border: none !important;
+                        min-height: 16px !important;
+                        border-radius: 0px !important;
+                        margin: 0px !important;
+                    }}
+
+                    QComboBox QAbstractItemView::item:hover {{
+                        background-color: {self.colors['combo_item_background_hover']} !important;
+                        color: {self.colors['combo_text']} !important;
+                    }}
+
+                    QComboBox QAbstractItemView::item:selected {{
+                        background-color: {self.colors['combo_item_background_selected']} !important;
+                        color: {self.colors['input_selection_text']} !important;
+                    }}
+                """)
