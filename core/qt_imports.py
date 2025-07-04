@@ -61,6 +61,7 @@ from PyQt5.QtGui import (
     QPalette,
     QPen,
     QPixmap,
+    QScreen,
     QStandardItem,
     QStandardItemModel,
 )
@@ -116,6 +117,8 @@ from PyQt5.QtWidgets import (
     QTableWidgetItem,
     QTextEdit,
     QTreeView,
+    QTreeWidget,
+    QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -129,7 +132,7 @@ __all__ = [
 
     # GUI
     'QColor', 'QCursor', 'QDesktopServices', 'QDrag', 'QDragEnterEvent', 'QDragMoveEvent', 'QDropEvent', 'QFont', 'QFontDatabase', 'QFontMetrics', 'QIcon', 'QIntValidator', 'QKeyEvent',
-    'QKeySequence', 'QMouseEvent', 'QPainter', 'QPalette', 'QPen', 'QPixmap', 'QStandardItem',
+    'QKeySequence', 'QMouseEvent', 'QPainter', 'QPalette', 'QPen', 'QPixmap', 'QScreen', 'QStandardItem',
     'QStandardItemModel',
 
     # SVG
@@ -139,6 +142,6 @@ __all__ = [
     'QAbstractItemView', 'QAction', 'QApplication', 'QButtonGroup', 'QCheckBox', 'QComboBox', 'QCompleter', 'QDialog', 'QDialogButtonBox', 'QFileDialog',
     'QFileSystemModel', 'QFrame', 'QGraphicsOpacityEffect', 'QGridLayout', 'QGroupBox', 'QHBoxLayout',
     'QHeaderView', 'QLabel', 'QLineEdit', 'QMainWindow', 'QMenu', 'QMessageBox', 'QProgressBar', 'QPushButton', 'QRadioButton', 'QScrollArea', 'QShortcut',
-    'QProxyStyle', 'QSizePolicy', 'QSplashScreen', 'QSplitter', 'QStyle', 'QStyleOption', 'QStyledItemDelegate', 'QStyleFactory', 'QStyleOptionViewItem', 'QTableWidget', 'QTableWidgetItem', 'QTableView', 'QTextEdit', 'QTreeView',
+    'QProxyStyle', 'QSizePolicy', 'QSplashScreen', 'QSplitter', 'QStyle', 'QStyleOption', 'QStyledItemDelegate', 'QStyleFactory', 'QStyleOptionViewItem', 'QTableWidget', 'QTableWidgetItem', 'QTableView', 'QTextEdit', 'QTreeView', 'QTreeWidget', 'QTreeWidgetItem',
     'QVBoxLayout', 'QWidget',
 ]

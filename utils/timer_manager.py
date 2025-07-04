@@ -203,12 +203,28 @@ class TimerManager(QObject):
         for timer_id, existing_type in timer_items:
             if existing_type == timer_type:
                 existing_timer = self._active_timers.get(timer_id)
-                if existing_timer and existing_timer.isActive():
-                    # Check if delays are similar (within 10ms)
-                    remaining = existing_timer.remainingTime()
-                    if abs(remaining - delay) <= 10:
-                        return timer_id
+                if existing_timer:
+                    try:
+                        # Check if timer is still active (protect against deleted timers)
+                        if existing_timer.isActive():
+                            # Check if delays are similar (within 10ms)
+                            remaining = existing_timer.remainingTime()
+                            if abs(remaining - delay) <= 10:
+                                return timer_id
+                    except RuntimeError:
+                        # Timer has been deleted, remove it from our tracking
+                        logger.debug(f"[TimerManager] Removing deleted timer '{timer_id}'", extra={"dev_only": True})
+                        self._cleanup_deleted_timer(timer_id)
         return None
+
+    def _cleanup_deleted_timer(self, timer_id: str) -> None:
+        """Clean up references to a deleted timer."""
+        if timer_id in self._active_timers:
+            del self._active_timers[timer_id]
+        if timer_id in self._timer_callbacks:
+            del self._timer_callbacks[timer_id]
+        if timer_id in self._timer_types:
+            del self._timer_types[timer_id]
 
     def _on_timer_finished(self, timer_id: str) -> None:
         """Handle timer completion."""
