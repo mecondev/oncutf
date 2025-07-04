@@ -98,7 +98,7 @@ def format_file_size_stable(size_bytes: int) -> str:
         Formatted size string with consistent width (e.g., "  1.5 GB  ", " 999 MB  ")
     """
     if size_bytes < 0:
-        return "    0 B   "  # Fixed width: 10 characters
+        return "     0 B   "[:10].ljust(10)  # Fixed width: 10 characters
 
     # Use binary units (1024) for consistency with most systems
     units = ["B", "KB", "MB", "GB", "TB", "PB"]
@@ -107,56 +107,25 @@ def format_file_size_stable(size_bytes: int) -> str:
     size = float(size_bytes)
     unit_index = 0
 
+    # Special handling for bytes - don't convert small values to KB
+    if size_bytes < 1024:
+        # Keep as bytes for values under 1024
+        return f"  {int(size)} B   "[:10].ljust(10)
+
+    # Convert to appropriate unit
     while size >= base and unit_index < len(units) - 1:
         size /= base
         unit_index += 1
 
-    # Additional check: if we have a 4-digit number (>=1000), promote to next unit
-    # This prevents "1000 MB" and goes straight to "1.0 GB"
-    if size >= 1000 and unit_index < len(units) - 1:
-        size /= base
-        unit_index += 1
-
     # Format with consistent 10-character width
-    if unit_index == 0:
-        # Bytes: right-align the number, left-align the unit
-        if size < 10:
-            return f"     {int(size)} B   "     # "     5 B   "
-        elif size < 100:
-            return f"    {int(size)} B   "      # "    99 B   "
-        elif size < 1000:
-            return f"   {int(size)} B   "       # "   999 B   "
-        else:
-            return f"  {int(size)} B   "        # "  1023 B   "
+    unit_str = units[unit_index]
+
+    if size >= 100:
+        # Large values: no decimals (e.g., "100.0 MB")
+        content = f"{size:.1f} {unit_str}"
     else:
-        # Other units: format consistently
-        if size >= 100:
-            # Large values: no decimals, right-aligned
-            num_str = f"{int(round(size))}"
-            unit_str = units[unit_index]
-            total_content = f"{num_str} {unit_str}"
+        # Small values: one decimal (e.g., "1.0 MB")
+        content = f"{size:.1f} {unit_str}"
 
-            # Pad to exactly 10 characters
-            if len(total_content) < 10:
-                padding = 10 - len(total_content)
-                return f"{' ' * padding}{total_content}"
-            else:
-                return total_content[:10]  # Truncate if somehow too long
-        else:
-            # Small values: one decimal, right-aligned
-            rounded = round(size, 1)
-            if rounded == int(rounded):
-                # Whole number, but show as decimal for consistency
-                num_str = f"{int(rounded)}.0"
-            else:
-                num_str = f"{rounded:.1f}"
-
-            unit_str = units[unit_index]
-            total_content = f"{num_str} {unit_str}"
-
-            # Pad to exactly 10 characters
-            if len(total_content) < 10:
-                padding = 10 - len(total_content)
-                return f"{' ' * padding}{total_content}"
-            else:
-                return total_content[:10]  # Truncate if somehow too long
+    # Ensure exactly 10 characters
+    return content.rjust(10)[:10]
