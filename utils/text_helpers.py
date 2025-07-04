@@ -8,6 +8,8 @@ Utility functions for text manipulation and formatting.
 Provides helper functions for truncating, formatting, and processing text strings.
 """
 
+import os
+from typing import Optional
 
 
 def elide_text(text: str, max_len: int) -> str:
@@ -28,3 +30,133 @@ def elide_text(text: str, max_len: int) -> str:
     if len(text) <= max_len:
         return text
     return text[:max_len - 1] + "…"
+
+
+def truncate_filename_middle(filename: str, max_length: int = 60) -> str:
+    """
+    Truncate filename with "..." in the middle, preserving file extension.
+
+    This function intelligently truncates long filenames by placing "..." in the middle
+    while preserving the file extension. This provides better UX than truncating at the end.
+
+    Args:
+        filename: The filename to truncate
+        max_length: Maximum length of the truncated filename (default: 60)
+
+    Returns:
+        Truncated filename with "..." in the middle
+
+    Examples:
+        >>> truncate_filename_middle("very_long_filename_that_needs_truncation.jpg")
+        "very_long...truncation.jpg"
+
+        >>> truncate_filename_middle("short.txt")
+        "short.txt"
+
+        >>> truncate_filename_middle("no_extension_file")
+        "no_extension_file"
+    """
+    if not filename:
+        return ""
+
+    if len(filename) <= max_length:
+        return filename
+
+    name_part, ext_part = os.path.splitext(filename)
+
+    if ext_part and len(ext_part) < 10:
+        # Preserve extension, truncate name part in the middle
+        available_length = max_length - len(ext_part) - 3  # 3 for "..."
+        if available_length > 10:
+            # Split the name part and add "..." in the middle
+            name_start = available_length // 2
+            name_end = available_length - name_start
+            truncated_name = name_part[:name_start] + "..." + name_part[-name_end:] + ext_part
+            return truncated_name
+
+    # Fallback: truncate in the middle without extension consideration
+    if len(filename) > max_length:
+        start_len = (max_length - 3) // 2  # 3 for "..."
+        end_len = max_length - 3 - start_len
+        truncated_name = filename[:start_len] + "..." + filename[-end_len:]
+        return truncated_name
+
+    return filename
+
+
+def format_file_size_stable(size_bytes: int) -> str:
+    """
+    Format file size with stable display for better UX.
+
+    Uses fixed-width formatting to prevent visual "jumping" when text length changes.
+    All formatted strings have the same width (10 characters) for perfect alignment.
+
+    Args:
+        size_bytes: File size in bytes
+
+    Returns:
+        Formatted size string with consistent width (e.g., "  1.5 GB  ", " 999 MB  ")
+    """
+    if size_bytes < 0:
+        return "    0 B   "  # Fixed width: 10 characters
+
+    # Use binary units (1024) for consistency with most systems
+    units = ["B", "KB", "MB", "GB", "TB", "PB"]
+    base = 1024
+
+    size = float(size_bytes)
+    unit_index = 0
+
+    while size >= base and unit_index < len(units) - 1:
+        size /= base
+        unit_index += 1
+
+    # Additional check: if we have a 4-digit number (>=1000), promote to next unit
+    # This prevents "1000 MB" and goes straight to "1.0 GB"
+    if size >= 1000 and unit_index < len(units) - 1:
+        size /= base
+        unit_index += 1
+
+    # Format with consistent 10-character width
+    if unit_index == 0:
+        # Bytes: right-align the number, left-align the unit
+        if size < 10:
+            return f"     {int(size)} B   "     # "     5 B   "
+        elif size < 100:
+            return f"    {int(size)} B   "      # "    99 B   "
+        elif size < 1000:
+            return f"   {int(size)} B   "       # "   999 B   "
+        else:
+            return f"  {int(size)} B   "        # "  1023 B   "
+    else:
+        # Other units: format consistently
+        if size >= 100:
+            # Large values: no decimals, right-aligned
+            num_str = f"{int(round(size))}"
+            unit_str = units[unit_index]
+            total_content = f"{num_str} {unit_str}"
+
+            # Pad to exactly 10 characters
+            if len(total_content) < 10:
+                padding = 10 - len(total_content)
+                return f"{' ' * padding}{total_content}"
+            else:
+                return total_content[:10]  # Truncate if somehow too long
+        else:
+            # Small values: one decimal, right-aligned
+            rounded = round(size, 1)
+            if rounded == int(rounded):
+                # Whole number, but show as decimal for consistency
+                num_str = f"{int(rounded)}.0"
+            else:
+                num_str = f"{rounded:.1f}"
+
+            unit_str = units[unit_index]
+            total_content = f"{num_str} {unit_str}"
+
+            # Pad to exactly 10 characters
+            if len(total_content) < 10:
+                padding = 10 - len(total_content)
+                return f"{' ' * padding}{total_content}"
+            else:
+                return total_content[:10]  # Truncate if somehow too long

@@ -346,27 +346,12 @@ class ProgressWidget(QWidget):
         else:
             self.status_label.setText(text)
 
-    def set_filename(self, filename: str):
+        def set_filename(self, filename: str):
         """Set filename with intelligent truncation for long paths."""
-        if not filename:
-            self.filename_label.setText("")
-            return
+        from utils.text_helpers import truncate_filename_middle
 
-        # Intelligent truncation preserving extension
-        max_length = 60
-        if len(filename) > max_length:
-            name_part, ext_part = os.path.splitext(filename)
-            if ext_part and len(ext_part) < 10:
-                available_length = max_length - len(ext_part) - 3
-                if available_length > 10:
-                    truncated_name = name_part[:available_length] + "..." + ext_part
-                    self.filename_label.setText(truncated_name)
-                    return
-
-            # Fallback: simple truncation
-            self.filename_label.setText(filename[:max_length] + "...")
-        else:
-            self.filename_label.setText(filename)
+        truncated_filename = truncate_filename_middle(filename)
+        self.filename_label.setText(truncated_filename)
 
     def set_count(self, current: int, total: int):
         """Set count display."""
@@ -428,10 +413,10 @@ class ProgressWidget(QWidget):
 
         if self.show_time_info and hasattr(self, 'time_label'):
             self.time_label.setText("0s")
-            # Start timer to update time display every second
+            # Start timer to update time display every 500ms for smoother updates
             self._time_timer = QTimer(self)
             self._time_timer.timeout.connect(self._update_time_display)
-            self._time_timer.start(1000)  # Update every second
+            self._time_timer.start(500)  # Update every 500ms for smoother time display
 
         logger.debug(f"[ProgressWidget] Started tracking (total_size: {total_size})")
 
@@ -477,88 +462,17 @@ class ProgressWidget(QWidget):
 
     def _update_size_display(self):
         """Update size information display with stable formatting."""
-        # Use custom stable formatting instead of the system formatter
-        # to avoid constantly changing decimal values that hurt UX
+        from utils.text_helpers import format_file_size_stable
 
-        processed_str = self._format_size_stable(self.processed_size)
+        processed_str = format_file_size_stable(self.processed_size)
         if self.total_size > 0:
-            total_str = self._format_size_stable(self.total_size)
-            size_text = f"{processed_str}/{total_str}"
+            total_str = format_file_size_stable(self.total_size)
+            size_text = f"{processed_str} / {total_str}"  # Added space before "/"
         else:
             size_text = processed_str
         self.size_label.setText(size_text)
 
-    def _format_size_stable(self, size_bytes: int) -> str:
-        """
-        Format file size with stable display for better UX.
 
-        Uses fixed-width formatting to prevent visual "jumping" when text length changes.
-        All formatted strings have the same width (8 characters) for perfect alignment.
-
-        Args:
-            size_bytes: File size in bytes
-
-        Returns:
-            Formatted size string with consistent width (e.g., " 1.5 GB ", "999 MB  ")
-        """
-        if size_bytes < 0:
-            return "   0 B  "  # Fixed width: 8 characters
-
-        # Use binary units (1024) for consistency with most systems
-        units = ["B", "KB", "MB", "GB", "TB", "PB"]
-        base = 1024
-
-        size = float(size_bytes)
-        unit_index = 0
-
-        while size >= base and unit_index < len(units) - 1:
-            size /= base
-            unit_index += 1
-
-        # Additional check: if we have a 4-digit number (>=1000), promote to next unit
-        # This prevents "1000 MB" and goes straight to "1.0 GB"
-        if size >= 1000 and unit_index < len(units) - 1:
-            size /= base
-            unit_index += 1
-
-        # Format with consistent 8-character width
-        if unit_index == 0:
-            # Bytes: right-align the number, left-align the unit
-            if size < 10:
-                return f"   {int(size)} B  "     # "   5 B  "
-            elif size < 100:
-                return f"  {int(size)} B  "      # "  99 B  "
-            elif size < 1000:
-                return f" {int(size)} B  "       # " 999 B  "
-            else:
-                return f"{int(size)} B  "        # "1023 B  "
-        else:
-            # Other units: format consistently
-            if size >= 100:
-                # Large values: no decimals, right-aligned
-                num_str = f"{int(round(size))}"
-                unit_str = units[unit_index]
-                total_len = len(num_str) + 1 + len(unit_str)  # number + space + unit
-                padding = 8 - total_len
-                return f"{' ' * padding}{num_str} {unit_str}{' ' * max(0, 8 - len(f'{num_str} {unit_str}') - padding)}"
-            else:
-                # Small values: one decimal, right-aligned
-                rounded = round(size, 1)
-                if rounded == int(rounded):
-                    # Whole number, but show as decimal for consistency
-                    num_str = f"{int(rounded)}.0"
-                else:
-                    num_str = f"{rounded:.1f}"
-
-                unit_str = units[unit_index]
-                total_content = f"{num_str} {unit_str}"
-
-                # Pad to exactly 8 characters
-                if len(total_content) < 8:
-                    padding = 8 - len(total_content)
-                    return f"{' ' * padding}{total_content}"
-                else:
-                    return total_content[:8]  # Truncate if somehow too long
 
     def _update_time_display(self):
         """

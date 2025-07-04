@@ -337,14 +337,57 @@ class MetadataManager:
 
             def start_metadata_loading():
                 """Start the actual metadata loading after dialog is shown."""
-                # Initialize incremental size tracking for better performance
-                processed_size = 0
+                # Use a simple object to hold mutable state for the timer
+                class ProgressState:
+                    def __init__(self):
+                        self.processed_size = 0
+                        self.current_file_index = 0
+
+                progress_state = ProgressState()
+
+                                # Setup periodic UI updates for smoother time display
+                from PyQt5.QtCore import QTimer
+                ui_update_timer = QTimer()
+
+                def update_ui_periodically():
+                    """Periodic UI update for smooth time display."""
+                    # Update progress with current state
+                    loading_dialog.update_progress(
+                        file_count=progress_state.current_file_index,
+                        total_files=len(needs_loading),
+                        processed_bytes=progress_state.processed_size,
+                        total_bytes=total_size
+                    )
+
+                    # Force UI update to ensure smooth time display
+                    from PyQt5.QtWidgets import QApplication
+                    QApplication.processEvents()
+
+                ui_update_timer.timeout.connect(update_ui_periodically)
+                ui_update_timer.start(500)  # Update every 500ms for smooth time display
+
+                # Setup a faster timer for UI responsiveness during file processing
+                ui_responsive_timer = QTimer()
+
+                def update_ui_responsive():
+                    """Fast UI updates for responsiveness during file processing."""
+                    # Just force UI update without changing progress data
+                    from PyQt5.QtWidgets import QApplication
+                    QApplication.processEvents()
+
+                ui_responsive_timer.timeout.connect(update_ui_responsive)
+                ui_responsive_timer.start(100)  # Update every 100ms for responsiveness
 
                 # Process each file
                 for i, file_item in enumerate(needs_loading):
+                    # Update progress state
+                    progress_state.current_file_index = i + 1
+
                     # Check for cancellation before processing each file
                     if self._metadata_cancelled:
                         logger.info(f"[MetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}")
+                        ui_update_timer.stop()
+                        ui_responsive_timer.stop()
                         loading_dialog.close()
                         return
 
@@ -360,7 +403,7 @@ class MetadataManager:
                         else:
                             current_file_size = 0
 
-                        processed_size += current_file_size
+                        progress_state.processed_size += current_file_size
                     except (OSError, AttributeError):
                         current_file_size = 0
 
@@ -368,20 +411,25 @@ class MetadataManager:
                     loading_dialog.update_progress(
                         file_count=i + 1,
                         total_files=len(needs_loading),
-                        processed_bytes=processed_size,
+                        processed_bytes=progress_state.processed_size,
                         total_bytes=total_size
                     )
                     loading_dialog.set_filename(file_item.filename)
                     loading_dialog.set_count(i + 1, len(needs_loading))
 
+                    # Force UI update for smoother progress display
+                    from PyQt5.QtWidgets import QApplication
+                    QApplication.processEvents()
+
                     # Process events to update the dialog and handle cancellation
-                    if (i + 1) % 10 == 0 or current_file_size > 10 * 1024 * 1024:
-                        from PyQt5.QtWidgets import QApplication
+                    if (i + 1) % 5 == 0 or current_file_size > 5 * 1024 * 1024:  # More frequent updates
                         QApplication.processEvents()
 
                     # Check again after processing events
                     if self._metadata_cancelled:
                         logger.info(f"[MetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}")
+                        ui_update_timer.stop()
+                        ui_responsive_timer.stop()
                         loading_dialog.close()
                         return
 
@@ -417,6 +465,10 @@ class MetadataManager:
                                         break
                             except Exception as e:
                                 logger.warning(f"[Loader] Failed to emit dataChanged for {file_item.filename}: {e}")
+
+                # Stop the UI update timers
+                ui_update_timer.stop()
+                ui_responsive_timer.stop()
 
                 # Close the dialog
                 loading_dialog.close()
