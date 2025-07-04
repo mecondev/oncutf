@@ -86,6 +86,10 @@ class FileTreeView(QTreeView):
         self._drag_start_pos = None
         self._drag_feedback_timer_id = None
 
+        # Connect expand/collapse signals for wait cursor
+        self.expanded.connect(self._on_item_expanded)
+        self.collapsed.connect(self._on_item_collapsed)
+
     def _setup_branch_icons(self) -> None:
         """Setup custom branch icons for better cross-platform compatibility."""
         try:
@@ -643,6 +647,26 @@ class FileTreeView(QTreeView):
         # This prevents Qt from starting its own drag which could cause hover issues
         logger.debug("[FileTreeView] Built-in startDrag called but ignored - using custom drag system", extra={"dev_only": True})
         return
+
+    def _on_item_expanded(self, index):
+        """Handle item expansion with wait cursor for better UX"""
+        from utils.cursor_helper import wait_cursor
+        from utils.timer_manager import schedule_ui_update
+
+        def show_wait_cursor():
+            """Show wait cursor briefly during folder expansion"""
+            with wait_cursor():
+                # Brief delay to show wait cursor during expansion
+                QApplication.processEvents()
+                schedule_ui_update(lambda: None, delay=10)  # 10ms delay
+
+        # Schedule wait cursor for expansion
+        schedule_ui_update(show_wait_cursor, delay=1)
+        logger.debug(f"[FileTreeView] Item expanded with wait cursor", extra={"dev_only": True})
+
+    def _on_item_collapsed(self, index):
+        """Handle item collapse - no wait cursor needed as it's instant"""
+        logger.debug(f"[FileTreeView] Item collapsed", extra={"dev_only": True})
 
 
 # =====================================

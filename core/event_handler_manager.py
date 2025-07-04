@@ -131,6 +131,47 @@ class EventHandlerManager:
         action_load_ext_sel = menu.addAction(get_menu_icon("file-plus"), "Load extended metadata for selected file(s) (Ctrl+E)")
         action_load_ext_all = menu.addAction(get_menu_icon("folder-plus"), "Load extended metadata for all files")
 
+        # Check basic selection state first
+        has_selection = len(selected_files) > 0
+
+        # Check metadata availability for smart menu behavior
+        selected_basic_loaded = self._check_files_have_metadata_type(selected_files, extended=False)
+        selected_extended_loaded = self._check_files_have_metadata_type(selected_files, extended=True)
+        all_basic_loaded = self._check_all_files_have_metadata_type(extended=False)
+        all_extended_loaded = self._check_all_files_have_metadata_type(extended=True)
+        selected_have_hashes = self._check_files_have_hashes(selected_files)
+
+        # Smart enable/disable logic for metadata actions
+        action_load_sel.setEnabled(has_selection and not selected_basic_loaded)
+        action_load_ext_sel.setEnabled(has_selection and not selected_extended_loaded)
+        action_load_all.setEnabled(total_files > 0 and not all_basic_loaded)
+        action_load_ext_all.setEnabled(total_files > 0 and not all_extended_loaded)
+
+        # Update tooltips with smart information
+        if has_selection:
+            if selected_basic_loaded:
+                action_load_sel.setToolTip("Selected files already have basic metadata loaded")
+            else:
+                action_load_sel.setToolTip(f"Load basic metadata for {len(selected_files)} selected file(s)")
+
+            if selected_extended_loaded:
+                action_load_ext_sel.setToolTip("Selected files already have extended metadata loaded")
+            else:
+                action_load_ext_sel.setToolTip(f"Load extended metadata for {len(selected_files)} selected file(s)")
+        else:
+            action_load_sel.setToolTip("Select files first to load their metadata")
+            action_load_ext_sel.setToolTip("Select files first to load their extended metadata")
+
+        if all_basic_loaded:
+            action_load_all.setToolTip("All files already have basic metadata loaded")
+        else:
+            action_load_all.setToolTip("Load basic metadata for all files in folder")
+
+        if all_extended_loaded:
+            action_load_ext_all.setToolTip("All files already have extended metadata loaded")
+        else:
+            action_load_ext_all.setToolTip("Load extended metadata for all files in folder")
+
         menu.addSeparator()
 
         # --- Selection actions ---
@@ -214,7 +255,6 @@ class EventHandlerManager:
         action_edit_keywords = menu.addAction(get_menu_icon("tag"), "Edit Keywords...")
 
         # Check metadata availability for actions (used by both metadata editing and export)
-        has_selection = len(selected_files) > 0
         selected_has_metadata = self._check_selected_files_have_metadata(selected_files)
         all_files_have_metadata = self._check_any_files_have_metadata()
 
@@ -286,27 +326,27 @@ class EventHandlerManager:
         # --- Enable/disable logic with enhanced debugging ---
         logger.debug(f"[ContextMenu] Selection state: {has_selection} ({len(selected_files)} files)", extra={"dev_only": True})
 
-        if not has_selection:
-            action_load_sel.setEnabled(False)
-            action_load_ext_sel.setEnabled(False)
-            action_invert.setEnabled(total_files > 0)
-            logger.debug("[ContextMenu] Disabled selection-based actions (no selection)", extra={"dev_only": True})
-        else:
-            action_load_sel.setEnabled(True)
-            action_load_ext_sel.setEnabled(True)
-            logger.debug(f"[ContextMenu] Enabled selection-based actions ({len(selected_files)} files selected)", extra={"dev_only": True})
-
-        action_load_all.setEnabled(total_files > 0)
-        action_load_ext_all.setEnabled(total_files > 0)
+        # NOTE: Smart metadata enable/disable logic is already handled above
+        # Only handle non-metadata selection actions here
+        action_invert.setEnabled(total_files > 0 and has_selection)
         action_select_all.setEnabled(total_files > 0)
         action_reload.setEnabled(total_files > 0)
         action_clear_table.setEnabled(total_files > 0)
 
-        # Hash actions enable/disable logic
+        # Hash actions enable/disable logic with smart behavior
         action_find_duplicates_sel.setEnabled(len(selected_files) >= 2)  # Need at least 2 files to find duplicates
         action_find_duplicates_all.setEnabled(total_files >= 2)
         action_compare_external.setEnabled(has_selection)  # Need selection to compare
-        action_calculate_hashes.setEnabled(has_selection)
+        action_calculate_hashes.setEnabled(has_selection and not selected_have_hashes)
+
+        # Update hash tooltip
+        if has_selection:
+            if selected_have_hashes:
+                action_calculate_hashes.setToolTip("Selected files already have checksums calculated")
+            else:
+                action_calculate_hashes.setToolTip(f"Calculate checksums for {len(selected_files)} selected file(s)")
+        else:
+            action_calculate_hashes.setToolTip("Select files first to calculate their checksums")
 
         # Show menu and get chosen action
         action = menu.exec_(self.parent_window.file_table_view.viewport().mapToGlobal(position))
@@ -1753,104 +1793,102 @@ class EventHandlerManager:
 
     def _apply_metadata_field_changes(self, files_to_modify: list, field_name: str, new_value: str) -> None:
         """
-        Apply metadata field changes to the specified files.
-
-        Args:
-            files_to_modify: List of FileItem objects to modify
-            field_name: Name of the field to modify
-            new_value: New value to set
+        Apply metadata field changes to files by updating the metadata tree view.
+        This ensures the changes are properly tracked and can be saved later.
         """
-        if not files_to_modify:
+        if not hasattr(self.parent_window, 'metadata_tree_view'):
+            logger.warning("[EventHandler] No metadata tree view available for field changes")
             return
 
-        logger.info(f"[MetadataEdit] Applying {field_name} changes to {len(files_to_modify)} files")
+        metadata_tree_view = self.parent_window.metadata_tree_view
 
+        # Apply changes to each file
+        for file_item in files_to_modify:
+            logger.debug(f"[EventHandler] Applying {field_name} change to {file_item.filename}: '{new_value}'")
+
+            # Get the preferred field standard for this file
+            field_standard = self._get_preferred_field_standard(file_item, field_name)
+            if not field_standard:
+                logger.warning(f"[EventHandler] No field standard found for {field_name} in {file_item.filename}")
+                continue
+
+            # Apply the change through metadata tree view
+            metadata_tree_view.apply_field_change_to_file(file_item.full_path, field_standard, new_value)
+
+        logger.info(f"[EventHandler] Applied {field_name} changes to {len(files_to_modify)} files")
+
+    def _check_files_have_metadata_type(self, files: list, extended: bool) -> bool:
+        """Check if all files have the specified type of metadata (basic or extended)."""
+        if not files:
+            return False
+
+        for file_item in files:
+            if not self._file_has_metadata_type(file_item, extended):
+                return False
+        return True
+
+    def _check_all_files_have_metadata_type(self, extended: bool) -> bool:
+        """Check if all files in the current folder have the specified type of metadata."""
+        if not hasattr(self.parent_window, 'file_model') or not self.parent_window.file_model.files:
+            return False
+
+        for file_item in self.parent_window.file_model.files:
+            if not self._file_has_metadata_type(file_item, extended):
+                return False
+        return True
+
+    def _file_has_metadata_type(self, file_item, extended: bool) -> bool:
+        """Check if a file has the specified type of metadata (basic or extended)."""
         try:
-            modified_count = 0
-
-            for file_item in files_to_modify:
-                # Get the preferred metadata standard for this file
-                preferred_standard = self._get_preferred_field_standard(file_item, field_name)
-                if not preferred_standard:
-                    logger.debug(f"[MetadataEdit] No preferred standard for {field_name} in {file_item.filename}")
-                    continue
-
-                # Get or create metadata cache entry
+            # Check metadata cache first
+            if hasattr(self.parent_window, 'metadata_cache'):
                 cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
-                if not cache_entry:
-                    # Create a new cache entry if none exists
-                    metadata_dict = getattr(file_item, 'metadata', {}) or {}
-                    self.parent_window.metadata_cache.set(file_item.full_path, metadata_dict)
-                    cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+                if cache_entry and hasattr(cache_entry, 'is_extended') and hasattr(cache_entry, 'data'):
+                    # Check if we have the right type and actual content
+                    if cache_entry.is_extended == extended and cache_entry.data:
+                        real_metadata = {k: v for k, v in cache_entry.data.items() if not k.startswith('__')}
+                        return len(real_metadata) > 0
 
-                if cache_entry and hasattr(cache_entry, 'data'):
-                    # Set the field value using the preferred standard
-                    if new_value.strip():
-                        cache_entry.data[preferred_standard] = new_value.strip()
-                    else:
-                        # Remove field if empty value
-                        cache_entry.data.pop(preferred_standard, None)
+            # Fallback to file item metadata
+            if hasattr(file_item, 'metadata') and file_item.metadata:
+                metadata = file_item.metadata
+                # Check if it's the right type
+                has_extended_marker = '__extended__' in metadata
+                if has_extended_marker == extended:
+                    real_metadata = {k: v for k, v in metadata.items() if not k.startswith('__')}
+                    return len(real_metadata) > 0
 
-                    cache_entry.modified = True
-
-                    # Update file item metadata too
-                    if not hasattr(file_item, 'metadata') or file_item.metadata is None:
-                        file_item.metadata = {}
-
-                    if new_value.strip():
-                        file_item.metadata[preferred_standard] = new_value.strip()
-                    else:
-                        file_item.metadata.pop(preferred_standard, None)
-
-                    # Mark file as modified
-                    file_item.metadata_status = "modified"
-                    modified_count += 1
-
-                    logger.debug(f"[MetadataEdit] Set {preferred_standard}='{new_value}' for {file_item.filename}")
-
-            # Update UI to reflect changes
-            if modified_count > 0:
-                # Update file table icons
-                self.parent_window.file_model.layoutChanged.emit()
-
-                # CRITICAL: Update metadata tree view to mark items as modified
-                if hasattr(self.parent_window, 'metadata_tree_view'):
-                    # For each modified file, mark the field as modified in tree view
-                    for file_item in files_to_modify:
-                        if file_item.metadata_status == "modified":
-                            # Add to modified items for this file path
-                            if not self.parent_window.metadata_tree_view._path_in_dict(file_item.full_path, self.parent_window.metadata_tree_view.modified_items_per_file):
-                                self.parent_window.metadata_tree_view._set_in_path_dict(file_item.full_path, set(), self.parent_window.metadata_tree_view.modified_items_per_file)
-
-                            existing_modifications = self.parent_window.metadata_tree_view._get_from_path_dict(file_item.full_path, self.parent_window.metadata_tree_view.modified_items_per_file)
-                            if existing_modifications is None:
-                                existing_modifications = set()
-
-                            # Add the preferred standard to modifications
-                            preferred_standard = self._get_preferred_field_standard(file_item, field_name)
-                            if preferred_standard:
-                                existing_modifications.add(preferred_standard)
-                                self.parent_window.metadata_tree_view._set_in_path_dict(file_item.full_path, existing_modifications, self.parent_window.metadata_tree_view.modified_items_per_file)
-
-                            # If this is the currently displayed file, update current modified items too
-                            if (hasattr(self.parent_window.metadata_tree_view, '_current_file_path') and
-                                hasattr(self.parent_window.metadata_tree_view, 'modified_items') and
-                                self.parent_window.metadata_tree_view._current_file_path == file_item.full_path):
-                                if preferred_standard:
-                                    self.parent_window.metadata_tree_view.modified_items.add(preferred_standard)
-
-                    # Refresh the metadata display to show the changes
-                    self.parent_window.metadata_tree_view.update_from_parent_selection()
-
-                logger.info(f"[MetadataEdit] Successfully applied {field_name} to {modified_count} files")
-            else:
-                logger.warning(f"[MetadataEdit] No files were actually modified for {field_name}")
+            return False
 
         except Exception as e:
-            logger.exception(f"[MetadataEdit] Error applying {field_name} changes: {e}")
-            from utils.dialog_utils import show_error_message
-            show_error_message(
-                self.parent_window,
-                "Error",
-                f"Failed to apply {field_name} changes: {str(e)}"
-            )
+            logger.debug(f"[EventHandler] Error checking metadata type for {getattr(file_item, 'filename', 'unknown')}: {e}")
+            return False
+
+    def _check_files_have_hashes(self, files: list) -> bool:
+        """Check if all files have hash values calculated."""
+        if not files:
+            return False
+
+        for file_item in files:
+            if not self._file_has_hash(file_item):
+                return False
+        return True
+
+    def _file_has_hash(self, file_item) -> bool:
+        """Check if a file has a hash value calculated."""
+        try:
+            # Check if file has hash attribute
+            if hasattr(file_item, 'hash_value') and file_item.hash_value:
+                return True
+
+            # Check hash cache if available
+            if hasattr(self.parent_window, 'hash_cache'):
+                hash_entry = self.parent_window.hash_cache.get(file_item.full_path)
+                if hash_entry:
+                    return True
+
+            return False
+
+        except Exception as e:
+            logger.debug(f"[EventHandler] Error checking hash for {getattr(file_item, 'filename', 'unknown')}: {e}")
+            return False

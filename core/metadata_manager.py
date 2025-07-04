@@ -214,8 +214,14 @@ class MetadataManager:
             cache_entry = self.parent_window.metadata_cache.get_entry(item.full_path) if self.parent_window else None
 
             if cache_entry and hasattr(cache_entry, 'is_extended'):
-                # If we have cache and it matches the requested type, skip loading
+                # Smart loading logic:
+                # - If we have the exact type requested, skip
+                # - If we have extended and requesting basic, skip (extended includes basic)
+                # - If we have basic and requesting extended, load extended
                 if cache_entry.is_extended == use_extended:
+                    continue
+                elif cache_entry.is_extended and not use_extended:
+                    # We have extended but requesting basic - extended includes basic, so skip
                     continue
 
             needs_loading.append(item)
@@ -306,9 +312,6 @@ class MetadataManager:
             )
             loading_dialog.set_status("Loading metadata..." if not use_extended else "Loading extended metadata...")
 
-            # Start enhanced tracking with total size
-            loading_dialog.start_progress_tracking(total_size)
-
             # Show dialog with smooth appearance to prevent shadow flicker
             from utils.dialog_utils import show_dialog_smooth
             show_dialog_smooth(loading_dialog)
@@ -316,91 +319,103 @@ class MetadataManager:
             # Initialize incremental size tracking for better performance
             processed_size = 0
 
-            # Process each file
-            for i, file_item in enumerate(needs_loading):
-                # Check for cancellation before processing each file
-                if self._metadata_cancelled:
-                    logger.info(f"[MetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}")
-                    loading_dialog.close()
-                    return
+            # Delay metadata loading start to allow dialog to fully appear
+            # This prevents the shadow-only appearance issue for fast operations
+            from utils.timer_manager import schedule_ui_update
 
-                # Add current file size to processed total
-                try:
-                    if hasattr(file_item, 'file_size') and file_item.file_size is not None:
-                        current_file_size = file_item.file_size
-                    elif hasattr(file_item, 'full_path') and os.path.exists(file_item.full_path):
-                        current_file_size = os.path.getsize(file_item.full_path)
-                        # Cache it for future use
-                        if hasattr(file_item, 'file_size'):
-                            file_item.file_size = current_file_size
-                    else:
+            def start_metadata_loading():
+                """Start the actual metadata loading after dialog is shown."""
+                # Initialize incremental size tracking for better performance
+                processed_size = 0
+
+                # Process each file
+                for i, file_item in enumerate(needs_loading):
+                    # Check for cancellation before processing each file
+                    if self._metadata_cancelled:
+                        logger.info(f"[MetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}")
+                        loading_dialog.close()
+                        return
+
+                    # Add current file size to processed total
+                    try:
+                        if hasattr(file_item, 'file_size') and file_item.file_size is not None:
+                            current_file_size = file_item.file_size
+                        elif hasattr(file_item, 'full_path') and os.path.exists(file_item.full_path):
+                            current_file_size = os.path.getsize(file_item.full_path)
+                            # Cache it for future use
+                            if hasattr(file_item, 'file_size'):
+                                file_item.file_size = current_file_size
+                        else:
+                            current_file_size = 0
+
+                        processed_size += current_file_size
+                    except (OSError, AttributeError):
                         current_file_size = 0
 
-                    processed_size += current_file_size
-                except (OSError, AttributeError):
-                    current_file_size = 0
+                    # Update progress using unified method
+                    loading_dialog.update_progress(
+                        file_count=i + 1,
+                        total_files=len(needs_loading),
+                        processed_bytes=processed_size,
+                        total_bytes=total_size
+                    )
+                    loading_dialog.set_filename(file_item.filename)
+                    loading_dialog.set_count(i + 1, len(needs_loading))
 
-                # Update progress using unified method
-                loading_dialog.update_progress(
-                    file_count=i + 1,
-                    total_files=len(needs_loading),
-                    processed_bytes=processed_size,
-                    total_bytes=total_size
-                )
-                loading_dialog.set_filename(file_item.filename)
-                loading_dialog.set_count(i + 1, len(needs_loading))
+                    # Process events to update the dialog and handle cancellation
+                    if (i + 1) % 10 == 0 or current_file_size > 10 * 1024 * 1024:
+                        from PyQt5.QtWidgets import QApplication
+                        QApplication.processEvents()
 
-                # Process events to update the dialog and handle cancellation
-                if (i + 1) % 10 == 0 or current_file_size > 10 * 1024 * 1024:
-                    from PyQt5.QtWidgets import QApplication
-                    QApplication.processEvents()
+                    # Check again after processing events
+                    if self._metadata_cancelled:
+                        logger.info(f"[MetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}")
+                        loading_dialog.close()
+                        return
 
-                # Check again after processing events
-                if self._metadata_cancelled:
-                    logger.info(f"[MetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}")
-                    loading_dialog.close()
-                    return
+                    metadata = self._exiftool_wrapper.get_metadata(file_item.full_path, use_extended=use_extended)
 
-                metadata = self._exiftool_wrapper.get_metadata(file_item.full_path, use_extended=use_extended)
+                    if metadata:
+                        # Mark metadata with loading mode for UI indicators
+                        if use_extended and '__extended__' not in metadata:
+                            metadata['__extended__'] = True
+                        elif not use_extended and '__extended__' in metadata:
+                            del metadata['__extended__']
 
-                if metadata:
-                    # Mark metadata with loading mode for UI indicators
-                    if use_extended and '__extended__' not in metadata:
-                        metadata['__extended__'] = True
-                    elif not use_extended and '__extended__' in metadata:
-                        del metadata['__extended__']
+                        # Cache the result in both local and parent window caches
+                        cache_key = (file_item.full_path, use_extended)
+                        self._metadata_cache[cache_key] = metadata
 
-                    # Cache the result in both local and parent window caches
-                    cache_key = (file_item.full_path, use_extended)
-                    self._metadata_cache[cache_key] = metadata
+                        # Also save to parent window's metadata_cache for UI display
+                        if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
+                            self.parent_window.metadata_cache.set(file_item.full_path, metadata, is_extended=use_extended)
 
-                    # Also save to parent window's metadata_cache for UI display
-                    if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
-                        self.parent_window.metadata_cache.set(file_item.full_path, metadata, is_extended=use_extended)
+                        # Update the file item
+                        file_item.metadata = metadata
 
-                    # Update the file item
-                    file_item.metadata = metadata
+                        # Emit dataChanged signal to update UI
+                        if self.parent_window and hasattr(self.parent_window, 'file_model'):
+                            try:
+                                # Find the row index and emit dataChanged for the entire row
+                                for i, file in enumerate(self.parent_window.file_model.files):
+                                    if paths_equal(file.full_path, file_item.full_path):
+                                        top_left = self.parent_window.file_model.index(i, 0)
+                                        bottom_right = self.parent_window.file_model.index(i, self.parent_window.file_model.columnCount() - 1)
+                                        self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]) # type: ignore
+                                        break
+                            except Exception as e:
+                                logger.warning(f"[Loader] Failed to emit dataChanged for {file_item.filename}: {e}")
 
-                    # Emit dataChanged signal to update UI
-                    if self.parent_window and hasattr(self.parent_window, 'file_model'):
-                        try:
-                            # Find the row index and emit dataChanged for the entire row
-                            for i, file in enumerate(self.parent_window.file_model.files):
-                                if paths_equal(file.full_path, file_item.full_path):
-                                    top_left = self.parent_window.file_model.index(i, 0)
-                                    bottom_right = self.parent_window.file_model.index(i, self.parent_window.file_model.columnCount() - 1)
-                                    self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]) # type: ignore
-                                    break
-                        except Exception as e:
-                            logger.warning(f"[Loader] Failed to emit dataChanged for {file_item.filename}: {e}")
+                # Close the dialog
+                loading_dialog.close()
 
-            # Close the dialog
-            loading_dialog.close()
+                # Display metadata for the appropriate file
+                if metadata_tree_view and needs_loading:
+                    display_file = needs_loading[0] if len(needs_loading) == 1 else needs_loading[-1]
+                    metadata_tree_view.display_file_metadata(display_file)
 
-        # Display metadata for the appropriate file
-        if metadata_tree_view and needs_loading:
-            display_file = needs_loading[0] if len(needs_loading) == 1 else needs_loading[-1]
-            metadata_tree_view.display_file_metadata(display_file)
+            # Schedule the metadata loading to start after dialog is fully shown
+            schedule_ui_update(start_metadata_loading, delay=10)  # 10ms delay for dialog to appear
 
     def save_metadata_for_selected(self) -> None:
         """
