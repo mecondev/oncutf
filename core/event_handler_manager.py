@@ -142,14 +142,17 @@ class EventHandlerManager:
         selected_have_hashes = self._check_files_have_hashes(selected_files)
 
         # Smart enable/disable logic for metadata actions
-        action_load_sel.setEnabled(has_selection and not selected_basic_loaded)
+        # If we have extended metadata, we don't need basic (extended includes basic)
+        action_load_sel.setEnabled(has_selection and not selected_basic_loaded and not selected_extended_loaded)
         action_load_ext_sel.setEnabled(has_selection and not selected_extended_loaded)
-        action_load_all.setEnabled(total_files > 0 and not all_basic_loaded)
+        action_load_all.setEnabled(total_files > 0 and not all_basic_loaded and not all_extended_loaded)
         action_load_ext_all.setEnabled(total_files > 0 and not all_extended_loaded)
 
         # Update tooltips with smart information
         if has_selection:
-            if selected_basic_loaded:
+            if selected_extended_loaded:
+                action_load_sel.setToolTip("Selected files already have extended metadata (includes basic)")
+            elif selected_basic_loaded:
                 action_load_sel.setToolTip("Selected files already have basic metadata loaded")
             else:
                 action_load_sel.setToolTip(f"Load basic metadata for {len(selected_files)} selected file(s)")
@@ -162,7 +165,9 @@ class EventHandlerManager:
             action_load_sel.setToolTip("Select files first to load their metadata")
             action_load_ext_sel.setToolTip("Select files first to load their extended metadata")
 
-        if all_basic_loaded:
+        if all_extended_loaded:
+            action_load_all.setToolTip("All files already have extended metadata (includes basic)")
+        elif all_basic_loaded:
             action_load_all.setToolTip("All files already have basic metadata loaded")
         else:
             action_load_all.setToolTip("Load basic metadata for all files in folder")
