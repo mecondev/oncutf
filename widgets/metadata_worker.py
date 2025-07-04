@@ -43,6 +43,7 @@ class MetadataWorker(QObject):
 
     finished = pyqtSignal()
     progress = pyqtSignal(int, int)
+    size_progress = pyqtSignal(int, int)  # processed_bytes, total_bytes
 
     def __init__(self, *, reader: MetadataLoader, metadata_cache, parent: Optional[QObject] = None):
         super().__init__(parent)
@@ -53,6 +54,13 @@ class MetadataWorker(QObject):
         self.metadata_cache = metadata_cache
         self._cancelled = False
         self.use_extended = False
+        self._total_size = 0
+        self._processed_size = 0
+
+    def set_total_size(self, total_size: int) -> None:
+        """Set the total size of all files to process."""
+        self._total_size = total_size
+        self._processed_size = 0
 
     @pyqtSlot()
     def run_batch(self) -> None:
@@ -78,7 +86,14 @@ class MetadataWorker(QObject):
                     logger.warning(f"[Worker] Canceled before processing: {path}")
                     break
 
-                file_size_mb = os.path.getsize(path) / (1024 * 1024)
+                # Get file size for progress tracking
+                try:
+                    file_size = os.path.getsize(path)
+                    file_size_mb = file_size / (1024 * 1024)
+                except (OSError, AttributeError):
+                    file_size = 0
+                    file_size_mb = 0
+
                 start_file = time.time()
                 logger.debug(f"[Worker] Processing file {index + 1}/{total}: {path} ({file_size_mb:.2f} MB)", extra={"dev_only": True})
 
@@ -109,6 +124,10 @@ class MetadataWorker(QObject):
                 except Exception as e:
                     logger.exception(f"[Worker] Exception while reading metadata for {path}: {e}")
                     metadata = {}
+
+                # Update processed size and emit size progress
+                self._processed_size += file_size
+                self.size_progress.emit(self._processed_size, self._total_size)
 
                 # Note: File item status updates are handled by the parent window
                 # after metadata loading is complete

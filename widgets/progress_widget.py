@@ -346,7 +346,7 @@ class ProgressWidget(QWidget):
         else:
             self.status_label.setText(text)
 
-        def set_filename(self, filename: str):
+    def set_filename(self, filename: str):
         """Set filename with intelligent truncation for long paths."""
         from utils.text_helpers import truncate_filename_middle
 
@@ -417,6 +417,7 @@ class ProgressWidget(QWidget):
             self._time_timer = QTimer(self)
             self._time_timer.timeout.connect(self._update_time_display)
             self._time_timer.start(500)  # Update every 500ms for smoother time display
+            logger.debug(f"[ProgressWidget] Timer started for time updates (500ms interval)")
 
         logger.debug(f"[ProgressWidget] Started tracking (total_size: {total_size})")
 
@@ -472,8 +473,6 @@ class ProgressWidget(QWidget):
             size_text = processed_str
         self.size_label.setText(size_text)
 
-
-
     def _update_time_display(self):
         """
         Update time display with elapsed and estimated time in HH:MM:SS format.
@@ -490,6 +489,9 @@ class ProgressWidget(QWidget):
 
         # Calculate elapsed time
         elapsed = time.time() - self.start_time
+
+        # Debug logging to see if this method is being called
+        logger.debug(f"[ProgressWidget] _update_time_display called: elapsed={elapsed:.1f}s, processed={self.processed_size}, total={self.total_size}")
 
         # Stable estimation based on cumulative progress - no more resets between files
         if self.processed_size > 0 and self.total_size > 0:
@@ -520,14 +522,19 @@ class ProgressWidget(QWidget):
                 elapsed_str = self._format_time_hms(elapsed)
                 estimated_total_str = self._format_time_hms(estimated_total)
 
-                self.time_label.setText(f"{elapsed_str} / {estimated_total_str}")
+                time_text = f"{elapsed_str} / {estimated_total_str}"
+                self.time_label.setText(time_text)
+                logger.debug(f"[ProgressWidget] Time updated: {time_text}")
             else:
                 # Early stage - just show elapsed time until we have stable estimation
                 elapsed_str = self._format_time_hms(elapsed)
-                self.time_label.setText(f"{elapsed_str} / calculating...")
+                time_text = f"{elapsed_str} / calculating..."
+                self.time_label.setText(time_text)
+                logger.debug(f"[ProgressWidget] Time updated (early): {time_text}")
         else:
             elapsed_str = self._format_time_hms(elapsed)
-            self.time_label.setText(f"{elapsed_str}")
+            self.time_label.setText(elapsed_str)
+            logger.debug(f"[ProgressWidget] Time updated (no progress): {elapsed_str}")
 
     def _format_time_hms(self, seconds: float) -> str:
         """

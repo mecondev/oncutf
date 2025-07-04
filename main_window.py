@@ -541,20 +541,24 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'dialog_manager'):
             self.dialog_manager.cleanup()
 
-        # 5. Force cleanup any background workers/threads
+        # 5. Clean up metadata workers first (before general background workers)
+        if hasattr(self, 'metadata_manager') and self.metadata_manager:
+            self.metadata_manager.cleanup()
+
+        # 6. Force cleanup any background workers/threads
         self._force_cleanup_background_workers()
 
-        # 6. Clean up application context
+        # 7. Clean up application context
         if hasattr(self, 'context'):
             try:
                 self.context.cleanup()
             except Exception as e:
                 logger.warning(f"[CloseEvent] Error cleaning application context: {e}")
 
-        # 7. Force close any active progress dialogs first
+        # 8. Force close any active progress dialogs first
         self._force_close_progress_dialogs()
 
-        # 8. Stop any running timers
+        # 9. Stop any running timers
         # First stop TimerManager timers (which include scheduled operations)
         try:
             from utils.timer_manager import cleanup_all_timers
@@ -578,19 +582,19 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.warning(f"[CloseEvent] Error stopping QTimer instances: {e}")
 
-        # 9. Clean up any remaining Qt resources
+        # 10. Clean up any remaining Qt resources
         try:
             QApplication.processEvents()
         except Exception as e:
             logger.warning(f"[CloseEvent] Error processing events during cleanup: {e}")
 
-        # 10. Call parent closeEvent
+        # 11. Call parent closeEvent
         try:
             super().closeEvent(event)
         except Exception as e:
             logger.warning(f"[CloseEvent] Error in parent closeEvent: {e}")
 
-        # 11. Close database connections before final cleanup
+        # 12. Close database connections before final cleanup
         if hasattr(self, 'db_manager'):
             try:
                 self.db_manager.close()
@@ -607,7 +611,7 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 logger.warning(f"[CloseEvent] Error cleaning backup manager: {e}")
 
-        # 12. Final cleanup - force terminate any remaining background processes
+        # 13. Final cleanup - force terminate any remaining background processes
         logger.info("[CloseEvent] Final cleanup - forcing application termination")
 
         # Force quit the application immediately
@@ -641,35 +645,6 @@ class MainWindow(QMainWindow):
                 if not thread.wait(1000):  # Wait max 1 second
                     thread.terminate()
                     thread.wait(500)
-
-        # 3. Clean up metadata manager operations and ExifTool
-        if hasattr(self, 'metadata_manager'):
-            try:
-                # Force stop any ongoing metadata operations
-                if hasattr(self.metadata_manager, '_running_operations'):
-                    self.metadata_manager._running_operations = False
-
-                # Close ExifTool wrapper if it exists
-                if hasattr(self.metadata_manager, '_exiftool_wrapper') and self.metadata_manager._exiftool_wrapper:
-                    logger.info("[CloseEvent] Closing ExifTool wrapper...")
-                    self.metadata_manager._exiftool_wrapper.close()
-                    logger.info("[CloseEvent] ExifTool wrapper closed")
-
-                # Also close metadata loader ExifTool if it exists
-                if hasattr(self.metadata_manager, 'metadata_loader') and self.metadata_manager.metadata_loader:
-                    if hasattr(self.metadata_manager.metadata_loader, 'exiftool'):
-                        logger.info("[CloseEvent] Closing metadata loader ExifTool...")
-                        self.metadata_manager.metadata_loader.close()
-                        logger.info("[CloseEvent] Metadata loader ExifTool closed")
-
-                # Force cleanup any remaining ExifTool processes
-                logger.info("[CloseEvent] Force cleaning up any remaining ExifTool processes...")
-                from utils.exiftool_wrapper import ExifToolWrapper
-                ExifToolWrapper.force_cleanup_all_exiftool_processes()
-
-                logger.debug("[CloseEvent] Cleaned up metadata manager")
-            except Exception as e:
-                logger.warning(f"[CloseEvent] Error cleaning metadata manager: {e}")
 
     def _force_close_progress_dialogs(self) -> None:
         """Force close any active progress dialogs."""

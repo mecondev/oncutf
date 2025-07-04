@@ -243,245 +243,186 @@ class MetadataManager:
 
             return
 
-        # Determine loading mode based on file count and settings
-        loading_mode = self.determine_loading_mode(len(needs_loading), use_extended)
+        # Determine loading mode: single file + fast metadata = wait_cursor, everything else = worker
+        should_use_wait_cursor = (len(needs_loading) == 1 and not use_extended)
 
-        # Handle different loading modes
-        if loading_mode == "single_file_wait_cursor":
-            logger.info(f"[{source}] Loading metadata for single file with wait_cursor (extended={use_extended})")
+        if should_use_wait_cursor:
+            logger.info(f"[{source}] Loading fast metadata for single file with wait_cursor")
+            self._load_single_file_with_wait_cursor(needs_loading[0], metadata_tree_view)
+        else:
+            logger.info(f"[{source}] Loading metadata for {len(needs_loading)} files with worker (extended={use_extended})")
+            self._load_files_with_worker(needs_loading, use_extended, metadata_tree_view)
 
-            from utils.cursor_helper import wait_cursor
-            with wait_cursor():
-                # Load metadata for the single file
-                file_item = needs_loading[0]
-                metadata = self._exiftool_wrapper.get_metadata(file_item.full_path, use_extended=use_extended)
+    def _load_single_file_with_wait_cursor(self, file_item: FileItem, metadata_tree_view) -> None:
+        """Load metadata for a single file using wait cursor (fast metadata only)."""
+        from utils.cursor_helper import wait_cursor
 
-                if metadata:
-                    # Mark metadata with loading mode for UI indicators
-                    if use_extended and '__extended__' not in metadata:
-                        metadata['__extended__'] = True
-                    elif not use_extended and '__extended__' in metadata:
-                        del metadata['__extended__']
+        with wait_cursor():
+            # Load metadata for the single file
+            metadata = self._exiftool_wrapper.get_metadata(file_item.full_path, use_extended=False)
 
-                    # Cache the result in both local and parent window caches
-                    cache_key = (file_item.full_path, use_extended)
-                    self._metadata_cache[cache_key] = metadata
+            if metadata:
+                # Cache the result in both local and parent window caches
+                cache_key = (file_item.full_path, False)
+                self._metadata_cache[cache_key] = metadata
 
-                    # Also save to parent window's metadata_cache for UI display
-                    if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
-                        self.parent_window.metadata_cache.set(file_item.full_path, metadata, is_extended=use_extended)
+                # Also save to parent window's metadata_cache for UI display
+                if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
+                    self.parent_window.metadata_cache.set(file_item.full_path, metadata, is_extended=False)
 
-                    # Update the file item
-                    file_item.metadata = metadata
+                # Update the file item
+                file_item.metadata = metadata
 
-                    # Emit dataChanged signal to update UI
-                    if self.parent_window and hasattr(self.parent_window, 'file_model'):
-                        try:
-                            # Find the row index and emit dataChanged for the entire row
-                            for i, file in enumerate(self.parent_window.file_model.files):
-                                if paths_equal(file.full_path, file_item.full_path):
-                                    top_left = self.parent_window.file_model.index(i, 0)
-                                    bottom_right = self.parent_window.file_model.index(i, self.parent_window.file_model.columnCount() - 1)
-                                    self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]) # type: ignore
-                                    break
-                        except Exception as e:
-                            logger.warning(f"[Loader] Failed to emit dataChanged for {file_item.filename}: {e}")
-
-        elif loading_mode == "multiple_files_dialog":
-            logger.info(f"[{source}] Loading metadata for {len(needs_loading)} files with dialog (extended={use_extended})")
-
-            # Calculate total size for enhanced progress tracking
-            from utils.file_size_calculator import calculate_files_total_size
-            total_size = calculate_files_total_size(needs_loading)
-
-            # Use progress dialog for large batches
-            from utils.progress_dialog import ProgressDialog
-
-            # Cancellation support
-            self._metadata_cancelled = False
-
-            def cancel_metadata_loading():
-                self._metadata_cancelled = True
-                logger.info("[MetadataManager] Metadata loading cancelled by user")
-
-                        # Create loading dialog
-            loading_dialog = ProgressDialog.create_metadata_dialog(
-                parent=self.parent_window,
-                is_extended=use_extended,
-                cancel_callback=cancel_metadata_loading
-            )
-            loading_dialog.set_status("Preparing metadata loading..." if not use_extended else "Preparing extended metadata loading...")
-
-            # Start progress tracking with total size for time estimation
-            loading_dialog.start_progress_tracking(total_size)
-
-            # Show dialog with smooth appearance to prevent shadow flicker
-            from utils.dialog_utils import show_dialog_smooth
-            show_dialog_smooth(loading_dialog)
-
-            # Force immediate UI update to ensure dialog is visible
-            from PyQt5.QtWidgets import QApplication
-            QApplication.processEvents()
-
-            # Additional delay to ensure dialog is fully rendered and visible to user
-            import time
-            time.sleep(0.1)  # 100ms additional delay for better visibility
-            QApplication.processEvents()
-
-            # Update status to show we're about to start
-            loading_dialog.set_status("Starting metadata loading..." if not use_extended else "Starting extended metadata loading...")
-            QApplication.processEvents()
-
-            # Initialize incremental size tracking for better performance
-            processed_size = 0
-
-            def start_metadata_loading():
-                """Start the actual metadata loading after dialog is shown."""
-                # Use a simple object to hold mutable state for the timer
-                class ProgressState:
-                    def __init__(self):
-                        self.processed_size = 0
-                        self.current_file_index = 0
-
-                progress_state = ProgressState()
-
-                                # Setup periodic UI updates for smoother time display
-                from PyQt5.QtCore import QTimer
-                ui_update_timer = QTimer()
-
-                def update_ui_periodically():
-                    """Periodic UI update for smooth time display."""
-                    # Update progress with current state
-                    loading_dialog.update_progress(
-                        file_count=progress_state.current_file_index,
-                        total_files=len(needs_loading),
-                        processed_bytes=progress_state.processed_size,
-                        total_bytes=total_size
-                    )
-
-                    # Force UI update to ensure smooth time display
-                    from PyQt5.QtWidgets import QApplication
-                    QApplication.processEvents()
-
-                ui_update_timer.timeout.connect(update_ui_periodically)
-                ui_update_timer.start(500)  # Update every 500ms for smooth time display
-
-                # Setup a faster timer for UI responsiveness during file processing
-                ui_responsive_timer = QTimer()
-
-                def update_ui_responsive():
-                    """Fast UI updates for responsiveness during file processing."""
-                    # Just force UI update without changing progress data
-                    from PyQt5.QtWidgets import QApplication
-                    QApplication.processEvents()
-
-                ui_responsive_timer.timeout.connect(update_ui_responsive)
-                ui_responsive_timer.start(100)  # Update every 100ms for responsiveness
-
-                # Process each file
-                for i, file_item in enumerate(needs_loading):
-                    # Update progress state
-                    progress_state.current_file_index = i + 1
-
-                    # Check for cancellation before processing each file
-                    if self._metadata_cancelled:
-                        logger.info(f"[MetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}")
-                        ui_update_timer.stop()
-                        ui_responsive_timer.stop()
-                        loading_dialog.close()
-                        return
-
-                    # Add current file size to processed total
+                # Emit dataChanged signal to update UI
+                if self.parent_window and hasattr(self.parent_window, 'file_model'):
                     try:
-                        if hasattr(file_item, 'file_size') and file_item.file_size is not None:
-                            current_file_size = file_item.file_size
-                        elif hasattr(file_item, 'full_path') and os.path.exists(file_item.full_path):
-                            current_file_size = os.path.getsize(file_item.full_path)
-                            # Cache it for future use
-                            if hasattr(file_item, 'file_size'):
-                                file_item.file_size = current_file_size
-                        else:
-                            current_file_size = 0
+                        # Find the row index and emit dataChanged for the entire row
+                        for i, file in enumerate(self.parent_window.file_model.files):
+                            if paths_equal(file.full_path, file_item.full_path):
+                                top_left = self.parent_window.file_model.index(i, 0)
+                                bottom_right = self.parent_window.file_model.index(i, self.parent_window.file_model.columnCount() - 1)
+                                self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]) # type: ignore
+                                break
+                    except Exception as e:
+                        logger.warning(f"[Loader] Failed to emit dataChanged for {file_item.filename}: {e}")
 
-                        progress_state.processed_size += current_file_size
-                    except (OSError, AttributeError):
-                        current_file_size = 0
+        # Display metadata after cursor is restored
+        if metadata_tree_view:
+            metadata_tree_view.display_file_metadata(file_item)
 
-                    # Update progress using unified method
-                    loading_dialog.update_progress(
-                        file_count=i + 1,
-                        total_files=len(needs_loading),
-                        processed_bytes=progress_state.processed_size,
-                        total_bytes=total_size
-                    )
-                    loading_dialog.set_filename(file_item.filename)
-                    loading_dialog.set_count(i + 1, len(needs_loading))
+    def _load_files_with_worker(self, files_to_load: List[FileItem], use_extended: bool, metadata_tree_view) -> None:
+        """Load metadata for multiple files or extended metadata using MetadataWorker."""
+        # Calculate total size for enhanced progress tracking
+        from utils.file_size_calculator import calculate_files_total_size
+        total_size = calculate_files_total_size(files_to_load)
 
-                    # Force UI update for smoother progress display
-                    from PyQt5.QtWidgets import QApplication
-                    QApplication.processEvents()
+        # Use progress dialog for multiple files or extended metadata
+        from utils.progress_dialog import ProgressDialog
 
-                    # Process events to update the dialog and handle cancellation
-                    if (i + 1) % 5 == 0 or current_file_size > 5 * 1024 * 1024:  # More frequent updates
-                        QApplication.processEvents()
+        # Cancellation support
+        self._metadata_cancelled = False
 
-                    # Check again after processing events
-                    if self._metadata_cancelled:
-                        logger.info(f"[MetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}")
-                        ui_update_timer.stop()
-                        ui_responsive_timer.stop()
-                        loading_dialog.close()
-                        return
+        def cancel_metadata_loading():
+            self._metadata_cancelled = True
+            logger.info("[MetadataManager] Metadata loading cancelled by user")
+            if hasattr(self, 'metadata_worker') and self.metadata_worker:
+                self.metadata_worker.cancel()
 
-                    metadata = self._exiftool_wrapper.get_metadata(file_item.full_path, use_extended=use_extended)
+        # Create loading dialog
+        loading_dialog = ProgressDialog.create_metadata_dialog(
+            parent=self.parent_window,
+            is_extended=use_extended,
+            cancel_callback=cancel_metadata_loading
+        )
+        loading_dialog.set_status("Preparing metadata loading..." if not use_extended else "Preparing extended metadata loading...")
 
-                    if metadata:
-                        # Mark metadata with loading mode for UI indicators
-                        if use_extended and '__extended__' not in metadata:
-                            metadata['__extended__'] = True
-                        elif not use_extended and '__extended__' in metadata:
-                            del metadata['__extended__']
+        # Start progress tracking with total size for time estimation
+        loading_dialog.start_progress_tracking(total_size)
 
-                        # Cache the result in both local and parent window caches
-                        cache_key = (file_item.full_path, use_extended)
-                        self._metadata_cache[cache_key] = metadata
+        # Show dialog with smooth appearance
+        from utils.dialog_utils import show_dialog_smooth
+        show_dialog_smooth(loading_dialog)
 
-                        # Also save to parent window's metadata_cache for UI display
-                        if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
-                            self.parent_window.metadata_cache.set(file_item.full_path, metadata, is_extended=use_extended)
+        # Create and configure metadata worker
+        from widgets.metadata_worker import MetadataWorker
+        from utils.metadata_loader import MetadataLoader
 
-                        # Update the file item
-                        file_item.metadata = metadata
+        # Create metadata loader
+        metadata_loader = MetadataLoader()
+        metadata_loader.model = self.parent_window.file_model if self.parent_window else None
 
-                        # Emit dataChanged signal to update UI
-                        if self.parent_window and hasattr(self.parent_window, 'file_model'):
-                            try:
-                                # Find the row index and emit dataChanged for the entire row
-                                for i, file in enumerate(self.parent_window.file_model.files):
-                                    if paths_equal(file.full_path, file_item.full_path):
-                                        top_left = self.parent_window.file_model.index(i, 0)
-                                        bottom_right = self.parent_window.file_model.index(i, self.parent_window.file_model.columnCount() - 1)
-                                        self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]) # type: ignore
-                                        break
-                            except Exception as e:
-                                logger.warning(f"[Loader] Failed to emit dataChanged for {file_item.filename}: {e}")
+        # Create worker WITHOUT parent (to avoid moveToThread issues)
+        self.metadata_worker = MetadataWorker(
+            reader=metadata_loader,
+            metadata_cache=self.parent_window.metadata_cache if self.parent_window else None,
+            parent=None  # No parent to avoid moveToThread issues
+        )
 
-                # Stop the UI update timers
-                ui_update_timer.stop()
-                ui_responsive_timer.stop()
+        # Set parent window reference manually (after creation)
+        self.metadata_worker.main_window = self.parent_window
 
-                # Close the dialog
-                loading_dialog.close()
+        # Configure worker
+        self.metadata_worker.file_path = [item.full_path for item in files_to_load]
+        self.metadata_worker.use_extended = use_extended
+        self.metadata_worker.set_total_size(total_size)
 
-                # Display metadata for the appropriate file
-                if metadata_tree_view and needs_loading:
-                    display_file = needs_loading[0] if len(needs_loading) == 1 else needs_loading[-1]
-                    metadata_tree_view.display_file_metadata(display_file)
+        # Connect worker signals
+        self.metadata_worker.progress.connect(
+            lambda current, total: self._on_metadata_progress(loading_dialog, current, total)
+        )
 
-            # Start metadata loading after dialog is fully visible
-            # Use adequate delay to ensure dialog is properly shown and user can see it
-            from utils.timer_manager import schedule_ui_update
-            schedule_ui_update(start_metadata_loading, 300)  # 300ms delay for dialog to appear
+        self.metadata_worker.size_progress.connect(
+            lambda processed, total: self._on_metadata_size_progress(loading_dialog, processed, total)
+        )
+
+        self.metadata_worker.finished.connect(
+            lambda: self._on_metadata_finished(loading_dialog, files_to_load, metadata_tree_view)
+        )
+
+        # Create and start thread
+        from PyQt5.QtCore import QThread
+        self.metadata_thread = QThread()
+        self.metadata_worker.moveToThread(self.metadata_thread)
+
+        # Connect thread signals
+        self.metadata_thread.started.connect(self.metadata_worker.run_batch)
+        self.metadata_worker.finished.connect(self.metadata_thread.quit)
+        self.metadata_worker.finished.connect(self.metadata_worker.deleteLater)
+        self.metadata_thread.finished.connect(self.metadata_thread.deleteLater)
+
+        # Start the thread
+        self.metadata_thread.start()
+
+    def _on_metadata_progress(self, loading_dialog, current: int, total: int) -> None:
+        """Handle metadata worker progress updates."""
+        if loading_dialog:
+            loading_dialog.update_progress(
+                file_count=current,
+                total_files=total,
+                processed_bytes=0,  # Size will be updated by size_progress signal
+                total_bytes=0
+            )
+            loading_dialog.set_count(current, total)
+
+    def _on_metadata_size_progress(self, loading_dialog, processed: int, total: int) -> None:
+        """Handle metadata worker size progress updates."""
+        if loading_dialog:
+            # Use the unified progress update method with size data
+            loading_dialog.update_progress(
+                file_count=0,  # Will be updated by file progress
+                total_files=0,
+                processed_bytes=processed,
+                total_bytes=total
+            )
+
+    def _on_metadata_finished(self, loading_dialog, files_to_load: List[FileItem], metadata_tree_view) -> None:
+        """Handle metadata worker completion."""
+        # Close dialog
+        if loading_dialog:
+            loading_dialog.close()
+
+        # Update file model to show new metadata status
+        if self.parent_window and hasattr(self.parent_window, 'file_model'):
+            try:
+                # Emit dataChanged for all loaded files
+                for file_item in files_to_load:
+                    for i, file in enumerate(self.parent_window.file_model.files):
+                        if paths_equal(file.full_path, file_item.full_path):
+                            top_left = self.parent_window.file_model.index(i, 0)
+                            bottom_right = self.parent_window.file_model.index(i, self.parent_window.file_model.columnCount() - 1)
+                            self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]) # type: ignore
+                            break
+            except Exception as e:
+                logger.warning(f"[Loader] Failed to emit dataChanged after worker completion: {e}")
+
+        # Display metadata for the appropriate file
+        if metadata_tree_view and files_to_load:
+            display_file = files_to_load[0] if len(files_to_load) == 1 else files_to_load[-1]
+            metadata_tree_view.display_file_metadata(display_file)
+
+        # Clean up
+        self.metadata_worker = None
+        self.metadata_thread = None
 
     def save_metadata_for_selected(self) -> None:
         """
@@ -797,28 +738,109 @@ class MetadataManager:
 
     def _get_files_from_source(self, source: str) -> Optional[List[FileItem]]:
         """
-        Get list of files based on source identifier.
+        Get files based on source type.
 
         Args:
-            source: Source identifier (e.g., "selected", "all")
+            source: Source type ("selected", "all", etc.)
 
         Returns:
-            List of FileItem objects or None
+            List of FileItem objects or None if source not recognized
         """
         if not self.parent_window:
             return None
 
         if source == "selected":
             # Get selected files
-            if hasattr(self.parent_window, 'file_table_view'):
+            if (hasattr(self.parent_window, 'file_table_view') and
+                hasattr(self.parent_window, 'file_model')):
                 selected_rows = self.parent_window.file_table_view._get_current_selection()
-                if selected_rows and hasattr(self.parent_window, 'file_model'):
-                    return [self.parent_window.file_model.files[r]
-                           for r in selected_rows
-                           if 0 <= r < len(self.parent_window.file_model.files)]
+                return [self.parent_window.file_model.files[r]
+                       for r in selected_rows
+                       if 0 <= r < len(self.parent_window.file_model.files)]
         elif source == "all":
             # Get all files
             if hasattr(self.parent_window, 'file_model'):
                 return self.parent_window.file_model.files
 
         return None
+
+    def cleanup(self) -> None:
+        """
+        Clean up metadata manager resources.
+
+        This method should be called when shutting down the application
+        to ensure all ExifTool processes and threads are properly closed.
+        """
+        logger.info("[MetadataManager] Starting cleanup...")
+
+        try:
+            # 1. Cancel any running metadata operations
+            self._metadata_cancelled = True
+
+            # 2. Clean up metadata worker and thread
+            if hasattr(self, 'metadata_worker') and self.metadata_worker:
+                logger.info("[MetadataManager] Cleaning up metadata worker...")
+
+                # Cancel the worker
+                self.metadata_worker.cancel()
+
+                # Close the ExifToolWrapper in the worker's MetadataLoader
+                if hasattr(self.metadata_worker, 'reader') and self.metadata_worker.reader:
+                    logger.info("[MetadataManager] Closing MetadataWorker ExifTool...")
+                    try:
+                        self.metadata_worker.reader.close()
+                        logger.info("[MetadataManager] MetadataWorker ExifTool closed")
+                    except Exception as e:
+                        logger.warning(f"[MetadataManager] Error closing MetadataWorker ExifTool: {e}")
+
+                # Clear reference
+                self.metadata_worker = None
+
+            # 3. Clean up metadata thread
+            if hasattr(self, 'metadata_thread') and self.metadata_thread:
+                logger.info("[MetadataManager] Cleaning up metadata thread...")
+
+                # First try graceful quit
+                self.metadata_thread.quit()
+                if not self.metadata_thread.wait(2000):  # Wait max 2 seconds
+                    logger.warning("[MetadataManager] Metadata thread did not quit gracefully, terminating...")
+                    self.metadata_thread.terminate()
+                    self.metadata_thread.wait(500)  # Wait for termination
+
+                # Clear reference
+                self.metadata_thread = None
+
+            # 4. Close the main ExifTool wrapper
+            if hasattr(self, '_exiftool_wrapper') and self._exiftool_wrapper:
+                logger.info("[MetadataManager] Closing main ExifTool wrapper...")
+                try:
+                    self._exiftool_wrapper.close()
+                    logger.info("[MetadataManager] Main ExifTool wrapper closed")
+                except Exception as e:
+                    logger.warning(f"[MetadataManager] Error closing main ExifTool wrapper: {e}")
+
+                # Clear reference
+                self._exiftool_wrapper = None
+
+            # 5. Close metadata loader ExifTool if it exists
+            if hasattr(self, 'metadata_loader') and self.metadata_loader:
+                logger.info("[MetadataManager] Closing metadata loader ExifTool...")
+                try:
+                    self.metadata_loader.close()
+                    logger.info("[MetadataManager] Metadata loader ExifTool closed")
+                except Exception as e:
+                    logger.warning(f"[MetadataManager] Error closing metadata loader ExifTool: {e}")
+
+            logger.info("[MetadataManager] Cleanup completed successfully")
+
+        except Exception as e:
+            logger.error(f"[MetadataManager] Error during cleanup: {e}")
+
+        finally:
+            # Force cleanup any remaining ExifTool processes as last resort
+            try:
+                logger.info("[MetadataManager] Force cleaning up any remaining ExifTool processes...")
+                from utils.exiftool_wrapper import ExifToolWrapper
+                ExifToolWrapper.force_cleanup_all_exiftool_processes()
+            except Exception as e:
+                logger.warning(f"[MetadataManager] Error during force cleanup: {e}")
