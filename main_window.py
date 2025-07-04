@@ -657,6 +657,11 @@ class MainWindow(QMainWindow):
                         self.metadata_manager.metadata_loader.close()
                         logger.info("[CloseEvent] Metadata loader ExifTool closed")
 
+                # Force cleanup any remaining ExifTool processes
+                logger.info("[CloseEvent] Force cleaning up any remaining ExifTool processes...")
+                from utils.exiftool_wrapper import ExifToolWrapper
+                ExifToolWrapper.force_cleanup_all_exiftool_processes()
+
                 logger.debug("[CloseEvent] Cleaned up metadata manager")
             except Exception as e:
                 logger.warning(f"[CloseEvent] Error cleaning metadata manager: {e}")

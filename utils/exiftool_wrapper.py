@@ -244,27 +244,35 @@ class ExifToolWrapper:
             return
 
         try:
-            # First try to close gracefully
-            if self.process.stdin and not self.process.stdin.closed:
-                self.process.stdin.write("-stay_open\nFalse\n")
-                self.process.stdin.flush()
-                self.process.stdin.close()
+            with self.lock:  # Ensure thread-safe shutdown
+                # First try to close gracefully
+                if self.process.stdin and not self.process.stdin.closed:
+                    try:
+                        self.process.stdin.write("-stay_open\nFalse\n")
+                        self.process.stdin.flush()
+                        self.process.stdin.close()
+                    except (BrokenPipeError, OSError):
+                        # Process may have already terminated
+                        pass
 
-            # Wait for process to terminate gracefully
-            try:
-                self.process.wait(timeout=3)
-                logger.debug("[ExifToolWrapper] Process terminated gracefully")
-            except subprocess.TimeoutExpired:
-                # Force terminate if it doesn't close gracefully
-                logger.warning("[ExifToolWrapper] Process didn't terminate gracefully, forcing termination")
-                self.process.terminate()
+                # Wait for process to terminate gracefully
                 try:
-                    self.process.wait(timeout=2)
+                    self.process.wait(timeout=3)
+                    logger.debug("[ExifToolWrapper] Process terminated gracefully")
                 except subprocess.TimeoutExpired:
-                    # Last resort: kill the process
-                    logger.warning("[ExifToolWrapper] Force killing ExifTool process")
-                    self.process.kill()
-                    self.process.wait()
+                    # Force terminate if it doesn't close gracefully
+                    logger.warning("[ExifToolWrapper] Process didn't terminate gracefully, forcing termination")
+                    self.process.terminate()
+                    try:
+                        self.process.wait(timeout=2)
+                    except subprocess.TimeoutExpired:
+                        # Last resort: kill the process
+                        logger.warning("[ExifToolWrapper] Force killing ExifTool process")
+                        self.process.kill()
+                        try:
+                            self.process.wait(timeout=1)
+                        except subprocess.TimeoutExpired:
+                            logger.error("[ExifToolWrapper] Process refused to die, may be zombie")
 
         except Exception as e:
             logger.warning(f"[ExifToolWrapper] Error during shutdown: {e}")
@@ -272,9 +280,66 @@ class ExifToolWrapper:
             try:
                 if self.process and self.process.poll() is None:
                     self.process.kill()
-                    self.process.wait()
+                    try:
+                        self.process.wait(timeout=1)
+                    except subprocess.TimeoutExpired:
+                        logger.error("[ExifToolWrapper] Zombie process detected")
             except Exception:
                 pass
         finally:
             self.process = None
             logger.debug("[ExifToolWrapper] ExifTool wrapper closed")
+
+    @staticmethod
+    def force_cleanup_all_exiftool_processes() -> None:
+        """Force cleanup all ExifTool processes system-wide."""
+        try:
+            import psutil
+            killed_count = 0
+
+            for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+                try:
+                    if proc.info['name'] and 'exiftool' in proc.info['name'].lower():
+                        logger.warning(f"[ExifToolWrapper] Killing orphaned ExifTool process: PID {proc.info['pid']}")
+                        proc.kill()
+                        killed_count += 1
+                    elif proc.info['cmdline']:
+                        cmdline = ' '.join(proc.info['cmdline']).lower()
+                        if 'exiftool' in cmdline and '-stay_open' in cmdline:
+                            logger.warning(f"[ExifToolWrapper] Killing orphaned ExifTool process: PID {proc.info['pid']}")
+                            proc.kill()
+                            killed_count += 1
+                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                    pass
+
+            if killed_count > 0:
+                logger.info(f"[ExifToolWrapper] Cleaned up {killed_count} orphaned ExifTool processes")
+            else:
+                logger.debug("[ExifToolWrapper] No orphaned ExifTool processes found")
+
+        except ImportError:
+            # Fallback to system commands if psutil not available
+            try:
+                import subprocess
+                import os
+
+                if os.name == 'posix':  # Linux/macOS
+                    result = subprocess.run(['pkill', '-f', 'exiftool.*stay_open'],
+                                          capture_output=True, text=True)
+                    if result.returncode == 0:
+                        logger.info("[ExifToolWrapper] Cleaned up ExifTool processes via pkill")
+                    else:
+                        logger.debug("[ExifToolWrapper] No ExifTool processes to clean up")
+                else:  # Windows
+                    result = subprocess.run(['taskkill', '/F', '/IM', 'exiftool.exe'],
+                                          capture_output=True, text=True)
+                    if result.returncode == 0:
+                        logger.info("[ExifToolWrapper] Cleaned up ExifTool processes via taskkill")
+                    else:
+                        logger.debug("[ExifToolWrapper] No ExifTool processes to clean up")
+
+            except Exception as e:
+                logger.warning(f"[ExifToolWrapper] Failed to cleanup ExifTool processes: {e}")
+
+        except Exception as e:
+            logger.warning(f"[ExifToolWrapper] Error during force cleanup: {e}")

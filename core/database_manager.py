@@ -28,7 +28,7 @@ from utils.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 
-class DatabaseManagerV2:
+class DatabaseManager:
     """
     Enhanced database management with improved separation of concerns.
 
@@ -64,7 +64,7 @@ class DatabaseManagerV2:
             self.db_path = data_dir / "oncutf_data.db"
 
         self._initialize_database()
-        logger.info(f"[DatabaseManagerV2] Initialized with database: {self.db_path}")
+        logger.info(f"[DatabaseManager] Initialized with database: {self.db_path}")
 
     def _get_user_data_directory(self) -> Path:
         """Get user data directory for storing database."""
@@ -128,7 +128,7 @@ class DatabaseManagerV2:
             self._create_indexes(cursor)
             conn.commit()
 
-        logger.debug(f"[DatabaseManagerV2] Schema initialized (version {self.SCHEMA_VERSION})")
+        logger.debug(f"[DatabaseManager] Schema initialized (version {self.SCHEMA_VERSION})")
 
     def _create_schema_v2(self, cursor: sqlite3.Cursor):
         """Create the new v2 schema with separated tables."""
@@ -191,12 +191,12 @@ class DatabaseManagerV2:
             )
         """)
 
-        logger.debug("[DatabaseManagerV2] Schema v2 created")
+        logger.debug("[DatabaseManager] Schema v2 created")
 
     def _migrate_schema(self, cursor: sqlite3.Cursor, from_version: int):
         """Migrate from older schema versions."""
         # Future migrations will go here
-        logger.info(f"[DatabaseManagerV2] Migrating from version {from_version} to {self.SCHEMA_VERSION}")
+        logger.info(f"[DatabaseManager] Migrating from version {from_version} to {self.SCHEMA_VERSION}")
 
     def _create_indexes(self, cursor: sqlite3.Cursor):
         """Create database indexes for performance."""
@@ -223,7 +223,7 @@ class DatabaseManagerV2:
         for index_sql in indexes:
             cursor.execute(index_sql)
 
-        logger.debug("[DatabaseManagerV2] Database indexes created")
+        logger.debug("[DatabaseManager] Database indexes created")
 
     # =====================================
     # File Path Management
@@ -327,11 +327,11 @@ class DatabaseManagerV2:
                 # Commit the transaction
                 conn.commit()
 
-                logger.debug(f"[DatabaseManagerV2] Stored {metadata_type} metadata for: {os.path.basename(file_path)}")
+                logger.debug(f"[DatabaseManager] Stored {metadata_type} metadata for: {os.path.basename(file_path)}")
                 return True
 
         except Exception as e:
-            logger.error(f"[DatabaseManagerV2] Error storing metadata for {file_path}: {e}")
+            logger.error(f"[DatabaseManager] Error storing metadata for {file_path}: {e}")
             return False
 
     def get_metadata(self, file_path: str) -> Optional[Dict[str, Any]]:
@@ -366,7 +366,7 @@ class DatabaseManagerV2:
                 return metadata
 
         except Exception as e:
-            logger.error(f"[DatabaseManagerV2] Error retrieving metadata for {file_path}: {e}")
+            logger.error(f"[DatabaseManager] Error retrieving metadata for {file_path}: {e}")
             return None
 
     def has_metadata(self, file_path: str, metadata_type: Optional[str] = None) -> bool:
@@ -395,7 +395,7 @@ class DatabaseManagerV2:
                 return cursor.fetchone() is not None
 
         except Exception as e:
-            logger.error(f"[DatabaseManagerV2] Error checking metadata for {file_path}: {e}")
+            logger.error(f"[DatabaseManager] Error checking metadata for {file_path}: {e}")
             return False
 
     # =====================================
@@ -434,11 +434,11 @@ class DatabaseManagerV2:
                 # Commit the transaction
                 conn.commit()
 
-                logger.debug(f"[DatabaseManagerV2] Stored {algorithm} hash for: {os.path.basename(file_path)}")
+                logger.debug(f"[DatabaseManager] Stored {algorithm} hash for: {os.path.basename(file_path)}")
                 return True
 
         except Exception as e:
-            logger.error(f"[DatabaseManagerV2] Error storing hash for {file_path}: {e}")
+            logger.error(f"[DatabaseManager] Error storing hash for {file_path}: {e}")
             return False
 
     def get_hash(self, file_path: str, algorithm: str = 'CRC32') -> Optional[str]:
@@ -461,7 +461,7 @@ class DatabaseManagerV2:
                 return row['hash_value'] if row else None
 
         except Exception as e:
-            logger.error(f"[DatabaseManagerV2] Error retrieving hash for {file_path}: {e}")
+            logger.error(f"[DatabaseManager] Error retrieving hash for {file_path}: {e}")
             return None
 
     def has_hash(self, file_path: str, algorithm: str = 'CRC32') -> bool:
@@ -482,7 +482,7 @@ class DatabaseManagerV2:
                 return cursor.fetchone() is not None
 
         except Exception as e:
-            logger.error(f"[DatabaseManagerV2] Error checking hash for {file_path}: {e}")
+            logger.error(f"[DatabaseManager] Error checking hash for {file_path}: {e}")
             return False
 
     # =====================================
@@ -507,13 +507,13 @@ class DatabaseManagerV2:
                 return stats
 
         except Exception as e:
-            logger.error(f"[DatabaseManagerV2] Error getting database stats: {e}")
+            logger.error(f"[DatabaseManager] Error getting database stats: {e}")
             return {}
 
     def close(self):
         """Close database connections."""
         # Connection pooling cleanup would go here if needed
-        logger.debug("[DatabaseManagerV2] Database connections closed")
+        logger.debug("[DatabaseManager] Database connections closed")
 
 
 # =====================================
@@ -522,15 +522,15 @@ class DatabaseManagerV2:
 
 _db_manager_v2_instance = None
 
-def get_database_manager() -> DatabaseManagerV2:
+def get_database_manager() -> DatabaseManager:
     """Get global database manager instance."""
     global _db_manager_v2_instance
     if _db_manager_v2_instance is None:
-        _db_manager_v2_instance = DatabaseManagerV2()
+        _db_manager_v2_instance = DatabaseManager()
     return _db_manager_v2_instance
 
-def initialize_database(db_path: Optional[str] = None) -> DatabaseManagerV2:
+def initialize_database(db_path: Optional[str] = None) -> DatabaseManager:
     """Initialize database manager with custom path."""
     global _db_manager_v2_instance
-    _db_manager_v2_instance = DatabaseManagerV2(db_path)
+    _db_manager_v2_instance = DatabaseManager(db_path)
     return _db_manager_v2_instance
