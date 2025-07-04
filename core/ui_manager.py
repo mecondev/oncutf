@@ -130,6 +130,15 @@ class UIManager:
 
     def _calculate_optimal_splitter_sizes(self, window_width: int):
         """Calculate optimal splitter sizes based on window width with smart adaptation for wide screens."""
+        # Delegate to SplitterManager if available
+        if hasattr(self.parent_window, 'splitter_manager'):
+            return self.parent_window.splitter_manager.calculate_optimal_splitter_sizes(window_width)
+
+        # Fallback to legacy calculation if SplitterManager is not available
+        return self._legacy_calculate_optimal_splitter_sizes(window_width)
+
+    def _legacy_calculate_optimal_splitter_sizes(self, window_width: int):
+        """Legacy splitter size calculation method (kept as fallback)."""
         # Smart percentage calculation based on screen width
         if window_width >= 2560:  # 4K/Ultrawide screens
             # Wide screens: Give more space to center panel, keep side panels reasonable
@@ -183,7 +192,7 @@ class UIManager:
 
         optimal_sizes = [left_width, center_width, right_width]
 
-        logger.debug(f"[UIManager] Calculated splitter sizes for {window_width}px: {optimal_sizes} "
+        logger.debug(f"[UIManager] Legacy calculated splitter sizes for {window_width}px: {optimal_sizes} "
                     f"({left_width/window_width*100:.1f}%, {center_width/window_width*100:.1f}%, {right_width/window_width*100:.1f}%)", extra={"dev_only": True})
         return optimal_sizes
 

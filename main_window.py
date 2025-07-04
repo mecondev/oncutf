@@ -28,13 +28,16 @@ from core.drag_manager import DragManager
 from core.event_handler_manager import EventHandlerManager
 from core.file_load_manager import FileLoadManager
 from core.file_operations_manager import FileOperationsManager
+from core.file_validation_manager import get_file_validation_manager
 from core.initialization_manager import InitializationManager
 from core.preview_manager import PreviewManager
+from core.window_config_manager import WindowConfigManager
 
 # Import all PyQt5 classes from centralized module
 from core.qt_imports import *
 from core.rename_manager import RenameManager
 from core.shortcut_manager import ShortcutManager
+from core.splitter_manager import SplitterManager
 from core.table_manager import TableManager
 from core.ui_manager import UIManager
 from core.utility_manager import UtilityManager
@@ -141,11 +144,13 @@ class MainWindow(QMainWindow):
         self.dialog_manager = DialogManager()
         self.event_handler_manager = EventHandlerManager(self)
         self.file_load_manager = FileLoadManager(self)
+        self.file_validation_manager = get_file_validation_manager()
         self.table_manager = TableManager(self)
         self.utility_manager = UtilityManager(self)
         self.rename_manager = RenameManager(self)
         self.drag_cleanup_manager = DragCleanupManager(self)
         self.shortcut_manager = ShortcutManager(self)
+        self.splitter_manager = SplitterManager(self)
         self.initialization_manager = InitializationManager(self)
 
         # --- Initialize UIManager and setup all UI ---
@@ -155,14 +160,17 @@ class MainWindow(QMainWindow):
         # --- Initialize JSON Config Manager ---
         self.config_manager = get_app_config_manager()
 
+        # --- Initialize WindowConfigManager ---
+        self.window_config_manager = WindowConfigManager(self)
+
         # --- Load and apply window configuration ---
-        self._load_window_config()
+        self.window_config_manager.load_window_config()
 
         # Store initial geometry AFTER smart sizing for proper restore behavior
         self._initial_geometry = self.geometry()
 
         # --- Apply UI configuration after UI is initialized ---
-        self._apply_loaded_config()
+        self.window_config_manager.apply_loaded_config()
 
         # --- Ensure column widths are properly initialized ---
         # This handles cases where no config exists (fresh start) or when config is deleted
@@ -299,20 +307,65 @@ class MainWindow(QMainWindow):
         self.utility_manager.center_window()
 
     def confirm_large_folder(self, file_list: list[str], folder_path: str) -> bool:
-        """Delegates to FileOperationsManager for large folder confirmation."""
-        return self.file_operations_manager.confirm_large_folder(file_list, folder_path)
+        """Delegates to FileValidationManager for intelligent large folder validation."""
+        from core.file_validation_manager import OperationType
+
+        # Use FileValidationManager for smart validation
+        validation_result = self.file_validation_manager.validate_operation_batch(
+            file_list, OperationType.FILE_LOADING
+        )
+
+        if validation_result['should_warn']:
+            # Show warning with smart information
+            return self.dialog_manager.confirm_large_folder(folder_path, validation_result['file_count'])
+
+        return True  # No warning needed
 
     def check_large_files(self, files: list[FileItem]) -> list[FileItem]:
-        """Delegates to FileOperationsManager for large file checking."""
-        return self.file_operations_manager.check_large_files(files)
+        """Delegates to FileValidationManager for intelligent large file checking."""
+        from core.file_validation_manager import OperationType
+
+        # Convert FileItems to paths for validation
+        file_paths = [f.full_path for f in files if hasattr(f, 'full_path')]
+
+        validation_result = self.file_validation_manager.validate_operation_batch(
+            file_paths, OperationType.METADATA_EXTENDED
+        )
+
+        # Return files that exceed size thresholds
+        if validation_result['should_warn']:
+            # Use DialogManager for detailed large file detection
+            has_large, large_file_paths = self.dialog_manager.check_large_files(file_paths)
+            if has_large:
+                return [f for f in files if f.full_path in large_file_paths]
+
+        return []
 
     def confirm_large_files(self, files: list[FileItem]) -> bool:
-        """Delegates to FileOperationsManager for large file confirmation."""
-        return self.file_operations_manager.confirm_large_files(files)
+        """Delegates to FileValidationManager and DialogManager for large file confirmation."""
+        from core.file_validation_manager import OperationType
+
+        if not files:
+            return True
+
+        # Get validation summary from FileValidationManager
+        file_paths = [f.full_path for f in files if hasattr(f, 'full_path')]
+        validation_result = self.file_validation_manager.validate_operation_batch(
+            file_paths, OperationType.METADATA_EXTENDED
+        )
+
+        if validation_result['should_warn']:
+            # Show detailed confirmation dialog
+            return self.dialog_manager.confirm_large_files(files)
+
+        return True  # No confirmation needed
 
     def prompt_file_conflict(self, target_path: str) -> str:
-        """Delegates to FileOperationsManager for file conflict resolution."""
-        return self.file_operations_manager.prompt_file_conflict(target_path)
+        """Delegates to DialogManager for file conflict resolution."""
+        old_name = os.path.basename(target_path)
+        new_name = os.path.basename(target_path)
+        result = self.dialog_manager.prompt_file_conflict(old_name, new_name)
+        return "overwrite" if result else "cancel"
 
     def update_files_label(self) -> None:
         """Delegates to UtilityManager for files label update."""
@@ -402,7 +455,7 @@ class MainWindow(QMainWindow):
         super().resizeEvent(event)
 
         # Only update splitters if UI is fully initialized and window is visible
-        if (hasattr(self, 'ui_manager') and
+        if (hasattr(self, 'splitter_manager') and
             hasattr(self, 'horizontal_splitter') and
             self.isVisible() and
             not self.isMinimized()):
@@ -410,34 +463,21 @@ class MainWindow(QMainWindow):
             # Get new window width
             new_width = self.width()
 
-            # Calculate new optimal splitter sizes
-            optimal_sizes = self.ui_manager._calculate_optimal_splitter_sizes(new_width)
+            # Use SplitterManager to update splitter sizes
+            from utils.timer_manager import schedule_resize_adjust
 
-            # Only update if the sizes would be significantly different
-            current_sizes = self.horizontal_splitter.sizes()
-            if len(current_sizes) == 3 and len(optimal_sizes) == 3:
-                # Check if any panel size differs by more than 50px
-                size_differences = [abs(current - optimal) for current, optimal in zip(current_sizes, optimal_sizes)]
-                if any(diff > 50 for diff in size_differences):
-                    # Update splitter sizes with smooth transition
-                    from utils.timer_manager import schedule_resize_adjust
+            def update_splitters():
+                self.splitter_manager.update_splitter_sizes_for_window_width(new_width)
 
-                    def update_splitters():
-                        self.horizontal_splitter.setSizes(optimal_sizes)
-                        logger.debug(f"[ResizeEvent] Updated splitter sizes for {new_width}px: {optimal_sizes}")
-
-                    # Schedule the update to avoid conflicts with other resize operations
-                    schedule_resize_adjust(update_splitters, 50)
+            # Schedule the update to avoid conflicts with other resize operations
+            schedule_resize_adjust(update_splitters, 50)
 
             # Also trigger column adjustment when window resizes
             if hasattr(self, 'file_table_view'):
-                from utils.timer_manager import schedule_resize_adjust
-
                 def trigger_column_adjustment():
-                    if hasattr(self.file_table_view, '_trigger_column_adjustment'):
-                        self.file_table_view._trigger_column_adjustment()
+                    self.splitter_manager.trigger_column_adjustment_after_splitter_change()
 
-                # Schedule column adjustment after splitter update (reduced delay for smoother response)
+                # Schedule column adjustment after splitter update
                 schedule_resize_adjust(trigger_column_adjustment, 60)
 
     def _handle_window_state_change(self) -> None:
@@ -532,7 +572,7 @@ class MainWindow(QMainWindow):
                 logger.error(f"[CloseEvent] Error creating database backup: {e}")
 
         # 2. Save window configuration before cleanup
-        self._save_window_config()
+        self.window_config_manager.save_window_config()
 
         # 3. Clean up any active drag operations
         self.drag_cleanup_manager.emergency_drag_cleanup()
@@ -757,12 +797,12 @@ class MainWindow(QMainWindow):
         self.metadata_manager.load_metadata_for_items(items, use_extended, source)
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
-        """Delegates to EventHandlerManager for horizontal splitter movement handling."""
-        self.event_handler_manager.on_horizontal_splitter_moved(pos, index)
+        """Delegates to SplitterManager for horizontal splitter movement handling."""
+        self.splitter_manager.on_horizontal_splitter_moved(pos, index)
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
-        """Delegates to EventHandlerManager for vertical splitter movement handling."""
-        self.event_handler_manager.on_vertical_splitter_moved(pos, index)
+        """Delegates to SplitterManager for vertical splitter movement handling."""
+        self.splitter_manager.on_vertical_splitter_moved(pos, index)
 
     def show_metadata_status(self) -> None:
         """Delegates to InitializationManager for metadata status display."""
@@ -829,304 +869,73 @@ class MainWindow(QMainWindow):
 
     def _load_window_config(self) -> None:
         """Load and apply window configuration from config manager."""
-        try:
-            window_config = self.config_manager.get_category('window')
-
-            # Load geometry
-            geometry = window_config.get('geometry')
-            logger.debug(f"[Config] Loaded geometry from config: {geometry}", extra={"dev_only": True})
-
-            if geometry:
-                self.setGeometry(
-                    geometry['x'], geometry['y'],
-                    geometry['width'], geometry['height']
-                )
-                logger.info(f"[Config] Applied saved window geometry: {geometry}")
-            else:
-                # No saved geometry - set smart defaults based on screen size
-                logger.info("[Config] No saved geometry found, applying smart defaults")
-                self._set_smart_default_geometry()
-
-            # Load window state
-            window_state = window_config.get('window_state', 'normal')
-            if window_state == 'maximized':
-                self.showMaximized()
-            elif window_state == 'minimized':
-                self.showMinimized()
-            else:
-                self.showNormal()
-
-            # Store last folder and other settings for later use
-            self._last_folder_from_config = window_config.get('last_folder', '')
-            self._recursive_mode_from_config = window_config.get('recursive_mode', False)
-            self._sort_column_from_config = window_config.get('sort_column', 1)
-            self._sort_order_from_config = window_config.get('sort_order', 0)
-
-            logger.info("[Config] Window configuration loaded successfully", extra={"dev_only": True})
-
-        except Exception as e:
-            logger.error(f"[Config] Failed to load window configuration: {e}")
-            # If config loading fails, still set smart defaults
-            logger.info("[Config] Exception occurred, applying smart defaults as fallback")
-            self._set_smart_default_geometry()
+        # Delegate to WindowConfigManager
+        self.window_config_manager.load_window_config()
 
     def _set_smart_default_geometry(self) -> None:
         """Set smart default window geometry based on screen size and aspect ratio."""
-        try:
-            # Use modern QScreen API instead of deprecated QDesktopWidget
-            app = QApplication.instance()
-            if not app:
-                raise RuntimeError("No QApplication instance found")
-
-            # Get the primary screen using modern API
-            primary_screen = app.primaryScreen() # type: ignore[attr-defined]
-            if not primary_screen:
-                raise RuntimeError("No primary screen found")
-
-            # Get screen geometry (available area excluding taskbars, docks, etc.)
-            screen_geometry = primary_screen.availableGeometry()
-            screen_width = screen_geometry.width()
-            screen_height = screen_geometry.height()
-            screen_aspect = screen_width / screen_height if screen_height > 0 else 1.0
-
-            logger.info(f"[Config] Primary screen detected: {screen_width}x{screen_height} (aspect: {screen_aspect:.2f})")
-            logger.info(f"[Config] Screen name: {primary_screen.name()}, DPI: {primary_screen.logicalDotsPerInch():.1f}")
-
-            # Log all available screens for debugging multi-monitor setups
-            all_screens = app.screens() # type: ignore[attr-defined]
-            if len(all_screens) > 1:
-                total_width = sum(screen.geometry().width() for screen in all_screens)
-                total_height = max(screen.geometry().height() for screen in all_screens)
-                logger.info(f"[Config] Multi-monitor setup detected: {len(all_screens)} screens, total desktop: {total_width}x{total_height}")
-                for i, screen in enumerate(all_screens):
-                    geo = screen.geometry()
-                    logger.debug(f"[Config] Screen {i}: {screen.name()} - {geo.width()}x{geo.height()} at ({geo.x()}, {geo.y()})")
-
-            # Import screen size configuration from config
-            from core.config_imports import (
-                DEV_SIMULATE_SCREEN,
-                DEV_SIMULATED_SCREEN,
-                SCREEN_SIZE_BREAKPOINTS,
-                SCREEN_SIZE_PERCENTAGES,
-                WINDOW_MIN_SMART_WIDTH,
-                WINDOW_MIN_SMART_HEIGHT,
-                LARGE_SCREEN_MIN_WIDTH,
-                LARGE_SCREEN_MIN_HEIGHT
-            )
-
-            # Check if we should simulate a different screen size (DEV ONLY)
-            if DEV_SIMULATE_SCREEN:
-                screen_width = DEV_SIMULATED_SCREEN["width"]
-                screen_height = DEV_SIMULATED_SCREEN["height"]
-                screen_name = DEV_SIMULATED_SCREEN["name"]
-                logger.warning(f"[Config] 🚧 DEV MODE: Simulating screen: {screen_name} - {screen_width}x{screen_height}")
-                # Override the real screen values for testing
-                screen_geometry = type('MockGeometry', (), {
-                    'x': lambda: 0,
-                    'y': lambda: 0,
-                    'width': lambda: screen_width,
-                    'height': lambda: screen_height
-                })()
-
-            # Calculate smart window dimensions based on primary screen size using configurable breakpoints
-            if screen_width >= SCREEN_SIZE_BREAKPOINTS["large_4k"]:  # 4K or large single screen
-                # Large screens: use configurable percentages, with configurable minimum
-                percentages = SCREEN_SIZE_PERCENTAGES["large_4k"]
-                window_width = max(int(screen_width * percentages["width"]), LARGE_SCREEN_MIN_WIDTH)
-                window_height = max(int(screen_height * percentages["height"]), LARGE_SCREEN_MIN_HEIGHT)
-                logger.info(f"[Config] Large screen detected (>={SCREEN_SIZE_BREAKPOINTS['large_4k']}px), using {percentages['width']*100}%x{percentages['height']*100}%: {window_width}x{window_height}")
-            elif screen_width >= SCREEN_SIZE_BREAKPOINTS["full_hd"]:  # Full HD single screen
-                # Standard large screens: use configurable percentages
-                percentages = SCREEN_SIZE_PERCENTAGES["full_hd"]
-                window_width = int(screen_width * percentages["width"])
-                window_height = int(screen_height * percentages["height"])
-                logger.info(f"[Config] Full HD screen detected (>={SCREEN_SIZE_BREAKPOINTS['full_hd']}px), using {percentages['width']*100}%x{percentages['height']*100}%: {window_width}x{window_height}")
-            elif screen_width >= SCREEN_SIZE_BREAKPOINTS["laptop"]:  # Common laptop resolution
-                # Medium screens: use configurable percentages
-                percentages = SCREEN_SIZE_PERCENTAGES["laptop"]
-                window_width = int(screen_width * percentages["width"])
-                window_height = int(screen_height * percentages["height"])
-                logger.info(f"[Config] Medium screen detected (>={SCREEN_SIZE_BREAKPOINTS['laptop']}px), using {percentages['width']*100}%x{percentages['height']*100}%: {window_width}x{window_height}")
-            else:  # Small screens (below laptop breakpoint)
-                # Small screens: use configurable percentages, but ensure minimum usability
-                percentages = SCREEN_SIZE_PERCENTAGES["small"]
-                window_width = max(int(screen_width * percentages["width"]), WINDOW_MIN_SMART_WIDTH)
-                window_height = max(int(screen_height * percentages["height"]), WINDOW_MIN_SMART_HEIGHT)
-                logger.info(f"[Config] Small screen detected (<{SCREEN_SIZE_BREAKPOINTS['laptop']}px), using {percentages['width']*100}%x{percentages['height']*100}%: {window_width}x{window_height}")
-
-            # Ensure minimum dimensions for usability
-            original_width, original_height = window_width, window_height
-            window_width = max(window_width, WINDOW_MIN_SMART_WIDTH)
-            window_height = max(window_height, WINDOW_MIN_SMART_HEIGHT)
-            if window_width != original_width or window_height != original_height:
-                logger.info(f"[Config] Applied minimum constraints: {original_width}x{original_height} -> {window_width}x{window_height}")
-
-            # Ensure window doesn't exceed primary screen bounds
-            original_width, original_height = window_width, window_height
-            window_width = min(window_width, screen_width - 100)
-            window_height = min(window_height, screen_height - 100)
-            if window_width != original_width or window_height != original_height:
-                logger.info(f"[Config] Applied screen bounds: {original_width}x{original_height} -> {window_width}x{window_height}")
-
-            # Calculate centered position on primary screen
-            x = screen_geometry.x() + (screen_width - window_width) // 2
-            y = screen_geometry.y() + (screen_height - window_height) // 2
-
-            # Apply the geometry
-            logger.info(f"[Config] Setting geometry: {window_width}x{window_height} at ({x}, {y}) on primary screen")
-            self.setGeometry(x, y, window_width, window_height)
-
-            # Verify what was actually set (some window managers might override)
-            actual_geo = self.geometry()
-            if actual_geo.width() != window_width or actual_geo.height() != window_height or actual_geo.x() != x or actual_geo.y() != y:
-                logger.warning(f"[Config] Window manager overrode geometry! Requested: {window_width}x{window_height} at ({x}, {y}), Got: {actual_geo.width()}x{actual_geo.height()} at ({actual_geo.x()}, {actual_geo.y()})")
-            else:
-                logger.info(f"[Config] Geometry set successfully: {window_width}x{window_height} at ({x}, {y})")
-
-        except Exception as e:
-            logger.error(f"[Config] Failed to set smart default geometry: {e}")
-            # Ultimate fallback - fixed reasonable size
-            self.setGeometry(100, 100, 1200, 800)
-            logger.info("[Config] Used fallback geometry: 1200x800 at (100, 100)")
+        # Delegate to WindowConfigManager
+        self.window_config_manager.set_smart_default_geometry()
 
     def _save_window_config(self) -> None:
         """Save current window state to config manager."""
-        try:
-            window_config = self.config_manager.get_category('window')
-
-            # Save geometry (use normal geometry if maximized)
-            if self.isMaximized():
-                # Use stored restore geometry if available, otherwise use initial
-                if hasattr(self, '_restore_geometry'):
-                    geo = self._restore_geometry
-                else:
-                    geo = self._initial_geometry
-            else:
-                geo = self.geometry()
-
-            window_config.set('geometry', {
-                'x': geo.x(),
-                'y': geo.y(),
-                'width': geo.width(),
-                'height': geo.height()
-            })
-
-            # Save window state
-            if self.isMaximized():
-                window_state = 'maximized'
-            elif self.isMinimized():
-                window_state = 'minimized'
-            else:
-                window_state = 'normal'
-            window_config.set('window_state', window_state)
-
-            # Save splitter states
-            splitter_states = {}
-            if hasattr(self, 'horizontal_splitter'):
-                splitter_states['horizontal'] = self.horizontal_splitter.sizes()
-            if hasattr(self, 'vertical_splitter'):
-                splitter_states['vertical'] = self.vertical_splitter.sizes()
-            window_config.set('splitter_states', splitter_states)
-
-            # Save column widths
-            column_widths = {}
-            if hasattr(self, 'file_table_view') and self.file_table_view.model():
-                header = self.file_table_view.horizontalHeader()
-                file_table_widths = []
-                for i in range(header.count()):
-                    file_table_widths.append(header.sectionSize(i))
-                column_widths['file_table'] = file_table_widths
-
-            if hasattr(self, 'metadata_tree_view'):
-                header = self.metadata_tree_view.header()
-                metadata_tree_widths = []
-                for i in range(header.count()):
-                    metadata_tree_widths.append(header.sectionSize(i))
-                column_widths['metadata_tree'] = metadata_tree_widths
-
-            window_config.set('column_widths', column_widths)
-
-            # Save current folder and settings
-            if hasattr(self, 'current_folder_path') and self.current_folder_path:
-                window_config.set('last_folder', self.current_folder_path)
-                app_config = self.config_manager.get_category('app')
-                app_config.add_recent_folder(self.current_folder_path)
-
-            if hasattr(self, 'current_folder_is_recursive'):
-                window_config.set('recursive_mode', self.current_folder_is_recursive)
-
-            if hasattr(self, 'current_sort_column'):
-                window_config.set('sort_column', self.current_sort_column)
-
-            if hasattr(self, 'current_sort_order'):
-                window_config.set('sort_order', int(self.current_sort_order))
-
-            # Save configuration to file
-            self.config_manager.save()
-
-            logger.info("[Config] Window configuration saved successfully", extra={"dev_only": True})
-
-        except Exception as e:
-            logger.error(f"[Preferences] Failed to save window preferences: {e}")
+        # Delegate to WindowConfigManager
+        self.window_config_manager.save_window_config()
 
     def _apply_loaded_config(self) -> None:
         """Apply loaded configuration after UI is fully initialized."""
-        try:
-            window_config = self.config_manager.get_category('window')
-
-            # Apply splitter states
-            splitter_states = window_config.get('splitter_states', {})
-            if 'horizontal' in splitter_states and hasattr(self, 'horizontal_splitter'):
-                self.horizontal_splitter.setSizes(splitter_states['horizontal'])
-                logger.debug(f"[Config] Applied horizontal splitter: {splitter_states['horizontal']}", extra={"dev_only": True})
-
-            if 'vertical' in splitter_states and hasattr(self, 'vertical_splitter'):
-                self.vertical_splitter.setSizes(splitter_states['vertical'])
-                logger.debug(f"[Config] Applied vertical splitter: {splitter_states['vertical']}", extra={"dev_only": True})
-
-            # Apply column widths
-            column_widths = window_config.get('column_widths', {})
-            if 'file_table' in column_widths and hasattr(self, 'file_table_view'):
-                widths = column_widths['file_table']
-                header = self.file_table_view.horizontalHeader()
-                for i, width in enumerate(widths):
-                    if i < header.count():
-                        header.resizeSection(i, width)
-                logger.debug(f"[Config] Applied file table column widths: {widths}", extra={"dev_only": True})
-
-            if 'metadata_tree' in column_widths and hasattr(self, 'metadata_tree_view'):
-                widths = column_widths['metadata_tree']
-                header = self.metadata_tree_view.header()
-                for i, width in enumerate(widths):
-                    if i < header.count():
-                        header.resizeSection(i, width)
-                logger.debug(f"[Config] Applied metadata tree column widths: {widths}", extra={"dev_only": True})
-
-            logger.info("[Config] UI configuration applied successfully", extra={"dev_only": True})
-
-        except Exception as e:
-            logger.error(f"[Config] Failed to apply UI configuration: {e}")
+        # Delegate to WindowConfigManager
+        self.window_config_manager.apply_loaded_config()
 
     def _ensure_initial_column_sizing(self) -> None:
         """Ensure column widths are properly sized on startup, especially when no config exists."""
-        if hasattr(self, 'file_table_view') and self.file_table_view.model():
-            # Trigger column adjustment using the existing logic
-            self.file_table_view._trigger_column_adjustment()
-            logger.debug("[Config] Ensured initial column sizing", extra={"dev_only": True})
+        # Delegate to WindowConfigManager
+        self.window_config_manager.ensure_initial_column_sizing()
 
     def restore_last_folder_if_available(self) -> None:
         """Restore the last folder if available and user wants it."""
-        if hasattr(self, '_last_folder_from_config') and self._last_folder_from_config:
-            last_folder = self._last_folder_from_config
-            if os.path.exists(last_folder):
-                logger.info(f"[Config] Restoring last folder: {last_folder}")
-                # Use the file load manager to load the folder
-                recursive = getattr(self, '_recursive_mode_from_config', False)
-                self.file_load_manager.load_folder(last_folder, merge=False, recursive=recursive)
+        # Delegate to WindowConfigManager
+        self.window_config_manager.restore_last_folder_if_available()
 
-                # Apply sort configuration after loading
-                if hasattr(self, '_sort_column_from_config') and hasattr(self, '_sort_order_from_config'):
-                    sort_order = Qt.AscendingOrder if self._sort_order_from_config == 0 else Qt.DescendingOrder
-                    self.sort_by_column(self._sort_column_from_config, sort_order)
-            else:
-                logger.warning(f"[Config] Last folder no longer exists: {last_folder}")
+    def validate_operation_for_user(self, files: list[str], operation_type: str) -> dict:
+        """
+        New method: Comprehensive operation validation with user-friendly results.
+        Returns validation summary for UI display.
+        """
+        from core.file_validation_manager import OperationType
+
+        # Map string operation types to enum
+        operation_map = {
+            'metadata_fast': OperationType.METADATA_FAST,
+            'metadata_extended': OperationType.METADATA_EXTENDED,
+            'hash_calculation': OperationType.HASH_CALCULATION,
+            'rename': OperationType.RENAME_OPERATION,
+            'file_loading': OperationType.FILE_LOADING
+        }
+
+        operation = operation_map.get(operation_type, OperationType.FILE_LOADING)
+
+        return self.file_validation_manager.validate_operation_batch(files, operation)
+
+    def identify_moved_files(self, file_paths: list[str]) -> dict:
+        """
+        New method: Identify files that may have been moved using content-based detection.
+        Returns mapping of current_path -> original_record for moved files.
+        """
+        moved_files = {}
+
+        for file_path in file_paths:
+            file_record, was_moved = self.file_validation_manager.identify_file_with_content_fallback(file_path)
+
+            if was_moved and file_record:
+                moved_files[file_path] = {
+                    'original_path': file_record.get('file_path'),
+                    'preserved_metadata': file_record.get('metadata_json') is not None,
+                    'preserved_hash': file_record.get('hash_value') is not None,
+                    'file_record': file_record
+                }
+
+                # Log successful identification
+                logger.info(f"[MainWindow] Identified moved file: {file_path} (was: {file_record.get('file_path')})")
+
+        return moved_files

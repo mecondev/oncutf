@@ -92,6 +92,16 @@ DEV_SIMULATED_SCREEN = {
 TOP_BOTTOM_SPLIT_RATIO = [500, 400]
 LEFT_CENTER_RIGHT_SPLIT_RATIO = [250, 674, 250]
 
+# Panel size constraints for SplitterManager
+LEFT_PANEL_MIN_WIDTH = 200
+LEFT_PANEL_MAX_WIDTH = 350
+RIGHT_PANEL_MIN_WIDTH = 200
+RIGHT_PANEL_MAX_WIDTH = 450
+
+# Screen size thresholds for adaptive splitter sizing
+WIDE_SCREEN_THRESHOLD = 1920     # Full HD and above
+ULTRA_WIDE_SCREEN_THRESHOLD = 2560  # 4K/Ultrawide screens
+
 # Preview columns
 PREVIEW_COLUMN_WIDTH = 350
 PREVIEW_MIN_WIDTH = 250
