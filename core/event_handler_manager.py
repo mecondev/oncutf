@@ -827,7 +827,9 @@ class EventHandlerManager:
             if hasattr(self.hash_dialog, 'start_progress_tracking'):
                 self.hash_dialog.start_progress_tracking(self._total_size_bytes)
 
-            self.hash_dialog.show()
+            # Show dialog with smooth appearance to prevent shadow flicker
+            from utils.dialog_utils import show_dialog_smooth
+            show_dialog_smooth(self.hash_dialog)
 
             # Update main window status
             if hasattr(self.parent_window, 'set_status'):

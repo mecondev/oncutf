@@ -609,7 +609,12 @@ class MainWindow(QMainWindow):
                 logger.warning(f"[CloseEvent] Error cleaning backup manager: {e}")
 
         # Schedule force exit after 2 seconds if app doesn't quit normally
-        QTimer.singleShot(2000, force_exit)
+        from utils.timer_manager import get_timer_manager, TimerType
+        get_timer_manager().schedule(
+            force_exit,
+            delay=2000,
+            timer_type=TimerType.CLEANUP
+        )
 
     def _force_cleanup_background_workers(self) -> None:
         """Force cleanup of any background workers/threads."""

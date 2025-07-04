@@ -308,7 +308,10 @@ class MetadataManager:
 
             # Start enhanced tracking with total size
             loading_dialog.start_progress_tracking(total_size)
-            loading_dialog.show()
+
+            # Show dialog with smooth appearance to prevent shadow flicker
+            from utils.dialog_utils import show_dialog_smooth
+            show_dialog_smooth(loading_dialog)
 
             # Initialize incremental size tracking for better performance
             processed_size = 0
@@ -579,7 +582,10 @@ class MetadataManager:
 
                 # Start enhanced tracking with total size
                 save_dialog.start_progress_tracking(total_size)
-                save_dialog.show()
+
+                # Show dialog with smooth appearance to prevent shadow flicker
+                from utils.dialog_utils import show_dialog_smooth
+                show_dialog_smooth(save_dialog)
 
                 # Initialize incremental size tracking for better performance
                 processed_size = 0
@@ -641,11 +647,12 @@ class MetadataManager:
                 # Complete progress and close dialog
                 save_dialog.set_progress(len(files_to_save), len(files_to_save))
                 save_dialog.set_status("Save complete!")
-                from core.qt_imports import QApplication
-                QApplication.processEvents()
+
+                # Use timer manager instead of processEvents for UI update
+                from utils.timer_manager import schedule_ui_update, schedule_dialog_close
+                schedule_ui_update(lambda: None, delay=1)  # Allow UI to update
 
                 # Keep dialog visible for a moment to show completion
-                from utils.timer_manager import schedule_dialog_close
                 schedule_dialog_close(save_dialog.close, 500)
 
             # Show result message

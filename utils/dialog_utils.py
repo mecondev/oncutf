@@ -24,7 +24,7 @@ def center_widget_on_parent(widget: QWidget, parent: Optional[QWidget] = None) -
     target_parent = parent or widget.parent()
 
     if target_parent:
-        parent_rect = target_parent.geometry()
+        parent_rect = target_parent.geometry() # type: ignore
         widget_size = widget.sizeHint()
         x = parent_rect.x() + (parent_rect.width() - widget_size.width()) // 2
         y = parent_rect.y() + (parent_rect.height() - widget_size.height()) // 2
@@ -45,6 +45,23 @@ def setup_dialog_size_and_center(dialog: QWidget, content_widget: QWidget) -> No
 
     # Center the dialog on parent
     center_widget_on_parent(dialog)
+
+
+def show_dialog_smooth(dialog: QWidget) -> None:
+    """
+    Show dialog with smooth appearance to prevent shadow flicker.
+
+    Args:
+        dialog: The dialog to show
+    """
+    # Force layout completion before showing
+    dialog.adjustSize()
+    dialog.updateGeometry()
+
+    # Use the global timer manager to show dialog after layout is complete
+    # This prevents the shadow-first appearance issue
+    from utils.timer_manager import schedule_ui_update
+    schedule_ui_update(dialog.show, delay=1)  # 1ms delay allows layout to complete
 
 
 def show_info_message(parent: Optional[QWidget], title: str, message: str) -> None:

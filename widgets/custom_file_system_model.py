@@ -168,11 +168,11 @@ class CustomFileSystemModel(QFileSystemModel):
         # Return specific icon based on file type
         return self.FILE_TYPE_ICONS.get(ext, 'file')
 
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:
+    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any: # type: ignore
         """Override data method to provide custom icons"""
 
         # Handle decoration role (icons)
-        if role == Qt.DecorationRole:
+        if role == Qt.DecorationRole: # type: ignore
             if index.isValid():
                 file_path = self.filePath(index)
                 if file_path:
@@ -183,30 +183,14 @@ class CustomFileSystemModel(QFileSystemModel):
         return super().data(index, role)
 
     def hasChildren(self, parent: QModelIndex = QModelIndex()) -> bool:
-        """Override to ensure proper expand/collapse behavior"""
+        """Override to ensure proper expand/collapse behavior with optimized checking"""
         if not parent.isValid():
             return True
 
         file_path = self.filePath(parent)
         if file_path and self.isDir(parent):
-            # Check if directory has any children (files or subdirectories)
-            try:
-                # Only check for allowed file types and directories
-                for item in os.listdir(file_path):
-                    item_path = os.path.join(file_path, item)
-                    if os.path.isdir(item_path):
-                        return True
-
-                    # Check if file has allowed extension
-                    _, ext = os.path.splitext(item)
-                    if ext.startswith('.'):
-                        ext = ext[1:].lower()
-                        if ext in ALLOWED_EXTENSIONS:
-                            return True
-
-                return False
-            except (OSError, PermissionError):
-                # If we can't read the directory, assume it might have children
-                return True
+            # Use the default Qt behavior for better performance
+            # Qt's QFileSystemModel already handles this efficiently
+            return super().hasChildren(parent)
 
         return False

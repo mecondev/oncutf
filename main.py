@@ -114,8 +114,13 @@ def main() -> int:
                 # Restore normal cursor
                 app.restoreOverrideCursor()
 
-            # Use configurable delay for splash screen
-            QTimer.singleShot(SPLASH_SCREEN_DURATION, show_main) # type: ignore
+            # Use configurable delay for splash screen with timer manager
+            from utils.timer_manager import get_timer_manager, TimerType
+            get_timer_manager().schedule(
+                show_main,
+                delay=SPLASH_SCREEN_DURATION,
+                timer_type=TimerType.GENERIC
+            )
 
         except Exception as e:
             logger.error(f"Error creating custom splash screen: {e}")
