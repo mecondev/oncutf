@@ -175,10 +175,12 @@ def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extende
         group_font.setPointSize(10)
         group_item.setFont(group_font)
 
-        # Add tooltip for extended groups
+        # Add tooltip for extended groups using Qt's native tooltip system
+        # Note: We use setToolTip() instead of our custom tooltip system
+        # because QStandardItem is not a QWidget and doesn't support our tooltip system
         if group_has_extended:
             extended_count = sum(1 for key, _ in items if key in extended_keys)
-            setup_tooltip(group_item, f"Contains {extended_count} keys from extended metadata", TooltipType.INFO)
+            group_item.setToolTip(f"Contains {extended_count} keys from extended metadata")
 
         dummy_value_item = QStandardItem("")  # empty second column
         dummy_value_item.setSelectable(False)
@@ -200,8 +202,8 @@ def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extende
 
                 # Add extended indicator to key name
                 key_item.setText(f"[Ext] {format_key(key)}")
-                setup_tooltip(key_item, "Available only in extended metadata mode", TooltipType.INFO)
-                setup_tooltip(value_item, "Available only in extended metadata mode", TooltipType.INFO)
+                key_item.setToolTip("Available only in extended metadata mode")
+                value_item.setToolTip("Available only in extended metadata mode")
 
                 # Set text color to indicate extended metadata
                 extended_color = QColor(100, 150, 255)  # Light blue
@@ -221,8 +223,8 @@ def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extende
                 else:
                     key_item.setText(f"[Ext][Mod] {format_key(key)}")
 
-                setup_tooltip(key_item, "Modified value" + (" (extended metadata, TooltipType.INFO)" if is_extended else ""))
-                setup_tooltip(value_item, "Modified value" + (" (extended metadata, TooltipType.INFO)" if is_extended else ""))
+                key_item.setToolTip("Modified value" + (" (extended metadata)" if is_extended else ""))
+                value_item.setToolTip("Modified value" + (" (extended metadata)" if is_extended else ""))
 
             group_item.appendRow([key_item, value_item])
 

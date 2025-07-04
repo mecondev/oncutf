@@ -905,8 +905,13 @@ class EventHandlerManager:
 
             self._last_processed_bytes = total_processed
 
-            # Use the accurate size progress from the worker
-            self.hash_dialog.set_size_info(total_processed, total_size)
+            # Use the accurate size progress from the worker to update both progress bar and size info
+            self.hash_dialog.update_progress(
+                file_count=0,  # File count will be updated by _on_hash_progress_updated
+                total_files=0,
+                processed_bytes=total_processed,
+                total_bytes=total_size
+            )
 
     def _on_file_hash_calculated(self, file_path: str) -> None:
         """Handle individual file hash calculation for real-time UI updates."""

@@ -163,9 +163,12 @@ class TooltipHelper:
     @classmethod
     def _setup_persistent_tooltip(cls, widget: QWidget, message: str, tooltip_type: str) -> None:
         """Setup a persistent tooltip that shows on hover (like Qt standard)"""
+        # Use widget id as key to support non-hashable widgets like QStandardItem
+        widget_id = id(widget)
+
         # Remove any existing persistent tooltip for this widget
-        if widget in cls._persistent_tooltips:
-            old_tooltip = cls._persistent_tooltips[widget]
+        if widget_id in cls._persistent_tooltips:
+            old_tooltip = cls._persistent_tooltips[widget_id]
             try:
                 old_tooltip.hide()
                 old_tooltip.deleteLater()
@@ -175,7 +178,7 @@ class TooltipHelper:
 
         # Create persistent tooltip
         tooltip = CustomTooltip(widget.window(), message, tooltip_type, persistent=True)
-        cls._persistent_tooltips[widget] = tooltip
+        cls._persistent_tooltips[widget_id] = tooltip
 
         # Setup hover events
         widget.setMouseTracking(True)
@@ -208,13 +211,15 @@ class TooltipHelper:
                     cancel_timer(tooltip._timer_id)
                     tooltip._timer_id = None
                 # Check if tooltip still exists before trying to hide it
-                if widget in cls._persistent_tooltips and cls._persistent_tooltips[widget] == tooltip:
+                widget_id = id(widget)
+                if widget_id in cls._persistent_tooltips and cls._persistent_tooltips[widget_id] == tooltip:
                     tooltip.hide()
             except RuntimeError as e:
                 # Qt object has been deleted - remove from tracking
                 logger.debug(f"[TooltipHelper] Tooltip object deleted, cleaning up: {e}")
-                if widget in cls._persistent_tooltips:
-                    del cls._persistent_tooltips[widget]
+                widget_id = id(widget)
+                if widget_id in cls._persistent_tooltips:
+                    del cls._persistent_tooltips[widget_id]
 
         # Replace event handlers
         widget.enterEvent = enter_event  # type: ignore
@@ -225,7 +230,8 @@ class TooltipHelper:
         """Show persistent tooltip on hover"""
         try:
             # Check if widget and tooltip still exist
-            if widget not in cls._persistent_tooltips or cls._persistent_tooltips[widget] != tooltip:
+            widget_id = id(widget)
+            if widget_id not in cls._persistent_tooltips or cls._persistent_tooltips[widget_id] != tooltip:
                 return
 
             # Calculate position relative to cursor for better UX
@@ -251,8 +257,9 @@ class TooltipHelper:
         except RuntimeError as e:
             # Qt object has been deleted - remove from tracking
             logger.debug(f"[TooltipHelper] Tooltip object deleted during show: {e}")
-            if widget in cls._persistent_tooltips:
-                del cls._persistent_tooltips[widget]
+            widget_id = id(widget)
+            if widget_id in cls._persistent_tooltips:
+                del cls._persistent_tooltips[widget_id]
         except Exception as e:
             logger.error(f"[TooltipHelper] Failed to show persistent tooltip: {e}")
 
@@ -291,8 +298,9 @@ class TooltipHelper:
         cls._active_tooltips = [(w, t) for w, t in cls._active_tooltips if w != widget]
 
         # Clear persistent tooltips
-        if widget in cls._persistent_tooltips:
-            tooltip = cls._persistent_tooltips[widget]
+        widget_id = id(widget)
+        if widget_id in cls._persistent_tooltips:
+            tooltip = cls._persistent_tooltips[widget_id]
             try:
                 # Cancel any pending timer
                 if hasattr(tooltip, '_timer_id') and tooltip._timer_id:
@@ -303,7 +311,7 @@ class TooltipHelper:
             except RuntimeError:
                 # Qt object already deleted
                 pass
-            del cls._persistent_tooltips[widget]
+            del cls._persistent_tooltips[widget_id]
 
     @classmethod
     def clear_all_tooltips(cls) -> None:
