@@ -537,18 +537,24 @@ class MainWindow(QMainWindow):
         # 3. Clean up any active drag operations
         self.drag_cleanup_manager.emergency_drag_cleanup()
 
-        # 3. Clean up any open dialogs
+        # 4. Clean up any open dialogs
         if hasattr(self, 'dialog_manager'):
             self.dialog_manager.cleanup()
 
-        # 4. Force cleanup any background workers/threads
+        # 5. Force cleanup any background workers/threads
         self._force_cleanup_background_workers()
 
-        # 5. Clean up application context
+        # 6. Clean up application context
         if hasattr(self, 'context'):
-            self.context.cleanup()
+            try:
+                self.context.cleanup()
+            except Exception as e:
+                logger.warning(f"[CloseEvent] Error cleaning application context: {e}")
 
-        # 6. Stop any running timers
+        # 7. Force close any active progress dialogs first
+        self._force_close_progress_dialogs()
+
+        # 8. Stop any running timers
         # First stop TimerManager timers (which include scheduled operations)
         try:
             from utils.timer_manager import cleanup_all_timers
@@ -559,39 +565,32 @@ class MainWindow(QMainWindow):
             logger.warning(f"[CloseEvent] Error cleaning TimerManager: {e}")
 
         # Then find and stop any remaining QTimer instances
-        from PyQt5.QtCore import QTimer
-        remaining_timers = self.findChildren(QTimer)
-        for timer in remaining_timers:
-            if timer.isActive():
-                timer.stop()
-                logger.debug(f"[CloseEvent] Stopped QTimer: {timer.objectName() or 'unnamed'}")
+        try:
+            from PyQt5.QtCore import QTimer
+            remaining_timers = self.findChildren(QTimer)
+            for timer in remaining_timers:
+                if timer.isActive():
+                    timer.stop()
+                    logger.debug(f"[CloseEvent] Stopped QTimer: {timer.objectName() or 'unnamed'}")
 
-        if remaining_timers:
-            logger.info(f"[CloseEvent] Stopped {len(remaining_timers)} QTimer instances")
+            if remaining_timers:
+                logger.info(f"[CloseEvent] Stopped {len(remaining_timers)} QTimer instances")
+        except Exception as e:
+            logger.warning(f"[CloseEvent] Error stopping QTimer instances: {e}")
 
-        # 7. Force close any active progress dialogs
-        self._force_close_progress_dialogs()
+        # 9. Clean up any remaining Qt resources
+        try:
+            QApplication.processEvents()
+        except Exception as e:
+            logger.warning(f"[CloseEvent] Error processing events during cleanup: {e}")
 
-        # 8. Clean up any remaining Qt resources
-        QApplication.processEvents()
+        # 10. Call parent closeEvent
+        try:
+            super().closeEvent(event)
+        except Exception as e:
+            logger.warning(f"[CloseEvent] Error in parent closeEvent: {e}")
 
-        # 9. Call parent closeEvent
-        super().closeEvent(event)
-
-        # 10. Final cleanup - force terminate any remaining background processes
-        import os
-        logger.info("[CloseEvent] Final cleanup - forcing application termination")
-
-        # Force quit the application immediately
-        QApplication.quit()
-
-        # If we're still here after a short delay, force exit
-        from PyQt5.QtCore import QTimer
-        def force_exit():
-            logger.warning("[CloseEvent] Application did not quit gracefully, forcing exit")
-            os._exit(0)  # Force exit without cleanup
-
-        # Close database connections
+        # 11. Close database connections before final cleanup
         if hasattr(self, 'db_manager'):
             try:
                 self.db_manager.close()
@@ -608,14 +607,14 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 logger.warning(f"[CloseEvent] Error cleaning backup manager: {e}")
 
-        # Schedule force exit after 2 seconds if app doesn't quit normally
-        from utils.timer_manager import get_timer_manager, TimerType, TimerPriority
-        get_timer_manager().schedule(
-            force_exit,
-            delay=2000,
-            priority=TimerPriority.CLEANUP,
-            timer_type=TimerType.GENERIC
-        )
+        # 12. Final cleanup - force terminate any remaining background processes
+        logger.info("[CloseEvent] Final cleanup - forcing application termination")
+
+        # Force quit the application immediately
+        QApplication.quit()
+
+        # Don't schedule any more timers after QApplication.quit()
+        # The application should exit gracefully at this point
 
     def _force_cleanup_background_workers(self) -> None:
         """Force cleanup of any background workers/threads."""

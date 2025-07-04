@@ -161,7 +161,7 @@ QScrollBar:horizontal {{
 /* Progress Bars */
 QProgressBar {{
     font-size: {font_sizes['small']}pt;
-    min-height: {max(16, font_sizes['small'] + 8)}px;
+    /* min-height removed - let widgets control their own height */
 }}
 """
 

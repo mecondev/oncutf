@@ -304,24 +304,36 @@ class MetadataManager:
                 self._metadata_cancelled = True
                 logger.info("[MetadataManager] Metadata loading cancelled by user")
 
-            # Create loading dialog
+                        # Create loading dialog
             loading_dialog = ProgressDialog.create_metadata_dialog(
                 parent=self.parent_window,
                 is_extended=use_extended,
                 cancel_callback=cancel_metadata_loading
             )
-            loading_dialog.set_status("Loading metadata..." if not use_extended else "Loading extended metadata...")
+            loading_dialog.set_status("Preparing metadata loading..." if not use_extended else "Preparing extended metadata loading...")
+
+            # Start progress tracking with total size for time estimation
+            loading_dialog.start_progress_tracking(total_size)
 
             # Show dialog with smooth appearance to prevent shadow flicker
             from utils.dialog_utils import show_dialog_smooth
             show_dialog_smooth(loading_dialog)
 
+            # Force immediate UI update to ensure dialog is visible
+            from PyQt5.QtWidgets import QApplication
+            QApplication.processEvents()
+
+            # Additional delay to ensure dialog is fully rendered and visible to user
+            import time
+            time.sleep(0.1)  # 100ms additional delay for better visibility
+            QApplication.processEvents()
+
+            # Update status to show we're about to start
+            loading_dialog.set_status("Starting metadata loading..." if not use_extended else "Starting extended metadata loading...")
+            QApplication.processEvents()
+
             # Initialize incremental size tracking for better performance
             processed_size = 0
-
-            # Delay metadata loading start to allow dialog to fully appear
-            # This prevents the shadow-only appearance issue for fast operations
-            from utils.timer_manager import schedule_ui_update
 
             def start_metadata_loading():
                 """Start the actual metadata loading after dialog is shown."""
@@ -414,8 +426,10 @@ class MetadataManager:
                     display_file = needs_loading[0] if len(needs_loading) == 1 else needs_loading[-1]
                     metadata_tree_view.display_file_metadata(display_file)
 
-            # Schedule the metadata loading to start after dialog is fully shown
-            schedule_ui_update(start_metadata_loading, delay=10)  # 10ms delay for dialog to appear
+            # Start metadata loading after dialog is fully visible
+            # Use adequate delay to ensure dialog is properly shown and user can see it
+            from utils.timer_manager import schedule_ui_update
+            schedule_ui_update(start_metadata_loading, 300)  # 300ms delay for dialog to appear
 
     def save_metadata_for_selected(self) -> None:
         """

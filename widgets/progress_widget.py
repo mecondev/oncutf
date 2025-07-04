@@ -150,7 +150,11 @@ class ProgressWidget(QWidget):
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
         self.progress_bar.setTextVisible(False)
-        self.progress_bar.setFixedHeight(8)
+        # DPI-aware progress bar height (8px at 96 DPI)
+        from PyQt5.QtWidgets import QApplication
+        dpi_scale = QApplication.instance().devicePixelRatio() if QApplication.instance() else 1.0
+        progress_height = max(6, int(8 * dpi_scale))  # Minimum 6px, scaled for DPI
+        self.progress_bar.setFixedHeight(progress_height)
         self.main_layout.addWidget(self.progress_bar)
 
         # Third row: percentage and filename (horizontal layout)
