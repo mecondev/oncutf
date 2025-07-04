@@ -150,11 +150,11 @@ class InterFonts:
 
     def get_font(self, use_case: str, size: int = 10) -> QFont:
         """
-        Get a QFont for specific use case
+        Get a QFont for specific use case with DPI scaling
 
         Args:
             use_case: One of 'base', 'buttons', 'headers', 'titles', 'emphasis', 'medium'
-            size: Font size in points
+            size: Font size in points (will be scaled for DPI)
 
         Returns:
             QFont object configured for the use case
@@ -171,9 +171,17 @@ class InterFonts:
 
         font_key = font_mapping.get(use_case, 'regular')
 
+        # Apply DPI scaling to font size
+        try:
+            from utils.dpi_helper import scale_font_size
+            scaled_size = scale_font_size(size)
+        except ImportError:
+            # Fallback if DPI helper not available
+            scaled_size = size
+
         if font_key in self.font_families:
             family = self.font_families[font_key]
-            font = QFont(family, size)
+            font = QFont(family, scaled_size)
 
             # Set italic style if needed
             if font_key == 'italic':
@@ -182,7 +190,7 @@ class InterFonts:
             return font
         else:
             logger.warning(f"Font key '{font_key}' not loaded, using system default")
-            return QFont('Arial', size)
+            return QFont('Arial', scaled_size)
 
     def get_css_weight(self, use_case: str) -> int:
         """Get CSS font-weight value for use case"""

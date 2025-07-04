@@ -9,9 +9,9 @@ and user interactions. Centralizes event handling logic to keep the main window 
 """
 
 import os
-from typing import List, Optional
+from typing import List, Optional, cast
 
-from core.qt_imports import QModelIndex, Qt, QApplication, QFileDialog, QMenu
+from core.qt_imports import QModelIndex, Qt, QApplication, QFileDialog, QMenu, QAction
 from core.file_item import FileItem
 from config import STATUS_COLORS
 from utils.logger_factory import get_cached_logger
@@ -82,8 +82,8 @@ class EventHandlerManager:
 
         # Get modifier state for merge/recursive options
         modifiers = QApplication.keyboardModifiers()
-        ctrl = bool(modifiers & Qt.ControlModifier)
-        shift = bool(modifiers & Qt.ShiftModifier)
+        ctrl = bool(modifiers & Qt.ControlModifier)  # type: ignore
+        shift = bool(modifiers & Qt.ShiftModifier)  # type: ignore
 
         merge_mode = shift
         recursive = ctrl
@@ -126,10 +126,10 @@ class EventHandlerManager:
         menu = QMenu(self.parent_window)
 
         # --- Metadata actions ---
-        action_load_sel = menu.addAction(get_menu_icon("file"), "Load metadata for selected file(s) (Ctrl+M)")
-        action_load_all = menu.addAction(get_menu_icon("folder"), "Load metadata for all files")
-        action_load_ext_sel = menu.addAction(get_menu_icon("file-plus"), "Load extended metadata for selected file(s) (Ctrl+E)")
-        action_load_ext_all = menu.addAction(get_menu_icon("folder-plus"), "Load extended metadata for all files")
+        action_load_sel = cast(QAction, menu.addAction(get_menu_icon("file"), "Load metadata for selected file(s) (Ctrl+M)"))
+        action_load_all = cast(QAction, menu.addAction(get_menu_icon("folder"), "Load metadata for all files"))
+        action_load_ext_sel = cast(QAction, menu.addAction(get_menu_icon("file-plus"), "Load extended metadata for selected file(s) (Ctrl+E)"))
+        action_load_ext_all = cast(QAction, menu.addAction(get_menu_icon("folder-plus"), "Load extended metadata for all files"))
 
         # Check basic selection state first
         has_selection = len(selected_files) > 0
@@ -180,20 +180,20 @@ class EventHandlerManager:
         menu.addSeparator()
 
         # --- Selection actions ---
-        action_select_all = menu.addAction(get_menu_icon("check-square"), "Select all (Ctrl+A)")
-        action_invert = menu.addAction(get_menu_icon("refresh-cw"), "Invert selection (Ctrl+I)")
-        action_deselect_all = menu.addAction(get_menu_icon("square"), "Deselect all (Ctrl+Shift+A)")
+        action_select_all = cast(QAction, menu.addAction(get_menu_icon("check-square"), "Select all (Ctrl+A)"))
+        action_invert = cast(QAction, menu.addAction(get_menu_icon("refresh-cw"), "Invert selection (Ctrl+I)"))
+        action_deselect_all = cast(QAction, menu.addAction(get_menu_icon("square"), "Deselect all (Ctrl+Shift+A)"))
 
         menu.addSeparator()
 
         # --- Other actions ---
-        action_reload = menu.addAction(get_menu_icon("refresh-cw"), "Reload folder (Ctrl+R)")
-        action_clear_table = menu.addAction(get_menu_icon("x"), "Clear file table (Ctrl+Escape)")
+        action_reload = cast(QAction, menu.addAction(get_menu_icon("refresh-cw"), "Reload folder (Ctrl+R)"))
+        action_clear_table = cast(QAction, menu.addAction(get_menu_icon("x"), "Clear file table (Ctrl+Escape)"))
 
         menu.addSeparator()
 
         # --- Bulk rotation action ---
-        action_bulk_rotation = menu.addAction(get_menu_icon("rotate-ccw"), "Set All Files to 0° Rotation...")
+        action_bulk_rotation = cast(QAction, menu.addAction(get_menu_icon("rotate-ccw"), "Set All Files to 0° Rotation..."))
         action_bulk_rotation.setEnabled(len(selected_files) > 0)
         if len(selected_files) > 0:
             # Count how many files actually need rotation changes
@@ -216,16 +216,16 @@ class EventHandlerManager:
         menu.addSeparator()
 
         # --- Hash & Comparison actions ---
-        action_find_duplicates_sel = menu.addAction(get_menu_icon("copy"), "Find duplicates in selected files")
-        action_find_duplicates_all = menu.addAction(get_menu_icon("layers"), "Find duplicates in all files")
-        action_compare_external = menu.addAction(get_menu_icon("folder"), "Compare with external folder...")
-        action_calculate_hashes = menu.addAction(get_menu_icon("hash"), "Calculate checksums for selected")
+        action_find_duplicates_sel = cast(QAction, menu.addAction(get_menu_icon("copy"), "Find duplicates in selected files"))
+        action_find_duplicates_all = cast(QAction, menu.addAction(get_menu_icon("layers"), "Find duplicates in all files"))
+        action_compare_external = cast(QAction, menu.addAction(get_menu_icon("folder"), "Compare with external folder..."))
+        action_calculate_hashes = cast(QAction, menu.addAction(get_menu_icon("hash"), "Calculate checksums for selected"))
 
         menu.addSeparator()
 
         # --- Save actions ---
-        action_save_sel = menu.addAction(get_menu_icon("save"), "Save metadata for selected file(s) (Ctrl+S)")
-        action_save_all = menu.addAction(get_menu_icon("save"), "Save ALL modified metadata (Ctrl+Shift+S)")
+        action_save_sel = cast(QAction, menu.addAction(get_menu_icon("save"), "Save metadata for selected file(s) (Ctrl+S)"))
+        action_save_all = cast(QAction, menu.addAction(get_menu_icon("save"), "Save ALL modified metadata (Ctrl+Shift+S)"))
 
         # Check for modifications using the new methods
         has_selected_modifications = False
@@ -253,11 +253,11 @@ class EventHandlerManager:
         menu.addSeparator()
 
         # --- Metadata editing actions ---
-        action_edit_title = menu.addAction(get_menu_icon("edit"), "Edit Title...")
-        action_edit_artist = menu.addAction(get_menu_icon("user"), "Edit Artist...")
-        action_edit_copyright = menu.addAction(get_menu_icon("shield"), "Edit Copyright...")
-        action_edit_description = menu.addAction(get_menu_icon("file-text"), "Edit Description...")
-        action_edit_keywords = menu.addAction(get_menu_icon("tag"), "Edit Keywords...")
+        action_edit_title = cast(QAction, menu.addAction(get_menu_icon("edit"), "Edit Title..."))
+        action_edit_artist = cast(QAction, menu.addAction(get_menu_icon("user"), "Edit Artist..."))
+        action_edit_copyright = cast(QAction, menu.addAction(get_menu_icon("shield"), "Edit Copyright..."))
+        action_edit_description = cast(QAction, menu.addAction(get_menu_icon("file-text"), "Edit Description..."))
+        action_edit_keywords = cast(QAction, menu.addAction(get_menu_icon("tag"), "Edit Keywords..."))
 
         # Check metadata availability for actions (used by both metadata editing and export)
         selected_has_metadata = self._check_selected_files_have_metadata(selected_files)
@@ -308,8 +308,8 @@ class EventHandlerManager:
         menu.addSeparator()
 
         # --- Export actions ---
-        action_export_sel = menu.addAction(get_menu_icon("download"), "Export metadata for selected file(s)")
-        action_export_all = menu.addAction(get_menu_icon("download"), "Export metadata for all files")
+        action_export_sel = cast(QAction, menu.addAction(get_menu_icon("download"), "Export metadata for selected file(s)"))
+        action_export_all = cast(QAction, menu.addAction(get_menu_icon("download"), "Export metadata for all files"))
 
         # Enable/disable export actions based on metadata availability
         action_export_sel.setEnabled(has_selection and selected_has_metadata)
@@ -455,7 +455,7 @@ class EventHandlerManager:
             # Handle keywords editing
             self._handle_metadata_field_edit(selected_files, "Keywords")
 
-    def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
+    def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifiers()) -> None:
         """
         Loads metadata for the file (even if already loaded), on double-click.
         Uses unified dialog-based loading for consistency.
@@ -778,7 +778,7 @@ class EventHandlerManager:
             self._start_hash_operation("duplicates", file_paths, scope)
 
     def _start_hash_operation(self, operation_type: str, file_paths: List[str],
-                            scope: str = None, external_folder: str = None) -> None:
+                            scope: Optional[str] = None, external_folder: Optional[str] = None) -> None:
         """Start a hash operation with worker thread and progress dialog."""
         from core.hash_worker import HashWorker
         from utils.progress_dialog import ProgressDialog
@@ -836,11 +836,11 @@ class EventHandlerManager:
             # Connect result signals
             if operation_type == "duplicates":
                 self.hash_worker.duplicates_found.connect(
-                    lambda duplicates: self._on_duplicates_found(duplicates, scope)
+                    lambda duplicates: self._on_duplicates_found(duplicates, scope or "unknown")
                 )
             elif operation_type == "compare":
                 self.hash_worker.comparison_result.connect(
-                    lambda results: self._on_comparison_result(results, external_folder)
+                    lambda results: self._on_comparison_result(results, external_folder or "unknown")
                 )
             elif operation_type == "checksums":
                 self.hash_worker.checksums_calculated.connect(self._on_checksums_calculated)
@@ -854,7 +854,7 @@ class EventHandlerManager:
                 self.hash_worker.setup_duplicate_scan(file_paths)
                 initial_status = f"Scanning {len(file_paths)} files for duplicates..."
             elif operation_type == "compare":
-                self.hash_worker.setup_external_comparison(file_paths, external_folder)
+                self.hash_worker.setup_external_comparison(file_paths, external_folder or "")
                 initial_status = f"Comparing {len(file_paths)} files with external folder..."
             elif operation_type == "checksums":
                 self.hash_worker.setup_checksum_calculation(file_paths)
@@ -1627,7 +1627,7 @@ class EventHandlerManager:
 
         return False
 
-    def _get_preferred_field_standard(self, file_item, field_name: str) -> str:
+    def _get_preferred_field_standard(self, file_item, field_name: str) -> Optional[str]:
         """
         Get the preferred metadata standard for a field based on file type and existing metadata.
         Uses exiftool's field hierarchy and existing field availability.

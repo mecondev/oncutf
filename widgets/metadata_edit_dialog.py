@@ -82,11 +82,19 @@ class MetadataEditDialog(QDialog):
         pass
 
     def _apply_info_label_style(self, color: str, opacity: str = "1.0"):
-        """Apply consistent font styling to info label."""
+        """Apply consistent font styling to info label with DPI awareness."""
         from utils.fonts import get_inter_family, get_inter_css_weight
         font_family = get_inter_family('base')
         font_weight = get_inter_css_weight('base')
-        self.info_label.setStyleSheet(f"color: {color}; font-family: '{font_family}', Arial, sans-serif; font-size: 8pt; font-weight: {font_weight}; opacity: {opacity};")
+
+        # Get DPI-aware font size
+        try:
+            from utils.theme_font_generator import get_ui_font_sizes
+            font_size = get_ui_font_sizes()['small']
+        except ImportError:
+            font_size = 8
+
+        self.info_label.setStyleSheet(f"color: {color}; font-family: '{font_family}', Arial, sans-serif; font-size: {font_size}pt; font-weight: {font_weight}; opacity: {opacity};")
 
     def _setup_ui(self):
         """Set up the main UI layout."""

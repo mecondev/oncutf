@@ -136,8 +136,16 @@ class ThemeEngine:
         app.setStyleSheet("")
         main_window.setStyleSheet("")
 
-        # Create complete global stylesheet
+        # Create complete global stylesheet with DPI awareness
         global_style = self._get_complete_stylesheet()
+
+        # Add DPI-aware font styling
+        try:
+            from utils.theme_font_generator import generate_dpi_aware_css
+            dpi_css = generate_dpi_aware_css()
+            global_style += "\n" + dpi_css
+        except ImportError:
+            pass
 
         # Apply the complete stylesheet globally
         app.setStyleSheet(global_style)

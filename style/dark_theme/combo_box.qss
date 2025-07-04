@@ -2,36 +2,49 @@ QComboBox {
     background-color: #2a2a2a;
     color: #f0ebd8;
     font-size: 9pt;
-    border: none;
+    border: 1px solid transparent;
     border-radius: 8px;
     padding: 2px 4px;
+    min-height: 16px;
 }
 
 QComboBox:hover {
-    background-color: #3e5c76;  /* Match tree/table hover color */;
+    background-color: #3e5c76;  /* Match tree/table hover color */
     color: #f0ebd8;
+    border: 1px solid #4a6b8a;  /* Subtle border for Windows hover feedback */
 }
 
 QComboBox:pressed {
-    background-color: #8a9bb4;  /* Brightest color - selected+hover from tree view */;
+    background-color: #8a9bb4;  /* Brightest color - selected+hover from tree view */
     color: #0d1321;
+    border: 1px solid #9bb4d1;
 }
 
 QComboBox:focus {
-    background-color: #3e5c76;  /* Dark color - hover */;
+    background-color: #3e5c76;  /* Dark color - hover */
     color: #f0ebd8;
+    border: 1px solid #4a6b8a;
     outline: none;
 }
 
 QComboBox:focus:hover {
-    background-color: #748cab;  /* Intermediate color - selection */;
+    background-color: #748cab;  /* Intermediate color - selection */
     color: #0d1321;
+    border: 1px solid #8a9bb4;
 }
 
-/* Fix για το right-click problem - εξασφαλίζει ότι θα γυρίσει στο normal state */
-QComboBox:!focus:!hover {
+/* Enhanced state management for Windows compatibility */
+QComboBox:!focus:!hover:!pressed {
     background-color: #2a2a2a;
     color: #f0ebd8;
+    border: 1px solid transparent;
+}
+
+/* Windows-specific hover enhancement */
+QComboBox:hover:!pressed {
+    background-color: #3e5c76;
+    border: 1px solid #4a6b8a;
+    transition: background-color 0.1s ease-in-out;
 }
 
 /* Dropdown styling - matches the dropdown list appearance */

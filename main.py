@@ -52,10 +52,25 @@ def main() -> int:
     MainWindow and shows it, and enters the application's main loop.
     """
     try:
+        # Enable High DPI support before creating QApplication
+        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)  # type: ignore[attr-defined]
+        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)  # type: ignore[attr-defined]
+
         # Create application
         app = QApplication(sys.argv)
-        # Qt.AA_UseHighDpiPixmaps is defined in PyQt5, but linter may not resolve C++-level attributes
-        app.setAttribute(Qt.AA_UseHighDpiPixmaps) # type: ignore[attr-defined]
+
+        # Initialize DPI helper early
+        from utils.dpi_helper import get_dpi_helper, log_dpi_info
+        dpi_helper = get_dpi_helper()
+        log_dpi_info()
+
+        # Log font sizes for debugging
+        try:
+            from utils.theme_font_generator import get_ui_font_sizes
+            font_sizes = get_ui_font_sizes()
+            logger.info(f"[DPI] Applied font sizes: {font_sizes}")
+        except ImportError:
+            logger.warning("[DPI] Could not get font sizes - DPI helper not available")
 
         # Set native style for better system integration
         system = platform.system()
