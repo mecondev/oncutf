@@ -126,6 +126,16 @@ class WindowConfigManager:
                     column_widths.append(self.main_window.file_table_view.columnWidth(i))
                 window_config.set('column_widths', column_widths)
 
+            # Save column states using ColumnManager
+            if hasattr(self.main_window, 'column_manager'):
+                column_states = {
+                    'file_table': self.main_window.column_manager.save_column_state('file_table'),
+                    'metadata_tree': self.main_window.column_manager.save_column_state('metadata_tree'),
+                    'preview_old': self.main_window.column_manager.save_column_state('preview_old'),
+                    'preview_new': self.main_window.column_manager.save_column_state('preview_new')
+                }
+                window_config.set('column_states', column_states)
+
             logger.info("[Config] Window configuration saved successfully", extra={"dev_only": True})
 
         except Exception as e:
@@ -217,6 +227,14 @@ class WindowConfigManager:
             self.main_window._sort_column_from_config = window_config.get('sort_column', 1)
             self.main_window._sort_order_from_config = window_config.get('sort_order', 0)
 
+            # Load column states using ColumnManager
+            if hasattr(self.main_window, 'column_manager'):
+                column_states = window_config.get('column_states', {})
+                if column_states:
+                    for table_type, state_data in column_states.items():
+                        if state_data:
+                            self.main_window.column_manager.load_column_state(table_type, state_data)
+
             logger.info("[Config] Configuration applied successfully", extra={"dev_only": True})
 
         except Exception as e:
@@ -248,11 +266,13 @@ class WindowConfigManager:
                 from utils.timer_manager import get_timer_manager, TimerType
 
                 def refresh():
-                    # Reset manual column preference for auto-sizing
+                    # Reset manual column preference for auto-sizing - use original FileTableView logic
                     if hasattr(self.main_window.file_table_view, '_manual_column_resize'):
                         self.main_window.file_table_view._manual_column_resize = False
+                    if hasattr(self.main_window.file_table_view, '_has_manual_preference'):
+                        self.main_window.file_table_view._has_manual_preference = False
 
-                    # Trigger column auto-sizing
+                    # Trigger column auto-sizing using original logic
                     if hasattr(self.main_window, '_ensure_initial_column_sizing'):
                         self.main_window._ensure_initial_column_sizing()
 

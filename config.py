@@ -218,11 +218,11 @@ TREE_EXPAND_MODE = "double"  # Options: "single" or "double". Default: double cl
 # File Table Column Widths
 # ----------------------------
 FILE_TABLE_COLUMN_WIDTHS = {
-    "STATUS_COLUMN": 40,     # Column 0: Status/info icon column (increased for metadata + hash icons)
-    "FILENAME_COLUMN": 400,  # Column 1: Filename column (increased to 400px for testing)
-    "FILESIZE_COLUMN": 80,   # Column 2: File size column
-    "EXTENSION_COLUMN": 60,  # Column 3: File extension column
-    "DATE_COLUMN": 130       # Column 4: Modified date column
+    "STATUS_COLUMN": 23,     # Column 0: Status/info icon column (just for icons, minimal width)
+    "FILENAME_COLUMN": 250,  # Column 1: Filename column (reasonable default, will expand dynamically)
+    "FILESIZE_COLUMN": 70,   # Column 2: File size column (compact for size display)
+    "EXTENSION_COLUMN": 45,  # Column 3: File extension column (minimal for extensions like .jpg, .pdf)
+    "DATE_COLUMN": 110       # Column 4: Modified date column (compact date format)
 }
 
 # ----------------------------

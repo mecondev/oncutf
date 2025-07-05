@@ -206,10 +206,31 @@ class SplitterManager:
         Trigger column adjustment in UI elements after splitter changes.
         This is useful when splitter movements affect column layouts.
         """
-        # Schedule column adjustment for file table view
+        # For file table, use the original sophisticated logic
         if hasattr(self.parent_window, 'file_table_view'):
-            # Use existing splitter logic for column sizing
+            # Use existing splitter logic for column sizing (original implementation)
             if hasattr(self.parent_window, 'horizontal_splitter'):
                 sizes = self.parent_window.horizontal_splitter.sizes()
                 self.parent_window.file_table_view.on_horizontal_splitter_moved(sizes[1], 1)
-                logger.debug("[SplitterManager] Triggered column adjustment after splitter change")
+                logger.debug("[SplitterManager] Triggered original file table column adjustment")
+
+        # Use ColumnManager for other table views that don't have sophisticated logic
+        if hasattr(self.parent_window, 'column_manager'):
+            # Adjust metadata tree columns
+            if hasattr(self.parent_window, 'metadata_tree_view'):
+                self.parent_window.column_manager.adjust_columns_for_splitter_change(
+                    self.parent_window.metadata_tree_view, 'metadata_tree'
+                )
+
+            # Adjust preview table columns
+            if hasattr(self.parent_window, 'preview_tables_view'):
+                if hasattr(self.parent_window.preview_tables_view, 'old_names_table'):
+                    self.parent_window.column_manager.adjust_columns_for_splitter_change(
+                        self.parent_window.preview_tables_view.old_names_table, 'preview_old'
+                    )
+                if hasattr(self.parent_window.preview_tables_view, 'new_names_table'):
+                    self.parent_window.column_manager.adjust_columns_for_splitter_change(
+                        self.parent_window.preview_tables_view.new_names_table, 'preview_new'
+                    )
+
+            logger.debug("[SplitterManager] Triggered ColumnManager adjustment for other tables")

@@ -153,6 +153,10 @@ class MainWindow(QMainWindow):
         self.splitter_manager = SplitterManager(self)
         self.initialization_manager = InitializationManager(self)
 
+        # Initialize ColumnManager for centralized column management
+        from core.column_manager import ColumnManager
+        self.column_manager = ColumnManager(self)
+
         # --- Initialize UIManager and setup all UI ---
         self.ui_manager = UIManager(parent_window=self)
         self.ui_manager.setup_all_ui()
@@ -889,8 +893,48 @@ class MainWindow(QMainWindow):
 
     def _ensure_initial_column_sizing(self) -> None:
         """Ensure column widths are properly sized on startup, especially when no config exists."""
-        # Delegate to WindowConfigManager
-        self.window_config_manager.ensure_initial_column_sizing()
+        # Use the original FileTableView column configuration logic instead of ColumnManager
+        if hasattr(self, 'file_table_view') and self.file_table_view.model():
+            # Trigger the original, sophisticated column configuration
+            if hasattr(self.file_table_view, '_configure_columns'):
+                self.file_table_view._configure_columns()
+
+            # Then trigger column adjustment using the existing logic
+            if hasattr(self.file_table_view, '_trigger_column_adjustment'):
+                self.file_table_view._trigger_column_adjustment()
+
+            logger.debug("[MainWindow] Used original FileTableView column configuration")
+
+        # Configure other table views with ColumnManager (they don't have the sophisticated logic)
+        if hasattr(self, 'metadata_tree_view') and self.metadata_tree_view:
+            self.column_manager.configure_table_columns(self.metadata_tree_view, 'metadata_tree')
+
+        if hasattr(self, 'preview_tables_view') and self.preview_tables_view:
+            # Configure preview tables
+            if hasattr(self.preview_tables_view, 'old_names_table'):
+                self.column_manager.configure_table_columns(self.preview_tables_view.old_names_table, 'preview_old')
+            if hasattr(self.preview_tables_view, 'new_names_table'):
+                self.column_manager.configure_table_columns(self.preview_tables_view.new_names_table, 'preview_new')
+
+    def configure_table_columns(self, table_view, table_type: str) -> None:
+        """Configure columns for a specific table view using ColumnManager."""
+        self.column_manager.configure_table_columns(table_view, table_type)
+
+    def adjust_columns_for_splitter_change(self, table_view, table_type: str) -> None:
+        """Adjust columns when splitter position changes using ColumnManager."""
+        self.column_manager.adjust_columns_for_splitter_change(table_view, table_type)
+
+    def reset_column_preferences(self, table_type: str, column_index: int = None) -> None:
+        """Reset user preferences for columns to allow auto-sizing."""
+        self.column_manager.reset_user_preferences(table_type, column_index)
+
+    def save_column_state(self, table_type: str) -> dict:
+        """Save current column state for persistence."""
+        return self.column_manager.save_column_state(table_type)
+
+    def load_column_state(self, table_type: str, state_data: dict) -> None:
+        """Load column state from persistence."""
+        self.column_manager.load_column_state(table_type, state_data)
 
     def restore_last_folder_if_available(self) -> None:
         """Restore the last folder if available and user wants it."""
