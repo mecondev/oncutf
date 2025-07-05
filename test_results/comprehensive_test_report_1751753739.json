@@ -1,0 +1,85 @@
+{
+  "timestamp": 1751753739.4471111,
+  "total_duration": 1.5208933353424072,
+  "overall_success": false,
+  "successful_tests": 0,
+  "total_tests": 5,
+  "test_results": {
+    "system_validation": {
+      "success": false,
+      "checks": {
+        "core.memory_manager.MemoryManager": {
+          "success": false,
+          "error": "No module named 'psutil'"
+        },
+        "utils.smart_icon_cache.SmartIconCache": {
+          "success": true,
+          "message": "Import and instantiation successful"
+        },
+        "core.optimized_database_manager.OptimizedDatabaseManager": {
+          "success": true,
+          "message": "Import and instantiation successful"
+        },
+        "core.async_operations_manager.AsyncOperationsManager": {
+          "success": false,
+          "error": "No module named 'aiofiles'"
+        },
+        "core.thread_pool_manager.ThreadPoolManager": {
+          "success": false,
+          "error": "No module named 'psutil'"
+        },
+        "dependency_psutil": {
+          "success": false,
+          "error": "No module named 'psutil'"
+        },
+        "dependency_aiofiles": {
+          "success": false,
+          "error": "No module named 'aiofiles'"
+        },
+        "dependency_asyncio": {
+          "success": true,
+          "message": "Dependency available"
+        }
+      },
+      "duration": 0.15822219848632812
+    },
+    "unit_tests": {
+      "success": false,
+      "returncode": 2,
+      "stdout": "============================= test session starts ==============================\nplatform linux -- Python 3.13.0, pytest-8.3.5, pluggy-1.6.0\nPyQt5 5.15.11 -- Qt runtime 5.15.15 -- Qt compiled 5.15.14\nrootdir: /mnt/data_1/edu/Python/oncutf\nconfigfile: pyproject.toml\nplugins: qt-4.4.0, cov-5.0.0, mock-3.14.1\ncollected 201 items / 2 errors\n\n==================================== ERRORS ====================================\n_______________ ERROR collecting tests/test_memory_profiling.py ________________\nImportError while importing test module '/mnt/data_1/edu/Python/oncutf/tests/test_memory_profiling.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/home/meconet/.pyenv/versions/3.13.0/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\ntests/test_memory_profiling.py:21: in <module>\n    import psutil\nE   ModuleNotFoundError: No module named 'psutil'\n____________ ERROR collecting tests/test_performance_benchmarks.py _____________\nImportError while importing test module '/mnt/data_1/edu/Python/oncutf/tests/test_performance_benchmarks.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/home/meconet/.pyenv/versions/3.13.0/lib/python3.13/importlib/__init__.py:88: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\ntests/test_performance_benchmarks.py:22: in <module>\n    import psutil\nE   ModuleNotFoundError: No module named 'psutil'\n- generated xml file: /mnt/data_1/edu/Python/oncutf/test_results/unit_tests.xml -\n=========================== short test summary info ============================\nERROR tests/test_memory_profiling.py\nERROR tests/test_performance_benchmarks.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.59s ===============================\n",
+      "stderr": "",
+      "duration": 1.2919645309448242
+    },
+    "performance_benchmarks": {
+      "success": false,
+      "error": "No module named 'psutil'",
+      "duration": 1.293278455734253
+    },
+    "memory_profiling": {
+      "success": false,
+      "error": "No module named 'psutil'",
+      "duration": 1.2940800189971924
+    },
+    "integration_tests": {
+      "success": false,
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "Traceback (most recent call last):\n  File \"/mnt/data_1/edu/Python/oncutf/examples/optimization_integration_example.py\", line 24, in <module>\n    from core.qt_imports import QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel, QPushButton\nModuleNotFoundError: No module named 'core'\n",
+      "duration": 1.5206997394561768
+    }
+  },
+  "summary": {
+    "unit_tests": false,
+    "performance_benchmarks": false,
+    "memory_profiling": false,
+    "integration_tests": false,
+    "system_validation": false
+  },
+  "recommendations": [
+    "System validation failed - Check dependencies and imports",
+    "Unit tests failed - Check existing functionality for regressions",
+    "Performance benchmarks failed - Review optimization implementations",
+    "Memory profiling failed - Check for memory leaks or excessive usage",
+    "Integration tests failed - Verify system components work together"
+  ]
+}

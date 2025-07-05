@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="2" failures="0" skipped="0" tests="2" time="0.593" timestamp="2025-07-06T01:15:38.511681+03:00" hostname="meconet-PC"><testcase classname="" name="tests.test_memory_profiling" time="0.000"><error message="collection failure">ImportError while importing test module '/mnt/data_1/edu/Python/oncutf/tests/test_memory_profiling.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/home/meconet/.pyenv/versions/3.13.0/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/test_memory_profiling.py:21: in &lt;module&gt;
+    import psutil
+E   ModuleNotFoundError: No module named 'psutil'</error></testcase><testcase classname="" name="tests.test_performance_benchmarks" time="0.000"><error message="collection failure">ImportError while importing test module '/mnt/data_1/edu/Python/oncutf/tests/test_performance_benchmarks.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/home/meconet/.pyenv/versions/3.13.0/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+tests/test_performance_benchmarks.py:22: in &lt;module&gt;
+    import psutil
+E   ModuleNotFoundError: No module named 'psutil'</error></testcase></testsuite></testsuites>
