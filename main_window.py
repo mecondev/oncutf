@@ -187,19 +187,279 @@ class MainWindow(QMainWindow):
         self.preview_update_timer.setInterval(100)  # milliseconds
         self.preview_update_timer.timeout.connect(self.generate_preview_names)
 
+        # --- Initialize Application Service Layer ---
+        from core.application_service import initialize_application_service
+        self.app_service = initialize_application_service(self)
+        logger.info("[MainWindow] Application Service Layer initialized")
+
     # --- Method definitions ---
+
+    # =====================================
+    # Application Service Delegates
+    # (These methods now use the Application Service Layer)
+    # =====================================
+
+    def select_all_rows(self) -> None:
+        """Select all rows via Application Service."""
+        self.app_service.select_all_rows()
+
+    def clear_all_selection(self) -> None:
+        """Clear all selection via Application Service."""
+        self.app_service.clear_all_selection()
+
+    def invert_selection(self) -> None:
+        """Invert selection via Application Service."""
+        self.app_service.invert_selection()
+
+    def shortcut_load_metadata(self) -> None:
+        """Load fast metadata via Application Service."""
+        self.app_service.load_metadata_fast()
+
+    def shortcut_load_extended_metadata(self) -> None:
+        """Load extended metadata via Application Service."""
+        self.app_service.load_metadata_extended()
+
+    def shortcut_save_selected_metadata(self) -> None:
+        """Save selected metadata via Application Service."""
+        self.app_service.save_selected_metadata()
+
+    def shortcut_save_all_metadata(self) -> None:
+        """Save all metadata via Application Service."""
+        self.app_service.save_all_metadata()
+
+    def rename_files(self) -> None:
+        """Execute batch rename via Application Service."""
+        self.app_service.rename_files()
+
+    def clear_file_table_shortcut(self) -> None:
+        """Clear file table via Application Service."""
+        self.app_service.clear_file_table_shortcut()
+
+    def force_drag_cleanup(self) -> None:
+        """Force drag cleanup via Application Service."""
+        self.app_service.force_drag_cleanup()
+
+    def request_preview_update(self) -> None:
+        """Request preview update via Application Service."""
+        self.app_service.request_preview_update()
+
+    def generate_preview_names(self) -> None:
+        """Generate preview names via Application Service."""
+        self.app_service.generate_preview_names()
+
+    def center_window(self) -> None:
+        """Center window via Application Service."""
+        self.app_service.center_window()
+
+    def force_reload(self) -> None:
+        """Force reload via Application Service."""
+        self.app_service.force_reload()
+
+    def handle_browse(self) -> None:
+        """Handle browse via Application Service."""
+        self.app_service.handle_browse()
+
+    def handle_folder_import(self) -> None:
+        """Handle folder import via Application Service."""
+        self.app_service.handle_folder_import()
+
+    def reload_current_folder(self) -> None:
+        """Reload current folder via Application Service."""
+        self.app_service.reload_current_folder()
+
+    # =====================================
+    # File Operations via Application Service
+    # =====================================
+
+    def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False, force: bool = False):
+        """Load files from folder via Application Service."""
+        self.app_service.load_files_from_folder(folder_path, skip_metadata, force)
+
+    def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> None:
+        """Load files from paths via Application Service."""
+        self.app_service.load_files_from_paths(file_paths, clear=clear)
+
+    def load_files_from_dropped_items(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
+        """Load files from dropped items via Application Service."""
+        self.app_service.load_files_from_dropped_items(paths, modifiers)
+
+    def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
+        """Prepare folder load via Application Service."""
+        return self.app_service.prepare_folder_load(folder_path, clear=clear)
+
+    def load_single_item_from_drop(self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
+        """Load single item from drop via Application Service."""
+        self.app_service.load_single_item_from_drop(path, modifiers)
+
+    def _handle_folder_drop(self, folder_path: str, merge_mode: bool, recursive: bool) -> None:
+        """Handle folder drop via Application Service."""
+        self.app_service.handle_folder_drop(folder_path, merge_mode, recursive)
+
+    def _handle_file_drop(self, file_path: str, merge_mode: bool) -> None:
+        """Handle file drop via Application Service."""
+        self.app_service.handle_file_drop(file_path, merge_mode)
+
+    def load_metadata_for_items(
+        self,
+        items: list[FileItem],
+        use_extended: bool = False,
+        source: str = "unknown"
+    ) -> None:
+        """Load metadata for items via Application Service."""
+        self.app_service.load_metadata_for_items(items, use_extended, source)
+
+    # =====================================
+    # Table Operations via Application Service
+    # =====================================
+
+    def sort_by_column(self, column: int, order: Qt.SortOrder = None, force_order: Qt.SortOrder = None) -> None:
+        """Sort by column via Application Service."""
+        self.app_service.sort_by_column(column, order, force_order)
+
+    def prepare_file_table(self, file_items: list[FileItem]) -> None:
+        """Prepare file table via Application Service."""
+        self.app_service.prepare_file_table(file_items)
+
+    def restore_fileitem_metadata_from_cache(self) -> None:
+        """Restore metadata from cache via Application Service."""
+        self.app_service.restore_fileitem_metadata_from_cache()
+
+    def clear_file_table(self, message: str = "No folder selected") -> None:
+        """Clear file table via Application Service."""
+        self.app_service.clear_file_table(message)
+
+    def get_common_metadata_fields(self) -> list[str]:
+        """Get common metadata fields via Application Service."""
+        return self.app_service.get_common_metadata_fields()
+
+    def set_fields_from_list(self, field_names: list[str]) -> None:
+        """Set fields from list via Application Service."""
+        self.app_service.set_fields_from_list(field_names)
+
+    def after_check_change(self) -> None:
+        """Handle check change via Application Service."""
+        self.app_service.after_check_change()
+
+    def get_selected_files(self) -> list[FileItem]:
+        """Get selected files via Application Service."""
+        return self.app_service.get_selected_files()
+
+    # =====================================
+    # Event Handling via Application Service
+    # =====================================
+
+    def handle_table_context_menu(self, position) -> None:
+        """Handle table context menu via Application Service."""
+        self.app_service.handle_table_context_menu(position)
+
+    def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
+        """Handle file double click via Application Service."""
+        self.app_service.handle_file_double_click(index, modifiers)
+
+    def on_table_row_clicked(self, index: QModelIndex) -> None:
+        """Handle table row click via Application Service."""
+        self.app_service.on_table_row_clicked(index)
+
+    def handle_header_toggle(self, _) -> None:
+        """Handle header toggle via Application Service."""
+        self.app_service.handle_header_toggle(_)
+
+    def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
+        """Handle horizontal splitter movement via Application Service."""
+        self.app_service.on_horizontal_splitter_moved(pos, index)
+
+    def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
+        """Handle vertical splitter movement via Application Service."""
+        self.app_service.on_vertical_splitter_moved(pos, index)
+
+    # =====================================
+    # Preview Operations via Application Service
+    # =====================================
+
+    def get_identity_name_pairs(self) -> list[tuple[str, str]]:
+        """Get identity name pairs via Application Service."""
+        return self.app_service.get_identity_name_pairs()
+
+    def update_preview_tables_from_pairs(self, name_pairs: list[tuple[str, str]]) -> None:
+        """Update preview tables from pairs via Application Service."""
+        self.app_service.update_preview_tables_from_pairs(name_pairs)
+
+    def compute_max_filename_width(self, file_list: list[FileItem]) -> int:
+        """Compute max filename width via Application Service."""
+        return self.app_service.compute_max_filename_width(file_list)
+
+    def update_preview_from_selection(self, selected_rows: list[int]) -> None:
+        """Update preview from selection via Application Service."""
+        self.app_service.update_preview_from_selection(selected_rows)
+
+    # =====================================
+    # Utility Operations via Application Service
+    # =====================================
+
+    def get_selected_rows_files(self) -> list:
+        """Get selected rows as files via Application Service."""
+        return self.app_service.get_selected_rows_files()
+
+    def find_fileitem_by_path(self, path: str) -> Optional[FileItem]:
+        """Find FileItem by path via Application Service."""
+        return self.app_service.find_fileitem_by_path(path)
+
+    def get_modifier_flags(self) -> tuple[bool, bool]:
+        """Get modifier flags via Application Service."""
+        return self.app_service.get_modifier_flags()
+
+    def determine_metadata_mode(self) -> tuple[bool, bool]:
+        """Determine metadata mode via Application Service."""
+        return self.app_service.determine_metadata_mode()
+
+    def should_use_extended_metadata(self) -> bool:
+        """Determine if extended metadata should be used via Application Service."""
+        return self.app_service.should_use_extended_metadata()
+
+    def update_files_label(self) -> None:
+        """Update files label via Application Service."""
+        self.app_service.update_files_label()
+
+    # =====================================
+    # Validation & Dialog Operations via Application Service
+    # =====================================
+
+    def confirm_large_folder(self, file_list: list[str], folder_path: str) -> bool:
+        """Confirm large folder via Application Service."""
+        return self.app_service.confirm_large_folder(file_list, folder_path)
+
+    def check_large_files(self, files: list[FileItem]) -> list[FileItem]:
+        """Check large files via Application Service."""
+        return self.app_service.check_large_files(files)
+
+    def confirm_large_files(self, files: list[FileItem]) -> bool:
+        """Confirm large files via Application Service."""
+        return self.app_service.confirm_large_files(files)
+
+    def prompt_file_conflict(self, target_path: str) -> str:
+        """Prompt file conflict via Application Service."""
+        return self.app_service.prompt_file_conflict(target_path)
+
+    def validate_operation_for_user(self, files: list[str], operation_type: str) -> dict:
+        """Validate operation for user via Application Service."""
+        return self.app_service.validate_operation_for_user(files, operation_type)
+
+    def identify_moved_files(self, file_paths: list[str]) -> dict:
+        """Identify moved files via Application Service."""
+        return self.app_service.identify_moved_files(file_paths)
+
+    def set_status(self, text: str, color: str = "", auto_reset: bool = False, reset_delay: int = 3000) -> None:
+        """Set status text and color via Application Service."""
+        self.app_service.set_status(text, color, auto_reset, reset_delay)
+
+    # =====================================
+    # Direct Manager Delegates
+    # (These methods still delegate directly to managers)
+    # =====================================
 
     def _update_status_from_preview(self, status_html: str) -> None:
         """Delegates to InitializationManager for status updates from preview."""
         self.initialization_manager.update_status_from_preview(status_html)
-
-    def clear_file_table_shortcut(self) -> None:
-        """Delegates to ShortcutManager for clear file table shortcut."""
-        self.shortcut_manager.clear_file_table_shortcut()
-
-    def force_drag_cleanup(self) -> None:
-        """Delegates to DragCleanupManager for force drag cleanup."""
-        self.drag_cleanup_manager.force_drag_cleanup()
 
     def _cleanup_widget_drag_states(self) -> None:
         """Delegates to DragCleanupManager for widget drag states cleanup."""
@@ -213,41 +473,9 @@ class MainWindow(QMainWindow):
         """Delegates to UtilityManager for event filtering."""
         return self.utility_manager.event_filter(obj, event)
 
-    def request_preview_update(self) -> None:
-        """Delegates to UtilityManager for preview update scheduling."""
-        self.utility_manager.request_preview_update()
-
-    def force_reload(self) -> None:
-        """Delegates to UtilityManager for force reload functionality."""
-        self.utility_manager.force_reload()
-
     def _find_consecutive_ranges(self, indices: list[int]) -> list[tuple[int, int]]:
         """Delegates to UtilityManager for consecutive ranges calculation."""
         return self.utility_manager.find_consecutive_ranges(indices)
-
-    def select_all_rows(self) -> None:
-        """Delegates to SelectionManager."""
-        self.selection_manager.select_all_rows()
-
-    def clear_all_selection(self) -> None:
-        """Delegates to SelectionManager."""
-        self.selection_manager.clear_all_selection()
-
-    def invert_selection(self) -> None:
-        """Delegates to SelectionManager."""
-        self.selection_manager.invert_selection()
-
-    def sort_by_column(self, column: int, order: Qt.SortOrder = None, force_order: Qt.SortOrder = None) -> None:
-        """Delegates to TableManager for column sorting."""
-        self.table_manager.sort_by_column(column, order, force_order)
-
-    def restore_fileitem_metadata_from_cache(self) -> None:
-        """Delegates to TableManager for restoring metadata from cache."""
-        self.table_manager.restore_fileitem_metadata_from_cache()
-
-    def rename_files(self) -> None:
-        """Delegates to RenameManager for batch rename execution."""
-        self.rename_manager.rename_files()
 
     def should_skip_folder_reload(self, folder_path: str, force: bool = False) -> bool:
         """Delegates to FileOperationsManager for folder reload check."""
@@ -259,846 +487,9 @@ class MainWindow(QMainWindow):
         """Delegates to FileLoadManager for getting file items from folder."""
         return self.file_load_manager.get_file_items_from_folder(folder_path)
 
-    def prepare_file_table(self, file_items: list[FileItem]) -> None:
-        """Delegates to TableManager for file table preparation."""
-        self.table_manager.prepare_file_table(file_items)
-
-    def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False, force: bool = False):
-        """Delegates to FileLoadManager for folder loading."""
-        # Use the remembered recursive state for consistent behavior
-        recursive = getattr(self, 'current_folder_is_recursive', False)
-        logger.info(f"[MainWindow] load_files_from_folder: {folder_path} (recursive={recursive}, remembered from previous load)")
-        self.file_load_manager.load_folder(folder_path, merge_mode=False, recursive=recursive)
-
-    def shortcut_load_metadata(self) -> None:
-        """Delegates to MetadataManager for shortcut-based metadata loading."""
-        self.metadata_manager.shortcut_load_metadata()
-
-    def shortcut_load_extended_metadata(self) -> None:
-        """Delegates to MetadataManager for extended metadata shortcut loading."""
-        self.metadata_manager.shortcut_load_extended_metadata()
-
-    def shortcut_save_selected_metadata(self) -> None:
-        """Delegates to MetadataManager for saving metadata of selected files."""
-        self.metadata_manager.save_metadata_for_selected()
-
-    def shortcut_save_all_metadata(self) -> None:
-        """Delegates to MetadataManager for saving all modified metadata."""
-        self.metadata_manager.save_all_modified_metadata()
-
-    def reload_current_folder(self) -> None:
-        """Delegates to FileLoadManager for reloading current folder."""
-        self.file_load_manager.reload_current_folder()
-
     def update_module_dividers(self) -> None:
         """Delegates to RenameManager for module dividers update."""
         self.rename_manager.update_module_dividers()
-
-    def handle_header_toggle(self, _) -> None:
-        """Delegates to EventHandlerManager for header toggle handling."""
-        self.event_handler_manager.handle_header_toggle(_)
-
-    def generate_preview_names(self) -> None:
-        """Delegates to UtilityManager for preview names generation."""
-        self.utility_manager.generate_preview_names()
-
-    def compute_max_filename_width(self, file_list: list[FileItem]) -> int:
-        """Delegates to PreviewManager for filename width calculation."""
-        return self.preview_manager.compute_max_filename_width(file_list)
-
-    def center_window(self) -> None:
-        """Delegates to UtilityManager for window centering."""
-        self.utility_manager.center_window()
-
-    def confirm_large_folder(self, file_list: list[str], folder_path: str) -> bool:
-        """Delegates to FileValidationManager for intelligent large folder validation."""
-        from core.file_validation_manager import OperationType
-
-        # Use FileValidationManager for smart validation
-        validation_result = self.file_validation_manager.validate_operation_batch(
-            file_list, OperationType.FILE_LOADING
-        )
-
-        if validation_result['should_warn']:
-            # Show warning with smart information
-            return self.dialog_manager.confirm_large_folder(folder_path, validation_result['file_count'])
-
-        return True  # No warning needed
-
-    def check_large_files(self, files: list[FileItem]) -> list[FileItem]:
-        """Delegates to FileValidationManager for intelligent large file checking."""
-        from core.file_validation_manager import OperationType
-
-        # Convert FileItems to paths for validation
-        file_paths = [f.full_path for f in files if hasattr(f, 'full_path')]
-
-        validation_result = self.file_validation_manager.validate_operation_batch(
-            file_paths, OperationType.METADATA_EXTENDED
-        )
-
-        # Return files that exceed size thresholds
-        if validation_result['should_warn']:
-            # Use DialogManager for detailed large file detection
-            has_large, large_file_paths = self.dialog_manager.check_large_files(file_paths)
-            if has_large:
-                return [f for f in files if f.full_path in large_file_paths]
-
-        return []
-
-    def confirm_large_files(self, files: list[FileItem]) -> bool:
-        """Delegates to FileValidationManager and DialogManager for large file confirmation."""
-        from core.file_validation_manager import OperationType
-
-        if not files:
-            return True
-
-        # Get validation summary from FileValidationManager
-        file_paths = [f.full_path for f in files if hasattr(f, 'full_path')]
-        validation_result = self.file_validation_manager.validate_operation_batch(
-            file_paths, OperationType.METADATA_EXTENDED
-        )
-
-        if validation_result['should_warn']:
-            # Show detailed confirmation dialog
-            return self.dialog_manager.confirm_large_files(files)
-
-        return True  # No confirmation needed
-
-    def prompt_file_conflict(self, target_path: str) -> str:
-        """Delegates to DialogManager for file conflict resolution."""
-        old_name = os.path.basename(target_path)
-        new_name = os.path.basename(target_path)
-        result = self.dialog_manager.prompt_file_conflict(old_name, new_name)
-        return "overwrite" if result else "cancel"
-
-    def update_files_label(self) -> None:
-        """Delegates to UtilityManager for files label update."""
-        self.utility_manager.update_files_label()
-
-    def set_status(self, text: str, color: str = "", auto_reset: bool = False, reset_delay: int = 3000) -> None:
-        """
-        Sets the status label text and optional color. Delegates to StatusManager.
-        """
-        self.status_manager.set_status(text, color, auto_reset, reset_delay)
-
-    def get_identity_name_pairs(self) -> list[tuple[str, str]]:
-        """Delegates to PreviewManager for identity name pairs."""
-        return self.preview_manager.get_identity_name_pairs(self.file_model.files)
-
-    def update_preview_tables_from_pairs(self, name_pairs: list[tuple[str, str]]) -> None:
-        """Delegates to PreviewManager for preview tables update."""
-        self.preview_manager.update_preview_tables_from_pairs(name_pairs)
-
-
-
-    def get_selected_rows_files(self) -> list:
-        """Delegates to UtilityManager for getting selected rows as files."""
-        return self.utility_manager.get_selected_rows_files()
-
-    def find_fileitem_by_path(self, path: str) -> Optional[FileItem]:
-        """Delegates to FileOperationsManager for finding FileItem by path."""
-        return self.file_operations_manager.find_fileitem_by_path(self.file_model.files, path)
-
-    def on_table_row_clicked(self, index: QModelIndex) -> None:
-        """Delegates to EventHandlerManager for table row click handling."""
-        self.event_handler_manager.on_table_row_clicked(index)
-
-    def clear_file_table(self, message: str = "No folder selected") -> None:
-        """Delegates to TableManager for clearing file table."""
-        self.table_manager.clear_file_table(message)
-
-    def get_common_metadata_fields(self) -> list[str]:
-        """Delegates to TableManager for getting common metadata fields."""
-        return self.table_manager.get_common_metadata_fields()
-
-    def set_fields_from_list(self, field_names: list[str]) -> None:
-        """Delegates to TableManager for setting fields from list."""
-        self.table_manager.set_fields_from_list(field_names)
-
-    def after_check_change(self) -> None:
-        """Delegates to TableManager for handling check change."""
-        self.table_manager.after_check_change()
-
-    def get_selected_files(self) -> list[FileItem]:
-        """Delegates to TableManager for getting selected files."""
-        return self.table_manager.get_selected_files()
-
-    def get_modifier_flags(self) -> tuple[bool, bool]:
-        """Delegates to UtilityManager for modifier flags checking."""
-        return self.utility_manager.get_modifier_flags()
-
-    def determine_metadata_mode(self) -> tuple[bool, bool]:
-        """Delegates to MetadataManager for metadata mode determination."""
-        return self.metadata_manager.determine_metadata_mode(self.modifier_state)
-
-    def should_use_extended_metadata(self) -> bool:
-        """Delegates to MetadataManager for extended metadata decision."""
-        return self.metadata_manager.should_use_extended_metadata(self.modifier_state)
-
-    def update_preview_from_selection(self, selected_rows: list[int]) -> None:
-        """Delegates to SelectionManager."""
-        self.selection_manager.update_preview_from_selection(selected_rows)
-
-    def handle_table_context_menu(self, position) -> None:
-        """Delegates to EventHandlerManager for table context menu handling."""
-        self.event_handler_manager.handle_table_context_menu(position)
-
-    def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
-        """Delegates to EventHandlerManager for file double click handling."""
-        self.event_handler_manager.handle_file_double_click(index, modifiers)
-
-    def changeEvent(self, event) -> None:
-        """Handle window state changes (maximize, minimize, restore)."""
-        super().changeEvent(event)
-
-        if event.type() == QEvent.WindowStateChange:  # type: ignore
-            self._handle_window_state_change()
-
-    def resizeEvent(self, event) -> None:
-        """Handle window resize events to update splitter ratios for wide screens."""
-        super().resizeEvent(event)
-
-        # Only update splitters if UI is fully initialized and window is visible
-        if (hasattr(self, 'splitter_manager') and
-            hasattr(self, 'horizontal_splitter') and
-            self.isVisible() and
-            not self.isMinimized()):
-
-            # Get new window width
-            new_width = self.width()
-
-            # Use SplitterManager to update splitter sizes
-            from utils.timer_manager import schedule_resize_adjust
-
-            def update_splitters():
-                self.splitter_manager.update_splitter_sizes_for_window_width(new_width)
-
-            # Schedule the update to avoid conflicts with other resize operations
-            schedule_resize_adjust(update_splitters, 50)
-
-            # Also trigger column adjustment when window resizes
-            if hasattr(self, 'file_table_view'):
-                def trigger_column_adjustment():
-                    self.splitter_manager.trigger_column_adjustment_after_splitter_change()
-
-                # Schedule column adjustment after splitter update
-                schedule_resize_adjust(trigger_column_adjustment, 60)
-
-    def _handle_window_state_change(self) -> None:
-        """Handle maximize/restore geometry and file table refresh."""
-        # Handle maximize: store appropriate geometry for restore
-        if self.isMaximized() and not hasattr(self, '_restore_geometry'):
-            current_geo = self.geometry()
-            initial_size = self._initial_geometry.size()
-
-            # Use current geometry if manually resized, otherwise use initial
-            is_manually_resized = (
-                abs(current_geo.width() - initial_size.width()) > 10 or
-                abs(current_geo.height() - initial_size.height()) > 10
-            )
-
-            self._restore_geometry = current_geo if is_manually_resized else self._initial_geometry
-            logger.debug(f"[MainWindow] Stored {'manual' if is_manually_resized else 'initial'} geometry for restore")
-
-        # Handle restore: restore stored geometry
-        elif not self.isMaximized() and hasattr(self, '_restore_geometry'):
-            self.setGeometry(self._restore_geometry)
-            delattr(self, '_restore_geometry')
-            logger.debug("[MainWindow] Restored geometry")
-
-        # Refresh file table after state change
-        self._refresh_file_table_for_window_change()
-
-    def _refresh_file_table_for_window_change(self) -> None:
-        """Refresh file table after window state changes."""
-        if not hasattr(self, 'file_table_view') or not self.file_table_view.model():
-            return
-
-        from utils.timer_manager import schedule_resize_adjust
-
-        def refresh():
-            # Reset manual column preference for auto-sizing
-            if not getattr(self.file_table_view, '_recent_manual_resize', False):
-                self.file_table_view._has_manual_preference = False
-
-            # Use existing splitter logic for column sizing
-            if hasattr(self, 'horizontal_splitter'):
-                sizes = self.horizontal_splitter.sizes()
-                self.file_table_view.on_horizontal_splitter_moved(sizes[1], 1)
-
-        schedule_resize_adjust(refresh, 25)
-
-    def closeEvent(self, event) -> None:
-        """
-        Handles application shutdown and cleanup with graceful progress dialog.
-
-        Ensures all resources are properly released and threads are stopped.
-        """
-        # If shutdown is already in progress, ignore additional close events
-        if hasattr(self, '_shutdown_in_progress') and self._shutdown_in_progress:
-            event.ignore()
-            return
-
-        logger.info("Application shutting down...")
-
-        # 0. Check for unsaved metadata changes
-        if self._check_for_unsaved_changes():
-            reply = self.dialog_manager.confirm_unsaved_changes(self)
-
-            if reply == "cancel":
-                # User wants to cancel closing
-                event.ignore()
-                return
-            elif reply == "save_and_close":
-                # User wants to save changes before closing
-                try:
-                    # Save all modified metadata
-                    if hasattr(self, 'metadata_manager'):
-                        self.metadata_manager.save_all_modified_metadata()
-                        logger.info("[CloseEvent] Saved all metadata changes before closing")
-                    else:
-                        logger.warning("[CloseEvent] MetadataManager not available for saving")
-                except Exception as e:
-                    logger.error(f"[CloseEvent] Failed to save metadata before closing: {e}")
-                    # Show error but continue closing anyway
-                    from widgets.custom_msgdialog import CustomMessageDialog
-                    CustomMessageDialog.information(
-                        self,
-                        "Save Error",
-                        f"Failed to save metadata changes:\n{e}\n\nClosing anyway."
-                    )
-            # If reply == "close_without_saving", we just continue with closing
-
-        # Mark shutdown as in progress
-        self._shutdown_in_progress = True
-
-        # Ignore this close event - we'll handle closing ourselves
-        event.ignore()
-
-        # Start async shutdown process
-        self._start_async_shutdown()
-
-    def _start_async_shutdown(self):
-        """Start the async shutdown process with progress updates."""
-        try:
-            # Set wait cursor for the entire shutdown process
-            from utils.cursor_helper import wait_cursor
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-
-            # Create custom shutdown dialog that doesn't respond to ESC
-            from widgets.metadata_waiting_dialog import MetadataWaitingDialog
-
-            class ShutdownDialog(MetadataWaitingDialog):
-                """Custom dialog for shutdown that ignores ESC key."""
-                def keyPressEvent(self, event):
-                    # Ignore ESC key during shutdown and maintain wait cursor
-                    if event.key() == Qt.Key_Escape:
-                        logger.debug("[ShutdownDialog] ESC key ignored during shutdown")
-                        # Ensure wait cursor is maintained
-                        QApplication.setOverrideCursor(Qt.WaitCursor)
-                        return
-                    # Handle other keys normally
-                    super().keyPressEvent(event)
-
-            self.shutdown_dialog = ShutdownDialog(self, is_extended=False)
-
-            # Make dialog more visible and prevent it from closing
-            self.shutdown_dialog.setWindowTitle("Closing OnCutF...")
-            self.shutdown_dialog.setWindowFlags(
-                self.shutdown_dialog.windowFlags() | Qt.WindowStaysOnTopHint
-            )
-            self.shutdown_dialog.set_status("Preparing to close...")
-
-            # Prevent dialog from being closed by user
-            self.shutdown_dialog.setWindowFlags(
-                self.shutdown_dialog.windowFlags() & ~Qt.WindowCloseButtonHint
-            )
-
-            # Force show and ensure it's visible
-            self.shutdown_dialog.show()
-            self.shutdown_dialog.raise_()
-            self.shutdown_dialog.activateWindow()
-
-            # Move dialog to center of screen
-            screen = QApplication.desktop().screenGeometry()
-            dialog_geometry = self.shutdown_dialog.geometry()
-            x = (screen.width() - dialog_geometry.width()) // 2
-            y = (screen.height() - dialog_geometry.height()) // 2
-            self.shutdown_dialog.move(x, y)
-
-            QApplication.processEvents()
-
-            logger.info("[CloseEvent] Shutdown dialog created and shown with wait cursor (ESC disabled)")
-
-            # Setup shutdown steps
-            self.shutdown_steps = [
-                ("Creating database backup...", self._shutdown_step_backup),
-                ("Saving window configuration...", self._shutdown_step_config),
-                ("Cleaning up drag operations...", self._shutdown_step_drag),
-                ("Closing dialogs...", self._shutdown_step_dialogs),
-                ("Stopping metadata operations...", self._shutdown_step_metadata),
-                ("Stopping background tasks...", self._shutdown_step_background),
-                ("Cleaning up application context...", self._shutdown_step_context),
-                ("Closing progress dialogs...", self._shutdown_step_progress_dialogs),
-                ("Stopping timers...", self._shutdown_step_timers),
-                ("Cleaning up Qt resources...", self._shutdown_step_qt_resources),
-                ("Closing database connections...", self._shutdown_step_database),
-                ("Cleaning up backup manager...", self._shutdown_step_backup_manager),
-                ("Finalizing shutdown...", self._shutdown_step_finalize),
-            ]
-
-            self.current_shutdown_step = 0
-            self.total_shutdown_steps = len(self.shutdown_steps)
-
-            # Update progress to show we're starting
-            self.shutdown_dialog.set_progress(0, self.total_shutdown_steps)
-            QApplication.processEvents()
-
-            logger.info(f"[CloseEvent] Starting shutdown with {self.total_shutdown_steps} steps")
-
-            # Start the first step with shorter initial delay
-            from PyQt5.QtCore import QTimer
-            self.shutdown_timer = QTimer()
-            self.shutdown_timer.setSingleShot(True)
-            self.shutdown_timer.timeout.connect(self._execute_next_shutdown_step)
-            self.shutdown_timer.start(500)  # Reduced from 1000ms to 500ms
-
-        except Exception as e:
-            logger.error(f"[CloseEvent] Error starting async shutdown: {e}")
-            # Restore cursor and fallback to immediate close
-            QApplication.restoreOverrideCursor()
-            QApplication.quit()
-
-    def _execute_next_shutdown_step(self):
-        """Execute the next shutdown step."""
-        try:
-            if self.current_shutdown_step >= self.total_shutdown_steps:
-                # All steps completed
-                self._complete_shutdown()
-                return
-
-            # Ensure wait cursor is still active (reapply if needed)
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-
-            # Get current step
-            step_name, step_function = self.shutdown_steps[self.current_shutdown_step]
-
-            logger.info(f"[CloseEvent] Executing step {self.current_shutdown_step + 1}/{self.total_shutdown_steps}: {step_name}")
-
-            # Update progress and status - make sure dialog is still visible
-            if hasattr(self, 'shutdown_dialog') and self.shutdown_dialog and self.shutdown_dialog.isVisible():
-                self.shutdown_dialog.set_status(step_name)
-                self.shutdown_dialog.set_progress(self.current_shutdown_step, self.total_shutdown_steps)
-
-                # Force dialog to stay visible and on top
-                self.shutdown_dialog.show()
-                self.shutdown_dialog.raise_()
-                self.shutdown_dialog.activateWindow()
-                QApplication.processEvents()
-            else:
-                logger.warning("[CloseEvent] Shutdown dialog is not visible, recreating...")
-                # Try to recreate dialog if it disappeared
-                self._recreate_shutdown_dialog()
-
-            try:
-                # Execute the step
-                step_function()
-            except Exception as e:
-                logger.error(f"[CloseEvent] Error in shutdown step '{step_name}': {e}")
-
-            # Reapply wait cursor after step execution (in case it was changed)
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-
-            # Move to next step
-            self.current_shutdown_step += 1
-
-            # Schedule next step with shorter delays - faster but still visible
-            delay = 500 if self.current_shutdown_step in [4, 5] else 350  # Reduced from 800/600 to 500/350
-            if hasattr(self, 'shutdown_timer'):
-                self.shutdown_timer.start(delay)
-
-        except Exception as e:
-            logger.error(f"[CloseEvent] Error in shutdown step execution: {e}")
-            # Fallback to immediate close if something goes wrong
-            self._complete_shutdown()
-
-    def _recreate_shutdown_dialog(self):
-        """Recreate shutdown dialog if it disappeared."""
-        try:
-            from widgets.metadata_waiting_dialog import MetadataWaitingDialog
-
-            class ShutdownDialog(MetadataWaitingDialog):
-                """Custom dialog for shutdown that ignores ESC key."""
-                def keyPressEvent(self, event):
-                    # Ignore ESC key during shutdown and maintain wait cursor
-                    if event.key() == Qt.Key_Escape:
-                        logger.debug("[ShutdownDialog] ESC key ignored during shutdown")
-                        # Ensure wait cursor is maintained
-                        QApplication.setOverrideCursor(Qt.WaitCursor)
-                        return
-                    # Handle other keys normally
-                    super().keyPressEvent(event)
-
-            self.shutdown_dialog = ShutdownDialog(self, is_extended=False)
-
-            # Make dialog more visible and prevent it from closing
-            self.shutdown_dialog.setWindowTitle("Closing OnCutF...")
-            self.shutdown_dialog.setWindowFlags(
-                self.shutdown_dialog.windowFlags() | Qt.WindowStaysOnTopHint
-            )
-
-            # Prevent dialog from being closed by user
-            self.shutdown_dialog.setWindowFlags(
-                self.shutdown_dialog.windowFlags() & ~Qt.WindowCloseButtonHint
-            )
-
-            # Force show and ensure it's visible
-            self.shutdown_dialog.show()
-            self.shutdown_dialog.raise_()
-            self.shutdown_dialog.activateWindow()
-
-            # Move dialog to center of screen
-            screen = QApplication.desktop().screenGeometry()
-            dialog_geometry = self.shutdown_dialog.geometry()
-            x = (screen.width() - dialog_geometry.width()) // 2
-            y = (screen.height() - dialog_geometry.height()) // 2
-            self.shutdown_dialog.move(x, y)
-
-            QApplication.processEvents()
-            logger.info("[CloseEvent] Shutdown dialog recreated (ESC disabled)")
-
-        except Exception as e:
-            logger.error(f"[CloseEvent] Error recreating shutdown dialog: {e}")
-
-    def _complete_shutdown(self):
-        """Complete the shutdown process."""
-        try:
-            logger.info("[CloseEvent] Completing shutdown process")
-
-            # Ensure wait cursor is still active
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-
-            # Show completion - make sure dialog is visible
-            if hasattr(self, 'shutdown_dialog') and self.shutdown_dialog:
-                if not self.shutdown_dialog.isVisible():
-                    self._recreate_shutdown_dialog()
-
-                if self.shutdown_dialog and self.shutdown_dialog.isVisible():
-                    self.shutdown_dialog.set_status("Cleanup complete!")
-                    self.shutdown_dialog.set_progress(self.total_shutdown_steps, self.total_shutdown_steps)
-
-                    # Force dialog to stay visible
-                    self.shutdown_dialog.show()
-                    self.shutdown_dialog.raise_()
-                    self.shutdown_dialog.activateWindow()
-                    QApplication.processEvents()
-
-                    logger.info("[CloseEvent] Shutdown completion status shown")
-
-            # Stop the shutdown timer
-            if hasattr(self, 'shutdown_timer'):
-                self.shutdown_timer.stop()
-
-            # Schedule final close with shorter delay
-            from PyQt5.QtCore import QTimer
-            QTimer.singleShot(800, self._final_close)  # Reduced from 1500ms to 800ms
-
-        except Exception as e:
-            logger.error(f"[CloseEvent] Error completing shutdown: {e}")
-            # Fallback to immediate close
-            self._final_close()
-
-    def _final_close(self):
-        """Final application close."""
-        try:
-            logger.info("[CloseEvent] Final close initiated")
-
-            # Restore cursor
-            QApplication.restoreOverrideCursor()
-
-            # Close the shutdown dialog
-            if hasattr(self, 'shutdown_dialog') and self.shutdown_dialog:
-                self.shutdown_dialog.close()
-                logger.info("[CloseEvent] Shutdown dialog closed")
-        except Exception as e:
-            logger.warning(f"[CloseEvent] Error closing shutdown dialog: {e}")
-
-        try:
-            # Force quit the application
-            logger.info("[CloseEvent] Forcing application quit")
-            QApplication.quit()
-
-        except Exception as e:
-            logger.warning(f"[CloseEvent] Error in final close: {e}")
-            # Force quit the application as fallback
-            import sys
-            sys.exit(0)
-
-    def _shutdown_step_backup(self):
-        """Step 1: Create database backup."""
-        if hasattr(self, 'backup_manager'):
-            try:
-                backup_path = self.backup_manager.backup_on_shutdown()
-                if backup_path:
-                    logger.info(f"[CloseEvent] Database backup created: {backup_path}")
-                else:
-                    logger.warning("[CloseEvent] Failed to create database backup")
-            except Exception as e:
-                logger.error(f"[CloseEvent] Error creating database backup: {e}")
-
-    def _shutdown_step_config(self):
-        """Step 2: Save window configuration."""
-        self.window_config_manager.save_window_config()
-
-    def _shutdown_step_drag(self):
-        """Step 3: Clean up drag operations."""
-        self.drag_cleanup_manager.emergency_drag_cleanup()
-
-    def _shutdown_step_dialogs(self):
-        """Step 4: Clean up dialogs (but not the shutdown dialog)."""
-        if hasattr(self, 'dialog_manager'):
-            # Don't call dialog_manager.cleanup() as it closes ALL dialogs including shutdown dialog
-            # Instead, manually close specific dialogs
-            try:
-                # Close any open message dialogs (but not shutdown dialog)
-                for widget in QApplication.topLevelWidgets():
-                    if (hasattr(widget, 'close') and 'Dialog' in widget.__class__.__name__
-                        and widget != getattr(self, 'shutdown_dialog', None)):
-                        widget.close()
-
-                # Close any open file dialogs
-                from core.qt_imports import QFileDialog
-                for widget in QApplication.topLevelWidgets():
-                    if isinstance(widget, QFileDialog):
-                        widget.close()
-
-                # Process any pending events
-                QApplication.processEvents()
-
-                logger.debug("[CloseEvent] Closed dialogs (excluding shutdown dialog)")
-            except Exception as e:
-                logger.warning(f"[CloseEvent] Error closing dialogs: {e}")
-
-    def _shutdown_step_metadata(self):
-        """Step 5: Clean up metadata operations."""
-        if hasattr(self, 'metadata_manager') and self.metadata_manager:
-            self.metadata_manager.cleanup()
-
-    def _shutdown_step_background(self):
-        """Step 6: Clean up background workers."""
-        self._force_cleanup_background_workers()
-
-    def _shutdown_step_context(self):
-        """Step 7: Clean up application context."""
-        if hasattr(self, 'context'):
-            try:
-                self.context.cleanup()
-            except Exception as e:
-                logger.warning(f"[CloseEvent] Error cleaning application context: {e}")
-
-    def _shutdown_step_progress_dialogs(self):
-        """Step 8: Close progress dialogs."""
-        self._force_close_progress_dialogs()
-
-    def _shutdown_step_timers(self):
-        """Step 9: Stop timers."""
-        # First stop TimerManager timers
-        try:
-            from utils.timer_manager import cleanup_all_timers
-            cleaned_timers = cleanup_all_timers()
-            if cleaned_timers > 0:
-                logger.info(f"[CloseEvent] Cleaned up {cleaned_timers} scheduled timers")
-        except Exception as e:
-            logger.warning(f"[CloseEvent] Error cleaning TimerManager: {e}")
-
-        # Then find and stop any remaining QTimer instances (except our shutdown timer)
-        try:
-            from PyQt5.QtCore import QTimer
-            remaining_timers = self.findChildren(QTimer)
-            for timer in remaining_timers:
-                if timer != self.shutdown_timer and timer.isActive():
-                    timer.stop()
-                    logger.debug(f"[CloseEvent] Stopped QTimer: {timer.objectName() or 'unnamed'}")
-
-            active_timers = [t for t in remaining_timers if t != self.shutdown_timer and t.isActive()]
-            if active_timers:
-                logger.info(f"[CloseEvent] Stopped {len(active_timers)} QTimer instances")
-        except Exception as e:
-            logger.warning(f"[CloseEvent] Error stopping QTimer instances: {e}")
-
-    def _shutdown_step_qt_resources(self):
-        """Step 10: Clean up Qt resources."""
-        try:
-            QApplication.processEvents()
-        except Exception as e:
-            logger.warning(f"[CloseEvent] Error processing events during cleanup: {e}")
-
-    def _shutdown_step_database(self):
-        """Step 11: Close database connections."""
-        if hasattr(self, 'db_manager'):
-            try:
-                self.db_manager.close()
-                logger.info("[CloseEvent] Database connections closed")
-            except Exception as e:
-                logger.warning(f"[CloseEvent] Error closing database: {e}")
-
-    def _shutdown_step_backup_manager(self):
-        """Step 12: Clean up backup manager."""
-        if hasattr(self, 'backup_manager'):
-            try:
-                from core.backup_manager import cleanup_backup_manager
-                cleanup_backup_manager()
-                logger.info("[CloseEvent] Backup manager cleaned up")
-            except Exception as e:
-                logger.warning(f"[CloseEvent] Error cleaning backup manager: {e}")
-
-    def _shutdown_step_finalize(self):
-        """Step 13: Final cleanup."""
-        logger.info("[CloseEvent] Final cleanup - forcing application termination")
-
-    def _force_cleanup_background_workers(self) -> None:
-        """Force cleanup of any background workers/threads."""
-        logger.info("[CloseEvent] Cleaning up background workers...")
-
-        # 1. Cleanup HashWorker if it exists
-        if hasattr(self, 'event_handler_manager') and hasattr(self.event_handler_manager, 'hash_worker'):
-            hash_worker = self.event_handler_manager.hash_worker
-            if hash_worker and hash_worker.isRunning():
-                logger.info("[CloseEvent] Cancelling and terminating HashWorker...")
-                hash_worker.cancel()
-                if not hash_worker.wait(1000):  # Wait max 1 second
-                    logger.warning("[CloseEvent] HashWorker did not stop gracefully, terminating...")
-                    hash_worker.terminate()
-                    hash_worker.wait(500)  # Wait another 500ms for termination
-
-        # 2. Find and terminate any other QThread instances
-        from PyQt5.QtCore import QThread
-        threads = self.findChildren(QThread)
-        for thread in threads:
-            if thread.isRunning():
-                logger.info(f"[CloseEvent] Terminating QThread: {thread.__class__.__name__}")
-                thread.quit()
-                if not thread.wait(1000):  # Wait max 1 second
-                    thread.terminate()
-                    thread.wait(500)
-
-    def _force_close_progress_dialogs(self) -> None:
-        """Force close any active progress dialogs except the shutdown dialog."""
-        from utils.progress_dialog import ProgressDialog
-        from widgets.metadata_waiting_dialog import MetadataWaitingDialog
-
-        # Find and close any active progress dialogs
-        dialogs_closed = 0
-
-        # Close ProgressDialog instances
-        progress_dialogs = self.findChildren(ProgressDialog)
-        for dialog in progress_dialogs:
-            if dialog.isVisible():
-                logger.info("[CloseEvent] Force closing ProgressDialog")
-                dialog.reject()  # Force close without waiting
-                dialogs_closed += 1
-
-        # Close MetadataWaitingDialog instances (but NOT the shutdown dialog)
-        metadata_dialogs = self.findChildren(MetadataWaitingDialog)
-        for dialog in metadata_dialogs:
-            if dialog.isVisible() and dialog != getattr(self, 'shutdown_dialog', None):
-                logger.info("[CloseEvent] Force closing MetadataWaitingDialog")
-                dialog.reject()  # Force close without waiting
-                dialogs_closed += 1
-
-        if dialogs_closed > 0:
-            logger.info(f"[CloseEvent] Force closed {dialogs_closed} progress dialogs (excluding shutdown dialog)")
-
-    def _check_for_unsaved_changes(self) -> bool:
-        """
-        Check if there are any unsaved metadata changes.
-
-        Returns:
-            bool: True if there are unsaved changes, False otherwise
-        """
-        if not hasattr(self, 'metadata_tree_view'):
-            return False
-
-        try:
-            # Force save current file modifications to per-file storage first
-            if hasattr(self.metadata_tree_view, '_current_file_path') and self.metadata_tree_view._current_file_path:
-                if self.metadata_tree_view.modified_items:
-                    self.metadata_tree_view._set_in_path_dict(
-                        self.metadata_tree_view._current_file_path,
-                        self.metadata_tree_view.modified_items.copy(),
-                        self.metadata_tree_view.modified_items_per_file
-                    )
-
-            # Get all modified metadata for all files
-            all_modifications = self.metadata_tree_view.get_all_modified_metadata_for_files()
-
-            # Check if there are any actual modifications
-            has_modifications = any(modifications for modifications in all_modifications.values())
-
-            if has_modifications:
-                logger.info(f"[CloseEvent] Found unsaved changes in {len(all_modifications)} files")
-                for file_path, modifications in all_modifications.items():
-                    if modifications:
-                        logger.debug(f"[CloseEvent] - {file_path}: {list(modifications.keys())}")
-
-            return has_modifications
-
-        except Exception as e:
-            logger.warning(f"[CloseEvent] Error checking for unsaved changes: {e}")
-            return False
-
-    def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
-        """Delegates to FileLoadManager for folder load preparation."""
-        return self.file_load_manager.prepare_folder_load(folder_path, clear=clear)
-
-    def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> None:
-        """Delegates to FileLoadManager for loading files from paths."""
-        self.file_load_manager.load_files_from_paths(file_paths, clear=clear)
-
-    def load_files_from_dropped_items(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
-        """Delegates to FileLoadManager for loading files from dropped items."""
-        self.file_load_manager.load_files_from_dropped_items(paths, modifiers)
-
-    def handle_browse(self) -> None:
-        """Delegates to EventHandlerManager for browse handling."""
-        self.event_handler_manager.handle_browse()
-
-    def handle_folder_import(self) -> None:
-        """Delegates to EventHandlerManager for folder import handling."""
-        self.event_handler_manager.handle_folder_import()
-
-    def load_single_item_from_drop(self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
-        """Delegates to FileLoadManager for loading single item from drop."""
-        self.file_load_manager.load_single_item_from_drop(path, modifiers)
-
-    def _has_deep_content(self, folder_path: str) -> bool:
-        """Delegates to FileLoadManager for checking deep content."""
-        return self.file_load_manager._has_deep_content(folder_path)
-
-    def _handle_folder_drop(self, folder_path: str, merge_mode: bool, recursive: bool) -> None:
-        """Delegates to FileLoadManager for handling folder drop."""
-        self.file_load_manager._handle_folder_drop(folder_path, merge_mode, recursive)
-
-    def _handle_file_drop(self, file_path: str, merge_mode: bool) -> None:
-        """Delegates to FileLoadManager for handling file drop."""
-        self.file_load_manager._handle_file_drop(file_path, merge_mode)
-
-    def load_metadata_for_items(
-        self,
-        items: list[FileItem],
-        use_extended: bool = False,
-        source: str = "unknown"
-    ) -> None:
-        """Delegates to MetadataManager for intelligent metadata loading with cache checking."""
-        self.metadata_manager.load_metadata_for_items(items, use_extended, source)
-
-    def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
-        """Delegates to SplitterManager for horizontal splitter movement handling."""
-        self.splitter_manager.on_horizontal_splitter_moved(pos, index)
-
-    def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
-        """Delegates to SplitterManager for vertical splitter movement handling."""
-        self.splitter_manager.on_vertical_splitter_moved(pos, index)
 
     def show_metadata_status(self) -> None:
         """Delegates to InitializationManager for metadata status display."""
@@ -1249,49 +640,6 @@ class MainWindow(QMainWindow):
         """Restore the last folder if available and user wants it."""
         # Delegate to WindowConfigManager
         self.window_config_manager.restore_last_folder_if_available()
-
-    def validate_operation_for_user(self, files: list[str], operation_type: str) -> dict:
-        """
-        New method: Comprehensive operation validation with user-friendly results.
-        Returns validation summary for UI display.
-        """
-        from core.file_validation_manager import OperationType
-
-        # Map string operation types to enum
-        operation_map = {
-            'metadata_fast': OperationType.METADATA_FAST,
-            'metadata_extended': OperationType.METADATA_EXTENDED,
-            'hash_calculation': OperationType.HASH_CALCULATION,
-            'rename': OperationType.RENAME_OPERATION,
-            'file_loading': OperationType.FILE_LOADING
-        }
-
-        operation = operation_map.get(operation_type, OperationType.FILE_LOADING)
-
-        return self.file_validation_manager.validate_operation_batch(files, operation)
-
-    def identify_moved_files(self, file_paths: list[str]) -> dict:
-        """
-        New method: Identify files that may have been moved using content-based detection.
-        Returns mapping of current_path -> original_record for moved files.
-        """
-        moved_files = {}
-
-        for file_path in file_paths:
-            file_record, was_moved = self.file_validation_manager.identify_file_with_content_fallback(file_path)
-
-            if was_moved and file_record:
-                moved_files[file_path] = {
-                    'original_path': file_record.get('file_path'),
-                    'preserved_metadata': file_record.get('metadata_json') is not None,
-                    'preserved_hash': file_record.get('hash_value') is not None,
-                    'file_record': file_record
-                }
-
-                # Log successful identification
-                logger.info(f"[MainWindow] Identified moved file: {file_path} (was: {file_record.get('file_path')})")
-
-        return moved_files
 
     def get_selected_files_ordered(self) -> list[FileItem]:
         """

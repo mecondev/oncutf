@@ -10,6 +10,7 @@ Provides consistent interface for metadata cache operations across the applicati
 
 from typing import Any, Dict, Optional, Union
 from utils.logger_factory import get_cached_logger
+from utils.path_utils import normalize_path
 
 logger = get_cached_logger(__name__)
 
@@ -33,7 +34,7 @@ class MetadataCacheHelper:
 
     def get_metadata_for_file(self, file_item, fallback_to_file_item: bool = True) -> Dict[str, Any]:
         """
-        Unified metadata retrieval for a file.
+        Unified metadata retrieval for a file with path normalization.
 
         Args:
             file_item: FileItem object with full_path attribute
@@ -46,17 +47,20 @@ class MetadataCacheHelper:
             return {}
 
         try:
+            # Normalize path for consistent cache access
+            normalized_path = normalize_path(file_item.full_path)
+
             # Try cache first
             if self.metadata_cache:
                 # Try get_entry() method first (preferred)
                 if hasattr(self.metadata_cache, 'get_entry'):
-                    cache_entry = self.metadata_cache.get_entry(file_item.full_path)
+                    cache_entry = self.metadata_cache.get_entry(normalized_path)
                     if cache_entry and hasattr(cache_entry, 'data') and cache_entry.data:
                         return cache_entry.data
 
                 # Fallback to get() method
                 if hasattr(self.metadata_cache, 'get'):
-                    metadata = self.metadata_cache.get(file_item.full_path)
+                    metadata = self.metadata_cache.get(normalized_path)
                     if metadata:
                         return metadata
 
@@ -72,7 +76,7 @@ class MetadataCacheHelper:
 
     def get_cache_entry_for_file(self, file_item):
         """
-        Get cache entry object for a file.
+        Get cache entry object for a file with path normalization.
 
         Args:
             file_item: FileItem object with full_path attribute
@@ -84,8 +88,11 @@ class MetadataCacheHelper:
             return None
 
         try:
+            # Normalize path for consistent cache access
+            normalized_path = normalize_path(file_item.full_path)
+
             if self.metadata_cache and hasattr(self.metadata_cache, 'get_entry'):
-                return self.metadata_cache.get_entry(file_item.full_path)
+                return self.metadata_cache.get_entry(normalized_path)
             return None
 
         except Exception as e:
@@ -94,7 +101,7 @@ class MetadataCacheHelper:
 
     def set_metadata_for_file(self, file_item, metadata: Dict[str, Any], is_extended: bool = False, modified: bool = False):
         """
-        Unified metadata storage for a file.
+        Unified metadata storage for a file with path normalization.
 
         Args:
             file_item: FileItem object with full_path attribute
@@ -106,10 +113,13 @@ class MetadataCacheHelper:
             return
 
         try:
+            # Normalize path for consistent cache access
+            normalized_path = normalize_path(file_item.full_path)
+
             # Update cache if available
             if self.metadata_cache and hasattr(self.metadata_cache, 'set_entry'):
                 self.metadata_cache.set_entry(
-                    file_item.full_path,
+                    normalized_path,
                     metadata,
                     is_extended=is_extended,
                     modified=modified
@@ -123,7 +133,7 @@ class MetadataCacheHelper:
 
     def has_metadata(self, file_item, extended: bool = None) -> bool:
         """
-        Check if a file has metadata.
+        Check if a file has metadata with path normalization.
 
         Args:
             file_item: FileItem object to check
@@ -175,7 +185,7 @@ class MetadataCacheHelper:
 
     def get_metadata_value(self, file_item, key_path: str, default: Any = None) -> Any:
         """
-        Get a specific metadata value by key path.
+        Get a specific metadata value by key path with path normalization.
 
         Args:
             file_item: FileItem object
@@ -206,7 +216,7 @@ class MetadataCacheHelper:
 
     def is_metadata_modified(self, file_item) -> bool:
         """
-        Check if metadata for a file has been modified.
+        Check if metadata for a file has been modified with path normalization.
 
         Args:
             file_item: FileItem object to check

@@ -25,6 +25,7 @@ from core.qt_imports import QObject, pyqtSignal, pyqtSlot
 # Logger setup
 from utils.logger_factory import get_cached_logger
 from utils.metadata_loader import MetadataLoader
+from utils.metadata_cache_helper import MetadataCacheHelper
 
 logger = get_cached_logger(__name__)
 
@@ -55,6 +56,7 @@ class MetadataWorker(QObject):
         self.reader = reader
         self.file_path = []
         self.metadata_cache = metadata_cache
+        self._cache_helper = MetadataCacheHelper(metadata_cache)
         self._cancelled = False
         self.use_extended = False
         self._total_size = 0
@@ -106,7 +108,15 @@ class MetadataWorker(QObject):
                         use_extended=self.use_extended
                     )
 
-                    previous_entry = self.metadata_cache.get_entry(path)
+                    # Create a temporary FileItem-like object for cache helper
+                    class TempFileItem:
+                        def __init__(self, path):
+                            self.full_path = path
+
+                    temp_file_item = TempFileItem(path)
+
+                    # Get previous entry using cache helper
+                    previous_entry = self._cache_helper.get_cache_entry_for_file(temp_file_item)
                     previous_extended = previous_entry.is_extended if previous_entry else False
 
                     # Check if metadata has the extended flag directly

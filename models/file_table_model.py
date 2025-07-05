@@ -14,7 +14,7 @@ Classes:
 
 import os
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from core.qt_imports import (
     QAbstractTableModel,
@@ -36,6 +36,7 @@ from models.file_item import FileItem
 from utils.icons_loader import load_metadata_icons
 from utils.svg_icon_generator import generate_hash_icon
 from core.persistent_metadata_cache import MetadataEntry
+from utils.metadata_cache_helper import MetadataCacheHelper
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
@@ -53,10 +54,19 @@ class FileTableModel(QAbstractTableModel):
 
     def __init__(self, parent_window=None):
         super().__init__()
-        self.files: list[FileItem] = []  # List of file entries
+        self.files: List[FileItem] = []  # List of file entries
         self.parent_window = parent_window  # Needed for triggering updates
         self.metadata_icons = load_metadata_icons()
         self.hash_icon = generate_hash_icon(size=16)  # Generate hash icon
+        self._cache_helper = None
+
+    def _get_cache_helper(self) -> Optional[MetadataCacheHelper]:
+        """Get or create the MetadataCacheHelper instance."""
+        if self._cache_helper is None and self.parent_window:
+            metadata_cache = getattr(self.parent_window, 'metadata_cache', None)
+            if metadata_cache:
+                self._cache_helper = MetadataCacheHelper(metadata_cache)
+        return self._cache_helper
 
     def _has_hash_cached(self, file_path: str) -> bool:
         """
@@ -229,14 +239,25 @@ class FileTableModel(QAbstractTableModel):
         if role == Qt.ToolTipRole and col == 1: # type: ignore
             tooltip_parts = []
 
-            # Add metadata info
-            entry = self.parent_window.metadata_cache.get_entry(file.full_path) if self.parent_window else None
-            if entry and entry.data:
-                metadata_count = len(entry.data)
-                if entry.is_extended:
-                    tooltip_parts.append(f"Extended Metadata Loaded: {metadata_count} values")
+            # Add metadata info using cache helper
+            cache_helper = self._get_cache_helper()
+            if cache_helper:
+                # Create temporary FileItem-like object for cache helper
+                class TempFileItem:
+                    def __init__(self, path):
+                        self.full_path = path
+
+                temp_file_item = TempFileItem(file.full_path)
+                entry = cache_helper.get_cache_entry_for_file(temp_file_item)
+
+                if entry and entry.data:
+                    metadata_count = len(entry.data)
+                    if entry.is_extended:
+                        tooltip_parts.append(f"Extended Metadata Loaded: {metadata_count} values")
+                    else:
+                        tooltip_parts.append(f"Metadata loaded: {metadata_count} values")
                 else:
-                    tooltip_parts.append(f"Metadata loaded: {metadata_count} values")
+                    tooltip_parts.append("Metadata not loaded")
             else:
                 tooltip_parts.append("Metadata not loaded")
 
@@ -248,7 +269,17 @@ class FileTableModel(QAbstractTableModel):
             return "\n".join(tooltip_parts)
 
         if role == Qt.DecorationRole and index.column() == 0: # type: ignore
-            entry = self.parent_window.metadata_cache.get_entry(file.full_path) if self.parent_window else None
+            cache_helper = self._get_cache_helper()
+            entry = None
+
+            if cache_helper:
+                # Create temporary FileItem-like object for cache helper
+                class TempFileItem:
+                    def __init__(self, path):
+                        self.full_path = path
+
+                temp_file_item = TempFileItem(file.full_path)
+                entry = cache_helper.get_cache_entry_for_file(temp_file_item)
 
             # Check if file has hash cached first
             has_hash = self._has_hash_cached(file.full_path)
@@ -280,9 +311,18 @@ class FileTableModel(QAbstractTableModel):
                 return QIcon()
 
         if col == 0 and role == Qt.UserRole: # type: ignore
-            entry = self.parent_window.metadata_cache.get_entry(file.full_path) if self.parent_window else None
-            if isinstance(entry, MetadataEntry):
-                return 'extended' if entry.is_extended else 'loaded'
+            cache_helper = self._get_cache_helper()
+            if cache_helper:
+                # Create temporary FileItem-like object for cache helper
+                class TempFileItem:
+                    def __init__(self, path):
+                        self.full_path = path
+
+                temp_file_item = TempFileItem(file.full_path)
+                entry = cache_helper.get_cache_entry_for_file(temp_file_item)
+
+                if isinstance(entry, MetadataEntry):
+                    return 'extended' if entry.is_extended else 'loaded'
             return 'missing'
 
         elif role == Qt.CheckStateRole and col == 0: # type: ignore
