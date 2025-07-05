@@ -13,7 +13,6 @@ Many of the linter warnings are false positives and can be safely ignored.
 
 # type: ignore (PyQt5 attributes not recognized by linter)
 
-import os
 from typing import Optional
 
 # Import all config constants from centralized module
@@ -47,7 +46,6 @@ from models.file_item import FileItem
 from models.file_table_model import FileTableModel
 
 # Utility functions and helpers
-# Filename validation utilities available as functions
 from utils.icon_cache import load_preview_status_icons, prepare_status_icons
 from utils.icons import create_colored_icon
 from utils.icons_loader import icons_loader, load_metadata_icons
@@ -70,8 +68,6 @@ class MainWindow(QMainWindow):
 
         # --- Initialize DragManager ---
         self.drag_manager = DragManager.get_instance()
-
-
 
         # --- Initialize PreviewManager ---
         self.preview_manager = PreviewManager(parent_window=self)
@@ -665,3 +661,607 @@ class MainWindow(QMainWindow):
                 selected_files.append(self.file_model.files[row])
 
         return selected_files
+
+    # =====================================
+    # Application Shutdown System
+    # =====================================
+
+    def changeEvent(self, event) -> None:
+        """Handle window state changes (maximize, minimize, restore)."""
+        super().changeEvent(event)
+
+        if event.type() == QEvent.WindowStateChange:  # type: ignore
+            self._handle_window_state_change()
+
+    def resizeEvent(self, event) -> None:
+        """Handle window resize events to update splitter ratios for wide screens."""
+        super().resizeEvent(event)
+
+        # Only update splitters if UI is fully initialized and window is visible
+        if (hasattr(self, 'splitter_manager') and
+            hasattr(self, 'horizontal_splitter') and
+            self.isVisible() and
+            not self.isMinimized()):
+
+            # Get new window width
+            new_width = self.width()
+
+            # Use SplitterManager to update splitter sizes
+            from utils.timer_manager import schedule_resize_adjust
+
+            def update_splitters():
+                self.splitter_manager.update_splitter_sizes_for_window_width(new_width)
+
+            # Schedule the update to avoid conflicts with other resize operations
+            schedule_resize_adjust(update_splitters, 50)
+
+            # Also trigger column adjustment when window resizes
+            if hasattr(self, 'file_table_view'):
+                def trigger_column_adjustment():
+                    self.splitter_manager.trigger_column_adjustment_after_splitter_change()
+
+                # Schedule column adjustment after splitter update
+                schedule_resize_adjust(trigger_column_adjustment, 60)
+
+    def _handle_window_state_change(self) -> None:
+        """Handle maximize/restore geometry and file table refresh."""
+        # Handle maximize: store appropriate geometry for restore
+        if self.isMaximized() and not hasattr(self, '_restore_geometry'):
+            current_geo = self.geometry()
+            initial_size = self._initial_geometry.size()
+
+            # Use current geometry if manually resized, otherwise use initial
+            is_manually_resized = (
+                abs(current_geo.width() - initial_size.width()) > 10 or
+                abs(current_geo.height() - initial_size.height()) > 10
+            )
+
+            self._restore_geometry = current_geo if is_manually_resized else self._initial_geometry
+            logger.debug(f"[MainWindow] Stored {'manual' if is_manually_resized else 'initial'} geometry for restore")
+
+        # Handle restore: restore stored geometry
+        elif not self.isMaximized() and hasattr(self, '_restore_geometry'):
+            self.setGeometry(self._restore_geometry)
+            delattr(self, '_restore_geometry')
+            logger.debug("[MainWindow] Restored geometry")
+
+        # Refresh file table after state change
+        self._refresh_file_table_for_window_change()
+
+    def _refresh_file_table_for_window_change(self) -> None:
+        """Refresh file table after window state changes."""
+        if not hasattr(self, 'file_table_view') or not self.file_table_view.model():
+            return
+
+        from utils.timer_manager import schedule_resize_adjust
+
+        def refresh():
+            # Reset manual column preference for auto-sizing
+            if not getattr(self.file_table_view, '_recent_manual_resize', False):
+                self.file_table_view._has_manual_preference = False
+
+            # Use existing splitter logic for column sizing
+            if hasattr(self, 'horizontal_splitter'):
+                sizes = self.horizontal_splitter.sizes()
+                self.file_table_view.on_horizontal_splitter_moved(sizes[1], 1)
+
+        schedule_resize_adjust(refresh, 25)
+
+    def closeEvent(self, event) -> None:
+        """
+        Handles application shutdown and cleanup with graceful progress dialog.
+
+        Ensures all resources are properly released and threads are stopped.
+        """
+        # If shutdown is already in progress, ignore additional close events
+        if hasattr(self, '_shutdown_in_progress') and self._shutdown_in_progress:
+            event.ignore()
+            return
+
+        logger.info("Application shutting down...")
+
+        # 0. Check for unsaved metadata changes
+        if self._check_for_unsaved_changes():
+            reply = self.dialog_manager.confirm_unsaved_changes(self)
+
+            if reply == "cancel":
+                # User wants to cancel closing
+                event.ignore()
+                return
+            elif reply == "save_and_close":
+                # User wants to save changes before closing
+                try:
+                    # Save all modified metadata
+                    if hasattr(self, 'metadata_manager'):
+                        self.metadata_manager.save_all_modified_metadata()
+                        logger.info("[CloseEvent] Saved all metadata changes before closing")
+                    else:
+                        logger.warning("[CloseEvent] MetadataManager not available for saving")
+                except Exception as e:
+                    logger.error(f"[CloseEvent] Failed to save metadata before closing: {e}")
+                    # Show error but continue closing anyway
+                    from widgets.custom_msgdialog import CustomMessageDialog
+                    CustomMessageDialog.information(
+                        self,
+                        "Save Error",
+                        f"Failed to save metadata changes:\n{e}\n\nClosing anyway."
+                    )
+            # If reply == "close_without_saving", we just continue with closing
+
+        # Mark shutdown as in progress
+        self._shutdown_in_progress = True
+
+        # Ignore this close event - we'll handle closing ourselves
+        event.ignore()
+
+        # Start async shutdown process
+        self._start_async_shutdown()
+
+    def _start_async_shutdown(self):
+        """Start the async shutdown process with progress updates."""
+        try:
+            # Set wait cursor for the entire shutdown process
+            from utils.cursor_helper import wait_cursor
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+
+            # Create custom shutdown dialog that doesn't respond to ESC
+            from widgets.metadata_waiting_dialog import MetadataWaitingDialog
+
+            class ShutdownDialog(MetadataWaitingDialog):
+                """Custom dialog for shutdown that ignores ESC key."""
+                def keyPressEvent(self, event):
+                    # Ignore ESC key during shutdown and maintain wait cursor
+                    if event.key() == Qt.Key_Escape:
+                        logger.debug("[ShutdownDialog] ESC key ignored during shutdown")
+                        # Ensure wait cursor is maintained
+                        QApplication.setOverrideCursor(Qt.WaitCursor)
+                        return
+                    # Handle other keys normally
+                    super().keyPressEvent(event)
+
+            self.shutdown_dialog = ShutdownDialog(self, is_extended=False)
+
+            # Make dialog more visible and prevent it from closing
+            self.shutdown_dialog.setWindowTitle("Closing OnCutF...")
+            self.shutdown_dialog.setWindowFlags(
+                self.shutdown_dialog.windowFlags() | Qt.WindowStaysOnTopHint
+            )
+            self.shutdown_dialog.set_status("Preparing to close...")
+
+            # Prevent dialog from being closed by user
+            self.shutdown_dialog.setWindowFlags(
+                self.shutdown_dialog.windowFlags() & ~Qt.WindowCloseButtonHint
+            )
+
+            # Force show and ensure it's visible
+            self.shutdown_dialog.show()
+            self.shutdown_dialog.raise_()
+            self.shutdown_dialog.activateWindow()
+
+            # Move dialog to center of screen
+            screen = QApplication.desktop().screenGeometry()
+            dialog_geometry = self.shutdown_dialog.geometry()
+            x = (screen.width() - dialog_geometry.width()) // 2
+            y = (screen.height() - dialog_geometry.height()) // 2
+            self.shutdown_dialog.move(x, y)
+
+            QApplication.processEvents()
+
+            logger.info("[CloseEvent] Shutdown dialog created and shown with wait cursor (ESC disabled)")
+
+            # Setup shutdown steps
+            self.shutdown_steps = [
+                ("Creating database backup...", self._shutdown_step_backup),
+                ("Saving window configuration...", self._shutdown_step_config),
+                ("Cleaning up drag operations...", self._shutdown_step_drag),
+                ("Closing dialogs...", self._shutdown_step_dialogs),
+                ("Stopping metadata operations...", self._shutdown_step_metadata),
+                ("Stopping background tasks...", self._shutdown_step_background),
+                ("Cleaning up application context...", self._shutdown_step_context),
+                ("Closing progress dialogs...", self._shutdown_step_progress_dialogs),
+                ("Stopping timers...", self._shutdown_step_timers),
+                ("Cleaning up Qt resources...", self._shutdown_step_qt_resources),
+                ("Closing database connections...", self._shutdown_step_database),
+                ("Cleaning up backup manager...", self._shutdown_step_backup_manager),
+                ("Finalizing shutdown...", self._shutdown_step_finalize),
+            ]
+
+            self.current_shutdown_step = 0
+            self.total_shutdown_steps = len(self.shutdown_steps)
+
+            # Update progress to show we're starting
+            self.shutdown_dialog.set_progress(0, self.total_shutdown_steps)
+            QApplication.processEvents()
+
+            logger.info(f"[CloseEvent] Starting shutdown with {self.total_shutdown_steps} steps")
+
+            # Start the first step with shorter initial delay
+            from PyQt5.QtCore import QTimer
+            self.shutdown_timer = QTimer()
+            self.shutdown_timer.setSingleShot(True)
+            self.shutdown_timer.timeout.connect(self._execute_next_shutdown_step)
+            self.shutdown_timer.start(500)  # Reduced from 1000ms to 500ms
+
+        except Exception as e:
+            logger.error(f"[CloseEvent] Error starting async shutdown: {e}")
+            # Restore cursor and fallback to immediate close
+            QApplication.restoreOverrideCursor()
+            QApplication.quit()
+
+    def _execute_next_shutdown_step(self):
+        """Execute the next shutdown step."""
+        try:
+            if self.current_shutdown_step >= self.total_shutdown_steps:
+                # All steps completed
+                self._complete_shutdown()
+                return
+
+            # Ensure wait cursor is still active (reapply if needed)
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+
+            # Get current step
+            step_name, step_function = self.shutdown_steps[self.current_shutdown_step]
+
+            logger.info(f"[CloseEvent] Executing step {self.current_shutdown_step + 1}/{self.total_shutdown_steps}: {step_name}")
+
+            # Update progress and status - make sure dialog is still visible
+            if hasattr(self, 'shutdown_dialog') and self.shutdown_dialog and self.shutdown_dialog.isVisible():
+                self.shutdown_dialog.set_status(step_name)
+                self.shutdown_dialog.set_progress(self.current_shutdown_step, self.total_shutdown_steps)
+
+                # Force dialog to stay visible and on top
+                self.shutdown_dialog.show()
+                self.shutdown_dialog.raise_()
+                self.shutdown_dialog.activateWindow()
+                QApplication.processEvents()
+            else:
+                logger.warning("[CloseEvent] Shutdown dialog is not visible, recreating...")
+                # Try to recreate dialog if it disappeared
+                self._recreate_shutdown_dialog()
+
+            try:
+                # Execute the step
+                step_function()
+            except Exception as e:
+                logger.error(f"[CloseEvent] Error in shutdown step '{step_name}': {e}")
+
+            # Reapply wait cursor after step execution (in case it was changed)
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+
+            # Move to next step
+            self.current_shutdown_step += 1
+
+            # Schedule next step with shorter delays - faster but still visible
+            delay = 500 if self.current_shutdown_step in [4, 5] else 350  # Reduced from 800/600 to 500/350
+            if hasattr(self, 'shutdown_timer'):
+                self.shutdown_timer.start(delay)
+
+        except Exception as e:
+            logger.error(f"[CloseEvent] Error in shutdown step execution: {e}")
+            # Fallback to immediate close if something goes wrong
+            self._complete_shutdown()
+
+    def _recreate_shutdown_dialog(self):
+        """Recreate shutdown dialog if it disappeared."""
+        try:
+            from widgets.metadata_waiting_dialog import MetadataWaitingDialog
+
+            class ShutdownDialog(MetadataWaitingDialog):
+                """Custom dialog for shutdown that ignores ESC key."""
+                def keyPressEvent(self, event):
+                    # Ignore ESC key during shutdown and maintain wait cursor
+                    if event.key() == Qt.Key_Escape:
+                        logger.debug("[ShutdownDialog] ESC key ignored during shutdown")
+                        # Ensure wait cursor is maintained
+                        QApplication.setOverrideCursor(Qt.WaitCursor)
+                        return
+                    # Handle other keys normally
+                    super().keyPressEvent(event)
+
+            self.shutdown_dialog = ShutdownDialog(self, is_extended=False)
+
+            # Make dialog more visible and prevent it from closing
+            self.shutdown_dialog.setWindowTitle("Closing OnCutF...")
+            self.shutdown_dialog.setWindowFlags(
+                self.shutdown_dialog.windowFlags() | Qt.WindowStaysOnTopHint
+            )
+
+            # Prevent dialog from being closed by user
+            self.shutdown_dialog.setWindowFlags(
+                self.shutdown_dialog.windowFlags() & ~Qt.WindowCloseButtonHint
+            )
+
+            # Force show and ensure it's visible
+            self.shutdown_dialog.show()
+            self.shutdown_dialog.raise_()
+            self.shutdown_dialog.activateWindow()
+
+            # Move dialog to center of screen
+            screen = QApplication.desktop().screenGeometry()
+            dialog_geometry = self.shutdown_dialog.geometry()
+            x = (screen.width() - dialog_geometry.width()) // 2
+            y = (screen.height() - dialog_geometry.height()) // 2
+            self.shutdown_dialog.move(x, y)
+
+            QApplication.processEvents()
+            logger.info("[CloseEvent] Shutdown dialog recreated (ESC disabled)")
+
+        except Exception as e:
+            logger.error(f"[CloseEvent] Error recreating shutdown dialog: {e}")
+
+    def _complete_shutdown(self):
+        """Complete the shutdown process."""
+        try:
+            logger.info("[CloseEvent] Completing shutdown process")
+
+            # Ensure wait cursor is still active
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+
+            # Show completion - make sure dialog is visible
+            if hasattr(self, 'shutdown_dialog') and self.shutdown_dialog:
+                if not self.shutdown_dialog.isVisible():
+                    self._recreate_shutdown_dialog()
+
+                if self.shutdown_dialog and self.shutdown_dialog.isVisible():
+                    self.shutdown_dialog.set_status("Cleanup complete!")
+                    self.shutdown_dialog.set_progress(self.total_shutdown_steps, self.total_shutdown_steps)
+
+                    # Force dialog to stay visible
+                    self.shutdown_dialog.show()
+                    self.shutdown_dialog.raise_()
+                    self.shutdown_dialog.activateWindow()
+                    QApplication.processEvents()
+
+                    logger.info("[CloseEvent] Shutdown completion status shown")
+
+            # Stop the shutdown timer
+            if hasattr(self, 'shutdown_timer'):
+                self.shutdown_timer.stop()
+
+            # Schedule final close with shorter delay
+            from PyQt5.QtCore import QTimer
+            QTimer.singleShot(800, self._final_close)  # Reduced from 1500ms to 800ms
+
+        except Exception as e:
+            logger.error(f"[CloseEvent] Error completing shutdown: {e}")
+            # Fallback to immediate close
+            self._final_close()
+
+    def _final_close(self):
+        """Final application close."""
+        try:
+            logger.info("[CloseEvent] Final close initiated")
+
+            # Restore cursor
+            QApplication.restoreOverrideCursor()
+
+            # Close the shutdown dialog
+            if hasattr(self, 'shutdown_dialog') and self.shutdown_dialog:
+                self.shutdown_dialog.close()
+                logger.info("[CloseEvent] Shutdown dialog closed")
+        except Exception as e:
+            logger.warning(f"[CloseEvent] Error closing shutdown dialog: {e}")
+
+        try:
+            # Force quit the application
+            logger.info("[CloseEvent] Forcing application quit")
+            QApplication.quit()
+
+        except Exception as e:
+            logger.warning(f"[CloseEvent] Error in final close: {e}")
+            # Force quit the application as fallback
+            import sys
+            sys.exit(0)
+
+    def _shutdown_step_backup(self):
+        """Step 1: Create database backup."""
+        if hasattr(self, 'backup_manager'):
+            try:
+                backup_path = self.backup_manager.backup_on_shutdown()
+                if backup_path:
+                    logger.info(f"[CloseEvent] Database backup created: {backup_path}")
+                else:
+                    logger.warning("[CloseEvent] Failed to create database backup")
+            except Exception as e:
+                logger.error(f"[CloseEvent] Error creating database backup: {e}")
+
+    def _shutdown_step_config(self):
+        """Step 2: Save window configuration."""
+        self.window_config_manager.save_window_config()
+
+    def _shutdown_step_drag(self):
+        """Step 3: Clean up drag operations."""
+        self.drag_cleanup_manager.emergency_drag_cleanup()
+
+    def _shutdown_step_dialogs(self):
+        """Step 4: Clean up dialogs (but not the shutdown dialog)."""
+        if hasattr(self, 'dialog_manager'):
+            # Don't call dialog_manager.cleanup() as it closes ALL dialogs including shutdown dialog
+            # Instead, manually close specific dialogs
+            try:
+                # Close any open message dialogs (but not shutdown dialog)
+                for widget in QApplication.topLevelWidgets():
+                    if (hasattr(widget, 'close') and 'Dialog' in widget.__class__.__name__
+                        and widget != getattr(self, 'shutdown_dialog', None)):
+                        widget.close()
+
+                # Close any open file dialogs
+                from core.qt_imports import QFileDialog
+                for widget in QApplication.topLevelWidgets():
+                    if isinstance(widget, QFileDialog):
+                        widget.close()
+
+                # Process any pending events
+                QApplication.processEvents()
+
+                logger.debug("[CloseEvent] Closed dialogs (excluding shutdown dialog)")
+            except Exception as e:
+                logger.warning(f"[CloseEvent] Error closing dialogs: {e}")
+
+    def _shutdown_step_metadata(self):
+        """Step 5: Clean up metadata operations."""
+        if hasattr(self, 'metadata_manager') and self.metadata_manager:
+            self.metadata_manager.cleanup()
+
+    def _shutdown_step_background(self):
+        """Step 6: Clean up background workers."""
+        self._force_cleanup_background_workers()
+
+    def _shutdown_step_context(self):
+        """Step 7: Clean up application context."""
+        if hasattr(self, 'context'):
+            try:
+                self.context.cleanup()
+            except Exception as e:
+                logger.warning(f"[CloseEvent] Error cleaning application context: {e}")
+
+    def _shutdown_step_progress_dialogs(self):
+        """Step 8: Close progress dialogs."""
+        self._force_close_progress_dialogs()
+
+    def _shutdown_step_timers(self):
+        """Step 9: Stop timers."""
+        # First stop TimerManager timers
+        try:
+            from utils.timer_manager import cleanup_all_timers
+            cleaned_timers = cleanup_all_timers()
+            if cleaned_timers > 0:
+                logger.info(f"[CloseEvent] Cleaned up {cleaned_timers} scheduled timers")
+        except Exception as e:
+            logger.warning(f"[CloseEvent] Error cleaning TimerManager: {e}")
+
+        # Then find and stop any remaining QTimer instances (except our shutdown timer)
+        try:
+            from PyQt5.QtCore import QTimer
+            remaining_timers = self.findChildren(QTimer)
+            for timer in remaining_timers:
+                if timer != self.shutdown_timer and timer.isActive():
+                    timer.stop()
+                    logger.debug(f"[CloseEvent] Stopped QTimer: {timer.objectName() or 'unnamed'}")
+
+            active_timers = [t for t in remaining_timers if t != self.shutdown_timer and t.isActive()]
+            if active_timers:
+                logger.info(f"[CloseEvent] Stopped {len(active_timers)} QTimer instances")
+        except Exception as e:
+            logger.warning(f"[CloseEvent] Error stopping QTimer instances: {e}")
+
+    def _shutdown_step_qt_resources(self):
+        """Step 10: Clean up Qt resources."""
+        try:
+            QApplication.processEvents()
+        except Exception as e:
+            logger.warning(f"[CloseEvent] Error processing events during cleanup: {e}")
+
+    def _shutdown_step_database(self):
+        """Step 11: Close database connections."""
+        if hasattr(self, 'db_manager'):
+            try:
+                self.db_manager.close()
+                logger.info("[CloseEvent] Database connections closed")
+            except Exception as e:
+                logger.warning(f"[CloseEvent] Error closing database: {e}")
+
+    def _shutdown_step_backup_manager(self):
+        """Step 12: Clean up backup manager."""
+        if hasattr(self, 'backup_manager'):
+            try:
+                from core.backup_manager import cleanup_backup_manager
+                cleanup_backup_manager()
+                logger.info("[CloseEvent] Backup manager cleaned up")
+            except Exception as e:
+                logger.warning(f"[CloseEvent] Error cleaning backup manager: {e}")
+
+    def _shutdown_step_finalize(self):
+        """Step 13: Final cleanup."""
+        logger.info("[CloseEvent] Final cleanup - forcing application termination")
+
+    def _force_cleanup_background_workers(self) -> None:
+        """Force cleanup of any background workers/threads."""
+        logger.info("[CloseEvent] Cleaning up background workers...")
+
+        # 1. Cleanup HashWorker if it exists
+        if hasattr(self, 'event_handler_manager') and hasattr(self.event_handler_manager, 'hash_worker'):
+            hash_worker = self.event_handler_manager.hash_worker
+            if hash_worker and hash_worker.isRunning():
+                logger.info("[CloseEvent] Cancelling and terminating HashWorker...")
+                hash_worker.cancel()
+                if not hash_worker.wait(1000):  # Wait max 1 second
+                    logger.warning("[CloseEvent] HashWorker did not stop gracefully, terminating...")
+                    hash_worker.terminate()
+                    hash_worker.wait(500)  # Wait another 500ms for termination
+
+        # 2. Find and terminate any other QThread instances
+        from PyQt5.QtCore import QThread
+        threads = self.findChildren(QThread)
+        for thread in threads:
+            if thread.isRunning():
+                logger.info(f"[CloseEvent] Terminating QThread: {thread.__class__.__name__}")
+                thread.quit()
+                if not thread.wait(1000):  # Wait max 1 second
+                    thread.terminate()
+                    thread.wait(500)
+
+    def _force_close_progress_dialogs(self) -> None:
+        """Force close any active progress dialogs except the shutdown dialog."""
+        from utils.progress_dialog import ProgressDialog
+        from widgets.metadata_waiting_dialog import MetadataWaitingDialog
+
+        # Find and close any active progress dialogs
+        dialogs_closed = 0
+
+        # Close ProgressDialog instances
+        progress_dialogs = self.findChildren(ProgressDialog)
+        for dialog in progress_dialogs:
+            if dialog.isVisible():
+                logger.info("[CloseEvent] Force closing ProgressDialog")
+                dialog.reject()  # Force close without waiting
+                dialogs_closed += 1
+
+        # Close MetadataWaitingDialog instances (but NOT the shutdown dialog)
+        metadata_dialogs = self.findChildren(MetadataWaitingDialog)
+        for dialog in metadata_dialogs:
+            if dialog.isVisible() and dialog != getattr(self, 'shutdown_dialog', None):
+                logger.info("[CloseEvent] Force closing MetadataWaitingDialog")
+                dialog.reject()  # Force close without waiting
+                dialogs_closed += 1
+
+        if dialogs_closed > 0:
+            logger.info(f"[CloseEvent] Force closed {dialogs_closed} progress dialogs (excluding shutdown dialog)")
+
+    def _check_for_unsaved_changes(self) -> bool:
+        """
+        Check if there are any unsaved metadata changes.
+
+        Returns:
+            bool: True if there are unsaved changes, False otherwise
+        """
+        if not hasattr(self, 'metadata_tree_view'):
+            return False
+
+        try:
+            # Force save current file modifications to per-file storage first
+            if hasattr(self.metadata_tree_view, '_current_file_path') and self.metadata_tree_view._current_file_path:
+                if self.metadata_tree_view.modified_items:
+                    self.metadata_tree_view._set_in_path_dict(
+                        self.metadata_tree_view._current_file_path,
+                        self.metadata_tree_view.modified_items.copy(),
+                        self.metadata_tree_view.modified_items_per_file
+                    )
+
+            # Get all modified metadata for all files
+            all_modifications = self.metadata_tree_view.get_all_modified_metadata_for_files()
+
+            # Check if there are any actual modifications
+            has_modifications = any(modifications for modifications in all_modifications.values())
+
+            if has_modifications:
+                logger.info(f"[CloseEvent] Found unsaved changes in {len(all_modifications)} files")
+                for file_path, modifications in all_modifications.items():
+                    if modifications:
+                        logger.debug(f"[CloseEvent] - {file_path}: {list(modifications.keys())}")
+
+            return has_modifications
+
+        except Exception as e:
+            logger.warning(f"[CloseEvent] Error checking for unsaved changes: {e}")
+            return False

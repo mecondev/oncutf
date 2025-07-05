@@ -977,12 +977,13 @@ class MetadataTreeView(QTreeView):
             self.modified_items.add(normalized_key_path)
 
             # Update metadata in cache for all files to modify
+            cache_helper = self._get_cache_helper()
             for file_item in files_to_modify:
-                if metadata_cache:
-                    cache_entry = metadata_cache.get_entry(file_item.full_path)
-                    if cache_entry and hasattr(cache_entry, 'data'):
-                        cache_entry.data[normalized_key_path] = new_value
-                        # Mark the cache entry as modified
+                if cache_helper:
+                    cache_helper.set_metadata_value(file_item, normalized_key_path, new_value)
+                    # Mark the cache entry as modified
+                    cache_entry = cache_helper.get_cache_entry_for_file(file_item)
+                    if cache_entry:
                         cache_entry.modified = True
 
                 # Update the file item's metadata status
@@ -1221,9 +1222,9 @@ class MetadataTreeView(QTreeView):
                 has_modifications = bool(stored_modifications)
 
             # Also check metadata cache for modified flag
-            metadata_cache = self._get_metadata_cache()
-            if metadata_cache:
-                cache_entry = metadata_cache.get_entry(file_path)
+            cache_helper = self._get_cache_helper()
+            if cache_helper:
+                cache_entry = cache_helper.get_cache_entry_for_file(file_item)
                 if cache_entry and hasattr(cache_entry, 'modified') and cache_entry.modified:
                     has_modifications = True
 
@@ -1756,9 +1757,9 @@ class MetadataTreeView(QTreeView):
 
         # Get the current metadata cache to get the modified values
         selected_files = self._get_current_selection()
-        metadata_cache = self._get_metadata_cache()
+        cache_helper = self._get_cache_helper()
 
-        if not selected_files or not metadata_cache:
+        if not selected_files or not cache_helper:
             return
 
         # For single file selection only (for now)
@@ -1766,7 +1767,7 @@ class MetadataTreeView(QTreeView):
             return
 
         file_item = selected_files[0]
-        metadata_entry = metadata_cache.get_entry(file_item.full_path)
+        metadata_entry = cache_helper.get_cache_entry_for_file(file_item)
 
         if not metadata_entry or not hasattr(metadata_entry, 'data'):
             return
@@ -1911,13 +1912,10 @@ class MetadataTreeView(QTreeView):
 
             # Get metadata from cache first (to preserve modifications), then fallback to file_item
             metadata = None
-            if hasattr(parent_window, 'metadata_cache'):
+            cache_helper = self._get_cache_helper()
+            if cache_helper:
                 # Get metadata from cache - this includes any modifications
-                cache_entry = parent_window.metadata_cache.get_entry(file_item.full_path)
-                if cache_entry and hasattr(cache_entry, 'data'):
-                    metadata = cache_entry.data
-                else:
-                    metadata = parent_window.metadata_cache.get(file_item.full_path)
+                metadata = cache_helper.get_metadata_for_file(file_item)
 
             # Only display metadata if it exists in cache (i.e., has been loaded via drag & drop)
             # Don't use file_item.metadata as fallback to avoid instant display
@@ -2100,9 +2098,9 @@ class MetadataTreeView(QTreeView):
 
         # Get current file's metadata
         selected_files = self._get_current_selection()
-        metadata_cache = self._get_metadata_cache()
+        cache_helper = self._get_cache_helper()
 
-        if not selected_files or not metadata_cache:
+        if not selected_files or not cache_helper:
             return {}
 
         # For now, only handle single file selection
@@ -2111,7 +2109,7 @@ class MetadataTreeView(QTreeView):
             return {}
 
         file_item = selected_files[0]
-        metadata_entry = metadata_cache.get_entry(file_item.full_path)
+        metadata_entry = cache_helper.get_cache_entry_for_file(file_item)
 
         if not metadata_entry or not hasattr(metadata_entry, 'data'):
             return {}
@@ -2161,8 +2159,8 @@ class MetadataTreeView(QTreeView):
             del self.modified_items_per_file[none_key]
 
         # Get metadata cache
-        metadata_cache = self._get_metadata_cache()
-        if not metadata_cache:
+        cache_helper = self._get_cache_helper()
+        if not cache_helper:
             return {}
 
         # Collect modifications for each file
@@ -2171,7 +2169,13 @@ class MetadataTreeView(QTreeView):
             if not file_path or not modified_keys:
                 continue
 
-            metadata_entry = metadata_cache.get_entry(file_path)
+            # Create a temporary file item to use with cache helper
+            class TempFileItem:
+                def __init__(self, full_path):
+                    self.full_path = full_path
+
+            temp_file_item = TempFileItem(file_path)
+            metadata_entry = cache_helper.get_cache_entry_for_file(temp_file_item)
             file_modifications = {}
 
             for key_path in modified_keys:
@@ -2248,9 +2252,9 @@ class MetadataTreeView(QTreeView):
                 selected_files = self._get_current_selection()
                 if selected_files and len(selected_files) == 1:
                     file_item = selected_files[0]
-                    metadata_cache = self._get_metadata_cache()
-                    if metadata_cache:
-                        metadata_entry = metadata_cache.get_entry(file_item.full_path)
+                    cache_helper = self._get_cache_helper()
+                    if cache_helper:
+                        metadata_entry = cache_helper.get_cache_entry_for_file(file_item)
                         if metadata_entry and hasattr(metadata_entry, 'data'):
                             display_data = dict(metadata_entry.data)
                             display_data["FileName"] = file_item.filename

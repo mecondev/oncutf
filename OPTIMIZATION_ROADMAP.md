@@ -111,7 +111,7 @@ class ProgressDialog:
 
 **Εκτιμώμενη μείωση κώδικα**: ~60 γραμμές (ήδη εφαρμοσμένη) ✅
 
-### 5. **Metadata Cache Access Unification** ✅ (Μερικώς ολοκληρώθηκε)
+### 5. **Metadata Cache Access Unification** ✅ **ΟΛΟΚΛΗΡΩΘΗΚΕ**
 **Στόχος**: Ενοποίηση όλων των metadata cache patterns
 
 **Νέα unified helper class**:
@@ -138,12 +138,12 @@ class MetadataCacheHelper:
 - [x] `core/table_manager.py` - 1 pattern αντικαταστάθηκε ✅
 - [x] Δημιουργήθηκε `utils/metadata_cache_helper.py` ✅
 
-**Υπολοίπουν για μεγαλύτερη βελτιστοποίηση**:
-- [ ] `widgets/metadata_tree_view.py` (15 patterns)
-- [ ] `models/file_table_model.py` (3 patterns)
-- [ ] `utils/metadata_exporter.py` (1 pattern)
+**Ολοκληρώθηκε πλήρως**:
+- [x] `widgets/metadata_tree_view.py` (15 patterns) ✅
+- [x] `models/file_table_model.py` (ήδη χρησιμοποιούσε MetadataCacheHelper) ✅
+- [x] `utils/metadata_exporter.py` (1 pattern) ✅
 
-**Εκτιμώμενη μείωση κώδικα**: ~200 γραμμές (50 ήδη ολοκληρώθηκαν) ✅
+**Εκτιμώμενη μείωση κώδικα**: ~200 γραμμές ✅ **ΟΛΟΚΛΗΡΩΘΗΚΕ**
 
 ---
 

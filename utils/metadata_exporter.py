@@ -326,18 +326,15 @@ class MetadataExporter:
             return None
 
     def _get_metadata_for_file(self, file_item: Any) -> Optional[Dict[str, Any]]:
-        """Get metadata for a file from cache or file item."""
+        """Get metadata for a file from cache or file item using unified cache helper."""
         try:
-            # Try metadata cache first
-            if (self.parent_window and
-                hasattr(self.parent_window, 'metadata_cache') and
-                hasattr(file_item, 'full_path')):
+            # Use MetadataCacheHelper for unified access
+            if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
+                from utils.metadata_cache_helper import MetadataCacheHelper
+                cache_helper = MetadataCacheHelper(self.parent_window.metadata_cache)
+                return cache_helper.get_metadata_for_file(file_item)
 
-                cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
-                if cache_entry and hasattr(cache_entry, 'data'):
-                    return cache_entry.data
-
-            # Fallback to file item metadata
+            # Fallback to file item metadata if no cache available
             if hasattr(file_item, 'metadata') and file_item.metadata:
                 return file_item.metadata
 

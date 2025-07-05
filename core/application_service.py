@@ -459,6 +459,10 @@ class ApplicationService:
         """Set status text and color via StatusManager."""
         self.main_window.status_manager.set_status(text, color, auto_reset, reset_delay)
 
+    def reload_current_folder(self) -> None:
+        """Reload current folder via FileLoadManager."""
+        self.main_window.file_load_manager.reload_current_folder()
+
 
 # =====================================
 # Global Instance Management
