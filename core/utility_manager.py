@@ -79,7 +79,12 @@ class UtilityManager:
         self.main_window.modifier_state = QApplication.keyboardModifiers()
 
         if not self.main_window.current_folder_path:
-            self.main_window.set_status("No folder loaded.", color=STATUS_COLORS["no_action"], auto_reset=True)
+            if hasattr(self.main_window, 'status_manager'):
+                self.main_window.status_manager.set_file_operation_status(
+                    "No folder loaded",
+                    success=False,
+                    auto_reset=True
+                )
             return
 
         from widgets.custom_msgdialog import CustomMessageDialog
@@ -264,7 +269,12 @@ class UtilityManager:
             # No modules at all → clear preview completely
             self.main_window.update_preview_tables_from_pairs([])
             self.main_window.rename_button.setEnabled(False)
-            self.main_window.set_status("No rename modules defined.", color=STATUS_COLORS["loading"], auto_reset=True)
+            if hasattr(self.main_window, 'status_manager'):
+                self.main_window.status_manager.set_validation_status(
+                    "No rename modules defined",
+                    validation_type="info",
+                    auto_reset=True
+                )
             return
 
         if not has_changes:
@@ -272,7 +282,12 @@ class UtilityManager:
             self.main_window.rename_button.setEnabled(False)
             setup_tooltip(self.main_window.rename_button, "No changes to apply", TooltipType.WARNING)
             self.main_window.update_preview_tables_from_pairs(name_pairs)
-            self.main_window.set_status("Rename modules present but inactive.", color=STATUS_COLORS["loading"], auto_reset=True)
+            if hasattr(self.main_window, 'status_manager'):
+                self.main_window.status_manager.set_validation_status(
+                    "Rename modules present but inactive",
+                    validation_type="info",
+                    auto_reset=True
+                )
             return
 
         # Update preview tables with changes

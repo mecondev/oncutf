@@ -161,8 +161,13 @@ class SelectionManager:
         file_table_view = getattr(self.parent_window, 'file_table_view', None)
 
         if not file_model or not file_table_view or not file_model.files:
-            if hasattr(self.parent_window, 'set_status'):
-                self.parent_window.set_status("No files to invert selection.", color=STATUS_COLORS["no_action"], auto_reset=True)
+            if hasattr(self.parent_window, 'status_manager'):
+                self.parent_window.status_manager.set_selection_status(
+                    "No files to invert selection",
+                    selected_count=0,
+                    total_count=0,
+                    auto_reset=True
+                )
             return
 
         with wait_cursor():

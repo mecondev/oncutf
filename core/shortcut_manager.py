@@ -49,7 +49,13 @@ class ShortcutManager:
 
         if not self.main_window.file_model.files:
             logger.info("[MainWindow] CLEAR TABLE: No files to clear")
-            self.main_window.set_status("No files to clear", color=STATUS_COLORS["no_action"], auto_reset=True, reset_delay=1000)
+            if hasattr(self.main_window, 'status_manager'):
+                self.main_window.status_manager.set_selection_status(
+                    "No files to clear",
+                    selected_count=0,
+                    total_count=0,
+                    auto_reset=True
+                )
             return
 
         # Clear the file table
@@ -58,10 +64,19 @@ class ShortcutManager:
         self.main_window.current_folder_is_recursive = False  # Reset recursive state
         self.main_window.current_sort_column = 1  # Reset to filename column
         self.main_window.current_sort_order = Qt.AscendingOrder  # Reset to ascending
-        self.main_window.set_status("File table cleared", color=STATUS_COLORS["file_cleared"], auto_reset=True, reset_delay=1000)
+
+        if hasattr(self.main_window, 'status_manager'):
+            self.main_window.status_manager.set_file_operation_status(
+                "File table cleared",
+                success=True,
+                auto_reset=True
+            )
+            # Override the reset delay for quick feedback
+            if self.main_window.status_manager._status_timer:
+                self.main_window.status_manager._status_timer.stop()
+                self.main_window.status_manager._status_timer.start(1000)  # 1 second
+
         logger.info("[MainWindow] CLEAR TABLE: File table cleared successfully")
-
-
 
     def get_shortcut_status(self) -> dict:
         """

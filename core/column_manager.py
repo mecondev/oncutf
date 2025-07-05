@@ -198,7 +198,13 @@ class ColumnManager:
             logger.warning(f"[ColumnManager] No model set for table type: {table_type}")
             return
 
-        header = table_view.horizontalHeader()
+        # Get header - QTableView has horizontalHeader(), QTreeView has header()
+        header = None
+        if isinstance(table_view, QTableView):
+            header = table_view.horizontalHeader()
+        elif isinstance(table_view, QTreeView):
+            header = table_view.header()
+
         if not header:
             logger.warning(f"[ColumnManager] No header found for table type: {table_type}")
             return
@@ -399,13 +405,11 @@ class ColumnManager:
             if viewport_height <= 0:
                 return False
 
-            # Estimate content height
-            row_height = 25  # Default estimate
-            if hasattr(table_view, 'rowHeight') and row_count > 0:
+            # Estimate row height (this is approximate)
+            row_height = 20  # Default estimate
+            if hasattr(table_view, 'rowHeight'):
                 try:
-                    first_row_height = table_view.rowHeight(0)
-                    if first_row_height > 0:
-                        row_height = first_row_height
+                    row_height = table_view.rowHeight(0) if row_count > 0 else 20
                 except:
                     pass
 
@@ -413,8 +417,12 @@ class ColumnManager:
 
             # Add header height
             header_height = 0
-            if hasattr(table_view, 'horizontalHeader'):
+            if isinstance(table_view, QTableView):
                 header = table_view.horizontalHeader()
+                if header:
+                    header_height = header.height()
+            elif isinstance(table_view, QTreeView):
+                header = table_view.header()
                 if header:
                     header_height = header.height()
 
@@ -441,7 +449,13 @@ class ColumnManager:
                                table_type: str) -> None:
         """Connect resize signals for user preference tracking."""
         try:
-            header = table_view.horizontalHeader()
+            # Get header - QTableView has horizontalHeader(), QTreeView has header()
+            header = None
+            if isinstance(table_view, QTableView):
+                header = table_view.horizontalHeader()
+            elif isinstance(table_view, QTreeView):
+                header = table_view.header()
+
             if header:
                 # Disconnect any existing connections to avoid duplicates
                 try:

@@ -39,19 +39,35 @@ class FileOperationsManager:
     ) -> int:
         """Execute batch rename process."""
         if not current_folder_path:
-            if self.parent_window:
-                self.parent_window.set_status("No folder selected.", color=STATUS_COLORS["alert_notice"])
+            if self.parent_window and hasattr(self.parent_window, 'status_manager'):
+                self.parent_window.status_manager.set_validation_status(
+                    "No folder selected",
+                    validation_type="warning",
+                    auto_reset=True
+                )
             return 0
 
         if not selected_files:
-            if self.parent_window:
-                self.parent_window.set_status("No files selected.", color=STATUS_COLORS["no_action"])
+            if self.parent_window and hasattr(self.parent_window, 'status_manager'):
+                self.parent_window.status_manager.set_selection_status(
+                    "No files selected for renaming",
+                    selected_count=0,
+                    total_count=0,
+                    auto_reset=True
+                )
                 CustomMessageDialog.show_warning(
                     self.parent_window, "Rename Warning", "No files are selected for renaming."
                 )
             return 0
 
         logger.info(f"[Rename] Starting rename process for {len(selected_files)} files...")
+
+        # Start operation tracking
+        operation_id = f"rename_{len(selected_files)}_files"
+        if self.parent_window and hasattr(self.parent_window, 'status_manager'):
+            self.parent_window.status_manager.start_operation(
+                operation_id, "rename", f"Renaming {len(selected_files)} files"
+            )
 
         # Import validator here to avoid circular imports
         from utils.filename_validator import validate_filename_part
@@ -81,8 +97,21 @@ class FileOperationsManager:
             elif result.error:
                 logger.error(f"[Rename] Error: {result.old_path} — {result.error}")
 
-        if self.parent_window:
-            self.parent_window.set_status(f"Renamed {renamed_count} file(s).", color=STATUS_COLORS["rename_success"], auto_reset=True)
+        # Use specialized rename status method
+        if self.parent_window and hasattr(self.parent_window, 'status_manager'):
+            self.parent_window.status_manager.set_rename_status(
+                f"Renamed {renamed_count} file(s)",
+                renamed_count=renamed_count,
+                success=True,
+                auto_reset=True
+            )
+
+            # Finish operation tracking
+            self.parent_window.status_manager.finish_operation(
+                operation_id,
+                success=renamed_count > 0,
+                final_message=f"Rename operation completed: {renamed_count}/{len(selected_files)} files renamed"
+            )
 
         logger.info(f"[Rename] Completed: {renamed_count} renamed out of {len(results)} total")
 

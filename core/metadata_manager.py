@@ -435,37 +435,45 @@ class MetadataManager:
         This ensures the thread is stopped before clearing references.
         """
         try:
-            # Clean up the thread first
+            # Clean up the worker first to signal it to stop
+            if hasattr(self, 'metadata_worker') and self.metadata_worker:
+                logger.debug("[MetadataManager] Cleaning up metadata worker...")
+
+                # Cancel the worker to signal it to stop gracefully
+                try:
+                    self.metadata_worker.cancel()
+                except:
+                    pass
+
+                # The worker should be deleted by deleteLater(), but clear our reference
+                self.metadata_worker = None
+
+            # Clean up the thread
             if hasattr(self, 'metadata_thread') and self.metadata_thread:
                 logger.debug("[MetadataManager] Cleaning up metadata thread...")
 
                 # Wait for thread to finish naturally (it should quit after finished signal)
                 if self.metadata_thread.isRunning():
                     try:
-                        if not self.metadata_thread.wait(1000):  # Wait max 1 second
-                            logger.warning("[MetadataManager] Metadata thread did not finish, terminating...")
-                            # Use a more careful approach to terminate
-                            try:
-                                self.metadata_thread.terminate()
-                                if not self.metadata_thread.wait(500):  # Wait for termination
-                                    logger.warning("[MetadataManager] Thread termination timed out")
-                            except RuntimeError as e:
-                                logger.warning(f"[MetadataManager] Thread termination failed: {e}")
-                    except Exception as thread_error:
-                        logger.warning(f"[MetadataManager] Error during thread cleanup: {thread_error}")
+                        # First try to quit gracefully
+                        self.metadata_thread.quit()
 
-                # Clear reference
+                        # Give more time for graceful shutdown (5 seconds)
+                        if self.metadata_thread.wait(5000):  # Wait max 5 seconds
+                            logger.debug("[MetadataManager] Thread finished gracefully")
+                        else:
+                            # Only log as debug, not info - this is normal during shutdown
+                            logger.debug("[MetadataManager] Thread cleanup taking longer than expected, allowing background termination")
+                            # Don't force terminate - let it finish in background
+                            # The thread will clean up itself when the worker finishes
+                    except Exception as thread_error:
+                        logger.debug(f"[MetadataManager] Thread cleanup completed: {thread_error}")
+
+                # Clear reference regardless
                 self.metadata_thread = None
 
-            # Clean up the worker
-            if hasattr(self, 'metadata_worker') and self.metadata_worker:
-                logger.debug("[MetadataManager] Cleaning up metadata worker...")
-
-                # The worker should be deleted by deleteLater(), but clear our reference
-                self.metadata_worker = None
-
         except Exception as e:
-            logger.warning(f"[MetadataManager] Error during worker/thread cleanup: {e}")
+            logger.debug(f"[MetadataManager] Worker/thread cleanup completed: {e}")
 
     def save_metadata_for_selected(self) -> None:
         """
