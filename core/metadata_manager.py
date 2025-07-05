@@ -147,23 +147,16 @@ class MetadataManager:
         if not self.parent_window:
             return
 
-        if (hasattr(self.parent_window, 'file_table_view') and
-            hasattr(self.parent_window, 'file_model')):
-            # Use the new selection system
-            selected_rows = self.parent_window.file_table_view._get_current_selection()
-            # Sort rows to maintain file table display order
-            selected_rows_sorted = sorted(selected_rows)
-            selected = [self.parent_window.file_model.files[r]
-                       for r in selected_rows_sorted
-                       if 0 <= r < len(self.parent_window.file_model.files)]
+        # Use unified selection method
+        selected_files = self.parent_window.get_selected_files_ordered() if self.parent_window else []
 
-            if not selected:
-                logger.info("[Shortcut] No files selected for metadata loading")
-                return
+        if not selected_files:
+            logger.info("[Shortcut] No files selected for metadata loading")
+            return
 
-            logger.info(f"[Shortcut] Loading basic metadata for {len(selected)} files")
-            # Use intelligent loading with cache checking and smart UX
-            self.load_metadata_for_items(selected, use_extended=False, source="shortcut")
+        logger.info(f"[Shortcut] Loading basic metadata for {len(selected_files)} files")
+        # Use intelligent loading with cache checking and smart UX
+        self.load_metadata_for_items(selected_files, use_extended=False, source="shortcut")
 
     def shortcut_load_extended_metadata(self) -> None:
         """
@@ -176,23 +169,16 @@ class MetadataManager:
             logger.warning("[Shortcut] Metadata scan already running — shortcut ignored.")
             return
 
-        if (hasattr(self.parent_window, 'file_table_view') and
-            hasattr(self.parent_window, 'file_model')):
-            # Use the new selection system
-            selected_rows = self.parent_window.file_table_view._get_current_selection()
-            # Sort rows to maintain file table display order
-            selected_rows_sorted = sorted(selected_rows)
-            selected = [self.parent_window.file_model.files[r]
-                       for r in selected_rows_sorted
-                       if 0 <= r < len(self.parent_window.file_model.files)]
+        # Use unified selection method
+        selected_files = self.parent_window.get_selected_files_ordered() if self.parent_window else []
 
-            if not selected:
-                logger.info("[Shortcut] No files selected for extended metadata loading")
-                return
+        if not selected_files:
+            logger.info("[Shortcut] No files selected for extended metadata loading")
+            return
 
-            logger.info(f"[Shortcut] Loading extended metadata for {len(selected)} files")
-            # Use intelligent loading with cache checking and smart UX
-            self.load_metadata_for_items(selected, use_extended=True, source="shortcut")
+        logger.info(f"[Shortcut] Loading extended metadata for {len(selected_files)} files")
+        # Use intelligent loading with cache checking and smart UX
+        self.load_metadata_for_items(selected_files, use_extended=True, source="shortcut")
 
     def load_metadata_for_items(self, items: List[FileItem], use_extended: bool = False, source: str = "unknown") -> None:
         """

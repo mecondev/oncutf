@@ -65,13 +65,8 @@ class InteractiveHeader(QHeaderView):
             return self.parent_window
 
         # Last resort: traverse parents to find main window
-        parent = self.parent()
-        while parent:
-            if hasattr(parent, 'handle_header_toggle') and hasattr(parent, 'sort_by_column'):
-                return parent
-            parent = parent.parent()
-
-        return None
+        from utils.path_utils import find_parent_with_attribute
+        return find_parent_with_attribute(self, 'handle_header_toggle')
 
     def mousePressEvent(self, event) -> None:
         self._press_pos = event.pos()

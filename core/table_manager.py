@@ -194,8 +194,10 @@ class TableManager:
         common_keys = None
 
         for file in selected_files:
-            path = file.full_path
-            metadata = self.parent_window.metadata_cache.get(path, {})
+            from utils.metadata_cache_helper import get_metadata_cache_helper
+
+            cache_helper = get_metadata_cache_helper(parent_window=self.parent_window)
+            metadata = cache_helper.get_metadata_for_file(file)
             keys = set(metadata.keys())
 
             if common_keys is None:

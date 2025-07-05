@@ -56,6 +56,7 @@ from utils.path_utils import paths_equal
 from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust, schedule_ui_update
 from widgets.file_tree_view import _drag_cancel_filter
 from widgets.metadata_edit_dialog import MetadataEditDialog
+from utils.metadata_cache_helper import MetadataCacheHelper
 
 # ApplicationContext integration
 try:
@@ -185,6 +186,25 @@ class MetadataTreeView(QTreeView):
 
         # Timer for update debouncing
         self._update_timer_id = None
+
+        # Initialize MetadataCacheHelper for unified cache access
+        self._cache_helper = None
+
+        # Initialize cache helper when parent is available
+        self._initialize_cache_helper()
+
+    def _initialize_cache_helper(self) -> None:
+        """Initialize the MetadataCacheHelper when parent window is available."""
+        parent_window = self._get_parent_with_file_table()
+        if parent_window and hasattr(parent_window, 'metadata_cache'):
+            self._cache_helper = MetadataCacheHelper(parent_window.metadata_cache)
+            logger.debug("[MetadataTreeView] MetadataCacheHelper initialized")
+
+    def _get_cache_helper(self) -> Optional[MetadataCacheHelper]:
+        """Get the MetadataCacheHelper instance, initializing if needed."""
+        if self._cache_helper is None:
+            self._initialize_cache_helper()
+        return self._cache_helper
 
     def _setup_tree_view_properties(self) -> None:
         """Configure standard tree view properties."""
@@ -762,12 +782,10 @@ class MetadataTreeView(QTreeView):
             selected_files = self._get_current_selection()
             if selected_files:
                 file_item = selected_files[0]
-                # Check cache first (for any pending modifications)
-                metadata_cache = self._get_metadata_cache()
-                if metadata_cache:
-                    cache_entry = metadata_cache.get_entry(file_item.full_path)
-                    if cache_entry and hasattr(cache_entry, 'data'):
-                        current_field_value = cache_entry.data.get(normalized_key_path)
+                # Use cache helper for unified access
+                cache_helper = self._get_cache_helper()
+                if cache_helper:
+                    current_field_value = cache_helper.get_metadata_value(file_item, normalized_key_path)
 
                 # Fallback to file item metadata if not in cache
                 if current_field_value is None and hasattr(file_item, 'metadata') and file_item.metadata:
@@ -991,29 +1009,16 @@ class MetadataTreeView(QTreeView):
         This should be called before resetting to get the original value.
         """
         selected_files = self._get_current_selection()
-        metadata_cache = self._get_metadata_cache()
-
-        if not selected_files or not metadata_cache:
+        if not selected_files:
             return None
 
-        # Get the first selected file to get original value
         file_item = selected_files[0]
-        full_path = file_item.full_path
-
-        # Try to get original metadata (unmodified) from cache
-        metadata_entry = metadata_cache.get_entry(full_path)
-        if not metadata_entry or not hasattr(metadata_entry, 'data'):
+        cache_helper = self._get_cache_helper()
+        if not cache_helper:
             return None
 
-        # If the entry is not modified, get value directly
-        # If it is modified, we need to get the original value from the file system
-        # For now, we'll reconstruct from the file's original metadata
-        if hasattr(file_item, 'metadata') and file_item.metadata:
-            # Get from file item's original metadata
-            return self._get_value_from_metadata_dict(file_item.metadata, key_path)
-
-        # Fallback: get from cache data
-        return self._get_value_from_metadata_dict(metadata_entry.data, key_path)
+        # Use cache helper for unified access
+        return cache_helper.get_metadata_value(file_item, key_path)
 
     def _get_value_from_metadata_dict(self, metadata: Dict[str, Any], key_path: str) -> Optional[Any]:
         """
@@ -1140,12 +1145,8 @@ class MetadataTreeView(QTreeView):
 
     def _get_parent_with_file_table(self) -> Optional[QWidget]:
         """Find the parent window that has file_table_view attribute."""
-        parent = self.parent()
-        while parent:
-            if hasattr(parent, 'file_table_view') and hasattr(parent, 'file_model'):
-                return parent
-            parent = parent.parent()
-        return None
+        from utils.path_utils import find_parent_with_attribute
+        return find_parent_with_attribute(self, 'file_table_view')
 
     def _get_current_selection(self):
         """Get current selection via parent traversal."""
@@ -1256,38 +1257,36 @@ class MetadataTreeView(QTreeView):
         Reset the metadata value in the cache to its original state.
         """
         selected_files = self._get_current_selection()
-        metadata_cache = self._get_metadata_cache()
-
-        if not selected_files or not metadata_cache:
+        if not selected_files:
             return
 
-        # For each selected file, reset its metadata in cache
-        for file_item in selected_files:
-            full_path = file_item.full_path
+        file_item = selected_files[0]
+        cache_helper = self._get_cache_helper()
+        if not cache_helper:
+            return
 
-            # Get the original value from file item's metadata
-            original_value = None
-            if hasattr(file_item, 'metadata') and file_item.metadata:
-                original_value = self._get_value_from_metadata_dict(file_item.metadata, key_path)
+        # Get the original value from file item metadata
+        original_value = None
+        if hasattr(file_item, 'metadata') and file_item.metadata:
+            original_value = self._get_value_from_metadata_dict(file_item.metadata, key_path)
 
-            # Update the metadata in cache
-            metadata_entry = metadata_cache.get_entry(full_path)
-            if metadata_entry and hasattr(metadata_entry, 'data'):
-                if original_value is not None:
-                    # Restore the original value
-                    self._set_metadata_in_cache(metadata_entry.data, key_path, str(original_value))
-                    self._set_metadata_in_file_item(file_item, key_path, str(original_value))
-                else:
-                    # If no original value, remove the modified entry
-                    self._remove_metadata_from_cache(metadata_entry.data, key_path)
-                    self._remove_metadata_from_file_item(file_item, key_path)
+        # Update cache with original value or remove if no original
+        if original_value is not None:
+            cache_helper.set_metadata_value(file_item, key_path, original_value)
+        else:
+            # Remove from cache if no original value
+            cache_entry = cache_helper.get_cache_entry_for_file(file_item)
+            if cache_entry and hasattr(cache_entry, 'data') and key_path in cache_entry.data:
+                del cache_entry.data[key_path]
 
-                # Update file icon status based on remaining modified items
-                if not self.modified_items:
-                    file_item.metadata_status = "loaded"
-                    metadata_entry.modified = False
-                else:
-                    file_item.metadata_status = "modified"
+        # Update file icon status based on remaining modified items
+        if not self.modified_items:
+            file_item.metadata_status = "loaded"
+            cache_entry = cache_helper.get_cache_entry_for_file(file_item)
+            if cache_entry:
+                cache_entry.modified = False
+        else:
+            file_item.metadata_status = "modified"
 
         # Trigger UI update
         self._update_file_icon_status()
@@ -1295,75 +1294,23 @@ class MetadataTreeView(QTreeView):
     def _update_metadata_in_cache(self, key_path: str, new_value: str) -> None:
         """
         Update the metadata value in the cache to persist changes.
-        SIMPLIFIED: Rotation is always a top-level field.
         """
         selected_files = self._get_current_selection()
-        metadata_cache = self._get_metadata_cache()
-
-        if not selected_files or not metadata_cache:
+        if not selected_files:
             return
 
-        # For each selected file, update its metadata in cache
-        for file_item in selected_files:
-            full_path = file_item.full_path
+        file_item = selected_files[0]
+        cache_helper = self._get_cache_helper()
+        if cache_helper:
+            cache_helper.set_metadata_value(file_item, key_path, new_value)
 
-            # Update the metadata in cache
-            metadata_entry = metadata_cache.get_entry(full_path)
-            if metadata_entry and hasattr(metadata_entry, 'data'):
-                parts = key_path.split('/')
+            # Mark the entry as modified
+            cache_entry = cache_helper.get_cache_entry_for_file(file_item)
+            if cache_entry:
+                cache_entry.modified = True
 
-                # Special handling for rotation - it's ALWAYS a top-level field
-                if len(parts) == 2 and parts[1].lower() == "rotation":
-                    # Remove any existing rotation entries from anywhere
-                    if "Rotation" in metadata_entry.data:
-                        del metadata_entry.data["Rotation"]
-                    if "rotation" in metadata_entry.data:
-                        del metadata_entry.data["rotation"]
-
-                    # Remove from any groups too (cleanup)
-                    for existing_group, existing_data in list(metadata_entry.data.items()):
-                        if isinstance(existing_data, dict):
-                            if "Rotation" in existing_data:
-                                del existing_data["Rotation"]
-                            if "rotation" in existing_data:
-                                del existing_data["rotation"]
-
-                    # Add as top-level field (this is how ExifTool stores it)
-                    metadata_entry.data["Rotation"] = new_value
-
-                    # Also update in file_item
-                    if hasattr(file_item, 'metadata') and file_item.metadata:
-                        # Clean up file_item metadata too
-                        if "Rotation" in file_item.metadata:
-                            del file_item.metadata["Rotation"]
-                        if "rotation" in file_item.metadata:
-                            del file_item.metadata["rotation"]
-
-                        for existing_group, existing_data in list(file_item.metadata.items()):
-                            if isinstance(existing_data, dict):
-                                if "Rotation" in existing_data:
-                                    del existing_data["Rotation"]
-                                if "rotation" in existing_data:
-                                    del existing_data["rotation"]
-
-                        # Set as top-level
-                        file_item.metadata["Rotation"] = new_value
-                elif len(parts) == 1 and parts[0].lower() == "rotation":
-                    # Direct top-level rotation
-                    metadata_entry.data["Rotation"] = new_value
-
-                    if hasattr(file_item, 'metadata') and file_item.metadata:
-                        file_item.metadata["Rotation"] = new_value
-                else:
-                    # Normal handling for non-rotation fields
-                    self._set_metadata_in_cache(metadata_entry.data, key_path, new_value)
-                    self._set_metadata_in_file_item(file_item, key_path, new_value)
-
-                # Mark the entry as modified
-                metadata_entry.modified = True
-
-                # Mark file item as modified
-                file_item.metadata_status = "modified"
+            # Mark file item as modified
+            file_item.metadata_status = "modified"
 
         # Trigger UI update
         self._update_file_icon_status()
@@ -2037,19 +1984,15 @@ class MetadataTreeView(QTreeView):
             self.clear_view()
             return
 
-        # Get metadata from cache first (to preserve modifications), then fallback to file_item
+        # Use cache helper for unified metadata access
+        cache_helper = self._get_cache_helper()
         metadata = None
-        parent_window = self._get_parent_with_file_table()
-        if parent_window and hasattr(parent_window, 'metadata_cache'):
-            # Try cache first - this includes modifications
-            cache_entry = parent_window.metadata_cache.get_entry(file_item.full_path)
-            if cache_entry and hasattr(cache_entry, 'data'):
-                metadata = cache_entry.data
-            else:
-                metadata = parent_window.metadata_cache.get(file_item.full_path)
 
-        # Fallback to file_item metadata if cache is empty
-        if not metadata and hasattr(file_item, 'metadata') and file_item.metadata:
+        if cache_helper:
+            metadata = cache_helper.get_metadata_for_file(file_item)
+
+        # Fallback to file item metadata
+        if not metadata and hasattr(file_item, 'metadata'):
             metadata = file_item.metadata
 
         if isinstance(metadata, dict) and metadata:

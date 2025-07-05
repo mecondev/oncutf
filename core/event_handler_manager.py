@@ -117,11 +117,8 @@ class EventHandlerManager:
         # Give a brief moment for sync to complete
         QApplication.processEvents()
 
-        # Use the unified selection system (same as shortcuts and drag-drop)
-        selected_rows = self.parent_window.file_table_view._get_current_selection()
-        # Sort rows to maintain file table display order
-        selected_rows_sorted = sorted(selected_rows)
-        selected_files = [self.parent_window.file_model.files[r] for r in selected_rows_sorted if 0 <= r < total_files]
+        # Use unified selection method
+        selected_files = self.parent_window.get_selected_files_ordered()
 
         logger.debug(f"[ContextMenu] Found {len(selected_files)} selected files at position row {index_at_position.row() if index_at_position.isValid() else 'invalid'}", extra={"dev_only": True})
 
@@ -1303,49 +1300,20 @@ class EventHandlerManager:
 
     def _check_selected_files_have_metadata(self, selected_files: list) -> bool:
         """Check if any of the selected files have metadata."""
-        if not selected_files:
-            return False
-
-        # Check if any selected file has metadata
-        for file_item in selected_files:
-            if self._file_has_metadata(file_item):
-                return True
-
-        return False
+        status = self.check_files_status(files=selected_files, check_type='metadata', extended=False)
+        return status['count'] > 0  # Any files have metadata
 
     def _check_any_files_have_metadata(self) -> bool:
         """Check if any file in the current folder has metadata."""
-        # Check if any file has metadata
-        for file_item in self.parent_window.file_model.files:
-            if self._file_has_metadata(file_item):
-                return True
-
-        return False
+        status = self.check_files_status(files=None, check_type='metadata', extended=False, scope='all')
+        return status['count'] > 0  # Any files have metadata
 
     def _file_has_metadata(self, file_item) -> bool:
         """Check if a specific file has metadata."""
-        try:
-            # Check metadata cache first
-            if hasattr(self.parent_window, 'metadata_cache'):
-                cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
-                if cache_entry and hasattr(cache_entry, 'data') and cache_entry.data:
-                    # Check if metadata has actual content (not just empty dict)
-                    metadata = cache_entry.data
-                    # Filter out internal markers and check for real metadata
-                    real_metadata = {k: v for k, v in metadata.items() if not k.startswith('__')}
-                    return len(real_metadata) > 0
+        from utils.metadata_cache_helper import get_metadata_cache_helper
 
-            # Fallback to file item metadata
-            if hasattr(file_item, 'metadata') and file_item.metadata:
-                metadata = file_item.metadata
-                real_metadata = {k: v for k, v in metadata.items() if not k.startswith('__')}
-                return len(real_metadata) > 0
-
-            return False
-
-        except Exception as e:
-            logger.debug(f"[EventHandler] Error checking metadata for {getattr(file_item, 'filename', 'unknown')}: {e}")
-            return False
+        cache_helper = get_metadata_cache_helper(parent_window=self.parent_window)
+        return cache_helper.has_metadata(file_item)
 
     def _handle_export_metadata(self, file_items: list, scope: str) -> None:
         """Handle metadata export dialog and process."""
@@ -1840,60 +1808,127 @@ class EventHandlerManager:
 
     def _check_files_have_metadata_type(self, files: list, extended: bool) -> bool:
         """Check if all files have the specified type of metadata (basic or extended)."""
-        if not files:
-            return False
-
-        for file_item in files:
-            if not self._file_has_metadata_type(file_item, extended):
-                return False
-        return True
+        status = self.check_files_status(files=files, check_type='metadata', extended=extended)
+        return status['has_status']  # All files have the metadata type
 
     def _check_all_files_have_metadata_type(self, extended: bool) -> bool:
         """Check if all files in the current folder have the specified type of metadata."""
-        if not hasattr(self.parent_window, 'file_model') or not self.parent_window.file_model.files:
-            return False
-
-        for file_item in self.parent_window.file_model.files:
-            if not self._file_has_metadata_type(file_item, extended):
-                return False
-        return True
+        status = self.check_files_status(files=None, check_type='metadata', extended=extended, scope='all')
+        return status['has_status']  # All files have the metadata type
 
     def _file_has_metadata_type(self, file_item, extended: bool) -> bool:
         """Check if a file has the specified type of metadata (basic or extended)."""
-        try:
-            # Check metadata cache first
-            if hasattr(self.parent_window, 'metadata_cache'):
-                cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
-                if cache_entry and hasattr(cache_entry, 'is_extended') and hasattr(cache_entry, 'data'):
-                    # Check if we have the right type and actual content
-                    if cache_entry.is_extended == extended and cache_entry.data:
-                        real_metadata = {k: v for k, v in cache_entry.data.items() if not k.startswith('__')}
-                        return len(real_metadata) > 0
+        from utils.metadata_cache_helper import get_metadata_cache_helper
 
-            # Fallback to file item metadata
-            if hasattr(file_item, 'metadata') and file_item.metadata:
-                metadata = file_item.metadata
-                # Check if it's the right type
-                has_extended_marker = '__extended__' in metadata
-                if has_extended_marker == extended:
-                    real_metadata = {k: v for k, v in metadata.items() if not k.startswith('__')}
-                    return len(real_metadata) > 0
+        cache_helper = get_metadata_cache_helper(parent_window=self.parent_window)
+        return cache_helper.has_metadata(file_item, extended=extended)
 
-            return False
+    # =====================================
+    # Unified File Status Checking System
+    # =====================================
 
-        except Exception as e:
-            logger.debug(f"[EventHandler] Error checking metadata type for {getattr(file_item, 'filename', 'unknown')}: {e}")
-            return False
+    def check_files_status(self, files: list = None, check_type: str = 'metadata', extended: bool = False, scope: str = 'selected') -> dict:
+        """
+        Unified file status checking for metadata and hash operations.
+
+        Args:
+            files: List of files to check (None for all files)
+            check_type: 'metadata' or 'hash'
+            extended: For metadata checks, whether to check for extended metadata
+            scope: 'selected' or 'all' (used when files is None)
+
+        Returns:
+            dict: {
+                'has_status': bool,  # True if files have the requested status
+                'count': int,        # Number of files with status
+                'total': int,        # Total number of files checked
+                'files_with_status': list,  # Files that have the status
+                'files_without_status': list  # Files that don't have the status
+            }
+        """
+        # Determine which files to check
+        if files is None:
+            if scope == 'all' and hasattr(self.parent_window, 'file_model'):
+                files = self.parent_window.file_model.files or []
+            else:
+                files = []
+
+        if not files:
+            return {
+                'has_status': False,
+                'count': 0,
+                'total': 0,
+                'files_with_status': [],
+                'files_without_status': []
+            }
+
+        files_with_status = []
+        files_without_status = []
+
+        # Check each file
+        for file_item in files:
+            if check_type == 'metadata':
+                if extended:
+                    has_status = self._file_has_metadata_type(file_item, extended=True)
+                else:
+                    # For basic metadata, accept either basic or extended (extended includes basic)
+                    has_status = (self._file_has_metadata_type(file_item, extended=False) or
+                                self._file_has_metadata_type(file_item, extended=True))
+            elif check_type == 'hash':
+                has_status = self._file_has_hash(file_item)
+            else:
+                has_status = False
+
+            if has_status:
+                files_with_status.append(file_item)
+            else:
+                files_without_status.append(file_item)
+
+        return {
+            'has_status': len(files_with_status) == len(files),  # All files have status
+            'count': len(files_with_status),
+            'total': len(files),
+            'files_with_status': files_with_status,
+            'files_without_status': files_without_status
+        }
 
     def _check_files_have_hashes(self, files: list) -> bool:
         """Check if all files have hash values calculated."""
-        if not files:
-            return False
+        status = self.check_files_status(files=files, check_type='hash')
+        return status['has_status']  # All files have hashes
 
-        for file_item in files:
-            if not self._file_has_hash(file_item):
-                return False
-        return True
+    # =====================================
+    # Convenience Methods Using Unified System
+    # =====================================
+
+    def get_files_without_metadata(self, files: list = None, extended: bool = False, scope: str = 'selected') -> list:
+        """Get list of files that don't have metadata."""
+        status = self.check_files_status(files=files, check_type='metadata', extended=extended, scope=scope)
+        return status['files_without_status']
+
+    def get_files_without_hashes(self, files: list = None, scope: str = 'selected') -> list:
+        """Get list of files that don't have hash values."""
+        status = self.check_files_status(files=files, check_type='hash', scope=scope)
+        return status['files_without_status']
+
+    def get_metadata_status_summary(self, files: list = None, scope: str = 'selected') -> dict:
+        """Get comprehensive metadata status summary."""
+        basic_status = self.check_files_status(files=files, check_type='metadata', extended=False, scope=scope)
+        extended_status = self.check_files_status(files=files, check_type='metadata', extended=True, scope=scope)
+
+        return {
+            'total_files': basic_status['total'],
+            'basic_metadata': {
+                'count': basic_status['count'],
+                'percentage': (basic_status['count'] / basic_status['total'] * 100) if basic_status['total'] > 0 else 0
+            },
+            'extended_metadata': {
+                'count': extended_status['count'],
+                'percentage': (extended_status['count'] / extended_status['total'] * 100) if extended_status['total'] > 0 else 0
+            },
+            'files_needing_basic': basic_status['files_without_status'],
+            'files_needing_extended': extended_status['files_without_status']
+        }
 
     def _file_has_hash(self, file_item) -> bool:
         """Check if a file has a hash value calculated."""

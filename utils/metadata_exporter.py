@@ -102,20 +102,11 @@ class MetadataExporter:
 
     def _get_selected_files(self) -> List[Any]:
         """Get currently selected files from file table."""
-        if not (hasattr(self.parent_window, 'file_table_view') and
-                hasattr(self.parent_window, 'file_model')):
+        if not self.parent_window:
             return []
 
-        selected_rows = self.parent_window.file_table_view._get_current_selection()
-        selected_files = []
-
-        # Sort rows to maintain file table display order
-        selected_rows_sorted = sorted(selected_rows)
-        for row in selected_rows_sorted:
-            if 0 <= row < len(self.parent_window.file_model.files):
-                selected_files.append(self.parent_window.file_model.files[row])
-
-        return selected_files
+        # Use unified selection method
+        return self.parent_window.get_selected_files_ordered()
 
     def _get_all_files(self) -> List[Any]:
         """Get all files from file model."""

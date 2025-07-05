@@ -1073,16 +1073,19 @@ class FileTableView(QTableView):
             logger.warning("[FileTableView] No valid selection found for metadata tree drop")
             return False
 
-        # Convert to FileItem objects
+        # Convert to FileItem objects using unified selection method
         try:
-            # Sort rows to maintain file table display order
-            selected_rows_sorted = sorted(selected_rows)
-            file_items = [self.model().files[r] for r in selected_rows_sorted if 0 <= r < len(self.model().files)]
+            parent_window = self._get_parent_with_metadata_tree()
+            if not parent_window:
+                logger.warning("[FileTableView] Could not find parent window for unified selection")
+                return False
+
+            file_items = parent_window.get_selected_files_ordered()
             if not file_items:
                 logger.warning("[FileTableView] No valid file items found for metadata tree drop")
                 return False
         except (AttributeError, IndexError) as e:
-            logger.error(f"[FileTableView] Error converting selection to file items: {e}")
+            logger.error(f"[FileTableView] Error getting selected files: {e}")
             return False
 
         # Get modifiers for metadata loading decision
@@ -1128,12 +1131,8 @@ class FileTableView(QTableView):
 
     def _get_parent_with_metadata_tree(self):
         """Find parent window that has metadata_tree_view attribute"""
-        parent = self.parent()
-        while parent:
-            if hasattr(parent, 'metadata_tree_view'):
-                return parent
-            parent = parent.parent()
-        return None
+        from utils.path_utils import find_parent_with_attribute
+        return find_parent_with_attribute(self, 'metadata_tree_view')
 
     # =====================================
     # Drag & Drop Event Handlers
