@@ -98,6 +98,7 @@ class FileTableModel(QAbstractTableModel):
     def _create_combined_icon(self, metadata_icon: QPixmap, show_hash: bool) -> QIcon:
         """
         Create a combined icon showing metadata status and optionally hash status.
+        Uses left alignment with metadata icon on the left and hash icon on the right.
 
         Args:
             metadata_icon: The metadata status icon
@@ -109,8 +110,9 @@ class FileTableModel(QAbstractTableModel):
         if not show_hash:
             return QIcon(metadata_icon)
 
-        # Create a wider pixmap to hold both icons
-        combined_width = 32  # Space for two 16px icons
+        # Use the full STATUS_COLUMN width for proper spacing
+        from config import FILE_TABLE_COLUMN_WIDTHS
+        combined_width = FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"]  # 45px
         combined_height = 16
         combined_pixmap = QPixmap(combined_width, combined_height)
         combined_pixmap.fill(QColor(0, 0, 0, 0))
@@ -118,11 +120,60 @@ class FileTableModel(QAbstractTableModel):
         painter = QPainter(combined_pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        # Draw metadata icon on the left
-        painter.drawPixmap(0, 0, metadata_icon)
+        # Draw metadata icon on the left (2px from left edge)
+        painter.drawPixmap(2, 0, metadata_icon)
 
-        # Draw hash icon on the right
-        painter.drawPixmap(16, 0, self.hash_icon)
+        # Draw hash icon on the right (27px from left = 45-16-2 for 2px right margin)
+        painter.drawPixmap(27, 0, self.hash_icon)
+
+        painter.end()
+
+        return QIcon(combined_pixmap)
+
+    def _create_metadata_only_icon(self, metadata_icon: QPixmap) -> QIcon:
+        """
+        Create a metadata-only icon positioned on the left side of the STATUS_COLUMN.
+
+        Args:
+            metadata_icon: The metadata status icon
+
+        Returns:
+            QIcon: Metadata icon positioned on the left
+        """
+        from config import FILE_TABLE_COLUMN_WIDTHS
+        combined_width = FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"]  # 45px
+        combined_height = 16
+        combined_pixmap = QPixmap(combined_width, combined_height)
+        combined_pixmap.fill(QColor(0, 0, 0, 0))
+
+        painter = QPainter(combined_pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        # Draw metadata icon on the left (2px from left edge)
+        painter.drawPixmap(2, 0, metadata_icon)
+
+        painter.end()
+
+        return QIcon(combined_pixmap)
+
+    def _create_hash_only_icon(self) -> QIcon:
+        """
+        Create a hash-only icon positioned on the right side of the STATUS_COLUMN.
+
+        Returns:
+            QIcon: Hash icon positioned on the right
+        """
+        from config import FILE_TABLE_COLUMN_WIDTHS
+        combined_width = FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"]  # 45px
+        combined_height = 16
+        combined_pixmap = QPixmap(combined_width, combined_height)
+        combined_pixmap.fill(QColor(0, 0, 0, 0))
+
+        painter = QPainter(combined_pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        # Draw hash icon on the right (27px from left = 45-16-2 for 2px right margin)
+        painter.drawPixmap(27, 0, self.hash_icon)
 
         painter.end()
 
@@ -220,10 +271,10 @@ class FileTableModel(QAbstractTableModel):
                 return self._create_combined_icon(metadata_pixmap, has_hash)
             elif metadata_pixmap:
                 # Only metadata - show just metadata icon
-                return QIcon(metadata_pixmap)
+                return self._create_metadata_only_icon(metadata_pixmap)
             elif has_hash:
                 # Only hash - show just hash icon
-                return QIcon(self.hash_icon)
+                return self._create_hash_only_icon()
             else:
                 # Neither metadata nor hash - show nothing
                 return QIcon()
@@ -239,7 +290,7 @@ class FileTableModel(QAbstractTableModel):
 
         elif role == Qt.TextAlignmentRole: # type: ignore
             if col == 0:
-                return Qt.AlignVCenter | Qt.AlignCenter
+                return Qt.AlignVCenter | Qt.AlignLeft
             elif col == 2:
                 return Qt.AlignVCenter | Qt.AlignRight
             return Qt.AlignVCenter | Qt.AlignLeft
