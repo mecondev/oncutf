@@ -107,9 +107,7 @@ class MainWindow(QMainWindow):
         self.preview_icons = load_preview_status_icons()
         self.force_extended_metadata = False
         self.skip_metadata_mode = DEFAULT_SKIP_METADATA # Keeps state across folder reloads
-        self.metadata_loader = MetadataLoader()
         self.file_model = FileTableModel(parent_window=self)
-        self.metadata_loader.model = self.file_model
 
         # --- Initialize MetadataManager after dependencies are ready ---
         from core.metadata_manager import MetadataManager
@@ -121,7 +119,7 @@ class MainWindow(QMainWindow):
         icons_loader.set_theme("dark")
 
         self.loading_dialog = None
-        self.modifier_state = Qt.NoModifier # type: ignore[attr-defined]
+        self.modifier_state = Qt.NoModifier  # type: ignore
 
         self.create_colored_icon = create_colored_icon
         self.icon_paths = prepare_status_icons()
@@ -131,7 +129,7 @@ class MainWindow(QMainWindow):
         self.current_folder_path = None
         self.current_folder_is_recursive = False  # Track if current folder was loaded recursively
         self.current_sort_column = 1  # Track current sort column (default: filename)
-        self.current_sort_order = Qt.AscendingOrder  # Track current sort order
+        self.current_sort_order = Qt.AscendingOrder  # type: ignore
         self.files = []
         self.preview_map = {}  # preview_filename -> FileItem
         self._selection_sync_mode = "normal"  # values: "normal", "toggle"
@@ -275,7 +273,7 @@ class MainWindow(QMainWindow):
         """Load files from paths via Application Service."""
         self.app_service.load_files_from_paths(file_paths, clear=clear)
 
-    def load_files_from_dropped_items(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
+    def load_files_from_dropped_items(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:  # type: ignore
         """Load files from dropped items via Application Service."""
         self.app_service.load_files_from_dropped_items(paths, modifiers)
 
@@ -283,7 +281,7 @@ class MainWindow(QMainWindow):
         """Prepare folder load via Application Service."""
         return self.app_service.prepare_folder_load(folder_path, clear=clear)
 
-    def load_single_item_from_drop(self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
+    def load_single_item_from_drop(self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:  # type: ignore
         """Load single item from drop via Application Service."""
         self.app_service.load_single_item_from_drop(path, modifiers)
 
@@ -308,7 +306,7 @@ class MainWindow(QMainWindow):
     # Table Operations via Application Service
     # =====================================
 
-    def sort_by_column(self, column: int, order: Qt.SortOrder = None, force_order: Qt.SortOrder = None) -> None:
+    def sort_by_column(self, column: int, order: Optional[Qt.SortOrder] = None, force_order: Optional[Qt.SortOrder] = None) -> None:
         """Sort by column via Application Service."""
         self.app_service.sort_by_column(column, order, force_order)
 
@@ -348,7 +346,7 @@ class MainWindow(QMainWindow):
         """Handle table context menu via Application Service."""
         self.app_service.handle_table_context_menu(position)
 
-    def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
+    def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:  # type: ignore
         """Handle file double click via Application Service."""
         self.app_service.handle_file_double_click(index, modifiers)
 
@@ -474,14 +472,14 @@ class MainWindow(QMainWindow):
         return self.utility_manager.find_consecutive_ranges(indices)
 
     def should_skip_folder_reload(self, folder_path: str, force: bool = False) -> bool:
-        """Delegates to FileOperationsManager for folder reload check."""
-        return self.file_operations_manager.should_skip_folder_reload(
-            folder_path, self.current_folder_path, force
-        )
+        """Check if folder reload should be skipped."""
+        # Legacy method - logic moved to Application Service
+        return folder_path == self.current_folder_path and not force
 
     def get_file_items_from_folder(self, folder_path: str) -> list[FileItem]:
-        """Delegates to FileLoadManager for getting file items from folder."""
-        return self.file_load_manager.get_file_items_from_folder(folder_path)
+        """Get file items from folder."""
+        # Legacy method - logic moved to Application Service
+        return self.app_service.get_file_items_from_folder(folder_path)
 
     def update_module_dividers(self) -> None:
         """Delegates to RenameManager for module dividers update."""
@@ -512,12 +510,13 @@ class MainWindow(QMainWindow):
         """
         logger.info(f"[MetadataEdit] Value changed: {key_path} = '{old_value}' -> '{new_value}'")
 
-        # Use specialized metadata status method
-        self.status_manager.set_metadata_status(
-            f"Modified {key_path}: {old_value} → {new_value}",
-            operation_type="success",
-            auto_reset=True
-        )
+        # Use specialized metadata status method if status manager is available
+        if hasattr(self, 'status_manager') and self.status_manager:
+            self.status_manager.set_metadata_status(
+                f"Modified {key_path}: {old_value} → {new_value}",
+                operation_type="success",
+                auto_reset=True
+            )
 
         # The file icon status update is already handled by MetadataTreeView._update_file_icon_status()
         # Just log the change for debugging
@@ -532,12 +531,13 @@ class MainWindow(QMainWindow):
         """
         logger.info(f"[MetadataEdit] Value reset: {key_path}")
 
-        # Use specialized metadata status method
-        self.status_manager.set_metadata_status(
-            f"Reset {key_path} to original value",
-            operation_type="success",
-            auto_reset=True
-        )
+        # Use specialized metadata status method if status manager is available
+        if hasattr(self, 'status_manager') and self.status_manager:
+            self.status_manager.set_metadata_status(
+                f"Reset {key_path} to original value",
+                operation_type="success",
+                auto_reset=True
+            )
 
         # The file icon status update is already handled by MetadataTreeView._update_file_icon_status()
         logger.debug(f"[MetadataEdit] Reset metadata field: {key_path}")
@@ -551,17 +551,18 @@ class MainWindow(QMainWindow):
         """
         logger.debug(f"[MetadataEdit] Value copied to clipboard: {value}")
 
-        # Use specialized file operation status method
-        self.status_manager.set_file_operation_status(
-            f"Copied '{value}' to clipboard",
-            success=True,
-            auto_reset=True
-        )
+        # Use specialized file operation status method if status manager is available
+        if hasattr(self, 'status_manager') and self.status_manager:
+            self.status_manager.set_file_operation_status(
+                f"Copied '{value}' to clipboard",
+                success=True,
+                auto_reset=True
+            )
 
-        # Override the reset delay for clipboard operations (shorter feedback)
-        if self.status_manager._status_timer:
-            self.status_manager._status_timer.stop()
-            self.status_manager._status_timer.start(2000)  # 2 seconds for clipboard feedback
+            # Override the reset delay for clipboard operations (shorter feedback)
+            if hasattr(self.status_manager, '_status_timer') and self.status_manager._status_timer:
+                self.status_manager._status_timer.stop()
+                self.status_manager._status_timer.start(2000)  # 2 seconds for clipboard feedback
 
     # =====================================
     # Window Configuration Management
@@ -574,8 +575,9 @@ class MainWindow(QMainWindow):
 
     def _set_smart_default_geometry(self) -> None:
         """Set smart default window geometry based on screen size and aspect ratio."""
-        # Delegate to WindowConfigManager
-        self.window_config_manager.set_smart_default_geometry()
+        # Legacy method - logic moved to WindowConfigManager
+        if hasattr(self.window_config_manager, 'set_smart_default_geometry'):
+            self.window_config_manager.set_smart_default_geometry()
 
     def _save_window_config(self) -> None:
         """Save current window state to config manager."""
@@ -620,7 +622,7 @@ class MainWindow(QMainWindow):
         """Adjust columns when splitter position changes using ColumnManager."""
         self.column_manager.adjust_columns_for_splitter_change(table_view, table_type)
 
-    def reset_column_preferences(self, table_type: str, column_index: int = None) -> None:
+    def reset_column_preferences(self, table_type: str, column_index: Optional[int] = None) -> None:
         """Reset user preferences for columns to allow auto-sizing."""
         self.column_manager.reset_user_preferences(table_type, column_index)
 
@@ -772,9 +774,12 @@ class MainWindow(QMainWindow):
                 # User wants to save changes before closing
                 try:
                     # Save all modified metadata
-                    if hasattr(self, 'metadata_manager'):
-                        self.metadata_manager.save_all_modified_metadata()
-                        logger.info("[CloseEvent] Saved all metadata changes before closing")
+                    if hasattr(self, 'metadata_manager') and self.metadata_manager:
+                        if hasattr(self.metadata_manager, 'save_all_modified_metadata'):
+                            self.metadata_manager.save_all_modified_metadata()
+                            logger.info("[CloseEvent] Saved all metadata changes before closing")
+                        else:
+                            logger.warning("[CloseEvent] save_all_modified_metadata method not available")
                     else:
                         logger.warning("[CloseEvent] MetadataManager not available for saving")
                 except Exception as e:
@@ -802,7 +807,7 @@ class MainWindow(QMainWindow):
         try:
             # Set wait cursor for the entire shutdown process
             from utils.cursor_helper import wait_cursor
-            QApplication.setOverrideCursor(Qt.WaitCursor)
+            QApplication.setOverrideCursor(Qt.WaitCursor)  # type: ignore
 
             # Create custom shutdown dialog that doesn't respond to ESC
             from widgets.metadata_waiting_dialog import MetadataWaitingDialog
@@ -811,10 +816,10 @@ class MainWindow(QMainWindow):
                 """Custom dialog for shutdown that ignores ESC key."""
                 def keyPressEvent(self, event):
                     # Ignore ESC key during shutdown and maintain wait cursor
-                    if event.key() == Qt.Key_Escape:
+                    if event.key() == Qt.Key_Escape:  # type: ignore
                         logger.debug("[ShutdownDialog] ESC key ignored during shutdown")
                         # Ensure wait cursor is maintained
-                        QApplication.setOverrideCursor(Qt.WaitCursor)
+                        QApplication.setOverrideCursor(Qt.WaitCursor)  # type: ignore
                         return
                     # Handle other keys normally
                     super().keyPressEvent(event)
@@ -824,13 +829,13 @@ class MainWindow(QMainWindow):
             # Make dialog more visible and prevent it from closing
             self.shutdown_dialog.setWindowTitle("Closing OnCutF...")
             self.shutdown_dialog.setWindowFlags(
-                self.shutdown_dialog.windowFlags() | Qt.WindowStaysOnTopHint
+                self.shutdown_dialog.windowFlags() | Qt.WindowStaysOnTopHint  # type: ignore
             )
             self.shutdown_dialog.set_status("Preparing to close...")
 
             # Prevent dialog from being closed by user
             self.shutdown_dialog.setWindowFlags(
-                self.shutdown_dialog.windowFlags() & ~Qt.WindowCloseButtonHint
+                self.shutdown_dialog.windowFlags() & ~Qt.WindowCloseButtonHint  # type: ignore
             )
 
             # Force show and ensure it's visible
@@ -839,7 +844,7 @@ class MainWindow(QMainWindow):
             self.shutdown_dialog.activateWindow()
 
             # Move dialog to center of screen
-            screen = QApplication.desktop().screenGeometry()
+            screen = QApplication.desktop().screenGeometry()  # type: ignore
             dialog_geometry = self.shutdown_dialog.geometry()
             x = (screen.width() - dialog_geometry.width()) // 2
             y = (screen.height() - dialog_geometry.height()) // 2
@@ -897,7 +902,7 @@ class MainWindow(QMainWindow):
                 return
 
             # Ensure wait cursor is still active (reapply if needed)
-            QApplication.setOverrideCursor(Qt.WaitCursor)
+            QApplication.setOverrideCursor(Qt.WaitCursor)  # type: ignore
 
             # Get current step
             step_name, step_function = self.shutdown_steps[self.current_shutdown_step]
@@ -926,7 +931,7 @@ class MainWindow(QMainWindow):
                 logger.error(f"[CloseEvent] Error in shutdown step '{step_name}': {e}")
 
             # Reapply wait cursor after step execution (in case it was changed)
-            QApplication.setOverrideCursor(Qt.WaitCursor)
+            QApplication.setOverrideCursor(Qt.WaitCursor)  # type: ignore
 
             # Move to next step
             self.current_shutdown_step += 1
@@ -950,10 +955,10 @@ class MainWindow(QMainWindow):
                 """Custom dialog for shutdown that ignores ESC key."""
                 def keyPressEvent(self, event):
                     # Ignore ESC key during shutdown and maintain wait cursor
-                    if event.key() == Qt.Key_Escape:
+                    if event.key() == Qt.Key_Escape:  # type: ignore
                         logger.debug("[ShutdownDialog] ESC key ignored during shutdown")
                         # Ensure wait cursor is maintained
-                        QApplication.setOverrideCursor(Qt.WaitCursor)
+                        QApplication.setOverrideCursor(Qt.WaitCursor)  # type: ignore
                         return
                     # Handle other keys normally
                     super().keyPressEvent(event)
@@ -963,12 +968,12 @@ class MainWindow(QMainWindow):
             # Make dialog more visible and prevent it from closing
             self.shutdown_dialog.setWindowTitle("Closing OnCutF...")
             self.shutdown_dialog.setWindowFlags(
-                self.shutdown_dialog.windowFlags() | Qt.WindowStaysOnTopHint
+                self.shutdown_dialog.windowFlags() | Qt.WindowStaysOnTopHint  # type: ignore
             )
 
             # Prevent dialog from being closed by user
             self.shutdown_dialog.setWindowFlags(
-                self.shutdown_dialog.windowFlags() & ~Qt.WindowCloseButtonHint
+                self.shutdown_dialog.windowFlags() & ~Qt.WindowCloseButtonHint  # type: ignore
             )
 
             # Force show and ensure it's visible
@@ -977,7 +982,7 @@ class MainWindow(QMainWindow):
             self.shutdown_dialog.activateWindow()
 
             # Move dialog to center of screen
-            screen = QApplication.desktop().screenGeometry()
+            screen = QApplication.desktop().screenGeometry()  # type: ignore
             dialog_geometry = self.shutdown_dialog.geometry()
             x = (screen.width() - dialog_geometry.width()) // 2
             y = (screen.height() - dialog_geometry.height()) // 2
@@ -995,7 +1000,7 @@ class MainWindow(QMainWindow):
             logger.info("[CloseEvent] Completing shutdown process")
 
             # Ensure wait cursor is still active
-            QApplication.setOverrideCursor(Qt.WaitCursor)
+            QApplication.setOverrideCursor(Qt.WaitCursor)  # type: ignore
 
             # Show completion - make sure dialog is visible
             if hasattr(self, 'shutdown_dialog') and self.shutdown_dialog:
