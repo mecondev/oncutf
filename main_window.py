@@ -186,6 +186,11 @@ class MainWindow(QMainWindow):
         self.app_service = initialize_application_service(self)
         logger.info("[MainWindow] Application Service Layer initialized")
 
+        # --- Initialize Batch Operations Manager ---
+        from core.batch_operations_manager import get_batch_manager
+        self.batch_manager = get_batch_manager(self)
+        logger.info("[MainWindow] Batch Operations Manager initialized")
+
     # --- Method definitions ---
 
     # =====================================
@@ -858,6 +863,7 @@ class MainWindow(QMainWindow):
             self.shutdown_steps = [
                 ("Creating database backup...", self._shutdown_step_backup),
                 ("Saving window configuration...", self._shutdown_step_config),
+                ("Flushing batch operations...", self._shutdown_step_batch_operations),
                 ("Cleaning up drag operations...", self._shutdown_step_drag),
                 ("Closing dialogs...", self._shutdown_step_dialogs),
                 ("Stopping metadata operations...", self._shutdown_step_metadata),
@@ -1074,12 +1080,46 @@ class MainWindow(QMainWindow):
         """Step 2: Save window configuration."""
         self.window_config_manager.save_window_config()
 
+    def _shutdown_step_batch_operations(self):
+        """Step 3: Flush all pending batch operations."""
+        if hasattr(self, 'batch_manager') and self.batch_manager:
+            try:
+                # Get pending operations before flushing
+                pending = self.batch_manager.get_pending_operations()
+                if pending:
+                    logger.info(f"[CloseEvent] Flushing pending batch operations: {pending}")
+
+                    # Flush all batch types
+                    results = self.batch_manager.flush_all()
+
+                    # Log results
+                    total_flushed = sum(results.values())
+                    if total_flushed > 0:
+                        logger.info(f"[CloseEvent] Flushed {total_flushed} batch operations: {results}")
+
+                    # Get final statistics
+                    stats = self.batch_manager.get_stats()
+                    logger.info(f"[CloseEvent] Batch operations stats: {stats.batched_operations} total batched, "
+                               f"avg batch size: {stats.average_batch_size:.1f}, "
+                               f"estimated time saved: {stats.total_time_saved:.2f}s")
+                else:
+                    logger.info("[CloseEvent] No pending batch operations to flush")
+
+                # Clean up batch manager
+                self.batch_manager.cleanup()
+                logger.info("[CloseEvent] Batch operations manager cleaned up")
+
+            except Exception as e:
+                logger.error(f"[CloseEvent] Error during batch operations cleanup: {e}")
+        else:
+            logger.warning("[CloseEvent] Batch operations manager not available")
+
     def _shutdown_step_drag(self):
-        """Step 3: Clean up drag operations."""
+        """Step 4: Clean up drag operations."""
         self.drag_cleanup_manager.emergency_drag_cleanup()
 
     def _shutdown_step_dialogs(self):
-        """Step 4: Clean up dialogs (but not the shutdown dialog)."""
+        """Step 5: Clean up dialogs (but not the shutdown dialog)."""
         if hasattr(self, 'dialog_manager'):
             # Don't call dialog_manager.cleanup() as it closes ALL dialogs including shutdown dialog
             # Instead, manually close specific dialogs
@@ -1104,16 +1144,16 @@ class MainWindow(QMainWindow):
                 logger.warning(f"[CloseEvent] Error closing dialogs: {e}")
 
     def _shutdown_step_metadata(self):
-        """Step 5: Clean up metadata operations."""
+        """Step 6: Clean up metadata operations."""
         if hasattr(self, 'metadata_manager') and self.metadata_manager:
             self.metadata_manager.cleanup()
 
     def _shutdown_step_background(self):
-        """Step 6: Clean up background workers."""
+        """Step 7: Clean up background workers."""
         self._force_cleanup_background_workers()
 
     def _shutdown_step_context(self):
-        """Step 7: Clean up application context."""
+        """Step 8: Clean up application context."""
         if hasattr(self, 'context'):
             try:
                 self.context.cleanup()

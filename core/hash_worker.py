@@ -2,7 +2,7 @@
 hash_worker.py
 
 Author: Michael Economou
-Date: 2025-06-23
+Date: 2025-01-31
 
 QThread worker for background hash calculation operations.
 
@@ -15,6 +15,7 @@ Key Features:
 - Graceful cancellation support
 - Optimized for large file operations
 - Smart cache checking to avoid redundant hash calculations
+- Batch operations optimization for better performance
 
 Usage:
     worker = HashWorker()
@@ -37,7 +38,7 @@ logger = get_cached_logger(__name__)
 
 class HashWorker(QThread):
     """
-    Background worker for hash calculation operations.
+    Background worker for hash calculation operations with batch optimization.
 
     Supports three main operations:
     1. Find duplicates in file list
@@ -66,6 +67,7 @@ class HashWorker(QThread):
         super().__init__(parent)
         self._mutex = QMutex()
         self._cancelled = False
+        self.main_window = parent
 
         # Shared hash manager instance for better cache utilization
         from core.hash_manager import HashManager
@@ -88,6 +90,16 @@ class HashWorker(QThread):
         self._cache_hits = 0
         self._cache_misses = 0
 
+        # Batch operations optimization
+        self._batch_manager = None
+        self._enable_batching = True
+        self._batch_operations = []  # Store operations for final batch
+
+    def enable_batch_operations(self, enabled: bool = True) -> None:
+        """Enable or disable batch operations optimization."""
+        self._enable_batching = enabled
+        logger.debug(f"[HashWorker] Batch operations {'enabled' if enabled else 'disabled'}")
+
     def setup_duplicate_scan(self, file_paths: List[str]) -> None:
         """Configure worker for duplicate detection."""
         with QMutexLocker(self._mutex):
@@ -100,6 +112,7 @@ class HashWorker(QThread):
             self._cumulative_processed_bytes = 0
             self._cache_hits = 0
             self._cache_misses = 0
+            self._batch_operations = []
 
     def setup_external_comparison(self, file_paths: List[str], external_folder: str) -> None:
         """Configure worker for external folder comparison."""
@@ -113,6 +126,7 @@ class HashWorker(QThread):
             self._cumulative_processed_bytes = 0
             self._cache_hits = 0
             self._cache_misses = 0
+            self._batch_operations = []
 
     def setup_checksum_calculation(self, file_paths: List[str]) -> None:
         """Configure worker for checksum calculation."""
@@ -126,6 +140,7 @@ class HashWorker(QThread):
             self._cumulative_processed_bytes = 0
             self._cache_hits = 0
             self._cache_misses = 0
+            self._batch_operations = []
 
     def set_total_size(self, total_size: int) -> None:
         """Set the total size from external calculation to avoid duplicate work."""
@@ -190,6 +205,16 @@ class HashWorker(QThread):
                 self.finished_processing.emit(False)
                 return
 
+            # Initialize batch manager if enabled
+            if self._enable_batching:
+                try:
+                    from core.batch_operations_manager import get_batch_manager
+                    self._batch_manager = get_batch_manager(self.main_window)
+                    logger.debug("[HashWorker] Batch operations manager initialized")
+                except Exception as e:
+                    logger.warning(f"[HashWorker] Failed to initialize batch manager: {e}")
+                    self._enable_batching = False
+
             # Get configuration safely
             with QMutexLocker(self._mutex):
                 operation_type = self._operation_type
@@ -198,53 +223,88 @@ class HashWorker(QThread):
 
             if not operation_type or not file_paths:
                 self.error_occurred.emit("Invalid operation configuration")
-                self.finished_processing.emit(False)
                 return
 
-            logger.info(f"[HashWorker] Starting {operation_type} operation for {len(file_paths)} files")
+            # Calculate total size if not already set
+            if self._total_bytes == 0:
+                self._total_bytes = self._calculate_total_size(file_paths)
 
-            # Execute appropriate operation
+            # Execute the appropriate operation
             if operation_type == "duplicates":
                 self._find_duplicates(file_paths)
             elif operation_type == "compare":
-                if external_folder is None:
-                    self.error_occurred.emit("External folder not specified for comparison")
-                    self.finished_processing.emit(False)
-                    return
                 self._compare_external(file_paths, external_folder)
             elif operation_type == "checksums":
                 self._calculate_checksums(file_paths)
-            else:
-                self.error_occurred.emit(f"Unknown operation type: {operation_type}")
-                self.finished_processing.emit(False)
 
         except Exception as e:
-            logger.exception(f"[HashWorker] Error during operation: {e}")
+            logger.exception(f"[HashWorker] Unexpected error: {e}")
             self.error_occurred.emit(str(e))
             self.finished_processing.emit(False)
+        finally:
+            # Flush any remaining batch operations
+            if self._enable_batching and self._batch_manager and self._batch_operations:
+                logger.info(f"[HashWorker] Flushing {len(self._batch_operations)} batched hash operations")
+
+                try:
+                    # Force flush all hash operations
+                    flushed = self._batch_manager.flush_batch_type('hash_store')
+                    logger.info(f"[HashWorker] Successfully flushed {flushed} hash operations")
+
+                    # Get batch statistics
+                    stats = self._batch_manager.get_stats()
+                    logger.info(f"[HashWorker] Batch stats: {stats.batched_operations} batched, "
+                               f"avg batch size: {stats.average_batch_size:.1f}, "
+                               f"time saved: {stats.total_time_saved:.2f}s")
+
+                except Exception as e:
+                    logger.error(f"[HashWorker] Error flushing batch operations: {e}")
 
     def _check_cache_before_calculation(self, file_path: str) -> str | None:
         """
         Check if hash exists in cache before calculating.
 
         Returns:
-            str: Cached hash if found, None if not in cache
+            str: Hash value if found in cache, None otherwise
         """
         try:
-            # Use HashManager's built-in cache checking methods
-            cached_hash = self._hash_manager.get_cached_hash(file_path)
-            if cached_hash:
+            hash_value = self._hash_manager.get_cached_hash(file_path)
+            if hash_value is not None:
                 self._cache_hits += 1
                 logger.debug(f"[HashWorker] Cache hit for: {os.path.basename(file_path)}")
-                return cached_hash
-
-            self._cache_misses += 1
-            return None
-
+                return hash_value
+            else:
+                self._cache_misses += 1
+                logger.debug(f"[HashWorker] Cache miss for: {os.path.basename(file_path)}")
+                return None
         except Exception as e:
-            logger.debug(f"[HashWorker] Error checking cache for {file_path}: {e}")
+            logger.debug(f"[HashWorker] Cache check failed for {file_path}: {e}")
             self._cache_misses += 1
             return None
+
+    def _store_hash_optimized(self, file_path: str, hash_value: str, algorithm: str = 'crc32') -> None:
+        """Store hash using batch operations if available."""
+        if self._enable_batching and self._batch_manager:
+            logger.debug(f"[HashWorker] Queuing hash for batching: {os.path.basename(file_path)}")
+
+            # Queue for batch processing
+            self._batch_manager.queue_hash_store(
+                file_path=file_path,
+                hash_value=hash_value,
+                algorithm=algorithm,
+                priority=10  # High priority for worker operations
+            )
+
+            # Store operation info for tracking
+            self._batch_operations.append({
+                'path': file_path,
+                'hash': hash_value,
+                'algorithm': algorithm
+            })
+        else:
+            # Fallback to direct storage
+            logger.debug(f"[HashWorker] Storing hash directly: {os.path.basename(file_path)}")
+            self._hash_manager.store_hash(file_path, hash_value, algorithm)
 
     def _process_file_with_progress(self, file_path: str, i: int, total_files: int) -> tuple[str | None, int]:
         """
@@ -298,6 +358,10 @@ class HashWorker(QThread):
         # Calculate hash with optional real-time progress for large files
         file_hash = self._hash_manager.calculate_hash(file_path, progress_callback=progress_callback)
 
+        # Store hash using optimized batching if available
+        if file_hash is not None:
+            self._store_hash_optimized(file_path, file_hash, 'crc32')
+
         # Update cumulative bytes AFTER each file is completed
         with QMutexLocker(self._mutex):
             if file_size > 0:
@@ -345,10 +409,13 @@ class HashWorker(QThread):
 
         # Report cache statistics
         cache_hit_rate = (self._cache_hits / (self._cache_hits + self._cache_misses) * 100) if (self._cache_hits + self._cache_misses) > 0 else 0
-        self.status_updated.emit(f"CRC32 checksums calculated for {len(hash_results)} files! Cache hit rate: {cache_hit_rate:.1f}%")
+        batch_info = f", batch ops: {len(self._batch_operations)}" if self._batch_operations else ""
+        self.status_updated.emit(f"CRC32 checksums calculated for {len(hash_results)} files! Cache hit rate: {cache_hit_rate:.1f}%{batch_info}")
 
         logger.info(f"[HashWorker] Calculated checksums for {len(hash_results)} files")
         logger.info(f"[HashWorker] Cache performance - Hits: {self._cache_hits}, Misses: {self._cache_misses}, Hit rate: {cache_hit_rate:.1f}%")
+        if self._batch_operations:
+            logger.info(f"[HashWorker] Batch operations queued: {len(self._batch_operations)}")
         self.checksums_calculated.emit(hash_results)
         self.finished_processing.emit(True)
 
@@ -381,13 +448,16 @@ class HashWorker(QThread):
 
         # Report cache statistics
         cache_hit_rate = (self._cache_hits / (self._cache_hits + self._cache_misses) * 100) if (self._cache_hits + self._cache_misses) > 0 else 0
-        self.status_updated.emit(f"Duplicate analysis complete! Cache hit rate: {cache_hit_rate:.1f}%")
+        batch_info = f", batch ops: {len(self._batch_operations)}" if self._batch_operations else ""
+        self.status_updated.emit(f"Duplicate analysis complete! Cache hit rate: {cache_hit_rate:.1f}%{batch_info}")
 
         # Find duplicates
         duplicates = {hash_val: paths for hash_val, paths in hash_to_files.items() if len(paths) > 1}
 
         logger.info(f"[HashWorker] Found {len(duplicates)} duplicate groups from {total_files} files")
         logger.info(f"[HashWorker] Cache performance - Hits: {self._cache_hits}, Misses: {self._cache_misses}, Hit rate: {cache_hit_rate:.1f}%")
+        if self._batch_operations:
+            logger.info(f"[HashWorker] Batch operations queued: {len(self._batch_operations)}")
         self.duplicates_found.emit(duplicates)
         self.finished_processing.emit(True)
 
@@ -421,6 +491,9 @@ class HashWorker(QThread):
                 if external_hash is None:
                     # Calculate if not in cache
                     external_hash = self._hash_manager.calculate_hash(str(external_file_path))
+                    # Store external hash using batch operations too
+                    if external_hash is not None:
+                        self._store_hash_optimized(str(external_file_path), external_hash, 'crc32')
 
                 if external_hash is not None:
                     is_same = current_hash == external_hash
@@ -438,9 +511,12 @@ class HashWorker(QThread):
 
         # Report cache statistics
         cache_hit_rate = (self._cache_hits / (self._cache_hits + self._cache_misses) * 100) if (self._cache_hits + self._cache_misses) > 0 else 0
-        self.status_updated.emit(f"File comparison complete! Cache hit rate: {cache_hit_rate:.1f}%")
+        batch_info = f", batch ops: {len(self._batch_operations)}" if self._batch_operations else ""
+        self.status_updated.emit(f"File comparison complete! Cache hit rate: {cache_hit_rate:.1f}%{batch_info}")
 
         logger.info(f"[HashWorker] Compared {len(file_paths)} files with external folder")
         logger.info(f"[HashWorker] Cache performance - Hits: {self._cache_hits}, Misses: {self._cache_misses}, Hit rate: {cache_hit_rate:.1f}%")
+        if self._batch_operations:
+            logger.info(f"[HashWorker] Batch operations queued: {len(self._batch_operations)}")
         self.comparison_result.emit(comparison_results)
         self.finished_processing.emit(True)

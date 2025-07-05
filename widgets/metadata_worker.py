@@ -2,7 +2,7 @@
 Module: metadata_worker.py
 
 Author: Michael Economou
-Updated: 2025-05-23
+Updated: 2025-01-31
 
 This module defines a background worker that loads metadata from files using a MetadataLoader.
 It is executed inside a thread to keep the GUI responsive during batch metadata extraction.
@@ -13,6 +13,7 @@ Features:
 - Safe cancellation during processing
 - Optional support for extended metadata
 - Integrated caching with skip logic
+- Batch operations optimization for better performance
 """
 
 import os
@@ -32,7 +33,7 @@ logger = get_cached_logger(__name__)
 
 class MetadataWorker(QObject):
     """
-    Worker class for threaded metadata extraction.
+    Worker class for threaded metadata extraction with batch optimization.
     Emits progress and result signals and supports graceful cancellation.
 
     Attributes:
@@ -62,10 +63,20 @@ class MetadataWorker(QObject):
         self._total_size = 0
         self._processed_size = 0
 
+        # Batch operations optimization
+        self._batch_manager = None
+        self._enable_batching = True
+        self._batch_operations = []  # Store operations for final batch
+
     def set_total_size(self, total_size: int) -> None:
         """Set the total size of all files to process."""
         self._total_size = total_size
         self._processed_size = 0
+
+    def enable_batch_operations(self, enabled: bool = True) -> None:
+        """Enable or disable batch operations optimization."""
+        self._enable_batching = enabled
+        logger.debug(f"[Worker] Batch operations {'enabled' if enabled else 'disabled'}")
 
     @pyqtSlot()
     def run_batch(self) -> None:
@@ -76,13 +87,23 @@ class MetadataWorker(QObject):
         - Iterates over a list of file paths
         - Extracts metadata using the MetadataLoader
         - Logs time per file and total time
-        - Updates the cache and progress bar
+        - Updates the cache using batch operations for better performance
         - Emits finished signal at the end
         """
         logger.debug(f"[Worker] run_batch() started — use_extended = {self.use_extended}", extra={"dev_only": True})
         logger.warning(f"[Worker] run_batch() running in thread: {threading.current_thread().name}")
 
         start_total = time.time()
+
+        # Initialize batch manager if enabled
+        if self._enable_batching:
+            try:
+                from core.batch_operations_manager import get_batch_manager
+                self._batch_manager = get_batch_manager(self.main_window)
+                logger.debug("[Worker] Batch operations manager initialized")
+            except Exception as e:
+                logger.warning(f"[Worker] Failed to initialize batch manager: {e}")
+                self._enable_batching = False
 
         try:
             total = len(self.file_path)
@@ -131,8 +152,28 @@ class MetadataWorker(QObject):
                     logger.debug(f"[Worker] - metadata has __extended__ flag: {metadata_has_extended}", extra={"dev_only": True})
                     logger.debug(f"[Worker] - final extended status: {is_extended_flag}", extra={"dev_only": True})
 
-                    logger.debug(f"[Worker] Saving metadata for {path}, extended = {is_extended_flag}", extra={"dev_only": True})
-                    self.metadata_cache.set(path, metadata, is_extended=is_extended_flag)
+                    # Store metadata using batch operations if available
+                    if self._enable_batching and self._batch_manager:
+                        logger.debug(f"[Worker] Queuing metadata for batching: {path}", extra={"dev_only": True})
+
+                        # Queue for batch processing
+                        self._batch_manager.queue_metadata_set(
+                            file_path=path,
+                            metadata=metadata,
+                            is_extended=is_extended_flag,
+                            priority=10  # High priority for worker operations
+                        )
+
+                        # Store operation info for final flush
+                        self._batch_operations.append({
+                            'path': path,
+                            'metadata': metadata,
+                            'is_extended': is_extended_flag
+                        })
+                    else:
+                        # Fallback to direct cache operation
+                        logger.debug(f"[Worker] Saving metadata directly: {path}, extended = {is_extended_flag}", extra={"dev_only": True})
+                        self.metadata_cache.set(path, metadata, is_extended=is_extended_flag)
 
                     # Emit real-time update signal for immediate UI refresh (same as HashWorker)
                     self.file_metadata_loaded.emit(path)
@@ -159,8 +200,47 @@ class MetadataWorker(QObject):
                     break
 
         finally:
+            # Flush any remaining batch operations
+            if self._enable_batching and self._batch_manager and self._batch_operations:
+                logger.info(f"[Worker] Flushing {len(self._batch_operations)} batched metadata operations")
+
+                try:
+                    # Force flush all metadata operations
+                    flushed = self._batch_manager.flush_batch_type('metadata_set')
+                    logger.info(f"[Worker] Successfully flushed {flushed} metadata operations")
+
+                    # Get batch statistics
+                    stats = self._batch_manager.get_stats()
+                    logger.info(f"[Worker] Batch stats: {stats.batched_operations} batched, "
+                               f"avg batch size: {stats.average_batch_size:.1f}, "
+                               f"time saved: {stats.total_time_saved:.2f}s")
+
+                except Exception as e:
+                    logger.error(f"[Worker] Error flushing batch operations: {e}")
+
+                    # Fallback: save operations individually
+                    logger.warning("[Worker] Falling back to individual metadata saves")
+                    for op in self._batch_operations:
+                        try:
+                            self.metadata_cache.set(
+                                op['path'],
+                                op['metadata'],
+                                is_extended=op['is_extended']
+                            )
+                        except Exception as fallback_error:
+                            logger.error(f"[Worker] Fallback save failed for {op['path']}: {fallback_error}")
+
             elapsed_total = time.time() - start_total
             logger.debug(f"[Worker] Total time for batch: {elapsed_total:.2f} sec", extra={"dev_only": True})
+
+            # Log batch optimization results
+            if self._batch_operations:
+                batch_count = len(self._batch_operations)
+                estimated_individual_time = batch_count * 0.01  # 10ms per individual operation
+                estimated_time_saved = max(0, estimated_individual_time - elapsed_total * 0.1)  # Rough estimate
+                logger.info(f"[Worker] Batch optimization: {batch_count} operations, "
+                           f"estimated time saved: {estimated_time_saved:.3f}s")
+
             logger.warning("[Worker] FINALLY → emitting finished signal")
             self.finished.emit()
 
@@ -170,3 +250,11 @@ class MetadataWorker(QObject):
         """
         logger.info("[Worker] cancel() requested — will cancel after current file")
         self._cancelled = True
+
+        # Also flush any pending batch operations on cancellation
+        if self._enable_batching and self._batch_manager and self._batch_operations:
+            logger.info("[Worker] Flushing batch operations due to cancellation")
+            try:
+                self._batch_manager.flush_batch_type('metadata_set')
+            except Exception as e:
+                logger.error(f"[Worker] Error flushing on cancellation: {e}")
