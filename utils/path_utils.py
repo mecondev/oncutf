@@ -232,3 +232,26 @@ def find_file_by_path(files: list, target_path: str, path_attr: str = 'full_path
                 return file_obj
 
     return None
+
+
+def find_parent_with_attribute(widget, attribute_name: str):
+    """
+    Unified function to find parent widget with specific attribute.
+
+    Args:
+        widget: Starting widget
+        attribute_name: Name of attribute to search for
+
+    Returns:
+        Parent widget with the attribute, or None if not found
+    """
+    if not widget:
+        return None
+
+    parent = widget.parent() if hasattr(widget, 'parent') else None
+    while parent:
+        if hasattr(parent, attribute_name):
+            return parent
+        parent = parent.parent() if hasattr(parent, 'parent') else None
+
+    return None

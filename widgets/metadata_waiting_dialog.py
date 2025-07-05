@@ -1,11 +1,13 @@
 """
-metadata_waiting_dialog.py
+operation_dialog.py
 
 Author: Michael Economou
 Date: 2025-05-01
 
-Frameless waiting dialog for metadata extraction operations.
-Provides a clean, minimal UI for displaying metadata loading progress.
+Frameless waiting dialog for background operations (metadata, hash, file loading).
+Provides a clean, minimal UI for displaying operation progress.
+
+Note: This is the legacy dialog - new code should use utils.progress_dialog.ProgressDialog
 """
 
 from typing import Callable, Optional
@@ -25,15 +27,17 @@ from widgets.progress_widget import ProgressWidget
 logger = get_cached_logger(__name__)
 
 
-class MetadataWaitingDialog(QDialog):
+class OperationDialog(QDialog):
     """
-    QDialog wrapper that contains a CompactWaitingWidget.
+    QDialog wrapper for background operations (legacy).
 
     This dialog:
     - Has no title bar (frameless)
     - Is styled via QSS using standard QWidget rules
-    - Hosts a compact waiting UI to display metadata reading progress
+    - Hosts a compact waiting UI to display operation progress
     - Supports ESC key cancellation
+
+    Note: For new code, use utils.progress_dialog.ProgressDialog instead
     """
     def __init__(self, parent: Optional[QWidget] = None, is_extended: bool = False,
                  cancel_callback: Optional[Callable] = None) -> None:
@@ -74,9 +78,9 @@ class MetadataWaitingDialog(QDialog):
         setup_dialog_size_and_center(self, self.waiting_widget)
 
     def keyPressEvent(self, event):
-        """Handle ESC key to cancel metadata loading."""
+        """Handle ESC key to cancel operation."""
         if event.key() == Qt.Key_Escape: # type: ignore
-            logger.info("[MetadataWaitingDialog] User cancelled metadata loading")
+            logger.info("[OperationDialog] User cancelled operation")
             self.waiting_widget.set_status("Cancelling...")
 
             # Call the cancel callback if provided
@@ -98,3 +102,7 @@ class MetadataWaitingDialog(QDialog):
     def set_status(self, text: str) -> None:
         """Set the status text."""
         self.waiting_widget.set_status(text)
+
+
+# Backward compatibility alias
+MetadataWaitingDialog = OperationDialog

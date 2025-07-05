@@ -1292,3 +1292,28 @@ class MainWindow(QMainWindow):
                 logger.info(f"[MainWindow] Identified moved file: {file_path} (was: {file_record.get('file_path')})")
 
         return moved_files
+
+    def get_selected_files_ordered(self) -> list[FileItem]:
+        """
+        Unified method to get selected files in table display order.
+
+        Returns:
+            List of FileItem objects sorted by their row position in the table
+        """
+        if not (hasattr(self, 'file_table_view') and hasattr(self, 'file_model')):
+            return []
+
+        if not self.file_model or not self.file_model.files:
+            return []
+
+        # Get current selection and sort to maintain display order
+        selected_rows = self.file_table_view._get_current_selection()
+        selected_rows_sorted = sorted(selected_rows)
+
+        # Convert to FileItem objects with bounds checking
+        selected_files = []
+        for row in selected_rows_sorted:
+            if 0 <= row < len(self.file_model.files):
+                selected_files.append(self.file_model.files[row])
+
+        return selected_files

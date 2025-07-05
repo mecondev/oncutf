@@ -119,7 +119,9 @@ class EventHandlerManager:
 
         # Use the unified selection system (same as shortcuts and drag-drop)
         selected_rows = self.parent_window.file_table_view._get_current_selection()
-        selected_files = [self.parent_window.file_model.files[r] for r in selected_rows if 0 <= r < total_files]
+        # Sort rows to maintain file table display order
+        selected_rows_sorted = sorted(selected_rows)
+        selected_files = [self.parent_window.file_model.files[r] for r in selected_rows_sorted if 0 <= r < total_files]
 
         logger.debug(f"[ContextMenu] Found {len(selected_files)} selected files at position row {index_at_position.row() if index_at_position.isValid() else 'invalid'}", extra={"dev_only": True})
 

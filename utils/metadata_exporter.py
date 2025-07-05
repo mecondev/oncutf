@@ -109,7 +109,9 @@ class MetadataExporter:
         selected_rows = self.parent_window.file_table_view._get_current_selection()
         selected_files = []
 
-        for row in selected_rows:
+        # Sort rows to maintain file table display order
+        selected_rows_sorted = sorted(selected_rows)
+        for row in selected_rows_sorted:
             if 0 <= row < len(self.parent_window.file_model.files):
                 selected_files.append(self.parent_window.file_model.files[row])
 

@@ -151,8 +151,10 @@ class MetadataManager:
             hasattr(self.parent_window, 'file_model')):
             # Use the new selection system
             selected_rows = self.parent_window.file_table_view._get_current_selection()
+            # Sort rows to maintain file table display order
+            selected_rows_sorted = sorted(selected_rows)
             selected = [self.parent_window.file_model.files[r]
-                       for r in selected_rows
+                       for r in selected_rows_sorted
                        if 0 <= r < len(self.parent_window.file_model.files)]
 
             if not selected:
@@ -178,8 +180,10 @@ class MetadataManager:
             hasattr(self.parent_window, 'file_model')):
             # Use the new selection system
             selected_rows = self.parent_window.file_table_view._get_current_selection()
+            # Sort rows to maintain file table display order
+            selected_rows_sorted = sorted(selected_rows)
             selected = [self.parent_window.file_model.files[r]
-                       for r in selected_rows
+                       for r in selected_rows_sorted
                        if 0 <= r < len(self.parent_window.file_model.files)]
 
             if not selected:
@@ -361,6 +365,9 @@ class MetadataManager:
             lambda processed, total: self._on_metadata_size_progress(loading_dialog, processed, total)
         )
 
+        # Connect real-time update signal for immediate UI refresh (same as HashWorker)
+        self.metadata_worker.file_metadata_loaded.connect(self._on_file_metadata_loaded)
+
         self.metadata_worker.finished.connect(
             lambda: self._on_metadata_finished(loading_dialog, files_to_load, metadata_tree_view)
         )
@@ -400,6 +407,22 @@ class MetadataManager:
                 processed_bytes=processed,
                 total_bytes=total
             )
+
+    def _on_file_metadata_loaded(self, file_path: str) -> None:
+        """Handle real-time metadata loading completion for individual files (same as HashWorker)."""
+        try:
+            # Update file icon status immediately (same logic as _on_file_hash_calculated)
+            if self.parent_window and hasattr(self.parent_window, 'file_model'):
+                for i, file_item in enumerate(self.parent_window.file_model.files):
+                    if paths_equal(file_item.full_path, file_path):
+                        # Update file icon to show metadata status
+                        index = self.parent_window.file_model.index(i, 0)
+                        self.parent_window.file_model.dataChanged.emit(index, index, [Qt.DecorationRole, Qt.ToolTipRole]) # type: ignore
+                        logger.debug(f"[MetadataManager] Updated icon for: {os.path.basename(file_path)}", extra={"dev_only": True})
+                        break
+
+        except Exception as e:
+            logger.warning(f"[MetadataManager] Error updating icon for {file_path}: {e}")
 
     def _on_metadata_finished(self, loading_dialog, files_to_load: List[FileItem], metadata_tree_view) -> None:
         """Handle metadata worker completion."""
@@ -495,7 +518,9 @@ class MetadataManager:
         if hasattr(self.parent_window, 'file_table_view'):
             selected_rows = self.parent_window.file_table_view._get_current_selection()
             if selected_rows and hasattr(self.parent_window, 'file_model'):
-                for row in selected_rows:
+                # Sort rows to maintain file table display order
+                selected_rows_sorted = sorted(selected_rows)
+                for row in selected_rows_sorted:
                     if 0 <= row < len(self.parent_window.file_model.files):
                         selected_files.append(self.parent_window.file_model.files[row])
 

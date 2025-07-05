@@ -1075,7 +1075,9 @@ class FileTableView(QTableView):
 
         # Convert to FileItem objects
         try:
-            file_items = [self.model().files[r] for r in selected_rows if 0 <= r < len(self.model().files)]
+            # Sort rows to maintain file table display order
+            selected_rows_sorted = sorted(selected_rows)
+            file_items = [self.model().files[r] for r in selected_rows_sorted if 0 <= r < len(self.model().files)]
             if not file_items:
                 logger.warning("[FileTableView] No valid file items found for metadata tree drop")
                 return False

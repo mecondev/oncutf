@@ -1,10 +1,10 @@
 """
-persistent_metadata_cache_v2.py
+persistent_metadata_cache.py
 
 Author: Michael Economou
 Date: 2025-01-27
 
-Enhanced persistent metadata cache using the new v2 database architecture.
+Enhanced persistent metadata cache using the improved database architecture.
 Provides the same interface as the original cache but with improved performance
 and separation of concerns.
 """
@@ -40,9 +40,9 @@ class MetadataEntry:
 
 class PersistentMetadataCache:
     """
-    Enhanced persistent metadata cache using v2 database architecture.
+    Enhanced persistent metadata cache using improved database architecture.
 
-    Benefits of v2:
+    Benefits:
     - Better separation of concerns
     - Improved performance with dedicated tables
     - More maintainable architecture
@@ -50,13 +50,13 @@ class PersistentMetadataCache:
     """
 
     def __init__(self):
-        """Initialize persistent metadata cache with v2 database backend."""
+        """Initialize persistent metadata cache with database backend."""
         self._db_manager = get_database_manager()
         self._memory_cache: Dict[str, MetadataEntry] = {}  # Hot cache for performance
         self._cache_hits = 0
         self._cache_misses = 0
 
-        logger.info("[PersistentMetadataCache] Initialized with v2 database backend")
+        logger.info("[PersistentMetadataCache] Initialized with database backend")
 
     def _normalize_path(self, file_path: str) -> str:
         """Normalize file path for consistent storage."""

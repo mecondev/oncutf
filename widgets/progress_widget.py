@@ -106,8 +106,9 @@ class ProgressWidget(QWidget):
         self.total_size = 0
         self.processed_size = 0
 
-        # Throttling to prevent flickering
+        # Optimized throttling for better responsiveness
         self._last_update_time = 0
+        self._min_update_interval = 0.05  # 50ms for better responsiveness (was 100ms)
 
         # Timer for time updates
         self._time_timer = None
@@ -462,13 +463,13 @@ class ProgressWidget(QWidget):
             self._update_time_display()
 
     def _update_size_display(self):
-        """Update size information display with stable formatting."""
+        """Update size information display with improved formatting."""
         from utils.text_helpers import format_file_size_stable
 
         processed_str = format_file_size_stable(self.processed_size)
         if self.total_size > 0:
             total_str = format_file_size_stable(self.total_size)
-            size_text = f"{processed_str} / {total_str}"  # Added space before "/"
+            size_text = f"{processed_str} of {total_str}"  # Use "of" instead of "/"
         else:
             size_text = processed_str
         self.size_label.setText(size_text)
@@ -518,17 +519,17 @@ class ProgressWidget(QWidget):
                     self._last_estimation = estimated_total
                     self._last_progress_ratio = progress_ratio
 
-                # Format times in HH:MM:SS format
+                # Format times in HH:MM:SS format with improved formatting
                 elapsed_str = self._format_time_hms(elapsed)
                 estimated_total_str = self._format_time_hms(estimated_total)
 
-                time_text = f"{elapsed_str} / {estimated_total_str}"
+                time_text = f"{elapsed_str} of {estimated_total_str} Est."  # Use "of" and "Est."
                 self.time_label.setText(time_text)
                 logger.debug(f"[ProgressWidget] Time updated: {time_text}")
             else:
                 # Early stage - just show elapsed time until we have stable estimation
                 elapsed_str = self._format_time_hms(elapsed)
-                time_text = f"{elapsed_str} / calculating..."
+                time_text = f"{elapsed_str} of calculating... Est."
                 self.time_label.setText(time_text)
                 logger.debug(f"[ProgressWidget] Time updated (early): {time_text}")
         else:
@@ -660,21 +661,18 @@ class ProgressWidget(QWidget):
                 if (processed_size - old_processed) > 1_000_000:
                     force_update = True
 
-        # Apply more relaxed throttling for better responsiveness with small files
-        if not force_update:
-            current_time = time.time()
-            # Shorter throttling interval for better small file handling
-            if current_time - self._last_update_time < 0.05:  # Update every 50ms instead of 100ms
-                return
+        # Apply optimized throttling for better responsiveness
+        current_time = time.time()
+        time_since_last_update = current_time - self._last_update_time
 
-        self._last_update_time = time.time()
+        # Force update if enough time has passed OR if it's a significant change
+        if force_update or time_since_last_update >= self._min_update_interval:
+            self._last_update_time = current_time
+            self._update_size_display()
 
-        # Update display with current values
-        self._update_size_display()
-
-        # Update time estimation based on stable cumulative progress
-        if self.show_time_info:
-            self._update_time_display()
+            # Also update time display if enabled
+            if self.show_time_info:
+                self._update_time_display()
 
     def set_time_info(self, elapsed: float):
         """Manually set time information in HH:MM:SS format."""

@@ -1,10 +1,10 @@
 """
-persistent_hash_cache_v2.py
+persistent_hash_cache.py
 
 Author: Michael Economou
 Date: 2025-01-27
 
-Enhanced persistent hash cache using the new v2 database architecture.
+Enhanced persistent hash cache using the improved database architecture.
 Provides improved performance and separation of concerns.
 """
 
@@ -19,9 +19,9 @@ logger = get_cached_logger(__name__)
 
 class PersistentHashCache:
     """
-    Enhanced persistent hash cache using v2 database architecture.
+    Enhanced persistent hash cache using improved database architecture.
 
-    Benefits of v2:
+    Benefits:
     - Better separation of concerns with dedicated hash table
     - Improved performance with focused indexes
     - More maintainable architecture
@@ -29,13 +29,13 @@ class PersistentHashCache:
     """
 
     def __init__(self):
-        """Initialize persistent hash cache with v2 database backend."""
+        """Initialize persistent hash cache with database backend."""
         self._db_manager = get_database_manager()
         self._memory_cache: Dict[str, str] = {}  # Hot cache for performance
         self._cache_hits = 0
         self._cache_misses = 0
 
-        logger.info("[PersistentHashCache] Initialized with v2 database backend")
+        logger.info("[PersistentHashCache] Initialized with database backend")
 
     def _normalize_path(self, file_path: str) -> str:
         """Normalize file path for consistent storage."""

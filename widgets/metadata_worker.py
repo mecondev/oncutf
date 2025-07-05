@@ -45,6 +45,9 @@ class MetadataWorker(QObject):
     progress = pyqtSignal(int, int)
     size_progress = pyqtSignal(int, int)  # processed_bytes, total_bytes
 
+    # Real-time UI update signal - same as HashWorker
+    file_metadata_loaded = pyqtSignal(str)  # file_path - emitted when individual file metadata is loaded
+
     def __init__(self, *, reader: MetadataLoader, metadata_cache, parent: Optional[QObject] = None):
         super().__init__(parent)
         logger.debug("[Worker] __init__ called")
@@ -121,6 +124,10 @@ class MetadataWorker(QObject):
                     logger.debug(f"[Worker] Saving metadata for {path}, extended = {is_extended_flag}", extra={"dev_only": True})
                     self.metadata_cache.set(path, metadata, is_extended=is_extended_flag)
 
+                    # Emit real-time update signal for immediate UI refresh (same as HashWorker)
+                    self.file_metadata_loaded.emit(path)
+                    logger.debug(f"[Worker] Emitted file_metadata_loaded signal for: {os.path.basename(path)}", extra={"dev_only": True})
+
                 except Exception as e:
                     logger.exception(f"[Worker] Exception while reading metadata for {path}: {e}")
                     metadata = {}
@@ -129,8 +136,7 @@ class MetadataWorker(QObject):
                 self._processed_size += file_size
                 self.size_progress.emit(self._processed_size, self._total_size)
 
-                # Note: File item status updates are handled by the parent window
-                # after metadata loading is complete
+                # Note: Real-time file item status updates are now handled via file_metadata_loaded signal
 
                 elapsed_file = time.time() - start_file
                 logger.debug(f"[Worker] File processed in {elapsed_file:.2f} sec", extra={"dev_only": True})

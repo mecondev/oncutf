@@ -1,5 +1,5 @@
 """
-database_manager_v2.py
+database_manager.py
 
 Author: Michael Economou
 Date: 2025-01-27
@@ -7,7 +7,7 @@ Date: 2025-01-27
 Enhanced database management with improved architecture.
 Separates concerns into dedicated tables while maintaining referential integrity.
 
-New Architecture:
+Architecture:
 - file_paths: Central table for file path management
 - file_metadata: Dedicated metadata storage
 - file_hashes: Dedicated hash storage
