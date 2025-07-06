@@ -1,9 +1,22 @@
+"""
+Module: test_human_readable.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+test_human_readable.py
+Test script to compare human-readable file size formatting
+between our application and system commands like ls -lh.
+"""
+import warnings
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+
 #!/usr/bin/env python3
 """
 test_human_readable.py
 
-Author: Michael Economou
-Date: 2025-06-23
 
 Test script to compare human-readable file size formatting
 between our application and system commands like ls -lh.

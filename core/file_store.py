@@ -1,19 +1,18 @@
 """
-File Store - Centralized file management
+Module: file_store.py
 
 Author: Michael Economou
-Date: 2025-06-10
+Date: 2025-07-06
 
+File Store - Centralized file management
 This module handles all file-related operations, removing them from MainWindow
 to improve performance and maintainability.
-
 Manages:
 - File scanning and loading
 - Folder operations
 - File validation and filtering
 - Performance optimization for large folders
 """
-
 import glob
 import os
 from typing import Any, Dict, List, Optional, Set

@@ -1,19 +1,18 @@
 """
-Selection Store - Centralized selection state management
+Module: selection_store.py
 
 Author: Michael Economou
-Date: 2025-06-10
+Date: 2025-07-06
 
+Selection Store - Centralized selection state management
 This module provides centralized selection and checked state management,
 eliminating the need for scattered parent_window traversals and improving performance.
-
 Features:
 - Unified selection and checked state tracking
 - Event-driven updates via Qt signals
 - Performance optimizations for large file sets
 - Automatic synchronization between selection and checked states
 """
-
 import time
 from typing import Any, Dict, Optional, Set
 

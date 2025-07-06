@@ -1,22 +1,20 @@
 """
-preview_engine.py
+Module: preview_engine.py
 
+Author: Michael Economou
+Date: 2025-07-06
+
+preview_engine.py
 This module provides the core logic for applying rename rules
 (modules) to filenames based on user-defined configurations.
-
 Supported module types include:
 - Specified Text: Adds static text to the filename
 - Counter: Adds an incrementing number with configurable padding
 - Metadata: Appends a formatted date based on file metadata
 - Original Name: Applies transformation to the original filename
-
 The function `apply_rename_modules()` is used by the main application
 to generate preview names and resolve rename plans for batch processing.
-
-Author: Michael Economou
-Date: 2025-05-12
 """
-
 import os
 
 from modules.counter_module import CounterModule

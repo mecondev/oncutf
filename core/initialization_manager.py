@@ -1,16 +1,16 @@
 """
-InitializationManager - Handles initialization and setup operations
+Module: initialization_manager.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
+InitializationManager - Handles initialization and setup operations
 This manager centralizes initialization and setup operations including:
 - Metadata status display
 - SelectionStore mode initialization
 - Application component setup
 - Status and display management
 """
-
 from typing import TYPE_CHECKING
 
 from utils.logger_factory import get_cached_logger

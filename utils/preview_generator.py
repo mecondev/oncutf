@@ -1,14 +1,14 @@
 """
-preview_generator.py
+Module: preview_generator.py
 
+Author: Michael Economou
+Date: 2025-07-06
+
+preview_generator.py
 This module provides functions to generate preview names for file renaming
 based on user-defined modules. It supports modular rename logic and allows
 integration with metadata.
-
-Author: Michael Economou
-Date: 2025-05-13
 """
-
 from typing import Any, Dict, List, Optional, Tuple
 
 from models.file_item import FileItem

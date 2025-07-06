@@ -1,9 +1,29 @@
+"""
+Module: test_metadata_worker.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+This module provides functionality for the OnCutF batch file renaming application.
+"""
+"""
+Module: tests/test_metadata_worker.py
+
+
+This module provides functionality for the OnCutF batch file renaming application.
+"""
+
 import time
 
 import pytest
 from PyQt5.QtCore import QCoreApplication
 
 from widgets.metadata_worker import MetadataWorker
+import warnings
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+
 
 
 @pytest.fixture

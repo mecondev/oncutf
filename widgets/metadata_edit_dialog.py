@@ -1,14 +1,13 @@
 """
-metadata_edit_dialog.py
+Module: metadata_edit_dialog.py
 
 Author: Michael Economou
-Date: 2025-01-28
+Date: 2025-07-06
 
+metadata_edit_dialog.py
 Generic dialog for editing metadata fields.
 Based on bulk_rotation_dialog.py but made flexible for different field types.
 """
-
-
 from core.qt_imports import (
     QCheckBox,
     QDialog,

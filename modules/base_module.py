@@ -1,4 +1,13 @@
-"""Base module for all rename modules."""
+"""
+Module: base_module.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+Base module for all rename modules.
+"""
+"""Base module for all rename modules.
+"""
 
 from abc import ABC, abstractmethod
 from core.qt_imports import pyqtSignal, QWidget

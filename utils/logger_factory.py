@@ -1,13 +1,13 @@
 """
-logger_factory.py
+Module: logger_factory.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
+logger_factory.py
 Optimized logger factory with caching for improved performance.
 Provides centralized logger management with thread-safe operations.
 """
-
 import logging
 import threading
 from typing import Dict, Optional

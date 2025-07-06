@@ -1,16 +1,15 @@
 """
-Application Context - Centralized state management
+Module: application_context.py
 
 Author: Michael Economou
-Date: 2025-06-10
+Date: 2025-07-06
 
+Application Context - Centralized state management
 This module provides centralized access to application state, eliminating
 the need for complex parent-child traversal patterns throughout the codebase.
-
 Current implementation is a skeleton that will gradually replace
 distributed state management across widgets.
 """
-
 from typing import TYPE_CHECKING, Any, Dict, Optional, Set
 
 from core.qt_imports import QObject, pyqtSignal

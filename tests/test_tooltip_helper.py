@@ -1,5 +1,20 @@
 """
+Module: test_tooltip_helper.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
 Tests for tooltip helper system
+"""
+import warnings
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+
+
+"""
+Tests for tooltip helper system
+
 """
 
 import pytest

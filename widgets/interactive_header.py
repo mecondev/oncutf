@@ -1,18 +1,17 @@
 """
-interactive_header.py
+Module: interactive_header.py
 
 Author: Michael Economou
-Date: 2025-05-22
+Date: 2025-07-06
 
+interactive_header.py
 This module defines InteractiveHeader, a subclass of QHeaderView that
 adds interactive behavior to table headers in the oncutf application.
-
 Features:
 - Toggles selection of all rows when clicking on column 0
 - Performs manual sort handling for sortable columns (excluding column 0)
 - Prevents accidental sort when resizing (Explorer-like behavior)
 """
-
 from core.qt_imports import QPoint, Qt, QAction, QHeaderView, QMenu
 
 # ApplicationContext integration

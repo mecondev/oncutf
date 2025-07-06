@@ -1,19 +1,18 @@
 """
-rename_history_dialog.py
+Module: rename_history_dialog.py
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-07-06
 
+rename_history_dialog.py
 Dialog for viewing and managing rename history with undo functionality.
 Provides a user-friendly interface for undoing batch rename operations.
-
 Features:
 - List of recent rename operations
 - Detailed view of each operation
 - Undo functionality with validation
 - Operation status and file counts
 """
-
 from typing import Optional
 
 from core.qt_imports import (

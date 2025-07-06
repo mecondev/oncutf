@@ -2,15 +2,13 @@
 Module: metadata_module.py
 
 Author: Michael Economou
-Date: 2025-05-04
+Date: 2025-07-06
 
 This module provides logic for extracting metadata fields (such as creation date,
 modification date, or EXIF tag) to include in renamed filenames.
-
 It is used in the oncutf tool to dynamically extract and apply file
 metadata during batch renaming.
 """
-
 import os
 from datetime import datetime
 from typing import Optional

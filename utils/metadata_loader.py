@@ -2,12 +2,12 @@
 Module: metadata_loader.py
 
 Author: Michael Economou
-Updated: 2025-05-23
+Date: 2025-07-06
 
+Updated: 2025-05-23
 This module defines the MetadataLoader class, responsible for loading media metadata
 via ExifTool in the oncutf application. It supports both fast and extended scanning modes
 and integrates with the application's metadata caching infrastructure.
-
 Features:
 - Uses persistent ExifTool (-stay_open True) for fast metadata extraction
 - Supports extended scanning with -ee for embedded streams
@@ -15,7 +15,6 @@ Features:
 - Thread-safe cancellation for subprocess calls
 - Interoperable with MetadataEntry-based cache
 """
-
 import subprocess
 import threading
 from typing import Dict, Optional

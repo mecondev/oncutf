@@ -1,7 +1,19 @@
+"""
+Module: test_specified_text_module.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+"""
 # tests/test_specified_text_module.py
 
 from modules.specified_text_module import SpecifiedTextModule
 from tests.mocks import MockFileItem
+import warnings
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+
 
 
 def test_specified_text_valid():

@@ -1,13 +1,13 @@
 """
-qt_imports.py
+Module: qt_imports.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
+qt_imports.py
 Centralized PyQt5 imports to reduce import clutter in main files.
 Groups related Qt classes together for better organization.
 """
-
 # Core Qt classes
 from PyQt5.QtCore import (
     QAbstractTableModel,

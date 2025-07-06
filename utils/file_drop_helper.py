@@ -1,14 +1,14 @@
 """
-file_drop_helper.py
+Module: file_drop_helper.py
 
 Author: Michael Economou
-Date: 2025-06-10
+Date: 2025-07-06
 
+file_drop_helper.py
 This module provides modular logic for drag & drop handling in the oncutf file table.
 It detects the drop type (folder, files, mixed), checks allowed file types,
 triggers custom dialogs (recursive, rejected files), and returns results for the UI.
 """
-
 import os
 from typing import Dict, List, Literal, Tuple
 

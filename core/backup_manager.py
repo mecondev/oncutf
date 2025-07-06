@@ -2,12 +2,11 @@
 Module: backup_manager.py
 
 Author: Michael Economou
-Date: 2025-01-01
+Date: 2025-07-06
 
 This module provides database backup functionality for the oncutf application.
 It handles automatic backups on application shutdown, periodic backups during
 runtime, and backup file rotation to maintain disk space.
-
 Features:
 - Automatic backup on application shutdown
 - Periodic backups with configurable interval
@@ -15,7 +14,6 @@ Features:
 - Configurable backup count
 - Thread-safe backup operations
 """
-
 import os
 import shutil
 import glob

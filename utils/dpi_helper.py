@@ -1,13 +1,13 @@
 """
-dpi_helper.py
+Module: dpi_helper.py
 
 Author: Michael Economou
-Date: 2025-01-28
+Date: 2025-07-06
 
+dpi_helper.py
 DPI adaptation utilities for cross-platform font and UI scaling.
 Handles differences between Windows and Linux DPI scaling behavior.
 """
-
 import logging
 import platform
 from typing import Dict, Tuple

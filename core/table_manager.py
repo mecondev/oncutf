@@ -1,14 +1,14 @@
 """
-table_manager.py
+Module: table_manager.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
+table_manager.py
 Manager for handling file table operations in the MainWindow.
 Consolidates all table-related logic including sorting, clearing,
 preparation, and selection management.
 """
-
 from typing import List
 
 from core.qt_imports import Qt

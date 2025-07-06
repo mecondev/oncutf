@@ -92,16 +92,6 @@ def main() -> int:
         # Initialize theme engine
         theme_manager = ThemeEngine()
 
-        # Clean up old benchmark files on startup
-        try:
-            from utils.benchmark_cleanup import cleanup_benchmark_files
-            cleanup_results = cleanup_benchmark_files()
-            if cleanup_results['moved_files'] > 0 or cleanup_results['deleted_files'] > 0:
-                logger.info(f"[Startup] Cleaned up benchmark files: "
-                           f"{cleanup_results['moved_files']} moved, {cleanup_results['deleted_files']} deleted")
-        except Exception as e:
-            logger.debug(f"[Startup] Benchmark cleanup failed: {e}", extra={"dev_only": True})
-
         # We'll apply the theme after creating the main window
 
         # Create custom splash screen

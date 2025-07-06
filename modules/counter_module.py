@@ -2,13 +2,12 @@
 Module: counter_module.py
 
 Author: Michael Economou
-Date: 2025-05-02
+Date: 2025-07-06
 
 This module defines a rename module that inserts an incrementing counter
 into filenames. It is used within the oncutf application to generate
 sequential file names based on configurable start value, step, and padding.
 """
-
 from typing import Optional
 
 from core.qt_imports import Qt, pyqtSignal, QIntValidator, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget, QSize

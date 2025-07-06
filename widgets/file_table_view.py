@@ -1,8 +1,13 @@
+"""
+Module: file_table_view.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+"""
 '''
 file_table_view.py
 
-Author: Michael Economou
-Date: 2025-05-25
 
 Custom QTableView with Windows Explorer-like behavior:
 - Full-row selection with anchor handling

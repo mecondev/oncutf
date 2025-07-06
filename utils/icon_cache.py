@@ -2,20 +2,17 @@
 Module: icon_cache.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
 This utility module provides functions for caching QIcons or other
 visual assets to avoid redundant loading and improve GUI performance.
-
 Used by oncutf to store and reuse icons across different widgets
 without unnecessary overhead.
-
 Supports:
 - Icon retrieval by file type or status
 - In-memory caching of icons
 - Integration with GUI elements via shared cache
 """
-
 import os
 
 from core.qt_imports import Qt, QIcon, QPixmap

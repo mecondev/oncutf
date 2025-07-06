@@ -1,16 +1,16 @@
 """
-RenameManager - Handles rename operations and workflow
+Module: rename_manager.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
+RenameManager - Handles rename operations and workflow
 This manager centralizes rename operations including:
 - Batch rename execution
 - Post-rename workflow
 - State restoration after rename
 - Module dividers management
 """
-
 from typing import TYPE_CHECKING, List, Set
 
 from models.file_item import FileItem

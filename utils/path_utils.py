@@ -1,15 +1,15 @@
 """
-path_utils.py
+Module: path_utils.py
 
 Author: Michael Economou
-Date: 2025-06-20
+Date: 2025-07-06
 
+path_utils.py
 Utility functions for robust path operations across different operating systems.
 Handles path normalization to resolve issues with mixed path separators (especially on Windows).
 Also provides centralized project path management to ensure resources are loaded correctly
 regardless of current working directory.
 """
-
 import os
 from pathlib import Path
 from typing import Optional

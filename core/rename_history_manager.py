@@ -1,19 +1,18 @@
 """
-rename_history_manager.py
+Module: rename_history_manager.py
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-07-06
 
+rename_history_manager.py
 Rename history management system for undo/redo functionality.
 Tracks rename operations and provides rollback capabilities.
-
 Features:
 - Persistent storage of rename operations
 - Undo/redo functionality for batch renames
 - Operation grouping and rollback validation
 - Integration with existing rename workflow
 """
-
 import os
 import uuid
 from datetime import datetime

@@ -1,13 +1,13 @@
 """
-Drag Zone Validator - Common logic for drag & drop zone validation
+Module: drag_zone_validator.py
 
 Author: Michael Economou
-Date: 2025-06-22
+Date: 2025-07-06
 
+Drag Zone Validator - Common logic for drag & drop zone validation
 This module provides shared logic for validating drop zones during drag operations,
 eliminating code duplication between FileTreeView and FileTableView.
 """
-
 from typing import Dict, List, Optional
 
 from core.qt_imports import QCursor, QApplication

@@ -1,13 +1,13 @@
 """
-utils/metadata_exporter.py
+Module: metadata_exporter.py
 
 Author: Michael Economou
-Date: 2025-01-XX
+Date: 2025-07-06
 
+utils/metadata_exporter.py
 Metadata export utility supporting multiple human-readable formats.
 Exports metadata with proper grouping, hash information, and application branding.
 """
-
 import json
 import os
 from collections import defaultdict

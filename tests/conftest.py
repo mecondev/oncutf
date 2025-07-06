@@ -1,3 +1,10 @@
+"""
+Module: conftest.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+"""
 # tests/conftest.py
 import os
 import sys

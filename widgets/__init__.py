@@ -1,9 +1,12 @@
 """
-widgets package initialization
+Module: __init__.py
 
+Author: Michael Economou
+Date: 2025-07-06
+
+widgets package initialization
 This package contains all custom widgets used in the OnCutF application.
 """
-
 from .custom_msgdialog import CustomMessageDialog
 from .progress_manager import ProgressManager
 from .progress_widget import ProgressWidget

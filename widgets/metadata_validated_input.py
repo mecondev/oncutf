@@ -2,17 +2,15 @@
 Module: metadata_validated_input.py
 
 Author: Michael Economou
-Date: 2025-01-28
+Date: 2025-07-06
 
 Validated input widgets specifically designed for metadata field editing.
 Provides real-time character validation, paste cleaning, and visual feedback
 tailored for different metadata field types.
-
 Contains:
 - MetadataValidatedLineEdit: Single-line input with metadata-specific validation
 - MetadataValidatedTextEdit: Multi-line input for description fields
 """
-
 import logging
 from typing import Optional, Set, Tuple
 

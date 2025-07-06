@@ -1,16 +1,16 @@
 """
-DragCleanupManager - Handles drag and drop cleanup operations
+Module: drag_cleanup_manager.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
+DragCleanupManager - Handles drag and drop cleanup operations
 This manager centralizes drag cleanup operations including:
 - Force drag cleanup on Escape key
 - Emergency drag cleanup for stuck cursors
 - Widget drag state cleanup
 - Cursor management
 """
-
 from typing import TYPE_CHECKING
 
 from core.qt_imports import Qt, QApplication

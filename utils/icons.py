@@ -2,20 +2,17 @@
 Module: icons.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
 This utility module provides functions for creating and preparing icons,
 typically using QIcon or related PyQt components. It may also include
 logic for assigning icons based on file status or other contextual rules.
-
 Used by oncutf to generate or modify visual indicators in the user interface.
-
 Supports:
 - Dynamic icon generation based on input conditions
 - Theming or state-aware icon selection
 - Compatibility with oncutf UI components
 """
-
 from core.qt_imports import Qt, QColor, QPainter, QPen, QPixmap
 
 # Initialize Logger

@@ -1,19 +1,18 @@
 """
-progress_dialog.py
+Module: progress_dialog.py
 
 Author: Michael Economou
-Date: 2025-06-23
+Date: 2025-07-06
 
+progress_dialog.py
 Unified progress dialog for all background operations in the oncutf application.
 Consolidates MetadataWaitingDialog and FileLoadingDialog functionality.
-
 Features:
 - Configurable colors for different operation types
 - Proper wait cursor management
 - Robust ESC key handling with cancellation
 - Support for all operation types (metadata, file loading, hash calculation)
 """
-
 from typing import Callable, Optional
 
 from config import (

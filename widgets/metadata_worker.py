@@ -2,11 +2,11 @@
 Module: metadata_worker.py
 
 Author: Michael Economou
-Updated: 2025-01-31
+Date: 2025-07-06
 
+Updated: 2025-01-31
 This module defines a background worker that loads metadata from files using a MetadataLoader.
 It is executed inside a thread to keep the GUI responsive during batch metadata extraction.
-
 Features:
 - Threaded metadata loading
 - Signal-based progress reporting
@@ -15,7 +15,6 @@ Features:
 - Integrated caching with skip logic
 - Batch operations optimization for better performance
 """
-
 import os
 import threading
 import time

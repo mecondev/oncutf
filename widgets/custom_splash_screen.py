@@ -1,9 +1,10 @@
 """
-custom_splash_screen.py
+Module: custom_splash_screen.py
 
 Author: Michael Economou
-Date: 2025-06-23
+Date: 2025-07-06
 
+custom_splash_screen.py
 Custom splash screen widget for the oncutf application.
 Features:
 - Custom size (16:9 aspect ratio with 400px height)
@@ -12,7 +13,6 @@ Features:
 - Custom styling and positioning
 - Blocks application interaction until closed
 """
-
 import logging
 
 from core.qt_imports import Qt, QFont, QFontMetrics, QPainter, QPen, QPixmap, QColor, QApplication, QSplashScreen, QTimer

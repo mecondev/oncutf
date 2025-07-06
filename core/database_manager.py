@@ -1,12 +1,12 @@
 """
-database_manager.py
+Module: database_manager.py
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-07-06
 
+database_manager.py
 Enhanced database management with improved architecture.
 Separates concerns into dedicated tables while maintaining referential integrity.
-
 Architecture:
 - file_paths: Central table for file path management
 - file_metadata: Dedicated metadata storage
@@ -14,7 +14,6 @@ Architecture:
 - file_rename_history: Dedicated rename history
 - Future: file_thumbnails, file_tags, etc.
 """
-
 import json
 import os
 import sqlite3

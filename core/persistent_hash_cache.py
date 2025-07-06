@@ -1,13 +1,13 @@
 """
-persistent_hash_cache.py
+Module: persistent_hash_cache.py
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-07-06
 
+persistent_hash_cache.py
 Enhanced persistent hash cache using the improved database architecture.
 Provides improved performance and separation of concerns.
 """
-
 import os
 from typing import Dict, List, Optional
 

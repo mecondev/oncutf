@@ -1,3 +1,10 @@
+"""
+Module: mocks.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+"""
 # tests/mocks.py
 
 class MockFileItem:

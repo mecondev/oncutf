@@ -1,13 +1,13 @@
 """
-metadata_manager.py
+Module: metadata_manager.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
+metadata_manager.py
 Centralized metadata management operations extracted from MainWindow.
 Handles metadata loading, progress tracking, thread management, and UI coordination.
 """
-
 import os
 from typing import List, Optional
 

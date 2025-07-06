@@ -1,13 +1,13 @@
 """
-ui_manager.py
+Module: ui_manager.py
 
 Author: Michael Economou
-Date: 2025-06-13
+Date: 2025-07-06
 
+ui_manager.py
 Manages UI setup and layout configuration for the main window.
 Handles widget initialization, signal connections, and layout management.
 """
-
 import platform
 from typing import TYPE_CHECKING
 

@@ -1,12 +1,12 @@
 """
-preview_tables_view.py
+Module: preview_tables_view.py
 
 Author: Michael Economou
-Date: 2025-06-05
+Date: 2025-07-06
 
+preview_tables_view.py
 Implements a view that manages the preview tables for old/new filenames
 with intelligent placeholder management and scrollbar optimization.
-
 Features:
 - Placeholder management (show when empty, hide when populated)
 - Intelligent horizontal scrolling (expand to fill or enable scrollbar)
@@ -14,7 +14,6 @@ Features:
 - Status icon display for rename validation
 - Custom table widgets with resize signal handling
 """
-
 from typing import Tuple
 
 from core.qt_imports import Qt, pyqtSignal, QPixmap, QAbstractItemView, QHBoxLayout, QHeaderView, QLabel, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget

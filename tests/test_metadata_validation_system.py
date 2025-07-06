@@ -1,8 +1,25 @@
 """
-Tests for metadata validation system
+Module: test_metadata_validation_system.py
 
 Author: Michael Economou
-Date: 2025-01-28
+Date: 2025-07-06
+
+Tests for metadata validation system
+Comprehensive pytest tests for the metadata validation system including:
+- MetadataFieldValidator functionality
+- BaseValidatedInput behavior
+- MetadataValidatedLineEdit and MetadataValidatedTextEdit widgets
+- Field-specific validation rules
+- Character blocking and paste cleaning
+"""
+import warnings
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+
+"""
+Tests for metadata validation system
+
 
 Comprehensive pytest tests for the metadata validation system including:
 - MetadataFieldValidator functionality

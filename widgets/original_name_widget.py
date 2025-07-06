@@ -1,12 +1,11 @@
 """
 Module: original_name_widget.py
 
-Rename module that reuses original filename.
-
 Author: Michael Economou
-Date: 2025-06-04
-"""
+Date: 2025-07-06
 
+Rename module that reuses original filename.
+"""
 from core.qt_imports import QHBoxLayout, QLabel, QVBoxLayout
 from modules.base_module import BaseRenameModule
 from utils.logger_factory import get_cached_logger

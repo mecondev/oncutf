@@ -1,11 +1,12 @@
 """
-core/lazy_metadata_manager.py
-Author: Michael Economou
-Date: 2025-01-31
+Module: lazy_metadata_manager.py
 
+Author: Michael Economou
+Date: 2025-07-06
+
+core/lazy_metadata_manager.py
 Lazy Metadata Manager for intelligent on-demand metadata loading.
 Implements smart prefetching, background loading, and memory optimization.
-
 Features:
 - On-demand metadata loading only when needed
 - Smart prefetching based on user selection patterns
@@ -13,7 +14,6 @@ Features:
 - LRU cache management for memory optimization
 - Viewport-aware loading priorities
 """
-
 import logging
 from typing import Optional, List, Dict, Set, Any, Tuple
 from collections import OrderedDict

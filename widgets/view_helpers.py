@@ -1,17 +1,16 @@
 """
-view_helpers.py
+Module: view_helpers.py
 
 Author: Michael Economou
-Date: 2025-05-24
+Date: 2025-07-06
 
+view_helpers.py
 This module provides view-level helper functions for UI updates
 in the Batch File Renamer GUI, such as triggering table cell refreshes
 without relying on internal status propagation.
-
 Currently includes:
 - update_info_icon: visually refreshes the icon cell in column 0 for a given file.
 """
-
 from core.qt_imports import QTableView
 
 from utils.path_utils import paths_equal

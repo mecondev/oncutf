@@ -1,13 +1,12 @@
 """
-hash_worker.py
+Module: hash_worker.py
 
 Author: Michael Economou
-Date: 2025-01-31
+Date: 2025-07-06
 
+hash_worker.py
 QThread worker for background hash calculation operations.
-
 This module provides thread-safe, cancellable hash operations with accurate progress updates.
-
 Key Features:
 - Thread-safe with QMutex protection
 - Support for multiple hash operations (duplicates, comparison, checksums)
@@ -16,14 +15,12 @@ Key Features:
 - Optimized for large file operations
 - Smart cache checking to avoid redundant hash calculations
 - Batch operations optimization for better performance
-
 Usage:
-    worker = HashWorker()
-    worker.setup_duplicate_scan(file_paths)
-    worker.duplicates_found.connect(handle_duplicates)
-    worker.start()
+worker = HashWorker()
+worker.setup_duplicate_scan(file_paths)
+worker.duplicates_found.connect(handle_duplicates)
+worker.start()
 """
-
 import os
 from pathlib import Path
 from typing import List

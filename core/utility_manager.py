@@ -1,9 +1,10 @@
 """
-UtilityManager - Handles utility functions and miscellaneous operations
+Module: utility_manager.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
+UtilityManager - Handles utility functions and miscellaneous operations
 This manager centralizes utility functions including:
 - Event filtering and modifier handling
 - Window management operations
@@ -11,7 +12,6 @@ This manager centralizes utility functions including:
 - Status and UI updates
 - Application lifecycle management
 """
-
 from typing import TYPE_CHECKING
 
 from core.qt_imports import QEvent, Qt, QApplication

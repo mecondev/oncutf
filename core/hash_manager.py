@@ -1,13 +1,13 @@
 """
-hash_manager.py
+Module: hash_manager.py
 
 Author: Michael Economou
-Date: 2025-06-21
+Date: 2025-07-06
 
+hash_manager.py
 Manages file hashing operations, duplicate detection, and file integrity checking.
 Provides CRC32 hash calculations optimized for speed and efficiency.
 """
-
 import zlib
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union

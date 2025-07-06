@@ -1,8 +1,25 @@
 """
+Module: test_simple_hash_integration.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+test_simple_hash_integration.py
+Simple integration test for hash functionality without relying on signals.
+Tests the actual fix for cumulative progress tracking.
+"""
+import warnings
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+
+
+"""
 test_simple_hash_integration.py
 
 Simple integration test for hash functionality without relying on signals.
 Tests the actual fix for cumulative progress tracking.
+
 """
 
 import os

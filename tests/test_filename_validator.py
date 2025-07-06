@@ -1,5 +1,20 @@
 """
+Module: test_filename_validator.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
 Tests for filename validation utilities
+"""
+import warnings
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+
+
+"""
+Tests for filename validation utilities
+
 """
 
 from config import INVALID_FILENAME_CHARS, INVALID_FILENAME_MARKER

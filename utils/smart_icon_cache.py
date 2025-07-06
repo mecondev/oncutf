@@ -1,9 +1,12 @@
 """
-Smart Icon Cache Module
+Module: smart_icon_cache.py
 
+Author: Michael Economou
+Date: 2025-07-06
+
+Smart Icon Cache Module
 This module provides an advanced icon caching system with LRU eviction,
 memory optimization, and intelligent loading patterns.
-
 Features:
 - LRU (Least Recently Used) eviction policy
 - Memory-aware caching with size limits
@@ -12,11 +15,7 @@ Features:
 - Preloading of commonly used icons
 - Icon size optimization and scaling
 - Integration with existing icon systems
-
-Author: OnCutF Development Team
-Date: 2025-01-31
 """
-
 import os
 import time
 import threading

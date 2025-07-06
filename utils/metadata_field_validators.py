@@ -1,13 +1,13 @@
 """
-metadata_field_validators.py
+Module: metadata_field_validators.py
 
 Author: Michael Economou
-Date: 2025-01-28
+Date: 2025-07-06
 
+metadata_field_validators.py
 Validation system for metadata field editing.
 Provides validation rules and error messages for different metadata field types.
 """
-
 from typing import List, Tuple
 
 

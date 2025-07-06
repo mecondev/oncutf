@@ -1,23 +1,21 @@
 """
-custom_msgdialog.py
+Module: custom_msgdialog.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
+custom_msgdialog.py
 This module defines the CustomMessageDialog class, a flexible and styled alternative
 to QMessageBox for use in the oncutf application.
-
 It provides support for various types of dialogs including:
 - Question dialogs with custom button labels
 - Informational dialogs with an OK button
 - Non-blocking waiting dialogs with optional progress bar
 - Conflict resolution dialogs for rename operations (e.g., Skip, Overwrite)
-
 This dialog is intended for consistent and modern user feedback across the application,
 and is used instead of standard QMessageBox to allow greater control over layout,
 behavior, and styling.
 """
-
 from typing import Optional
 
 from core.qt_imports import (

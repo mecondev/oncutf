@@ -1,14 +1,14 @@
 """
-custom_file_system_model.py
+Module: custom_file_system_model.py
 
 Author: Michael Economou
-Date: 2025-06-11
+Date: 2025-07-06
 
+custom_file_system_model.py
 Custom QFileSystemModel that uses feather icons instead of OS default icons.
 Provides consistent cross-platform appearance with professional feather icons
 for folders, files, and expand/collapse indicators.
 """
-
 import os
 from typing import Any
 

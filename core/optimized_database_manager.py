@@ -1,6 +1,10 @@
 """
-Optimized Database Manager Module
+Module: optimized_database_manager.py
 
+Author: Michael Economou
+Date: 2025-07-06
+
+Optimized Database Manager Module
 This module provides an enhanced database management system with:
 - Prepared statements for better performance
 - Connection pooling for efficient resource usage
@@ -9,11 +13,7 @@ This module provides an enhanced database management system with:
 - Transaction management
 - Database indexing optimization
 - Query statistics and monitoring
-
-Author: Michael Economou
-Date: 2025-07-06
 """
-
 import sqlite3
 import threading
 import time

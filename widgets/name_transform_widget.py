@@ -1,15 +1,14 @@
 """
-name_transform_widget.py
-
-UI widget for configuring NameTransformModule.
-Provides options for Greek to Greeklish conversion, case and separator transformation.
-
-Uses BaseRenameModule to prevent duplicate emits.
+Module: name_transform_widget.py
 
 Author: Michael Economou
-Date: 2025-06-04
-"""
+Date: 2025-07-06
 
+name_transform_widget.py
+UI widget for configuring NameTransformModule.
+Provides options for Greek to Greeklish conversion, case and separator transformation.
+Uses BaseRenameModule to prevent duplicate emits.
+"""
 from typing import Optional
 
 from core.qt_imports import Qt, QCheckBox, QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget

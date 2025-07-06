@@ -1,12 +1,13 @@
 """
-utils/viewport_detector.py
-Author: Michael Economou
-Date: 2025-01-31
+Module: viewport_detector.py
 
+Author: Michael Economou
+Date: 2025-07-06
+
+utils/viewport_detector.py
 Viewport detection utility for lazy metadata loading.
 Detects which files are currently visible in table views for smart loading priorities.
 """
-
 import logging
 from typing import List, Tuple, Optional
 from PyQt5.QtWidgets import QAbstractItemView, QTableView

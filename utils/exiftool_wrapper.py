@@ -1,16 +1,15 @@
 """
-exiftool_wrapper.py
+Module: exiftool_wrapper.py
 
 Author: Michael Economou
-Date: 2025-05-22
+Date: 2025-07-06
 
+exiftool_wrapper.py
 This module provides a lightweight ExifTool wrapper using a persistent
 '-stay_open True' process for fast metadata extraction. For extended metadata,
 it falls back to a one-shot subprocess call with '-ee'.
-
 Requires: exiftool installed and in PATH
 """
-
 import json
 import os
 import subprocess

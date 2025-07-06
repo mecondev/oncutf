@@ -1,10 +1,13 @@
 """
-Thread Pool Manager Module
+Module: thread_pool_manager.py
 
+Author: Michael Economou
+Date: 2025-07-06
+
+Thread Pool Manager Module
 This module provides an optimized thread pool management system for OnCutF.
 It handles intelligent work distribution, resource management optimization,
 and advanced thread pool features for better performance.
-
 Features:
 - Dynamic thread pool sizing based on workload
 - Priority-based task scheduling
@@ -13,11 +16,7 @@ Features:
 - Integration with Qt worker threads
 - Graceful shutdown and cleanup
 - Work stealing for load balancing
-
-Author: OnCutF Development Team
-Date: 2025-01-31
 """
-
 import threading
 import time
 import queue

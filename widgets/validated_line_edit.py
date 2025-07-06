@@ -2,16 +2,14 @@
 Module: validated_line_edit.py
 
 Author: Michael Economou
-Date: 2025-01-01
+Date: 2025-07-06
 
 This module provides a custom QLineEdit widget with built-in filename
 validation, input filtering, and tooltip feedback. It prevents invalid
 characters from being entered and provides visual feedback to the user.
-
 Contains:
 - ValidatedLineEdit: Enhanced QLineEdit with validation and tooltip support
 """
-
 import logging
 from typing import Optional, Set, Tuple
 

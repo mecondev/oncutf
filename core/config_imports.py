@@ -1,13 +1,13 @@
 """
-config_imports.py
+Module: config_imports.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
+config_imports.py
 Centralized config imports to reduce clutter in main files.
 Re-exports commonly used configuration constants.
 """
-
 from config import (
     ALLOWED_EXTENSIONS,
     APP_NAME,

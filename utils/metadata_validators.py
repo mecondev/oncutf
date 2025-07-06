@@ -1,13 +1,13 @@
 """
-metadata_validators.py
+Module: metadata_validators.py
 
 Author: Michael Economou
-Date: 2025-06-07
+Date: 2025-07-06
 
+metadata_validators.py
 This module provides validation functions for metadata values.
 Each validator checks if a given value is valid for a specific metadata field.
 """
-
 from typing import Optional, Tuple
 
 from utils.logger_factory import get_cached_logger

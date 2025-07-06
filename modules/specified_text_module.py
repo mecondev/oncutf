@@ -2,12 +2,11 @@
 Module: specified_text_module.py
 
 Author: Michael Economou
-Date: 2025-05-02
+Date: 2025-07-06
 
 This module defines a rename module that inserts user-specified text
 into filenames. It allows users to prepend, append, or inject static
 text at a defined position within the filename.
-
 Used in the oncutf application as one of the modular renaming components.
 """
 import os

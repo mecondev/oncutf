@@ -1,16 +1,15 @@
 """
-logger_file_helper.py
-
-Provides utility functions to attach file handlers to a logger,
-with optional filtering by level or logger name.
-
-Functions:
-    add_file_handler: Attaches a rotating file handler with custom level and optional filter.
+Module: logger_file_helper.py
 
 Author: Michael Economou
-Date: 2025-05-12
-"""
+Date: 2025-07-06
 
+logger_file_helper.py
+Provides utility functions to attach file handlers to a logger,
+with optional filtering by level or logger name.
+Functions:
+add_file_handler: Attaches a rotating file handler with custom level and optional filter.
+"""
 import logging
 import os
 from logging.handlers import RotatingFileHandler

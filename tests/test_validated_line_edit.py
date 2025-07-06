@@ -1,5 +1,20 @@
 """
+Module: test_validated_line_edit.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
 Tests for ValidatedLineEdit widget
+"""
+import warnings
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+
+
+"""
+Tests for ValidatedLineEdit widget
+
 """
 
 import pytest

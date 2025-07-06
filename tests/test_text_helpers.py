@@ -1,8 +1,20 @@
 """
-test_text_helpers.py
+Module: test_text_helpers.py
 
 Author: Michael Economou
-Date: 2025-07-04
+Date: 2025-07-06
+
+test_text_helpers.py
+Tests for text helper functions in utils/text_helpers.py
+"""
+import warnings
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+
+"""
+test_text_helpers.py
+
 
 Tests for text helper functions in utils/text_helpers.py
 """

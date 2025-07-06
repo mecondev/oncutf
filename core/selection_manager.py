@@ -1,13 +1,13 @@
 """
-selection_manager.py
+Module: selection_manager.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
+selection_manager.py
 Centralized selection management operations extracted from MainWindow.
 Handles file table selection operations, preview updates, and metadata synchronization.
 """
-
 from typing import List
 
 from config import STATUS_COLORS

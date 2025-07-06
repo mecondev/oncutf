@@ -1,13 +1,13 @@
 """
-utils/metadata_cache_helper.py
+Module: metadata_cache_helper.py
 
 Author: Michael Economou
-Date: 2025-01-31
+Date: 2025-07-06
 
+utils/metadata_cache_helper.py
 Unified metadata cache access helper to eliminate duplicate patterns.
 Provides consistent interface for metadata cache operations across the application.
 """
-
 from typing import Any, Dict, Optional, Union
 from utils.logger_factory import get_cached_logger
 from utils.path_utils import normalize_path

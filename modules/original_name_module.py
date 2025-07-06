@@ -1,10 +1,11 @@
 """
-original_name_module.py
-
-Module for applying original name transformations.
+Module: original_name_module.py
 
 Author: Michael Economou
-Date: 2025-05-15
+Date: 2025-07-06
+
+original_name_module.py
+Module for applying original name transformations.
 """
 import os
 

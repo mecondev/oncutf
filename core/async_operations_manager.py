@@ -1,10 +1,13 @@
 """
-Async Operations Manager Module
+Module: async_operations_manager.py
 
+Author: Michael Economou
+Date: 2025-07-06
+
+Async Operations Manager Module
 This module provides asynchronous operations for OnCutF using asyncio.
 It handles non-blocking file operations, UI updates, and parallel processing
 for heavy operations to improve application responsiveness.
-
 Features:
 - Async file I/O operations
 - Non-blocking metadata processing
@@ -13,11 +16,7 @@ Features:
 - Progress tracking and cancellation
 - Integration with Qt event loop
 - Thread-safe operations
-
-Author: OnCutF Development Team
-Date: 2025-01-31
 """
-
 import asyncio
 import aiofiles
 import threading

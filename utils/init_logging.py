@@ -1,16 +1,15 @@
 """
-init_logging.py
-
-Provides a single entry point to initialize the logging system
-for the application with app-specific log file names.
-
-Functions:
-    init_logging(app_name): Sets up loggers with rotating file handlers.
+Module: init_logging.py
 
 Author: Michael Economou
-Date: 2025-05-12
-"""
+Date: 2025-07-06
 
+init_logging.py
+Provides a single entry point to initialize the logging system
+for the application with app-specific log file names.
+Functions:
+init_logging(app_name): Sets up loggers with rotating file handlers.
+"""
 import logging
 
 from utils.logger_factory import get_cached_logger

@@ -1,23 +1,21 @@
 """
-logger_helper.py
+Module: logger_helper.py
 
+Author: Michael Economou
+Date: 2025-07-06
+
+logger_helper.py
 Provides utility functions for working with loggers in a safe and consistent way.
 Includes functions to retrieve or configure named loggers and to safely log
 Unicode messages to the console across platforms (Windows, Linux, macOS).
-
 Functions:
-    get_logger(name): Returns a patched logger with UTF-8-safe handlers and logging methods.
-    safe_text(text): Replaces problematic Unicode characters with ASCII equivalents.
-    safe_log(logger_func, message): Logs a message safely, falling back to ASCII if needed.
-
+get_logger(name): Returns a patched logger with UTF-8-safe handlers and logging methods.
+safe_text(text): Replaces problematic Unicode characters with ASCII equivalents.
+safe_log(logger_func, message): Logs a message safely, falling back to ASCII if needed.
 DevOnlyFilter:
-    A logging filter that hides dev-only debug messages from the console,
-    while still allowing them to be stored in file logs.
-
-Author: Michael Economou
-Date: 2025-05-12
+A logging filter that hides dev-only debug messages from the console,
+while still allowing them to be stored in file logs.
 """
-
 import logging
 import re
 import sys

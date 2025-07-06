@@ -1,7 +1,16 @@
 """
+Module: test_backup_simple.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
 Simple backup manager tests for development verification.
 Tests basic functionality without complex mocking or timing dependencies.
 """
+import warnings
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
 
 import pytest
 import tempfile

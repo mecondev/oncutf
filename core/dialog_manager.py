@@ -1,13 +1,13 @@
 """
-dialog_manager.py
+Module: dialog_manager.py
 
 Author: Michael Economou
-Date: 2025-06-05
+Date: 2025-07-06
 
+dialog_manager.py
 Manages all dialog and validation operations for the application.
 Centralizes dialog creation, validation logic, and user confirmations.
 """
-
 import os
 from typing import List, Tuple
 

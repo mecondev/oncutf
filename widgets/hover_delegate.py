@@ -1,14 +1,14 @@
 """
-hover_delegate.py
+Module: hover_delegate.py
 
+Author: Michael Economou
+Date: 2025-07-06
+
+hover_delegate.py
 Custom QStyledItemDelegate that enables full-row hover highlight.
 The hover background color is provided via constructor and is applied
 only when the row is not selected.
-
-Author: Michael Economou
-Date: 2025-05-21
 """
-
 from core.qt_imports import Qt, QColor, QIcon, QPalette, QPen, QStyle, QStyledItemDelegate, QStyleOptionViewItem, QTableView
 
 from utils.theme import get_qcolor, get_theme_color

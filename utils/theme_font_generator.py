@@ -1,12 +1,12 @@
 """
-theme_font_generator.py
+Module: theme_font_generator.py
 
 Author: Michael Economou
-Date: 2025-01-28
+Date: 2025-07-06
 
+theme_font_generator.py
 Generates CSS font styles with DPI-aware sizing for cross-platform consistency.
 """
-
 import logging
 from typing import Dict
 

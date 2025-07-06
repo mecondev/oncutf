@@ -2,21 +2,19 @@
 Module: tooltip_helper.py
 
 Author: Michael Economou
-Date: 2025-01-01
+Date: 2025-07-06
 
 This module provides centralized tooltip management with custom styling and
 behavior. It supports both temporary tooltips (with auto-hide) and persistent
 tooltips (that behave like Qt standard tooltips) for displaying tooltips with
 different types (error, warning, info, success) and consistent styling across
 the application.
-
 Classes:
 - CustomTooltip: Enhanced tooltip widget with custom styling
 - TooltipHelper: Central management class for tooltip operations
 - TooltipType: Constants for different tooltip types
 - Convenience functions for easy tooltip display
 """
-
 from typing import Optional, Tuple
 from PyQt5.QtCore import QPoint, QTimer, Qt, QEvent
 from PyQt5.QtWidgets import QApplication, QLabel, QWidget

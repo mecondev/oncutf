@@ -145,6 +145,17 @@ notes/
 reports/
 .continue
 
+# Benchmark and performance files
+benchmark_report_*.json
+performance_report_*.json
+performance_report_*.html
+comprehensive_test_report_*.json
+unit_tests*.xml
+test_results/
+*_profiling.py
+*_benchmarks.py
+*_performance.py
+
 # =======================================
 # System Files (Windows/macOS)
 # =======================================

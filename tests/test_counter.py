@@ -1,4 +1,24 @@
+"""
+Module: test_counter.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+This module provides functionality for the OnCutF batch file renaming application.
+"""
+"""
+Module: tests/test_counter.py
+
+
+This module provides functionality for the OnCutF batch file renaming application.
+"""
+
 from modules.counter_module import CounterModule
+import warnings
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+
 
 
 def test_counter_default():

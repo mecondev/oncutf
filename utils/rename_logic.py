@@ -1,20 +1,19 @@
 """
-rename_logic.py
+Module: rename_logic.py
 
+Author: Michael Economou
+Date: 2025-07-06
+
+rename_logic.py
 This module provides the core logic for building, resolving, and executing
 rename plans for batch file renaming operations. It separates rename logic
 from the UI layer to allow better maintainability and reusability.
-
 Functions:
-    - build_rename_plan: Generates a list of rename operations with conflict detection.
-    - resolve_rename_conflicts: Prompts user to resolve filename conflicts before rename.
-    - execute_rename_plan: Performs the actual renaming actions based on the plan.
-    - get_preview_pairs: Generates preview name pairs from checked files and renaming rules.
-
-Author: Michael Economou
-Date: 2025-05-11
+- build_rename_plan: Generates a list of rename operations with conflict detection.
+- resolve_rename_conflicts: Prompts user to resolve filename conflicts before rename.
+- execute_rename_plan: Performs the actual renaming actions based on the plan.
+- get_preview_pairs: Generates preview name pairs from checked files and renaming rules.
 """
-
 import os
 from typing import Callable, Dict, List, Tuple
 

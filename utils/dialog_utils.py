@@ -1,13 +1,13 @@
 """
-dialog_utils.py
+Module: dialog_utils.py
 
 Author: Michael Economou
-Date: 2025-01-20
+Date: 2025-07-06
 
+dialog_utils.py
 Utility functions for dialog and widget positioning and management.
 Provides centralized logic for common dialog operations like centering.
 """
-
 from typing import Optional
 
 from core.qt_imports import QWidget

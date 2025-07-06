@@ -1,9 +1,22 @@
+"""
+Module: test_file_size_formatter.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+test_file_size_formatter.py
+Test cases for the FileSizeFormatter utility.
+Tests cross-platform file size formatting with various units and locales.
+"""
+import warnings
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+
 #!/usr/bin/env python3
 """
 test_file_size_formatter.py
 
-Author: Michael Economou
-Date: 2025-06-23
 
 Test cases for the FileSizeFormatter utility.
 Tests cross-platform file size formatting with various units and locales.

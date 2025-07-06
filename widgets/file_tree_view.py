@@ -1,14 +1,14 @@
 """
-file_tree_view.py
+Module: file_tree_view.py
 
 Author: Michael Economou
-Date: 2025-06-05
+Date: 2025-07-06
 
+file_tree_view.py
 Implements a custom tree view with clean single-item drag implementation.
 No reliance on Qt built-in drag system - everything is manual and controlled.
 Single item selection only - no multi-selection complexity.
 """
-
 import os
 
 from core.qt_imports import QEvent, Qt, pyqtSignal, QCursor, QKeyEvent, QMouseEvent, QApplication

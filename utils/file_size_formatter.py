@@ -1,19 +1,18 @@
 """
-file_size_formatter.py
+Module: file_size_formatter.py
 
 Author: Michael Economou
-Date: 2025-06-23
+Date: 2025-07-06
 
+file_size_formatter.py
 Cross-platform file size formatting utility.
 Supports both binary (1024) and decimal (1000) units with locale-aware formatting.
-
 Features:
 - Binary units (1024): KiB, MiB, GiB, TiB (IEC standard)
 - Decimal units (1000): KB, MB, GB, TB (SI standard)
 - Locale-aware decimal separator (. vs ,)
 - Cross-platform compatibility (Windows, Linux, macOS)
 """
-
 import locale
 import platform
 from typing import Union

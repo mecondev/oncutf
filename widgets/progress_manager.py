@@ -2,7 +2,18 @@
 Module: progress_manager.py
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-07-06
+
+from typing import Optional
+from core.qt_imports import QWidget
+from utils.logger_factory import get_cached_logger
+from widgets.progress_widget import ProgressWidget, create_size_based_progress_widget
+logger = get_cached_logger(__name__)
+class ProgressManager:
+"""
+"""
+Module: progress_manager.py
+
 
 Unified Progress Manager for all file operations.
 

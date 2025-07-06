@@ -1,13 +1,13 @@
 """
-timer_manager.py
+Module: timer_manager.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
+timer_manager.py
 Centralized timer management system for improved performance and better control.
 Provides optimized timer operations with automatic cleanup and debugging capabilities.
 """
-
 import threading
 import weakref
 from enum import Enum

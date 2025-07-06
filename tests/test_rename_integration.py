@@ -1,4 +1,19 @@
-"""Integration tests for the enhanced rename workflow with validation"""
+"""
+Module: test_rename_integration.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+Integration tests for the enhanced rename workflow with validation
+"""
+import warnings
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+
+
+"""Integration tests for the enhanced rename workflow with validation
+"""
 
 from config import INVALID_FILENAME_MARKER
 from modules.specified_text_module import SpecifiedTextModule

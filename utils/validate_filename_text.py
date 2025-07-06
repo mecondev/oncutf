@@ -2,18 +2,15 @@
 Module: validate_filename_text.py
 
 Author: Michael Economou
-Date: 2025-05-05
+Date: 2025-07-06
 
 This module defines a utility function for validating user-supplied text
 intended for use in filenames. It ensures that the input conforms to
 a predefined set of allowed characters, making it safe for use across
 file systems.
-
 Functions:
-    - is_valid_filename_text(text): Returns True if the input text is valid for filenames.
+- is_valid_filename_text(text): Returns True if the input text is valid for filenames.
 """
-
-
 import re
 
 from config import ALLOWED_FILENAME_CHARS

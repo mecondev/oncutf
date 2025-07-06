@@ -1,13 +1,13 @@
 """
-text_helpers.py
+Module: text_helpers.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
+text_helpers.py
 Utility functions for text manipulation and formatting.
 Provides helper functions for truncating, formatting, and processing text strings.
 """
-
 import os
 from typing import Optional
 

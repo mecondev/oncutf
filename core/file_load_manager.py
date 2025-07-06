@@ -1,15 +1,15 @@
 """
-file_load_manager.py
+Module: file_load_manager.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
+file_load_manager.py
 Unified file loading manager with fully optimized policy:
 - All operations: wait_cursor only (fast, synchronous)
 - Consistent behavior between drag, import, and external operations
 - No progress dialogs, just fast os.walk() for everything
 """
-
 import os
 from typing import List, Set
 

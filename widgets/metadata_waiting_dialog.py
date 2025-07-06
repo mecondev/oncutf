@@ -1,15 +1,14 @@
 """
-operation_dialog.py
+Module: metadata_waiting_dialog.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
+operation_dialog.py
 Frameless waiting dialog for background operations (metadata, hash, file loading).
 Provides a clean, minimal UI for displaying operation progress.
-
 Note: This is the legacy dialog - new code should use utils.progress_dialog.ProgressDialog
 """
-
 from typing import Callable, Optional
 
 from core.qt_imports import Qt, QDialog, QVBoxLayout, QWidget

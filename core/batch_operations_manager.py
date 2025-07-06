@@ -1,13 +1,13 @@
 """
-batch_operations_manager.py
+Module: batch_operations_manager.py
 
 Author: Michael Economou
-Date: 2025-01-31
+Date: 2025-07-06
 
+batch_operations_manager.py
 This module provides batch operations optimization for database queries, cache operations,
 and file I/O operations. It groups similar operations together to reduce overhead and
 improve performance, especially for large file sets.
-
 Features:
 - Batch metadata cache operations
 - Batch hash cache operations
@@ -16,7 +16,6 @@ Features:
 - Automatic flush mechanisms with size/time thresholds
 - Thread-safe operation batching
 """
-
 import threading
 import time
 from typing import Dict, List, Tuple, Any, Optional, Callable

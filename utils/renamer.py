@@ -1,3 +1,19 @@
+"""
+Module: renamer.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+Initializes the Renamer with required inputs for batch renaming.
+Parameters:
+files (List[FileItem]): List of FileItem objects selected for rename.
+modules_data (List[dict]): Serialized rename module data.
+metadata_cache (dict): Metadata dictionary (full_path → metadata dict).
+post_transform (dict, optional): Transformation options (case, separator).
+parent (QWidget, optional): Parent UI component.
+conflict_callback (Callable, optional): Function to handle filename conflicts.
+validator (object): Object to validate filename text.
+"""
 import os
 from typing import Callable, List, Optional
 
@@ -34,7 +50,8 @@ class Renamer:
         conflict_callback: Optional[Callable[[QWidget, str], str]] = None,
         validator: Optional[object] = None
     ) -> None:
-        """
+        
+"""
         Initializes the Renamer with required inputs for batch renaming.
 
         Parameters:
@@ -45,7 +62,8 @@ class Renamer:
             parent (QWidget, optional): Parent UI component.
             conflict_callback (Callable, optional): Function to handle filename conflicts.
             validator (object): Object to validate filename text.
-        """
+        
+"""
         self.files = files
         self.modules_data = modules_data
         self.metadata_cache = metadata_cache

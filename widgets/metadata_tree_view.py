@@ -1,10 +1,31 @@
 #!/usr/bin/env python3
+"""
+Module: metadata_tree_view.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+metadata_tree_view.py
+This module defines a custom QTreeView widget that supports drag-and-drop functionality
+for triggering metadata loading in the Batch File Renamer GUI.
+The view accepts file drops ONLY from the internal file table of the application,
+and emits a signal (`files_dropped`) containing the dropped file paths.
+Features:
+- Drag & drop support from internal file table only
+- Intelligent scroll position memory per file with smooth animation
+- Context menu for metadata editing (copy, edit, reset)
+- Placeholder mode for empty content
+- Modified item tracking with visual indicators
+Expected usage:
+- Drag files from the file table (but not from external sources).
+- Drop onto the metadata tree.
+- The main window connects to `files_dropped` and triggers selective metadata loading.
+Designed for integration with MainWindow and MetadataReader.
+"""
 # -*- coding: utf-8 -*-
 """
 metadata_tree_view.py
 
-Author: Michael Economou
-Date: 2025-05-20
 
 This module defines a custom QTreeView widget that supports drag-and-drop functionality
 for triggering metadata loading in the Batch File Renamer GUI.

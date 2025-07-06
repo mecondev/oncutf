@@ -1,8 +1,25 @@
 """
+Module: test_hash_worker_progress.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+test_hash_worker_progress.py
+Tests for HashWorker cumulative progress tracking.
+Ensures that progress never goes backwards and accumulates correctly.
+"""
+import warnings
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+
+
+"""
 test_hash_worker_progress.py
 
 Tests for HashWorker cumulative progress tracking.
 Ensures that progress never goes backwards and accumulates correctly.
+
 """
 
 import os

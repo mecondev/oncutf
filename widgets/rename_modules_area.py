@@ -1,17 +1,16 @@
 """
-rename_modules_area.py
+Module: rename_modules_area.py
 
 Author: Michael Economou
-Date: 2025-05-25
+Date: 2025-07-06
 
+rename_modules_area.py
 Container widget that holds multiple RenameModuleWidget instances inside
 scrollable area and provides fixed post-processing section and global
 add/remove controls.
-
 Designed to scale and support future drag & drop reordering.
 Now supports ApplicationContext for optimized access patterns.
 """
-
 from typing import Optional
 
 from core.qt_imports import Qt, QTimer, pyqtSignal, QHBoxLayout, QScrollArea, QVBoxLayout, QWidget

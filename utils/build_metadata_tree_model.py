@@ -1,14 +1,14 @@
 """
-utils/build_metadata_tree_model.py
+Module: build_metadata_tree_model.py
 
 Author: Michael Economou
-Date: 2025-05-09
+Date: 2025-07-06
 
+utils/build_metadata_tree_model.py
 Provides a utility function for converting nested metadata
 (dicts/lists) into a QStandardItemModel suitable for display in a QTreeView.
 Enhanced with better metadata grouping and extended metadata indicators.
 """
-
 import re
 
 from core.qt_imports import Qt, QColor, QFont, QStandardItem, QStandardItemModel

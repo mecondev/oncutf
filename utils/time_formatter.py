@@ -1,19 +1,18 @@
 """
-time_formatter.py
+Module: time_formatter.py
 
 Author: Michael Economou
-Date: 2025-06-23
+Date: 2025-07-06
 
+time_formatter.py
 Time formatting utilities for progress dialogs.
 Formats elapsed and estimated time in human-readable format.
-
 Features:
 - Elapsed time formatting (3':20'', 1:24':15'')
 - Estimated time formatting with ETA
 - Progress rate calculation
 - Cross-platform time handling
 """
-
 import time
 from typing import Optional, Tuple
 

@@ -1,22 +1,21 @@
 """
-Drag Visual Manager - Visual feedback for drag & drop operations
+Module: drag_visual_manager.py
 
 Author: Michael Economou
-Date: 2025-06-10
+Date: 2025-07-06
 
+Drag Visual Manager - Visual feedback for drag & drop operations
 This module provides visual feedback for drag & drop operations including:
 - Legal/illegal drop zone indicators
 - File/folder type cursors
 - Modifier state indicators (normal/extended metadata)
 - Dynamic cursor and overlay management
-
 Features:
 - Icon-based cursors with state awareness
 - Real-time drop zone validation
 - Keyboard modifier detection
 - Theme-aware icons from feather set
 """
-
 import os
 from enum import Enum
 from typing import Dict, Optional

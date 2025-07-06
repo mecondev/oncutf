@@ -1,7 +1,23 @@
 """
+Module: test_progress_manager.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+test_progress_manager.py
+Tests for the new unified ProgressManager.
+"""
+import warnings
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+
+
+"""
 test_progress_manager.py
 
 Tests for the new unified ProgressManager.
+
 """
 
 import pytest

@@ -1,6 +1,26 @@
+"""
+Module: test_transform_utils.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+This module provides functionality for the OnCutF batch file renaming application.
+"""
+"""
+Module: tests/test_transform_utils.py
+
+
+This module provides functionality for the OnCutF batch file renaming application.
+"""
+
 import pytest
 
 from utils.transform_utils import apply_transform
+import warnings
+warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+
 
 
 @pytest.mark.parametrize("name, transform, expected", [

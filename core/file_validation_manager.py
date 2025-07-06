@@ -1,12 +1,12 @@
 """
-file_validation_manager.py
+Module: file_validation_manager.py
 
 Author: Michael Economou
-Date: 2025-01-05
+Date: 2025-07-06
 
+file_validation_manager.py
 Advanced file validation manager with content-based identification and smart caching.
 Designed for archival applications with occasional use and high probability of path changes.
-
 Features:
 - Content-based file identification (survives path changes)
 - Medium accuracy validation (balanced performance)
@@ -15,7 +15,6 @@ Features:
 - Efficient batch processing for bulk operations
 - User preference memory for validation choices
 """
-
 import os
 import time
 import hashlib

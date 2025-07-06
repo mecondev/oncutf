@@ -1,7 +1,17 @@
 """
+Module: bulk_rotation_dialog.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+bulk_rotation_dialog.py
+Dialog for bulk rotation operations.
+"""
+"""
 bulk_rotation_dialog.py
 
 Dialog for bulk rotation operations.
+
 """
 
 from pathlib import Path

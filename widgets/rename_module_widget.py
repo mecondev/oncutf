@@ -2,23 +2,20 @@
 Module: rename_module_widget.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
 This module defines a custom widget for managing rename modules within
 the oncutf application. It allows users to add, configure, remove, and
 reorder individual rename modules that collectively define the batch
 renaming logic.
-
 The widget provides a visual, modular interface for customizing the
 renaming workflow interactively.
-
 Features:
 - Dynamic UI creation for each module type
 - Unified add/remove buttons at bottom right
 - Fixed post-processing area (e.g., NameTransform)
 - Responsive layout with visual separation between module logic and final formatting
 """
-
 from typing import Optional
 
 from core.qt_imports import pyqtSignal, QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget, Qt

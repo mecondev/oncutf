@@ -1,21 +1,20 @@
 """
-Memory Manager Module
+Module: memory_manager.py
 
+Author: Michael Economou
+Date: 2025-07-06
+
+Memory Manager Module
 This module provides comprehensive memory management for the OnCutF application.
 It handles automatic cleanup of unused cache entries, memory optimization,
 and smart cache management with LRU eviction policies.
-
 Features:
 - Automatic cache cleanup based on usage patterns
 - Memory threshold monitoring
 - LRU eviction policies
 - Cache statistics and monitoring
 - Integration with existing cache systems
-
-Author: OnCutF Development Team
-Date: 2025-01-31
 """
-
 import gc
 import time
 import psutil

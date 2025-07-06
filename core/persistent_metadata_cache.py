@@ -1,14 +1,14 @@
 """
-persistent_metadata_cache.py
+Module: persistent_metadata_cache.py
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-07-06
 
+persistent_metadata_cache.py
 Enhanced persistent metadata cache using the improved database architecture.
 Provides the same interface as the original cache but with improved performance
 and separation of concerns.
 """
-
 import time
 from typing import Dict, Optional
 

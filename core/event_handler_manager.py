@@ -1,13 +1,13 @@
 """
-event_handler_manager.py
+Module: event_handler_manager.py
 
 Author: Michael Economou
-Date: 2025-07-08
+Date: 2025-07-06
 
+event_handler_manager.py
 Handles UI events for the main window including file operations, context menus,
 and user interactions. Centralizes event handling logic to keep the main window clean.
 """
-
 import os
 from typing import List, Optional, cast
 

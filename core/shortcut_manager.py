@@ -1,14 +1,14 @@
 """
-ShortcutManager - Handles keyboard shortcuts
+Module: shortcut_manager.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
+ShortcutManager - Handles keyboard shortcuts
 This manager centralizes keyboard shortcut handling including:
 - Clear file table shortcut (Ctrl+Escape)
 - Future keyboard shortcuts can be added here
 """
-
 from typing import TYPE_CHECKING
 
 from core.qt_imports import Qt

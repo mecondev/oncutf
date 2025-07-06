@@ -1,13 +1,14 @@
 """
-json_config_manager.py
-Author: Michael Economou
-Date: 2025-06-20
+Module: json_config_manager.py
 
+Author: Michael Economou
+Date: 2025-07-06
+
+json_config_manager.py
 A comprehensive JSON-based configuration manager for any application.
 Handles JSON serialization, deserialization, and management with support for
 multiple configuration categories, automatic backups, and thread-safe operations.
 """
-
 import json
 import os
 import shutil

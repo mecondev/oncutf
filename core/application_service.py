@@ -1,13 +1,13 @@
 """
-core/application_service.py
-
-Application Service Layer that provides a unified interface to all application operations.
-This reduces the need for delegate methods in MainWindow and creates better separation of concerns.
+Module: application_service.py
 
 Author: Michael Economou
-Date: 2025-07-05
-"""
+Date: 2025-07-06
 
+core/application_service.py
+Application Service Layer that provides a unified interface to all application operations.
+This reduces the need for delegate methods in MainWindow and creates better separation of concerns.
+"""
 import logging
 from typing import Optional, List, Tuple, Dict, Any
 from core.qt_imports import QModelIndex, Qt

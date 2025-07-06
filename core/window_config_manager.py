@@ -1,13 +1,13 @@
 """
-window_config_manager.py
+Module: window_config_manager.py
 
 Author: Michael Economou
-Date: 2025-07-04
+Date: 2025-07-06
 
+window_config_manager.py
 Manages window configuration including geometry, state, and splitter positions.
 Separates window management logic from MainWindow for better code organization.
 """
-
 import logging
 from typing import Dict, Any, Optional, Tuple
 import os

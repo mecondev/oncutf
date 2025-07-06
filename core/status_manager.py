@@ -1,14 +1,13 @@
 """
-status_manager.py
+Module: status_manager.py
 
 Author: Michael Economou
-Date: 2025-05-01
+Date: 2025-07-06
 
+status_manager.py
 Enhanced Status Manager for OnCutF Application
-
 Manages status bar updates and UI feedback with specialized methods for different operations,
 progress integration, status history tracking, and smart context awareness.
-
 Key Features:
 - Specialized status methods for different operation types
 - Progress dialog integration and coordination
@@ -17,7 +16,6 @@ Key Features:
 - Smart context awareness for better user feedback
 - Automatic status categorization and prioritization
 """
-
 from typing import Optional, Dict, List, Any, Tuple
 from enum import Enum
 from dataclasses import dataclass, field

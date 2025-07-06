@@ -1,4 +1,28 @@
 """
+Module: column_manager.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+Column Management System for OnCutF Application
+This module provides centralized column management for all table views in the application,
+including the main file table view, metadata tree view, and preview tables.
+Key Features:
+- Intelligent column width calculation based on content and available space
+- Adaptive column sizing for different screen sizes and window states
+- Column persistence and restoration from configuration
+- Dynamic column adjustment on splitter movement and window resize
+- Support for both fixed and interactive column resize modes
+- Font-aware column sizing with proper text metrics
+- Scrollbar-aware space calculation
+- User preference tracking and manual resize detection
+Classes:
+ColumnManager: Main column management class
+ColumnType: Enum for different column types
+ColumnConfig: Configuration class for column settings
+ColumnState: State tracking for column management
+"""
+"""
 Column Management System for OnCutF Application
 
 This module provides centralized column management for all table views in the application,
@@ -19,6 +43,7 @@ Classes:
     ColumnType: Enum for different column types
     ColumnConfig: Configuration class for column settings
     ColumnState: State tracking for column management
+
 """
 
 from typing import Dict, List, Optional, Tuple, Union, Any

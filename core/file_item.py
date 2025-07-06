@@ -8,6 +8,9 @@ class FileItem:
     """
     Represents a file in the application.
     Stores file metadata and handles file operations.
+
+    Author: Michael Economou
+    Date: 2025-07-06
     """
 
     def __init__(self, path: str, extension: str, modified: datetime):

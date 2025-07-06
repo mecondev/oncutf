@@ -1,13 +1,13 @@
 """
-final_transform_container.py
+Module: final_transform_container.py
 
 Author: Michael Economou
-Date: 2025-06-28
+Date: 2025-07-06
 
+final_transform_container.py
 Container widget for the final transformation controls.
 Uses a clean 3-column layout: Labels | Controls | Buttons
 """
-
 from typing import Optional
 
 from core.qt_imports import pyqtSignal, QCheckBox, QComboBox, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget, QSize, Qt, QGridLayout
