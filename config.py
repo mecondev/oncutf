@@ -168,11 +168,11 @@ METADATA_ICON_COLORS = {
     'basic': '#e8f4fd',          # Light blue for basic metadata
     'extended': EXTENDED_METADATA_COLOR,  # Orange for extended metadata
     'invalid': '#ff6b6b',        # Red for invalid metadata
-    'loaded': '#51cf66',         # Green for loaded metadata
+    'loaded': '#51cf66',         # Green for loaded metadata (fast/basic)
     'modified': '#ffa726',       # Orange for modified metadata
     'partial': '#ffeb3b',        # Yellow for partial metadata
-    'hash': '#9c27b0',           # Purple for hash (matches HASH_CALCULATION_COLOR)
-    'none': '#666666'            # Gray for no metadata
+    'hash': '#ce93d8',           # Light purple for hash (brighter than before)
+    'none': '#252525'            # Dark gray for no metadata/hash (grayout)
 }
 
 # File Table Settings

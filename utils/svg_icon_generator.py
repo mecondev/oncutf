@@ -203,8 +203,8 @@ class SVGIconGenerator:
 
         icons = {}
         for status in METADATA_ICON_COLORS.keys():
-            if status != 'hash':  # Hash icons are separate
-                icons[status] = self.generate_icon(status, size)
+            # Generate all icons including hash since we use it in file table model
+            icons[status] = self.generate_icon(status, size)
 
         logger.debug(f"[SVGIconGenerator] Generated {len(icons)} metadata icons")
         return icons

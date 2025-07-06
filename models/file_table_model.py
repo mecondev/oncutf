@@ -35,7 +35,6 @@ from utils.icons_loader import load_metadata_icons
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
-from utils.svg_icon_generator import generate_hash_icon
 
 logger = get_cached_logger(__name__)
 
@@ -56,9 +55,7 @@ class FileTableModel(QAbstractTableModel):
         self._cache_helper = None
 
         # Load icons for metadata status using the correct functions
-
         self.metadata_icons = load_metadata_icons()
-        self.hash_icon = generate_hash_icon(size=16)
 
     def _has_hash_cached(self, file_path: str) -> bool:
         """
@@ -97,21 +94,18 @@ class FileTableModel(QAbstractTableModel):
             logger.debug(f"[FileTableModel] Could not get hash value: {e}")
             return ""
 
-    def _create_combined_icon(self, metadata_icon: QPixmap, show_hash: bool) -> QIcon:
+    def _create_combined_icon(self, metadata_status: str, hash_status: str) -> QIcon:
         """
-        Create a combined icon showing metadata status and optionally hash status.
-        Uses left alignment with metadata icon on the left and hash icon on the right.
+        Create a combined icon showing metadata status (left) and hash status (right).
+        Always shows both icons - uses grayout color for missing states.
 
         Args:
-            metadata_icon: The metadata status icon
-            show_hash: Whether to show the hash icon
+            metadata_status: Status of metadata ('loaded', 'extended', 'modified', 'invalid', 'none')
+            hash_status: Status of hash ('hash' for available, 'none' for not available)
 
         Returns:
-            QIcon: Combined icon with metadata and optionally hash
+            QIcon: Combined icon with metadata and hash status
         """
-        if not show_hash:
-            return QIcon(metadata_icon)
-
         # Use the full STATUS_COLUMN width for proper spacing
         from config import FILE_TABLE_COLUMN_WIDTHS
         combined_width = FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"]  # 45px
@@ -122,63 +116,19 @@ class FileTableModel(QAbstractTableModel):
         painter = QPainter(combined_pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        # Draw metadata icon on the left (2px from left edge)
-        painter.drawPixmap(2, 0, metadata_icon)
+        # Get metadata icon
+        metadata_icon = self.metadata_icons.get(metadata_status)
+        if metadata_icon:
+            # Draw metadata icon on the left (2px from left edge)
+            painter.drawPixmap(2, 0, metadata_icon)
 
-        # Draw hash icon on the right (27px from left = 45-16-2 for 2px right margin)
-        painter.drawPixmap(27, 0, self.hash_icon)
-
-        painter.end()
-
-        return QIcon(combined_pixmap)
-
-    def _create_metadata_only_icon(self, metadata_icon: QPixmap) -> QIcon:
-        """
-        Create a metadata-only icon positioned on the left side of the STATUS_COLUMN.
-
-        Args:
-            metadata_icon: The metadata status icon
-
-        Returns:
-            QIcon: Metadata icon positioned on the left
-        """
-        from config import FILE_TABLE_COLUMN_WIDTHS
-        combined_width = FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"]  # 45px
-        combined_height = 16
-        combined_pixmap = QPixmap(combined_width, combined_height)
-        combined_pixmap.fill(QColor(0, 0, 0, 0))
-
-        painter = QPainter(combined_pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-
-        # Draw metadata icon on the left (2px from left edge)
-        painter.drawPixmap(2, 0, metadata_icon)
+        # Get hash icon
+        hash_icon = self.metadata_icons.get(hash_status)
+        if hash_icon:
+            # Draw hash icon on the right (27px from left = 45-16-2 for 2px right margin)
+            painter.drawPixmap(27, 0, hash_icon)
 
         painter.end()
-
-        return QIcon(combined_pixmap)
-
-    def _create_hash_only_icon(self) -> QIcon:
-        """
-        Create a hash-only icon positioned on the right side of the STATUS_COLUMN.
-
-        Returns:
-            QIcon: Hash icon positioned on the right
-        """
-        from config import FILE_TABLE_COLUMN_WIDTHS
-        combined_width = FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"]  # 45px
-        combined_height = 16
-        combined_pixmap = QPixmap(combined_width, combined_height)
-        combined_pixmap.fill(QColor(0, 0, 0, 0))
-
-        painter = QPainter(combined_pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-
-        # Draw hash icon on the right (27px from left = 45-16-2 for 2px right margin)
-        painter.drawPixmap(27, 0, self.hash_icon)
-
-        painter.end()
-
         return QIcon(combined_pixmap)
 
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
@@ -269,33 +219,22 @@ class FileTableModel(QAbstractTableModel):
             # Check if file has hash cached
             has_hash = self._has_hash_cached(file.full_path)
 
-            # Determine metadata icon
-            metadata_pixmap = None
+            # Determine metadata status
+            metadata_status = "none"  # Default to grayout
             if entry:
                 # Check if metadata has been modified
                 if hasattr(entry, 'modified') and entry.modified:
-                    metadata_pixmap = self.metadata_icons.get("modified")
+                    metadata_status = "modified"
                 elif entry.is_extended:
-                    metadata_pixmap = self.metadata_icons.get("extended")
+                    metadata_status = "extended"
                 else:
-                    metadata_pixmap = self.metadata_icons.get("loaded")
-            else:
-                # Show 'basic' icon for files without metadata (ready for loading)
-                metadata_pixmap = self.metadata_icons.get("basic")
+                    metadata_status = "loaded"  # This is fast/basic metadata
 
-            # Handle different combinations
-            if metadata_pixmap and has_hash:
-                # Both metadata and hash - show combined
-                return self._create_combined_icon(metadata_pixmap, has_hash)
-            elif metadata_pixmap:
-                # Only metadata - show just metadata icon
-                return self._create_metadata_only_icon(metadata_pixmap)
-            elif has_hash:
-                # Only hash - show just hash icon
-                return self._create_hash_only_icon()
-            else:
-                # This shouldn't happen now since we always have metadata_pixmap
-                return QIcon()
+            # Determine hash status
+            hash_status = "hash" if has_hash else "none"
+
+            # Always create combined icon with both statuses
+            return self._create_combined_icon(metadata_status, hash_status)
 
         if col == 0 and role == Qt.UserRole: # type: ignore
             cache_helper = self._cache_helper
