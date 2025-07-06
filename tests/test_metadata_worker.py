@@ -14,12 +14,13 @@ This module provides functionality for the OnCutF batch file renaming applicatio
 """
 
 import time
+import warnings
 
 import pytest
 from PyQt5.QtCore import QCoreApplication
 
 from widgets.metadata_worker import MetadataWorker
-import warnings
+
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)

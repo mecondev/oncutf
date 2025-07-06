@@ -14,11 +14,9 @@ This manager centralizes utility functions including:
 """
 from typing import TYPE_CHECKING
 
-from core.qt_imports import QEvent, Qt, QApplication
-
-from config import STATUS_COLORS
+from core.pyqt_imports import QApplication, QEvent, Qt
 from utils.logger_factory import get_cached_logger
-from utils.tooltip_helper import setup_tooltip, TooltipType
+from utils.tooltip_helper import TooltipType, setup_tooltip
 
 if TYPE_CHECKING:
     from main_window import MainWindow
@@ -87,7 +85,7 @@ class UtilityManager:
                 )
             return
 
-        from widgets.custom_msgdialog import CustomMessageDialog
+        from widgets.custom_message_dialog import CustomMessageDialog
         if not CustomMessageDialog.question(self.main_window, "Reload Folder", "Reload current folder?", yes_text="Reload", no_text="Cancel"):
             return
 

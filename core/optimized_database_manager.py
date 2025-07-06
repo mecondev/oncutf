@@ -17,15 +17,13 @@ This module provides an enhanced database management system with:
 import sqlite3
 import threading
 import time
+from collections import OrderedDict
 from contextlib import contextmanager
-from typing import Dict, List, Optional, Any, Tuple, Union
-from collections import defaultdict, OrderedDict
 from dataclasses import dataclass, field
 from pathlib import Path
-import json
-import os
+from typing import Any, Dict, List, Optional, Tuple
 
-from core.qt_imports import QObject, pyqtSignal
+from core.pyqt_imports import QObject, pyqtSignal
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

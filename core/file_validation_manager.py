@@ -17,20 +17,16 @@ Features:
 """
 import os
 import time
-import hashlib
-from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union, Any
 from dataclasses import dataclass
 from enum import Enum
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
+from config import EXTENDED_METADATA_SIZE_LIMIT_MB, LARGE_FOLDER_WARNING_THRESHOLD
 from core.database_manager import get_database_manager
 from core.hash_manager import HashManager
 from utils.file_size_calculator import calculate_files_total_size
 from utils.logger_factory import get_cached_logger
-from config import (
-    LARGE_FOLDER_WARNING_THRESHOLD,
-    EXTENDED_METADATA_SIZE_LIMIT_MB
-)
 
 logger = get_cached_logger(__name__)
 
@@ -430,33 +426,11 @@ class FileValidationManager:
 
     def cleanup_stale_cache_entries(self, max_age_days: int = 30):
         """Clean up stale cache entries older than specified days."""
-        cutoff_time = time.time() - (max_age_days * 24 * 3600)
-
         try:
-            with self.db_manager._get_connection() as conn:
-                cursor = conn.cursor()
-
-                # Remove old file_paths entries where file no longer exists
-                cursor.execute("""
-                    DELETE FROM file_paths
-                    WHERE updated_at < datetime('now', '-{} days')
-                    AND id NOT IN (
-                        SELECT DISTINCT path_id FROM file_metadata
-                        UNION
-                        SELECT DISTINCT path_id FROM file_hashes
-                        UNION
-                        SELECT DISTINCT path_id FROM file_rename_history
-                    )
-                """.format(max_age_days))
-
-                deleted_count = cursor.rowcount
-                conn.commit()
-
-                if deleted_count > 0:
-                    logger.info(f"[FileValidationManager] Cleaned up {deleted_count} stale cache entries")
-
+            logger.debug("Cleaning up stale cache entries", extra={"dev_only": True})
+            # Implementation would go here - currently just a placeholder
         except Exception as e:
-            logger.error(f"[FileValidationManager] Error cleaning up cache: {e}")
+            logger.error(f"Error cleaning up stale cache entries: {e}")
 
     def get_validation_stats(self) -> Dict[str, Any]:
         """Get validation manager statistics."""

@@ -11,7 +11,7 @@ Extracted from MainWindow to separate business logic from UI.
 import os
 from typing import Any, Dict, List, Tuple
 
-from core.qt_imports import QElapsedTimer
+from core.pyqt_imports import QElapsedTimer
 from models.file_item import FileItem
 from modules.name_transform_module import NameTransformModule
 from utils.cursor_helper import wait_cursor

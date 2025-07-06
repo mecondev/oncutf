@@ -11,14 +11,13 @@ Note: This is the legacy dialog - new code should use utils.progress_dialog.Prog
 """
 from typing import Callable, Optional
 
-from core.qt_imports import Qt, QDialog, QVBoxLayout, QWidget
-
 from config import (
     EXTENDED_METADATA_BG_COLOR,
     EXTENDED_METADATA_COLOR,
     FAST_METADATA_BG_COLOR,
     FAST_METADATA_COLOR,
 )
+from core.pyqt_imports import QDialog, Qt, QVBoxLayout, QWidget
 from utils.dialog_utils import setup_dialog_size_and_center
 from utils.logger_factory import get_cached_logger
 from widgets.progress_widget import ProgressWidget

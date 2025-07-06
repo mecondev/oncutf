@@ -16,15 +16,15 @@ Features:
 - Integration with existing cache systems
 """
 import gc
-import time
-import psutil
 import threading
-from typing import Dict, List, Optional, Any, Callable, Set
-from collections import OrderedDict, defaultdict
+import time
+from collections import OrderedDict
 from dataclasses import dataclass, field
-from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
 
-from core.qt_imports import QObject, QTimer, pyqtSignal
+import psutil
+
+from core.pyqt_imports import QObject, QTimer, pyqtSignal
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

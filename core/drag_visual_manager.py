@@ -20,8 +20,7 @@ import os
 from enum import Enum
 from typing import Dict, Optional
 
-from core.qt_imports import Qt, QColor, QCursor, QIcon, QPainter, QPixmap, QApplication, QWidget
-
+from core.pyqt_imports import QApplication, QColor, QCursor, QIcon, QPainter, QPixmap, Qt, QWidget
 from utils.icons_loader import get_menu_icon
 from utils.logger_factory import get_cached_logger
 

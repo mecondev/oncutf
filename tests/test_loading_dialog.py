@@ -16,6 +16,7 @@ These tests ensure that the loading dialog provides responsive and reliable user
 during asynchronous operations like metadata scanning.
 """
 import warnings
+
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
@@ -44,7 +45,7 @@ import pytest
 from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QWidget
 
-from widgets.custom_msgdialog import CustomMessageDialog
+from widgets.custom_message_dialog import CustomMessageDialog
 
 
 class FakeWorker(QObject):

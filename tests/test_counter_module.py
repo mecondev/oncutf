@@ -13,9 +13,11 @@ Module: tests/test_counter_module.py
 This module provides functionality for the OnCutF batch file renaming application.
 """
 
+import warnings
+
 from modules.counter_module import CounterModule
 from tests.mocks import MockFileItem
-import warnings
+
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)

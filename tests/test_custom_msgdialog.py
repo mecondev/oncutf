@@ -21,6 +21,7 @@ Tests in this module cover:
 These tests ensure consistent and reliable user interaction in dialog-based flows within the application.
 """
 import warnings
+
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
@@ -58,7 +59,7 @@ import pytest
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget
 
-from widgets.custom_msgdialog import CustomMessageDialog
+from widgets.custom_message_dialog import CustomMessageDialog
 
 
 @pytest.mark.skipif("CI" in os.environ, reason="Fails on CI due to GUI")

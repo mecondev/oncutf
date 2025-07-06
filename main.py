@@ -19,7 +19,7 @@ import sys
 import time
 from pathlib import Path
 
-from core.qt_imports import Qt, QTimer, QApplication, QStyleFactory
+from core.pyqt_imports import QApplication, QStyleFactory, Qt
 
 # Add the project root to the Python path
 project_root = Path(__file__).parent
@@ -41,7 +41,7 @@ logger = logging.getLogger()
 now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 logger.info(f"Application started at {now}")
 
-logger_effective_level =logger.getEffectiveLevel()
+logger_effective_level = logger.getEffectiveLevel()
 logger.debug(f"Effective logging level: {logger_effective_level}", extra={"dev_only": True})
 
 def main() -> int:
@@ -61,16 +61,16 @@ def main() -> int:
 
         # Initialize DPI helper early
         from utils.dpi_helper import get_dpi_helper, log_dpi_info
-        dpi_helper = get_dpi_helper()
+        get_dpi_helper()  # Initialize but don't store
         log_dpi_info()
 
         # Log font sizes for debugging
         try:
             from utils.theme_font_generator import get_ui_font_sizes
             font_sizes = get_ui_font_sizes()
-            logger.info(f"[DPI] Applied font sizes: {font_sizes}")
+            logger.debug(f"Applied font sizes: {font_sizes}", extra={"dev_only": True})
         except ImportError:
-            logger.warning("[DPI] Could not get font sizes - DPI helper not available")
+            logger.warning("Could not get font sizes - DPI helper not available")
 
         # Set native style for better system integration
         system = platform.system()
@@ -92,12 +92,10 @@ def main() -> int:
         # Initialize theme engine
         theme_manager = ThemeEngine()
 
-        # We'll apply the theme after creating the main window
-
         # Create custom splash screen
         from utils.path_utils import get_images_dir
         splash_path = get_images_dir() / "splash.png"
-        logger.debug(f"Loading custom splash screen from: {splash_path}", extra={"dev_only": True})
+        logger.debug(f"Loading splash screen from: {splash_path}", extra={"dev_only": True})
 
         # Set application-wide wait cursor
         app.setOverrideCursor(Qt.WaitCursor) # type: ignore[attr-defined]
@@ -106,11 +104,11 @@ def main() -> int:
             # Create custom splash screen
             splash = CustomSplashScreen(str(splash_path))
             splash.show()
-            splash.raise_()  # Bring to front
-            splash.activateWindow()  # Activate the window
-            app.processEvents()  # Force paint of splash
+            splash.raise_()
+            splash.activateWindow()
+            app.processEvents()
 
-            logger.debug(f"Custom splash screen displayed (size: {splash.splash_width}x{splash.splash_height})", extra={"dev_only": True})
+            logger.debug(f"Splash screen displayed (size: {splash.splash_width}x{splash.splash_height})", extra={"dev_only": True})
 
             # Initialize app
             window = MainWindow()
@@ -120,17 +118,16 @@ def main() -> int:
 
             # Show main window and close splash
             def show_main():
-                logger.debug("Hiding splash screen and showing main window", extra={"dev_only": True})
+                logger.debug("Showing main window", extra={"dev_only": True})
                 splash.finish(window)
                 window.show()
-                window.raise_()  # Bring main window to front
-                window.activateWindow()  # Activate the main window
-                app.processEvents()  # Force UI update
-                # Restore normal cursor
+                window.raise_()
+                window.activateWindow()
+                app.processEvents()
                 app.restoreOverrideCursor()
 
             # Use configurable delay for splash screen with timer manager
-            from utils.timer_manager import get_timer_manager, TimerType
+            from utils.timer_manager import TimerType, get_timer_manager
             get_timer_manager().schedule(
                 show_main,
                 delay=SPLASH_SCREEN_DURATION,
@@ -138,13 +135,13 @@ def main() -> int:
             )
 
         except Exception as e:
-            logger.error(f"Error creating custom splash screen: {e}")
+            logger.error(f"Error creating splash screen: {e}")
             # Fallback: Initialize app without splash
             app.restoreOverrideCursor()
             window = MainWindow()
             window.show()
-            window.raise_()  # Bring main window to front
-            window.activateWindow()  # Activate the main window
+            window.raise_()
+            window.activateWindow()
 
         # Run the app
         exit_code = app.exec_()

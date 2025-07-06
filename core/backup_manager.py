@@ -14,22 +14,20 @@ Features:
 - Configurable backup count
 - Thread-safe backup operations
 """
-import os
 import shutil
-import glob
 from datetime import datetime
-from typing import Optional, List
 from pathlib import Path
+from typing import List, Optional
 
-from core.qt_imports import QTimer, QObject, pyqtSignal
-from utils.logger_helper import get_logger
 from config import (
-    DEFAULT_BACKUP_COUNT,
-    DEFAULT_BACKUP_INTERVAL,
     BACKUP_FILENAME_FORMAT,
     BACKUP_TIMESTAMP_FORMAT,
-    DEFAULT_PERIODIC_BACKUP_ENABLED
+    DEFAULT_BACKUP_COUNT,
+    DEFAULT_BACKUP_INTERVAL,
+    DEFAULT_PERIODIC_BACKUP_ENABLED,
 )
+from core.pyqt_imports import QObject, QTimer, pyqtSignal
+from utils.logger_helper import get_logger
 
 logger = get_logger(__name__)
 

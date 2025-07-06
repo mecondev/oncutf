@@ -13,13 +13,12 @@ Now supports ApplicationContext for optimized access patterns.
 """
 from typing import Optional
 
-from core.qt_imports import Qt, QTimer, pyqtSignal, QHBoxLayout, QScrollArea, QVBoxLayout, QWidget
-
+import config
+from core.pyqt_imports import QScrollArea, Qt, QTimer, QVBoxLayout, QWidget, pyqtSignal
 from modules.base_module import BaseRenameModule
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_scroll_adjust
 from widgets.rename_module_widget import RenameModuleWidget
-import config
 
 # ApplicationContext integration
 try:

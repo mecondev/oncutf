@@ -7,14 +7,14 @@ Date: 2025-06-01
 import os
 import time
 from typing import Optional
-from core.qt_imports import Qt, QTimer
+from core.pyqt_imports import Qt, QTimer
 from config import (
 QLABEL_BORDER_GRAY,
 QLABEL_PRIMARY_TEXT,
 QLABEL_SECONDARY_TEXT,
 QLABEL_TERTIARY_TEXT,
 )
-from core.qt_imports import (
+from core.pyqt_imports import (
 QHBoxLayout,
 QLabel,
 QProgressBar,
@@ -62,11 +62,8 @@ Usage Examples:
     widget.set_progress_mode("count") # Switch back to count-based
 """
 
-import os
 import time
 from typing import Optional
-
-from core.qt_imports import Qt, QTimer
 
 from config import (
     QLABEL_BORDER_GRAY,
@@ -74,12 +71,14 @@ from config import (
     QLABEL_SECONDARY_TEXT,
     QLABEL_TERTIARY_TEXT,
 )
-from core.qt_imports import (
+from core.pyqt_imports import (
     QHBoxLayout,
     QLabel,
     QProgressBar,
     QSize,
     QSizePolicy,
+    Qt,
+    QTimer,
     QVBoxLayout,
     QWidget,
 )
@@ -445,7 +444,7 @@ class ProgressWidget(QWidget):
             self._time_timer = QTimer(self)
             self._time_timer.timeout.connect(self._update_time_display)
             self._time_timer.start(500)  # Update every 500ms for smoother time display
-            logger.debug(f"[ProgressWidget] Timer started for time updates (500ms interval)")
+            logger.debug("[ProgressWidget] Timer started for time updates (500ms interval)")
 
         logger.debug(f"[ProgressWidget] Started tracking (total_size: {total_size})")
 

@@ -11,7 +11,7 @@ Uses BaseRenameModule to prevent duplicate emits.
 """
 from typing import Optional
 
-from core.qt_imports import Qt, QCheckBox, QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from core.pyqt_imports import QCheckBox, QComboBox, QHBoxLayout, QLabel, Qt, QVBoxLayout, QWidget
 from modules.base_module import BaseRenameModule  # Debounced signal base
 
 

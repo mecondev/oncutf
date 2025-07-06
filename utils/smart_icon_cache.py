@@ -17,14 +17,13 @@ Features:
 - Integration with existing icon systems
 """
 import os
-import time
 import threading
-from typing import Dict, Optional, Tuple, List, Set, Any
+import time
 from collections import OrderedDict
-from pathlib import Path
 from dataclasses import dataclass, field
+from typing import Any, Dict, Optional
 
-from core.qt_imports import QIcon, QPixmap, QSize, QObject, QTimer, pyqtSignal
+from core.pyqt_imports import QIcon, QObject, QPixmap, QSize, QTimer, pyqtSignal
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

@@ -15,15 +15,26 @@ Features:
 """
 from typing import Optional
 
-from core.qt_imports import (
-    QAbstractItemView, QDialog, QDialogButtonBox, QHeaderView, QHBoxLayout,
-    QLabel, QMessageBox, QPushButton, QSizePolicy, QSplitter, QTableWidget,
-    QTableWidgetItem, QTextEdit, QVBoxLayout, QWidget, Qt
+from core.pyqt_imports import (
+    QAbstractItemView,
+    QDialog,
+    QDialogButtonBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QPushButton,
+    QSplitter,
+    Qt,
+    QTableWidget,
+    QTableWidgetItem,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
 from core.rename_history_manager import get_rename_history_manager
 from utils.logger_factory import get_cached_logger
-from widgets.custom_msgdialog import CustomMessageDialog
-from utils.tooltip_helper import setup_tooltip, TooltipType
+from utils.tooltip_helper import TooltipType, setup_tooltip
+from widgets.custom_message_dialog import CustomMessageDialog
 
 logger = get_cached_logger(__name__)
 
@@ -274,7 +285,7 @@ class RenameHistoryDialog(QDialog):
                 return
 
             # Confirm undo
-            message = f"Are you sure you want to undo this rename operation?\n\n"
+            message = "Are you sure you want to undo this rename operation?\n\n"
             message += f"This will revert {batch.file_count} files to their previous names.\n"
             message += f"Operation from: {batch.timestamp[:19].replace('T', ' ')}"
 

@@ -16,14 +16,14 @@ Key Features:
 - Smart context awareness for better user feedback
 - Automatic status categorization and prioritization
 """
-from typing import Optional, Dict, List, Any, Tuple
-from enum import Enum
+import threading
 from dataclasses import dataclass, field
 from datetime import datetime
-import threading
+from enum import Enum
+from typing import Any, Dict, List, Optional
 
 from config import STATUS_COLORS
-from core.qt_imports import QTimer
+from core.pyqt_imports import QTimer
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

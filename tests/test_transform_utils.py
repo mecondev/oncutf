@@ -13,10 +13,12 @@ Module: tests/test_transform_utils.py
 This module provides functionality for the OnCutF batch file renaming application.
 """
 
+import warnings
+
 import pytest
 
 from utils.transform_utils import apply_transform
-import warnings
+
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)

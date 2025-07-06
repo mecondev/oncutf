@@ -12,7 +12,7 @@ import os
 from typing import List, Optional
 
 from config import STATUS_COLORS
-from core.qt_imports import QApplication, Qt
+from core.pyqt_imports import QApplication, Qt
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
 from utils.path_utils import find_file_by_path, paths_equal
@@ -280,8 +280,8 @@ class MetadataManager:
         show_dialog_smooth(loading_dialog)
 
         # Create and configure metadata worker
-        from widgets.metadata_worker import MetadataWorker
         from utils.metadata_loader import MetadataLoader
+        from widgets.metadata_worker import MetadataWorker
 
         # Create metadata loader
         metadata_loader = MetadataLoader()
@@ -411,7 +411,7 @@ class MetadataManager:
                 # Cancel the worker to signal it to stop gracefully
                 try:
                     self.metadata_worker.cancel()
-                except:
+                except (AttributeError, RuntimeError):
                     pass
 
                 # The worker should be deleted by deleteLater(), but clear our reference
@@ -665,7 +665,7 @@ class MetadataManager:
                     # Reduced frequency of processEvents() for better performance
                     # Only process events every 5 files or for large files (>10MB)
                     if (i + 1) % 5 == 0 or current_file_size > 10 * 1024 * 1024:
-                        from core.qt_imports import QApplication
+                        from core.pyqt_imports import QApplication
                         QApplication.processEvents()
 
                     # Use path-aware lookup for modified metadata
@@ -693,7 +693,7 @@ class MetadataManager:
                 save_dialog.set_status("Save complete!")
 
                 # Use timer manager instead of processEvents for UI update
-                from utils.timer_manager import schedule_ui_update, schedule_dialog_close
+                from utils.timer_manager import schedule_dialog_close, schedule_ui_update
                 schedule_ui_update(lambda: None, delay=1)  # Allow UI to update
 
                 # Keep dialog visible for a moment to show completion
@@ -723,7 +723,7 @@ class MetadataManager:
             try:
                 row = self.parent_window.file_model.files.index(file_item)
                 icon_index = self.parent_window.file_model.index(row, 0)
-                from core.qt_imports import Qt
+                from core.pyqt_imports import Qt
                 self.parent_window.file_model.dataChanged.emit(
                     icon_index,
                     icon_index,

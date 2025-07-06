@@ -9,9 +9,9 @@ Base module for all rename modules.
 """Base module for all rename modules.
 """
 
-from abc import ABC, abstractmethod
-from core.qt_imports import pyqtSignal, QWidget
 import logging
+
+from core.pyqt_imports import QWidget, pyqtSignal
 
 logger = logging.getLogger(__name__)
 

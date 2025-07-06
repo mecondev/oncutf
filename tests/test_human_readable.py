@@ -9,6 +9,7 @@ Test script to compare human-readable file size formatting
 between our application and system commands like ls -lh.
 """
 import warnings
+
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)

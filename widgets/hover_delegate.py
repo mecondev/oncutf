@@ -9,8 +9,7 @@ Custom QStyledItemDelegate that enables full-row hover highlight.
 The hover background color is provided via constructor and is applied
 only when the row is not selected.
 """
-from core.qt_imports import Qt, QColor, QIcon, QPalette, QPen, QStyle, QStyledItemDelegate, QStyleOptionViewItem, QTableView
-
+from core.pyqt_imports import QColor, QIcon, QPen, QStyle, QStyledItemDelegate, Qt, QTableView
 from utils.theme import get_qcolor, get_theme_color
 
 

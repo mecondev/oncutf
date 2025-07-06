@@ -8,7 +8,7 @@ metadata_edit_dialog.py
 Generic dialog for editing metadata fields.
 Based on bulk_rotation_dialog.py but made flexible for different field types.
 """
-from core.qt_imports import (
+from core.pyqt_imports import (
     QCheckBox,
     QDialog,
     QHBoxLayout,
@@ -82,7 +82,7 @@ class MetadataEditDialog(QDialog):
 
     def _apply_info_label_style(self, color: str, opacity: str = "1.0"):
         """Apply consistent font styling to info label with DPI awareness."""
-        from utils.fonts import get_inter_family, get_inter_css_weight
+        from utils.fonts import get_inter_css_weight, get_inter_family
         font_family = get_inter_family('base')
         font_weight = get_inter_css_weight('base')
 
@@ -126,7 +126,6 @@ class MetadataEditDialog(QDialog):
         self.info_label.setWordWrap(True)
         from utils.theme import get_theme_color
         muted_color = get_theme_color('text')
-        from utils.fonts import get_inter_family, get_inter_css_weight
         self._apply_info_label_style(muted_color, opacity="0.7")
         layout.addWidget(self.info_label)
 

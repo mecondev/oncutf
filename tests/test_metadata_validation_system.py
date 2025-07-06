@@ -13,6 +13,7 @@ Comprehensive pytest tests for the metadata validation system including:
 - Character blocking and paste cleaning
 """
 import warnings
+
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
@@ -249,8 +250,6 @@ class TestMetadataFieldValidator:
 
 # PyQt5 widget tests (only run if PyQt5 is available)
 try:
-    from PyQt5.QtCore import Qt
-    from PyQt5.QtGui import QKeyEvent
     from PyQt5.QtWidgets import QApplication
 
     from widgets.metadata_validated_input import (

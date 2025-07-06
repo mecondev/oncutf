@@ -12,8 +12,7 @@ import contextlib
 import traceback
 from typing import Optional
 
-from core.qt_imports import Qt, QApplication
-
+from core.pyqt_imports import QApplication, Qt
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

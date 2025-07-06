@@ -324,8 +324,8 @@ class ExifToolWrapper:
         except ImportError:
             # Fallback to system commands if psutil not available
             try:
-                import subprocess
                 import os
+                import subprocess
 
                 if os.name == 'posix':  # Linux/macOS
                     result = subprocess.run(['pkill', '-f', 'exiftool.*stay_open'],

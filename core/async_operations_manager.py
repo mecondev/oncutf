@@ -18,18 +18,18 @@ Features:
 - Thread-safe operations
 """
 import asyncio
-import aiofiles
+import hashlib
+import os
 import threading
 import time
-import hashlib
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, List, Optional, Any, Callable, Coroutine, Union
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from pathlib import Path
 from queue import Queue
-import os
+from typing import Any, Callable, Coroutine, Dict, List, Optional
 
-from core.qt_imports import QObject, QTimer, pyqtSignal, QThread, QMutex, QMutexLocker
+import aiofiles
+
+from core.pyqt_imports import QMutex, QMutexLocker, QObject, pyqtSignal
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

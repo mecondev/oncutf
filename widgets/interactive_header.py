@@ -12,7 +12,7 @@ Features:
 - Performs manual sort handling for sortable columns (excluding column 0)
 - Prevents accidental sort when resizing (Explorer-like behavior)
 """
-from core.qt_imports import QPoint, Qt, QAction, QHeaderView, QMenu
+from core.pyqt_imports import QAction, QHeaderView, QMenu, QPoint, Qt
 
 # ApplicationContext integration
 try:

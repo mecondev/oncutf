@@ -5,7 +5,7 @@ Author: Michael Economou
 Date: 2025-06-25
 
 from typing import Optional
-from core.qt_imports import QWidget
+from core.pyqt_imports import QWidget
 from utils.logger_factory import get_cached_logger
 from widgets.progress_widget import ProgressWidget, create_size_based_progress_widget
 logger = get_cached_logger(__name__)
@@ -47,8 +47,7 @@ Usage Examples:
 
 from typing import Optional
 
-from core.qt_imports import QWidget
-
+from core.pyqt_imports import QWidget
 from utils.logger_factory import get_cached_logger
 from widgets.progress_widget import ProgressWidget, create_size_based_progress_widget
 

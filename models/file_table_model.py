@@ -12,34 +12,30 @@ Classes:
     FileTableModel: Custom table model for file management.
 '''
 
-import os
 from datetime import datetime
-from typing import Optional, List
 
-from core.qt_imports import (
+from core.application_context import get_app_context
+from core.persistent_metadata_cache import MetadataEntry
+from core.pyqt_imports import (
     QAbstractTableModel,
+    QColor,
+    QIcon,
     QItemSelection,
     QItemSelectionModel,
     QItemSelectionRange,
     QModelIndex,
-    QVariant,
-    Qt,
-    pyqtSignal,
-    QColor,
-    QIcon,
+    QPainter,
     QPixmap,
-    QPainter
+    Qt,
+    QVariant,
+    pyqtSignal,
 )
-
-from core.application_context import get_app_context
 from models.file_item import FileItem
 from utils.icons_loader import load_metadata_icons
-from utils.svg_icon_generator import generate_hash_icon
-from core.persistent_metadata_cache import MetadataEntry
-from utils.metadata_cache_helper import MetadataCacheHelper
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
+from utils.svg_icon_generator import generate_hash_icon
 
 logger = get_cached_logger(__name__)
 
@@ -59,12 +55,10 @@ class FileTableModel(QAbstractTableModel):
         self._direct_loader = None
         self._cache_helper = None
 
-        # Load icons for metadata status
-        self.metadata_icons = {}
-        self.metadata_icons["loaded"] = QPixmap("resources/icons/valid.png")
-        self.metadata_icons["extended"] = QPixmap("resources/icons/duplicate.png")
-        self.metadata_icons["modified"] = QPixmap("resources/icons/invalid.png")
-        self.hash_icon = QPixmap("resources/icons/valid.png")
+        # Load icons for metadata status using the correct functions
+
+        self.metadata_icons = load_metadata_icons()
+        self.hash_icon = generate_hash_icon(size=16)
 
     def _has_hash_cached(self, file_path: str) -> bool:
         """
@@ -275,7 +269,7 @@ class FileTableModel(QAbstractTableModel):
             # Check if file has hash cached
             has_hash = self._has_hash_cached(file.full_path)
 
-            # Determine metadata icon - only show if metadata exists
+            # Determine metadata icon
             metadata_pixmap = None
             if entry:
                 # Check if metadata has been modified
@@ -285,7 +279,9 @@ class FileTableModel(QAbstractTableModel):
                     metadata_pixmap = self.metadata_icons.get("extended")
                 else:
                     metadata_pixmap = self.metadata_icons.get("loaded")
-            # No else clause - if no metadata entry, no metadata icon
+            else:
+                # Show 'basic' icon for files without metadata (ready for loading)
+                metadata_pixmap = self.metadata_icons.get("basic")
 
             # Handle different combinations
             if metadata_pixmap and has_hash:
@@ -298,7 +294,7 @@ class FileTableModel(QAbstractTableModel):
                 # Only hash - show just hash icon
                 return self._create_hash_only_icon()
             else:
-                # Neither metadata nor hash - show nothing
+                # This shouldn't happen now since we always have metadata_pixmap
                 return QIcon()
 
         if col == 0 and role == Qt.UserRole: # type: ignore

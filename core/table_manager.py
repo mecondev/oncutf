@@ -11,8 +11,7 @@ preparation, and selection management.
 """
 from typing import List
 
-from core.qt_imports import Qt
-
+from core.pyqt_imports import Qt
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
 

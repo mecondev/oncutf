@@ -11,8 +11,6 @@ Single item selection only - no multi-selection complexity.
 """
 import os
 
-from core.qt_imports import QEvent, Qt, pyqtSignal, QCursor, QKeyEvent, QMouseEvent, QApplication
-
 from config import ALLOWED_EXTENSIONS
 from core.drag_manager import DragManager
 from core.drag_visual_manager import (
@@ -22,7 +20,18 @@ from core.drag_visual_manager import (
     update_drag_feedback_for_widget,
 )
 from core.modifier_handler import decode_modifiers_to_flags
-from core.qt_imports import QAbstractItemView, QHeaderView, QTreeView
+from core.pyqt_imports import (
+    QAbstractItemView,
+    QApplication,
+    QCursor,
+    QEvent,
+    QHeaderView,
+    QKeyEvent,
+    QMouseEvent,
+    Qt,
+    QTreeView,
+    pyqtSignal,
+)
 from utils.drag_zone_validator import DragZoneValidator
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_scroll_adjust
@@ -96,8 +105,8 @@ class FileTreeView(QTreeView):
             from utils.icons_loader import get_menu_icon
 
             # Try to load custom icons
-            closed_icon = get_menu_icon("chevron-right")
-            open_icon = get_menu_icon("chevron-down")
+            _closed_icon = get_menu_icon("chevron-right")
+            _open_icon = get_menu_icon("chevron-down")
 
             # Set the icons on the style
             style = self.style()
@@ -662,11 +671,11 @@ class FileTreeView(QTreeView):
 
         # Schedule wait cursor for expansion
         schedule_ui_update(show_wait_cursor, delay=1)
-        logger.debug(f"[FileTreeView] Item expanded with wait cursor", extra={"dev_only": True})
+        logger.debug("[FileTreeView] Item expanded with wait cursor", extra={"dev_only": True})
 
     def _on_item_collapsed(self, index):
         """Handle item collapse - no wait cursor needed as it's instant"""
-        logger.debug(f"[FileTreeView] Item collapsed", extra={"dev_only": True})
+        logger.debug("[FileTreeView] Item collapsed", extra={"dev_only": True})
 
 
 # =====================================

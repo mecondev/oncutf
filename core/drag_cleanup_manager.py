@@ -13,9 +13,9 @@ This manager centralizes drag cleanup operations including:
 """
 from typing import TYPE_CHECKING
 
-from core.qt_imports import Qt, QApplication
 from config import STATUS_COLORS
 from core.drag_manager import DragManager
+from core.pyqt_imports import QApplication, Qt
 from utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:

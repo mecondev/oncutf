@@ -8,11 +8,10 @@ window_config_manager.py
 Manages window configuration including geometry, state, and splitter positions.
 Separates window management logic from MainWindow for better code organization.
 """
-import logging
-from typing import Dict, Any, Optional, Tuple
 import os
+from typing import Tuple
 
-from core.qt_imports import QApplication, QMainWindow
+from core.pyqt_imports import QApplication, QMainWindow
 from utils.json_config_manager import get_app_config_manager
 from utils.logger_factory import get_cached_logger
 
@@ -163,12 +162,12 @@ class WindowConfigManager:
 
             # Import screen size configuration from config
             from core.config_imports import (
+                LARGE_SCREEN_MIN_HEIGHT,
+                LARGE_SCREEN_MIN_WIDTH,
                 SCREEN_SIZE_BREAKPOINTS,
                 SCREEN_SIZE_PERCENTAGES,
-                WINDOW_MIN_SMART_WIDTH,
                 WINDOW_MIN_SMART_HEIGHT,
-                LARGE_SCREEN_MIN_WIDTH,
-                LARGE_SCREEN_MIN_HEIGHT
+                WINDOW_MIN_SMART_WIDTH,
             )
 
             # Calculate smart window dimensions based on screen size
@@ -263,7 +262,7 @@ class WindowConfigManager:
         try:
             if hasattr(self.main_window, 'file_table_view') and self.main_window.file_table_view:
                 # Schedule a delayed refresh to allow window state to settle
-                from utils.timer_manager import get_timer_manager, TimerType
+                from utils.timer_manager import TimerType, get_timer_manager
 
                 def refresh():
                     # Reset manual column preference for auto-sizing - use original FileTableView logic
@@ -331,7 +330,7 @@ class WindowConfigManager:
 
                 # Apply sort configuration after loading
                 if hasattr(self.main_window, '_sort_column_from_config') and hasattr(self.main_window, '_sort_order_from_config'):
-                    from core.qt_imports import Qt
+                    from core.pyqt_imports import Qt
                     sort_order = Qt.AscendingOrder if self.main_window._sort_order_from_config == 0 else Qt.DescendingOrder
                     if hasattr(self.main_window, 'sort_by_column'):
                         self.main_window.sort_by_column(self.main_window._sort_column_from_config, sort_order)

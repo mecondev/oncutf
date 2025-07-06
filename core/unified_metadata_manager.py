@@ -16,18 +16,16 @@ Features:
 - Unified API for all metadata operations
 """
 import os
-import logging
-from typing import List, Optional, Dict, Set
 from datetime import datetime
+from typing import List, Optional, Set
 
-from PyQt5.QtCore import QObject, pyqtSignal, QThread
+from PyQt5.QtCore import QObject, pyqtSignal
 
-from config import STATUS_COLORS
-from core.qt_imports import QApplication, Qt
+from core.pyqt_imports import QApplication, Qt
 from models.file_item import FileItem
-from utils.metadata_cache_helper import MetadataCacheHelper
 from utils.logger_factory import get_cached_logger
-from utils.path_utils import find_file_by_path, paths_equal
+from utils.metadata_cache_helper import MetadataCacheHelper
+from utils.path_utils import paths_equal
 
 logger = get_cached_logger(__name__)
 
@@ -460,17 +458,17 @@ class UnifiedMetadataManager(QObject):
                 self._metadata_cancelled = True
                 logger.info("[UnifiedMetadataManager] Metadata loading cancelled by user")
 
-            # Create loading dialog
-            loading_dialog = ProgressDialog.create_metadata_dialog(
-                parent=self.parent_window,
+            # Create progress dialog
+            _loading_dialog = ProgressDialog.create_metadata_dialog(
+                self.parent_window,
                 is_extended=use_extended,
                 cancel_callback=cancel_metadata_loading
             )
-            loading_dialog.set_status("Loading metadata..." if not use_extended else "Loading extended metadata...")
+            _loading_dialog.set_status("Loading metadata..." if not use_extended else "Loading extended metadata...")
 
             # Start enhanced tracking with total size
-            loading_dialog.start_progress_tracking(total_size)
-            loading_dialog.show()
+            _loading_dialog.start_progress_tracking(total_size)
+            _loading_dialog.show()
 
             # Initialize incremental size tracking for better performance
             processed_size = 0
@@ -480,7 +478,7 @@ class UnifiedMetadataManager(QObject):
                 # Check for cancellation before processing each file
                 if self._metadata_cancelled:
                     logger.info(f"[UnifiedMetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}")
-                    loading_dialog.close()
+                    _loading_dialog.close()
                     return
 
                 # Add current file size to processed total
@@ -500,14 +498,14 @@ class UnifiedMetadataManager(QObject):
                     current_file_size = 0
 
                 # Update progress using unified method
-                loading_dialog.update_progress(
+                _loading_dialog.update_progress(
                     file_count=i + 1,
                     total_files=len(needs_loading),
                     processed_bytes=processed_size,
                     total_bytes=total_size
                 )
-                loading_dialog.set_filename(file_item.filename)
-                loading_dialog.set_count(i + 1, len(needs_loading))
+                _loading_dialog.set_filename(file_item.filename)
+                _loading_dialog.set_count(i + 1, len(needs_loading))
 
                 # Process events to update the dialog and handle cancellation
                 if (i + 1) % 10 == 0 or current_file_size > 10 * 1024 * 1024:
@@ -517,7 +515,7 @@ class UnifiedMetadataManager(QObject):
                 # Check again after processing events
                 if self._metadata_cancelled:
                     logger.info(f"[UnifiedMetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}")
-                    loading_dialog.close()
+                    _loading_dialog.close()
                     return
 
                 # Load metadata using ExifTool wrapper directly
@@ -555,7 +553,7 @@ class UnifiedMetadataManager(QObject):
                             logger.warning(f"[UnifiedMetadataManager] Failed to emit dataChanged for {file_item.filename}: {e}")
 
             # Close the progress dialog
-            loading_dialog.close()
+            _loading_dialog.close()
 
             # Display metadata for the last processed file if available
             if metadata_tree_view and needs_loading:
@@ -621,7 +619,7 @@ class UnifiedMetadataManager(QObject):
 
             # Create progress dialog
             from utils.progress_dialog import ProgressDialog
-            loading_dialog = ProgressDialog.create_metadata_dialog(
+            _loading_dialog = ProgressDialog.create_metadata_dialog(
                 self.parent_window,
                 is_extended=use_extended,
                 cancel_callback=cancel_metadata_loading
@@ -647,7 +645,7 @@ class UnifiedMetadataManager(QObject):
 
             # Create progress dialog
             from utils.progress_dialog import ProgressDialog
-            loading_dialog = ProgressDialog.create_hash_dialog(
+            _loading_dialog = ProgressDialog.create_hash_dialog(
                 self.parent_window,
                 cancel_callback=cancel_hash_loading
             )
@@ -697,9 +695,9 @@ class UnifiedMetadataManager(QObject):
 
         try:
             # Use existing metadata worker
-            from widgets.metadata_worker import MetadataWorker
-            from core.qt_imports import QThread
+            from core.pyqt_imports import QThread
             from utils.metadata_loader import MetadataLoader
+            from widgets.metadata_worker import MetadataWorker
 
             # Create metadata loader
             metadata_loader = MetadataLoader()
@@ -746,7 +744,7 @@ class UnifiedMetadataManager(QObject):
         try:
             # Use existing hash worker
             from core.hash_worker import HashWorker
-            from core.qt_imports import QThread
+            from core.pyqt_imports import QThread
 
             # Create worker and thread
             self._hash_worker = HashWorker(files)
@@ -1061,7 +1059,7 @@ class UnifiedMetadataManager(QObject):
 
             # Show error message
             if self.parent_window:
-                from widgets.custom_msgdialog import CustomMsgDialog
+                from widgets.custom_message_dialog import CustomMsgDialog
                 CustomMsgDialog.show_error(
                     self.parent_window,
                     "Metadata Save Error",

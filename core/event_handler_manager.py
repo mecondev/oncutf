@@ -4,19 +4,17 @@ Module: event_handler_manager.py
 Author: Michael Economou
 Date: 2025-05-31
 
-event_handler_manager.py
-Handles UI events for the main window including file operations, context menus,
-and user interactions. Centralizes event handling logic to keep the main window clean.
+Manages all event handling operations for the main window.
+Handles browse, folder import, table interactions, context menus, and user actions.
 """
 import os
 from typing import List, Optional, cast
 
-from core.qt_imports import QModelIndex, Qt, QApplication, QFileDialog, QMenu, QAction
-from core.file_item import FileItem
 from config import STATUS_COLORS
-from utils.logger_factory import get_cached_logger
 from core.modifier_handler import decode_modifiers_to_flags
+from core.pyqt_imports import QAction, QApplication, QFileDialog, QMenu, QModelIndex, Qt
 from utils.cursor_helper import wait_cursor
+from utils.logger_factory import get_cached_logger
 from utils.path_utils import paths_equal
 
 logger = get_cached_logger(__name__)
@@ -35,7 +33,7 @@ class EventHandlerManager:
 
     def __init__(self, parent_window):
         self.parent_window = parent_window
-        logger.debug("[EventHandlerManager] Initialized")
+        logger.debug("EventHandlerManager initialized", extra={"dev_only": True})
 
     def handle_browse(self) -> None:
         """
@@ -57,7 +55,7 @@ class EventHandlerManager:
             modifiers = QApplication.keyboardModifiers()
             merge_mode, recursive, action_type = decode_modifiers_to_flags(modifiers)
 
-            logger.info(f"[Browse] User selected folder: {folder_path} ({action_type})")
+            logger.info(f"User selected folder: {folder_path} ({action_type})")
 
             # Use unified folder loading method
             if os.path.isdir(folder_path):
@@ -71,13 +69,13 @@ class EventHandlerManager:
                 index = self.parent_window.dir_model.index(folder_path)
                 self.parent_window.folder_tree.setCurrentIndex(index)
         else:
-            logger.debug("[Browse] User cancelled folder selection")
+            logger.debug("User cancelled folder selection", extra={"dev_only": True})
 
     def handle_folder_import(self) -> None:
         """Handle folder import from browse button"""
         selected_path = self.parent_window.folder_tree.get_selected_path()
         if not selected_path:
-            logger.debug("[FolderImport] No folder selected")
+            logger.debug("No folder selected", extra={"dev_only": True})
             return
 
         # Get modifier state for merge/recursive options
@@ -88,7 +86,7 @@ class EventHandlerManager:
         merge_mode = shift
         recursive = ctrl
 
-        logger.info(f"[FolderImport] Loading folder: {selected_path} ({'Merge' if merge_mode else 'Replace'} + {'Recursive' if recursive else 'Shallow'})")
+        logger.info(f"Loading folder: {selected_path} ({'Merge' if merge_mode else 'Replace'} + {'Recursive' if recursive else 'Shallow'})")
 
         # Use unified folder loading method
         self.parent_window.file_load_manager.load_folder(selected_path, merge_mode, recursive)
@@ -103,56 +101,65 @@ class EventHandlerManager:
 
         from utils.icons_loader import get_menu_icon
 
-        # Get the index at position to ensure proper context
-        index_at_position = self.parent_window.file_table_view.indexAt(position)
+        # Get total files for context
         total_files = len(self.parent_window.file_model.files)
 
         # Use unified selection method (fast)
         selected_files = self.parent_window.get_selected_files_ordered()
         has_selection = len(selected_files) > 0
 
-        logger.debug(f"[ContextMenu] Found {len(selected_files)} selected files", extra={"dev_only": True})
+        logger.debug(f"Context menu: {len(selected_files)} selected files", extra={"dev_only": True})
 
         menu = QMenu(self.parent_window)
 
-        # --- Metadata actions (simplified, always enabled) ---
-        action_load_sel = cast(QAction, menu.addAction(get_menu_icon("file"), "Load metadata for selected file(s) (Ctrl+M)"))
-        action_load_all = cast(QAction, menu.addAction(get_menu_icon("folder"), "Load metadata for all files"))
-        action_load_ext_sel = cast(QAction, menu.addAction(get_menu_icon("file-plus"), "Load extended metadata for selected file(s) (Ctrl+E)"))
-        action_load_ext_all = cast(QAction, menu.addAction(get_menu_icon("folder-plus"), "Load extended metadata for all files"))
+        # Smart Metadata actions
+        selected_analysis = self._analyze_metadata_state(selected_files)
+        all_files_analysis = self._analyze_metadata_state(self.parent_window.file_model.files)
 
-        # Simple enable/disable logic (no heavy checks)
-        action_load_sel.setEnabled(has_selection)
-        action_load_ext_sel.setEnabled(has_selection)
-        action_load_all.setEnabled(total_files > 0)
-        action_load_ext_all.setEnabled(total_files > 0)
+        # Create actions with smart labels and tooltips
+        action_load_sel = cast(QAction, menu.addAction(get_menu_icon("file"), f"{selected_analysis['fast_label']} for selected file(s) (Ctrl+M)"))
+        action_load_all = cast(QAction, menu.addAction(get_menu_icon("folder"), f"{all_files_analysis['fast_label']} for all files"))
+        action_load_ext_sel = cast(QAction, menu.addAction(get_menu_icon("file-plus"), f"{selected_analysis['extended_label']} for selected file(s) (Ctrl+E)"))
+        action_load_ext_all = cast(QAction, menu.addAction(get_menu_icon("folder-plus"), f"{all_files_analysis['extended_label']} for all files"))
+
+        # Smart enable/disable logic based on analysis
+        action_load_sel.setEnabled(has_selection and selected_analysis['enable_fast_selected'])
+        action_load_ext_sel.setEnabled(has_selection and selected_analysis['enable_extended_selected'])
+        action_load_all.setEnabled(total_files > 0 and all_files_analysis['enable_fast_selected'])
+        action_load_ext_all.setEnabled(total_files > 0 and all_files_analysis['enable_extended_selected'])
+
+        # Set smart tooltips
+        action_load_sel.setToolTip(selected_analysis['fast_tooltip'])
+        action_load_ext_sel.setToolTip(selected_analysis['extended_tooltip'])
+        action_load_all.setToolTip(all_files_analysis['fast_tooltip'])
+        action_load_ext_all.setToolTip(all_files_analysis['extended_tooltip'])
 
         menu.addSeparator()
 
-        # --- Selection actions ---
+        # Selection actions
         action_select_all = cast(QAction, menu.addAction(get_menu_icon("check-square"), "Select all (Ctrl+A)"))
         action_invert = cast(QAction, menu.addAction(get_menu_icon("refresh-cw"), "Invert selection (Ctrl+I)"))
         action_deselect_all = cast(QAction, menu.addAction(get_menu_icon("square"), "Deselect all (Ctrl+Shift+A)"))
 
         menu.addSeparator()
 
-        # --- Other actions ---
+        # Other actions
         action_reload = cast(QAction, menu.addAction(get_menu_icon("refresh-cw"), "Reload folder (Ctrl+R)"))
         action_clear_table = cast(QAction, menu.addAction(get_menu_icon("x"), "Clear file table (Ctrl+Escape)"))
 
         menu.addSeparator()
 
-        # --- Hash actions (simplified) ---
+        # Hash actions
         action_calculate_hashes = cast(QAction, menu.addAction(get_menu_icon("hash"), "Calculate checksums for selected"))
         action_calculate_hashes.setEnabled(has_selection)
 
         menu.addSeparator()
 
-        # --- Save actions (simplified) ---
+        # Save actions
         action_save_sel = cast(QAction, menu.addAction(get_menu_icon("save"), "Save metadata for selected file(s) (Ctrl+S)"))
         action_save_all = cast(QAction, menu.addAction(get_menu_icon("save"), "Save ALL modified metadata (Ctrl+Shift+S)"))
 
-        # Simple check for modifications (fast)
+        # Simple check for modifications
         has_modifications = False
         if hasattr(self.parent_window, 'metadata_tree_view'):
             has_modifications = bool(self.parent_window.metadata_tree_view.modified_items)
@@ -162,7 +169,7 @@ class EventHandlerManager:
 
         menu.addSeparator()
 
-        # --- Bulk rotation action ---
+        # Bulk rotation action
         action_bulk_rotation = cast(QAction, menu.addAction(get_menu_icon("rotate-ccw"), "Set All Files to 0° Rotation..."))
         action_bulk_rotation.setEnabled(len(selected_files) > 0)
         if len(selected_files) > 0:
@@ -185,14 +192,14 @@ class EventHandlerManager:
 
         menu.addSeparator()
 
-        # --- Hash & Comparison actions ---
+        # Hash & Comparison actions
         action_find_duplicates_sel = cast(QAction, menu.addAction(get_menu_icon("copy"), "Find duplicates in selected files"))
         action_find_duplicates_all = cast(QAction, menu.addAction(get_menu_icon("layers"), "Find duplicates in all files"))
         action_compare_external = cast(QAction, menu.addAction(get_menu_icon("folder"), "Compare with external folder..."))
 
         menu.addSeparator()
 
-        # --- Export actions ---
+        # Export actions
         action_export_sel = cast(QAction, menu.addAction(get_menu_icon("download"), "Export metadata for selected file(s)"))
         action_export_all = cast(QAction, menu.addAction(get_menu_icon("download"), "Export metadata for all files"))
 
@@ -211,10 +218,9 @@ class EventHandlerManager:
         else:
             action_export_all.setToolTip("No files have metadata to export")
 
-        # --- Enable/disable logic with enhanced debugging ---
-        logger.debug(f"[ContextMenu] Selection state: {has_selection} ({len(selected_files)} files)", extra={"dev_only": True})
+        # Enable/disable logic with enhanced debugging
+        logger.debug(f"Context menu: Selection state: {has_selection} ({len(selected_files)} files)", extra={"dev_only": True})
 
-        # NOTE: Smart metadata enable/disable logic is already handled above
         # Only handle non-metadata selection actions here
         action_invert.setEnabled(total_files > 0 and has_selection)
         action_select_all.setEnabled(total_files > 0)
@@ -387,7 +393,7 @@ class EventHandlerManager:
         DEPRECATED: This functionality has been moved to SplitterManager.
         This method is kept for backward compatibility and delegates to SplitterManager.
         """
-        logger.debug(f"[EventHandlerManager] DEPRECATED: Delegating splitter handling to SplitterManager")
+        logger.debug("[EventHandlerManager] DEPRECATED: Delegating splitter handling to SplitterManager")
 
         if hasattr(self.parent_window, 'splitter_manager'):
             self.parent_window.splitter_manager.on_horizontal_splitter_moved(pos, index)
@@ -408,7 +414,7 @@ class EventHandlerManager:
         DEPRECATED: This functionality has been moved to SplitterManager.
         This method is kept for backward compatibility and delegates to SplitterManager.
         """
-        logger.debug(f"[EventHandlerManager] DEPRECATED: Delegating splitter handling to SplitterManager")
+        logger.debug("[EventHandlerManager] DEPRECATED: Delegating splitter handling to SplitterManager")
 
         if hasattr(self.parent_window, 'splitter_manager'):
             self.parent_window.splitter_manager.on_vertical_splitter_moved(pos, index)
@@ -641,7 +647,7 @@ class EventHandlerManager:
                     self._show_duplicates_results(duplicates, scope)
             except Exception as e:
                 logger.error(f"[HashManager] Error finding duplicates: {e}")
-                from widgets.custom_msgdialog import CustomMessageDialog
+                from widgets.custom_message_dialog import CustomMessageDialog
                 CustomMessageDialog.information(
                     self.parent_window,
                     "Error",
@@ -759,7 +765,7 @@ class EventHandlerManager:
 
         except Exception as e:
             logger.error(f"[HashManager] Error starting hash operation: {e}")
-            from widgets.custom_msgdialog import CustomMessageDialog
+            from widgets.custom_message_dialog import CustomMessageDialog
             CustomMessageDialog.information(
                 self.parent_window,
                 "Error",
@@ -892,7 +898,7 @@ class EventHandlerManager:
             self.hash_dialog.close()
 
         # Show error message
-        from widgets.custom_msgdialog import CustomMessageDialog
+        from widgets.custom_message_dialog import CustomMessageDialog
         CustomMessageDialog.information(
             self.parent_window,
             "Error",
@@ -922,7 +928,7 @@ class EventHandlerManager:
 
         try:
             # Import Qt components
-            from core.qt_imports import QFileDialog
+            from core.pyqt_imports import QFileDialog
 
             # Show folder picker dialog
             external_folder = QFileDialog.getExistingDirectory(
@@ -947,7 +953,7 @@ class EventHandlerManager:
 
         except Exception as e:
             logger.error(f"[HashManager] Error setting up external comparison: {e}")
-            from widgets.custom_msgdialog import CustomMessageDialog
+            from widgets.custom_message_dialog import CustomMessageDialog
             CustomMessageDialog.information(
                 self.parent_window,
                 "Error",
@@ -1001,7 +1007,7 @@ class EventHandlerManager:
 
         except Exception as e:
             logger.error(f"[HashManager] Error calculating checksum: {e}")
-            from widgets.custom_msgdialog import CustomMessageDialog
+            from widgets.custom_message_dialog import CustomMessageDialog
             CustomMessageDialog.information(
                 self.parent_window,
                 "Error",
@@ -1017,7 +1023,7 @@ class EventHandlerManager:
             scope: Either "selected" or "all" for display purposes
         """
         if not duplicates:
-            from widgets.custom_msgdialog import CustomMessageDialog
+            from widgets.custom_message_dialog import CustomMessageDialog
             CustomMessageDialog.information(
                 self.parent_window,
                 "Duplicate Detection Results",
@@ -1043,7 +1049,7 @@ class EventHandlerManager:
             message_lines.append("")
 
         # Show results dialog
-        from widgets.custom_msgdialog import CustomMessageDialog
+        from widgets.custom_message_dialog import CustomMessageDialog
         CustomMessageDialog.information(
             self.parent_window,
             "Duplicate Detection Results",
@@ -1065,7 +1071,7 @@ class EventHandlerManager:
             external_folder: Path to the external folder that was compared
         """
         if not results:
-            from widgets.custom_msgdialog import CustomMessageDialog
+            from widgets.custom_message_dialog import CustomMessageDialog
             CustomMessageDialog.information(
                 self.parent_window,
                 "External Comparison Results",
@@ -1100,7 +1106,7 @@ class EventHandlerManager:
                     message_lines.append(f"  • {filename}")
 
         # Show results dialog
-        from widgets.custom_msgdialog import CustomMessageDialog
+        from widgets.custom_message_dialog import CustomMessageDialog
         CustomMessageDialog.information(
             self.parent_window,
             "External Comparison Results",
@@ -1124,7 +1130,7 @@ class EventHandlerManager:
             hash_results: Dictionary with filename as key and hash data as value
         """
         if not hash_results:
-            from widgets.custom_msgdialog import CustomMessageDialog
+            from widgets.custom_message_dialog import CustomMessageDialog
             CustomMessageDialog.information(
                 self.parent_window,
                 "Checksum Results",
@@ -1146,7 +1152,7 @@ class EventHandlerManager:
             message_lines.append(f"  {hash_value}\n")
 
         # Show results dialog
-        from widgets.custom_msgdialog import CustomMessageDialog
+        from widgets.custom_message_dialog import CustomMessageDialog
         CustomMessageDialog.information(
             self.parent_window,
             "Checksum Results",
@@ -1809,3 +1815,114 @@ class EventHandlerManager:
         except Exception as e:
             logger.debug(f"[EventHandler] Error checking hash for {getattr(file_item, 'filename', 'unknown')}: {e}")
             return False
+
+    def _analyze_metadata_state(self, files: list) -> dict:
+        """
+        Analyze the metadata state of files to determine smart context menu options.
+
+        Args:
+            files: List of FileItem objects to analyze
+
+        Returns:
+            dict: Analysis results with enable/disable logic for menu items
+        """
+        if not files:
+            return {
+                'enable_fast_selected': False,
+                'enable_extended_selected': False,
+                'fast_label': 'Load Fast Metadata',
+                'extended_label': 'Load Extended Metadata',
+                'fast_tooltip': 'No files selected',
+                'extended_tooltip': 'No files selected'
+            }
+
+        # Analyze each file's metadata state
+        no_metadata = []
+        has_fast = []
+        has_extended = []
+
+        for file_item in files:
+            if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
+                entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+                if entry and entry.data:
+                    if entry.is_extended:
+                        has_extended.append(file_item)
+                    else:
+                        has_fast.append(file_item)
+                else:
+                    no_metadata.append(file_item)
+            else:
+                no_metadata.append(file_item)
+
+        total = len(files)
+        no_count = len(no_metadata)
+        fast_count = len(has_fast)
+        extended_count = len(has_extended)
+
+        # Determine enable states and labels based on smart logic
+        enable_fast = False
+        enable_extended = False
+        fast_label = 'Load Fast Metadata'
+        extended_label = 'Load Extended Metadata'
+        fast_tooltip = ''
+        extended_tooltip = ''
+
+        if no_count == total:
+            # All files have no metadata
+            enable_fast = True
+            enable_extended = True
+            fast_tooltip = f'Load fast metadata for {total} file(s)'
+            extended_tooltip = f'Load extended metadata for {total} file(s)'
+
+        elif extended_count == total:
+            # All files have extended metadata - nothing to do
+            enable_fast = False
+            enable_extended = False
+            fast_tooltip = 'All files already have extended metadata (higher level)'
+            extended_tooltip = 'All files already have extended metadata'
+
+        elif fast_count == total:
+            # All files have fast metadata - can upgrade to extended
+            enable_fast = False
+            enable_extended = True
+            fast_tooltip = 'All files already have fast metadata'
+            extended_tooltip = f'Upgrade {total} file(s) to extended metadata'
+            extended_label = 'Upgrade to Extended Metadata'
+
+        elif no_count > 0:
+            # Some files have no metadata - can load both types
+            enable_fast = True
+            enable_extended = True
+
+            if fast_count > 0 or extended_count > 0:
+                # Mixed state
+                fast_tooltip = f'Load fast metadata for {no_count} file(s) without metadata'
+                extended_tooltip = f'Load extended metadata for {no_count} file(s) without metadata'
+                if fast_count > 0:
+                    extended_tooltip += f' and upgrade {fast_count} file(s) from fast'
+            else:
+                fast_tooltip = f'Load fast metadata for {no_count} file(s)'
+                extended_tooltip = f'Load extended metadata for {no_count} file(s)'
+
+        elif fast_count > 0 and extended_count > 0:
+            # Mixed fast and extended - can upgrade fast to extended
+            enable_fast = False
+            enable_extended = True
+            fast_tooltip = 'Some files have fast, some have extended metadata'
+            extended_tooltip = f'Upgrade {fast_count} file(s) from fast to extended metadata'
+            extended_label = 'Upgrade Fast to Extended'
+
+        return {
+            'enable_fast_selected': enable_fast,
+            'enable_extended_selected': enable_extended,
+            'fast_label': fast_label,
+            'extended_label': extended_label,
+            'fast_tooltip': fast_tooltip,
+            'extended_tooltip': extended_tooltip,
+            'stats': {
+                'total': total,
+                'no_metadata': no_count,
+                'fast': fast_count,
+                'extended': extended_count
+            }
+        }

@@ -11,9 +11,7 @@ This manager centralizes keyboard shortcut handling including:
 """
 from typing import TYPE_CHECKING
 
-from core.qt_imports import Qt
-
-from config import STATUS_COLORS
+from core.pyqt_imports import Qt
 from utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:

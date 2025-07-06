@@ -18,7 +18,7 @@ behavior, and styling.
 """
 from typing import Optional
 
-from core.qt_imports import (
+from core.pyqt_imports import (
     QApplication,
     QCheckBox,
     QDialog,

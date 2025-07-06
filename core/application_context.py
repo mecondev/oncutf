@@ -12,8 +12,7 @@ distributed state management across widgets.
 """
 from typing import TYPE_CHECKING, Any, Dict, Optional, Set
 
-from core.qt_imports import QObject, pyqtSignal
-
+from core.pyqt_imports import QObject, pyqtSignal
 from utils.logger_factory import get_cached_logger
 
 if TYPE_CHECKING:

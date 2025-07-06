@@ -17,7 +17,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Generic, Optional, TypeVar
 
-from config import APP_VERSION, WINDOW_HEIGHT, WINDOW_WIDTH
+from config import APP_VERSION
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

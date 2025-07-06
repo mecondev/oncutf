@@ -14,7 +14,7 @@ import logging
 from typing import Optional, Set, Tuple
 
 from config import INVALID_FILENAME_CHARS
-from core.qt_imports import QKeyEvent, QLineEdit, QWidget, pyqtSignal
+from core.pyqt_imports import QKeyEvent, QLineEdit, QWidget, pyqtSignal
 from utils.filename_validator import (
     get_validation_error_message,
     is_validation_error_marker,

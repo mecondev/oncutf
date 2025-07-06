@@ -17,8 +17,6 @@ Many of the linter warnings are false positives and can be safely ignored.
 from typing import Optional
 
 # Import all config constants from centralized module
-from config import STATUS_COLORS
-
 # Core application modules
 from core.application_context import ApplicationContext
 from core.config_imports import *
@@ -31,16 +29,16 @@ from core.file_operations_manager import FileOperationsManager
 from core.file_validation_manager import get_file_validation_manager
 from core.initialization_manager import InitializationManager
 from core.preview_manager import PreviewManager
-from core.window_config_manager import WindowConfigManager
 
 # Import all PyQt5 classes from centralized module
-from core.qt_imports import *
+from core.pyqt_imports import *
 from core.rename_manager import RenameManager
 from core.shortcut_manager import ShortcutManager
 from core.splitter_manager import SplitterManager
 from core.table_manager import TableManager
 from core.ui_manager import UIManager
 from core.utility_manager import UtilityManager
+from core.window_config_manager import WindowConfigManager
 
 # Data models and business logic modules
 from models.file_item import FileItem
@@ -48,11 +46,10 @@ from models.file_table_model import FileTableModel
 
 # Utility functions and helpers
 from utils.icon_cache import load_preview_status_icons, prepare_status_icons
-from utils.icons import create_colored_icon
+from utils.icon_utilities import create_colored_icon
 from utils.icons_loader import icons_loader, load_metadata_icons
 from utils.json_config_manager import get_app_config_manager
 from utils.logger_factory import get_cached_logger
-from utils.metadata_loader import MetadataLoader
 
 # UI widgets and custom components
 
@@ -83,11 +80,11 @@ class MainWindow(QMainWindow):
         self.metadata_manager = None  # Will be initialized after metadata components
 
         # --- Database System Initialization (V2 Architecture) ---
-        from core.database_manager import initialize_database
-        from core.persistent_metadata_cache import get_persistent_metadata_cache
-        from core.persistent_hash_cache import get_persistent_hash_cache
-        from core.rename_history_manager import get_rename_history_manager
         from core.backup_manager import get_backup_manager
+        from core.database_manager import initialize_database
+        from core.persistent_hash_cache import get_persistent_hash_cache
+        from core.persistent_metadata_cache import get_persistent_metadata_cache
+        from core.rename_history_manager import get_rename_history_manager
 
         # Initialize V2 database system with improved architecture
         self.db_manager = initialize_database()
@@ -111,8 +108,8 @@ class MainWindow(QMainWindow):
         self.file_model = FileTableModel(parent_window=self)
 
         # --- Initialize UnifiedMetadataManager after dependencies are ready ---
-        from core.unified_metadata_manager import get_unified_metadata_manager
         from core.selection_manager import SelectionManager
+        from core.unified_metadata_manager import get_unified_metadata_manager
         self.metadata_manager = get_unified_metadata_manager(self)
         self.metadata_manager.initialize_cache_helper()
         self.selection_manager = SelectionManager(parent_window=self)
@@ -792,7 +789,7 @@ class MainWindow(QMainWindow):
                 except Exception as e:
                     logger.error(f"[CloseEvent] Failed to save metadata before closing: {e}")
                     # Show error but continue closing anyway
-                    from widgets.custom_msgdialog import CustomMessageDialog
+                    from widgets.custom_message_dialog import CustomMessageDialog
                     CustomMessageDialog.information(
                         self,
                         "Save Error",
@@ -813,7 +810,6 @@ class MainWindow(QMainWindow):
         """Start the async shutdown process with progress updates."""
         try:
             # Set wait cursor for the entire shutdown process
-            from utils.cursor_helper import wait_cursor
             QApplication.setOverrideCursor(Qt.WaitCursor)  # type: ignore
 
             # Create custom shutdown dialog that doesn't respond to ESC
@@ -1133,7 +1129,7 @@ class MainWindow(QMainWindow):
                         widget.close()
 
                 # Close any open file dialogs
-                from core.qt_imports import QFileDialog
+                from core.pyqt_imports import QFileDialog
                 for widget in QApplication.topLevelWidgets():
                     if isinstance(widget, QFileDialog):
                         widget.close()

@@ -19,16 +19,14 @@ Features:
 """
 import threading
 import time
-import queue
-import psutil
-from concurrent.futures import ThreadPoolExecutor, Future, as_completed
-from typing import Dict, List, Optional, Any, Callable, Union
+from collections import deque
 from dataclasses import dataclass, field
-from collections import defaultdict, deque
 from enum import Enum
-import weakref
+from typing import Any, Callable, Dict, List, Optional
 
-from core.qt_imports import QObject, QThread, QTimer, pyqtSignal, QMutex, QMutexLocker
+import psutil
+
+from core.pyqt_imports import QMutex, QMutexLocker, QObject, QThread, QTimer, pyqtSignal
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

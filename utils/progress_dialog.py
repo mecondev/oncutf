@@ -25,7 +25,7 @@ from config import (
     HASH_CALCULATION_BG_COLOR,
     HASH_CALCULATION_COLOR,
 )
-from core.qt_imports import QDialog, Qt, QVBoxLayout, QWidget
+from core.pyqt_imports import QDialog, Qt, QVBoxLayout, QWidget
 from utils.cursor_helper import force_restore_cursor
 from utils.dialog_utils import setup_dialog_size_and_center
 from utils.logger_factory import get_cached_logger

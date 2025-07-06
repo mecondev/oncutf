@@ -8,6 +8,7 @@ test_timer_manager.py
 Basic tests for the centralized timer management system.
 """
 import warnings
+
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)

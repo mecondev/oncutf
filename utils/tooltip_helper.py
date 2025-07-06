@@ -15,8 +15,9 @@ Classes:
 - TooltipType: Constants for different tooltip types
 - Convenience functions for easy tooltip display
 """
-from typing import Optional, Tuple
-from PyQt5.QtCore import QPoint, QTimer, Qt, QEvent
+from typing import Optional
+
+from PyQt5.QtCore import QEvent, QPoint, Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QLabel, QWidget
 
 from config import TOOLTIP_DURATION, TOOLTIP_POSITION_OFFSET
@@ -137,7 +138,7 @@ class TooltipHelper:
         try:
             # Get current cursor position
             global_pos = QCursor.pos()
-        except:
+        except (AttributeError, RuntimeError):
             # Fallback to widget position if cursor position not available
             global_pos = widget.mapToGlobal(widget.rect().center())
 
@@ -237,7 +238,7 @@ class TooltipHelper:
             try:
                 # Get current cursor position
                 global_pos = QCursor.pos()
-            except:
+            except (AttributeError, RuntimeError):
                 # Fallback to widget position if cursor position not available
                 global_pos = widget.mapToGlobal(widget.rect().center())
 

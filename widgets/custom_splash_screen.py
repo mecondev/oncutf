@@ -15,9 +15,19 @@ Features:
 """
 import logging
 
-from core.qt_imports import Qt, QFont, QFontMetrics, QPainter, QPen, QPixmap, QColor, QApplication, QSplashScreen, QTimer
-
 from config import APP_VERSION
+from core.pyqt_imports import (
+    QApplication,
+    QColor,
+    QFont,
+    QFontMetrics,
+    QPainter,
+    QPen,
+    QPixmap,
+    QSplashScreen,
+    Qt,
+    QTimer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +100,7 @@ class CustomSplashScreen(QSplashScreen):
             from utils.fonts import get_inter_font
             try:
                 font = get_inter_font('titles', 24)  # Uses InterDisplay-SemiBold
-            except:
+            except (ImportError, AttributeError):
                 font = QFont("Inter", 24, QFont.Bold)  # Fallback
             painter.setFont(font)
             painter.drawText(
@@ -257,7 +267,7 @@ class CustomSplashScreen(QSplashScreen):
         try:
             version_font = get_inter_font('base', 11)  # Uses Inter-Regular
             init_font = get_inter_font('base', 9)     # Uses Inter-Regular
-        except:
+        except (ImportError, AttributeError):
             # Fallback to system fonts
             version_font = QFont("Inter", 11, QFont.Normal)
             init_font = QFont("Inter", 9, QFont.Normal)

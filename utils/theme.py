@@ -9,8 +9,8 @@ Theme management system using the new ThemeEngine.
 Provides color access and theme utilities for the application.
 """
 from typing import Dict, Optional
-from config import THEME_NAME
 
+from config import THEME_NAME
 
 # Global theme engine instance
 _theme_engine = None
@@ -39,5 +39,5 @@ def get_current_theme_colors() -> Dict[str, str]:
 
 def get_qcolor(color_key: str, theme_name: Optional[str] = None):
     """Get a QColor object from theme colors."""
-    from core.qt_imports import QColor
+    from core.pyqt_imports import QColor
     return QColor(get_theme_color(color_key, theme_name))

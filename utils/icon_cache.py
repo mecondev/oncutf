@@ -15,10 +15,9 @@ Supports:
 """
 import os
 
-from core.qt_imports import Qt, QIcon, QPixmap
-
 from config import PREVIEW_COLORS, PREVIEW_INDICATOR_SHAPE, PREVIEW_INDICATOR_SIZE
-from utils.icons import create_colored_icon
+from core.pyqt_imports import QIcon, QPixmap, Qt
+from utils.icon_utilities import create_colored_icon
 
 # Initialize Logger
 from utils.logger_factory import get_cached_logger

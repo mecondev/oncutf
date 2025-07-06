@@ -13,12 +13,10 @@ Usage:
 from utils.svg_icon_generator import generate_metadata_icons
 icon_map = generate_metadata_icons()
 """
-import os
 from typing import Dict, Optional
 
-from core.qt_imports import QPixmap, QPainter, QColor, QByteArray, QSvgRenderer
-
 from config import METADATA_ICON_COLORS
+from core.pyqt_imports import QByteArray, QColor, QPainter, QPixmap, QSvgRenderer
 from utils.logger_factory import get_cached_logger
 from utils.path_utils import get_icons_dir
 
@@ -41,6 +39,7 @@ class SVGIconGenerator:
         'modified': 'edit-2',
         'partial': 'alert-triangle',
         'hash': 'key',
+        'none': 'circle',  # Empty circle for no metadata
     }
 
     def __init__(self, size: int = 16):

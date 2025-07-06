@@ -18,12 +18,6 @@ Custom QTableView with Windows Explorer-like behavior:
 '''
 from typing import Optional
 
-from core.qt_imports import (
-    QEvent, QItemSelection, QItemSelectionModel, QModelIndex, QPoint, Qt, pyqtSignal,
-    QCursor, QDropEvent, QKeySequence, QMouseEvent, QPixmap,
-    QAbstractItemView, QApplication, QHeaderView, QLabel, QTableView
-)
-
 from config import FILE_TABLE_COLUMN_WIDTHS
 from core.application_context import get_app_context
 from core.drag_manager import DragManager
@@ -34,12 +28,32 @@ from core.drag_visual_manager import (
     start_drag_visual,
     update_drag_feedback_for_widget,
 )
+from core.pyqt_imports import (
+    QAbstractItemView,
+    QApplication,
+    QCursor,
+    QDropEvent,
+    QEvent,
+    QHeaderView,
+    QItemSelection,
+    QItemSelectionModel,
+    QKeySequence,
+    QLabel,
+    QModelIndex,
+    QMouseEvent,
+    QPixmap,
+    QPoint,
+    Qt,
+    QTableView,
+    pyqtSignal,
+)
 from utils.file_drop_helper import extract_file_paths
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import (
     schedule_resize_adjust,
     schedule_ui_update,
 )
+
 from .hover_delegate import HoverItemDelegate
 
 logger = get_cached_logger(__name__)
@@ -182,7 +196,7 @@ class FileTableView(QTableView):
 
                 # Select the new rows
                 if selected_rows:
-                    from core.qt_imports import QItemSelection
+                    from core.pyqt_imports import QItemSelection
                     full_selection = QItemSelection()
 
                     for row in selected_rows:
@@ -1297,7 +1311,7 @@ class FileTableView(QTableView):
         self.blockSignals(True)
 
         # Create a single selection for all rows
-        from core.qt_imports import QItemSelection
+        from core.pyqt_imports import QItemSelection
         full_selection = QItemSelection()
 
         for row in rows_to_select:

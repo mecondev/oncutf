@@ -18,11 +18,10 @@ Features:
 """
 from typing import Optional
 
-from core.qt_imports import pyqtSignal, QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget, Qt
-
+from core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, Qt, QVBoxLayout, QWidget, pyqtSignal
 from modules.counter_module import CounterModule
-# Lazy import to avoid circular import: from modules.specified_text_module import SpecifiedTextModule
 
+# Lazy import to avoid circular import: from modules.specified_text_module import SpecifiedTextModule
 # Initialize Logger
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_ui_update

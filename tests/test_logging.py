@@ -12,6 +12,7 @@ Tests the logging system setup to verify:
 Run this after setting up init_logging and logger_file_helper.
 """
 import warnings
+
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)

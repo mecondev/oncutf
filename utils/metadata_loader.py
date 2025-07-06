@@ -19,8 +19,7 @@ import subprocess
 import threading
 from typing import Dict, Optional
 
-from core.qt_imports import Qt
-
+from core.pyqt_imports import Qt
 from models.file_item import FileItem
 from utils.exiftool_wrapper import ExifToolWrapper
 from utils.logger_factory import get_cached_logger

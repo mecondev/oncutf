@@ -16,11 +16,12 @@ This module provides functionality for the OnCutF batch file renaming applicatio
 import os
 import shutil
 import tempfile
+import warnings
 
 import pytest
 
 from utils.rename_logic import build_rename_plan, execute_rename_plan
-import warnings
+
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)

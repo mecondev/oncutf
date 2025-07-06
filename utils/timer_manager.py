@@ -13,8 +13,7 @@ import weakref
 from enum import Enum
 from typing import Callable, Dict, Optional, Set
 
-from core.qt_imports import QObject, QTimer, pyqtSignal
-
+from core.pyqt_imports import QObject, QTimer, pyqtSignal
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

@@ -8,18 +8,15 @@ This module defines global configuration constants and settings used
 throughout the oncutf application. It centralizes UI defaults, file
 filters, path definitions, and other shared parameters.
 
-Intended to be imported wherever consistent application-wide settings
-are required.
-
 Contains:
 - Default UI settings
 - File extension filters
 - Paths to resources and stylesheets
 """
-from core.qt_imports import Qt
+from core.pyqt_imports import Qt
 
-# Debugging Set to False to disable debug.log output
-SHOW_DEV_ONLY_IN_CONSOLE = False    # Enabled for debugging column width issues
+# Debugging Settings
+SHOW_DEV_ONLY_IN_CONSOLE = False
 ENABLE_DEBUG_LOG_FILE = True
 
 # Which key skips the metadata scan when held down
@@ -31,10 +28,10 @@ APP_NAME = "oncutf"
 APP_VERSION = "1.3"
 
 # Export settings
-EXPORT_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"  # Format for export timestamps
+EXPORT_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 # Splash Screen Settings
-SPLASH_SCREEN_DURATION = 3000  # Duration in milliseconds (3 seconds)
+SPLASH_SCREEN_DURATION = 3000  # Duration in milliseconds
 
 # Window
 WINDOW_TITLE = "Batch File Renamer"
@@ -44,23 +41,20 @@ WINDOW_MIN_WIDTH = 800
 WINDOW_MIN_HEIGHT = 500
 
 # Smart Window Sizing Configuration
-# Screen size breakpoints (in pixels) - defines the categories
 SCREEN_SIZE_BREAKPOINTS = {
-    "large_4k": 2560,      # 4K screens and above
-    "full_hd": 1920,       # Full HD screens and above
-    "laptop": 1366,        # Common laptop resolution and above
-    # Everything below 1366px is considered "small"
+    "large_4k": 2560,
+    "full_hd": 1920,
+    "laptop": 1366,
 }
 
-# Window sizing percentages for each screen category (separate width/height control)
 SCREEN_SIZE_PERCENTAGES = {
-    "large_4k": {"width": 0.75, "height": 0.75},      # 4K screens: 75% of screen
-    "full_hd": {"width": 0.80, "height": 0.80},       # Full HD screens: 80% of screen
-    "laptop": {"width": 0.85, "height": 0.85},        # Laptop screens: 85% of screen
-    "small": {"width": 0.90, "height": 0.90}          # Small screens: 90% of screen
+    "large_4k": {"width": 0.75, "height": 0.75},
+    "full_hd": {"width": 0.80, "height": 0.80},
+    "laptop": {"width": 0.85, "height": 0.85},
+    "small": {"width": 0.90, "height": 0.90}
 }
 
-# Minimum window dimensions for usability
+# Minimum window dimensions
 WINDOW_MIN_SMART_WIDTH = 1000
 WINDOW_MIN_SMART_HEIGHT = 700
 
@@ -68,25 +62,15 @@ WINDOW_MIN_SMART_HEIGHT = 700
 LARGE_SCREEN_MIN_WIDTH = 1400
 LARGE_SCREEN_MIN_HEIGHT = 900
 
-# ----------------------------
 # Development/Testing Settings
-# ----------------------------
-# Set to True to simulate different screen sizes for testing (DEV ONLY)
 DEV_SIMULATE_SCREEN = False
 
 # Simulated screen dimensions (only used when DEV_SIMULATE_SCREEN is True)
 DEV_SIMULATED_SCREEN = {
     "width": 1280,
     "height": 1024,
-    "name": "Simulated 4K Screen"
+    "name": "Simulated Screen"
 }
-
-# Common screen sizes for quick testing:
-# 4K: {"width": 2560, "height": 1440, "name": "Simulated 4K"}
-# Full HD: {"width": 1920, "height": 1080, "name": "Simulated Full HD"}
-# Laptop: {"width": 1366, "height": 768, "name": "Simulated Laptop"}
-# Small: {"width": 1024, "height": 768, "name": "Simulated Small"}
-# Ultrawide: {"width": 3440, "height": 1440, "name": "Simulated Ultrawide"}
 
 # Splitter sizes
 TOP_BOTTOM_SPLIT_RATIO = [500, 400]
@@ -99,14 +83,14 @@ RIGHT_PANEL_MIN_WIDTH = 200
 RIGHT_PANEL_MAX_WIDTH = 450
 
 # Screen size thresholds for adaptive splitter sizing
-WIDE_SCREEN_THRESHOLD = 1920     # Full HD and above
-ULTRA_WIDE_SCREEN_THRESHOLD = 2560  # 4K/Ultrawide screens
+WIDE_SCREEN_THRESHOLD = 1920
+ULTRA_WIDE_SCREEN_THRESHOLD = 2560
 
 # Preview columns
 PREVIEW_COLUMN_WIDTH = 350
 PREVIEW_MIN_WIDTH = 250
 
-# Layout Margins (used in window, layout spacing, etc.)
+# Layout Margins
 CONTENT_MARGINS = {
     "top": 8,
     "bottom": 8,
@@ -114,11 +98,11 @@ CONTENT_MARGINS = {
     "right": 8,
 }
 
-# Allowed file extensions - organized by category for better maintenance
+# Allowed file extensions - organized by category
 ALLOWED_EXTENSIONS = {
     # Image formats
     "jpg", "jpeg", "png", "tiff", "tif", "bmp", "gif", "webp", "svg",
-    "heic", "heif",  # Apple formats
+    "heic", "heif",
 
     # RAW image formats
     "nef", "raw", "rw2", "arw", "cr2", "cr3", "dng", "orf",
@@ -129,7 +113,7 @@ ALLOWED_EXTENSIONS = {
     # Video formats
     "mp4", "mov", "mts", "avi", "mkv", "wmv", "flv", "webm", "m4v", "3gp", "ts", "vob",
 
-        # Document formats
+    # Document formats
     "txt", "csv", "xml", "json", "rtf",
     "pdf",
 
@@ -143,80 +127,61 @@ ALLOWED_FILENAME_CHARS = r"^[^\\/:*?\"<>|]+$"
 # Theme
 THEME_NAME = "dark"
 
-# ----------------------------
 # Font Configuration
-# ----------------------------
-USE_EMBEDDED_FONTS = False  # Set to True to use QRC embedded fonts instead of filesystem
+USE_EMBEDDED_FONTS = False
 
-# ----------------------------
 # Preview Indicator Settings
-# ----------------------------
 PREVIEW_COLORS = {
-    "valid": "#2ecc71",     # Green
-    "duplicate": "#e67e22",  # Orange
-    "invalid": "#c0392b",    # Red
-    "unchanged": "#777777"   # Gray
+    "valid": "#2ecc71",
+    "duplicate": "#e67e22",
+    "invalid": "#c0392b",
+    "unchanged": "#777777"
 }
 
-PREVIEW_INDICATOR_SHAPE = "circle"  # or "square"
-PREVIEW_INDICATOR_SIZE = (10, 10)    # Width, Height in pixels
+PREVIEW_INDICATOR_SHAPE = "circle"
+PREVIEW_INDICATOR_SIZE = (10, 10)
 PREVIEW_INDICATOR_BORDER = {
     "color": "#222222",
     "thickness": 1
 }
 
-# ----------------------------
 # File Handling Settings
-# ----------------------------
-USE_PREVIEW_BACKGROUND = False  # Whether to apply background color in tables
-LARGE_FOLDER_WARNING_THRESHOLD = 150 # Number when to prompt QuestionDialog to load large folder
-EXTENDED_METADATA_SIZE_LIMIT_MB = 500  # Over this size, warn user before attempting extended scan
+USE_PREVIEW_BACKGROUND = False
+LARGE_FOLDER_WARNING_THRESHOLD = 150
+EXTENDED_METADATA_SIZE_LIMIT_MB = 500
 
-# ----------------------------
 # Progress Dialog Colors
-# ----------------------------
-# Metadata colors (basic/fast metadata operations)
-FAST_METADATA_COLOR = "#64b5f6"        # Pale blue
-FAST_METADATA_BG_COLOR = "#0a1a2a"     # Darker blue bg
+FAST_METADATA_COLOR = "#64b5f6"
+FAST_METADATA_BG_COLOR = "#0a1a2a"
 
-# Metadata colors (extended metadata operations)
-EXTENDED_METADATA_COLOR = "#ffb74d"    # Pale orange
-EXTENDED_METADATA_BG_COLOR = "#2c1810" # Darker orange bg
+EXTENDED_METADATA_COLOR = "#ffb74d"
+EXTENDED_METADATA_BG_COLOR = "#2c1810"
 
-# File loading colors
-FILE_LOADING_COLOR = "#64b5f6"         # Blue
-FILE_LOADING_BG_COLOR = "#0a1a2a"      # Darker blue bg
+FILE_LOADING_COLOR = "#64b5f6"
+FILE_LOADING_BG_COLOR = "#0a1a2a"
 
-# Hash calculation colors
-HASH_CALCULATION_COLOR = "#9c27b0"     # Purple
-HASH_CALCULATION_BG_COLOR = "#2a1a2a"  # Darker purple bg
+HASH_CALCULATION_COLOR = "#9c27b0"
+HASH_CALCULATION_BG_COLOR = "#2a1a2a"
 
-# ----------------------------
-# Metadata Status Icon Colors (SVG-based system)
-# ----------------------------
+# Metadata Status Icon Colors
 METADATA_ICON_COLORS = {
-    'basic': '#e8f4fd',        # Almost white with slight blue tint
-    'extended': EXTENDED_METADATA_COLOR,  # Orange like progress bar (#ffb74d)
-    'invalid': '#ff6b6b',      # Light red
-    'loaded': '#51cf66',       # Light green
-    'modified': '#ffd755',     # Yellow
-    'partial': '#888888',      # Gray
-    'hash': HASH_CALCULATION_COLOR,  # Purple like progress bar (#9c27b0)
+    'basic': '#e8f4fd',          # Light blue for basic metadata
+    'extended': EXTENDED_METADATA_COLOR,  # Orange for extended metadata
+    'invalid': '#ff6b6b',        # Red for invalid metadata
+    'loaded': '#51cf66',         # Green for loaded metadata
+    'modified': '#ffa726',       # Orange for modified metadata
+    'partial': '#ffeb3b',        # Yellow for partial metadata
+    'hash': '#9c27b0',           # Purple for hash (matches HASH_CALCULATION_COLOR)
+    'none': '#666666'            # Gray for no metadata
 }
 
-# ----------------------------
 # File Table Settings
-# ----------------------------
 MAX_LABEL_LENGTH = 30
 
-# ----------------------------
 # Tree View Expand/Collapse Mode
-# ----------------------------
 TREE_EXPAND_MODE = "double"  # Options: "single" or "double". Default: double click for expand/collapse
 
-# ----------------------------
 # File Table Column Widths
-# ----------------------------
 FILE_TABLE_COLUMN_WIDTHS = {
     "STATUS_COLUMN": 45,     # Column 0: Status/info icon column (fits 2 icons: metadata + hash status)
     "FILENAME_COLUMN": 250,  # Column 1: Filename column (reasonable default, will expand dynamically)
@@ -225,9 +190,7 @@ FILE_TABLE_COLUMN_WIDTHS = {
     "DATE_COLUMN": 115       # Column 4: Modified date column (compact date format) - increased by 5px
 }
 
-# ----------------------------
 # Metadata Tree View Settings
-# ----------------------------
 METADATA_TREE_COLUMN_WIDTHS = {
     "PLACEHOLDER_KEY_WIDTH": 100,
     "PLACEHOLDER_VALUE_WIDTH": 250,
@@ -238,9 +201,7 @@ METADATA_TREE_COLUMN_WIDTHS = {
     "VALUE_MIN_WIDTH": 250
 }
 
-# ----------------------------
 # Status Label Colors
-# ----------------------------
 STATUS_COLORS = {
     # Basic status states
     "ready": "",                    # Default color (no override)
@@ -273,9 +234,7 @@ STATUS_COLORS = {
     "metadata_success": "#90ee90", # Pale green for metadata operations
 }
 
-# ----------------------------
 # Tooltip Settings
-# ----------------------------
 TOOLTIP_DURATION = 2000  # Duration in milliseconds (2 seconds)
 TOOLTIP_POSITION_OFFSET = (25, -35)  # (x, y) offset from widget position - positioned above and to the right
 
@@ -286,17 +245,13 @@ INVALID_TRAILING_CHARS = ' .'
 # Validation error marker (unique string that users won't intentionally use)
 INVALID_FILENAME_MARKER = "__VALIDATION_ERROR__"
 
-# ----------------------------
 # File Size Formatting Settings
-# ----------------------------
 # Use SI decimal units (1000) vs Binary units (1024)
 USE_BINARY_UNITS = False  # False = SI units (1000), True = Binary units (1024)
 # Auto-detect locale for decimal separator (. vs ,)
 USE_LOCALE_DECIMAL_SEPARATOR = True
 
-# ----------------------------
 # QLabel Text Colors
-# ----------------------------
 # Progress Widget Colors
 QLABEL_PRIMARY_TEXT = "#f0ebd8"      # Primary text color (status labels)
 QLABEL_SECONDARY_TEXT = "#90a4ae"    # Secondary text color (count, percentage)
@@ -314,9 +269,7 @@ QLABEL_DARK_BORDER = "#555555"       # Dark border color
 QLABEL_ERROR_BG = "#3a2222"          # Error background color
 QLABEL_DARK_BG = "#181818"           # Dark background color
 
-# ----------------------------
 # Database Backup Settings
-# ----------------------------
 # Backup count (how many backup files to keep)
 DEFAULT_BACKUP_COUNT = 2  # Keep 2 backup files by default
 
@@ -330,9 +283,7 @@ BACKUP_TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
 # Whether periodic backups are enabled by default
 DEFAULT_PERIODIC_BACKUP_ENABLED = True
 
-# ----------------------------
 # Theme Colors (Dark Theme)
-# ----------------------------
 THEME_COLORS = {
     "dark": {
         # Table/Tree view colors

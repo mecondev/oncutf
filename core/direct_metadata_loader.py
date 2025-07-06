@@ -14,15 +14,13 @@ Features:
 - Thread-based loading for UI responsiveness
 - Simple, clean architecture
 """
-import logging
-from typing import Optional, List, Dict, Set
-from datetime import datetime
+from typing import List, Optional, Set
 
-from PyQt5.QtCore import QObject, pyqtSignal, QThread
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
 from models.file_item import FileItem
-from utils.metadata_cache_helper import MetadataCacheHelper
 from utils.logger_factory import get_cached_logger
+from utils.metadata_cache_helper import MetadataCacheHelper
 
 logger = get_cached_logger(__name__)
 
@@ -252,8 +250,8 @@ class DirectMetadataLoader(QObject):
         source: str
     ) -> None:
         """Start metadata loading with progress tracking."""
-        from widgets.metadata_worker import MetadataWorker
         from utils.metadata_loader import MetadataLoader
+        from widgets.metadata_worker import MetadataWorker
 
         # Create worker and thread
         self._metadata_thread = QThread()
@@ -451,8 +449,8 @@ class DirectMetadataLoader(QObject):
         source: str
     ) -> None:
         """Start metadata loading in background thread."""
-        from widgets.metadata_worker import MetadataWorker
         from utils.metadata_loader import MetadataLoader
+        from widgets.metadata_worker import MetadataWorker
 
         # Create worker and thread
         self._metadata_thread = QThread()

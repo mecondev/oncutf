@@ -5,7 +5,7 @@ Author: Michael Economou
 Date: 2025-05-31
 
 from typing import Optional
-from core.qt_imports import QEvent, QObject, Qt, QTimer, QApplication
+from core.pyqt_imports import QEvent, QObject, Qt, QTimer, QApplication
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_drag_cleanup
 logger = get_cached_logger(__name__)
@@ -27,8 +27,7 @@ Features:
 
 from typing import Optional
 
-from core.qt_imports import QEvent, QObject, Qt, QTimer, QApplication
-
+from core.pyqt_imports import QApplication, QEvent, QObject, Qt, QTimer
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_drag_cleanup
 

@@ -8,6 +8,7 @@ test_text_helpers.py
 Tests for text helper functions in utils/text_helpers.py
 """
 import warnings
+
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
@@ -19,8 +20,7 @@ test_text_helpers.py
 Tests for text helper functions in utils/text_helpers.py
 """
 
-import pytest
-from utils.text_helpers import truncate_filename_middle, format_file_size_stable
+from utils.text_helpers import format_file_size_stable, truncate_filename_middle
 
 
 class TestTruncateFilenameMiddle:

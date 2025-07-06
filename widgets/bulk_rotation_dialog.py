@@ -17,9 +17,20 @@ Dialog for bulk rotation operations.
 from pathlib import Path
 from typing import List, Optional
 
-from core.qt_imports import Qt, QFont, QCheckBox, QDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QPushButton, QRadioButton, QScrollArea, QVBoxLayout, QWidget
-
 from config import QLABEL_MUTED_TEXT
+from core.pyqt_imports import (
+    QCheckBox,
+    QDialog,
+    QFont,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QScrollArea,
+    Qt,
+    QVBoxLayout,
+    QWidget,
+)
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -89,7 +100,7 @@ class BulkRotationDialog(QDialog):
 
     def _apply_info_label_style(self, color: str, opacity: str = "1.0"):
         """Apply consistent font styling to info label."""
-        from utils.fonts import get_inter_family, get_inter_css_weight
+        from utils.fonts import get_inter_css_weight, get_inter_family
         font_family = get_inter_family('base')
         font_weight = get_inter_css_weight('base')
         self.info_label.setStyleSheet(f"color: {color}; font-family: '{font_family}', Arial, sans-serif; font-size: 8pt; font-weight: {font_weight}; opacity: {opacity};")

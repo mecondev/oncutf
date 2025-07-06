@@ -11,11 +11,10 @@ Enhanced with better metadata grouping and extended metadata indicators.
 """
 import re
 
-from core.qt_imports import Qt, QColor, QFont, QStandardItem, QStandardItemModel
+from core.pyqt_imports import QColor, QFont, QStandardItem, QStandardItemModel, Qt
 
 # Initialize Logger
 from utils.logger_factory import get_cached_logger
-from utils.tooltip_helper import setup_tooltip, TooltipType
 
 logger = get_cached_logger(__name__)
 

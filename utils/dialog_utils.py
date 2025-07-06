@@ -10,7 +10,7 @@ Provides centralized logic for common dialog operations like centering.
 """
 from typing import Optional
 
-from core.qt_imports import QWidget
+from core.pyqt_imports import QWidget
 
 
 def center_widget_on_parent(widget: QWidget, parent: Optional[QWidget] = None) -> None:
@@ -73,7 +73,7 @@ def show_info_message(parent: Optional[QWidget], title: str, message: str) -> No
         title: Dialog title
         message: Message to display
     """
-    from widgets.custom_msgdialog import CustomMessageDialog
+    from widgets.custom_message_dialog import CustomMessageDialog
     CustomMessageDialog.information(parent, title, message)
 
 
@@ -86,5 +86,5 @@ def show_error_message(parent: Optional[QWidget], title: str, message: str) -> N
         title: Dialog title
         message: Message to display
     """
-    from widgets.custom_msgdialog import CustomMessageDialog
+    from widgets.custom_message_dialog import CustomMessageDialog
     CustomMessageDialog.information(parent, title, message)

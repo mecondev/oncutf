@@ -10,9 +10,9 @@ Handles differences between Windows and Linux DPI scaling behavior.
 """
 import logging
 import platform
-from typing import Dict, Tuple
+from typing import Dict
 
-from core.qt_imports import QApplication, QScreen
+from core.pyqt_imports import QApplication
 
 logger = logging.getLogger(__name__)
 

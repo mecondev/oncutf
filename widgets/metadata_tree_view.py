@@ -51,7 +51,7 @@ Designed for integration with MainWindow and MetadataReader.
 from typing import Any, Dict, Optional, Set, Union
 
 from config import METADATA_TREE_COLUMN_WIDTHS
-from core.qt_imports import (
+from core.pyqt_imports import (
     QAbstractItemView,
     QAction,
     QApplication,
@@ -73,12 +73,11 @@ from core.qt_imports import (
     pyqtSignal,
 )
 from utils.logger_factory import get_cached_logger
-from utils.path_utils import paths_equal, find_parent_with_attribute
+from utils.metadata_cache_helper import MetadataCacheHelper
+from utils.path_utils import find_parent_with_attribute, paths_equal
 from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust, schedule_ui_update
 from widgets.file_tree_view import _drag_cancel_filter
 from widgets.metadata_edit_dialog import MetadataEditDialog
-from utils.metadata_cache_helper import MetadataCacheHelper
-from .hover_delegate import HoverItemDelegate
 
 # ApplicationContext integration
 try:
@@ -746,7 +745,7 @@ class MetadataTreeView(QTreeView):
         if hasattr(self, '_scroll_animation'):
             self._scroll_animation.stop()
 
-        from core.qt_imports import QEasingCurve, QPropertyAnimation
+        from core.pyqt_imports import QEasingCurve, QPropertyAnimation
 
         self._scroll_animation = QPropertyAnimation(scrollbar, b"value")
         self._scroll_animation.setDuration(duration)

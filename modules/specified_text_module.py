@@ -12,9 +12,15 @@ Used in the oncutf application as one of the modular renaming components.
 import os
 from typing import Optional
 
-from core.qt_imports import Qt, pyqtSignal, QAction, QLabel, QMenu, QVBoxLayout, QWidget, QApplication
-
-from config import QLABEL_DARK_BG, QLABEL_DARK_BORDER, QLABEL_ERROR_TEXT, QLABEL_INFO_TEXT
+from core.pyqt_imports import (
+    QAction,
+    QApplication,
+    QMenu,
+    Qt,
+    QVBoxLayout,
+    QWidget,
+    pyqtSignal,
+)
 from modules.base_module import BaseRenameModule
 from utils.filename_validator import validate_filename_part
 from utils.icons_loader import get_menu_icon

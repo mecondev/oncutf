@@ -18,7 +18,7 @@ from config import (
     QLABEL_DARK_BORDER,
     QLABEL_INFO_TEXT,
 )
-from core.qt_imports import QKeyEvent
+from core.pyqt_imports import QKeyEvent
 from utils.tooltip_helper import show_error_tooltip
 
 logger = logging.getLogger(__name__)

@@ -46,17 +46,12 @@ Classes:
 
 """
 
-from typing import Dict, List, Optional, Tuple, Union, Any
-from enum import Enum
 from dataclasses import dataclass, field
-import logging
+from enum import Enum
+from typing import Any, Dict, Optional, Union
 
-from core.qt_imports import (
-    QTableView, QTreeView, QHeaderView, QWidget, QApplication, QFontMetrics
-)
-from core.config_imports import (
-    FILE_TABLE_COLUMN_WIDTHS, METADATA_TREE_COLUMN_WIDTHS
-)
+from core.config_imports import FILE_TABLE_COLUMN_WIDTHS, METADATA_TREE_COLUMN_WIDTHS
+from core.pyqt_imports import QFontMetrics, QHeaderView, QTableView, QTreeView, QWidget
 from utils.logger_helper import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -435,7 +430,7 @@ class ColumnManager:
             if hasattr(table_view, 'rowHeight'):
                 try:
                     row_height = table_view.rowHeight(0) if row_count > 0 else 20
-                except:
+                except (AttributeError, RuntimeError):
                     pass
 
             total_content_height = row_count * row_height
@@ -466,7 +461,7 @@ class ColumnManager:
                     width = scrollbar.width()
                     if width > 0:
                         return width
-        except:
+        except (AttributeError, RuntimeError):
             pass
         return 14  # Default estimate
 
@@ -485,7 +480,7 @@ class ColumnManager:
                 # Disconnect any existing connections to avoid duplicates
                 try:
                     header.sectionResized.disconnect()
-                except:
+                except (AttributeError, RuntimeError, TypeError):
                     pass
 
                 # Connect new handler

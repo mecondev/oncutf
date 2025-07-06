@@ -13,7 +13,7 @@ Supports:
 - Theming or state-aware icon selection
 - Compatibility with oncutf UI components
 """
-from core.qt_imports import Qt, QColor, QPainter, QPen, QPixmap
+from core.pyqt_imports import QColor, QPainter, QPen, QPixmap, Qt
 
 # Initialize Logger
 from utils.logger_factory import get_cached_logger

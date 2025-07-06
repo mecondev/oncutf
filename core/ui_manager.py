@@ -4,7 +4,6 @@ Module: ui_manager.py
 Author: Michael Economou
 Date: 2025-05-31
 
-ui_manager.py
 Manages UI setup and layout configuration for the main window.
 Handles widget initialization, signal connections, and layout management.
 """
@@ -12,11 +11,12 @@ import platform
 from typing import TYPE_CHECKING
 
 from core.config_imports import *
-from core.qt_imports import *
+from core.pyqt_imports import *
 from models.file_table_model import FileTableModel
 from utils.icons_loader import get_app_icon, get_menu_icon
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_selection_update, schedule_ui_update
+from utils.tooltip_helper import TooltipType, setup_tooltip
 from widgets.custom_file_system_model import CustomFileSystemModel
 from widgets.file_table_view import FileTableView
 from widgets.file_tree_view import FileTreeView
@@ -24,7 +24,6 @@ from widgets.interactive_header import InteractiveHeader
 from widgets.metadata_tree_view import MetadataTreeView
 from widgets.preview_tables_view import PreviewTablesView
 from widgets.rename_modules_area import RenameModulesArea
-from utils.tooltip_helper import setup_tooltip, TooltipType
 
 if TYPE_CHECKING:
     from main_window import MainWindow
@@ -38,7 +37,7 @@ class UIManager:
     def __init__(self, parent_window: 'MainWindow'):
         """Initialize UIManager with parent window reference."""
         self.parent_window = parent_window
-        logger.debug("[UIManager] Initialized", extra={"dev_only": True})
+        logger.debug("UIManager initialized", extra={"dev_only": True})
 
     def setup_all_ui(self) -> None:
         """Setup all UI components in the correct order."""
@@ -47,14 +46,14 @@ class UIManager:
         self.setup_splitters()
         self.setup_left_panel()
         self.setup_center_panel()
-        logger.debug("[UIManager] setup_center_panel() DONE - calling setup_right_panel()", extra={"dev_only": True})
+        logger.debug("setup_center_panel() completed", extra={"dev_only": True})
         self.setup_right_panel()
-        logger.debug("[UIManager] setup_right_panel() DONE", extra={"dev_only": True})
+        logger.debug("setup_right_panel() completed", extra={"dev_only": True})
         self.setup_bottom_layout()
         self.setup_footer()
         self.setup_signals()
         self.setup_shortcuts()
-        logger.debug("[UIManager] All UI components setup completed", extra={"dev_only": True})
+        logger.debug("All UI components setup completed", extra={"dev_only": True})
 
     def setup_main_window(self) -> None:
         """Configure main window properties."""
@@ -64,16 +63,15 @@ class UIManager:
         app_icon = get_app_icon()
         if not app_icon.isNull():
             self.parent_window.setWindowIcon(app_icon)
-            logger.debug("[UIManager] Window icon set using icon loader", extra={"dev_only": True})
+            logger.debug("Window icon set using icon loader", extra={"dev_only": True})
         else:
-            logger.warning("[UIManager] Failed to load application icon")
+            logger.warning("Failed to load application icon")
 
         # Calculate optimal window size based on screen resolution
         optimal_size = self._calculate_optimal_window_size()
         self.parent_window.resize(optimal_size.width(), optimal_size.height())
 
         self.parent_window.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
-        # self.parent_window.center_window()
         self.parent_window.dialog_manager.center_window(self.parent_window)
 
     def _calculate_optimal_window_size(self):
@@ -84,7 +82,7 @@ class UIManager:
         screen_height = screen.height()
         screen_aspect = screen_width / screen_height
 
-        logger.debug(f"[UIManager] Screen resolution: {screen_width}x{screen_height}, aspect: {screen_aspect:.2f}", extra={"dev_only": True})
+        logger.debug(f"Screen resolution: {screen_width}x{screen_height}, aspect: {screen_aspect:.2f}", extra={"dev_only": True})
 
         # Define target percentages of screen size
         width_percentage = 0.75  # Use 75% of screen width
@@ -96,30 +94,27 @@ class UIManager:
 
         # Adjust for different aspect ratios
         if screen_aspect >= 2.3:  # Ultrawide (21:9 or wider)
-            # For ultrawide screens, use less width percentage to avoid too wide windows
             target_width = int(screen_width * 0.65)
             target_height = int(screen_height * 0.85)
         elif screen_aspect >= 1.7:  # Widescreen (16:9, 16:10)
-            # Standard widescreen - use calculated values
-            pass
+            pass  # Use calculated values
         elif screen_aspect <= 1.4:  # 4:3 or close
-            # For 4:3 screens, use more width and height percentage (they're usually smaller)
-            target_width = int(screen_width * 0.92)  # Use 92% of width for 4:3
+            target_width = int(screen_width * 0.92)
             target_height = int(screen_height * 0.85)
 
         # Ensure minimum constraints
         target_width = max(target_width, WINDOW_MIN_WIDTH)
         target_height = max(target_height, WINDOW_MIN_HEIGHT)
 
-        # Ensure maximum reasonable size (not bigger than config fallback)
-        max_width = max(WINDOW_WIDTH, 1600)  # At least config default or 1600px
-        max_height = max(WINDOW_HEIGHT, 1200)  # At least config default or 1200px
+        # Ensure maximum reasonable size
+        max_width = max(WINDOW_WIDTH, 1600)
+        max_height = max(WINDOW_HEIGHT, 1200)
         target_width = min(target_width, max_width)
         target_height = min(target_height, max_height)
 
         optimal_size = QSize(target_width, target_height)
 
-        logger.debug(f"[UIManager] Calculated optimal window size: {target_width}x{target_height}", extra={"dev_only": True})
+        logger.debug(f"Calculated optimal window size: {target_width}x{target_height}", extra={"dev_only": True})
         return optimal_size
 
     def setup_main_layout(self) -> None:
@@ -141,44 +136,38 @@ class UIManager:
         """Legacy splitter size calculation method (kept as fallback)."""
         # Smart percentage calculation based on screen width
         if window_width >= 2560:  # 4K/Ultrawide screens
-            # Wide screens: Give more space to center panel, keep side panels reasonable
-            left_percentage = 0.12   # ~12% for left panel (smaller percentage, but still usable)
-            right_percentage = 0.18  # ~18% for right panel (metadata needs more space)
+            left_percentage = 0.12
+            right_percentage = 0.18
         elif window_width >= 1920:  # Full HD and above
-            # Large screens: Balanced approach with more center space
-            left_percentage = 0.15   # ~15% for left panel
-            right_percentage = 0.20  # ~20% for right panel
+            left_percentage = 0.15
+            right_percentage = 0.20
         elif window_width >= 1366:  # Common laptop resolution
-            # Medium screens: Standard approach
-            left_percentage = 0.18   # ~18% for left panel
-            right_percentage = 0.22  # ~22% for right panel
-        else:  # Small screens (1024x768 or smaller)
-            # Small screens: Give more relative space to side panels for usability
-            left_percentage = 0.20   # ~20% for left panel
-            right_percentage = 0.25  # ~25% for right panel
+            left_percentage = 0.18
+            right_percentage = 0.22
+        else:  # Small screens
+            left_percentage = 0.20
+            right_percentage = 0.25
 
         # Calculate sizes based on percentages
         left_width = int(window_width * left_percentage)
         right_width = int(window_width * right_percentage)
         center_width = window_width - left_width - right_width
 
-        # Apply minimum constraints to prevent panels from becoming too small
-        left_min = 200   # Absolute minimum for left panel
-        right_min = 200  # Absolute minimum for right panel
-        center_min = 400  # Absolute minimum for center panel
+        # Apply minimum constraints
+        left_min = 200
+        right_min = 200
+        center_min = 400
 
-        # Ensure minimums are respected
         left_width = max(left_width, left_min)
         right_width = max(right_width, right_min)
 
-        # Recalculate center if minimums were applied
         center_width = window_width - left_width - right_width
         center_width = max(center_width, center_min)
 
-        # For very wide screens, cap the side panels to prevent them from being too wide
+        # For very wide screens, cap the side panels
         if window_width >= 2560:
-            left_max = 300   # Maximum 300px for left panel on wide screens
-            right_max = 450  # Maximum 450px for right panel on wide screens
+            left_max = 300
+            right_max = 450
 
             if left_width > left_max:
                 extra_left = left_width - left_max
@@ -192,8 +181,7 @@ class UIManager:
 
         optimal_sizes = [left_width, center_width, right_width]
 
-        logger.debug(f"[UIManager] Legacy calculated splitter sizes for {window_width}px: {optimal_sizes} "
-                    f"({left_width/window_width*100:.1f}%, {center_width/window_width*100:.1f}%, {right_width/window_width*100:.1f}%)", extra={"dev_only": True})
+        logger.debug(f"Legacy calculated splitter sizes for {window_width}px: {optimal_sizes}", extra={"dev_only": True})
         return optimal_sizes
 
     def setup_splitters(self) -> None:
@@ -381,7 +369,7 @@ class UIManager:
         # Connect the proxy model to the tree view
         self.parent_window.metadata_tree_view.setModel(self.parent_window.metadata_proxy_model)
         right_layout.addWidget(self.parent_window.metadata_tree_view)
-        logger.debug("[UIManager] MetadataTreeView widget added to layout", extra={"dev_only": True})
+        logger.debug("MetadataTreeView widget added to layout", extra={"dev_only": True})
 
         # Dummy initial model
         placeholder_model = QStandardItemModel()

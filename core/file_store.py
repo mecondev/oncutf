@@ -17,9 +17,8 @@ import glob
 import os
 from typing import Any, Dict, List, Optional, Set
 
-from core.qt_imports import QElapsedTimer, QObject, pyqtSignal
-
 from config import ALLOWED_EXTENSIONS
+from core.pyqt_imports import QElapsedTimer, QObject, pyqtSignal
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
 

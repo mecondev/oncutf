@@ -9,6 +9,7 @@ Test cases for the FileSizeFormatter utility.
 Tests cross-platform file size formatting with various units and locales.
 """
 import warnings
+
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)

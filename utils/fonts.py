@@ -14,10 +14,9 @@ Manages loading and providing access to the Inter font family
 """
 
 import logging
-from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict
 
-from core.qt_imports import QResource, QFont, QFontDatabase
+from core.pyqt_imports import QFont, QFontDatabase, QResource
 
 logger = logging.getLogger(__name__)
 

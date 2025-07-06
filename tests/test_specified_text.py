@@ -13,8 +13,10 @@ Module: tests/test_specified_text.py
 This module provides functionality for the OnCutF batch file renaming application.
 """
 
-from modules.specified_text_module import SpecifiedTextModule
 import warnings
+
+from modules.specified_text_module import SpecifiedTextModule
+
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)

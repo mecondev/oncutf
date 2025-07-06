@@ -9,7 +9,6 @@ Utility functions for text manipulation and formatting.
 Provides helper functions for truncating, formatting, and processing text strings.
 """
 import os
-from typing import Optional
 
 
 def elide_text(text: str, max_len: int) -> str:

@@ -14,9 +14,9 @@ Applies all styling globally to handle dynamically created widgets.
 """
 
 import platform
-from typing import Dict
-from core.qt_imports import QApplication, QMainWindow, QWidget
+
 import config
+from core.pyqt_imports import QApplication, QMainWindow
 
 
 class ThemeEngine:
@@ -1271,7 +1271,7 @@ class ThemeEngine:
 
     def _apply_windows_combobox_fixes(self, app: QApplication):
         """Apply Windows-specific ComboBox dropdown fixes."""
-        from core.qt_imports import QComboBox
+        from core.pyqt_imports import QComboBox
 
         for widget in app.allWidgets():
             if isinstance(widget, QComboBox):

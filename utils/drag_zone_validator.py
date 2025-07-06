@@ -10,9 +10,8 @@ eliminating code duplication between FileTreeView and FileTableView.
 """
 from typing import Dict, List, Optional
 
-from core.qt_imports import QCursor, QApplication
-
 from core.drag_visual_manager import DropZoneState, update_drop_zone_state
+from core.pyqt_imports import QApplication, QCursor
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

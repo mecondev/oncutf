@@ -10,14 +10,24 @@ sequential file names based on configurable start value, step, and padding.
 """
 from typing import Optional
 
-from core.qt_imports import Qt, pyqtSignal, QIntValidator, QHBoxLayout, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget, QSize
-
+from core.pyqt_imports import (
+    QHBoxLayout,
+    QIntValidator,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QSize,
+    Qt,
+    QVBoxLayout,
+    QWidget,
+    pyqtSignal,
+)
 from modules.base_module import BaseRenameModule
 from utils.icons_loader import get_menu_icon
-from utils.tooltip_helper import setup_tooltip, TooltipType
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
+from utils.tooltip_helper import TooltipType, setup_tooltip
 
 logger = get_cached_logger(__name__)
 

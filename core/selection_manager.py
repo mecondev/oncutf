@@ -10,8 +10,7 @@ Handles file table selection operations, preview updates, and metadata synchroni
 """
 from typing import List
 
-from config import STATUS_COLORS
-from core.qt_imports import QElapsedTimer
+from core.pyqt_imports import QElapsedTimer
 from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
 from utils.metadata_cache_helper import MetadataCacheHelper

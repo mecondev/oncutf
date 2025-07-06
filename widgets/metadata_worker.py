@@ -20,12 +20,12 @@ import threading
 import time
 from typing import Optional
 
-from core.qt_imports import QObject, pyqtSignal, pyqtSlot
+from core.pyqt_imports import QObject, pyqtSignal, pyqtSlot
 
 # Logger setup
 from utils.logger_factory import get_cached_logger
-from utils.metadata_loader import MetadataLoader
 from utils.metadata_cache_helper import MetadataCacheHelper
+from utils.metadata_loader import MetadataLoader
 
 logger = get_cached_logger(__name__)
 

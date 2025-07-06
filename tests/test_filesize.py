@@ -9,6 +9,7 @@ Test script to compare file size calculations between our application
 and system commands (ls, stat, du) on Linux.
 """
 import warnings
+
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)

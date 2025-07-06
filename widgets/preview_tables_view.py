@@ -16,13 +16,23 @@ Features:
 """
 from typing import Tuple
 
-from core.qt_imports import Qt, pyqtSignal, QPixmap, QAbstractItemView, QHBoxLayout, QHeaderView, QLabel, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
-
+from core.pyqt_imports import (
+    QAbstractItemView,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QPixmap,
+    Qt,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+    pyqtSignal,
+)
 from utils.filename_validator import get_validation_error_message, is_validation_error_marker
 from utils.logger_factory import get_cached_logger
 from utils.theme import get_theme_color
 from utils.timer_manager import schedule_scroll_adjust, schedule_ui_update
-from utils.tooltip_helper import setup_tooltip, TooltipType
 
 logger = get_cached_logger(__name__)
 

@@ -6,7 +6,7 @@ Date: 2025-05-31
 
 import os
 from typing import Dict, Optional
-from core.qt_imports import QIcon, QPixmap
+from core.pyqt_imports import QIcon, QPixmap
 from utils.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 # Cache for metadata icons to avoid regeneration
@@ -34,8 +34,7 @@ Usage:
 import os
 from typing import Dict, Optional
 
-from core.qt_imports import QIcon, QPixmap
-
+from core.pyqt_imports import QIcon, QPixmap
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

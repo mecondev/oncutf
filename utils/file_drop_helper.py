@@ -12,9 +12,8 @@ triggers custom dialogs (recursive, rejected files), and returns results for the
 import os
 from typing import Dict, List, Literal, Tuple
 
-from core.qt_imports import QMimeData
-
 from config import ALLOWED_EXTENSIONS
+from core.pyqt_imports import QMimeData
 
 # Custom dialogs will be imported when connected
 # from widgets.custommsg_dialog import show_recursive_dialog, show_rejected_dialog
@@ -71,7 +70,7 @@ def ask_recursive_dialog(folder_path: str, parent=None) -> bool:
     Show a custom dialog asking if the user wants a recursive scan for the folder.
     Returns True if the user selects Yes.
     """
-    from widgets.custom_msgdialog import CustomMessageDialog
+    from widgets.custom_message_dialog import CustomMessageDialog
     folder_name = os.path.basename(folder_path)
     message = f"Do you want to import files from all subfolders of '{folder_name}' as well?"
     return CustomMessageDialog.question(parent, "Recursive Import", message, yes_text="Yes (recursive)", no_text="No (top folder only)")
@@ -81,7 +80,7 @@ def show_rejected_dialog(rejected: list[str], imported_count: int = 0, parent=No
     """
     Show a custom dialog listing the rejected files/folders, with a summary message above a scrollable area.
     """
-    from widgets.custom_msgdialog import CustomMessageDialog
+    from widgets.custom_message_dialog import CustomMessageDialog
     skipped_count = len(rejected)
     if skipped_count == 0:
         return
@@ -92,7 +91,7 @@ def show_rejected_dialog(rejected: list[str], imported_count: int = 0, parent=No
         CustomMessageDialog.information(parent, "Some files were skipped", message)
     else:
         # Show summary and scrollable list
-        from core.qt_imports import QDialog, QLabel, QPushButton, QTextEdit, QVBoxLayout
+        from core.pyqt_imports import QDialog, QLabel, QPushButton, QTextEdit, QVBoxLayout
         dialog = QDialog(parent)
         dialog.setWindowTitle("Some files were skipped")
         layout = QVBoxLayout(dialog)

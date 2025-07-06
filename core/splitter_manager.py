@@ -91,12 +91,12 @@ class SplitterManager:
         """
         # Import configuration constants
         from core.config_imports import (
-            LEFT_PANEL_MIN_WIDTH,
             LEFT_PANEL_MAX_WIDTH,
-            RIGHT_PANEL_MIN_WIDTH,
+            LEFT_PANEL_MIN_WIDTH,
             RIGHT_PANEL_MAX_WIDTH,
+            RIGHT_PANEL_MIN_WIDTH,
+            ULTRA_WIDE_SCREEN_THRESHOLD,
             WIDE_SCREEN_THRESHOLD,
-            ULTRA_WIDE_SCREEN_THRESHOLD
         )
 
         # Calculate optimal sizes based on window width

@@ -10,11 +10,21 @@ Uses a clean 3-column layout: Labels | Controls | Buttons
 """
 from typing import Optional
 
-from core.qt_imports import pyqtSignal, QCheckBox, QComboBox, QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget, QSize, Qt, QGridLayout
-from modules.base_module import BaseRenameModule
+from core.pyqt_imports import (
+    QCheckBox,
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSize,
+    Qt,
+    QVBoxLayout,
+    QWidget,
+    pyqtSignal,
+)
 from utils.icons_loader import get_menu_icon
 from utils.logger_factory import get_cached_logger
-from utils.tooltip_helper import setup_tooltip, TooltipType
+from utils.tooltip_helper import TooltipType, setup_tooltip
 
 logger = get_cached_logger(__name__)
 
@@ -176,8 +186,8 @@ class FinalTransformContainer(QWidget):
             self.remove_button.setToolTip("")
 
             # Create disabled icon with reduced opacity
-            from PyQt5.QtGui import QPixmap, QPainter
             from PyQt5.QtCore import Qt
+            from PyQt5.QtGui import QPainter, QPixmap
 
             # Get the original icon
             original_icon = get_menu_icon("minus")
