@@ -2,7 +2,7 @@
 Module: drag_cleanup_manager.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 DragCleanupManager - Handles drag and drop cleanup operations
 This manager centralizes drag cleanup operations including:

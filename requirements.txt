@@ -13,5 +13,5 @@ pytest-mock==3.14.1
 
 # --- Performance testing dependencies ---
 psutil==6.1.0
-tracemalloc  # Built-in Python module
+# tracemalloc is a built-in module, no need to install  # Built-in Python module
 aiofiles==24.1.0  # For async file operations

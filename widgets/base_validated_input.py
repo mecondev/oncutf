@@ -2,7 +2,7 @@
 Module: base_validated_input.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-01
 
 Base class for validated input widgets providing common validation functionality.
 This module serves as the foundation for both filename and metadata input validation,

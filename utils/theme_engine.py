@@ -2,7 +2,7 @@
 Module: theme_engine.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-20
 
 Simplified theme engine for OnCutF application.
 Applies all styling globally to handle dynamically created widgets.

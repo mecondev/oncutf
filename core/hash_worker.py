@@ -2,7 +2,7 @@
 Module: hash_worker.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-10
 
 hash_worker.py
 QThread worker for background hash calculation operations.

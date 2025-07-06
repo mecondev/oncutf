@@ -2,7 +2,7 @@
 Module: metadata_exporter.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-10
 
 utils/metadata_exporter.py
 Metadata export utility supporting multiple human-readable formats.

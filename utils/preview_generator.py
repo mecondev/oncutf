@@ -2,7 +2,7 @@
 Module: preview_generator.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-01
 
 preview_generator.py
 This module provides functions to generate preview names for file renaming

@@ -2,7 +2,7 @@
 Module: test_loading_dialog.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 This module contains tests for the loading dialog behavior used in the oncutf application,
 specifically for the non-blocking progress dialog implemented via CustomMessageDialog.show_waiting().

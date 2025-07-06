@@ -2,7 +2,7 @@
 Module: drag_manager.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 from typing import Optional
 from core.qt_imports import QEvent, QObject, Qt, QTimer, QApplication

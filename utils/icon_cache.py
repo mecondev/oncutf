@@ -2,7 +2,7 @@
 Module: icon_cache.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 This utility module provides functions for caching QIcons or other
 visual assets to avoid redundant loading and improve GUI performance.

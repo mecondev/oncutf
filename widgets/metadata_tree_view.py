@@ -3,7 +3,7 @@
 Module: metadata_tree_view.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 metadata_tree_view.py
 This module defines a custom QTreeView widget that supports drag-and-drop functionality

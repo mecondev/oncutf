@@ -2,7 +2,7 @@
 Module: icons.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 This utility module provides functions for creating and preparing icons,
 typically using QIcon or related PyQt components. It may also include

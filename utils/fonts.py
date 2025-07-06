@@ -2,7 +2,7 @@
 Module: fonts.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 Font utilities for Inter fonts
 Manages loading and providing access to the Inter font family

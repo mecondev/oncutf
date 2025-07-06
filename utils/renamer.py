@@ -2,7 +2,7 @@
 Module: renamer.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-01
 
 Initializes the Renamer with required inputs for batch renaming.
 Parameters:
@@ -50,8 +50,7 @@ class Renamer:
         conflict_callback: Optional[Callable[[QWidget, str], str]] = None,
         validator: Optional[object] = None
     ) -> None:
-        
-"""
+        """
         Initializes the Renamer with required inputs for batch renaming.
 
         Parameters:
@@ -62,8 +61,7 @@ class Renamer:
             parent (QWidget, optional): Parent UI component.
             conflict_callback (Callable, optional): Function to handle filename conflicts.
             validator (object): Object to validate filename text.
-        
-"""
+        """
         self.files = files
         self.modules_data = modules_data
         self.metadata_cache = metadata_cache

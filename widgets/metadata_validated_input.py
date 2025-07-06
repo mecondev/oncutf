@@ -2,7 +2,7 @@
 Module: metadata_validated_input.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-01
 
 Validated input widgets specifically designed for metadata field editing.
 Provides real-time character validation, paste cleaning, and visual feedback

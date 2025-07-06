@@ -2,7 +2,7 @@
 Module: progress_widget.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-01
 
 import os
 import time

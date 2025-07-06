@@ -2,7 +2,7 @@
 Module: custom_splash_screen.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-25
 
 custom_splash_screen.py
 Custom splash screen widget for the oncutf application.

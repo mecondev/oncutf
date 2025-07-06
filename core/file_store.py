@@ -2,7 +2,7 @@
 Module: file_store.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 File Store - Centralized file management
 This module handles all file-related operations, removing them from MainWindow

@@ -2,7 +2,7 @@
 Module: svg_icon_generator.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-20
 
 svg_icon_generator.py
 SVG Icon Generator for OnCutF metadata status icons.

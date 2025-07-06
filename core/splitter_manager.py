@@ -2,7 +2,7 @@
 Module: splitter_manager.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-10
 
 splitter_manager.py
 This module defines the SplitterManager class, which handles all splitter-related

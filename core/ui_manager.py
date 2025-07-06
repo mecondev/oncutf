@@ -2,7 +2,7 @@
 Module: ui_manager.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 ui_manager.py
 Manages UI setup and layout configuration for the main window.

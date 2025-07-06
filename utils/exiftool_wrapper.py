@@ -2,7 +2,7 @@
 Module: exiftool_wrapper.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 exiftool_wrapper.py
 This module provides a lightweight ExifTool wrapper using a persistent

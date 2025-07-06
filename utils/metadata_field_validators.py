@@ -2,7 +2,7 @@
 Module: metadata_field_validators.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-20
 
 metadata_field_validators.py
 Validation system for metadata field editing.

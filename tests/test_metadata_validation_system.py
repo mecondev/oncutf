@@ -2,7 +2,7 @@
 Module: test_metadata_validation_system.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 Tests for metadata validation system
 Comprehensive pytest tests for the metadata validation system including:

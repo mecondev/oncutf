@@ -2,7 +2,7 @@
 Module: metadata_edit_dialog.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-01
 
 metadata_edit_dialog.py
 Generic dialog for editing metadata fields.

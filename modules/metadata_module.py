@@ -2,7 +2,7 @@
 Module: metadata_module.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 This module provides logic for extracting metadata fields (such as creation date,
 modification date, or EXIF tag) to include in renamed filenames.

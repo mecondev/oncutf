@@ -2,7 +2,7 @@
 Module: test_hash_worker_progress.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 test_hash_worker_progress.py
 Tests for HashWorker cumulative progress tracking.

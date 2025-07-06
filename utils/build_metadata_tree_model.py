@@ -2,7 +2,7 @@
 Module: build_metadata_tree_model.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 utils/build_metadata_tree_model.py
 Provides a utility function for converting nested metadata

@@ -2,7 +2,7 @@
 Module: dialog_manager.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 dialog_manager.py
 Manages all dialog and validation operations for the application.

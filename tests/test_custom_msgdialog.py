@@ -2,7 +2,7 @@
 Module: test_custom_msgdialog.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 This module contains unit tests for the CustomMessageDialog class used in the oncutf application.
 CustomMessageDialog is a styled and flexible alternative to the standard QMessageBox, supporting:

@@ -2,7 +2,7 @@
 Module: file_size_formatter.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-10
 
 file_size_formatter.py
 Cross-platform file size formatting utility.

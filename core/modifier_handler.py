@@ -2,7 +2,7 @@
 Module: modifier_handler.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 modifier_handler.py
 Centralized handling of keyboard modifier combinations for file operations.

@@ -2,7 +2,7 @@
 Module: custom_file_system_model.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 custom_file_system_model.py
 Custom QFileSystemModel that uses feather icons instead of OS default icons.

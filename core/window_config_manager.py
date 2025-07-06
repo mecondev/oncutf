@@ -2,7 +2,7 @@
 Module: window_config_manager.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-10
 
 window_config_manager.py
 Manages window configuration including geometry, state, and splitter positions.

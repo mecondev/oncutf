@@ -2,7 +2,7 @@
 Module: shortcut_manager.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 ShortcutManager - Handles keyboard shortcuts
 This manager centralizes keyboard shortcut handling including:

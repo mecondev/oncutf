@@ -2,7 +2,7 @@
 Module: metadata_cache_helper.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-20
 
 utils/metadata_cache_helper.py
 Unified metadata cache access helper to eliminate duplicate patterns.

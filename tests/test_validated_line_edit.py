@@ -2,7 +2,7 @@
 Module: test_validated_line_edit.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 Tests for ValidatedLineEdit widget
 """

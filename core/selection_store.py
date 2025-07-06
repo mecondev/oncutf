@@ -2,7 +2,7 @@
 Module: selection_store.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 Selection Store - Centralized selection state management
 This module provides centralized selection and checked state management,

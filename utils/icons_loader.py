@@ -2,7 +2,7 @@
 Module: icons_loader.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 import os
 from typing import Dict, Optional

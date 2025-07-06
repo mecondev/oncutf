@@ -2,7 +2,7 @@
 Module: metadata_widget.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 Widget for metadata selection (file dates or EXIF), with optimized signal emission system.
 """

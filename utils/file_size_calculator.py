@@ -2,7 +2,7 @@
 Module: file_size_calculator.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-10
 
 file_size_calculator.py
 Utility functions for calculating file and folder sizes for progress tracking.

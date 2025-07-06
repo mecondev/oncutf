@@ -2,7 +2,7 @@
 Module: hash_manager.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-10
 
 hash_manager.py
 Manages file hashing operations, duplicate detection, and file integrity checking.

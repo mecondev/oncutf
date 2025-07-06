@@ -2,7 +2,7 @@
 Module: progress_dialog.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-01
 
 progress_dialog.py
 Unified progress dialog for all background operations in the oncutf application.

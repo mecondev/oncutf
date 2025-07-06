@@ -2,7 +2,7 @@
 Module: drag_zone_validator.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-10
 
 Drag Zone Validator - Common logic for drag & drop zone validation
 This module provides shared logic for validating drop zones during drag operations,

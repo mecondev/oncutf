@@ -2,7 +2,7 @@
 Module: bulk_rotation_dialog.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-01
 
 bulk_rotation_dialog.py
 Dialog for bulk rotation operations.

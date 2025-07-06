@@ -2,7 +2,7 @@
 Module: test_filesize.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 test_filesize.py
 Test script to compare file size calculations between our application

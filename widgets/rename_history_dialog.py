@@ -2,7 +2,7 @@
 Module: rename_history_dialog.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-01
 
 rename_history_dialog.py
 Dialog for viewing and managing rename history with undo functionality.

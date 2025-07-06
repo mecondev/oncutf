@@ -2,7 +2,7 @@
 Module: lazy_metadata_manager.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-25
 
 core/lazy_metadata_manager.py
 Lazy Metadata Manager for intelligent on-demand metadata loading.

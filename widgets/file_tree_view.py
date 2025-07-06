@@ -2,7 +2,7 @@
 Module: file_tree_view.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 file_tree_view.py
 Implements a custom tree view with clean single-item drag implementation.

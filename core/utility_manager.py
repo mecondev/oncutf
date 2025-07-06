@@ -2,7 +2,7 @@
 Module: utility_manager.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 UtilityManager - Handles utility functions and miscellaneous operations
 This manager centralizes utility functions including:

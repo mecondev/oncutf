@@ -2,7 +2,7 @@
 Module: viewport_detector.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-20
 
 utils/viewport_detector.py
 Viewport detection utility for lazy metadata loading.

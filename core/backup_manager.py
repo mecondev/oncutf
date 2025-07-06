@@ -2,7 +2,7 @@
 Module: backup_manager.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-10
 
 This module provides database backup functionality for the oncutf application.
 It handles automatic backups on application shutdown, periodic backups during

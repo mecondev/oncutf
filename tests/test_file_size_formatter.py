@@ -2,7 +2,7 @@
 Module: test_file_size_formatter.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 test_file_size_formatter.py
 Test cases for the FileSizeFormatter utility.

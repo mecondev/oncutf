@@ -2,7 +2,7 @@
 Module: progress_manager.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-25
 
 from typing import Optional
 from core.qt_imports import QWidget

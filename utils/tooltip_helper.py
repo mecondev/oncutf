@@ -2,7 +2,7 @@
 Module: tooltip_helper.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 This module provides centralized tooltip management with custom styling and
 behavior. It supports both temporary tooltips (with auto-hide) and persistent

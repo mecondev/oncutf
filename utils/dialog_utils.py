@@ -2,7 +2,7 @@
 Module: dialog_utils.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 dialog_utils.py
 Utility functions for dialog and widget positioning and management.

@@ -2,7 +2,7 @@
 Module: dpi_helper.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-06-10
 
 dpi_helper.py
 DPI adaptation utilities for cross-platform font and UI scaling.

@@ -2,7 +2,7 @@
 Module: file_drop_helper.py
 
 Author: Michael Economou
-Date: 2025-07-06
+Date: 2025-05-31
 
 file_drop_helper.py
 This module provides modular logic for drag & drop handling in the oncutf file table.
