@@ -187,6 +187,12 @@ class MainWindow(QMainWindow):
         self.app_service = initialize_application_service(self)
         logger.info("[MainWindow] Application Service Layer initialized")
 
+        # --- Initialize Direct Metadata Loader ---
+        from core.direct_metadata_loader import get_direct_metadata_loader
+        self.direct_metadata_loader = get_direct_metadata_loader(self)
+        self.direct_metadata_loader.initialize_cache_helper()
+        logger.info("[MainWindow] Direct Metadata Loader initialized")
+
         # --- Initialize Batch Operations Manager ---
         from core.batch_operations_manager import get_batch_manager
         self.batch_manager = get_batch_manager(self)
@@ -1148,6 +1154,14 @@ class MainWindow(QMainWindow):
         """Step 6: Clean up metadata operations."""
         if hasattr(self, 'metadata_manager') and self.metadata_manager:
             self.metadata_manager.cleanup()
+
+        # Clean up DirectMetadataLoader
+        if hasattr(self, 'direct_metadata_loader') and self.direct_metadata_loader:
+            self.direct_metadata_loader.cleanup()
+
+        # Clean up global DirectMetadataLoader
+        from core.direct_metadata_loader import cleanup_direct_metadata_loader
+        cleanup_direct_metadata_loader()
 
     def _shutdown_step_background(self):
         """Step 7: Clean up background workers."""

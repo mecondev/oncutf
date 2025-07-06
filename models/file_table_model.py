@@ -59,6 +59,7 @@ class FileTableModel(QAbstractTableModel):
         self.metadata_icons = load_metadata_icons()
         self.hash_icon = generate_hash_icon(size=16)  # Generate hash icon
         self._cache_helper = None
+        self._direct_loader = None
 
     def _get_cache_helper(self) -> Optional[MetadataCacheHelper]:
         """Get or create the MetadataCacheHelper instance."""
@@ -67,6 +68,13 @@ class FileTableModel(QAbstractTableModel):
             if metadata_cache:
                 self._cache_helper = MetadataCacheHelper(metadata_cache)
         return self._cache_helper
+
+    def _get_direct_loader(self):
+        """Get or create the DirectMetadataLoader instance."""
+        if self._direct_loader is None and self.parent_window:
+            from core.direct_metadata_loader import get_direct_metadata_loader
+            self._direct_loader = get_direct_metadata_loader(self.parent_window)
+        return self._direct_loader
 
     def _has_hash_cached(self, file_path: str) -> bool:
         """
@@ -268,33 +276,38 @@ class FileTableModel(QAbstractTableModel):
 
             return "\n".join(tooltip_parts)
 
-        if role == Qt.DecorationRole and index.column() == 0: # type: ignore
-            cache_helper = self._get_cache_helper()
-            entry = None
+        if role == Qt.DecorationRole and col == 0: # type: ignore
+            # Use DirectMetadataLoader for immediate cache checking
+            direct_loader = self._get_direct_loader()
+            if not direct_loader:
+                return QIcon()
 
-            if cache_helper:
-                # Create temporary FileItem-like object for cache helper
-                class TempFileItem:
-                    def __init__(self, path):
-                        self.full_path = path
+            # Check cache immediately without loading
+            has_metadata = direct_loader.has_cached_metadata(file)
+            has_hash = direct_loader.has_cached_hash(file)
 
-                temp_file_item = TempFileItem(file.full_path)
-                entry = cache_helper.get_cache_entry_for_file(temp_file_item)
-
-            # Check if file has hash cached first
-            has_hash = self._has_hash_cached(file.full_path)
-
-            # Determine metadata icon - only show if metadata exists
+            # Determine metadata icon type if metadata exists
             metadata_pixmap = None
-            if entry:
-                # Check if metadata has been modified
-                if hasattr(entry, 'modified') and entry.modified:
-                    metadata_pixmap = self.metadata_icons.get("modified")
-                elif entry.is_extended:
-                    metadata_pixmap = self.metadata_icons.get("extended")
-                else:
-                    metadata_pixmap = self.metadata_icons.get("loaded")
-            # No else clause - if no metadata entry, no metadata icon
+            if has_metadata:
+                # Get metadata entry to check type
+                cache_helper = self._get_cache_helper()
+                if cache_helper:
+                    # Create temporary FileItem-like object for cache helper
+                    class TempFileItem:
+                        def __init__(self, path):
+                            self.full_path = path
+
+                    temp_file_item = TempFileItem(file.full_path)
+                    entry = cache_helper.get_cache_entry_for_file(temp_file_item)
+
+                    if entry:
+                        # Check if metadata has been modified
+                        if hasattr(entry, 'modified') and entry.modified:
+                            metadata_pixmap = self.metadata_icons.get("modified")
+                        elif entry.is_extended:
+                            metadata_pixmap = self.metadata_icons.get("extended")
+                        else:
+                            metadata_pixmap = self.metadata_icons.get("loaded")
 
             # Handle different combinations
             if metadata_pixmap and has_hash:

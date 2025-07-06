@@ -1387,9 +1387,6 @@ class FileTableView(QTableView):
             super().scrollTo(index, hint)
         # Otherwise, do nothing - prevent automatic centering
 
-        # Update viewport tracking for lazy loading after scroll
-        self._schedule_viewport_update()
-
     def enable_selection_store_mode(self):
         """Enable SelectionStore mode (disable legacy selection handling)."""
         selection_store = self._get_selection_store()
@@ -1589,58 +1586,3 @@ class FileTableView(QTableView):
         # Fallback to estimated width based on style
         # Most modern themes use 12-16px scrollbars
         return 14  # Conservative estimate
-
-    # =====================================
-    # Viewport Tracking for Lazy Loading
-    # =====================================
-
-    def _schedule_viewport_update(self) -> None:
-        """Schedule a viewport update for lazy loading."""
-        if not hasattr(self, '_viewport_timer') or self._viewport_timer is None:
-            from PyQt5.QtCore import QTimer
-            self._viewport_timer = QTimer()
-            self._viewport_timer.setSingleShot(True)
-            self._viewport_timer.timeout.connect(self._update_viewport_for_lazy_loading)
-
-        # Debounce viewport updates (avoid excessive calls during scrolling)
-        self._viewport_timer.stop()
-        self._viewport_timer.start(200)  # 200ms delay
-
-    def _update_viewport_for_lazy_loading(self) -> None:
-        """Update lazy loading manager with current viewport information."""
-        try:
-            # Get visible files in viewport
-            visible_files = ViewportDetector.get_visible_files(self, self.model())
-
-            if not visible_files:
-                return
-
-            # Get parent window and metadata tree view
-            parent_window = self._get_parent_with_metadata_tree()
-            if not parent_window or not hasattr(parent_window, 'metadata_tree_view'):
-                return
-
-            metadata_tree_view = parent_window.metadata_tree_view
-            if not metadata_tree_view:
-                return
-
-            # Get lazy manager from metadata tree view
-            lazy_manager = metadata_tree_view._get_lazy_manager()
-            if not lazy_manager:
-                return
-
-            # Request viewport-based metadata loading
-            lazy_manager.request_metadata_for_viewport(visible_files)
-
-            # Store timestamp of last update
-            from datetime import datetime
-            self._last_viewport_update = datetime.now()
-
-            logger.debug(f"[FileTableView] Updated viewport for lazy loading: {len(visible_files)} visible files")
-
-        except Exception as e:
-            logger.warning(f"[FileTableView] Error updating viewport for lazy loading: {e}")
-
-    def trigger_viewport_update(self) -> None:
-        """Manually trigger a viewport update for lazy loading."""
-        self._schedule_viewport_update()

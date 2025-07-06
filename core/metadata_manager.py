@@ -182,7 +182,7 @@ class MetadataManager:
 
     def load_metadata_for_items(self, items: List[FileItem], use_extended: bool = False, source: str = "unknown") -> None:
         """
-        Load metadata for the given FileItem objects.
+        Load metadata for the given FileItem objects using DirectMetadataLoader.
 
         Args:
             items: List of FileItem objects to load metadata for
@@ -193,55 +193,16 @@ class MetadataManager:
             logger.warning("[MetadataManager] No items provided for metadata loading")
             return
 
-        # Reset cancellation flag for new metadata loading operation
-        self.reset_cancellation_flag()
+        # Use DirectMetadataLoader for simple, efficient loading
+        from core.direct_metadata_loader import get_direct_metadata_loader
 
-        # Check what items need loading vs what's already cached
-        needs_loading = []
+        direct_loader = get_direct_metadata_loader(self.parent_window)
+        direct_loader.initialize_cache_helper()
 
-        for item in items:
-            # Check cache for existing metadata
-            cache_entry = self.parent_window.metadata_cache.get_entry(item.full_path) if self.parent_window else None
+        # Load metadata for files that need it
+        direct_loader.load_metadata_for_files(items, use_extended, source)
 
-            if cache_entry and hasattr(cache_entry, 'is_extended'):
-                # Smart loading logic:
-                # - If we have the exact type requested, skip
-                # - If we have extended and requesting basic, skip (extended includes basic)
-                # - If we have basic and requesting extended, load extended
-                if cache_entry.is_extended == use_extended:
-                    continue
-                elif cache_entry.is_extended and not use_extended:
-                    # We have extended but requesting basic - extended includes basic, so skip
-                    continue
-
-            needs_loading.append(item)
-
-        # Get metadata tree view reference
-        metadata_tree_view = (self.parent_window.metadata_tree_view
-                            if self.parent_window and hasattr(self.parent_window, 'metadata_tree_view')
-                            else None)
-
-        # If nothing needs loading, just handle display logic
-        if not needs_loading:
-            logger.info(f"[{source}] All {len(items)} files already cached")
-
-            # Always display metadata for cached items too
-            if metadata_tree_view and items:
-                # Always display metadata - same logic as loaded items
-                display_file = items[0] if len(items) == 1 else items[-1]
-                metadata_tree_view.display_file_metadata(display_file)
-
-            return
-
-        # Determine loading mode: single file + fast metadata = wait_cursor, everything else = worker
-        should_use_wait_cursor = (len(needs_loading) == 1 and not use_extended)
-
-        if should_use_wait_cursor:
-            logger.info(f"[{source}] Loading fast metadata for single file with wait_cursor")
-            self._load_single_file_with_wait_cursor(needs_loading[0], metadata_tree_view)
-        else:
-            logger.info(f"[{source}] Loading metadata for {len(needs_loading)} files with worker (extended={use_extended})")
-            self._load_files_with_worker(needs_loading, use_extended, metadata_tree_view)
+        logger.info(f"[MetadataManager] Initiated metadata loading for {len(items)} files via DirectMetadataLoader")
 
     def _load_single_file_with_wait_cursor(self, file_item: FileItem, metadata_tree_view) -> None:
         """Load metadata for a single file using wait cursor (fast metadata only)."""

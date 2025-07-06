@@ -78,8 +78,7 @@ from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust, s
 from widgets.file_tree_view import _drag_cancel_filter
 from widgets.metadata_edit_dialog import MetadataEditDialog
 from utils.metadata_cache_helper import MetadataCacheHelper
-from core.lazy_metadata_manager import LazyMetadataManager
-from utils.viewport_detector import ViewportDetector
+from core.direct_metadata_loader import get_direct_metadata_loader
 
 # ApplicationContext integration
 try:
@@ -216,9 +215,9 @@ class MetadataTreeView(QTreeView):
         # Initialize cache helper when parent is available
         self._initialize_cache_helper()
 
-        # Initialize lazy metadata manager
-        self._lazy_manager: Optional[LazyMetadataManager] = None
-        self._initialize_lazy_manager()
+        # Initialize direct metadata loader
+        self._direct_loader = None
+        self._initialize_direct_loader()
 
     def _initialize_cache_helper(self) -> None:
         """Initialize the MetadataCacheHelper when parent window is available."""
@@ -233,23 +232,18 @@ class MetadataTreeView(QTreeView):
             self._initialize_cache_helper()
         return self._cache_helper
 
-    def _initialize_lazy_manager(self) -> None:
-        """Initialize the LazyMetadataManager when parent window is available."""
+    def _initialize_direct_loader(self) -> None:
+        """Initialize the DirectMetadataLoader when parent window is available."""
         parent_window = self._get_parent_with_file_table()
         if parent_window:
-            self._lazy_manager = LazyMetadataManager(parent_window)
-            self._lazy_manager.initialize_cache_helper()
+            self._direct_loader = get_direct_metadata_loader(parent_window)
+            logger.debug("[MetadataTreeView] DirectMetadataLoader initialized")
 
-            # Connect signals
-            self._lazy_manager.metadata_loaded.connect(self._on_lazy_metadata_loaded)
-
-            logger.debug("[MetadataTreeView] LazyMetadataManager initialized")
-
-    def _get_lazy_manager(self) -> Optional[LazyMetadataManager]:
-        """Get the LazyMetadataManager instance, initializing if needed."""
-        if self._lazy_manager is None:
-            self._initialize_lazy_manager()
-        return self._lazy_manager
+    def _get_direct_loader(self):
+        """Get the DirectMetadataLoader instance, initializing if needed."""
+        if self._direct_loader is None:
+            self._initialize_direct_loader()
+        return self._direct_loader
 
     def _setup_tree_view_properties(self) -> None:
         """Configure standard tree view properties."""
