@@ -64,22 +64,24 @@ class DirectMetadataLoader(QObject):
         Returns:
             Metadata dict if cached, None if not available
         """
-        if not self._cache_helper:
-            return None
-
         try:
-            # Direct cache check using persistent cache
+            # Direct cache check using persistent cache (same as has_cached_metadata)
             from core.persistent_metadata_cache import get_persistent_metadata_cache
             cache = get_persistent_metadata_cache()
 
-            # Get metadata directly from persistent cache using get() method
-            metadata = cache.get(file_item.full_path)
-            if metadata:
-                # Filter out internal markers to check if there's real metadata
-                real_metadata = {k: v for k, v in metadata.items() if not k.startswith('__')}
-                if real_metadata:
-                    logger.debug(f"[DirectMetadataLoader] Cache hit for {file_item.filename}")
-                    return metadata
+            # First check if metadata exists using has() method
+            if cache.has(file_item.full_path):
+                # Get metadata directly from persistent cache using get() method
+                metadata = cache.get(file_item.full_path)
+                if metadata:
+                    # Filter out internal markers to check if there's real metadata
+                    real_metadata = {k: v for k, v in metadata.items() if not k.startswith('__')}
+                    if real_metadata:
+                        logger.debug(f"[DirectMetadataLoader] Cache hit for {file_item.filename}")
+                        return metadata
+                    else:
+                        logger.debug(f"[DirectMetadataLoader] Empty metadata for {file_item.filename}")
+                        return None
 
             logger.debug(f"[DirectMetadataLoader] No cached metadata for {file_item.filename}")
             return None
@@ -153,8 +155,8 @@ class DirectMetadataLoader(QObject):
             from core.persistent_hash_cache import get_persistent_hash_cache
             cache = get_persistent_hash_cache()
 
-            # Use has() method to check existence
-            return cache.has(file_item.full_path)
+            # Use has_hash() method to check existence
+            return cache.has_hash(file_item.full_path)
 
         except Exception as e:
             logger.warning(f"[DirectMetadataLoader] Error checking hash existence for {file_item.filename}: {e}")

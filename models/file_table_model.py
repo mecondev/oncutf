@@ -289,25 +289,18 @@ class FileTableModel(QAbstractTableModel):
             # Determine metadata icon type if metadata exists
             metadata_pixmap = None
             if has_metadata:
-                # Get metadata entry to check type
-                cache_helper = self._get_cache_helper()
-                if cache_helper:
-                    # Create temporary FileItem-like object for cache helper
-                    class TempFileItem:
-                        def __init__(self, path):
-                            self.full_path = path
+                # Get actual metadata to determine type
+                metadata_dict = direct_loader.check_cached_metadata(file)
+                if metadata_dict:
+                    # Check if it's extended metadata (has more comprehensive data)
+                    is_extended = len(metadata_dict) > 10  # Simple heuristic
 
-                    temp_file_item = TempFileItem(file.full_path)
-                    entry = cache_helper.get_cache_entry_for_file(temp_file_item)
-
-                    if entry:
-                        # Check if metadata has been modified
-                        if hasattr(entry, 'modified') and entry.modified:
-                            metadata_pixmap = self.metadata_icons.get("modified")
-                        elif entry.is_extended:
-                            metadata_pixmap = self.metadata_icons.get("extended")
-                        else:
-                            metadata_pixmap = self.metadata_icons.get("loaded")
+                    # For now, just show basic loaded icon
+                    # TODO: Add logic to detect modified metadata
+                    if is_extended:
+                        metadata_pixmap = self.metadata_icons.get("extended")
+                    else:
+                        metadata_pixmap = self.metadata_icons.get("loaded")
 
             # Handle different combinations
             if metadata_pixmap and has_hash:
@@ -497,13 +490,32 @@ class FileTableModel(QAbstractTableModel):
         if direct_loader:
             direct_loader.initialize_cache_helper()
 
+        # Μετρητής για στατιστικά
+        cached_metadata_count = 0
+        cached_hash_count = 0
+
         # Ενημέρωση icons για αρχεία με cached metadata/hash
         for i, file_item in enumerate(self.files):
-            index = self.index(i, 0)
-            # Emit dataChanged για την πρώτη στήλη (icons)
-            self.dataChanged.emit(index, index, [Qt.DecorationRole, Qt.ToolTipRole])
+            # Έλεγχος για cached δεδομένα
+            has_metadata = False
+            has_hash = False
 
-        logger.debug(f"[FileTableModel] Updated icons immediately for {len(self.files)} files")
+            if direct_loader:
+                has_metadata = direct_loader.has_cached_metadata(file_item)
+                has_hash = direct_loader.has_cached_hash(file_item)
+
+                if has_metadata:
+                    cached_metadata_count += 1
+                if has_hash:
+                    cached_hash_count += 1
+
+            # Ενημέρωση icon αν υπάρχουν cached δεδομένα
+            if has_metadata or has_hash:
+                index = self.index(i, 0)
+                # Emit dataChanged για την πρώτη στήλη (icons)
+                self.dataChanged.emit(index, index, [Qt.DecorationRole, Qt.ToolTipRole])
+
+        logger.debug(f"[FileTableModel] Updated icons immediately for {len(self.files)} files (metadata: {cached_metadata_count}, hash: {cached_hash_count})")
 
         # Προσθήκη QTimer για delayed update αν χρειάζεται
         from PyQt5.QtCore import QTimer
