@@ -132,6 +132,7 @@ class MainWindow(QMainWindow):
         self.files = []
         self.preview_map = {}  # preview_filename -> FileItem
         self._selection_sync_mode = "normal"  # values: "normal", "toggle"
+        self.pending_completion_dialog = None  # For delayed completion dialog execution
 
         # --- Initialize managers first ---
         self.dialog_manager = DialogManager()

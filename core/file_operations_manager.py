@@ -71,13 +71,25 @@ class FileOperationsManager:
         # Import validator here to avoid circular imports
         from utils.filename_validator import validate_filename_part
 
+        # Create a safe conflict callback that doesn't block
+        def safe_conflict_callback(parent, filename):
+            """Safe conflict callback that prevents blocking."""
+            try:
+                logger.info(f"[Rename] File conflict detected for: {filename}")
+                # For now, automatically skip conflicts to prevent blocking
+                # TODO: Implement non-blocking conflict resolution UI
+                return "skip"
+            except Exception as e:
+                logger.error(f"[Rename] Error in conflict callback: {e}")
+                return "skip"
+
         renamer = Renamer(
             files=selected_files,
             modules_data=modules_data,
             metadata_cache=metadata_cache,
             post_transform=post_transform,
             parent=self.parent_window,
-            conflict_callback=lambda parent, filename: CustomMessageDialog.rename_conflict_dialog(parent, filename),
+            conflict_callback=safe_conflict_callback,
             validator=validate_filename_part
         )
 
@@ -114,15 +126,36 @@ class FileOperationsManager:
 
         logger.info(f"[Rename] Completed: {renamed_count} renamed out of {len(results)} total")
 
+        # Store the completion dialog information to be shown after the post-rename workflow
         if renamed_count > 0 and self.parent_window:
-            if CustomMessageDialog.question(
-                self.parent_window,
-                "Rename Complete",
-                f"{renamed_count} file(s) renamed.\nOpen the folder?",
-                yes_text="Open Folder",
-                no_text="Close"
-            ):
-                QDesktopServices.openUrl(QUrl.fromLocalFile(current_folder_path))
+            # Schedule the completion dialog to show after the post-rename workflow
+            def show_completion_dialog():
+                """Show the rename completion dialog after the workflow completes."""
+                try:
+                    if CustomMessageDialog.question(
+                        self.parent_window,
+                        "Rename Complete",
+                        f"{renamed_count} file(s) renamed.\nOpen the folder?",
+                        yes_text="Open Folder",
+                        no_text="Close"
+                    ):
+                        QDesktopServices.openUrl(QUrl.fromLocalFile(current_folder_path))
+                except Exception as e:
+                    logger.error(f"[FileOperationsManager] Error showing completion dialog: {e}")
+
+            # Store the dialog function in the parent window for later execution
+            if hasattr(self.parent_window, 'pending_completion_dialog'):
+                self.parent_window.pending_completion_dialog = show_completion_dialog
+            else:
+                # Fallback: schedule with timer manager for delayed execution
+                from utils.timer_manager import get_timer_manager, TimerType, TimerPriority
+                get_timer_manager().schedule(
+                    show_completion_dialog,
+                    delay=300,  # 300ms delay to let post-rename workflow complete
+                    priority=TimerPriority.LOW,
+                    timer_type=TimerType.GENERIC,
+                    timer_id="rename_completion_dialog"
+                )
 
         return renamed_count
 

@@ -340,6 +340,9 @@ class StatusManager:
     def finish_operation(self, operation_id: str, success: bool = True,
                         final_message: str = "") -> None:
         """Finish an operation and clean up context."""
+        # First, prepare the status data without holding the lock
+        status_data = None
+
         with self._lock:
             if operation_id in self._operation_contexts:
                 context = self._operation_contexts[operation_id]
@@ -358,14 +361,15 @@ class StatusManager:
                         StatusCategory.GENERAL
                     )
 
-                    self.set_status(
-                        final_message,
-                        color=STATUS_COLORS["operation_success"] if success else STATUS_COLORS["error"],
-                        auto_reset=True,
-                        category=category,
-                        priority=StatusPriority.HIGH if not success else StatusPriority.NORMAL,
-                        operation_id=operation_id
-                    )
+                    # Prepare status data to call set_status outside the lock
+                    status_data = {
+                        'message': final_message,
+                        'color': STATUS_COLORS["operation_success"] if success else STATUS_COLORS["error"],
+                        'auto_reset': True,
+                        'category': category,
+                        'priority': StatusPriority.HIGH if not success else StatusPriority.NORMAL,
+                        'operation_id': operation_id
+                    }
 
                 logger.info(
                     f"[StatusManager] Finished operation: {operation_id} "
@@ -377,6 +381,17 @@ class StatusManager:
 
                 if self._current_operation == operation_id:
                     self._current_operation = None
+
+        # Call set_status outside the lock to avoid deadlock
+        if status_data:
+            self.set_status(
+                status_data['message'],
+                color=status_data['color'],
+                auto_reset=status_data['auto_reset'],
+                category=status_data['category'],
+                priority=status_data['priority'],
+                operation_id=status_data['operation_id']
+            )
 
     # =====================================
     # Bulk Operations Support

@@ -63,17 +63,17 @@ class RenameModuleWidget(QWidget):
         from modules.specified_text_module import SpecifiedTextModule
 
         self.module_instances = {
-            "Original Name": OriginalNameWidget,
-            "Specified Text": SpecifiedTextModule,
             "Counter": CounterModule,
-            "Metadata": MetadataWidget
+            "Metadata": MetadataWidget,
+            "Original Name": OriginalNameWidget,
+            "Specified Text": SpecifiedTextModule
         }
 
         self.module_heights = {
-            "Original Name": 34,  # Reduced: just one line with minimal padding
-            "Specified Text": 37,  # Increased: 3px more space to prevent clipping
             "Counter": 88,  # Increased: 4px more space to prevent focus border clipping
-            "Metadata": 74   # Increased: 12px more space for increased row spacing
+            "Metadata": 74,   # Increased: 12px more space for increased row spacing
+            "Original Name": 34,  # Reduced: just one line with minimal padding
+            "Specified Text": 37  # Increased: 3px more space to prevent clipping
         }
 
         self.current_module_widget = None

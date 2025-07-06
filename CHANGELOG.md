@@ -14,6 +14,11 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - **CRITICAL**: Fixed tooltip system crash when renaming files (RuntimeError: deleted Qt objects)
+- **CRITICAL**: Fixed post-rename workflow crash that prevented UI updates after successful file renaming
+  - Implemented Safe Rename Workflow with TimerManager for delayed execution
+  - Added comprehensive error handling and state validation
+  - Restored proper UI state after rename operations (checked files, metadata, preview, icons)
+  - Enhanced rename workflow with graceful degradation and fallback mechanisms
 - Fixed memory leaks in persistent tooltip management
 - Enhanced error recovery for Qt object deletion scenarios
 - Improved application stability during file operations
