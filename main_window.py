@@ -512,7 +512,7 @@ class MainWindow(QMainWindow):
     def _enable_selection_store_mode(self):
         """Enable selection store mode in file table view after UI initialization."""
         if hasattr(self, 'file_table_view'):
-            logger.debug("[MainWindow] Enabling SelectionStore mode in FileTableView")
+            logger.debug("[MainWindow] Enabling SelectionStore mode in FileTableView", extra={"dev_only": True})
             self.file_table_view.enable_selection_store_mode()
 
     # =====================================
@@ -621,7 +621,7 @@ class MainWindow(QMainWindow):
             if hasattr(self.file_table_view, '_trigger_column_adjustment'):
                 self.file_table_view._trigger_column_adjustment()
 
-            logger.debug("[MainWindow] Used original FileTableView column configuration")
+            logger.debug("[MainWindow] Used original FileTableView column configuration", extra={"dev_only": True})
 
         # Configure other table views with ColumnManager (they don't have the sophisticated logic)
         if hasattr(self, 'metadata_tree_view') and self.metadata_tree_view:
@@ -847,9 +847,8 @@ class MainWindow(QMainWindow):
 
             # Make dialog more visible and prevent it from closing
             self.shutdown_dialog.setWindowTitle("Closing OnCutF...")
-            self.shutdown_dialog.setWindowFlags(
-                self.shutdown_dialog.windowFlags() | Qt.WindowStaysOnTopHint  # type: ignore
-            )
+            # Remove WindowStaysOnTopHint to prevent focus stealing
+            # The dialog will be visible but won't force itself on top
             self.shutdown_dialog.set_status("Preparing to close...")
 
             # Prevent dialog from being closed by user
@@ -857,10 +856,8 @@ class MainWindow(QMainWindow):
                 self.shutdown_dialog.windowFlags() & ~Qt.WindowCloseButtonHint  # type: ignore
             )
 
-            # Force show and ensure it's visible
+            # Show dialog but don't force focus
             self.shutdown_dialog.show()
-            self.shutdown_dialog.raise_()
-            self.shutdown_dialog.activateWindow()
 
             # Move dialog to center of screen
             screen = QApplication.desktop().screenGeometry()  # type: ignore
@@ -871,7 +868,7 @@ class MainWindow(QMainWindow):
 
             QApplication.processEvents()
 
-            logger.info("[CloseEvent] Shutdown dialog created and shown with wait cursor (ESC disabled)")
+            logger.info("[CloseEvent] Shutdown dialog created and shown (ESC disabled, no focus stealing)")
 
             # Setup shutdown steps
             self.shutdown_steps = [
@@ -934,10 +931,8 @@ class MainWindow(QMainWindow):
                 self.shutdown_dialog.set_status(step_name)
                 self.shutdown_dialog.set_progress(self.current_shutdown_step, self.total_shutdown_steps)
 
-                # Force dialog to stay visible and on top
+                # Keep dialog visible but don't force focus
                 self.shutdown_dialog.show()
-                self.shutdown_dialog.raise_()
-                self.shutdown_dialog.activateWindow()
                 QApplication.processEvents()
             else:
                 logger.warning("[CloseEvent] Shutdown dialog is not visible, recreating...")
@@ -987,19 +982,16 @@ class MainWindow(QMainWindow):
 
             # Make dialog more visible and prevent it from closing
             self.shutdown_dialog.setWindowTitle("Closing OnCutF...")
-            self.shutdown_dialog.setWindowFlags(
-                self.shutdown_dialog.windowFlags() | Qt.WindowStaysOnTopHint  # type: ignore
-            )
+            # Remove WindowStaysOnTopHint to prevent focus stealing
+            # The dialog will be visible but won't force itself on top
 
             # Prevent dialog from being closed by user
             self.shutdown_dialog.setWindowFlags(
                 self.shutdown_dialog.windowFlags() & ~Qt.WindowCloseButtonHint  # type: ignore
             )
 
-            # Force show and ensure it's visible
+            # Show dialog but don't force focus
             self.shutdown_dialog.show()
-            self.shutdown_dialog.raise_()
-            self.shutdown_dialog.activateWindow()
 
             # Move dialog to center of screen
             screen = QApplication.desktop().screenGeometry()  # type: ignore
@@ -1009,7 +1001,7 @@ class MainWindow(QMainWindow):
             self.shutdown_dialog.move(x, y)
 
             QApplication.processEvents()
-            logger.info("[CloseEvent] Shutdown dialog recreated (ESC disabled)")
+            logger.info("[CloseEvent] Shutdown dialog recreated (ESC disabled, no focus stealing)")
 
         except Exception as e:
             logger.error(f"[CloseEvent] Error recreating shutdown dialog: {e}")
@@ -1031,10 +1023,8 @@ class MainWindow(QMainWindow):
                     self.shutdown_dialog.set_status("Cleanup complete!")
                     self.shutdown_dialog.set_progress(self.total_shutdown_steps, self.total_shutdown_steps)
 
-                    # Force dialog to stay visible
+                    # Keep dialog visible but don't force focus
                     self.shutdown_dialog.show()
-                    self.shutdown_dialog.raise_()
-                    self.shutdown_dialog.activateWindow()
                     QApplication.processEvents()
 
                     logger.info("[CloseEvent] Shutdown completion status shown")

@@ -164,13 +164,18 @@ class Renamer:
                 logger.error(f"Rename failed for {src}: {str(e)}")
                 results.append(RenameResult(src, dst, success=False, error=str(e)))
 
-        for result in results:
-            if result.success and result.old_path in self.metadata_cache._cache:
-                metadata = self.metadata_cache.get(result.old_path)
-                if isinstance(metadata, dict):
-                    clean_meta = filter_metadata_safe(metadata)
-                    clean_meta["FileName"] = os.path.basename(result.new_path)
-                    self.metadata_cache.set(result.new_path, clean_meta)
+        # Update metadata cache for renamed files
+        try:
+            for result in results:
+                if result.success:
+                    # Check if metadata exists for the old path
+                    metadata = self.metadata_cache.get(result.old_path)
+                    if metadata and isinstance(metadata, dict):
+                        clean_meta = filter_metadata_safe(metadata)
+                        clean_meta["FileName"] = os.path.basename(result.new_path)
+                        self.metadata_cache.set(result.new_path, clean_meta)
+        except Exception as e:
+            logger.error(f"[Renamer] Error updating metadata cache: {e}")
 
         return results
 

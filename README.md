@@ -123,7 +123,7 @@ python3.9 main.py
 - **Ctrl+Shift+A**: Clear all selection
 - **Ctrl+I**: Invert selection
 - **Ctrl+O**: Browse for files
-- **Ctrl+R**: Force reload current folder
+- **F5**: Force reload current folder
 - **Ctrl+M**: Load basic metadata for selected files
 - **Ctrl+E**: Load extended metadata for selected files
 - **Ctrl+S**: Save selected metadata

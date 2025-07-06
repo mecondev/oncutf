@@ -37,12 +37,12 @@ class OriginalNameModule:
             str: Original filename base with optional Greeklish conversion
         """
         base_name = os.path.splitext(file_item.filename)[0]
-        logger.debug(f"[OriginalNameModule] Starting with: {base_name}")
+        logger.debug(f"[OriginalNameModule] Starting with: {base_name}", extra={"dev_only": True})
 
         # Only apply Greeklish transformation if requested
         if data.get("greeklish"):
             base_name = apply_transform(base_name, "greeklish")
-            logger.debug(f"[OriginalNameModule] After Greeklish: {base_name}")
+            logger.debug(f"[OriginalNameModule] After Greeklish: {base_name}", extra={"dev_only": True})
 
         if not base_name.strip():
             logger.warning(f"[OriginalNameModule] Empty result fallback to original filename: {file_item.filename}")

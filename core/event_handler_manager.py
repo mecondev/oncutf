@@ -102,70 +102,15 @@ class EventHandlerManager:
         from utils.icons_loader import get_menu_icon
         from config import QLABEL_MUTED_TEXT
 
-        # Create a custom menu class for better shortcut styling
-        class StyledMenu(QMenu):
-            def __init__(self, parent=None):
-                super().__init__(parent)
-                self.setStyleSheet(f"""
-                    QMenu {{
-                        background-color: #232323;
-                        color: #f0ebd8;
-                        border: none;
-                        border-radius: 8px;
-                        font-size: 9pt;
-                    }}
-                    QMenu::item {{
-                        background-color: transparent;
-                        color: #f0ebd8;
-                        padding: 6px 16px 6px 16px;
-                        border-radius: 6px;
-                        margin: 1px;
-                    }}
-                    QMenu::item:hover {{
-                        background-color: #3e5c76;
-                        color: #f0ebd8;
-                        border-radius: 6px;
-                    }}
-                    QMenu::item:selected {{
-                        background-color: #748cab;
-                        color: #0d1321;
-                        border-radius: 6px;
-                    }}
-                    QMenu::item:pressed {{
-                        background-color: #748cab;
-                        color: #0d1321;
-                        border-radius: 6px;
-                    }}
-                    QMenu::item:disabled {{
-                        color: #555555;
-                        background-color: transparent;
-                    }}
-                    QMenu::separator {{
-                        background-color: #5a5a5a;
-                        height: 1px;
-                        margin: 2px 8px;
-                    }}
-                """)
 
-        # Helper function to create actions with styled shortcuts
+                        # Helper function to create actions with shortcuts
         def create_action_with_shortcut(icon, text, shortcut=None):
+            action = QAction(text, self.parent_window)
+            action.setIcon(icon)
             if shortcut:
-                # Create rich text with right-aligned shortcut
-                rich_text = f"""
-                <table width="100%" cellpadding="0" cellspacing="0">
-                    <tr>
-                        <td align="left" style="color: #f0ebd8; font-weight: normal;">{text}</td>
-                        <td align="right" style="color: {QLABEL_MUTED_TEXT}; font-weight: bold; padding-left: 20px;">{shortcut}</td>
-                    </tr>
-                </table>
-                """
-                action = QAction(rich_text, self.parent_window)
-                action.setIcon(icon)
-                return action
-            else:
-                action = QAction(text, self.parent_window)
-                action.setIcon(icon)
-                return action
+                # Use tab character for right alignment - Qt handles this automatically
+                action.setText(f"{text}\t{shortcut}")
+            return action
 
         # Get total files for context
         total_files = len(self.parent_window.file_model.files)
@@ -176,7 +121,44 @@ class EventHandlerManager:
 
         logger.debug(f"Context menu: {len(selected_files)} selected files", extra={"dev_only": True})
 
-        menu = StyledMenu(self.parent_window)
+        menu = QMenu(self.parent_window)
+
+        # Enhanced styling for better appearance and spacing
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #232323;
+                color: #f0ebd8;
+                border: none;
+                border-radius: 8px;
+                font-family: "Inter", "Segoe UI", Arial, sans-serif;
+                font-size: 9pt;
+                padding: 6px 4px;
+            }
+            QMenu::item {
+                background-color: transparent;
+                padding: 3px 16px 3px 8px;
+                margin: 1px 2px;
+                border-radius: 4px;
+                min-height: 16px;
+                icon-size: 16px;
+            }
+            QMenu::item:selected {
+                background-color: #748cab;
+                color: #0d1321;
+            }
+            QMenu::item:disabled {
+                color: #888888;
+            }
+            QMenu::icon {
+                padding-left: 6px;
+                padding-right: 6px;
+            }
+            QMenu::separator {
+                background-color: #5a5a5a;
+                height: 1px;
+                margin: 4px 8px;
+            }
+        """)
 
         # Smart Metadata actions
         selected_analysis = self._analyze_metadata_state(selected_files)
@@ -219,7 +201,7 @@ class EventHandlerManager:
         menu.addSeparator()
 
         # Other actions
-        action_reload = create_action_with_shortcut(get_menu_icon("refresh-cw"), "Reload folder", "Ctrl+R")
+        action_reload = create_action_with_shortcut(get_menu_icon("refresh-cw"), "Reload folder", "F5")
         action_clear_table = create_action_with_shortcut(get_menu_icon("x"), "Clear file table", "Shift+Esc")
 
         menu.addAction(action_reload)

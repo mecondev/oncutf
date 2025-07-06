@@ -13,10 +13,13 @@ Applies all styling globally to handle dynamically created widgets.
 
 """
 
+import logging
 import platform
 
 import config
 from core.pyqt_imports import QApplication, QMainWindow
+
+logger = logging.getLogger(__name__)
 
 
 class ThemeEngine:
@@ -117,34 +120,30 @@ class ThemeEngine:
             'disabled_text': '#666666',
         }
 
-        # Font definitions (platform-specific)
-        if self.is_windows:
-            # Use Inter fonts on Windows too (same as Linux)
-            self.fonts = {
-                'base_family': 'Inter',
-                'base_size': '9pt',
-                'base_weight': '400',
-                'interface_size': '9pt',
-                'tree_size': '10pt',
-                'medium_weight': '500',
-                'semibold_weight': '600',
-            }
-        else:
-            self.fonts = {
-                'base_family': 'Inter',
-                'base_size': '9pt',
-                'base_weight': '400',
-                'interface_size': '9pt',
-                'tree_size': '10pt',
-                'medium_weight': '500',
-                'semibold_weight': '600',
-            }
+        # Font definitions (using Inter fonts for all platforms)
+        self.fonts = {
+            'base_family': 'Inter',
+            'base_size': '9pt',
+            'base_weight': '400',
+            'interface_size': '9pt',
+            'tree_size': '10pt',
+            'medium_weight': '500',
+            'semibold_weight': '600',
+        }
 
     def apply_complete_theme(self, app: QApplication, main_window: QMainWindow):
         """Apply complete theming to the entire application."""
         # Clear any existing stylesheets
         app.setStyleSheet("")
         main_window.setStyleSheet("")
+
+        # Load Inter fonts first
+        self._load_inter_fonts()
+
+        # Set application font programmatically for better consistency
+        from utils.fonts import get_inter_font
+        app_font = get_inter_font('base', int(self.fonts['base_size'].replace('pt', '')))
+        app.setFont(app_font)
 
         # Create complete global stylesheet with DPI awareness
         global_style = self._get_complete_stylesheet()
@@ -163,6 +162,15 @@ class ThemeEngine:
         # Apply Windows-specific ComboBox fixes if on Windows
         if self.is_windows:
             self._apply_windows_combobox_fixes(app)
+
+    def _load_inter_fonts(self):
+        """Load Inter fonts from resources"""
+        try:
+            from utils.fonts import _get_inter_fonts
+            inter_fonts = _get_inter_fonts()
+            logger.debug(f"[Theme] Inter fonts loaded: {len(inter_fonts.loaded_fonts)} fonts")
+        except Exception as e:
+            logger.error(f"[Theme] Failed to load Inter fonts: {e}")
 
     def _get_complete_stylesheet(self) -> str:
         """Get the complete stylesheet for the application."""

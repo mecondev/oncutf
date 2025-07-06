@@ -51,14 +51,14 @@ def generate_preview_names(
 
     for index, file in enumerate(files):
         name_parts = []
-        logger.debug(f"[PreviewGen] Start: file='{file.filename}', extension='{file.extension}'")
+        logger.debug(f"[PreviewGen] Start: file='{file.filename}', extension='{file.extension}'", extra={"dev_only": True})
         for module in modules_data:
             module_type = module.get("type")
-            logger.debug(f"[PreviewGen] Module: {module_type} | data={module}")
+            logger.debug(f"[PreviewGen] Module: {module_type} | data={module}", extra={"dev_only": True})
 
             if module_type == "specified_text":
                 text = module.get("text", "")
-                logger.debug(f"[PreviewGen] SpecifiedText: '{text}'")
+                logger.debug(f"[PreviewGen] SpecifiedText: '{text}'", extra={"dev_only": True})
                 name_parts.append(text)
 
             elif module_type == "counter":
@@ -66,13 +66,13 @@ def generate_preview_names(
                 padding = module.get("padding", 4)
                 step = module.get("step", 1)
                 value = start + (index * step)
-                logger.debug(f"[PreviewGen] Counter: value={value}, padding={padding}")
+                logger.debug(f"[PreviewGen] Counter: value={value}, padding={padding}", extra={"dev_only": True})
                 name_parts.append(str(value).zfill(padding))
 
             elif module_type == "original_name":
                 try:
                     result = OriginalNameModule.apply_from_data(module, file, index)
-                    logger.debug(f"[PreviewGen] OriginalName result: '{result}'")
+                    logger.debug(f"[PreviewGen] OriginalName result: '{result}'", extra={"dev_only": True})
                     name_parts.append(result)
                 except Exception as e:
                     logger.warning(f"[PreviewGen] Exception in OriginalNameModule for {file.filename}: {e}")
@@ -82,23 +82,23 @@ def generate_preview_names(
                 # Use MetadataModule for consistency with preview engine
                 try:
                     result = MetadataModule.apply_from_data(module, file, index, metadata_cache)
-                    logger.debug(f"[PreviewGen] Metadata result: '{result}'")
+                    logger.debug(f"[PreviewGen] Metadata result: '{result}'", extra={"dev_only": True})
                     name_parts.append(result)
                 except Exception as e:
                     logger.warning(f"[PreviewGen] Exception in MetadataModule for {file.filename}: {e}")
                     name_parts.append("unknown")
 
             else:
-                logger.debug(f"[PreviewGen] Invalid module type: {module_type}")
+                logger.debug(f"[PreviewGen] Invalid module type: {module_type}", extra={"dev_only": True})
                 name_parts.append("invalid")
 
-        logger.debug(f"[PreviewGen] All parts before join: {name_parts}")
+        logger.debug(f"[PreviewGen] All parts before join: {name_parts}", extra={"dev_only": True})
         new_basename = "".join(name_parts)
-        logger.debug(f"[PreviewGen] Basename before extension: '{new_basename}'")
+        logger.debug(f"[PreviewGen] Basename before extension: '{new_basename}'", extra={"dev_only": True})
         extension = file.extension or ""
         if extension and not extension.startswith("."):
             extension = "." + extension
-        logger.debug(f"[PreviewGen] Extension to use: '{extension}'")
+        logger.debug(f"[PreviewGen] Extension to use: '{extension}'", extra={"dev_only": True})
 
         # Note: Separator transformations are handled by NameTransformModule in main_window.py
         # This preview generator only creates the base name from modules
@@ -109,7 +109,7 @@ def generate_preview_names(
             new_name = f"{new_basename}{extension}"
         else:
             new_name = new_basename
-        logger.debug(f"[PreviewGen] Final name: '{new_name}'")
+        logger.debug(f"[PreviewGen] Final name: '{new_name}'", extra={"dev_only": True})
 
         if not is_valid_filename_text(new_name):
             logger.warning(f"[Preview] Invalid name generated: {new_name}")

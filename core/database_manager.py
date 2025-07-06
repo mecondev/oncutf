@@ -127,7 +127,7 @@ class DatabaseManager:
             self._create_indexes(cursor)
             conn.commit()
 
-        logger.debug(f"[DatabaseManager] Schema initialized (version {self.SCHEMA_VERSION})")
+        logger.debug(f"[DatabaseManager] Schema initialized (version {self.SCHEMA_VERSION})", extra={"dev_only": True})
 
     def _create_schema_v2(self, cursor: sqlite3.Cursor):
         """Create the new v2 schema with separated tables."""
@@ -222,7 +222,7 @@ class DatabaseManager:
         for index_sql in indexes:
             cursor.execute(index_sql)
 
-        logger.debug("[DatabaseManager] Database indexes created")
+        logger.debug("[DatabaseManager] Database indexes created", extra={"dev_only": True})
 
     # =====================================
     # File Path Management
@@ -512,7 +512,7 @@ class DatabaseManager:
     def close(self):
         """Close database connections."""
         # Connection pooling cleanup would go here if needed
-        logger.debug("[DatabaseManager] Database connections closed")
+        logger.debug("[DatabaseManager] Database connections closed", extra={"dev_only": True})
 
 
 # =====================================

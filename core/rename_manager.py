@@ -64,13 +64,17 @@ class RenameManager:
         checked_paths = {f.full_path for f in self.main_window.file_model.files if f.checked}
 
         # Use FileOperationsManager to perform rename
-        renamed_count = self.main_window.file_operations_manager.rename_files(
-            selected_files=selected_files,
-            modules_data=modules_data,
-            post_transform=post_transform,
-            metadata_cache=self.main_window.metadata_cache,
-            current_folder_path=self.main_window.current_folder_path
-        )
+        try:
+            renamed_count = self.main_window.file_operations_manager.rename_files(
+                selected_files=selected_files,
+                modules_data=modules_data,
+                post_transform=post_transform,
+                metadata_cache=self.main_window.metadata_cache,
+                current_folder_path=self.main_window.current_folder_path
+            )
+        except Exception as e:
+            logger.error(f"[RenameManager] Critical error during rename: {e}")
+            return
 
         # Record rename operation in history for undo functionality
         if renamed_count > 0:
@@ -104,7 +108,9 @@ class RenameManager:
             return
 
         # Execute post-rename workflow
-        self._execute_post_rename_workflow(checked_paths)
+        # TODO: Temporarily disabled to prevent segfault - needs investigation
+        # self._execute_post_rename_workflow(checked_paths)
+        logger.info(f"[RenameManager] Post-rename workflow temporarily disabled to prevent crash")
 
     def _execute_post_rename_workflow(self, checked_paths: Set[str]) -> None:
         """

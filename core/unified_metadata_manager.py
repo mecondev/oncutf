@@ -76,7 +76,7 @@ class UnifiedMetadataManager(QObject):
         """Initialize the cache helper if parent window is available."""
         if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
             self._cache_helper = MetadataCacheHelper(self.parent_window.metadata_cache)
-            logger.debug("[UnifiedMetadataManager] Cache helper initialized")
+            logger.debug("[UnifiedMetadataManager] Cache helper initialized", extra={"dev_only": True})
 
     # =====================================
     # Cache Checking Methods

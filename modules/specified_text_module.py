@@ -91,6 +91,43 @@ class SpecifiedTextModule(BaseRenameModule):
         """
         menu = QMenu(self.text_input)
 
+        # Apply consistent styling with Inter fonts
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #232323;
+                color: #f0ebd8;
+                border: none;
+                border-radius: 8px;
+                font-family: "Inter", "Segoe UI", Arial, sans-serif;
+                font-size: 9pt;
+                padding: 6px 4px;
+            }
+            QMenu::item {
+                background-color: transparent;
+                padding: 3px 16px 3px 8px;
+                margin: 1px 2px;
+                border-radius: 4px;
+                min-height: 16px;
+                icon-size: 16px;
+            }
+            QMenu::item:selected {
+                background-color: #748cab;
+                color: #0d1321;
+            }
+            QMenu::item:disabled {
+                color: #888888;
+            }
+            QMenu::icon {
+                padding-left: 6px;
+                padding-right: 6px;
+            }
+            QMenu::separator {
+                background-color: #5a5a5a;
+                height: 1px;
+                margin: 4px 8px;
+            }
+        """)
+
         # Original Name action (always visible, enabled only if we have a current file)
         original_name_action = QAction("Original Name", menu)
         original_name_action.setIcon(get_menu_icon("file"))

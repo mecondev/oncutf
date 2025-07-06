@@ -38,7 +38,7 @@ class FileLoadManager:
         self.timer_manager = get_timer_manager()
         # Flag to prevent metadata tree refresh conflicts during metadata operations
         self._metadata_operation_in_progress = False
-        logger.debug("[FileLoadManager] Initialized with unified loading policy")
+        logger.debug("[FileLoadManager] Initialized with unified loading policy", extra={"dev_only": True})
 
     def load_folder(self, folder_path: str, merge_mode: bool = False, recursive: bool = False) -> None:
         """

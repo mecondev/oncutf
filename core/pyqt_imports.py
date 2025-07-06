@@ -111,6 +111,7 @@ from PyQt5.QtWidgets import (
     QStyledItemDelegate,
     QStyleFactory,
     QStyleOption,
+
     QStyleOptionViewItem,
     QTableView,
     QTableWidget,

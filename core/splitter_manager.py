@@ -38,7 +38,7 @@ class SplitterManager:
             parent_window: Reference to the main window instance
         """
         self.parent_window = parent_window
-        logger.debug("[SplitterManager] Initialized")
+        logger.debug("[SplitterManager] Initialized", extra={"dev_only": True})
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
         """
@@ -106,7 +106,7 @@ class SplitterManager:
             right_width = min(RIGHT_PANEL_MAX_WIDTH + 100, int(window_width * 0.25))
             center_width = window_width - left_width - right_width
             optimal_sizes = [left_width, center_width, right_width]
-            logger.debug(f"[SplitterManager] Ultra-wide screen layout: {optimal_sizes}")
+            logger.debug(f"[SplitterManager] Ultra-wide screen layout: {optimal_sizes}", extra={"dev_only": True})
 
         elif window_width >= WIDE_SCREEN_THRESHOLD:
             # Wide screens: balanced increase for all panels
@@ -114,7 +114,7 @@ class SplitterManager:
             right_width = min(RIGHT_PANEL_MAX_WIDTH, int(window_width * 0.22))
             center_width = window_width - left_width - right_width
             optimal_sizes = [left_width, center_width, right_width]
-            logger.debug(f"[SplitterManager] Wide screen layout: {optimal_sizes}")
+            logger.debug(f"[SplitterManager] Wide screen layout: {optimal_sizes}", extra={"dev_only": True})
 
         else:
             # Standard screens: use minimum viable sizes
@@ -130,11 +130,11 @@ class SplitterManager:
                 center_width = window_width - left_width - right_width
 
             optimal_sizes = [left_width, center_width, right_width]
-            logger.debug(f"[SplitterManager] Standard screen layout: {optimal_sizes}")
+            logger.debug(f"[SplitterManager] Standard screen layout: {optimal_sizes}", extra={"dev_only": True})
 
         # Log the calculation details
         logger.debug(f"[SplitterManager] Calculated splitter sizes for {window_width}px: {optimal_sizes} "
-                    f"(left: {optimal_sizes[0]}, center: {optimal_sizes[1]}, right: {optimal_sizes[2]})")
+                    f"(left: {optimal_sizes[0]}, center: {optimal_sizes[1]}, right: {optimal_sizes[2]})", extra={"dev_only": True})
 
         return optimal_sizes
 

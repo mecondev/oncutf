@@ -562,7 +562,7 @@ class UIManager:
             ("Ctrl+Shift+A", self.parent_window.clear_all_selection),
             ("Ctrl+I", self.parent_window.invert_selection),
             ("Ctrl+O", self.parent_window.handle_browse),
-            ("Ctrl+R", self.parent_window.force_reload),
+            ("F5", self.parent_window.force_reload),
             ("Ctrl+M", self.parent_window.shortcut_load_metadata),
             ("Ctrl+E", self.parent_window.shortcut_load_extended_metadata),
             ("Shift+Ctrl+M", self.parent_window.shortcut_load_metadata_all),
@@ -592,6 +592,43 @@ class UIManager:
         Show custom context menu for the search field with consistent styling and icons.
         """
         menu = QMenu(line_edit)
+
+        # Apply consistent styling with Inter fonts
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #232323;
+                color: #f0ebd8;
+                border: none;
+                border-radius: 8px;
+                font-family: "Inter", "Segoe UI", Arial, sans-serif;
+                font-size: 9pt;
+                padding: 6px 4px;
+            }
+            QMenu::item {
+                background-color: transparent;
+                padding: 3px 16px 3px 8px;
+                margin: 1px 2px;
+                border-radius: 4px;
+                min-height: 16px;
+                icon-size: 16px;
+            }
+            QMenu::item:selected {
+                background-color: #748cab;
+                color: #0d1321;
+            }
+            QMenu::item:disabled {
+                color: #888888;
+            }
+            QMenu::icon {
+                padding-left: 6px;
+                padding-right: 6px;
+            }
+            QMenu::separator {
+                background-color: #5a5a5a;
+                height: 1px;
+                margin: 4px 8px;
+            }
+        """)
 
         # Standard editing actions
         undo_action = QAction("Undo", menu)

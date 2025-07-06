@@ -199,14 +199,14 @@ class SVGIconGenerator:
         if size is None:
             size = self.size
 
-        logger.debug(f"[SVGIconGenerator] Generating all metadata icons at {size}px")
+        logger.debug(f"[SVGIconGenerator] Generating all metadata icons at {size}px", extra={"dev_only": True})
 
         icons = {}
         for status in METADATA_ICON_COLORS.keys():
             # Generate all icons including hash since we use it in file table model
             icons[status] = self.generate_icon(status, size)
 
-        logger.debug(f"[SVGIconGenerator] Generated {len(icons)} metadata icons")
+        logger.debug(f"[SVGIconGenerator] Generated {len(icons)} metadata icons", extra={"dev_only": True})
         return icons
 
     def generate_inverted_icon(self, icon_name: str, size: Optional[int] = None) -> QPixmap:

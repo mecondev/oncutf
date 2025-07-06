@@ -252,7 +252,7 @@ class ColumnManager:
         # Connect resize signals for user preference tracking
         self._connect_resize_signals(table_view, table_type)
 
-        logger.debug(f"[ColumnManager] Configured columns for table type: {table_type}")
+        logger.debug(f"[ColumnManager] Configured columns for table type: {table_type}", extra={"dev_only": True})
 
     def _update_font_metrics(self, widget: QWidget) -> None:
         """Update font metrics for text-based calculations."""
@@ -514,7 +514,7 @@ class ColumnManager:
 
                 # Track user preference
                 self.state.set_user_preference(logical_index, new_size)
-                logger.debug(f"[ColumnManager] User preference set for {table_type} column {logical_index}: {new_size}")
+                logger.debug(f"[ColumnManager] User preference set for {table_type} column {logical_index}: {new_size}", extra={"dev_only": True})
 
     def adjust_columns_for_splitter_change(self, table_view: Union[QTableView, QTreeView],
                                          table_type: str) -> None:

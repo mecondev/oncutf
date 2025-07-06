@@ -69,7 +69,7 @@ class UtilityManager:
 
     def force_reload(self) -> None:
         """
-        Triggered by Ctrl+R.
+        Triggered by F5.
         If Ctrl is held, metadata scan is skipped (like Select/Browse).
         Otherwise, full reload with scan.
         """

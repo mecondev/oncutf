@@ -43,19 +43,20 @@ def wait_cursor(restore_after: bool = True):
         short_path = caller_line.filename[caller_line.filename.find("oncutf/"):]
         logger.debug(
             f"[Cursor] Wait cursor activated. Called from: {short_path}, "
-            f"line {caller_line.lineno}, in {caller_line.name}()"
+            f"line {caller_line.lineno}, in {caller_line.name}()",
+            extra={"dev_only": True}
         )
     else:
-        logger.debug("[Cursor] Wait cursor activated. Caller path not in oncutf/")
+        logger.debug("[Cursor] Wait cursor activated. Caller path not in oncutf/", extra={"dev_only": True})
 
     try:
         yield
     finally:
         if restore_after:
             QApplication.restoreOverrideCursor()
-            logger.debug("[Cursor] Wait cursor restored.")
+            logger.debug("[Cursor] Wait cursor restored.", extra={"dev_only": True})
         else:
-            logger.debug("[Cursor] Wait cursor NOT restored (as requested).")
+            logger.debug("[Cursor] Wait cursor NOT restored (as requested).", extra={"dev_only": True})
 
 
 def emergency_cursor_cleanup() -> int:
@@ -71,7 +72,7 @@ def emergency_cursor_cleanup() -> int:
         cursor_count += 1
 
     if cursor_count > 0:
-        logger.debug(f"[Cursor] Emergency cleanup: Removed {cursor_count} stuck cursors")
+        logger.debug(f"[Cursor] Emergency cleanup: Removed {cursor_count} stuck cursors", extra={"dev_only": True})
 
     return cursor_count
 
@@ -90,7 +91,7 @@ def force_restore_cursor() -> None:
             break
 
     if count > 0:
-        logger.debug(f"[Cursor] Force restore: Removed {count} cursors")
+        logger.debug(f"[Cursor] Force restore: Removed {count} cursors", extra={"dev_only": True})
 
 
 def get_current_cursor_info() -> Optional[str]:
