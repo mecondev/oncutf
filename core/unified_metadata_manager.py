@@ -1,0 +1,902 @@
+"""
+Module: unified_metadata_manager.py
+
+Author: Michael Economou
+Date: 2025-07-06
+
+Unified metadata management system combining MetadataManager and DirectMetadataLoader.
+Provides centralized metadata operations with on-demand loading capabilities.
+
+Features:
+- Centralized metadata management operations
+- On-demand metadata/hash loading
+- Thread-based loading with progress tracking
+- Immediate cache checking for instant icon display
+- Simple, clean architecture
+- Unified API for all metadata operations
+"""
+import os
+import logging
+from typing import List, Optional, Dict, Set
+from datetime import datetime
+
+from PyQt5.QtCore import QObject, pyqtSignal, QThread
+
+from config import STATUS_COLORS
+from core.qt_imports import QApplication, Qt
+from models.file_item import FileItem
+from utils.metadata_cache_helper import MetadataCacheHelper
+from utils.logger_factory import get_cached_logger
+from utils.path_utils import find_file_by_path, paths_equal
+
+logger = get_cached_logger(__name__)
+
+
+class UnifiedMetadataManager(QObject):
+    """
+    Unified metadata management system.
+
+    Combines the functionality of MetadataManager and DirectMetadataLoader
+    to provide a single, coherent interface for all metadata operations.
+
+    Features:
+    - On-demand metadata/hash loading
+    - Thread-based loading with progress tracking
+    - Immediate cache checking for instant display
+    - Centralized metadata management operations
+    - Modifier-based metadata mode decisions
+    - Dialog management for progress indication
+    - Error handling and cleanup
+    """
+
+    # Signals
+    metadata_loaded = pyqtSignal(str, dict)  # file_path, metadata
+    loading_started = pyqtSignal(str)  # file_path
+    loading_finished = pyqtSignal()
+
+    def __init__(self, parent_window=None):
+        """Initialize UnifiedMetadataManager with parent window reference."""
+        super().__init__(parent_window)
+        self.parent_window = parent_window
+        self._cache_helper: Optional[MetadataCacheHelper] = None
+        self._currently_loading: Set[str] = set()
+
+        # State tracking
+        self.force_extended_metadata = False
+        self._metadata_cancelled = False  # Cancellation flag for metadata loading
+
+        # Initialize metadata cache and exiftool wrapper
+        self._metadata_cache = {}  # Cache for metadata results
+
+        # Initialize ExifTool wrapper for single file operations
+        from utils.exiftool_wrapper import ExifToolWrapper
+        self._exiftool_wrapper = ExifToolWrapper()
+
+        logger.info("[UnifiedMetadataManager] Initialized - unified metadata management")
+
+    def initialize_cache_helper(self) -> None:
+        """Initialize the cache helper if parent window is available."""
+        if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
+            self._cache_helper = MetadataCacheHelper(self.parent_window.metadata_cache)
+            logger.debug("[UnifiedMetadataManager] Cache helper initialized")
+
+    # =====================================
+    # Cache Checking Methods
+    # =====================================
+
+    def check_cached_metadata(self, file_item: FileItem) -> Optional[dict]:
+        """
+        Check if metadata exists in cache without loading.
+
+        Args:
+            file_item: The file to check
+
+        Returns:
+            Metadata dict if cached, None if not available
+        """
+        try:
+            # Direct cache check using persistent cache
+            from core.persistent_metadata_cache import get_persistent_metadata_cache
+            cache = get_persistent_metadata_cache()
+
+            # First check if metadata exists using has() method
+            if cache.has(file_item.full_path):
+                # Get metadata directly from persistent cache using get() method
+                metadata = cache.get(file_item.full_path)
+                if metadata:
+                    # Filter out internal markers to check if there's real metadata
+                    real_metadata = {k: v for k, v in metadata.items() if not k.startswith('__')}
+                    if real_metadata:
+                        logger.debug(f"[UnifiedMetadataManager] Cache hit for {file_item.filename}")
+                        return metadata
+                    else:
+                        logger.debug(f"[UnifiedMetadataManager] Empty metadata for {file_item.filename}")
+                        return None
+
+            logger.debug(f"[UnifiedMetadataManager] No cached metadata for {file_item.filename}")
+            return None
+
+        except Exception as e:
+            logger.warning(f"[UnifiedMetadataManager] Error checking cache for {file_item.filename}: {e}")
+            return None
+
+    def check_cached_hash(self, file_item: FileItem) -> Optional[str]:
+        """
+        Check if hash exists in cache without loading.
+
+        Args:
+            file_item: The file to check
+
+        Returns:
+            Hash string if cached, None if not available
+        """
+        try:
+            # Direct cache check using persistent hash cache
+            from core.persistent_hash_cache import get_persistent_hash_cache
+            cache = get_persistent_hash_cache()
+
+            # Get hash directly from persistent cache using get() method
+            hash_value = cache.get(file_item.full_path)
+            if hash_value:
+                logger.debug(f"[UnifiedMetadataManager] Hash cache hit for {file_item.filename}")
+                return hash_value
+
+            logger.debug(f"[UnifiedMetadataManager] No cached hash for {file_item.filename}")
+            return None
+
+        except Exception as e:
+            logger.warning(f"[UnifiedMetadataManager] Error checking hash cache for {file_item.filename}: {e}")
+            return None
+
+    def has_cached_metadata(self, file_item: FileItem) -> bool:
+        """
+        Check if metadata exists in cache (fast check).
+
+        Args:
+            file_item: The file to check
+
+        Returns:
+            True if metadata exists in cache, False otherwise
+        """
+        try:
+            # Direct cache check using persistent cache
+            from core.persistent_metadata_cache import get_persistent_metadata_cache
+            cache = get_persistent_metadata_cache()
+
+            # Use has() method to check existence
+            return cache.has(file_item.full_path)
+
+        except Exception as e:
+            logger.warning(f"[UnifiedMetadataManager] Error checking metadata existence for {file_item.filename}: {e}")
+            return False
+
+    def has_cached_hash(self, file_item: FileItem) -> bool:
+        """
+        Check if hash exists in cache (fast check).
+
+        Args:
+            file_item: The file to check
+
+        Returns:
+            True if hash exists in cache, False otherwise
+        """
+        try:
+            # Direct cache check using persistent hash cache
+            from core.persistent_hash_cache import get_persistent_hash_cache
+            cache = get_persistent_hash_cache()
+
+            # Use has_hash() method to check existence
+            return cache.has_hash(file_item.full_path)
+
+        except Exception as e:
+            logger.warning(f"[UnifiedMetadataManager] Error checking hash existence for {file_item.filename}: {e}")
+            return False
+
+    # =====================================
+    # Loading State Management
+    # =====================================
+
+    def is_running_metadata_task(self) -> bool:
+        """
+        Check if there's currently a metadata task running.
+
+        Returns:
+            bool: True if a metadata task is running, False otherwise
+        """
+        return len(self._currently_loading) > 0
+
+    def is_loading(self) -> bool:
+        """Check if any files are currently being loaded."""
+        return len(self._currently_loading) > 0
+
+    def reset_cancellation_flag(self) -> None:
+        """Reset the metadata cancellation flag."""
+        self._metadata_cancelled = False
+
+    # =====================================
+    # Mode Determination Methods
+    # =====================================
+
+    def determine_loading_mode(self, file_count: int, use_extended: bool = False) -> str:
+        """
+        Determine the appropriate loading mode based on file count.
+
+        Args:
+            file_count: Number of files to load metadata for
+            use_extended: Whether extended metadata is requested
+
+        Returns:
+            str: Loading mode ("single_file_wait_cursor", "multiple_files_dialog", etc.)
+        """
+        if file_count == 1:
+            return "single_file_wait_cursor"
+        else:
+            # For any multiple files, use dialog
+            return "multiple_files_dialog"
+
+    def determine_metadata_mode(self, modifier_state=None) -> tuple[bool, bool]:
+        """
+        Determines whether to skip metadata scan or use extended mode based on modifier keys.
+
+        Args:
+            modifier_state: Qt.KeyboardModifiers to use, or None for current state
+
+        Returns:
+            tuple: (skip_metadata, use_extended)
+
+            - skip_metadata = True ➜ No metadata scan (no modifiers)
+            - skip_metadata = False & use_extended = False ➜ Fast scan (Ctrl)
+            - skip_metadata = False & use_extended = True ➜ Extended scan (Ctrl+Shift)
+        """
+        modifiers = modifier_state
+        if modifiers is None:
+            if self.parent_window and hasattr(self.parent_window, 'modifier_state'):
+                modifiers = self.parent_window.modifier_state
+            else:
+                modifiers = QApplication.keyboardModifiers()
+
+        if modifiers == Qt.NoModifier: # type: ignore
+            modifiers = QApplication.keyboardModifiers()  # fallback to current
+
+        ctrl = bool(modifiers & Qt.ControlModifier) # type: ignore
+        shift = bool(modifiers & Qt.ShiftModifier) # type: ignore
+
+        # - No modifiers: skip metadata
+        # - With Ctrl: load basic metadata
+        # - With Ctrl+Shift: load extended metadata
+        skip_metadata = not ctrl
+        use_extended = ctrl and shift
+
+        logger.debug(
+            f"[determine_metadata_mode] modifiers={int(modifiers)}, "
+            f"ctrl={ctrl}, shift={shift}, skip_metadata={skip_metadata}, use_extended={use_extended}"
+        )
+
+        return skip_metadata, use_extended
+
+    def should_use_extended_metadata(self, modifier_state=None) -> bool:
+        """
+        Returns True if Ctrl+Shift are both held,
+        used in cases where metadata is always loaded (double click, drag & drop).
+
+        This assumes that metadata will be loaded — we only decide if it's fast or extended.
+
+        Args:
+            modifier_state: Qt.KeyboardModifiers to use, or None for current state
+        """
+        modifiers = modifier_state
+        if modifiers is None:
+            if self.parent_window and hasattr(self.parent_window, 'modifier_state'):
+                modifiers = self.parent_window.modifier_state
+            else:
+                modifiers = QApplication.keyboardModifiers()
+
+        ctrl = bool(modifiers & Qt.ControlModifier) # type: ignore
+        shift = bool(modifiers & Qt.ShiftModifier) # type: ignore
+        return ctrl and shift
+
+    # =====================================
+    # Shortcut Methods
+    # =====================================
+
+    def shortcut_load_metadata(self) -> None:
+        """
+        Loads standard (non-extended) metadata for currently selected files.
+        """
+        if not self.parent_window:
+            return
+
+        # Use unified selection method
+        selected_files = self.parent_window.get_selected_files_ordered() if self.parent_window else []
+
+        if not selected_files:
+            logger.info("[Shortcut] No files selected for metadata loading")
+            return
+
+        logger.info(f"[Shortcut] Loading basic metadata for {len(selected_files)} files")
+        # Use intelligent loading with cache checking and smart UX
+        self.load_metadata_for_items(selected_files, use_extended=False, source="shortcut")
+
+    def shortcut_load_extended_metadata(self) -> None:
+        """
+        Loads extended metadata for selected files via custom selection system.
+        """
+        if not self.parent_window:
+            return
+
+        if self.is_running_metadata_task():
+            logger.warning("[Shortcut] Metadata scan already running — shortcut ignored.")
+            return
+
+        # Use unified selection method
+        selected_files = self.parent_window.get_selected_files_ordered() if self.parent_window else []
+
+        if not selected_files:
+            logger.info("[Shortcut] No files selected for extended metadata loading")
+            return
+
+        logger.info(f"[Shortcut] Loading extended metadata for {len(selected_files)} files")
+        # Use intelligent loading with cache checking and smart UX
+        self.load_metadata_for_items(selected_files, use_extended=True, source="shortcut")
+
+    # =====================================
+    # Main Loading Methods
+    # =====================================
+
+    def load_metadata_for_items(self, items: List[FileItem], use_extended: bool = False, source: str = "unknown") -> None:
+        """
+        Load metadata for the given FileItem objects.
+
+        Args:
+            items: List of FileItem objects to load metadata for
+            use_extended: Whether to use extended metadata loading
+            source: Source of the request (for logging)
+        """
+        if not items:
+            logger.warning("[UnifiedMetadataManager] No items provided for metadata loading")
+            return
+
+        # Filter files that need loading
+        files_to_load = []
+        for file_item in items:
+            if file_item.full_path not in self._currently_loading:
+                cached = self.check_cached_metadata(file_item)
+                if not cached:
+                    files_to_load.append(file_item)
+                    self._currently_loading.add(file_item.full_path)
+
+        if not files_to_load:
+            logger.info(f"[UnifiedMetadataManager] All {len(items)} files already have cached metadata")
+            return
+
+        logger.info(f"[UnifiedMetadataManager] Loading metadata for {len(files_to_load)} files ({source})")
+
+        # Show progress dialog for multiple files
+        if len(files_to_load) > 1:
+            self._show_metadata_progress_dialog(files_to_load, use_extended, source)
+        else:
+            # Single file - load directly
+            self._start_metadata_loading(files_to_load, use_extended, source)
+
+    def load_hashes_for_files(
+        self,
+        files: List[FileItem],
+        source: str = "user_request"
+    ) -> None:
+        """
+        Load hashes for files that don't have them cached.
+
+        Args:
+            files: List of files to load hashes for
+            source: Source of request for logging
+        """
+        if not files:
+            return
+
+        # Filter files that need loading
+        files_to_load = []
+        for file_item in files:
+            if file_item.full_path not in self._currently_loading:
+                cached = self.check_cached_hash(file_item)
+                if not cached:
+                    files_to_load.append(file_item)
+                    self._currently_loading.add(file_item.full_path)
+
+        if not files_to_load:
+            logger.info(f"[UnifiedMetadataManager] All {len(files)} files already have cached hashes")
+            return
+
+        logger.info(f"[UnifiedMetadataManager] Loading hashes for {len(files_to_load)} files ({source})")
+
+        # Show progress dialog for multiple files
+        if len(files_to_load) > 1:
+            self._show_hash_progress_dialog(files_to_load, source)
+        else:
+            # Single file - load directly
+            self._start_hash_loading(files_to_load, source)
+
+    # =====================================
+    # Progress Dialog Methods
+    # =====================================
+
+    def _show_metadata_progress_dialog(
+        self,
+        files: List[FileItem],
+        use_extended: bool,
+        source: str
+    ) -> None:
+        """Show progress dialog for metadata loading."""
+        try:
+            def cancel_metadata_loading():
+                self._cancel_current_loading()
+
+            # Create progress dialog
+            from utils.progress_dialog import ProgressDialog
+            loading_dialog = ProgressDialog.create_metadata_dialog(
+                self.parent_window,
+                is_extended=use_extended,
+                cancel_callback=cancel_metadata_loading
+            )
+
+            # Start loading with progress tracking
+            self._start_metadata_loading_with_progress(files, use_extended, source)
+
+        except Exception as e:
+            logger.error(f"[UnifiedMetadataManager] Error showing metadata progress dialog: {e}")
+            # Fallback to direct loading
+            self._start_metadata_loading(files, use_extended, source)
+
+    def _show_hash_progress_dialog(
+        self,
+        files: List[FileItem],
+        source: str
+    ) -> None:
+        """Show progress dialog for hash loading."""
+        try:
+            def cancel_hash_loading():
+                self._cancel_current_loading()
+
+            # Create progress dialog
+            from utils.progress_dialog import ProgressDialog
+            loading_dialog = ProgressDialog.create_hash_dialog(
+                self.parent_window,
+                cancel_callback=cancel_hash_loading
+            )
+
+            # Start loading with progress tracking
+            self._start_hash_loading_with_progress(files, source)
+
+        except Exception as e:
+            logger.error(f"[UnifiedMetadataManager] Error showing hash progress dialog: {e}")
+            # Fallback to direct loading
+            self._start_hash_loading(files, source)
+
+    # =====================================
+    # Worker Loading Methods
+    # =====================================
+
+    def _start_metadata_loading_with_progress(
+        self,
+        files: List[FileItem],
+        use_extended: bool,
+        source: str
+    ) -> None:
+        """Start metadata loading with progress tracking."""
+        # This will be implemented to use the existing metadata worker
+        # For now, fallback to direct loading
+        self._start_metadata_loading(files, use_extended, source)
+
+    def _start_hash_loading_with_progress(
+        self,
+        files: List[FileItem],
+        source: str
+    ) -> None:
+        """Start hash loading with progress tracking."""
+        # This will be implemented to use the existing hash worker
+        # For now, fallback to direct loading
+        self._start_hash_loading(files, source)
+
+    def _start_metadata_loading(
+        self,
+        files: List[FileItem],
+        use_extended: bool,
+        source: str
+    ) -> None:
+        """Start metadata loading using existing metadata worker."""
+        if not files:
+            return
+
+        try:
+            # Use existing metadata worker
+            from widgets.metadata_worker import MetadataWorker
+            from core.qt_imports import QThread
+
+            # Create worker and thread
+            self._metadata_worker = MetadataWorker(files, use_extended)
+            self._metadata_thread = QThread()
+
+            # Move worker to thread
+            self._metadata_worker.moveToThread(self._metadata_thread)
+
+            # Connect signals
+            self._metadata_thread.started.connect(self._metadata_worker.run)
+            self._metadata_worker.finished.connect(self._on_metadata_finished)
+            self._metadata_worker.file_processed.connect(self._on_file_metadata_loaded)
+
+            # Start thread
+            self._metadata_thread.start()
+
+            logger.info(f"[UnifiedMetadataManager] Started metadata loading for {len(files)} files")
+
+        except Exception as e:
+            logger.error(f"[UnifiedMetadataManager] Error starting metadata loading: {e}")
+            # Clean up loading state
+            for file_item in files:
+                self._currently_loading.discard(file_item.full_path)
+
+    def _start_hash_loading(self, files: List[FileItem], source: str) -> None:
+        """Start hash loading using existing hash worker."""
+        if not files:
+            return
+
+        try:
+            # Use existing hash worker
+            from core.hash_worker import HashWorker
+            from core.qt_imports import QThread
+
+            # Create worker and thread
+            self._hash_worker = HashWorker(files)
+            self._hash_thread = QThread()
+
+            # Move worker to thread
+            self._hash_worker.moveToThread(self._hash_thread)
+
+            # Connect signals
+            self._hash_thread.started.connect(self._hash_worker.run)
+            self._hash_worker.finished.connect(self._on_hash_finished)
+            self._hash_worker.file_processed.connect(self._on_file_hash_calculated)
+
+            # Start thread
+            self._hash_thread.start()
+
+            logger.info(f"[UnifiedMetadataManager] Started hash loading for {len(files)} files")
+
+        except Exception as e:
+            logger.error(f"[UnifiedMetadataManager] Error starting hash loading: {e}")
+            # Clean up loading state
+            for file_item in files:
+                self._currently_loading.discard(file_item.full_path)
+
+    # =====================================
+    # Progress Tracking Methods
+    # =====================================
+
+    def _on_metadata_progress(self, current: int, total: int) -> None:
+        """Handle metadata loading progress updates."""
+        # This will be connected to progress dialog updates
+        pass
+
+    def _on_metadata_size_progress(self, processed: int, total: int) -> None:
+        """Handle metadata size progress updates."""
+        # This will be connected to progress dialog updates
+        pass
+
+    def _on_hash_progress(self, current: int, total: int) -> None:
+        """Handle hash loading progress updates."""
+        # This will be connected to progress dialog updates
+        pass
+
+    def _on_hash_size_progress(self, processed: int, total: int) -> None:
+        """Handle hash size progress updates."""
+        # This will be connected to progress dialog updates
+        pass
+
+    def _cancel_current_loading(self) -> None:
+        """Cancel current loading operation."""
+        self._metadata_cancelled = True
+
+        # Cancel metadata worker if running
+        if hasattr(self, '_metadata_worker') and self._metadata_worker:
+            self._metadata_worker.cancel()
+
+        # Cancel hash worker if running
+        if hasattr(self, '_hash_worker') and self._hash_worker:
+            self._hash_worker.cancel()
+
+        logger.info("[UnifiedMetadataManager] Loading operation cancelled")
+
+    # =====================================
+    # Completion Handlers
+    # =====================================
+
+    def _on_file_metadata_loaded(self, file_path: str) -> None:
+        """Handle individual file metadata loaded."""
+        # Remove from loading set
+        self._currently_loading.discard(file_path)
+
+        # Emit signal
+        self.loading_started.emit(file_path)
+
+        # Update UI if needed
+        if self.parent_window:
+            # Update file table model icons
+            if hasattr(self.parent_window, 'file_model'):
+                self.parent_window.file_model.refresh_icons()
+
+        logger.debug(f"[UnifiedMetadataManager] Metadata loaded for {file_path}")
+
+    def _on_file_hash_calculated(self, file_path: str) -> None:
+        """Handle individual file hash calculated."""
+        # Remove from loading set
+        self._currently_loading.discard(file_path)
+
+        # Update UI if needed
+        if self.parent_window:
+            # Update file table model icons
+            if hasattr(self.parent_window, 'file_model'):
+                self.parent_window.file_model.refresh_icons()
+
+        logger.debug(f"[UnifiedMetadataManager] Hash calculated for {file_path}")
+
+    def _on_metadata_finished(self) -> None:
+        """Handle metadata loading completion."""
+        # Clean up worker and thread
+        self._cleanup_metadata_worker_and_thread()
+
+        # Emit finished signal
+        self.loading_finished.emit()
+
+        # Update UI
+        if self.parent_window:
+            # Update file table model
+            if hasattr(self.parent_window, 'file_model'):
+                self.parent_window.file_model.refresh_icons()
+
+            # Update metadata tree view
+            if hasattr(self.parent_window, 'metadata_tree_view'):
+                self.parent_window.metadata_tree_view.handle_metadata_load_completion(None, "metadata_loading")
+
+        logger.info("[UnifiedMetadataManager] Metadata loading completed")
+
+    def _on_hash_finished(self) -> None:
+        """Handle hash loading completion."""
+        # Clean up worker and thread
+        self._cleanup_hash_worker_and_thread()
+
+        # Emit finished signal
+        self.loading_finished.emit()
+
+        # Update UI
+        if self.parent_window:
+            # Update file table model
+            if hasattr(self.parent_window, 'file_model'):
+                self.parent_window.file_model.refresh_icons()
+
+        logger.info("[UnifiedMetadataManager] Hash loading completed")
+
+    def _cleanup_metadata_worker_and_thread(self) -> None:
+        """Clean up metadata worker and thread."""
+        if hasattr(self, '_metadata_worker') and self._metadata_worker:
+            self._metadata_worker.deleteLater()
+            self._metadata_worker = None
+
+        if hasattr(self, '_metadata_thread') and self._metadata_thread:
+            self._metadata_thread.quit()
+            self._metadata_thread.wait()
+            self._metadata_thread.deleteLater()
+            self._metadata_thread = None
+
+    def _cleanup_hash_worker_and_thread(self) -> None:
+        """Clean up hash worker and thread."""
+        if hasattr(self, '_hash_worker') and self._hash_worker:
+            self._hash_worker.deleteLater()
+            self._hash_worker = None
+
+        if hasattr(self, '_hash_thread') and self._hash_thread:
+            self._hash_thread.quit()
+            self._hash_thread.wait()
+            self._hash_thread.deleteLater()
+            self._hash_thread = None
+
+    # =====================================
+    # Metadata Saving Methods
+    # =====================================
+
+    def save_metadata_for_selected(self) -> None:
+        """Save metadata for selected files."""
+        if not self.parent_window:
+            return
+
+        # Get selected files
+        selected_files = self.parent_window.get_selected_files_ordered() if self.parent_window else []
+
+        if not selected_files:
+            logger.info("[UnifiedMetadataManager] No files selected for metadata saving")
+            return
+
+        # Get metadata tree view
+        metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
+        if not metadata_tree_view:
+            logger.warning("[UnifiedMetadataManager] No metadata tree view available")
+            return
+
+        # Get modified metadata
+        all_modified_metadata = metadata_tree_view.get_all_modified_metadata_for_files()
+
+        if not all_modified_metadata:
+            logger.info("[UnifiedMetadataManager] No modified metadata to save")
+            return
+
+        # Filter files that have modifications
+        files_to_save = []
+        for file_item in selected_files:
+            if file_item.full_path in all_modified_metadata:
+                files_to_save.append(file_item)
+
+        if not files_to_save:
+            logger.info("[UnifiedMetadataManager] No selected files have modified metadata")
+            return
+
+        logger.info(f"[UnifiedMetadataManager] Saving metadata for {len(files_to_save)} selected files")
+        self._save_metadata_files(files_to_save, all_modified_metadata)
+
+    def save_all_modified_metadata(self) -> None:
+        """Save all modified metadata across all files."""
+        if not self.parent_window:
+            return
+
+        # Get metadata tree view
+        metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
+        if not metadata_tree_view:
+            logger.warning("[UnifiedMetadataManager] No metadata tree view available")
+            return
+
+        # Get all modified metadata
+        all_modified_metadata = metadata_tree_view.get_all_modified_metadata_for_files()
+
+        if not all_modified_metadata:
+            logger.info("[UnifiedMetadataManager] No modified metadata to save")
+            return
+
+        # Get all files that have modifications
+        files_to_save = []
+        file_model = getattr(self.parent_window, 'file_model', None)
+        if file_model and hasattr(file_model, 'files'):
+            for file_item in file_model.files:
+                if file_item.full_path in all_modified_metadata:
+                    files_to_save.append(file_item)
+
+        if not files_to_save:
+            logger.info("[UnifiedMetadataManager] No files with modified metadata found")
+            return
+
+        logger.info(f"[UnifiedMetadataManager] Saving metadata for {len(files_to_save)} files with modifications")
+        self._save_metadata_files(files_to_save, all_modified_metadata)
+
+    def _save_metadata_files(self, files_to_save: list, all_modified_metadata: dict) -> None:
+        """Save metadata files using ExifTool."""
+        if not files_to_save:
+            return
+
+        success_count = 0
+        failed_files = []
+
+        try:
+            # Process each file
+            for file_item in files_to_save:
+                file_path = file_item.full_path
+
+                # Get modifications for this file
+                modifications = self._get_modified_metadata_for_file(file_path, all_modified_metadata)
+
+                if not modifications:
+                    continue
+
+                try:
+                    # Save using ExifTool
+                    success = self._exiftool_wrapper.write_metadata(file_path, modifications)
+
+                    if success:
+                        success_count += 1
+                        self._update_file_after_save(file_item)
+                        logger.debug(f"[UnifiedMetadataManager] Successfully saved metadata for {file_item.filename}")
+                    else:
+                        failed_files.append(file_item.filename)
+                        logger.warning(f"[UnifiedMetadataManager] Failed to save metadata for {file_item.filename}")
+
+                except Exception as e:
+                    failed_files.append(file_item.filename)
+                    logger.error(f"[UnifiedMetadataManager] Error saving metadata for {file_item.filename}: {e}")
+
+        except Exception as e:
+            logger.error(f"[UnifiedMetadataManager] Error in metadata saving process: {e}")
+
+        # Show results
+        self._show_save_results(success_count, failed_files, files_to_save)
+
+    def _get_modified_metadata_for_file(self, file_path: str, all_modified_metadata: dict) -> dict:
+        """Get modified metadata for a specific file."""
+        return all_modified_metadata.get(file_path, {})
+
+    def _update_file_after_save(self, file_item):
+        """Update file item after successful metadata save."""
+        # Clear cached metadata to force reload
+        if hasattr(self.parent_window, 'metadata_cache'):
+            cache = self.parent_window.metadata_cache
+            if hasattr(cache, 'remove'):
+                cache.remove(file_item.full_path)
+
+        # Update file modification time
+        try:
+            file_item.date_modified = datetime.fromtimestamp(os.path.getmtime(file_item.full_path))
+        except Exception as e:
+            logger.warning(f"[UnifiedMetadataManager] Could not update modification time for {file_item.filename}: {e}")
+
+    def _show_save_results(self, success_count, failed_files, files_to_save):
+        """Show results of metadata save operation."""
+        if success_count > 0:
+            logger.info(f"[UnifiedMetadataManager] Successfully saved metadata for {success_count} files")
+
+            # Update status bar
+            if self.parent_window and hasattr(self.parent_window, 'status_bar'):
+                self.parent_window.status_bar.showMessage(
+                    f"Metadata saved for {success_count} files",
+                    3000
+                )
+
+        if failed_files:
+            logger.warning(f"[UnifiedMetadataManager] Failed to save metadata for {len(failed_files)} files: {failed_files}")
+
+            # Show error message
+            if self.parent_window:
+                from widgets.custom_msgdialog import CustomMsgDialog
+                CustomMsgDialog.show_error(
+                    self.parent_window,
+                    "Metadata Save Error",
+                    f"Failed to save metadata for {len(failed_files)} files.\n\n"
+                    f"Files: {', '.join(failed_files[:5])}"
+                    f"{'...' if len(failed_files) > 5 else ''}"
+                )
+
+    # =====================================
+    # Cleanup Methods
+    # =====================================
+
+    def cleanup(self) -> None:
+        """Clean up resources."""
+        # Cancel any running operations
+        self._cancel_current_loading()
+
+        # Clean up workers
+        self._cleanup_metadata_worker_and_thread()
+        self._cleanup_hash_worker_and_thread()
+
+        # Clean up ExifTool wrapper
+        if hasattr(self, '_exiftool_wrapper') and self._exiftool_wrapper:
+            self._exiftool_wrapper.close()
+
+        # Clear loading state
+        self._currently_loading.clear()
+
+        logger.info("[UnifiedMetadataManager] Cleanup completed")
+
+
+# =====================================
+# Factory Functions
+# =====================================
+
+_unified_metadata_manager = None
+
+def get_unified_metadata_manager(parent_window=None) -> UnifiedMetadataManager:
+    """Get or create the unified metadata manager instance."""
+    global _unified_metadata_manager
+    if _unified_metadata_manager is None:
+        _unified_metadata_manager = UnifiedMetadataManager(parent_window)
+    return _unified_metadata_manager
+
+def cleanup_unified_metadata_manager() -> None:
+    """Clean up the unified metadata manager instance."""
+    global _unified_metadata_manager
+    if _unified_metadata_manager:
+        _unified_metadata_manager.cleanup()
+        _unified_metadata_manager = None

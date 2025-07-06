@@ -110,10 +110,11 @@ class MainWindow(QMainWindow):
         self.skip_metadata_mode = DEFAULT_SKIP_METADATA # Keeps state across folder reloads
         self.file_model = FileTableModel(parent_window=self)
 
-        # --- Initialize MetadataManager after dependencies are ready ---
-        from core.metadata_manager import MetadataManager
+        # --- Initialize UnifiedMetadataManager after dependencies are ready ---
+        from core.unified_metadata_manager import get_unified_metadata_manager
         from core.selection_manager import SelectionManager
-        self.metadata_manager = MetadataManager(parent_window=self)
+        self.metadata_manager = get_unified_metadata_manager(self)
+        self.metadata_manager.initialize_cache_helper()
         self.selection_manager = SelectionManager(parent_window=self)
 
         # Initialize theme icon loader with dark theme by default
@@ -186,12 +187,6 @@ class MainWindow(QMainWindow):
         from core.application_service import initialize_application_service
         self.app_service = initialize_application_service(self)
         logger.info("[MainWindow] Application Service Layer initialized")
-
-        # --- Initialize Direct Metadata Loader ---
-        from core.direct_metadata_loader import get_direct_metadata_loader
-        self.direct_metadata_loader = get_direct_metadata_loader(self)
-        self.direct_metadata_loader.initialize_cache_helper()
-        logger.info("[MainWindow] Direct Metadata Loader initialized")
 
         # --- Initialize Batch Operations Manager ---
         from core.batch_operations_manager import get_batch_manager
@@ -1155,13 +1150,9 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'metadata_manager') and self.metadata_manager:
             self.metadata_manager.cleanup()
 
-        # Clean up DirectMetadataLoader
-        if hasattr(self, 'direct_metadata_loader') and self.direct_metadata_loader:
-            self.direct_metadata_loader.cleanup()
-
-        # Clean up global DirectMetadataLoader
-        from core.direct_metadata_loader import cleanup_direct_metadata_loader
-        cleanup_direct_metadata_loader()
+        # Clean up global UnifiedMetadataManager
+        from core.unified_metadata_manager import cleanup_unified_metadata_manager
+        cleanup_unified_metadata_manager()
 
     def _shutdown_step_background(self):
         """Step 7: Clean up background workers."""

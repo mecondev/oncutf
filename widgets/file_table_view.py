@@ -40,8 +40,6 @@ from utils.timer_manager import (
     schedule_resize_adjust,
     schedule_ui_update,
 )
-from utils.viewport_detector import ViewportDetector
-
 from .hover_delegate import HoverItemDelegate
 
 logger = get_cached_logger(__name__)
@@ -126,12 +124,8 @@ class FileTableView(QTableView):
         self.hover_delegate = HoverItemDelegate(self)
         self.setItemDelegate(self.hover_delegate)
 
-                # Selection store integration (with fallback to legacy selection handling)
+        # Selection store integration (with fallback to legacy selection handling)
         self._legacy_selection_mode = True  # Start in legacy mode for compatibility
-
-        # Viewport tracking for lazy loading
-        self._viewport_timer = None
-        self._last_viewport_update = None
 
     def paintEvent(self, event):
         # Paint the normal table

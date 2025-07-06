@@ -5,7 +5,7 @@ Author: Michael Economou
 Date: 2025-07-06
 
 Direct metadata loader for on-demand metadata/hash loading.
-Replaces LazyMetadataManager with a simpler, faster approach.
+Provides simple, fast metadata loading without automatic background processing.
 
 Features:
 - No automatic loading on folder open

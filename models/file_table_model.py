@@ -70,10 +70,10 @@ class FileTableModel(QAbstractTableModel):
         return self._cache_helper
 
     def _get_direct_loader(self):
-        """Get or create the DirectMetadataLoader instance."""
+        """Get or create the UnifiedMetadataManager instance."""
         if self._direct_loader is None and self.parent_window:
-            from core.direct_metadata_loader import get_direct_metadata_loader
-            self._direct_loader = get_direct_metadata_loader(self.parent_window)
+            from core.unified_metadata_manager import get_unified_metadata_manager
+            self._direct_loader = get_unified_metadata_manager(self.parent_window)
         return self._direct_loader
 
     def _has_hash_cached(self, file_path: str) -> bool:
@@ -277,7 +277,7 @@ class FileTableModel(QAbstractTableModel):
             return "\n".join(tooltip_parts)
 
         if role == Qt.DecorationRole and col == 0: # type: ignore
-            # Use DirectMetadataLoader for immediate cache checking
+            # Use UnifiedMetadataManager for immediate cache checking
             direct_loader = self._get_direct_loader()
             if not direct_loader:
                 return QIcon()
@@ -485,7 +485,7 @@ class FileTableModel(QAbstractTableModel):
         if not self.files:
             return
 
-        # Βεβαιωθούμε ότι το DirectMetadataLoader είναι αρχικοποιημένο
+        # Βεβαιωθούμε ότι το UnifiedMetadataManager είναι αρχικοποιημένο
         direct_loader = self._get_direct_loader()
         if direct_loader:
             direct_loader.initialize_cache_helper()
@@ -576,7 +576,7 @@ class FileTableModel(QAbstractTableModel):
         if not self.files:
             return
 
-        # Βεβαιωθούμε ότι το DirectMetadataLoader είναι αρχικοποιημένο
+        # Βεβαιωθούμε ότι το UnifiedMetadataManager είναι αρχικοποιημένο
         direct_loader = self._get_direct_loader()
         if direct_loader:
             direct_loader.initialize_cache_helper()

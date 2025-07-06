@@ -233,14 +233,15 @@ class MetadataTreeView(QTreeView):
         return self._cache_helper
 
     def _initialize_direct_loader(self) -> None:
-        """Initialize the DirectMetadataLoader when parent window is available."""
+        """Initialize the UnifiedMetadataManager when parent window is available."""
         parent_window = self._get_parent_with_file_table()
         if parent_window:
-            self._direct_loader = get_direct_metadata_loader(parent_window)
-            logger.debug("[MetadataTreeView] DirectMetadataLoader initialized")
+            from core.unified_metadata_manager import get_unified_metadata_manager
+            self._direct_loader = get_unified_metadata_manager(parent_window)
+            logger.debug("[MetadataTreeView] UnifiedMetadataManager initialized")
 
     def _get_direct_loader(self):
-        """Get the DirectMetadataLoader instance, initializing if needed."""
+        """Get the UnifiedMetadataManager instance, initializing if needed."""
         if self._direct_loader is None:
             self._initialize_direct_loader()
         return self._direct_loader
@@ -2438,12 +2439,8 @@ class MetadataTreeView(QTreeView):
 
         # Also request viewport-based loading if file table is available
         if hasattr(parent_window, 'file_table_view'):
-            visible_files = ViewportDetector.get_visible_files(
-                parent_window.file_table_view,
-                parent_window.file_model
-            )
-            if visible_files:
-                lazy_manager.request_metadata_for_viewport(visible_files)
+            # ViewportDetector is no longer available, skip viewport-based loading
+            pass
 
     def _on_lazy_metadata_loaded(self, file_path: str, metadata: dict) -> None:
         """
