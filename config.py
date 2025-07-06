@@ -172,7 +172,7 @@ METADATA_ICON_COLORS = {
     'modified': '#ffa726',       # Orange for modified metadata
     'partial': '#ffeb3b',        # Yellow for partial metadata
     'hash': '#ce93d8',           # Light purple for hash (brighter than before)
-    'none': '#252525'            # Dark gray for no metadata/hash (grayout)
+    'none': '#404040'            # Dark gray for no metadata/hash (grayout)
 }
 
 # File Table Settings
@@ -200,6 +200,9 @@ METADATA_TREE_COLUMN_WIDTHS = {
     "KEY_MAX_WIDTH": 800,
     "VALUE_MIN_WIDTH": 250
 }
+
+# Metadata Display Level Settings
+DEFAULT_METADATA_DISPLAY_LEVEL = "essential"  # Options: "essential", "standard", "all"
 
 # Status Label Colors
 STATUS_COLORS = {

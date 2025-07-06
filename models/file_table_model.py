@@ -178,30 +178,29 @@ class FileTableModel(QAbstractTableModel):
                     return file.modified.strftime("%Y-%m-%d %H:%M:%S")
                 return str(file.modified)
 
-        if role == Qt.ToolTipRole and col == 1: # type: ignore
+        if role == Qt.ToolTipRole: # type: ignore
             tooltip_parts = []
+            tooltip_parts.append(f"File: {file.filename}")
 
-            # Add metadata info using cache helper
-            cache_helper = self._cache_helper
-            if cache_helper:
-                # Create temporary FileItem-like object for cache helper
-                class TempFileItem:
-                    def __init__(self, path):
-                        self.full_path = path
+            # Use the same cache access method as the icon generation
+            entry = None
+            if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
+                entry = self.parent_window.metadata_cache.get_entry(file.full_path)
 
-                temp_file_item = TempFileItem(file.full_path)
-                entry = cache_helper.get_cache_entry_for_file(temp_file_item)
+            if entry and hasattr(entry, 'data') and entry.data:
+                # Filter out internal metadata markers
+                real_metadata = {k: v for k, v in entry.data.items() if not k.startswith('__')}
+                metadata_count = len(real_metadata)
 
-                if entry and entry.data:
-                    metadata_count = len(entry.data)
-                    if entry.is_extended:
-                        tooltip_parts.append(f"Extended Metadata Loaded: {metadata_count} values")
+                if metadata_count > 0:
+                    if hasattr(entry, 'is_extended') and entry.is_extended:
+                        tooltip_parts.append(f"Extended Metadata: {metadata_count} values")
                     else:
-                        tooltip_parts.append(f"Metadata loaded: {metadata_count} values")
+                        tooltip_parts.append(f"Metadata: {metadata_count} values")
                 else:
-                    tooltip_parts.append("Metadata not loaded")
+                    tooltip_parts.append("No metadata")
             else:
-                tooltip_parts.append("Metadata not loaded")
+                tooltip_parts.append("No metadata")
 
             # Add hash info only if hash exists
             hash_value = self._get_hash_value(file.full_path)

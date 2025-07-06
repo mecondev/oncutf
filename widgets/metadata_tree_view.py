@@ -177,6 +177,10 @@ class MetadataTreeView(QTreeView):
         # Track if we're in placeholder mode
         self._is_placeholder_mode: bool = True
 
+        # Display level for metadata filtering (load from config)
+        from config import DEFAULT_METADATA_DISPLAY_LEVEL
+        self._current_display_level: str = DEFAULT_METADATA_DISPLAY_LEVEL
+
         # Scroll position memory: {file_path: scroll_position}
         self._scroll_positions: Dict[str, int] = {}
         self._current_file_path: Optional[str] = None
@@ -876,6 +880,37 @@ class MetadataTreeView(QTreeView):
 
         menu.addSeparator()
 
+        # Display level submenu
+        display_menu = QMenu("Display Level", menu)
+        display_menu.setIcon(self._get_menu_icon("eye"))
+
+        # Get current display level (fallback to config default)
+        from config import DEFAULT_METADATA_DISPLAY_LEVEL
+        current_level = getattr(self, '_current_display_level', DEFAULT_METADATA_DISPLAY_LEVEL)
+
+        # Create display level actions
+        essential_action = QAction("Essential", display_menu)
+        essential_action.setCheckable(True)
+        essential_action.setChecked(current_level == 'essential')
+        essential_action.triggered.connect(lambda: self._set_display_level('essential'))
+        display_menu.addAction(essential_action)
+
+        standard_action = QAction("Standard", display_menu)
+        standard_action.setCheckable(True)
+        standard_action.setChecked(current_level == 'standard')
+        standard_action.triggered.connect(lambda: self._set_display_level('standard'))
+        display_menu.addAction(standard_action)
+
+        all_action = QAction("All", display_menu)
+        all_action.setCheckable(True)
+        all_action.setChecked(current_level == 'all')
+        all_action.triggered.connect(lambda: self._set_display_level('all'))
+        display_menu.addAction(all_action)
+
+        menu.addMenu(display_menu)
+
+        menu.addSeparator()
+
         # Copy action - always available if there's a value
         copy_action = QAction("Copy", menu)
         copy_action.setIcon(self._get_menu_icon("copy"))
@@ -892,6 +927,45 @@ class MetadataTreeView(QTreeView):
     def _cleanup_menu(self) -> None:
         """Clean up the current menu reference."""
         self._current_menu = None
+
+    def _set_display_level(self, level: str) -> None:
+        """Set the display level and refresh the metadata view."""
+        if level not in ['essential', 'standard', 'all']:
+            logger.warning(f"Invalid display level: {level}")
+            return
+
+        self._current_display_level = level
+        logger.debug(f"Display level changed to: {level}", extra={"dev_only": True})
+
+        # Refresh the current metadata view with the new display level
+        self._refresh_current_metadata_view()
+
+    def _refresh_current_metadata_view(self) -> None:
+        """Refresh the current metadata view with the new display level."""
+        if not self._current_file_path:
+            return
+
+        # Get the current selection to re-display metadata
+        selected_files = self._get_current_selection()
+        if not selected_files:
+            return
+
+        # Get metadata for the current file
+        file_item = selected_files[0]
+
+        # Try to get metadata from cache first
+        cache_helper = self._get_cache_helper()
+        metadata = None
+
+        if cache_helper:
+            metadata = cache_helper.get_metadata_for_file(file_item)
+
+        # Fallback to file item metadata
+        if not metadata and hasattr(file_item, 'metadata'):
+            metadata = file_item.metadata
+
+        if metadata:
+            self.display_metadata(metadata, context="display_level_change")
 
     def _get_menu_icon(self, icon_name: str):
         """Get menu icon using the same system as specified text module."""
@@ -1762,7 +1836,7 @@ class MetadataTreeView(QTreeView):
                     ]):
                         extended_keys.add(key)
 
-            tree_model = build_metadata_tree_model(display_data, self.modified_items, extended_keys)
+            tree_model = build_metadata_tree_model(display_data, self.modified_items, extended_keys, self._current_display_level)
 
             # Use proxy model for filtering instead of setting model directly
             parent_window = self._get_parent_with_file_table()

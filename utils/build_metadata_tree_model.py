@@ -109,7 +109,258 @@ def create_item(text: str, alignment = None) -> QStandardItem:
     return item
 
 
-def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extended_keys: set = None) -> QStandardItemModel:
+def get_hidden_fields_for_level(level: str = "essential") -> set:
+    """
+    Get the set of fields to hide based on the display level.
+
+    Args:
+        level: Display level - "essential", "standard", or "all"
+
+    Returns:
+        Set of field names to hide
+    """
+    # Always hide ExifToolVersion regardless of level
+    always_hidden = {'ExifToolVersion'}
+
+    if level == "all":
+        return always_hidden
+
+    # Standard level - hide technical binary/offset fields
+    standard_hidden = always_hidden | {
+        'Directory',
+        'SourceFile',
+        'FileAccessDate',
+        'FileInodeChangeDate',
+        'FilePermissions',
+        'FileTypeExtension',
+        'MIMEType',
+        'ExifByteOrder',
+        'ThumbnailOffset',
+        'ThumbnailLength',
+        'ThumbnailImage',
+        'PreviewImage',
+        'JpgFromRaw',
+        'TiffThumbnail',
+        'StripOffsets',
+        'StripByteCounts',
+        'RowsPerStrip',
+        'Padding',
+        'OffsetSchema',
+        'ExifInteroperabilityOffset',
+        'InteroperabilityIndex',
+        'InteroperabilityVersion',
+    }
+
+    if level == "standard":
+        return standard_hidden
+
+        # Essential level (default) - hide most technical fields
+    essential_hidden = standard_hidden | {
+        # Image format technical fields
+        'Compression',
+        'PhotometricInterpretation',
+        'SamplesPerPixel',
+        'PlanarConfiguration',
+        'SubfileType',
+        'YCbCrCoefficients',
+        'YCbCrSubSampling',
+        'YCbCrPositioning',
+        'ReferenceBlackWhite',
+        'BitsPerSample',
+        'Predictor',
+        'FillOrder',
+        'DocumentName',
+        'ImageDescription',
+        'StripByteCounts',
+        'MinSampleValue',
+        'MaxSampleValue',
+        'XResolution',
+        'YResolution',
+        'ResolutionUnit',
+        'TransferFunction',
+        'WhitePoint',
+        'PrimaryChromaticities',
+
+        # EXIF technical fields
+        'ExifVersion',
+        'ComponentsConfiguration',
+        'FlashpixVersion',
+        'RelatedSoundFile',
+        'PrintImageMatching',
+        'SubSecTime',
+        'SubSecTimeOriginal',
+        'SubSecTimeDigitized',
+        'SpectralSensitivity',
+        'OECF',
+        'SensitivityType',
+        'StandardOutputSensitivity',
+        'RecommendedExposureIndex',
+        'ISOSpeed',
+        'ISOSpeedLatitudeyyy',
+        'ISOSpeedLatitudezzz',
+        'ExifImageWidth',
+        'ExifImageHeight',
+        'FileSource',
+        'SceneType',
+        'CFAPattern',
+        'CustomRendered',
+        'ExposureMode',
+        'WhiteBalance',
+        'DigitalZoomRatio',
+        'FocalLengthIn35mmFilm',
+        'SceneCaptureType',
+        'GainControl',
+        'Contrast',
+        'Saturation',
+        'Sharpness',
+        'DeviceSettingDescription',
+        'SubjectDistanceRange',
+        'ImageUniqueID',
+        'CameraOwnerName',
+        'BodySerialNumber',
+        'LensSpecification',
+        'LensModel',
+        'LensSerialNumber',
+        'LensMake',
+        'LensInfo',
+
+        # Video technical fields (for MP4/MOV files)
+        'CompressorID',
+        'SourceImageWidth',
+        'SourceImageHeight',
+        'XResolution',
+        'YResolution',
+        'CompressorName',
+        'BitDepth',
+        'ColorTable',
+        'GraphicsMode',
+        'OpColor',
+        'Balance',
+        'AudioFormat',
+        'AudioVendorID',
+        'AudioChannels',
+        'AudioBitsPerSample',
+        'AudioSampleRate',
+        'MatrixStructure',
+        'MediaHeaderVersion',
+        'MediaCreateDate',
+        'MediaModifyDate',
+        'MediaTimeScale',
+        'MediaDuration',
+        'MediaLanguageCode',
+        'HandlerClass',
+        'HandlerVendorID',
+        'HandlerDescription',
+        'VideoFrameRate',
+        'VideoCodecID',
+        'VideoBitrate',
+        'AudioCodecID',
+        'AudioBitrate',
+        'MovieHeaderVersion',
+        'CreateDate',
+        'ModifyDate',
+        'TimeScale',
+        'Duration',
+        'PreferredRate',
+        'PreferredVolume',
+        'PreviewTime',
+        'PreviewDuration',
+        'PosterTime',
+        'SelectionTime',
+        'SelectionDuration',
+        'CurrentTime',
+        'NextTrackID',
+
+        # RAW/DNG technical fields
+        'CFARepeatPatternDim',
+        'BlackLevel',
+        'WhiteLevel',
+        'DefaultScale',
+        'BestQualityScale',
+        'DefaultCropOrigin',
+        'DefaultCropSize',
+        'CalibrationIlluminant1',
+        'CalibrationIlluminant2',
+        'ColorMatrix1',
+        'ColorMatrix2',
+        'CameraCalibration1',
+        'CameraCalibration2',
+        'ReductionMatrix1',
+        'ReductionMatrix2',
+        'AnalogBalance',
+        'AsShotNeutral',
+        'AsShotWhiteXY',
+        'BaselineExposure',
+        'BaselineNoise',
+        'BaselineSharpness',
+        'BayerGreenSplit',
+        'LinearResponseLimit',
+        'AntiAliasStrength',
+        'ShadowScale',
+        'DNGVersion',
+        'DNGBackwardVersion',
+        'UniqueCameraModel',
+        'LocalizedCameraModel',
+        'DNGPrivateData',
+        'MakerNoteSafety',
+        'RawDataUniqueID',
+        'OriginalRawFileName',
+        'OriginalRawFileData',
+        'ActiveArea',
+        'MaskedAreas',
+        'AsShotICCProfile',
+        'AsShotPreProfileMatrix',
+        'CurrentICCProfile',
+        'CurrentPreProfileMatrix',
+        'ColorimetricReference',
+        'CameraCalibrationSignature',
+        'ProfileCalibrationSignature',
+        'ExtraCameraProfiles',
+        'AsShotProfileName',
+        'NoiseReductionApplied',
+        'NoiseProfile',
+        'DefaultUserCrop',
+        'DefaultBlackRender',
+        'BaselineExposureOffset',
+        'ProfileLookTableDims',
+        'ProfileLookTableData',
+        'OpcodeList1',
+        'OpcodeList2',
+        'OpcodeList3',
+
+        # Binary/proprietary fields
+        'MakerNote',
+        'UserComment',
+        'XMP',
+        'IPTC',
+        'ICC_Profile',
+        'Photoshop',
+        'APP14',
+        'JFIF',
+        'Adobe',
+        'FlashPix',
+        'PrintIM',
+        'Interoperability',
+
+        # GPS technical details (keep basic GPS but hide technical)
+        'GPSVersionID',
+        'GPSMapDatum',
+        'GPSMeasureMode',
+        'GPSDOP',
+        'GPSSpeedRef',
+        'GPSTrackRef',
+        'GPSImgDirectionRef',
+        'GPSDestBearingRef',
+        'GPSDestDistanceRef',
+        'GPSProcessingMethod',
+        'GPSAreaInformation',
+        'GPSDifferential',
+    }
+
+    return essential_hidden
+
+
+def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extended_keys: set = None, display_level: str = "essential") -> QStandardItemModel:
     """
     Build a tree model for metadata display with enhanced grouping and extended metadata indicators.
 
@@ -117,6 +368,7 @@ def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extende
         metadata: Dictionary containing metadata
         modified_keys: Set of keys that have been modified
         extended_keys: Set of keys that are only available in extended metadata mode
+        display_level: Display level - "essential", "standard", or "all"
     """
     logger.debug(">>> build_metadata_tree_model called", extra={"dev_only": True})
     logger.debug(f"metadata type: {type(metadata)} | keys: {list(metadata.keys()) if isinstance(metadata, dict) else 'N/A'}", extra={"dev_only": True})
@@ -126,21 +378,7 @@ def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extende
     if extended_keys is None:
         extended_keys = set()
 
-    # ExifTool-specific fields that should be hidden from the metadata tree
-    exiftool_hidden_fields = {
-        'ExifToolVersion',
-        'Directory',
-        'SourceFile',
-        'FileName',  # Hide ExifTool FileName - we use our own
-        'FileSize',  # Hide ExifTool FileSize - we have our own
-        'FileModifyDate',  # Hide ExifTool FileModifyDate - we have our own
-        'FileAccessDate',
-        'FileInodeChangeDate',
-        'FilePermissions',
-        'FileType',  # Can be hidden if we have our own Type
-        'FileTypeExtension',
-        'MIMEType'
-    }
+    hidden_fields = get_hidden_fields_for_level(display_level)
 
     model = QStandardItemModel()
     model.setHorizontalHeaderLabels(["Key", "Value"])
@@ -153,9 +391,9 @@ def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extende
         if key.startswith("__"):
             continue
 
-        # Skip ExifTool-specific fields
-        if key in exiftool_hidden_fields:
-            logger.debug(f"Skipping ExifTool field: {key}", extra={"dev_only": True})
+        # Skip hidden fields
+        if key in hidden_fields:
+            logger.debug(f"Skipping hidden field: {key}", extra={"dev_only": True})
             continue
 
         group = classify_key(key)
@@ -175,6 +413,9 @@ def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extende
     for group_name in ordered_groups:
         items = grouped[group_name]
         logger.debug(f"Creating group: {group_name} with {len(items)} items", extra={"dev_only": True})
+
+        # Sort items alphabetically within each group
+        items.sort(key=lambda item: item[0].lower())
 
         # Check if this group has extended metadata
         group_has_extended = any(key in extended_keys for key, _ in items)
