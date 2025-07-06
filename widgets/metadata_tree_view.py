@@ -73,12 +73,12 @@ from core.qt_imports import (
     pyqtSignal,
 )
 from utils.logger_factory import get_cached_logger
-from utils.path_utils import paths_equal
+from utils.path_utils import paths_equal, find_parent_with_attribute
 from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust, schedule_ui_update
 from widgets.file_tree_view import _drag_cancel_filter
 from widgets.metadata_edit_dialog import MetadataEditDialog
 from utils.metadata_cache_helper import MetadataCacheHelper
-from core.direct_metadata_loader import get_direct_metadata_loader
+from .hover_delegate import HoverItemDelegate
 
 # ApplicationContext integration
 try:
@@ -1186,7 +1186,6 @@ class MetadataTreeView(QTreeView):
 
     def _get_parent_with_file_table(self) -> Optional[QWidget]:
         """Find the parent window that has file_table_view attribute."""
-        from utils.path_utils import find_parent_with_attribute
         return find_parent_with_attribute(self, 'file_table_view')
 
     def _get_current_selection(self):

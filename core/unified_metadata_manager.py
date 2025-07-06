@@ -510,18 +510,33 @@ class UnifiedMetadataManager(QObject):
             # Use existing metadata worker
             from widgets.metadata_worker import MetadataWorker
             from core.qt_imports import QThread
+            from utils.metadata_loader import MetadataLoader
 
-            # Create worker and thread
-            self._metadata_worker = MetadataWorker(files, use_extended)
+            # Create metadata loader
+            metadata_loader = MetadataLoader()
+
+            # Create worker with named arguments as expected by constructor
+            self._metadata_worker = MetadataWorker(
+                reader=metadata_loader,
+                metadata_cache=self.parent_window.metadata_cache if self.parent_window else None,
+                parent=None  # No parent to avoid moveToThread issues
+            )
+
+            # Set additional properties after creation
+            self._metadata_worker.file_path = [item.full_path for item in files]
+            self._metadata_worker.use_extended = use_extended
+            self._metadata_worker.main_window = self.parent_window
+
+            # Create thread
             self._metadata_thread = QThread()
 
             # Move worker to thread
             self._metadata_worker.moveToThread(self._metadata_thread)
 
             # Connect signals
-            self._metadata_thread.started.connect(self._metadata_worker.run)
+            self._metadata_thread.started.connect(self._metadata_worker.run_batch)
             self._metadata_worker.finished.connect(self._on_metadata_finished)
-            self._metadata_worker.file_processed.connect(self._on_file_metadata_loaded)
+            self._metadata_worker.file_metadata_loaded.connect(self._on_file_metadata_loaded)
 
             # Start thread
             self._metadata_thread.start()

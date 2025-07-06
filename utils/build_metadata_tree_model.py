@@ -127,6 +127,22 @@ def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extende
     if extended_keys is None:
         extended_keys = set()
 
+    # ExifTool-specific fields that should be hidden from the metadata tree
+    exiftool_hidden_fields = {
+        'ExifToolVersion',
+        'Directory',
+        'SourceFile',
+        'FileName',  # Hide ExifTool FileName - we use our own
+        'FileSize',  # Hide ExifTool FileSize - we have our own
+        'FileModifyDate',  # Hide ExifTool FileModifyDate - we have our own
+        'FileAccessDate',
+        'FileInodeChangeDate',
+        'FilePermissions',
+        'FileType',  # Can be hidden if we have our own Type
+        'FileTypeExtension',
+        'MIMEType'
+    }
+
     model = QStandardItemModel()
     model.setHorizontalHeaderLabels(["Key", "Value"])
     root_item = model.invisibleRootItem()
@@ -136,6 +152,11 @@ def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extende
     for key, value in metadata.items():
         # Skip internal markers
         if key.startswith("__"):
+            continue
+
+        # Skip ExifTool-specific fields
+        if key in exiftool_hidden_fields:
+            logger.debug(f"Skipping ExifTool field: {key}", extra={"dev_only": True})
             continue
 
         group = classify_key(key)

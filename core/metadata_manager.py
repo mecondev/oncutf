@@ -182,27 +182,26 @@ class MetadataManager:
 
     def load_metadata_for_items(self, items: List[FileItem], use_extended: bool = False, source: str = "unknown") -> None:
         """
-        Load metadata for the given FileItem objects using DirectMetadataLoader.
+        Load metadata for the given FileItem objects.
+        This method is deprecated - use UnifiedMetadataManager instead.
 
         Args:
             items: List of FileItem objects to load metadata for
             use_extended: Whether to use extended metadata loading
             source: Source of the request (for logging)
         """
+        logger.warning("[MetadataManager] This method is deprecated - use UnifiedMetadataManager instead")
+
         if not items:
             logger.warning("[MetadataManager] No items provided for metadata loading")
             return
 
-        # Use DirectMetadataLoader for simple, efficient loading
-        from core.direct_metadata_loader import get_direct_metadata_loader
+        # For backward compatibility, delegate to UnifiedMetadataManager
+        from core.unified_metadata_manager import get_unified_metadata_manager
+        unified_manager = get_unified_metadata_manager(self.parent_window)
+        unified_manager.load_metadata_for_items(items, use_extended, source)
 
-        direct_loader = get_direct_metadata_loader(self.parent_window)
-        direct_loader.initialize_cache_helper()
-
-        # Load metadata for files that need it
-        direct_loader.load_metadata_for_files(items, use_extended, source)
-
-        logger.info(f"[MetadataManager] Initiated metadata loading for {len(items)} files via DirectMetadataLoader")
+        logger.info(f"[MetadataManager] Delegated metadata loading for {len(items)} files to UnifiedMetadataManager")
 
     def _load_single_file_with_wait_cursor(self, file_item: FileItem, metadata_tree_view) -> None:
         """Load metadata for a single file using wait cursor (fast metadata only)."""

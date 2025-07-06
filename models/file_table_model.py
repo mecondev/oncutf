@@ -289,17 +289,25 @@ class FileTableModel(QAbstractTableModel):
             # Determine metadata icon type if metadata exists
             metadata_pixmap = None
             if has_metadata:
-                # Get actual metadata to determine type
-                metadata_dict = direct_loader.check_cached_metadata(file)
-                if metadata_dict:
-                    # Check if it's extended metadata (has more comprehensive data)
-                    is_extended = len(metadata_dict) > 10  # Simple heuristic
+                # Get cache entry to determine type correctly
+                cache_helper = self._get_cache_helper()
+                if cache_helper:
+                    # Create temporary FileItem-like object for cache helper
+                    class TempFileItem:
+                        def __init__(self, path):
+                            self.full_path = path
 
-                    # For now, just show basic loaded icon
-                    # TODO: Add logic to detect modified metadata
-                    if is_extended:
-                        metadata_pixmap = self.metadata_icons.get("extended")
+                    temp_file_item = TempFileItem(file.full_path)
+                    entry = cache_helper.get_cache_entry_for_file(temp_file_item)
+
+                    if isinstance(entry, MetadataEntry):
+                        # Use the actual is_extended flag from cache entry
+                        if entry.is_extended:
+                            metadata_pixmap = self.metadata_icons.get("extended")
+                        else:
+                            metadata_pixmap = self.metadata_icons.get("loaded")
                     else:
+                        # Fallback to loaded icon if no cache entry
                         metadata_pixmap = self.metadata_icons.get("loaded")
 
             # Handle different combinations
@@ -477,61 +485,56 @@ class FileTableModel(QAbstractTableModel):
         self.files = files
         self.endResetModel()
 
-        # Άμεση ενημέρωση icons για cached metadata/hash
+        # Immediate icon update for cached metadata/hash
         self._update_icons_immediately()
 
     def _update_icons_immediately(self) -> None:
-        """Ενημερώνει άμεσα τα icons για όλα τα αρχεία που έχουν cached δεδομένα."""
+        """Updates icons immediately for all files that have cached data."""
         if not self.files:
             return
 
-        # Βεβαιωθούμε ότι το UnifiedMetadataManager είναι αρχικοποιημένο
+        # Ensure UnifiedMetadataManager is initialized
         direct_loader = self._get_direct_loader()
-        if direct_loader:
-            direct_loader.initialize_cache_helper()
+        if not direct_loader:
+            return
 
-        # Μετρητής για στατιστικά
+        direct_loader.initialize_cache_helper()
+
+        # Counters for statistics
         cached_metadata_count = 0
         cached_hash_count = 0
+        files_with_cached_data = []
 
-        # Ενημέρωση icons για αρχεία με cached metadata/hash
+        # Batch check for cached data (more efficient)
         for i, file_item in enumerate(self.files):
-            # Έλεγχος για cached δεδομένα
-            has_metadata = False
-            has_hash = False
+            has_metadata = direct_loader.has_cached_metadata(file_item)
+            has_hash = direct_loader.has_cached_hash(file_item)
 
-            if direct_loader:
-                has_metadata = direct_loader.has_cached_metadata(file_item)
-                has_hash = direct_loader.has_cached_hash(file_item)
+            if has_metadata:
+                cached_metadata_count += 1
+            if has_hash:
+                cached_hash_count += 1
 
-                if has_metadata:
-                    cached_metadata_count += 1
-                if has_hash:
-                    cached_hash_count += 1
-
-            # Ενημέρωση icon αν υπάρχουν cached δεδομένα
+            # Keep only files that have cached data
             if has_metadata or has_hash:
-                index = self.index(i, 0)
-                # Emit dataChanged για την πρώτη στήλη (icons)
-                self.dataChanged.emit(index, index, [Qt.DecorationRole, Qt.ToolTipRole])
+                files_with_cached_data.append(i)
 
-        logger.debug(f"[FileTableModel] Updated icons immediately for {len(self.files)} files (metadata: {cached_metadata_count}, hash: {cached_hash_count})")
-
-        # Προσθήκη QTimer για delayed update αν χρειάζεται
-        from PyQt5.QtCore import QTimer
-        QTimer.singleShot(50, self._delayed_icon_update)
-
-    def _delayed_icon_update(self) -> None:
-        """Delayed icon update για εξασφάλιση ότι όλα τα cached δεδομένα είναι διαθέσιμα."""
-        if not self.files:
-            return
-
-        # Δεύτερη ενημέρωση για εξασφάλιση ότι όλα τα icons εμφανίζονται σωστά
-        for i, file_item in enumerate(self.files):
+        # Update icons only for files with cached data
+        for i in files_with_cached_data:
             index = self.index(i, 0)
             self.dataChanged.emit(index, index, [Qt.DecorationRole, Qt.ToolTipRole])
 
-        logger.debug(f"[FileTableModel] Delayed icon update completed for {len(self.files)} files")
+        logger.debug(f"[FileTableModel] Updated icons immediately for {len(self.files)} files (metadata: {cached_metadata_count}, hash: {cached_hash_count})")
+
+        # Removed delayed update - no longer needed
+        # from PyQt5.QtCore import QTimer
+        # QTimer.singleShot(50, self._delayed_icon_update)
+
+    def _delayed_icon_update(self) -> None:
+        """Delayed icon update to ensure all cached data is available."""
+        # This method is no longer needed - removed for performance improvement
+        # The _update_icons_immediately() does all the work
+        pass
 
     def add_files(self, new_files: list[FileItem]) -> None:
         """
@@ -576,7 +579,7 @@ class FileTableModel(QAbstractTableModel):
         if not self.files:
             return
 
-        # Βεβαιωθούμε ότι το UnifiedMetadataManager είναι αρχικοποιημένο
+        # Ensure UnifiedMetadataManager is initialized
         direct_loader = self._get_direct_loader()
         if direct_loader:
             direct_loader.initialize_cache_helper()
