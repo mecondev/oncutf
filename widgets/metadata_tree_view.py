@@ -2355,40 +2355,17 @@ class MetadataTreeView(QTreeView):
 
     def _try_lazy_metadata_loading(self, file_item: Any, context: str = "") -> Optional[Dict[str, Any]]:
         """
-        Try to load metadata using lazy loading with smart caching.
+        Try to load metadata using simple fallback loading (lazy manager removed).
 
         Args:
             file_item: FileItem to load metadata for
             context: Context string for logging
 
         Returns:
-            dict: Metadata if available, None if needs background loading
+            dict: Metadata if available, None if not cached
         """
-        lazy_manager = self._get_lazy_manager()
-        if not lazy_manager:
-            # Fallback to traditional loading
-            return self._fallback_metadata_loading(file_item)
-
-        # Try lazy loading with high priority for user selection
-        metadata = lazy_manager.request_metadata(
-            file_item,
-            use_extended=False,
-            priority=5,  # High priority for user selection
-            source=f"display_{context}"
-        )
-
-        if metadata:
-            logger.debug(f"[MetadataTreeView] Lazy loading cache hit for {file_item.filename}")
-            return metadata
-
-        # Not immediately available - trigger smart prefetching
-        self._trigger_smart_prefetching(file_item)
-
-        # Show loading state briefly, then fallback
-        self.show_empty_state("Loading metadata...")
-
-        # Return None to indicate loading in progress
-        return None
+        # Since LazyMetadataManager was removed, use direct fallback loading
+        return self._fallback_metadata_loading(file_item)
 
     def _fallback_metadata_loading(self, file_item: Any) -> Optional[Dict[str, Any]]:
         """
@@ -2417,72 +2394,38 @@ class MetadataTreeView(QTreeView):
         """
         Trigger smart prefetching for files around the selected file.
 
+        Note: LazyMetadataManager was removed, so this is now a no-op.
+
         Args:
             selected_file: Currently selected FileItem
         """
-        lazy_manager = self._get_lazy_manager()
-        if not lazy_manager:
-            return
-
-        # Get parent window and file list
-        parent_window = self._get_parent_with_file_table()
-        if not parent_window or not hasattr(parent_window, 'file_model'):
-            return
-
-        file_list = parent_window.file_model.files if parent_window.file_model else []
-        if not file_list:
-            return
-
-        # Request smart prefetching
-        lazy_manager.request_smart_prefetch(selected_file, file_list)
-
-        # Also request viewport-based loading if file table is available
-        if hasattr(parent_window, 'file_table_view'):
-            # ViewportDetector is no longer available, skip viewport-based loading
-            pass
+        # LazyMetadataManager was removed - this is now a no-op
+        pass
 
     def _on_lazy_metadata_loaded(self, file_path: str, metadata: dict) -> None:
         """
         Handle metadata loaded signal from lazy manager.
 
+        Note: LazyMetadataManager was removed, so this is now a no-op.
+
         Args:
             file_path: Path of the file that was loaded
             metadata: The loaded metadata
         """
-        # Check if this is the currently selected file
-        current_file_path = getattr(self, '_current_file_path', None)
-
-        if current_file_path and current_file_path == file_path:
-            # This is the currently selected file - update display
-            display_metadata = dict(metadata)
-
-            # Try to get filename from file path
-            try:
-                import os
-                display_metadata["FileName"] = os.path.basename(file_path)
-            except Exception:
-                pass
-
-            self.display_metadata(display_metadata, context="lazy_loaded")
-            logger.debug(f"[MetadataTreeView] Updated display with lazy-loaded metadata for current file")
-
-        # Update file icon status
-        self._update_file_icon_status()
+        # LazyMetadataManager was removed - this is now a no-op
+        pass
 
     def enable_lazy_loading(self, enabled: bool = True) -> None:
         """
         Enable or disable lazy loading.
 
+        Note: LazyMetadataManager was removed, so this is now a no-op.
+
         Args:
             enabled: Whether to enable lazy loading
         """
-        lazy_manager = self._get_lazy_manager()
-        if lazy_manager:
-            lazy_manager.set_config(
-                enable_background=enabled,
-                enable_prefetching=enabled
-            )
-            logger.info(f"[MetadataTreeView] Lazy loading {'enabled' if enabled else 'disabled'}")
+        # LazyMetadataManager was removed - this is now a no-op
+        logger.info(f"[MetadataTreeView] Lazy loading is no longer available (manager was removed)")
 
     def configure_lazy_loading(
         self,
@@ -2494,40 +2437,26 @@ class MetadataTreeView(QTreeView):
         """
         Configure lazy loading parameters.
 
+        Note: LazyMetadataManager was removed, so this is now a no-op.
+
         Args:
             max_cache_size: Maximum number of files to cache in memory
             prefetch_radius: Number of files around selection to prefetch
             enable_background: Whether to enable background loading
             enable_prefetching: Whether to enable smart prefetching
         """
-        lazy_manager = self._get_lazy_manager()
-        if lazy_manager:
-            lazy_manager.set_config(
-                max_cache_size=max_cache_size,
-                prefetch_radius=prefetch_radius,
-                enable_background=enable_background,
-                enable_prefetching=enable_prefetching
-            )
-            logger.info("[MetadataTreeView] Lazy loading configuration updated")
+        # LazyMetadataManager was removed - this is now a no-op
+        logger.info("[MetadataTreeView] Lazy loading configuration is no longer available (manager was removed)")
 
     def get_lazy_loading_stats(self) -> Optional[Dict[str, Any]]:
         """
         Get lazy loading performance statistics.
 
+        Note: LazyMetadataManager was removed, so this always returns None.
+
         Returns:
-            dict: Statistics if available, None otherwise
+            dict: Always None since lazy loading is no longer available
         """
-        lazy_manager = self._get_lazy_manager()
-        if lazy_manager:
-            stats = lazy_manager.get_loading_stats()
-            return {
-                'total_requests': stats.total_requests,
-                'cache_hits': stats.cache_hits,
-                'background_loads': stats.background_loads,
-                'on_demand_loads': stats.on_demand_loads,
-                'prefetch_loads': stats.prefetch_loads,
-                'average_load_time': stats.average_load_time,
-                'cache_hit_rate': stats.cache_hits / max(stats.total_requests, 1) * 100
-            }
+        # LazyMetadataManager was removed - always return None
         return None
 

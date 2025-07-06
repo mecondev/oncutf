@@ -345,7 +345,10 @@ class UnifiedMetadataManager(QObject):
 
     def load_metadata_for_items(self, items: List[FileItem], use_extended: bool = False, source: str = "unknown") -> None:
         """
-        Load metadata for the given FileItem objects.
+        Load metadata for the given FileItem objects using simple and fast approach.
+
+        - Single file: Immediate loading with wait_cursor (fast and responsive)
+        - Multiple files: Background worker with progress dialog
 
         Args:
             items: List of FileItem objects to load metadata for
@@ -356,27 +359,213 @@ class UnifiedMetadataManager(QObject):
             logger.warning("[UnifiedMetadataManager] No items provided for metadata loading")
             return
 
-        # Filter files that need loading
-        files_to_load = []
-        for file_item in items:
-            if file_item.full_path not in self._currently_loading:
-                cached = self.check_cached_metadata(file_item)
-                if not cached:
-                    files_to_load.append(file_item)
-                    self._currently_loading.add(file_item.full_path)
+        # Reset cancellation flag for new metadata loading operation
+        self.reset_cancellation_flag()
 
-        if not files_to_load:
-            logger.info(f"[UnifiedMetadataManager] All {len(items)} files already have cached metadata")
+        # Check what items need loading vs what's already cached
+        needs_loading = []
+
+        for item in items:
+            # Check cache for existing metadata
+            cache_entry = self.parent_window.metadata_cache.get_entry(item.full_path) if self.parent_window else None
+
+            if cache_entry and hasattr(cache_entry, 'is_extended'):
+                # If we have cache and it matches the requested type, skip loading
+                if cache_entry.is_extended == use_extended:
+                    continue
+
+            needs_loading.append(item)
+
+        # Get metadata tree view reference
+        metadata_tree_view = (self.parent_window.metadata_tree_view
+                            if self.parent_window and hasattr(self.parent_window, 'metadata_tree_view')
+                            else None)
+
+        # If nothing needs loading, just handle display logic
+        if not needs_loading:
+            logger.info(f"[{source}] All {len(items)} files already cached")
+
+            # Always display metadata for cached items too
+            if metadata_tree_view and items:
+                # Always display metadata - same logic as loaded items
+                display_file = items[0] if len(items) == 1 else items[-1]
+                metadata_tree_view.display_file_metadata(display_file)
+
             return
 
-        logger.info(f"[UnifiedMetadataManager] Loading metadata for {len(files_to_load)} files ({source})")
+        # Determine loading mode based on file count
+        loading_mode = self.determine_loading_mode(len(needs_loading), use_extended)
 
-        # Show progress dialog for multiple files
-        if len(files_to_load) > 1:
-            self._show_metadata_progress_dialog(files_to_load, use_extended, source)
-        else:
-            # Single file - load directly
-            self._start_metadata_loading(files_to_load, use_extended, source)
+        # Handle different loading modes using old system's simple approach
+        if loading_mode == "single_file_wait_cursor":
+            logger.info(f"[{source}] Loading metadata for single file with wait_cursor (extended={use_extended})")
+
+            from utils.cursor_helper import wait_cursor
+            with wait_cursor():
+                # Load metadata for the single file using ExifTool wrapper directly
+                file_item = needs_loading[0]
+                metadata = self._exiftool_wrapper.get_metadata(file_item.full_path, use_extended=use_extended)
+
+                if metadata:
+                    # Mark metadata with loading mode for UI indicators
+                    if use_extended and '__extended__' not in metadata:
+                        metadata['__extended__'] = True
+                    elif not use_extended and '__extended__' in metadata:
+                        del metadata['__extended__']
+
+                    # Cache the result in both local and parent window caches
+                    cache_key = (file_item.full_path, use_extended)
+                    self._metadata_cache[cache_key] = metadata
+
+                    # Also save to parent window's metadata_cache for UI display
+                    if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
+                        self.parent_window.metadata_cache.set(file_item.full_path, metadata, is_extended=use_extended)
+
+                    # Update the file item
+                    file_item.metadata = metadata
+
+                    # Emit dataChanged signal to update UI icons immediately
+                    if self.parent_window and hasattr(self.parent_window, 'file_model'):
+                        try:
+                            # Find the row index and emit dataChanged for the entire row
+                            for i, file in enumerate(self.parent_window.file_model.files):
+                                if paths_equal(file.full_path, file_item.full_path):
+                                    top_left = self.parent_window.file_model.index(i, 0)
+                                    bottom_right = self.parent_window.file_model.index(i, self.parent_window.file_model.columnCount() - 1)
+                                    self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole])
+                                    break
+                        except Exception as e:
+                            logger.warning(f"[UnifiedMetadataManager] Failed to emit dataChanged for {file_item.filename}: {e}")
+
+                    # Display metadata in tree view if available
+                    if metadata_tree_view:
+                        metadata_tree_view.display_file_metadata(file_item)
+
+                    logger.info(f"[{source}] Successfully loaded metadata for {file_item.filename}")
+
+        elif loading_mode == "multiple_files_dialog":
+            logger.info(f"[{source}] Loading metadata for {len(needs_loading)} files with dialog (extended={use_extended})")
+
+            # Calculate total size for enhanced progress tracking
+            from utils.file_size_calculator import calculate_files_total_size
+            total_size = calculate_files_total_size(needs_loading)
+
+            # Use progress dialog for large batches
+            from utils.progress_dialog import ProgressDialog
+
+            # Cancellation support
+            self._metadata_cancelled = False
+
+            def cancel_metadata_loading():
+                self._metadata_cancelled = True
+                logger.info("[UnifiedMetadataManager] Metadata loading cancelled by user")
+
+            # Create loading dialog
+            loading_dialog = ProgressDialog.create_metadata_dialog(
+                parent=self.parent_window,
+                is_extended=use_extended,
+                cancel_callback=cancel_metadata_loading
+            )
+            loading_dialog.set_status("Loading metadata..." if not use_extended else "Loading extended metadata...")
+
+            # Start enhanced tracking with total size
+            loading_dialog.start_progress_tracking(total_size)
+            loading_dialog.show()
+
+            # Initialize incremental size tracking for better performance
+            processed_size = 0
+
+            # Process each file
+            for i, file_item in enumerate(needs_loading):
+                # Check for cancellation before processing each file
+                if self._metadata_cancelled:
+                    logger.info(f"[UnifiedMetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}")
+                    loading_dialog.close()
+                    return
+
+                # Add current file size to processed total
+                try:
+                    if hasattr(file_item, 'file_size') and file_item.file_size is not None:
+                        current_file_size = file_item.file_size
+                    elif hasattr(file_item, 'full_path') and os.path.exists(file_item.full_path):
+                        current_file_size = os.path.getsize(file_item.full_path)
+                        # Cache it for future use
+                        if hasattr(file_item, 'file_size'):
+                            file_item.file_size = current_file_size
+                    else:
+                        current_file_size = 0
+
+                    processed_size += current_file_size
+                except (OSError, AttributeError):
+                    current_file_size = 0
+
+                # Update progress using unified method
+                loading_dialog.update_progress(
+                    file_count=i + 1,
+                    total_files=len(needs_loading),
+                    processed_bytes=processed_size,
+                    total_bytes=total_size
+                )
+                loading_dialog.set_filename(file_item.filename)
+                loading_dialog.set_count(i + 1, len(needs_loading))
+
+                # Process events to update the dialog and handle cancellation
+                if (i + 1) % 10 == 0 or current_file_size > 10 * 1024 * 1024:
+                    from PyQt5.QtWidgets import QApplication
+                    QApplication.processEvents()
+
+                # Check again after processing events
+                if self._metadata_cancelled:
+                    logger.info(f"[UnifiedMetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}")
+                    loading_dialog.close()
+                    return
+
+                # Load metadata using ExifTool wrapper directly
+                metadata = self._exiftool_wrapper.get_metadata(file_item.full_path, use_extended=use_extended)
+
+                if metadata:
+                    # Mark metadata with loading mode for UI indicators
+                    if use_extended and '__extended__' not in metadata:
+                        metadata['__extended__'] = True
+                    elif not use_extended and '__extended__' in metadata:
+                        del metadata['__extended__']
+
+                    # Cache the result in both local and parent window caches
+                    cache_key = (file_item.full_path, use_extended)
+                    self._metadata_cache[cache_key] = metadata
+
+                    # Also save to parent window's metadata_cache for UI display
+                    if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
+                        self.parent_window.metadata_cache.set(file_item.full_path, metadata, is_extended=use_extended)
+
+                    # Update the file item
+                    file_item.metadata = metadata
+
+                    # Emit dataChanged signal to update UI icons
+                    if self.parent_window and hasattr(self.parent_window, 'file_model'):
+                        try:
+                            # Find the row index and emit dataChanged for the entire row
+                            for j, file in enumerate(self.parent_window.file_model.files):
+                                if paths_equal(file.full_path, file_item.full_path):
+                                    top_left = self.parent_window.file_model.index(j, 0)
+                                    bottom_right = self.parent_window.file_model.index(j, self.parent_window.file_model.columnCount() - 1)
+                                    self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole])
+                                    break
+                        except Exception as e:
+                            logger.warning(f"[UnifiedMetadataManager] Failed to emit dataChanged for {file_item.filename}: {e}")
+
+            # Close the progress dialog
+            loading_dialog.close()
+
+            # Display metadata for the last processed file if available
+            if metadata_tree_view and needs_loading:
+                display_file = needs_loading[-1]
+                metadata_tree_view.display_file_metadata(display_file)
+
+            logger.info(f"[{source}] Successfully loaded metadata for {len(needs_loading)} files")
+
+        # Always emit signal to indicate loading is finished
+        self.loading_finished.emit()
 
     def load_hashes_for_files(
         self,
