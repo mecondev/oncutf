@@ -1,0 +1,49 @@
+{
+  "timestamp": 1751786925.6070063,
+  "system_info": {
+    "cpu_count": 4,
+    "memory_total_gb": 7.1766204833984375,
+    "python_version": "3.13.0 (main, Nov 18 2024, 23:52:19) [GCC 13.2.0]",
+    "platform": "posix"
+  },
+  "summary": {
+    "total_tests": 1,
+    "avg_performance_improvement": -90.13963254932843,
+    "avg_memory_improvement": 0.0,
+    "avg_speed_improvement": -914.1609884243112,
+    "best_performance_test": "Thread_Pool_Performance",
+    "best_memory_test": "Thread_Pool_Performance",
+    "best_speed_test": "Thread_Pool_Performance"
+  },
+  "detailed_results": [
+    {
+      "test_name": "Thread_Pool_Performance",
+      "baseline": {
+        "test_name": "Thread_Pool_Baseline",
+        "duration": 1.0318224430084229,
+        "memory_usage_mb": 146.39453125,
+        "cpu_usage_percent": 2.6727272727272724,
+        "operations_per_second": 96.91589931736317,
+        "success_rate": 100.0,
+        "additional_metrics": {}
+      },
+      "optimized": {
+        "test_name": "Thread_Pool_Optimized",
+        "duration": 10.464340686798096,
+        "memory_usage_mb": 146.39453125,
+        "cpu_usage_percent": 7.889320388349515,
+        "operations_per_second": 9.556263790814922,
+        "success_rate": 100.0,
+        "additional_metrics": {}
+      },
+      "improvements": {
+        "performance": -90.13963254932843,
+        "memory": 0.0,
+        "speed": -914.1609884243112
+      }
+    }
+  ],
+  "recommendations": [
+    "Low performance improvement in Thread_Pool_Performance: -90.1% - Consider further optimization"
+  ]
+}

@@ -352,12 +352,12 @@ class MemoryStressTests:
                 # Submit many async operations
                 operation_ids = []
                 for i in range(operations):
-                    async def mock_operation(op_id=i):
+                    async def mock_operation(op_id: int = i):
                         await asyncio.sleep(0.01)
                         return f"result_{op_id}"
 
                     op_id = f"stress_op_{i}"
-                    async_manager.task_manager.submit_task(op_id, mock_operation(), 'stress_test')
+                    async_manager.task_manager.submit_task(op_id, mock_operation(i), 'stress_test')
                     operation_ids.append(op_id)
 
                 # Wait for completion

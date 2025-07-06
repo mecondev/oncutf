@@ -531,11 +531,11 @@ class AsyncBenchmarks:
                 for i, file_path in enumerate(test_files):
                     op_id = f"test_op_{i}"
                     # Mock async operation
-                    async def mock_operation():
+                    async def mock_operation(op_id: int = i):
                         await asyncio.sleep(0.01)  # Simulate work
-                        return f"result_{i}"
+                        return f"result_{op_id}"
 
-                    async_manager.task_manager.submit_task(op_id, mock_operation(), 'test')
+                    async_manager.task_manager.submit_task(op_id, mock_operation(i), 'test')
                     operation_ids.append(op_id)
 
                 # Wait for completion

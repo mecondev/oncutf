@@ -1,0 +1,49 @@
+{
+  "timestamp": 1751786909.8532588,
+  "system_info": {
+    "cpu_count": 4,
+    "memory_total_gb": 7.1766204833984375,
+    "python_version": "3.13.0 (main, Nov 18 2024, 23:52:19) [GCC 13.2.0]",
+    "platform": "posix"
+  },
+  "summary": {
+    "total_tests": 1,
+    "avg_performance_improvement": -99.59279784016401,
+    "avg_memory_improvement": 0.0,
+    "avg_speed_improvement": -24457.826520438684,
+    "best_performance_test": "Icon_Loading_Performance",
+    "best_memory_test": "Icon_Loading_Performance",
+    "best_speed_test": "Icon_Loading_Performance"
+  },
+  "detailed_results": [
+    {
+      "test_name": "Icon_Loading_Performance",
+      "baseline": {
+        "test_name": "Icon_Loading_Baseline",
+        "duration": 0.0004782676696777344,
+        "memory_usage_mb": 140.76953125,
+        "cpu_usage_percent": 0.0,
+        "operations_per_second": 209087.93619142572,
+        "success_rate": 100.0,
+        "additional_metrics": {}
+      },
+      "optimized": {
+        "test_name": "Icon_Loading_Optimized",
+        "duration": 0.11745214462280273,
+        "memory_usage_mb": 140.76953125,
+        "cpu_usage_percent": 66.15,
+        "operations_per_second": 851.4105921279662,
+        "success_rate": 100.0,
+        "additional_metrics": {}
+      },
+      "improvements": {
+        "performance": -99.59279784016401,
+        "memory": 0.0,
+        "speed": -24457.826520438684
+      }
+    }
+  ],
+  "recommendations": [
+    "Low performance improvement in Icon_Loading_Performance: -99.6% - Consider further optimization"
+  ]
+}

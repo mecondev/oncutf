@@ -1,0 +1,49 @@
+{
+  "timestamp": 1751786912.6460621,
+  "system_info": {
+    "cpu_count": 4,
+    "memory_total_gb": 7.1766204833984375,
+    "python_version": "3.13.0 (main, Nov 18 2024, 23:52:19) [GCC 13.2.0]",
+    "platform": "posix"
+  },
+  "summary": {
+    "total_tests": 1,
+    "avg_performance_improvement": -97.83376233358109,
+    "avg_memory_improvement": -0.0816938146904635,
+    "avg_speed_improvement": -4516.298643043811,
+    "best_performance_test": "Integration_Performance",
+    "best_memory_test": "Integration_Performance",
+    "best_speed_test": "Integration_Performance"
+  },
+  "detailed_results": [
+    {
+      "test_name": "Integration_Performance",
+      "baseline": {
+        "test_name": "Integration_Baseline",
+        "duration": 0.05501198768615723,
+        "memory_usage_mb": 140.76953125,
+        "cpu_usage_percent": 0.0,
+        "operations_per_second": 908.8928086956145,
+        "success_rate": 100.0,
+        "additional_metrics": {}
+      },
+      "optimized": {
+        "test_name": "Integration_Optimized",
+        "duration": 2.539517641067505,
+        "memory_usage_mb": 140.88453125,
+        "cpu_usage_percent": 7.62,
+        "operations_per_second": 19.688778369337154,
+        "success_rate": 100.0,
+        "additional_metrics": {}
+      },
+      "improvements": {
+        "performance": -97.83376233358109,
+        "memory": -0.0816938146904635,
+        "speed": -4516.298643043811
+      }
+    }
+  ],
+  "recommendations": [
+    "Low performance improvement in Integration_Performance: -97.8% - Consider further optimization"
+  ]
+}

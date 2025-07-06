@@ -1,0 +1,75 @@
+{
+  "timestamp": 1751786373.502524,
+  "system_info": {
+    "cpu_count": 4,
+    "memory_total_gb": 7.1766204833984375,
+    "python_version": "3.13.0 (main, Nov 18 2024, 23:52:19) [GCC 13.2.0]",
+    "platform": "posix"
+  },
+  "summary": {
+    "total_tests": 2,
+    "avg_performance_improvement": -19.7735192701655,
+    "avg_memory_improvement": -0.9209768933475866,
+    "avg_speed_improvement": -57.21651390395549,
+    "best_performance_test": "Memory_Cleanup_Performance",
+    "best_memory_test": "LRU_Cache_Performance",
+    "best_speed_test": "Memory_Cleanup_Performance"
+  },
+  "detailed_results": [
+    {
+      "test_name": "LRU_Cache_Performance",
+      "baseline": {
+        "test_name": "Memory_LRU_Baseline",
+        "duration": 0.11826300621032715,
+        "memory_usage_mb": 139.76171875,
+        "cpu_usage_percent": 48.9,
+        "operations_per_second": 84557.2958141729,
+        "success_rate": 100.0,
+        "additional_metrics": {}
+      },
+      "optimized": {
+        "test_name": "Memory_LRU_Optimized",
+        "duration": 0.270554780960083,
+        "memory_usage_mb": 139.76171875,
+        "cpu_usage_percent": 81.7,
+        "operations_per_second": 36961.09144519378,
+        "success_rate": 100.0,
+        "additional_metrics": {}
+      },
+      "improvements": {
+        "performance": -56.28870212876579,
+        "memory": 0.0,
+        "speed": -128.77380647580495
+      }
+    },
+    {
+      "test_name": "Memory_Cleanup_Performance",
+      "baseline": {
+        "test_name": "Memory_Cleanup_Baseline",
+        "duration": 0.14919304847717285,
+        "memory_usage_mb": 142.51171875,
+        "cpu_usage_percent": 63.0,
+        "operations_per_second": 33513.6258092147,
+        "success_rate": 100.0,
+        "additional_metrics": {}
+      },
+      "optimized": {
+        "test_name": "Memory_Cleanup_Optimized",
+        "duration": 0.12779760360717773,
+        "memory_usage_mb": 145.13671875,
+        "cpu_usage_percent": 72.7,
+        "operations_per_second": 39124.36429848029,
+        "success_rate": 100.0,
+        "additional_metrics": {}
+      },
+      "improvements": {
+        "performance": 16.74166358843479,
+        "memory": -1.8419537866951732,
+        "speed": 14.340778667893971
+      }
+    }
+  ],
+  "recommendations": [
+    "Low performance improvement in LRU_Cache_Performance: -56.3% - Consider further optimization"
+  ]
+}
