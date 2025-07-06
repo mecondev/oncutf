@@ -249,10 +249,15 @@ class ExifToolWrapper:
                     try:
                         self.process.stdin.write("-stay_open\nFalse\n")
                         self.process.stdin.flush()
-                        self.process.stdin.close()
-                    except (BrokenPipeError, OSError):
-                        # Process may have already terminated
-                        pass
+                    except (BrokenPipeError, OSError, ValueError) as e:
+                        # Process may have already terminated or stdin is closed
+                        logger.debug(f"[ExifToolWrapper] Expected error during graceful close: {e}")
+                    finally:
+                        try:
+                            self.process.stdin.close()
+                        except (BrokenPipeError, OSError, ValueError):
+                            # Ignore errors when closing stdin
+                            pass
 
                 # Wait for process to terminate gracefully
                 try:

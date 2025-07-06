@@ -479,12 +479,47 @@ class FileTableModel(QAbstractTableModel):
         self.endResetModel()
 
     def set_files(self, files: list[FileItem]) -> None:
+        """Set the files to be displayed in the table."""
         self.beginResetModel()
         self.files = files
         self.endResetModel()
 
-        for f in files:
-            f.checked = False  # force clear
+        # Άμεση ενημέρωση icons για cached metadata/hash
+        self._update_icons_immediately()
+
+    def _update_icons_immediately(self) -> None:
+        """Ενημερώνει άμεσα τα icons για όλα τα αρχεία που έχουν cached δεδομένα."""
+        if not self.files:
+            return
+
+        # Βεβαιωθούμε ότι το DirectMetadataLoader είναι αρχικοποιημένο
+        direct_loader = self._get_direct_loader()
+        if direct_loader:
+            direct_loader.initialize_cache_helper()
+
+        # Ενημέρωση icons για αρχεία με cached metadata/hash
+        for i, file_item in enumerate(self.files):
+            index = self.index(i, 0)
+            # Emit dataChanged για την πρώτη στήλη (icons)
+            self.dataChanged.emit(index, index, [Qt.DecorationRole, Qt.ToolTipRole])
+
+        logger.debug(f"[FileTableModel] Updated icons immediately for {len(self.files)} files")
+
+        # Προσθήκη QTimer για delayed update αν χρειάζεται
+        from PyQt5.QtCore import QTimer
+        QTimer.singleShot(50, self._delayed_icon_update)
+
+    def _delayed_icon_update(self) -> None:
+        """Delayed icon update για εξασφάλιση ότι όλα τα cached δεδομένα είναι διαθέσιμα."""
+        if not self.files:
+            return
+
+        # Δεύτερη ενημέρωση για εξασφάλιση ότι όλα τα icons εμφανίζονται σωστά
+        for i, file_item in enumerate(self.files):
+            index = self.index(i, 0)
+            self.dataChanged.emit(index, index, [Qt.DecorationRole, Qt.ToolTipRole])
+
+        logger.debug(f"[FileTableModel] Delayed icon update completed for {len(self.files)} files")
 
     def add_files(self, new_files: list[FileItem]) -> None:
         """
@@ -529,10 +564,15 @@ class FileTableModel(QAbstractTableModel):
         if not self.files:
             return
 
-        # Emit dataChanged for the entire first column to refresh icons
+        # Βεβαιωθούμε ότι το DirectMetadataLoader είναι αρχικοποιημένο
+        direct_loader = self._get_direct_loader()
+        if direct_loader:
+            direct_loader.initialize_cache_helper()
+
+        # Emit dataChanged for the entire first column to refresh icons and tooltips
         top_left = self.index(0, 0)
         bottom_right = self.index(len(self.files) - 1, 0)
-        self.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole])
+        self.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole])
         logger.debug(f"[FileTableModel] Refreshed icons for {len(self.files)} files")
 
     def get_checked_files(self) -> list[FileItem]:

@@ -96,11 +96,7 @@ class EventHandlerManager:
     def handle_table_context_menu(self, position) -> None:
         """
         Handles the right-click context menu for the file table.
-
-        Supports:
-        - Metadata load (normal / extended) for selected or all files
-        - Invert selection, select all, reload folder
-        - Uses unified selection system (_get_current_selection)
+        Simplified for faster response - basic functionality only.
         """
         if not self.parent_window.file_model.files:
             return
@@ -111,70 +107,25 @@ class EventHandlerManager:
         index_at_position = self.parent_window.file_table_view.indexAt(position)
         total_files = len(self.parent_window.file_model.files)
 
-        # Force sync selection to ensure it's current before showing menu
-        self.parent_window.file_table_view._sync_selection_safely()
-
-        # Give a brief moment for sync to complete
-        QApplication.processEvents()
-
-        # Use unified selection method
+        # Use unified selection method (fast)
         selected_files = self.parent_window.get_selected_files_ordered()
+        has_selection = len(selected_files) > 0
 
-        logger.debug(f"[ContextMenu] Found {len(selected_files)} selected files at position row {index_at_position.row() if index_at_position.isValid() else 'invalid'}", extra={"dev_only": True})
+        logger.debug(f"[ContextMenu] Found {len(selected_files)} selected files", extra={"dev_only": True})
 
         menu = QMenu(self.parent_window)
 
-        # --- Metadata actions ---
+        # --- Metadata actions (simplified, always enabled) ---
         action_load_sel = cast(QAction, menu.addAction(get_menu_icon("file"), "Load metadata for selected file(s) (Ctrl+M)"))
         action_load_all = cast(QAction, menu.addAction(get_menu_icon("folder"), "Load metadata for all files"))
         action_load_ext_sel = cast(QAction, menu.addAction(get_menu_icon("file-plus"), "Load extended metadata for selected file(s) (Ctrl+E)"))
         action_load_ext_all = cast(QAction, menu.addAction(get_menu_icon("folder-plus"), "Load extended metadata for all files"))
 
-        # Check basic selection state first
-        has_selection = len(selected_files) > 0
-
-        # Check metadata availability for smart menu behavior
-        selected_basic_loaded = self._check_files_have_metadata_type(selected_files, extended=False)
-        selected_extended_loaded = self._check_files_have_metadata_type(selected_files, extended=True)
-        all_basic_loaded = self._check_all_files_have_metadata_type(extended=False)
-        all_extended_loaded = self._check_all_files_have_metadata_type(extended=True)
-        selected_have_hashes = self._check_files_have_hashes(selected_files)
-
-        # Smart enable/disable logic for metadata actions
-        # If we have extended metadata, we don't need basic (extended includes basic)
-        action_load_sel.setEnabled(has_selection and not selected_basic_loaded and not selected_extended_loaded)
-        action_load_ext_sel.setEnabled(has_selection and not selected_extended_loaded)
-        action_load_all.setEnabled(total_files > 0 and not all_basic_loaded and not all_extended_loaded)
-        action_load_ext_all.setEnabled(total_files > 0 and not all_extended_loaded)
-
-        # Update tooltips with smart information
-        if has_selection:
-            if selected_extended_loaded:
-                action_load_sel.setToolTip("Selected files already have extended metadata (includes basic)")
-            elif selected_basic_loaded:
-                action_load_sel.setToolTip("Selected files already have basic metadata loaded")
-            else:
-                action_load_sel.setToolTip(f"Load basic metadata for {len(selected_files)} selected file(s)")
-
-            if selected_extended_loaded:
-                action_load_ext_sel.setToolTip("Selected files already have extended metadata loaded")
-            else:
-                action_load_ext_sel.setToolTip(f"Load extended metadata for {len(selected_files)} selected file(s)")
-        else:
-            action_load_sel.setToolTip("Select files first to load their metadata")
-            action_load_ext_sel.setToolTip("Select files first to load their extended metadata")
-
-        if all_extended_loaded:
-            action_load_all.setToolTip("All files already have extended metadata (includes basic)")
-        elif all_basic_loaded:
-            action_load_all.setToolTip("All files already have basic metadata loaded")
-        else:
-            action_load_all.setToolTip("Load basic metadata for all files in folder")
-
-        if all_extended_loaded:
-            action_load_ext_all.setToolTip("All files already have extended metadata loaded")
-        else:
-            action_load_ext_all.setToolTip("Load extended metadata for all files in folder")
+        # Simple enable/disable logic (no heavy checks)
+        action_load_sel.setEnabled(has_selection)
+        action_load_ext_sel.setEnabled(has_selection)
+        action_load_all.setEnabled(total_files > 0)
+        action_load_ext_all.setEnabled(total_files > 0)
 
         menu.addSeparator()
 
@@ -188,6 +139,26 @@ class EventHandlerManager:
         # --- Other actions ---
         action_reload = cast(QAction, menu.addAction(get_menu_icon("refresh-cw"), "Reload folder (Ctrl+R)"))
         action_clear_table = cast(QAction, menu.addAction(get_menu_icon("x"), "Clear file table (Ctrl+Escape)"))
+
+        menu.addSeparator()
+
+        # --- Hash actions (simplified) ---
+        action_calculate_hashes = cast(QAction, menu.addAction(get_menu_icon("hash"), "Calculate checksums for selected"))
+        action_calculate_hashes.setEnabled(has_selection)
+
+        menu.addSeparator()
+
+        # --- Save actions (simplified) ---
+        action_save_sel = cast(QAction, menu.addAction(get_menu_icon("save"), "Save metadata for selected file(s) (Ctrl+S)"))
+        action_save_all = cast(QAction, menu.addAction(get_menu_icon("save"), "Save ALL modified metadata (Ctrl+Shift+S)"))
+
+        # Simple check for modifications (fast)
+        has_modifications = False
+        if hasattr(self.parent_window, 'metadata_tree_view'):
+            has_modifications = bool(self.parent_window.metadata_tree_view.modified_items)
+
+        action_save_sel.setEnabled(has_selection and has_modifications)
+        action_save_all.setEnabled(has_modifications)
 
         menu.addSeparator()
 
@@ -218,91 +189,6 @@ class EventHandlerManager:
         action_find_duplicates_sel = cast(QAction, menu.addAction(get_menu_icon("copy"), "Find duplicates in selected files"))
         action_find_duplicates_all = cast(QAction, menu.addAction(get_menu_icon("layers"), "Find duplicates in all files"))
         action_compare_external = cast(QAction, menu.addAction(get_menu_icon("folder"), "Compare with external folder..."))
-        action_calculate_hashes = cast(QAction, menu.addAction(get_menu_icon("hash"), "Calculate checksums for selected"))
-
-        menu.addSeparator()
-
-        # --- Save actions ---
-        action_save_sel = cast(QAction, menu.addAction(get_menu_icon("save"), "Save metadata for selected file(s) (Ctrl+S)"))
-        action_save_all = cast(QAction, menu.addAction(get_menu_icon("save"), "Save ALL modified metadata (Ctrl+Shift+S)"))
-
-        # Check for modifications using the new methods
-        has_selected_modifications = False
-        has_any_modifications = False
-
-        if hasattr(self.parent_window, 'metadata_tree_view'):
-            has_selected_modifications = self.parent_window.metadata_tree_view.has_modifications_for_selected_files()
-            has_any_modifications = self.parent_window.metadata_tree_view.has_any_modifications()
-
-        # Enable/disable save actions based on modifications
-        action_save_sel.setEnabled(has_selected_modifications)
-        action_save_all.setEnabled(has_any_modifications)
-
-        # Update tooltips
-        if has_selected_modifications:
-            action_save_sel.setToolTip("Save metadata for selected file(s) with modifications")
-        else:
-            action_save_sel.setToolTip("No modifications in selected files")
-
-        if has_any_modifications:
-            action_save_all.setToolTip("Save ALL modified metadata")
-        else:
-            action_save_all.setToolTip("No metadata modifications to save")
-
-        menu.addSeparator()
-
-        # --- Metadata editing actions ---
-        action_edit_title = cast(QAction, menu.addAction(get_menu_icon("edit"), "Edit Title..."))
-        action_edit_artist = cast(QAction, menu.addAction(get_menu_icon("user"), "Edit Artist..."))
-        action_edit_copyright = cast(QAction, menu.addAction(get_menu_icon("shield"), "Edit Copyright..."))
-        action_edit_description = cast(QAction, menu.addAction(get_menu_icon("file-text"), "Edit Description..."))
-        action_edit_keywords = cast(QAction, menu.addAction(get_menu_icon("tag"), "Edit Keywords..."))
-
-        # Check metadata availability for actions (used by both metadata editing and export)
-        selected_has_metadata = self._check_selected_files_have_metadata(selected_files)
-        all_files_have_metadata = self._check_any_files_have_metadata()
-
-        # Enable/disable metadata editing actions based on compatibility
-        action_edit_title.setEnabled(
-            has_selection and selected_has_metadata and
-            self._check_metadata_field_compatibility(selected_files, "Title")
-        )
-        action_edit_artist.setEnabled(
-            has_selection and selected_has_metadata and
-            self._check_metadata_field_compatibility(selected_files, "Artist")
-        )
-        action_edit_copyright.setEnabled(
-            has_selection and selected_has_metadata and
-            self._check_metadata_field_compatibility(selected_files, "Copyright")
-        )
-        action_edit_description.setEnabled(
-            has_selection and selected_has_metadata and
-            self._check_metadata_field_compatibility(selected_files, "Description")
-        )
-        action_edit_keywords.setEnabled(
-            has_selection and selected_has_metadata and
-            self._check_metadata_field_compatibility(selected_files, "Keywords")
-        )
-
-        # Update tooltips for metadata editing actions
-        if has_selection and selected_has_metadata:
-            action_edit_title.setToolTip(f"Edit title for {len(selected_files)} selected file(s)")
-            action_edit_artist.setToolTip(f"Edit artist for {len(selected_files)} selected file(s)")
-            action_edit_copyright.setToolTip(f"Edit copyright for {len(selected_files)} selected file(s)")
-            action_edit_description.setToolTip(f"Edit description for {len(selected_files)} selected file(s)")
-            action_edit_keywords.setToolTip(f"Edit keywords for {len(selected_files)} selected file(s)")
-        elif has_selection:
-            action_edit_title.setToolTip("Selected files have no metadata or don't support this field")
-            action_edit_artist.setToolTip("Selected files have no metadata or don't support this field")
-            action_edit_copyright.setToolTip("Selected files have no metadata or don't support this field")
-            action_edit_description.setToolTip("Selected files have no metadata or don't support this field")
-            action_edit_keywords.setToolTip("Selected files have no metadata or don't support this field")
-        else:
-            action_edit_title.setToolTip("Select files first to edit title")
-            action_edit_artist.setToolTip("Select files first to edit artist")
-            action_edit_copyright.setToolTip("Select files first to edit copyright")
-            action_edit_description.setToolTip("Select files first to edit description")
-            action_edit_keywords.setToolTip("Select files first to edit keywords")
 
         menu.addSeparator()
 
@@ -311,18 +197,16 @@ class EventHandlerManager:
         action_export_all = cast(QAction, menu.addAction(get_menu_icon("download"), "Export metadata for all files"))
 
         # Enable/disable export actions based on metadata availability
-        action_export_sel.setEnabled(has_selection and selected_has_metadata)
-        action_export_all.setEnabled(all_files_have_metadata)
+        action_export_sel.setEnabled(has_selection)
+        action_export_all.setEnabled(total_files > 0)
 
         # Update tooltips
-        if has_selection and selected_has_metadata:
+        if has_selection:
             action_export_sel.setToolTip(f"Export metadata for {len(selected_files)} selected file(s)")
-        elif has_selection:
-            action_export_sel.setToolTip("Selected files have no metadata to export")
         else:
             action_export_sel.setToolTip("Select files first to export their metadata")
 
-        if all_files_have_metadata:
+        if total_files > 0:
             action_export_all.setToolTip("Export metadata for all files in folder")
         else:
             action_export_all.setToolTip("No files have metadata to export")
@@ -341,14 +225,11 @@ class EventHandlerManager:
         action_find_duplicates_sel.setEnabled(len(selected_files) >= 2)  # Need at least 2 files to find duplicates
         action_find_duplicates_all.setEnabled(total_files >= 2)
         action_compare_external.setEnabled(has_selection)  # Need selection to compare
-        action_calculate_hashes.setEnabled(has_selection and not selected_have_hashes)
+        action_calculate_hashes.setEnabled(has_selection)
 
         # Update hash tooltip
         if has_selection:
-            if selected_have_hashes:
-                action_calculate_hashes.setToolTip("Selected files already have checksums calculated")
-            else:
-                action_calculate_hashes.setToolTip(f"Calculate checksums for {len(selected_files)} selected file(s)")
+            action_calculate_hashes.setToolTip(f"Calculate checksums for {len(selected_files)} selected file(s)")
         else:
             action_calculate_hashes.setToolTip("Select files first to calculate their checksums")
 
@@ -433,26 +314,6 @@ class EventHandlerManager:
         elif action == action_export_all:
             # Handle metadata export for all files
             self._handle_export_metadata(self.parent_window.file_model.files, "all")
-
-        elif action == action_edit_title:
-            # Handle title editing
-            self._handle_metadata_field_edit(selected_files, "Title")
-
-        elif action == action_edit_artist:
-            # Handle artist editing
-            self._handle_metadata_field_edit(selected_files, "Artist")
-
-        elif action == action_edit_copyright:
-            # Handle copyright editing
-            self._handle_metadata_field_edit(selected_files, "Copyright")
-
-        elif action == action_edit_description:
-            # Handle description editing
-            self._handle_metadata_field_edit(selected_files, "Description")
-
-        elif action == action_edit_keywords:
-            # Handle keywords editing
-            self._handle_metadata_field_edit(selected_files, "Keywords")
 
     def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifiers()) -> None:
         """
