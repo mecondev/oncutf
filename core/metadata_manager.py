@@ -180,6 +180,46 @@ class MetadataManager:
         # Use intelligent loading with cache checking and smart UX
         self.load_metadata_for_items(selected_files, use_extended=True, source="shortcut")
 
+    def shortcut_load_metadata_all(self) -> None:
+        """
+        Load basic metadata for all files using keyboard shortcut.
+        """
+        if not self.parent_window:
+            return
+
+        if self.is_running_metadata_task():
+            logger.warning("[Shortcut] Metadata scan already running — shortcut ignored.")
+            return
+
+        if not self.parent_window.file_model.files:
+            logger.info("[Shortcut] No files available for metadata loading")
+            return
+
+        all_files = self.parent_window.file_model.files
+        logger.info(f"[Shortcut] Loading basic metadata for all {len(all_files)} files")
+
+        self.load_metadata_for_items(all_files, use_extended=False, source="shortcut_all")
+
+    def shortcut_load_extended_metadata_all(self) -> None:
+        """
+        Load extended metadata for all files using keyboard shortcut.
+        """
+        if not self.parent_window:
+            return
+
+        if self.is_running_metadata_task():
+            logger.warning("[Shortcut] Metadata scan already running — shortcut ignored.")
+            return
+
+        if not self.parent_window.file_model.files:
+            logger.info("[Shortcut] No files available for extended metadata loading")
+            return
+
+        all_files = self.parent_window.file_model.files
+        logger.info(f"[Shortcut] Loading extended metadata for all {len(all_files)} files")
+
+        self.load_metadata_for_items(all_files, use_extended=True, source="shortcut_all")
+
     def load_metadata_for_items(self, items: List[FileItem], use_extended: bool = False, source: str = "unknown") -> None:
         """
         Load metadata for the given FileItem objects.

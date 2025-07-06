@@ -100,6 +100,72 @@ class EventHandlerManager:
             return
 
         from utils.icons_loader import get_menu_icon
+        from config import QLABEL_MUTED_TEXT
+
+        # Create a custom menu class for better shortcut styling
+        class StyledMenu(QMenu):
+            def __init__(self, parent=None):
+                super().__init__(parent)
+                self.setStyleSheet(f"""
+                    QMenu {{
+                        background-color: #232323;
+                        color: #f0ebd8;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 9pt;
+                    }}
+                    QMenu::item {{
+                        background-color: transparent;
+                        color: #f0ebd8;
+                        padding: 6px 16px 6px 16px;
+                        border-radius: 6px;
+                        margin: 1px;
+                    }}
+                    QMenu::item:hover {{
+                        background-color: #3e5c76;
+                        color: #f0ebd8;
+                        border-radius: 6px;
+                    }}
+                    QMenu::item:selected {{
+                        background-color: #748cab;
+                        color: #0d1321;
+                        border-radius: 6px;
+                    }}
+                    QMenu::item:pressed {{
+                        background-color: #748cab;
+                        color: #0d1321;
+                        border-radius: 6px;
+                    }}
+                    QMenu::item:disabled {{
+                        color: #555555;
+                        background-color: transparent;
+                    }}
+                    QMenu::separator {{
+                        background-color: #5a5a5a;
+                        height: 1px;
+                        margin: 2px 8px;
+                    }}
+                """)
+
+        # Helper function to create actions with styled shortcuts
+        def create_action_with_shortcut(icon, text, shortcut=None):
+            if shortcut:
+                # Create rich text with right-aligned shortcut
+                rich_text = f"""
+                <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td align="left" style="color: #f0ebd8; font-weight: normal;">{text}</td>
+                        <td align="right" style="color: {QLABEL_MUTED_TEXT}; font-weight: bold; padding-left: 20px;">{shortcut}</td>
+                    </tr>
+                </table>
+                """
+                action = QAction(rich_text, self.parent_window)
+                action.setIcon(icon)
+                return action
+            else:
+                action = QAction(text, self.parent_window)
+                action.setIcon(icon)
+                return action
 
         # Get total files for context
         total_files = len(self.parent_window.file_model.files)
@@ -110,17 +176,22 @@ class EventHandlerManager:
 
         logger.debug(f"Context menu: {len(selected_files)} selected files", extra={"dev_only": True})
 
-        menu = QMenu(self.parent_window)
+        menu = StyledMenu(self.parent_window)
 
         # Smart Metadata actions
         selected_analysis = self._analyze_metadata_state(selected_files)
         all_files_analysis = self._analyze_metadata_state(self.parent_window.file_model.files)
 
         # Create actions with smart labels and tooltips
-        action_load_sel = cast(QAction, menu.addAction(get_menu_icon("file"), f"{selected_analysis['fast_label']} for selected file(s) (Ctrl+M)"))
-        action_load_all = cast(QAction, menu.addAction(get_menu_icon("folder"), f"{all_files_analysis['fast_label']} for all files"))
-        action_load_ext_sel = cast(QAction, menu.addAction(get_menu_icon("file-plus"), f"{selected_analysis['extended_label']} for selected file(s) (Ctrl+E)"))
-        action_load_ext_all = cast(QAction, menu.addAction(get_menu_icon("folder-plus"), f"{all_files_analysis['extended_label']} for all files"))
+        action_load_sel = create_action_with_shortcut(get_menu_icon("file"), f"{selected_analysis['fast_label']} for selected file(s)", "Ctrl+M")
+        action_load_all = create_action_with_shortcut(get_menu_icon("folder"), f"{all_files_analysis['fast_label']} for all files", "Shift+Ctrl+M")
+        action_load_ext_sel = create_action_with_shortcut(get_menu_icon("file-plus"), f"{selected_analysis['extended_label']} for selected file(s)", "Ctrl+E")
+        action_load_ext_all = create_action_with_shortcut(get_menu_icon("folder-plus"), f"{all_files_analysis['extended_label']} for all files", "Shift+Ctrl+E")
+
+        menu.addAction(action_load_sel)
+        menu.addAction(action_load_all)
+        menu.addAction(action_load_ext_sel)
+        menu.addAction(action_load_ext_all)
 
         # Smart enable/disable logic based on analysis
         action_load_sel.setEnabled(has_selection and selected_analysis['enable_fast_selected'])
@@ -137,27 +208,41 @@ class EventHandlerManager:
         menu.addSeparator()
 
         # Selection actions
-        action_select_all = cast(QAction, menu.addAction(get_menu_icon("check-square"), "Select all (Ctrl+A)"))
-        action_invert = cast(QAction, menu.addAction(get_menu_icon("refresh-cw"), "Invert selection (Ctrl+I)"))
-        action_deselect_all = cast(QAction, menu.addAction(get_menu_icon("square"), "Deselect all (Ctrl+Shift+A)"))
+        action_select_all = create_action_with_shortcut(get_menu_icon("check-square"), "Select all", "Ctrl+A")
+        action_invert = create_action_with_shortcut(get_menu_icon("refresh-cw"), "Invert selection", "Ctrl+I")
+        action_deselect_all = create_action_with_shortcut(get_menu_icon("square"), "Deselect all", "Ctrl+Shift+A")
+
+        menu.addAction(action_select_all)
+        menu.addAction(action_invert)
+        menu.addAction(action_deselect_all)
 
         menu.addSeparator()
 
         # Other actions
-        action_reload = cast(QAction, menu.addAction(get_menu_icon("refresh-cw"), "Reload folder (Ctrl+R)"))
-        action_clear_table = cast(QAction, menu.addAction(get_menu_icon("x"), "Clear file table (Ctrl+Escape)"))
+        action_reload = create_action_with_shortcut(get_menu_icon("refresh-cw"), "Reload folder", "Ctrl+R")
+        action_clear_table = create_action_with_shortcut(get_menu_icon("x"), "Clear file table", "Shift+Esc")
+
+        menu.addAction(action_reload)
+        menu.addAction(action_clear_table)
 
         menu.addSeparator()
 
         # Hash actions
-        action_calculate_hashes = cast(QAction, menu.addAction(get_menu_icon("hash"), "Calculate checksums for selected"))
+        action_calculate_hashes = create_action_with_shortcut(get_menu_icon("hash"), "Calculate checksums for selected", "Ctrl+H")
+        action_calculate_hashes_all = create_action_with_shortcut(get_menu_icon("hash"), "Calculate checksums for all files", "Shift+Ctrl+H")
+
+        menu.addAction(action_calculate_hashes)
+        menu.addAction(action_calculate_hashes_all)
         action_calculate_hashes.setEnabled(has_selection)
 
         menu.addSeparator()
 
         # Save actions
-        action_save_sel = cast(QAction, menu.addAction(get_menu_icon("save"), "Save metadata for selected file(s) (Ctrl+S)"))
-        action_save_all = cast(QAction, menu.addAction(get_menu_icon("save"), "Save ALL modified metadata (Ctrl+Shift+S)"))
+        action_save_sel = create_action_with_shortcut(get_menu_icon("save"), "Save metadata for selected file(s)", "Ctrl+S")
+        action_save_all = create_action_with_shortcut(get_menu_icon("save"), "Save ALL modified metadata", "Ctrl+Shift+S")
+
+        menu.addAction(action_save_sel)
+        menu.addAction(action_save_all)
 
         # Simple check for modifications
         has_modifications = False
@@ -170,7 +255,8 @@ class EventHandlerManager:
         menu.addSeparator()
 
         # Bulk rotation action
-        action_bulk_rotation = cast(QAction, menu.addAction(get_menu_icon("rotate-ccw"), "Set All Files to 0° Rotation..."))
+        action_bulk_rotation = create_action_with_shortcut(get_menu_icon("rotate-ccw"), "Set All Files to 0° Rotation...", None)
+        menu.addAction(action_bulk_rotation)
         action_bulk_rotation.setEnabled(len(selected_files) > 0)
         if len(selected_files) > 0:
             # Count how many files actually need rotation changes
@@ -193,15 +279,22 @@ class EventHandlerManager:
         menu.addSeparator()
 
         # Hash & Comparison actions
-        action_find_duplicates_sel = cast(QAction, menu.addAction(get_menu_icon("copy"), "Find duplicates in selected files"))
-        action_find_duplicates_all = cast(QAction, menu.addAction(get_menu_icon("layers"), "Find duplicates in all files"))
-        action_compare_external = cast(QAction, menu.addAction(get_menu_icon("folder"), "Compare with external folder..."))
+        action_find_duplicates_sel = create_action_with_shortcut(get_menu_icon("copy"), "Find duplicates in selected files", None)
+        action_find_duplicates_all = create_action_with_shortcut(get_menu_icon("layers"), "Find duplicates in all files", None)
+        action_compare_external = create_action_with_shortcut(get_menu_icon("folder"), "Compare with external folder...", None)
+
+        menu.addAction(action_find_duplicates_sel)
+        menu.addAction(action_find_duplicates_all)
+        menu.addAction(action_compare_external)
 
         menu.addSeparator()
 
         # Export actions
-        action_export_sel = cast(QAction, menu.addAction(get_menu_icon("download"), "Export metadata for selected file(s)"))
-        action_export_all = cast(QAction, menu.addAction(get_menu_icon("download"), "Export metadata for all files"))
+        action_export_sel = create_action_with_shortcut(get_menu_icon("download"), "Export metadata for selected file(s)", None)
+        action_export_all = create_action_with_shortcut(get_menu_icon("download"), "Export metadata for all files", None)
+
+        menu.addAction(action_export_sel)
+        menu.addAction(action_export_all)
 
         # Enable/disable export actions based on metadata availability
         action_export_sel.setEnabled(has_selection)
@@ -232,12 +325,18 @@ class EventHandlerManager:
         action_find_duplicates_all.setEnabled(total_files >= 2)
         action_compare_external.setEnabled(has_selection)  # Need selection to compare
         action_calculate_hashes.setEnabled(has_selection)
+        action_calculate_hashes_all.setEnabled(total_files > 0)
 
         # Update hash tooltip
         if has_selection:
             action_calculate_hashes.setToolTip(f"Calculate checksums for {len(selected_files)} selected file(s)")
         else:
             action_calculate_hashes.setToolTip("Select files first to calculate their checksums")
+
+        if total_files > 0:
+            action_calculate_hashes_all.setToolTip(f"Calculate checksums for all {total_files} files")
+        else:
+            action_calculate_hashes_all.setToolTip("No files available to calculate checksums")
 
         # Show menu and get chosen action
         action = menu.exec_(self.parent_window.file_table_view.viewport().mapToGlobal(position))
@@ -312,6 +411,10 @@ class EventHandlerManager:
         elif action == action_calculate_hashes:
             # Calculate checksums for selected files
             self._handle_calculate_hashes(selected_files)
+
+        elif action == action_calculate_hashes_all:
+            # Calculate checksums for all files
+            self._handle_calculate_hashes(self.parent_window.file_model.files)
 
         elif action == action_export_sel:
             # Handle metadata export for selected files

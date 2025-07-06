@@ -565,6 +565,10 @@ class UIManager:
             ("Ctrl+R", self.parent_window.force_reload),
             ("Ctrl+M", self.parent_window.shortcut_load_metadata),
             ("Ctrl+E", self.parent_window.shortcut_load_extended_metadata),
+            ("Shift+Ctrl+M", self.parent_window.shortcut_load_metadata_all),
+            ("Shift+Ctrl+E", self.parent_window.shortcut_load_extended_metadata_all),
+            ("Ctrl+H", self.parent_window.shortcut_calculate_hash_selected),
+            ("Shift+Ctrl+H", self.parent_window.shortcut_calculate_hash_all),
             ("Ctrl+S", self.parent_window.shortcut_save_selected_metadata),
             ("Ctrl+Shift+S", self.parent_window.shortcut_save_all_metadata),
         ]
@@ -576,7 +580,7 @@ class UIManager:
         # Global shortcuts (attached to main window)
         global_shortcuts = [
             ("Escape", self.parent_window.force_drag_cleanup),  # Global escape key
-            ("Ctrl+Escape", self.parent_window.clear_file_table_shortcut),  # Clear file table
+            ("Shift+Escape", self.parent_window.clear_file_table_shortcut),  # Clear file table
         ]
         for key, handler in global_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self.parent_window)  # Attached to main window

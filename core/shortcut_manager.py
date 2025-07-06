@@ -6,7 +6,7 @@ Date: 2025-05-31
 
 ShortcutManager - Handles keyboard shortcuts
 This manager centralizes keyboard shortcut handling including:
-- Clear file table shortcut (Ctrl+Escape)
+- Clear file table shortcut (Shift+Escape)
 - Future keyboard shortcuts can be added here
 """
 from typing import TYPE_CHECKING
@@ -41,9 +41,9 @@ class ShortcutManager:
 
     def clear_file_table_shortcut(self) -> None:
         """
-        Clear file table triggered by Ctrl+Escape shortcut.
+        Clear file table triggered by Shift+Escape shortcut.
         """
-        logger.info("[MainWindow] CLEAR TABLE: Ctrl+Escape key pressed")
+        logger.info("[MainWindow] CLEAR TABLE: Shift+Escape key pressed")
 
         if not self.main_window.file_model.files:
             logger.info("[MainWindow] CLEAR TABLE: No files to clear")

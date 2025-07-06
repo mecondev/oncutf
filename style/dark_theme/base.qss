@@ -112,6 +112,12 @@ QMenu::separator {
     margin: 2px 8px;
 }
 
+/* Right-aligned shortcut text styling */
+QMenu::shortcut {
+    color: #888888;  /* Muted color for shortcuts */
+    font-weight: normal;
+}
+
 QToolTip {
     background-color: #212121;
     color: #f0ebd8;

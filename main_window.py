@@ -225,6 +225,22 @@ class MainWindow(QMainWindow):
         """Save all metadata via Application Service."""
         self.app_service.save_all_metadata()
 
+    def shortcut_load_metadata_all(self) -> None:
+        """Load basic metadata for all files via Application Service."""
+        self.app_service.load_metadata_all_fast()
+
+    def shortcut_load_extended_metadata_all(self) -> None:
+        """Load extended metadata for all files via Application Service."""
+        self.app_service.load_metadata_all_extended()
+
+    def shortcut_calculate_hash_selected(self) -> None:
+        """Calculate hash for selected files via Application Service."""
+        self.app_service.calculate_hash_selected()
+
+    def shortcut_calculate_hash_all(self) -> None:
+        """Calculate hash for all files via Application Service."""
+        self.app_service.calculate_hash_all()
+
     def rename_files(self) -> None:
         """Execute batch rename via Application Service."""
         self.app_service.rename_files()

@@ -139,6 +139,26 @@ class ApplicationService:
         """Load extended metadata for selected files."""
         return self.main_window.metadata_manager.shortcut_load_extended_metadata()
 
+    def load_metadata_all_fast(self):
+        """Load basic metadata for all files."""
+        return self.main_window.metadata_manager.shortcut_load_metadata_all()
+
+    def load_metadata_all_extended(self):
+        """Load extended metadata for all files."""
+        return self.main_window.metadata_manager.shortcut_load_extended_metadata_all()
+
+    def calculate_hash_selected(self):
+        """Calculate hash for selected files."""
+        selected_files = self.main_window.get_selected_files_ordered()
+        if selected_files:
+            return self.main_window.event_handler_manager._handle_calculate_hashes(selected_files)
+
+    def calculate_hash_all(self):
+        """Calculate hash for all files."""
+        all_files = self.main_window.file_model.files
+        if all_files:
+            return self.main_window.event_handler_manager._handle_calculate_hashes(all_files)
+
     def save_selected_metadata(self):
         """Save metadata for selected files."""
         return self.main_window.metadata_manager.save_metadata_for_selected()
