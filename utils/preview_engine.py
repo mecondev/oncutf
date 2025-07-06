@@ -21,6 +21,7 @@ from modules.counter_module import CounterModule
 from modules.metadata_module import MetadataModule
 from modules.original_name_module import OriginalNameModule
 from modules.specified_text_module import SpecifiedTextModule
+from modules.text_removal_module import TextRemovalModule
 
 # Initialize Logger
 from utils.logger_factory import get_cached_logger

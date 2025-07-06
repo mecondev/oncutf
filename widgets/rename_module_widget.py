@@ -61,11 +61,13 @@ class RenameModuleWidget(QWidget):
 
         # Lazy import to avoid circular import
         from modules.specified_text_module import SpecifiedTextModule
+        from modules.text_removal_module import TextRemovalModule
 
         self.module_instances = {
             "Counter": CounterModule,
             "Metadata": MetadataWidget,
             "Original Name": OriginalNameWidget,
+            "Remove Text from Original Name": TextRemovalModule,
             "Specified Text": SpecifiedTextModule
         }
 
@@ -73,6 +75,7 @@ class RenameModuleWidget(QWidget):
             "Counter": 88,  # Increased: 4px more space to prevent focus border clipping
             "Metadata": 74,   # Increased: 12px more space for increased row spacing
             "Original Name": 34,  # Reduced: just one line with minimal padding
+            "Remove Text from Original Name": 64,  # Two rows: text input + options
             "Specified Text": 37  # Increased: 3px more space to prevent clipping
         }
 
