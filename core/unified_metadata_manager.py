@@ -821,11 +821,15 @@ class UnifiedMetadataManager(QObject):
         # Emit signal
         self.loading_started.emit(file_path)
 
-        # Update UI if needed
+        # Update UI if needed - use efficient single file icon refresh
         if self.parent_window:
-            # Update file table model icons
+            # Update file table model icons for this specific file
             if hasattr(self.parent_window, 'file_model'):
-                self.parent_window.file_model.refresh_icons()
+                if hasattr(self.parent_window.file_model, 'refresh_icon_for_file'):
+                    self.parent_window.file_model.refresh_icon_for_file(file_path)
+                else:
+                    # Fallback to full refresh if method not available
+                    self.parent_window.file_model.refresh_icons()
 
         logger.debug(f"[UnifiedMetadataManager] Metadata loaded for {file_path}")
 
@@ -834,11 +838,15 @@ class UnifiedMetadataManager(QObject):
         # Remove from loading set
         self._currently_loading.discard(file_path)
 
-        # Update UI if needed
+        # Update UI if needed - use efficient single file icon refresh
         if self.parent_window:
-            # Update file table model icons
+            # Update file table model icons for this specific file
             if hasattr(self.parent_window, 'file_model'):
-                self.parent_window.file_model.refresh_icons()
+                if hasattr(self.parent_window.file_model, 'refresh_icon_for_file'):
+                    self.parent_window.file_model.refresh_icon_for_file(file_path)
+                else:
+                    # Fallback to full refresh if method not available
+                    self.parent_window.file_model.refresh_icons()
 
         logger.debug(f"[UnifiedMetadataManager] Hash calculated for {file_path}")
 

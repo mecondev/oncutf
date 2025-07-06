@@ -54,27 +54,17 @@ class FileTableModel(QAbstractTableModel):
 
     def __init__(self, parent_window=None):
         super().__init__()
-        self.files: List[FileItem] = []  # List of file entries
-        self.parent_window = parent_window  # Needed for triggering updates
-        self.metadata_icons = load_metadata_icons()
-        self.hash_icon = generate_hash_icon(size=16)  # Generate hash icon
-        self._cache_helper = None
+        self.parent_window = parent_window
+        self.files = []
         self._direct_loader = None
+        self._cache_helper = None
 
-    def _get_cache_helper(self) -> Optional[MetadataCacheHelper]:
-        """Get or create the MetadataCacheHelper instance."""
-        if self._cache_helper is None and self.parent_window:
-            metadata_cache = getattr(self.parent_window, 'metadata_cache', None)
-            if metadata_cache:
-                self._cache_helper = MetadataCacheHelper(metadata_cache)
-        return self._cache_helper
-
-    def _get_direct_loader(self):
-        """Get or create the UnifiedMetadataManager instance."""
-        if self._direct_loader is None and self.parent_window:
-            from core.unified_metadata_manager import get_unified_metadata_manager
-            self._direct_loader = get_unified_metadata_manager(self.parent_window)
-        return self._direct_loader
+        # Load icons for metadata status
+        self.metadata_icons = {}
+        self.metadata_icons["loaded"] = QPixmap("resources/icons/valid.png")
+        self.metadata_icons["extended"] = QPixmap("resources/icons/duplicate.png")
+        self.metadata_icons["modified"] = QPixmap("resources/icons/invalid.png")
+        self.hash_icon = QPixmap("resources/icons/valid.png")
 
     def _has_hash_cached(self, file_path: str) -> bool:
         """
@@ -248,7 +238,7 @@ class FileTableModel(QAbstractTableModel):
             tooltip_parts = []
 
             # Add metadata info using cache helper
-            cache_helper = self._get_cache_helper()
+            cache_helper = self._cache_helper
             if cache_helper:
                 # Create temporary FileItem-like object for cache helper
                 class TempFileItem:
@@ -277,38 +267,25 @@ class FileTableModel(QAbstractTableModel):
             return "\n".join(tooltip_parts)
 
         if role == Qt.DecorationRole and col == 0: # type: ignore
-            # Use UnifiedMetadataManager for immediate cache checking
-            direct_loader = self._get_direct_loader()
-            if not direct_loader:
-                return QIcon()
+            # Use simple cache checking like the old system
+            entry = None
+            if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
+                entry = self.parent_window.metadata_cache.get_entry(file.full_path)
 
-            # Check cache immediately without loading
-            has_metadata = direct_loader.has_cached_metadata(file)
-            has_hash = direct_loader.has_cached_hash(file)
+            # Check if file has hash cached
+            has_hash = self._has_hash_cached(file.full_path)
 
-            # Determine metadata icon type if metadata exists
+            # Determine metadata icon - only show if metadata exists
             metadata_pixmap = None
-            if has_metadata:
-                # Get cache entry to determine type correctly
-                cache_helper = self._get_cache_helper()
-                if cache_helper:
-                    # Create temporary FileItem-like object for cache helper
-                    class TempFileItem:
-                        def __init__(self, path):
-                            self.full_path = path
-
-                    temp_file_item = TempFileItem(file.full_path)
-                    entry = cache_helper.get_cache_entry_for_file(temp_file_item)
-
-                    if isinstance(entry, MetadataEntry):
-                        # Use the actual is_extended flag from cache entry
-                        if entry.is_extended:
-                            metadata_pixmap = self.metadata_icons.get("extended")
-                        else:
-                            metadata_pixmap = self.metadata_icons.get("loaded")
-                    else:
-                        # Fallback to loaded icon if no cache entry
-                        metadata_pixmap = self.metadata_icons.get("loaded")
+            if entry:
+                # Check if metadata has been modified
+                if hasattr(entry, 'modified') and entry.modified:
+                    metadata_pixmap = self.metadata_icons.get("modified")
+                elif entry.is_extended:
+                    metadata_pixmap = self.metadata_icons.get("extended")
+                else:
+                    metadata_pixmap = self.metadata_icons.get("loaded")
+            # No else clause - if no metadata entry, no metadata icon
 
             # Handle different combinations
             if metadata_pixmap and has_hash:
@@ -325,7 +302,7 @@ class FileTableModel(QAbstractTableModel):
                 return QIcon()
 
         if col == 0 and role == Qt.UserRole: # type: ignore
-            cache_helper = self._get_cache_helper()
+            cache_helper = self._cache_helper
             if cache_helper:
                 # Create temporary FileItem-like object for cache helper
                 class TempFileItem:
@@ -493,42 +470,11 @@ class FileTableModel(QAbstractTableModel):
         if not self.files:
             return
 
-        # Ensure UnifiedMetadataManager is initialized
-        direct_loader = self._get_direct_loader()
-        if not direct_loader:
-            return
-
-        direct_loader.initialize_cache_helper()
-
-        # Counters for statistics
-        cached_metadata_count = 0
-        cached_hash_count = 0
-        files_with_cached_data = []
-
-        # Batch check for cached data (more efficient)
-        for i, file_item in enumerate(self.files):
-            has_metadata = direct_loader.has_cached_metadata(file_item)
-            has_hash = direct_loader.has_cached_hash(file_item)
-
-            if has_metadata:
-                cached_metadata_count += 1
-            if has_hash:
-                cached_hash_count += 1
-
-            # Keep only files that have cached data
-            if has_metadata or has_hash:
-                files_with_cached_data.append(i)
-
-        # Update icons only for files with cached data
-        for i in files_with_cached_data:
-            index = self.index(i, 0)
-            self.dataChanged.emit(index, index, [Qt.DecorationRole, Qt.ToolTipRole])
-
-        logger.debug(f"[FileTableModel] Updated icons immediately for {len(self.files)} files (metadata: {cached_metadata_count}, hash: {cached_hash_count})")
-
-        # Removed delayed update - no longer needed
-        # from PyQt5.QtCore import QTimer
-        # QTimer.singleShot(50, self._delayed_icon_update)
+        # Simple icon refresh like the old system
+        top_left = self.index(0, 0)
+        bottom_right = self.index(len(self.files) - 1, 0)
+        self.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole])
+        logger.debug(f"[FileTableModel] Updated icons immediately for {len(self.files)} files")
 
     def _delayed_icon_update(self) -> None:
         """Delayed icon update to ensure all cached data is available."""
@@ -579,16 +525,29 @@ class FileTableModel(QAbstractTableModel):
         if not self.files:
             return
 
-        # Ensure UnifiedMetadataManager is initialized
-        direct_loader = self._get_direct_loader()
-        if direct_loader:
-            direct_loader.initialize_cache_helper()
-
         # Emit dataChanged for the entire first column to refresh icons and tooltips
         top_left = self.index(0, 0)
         bottom_right = self.index(len(self.files) - 1, 0)
         self.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole])
         logger.debug(f"[FileTableModel] Refreshed icons for {len(self.files)} files")
+
+    def refresh_icon_for_file(self, file_path: str):
+        """
+        Refresh icon for a specific file by path.
+        More efficient than refreshing all icons.
+        """
+        if not self.files:
+            return
+
+        # Find the file in our list
+        for i, file_item in enumerate(self.files):
+            if file_item.full_path == file_path:
+                index = self.index(i, 0)
+                self.dataChanged.emit(index, index, [Qt.DecorationRole, Qt.ToolTipRole])
+                logger.debug(f"[FileTableModel] Refreshed icon for {file_item.filename}")
+                return
+
+        logger.debug(f"[FileTableModel] File not found for icon refresh: {file_path}")
 
     def get_checked_files(self) -> list[FileItem]:
         """
