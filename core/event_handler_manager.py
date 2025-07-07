@@ -214,9 +214,24 @@ class EventHandlerManager:
         action_calculate_hashes = create_action_with_shortcut(get_menu_icon("hash"), "Calculate checksums for selected", "Ctrl+H")
         action_calculate_hashes_all = create_action_with_shortcut(get_menu_icon("hash"), "Calculate checksums for all files", "Shift+Ctrl+H")
 
+        # Smart hash state analysis
+        selected_hash_analysis = self._analyze_hash_state(selected_files)
+        all_files_hash_analysis = self._analyze_hash_state(self.parent_window.file_model.files)
+
+        # Update hash actions with smart logic
+        action_calculate_hashes.setText(selected_hash_analysis['selected_label'] + "\tCtrl+H")
+        action_calculate_hashes_all.setText(all_files_hash_analysis['selected_label'].replace("selected", "all files") + "\tShift+Ctrl+H")
+
         menu.addAction(action_calculate_hashes)
         menu.addAction(action_calculate_hashes_all)
-        action_calculate_hashes.setEnabled(has_selection)
+
+        # Smart enable/disable for hash actions
+        action_calculate_hashes.setEnabled(has_selection and selected_hash_analysis['enable_selected'])
+        action_calculate_hashes_all.setEnabled(total_files > 0 and all_files_hash_analysis['enable_selected'])
+
+        # Set smart tooltips for hash actions
+        action_calculate_hashes.setToolTip(selected_hash_analysis['selected_tooltip'])
+        action_calculate_hashes_all.setToolTip(all_files_hash_analysis['selected_tooltip'].replace("selected", "all files"))
 
         menu.addSeparator()
 
@@ -307,17 +322,17 @@ class EventHandlerManager:
         action_find_duplicates_sel.setEnabled(len(selected_files) >= 2)  # Need at least 2 files to find duplicates
         action_find_duplicates_all.setEnabled(total_files >= 2)
         action_compare_external.setEnabled(has_selection)  # Need selection to compare
-        action_calculate_hashes.setEnabled(has_selection)
-        action_calculate_hashes_all.setEnabled(total_files > 0)
+        action_calculate_hashes.setEnabled(has_selection and selected_hash_analysis['enable_selected'])
+        action_calculate_hashes_all.setEnabled(total_files > 0 and all_files_hash_analysis['enable_selected'])
 
         # Update hash tooltip
         if has_selection:
-            action_calculate_hashes.setToolTip(f"Calculate checksums for {len(selected_files)} selected file(s)")
+            action_calculate_hashes.setToolTip(selected_hash_analysis['selected_tooltip'])
         else:
             action_calculate_hashes.setToolTip("Select files first to calculate their checksums")
 
         if total_files > 0:
-            action_calculate_hashes_all.setToolTip(f"Calculate checksums for all {total_files} files")
+            action_calculate_hashes_all.setToolTip(all_files_hash_analysis['selected_tooltip'].replace("selected", "all files"))
         else:
             action_calculate_hashes_all.setToolTip("No files available to calculate checksums")
 
@@ -2012,5 +2027,65 @@ class EventHandlerManager:
                 'no_metadata': no_count,
                 'fast': fast_count,
                 'extended': extended_count
+            }
+        }
+
+    def _analyze_hash_state(self, files: list) -> dict:
+        """
+        Analyze the hash state of files to determine smart hash menu options.
+
+        Args:
+            files: List of FileItem objects to analyze
+
+        Returns:
+            dict: Analysis results with enable/disable logic for hash menu items
+        """
+        if not files:
+            return {
+                'enable_selected': False,
+                'enable_all': False,
+                'selected_label': 'Calculate checksums for selected',
+                'all_label': 'Calculate checksums for all files',
+                'selected_tooltip': 'No files selected',
+                'all_tooltip': 'No files available'
+            }
+
+        # Analyze hash state for selected files
+        files_with_hash = []
+        files_without_hash = []
+
+        for file_item in files:
+            if self._file_has_hash(file_item):
+                files_with_hash.append(file_item)
+            else:
+                files_without_hash.append(file_item)
+
+        total = len(files)
+        with_hash_count = len(files_with_hash)
+        without_hash_count = len(files_without_hash)
+
+        # Determine enable states and labels
+        enable_selected = without_hash_count > 0  # Enable if any files don't have hash
+        selected_label = 'Calculate checksums for selected'
+        selected_tooltip = ''
+
+        if without_hash_count == 0:
+            # All files have hashes
+            selected_tooltip = f'All {total} file(s) already have checksums calculated'
+        elif without_hash_count == total:
+            # No files have hashes
+            selected_tooltip = f'Calculate checksums for {total} file(s)'
+        else:
+            # Mixed state
+            selected_tooltip = f'Calculate checksums for {without_hash_count} of {total} file(s) that need them'
+
+        return {
+            'enable_selected': enable_selected,
+            'selected_label': selected_label,
+            'selected_tooltip': selected_tooltip,
+            'stats': {
+                'total': total,
+                'with_hash': with_hash_count,
+                'without_hash': without_hash_count
             }
         }

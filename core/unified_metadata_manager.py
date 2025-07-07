@@ -1008,7 +1008,7 @@ class UnifiedMetadataManager(QObject):
 
                     if success:
                         success_count += 1
-                        self._update_file_after_save(file_item)
+                        self._update_file_after_save(file_item, modifications)
                         logger.debug(f"[UnifiedMetadataManager] Successfully saved metadata for {file_item.filename}")
                     else:
                         failed_files.append(file_item.filename)
@@ -1028,19 +1028,77 @@ class UnifiedMetadataManager(QObject):
         """Get modified metadata for a specific file."""
         return all_modified_metadata.get(file_path, {})
 
-    def _update_file_after_save(self, file_item):
-        """Update file item after successful metadata save."""
-        # Clear cached metadata to force reload
-        if hasattr(self.parent_window, 'metadata_cache'):
+    def _update_file_after_save(self, file_item, saved_metadata: dict = None):
+        """
+        Update file item after successful metadata save.
+
+        Args:
+            file_item: The FileItem that was saved
+            saved_metadata: The metadata that was actually saved to the file
+        """
+        # CRITICAL: Update cache with saved values instead of clearing it
+        if hasattr(self.parent_window, 'metadata_cache') and saved_metadata:
             cache = self.parent_window.metadata_cache
-            if hasattr(cache, 'remove'):
-                cache.remove(file_item.full_path)
+            metadata_entry = cache.get_entry(file_item.full_path)
+
+            if metadata_entry and hasattr(metadata_entry, 'data'):
+                logger.debug(f"[UnifiedMetadataManager] Updating cache with saved metadata for: {file_item.filename}", extra={"dev_only": True})
+
+                # Update the cache data with the values that were actually saved
+                for key_path, new_value in saved_metadata.items():
+                    logger.debug(f"[UnifiedMetadataManager] Updating cache: {key_path} = {new_value}", extra={"dev_only": True})
+
+                    # Handle nested keys (e.g., "EXIF:Rotation")
+                    if '/' in key_path or ':' in key_path:
+                        # Split by either / or : to handle both formats
+                        if '/' in key_path:
+                            parts = key_path.split('/', 1)
+                        else:
+                            parts = key_path.split(':', 1)
+
+                        if len(parts) == 2:
+                            group, key = parts
+                            if group not in metadata_entry.data:
+                                metadata_entry.data[group] = {}
+                            if isinstance(metadata_entry.data[group], dict):
+                                metadata_entry.data[group][key] = new_value
+                            else:
+                                # If group is not a dict, make it one
+                                metadata_entry.data[group] = {key: new_value}
+                        else:
+                            # Fallback: treat as top-level key
+                            metadata_entry.data[key_path] = new_value
+                    else:
+                        # Top-level key (e.g., "Rotation")
+                        metadata_entry.data[key_path] = new_value
+
+                # Mark cache as clean but keep the data
+                metadata_entry.modified = False
+
+        # Clear modifications in tree view
+        if hasattr(self.parent_window, 'metadata_tree_view'):
+            self.parent_window.metadata_tree_view.clear_modifications_for_file(file_item.full_path)
 
         # Update file modification time
         try:
             file_item.date_modified = datetime.fromtimestamp(os.path.getmtime(file_item.full_path))
         except Exception as e:
             logger.warning(f"[UnifiedMetadataManager] Could not update modification time for {file_item.filename}: {e}")
+
+        # Force refresh metadata view if this file is currently displayed
+        if (hasattr(self.parent_window, 'metadata_tree_view') and
+            hasattr(self.parent_window.metadata_tree_view, '_current_file_path') and
+            self.parent_window.metadata_tree_view._current_file_path == file_item.full_path):
+
+            logger.debug(f"[UnifiedMetadataManager] Refreshing metadata view for updated file: {file_item.filename}", extra={"dev_only": True})
+
+            # Get updated cache data to refresh the display
+            if hasattr(self.parent_window, 'metadata_cache'):
+                metadata_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+                if metadata_entry and hasattr(metadata_entry, 'data'):
+                    display_data = dict(metadata_entry.data)
+                    display_data["FileName"] = file_item.filename
+                    self.parent_window.metadata_tree_view.display_metadata(display_data, context="after_save")
 
     def _show_save_results(self, success_count, failed_files, files_to_save):
         """Show results of metadata save operation."""

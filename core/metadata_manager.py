@@ -642,7 +642,7 @@ class MetadataManager:
                         if success:
                             logger.info(f"[MetadataManager] Successfully saved metadata to: {file_item.filename}")
                             success_count += 1
-                            self._update_file_after_save(file_item)
+                            self._update_file_after_save(file_item, modified_metadata)
                         else:
                             logger.error(f"[MetadataManager] Failed to save metadata to: {file_item.filename}")
                             failed_files.append(file_item.filename)
@@ -723,7 +723,7 @@ class MetadataManager:
                     if success:
                         logger.info(f"[MetadataManager] Successfully saved metadata to: {file_item.filename}")
                         success_count += 1
-                        self._update_file_after_save(file_item)
+                        self._update_file_after_save(file_item, modified_metadata)
                     else:
                         logger.error(f"[MetadataManager] Failed to save metadata to: {file_item.filename}")
                         failed_files.append(file_item.filename)
@@ -745,14 +745,68 @@ class MetadataManager:
         finally:
             exiftool.close()
 
-    def _update_file_after_save(self, file_item):
-        """Update file state after successful metadata save."""
+    def _update_file_after_save(self, file_item, saved_metadata: dict = None):
+        """
+        Update file state after successful metadata save.
+
+        Args:
+            file_item: The FileItem that was saved
+            saved_metadata: The metadata that was actually saved to the file
+        """
         # Clear modifications for this file in tree view
         self.parent_window.metadata_tree_view.clear_modifications_for_file(file_item.full_path)
 
-        # Clear modified flag in cache
+        # CRITICAL: Update cache with the saved values to prevent stale data
         metadata_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
-        if metadata_entry:
+        if metadata_entry and saved_metadata:
+            logger.debug(f"[MetadataManager] Updating cache with saved metadata for: {file_item.filename}", extra={"dev_only": True})
+
+            # Update the cache data with the values that were actually saved
+            for key_path, new_value in saved_metadata.items():
+                logger.debug(f"[MetadataManager] Updating cache: {key_path} = {new_value}", extra={"dev_only": True})
+
+                # Handle nested keys (e.g., "EXIF:Rotation")
+                if '/' in key_path or ':' in key_path:
+                    # Split by either / or : to handle both formats
+                    if '/' in key_path:
+                        parts = key_path.split('/', 1)
+                    else:
+                        parts = key_path.split(':', 1)
+
+                    if len(parts) == 2:
+                        group, key = parts
+                        if group not in metadata_entry.data:
+                            metadata_entry.data[group] = {}
+                        if isinstance(metadata_entry.data[group], dict):
+                            metadata_entry.data[group][key] = new_value
+                        else:
+                            # If group is not a dict, make it one
+                            metadata_entry.data[group] = {key: new_value}
+                    else:
+                        # Fallback: treat as top-level key
+                        metadata_entry.data[key_path] = new_value
+                else:
+                    # Top-level key (e.g., "Rotation")
+                    metadata_entry.data[key_path] = new_value
+
+            # Mark cache as clean but keep the data
+            metadata_entry.modified = False
+
+            # Update file_item.metadata if it exists for consistency
+            if hasattr(file_item, 'metadata') and file_item.metadata:
+                for key_path, new_value in saved_metadata.items():
+                    if '/' in key_path or ':' in key_path:
+                        # For nested keys, update the top-level key (most common case)
+                        if '/' in key_path:
+                            top_level_key = key_path.split('/', 1)[1]
+                        else:
+                            top_level_key = key_path.split(':', 1)[1]
+                        file_item.metadata[top_level_key] = new_value
+                    else:
+                        file_item.metadata[key_path] = new_value
+
+        elif metadata_entry:
+            # No saved_metadata provided - just mark as clean
             metadata_entry.modified = False
 
         # Update file icon
@@ -771,6 +825,19 @@ class MetadataManager:
                 )
             except ValueError:
                 pass  # File not in model
+
+        # Force refresh metadata view if this file is currently displayed
+        if (hasattr(self.parent_window, 'metadata_tree_view') and
+            hasattr(self.parent_window.metadata_tree_view, '_current_file_path') and
+            self.parent_window.metadata_tree_view._current_file_path == file_item.full_path):
+
+            logger.debug(f"[MetadataManager] Refreshing metadata view for updated file: {file_item.filename}", extra={"dev_only": True})
+
+            # Use the updated cache data to refresh the display
+            if metadata_entry and hasattr(metadata_entry, 'data'):
+                display_data = dict(metadata_entry.data)
+                display_data["FileName"] = file_item.filename
+                self.parent_window.metadata_tree_view.display_metadata(display_data, context="after_save")
 
     def _show_save_results(self, success_count, failed_files, files_to_save):
         """Show results status message after save operation."""

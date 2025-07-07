@@ -44,6 +44,9 @@ class UtilityManager:
             main_window: Reference to the main window instance
         """
         self.main_window = main_window
+        # Cache for avoiding unnecessary preview generation
+        self._last_selected_files_hash = None
+        self._last_rename_data_hash = None
         logger.debug("[UtilityManager] Initialized", extra={"dev_only": True})
 
     def event_filter(self, obj, event):
@@ -242,11 +245,8 @@ class UtilityManager:
         selected_files = self.main_window.get_selected_files()
         logger.debug("[Preview] Triggered! Selected rows: %s", [f.filename for f in selected_files], extra={"dev_only": True})
 
-        if not selected_files:
-            logger.debug("[Preview] No selected files — skipping preview generation.", extra={"dev_only": True})
-            self.main_window.update_preview_tables_from_pairs([])
-            self.main_window.rename_button.setEnabled(False)
-            return
+        # Create hash of current selection for comparison
+        selected_files_hash = hash(tuple(f.full_path for f in selected_files)) if selected_files else None
 
         # Get rename data and modules
         rename_data = self.main_window.rename_modules_area.get_all_data()
@@ -254,6 +254,30 @@ class UtilityManager:
         # Add post_transform data from final transform container
         post_transform_data = self.main_window.final_transform_container.get_data()
         rename_data["post_transform"] = post_transform_data
+
+        # Create hash of rename data for comparison
+        import json
+        try:
+            rename_data_hash = hash(json.dumps(rename_data, sort_keys=True, default=str))
+        except (TypeError, ValueError):
+            # Fallback to string representation if JSON serialization fails
+            rename_data_hash = hash(str(rename_data))
+
+        # Check if we need to regenerate preview
+        if (selected_files_hash == self._last_selected_files_hash and
+            rename_data_hash == self._last_rename_data_hash):
+            logger.debug("[Preview] Data unchanged, skipping preview generation", extra={"dev_only": True})
+            return
+
+        # Update cache
+        self._last_selected_files_hash = selected_files_hash
+        self._last_rename_data_hash = rename_data_hash
+
+        if not selected_files:
+            logger.debug("[Preview] No selected files — skipping preview generation.", extra={"dev_only": True})
+            self.main_window.update_preview_tables_from_pairs([])
+            self.main_window.rename_button.setEnabled(False)
+            return
 
         all_modules = self.main_window.rename_modules_area.get_all_module_instances()
 
@@ -318,5 +342,11 @@ class UtilityManager:
             tooltip_type = TooltipType.WARNING
 
         setup_tooltip(self.main_window.rename_button, tooltip_msg, tooltip_type)
+
+    def clear_preview_cache(self) -> None:
+        """Clear the preview generation cache to force next update."""
+        self._last_selected_files_hash = None
+        self._last_rename_data_hash = None
+        logger.debug("[Preview] Cache cleared, next generation will be forced", extra={"dev_only": True})
 
 

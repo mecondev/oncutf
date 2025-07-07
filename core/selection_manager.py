@@ -31,9 +31,12 @@ class SelectionManager:
     """
 
     def __init__(self, parent_window=None):
-        """Initialize SelectionManager with parent window reference."""
+        """Initialize the selection manager with the parent window."""
         self.parent_window = parent_window
         self._cache_helper = None
+        # Cache for avoiding unnecessary preview updates
+        self._last_selected_rows = None
+        self._last_preview_update_time = 0
 
     def _get_cache_helper(self) -> MetadataCacheHelper:
         """Get or create the MetadataCacheHelper instance."""
@@ -45,8 +48,7 @@ class SelectionManager:
 
     def select_all_rows(self) -> None:
         """
-        Selects all rows in the file table efficiently using select_rows_range helper.
-        Shows wait cursor during the operation for consistent UX.
+        Selects all rows in the file table efficiently with wait cursor.
         """
         if not self.parent_window:
             return
@@ -55,49 +57,28 @@ class SelectionManager:
         file_table_view = getattr(self.parent_window, 'file_table_view', None)
 
         if not file_model or not file_table_view or not file_model.files:
-            return
-
-        total = len(file_model.files)
-        if total == 0:
-            return
-
-        selection_model = file_table_view.selectionModel()
-        all_checked = all(f.checked for f in file_model.files)
-        all_selected = False
-
-        selected_rows = getattr(file_table_view, 'selected_rows', set())
-        if selection_model is not None:
-            selected_rows = set(idx.row() for idx in selection_model.selectedRows())
-            all_selected = (len(selected_rows) == total)
-
-        if all_checked and all_selected:
-            logger.debug("[SelectAll] All files already selected in both checked and selection model. No action taken.", extra={"dev_only": True})
+            if hasattr(self.parent_window, 'status_manager'):
+                self.parent_window.status_manager.set_selection_status(
+                    "No files to select",
+                    selected_count=0,
+                    total_count=0,
+                    auto_reset=True
+                )
             return
 
         with wait_cursor():
-            logger.info(f"[SelectAll] Selecting all {total} rows.")
+            # Clear cache to force update
+            self.clear_preview_cache()
 
-            # Disable updates during batch operations to prevent flickering
-            file_table_view.setUpdatesEnabled(False)
+            for file in file_model.files:
+                file.checked = True
 
-            try:
-                # Step 1: Update internal state first (batch operation)
-                for file in file_model.files:
-                    file.checked = True
+            file_table_view.select_rows_range(0, len(file_model.files) - 1)
+            if hasattr(file_table_view, 'anchor_row'):
+                file_table_view.anchor_row = 0
 
-                # Step 2: Update visual selection immediately
-                file_table_view.select_rows_range(0, total - 1)
-                if hasattr(file_table_view, 'anchor_row'):
-                    file_table_view.anchor_row = 0
-
-                # Step 3: Update UI labels immediately
-                if hasattr(self.parent_window, 'update_files_label'):
-                    self.parent_window.update_files_label()
-
-            finally:
-                # Re-enable updates
-                file_table_view.setUpdatesEnabled(True)
-                file_table_view.viewport().update()
+            if hasattr(self.parent_window, 'update_files_label'):
+                self.parent_window.update_files_label()
 
             # Step 4: Request preview update (this can be async to avoid blocking)
             if hasattr(self.parent_window, 'request_preview_update'):
@@ -140,6 +121,9 @@ class SelectionManager:
             return
 
         with wait_cursor():
+            # Clear cache to force update
+            self.clear_preview_cache()
+
             selection_model = file_table_view.selectionModel()
             if selection_model:
                 selection_model.clearSelection()
@@ -180,6 +164,9 @@ class SelectionManager:
             return
 
         with wait_cursor():
+            # Clear cache to force update
+            self.clear_preview_cache()
+
             selection_model = file_table_view.selectionModel()
             current_selected = set()
             if selection_model:
@@ -271,6 +258,19 @@ class SelectionManager:
         if not file_model:
             return
 
+        # Check if the selection has actually changed to avoid unnecessary updates
+        selected_rows_set = set(selected_rows) if selected_rows else set()
+        last_selected_set = set(self._last_selected_rows) if self._last_selected_rows else set()
+
+        if selected_rows_set == last_selected_set:
+            logger.debug(f"[Sync] Selection unchanged ({len(selected_rows)} rows), skipping preview update", extra={"dev_only": True})
+            return
+
+        # Update the cache
+        self._last_selected_rows = selected_rows[:]
+        import time
+        self._last_preview_update_time = time.time()
+
         if not selected_rows:
             logger.debug("[Sync] No selection - clearing preview", extra={"dev_only": True})
             # Clear all checked states
@@ -334,3 +334,25 @@ class SelectionManager:
 
         elapsed = timer.elapsed()
         logger.debug(f"[Performance] Full preview update took {elapsed} ms")
+
+    def force_preview_update(self) -> None:
+        """
+        Force a preview update regardless of cache state.
+        Useful when rename modules change or other external factors require an update.
+        """
+        logger.debug("[Sync] Force preview update requested", extra={"dev_only": True})
+        # Clear cache to force update
+        self._last_selected_rows = None
+        self._last_preview_update_time = 0
+
+        # Get current selection and trigger update
+        if self.parent_window and hasattr(self.parent_window, 'file_table_view'):
+            selection_model = self.parent_window.file_table_view.selectionModel()
+            if selection_model:
+                selected_rows = [idx.row() for idx in selection_model.selectedRows()]
+                self.update_preview_from_selection(selected_rows)
+
+    def clear_preview_cache(self) -> None:
+        """Clear the preview cache to force next update."""
+        self._last_selected_rows = None
+        self._last_preview_update_time = 0

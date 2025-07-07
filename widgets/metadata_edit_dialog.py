@@ -470,7 +470,7 @@ class MetadataEditDialog(QDialog):
         Returns:
             Tuple of (success: bool, value: str, files_to_modify: List)
         """
-                        dialog = MetadataEditDialog(parent, selected_files, metadata_cache, field_name, current_value)
+        dialog = MetadataEditDialog(parent, selected_files, metadata_cache, field_name, current_value)
 
         if dialog.exec_() == QDialog.Accepted:
             return True, dialog.get_validated_value(), dialog.get_selected_files()

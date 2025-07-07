@@ -536,9 +536,13 @@ class UIManager:
 
         # --- Connect the updated signal of RenameModulesArea to generate_preview_names ---
         self.parent_window.rename_modules_area.updated.connect(self.parent_window.request_preview_update)
+        # Clear preview cache when rename modules change to force regeneration
+        self.parent_window.rename_modules_area.updated.connect(self.parent_window.utility_manager.clear_preview_cache)
 
         # --- Connect the FinalTransformContainer signals ---
         self.parent_window.final_transform_container.updated.connect(self.parent_window.request_preview_update)
+        # Clear preview cache when final transform changes to force regeneration
+        self.parent_window.final_transform_container.updated.connect(self.parent_window.utility_manager.clear_preview_cache)
         self.parent_window.final_transform_container.add_module_requested.connect(self.parent_window.rename_modules_area.add_module)
         self.parent_window.final_transform_container.remove_module_requested.connect(self.parent_window.rename_modules_area.remove_last_module)
 

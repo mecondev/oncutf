@@ -1148,9 +1148,6 @@ class MetadataTreeView(QTreeView):
             # Emit signal for external listeners
             self.value_edited.emit(normalized_key_path, str(current_value), new_value)
 
-            # Refresh the metadata display to ensure consistency
-            self.update_from_parent_selection()
-
             # Force viewport update to refresh visual state
             self.viewport().update()
 
@@ -1232,9 +1229,6 @@ class MetadataTreeView(QTreeView):
         # Emit signal for external listeners
         self.value_edited.emit(normalized_key_path, str(current_value) if current_value else "", new_value)
 
-        # Refresh the metadata display to ensure consistency
-        self.update_from_parent_selection()
-
         # Force viewport update to refresh visual state
         self.viewport().update()
 
@@ -1263,19 +1257,29 @@ class MetadataTreeView(QTreeView):
         # Emit signal for external listeners
         self.value_reset.emit(normalized_key_path)
 
-        # Refresh the metadata display to ensure consistency
-        self.update_from_parent_selection()
-
         # Force viewport update to refresh visual state
         self.viewport().update()
 
     def _update_tree_item_value(self, key_path: str, new_value: str) -> None:
         """
         Update the display value of a tree item to reflect changes.
-        This forces a refresh of the metadata display.
+        This forces a refresh of the metadata display with modification context.
         """
-        # For now, just trigger a complete refresh
-        # This ensures the updated value is displayed correctly
+        # Get current metadata and force refresh with modification context
+        selected_files = self._get_current_selection()
+        cache_helper = self._get_cache_helper()
+
+        if selected_files and cache_helper and len(selected_files) == 1:
+            file_item = selected_files[0]
+            metadata = cache_helper.get_metadata_for_file(file_item)
+            if isinstance(metadata, dict) and metadata:
+                display_metadata = dict(metadata)
+                display_metadata["FileName"] = file_item.filename
+                # Use modification context to force reload
+                self.display_metadata(display_metadata, context="modification")
+                return
+
+        # Fallback to normal update if we can't get metadata
         self.update_from_parent_selection()
 
     def mark_as_modified(self, key_path: str) -> None:
@@ -1631,6 +1635,21 @@ class MetadataTreeView(QTreeView):
             # Disable search field when no metadata
             self._update_search_field_state(False)
             return
+
+        # Check if this is the same metadata that's already displayed
+        source_file = metadata.get("SourceFile")
+        current_file = getattr(self, '_current_file_path', None)
+
+        if source_file and current_file and source_file == current_file:
+            # Same file - check if we already have a valid model with data
+            current_model = self.model()
+            if current_model and hasattr(current_model, 'sourceModel'):
+                source_model = current_model.sourceModel()
+                if source_model and source_model.rowCount() > 0:
+                    # Check if this is a forced reload (e.g., due to modifications)
+                    if context not in ["modification", "force_reload", "edit_completion"]:
+                        logger.debug(f"[MetadataTree] Same metadata already displayed for {source_file}, skipping reload (context: {context})", extra={"dev_only": True})
+                        return
 
         # Enable search field when metadata is available
         self._update_search_field_state(True)
@@ -1999,10 +2018,25 @@ class MetadataTreeView(QTreeView):
                         current_index = selection_model.currentIndex()
                         target_index = current_index if current_index.isValid() and current_index in selected_rows else selected_rows[0]
 
-                        if hasattr(parent_window, 'file_model') and 0 <= target_index.row() < len(parent_window.file_model.files):
+                        if (hasattr(parent_window, 'file_model') and
+                            0 <= target_index.row() < len(parent_window.file_model.files)):
+
                             file_item = parent_window.file_model.files[target_index.row()]
-                            self.set_current_file_path(file_item.full_path)
-                            return
+
+                            # Check if this is the same file that's already displayed to avoid unnecessary reloading
+                            current_file = getattr(self, '_current_file_path', None)
+                            if current_file and file_item.full_path == current_file:
+                                # Same file already displayed - check if we have a valid model with data
+                                current_model = self.model()
+                                if current_model and hasattr(current_model, 'sourceModel'):
+                                    source_model = current_model.sourceModel()
+                                    if source_model and source_model.rowCount() > 0:
+                                        logger.debug(f"[MetadataTree] Same file {file_item.filename} already displayed, skipping reload", extra={"dev_only": True})
+                                        return
+
+                        # CRITICAL: Always set current file path first to save any previous modifications
+                        # This must happen before checking metadata cache or displaying new metadata
+                        self.set_current_file_path(file_item.full_path)
 
         except Exception as e:
             logger.debug(f"Error determining current file: {e}")
@@ -2054,6 +2088,17 @@ class MetadataTreeView(QTreeView):
             0 <= target_index.row() < len(parent_window.file_model.files)):
 
             file_item = parent_window.file_model.files[target_index.row()]
+
+            # Check if this is the same file that's already displayed to avoid unnecessary reloading
+            current_file = getattr(self, '_current_file_path', None)
+            if current_file and file_item.full_path == current_file:
+                # Same file already displayed - check if we have a valid model with data
+                current_model = self.model()
+                if current_model and hasattr(current_model, 'sourceModel'):
+                    source_model = current_model.sourceModel()
+                    if source_model and source_model.rowCount() > 0:
+                        logger.debug(f"[MetadataTree] Same file {file_item.filename} already displayed, skipping reload", extra={"dev_only": True})
+                        return
 
             # CRITICAL: Always set current file path first to save any previous modifications
             # This must happen before checking metadata cache or displaying new metadata
@@ -2215,6 +2260,21 @@ class MetadataTreeView(QTreeView):
         if self.should_display_metadata_for_selection(selected_count):
             # Single file - display metadata if available
             if isinstance(metadata, dict) and metadata:
+                # Check if this is the same file that's already displayed to avoid unnecessary reloading
+                source_file = metadata.get("SourceFile")
+                current_file = getattr(self, '_current_file_path', None)
+
+                if source_file and current_file and source_file == current_file:
+                    # Same file already displayed - check if we need to update due to modifications
+                    current_model = self.model()
+                    if current_model and hasattr(current_model, 'sourceModel'):
+                        source_model = current_model.sourceModel()
+                        if source_model and source_model.rowCount() > 0:
+                            # Check if this is a context that requires a reload
+                            if context not in ["modification", "force_reload", "edit_completion", "metadata_update"]:
+                                logger.debug(f"[MetadataTree] Same file {source_file} already displayed, skipping reload (context: {context})", extra={"dev_only": True})
+                                return
+
                 self.display_metadata(metadata, context=context)
             else:
                 self.clear_view()

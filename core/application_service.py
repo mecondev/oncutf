@@ -148,16 +148,50 @@ class ApplicationService:
         return self.main_window.metadata_manager.shortcut_load_extended_metadata_all()
 
     def calculate_hash_selected(self):
-        """Calculate hash for selected files."""
+        """Calculate hash for selected files that don't already have hashes."""
         selected_files = self.main_window.get_selected_files_ordered()
-        if selected_files:
-            return self.main_window.event_handler_manager._handle_calculate_hashes(selected_files)
+        if not selected_files:
+            logger.info("[ApplicationService] No files selected for hash calculation")
+            return
+
+        # Check which files need hash calculation
+        hash_analysis = self.main_window.event_handler_manager._analyze_hash_state(selected_files)
+
+        if not hash_analysis['enable_selected']:
+            # All files already have hashes
+            from utils.dialog_utils import show_info_message
+            show_info_message(
+                self.main_window,
+                "Hash Calculation",
+                f"All {len(selected_files)} selected file(s) already have checksums calculated.",
+                details=hash_analysis['selected_tooltip']
+            )
+            return
+
+        return self.main_window.event_handler_manager._handle_calculate_hashes(selected_files)
 
     def calculate_hash_all(self):
-        """Calculate hash for all files."""
-        all_files = self.main_window.file_model.files
-        if all_files:
-            return self.main_window.event_handler_manager._handle_calculate_hashes(all_files)
+        """Calculate hash for all files that don't already have hashes."""
+        all_files = self.main_window.file_model.files if hasattr(self.main_window, 'file_model') else []
+        if not all_files:
+            logger.info("[ApplicationService] No files available for hash calculation")
+            return
+
+        # Check which files need hash calculation
+        hash_analysis = self.main_window.event_handler_manager._analyze_hash_state(all_files)
+
+        if not hash_analysis['enable_selected']:
+            # All files already have hashes
+            from utils.dialog_utils import show_info_message
+            show_info_message(
+                self.main_window,
+                "Hash Calculation",
+                f"All {len(all_files)} file(s) already have checksums calculated.",
+                details=hash_analysis['selected_tooltip']
+            )
+            return
+
+        return self.main_window.event_handler_manager._handle_calculate_hashes(all_files)
 
     def save_selected_metadata(self):
         """Save metadata for selected files."""
