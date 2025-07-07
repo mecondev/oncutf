@@ -84,6 +84,10 @@ class RenameModulesArea(QWidget):
         # Drag & Drop state
         self.dragged_module = None
         self.drop_indicators = []
+        self.auto_scroll_timer = QTimer()
+        self.auto_scroll_timer.setSingleShot(False)
+        self.auto_scroll_timer.timeout.connect(self.handle_auto_scroll)
+        self.scroll_direction = 0  # -1 for up, 1 for down, 0 for none
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
@@ -128,8 +132,8 @@ class RenameModulesArea(QWidget):
         # Update layout stretch to prevent modules from expanding
         self._update_layout_stretch()
 
-        # Schedule scroll to new module
-        schedule_scroll_adjust(lambda: self._scroll_to_show_new_module(module), 50)
+        # Schedule scroll to bottom for new module
+        schedule_scroll_adjust(lambda: self._scroll_to_bottom(), 50)
 
         self.updated.emit()
 
@@ -145,11 +149,10 @@ class RenameModulesArea(QWidget):
             # Update layout stretch to maintain proper layout
             self._update_layout_stretch()
 
-            # If one or no modules remain, scroll to top
-            if len(self.module_widgets) <= 1:
-                # Schedule scroll to top
-                schedule_scroll_adjust(lambda: self.scroll_area.verticalScrollBar().setValue(0), 50)
-                logger.debug(f"[RenameModulesArea] Scrolled to top after removal ({len(self.module_widgets)} modules remain)", extra={"dev_only": True})
+            # After removal, scroll to bottom to show remaining modules
+            # Schedule scroll to bottom
+            schedule_scroll_adjust(lambda: self._scroll_to_bottom(), 50)
+            logger.debug(f"[RenameModulesArea] Scrolled to bottom after removal ({len(self.module_widgets)} modules remain)", extra={"dev_only": True})
 
             self.updated.emit()
 
@@ -160,16 +163,11 @@ class RenameModulesArea(QWidget):
         else:
             logger.debug("[RenameModulesArea] No modules to remove", extra={"dev_only": True})
 
-    def _scroll_to_show_new_module(self, new_module):
-        """Scroll to ensure the newly added module is visible."""
-        if len(self.module_widgets) == 1:
-            # If only one module, scroll to top
-            self.scroll_area.verticalScrollBar().setValue(0)
-            logger.debug("[RenameModulesArea] Scrolled to top (single module)", extra={"dev_only": True})
-        else:
-            # If multiple modules, scroll to show the new module
-            self.scroll_area.ensureWidgetVisible(new_module, 50, 50)
-            logger.debug(f"[RenameModulesArea] Scrolled to show new module ({len(self.module_widgets)} total)", extra={"dev_only": True})
+    def _scroll_to_bottom(self):
+        """Scroll to the bottom of the modules area."""
+        scroll_bar = self.scroll_area.verticalScrollBar()
+        scroll_bar.setValue(scroll_bar.maximum())
+        logger.debug(f"[RenameModulesArea] Scrolled to bottom ({len(self.module_widgets)} modules)", extra={"dev_only": True})
 
     def _update_layout_stretch(self):
         """Update stretch to prevent modules from expanding to fill container."""
@@ -246,6 +244,10 @@ class RenameModulesArea(QWidget):
         """Handle when a module drag ends."""
         logger.debug(f"[RenameModulesArea] Module drag ended: {module}", extra={"dev_only": True})
 
+        # Stop auto-scrolling
+        self.auto_scroll_timer.stop()
+        self.scroll_direction = 0
+
         # Find drop position based on mouse position
         drop_index = self.find_drop_position()
         if drop_index is not None:
@@ -258,8 +260,19 @@ class RenameModulesArea(QWidget):
         """Create visual indicators showing where the module can be dropped."""
         self.cleanup_drop_indicators()
 
+        # Don't show indicator at the start if dragging the first module
+        # Don't show indicator at the end if dragging the last module
+        dragged_index = self.module_widgets.index(self.dragged_module) if self.dragged_module else -1
+
         # Create drop indicators between each module and at the ends
         for i in range(len(self.module_widgets) + 1):
+            # Skip indicator at start if dragging first module
+            if i == 0 and dragged_index == 0:
+                continue
+            # Skip indicator at end if dragging last module
+            if i == len(self.module_widgets) and dragged_index == len(self.module_widgets) - 1:
+                continue
+
             indicator = self.create_drop_indicator()
             self.drop_indicators.append(indicator)
 
@@ -276,16 +289,16 @@ class RenameModulesArea(QWidget):
         """Create a single drop indicator widget."""
         indicator = QFrame()
         indicator.setObjectName("drop_indicator")
-        indicator.setFixedHeight(6)
+        indicator.setFixedHeight(4)  # Slightly thinner
         indicator.setStyleSheet("""
             QFrame#drop_indicator {
-                background-color: rgba(0, 120, 215, 0.7);
-                border: 1px solid rgba(0, 120, 215, 1.0);
-                border-radius: 3px;
+                background-color: rgba(62, 92, 118, 0.8);
+                border: 1px solid rgba(62, 92, 118, 1.0);
+                border-radius: 2px;
                 margin: 1px 8px;
             }
             QFrame#drop_indicator:hover {
-                background-color: rgba(0, 120, 215, 0.9);
+                background-color: rgba(62, 92, 118, 1.0);
             }
         """)
         indicator.hide()  # Initially hidden
@@ -343,3 +356,52 @@ class RenameModulesArea(QWidget):
 
         # Emit updated signal
         self.updated.emit()
+
+    def handle_drag_auto_scroll(self, global_pos):
+        """Handle auto-scrolling during drag operations."""
+        # Convert global position to scroll area coordinates
+        scroll_local_pos = self.scroll_area.mapFromGlobal(global_pos)
+
+        # Get scroll area geometry
+        scroll_rect = self.scroll_area.rect()
+
+        # Define scroll zones (top and bottom 30 pixels)
+        scroll_zone = 30
+
+        if scroll_local_pos.y() < scroll_zone:
+            # Mouse near top - scroll up
+            self.scroll_direction = -1
+            if not self.auto_scroll_timer.isActive():
+                self.auto_scroll_timer.start(50)  # Scroll every 50ms
+        elif scroll_local_pos.y() > scroll_rect.height() - scroll_zone:
+            # Mouse near bottom - scroll down
+            self.scroll_direction = 1
+            if not self.auto_scroll_timer.isActive():
+                self.auto_scroll_timer.start(50)  # Scroll every 50ms
+        else:
+            # Mouse in middle area - stop scrolling
+            self.scroll_direction = 0
+            self.auto_scroll_timer.stop()
+
+    def handle_auto_scroll(self):
+        """Perform the actual auto-scrolling."""
+        if self.scroll_direction == 0:
+            self.auto_scroll_timer.stop()
+            return
+
+        scroll_bar = self.scroll_area.verticalScrollBar()
+        current_value = scroll_bar.value()
+
+        # Scroll speed (pixels per timer tick)
+        scroll_speed = 10
+
+        if self.scroll_direction == -1:  # Scroll up
+            new_value = max(0, current_value - scroll_speed)
+        else:  # Scroll down
+            new_value = min(scroll_bar.maximum(), current_value + scroll_speed)
+
+        scroll_bar.setValue(new_value)
+
+        # Stop scrolling if we've reached the limits
+        if new_value == scroll_bar.minimum() or new_value == scroll_bar.maximum():
+            self.auto_scroll_timer.stop()

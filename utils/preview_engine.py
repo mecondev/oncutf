@@ -74,6 +74,11 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
             part, _ = os.path.splitext(result_filename)
             logger.debug(f"[apply_rename_modules] TextRemoval result: '{part}'", extra={"dev_only": True})
 
+        elif module_type == "metadata":
+            # Apply metadata module
+            part = MetadataModule.apply_from_data(data, file_item, index, metadata_cache)
+            logger.debug(f"[apply_rename_modules] Metadata result: '{part}'", extra={"dev_only": True})
+
         else:
             logger.warning(f"[apply_rename_modules] Unknown module type: '{module_type}'")
 

@@ -128,6 +128,7 @@ class RenameModuleWidget(QWidget):
 
         # Enable drag functionality
         self.drag_handle.setAcceptDrops(True)
+        self.drag_handle.setAttribute(Qt.WA_Hover, True)  # Enable hover events
         self.drag_handle.mousePressEvent = self.drag_handle_mouse_press
         self.drag_handle.mouseMoveEvent = self.drag_handle_mouse_move
         self.drag_handle.mouseReleaseEvent = self.drag_handle_mouse_release
@@ -295,19 +296,24 @@ class RenameModuleWidget(QWidget):
     # Drag & Drop functionality
     def drag_handle_enter(self, event):
         """Handle mouse enter on drag handle - change cursor."""
-        self.drag_handle.setCursor(Qt.OpenHandCursor)
+        from core.pyqt_imports import QCursor
+        QApplication.setOverrideCursor(QCursor(Qt.OpenHandCursor))
+        logger.debug("[RenameModuleWidget] Mouse entered drag handle", extra={"dev_only": True})
 
     def drag_handle_leave(self, event):
         """Handle mouse leave on drag handle - restore cursor."""
         if not self.is_dragging:
-            self.drag_handle.setCursor(Qt.ArrowCursor)
+            QApplication.restoreOverrideCursor()
+            logger.debug("[RenameModuleWidget] Mouse left drag handle", extra={"dev_only": True})
 
     def drag_handle_mouse_press(self, event):
         """Handle mouse press on drag handle - prepare for dragging."""
         if event.button() == Qt.LeftButton:
             self.drag_start_position = event.pos()
-            self.drag_handle.setCursor(Qt.ClosedHandCursor)
+            from core.pyqt_imports import QCursor
+            QApplication.setOverrideCursor(QCursor(Qt.ClosedHandCursor))
             logger.debug("[RenameModuleWidget] Drag handle pressed", extra={"dev_only": True})
+            event.accept()
 
     def drag_handle_mouse_move(self, event):
         """Handle mouse move on drag handle - start dragging if moved enough."""
@@ -325,18 +331,27 @@ class RenameModuleWidget(QWidget):
         if not self.is_dragging:
             self.start_drag()
 
+        # Update module position to follow mouse during drag
+        if self.is_dragging:
+            self.update_drag_position(event.globalPos())
+
+        event.accept()
+
     def drag_handle_mouse_release(self, event):
         """Handle mouse release on drag handle - end dragging."""
         if event.button() == Qt.LeftButton:
             if self.is_dragging:
                 self.end_drag()
-            self.drag_handle.setCursor(Qt.OpenHandCursor)
+            else:
+                QApplication.restoreOverrideCursor()
             self.drag_start_position = None
+            logger.debug("[RenameModuleWidget] Drag handle released", extra={"dev_only": True})
+            event.accept()
 
     def start_drag(self):
         """Start the drag operation."""
         self.is_dragging = True
-        logger.debug("[RenameModuleWidget] Starting drag operation", extra={"dev_only": True})
+        logger.info("[RenameModuleWidget] Starting drag operation", extra={"dev_only": True})
 
         # Enhanced visual feedback during dragging
         self.setWindowOpacity(0.8)
@@ -356,23 +371,81 @@ class RenameModuleWidget(QWidget):
             }
         """)
 
-        # Notify parent that dragging started
-        if hasattr(self.parent(), 'module_drag_started'):
-            self.parent().module_drag_started(self)
+        # Notify parent that dragging started - try different parent levels
+        parent = self.parent()
+        while parent:
+            if hasattr(parent, 'module_drag_started'):
+                logger.info(f"[RenameModuleWidget] Found drag handler in {type(parent).__name__}", extra={"dev_only": True})
+                parent.module_drag_started(self)
+                break
+            parent = parent.parent()
+        else:
+            logger.warning("[RenameModuleWidget] No drag handler found in parent chain", extra={"dev_only": True})
 
     def end_drag(self):
         """End the drag operation."""
         self.is_dragging = False
-        logger.debug("[RenameModuleWidget] Ending drag operation", extra={"dev_only": True})
+        logger.info("[RenameModuleWidget] Ending drag operation", extra={"dev_only": True})
 
         # Restore normal appearance
         self.setWindowOpacity(1.0)
         self.setGraphicsEffect(None)  # Remove shadow
         self.setStyleSheet("")  # Remove scale transform
+        QApplication.restoreOverrideCursor()
 
-        # Notify parent that dragging ended
-        if hasattr(self.parent(), 'module_drag_ended'):
-            self.parent().module_drag_ended(self)
+        # Restore original position (remove horizontal offset)
+        if self.parent():
+            # Get the correct position from the layout
+            from utils.timer_manager import schedule_ui_update
+            schedule_ui_update(self.restore_original_position, 10)
+
+        # Notify parent that dragging ended - try different parent levels
+        parent = self.parent()
+        while parent:
+            if hasattr(parent, 'module_drag_ended'):
+                logger.info(f"[RenameModuleWidget] Found drag end handler in {type(parent).__name__}", extra={"dev_only": True})
+                parent.module_drag_ended(self)
+                break
+            parent = parent.parent()
+        else:
+            logger.warning("[RenameModuleWidget] No drag end handler found in parent chain", extra={"dev_only": True})
+
+    def restore_original_position(self):
+        """Restore the module to its proper position in the layout."""
+        if self.parent():
+            # Force layout update to restore proper positioning
+            self.parent().updateGeometry()
+            self.parent().update()
+
+    def update_drag_position(self, global_pos):
+        """Update module position during drag to follow mouse with horizontal movement."""
+        if not self.is_dragging:
+            return
+
+        # Get mouse position relative to parent widget
+        if self.parent():
+            local_pos = self.parent().mapFromGlobal(global_pos)
+
+            # Get current geometry
+            current_rect = self.geometry()
+
+            # Calculate horizontal offset (allow some horizontal movement for visual feedback)
+            original_x = current_rect.x()
+            mouse_offset_x = (local_pos.x() - original_x) * 0.1  # 10% of horizontal movement
+            # Clamp horizontal movement to a reasonable range (-20 to +20 pixels)
+            mouse_offset_x = max(-20, min(20, mouse_offset_x))
+
+            # Update position with horizontal offset
+            new_x = int(original_x + mouse_offset_x)
+            self.move(new_x, current_rect.y())
+
+            # Notify parent for auto-scroll handling
+            parent = self.parent()
+            while parent:
+                if hasattr(parent, 'handle_drag_auto_scroll'):
+                    parent.handle_drag_auto_scroll(global_pos)
+                    break
+                parent = parent.parent()
 
 
 
