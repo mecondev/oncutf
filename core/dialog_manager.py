@@ -142,22 +142,12 @@ class DialogManager:
         return CustomMessageDialog.unsaved_changes(parent)
 
     def center_window(self, window: QWidget):
-        """Center a window on the screen"""
+        """Center a window on the screen using multiscreen-aware positioning"""
         if not window:
             return
 
-        # Get screen geometry
-        screen = QApplication.primaryScreen().geometry() # type: ignore
-
-        # Get window geometry
-        window_geometry = window.geometry()
-
-        # Calculate center position
-        x = (screen.width() - window_geometry.width()) // 2
-        y = (screen.height() - window_geometry.height()) // 2
-
-        # Move window
-        window.move(x, y)
+        from utils.multiscreen_helper import center_dialog_on_screen
+        center_dialog_on_screen(window)
 
     def should_skip_folder_reload(self, folder_path: str) -> bool:
         """Check if folder reload should be skipped"""

@@ -113,6 +113,13 @@ class CustomMessageDialog(QDialog):
         layout.addLayout(btn_layout)
         self.selected = None
 
+    def showEvent(self, event):
+        """Handle show event to ensure proper positioning on multiscreen setups."""
+        super().showEvent(event)
+        # Ensure dialog appears on the same screen as its parent
+        from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+        ensure_dialog_on_parent_screen(self)
+
     def _on_button(self, btn_text: str):
         """
         Handles button click events, setting the selected button text

@@ -15,25 +15,19 @@ from core.pyqt_imports import QWidget
 
 def center_widget_on_parent(widget: QWidget, parent: Optional[QWidget] = None) -> None:
     """
-    Center a widget on its parent window.
+    Center a widget on its parent window using multiscreen-aware positioning.
 
     Args:
         widget: The widget to center
         parent: The parent widget to center on. If None, uses widget.parent()
     """
-    target_parent = parent or widget.parent()
-
-    if target_parent:
-        parent_rect = target_parent.geometry() # type: ignore
-        widget_size = widget.sizeHint()
-        x = parent_rect.x() + (parent_rect.width() - widget_size.width()) // 2
-        y = parent_rect.y() + (parent_rect.height() - widget_size.height()) // 2
-        widget.move(x, y)
+    from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+    ensure_dialog_on_parent_screen(widget, parent)
 
 
 def setup_dialog_size_and_center(dialog: QWidget, content_widget: QWidget) -> None:
     """
-    Set dialog size to match content widget and center it on parent.
+    Set dialog size to match content widget and center it on parent using multiscreen-aware positioning.
 
     Args:
         dialog: The dialog to setup
@@ -43,7 +37,7 @@ def setup_dialog_size_and_center(dialog: QWidget, content_widget: QWidget) -> No
     widget_size = content_widget.sizeHint()
     dialog.setFixedSize(widget_size.width(), widget_size.height())
 
-    # Center the dialog on parent
+    # Center the dialog on parent using multiscreen-aware positioning
     center_widget_on_parent(dialog)
 
 

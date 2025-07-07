@@ -44,7 +44,8 @@ class EventHandlerManager:
         - Shift: Merge + shallow (skip metadata)
         - Ctrl+Shift: Merge + recursive (skip metadata)
         """
-        folder_path = QFileDialog.getExistingDirectory(
+        from utils.multiscreen_helper import get_existing_directory_on_parent_screen
+        folder_path = get_existing_directory_on_parent_screen(
             self.parent_window,
             "Select Folder",
             self.parent_window.current_folder_path or os.path.expanduser("~")
@@ -1016,7 +1017,8 @@ class EventHandlerManager:
             from core.pyqt_imports import QFileDialog
 
             # Show folder picker dialog
-            external_folder = QFileDialog.getExistingDirectory(
+            from utils.multiscreen_helper import get_existing_directory_on_parent_screen
+            external_folder = get_existing_directory_on_parent_screen(
                 self.parent_window,
                 "Select folder to compare with",
                 "",
@@ -1325,7 +1327,8 @@ class EventHandlerManager:
         format_type = format_map.get(format_combo.currentIndex(), "json")
 
         # Get output directory
-        output_dir = QFileDialog.getExistingDirectory(
+        from utils.multiscreen_helper import get_existing_directory_on_parent_screen
+        output_dir = get_existing_directory_on_parent_screen(
             dialog,
             f"Select Export Directory - {scope.title()} Files",
             "",

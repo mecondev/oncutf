@@ -62,6 +62,13 @@ class RenameHistoryDialog(QDialog):
 
         logger.debug("[RenameHistoryDialog] Initialized")
 
+    def showEvent(self, event):
+        """Handle show event to ensure proper positioning on multiscreen setups."""
+        super().showEvent(event)
+        # Ensure dialog appears on the same screen as its parent
+        from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+        ensure_dialog_on_parent_screen(self)
+
     def _setup_ui(self):
         """Setup the dialog UI components."""
         layout = QVBoxLayout(self)
