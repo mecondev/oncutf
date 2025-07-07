@@ -63,8 +63,11 @@ class UtilityManager:
         the timer is restarted so that the actual update occurs only when
         changes stop for the specified duration (250ms).
         """
+        logger.debug("[UtilityManager] request_preview_update called", extra={"dev_only": True})
+
         if self.main_window.preview_update_timer.isActive():
             self.main_window.preview_update_timer.stop()
+
         self.main_window.preview_update_timer.start()
 
     def force_reload(self) -> None:

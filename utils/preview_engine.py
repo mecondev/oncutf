@@ -33,6 +33,7 @@ MODULE_TYPE_MAP = {
     "counter": CounterModule,
     "metadata": MetadataModule,
     "original_name": OriginalNameModule,
+    "remove_text_from_original_name": TextRemovalModule,
 }
 
 def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
@@ -65,6 +66,16 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
             if not part:
                 logger.debug(f"[apply_rename_modules] OriginalName fallback, using original base: {original_base_name}", extra={"dev_only": True})
                 part = "originalname"
+
+        elif module_type == "remove_text_from_original_name":
+            # Apply text removal to original filename and return the result
+            result_filename = TextRemovalModule.apply_from_data(data, file_item, index, metadata_cache)
+            # Extract just the base name without extension
+            part, _ = os.path.splitext(result_filename)
+            logger.debug(f"[apply_rename_modules] TextRemoval result: '{part}'", extra={"dev_only": True})
+
+        else:
+            logger.warning(f"[apply_rename_modules] Unknown module type: '{module_type}'")
 
         if part:
             logger.debug(f"[apply_rename_modules] Module {module_type} part: '{part}'", extra={"dev_only": True})

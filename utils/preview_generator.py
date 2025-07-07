@@ -88,6 +88,20 @@ def generate_preview_names(
                     logger.warning(f"[PreviewGen] Exception in MetadataModule for {file.filename}: {e}")
                     name_parts.append("unknown")
 
+            elif module_type == "remove_text_from_original_name":
+                # Use TextRemovalModule for text removal
+                try:
+                    from modules.text_removal_module import TextRemovalModule
+                    result_filename = TextRemovalModule.apply_from_data(module, file, index, metadata_cache)
+                    # Extract just the base name without extension
+                    import os
+                    result_basename, _ = os.path.splitext(result_filename)
+                    logger.debug(f"[PreviewGen] TextRemoval result: '{result_basename}'", extra={"dev_only": True})
+                    name_parts.append(result_basename)
+                except Exception as e:
+                    logger.warning(f"[PreviewGen] Exception in TextRemovalModule for {file.filename}: {e}")
+                    name_parts.append("error")
+
             else:
                 logger.debug(f"[PreviewGen] Invalid module type: {module_type}", extra={"dev_only": True})
                 name_parts.append("invalid")

@@ -18,7 +18,7 @@ Features:
 """
 from typing import Optional
 
-from core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, Qt, QVBoxLayout, QWidget, pyqtSignal
+from core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, Qt, QVBoxLayout, QWidget, pyqtSignal, QApplication, QGraphicsDropShadowEffect, QColor
 from modules.counter_module import CounterModule
 
 # Lazy import to avoid circular import: from modules.specified_text_module import SpecifiedTextModule
@@ -125,6 +125,18 @@ class RenameModuleWidget(QWidget):
         # Set drag handle icon
         drag_icon = get_menu_icon("more-vertical")
         self.drag_handle.setPixmap(drag_icon.pixmap(16, 16))
+
+        # Enable drag functionality
+        self.drag_handle.setAcceptDrops(True)
+        self.drag_handle.mousePressEvent = self.drag_handle_mouse_press
+        self.drag_handle.mouseMoveEvent = self.drag_handle_mouse_move
+        self.drag_handle.mouseReleaseEvent = self.drag_handle_mouse_release
+        self.drag_handle.enterEvent = self.drag_handle_enter
+        self.drag_handle.leaveEvent = self.drag_handle_leave
+
+        # Drag state
+        self.drag_start_position = None
+        self.is_dragging = False
 
         plate_layout.addWidget(self.drag_handle)
 
@@ -238,6 +250,7 @@ class RenameModuleWidget(QWidget):
             self.connect_signals_for_module(self.current_module_widget)
 
         # Emit updated signal to refresh preview
+        logger.debug(f"[RenameModuleWidget] Emitting updated signal for module: {module_name}", extra={"dev_only": True})
         self.updated.emit(self)
 
     def get_data(self) -> dict:
@@ -258,7 +271,8 @@ class RenameModuleWidget(QWidget):
         """
         module_type = self.type_combo.currentText()
         data = self.get_data()
-        data["type"] = module_type.lower().replace(" ", "_")
+        converted_type = module_type.lower().replace(" ", "_")
+        data["type"] = converted_type
         return data
 
     def is_effective(self) -> bool:
@@ -277,6 +291,88 @@ class RenameModuleWidget(QWidget):
             return module_class.is_effective(data)  # type: ignore[attr-defined]
             # return self.module.is_effective(self.get_data())
         return False
+
+    # Drag & Drop functionality
+    def drag_handle_enter(self, event):
+        """Handle mouse enter on drag handle - change cursor."""
+        self.drag_handle.setCursor(Qt.OpenHandCursor)
+
+    def drag_handle_leave(self, event):
+        """Handle mouse leave on drag handle - restore cursor."""
+        if not self.is_dragging:
+            self.drag_handle.setCursor(Qt.ArrowCursor)
+
+    def drag_handle_mouse_press(self, event):
+        """Handle mouse press on drag handle - prepare for dragging."""
+        if event.button() == Qt.LeftButton:
+            self.drag_start_position = event.pos()
+            self.drag_handle.setCursor(Qt.ClosedHandCursor)
+            logger.debug("[RenameModuleWidget] Drag handle pressed", extra={"dev_only": True})
+
+    def drag_handle_mouse_move(self, event):
+        """Handle mouse move on drag handle - start dragging if moved enough."""
+        if not (event.buttons() & Qt.LeftButton):
+            return
+
+        if not self.drag_start_position:
+            return
+
+        # Check if we've moved far enough to start dragging
+        if ((event.pos() - self.drag_start_position).manhattanLength() <
+            QApplication.startDragDistance()):
+            return
+
+        if not self.is_dragging:
+            self.start_drag()
+
+    def drag_handle_mouse_release(self, event):
+        """Handle mouse release on drag handle - end dragging."""
+        if event.button() == Qt.LeftButton:
+            if self.is_dragging:
+                self.end_drag()
+            self.drag_handle.setCursor(Qt.OpenHandCursor)
+            self.drag_start_position = None
+
+    def start_drag(self):
+        """Start the drag operation."""
+        self.is_dragging = True
+        logger.debug("[RenameModuleWidget] Starting drag operation", extra={"dev_only": True})
+
+        # Enhanced visual feedback during dragging
+        self.setWindowOpacity(0.8)
+        self.raise_()
+
+        # Add shadow effect for better visual feedback
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(15)
+        shadow.setColor(QColor(0, 0, 0, 160))
+        shadow.setOffset(2, 2)
+        self.setGraphicsEffect(shadow)
+
+        # Scale up slightly to show it's being dragged
+        self.setStyleSheet("""
+            QWidget[objectName="RenameModuleWidget"] {
+                transform: scale(1.02);
+            }
+        """)
+
+        # Notify parent that dragging started
+        if hasattr(self.parent(), 'module_drag_started'):
+            self.parent().module_drag_started(self)
+
+    def end_drag(self):
+        """End the drag operation."""
+        self.is_dragging = False
+        logger.debug("[RenameModuleWidget] Ending drag operation", extra={"dev_only": True})
+
+        # Restore normal appearance
+        self.setWindowOpacity(1.0)
+        self.setGraphicsEffect(None)  # Remove shadow
+        self.setStyleSheet("")  # Remove scale transform
+
+        # Notify parent that dragging ended
+        if hasattr(self.parent(), 'module_drag_ended'):
+            self.parent().module_drag_ended(self)
 
 
 

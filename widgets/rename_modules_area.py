@@ -14,7 +14,7 @@ Now supports ApplicationContext for optimized access patterns.
 from typing import Optional
 
 import config
-from core.pyqt_imports import QScrollArea, Qt, QTimer, QVBoxLayout, QWidget, pyqtSignal
+from core.pyqt_imports import QScrollArea, Qt, QTimer, QVBoxLayout, QWidget, pyqtSignal, QFrame, QCursor
 from modules.base_module import BaseRenameModule
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_scroll_adjust
@@ -79,7 +79,11 @@ class RenameModulesArea(QWidget):
         self._update_timer = QTimer()
         self._update_timer.setSingleShot(True)
         self._update_timer.setInterval(100)  # 100ms debounce
-        self._update_timer.timeout.connect(lambda: self.updated.emit())
+        self._update_timer.timeout.connect(lambda: self._emit_updated_signal())
+
+        # Drag & Drop state
+        self.dragged_module = None
+        self.drop_indicators = []
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
@@ -221,3 +225,121 @@ class RenameModulesArea(QWidget):
         self.current_theme = theme
         # Theme styling is now handled by the global theme engine
         logger.debug(f"[RenameModulesArea] Theme changed to: {theme}", extra={"dev_only": True})
+
+    def _emit_updated_signal(self):
+        """Emit the updated signal after debouncing."""
+        logger.debug("[RenameModulesArea] Timer timeout - emitting updated signal", extra={"dev_only": True})
+        self.updated.emit()
+
+    # Drag & Drop functionality
+    def module_drag_started(self, module):
+        """Handle when a module starts being dragged."""
+        self.dragged_module = module
+        logger.debug(f"[RenameModulesArea] Module drag started: {module}", extra={"dev_only": True})
+        self.create_drop_indicators()
+
+        # Show all drop indicators
+        for indicator in self.drop_indicators:
+            indicator.show()
+
+    def module_drag_ended(self, module):
+        """Handle when a module drag ends."""
+        logger.debug(f"[RenameModulesArea] Module drag ended: {module}", extra={"dev_only": True})
+
+        # Find drop position based on mouse position
+        drop_index = self.find_drop_position()
+        if drop_index is not None:
+            self.reorder_module(module, drop_index)
+
+        self.cleanup_drop_indicators()
+        self.dragged_module = None
+
+    def create_drop_indicators(self):
+        """Create visual indicators showing where the module can be dropped."""
+        self.cleanup_drop_indicators()
+
+        # Create drop indicators between each module and at the ends
+        for i in range(len(self.module_widgets) + 1):
+            indicator = self.create_drop_indicator()
+            self.drop_indicators.append(indicator)
+
+            # Insert at the correct position in the layout
+            insert_position = i * 2  # Account for modules taking odd positions
+            if i < len(self.module_widgets):
+                # Insert before the module at position i
+                self.scroll_layout.insertWidget(insert_position, indicator)
+            else:
+                # Insert at the end
+                self.scroll_layout.addWidget(indicator)
+
+    def create_drop_indicator(self):
+        """Create a single drop indicator widget."""
+        indicator = QFrame()
+        indicator.setObjectName("drop_indicator")
+        indicator.setFixedHeight(6)
+        indicator.setStyleSheet("""
+            QFrame#drop_indicator {
+                background-color: rgba(0, 120, 215, 0.7);
+                border: 1px solid rgba(0, 120, 215, 1.0);
+                border-radius: 3px;
+                margin: 1px 8px;
+            }
+            QFrame#drop_indicator:hover {
+                background-color: rgba(0, 120, 215, 0.9);
+            }
+        """)
+        indicator.hide()  # Initially hidden
+        return indicator
+
+    def cleanup_drop_indicators(self):
+        """Remove all drop indicators."""
+        for indicator in self.drop_indicators:
+            self.scroll_layout.removeWidget(indicator)
+            indicator.setParent(None)
+            indicator.deleteLater()
+        self.drop_indicators.clear()
+
+    def find_drop_position(self):
+        """Find the drop position based on current mouse position."""
+        if not self.dragged_module:
+            return None
+
+        # Get mouse position relative to scroll content
+        mouse_pos = self.scroll_content.mapFromGlobal(QCursor.pos())
+
+        # Find which module the mouse is over
+        for i, module in enumerate(self.module_widgets):
+            if module == self.dragged_module:
+                continue
+
+            module_rect = module.geometry()
+            if mouse_pos.y() < module_rect.center().y():
+                return i
+
+        # If not over any module, drop at the end
+        return len(self.module_widgets)
+
+    def reorder_module(self, module, new_index):
+        """Reorder a module to a new position."""
+        if module not in self.module_widgets:
+            return
+
+        old_index = self.module_widgets.index(module)
+        if old_index == new_index:
+            return
+
+        logger.debug(f"[RenameModulesArea] Reordering module from {old_index} to {new_index}", extra={"dev_only": True})
+
+        # Remove module from old position
+        self.module_widgets.pop(old_index)
+        self.scroll_layout.removeWidget(module)
+
+        # Insert module at new position
+        self.module_widgets.insert(new_index, module)
+        self.scroll_layout.insertWidget(new_index, module)
+
+        # Update layout stretch
+        self._update_layout_stretch()
+
+        # Emit updated signal
+        self.updated.emit()

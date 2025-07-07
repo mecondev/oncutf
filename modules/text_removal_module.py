@@ -2,30 +2,33 @@
 Module: text_removal_module.py
 
 Author: Michael Economou
-Date: 2025-01-24
+Date: 2025-01-07
 
-Text removal module for removing specific text from original filenames.
-This module works directly with the original filename without needing
-the Original Name module.
+This module provides functionality to remove specific text patterns from filenames.
+It supports removing text from the start, end, or anywhere in the filename,
+with case-sensitive or case-insensitive matching.
 """
 
-import logging
+import re
 from typing import Optional
-
 from core.pyqt_imports import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QCheckBox
-from modules.base_module import BaseModule
+from modules.base_module import BaseRenameModule
+import logging
 
 logger = logging.getLogger(__name__)
 
 
-class TextRemovalModule(BaseModule):
+class TextRemovalModule(BaseRenameModule):
     """
-    Module for removing specific text from original filenames.
+    Module for removing specific text patterns from filenames.
 
-    Features:
-    - Remove text from start, end, or anywhere in the filename
-    - Case sensitive/insensitive removal
-    - Direct work with original filename
+    This module allows users to remove text from different positions in filenames:
+    - From the end of the filename
+    - From the start of the filename
+    - First occurrence anywhere in the filename
+    - All occurrences anywhere in the filename
+
+    It supports both case-sensitive and case-insensitive matching.
     """
 
     def __init__(self, parent: Optional[QWidget] = None):
@@ -83,14 +86,20 @@ class TextRemovalModule(BaseModule):
 
     def on_text_changed(self):
         """Handle text input changes."""
+        text = self.text_input.text()
+        logger.debug(f"[TextRemoval] Text changed to: '{text}'", extra={"dev_only": True})
         self.updated.emit(self)
 
     def on_position_changed(self):
         """Handle position combo changes."""
+        position = self.position_combo.currentText()
+        logger.debug(f"[TextRemoval] Position changed to: '{position}'", extra={"dev_only": True})
         self.updated.emit(self)
 
     def on_case_changed(self):
         """Handle case sensitivity changes."""
+        case_sensitive = self.case_sensitive_check.isChecked()
+        logger.debug(f"[TextRemoval] Case sensitivity changed to: {case_sensitive}", extra={"dev_only": True})
         self.updated.emit(self)
 
     def get_data(self) -> dict:
@@ -194,7 +203,6 @@ class TextRemovalModule(BaseModule):
                     result_name = name_without_ext.replace(text_to_remove, "", 1)
             else:
                 # Case insensitive replacement
-                import re
                 pattern = re.escape(text_to_remove)
                 result_name = re.sub(pattern, "", name_without_ext, count=1, flags=re.IGNORECASE)
 
@@ -204,7 +212,6 @@ class TextRemovalModule(BaseModule):
                 result_name = name_without_ext.replace(text_to_remove, "")
             else:
                 # Case insensitive replacement
-                import re
                 pattern = re.escape(text_to_remove)
                 result_name = re.sub(pattern, "", name_without_ext, flags=re.IGNORECASE)
 
