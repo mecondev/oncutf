@@ -258,7 +258,17 @@ class RenameHistoryManager:
                     target_path = operation.old_path
 
                     # Perform the rename (revert)
-                    os.rename(current_path, target_path)
+                    # Use safe case rename for case-only changes
+                    from utils.rename_logic import safe_case_rename, is_case_only_change
+
+                    current_name = os.path.basename(current_path)
+                    target_name = os.path.basename(target_path)
+
+                    if is_case_only_change(current_name, target_name):
+                        if not safe_case_rename(current_path, target_path):
+                            raise Exception(f"Case-only rename failed: {current_name} -> {target_name}")
+                    else:
+                        os.rename(current_path, target_path)
                     successful_reverts.append(operation)
 
                     logger.debug(f"[RenameHistoryManager] Reverted: {operation.new_filename} -> {operation.old_filename}")

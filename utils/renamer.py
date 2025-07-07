@@ -158,8 +158,24 @@ class Renamer:
 
             # File rename
             try:
-                os.rename(src, dst)
-                results.append(RenameResult(src, dst, success=True))
+                # Import the safe case rename function
+                from utils.rename_logic import safe_case_rename, is_case_only_change
+
+                src_name = os.path.basename(src)
+                dst_name = os.path.basename(dst)
+
+                # Use safe case rename for case-only changes
+                if is_case_only_change(src_name, dst_name):
+                    if safe_case_rename(src, dst):
+                        results.append(RenameResult(src, dst, success=True))
+                        logger.info(f"Case-only rename successful: {src_name} -> {dst_name}")
+                    else:
+                        results.append(RenameResult(src, dst, success=False, error="Case-only rename failed"))
+                        logger.error(f"Case-only rename failed: {src_name} -> {dst_name}")
+                else:
+                    # Regular rename
+                    os.rename(src, dst)
+                    results.append(RenameResult(src, dst, success=True))
             except Exception as e:
                 logger.error(f"Rename failed for {src}: {str(e)}")
                 results.append(RenameResult(src, dst, success=False, error=str(e)))

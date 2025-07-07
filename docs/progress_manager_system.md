@@ -1,33 +1,33 @@
 # Progress Manager System
 
-## Επισκόπηση
+## Overview
 
-Το νέο ProgressManager σύστημα παρέχει ένα ενοποιημένο API για το progress tracking σε όλες τις file operations της εφαρμογής ONCUTF.
+The new ProgressManager system provides a unified API for progress tracking across all file operations in the ONCUTF application.
 
-## Αρχιτεκτονική
+## Architecture
 
 ### ProgressManager Class
 
-Ο `ProgressManager` είναι η κύρια κλάση που ενοποιεί όλες τις progress operations:
+The `ProgressManager` is the main class that unifies all progress operations:
 
 ```python
 from widgets.progress_manager import ProgressManager
 
-# Δημιουργία manager για hash operations
+# Create manager for hash operations
 hash_manager = ProgressManager("hash", parent)
 
-# Δημιουργία manager για metadata operations
+# Create manager for metadata operations
 metadata_manager = ProgressManager("metadata", parent)
 
-# Δημιουργία manager για copy operations (future)
+# Create manager for copy operations (future)
 copy_manager = ProgressManager("copy", parent)
 ```
 
-### Υποστηριζόμενες Operations
+### Supported Operations
 
-- **hash**: Size-based progress με real-time tracking για CRC32 calculations
-- **metadata**: Count-based progress με optional size tracking για metadata loading
-- **copy**: Size-based progress για file operations (future)
+- **hash**: Size-based progress with real-time tracking for CRC32 calculations
+- **metadata**: Count-based progress with optional size tracking for metadata loading
+- **copy**: Size-based progress for file operations (future)
 
 ## API Reference
 
@@ -49,11 +49,11 @@ ProgressManager(operation_type: str, parent: Optional[QWidget] = None)
 start_tracking(total_size: int = 0, total_files: int = 0)
 ```
 
-Ξεκινάει το progress tracking με τα κατάλληλα parameters.
+Starts progress tracking with the appropriate parameters.
 
 **Parameters:**
-- `total_size`: Συνολικό μέγεθος σε bytes (για size-based operations)
-- `total_files`: Συνολικός αριθμός αρχείων (για count-based operations)
+- `total_size`: Total size in bytes (for size-based operations)
+- `total_files`: Total number of files (for count-based operations)
 
 #### update_progress()
 
@@ -63,14 +63,14 @@ update_progress(file_count: int = 0, total_files: int = 0,
                filename: str = "", status: str = "")
 ```
 
-Ενημερώνει το progress με unified API.
+Updates progress with unified API.
 
 **Parameters:**
-- `file_count`: Τρέχων αριθμός επεξεργασμένων αρχείων
-- `total_files`: Συνολικός αριθμός αρχείων
-- `processed_bytes`: Επεξεργασμένα bytes (cumulative)
-- `total_bytes`: Συνολικό μέγεθος σε bytes
-- `filename`: Τρέχον όνομα αρχείου
+- `file_count`: Current number of processed files
+- `total_files`: Total number of files
+- `processed_bytes`: Processed bytes (cumulative)
+- `total_bytes`: Total size in bytes
+- `filename`: Current filename
 - `status`: Status message
 
 #### reset()
@@ -79,7 +79,7 @@ update_progress(file_count: int = 0, total_files: int = 0,
 reset()
 ```
 
-Επαναφέρει το progress tracking.
+Resets progress tracking.
 
 #### get_widget()
 
@@ -87,7 +87,7 @@ reset()
 get_widget() -> ProgressWidget
 ```
 
-Επιστρέφει το underlying progress widget.
+Returns the underlying progress widget.
 
 #### is_tracking()
 
@@ -95,11 +95,11 @@ get_widget() -> ProgressWidget
 is_tracking() -> bool
 ```
 
-Ελέγχει αν το progress tracking είναι ενεργό.
+Checks if progress tracking is active.
 
 ## Factory Functions
 
-Για ευκολία, παρέχονται factory functions:
+For convenience, factory functions are provided:
 
 ```python
 from widgets.progress_manager import (
@@ -108,7 +108,7 @@ from widgets.progress_manager import (
     create_copy_progress_manager
 )
 
-# Δημιουργία managers
+# Create managers
 hash_manager = create_hash_progress_manager(parent)
 metadata_manager = create_metadata_progress_manager(parent)
 copy_manager = create_copy_progress_manager(parent)
@@ -119,13 +119,13 @@ copy_manager = create_copy_progress_manager(parent)
 ### Hash Operations
 
 ```python
-# Δημιουργία manager
+# Create manager
 manager = ProgressManager("hash", parent)
 
-# Ξεκίνημα tracking
+# Start tracking
 manager.start_tracking(total_size=1000000000)  # 1GB
 
-# Ενημέρωση progress
+# Update progress
 manager.update_progress(
     processed_bytes=500000000,  # 500MB
     filename="large_file.mov",
@@ -136,13 +136,13 @@ manager.update_progress(
 ### Metadata Operations
 
 ```python
-# Δημιουργία manager
+# Create manager
 manager = ProgressManager("metadata", parent)
 
-# Ξεκίνημα tracking
+# Start tracking
 manager.start_tracking(total_files=100, total_size=50000000)
 
-# Ενημέρωση progress
+# Update progress
 manager.update_progress(
     file_count=50,
     total_files=100,
@@ -155,13 +155,13 @@ manager.update_progress(
 ### Copy Operations (Future)
 
 ```python
-# Δημιουργία manager
+# Create manager
 manager = ProgressManager("copy", parent)
 
-# Ξεκίνημα tracking
+# Start tracking
 manager.start_tracking(total_size=500000000)  # 500MB
 
-# Ενημέρωση progress
+# Update progress
 manager.update_progress(
     processed_bytes=250000000,  # 250MB
     filename="video.mp4",
@@ -171,9 +171,9 @@ manager.update_progress(
 
 ## Migration Guide
 
-### Από το παλιό σύστημα
+### From the Old System
 
-**Παλιό:**
+**Old:**
 ```python
 from widgets.progress_widget import create_size_based_progress_widget
 
@@ -182,7 +182,7 @@ widget.start_progress_tracking(total_size)
 widget.update_progress(processed_bytes=bytes, total_bytes=total)
 ```
 
-**Νέο:**
+**New:**
 ```python
 from widgets.progress_manager import create_hash_progress_manager
 
@@ -193,11 +193,19 @@ manager.update_progress(processed_bytes=bytes)
 
 ### Benefits
 
-1. **Unified API**: Ένα API για όλες τις operations
-2. **Automatic Mode Selection**: Αυτόματη επιλογή mode βάσει operation type
-3. **Better Error Handling**: Καλύτερο error handling και validation
-4. **Future Ready**: Έτοιμο για νέες operations (copy, move, etc.)
-5. **Cleaner Code**: Λιγότερος duplicate code
+1. **Unified API**: One API for all operations
+2. **Automatic Mode Selection**: Automatic mode selection based on operation type
+3. **Better Error Handling**: Improved error handling and validation
+4. **Future Ready**: Ready for new operations (copy, move, etc.)
+5. **Cleaner Code**: Less duplicate code
+
+## Related Documentation
+
+- **Database System**: [Database Quick Start](database_quick_start.md) | [Database System](database_system.md)
+- **Safe Rename Operations**: [Safe Rename Workflow](safe_rename_workflow.md)
+- **Case-Sensitive Renaming**: [Case-Sensitive Rename Guide](case_sensitive_rename_guide.md)
+- **Configuration**: [JSON Config System](json_config_system.md)
+- **Module Documentation**: [oncutf Module Docstrings](oncutf_module_docstrings.md)
 
 ## Implementation Details
 

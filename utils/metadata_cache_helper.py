@@ -215,6 +215,50 @@ class MetadataCacheHelper:
             # Simple key
             return metadata.get(key_path, default)
 
+    def set_metadata_value(self, file_item, key_path: str, new_value: Any) -> bool:
+        """
+        Set a specific metadata value by key path with path normalization.
+
+        Args:
+            file_item: FileItem object
+            key_path: Key path (e.g., "EXIF/ImageWidth" or "Title")
+            new_value: New value to set
+
+        Returns:
+            bool: True if value was set successfully
+        """
+        try:
+            # Get current metadata
+            metadata = self.get_metadata_for_file(file_item, fallback_to_file_item=True)
+            if metadata is None:
+                metadata = {}
+
+            # Handle nested keys (e.g., "EXIF/ImageWidth")
+            if '/' in key_path:
+                parts = key_path.split('/')
+                current = metadata
+
+                # Navigate to parent container
+                for part in parts[:-1]:
+                    if part not in current or not isinstance(current[part], dict):
+                        current[part] = {}
+                    current = current[part]
+
+                # Set the final value
+                current[parts[-1]] = new_value
+            else:
+                # Simple key
+                metadata[key_path] = new_value
+
+            # Update the metadata in cache and file item
+            self.set_metadata_for_file(file_item, metadata, modified=True)
+
+            return True
+
+        except Exception as e:
+            logger.error(f"[MetadataCacheHelper] Error setting metadata value for {getattr(file_item, 'filename', 'unknown')}: {e}")
+            return False
+
     def is_metadata_modified(self, file_item) -> bool:
         """
         Check if metadata for a file has been modified with path normalization.

@@ -15,7 +15,90 @@ Functions:
 - get_preview_pairs: Generates preview name pairs from checked files and renaming rules.
 """
 import os
+import platform
+import tempfile
 from typing import Callable, Dict, List, Tuple
+
+from utils.logger_factory import get_cached_logger
+
+logger = get_cached_logger(__name__)
+
+
+def is_case_only_change(old: str, new: str) -> bool:
+    """Check if the only difference between old and new names is case."""
+    return old.lower() == new.lower() and old != new
+
+
+def safe_case_rename(src_path: str, dst_path: str) -> bool:
+    """
+    Safely rename a file when only the case changes, working around Windows limitations.
+
+    On Windows, NTFS is case-insensitive, so os.rename(file.txt, FILE.TXT) fails.
+    This function uses a two-step process: rename to temporary name, then to final name.
+
+    Args:
+        src_path: Source file path
+        dst_path: Destination file path
+
+    Returns:
+        bool: True if rename was successful, False otherwise
+    """
+    try:
+        # Get the directory and filenames
+        src_dir = os.path.dirname(src_path)
+        src_name = os.path.basename(src_path)
+        dst_name = os.path.basename(dst_path)
+
+        # Check if this is actually a case-only change
+        if not is_case_only_change(src_name, dst_name):
+            # Not a case-only change, use regular rename
+            os.rename(src_path, dst_path)
+            return True
+
+        # For case-only changes, we need special handling on Windows
+        if platform.system() == "Windows":
+            # Step 1: Create a unique temporary name in the same directory
+            temp_name = f"_temp_rename_{hash(dst_name)}.tmp"
+            temp_path = os.path.join(src_dir, temp_name)
+
+            # Make sure temp name doesn't exist
+            counter = 0
+            while os.path.exists(temp_path):
+                counter += 1
+                temp_name = f"_temp_rename_{hash(dst_name)}_{counter}.tmp"
+                temp_path = os.path.join(src_dir, temp_name)
+                if counter > 100:  # Safety valve
+                    logger.error(f"Could not find unique temp name for case rename: {src_path}")
+                    return False
+
+            # Step 2: Rename to temporary name
+            os.rename(src_path, temp_path)
+            logger.debug(f"Case rename step 1: {src_name} -> {temp_name}")
+
+            # Step 3: Rename from temporary to final name
+            os.rename(temp_path, dst_path)
+            logger.debug(f"Case rename step 2: {temp_name} -> {dst_name}")
+
+            logger.info(f"Successfully completed case-only rename: {src_name} -> {dst_name}")
+            return True
+        else:
+            # On Unix-like systems, case-sensitive filesystems should work with direct rename
+            os.rename(src_path, dst_path)
+            return True
+
+    except Exception as e:
+        logger.error(f"Failed to perform case rename from {src_path} to {dst_path}: {e}")
+
+        # Cleanup: if we created a temp file but failed, try to restore original
+        try:
+            if platform.system() == "Windows" and 'temp_path' in locals() and os.path.exists(temp_path):
+                if not os.path.exists(src_path):
+                    os.rename(temp_path, src_path)
+                    logger.info(f"Restored original file after failed case rename: {src_path}")
+        except Exception as cleanup_error:
+            logger.error(f"Failed to cleanup after case rename failure: {cleanup_error}")
+
+        return False
 
 
 def build_rename_plan(
@@ -35,19 +118,19 @@ def build_rename_plan(
         List[Dict]: A list of rename instructions with conflict info and undecided action
     """
 
-    def is_case_only_change(old: str, new: str) -> bool:
-        return old.lower() == new.lower() and old != new
-
     plan = []
 
     for (old_name, new_name) in preview_pairs:
         src_path = os.path.join(folder_path, old_name)
         dst_path = os.path.join(folder_path, new_name)
 
+        # Mark case-only changes for special handling
+        is_case_only = is_case_only_change(old_name, new_name)
+
         # Ignore conflict if the only change is in letter case
         conflict = (
             os.path.exists(dst_path)
-            and not is_case_only_change(old_name, new_name)
+            and not is_case_only
             and os.path.abspath(dst_path) != os.path.abspath(src_path)
         )
 
@@ -57,6 +140,7 @@ def build_rename_plan(
             "src_path": src_path,
             "dst_path": dst_path,
             "conflict": conflict,
+            "is_case_only": is_case_only,
             "action": "undecided"
         })
 
@@ -116,11 +200,19 @@ def execute_rename_plan(plan: List[Dict]) -> int:
             continue
 
         try:
-            os.rename(entry["src_path"], entry["dst_path"])
-            success_count += 1
-        except Exception:
-            # print(f"Failed to rename {entry['src']} -> {entry['dst']}: {e}")
-            pass  # Silent fail - could be logged in the future
+            # Use safe case rename for case-only changes
+            if entry.get("is_case_only", False):
+                if safe_case_rename(entry["src_path"], entry["dst_path"]):
+                    success_count += 1
+                    logger.info(f"Case-only rename successful: {entry['src']} -> {entry['dst']}")
+                else:
+                    logger.warning(f"Case-only rename failed: {entry['src']} -> {entry['dst']}")
+            else:
+                # Regular rename
+                os.rename(entry["src_path"], entry["dst_path"])
+                success_count += 1
+        except Exception as e:
+            logger.error(f"Failed to rename {entry['src']} -> {entry['dst']}: {e}")
 
     return success_count
 

@@ -185,10 +185,26 @@ oncutf/
 │   └── images/             # UI images
 ├── assets/                 # Project assets
 ├── tests/                  # Comprehensive test suite
-├── docs/                   # Documentation
+├── docs/                   # Documentation (see docs/README.md)
 ├── examples/               # Usage examples
 └── scripts/                # Utility scripts
 ```
+
+---
+
+---
+
+## Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+- **[Complete Documentation Index](docs/README.md)** - Overview and navigation
+- **[Database Quick Start](docs/database_quick_start.md)** - Get started with persistent storage
+- **[Safe Rename Workflow](docs/safe_rename_workflow.md)** - Enhanced rename operations
+- **[Case-Sensitive Rename Guide](docs/case_sensitive_rename_guide.md)** - Cross-platform case renaming
+- **[Progress Manager System](docs/progress_manager_system.md)** - Unified progress tracking
+- **[JSON Config System](docs/json_config_system.md)** - Configuration management
+- **[Module Documentation](docs/oncutf_module_docstrings.md)** - Developer reference
 
 ---
 

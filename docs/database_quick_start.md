@@ -2,81 +2,81 @@
 
 ## Overview
 
-Το oncutf περιλαμβάνει τώρα ένα ολοκληρωμένο σύστημα βάσης δεδομένων που παρέχει:
+The oncutf application now includes a comprehensive database system that provides:
 
-- **Persistent Metadata Storage**: Αποθήκευση metadata που διατηρείται μεταξύ των sessions
-- **Hash Caching**: Persistent caching των CRC32 hashes για καλύτερη απόδοση
-- **Rename History**: Undo/redo functionality για rename operations
-- **Enhanced Performance**: Memory caching με database fallback
+- **Persistent Metadata Storage**: Metadata storage that persists between sessions
+- **Hash Caching**: Persistent caching of CRC32 hashes for improved performance
+- **Rename History**: Undo/redo functionality for rename operations
+- **Enhanced Performance**: Memory caching with database fallback
 
-## Βασικά Χαρακτηριστικά
+## Core Features
 
 ### 🗄️ Persistent Storage
-- Όλα τα metadata και hashes αποθηκεύονται μόνιμα
-- Γρήγορη πρόσβαση με memory caching
-- Αυτόματη συντήρηση και καθαρισμός
+- All metadata and hashes are stored permanently
+- Fast access with memory caching
+- Automatic maintenance and cleanup
 
 ### ↩️ Undo Functionality
-- Πλήρης καταγραφή rename operations
-- Undo με validation και integrity checking
+- Complete tracking of rename operations
+- Undo with validation and integrity checking
 - Batch operations support
 
 ### ⚡ Performance
 - Thread-safe operations
 - Connection pooling
 - Optimized database queries
-- Lazy loading με smart caching
+- Lazy loading with smart caching
 
-## Χρήση
+## Usage
 
-### Αυτόματη Ενεργοποίηση
-Το database system ενεργοποιείται αυτόματα όταν ξεκινάει η εφαρμογή. Δεν χρειάζεται καμία ρύθμιση.
+### Automatic Activation
+The database system is automatically activated when the application starts. No configuration required.
 
-### Τοποθεσία Database
+### Database Location
 - **Linux**: `~/.local/share/oncutf/oncutf_data.db`
 - **Windows**: `%APPDATA%/oncutf/oncutf_data.db`
 
-### Νέες Λειτουργίες
+### New Features
 
 #### Rename History
-- Πατήστε `Ctrl+Z` για undo της τελευταίας rename operation
-- Δείτε όλο το history μέσω του Tools menu
-- Validation για safe undo operations
+- Press `Ctrl+Z` to undo the last rename operation
+- View complete history through the Tools menu
+- Validation for safe undo operations
 
 #### Database Statistics
-- Δείτε στατιστικά χρήσης της βάσης δεδομένων
+- View database usage statistics
 - Monitor cache performance
-- Cleanup tools για παλιά δεδομένα
+- Cleanup tools for old data
 
 ## Testing
 
-Για να δοκιμάσετε το νέο σύστημα:
+To test the new system:
 
 ```bash
 python scripts/test_database_system.py
 ```
 
-Αυτό το script:
-- Δημιουργεί test data
-- Δοκιμάζει όλες τις λειτουργίες
-- Επαληθεύει την ορθή λειτουργία
-- Καθαρίζει τα temporary files
+This script:
+- Creates test data
+- Tests all functionality
+- Verifies correct operation
+- Cleans up temporary files
 
 ## Backward Compatibility
 
-Το νέο σύστημα είναι πλήρως backward compatible:
-- Ο υπάρχων κώδικας συνεχίζει να λειτουργεί
-- Τα παλιά APIs διατηρούνται
-- Αυτόματη migration από memory-only caches
-- Graceful fallback σε περίπτωση προβλημάτων
+The new system is fully backward compatible:
+- Existing code continues to work
+- Old APIs are preserved
+- Automatic migration from memory-only caches
+- Graceful fallback in case of problems
 
 ## Troubleshooting
 
-### Συνηθισμένα Προβλήματα
+### Common Issues
 
-1. **Database Locked**: Συνήθως λύνεται αυτόματα
-2. **Permission Errors**: Ελέγξτε δικαιώματα στον data directory
-3. **Performance Issues**: Χρησιμοποιήστε cleanup tools
+1. **Database Locked**: Usually resolves automatically
+2. **Permission Errors**: Check permissions on the data directory
+3. **Performance Issues**: Use cleanup tools
 
 ### Debug Mode
 ```python
@@ -85,20 +85,23 @@ logging.getLogger('core.database_manager').setLevel(logging.DEBUG)
 ```
 
 ### Manual Reset
-Αν υπάρχουν προβλήματα:
-1. Κλείστε την εφαρμογή
-2. Διαγράψτε το database file
-3. Επανεκκινήστε (θα δημιουργηθεί νέα βάση)
+If there are problems:
+1. Close the application
+2. Delete the database file
+3. Restart (a new database will be created)
 
-## Περισσότερες Πληροφορίες
+## Related Documentation
 
-- **Πλήρης Documentation**: [`docs/database_system.md`](database_system.md)
+- **Complete Technical Documentation**: [Database System](database_system.md)
+- **Safe Rename Workflow**: [Safe Rename Workflow](safe_rename_workflow.md)
+- **Case-Sensitive Renaming**: [Case-Sensitive Rename Guide](case_sensitive_rename_guide.md)
+- **Configuration System**: [JSON Config System](json_config_system.md)
 - **Test Suite**: [`tests/test_database_system.py`](../tests/test_database_system.py)
 - **Demo Script**: [`scripts/test_database_system.py`](../scripts/test_database_system.py)
 
-## Μελλοντικές Βελτιώσεις
+## Future Improvements
 
-- Compression για μεγάλα metadata
+- Compression for large metadata
 - Optional encryption
 - Backup/restore functionality
 - Cloud synchronization
@@ -106,4 +109,4 @@ logging.getLogger('core.database_manager').setLevel(logging.DEBUG)
 
 ---
 
-Το νέο database system παρέχει solid foundation για μελλοντικές επεκτάσεις και βελτιώσεις της εφαρμογής!
+The new database system provides a solid foundation for future extensions and improvements to the application!

@@ -65,9 +65,9 @@ class RenameHistoryDialog(QDialog):
     def showEvent(self, event):
         """Handle show event to ensure proper positioning on multiscreen setups."""
         super().showEvent(event)
-        # Ensure dialog appears on the same screen as its parent
-        from utils.multiscreen_helper import ensure_dialog_on_parent_screen
-        ensure_dialog_on_parent_screen(self)
+        # Ensure dialog appears centered on the same screen as its parent
+        from utils.multiscreen_helper import position_dialog_relative_to_parent
+        position_dialog_relative_to_parent(self)
 
     def _setup_ui(self):
         """Setup the dialog UI components."""

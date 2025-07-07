@@ -94,8 +94,8 @@ class ProgressDialog(QDialog):
     def _setup_dialog(self) -> None:
         """Setup the dialog UI and properties."""
         # Frameless dialog
-        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)
-        self.setAttribute(Qt.WA_TranslucentBackground, False)
+        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint) # type: ignore
+        self.setAttribute(Qt.WA_TranslucentBackground, False) # type: ignore
         self.setModal(True)
 
         # Layout
@@ -125,10 +125,10 @@ class ProgressDialog(QDialog):
         """Setup wait cursor for the dialog and parent."""
         # Set wait cursor on parent if available
         if self.parent():
-            self.parent().setCursor(Qt.WaitCursor)
+            self.parent().setCursor(Qt.WaitCursor) # type: ignore
 
         # Set wait cursor on the dialog itself
-        self.setCursor(Qt.WaitCursor)
+        self.setCursor(Qt.WaitCursor) # type: ignore
 
         logger.debug("[ProgressDialog] Wait cursor set")
 
@@ -139,14 +139,14 @@ class ProgressDialog(QDialog):
 
         # Set normal cursor on parent and dialog
         if self.parent():
-            self.parent().setCursor(Qt.ArrowCursor)
-        self.setCursor(Qt.ArrowCursor)
+            self.parent().setCursor(Qt.ArrowCursor) # type: ignore
+        self.setCursor(Qt.ArrowCursor) # type: ignore
 
         logger.debug("[ProgressDialog] Cursors restored")
 
     def keyPressEvent(self, event) -> None:
         """Handle ESC key for cancellation with improved responsiveness."""
-        if event.key() == Qt.Key_Escape and not self._is_cancelling:
+        if event.key() == Qt.Key_Escape and not self._is_cancelling: # type: ignore
             self._handle_cancellation()
         else:
             super().keyPressEvent(event)
@@ -236,10 +236,10 @@ class ProgressDialog(QDialog):
         if hasattr(self.waiting_widget, 'set_size_info'):
             self.waiting_widget.set_size_info(processed_size, total_size)
 
-    def set_time_info(self, elapsed: float, estimated_total: float = None) -> None:
+    def set_time_info(self, elapsed: float, estimated_total: Optional[float] = None) -> None:
         """Set time information manually."""
         if hasattr(self.waiting_widget, 'set_time_info'):
-            self.waiting_widget.set_time_info(elapsed, estimated_total)
+            self.waiting_widget.set_time_info(elapsed, estimated_total) # type: ignore
 
     def update_progress(self, file_count: int = 0, total_files: int = 0,
                        processed_bytes: int = 0, total_bytes: int = 0) -> None:

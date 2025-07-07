@@ -365,3 +365,12 @@ If database issues persist:
 2. Delete the database file
 3. Restart the application (database will be recreated)
 4. Note: This will lose all stored metadata and history
+
+## Related Documentation
+
+- **Quick Start Guide**: [Database Quick Start](database_quick_start.md)
+- **Progress Tracking**: [Progress Manager System](progress_manager_system.md)
+- **Safe Operations**: [Safe Rename Workflow](safe_rename_workflow.md)
+- **Case-Sensitive Renaming**: [Case-Sensitive Rename Guide](case_sensitive_rename_guide.md)
+- **Configuration**: [JSON Config System](json_config_system.md)
+- **Module Reference**: [oncutf Module Docstrings](oncutf_module_docstrings.md)

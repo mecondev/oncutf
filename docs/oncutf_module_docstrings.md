@@ -186,3 +186,11 @@ ensures reliable path-based operations throughout the application.
 Key functions include normalize_path(), paths_equal(), and find_file_by_path()
 for consistent path handling across Windows and Unix-like systems.
 
+## Related Documentation
+
+- **Database System**: [Database Quick Start](database_quick_start.md) | [Database System](database_system.md)
+- **Safe Operations**: [Safe Rename Workflow](safe_rename_workflow.md)
+- **Case-Sensitive Renaming**: [Case-Sensitive Rename Guide](case_sensitive_rename_guide.md)
+- **Progress Tracking**: [Progress Manager System](progress_manager_system.md)
+- **Configuration**: [JSON Config System](json_config_system.md)
+
