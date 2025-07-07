@@ -85,6 +85,15 @@ try:
 except ImportError:
     get_app_context = None
 
+# Command system integration
+try:
+    from core.metadata_command_manager import get_metadata_command_manager
+    from core.metadata_commands import EditMetadataFieldCommand, ResetMetadataFieldCommand
+except ImportError:
+    get_metadata_command_manager = None
+    EditMetadataFieldCommand = None
+    ResetMetadataFieldCommand = None
+
 logger = get_cached_logger(__name__)
 
 
@@ -946,6 +955,59 @@ class MetadataTreeView(QTreeView):
 
         menu.addMenu(display_menu)
 
+        # History submenu
+        history_menu = QMenu("History", menu)
+        history_menu.setIcon(self._get_menu_icon("clock"))
+
+        # Undo action
+        undo_action = QAction("Undo", history_menu)
+        undo_action.setIcon(self._get_menu_icon("rotate-ccw"))
+        undo_action.triggered.connect(self._undo_metadata_operation)
+
+        # Redo action
+        redo_action = QAction("Redo", history_menu)
+        redo_action.setIcon(self._get_menu_icon("rotate-cw"))
+        redo_action.triggered.connect(self._redo_metadata_operation)
+
+        # Check if undo/redo are available
+        try:
+            from core.metadata_command_manager import get_metadata_command_manager
+            command_manager = get_metadata_command_manager()
+            undo_action.setEnabled(command_manager.can_undo())
+            redo_action.setEnabled(command_manager.can_redo())
+
+            # Add descriptions to tooltips
+            undo_desc = command_manager.get_undo_description()
+            redo_desc = command_manager.get_redo_description()
+            if undo_desc:
+                undo_action.setToolTip(undo_desc)
+            if redo_desc:
+                redo_action.setToolTip(redo_desc)
+
+        except Exception as e:
+            logger.warning(f"[MetadataTreeView] Error checking command manager status: {e}")
+            undo_action.setEnabled(False)
+            redo_action.setEnabled(False)
+
+        history_menu.addAction(undo_action)
+        history_menu.addAction(redo_action)
+
+        history_menu.addSeparator()
+
+        # Show history dialog action
+        show_history_action = QAction("Show Command History...", history_menu)
+        show_history_action.setIcon(self._get_menu_icon("list"))
+        show_history_action.triggered.connect(self._show_history_dialog)
+        history_menu.addAction(show_history_action)
+
+        # Show rename history action
+        show_rename_history_action = QAction("Show Rename History...", history_menu)
+        show_rename_history_action.setIcon(self._get_menu_icon("archive"))
+        show_rename_history_action.triggered.connect(self._show_rename_history_dialog)
+        history_menu.addAction(show_rename_history_action)
+
+        menu.addMenu(history_menu)
+
         menu.addSeparator()
 
         # Copy action - always available if there's a value
@@ -1123,33 +1185,58 @@ class MetadataTreeView(QTreeView):
         )
 
         if accepted and new_value != str(current_value):
-            # Mark as modified
-            self.modified_items.add(normalized_key_path)
+            # Use command system for undo/redo support
+            command_manager = get_metadata_command_manager()
+            if command_manager and EditMetadataFieldCommand:
+                # Create command for each file to modify
+                for file_item in files_to_modify:
+                    command = EditMetadataFieldCommand(
+                        file_path=file_item.full_path,
+                        field_path=normalized_key_path,
+                        new_value=new_value,
+                        old_value=str(current_value),
+                        metadata_tree_view=self  # Pass self reference
+                    )
 
-            # Update metadata in cache for all files to modify
-            cache_helper = self._get_cache_helper()
-            for file_item in files_to_modify:
-                if cache_helper:
-                    cache_helper.set_metadata_value(file_item, normalized_key_path, new_value)
-                    # Mark the cache entry as modified
-                    cache_entry = cache_helper.get_cache_entry_for_file(file_item)
-                    if cache_entry:
-                        cache_entry.modified = True
-
-                # Update the file item's metadata status
-                file_item.metadata_status = "modified"
-
-            # Update the file icon status immediately
-            self._update_file_icon_status()
-
-            # Update the tree display to show the new value
-            self._update_tree_item_value(normalized_key_path, new_value)
+                    # Execute command (this will update cache and UI)
+                    if command_manager.execute_command(command, group_with_previous=True):
+                        logger.debug(f"[MetadataTree] Executed edit command for {file_item.filename}")
+                    else:
+                        logger.warning(f"[MetadataTree] Failed to execute edit command for {file_item.filename}")
+            else:
+                # Fallback to old method if command system not available
+                logger.warning("[MetadataTree] Command system not available, using fallback method")
+                self._fallback_edit_value(normalized_key_path, new_value, str(current_value), files_to_modify)
 
             # Emit signal for external listeners
             self.value_edited.emit(normalized_key_path, str(current_value), new_value)
 
-            # Force viewport update to refresh visual state
-            self.viewport().update()
+    def _fallback_edit_value(self, key_path: str, new_value: str, old_value: str, files_to_modify: list) -> None:
+        """Fallback method for editing metadata without command system."""
+        # Mark as modified
+        self.modified_items.add(key_path)
+
+        # Update metadata in cache for all files to modify
+        cache_helper = self._get_cache_helper()
+        for file_item in files_to_modify:
+            if cache_helper:
+                cache_helper.set_metadata_value(file_item, key_path, new_value)
+                # Mark the cache entry as modified
+                cache_entry = cache_helper.get_cache_entry_for_file(file_item)
+                if cache_entry:
+                    cache_entry.modified = True
+
+            # Update the file item's metadata status
+            file_item.metadata_status = "modified"
+
+        # Update the file icon status immediately
+        self._update_file_icon_status()
+
+        # Update the tree display to show the new value
+        self._update_tree_item_value(key_path, new_value)
+
+        # Force viewport update to refresh visual state
+        self.viewport().update()
 
     def _get_original_value_from_cache(self, key_path: str) -> Optional[Any]:
         """
@@ -1210,13 +1297,42 @@ class MetadataTreeView(QTreeView):
             logger.debug(f"[MetadataTree] Rotation already set to 0° for {file_item.filename}")
             return
 
+        # Use command system for undo/redo support
+        command_manager = get_metadata_command_manager()
+        if command_manager and EditMetadataFieldCommand:
+            # Create command for each file to modify
+            for file_item in selected_files:
+                command = EditMetadataFieldCommand(
+                    file_path=file_item.full_path,
+                    field_path=normalized_key_path,
+                    new_value=new_value,
+                    old_value=str(current_value) if current_value is not None else "",
+                    metadata_tree_view=self  # Pass self reference
+                )
+
+                # Execute command (this will update cache and UI)
+                if command_manager.execute_command(command, group_with_previous=True):
+                    logger.debug(f"[MetadataTree] Executed rotation reset command for {file_item.filename}")
+                else:
+                    logger.warning(f"[MetadataTree] Failed to execute rotation reset command for {file_item.filename}")
+        else:
+            # Fallback to old method if command system not available
+            logger.warning("[MetadataTree] Command system not available, using fallback method")
+            self._fallback_set_rotation_to_zero(normalized_key_path, new_value, current_value)
+
+        # Emit signal for external listeners
+        self.value_edited.emit(normalized_key_path, str(current_value) if current_value else "", new_value)
+
+    def _fallback_set_rotation_to_zero(self, key_path: str, new_value: str, current_value: Any) -> None:
+        """Fallback method for setting rotation to zero without command system."""
         # Mark as modified
-        self.modified_items.add(normalized_key_path)
+        self.modified_items.add(key_path)
 
         # Update metadata in cache and file item status
-        self._update_metadata_in_cache(normalized_key_path, new_value)
+        self._update_metadata_in_cache(key_path, new_value)
 
         # Update the file item's metadata status
+        selected_files = self._get_current_selection()
         for file_item in selected_files:
             file_item.metadata_status = "modified"
 
@@ -1224,10 +1340,7 @@ class MetadataTreeView(QTreeView):
         self._update_file_icon_status()
 
         # Update the tree display to show the new value
-        self._update_tree_item_value(normalized_key_path, new_value)
-
-        # Emit signal for external listeners
-        self.value_edited.emit(normalized_key_path, str(current_value) if current_value else "", new_value)
+        self._update_tree_item_value(key_path, new_value)
 
         # Force viewport update to refresh visual state
         self.viewport().update()
@@ -1240,22 +1353,59 @@ class MetadataTreeView(QTreeView):
         # Get the original value before resetting
         original_value = self._get_original_value_from_cache(normalized_key_path)
 
+        # Get current value for command
+        selected_files = self._get_current_selection()
+        if not selected_files:
+            logger.warning("[MetadataTree] No files selected for reset")
+            return
+
+        # Get current modified value
+        current_value = None
+        file_item = selected_files[0]
+        if hasattr(file_item, 'metadata') and file_item.metadata:
+            current_value = self._get_value_from_metadata_dict(file_item.metadata, normalized_key_path)
+
+        # Use command system for undo/redo support
+        command_manager = get_metadata_command_manager()
+        if command_manager and ResetMetadataFieldCommand:
+            # Create reset command for each selected file
+            for file_item in selected_files:
+                command = ResetMetadataFieldCommand(
+                    file_path=file_item.full_path,
+                    field_path=normalized_key_path,
+                    current_value=str(current_value) if current_value is not None else "",
+                    original_value=str(original_value) if original_value is not None else "",
+                    metadata_tree_view=self  # Pass self reference
+                )
+
+                # Execute command (this will reset cache and UI)
+                if command_manager.execute_command(command, group_with_previous=True):
+                    logger.debug(f"[MetadataTree] Executed reset command for {file_item.filename}")
+                else:
+                    logger.warning(f"[MetadataTree] Failed to execute reset command for {file_item.filename}")
+        else:
+            # Fallback to old method if command system not available
+            logger.warning("[MetadataTree] Command system not available, using fallback method")
+            self._fallback_reset_value(normalized_key_path, original_value)
+
+        # Emit signal for external listeners
+        self.value_reset.emit(normalized_key_path)
+
+    def _fallback_reset_value(self, key_path: str, original_value: Any) -> None:
+        """Fallback method for resetting metadata without command system."""
         # Remove from modified items
-        if normalized_key_path in self.modified_items:
-            self.modified_items.remove(normalized_key_path)
+        if key_path in self.modified_items:
+            self.modified_items.remove(key_path)
 
         # Reset metadata in cache to original value
-        self._reset_metadata_in_cache(normalized_key_path)
+        self._reset_metadata_in_cache(key_path)
 
         # Update the file icon status
         self._update_file_icon_status()
 
         # Update the tree display to show the original value
         if original_value is not None:
-            self._update_tree_item_value(normalized_key_path, str(original_value))
-
-        # Emit signal for external listeners
-        self.value_reset.emit(normalized_key_path)
+            self._update_tree_item_value(key_path, str(original_value))
 
         # Force viewport update to refresh visual state
         self.viewport().update()
@@ -2539,26 +2689,99 @@ class MetadataTreeView(QTreeView):
 
     def _fallback_metadata_loading(self, file_item: Any) -> Optional[Dict[str, Any]]:
         """
-        Fallback to traditional metadata loading when lazy loading is not available.
-
-        Args:
-            file_item: FileItem to load metadata for
-
-        Returns:
-            dict: Metadata if available, None otherwise
+        Fallback metadata loading using the file item's metadata property.
         """
-        # Use cache helper for unified metadata access
-        cache_helper = self._get_cache_helper()
-        metadata = None
+        if hasattr(file_item, 'metadata') and file_item.metadata:
+            return file_item.metadata
+        return None
 
-        if cache_helper:
-            metadata = cache_helper.get_metadata_for_file(file_item)
+    # =====================================
+    # History Menu Actions
+    # =====================================
 
-        # Fallback to file item metadata
-        if not metadata and hasattr(file_item, 'metadata'):
-            metadata = file_item.metadata
+    def _undo_metadata_operation(self) -> None:
+        """Undo the last metadata operation from context menu."""
+        try:
+            from core.metadata_command_manager import get_metadata_command_manager
+            command_manager = get_metadata_command_manager()
 
-        return metadata
+            if command_manager.undo():
+                logger.info("[MetadataTreeView] Undo operation successful")
+
+                # Get parent window for status message
+                parent_window = self._get_parent_with_file_table()
+                if parent_window and hasattr(parent_window, 'status_manager'):
+                    parent_window.status_manager.set_file_operation_status(
+                        "Operation undone",
+                        success=True,
+                        auto_reset=True
+                    )
+            else:
+                logger.info("[MetadataTreeView] No operations to undo")
+
+                # Show status message
+                parent_window = self._get_parent_with_file_table()
+                if parent_window and hasattr(parent_window, 'status_manager'):
+                    parent_window.status_manager.set_file_operation_status(
+                        "No operations to undo",
+                        success=False,
+                        auto_reset=True
+                    )
+
+        except Exception as e:
+            logger.error(f"[MetadataTreeView] Error during undo operation: {e}")
+
+    def _redo_metadata_operation(self) -> None:
+        """Redo the last undone metadata operation from context menu."""
+        try:
+            from core.metadata_command_manager import get_metadata_command_manager
+            command_manager = get_metadata_command_manager()
+
+            if command_manager.redo():
+                logger.info("[MetadataTreeView] Redo operation successful")
+
+                # Get parent window for status message
+                parent_window = self._get_parent_with_file_table()
+                if parent_window and hasattr(parent_window, 'status_manager'):
+                    parent_window.status_manager.set_file_operation_status(
+                        "Operation redone",
+                        success=True,
+                        auto_reset=True
+                    )
+            else:
+                logger.info("[MetadataTreeView] No operations to redo")
+
+                # Show status message
+                parent_window = self._get_parent_with_file_table()
+                if parent_window and hasattr(parent_window, 'status_manager'):
+                    parent_window.status_manager.set_file_operation_status(
+                        "No operations to redo",
+                        success=False,
+                        auto_reset=True
+                    )
+
+        except Exception as e:
+            logger.error(f"[MetadataTreeView] Error during redo operation: {e}")
+
+    def _show_history_dialog(self) -> None:
+        """Show the command history dialog from context menu."""
+        try:
+            from widgets.metadata_history_dialog import show_metadata_history_dialog
+            parent_window = self._get_parent_with_file_table()
+            show_metadata_history_dialog(parent_window)
+
+        except Exception as e:
+            logger.error(f"[MetadataTreeView] Error showing history dialog: {e}")
+
+    def _show_rename_history_dialog(self) -> None:
+        """Show the rename history dialog from context menu."""
+        try:
+            from widgets.rename_history_dialog import show_rename_history_dialog
+            parent_window = self._get_parent_with_file_table()
+            show_rename_history_dialog(parent_window)
+
+        except Exception as e:
+            logger.error(f"[MetadataTreeView] Error showing rename history dialog: {e}")
 
 
 

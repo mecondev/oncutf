@@ -324,3 +324,40 @@ THEME_COLORS = {
     }
 }
 
+# Undo/Redo System Settings
+UNDO_REDO_SETTINGS = {
+    # Maximum number of undo steps to keep in memory
+    "MAX_UNDO_STEPS": 300,
+
+    # Keyboard shortcuts
+    "UNDO_SHORTCUT": "Ctrl+Z",
+    "REDO_SHORTCUT": "Ctrl+Shift+Z",
+    "HISTORY_SHORTCUT": "Ctrl+H",
+
+    # Command grouping timeout (milliseconds)
+    # Commands within this time window may be grouped together
+    "COMMAND_GROUPING_TIMEOUT": 1000,
+
+    # Whether to persist undo history between sessions
+    "PERSIST_UNDO_HISTORY": False,
+
+    # Colors for undo/redo UI elements
+    "UNDO_AVAILABLE_COLOR": "#51cf66",    # Green when undo is available
+    "REDO_AVAILABLE_COLOR": "#74c0fc",    # Blue when redo is available
+    "UNAVAILABLE_COLOR": "#6c757d",       # Gray when unavailable
+
+    # History dialog settings
+    "HISTORY_DIALOG_WIDTH": 900,
+    "HISTORY_DIALOG_HEIGHT": 700,
+    "HISTORY_ITEMS_PER_PAGE": 50,
+}
+
+# Command Types for Undo/Redo System
+COMMAND_TYPES = {
+    "METADATA_EDIT": "metadata_edit",
+    "METADATA_RESET": "metadata_reset",
+    "METADATA_SAVE": "metadata_save",
+    "RENAME_OPERATION": "rename_operation",
+    "BATCH_OPERATION": "batch_operation",
+}
+

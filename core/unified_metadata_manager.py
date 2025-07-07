@@ -1024,6 +1024,38 @@ class UnifiedMetadataManager(QObject):
         # Show results
         self._show_save_results(success_count, failed_files, files_to_save)
 
+        # Record save operation in command system for undo/redo
+        if success_count > 0:
+            try:
+                from core.metadata_command_manager import get_metadata_command_manager
+                from core.metadata_commands import SaveMetadataCommand
+
+                command_manager = get_metadata_command_manager()
+                if command_manager and SaveMetadataCommand:
+                    # Create save command with successful saves
+                    successful_files = []
+                    successful_metadata = {}
+
+                    for file_item in files_to_save:
+                        if file_item.filename not in failed_files:
+                            successful_files.append(file_item.full_path)
+                            modifications = self._get_modified_metadata_for_file(file_item.full_path, all_modified_metadata)
+                            if modifications:
+                                successful_metadata[file_item.full_path] = modifications
+
+                    if successful_files:
+                        save_command = SaveMetadataCommand(
+                            file_paths=successful_files,
+                            saved_metadata=successful_metadata
+                        )
+
+                        # Execute command (this just records the save operation)
+                        command_manager.execute_command(save_command)
+                        logger.debug(f"[UnifiedMetadataManager] Recorded save command for {len(successful_files)} files")
+
+            except Exception as e:
+                logger.warning(f"[UnifiedMetadataManager] Error recording save command: {e}")
+
     def _get_modified_metadata_for_file(self, file_path: str, all_modified_metadata: dict) -> dict:
         """Get modified metadata for a specific file."""
         return all_modified_metadata.get(file_path, {})

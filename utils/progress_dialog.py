@@ -41,6 +41,7 @@ class ProgressDialog(QDialog):
     Supports different operation types with configurable colors:
     - metadata_basic: Fast metadata loading (blue)
     - metadata_extended: Extended metadata loading (orange)
+    - metadata_save: Metadata save operations (blue)
     - file_loading: File loading operations (blue)
     - hash_calculation: Hash/checksum operations (default)
     """
@@ -75,7 +76,7 @@ class ProgressDialog(QDialog):
         Args:
             parent: Parent widget
             operation_type: Type of operation ('metadata_basic', 'metadata_extended',
-                          'file_loading', 'hash_calculation')
+                          'metadata_save', 'file_loading', 'hash_calculation')
             cancel_callback: Function to call when user cancels operation
             show_enhanced_info: Whether to show enhanced size/time tracking
         """
