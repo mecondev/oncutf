@@ -98,12 +98,7 @@ class BulkRotationDialog(QDialog):
         self._setup_ui()
         self._analyze_files()
 
-    def showEvent(self, event):
-        """Handle show event to ensure proper positioning on multiscreen setups."""
-        super().showEvent(event)
-        # Ensure dialog appears centered on the same screen as its parent
-        from utils.multiscreen_helper import position_dialog_relative_to_parent
-        position_dialog_relative_to_parent(self)
+
 
     def _apply_info_label_style(self, color: str, opacity: str = "1.0"):
         """Apply consistent font styling to info label."""

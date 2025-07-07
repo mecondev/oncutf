@@ -362,4 +362,10 @@ def show_rename_history_dialog(parent: Optional[QWidget] = None) -> None:
         parent: Parent widget for the dialog
     """
     dialog = RenameHistoryDialog(parent)
+
+    # Ensure proper positioning on multiscreen setups before showing
+    if parent:
+        from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+        ensure_dialog_on_parent_screen(dialog, parent)
+
     dialog.exec_()

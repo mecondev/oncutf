@@ -51,12 +51,8 @@ class MetadataEditDialog(QDialog):
         # Determine if this is a multi-line field
         self.is_multiline = field_name in ["Description"]
 
-        # Set up dialog properties - frameless but draggable
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog) # type: ignore
+        # Set up dialog properties - simple modal dialog
         self.setModal(True)
-
-        # Add drag functionality
-        self._drag_position = None
 
         # Adjust size based on mode and field type
         if self.is_multi_file:
@@ -75,12 +71,7 @@ class MetadataEditDialog(QDialog):
         self._setup_styles()
         self._setup_ui()
 
-    def showEvent(self, event):
-        """Handle show event to ensure proper positioning on multiscreen setups."""
-        super().showEvent(event)
-        # Ensure dialog appears centered on the same screen as its parent
-        from utils.multiscreen_helper import position_dialog_relative_to_parent
-        position_dialog_relative_to_parent(self)
+
 
     def _setup_styles(self):
         """Set up dialog styling using theme system."""
@@ -296,17 +287,7 @@ class MetadataEditDialog(QDialog):
         # Install event filter for keyboard shortcuts
         self.input_field.installEventFilter(self)
 
-    def mousePressEvent(self, event):
-        """Handle mouse press for dragging."""
-        if event.button() == Qt.LeftButton: # type: ignore
-            self._drag_position = event.globalPos() - self.frameGeometry().topLeft()
-            event.accept()
 
-    def mouseMoveEvent(self, event):
-        """Handle mouse move for dragging."""
-        if event.buttons() == Qt.LeftButton and self._drag_position: # type: ignore
-            self.move(event.globalPos() - self._drag_position)
-            event.accept()
 
     def eventFilter(self, obj, event):
         """Handle keyboard events for input field."""
@@ -489,7 +470,7 @@ class MetadataEditDialog(QDialog):
         Returns:
             Tuple of (success: bool, value: str, files_to_modify: List)
         """
-        dialog = MetadataEditDialog(parent, selected_files, metadata_cache, field_name, current_value)
+                        dialog = MetadataEditDialog(parent, selected_files, metadata_cache, field_name, current_value)
 
         if dialog.exec_() == QDialog.Accepted:
             return True, dialog.get_validated_value(), dialog.get_selected_files()

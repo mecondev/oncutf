@@ -163,6 +163,12 @@ class CustomMessageDialog(QDialog):
             True if the "Yes" button was clicked, False if the "No" button was clicked.
         """
         dlg = CustomMessageDialog(title, message, [yes_text, no_text], parent)
+
+        # Ensure proper positioning on multiscreen setups before showing
+        if parent:
+            from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+            ensure_dialog_on_parent_screen(dlg, parent)
+
         dlg.exec_()
         return dlg.selected == yes_text if dlg.selected else False
 
@@ -188,6 +194,12 @@ class CustomMessageDialog(QDialog):
         None
         """
         dlg = CustomMessageDialog(title, message, [ok_text], parent)
+
+        # Ensure proper positioning on multiscreen setups before showing
+        if parent:
+            from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+            ensure_dialog_on_parent_screen(dlg, parent)
+
         dlg.exec_()
 
     @staticmethod
@@ -212,6 +224,12 @@ class CustomMessageDialog(QDialog):
         """
         buttons = ["Save & Close", "Close without saving", "Cancel"]
         dlg = CustomMessageDialog(title, message, buttons, parent)
+
+        # Ensure proper positioning on multiscreen setups before showing
+        if parent:
+            from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+            ensure_dialog_on_parent_screen(dlg, parent)
+
         dlg.exec_()
 
         # Map button text to return values
@@ -268,6 +286,12 @@ class CustomMessageDialog(QDialog):
         buttons = ["Overwrite", "Skip", "Skip All", "Cancel"]
 
         dlg = CustomMessageDialog("File Conflict", message, buttons=buttons, parent=parent)
+
+        # Ensure proper positioning on multiscreen setups before showing
+        if parent:
+            from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+            ensure_dialog_on_parent_screen(dlg, parent)
+
         dlg.exec_()
 
         label_map = {
@@ -353,6 +377,12 @@ class CustomMessageDialog(QDialog):
             parent=parent,
             show_checkbox=True
         )
+
+        # Ensure proper positioning on multiscreen setups before showing
+        if parent:
+            from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+            ensure_dialog_on_parent_screen(dlg, parent)
+
         dlg.exec_()
         selected = dlg.selected or "Cancel"
         apply_to_all = dlg.is_checkbox_checked()
