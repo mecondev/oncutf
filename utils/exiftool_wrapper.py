@@ -202,8 +202,29 @@ class ExifToolWrapper:
                 # Handle special cases for rotation metadata
                 key_lower = key.lower()
                 if "rotation" in key_lower:
-                    # For any rotation tag, use simple -Rotation (works for most file types)
-                    tag_name = "Rotation"
+                    # Use the appropriate rotation tag based on file type
+                    file_ext = os.path.splitext(file_path)[1].lower()
+
+                    if file_ext in ['.jpg', '.jpeg']:
+                        # For JPEG files, use EXIF:Orientation (1-8) or Rotation (0, 90, 180, 270)
+                        if value in ['0', '90', '180', '270']:
+                            tag_name = "Rotation"
+                        else:
+                            tag_name = "EXIF:Orientation"
+                    elif file_ext in ['.png']:
+                        # PNG doesn't support EXIF rotation, try XMP or just Rotation
+                        tag_name = "Rotation"
+                    elif file_ext in ['.tiff', '.tif']:
+                        # TIFF supports EXIF:Orientation
+                        if value in ['0', '90', '180', '270']:
+                            tag_name = "Rotation"
+                        else:
+                            tag_name = "EXIF:Orientation"
+                    else:
+                        # Generic rotation tag for other formats
+                        tag_name = "Rotation"
+
+                    logger.debug(f"[ExifToolWrapper] Rotation: {key} -> {tag_name} = {value} for {file_ext}", extra={"dev_only": True})
                 else:
                     # Convert our format (e.g., "EXIF/DateTimeOriginal") to exiftool format
                     tag_name = key.replace("/", ":")
@@ -213,6 +234,7 @@ class ExifToolWrapper:
             cmd.append(file_path)
 
             logger.debug(f"[ExifToolWrapper] Writing metadata with command: {' '.join(cmd)}")
+            logger.debug(f"[ExifToolWrapper] Original metadata_changes: {metadata_changes}", extra={"dev_only": True})
 
             # Execute the command
             result = subprocess.run(

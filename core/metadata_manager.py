@@ -637,6 +637,7 @@ class MetadataManager:
                     if modified_metadata:
                         logger.info(f"[MetadataManager] Saving metadata for: {file_item.filename}")
                         logger.debug(f"[MetadataManager] Metadata to save: {list(modified_metadata.keys())}", extra={"dev_only": True})
+                        logger.debug(f"[MetadataManager] Metadata values: {modified_metadata}", extra={"dev_only": True})
                         success = exiftool.write_metadata(file_item.full_path, modified_metadata)
 
                         if success:
@@ -716,6 +717,7 @@ class MetadataManager:
 
                     logger.info(f"[MetadataManager] Saving metadata for: {file_item.filename}")
                     logger.debug(f"[MetadataManager] Metadata to save: {list(modified_metadata.keys())}", extra={"dev_only": True})
+                    logger.debug(f"[MetadataManager] Metadata values: {modified_metadata}", extra={"dev_only": True})
 
                     # Write metadata to file
                     success = exiftool.write_metadata(file_item.full_path, modified_metadata)

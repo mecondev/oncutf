@@ -1036,44 +1036,97 @@ class UnifiedMetadataManager(QObject):
             file_item: The FileItem that was saved
             saved_metadata: The metadata that was actually saved to the file
         """
-        # CRITICAL: Update cache with saved values instead of clearing it
-        if hasattr(self.parent_window, 'metadata_cache') and saved_metadata:
-            cache = self.parent_window.metadata_cache
-            metadata_entry = cache.get_entry(file_item.full_path)
+        # CRITICAL: Update both UI cache and persistent cache with saved values
+        if saved_metadata:
+            # Step 1: Update UI cache (metadata_cache)
+            if hasattr(self.parent_window, 'metadata_cache'):
+                cache = self.parent_window.metadata_cache
+                metadata_entry = cache.get_entry(file_item.full_path)
 
-            if metadata_entry and hasattr(metadata_entry, 'data'):
-                logger.debug(f"[UnifiedMetadataManager] Updating cache with saved metadata for: {file_item.filename}", extra={"dev_only": True})
+                if metadata_entry and hasattr(metadata_entry, 'data'):
+                    logger.debug(f"[UnifiedMetadataManager] Updating UI cache with saved metadata for: {file_item.filename}", extra={"dev_only": True})
 
-                # Update the cache data with the values that were actually saved
-                for key_path, new_value in saved_metadata.items():
-                    logger.debug(f"[UnifiedMetadataManager] Updating cache: {key_path} = {new_value}", extra={"dev_only": True})
+                    # Update the cache data with the values that were actually saved
+                    for key_path, new_value in saved_metadata.items():
+                        logger.debug(f"[UnifiedMetadataManager] Updating UI cache: {key_path} = {new_value}", extra={"dev_only": True})
 
-                    # Handle nested keys (e.g., "EXIF:Rotation")
-                    if '/' in key_path or ':' in key_path:
-                        # Split by either / or : to handle both formats
-                        if '/' in key_path:
-                            parts = key_path.split('/', 1)
-                        else:
-                            parts = key_path.split(':', 1)
-
-                        if len(parts) == 2:
-                            group, key = parts
-                            if group not in metadata_entry.data:
-                                metadata_entry.data[group] = {}
-                            if isinstance(metadata_entry.data[group], dict):
-                                metadata_entry.data[group][key] = new_value
+                        # Handle nested keys (e.g., "EXIF:Rotation")
+                        if '/' in key_path or ':' in key_path:
+                            # Split by either / or : to handle both formats
+                            if '/' in key_path:
+                                parts = key_path.split('/', 1)
                             else:
-                                # If group is not a dict, make it one
-                                metadata_entry.data[group] = {key: new_value}
-                        else:
-                            # Fallback: treat as top-level key
-                            metadata_entry.data[key_path] = new_value
-                    else:
-                        # Top-level key (e.g., "Rotation")
-                        metadata_entry.data[key_path] = new_value
+                                parts = key_path.split(':', 1)
 
-                # Mark cache as clean but keep the data
-                metadata_entry.modified = False
+                            if len(parts) == 2:
+                                group, key = parts
+                                if group not in metadata_entry.data:
+                                    metadata_entry.data[group] = {}
+                                if isinstance(metadata_entry.data[group], dict):
+                                    metadata_entry.data[group][key] = new_value
+                                else:
+                                    # If group is not a dict, make it one
+                                    metadata_entry.data[group] = {key: new_value}
+                            else:
+                                # Fallback: treat as top-level key
+                                metadata_entry.data[key_path] = new_value
+                        else:
+                            # Top-level key (e.g., "Rotation")
+                            metadata_entry.data[key_path] = new_value
+
+                    # Mark cache as clean but keep the data
+                    metadata_entry.modified = False
+
+            # Step 2: Update persistent cache (CRITICAL for cross-session persistence)
+            try:
+                from core.persistent_metadata_cache import get_persistent_metadata_cache
+                persistent_cache = get_persistent_metadata_cache()
+
+                if persistent_cache:
+                    # Get current cached metadata
+                    current_metadata = persistent_cache.get(file_item.full_path)
+
+                    if current_metadata:
+                        # Update the current metadata with saved values
+                        updated_metadata = dict(current_metadata)
+
+                        for key_path, new_value in saved_metadata.items():
+                            logger.debug(f"[UnifiedMetadataManager] Updating persistent cache: {key_path} = {new_value}", extra={"dev_only": True})
+
+                            # Handle nested keys (e.g., "EXIF:Rotation")
+                            if '/' in key_path or ':' in key_path:
+                                # For persistent cache, convert colon-separated keys to forward slash
+                                key_path_normalized = key_path.replace(':', '/')
+
+                                if '/' in key_path_normalized:
+                                    parts = key_path_normalized.split('/', 1)
+                                    if len(parts) == 2:
+                                        group, key = parts
+                                        if group not in updated_metadata:
+                                            updated_metadata[group] = {}
+                                        if isinstance(updated_metadata[group], dict):
+                                            updated_metadata[group][key] = new_value
+                                        else:
+                                            # If group is not a dict, make it one
+                                            updated_metadata[group] = {key: new_value}
+                                    else:
+                                        # Fallback: treat as top-level key
+                                        updated_metadata[key_path] = new_value
+                                else:
+                                    # Top-level key
+                                    updated_metadata[key_path] = new_value
+                            else:
+                                # Top-level key (e.g., "Rotation")
+                                updated_metadata[key_path] = new_value
+
+                        # Save updated metadata back to persistent cache
+                        persistent_cache.set(file_item.full_path, updated_metadata, is_extended=False)
+                        logger.debug(f"[UnifiedMetadataManager] Updated persistent cache for: {file_item.filename}", extra={"dev_only": True})
+                    else:
+                        logger.warning(f"[UnifiedMetadataManager] No existing metadata in persistent cache for: {file_item.filename}")
+
+            except Exception as e:
+                logger.warning(f"[UnifiedMetadataManager] Failed to update persistent cache: {e}")
 
         # Clear modifications in tree view
         if hasattr(self.parent_window, 'metadata_tree_view'):
