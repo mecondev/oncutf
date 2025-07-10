@@ -229,7 +229,7 @@ class FileTableModel(QAbstractTableModel):
                                 "device_manufacturer": "EXIF:Make"
                             }
 
-                                                        metadata_key = metadata_key_map.get(column_key)
+                            metadata_key = metadata_key_map.get(column_key)
                             if metadata_key:
                                 # Special handling for image size (combines width x height)
                                 if column_key == "image_size":
@@ -246,6 +246,16 @@ class FileTableModel(QAbstractTableModel):
                                 elif metadata_key in entry.data:
                                     value = entry.data[metadata_key]
                                     return str(value) if value is not None else ""
+                                elif column_key == "duration":
+                                    # Try different possible keys for duration
+                                    duration = (entry.data.get("QuickTime:Duration") or
+                                               entry.data.get("Duration") or
+                                               entry.data.get("MediaDuration") or
+                                               entry.data.get("VideoTrackDuration") or
+                                               entry.data.get("AudioTrackDuration"))
+                                    if duration:
+                                        return str(duration)
+                                    return ""
 
                             # For columns that don't have extended metadata, show empty string
                             if column_key in ["rotation", "duration", "audio_channels", "audio_format",
@@ -269,7 +279,7 @@ class FileTableModel(QAbstractTableModel):
                         # Direct metadata access for common EXIF/QuickTime fields
                         metadata_direct_map = {
                             "rotation": ["EXIF:Orientation", "Orientation"],
-                            "duration": ["QuickTime:Duration", "Duration"],
+                            "duration": ["QuickTime:Duration", "Duration", "MediaDuration", "VideoTrackDuration", "AudioTrackDuration"],
                             "audio_channels": ["QuickTime:AudioChannels", "AudioChannels"],
                             "audio_format": ["QuickTime:AudioFormat", "AudioFormat"],
                             "aperture": ["EXIF:FNumber", "FNumber", "Aperture"],

@@ -597,7 +597,7 @@ FILE_TABLE_COLUMN_CONFIG = {
     "image_size": {
         "title": "Image Size",
         "key": "image_size",
-        "default_visible": False,
+        "default_visible": True,
         "removable": True,
         "width": 100,
         "alignment": "right",  # Dimensions align right

@@ -118,12 +118,23 @@ class WindowConfigManager:
             if hasattr(self.main_window, 'current_sort_order'):
                 window_config.set('sort_order', int(self.main_window.current_sort_order))
 
-            # Save column widths if available
+            # Save column widths using new dictionary format
             if hasattr(self.main_window, 'file_table_view'):
-                column_widths = []
-                for i in range(self.main_window.file_table_view.model().columnCount()):
-                    column_widths.append(self.main_window.file_table_view.columnWidth(i))
-                window_config.set('column_widths', column_widths)
+                file_model = self.main_window.file_table_view.model()
+                if file_model:
+                    column_widths = {}
+                    # Get visible columns from the model
+                    visible_columns = file_model.get_visible_columns()
+
+                    # Save status column (always column 0)
+                    column_widths['status'] = self.main_window.file_table_view.columnWidth(0)
+
+                    # Save other columns by their keys
+                    for i, column_key in enumerate(visible_columns):
+                        column_index = i + 1  # +1 because status is column 0
+                        column_widths[column_key] = self.main_window.file_table_view.columnWidth(column_index)
+
+                    window_config.set('file_table_column_widths', column_widths)
 
             # Save column states using ColumnManager
             if hasattr(self.main_window, 'column_manager'):
