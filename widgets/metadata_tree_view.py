@@ -47,6 +47,7 @@ from core.pyqt_imports import (
     QWidget,
     pyqtSignal,
     QMessageBox,
+    QTimer,
 )
 from utils.logger_factory import get_cached_logger
 from utils.metadata_cache_helper import MetadataCacheHelper
@@ -3053,6 +3054,12 @@ class MetadataTreeView(QTreeView):
             if not column_key:
                 return
 
+            # Store current selection and metadata state before update
+            current_selection = self._get_current_selection()
+            current_metadata = None
+            if hasattr(self, '_current_file_metadata'):
+                current_metadata = getattr(self, '_current_file_metadata', None)
+
             # Update visibility configuration
             if hasattr(file_table_view, '_visible_columns'):
                 file_table_view._visible_columns[column_key] = True
@@ -3065,10 +3072,82 @@ class MetadataTreeView(QTreeView):
                 if hasattr(file_table_view, '_update_table_columns'):
                     file_table_view._update_table_columns()
 
+                # Refresh metadata display after table update
+                self._refresh_metadata_after_column_update(current_selection, current_metadata)
+
                 logger.info(f"Added column '{key_path}' -> '{column_key}' to file view")
 
         except Exception as e:
             logger.error(f"Error adding column to file view: {e}")
+
+    def _remove_column_from_file_view(self, key_path: str) -> None:
+        """Remove a metadata column from the file view."""
+        try:
+            # Get the file table view
+            file_table_view = self._get_file_table_view()
+            if not file_table_view:
+                return
+
+            # Map metadata key to column key
+            column_key = self._map_metadata_key_to_column_key(key_path)
+            if not column_key:
+                return
+
+            # Store current selection and metadata state before update
+            current_selection = self._get_current_selection()
+            current_metadata = None
+            if hasattr(self, '_current_file_metadata'):
+                current_metadata = getattr(self, '_current_file_metadata', None)
+
+            # Update visibility configuration
+            if hasattr(file_table_view, '_visible_columns'):
+                file_table_view._visible_columns[column_key] = False
+
+                # Save configuration
+                if hasattr(file_table_view, '_save_column_visibility_config'):
+                    file_table_view._save_column_visibility_config()
+
+                # Update table display
+                if hasattr(file_table_view, '_update_table_columns'):
+                    file_table_view._update_table_columns()
+
+                # Refresh metadata display after table update
+                self._refresh_metadata_after_column_update(current_selection, current_metadata)
+
+                logger.info(f"Removed column '{key_path}' -> '{column_key}' from file view")
+
+        except Exception as e:
+            logger.error(f"Error removing column from file view: {e}")
+
+    def _refresh_metadata_after_column_update(self, previous_selection, previous_metadata):
+        """Refresh metadata display after column visibility update."""
+        try:
+            def delayed_refresh():
+                try:
+                    # Check if we still have the same selection
+                    current_selection = self._get_current_selection()
+
+                    if current_selection and previous_metadata:
+                        # We have metadata to restore
+                        self.display_metadata(previous_metadata, "column_update_refresh")
+                        logger.debug("Refreshed metadata display after column update")
+                    elif current_selection:
+                        # We have selection but no cached metadata, trigger refresh
+                        self.handle_selection_change()
+                        logger.debug("Triggered selection refresh after column update")
+                    else:
+                        # No selection, show empty state
+                        self.show_empty_state("No file selected")
+                        logger.debug("Showed empty state after column update")
+
+                except Exception as e:
+                    logger.warning(f"Error in delayed metadata refresh: {e}")
+
+            # Schedule the refresh with a small delay to ensure table is fully updated
+            QTimer.singleShot(50, delayed_refresh)
+
+        except Exception as e:
+            logger.warning(f"Error scheduling metadata refresh: {e}")
 
     def _get_file_table_view(self):
         """Get the file table view from the parent hierarchy."""
@@ -3186,35 +3265,5 @@ class MetadataTreeView(QTreeView):
             logger.warning(f"Error mapping metadata key to column key: {e}")
 
         return None
-
-    def _remove_column_from_file_view(self, key_path: str) -> None:
-        """Remove a metadata column from the file view."""
-        try:
-            # Get the file table view
-            file_table_view = self._get_file_table_view()
-            if not file_table_view:
-                return
-
-            # Map metadata key to column key
-            column_key = self._map_metadata_key_to_column_key(key_path)
-            if not column_key:
-                return
-
-            # Update visibility configuration
-            if hasattr(file_table_view, '_visible_columns'):
-                file_table_view._visible_columns[column_key] = False
-
-                # Save configuration
-                if hasattr(file_table_view, '_save_column_visibility_config'):
-                    file_table_view._save_column_visibility_config()
-
-                # Update table display
-                if hasattr(file_table_view, '_update_table_columns'):
-                    file_table_view._update_table_columns()
-
-                logger.info(f"Removed column '{key_path}' -> '{column_key}' from file view")
-
-        except Exception as e:
-            logger.error(f"Error removing column from file view: {e}")
 
 
