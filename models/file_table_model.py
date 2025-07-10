@@ -1,4 +1,4 @@
-'''
+"""
 file_table_model.py
 
 Author: Michael Economou
@@ -10,7 +10,7 @@ sorting, and provides metadata status icons.
 
 Classes:
     FileTableModel: Custom table model for file management.
-'''
+"""
 
 from datetime import datetime
 
@@ -45,6 +45,7 @@ class FileTableModel(QAbstractTableModel):
     in a QTableView. Supports row selection (blue highlighting), sorting, and preview updates.
     Now supports displaying both metadata and hash icons in column 0.
     """
+
     sort_changed = pyqtSignal()  # Emitted when sort() is called
 
     def __init__(self, parent_window=None):
@@ -56,6 +57,54 @@ class FileTableModel(QAbstractTableModel):
 
         # Load icons for metadata status using the correct functions
         self.metadata_icons = load_metadata_icons()
+
+        # Dynamic columns support
+        self._visible_columns = self._load_default_visible_columns()
+        self._column_mapping = self._create_column_mapping()
+
+    def _load_default_visible_columns(self) -> list:
+        """Load default visible columns configuration."""
+        from config import FILE_TABLE_COLUMN_CONFIG
+
+        visible_columns = []
+        for column_key, column_config in FILE_TABLE_COLUMN_CONFIG.items():
+            if column_config["default_visible"]:
+                visible_columns.append(column_key)
+
+        return visible_columns
+
+    def _create_column_mapping(self) -> dict:
+        """Create mapping from column index to column key."""
+        mapping = {0: "status"}  # Column 0 is always status column
+        for i, column_key in enumerate(self._visible_columns):
+            mapping[i + 1] = column_key  # Dynamic columns start from index 1
+        return mapping
+
+    def update_visible_columns(self, visible_columns: dict) -> None:
+        """Update the visible columns and refresh the model."""
+        from config import FILE_TABLE_COLUMN_CONFIG
+
+        # Create new visible columns list based on visibility dict
+        new_visible_columns = []
+        for column_key, column_config in FILE_TABLE_COLUMN_CONFIG.items():
+            is_visible = visible_columns.get(column_key, column_config["default_visible"])
+            if is_visible:
+                new_visible_columns.append(column_key)
+
+        # Only update if there's a change
+        if new_visible_columns != self._visible_columns:
+            self.beginResetModel()
+            self._visible_columns = new_visible_columns
+            self._column_mapping = self._create_column_mapping()
+            self.endResetModel()
+
+    def get_visible_columns(self) -> list:
+        """Get the current visible columns list."""
+        return self._visible_columns.copy()
+
+    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
+        # Status column (0) + dynamic columns
+        return 1 + len(self._visible_columns)
 
     def _has_hash_cached(self, file_path: str) -> bool:
         """
@@ -69,6 +118,7 @@ class FileTableModel(QAbstractTableModel):
         """
         try:
             from core.persistent_hash_cache import get_persistent_hash_cache
+
             cache = get_persistent_hash_cache()
             return cache.has_hash(file_path)
         except (ImportError, Exception) as e:
@@ -87,6 +137,7 @@ class FileTableModel(QAbstractTableModel):
         """
         try:
             from core.persistent_hash_cache import get_persistent_hash_cache
+
             cache = get_persistent_hash_cache()
             hash_value = cache.get_hash(file_path)
             return hash_value if hash_value else ""
@@ -108,6 +159,7 @@ class FileTableModel(QAbstractTableModel):
         """
         # Use the full STATUS_COLUMN width for proper spacing
         from config import FILE_TABLE_COLUMN_WIDTHS
+
         combined_width = FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"]  # 45px
         combined_height = 16
         combined_pixmap = QPixmap(combined_width, combined_height)
@@ -134,10 +186,121 @@ class FileTableModel(QAbstractTableModel):
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         return len(self.files) if self.files else 1
 
-    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
-        return 5  # Info, Filename, Filesize, Type, Modified
+    def _get_column_data(self, file, column_key: str, role: int):
+        """Get data for a specific column key."""
+        if role == Qt.DisplayRole:
+            if column_key == "filename":
+                return str(file.filename)
+            elif column_key == "file_size":
+                return str(file.get_human_readable_size())
+            elif column_key == "type":
+                return str(file.extension)
+            elif column_key == "modified":
+                if isinstance(file.modified, datetime):
+                    return file.modified.strftime("%Y-%m-%d %H:%M:%S")
+                return str(file.modified)
+            elif column_key == "file_hash":
+                return self._get_hash_value(file.full_path)
+            # For metadata columns, try to get from metadata cache
+            else:
+                # Try to get metadata value from cache
+                if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
+                    try:
+                        entry = self.parent_window.metadata_cache.get_entry(file.full_path)
+                        if entry and hasattr(entry, 'data') and entry.data:
+                            # Map column keys to metadata keys (using basic metadata keys that are available)
+                            metadata_key_map = {
+                                "rotation": "EXIF:Orientation",  # May not be available in basic metadata
+                                "duration": "QuickTime:Duration",  # May not be available in basic metadata
+                                "audio_channels": "QuickTime:AudioChannels",
+                                "audio_format": "QuickTime:AudioFormat",
+                                "aperture": "EXIF:FNumber",
+                                "iso": "EXIF:ISO",
+                                "shutter_speed": "EXIF:ExposureTime",
+                                "white_balance": "EXIF:WhiteBalance",
+                                "image_size": "EXIF:ImageWidth",  # We'll handle this specially
+                                "compression": "EXIF:Compression",
+                                "device_model": "EXIF:Model",
+                                "device_serial_no": "EXIF:SerialNumber",
+                                "video_fps": "QuickTime:VideoFrameRate",
+                                "video_avg_bitrate": "QuickTime:AvgBitrate",
+                                "video_codec": "QuickTime:VideoCodec",
+                                "video_format": "QuickTime:MajorBrand",
+                                "device_manufacturer": "EXIF:Make"
+                            }
 
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> QVariant: # type: ignore
+                            metadata_key = metadata_key_map.get(column_key)
+                            if metadata_key:
+                                # Special handling for image size (combines width x height)
+                                if column_key == "image_size":
+                                    width = entry.data.get("EXIF:ImageWidth")
+                                    height = entry.data.get("EXIF:ImageHeight")
+                                    if width and height:
+                                        return f"{width}x{height}"
+                                    return ""
+                                elif metadata_key in entry.data:
+                                    value = entry.data[metadata_key]
+                                    return str(value) if value is not None else ""
+
+                            # For columns that don't have extended metadata, show placeholder
+                            if column_key in ["rotation", "duration", "audio_channels", "audio_format",
+                                            "aperture", "iso", "shutter_speed", "white_balance",
+                                            "image_size", "compression", "device_model",
+                                            "device_serial_no", "video_fps", "video_avg_bitrate",
+                                            "video_codec", "video_format", "device_manufacturer"]:
+                                # Check if this entry has extended metadata
+                                if hasattr(entry, 'is_extended') and entry.is_extended:
+                                    return ""  # Extended metadata loaded but key not found
+                                else:
+                                    return "—"  # Placeholder for non-extended metadata
+
+                            return ""
+                    except Exception as e:
+                        logger.debug(f"Error accessing metadata cache for {column_key}: {e}")
+
+                # Fallback: try to get from file item metadata directly
+                if hasattr(file, 'metadata') and file.metadata:
+                    try:
+                        # Direct metadata access for common EXIF/QuickTime fields
+                        metadata_direct_map = {
+                            "rotation": ["EXIF:Orientation", "Orientation"],
+                            "duration": ["QuickTime:Duration", "Duration"],
+                            "audio_channels": ["QuickTime:AudioChannels", "AudioChannels"],
+                            "audio_format": ["QuickTime:AudioFormat", "AudioFormat"],
+                            "aperture": ["EXIF:FNumber", "FNumber", "Aperture"],
+                            "iso": ["EXIF:ISO", "ISO"],
+                            "shutter_speed": ["EXIF:ExposureTime", "ExposureTime", "ShutterSpeed"],
+                            "white_balance": ["EXIF:WhiteBalance", "WhiteBalance"],
+                            "image_size": ["EXIF:ImageWidth", "EXIF:ImageHeight", "ImageSize"],
+                            "compression": ["EXIF:Compression", "Compression"],
+                            "device_model": ["EXIF:Model", "Model"],
+                            "device_serial_no": ["EXIF:SerialNumber", "SerialNumber"],
+                            "video_fps": ["QuickTime:VideoFrameRate", "VideoFrameRate"],
+                            "video_avg_bitrate": ["QuickTime:AvgBitrate", "AvgBitrate"],
+                            "video_codec": ["QuickTime:VideoCodec", "VideoCodec"],
+                            "video_format": ["QuickTime:MajorBrand", "MajorBrand"],
+                            "device_manufacturer": ["EXIF:Make", "Make"]
+                        }
+
+                        possible_keys = metadata_direct_map.get(column_key, [])
+                        for key in possible_keys:
+                            if key in file.metadata:
+                                value = file.metadata[key]
+                                return str(value) if value is not None else ""
+                    except Exception as e:
+                        logger.debug(f"Error accessing file metadata for {column_key}: {e}")
+
+                return ""  # Empty string for missing metadata
+
+        elif role == Qt.TextAlignmentRole:
+            # Right-align numeric columns
+            if column_key in ["file_size", "duration", "iso", "video_fps", "video_avg_bitrate"]:
+                return Qt.AlignRight | Qt.AlignVCenter
+            return Qt.AlignLeft | Qt.AlignVCenter
+
+        return QVariant()
+
+    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> QVariant:  # type: ignore
         if not index.isValid():
             return QVariant()
 
@@ -145,15 +308,27 @@ class FileTableModel(QAbstractTableModel):
         col = index.column()
 
         if not self.files:
-            if role == Qt.DisplayRole and col == 1: # type: ignore
+            # For empty table, only show content in filename column
+            filename_column_index = None
+            try:
+                filename_column_index = self._visible_columns.index('filename') + 1  # +1 for status column
+            except ValueError:
+                filename_column_index = 1  # Fallback to first dynamic column
+
+            if role == Qt.DisplayRole and col == filename_column_index:
                 return ""
-            if role == Qt.TextAlignmentRole: # type: ignore
+            if role == Qt.TextAlignmentRole:
                 return Qt.AlignHCenter
             return QVariant()
 
         file = self.files[row]
 
-        if role == Qt.BackgroundRole: # type: ignore
+        # Get column key from mapping
+        column_key = self._column_mapping.get(col)
+        if not column_key:
+            return QVariant()
+
+        if role == Qt.BackgroundRole:
             status = getattr(file, "status", None)
             if status == "conflict":
                 return QColor("#662222")
@@ -163,106 +338,59 @@ class FileTableModel(QAbstractTableModel):
                 return QColor("#223344")
             return QVariant()
 
-        if role == Qt.DisplayRole: # type: ignore
-            if col == 0:
-                return " "
-            elif col == 1:
-                return str(file.filename)
-            elif col == 2:
-                return str(file.get_human_readable_size())
-            elif col == 3:
-                return str(file.extension)
-            elif col == 4:
-                # Format the datetime for better display
-                if isinstance(file.modified, datetime):
-                    return file.modified.strftime("%Y-%m-%d %H:%M:%S")
-                return str(file.modified)
+        # Handle status column (column 0)
+        if column_key == "status":
+            if role == Qt.DecorationRole:
+                # Show combined icon for status column
+                entry = None
+                if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
+                    entry = self.parent_window.metadata_cache.get_entry(file.full_path)
 
-        if role == Qt.ToolTipRole: # type: ignore
-            tooltip_parts = []
-            tooltip_parts.append(f"File: {file.filename}")
+                # Check if file has hash cached
+                has_hash = self._has_hash_cached(file.full_path)
 
-            # Use the same cache access method as the icon generation
-            entry = None
-            if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
-                entry = self.parent_window.metadata_cache.get_entry(file.full_path)
-
-            if entry and hasattr(entry, 'data') and entry.data:
-                # Filter out internal metadata markers
-                real_metadata = {k: v for k, v in entry.data.items() if not k.startswith('__')}
-                metadata_count = len(real_metadata)
-
-                if metadata_count > 0:
-                    if hasattr(entry, 'is_extended') and entry.is_extended:
-                        tooltip_parts.append(f"Extended Metadata: {metadata_count} values")
+                # Determine metadata status
+                metadata_status = "none"  # Default to grayout
+                if entry:
+                    # Check if metadata has been modified
+                    if hasattr(entry, "modified") and entry.modified:
+                        metadata_status = "modified"
+                    elif entry.is_extended:
+                        metadata_status = "extended"
                     else:
-                        tooltip_parts.append(f"Metadata: {metadata_count} values")
-                else:
-                    tooltip_parts.append("No metadata")
-            else:
-                tooltip_parts.append("No metadata")
+                        metadata_status = "loaded"  # This is fast/basic metadata
 
-            # Add hash info only if hash exists
-            hash_value = self._get_hash_value(file.full_path)
-            if hash_value:
-                tooltip_parts.append(f"Hash: {hash_value}")
+                # Determine hash status
+                hash_status = "hash" if has_hash else "none"
 
-            return "\n".join(tooltip_parts)
+                # Always create combined icon with both statuses
+                return self._create_combined_icon(metadata_status, hash_status)
 
-        if role == Qt.DecorationRole and col == 0: # type: ignore
-            # Use simple cache checking like the old system
-            entry = None
-            if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
-                entry = self.parent_window.metadata_cache.get_entry(file.full_path)
+            elif role == Qt.CheckStateRole:
+                return Qt.Checked if file.checked else Qt.Unchecked
 
-            # Check if file has hash cached
-            has_hash = self._has_hash_cached(file.full_path)
+            elif role == Qt.UserRole:
+                cache_helper = self._cache_helper
+                if cache_helper:
+                    # Create temporary FileItem-like object for cache helper
+                    class TempFileItem:
+                        def __init__(self, path):
+                            self.full_path = path
 
-            # Determine metadata status
-            metadata_status = "none"  # Default to grayout
-            if entry:
-                # Check if metadata has been modified
-                if hasattr(entry, 'modified') and entry.modified:
-                    metadata_status = "modified"
-                elif entry.is_extended:
-                    metadata_status = "extended"
-                else:
-                    metadata_status = "loaded"  # This is fast/basic metadata
+                    temp_file_item = TempFileItem(file.full_path)
+                    entry = cache_helper.get_cache_entry_for_file(temp_file_item)
 
-            # Determine hash status
-            hash_status = "hash" if has_hash else "none"
+                    if isinstance(entry, MetadataEntry):
+                        return "extended" if entry.is_extended else "loaded"
+                return "missing"
 
-            # Always create combined icon with both statuses
-            return self._create_combined_icon(metadata_status, hash_status)
-
-        if col == 0 and role == Qt.UserRole: # type: ignore
-            cache_helper = self._cache_helper
-            if cache_helper:
-                # Create temporary FileItem-like object for cache helper
-                class TempFileItem:
-                    def __init__(self, path):
-                        self.full_path = path
-
-                temp_file_item = TempFileItem(file.full_path)
-                entry = cache_helper.get_cache_entry_for_file(temp_file_item)
-
-                if isinstance(entry, MetadataEntry):
-                    return 'extended' if entry.is_extended else 'loaded'
-            return 'missing'
-
-        elif role == Qt.CheckStateRole and col == 0: # type: ignore
+            # No display text for status column
             return QVariant()
 
-        elif role == Qt.TextAlignmentRole: # type: ignore
-            if col == 0:
-                return Qt.AlignVCenter | Qt.AlignLeft
-            elif col == 2:
-                return Qt.AlignVCenter | Qt.AlignRight
-            return Qt.AlignVCenter | Qt.AlignLeft
+        # Handle dynamic columns (filename, file_size, etc.)
+        return self._get_column_data(file, column_key, role)
 
-        return QVariant()
-
-    def setData(self, index: QModelIndex, value, role: int = Qt.EditRole) -> bool: # type: ignore
+    def setData(self, index: QModelIndex, value, role: int = Qt.EditRole) -> bool:  # type: ignore
         if not index.isValid() or not self.files:
             return False
 
@@ -270,8 +398,9 @@ class FileTableModel(QAbstractTableModel):
         col = index.column()
         file = self.files[row]
 
-        if role == Qt.CheckStateRole and col == 0: # type: ignore
-            new_checked = (value == Qt.Checked)
+        # Handle checkbox in status column (column 0)
+        if role == Qt.CheckStateRole and col == 0:
+            new_checked = value == Qt.Checked
             if file.checked == new_checked:
                 return False  # Don't do anything if it didn't change
             file.checked = new_checked
@@ -283,9 +412,9 @@ class FileTableModel(QAbstractTableModel):
                 get_app_context()
                 # For now, we still need to access parent window for UI updates
                 # This will be improved when we migrate UI update handling to context
-                # Find parent window by traversing up the widget hierarchy
                 import sys
-                if hasattr(sys, '_getframe'):
+
+                if hasattr(sys, "_getframe"):
                     # Try to get parent window from current widget hierarchy
                     # This is a transitional approach
                     pass
@@ -306,20 +435,37 @@ class FileTableModel(QAbstractTableModel):
 
         return False
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags: # type: ignore
+    def flags(self, index: QModelIndex) -> Qt.ItemFlags:  # type: ignore
         if not index.isValid() or not self.files:
             return Qt.NoItemFlags
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
-    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole): # type: ignore
+        base_flags = Qt.ItemIsEnabled | Qt.ItemIsSelectable
+
+        # Enable checkbox only in status column (column 0)
+        if index.column() == 0:
+            base_flags |= Qt.ItemIsUserCheckable
+
+        return base_flags
+
+    def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole):  # type: ignore
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            headers = ["", "Filename", "Size", "Type", "Modified"]
-            if 0 <= section < len(headers):
-                return headers[section]
-        return super().headerData(section, orientation, role)
+            if section == 0:
+                return ""  # No title for status column
 
-    def sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None: # type: ignore
+            column_key = self._column_mapping.get(section)
+            if column_key:
+                from config import FILE_TABLE_COLUMN_CONFIG
+                column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
+                return column_config.get("title", column_key)
+        return QVariant()
+
+    def sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None:  # type: ignore
         if not self.files:
+            return
+
+        # Get column key from mapping
+        column_key = self._column_mapping.get(column)
+        if not column_key:
             return
 
         # Try to get selection model from ApplicationContext, fallback to parent_window
@@ -340,16 +486,58 @@ class FileTableModel(QAbstractTableModel):
 
         selected_items = [self.files[i.row()] for i in selection_model.selectedRows()]
 
-        reverse = (order == Qt.DescendingOrder)
+        reverse = order == Qt.DescendingOrder
 
-        if column == 1:
+        # Sort based on column key
+        if column_key == "filename":
             self.files.sort(key=lambda f: f.filename.lower(), reverse=reverse)
-        elif column == 2:
-            self.files.sort(key=lambda f: f.size if hasattr(f, 'size') else 0, reverse=reverse)
-        elif column == 3:
+        elif column_key == "file_size":
+            self.files.sort(key=lambda f: f.size if hasattr(f, "size") else 0, reverse=reverse)
+        elif column_key == "type":
             self.files.sort(key=lambda f: f.extension.lower(), reverse=reverse)
-        elif column == 4:
+        elif column_key == "modified":
             self.files.sort(key=lambda f: f.modified, reverse=reverse)
+        elif column_key == "file_hash":
+            self.files.sort(key=lambda f: self._get_hash_value(f.full_path), reverse=reverse)
+        else:
+            # For metadata columns, sort by the metadata value
+            def get_metadata_sort_key(file):
+                if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
+                    entry = self.parent_window.metadata_cache.get_entry(file.full_path)
+                    if entry and hasattr(entry, 'data') and entry.data:
+                        # Map column keys to metadata keys (using actual EXIF/QuickTime keys)
+                        metadata_key_map = {
+                            "rotation": "EXIF:Orientation",
+                            "duration": "QuickTime:Duration",
+                            "audio_channels": "QuickTime:AudioChannels",
+                            "audio_format": "QuickTime:AudioFormat",
+                            "aperture": "EXIF:FNumber",
+                            "iso": "EXIF:ISO",
+                            "shutter_speed": "EXIF:ExposureTime",
+                            "white_balance": "EXIF:WhiteBalance",
+                            "image_size": "EXIF:ImageWidth",
+                            "compression": "EXIF:Compression",
+                            "device_model": "EXIF:Model",
+                            "device_serial_no": "EXIF:SerialNumber",
+                            "video_fps": "QuickTime:VideoFrameRate",
+                            "video_avg_bitrate": "QuickTime:AvgBitrate",
+                            "video_codec": "QuickTime:VideoCodec",
+                            "video_format": "QuickTime:MajorBrand",
+                            "device_manufacturer": "EXIF:Make"
+                        }
+
+                        metadata_key = metadata_key_map.get(column_key)
+                        if metadata_key:
+                            # Special handling for image size (sort by width)
+                            if column_key == "image_size":
+                                width = entry.data.get("EXIF:ImageWidth")
+                                return int(width) if width and str(width).isdigit() else 0
+                            elif metadata_key in entry.data:
+                                value = entry.data[metadata_key]
+                                return str(value) if value is not None else ""
+                return ""
+
+            self.files.sort(key=get_metadata_sort_key, reverse=reverse)
 
         self.layoutChanged.emit()
         self.sort_changed.emit()
@@ -358,7 +546,10 @@ class FileTableModel(QAbstractTableModel):
         if self.parent_window:
             self.parent_window.current_sort_column = column
             self.parent_window.current_sort_order = order
-            logger.debug(f"[Model] Stored sort state: column={column}, order={order}", extra={"dev_only": True})
+            logger.debug(
+                f"[Model] Stored sort state: column={column}, order={order}",
+                extra={"dev_only": True},
+            )
 
         selection_model.clearSelection()
         selection = QItemSelection()
@@ -491,5 +682,3 @@ class FileTableModel(QAbstractTableModel):
             list[FileItem]: List of checked FileItem objects
         """
         return [f for f in self.files if f.checked]
-
-
