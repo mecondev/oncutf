@@ -66,17 +66,20 @@ class FileTableView(QTableView):
 
     Features:
     - Full-row selection with anchor handling
-    - Intelligent column width management with delayed save (7 seconds)
+    - Fixed-width column management with delayed save (7 seconds)
+    - Horizontal scrollbar appears when columns exceed viewport width
     - Drag & drop support with custom MIME types
     - Hover highlighting and visual feedback
-    - Automatic placeholder management
+    - Automatic placeholder management (no scrollbar in placeholder mode)
     - Keyboard shortcuts for column management (Ctrl+T, Ctrl+Shift+T)
 
     Column Configuration:
+    - Columns maintain their configured widths when adding/removing columns
     - Column width changes are batched and saved with a 7-second delay
     - Multiple rapid changes are consolidated into a single save operation
     - On application shutdown, pending changes are force-saved immediately
     - This prevents excessive I/O while maintaining user preference persistence
+    - Horizontal scrollbar appears automatically when total column width exceeds viewport
     """
 
     selection_changed = pyqtSignal(list)  # Emitted with list[int] of selected rows
@@ -485,23 +488,61 @@ class FileTableView(QTableView):
         self._column_alignments[column_index] = qt_alignment
 
     def _load_column_width(self, column_key: str) -> int:
-        """Load saved column width from config.json."""
+        """Load column width from main config system with fallback to defaults."""
         try:
+            # Try main config system first
+            main_window = self._get_main_window()
+            if main_window and hasattr(main_window, 'window_config_manager'):
+                config_manager = main_window.window_config_manager.config_manager
+                window_config = config_manager.get_category('window')
+                column_widths = window_config.get('file_table_column_widths', {})
+
+                if column_key in column_widths:
+                    return column_widths[column_key]
+
+            # Fallback to old method
             from utils.json_config_manager import load_config
             config = load_config()
-            return config.get("file_table_column_widths", {}).get(column_key, 0)
-        except Exception:
-            return 0
+            column_widths = config.get("file_table_column_widths", {})
+            if column_key in column_widths:
+                return column_widths[column_key]
+
+            # Final fallback to config.py defaults
+            from config import FILE_TABLE_COLUMN_CONFIG
+            column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
+            return column_config.get("width", 100)
+
+        except Exception as e:
+            logger.warning(f"Failed to load column width for {column_key}: {e}")
+            # Emergency fallback
+            from config import FILE_TABLE_COLUMN_CONFIG
+            column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
+            return column_config.get("width", 100)
 
     def _save_column_width(self, column_key: str, width: int) -> None:
-        """Save column width to config.json."""
+        """Save column width to main config system."""
         try:
-            from utils.json_config_manager import load_config, save_config
-            config = load_config()
-            if "file_table_column_widths" not in config:
-                config["file_table_column_widths"] = {}
-            config["file_table_column_widths"][column_key] = width
-            save_config(config)
+            # Get the main window and its config manager
+            main_window = self._get_main_window()
+            if main_window and hasattr(main_window, 'window_config_manager'):
+                config_manager = main_window.window_config_manager.config_manager
+                window_config = config_manager.get_category('window')
+
+                # Get current column widths
+                column_widths = window_config.get('file_table_column_widths', {})
+                column_widths[column_key] = width
+                window_config.set('file_table_column_widths', column_widths)
+
+                # Save immediately for individual changes
+                config_manager.save()
+            else:
+                # Fallback to old method if main window not available
+                from utils.json_config_manager import load_config, save_config
+                config = load_config()
+                if "file_table_column_widths" not in config:
+                    config["file_table_column_widths"] = {}
+                config["file_table_column_widths"][column_key] = width
+                save_config(config)
         except Exception as e:
             logger.warning(f"Failed to save column width for {column_key}: {e}")
 
@@ -1705,12 +1746,26 @@ class FileTableView(QTableView):
             return {key: cfg["default_visible"] for key, cfg in FILE_TABLE_COLUMN_CONFIG.items()}
 
     def _save_column_visibility_config(self) -> None:
-        """Save column visibility configuration to config.json."""
+        """Save column visibility configuration to main config system."""
         try:
-            from utils.json_config_manager import load_config, save_config
-            config = load_config()
-            config["file_table_columns"] = self._visible_columns
-            save_config(config)
+            # Get the main window and its config manager
+            main_window = self._get_main_window()
+            if main_window and hasattr(main_window, 'window_config_manager'):
+                config_manager = main_window.window_config_manager.config_manager
+                window_config = config_manager.get_category('window')
+
+                # Get current column visibility
+                current_visibility = self._load_column_visibility_config()
+                window_config.set('file_table_columns', current_visibility)
+
+                # Save immediately
+                config_manager.save()
+            else:
+                # Fallback to old method
+                from utils.json_config_manager import load_config, save_config
+                config = load_config()
+                config["file_table_columns"] = self._load_column_visibility_config()
+                save_config(config)
         except Exception as e:
             logger.warning(f"Failed to save column visibility config: {e}")
 

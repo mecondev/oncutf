@@ -469,7 +469,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "key": "filename",
         "default_visible": True,
         "removable": False,  # Always visible
-        "width": 250,
+        "width": 524,
         "alignment": "left",
         "min_width": 150,
     },
@@ -496,7 +496,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "key": "modified",
         "default_visible": True,
         "removable": True,
-        "width": 115,
+        "width": 134,
         "alignment": "center",  # Dates look good centered
         "min_width": 100,
     },

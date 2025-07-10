@@ -91,9 +91,7 @@ class TableManager:
         # Update scrollbar visibility after clearing table
         self.parent_window.file_table_view._update_scrollbar_visibility()
 
-        # Adjust filename column width to available space when table is empty
-        from utils.timer_manager import schedule_resize_adjust
-        schedule_resize_adjust(self.parent_window.file_table_view._trigger_column_adjustment, 10)
+        # No longer need column adjustment - columns maintain fixed widths
 
         # Explicitly clear preview tables and show placeholders
         self.parent_window.update_preview_tables_from_pairs([])

@@ -135,6 +135,9 @@ class WindowConfigManager:
                 }
                 window_config.set('column_states', column_states)
 
+            # Actually save the configuration to file
+            self.config_manager.save()
+
             logger.info("[Config] Window configuration saved successfully", extra={"dev_only": True})
 
         except Exception as e:
@@ -340,7 +343,5 @@ class WindowConfigManager:
     def ensure_initial_column_sizing(self) -> None:
         """Ensure column widths are properly sized on startup, especially when no config exists."""
         if hasattr(self.main_window, 'file_table_view') and self.main_window.file_table_view.model():
-            # Trigger column adjustment using the existing logic
-            if hasattr(self.main_window.file_table_view, '_trigger_column_adjustment'):
-                self.main_window.file_table_view._trigger_column_adjustment()
-                logger.debug("[Config] Ensured initial column sizing", extra={"dev_only": True})
+            # No longer need column adjustment - columns maintain fixed widths from config
+            logger.debug("[Config] Column sizing handled by fixed-width configuration", extra={"dev_only": True})

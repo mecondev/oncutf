@@ -619,8 +619,7 @@ class MainWindow(QMainWindow):
                 self.file_table_view._configure_columns()
 
             # Then trigger column adjustment using the existing logic
-            if hasattr(self.file_table_view, '_trigger_column_adjustment'):
-                self.file_table_view._trigger_column_adjustment()
+            # No longer need column adjustment - columns maintain fixed widths from config
 
             logger.debug("[MainWindow] Used original FileTableView column configuration", extra={"dev_only": True})
 
