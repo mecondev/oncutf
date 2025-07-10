@@ -1843,17 +1843,22 @@ class FileTableView(QTableView):
         # No longer need to trigger column adjustment - columns maintain fixed widths
 
     def _get_metadata_tree(self):
-        """Get the metadata tree view."""
-        try:
-            parent_window = self.parent()
-            while parent_window and not hasattr(parent_window, 'metadata_tree_view'):
-                parent_window = parent_window.parent()
+        """Get the metadata tree widget from the parent hierarchy."""
+        parent = self.parent()
+        while parent:
+            if hasattr(parent, 'metadata_tree'):
+                return parent.metadata_tree
+            parent = parent.parent()
+        return None
 
-            if parent_window and hasattr(parent_window, 'metadata_tree_view'):
-                return parent_window.metadata_tree_view
-            return None
-        except Exception:
-            return None
+    def _get_main_window(self):
+        """Get the main window from the parent hierarchy."""
+        parent = self.parent()
+        while parent:
+            if hasattr(parent, 'window_config_manager'):
+                return parent
+            parent = parent.parent()
+        return None
 
     def _clear_preview_and_metadata(self) -> None:
         """Clear preview and metadata displays when no selection exists."""

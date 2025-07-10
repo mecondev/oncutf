@@ -68,9 +68,11 @@ class WindowConfig(ConfigCategory):
             "geometry": None,  # No default geometry - will trigger smart sizing
             "window_state": "normal",
             "splitter_states": {"horizontal": [250, 674, 250], "vertical": [500, 300]},
-            "column_widths": {"file_table": [23, 345, 80, 60, 130], "metadata_tree": [180, 500]},
+            # Dictionary-based column configuration (safer than arrays)
             "file_table_column_widths": {},  # Individual column widths by key
             "file_table_columns": {},  # Column visibility by key
+            "metadata_tree_column_widths": {},  # Metadata tree column widths by key
+            "metadata_tree_columns": {},  # Metadata tree column visibility by key
             "last_folder": "",
             "recursive_mode": False,
             "sort_column": 1,

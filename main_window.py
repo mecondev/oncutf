@@ -624,8 +624,9 @@ class MainWindow(QMainWindow):
             logger.debug("[MainWindow] Used original FileTableView column configuration", extra={"dev_only": True})
 
         # Configure other table views with ColumnManager (they don't have the sophisticated logic)
-        if hasattr(self, 'metadata_tree_view') and self.metadata_tree_view:
-            self.column_manager.configure_table_columns(self.metadata_tree_view, 'metadata_tree')
+        # Note: MetadataTreeView handles its own column configuration, so we skip it here
+        # if hasattr(self, 'metadata_tree_view') and self.metadata_tree_view:
+        #     self.column_manager.configure_table_columns(self.metadata_tree_view, 'metadata_tree')
 
         if hasattr(self, 'preview_tables_view') and self.preview_tables_view:
             # Configure preview tables

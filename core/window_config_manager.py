@@ -130,8 +130,6 @@ class WindowConfigManager:
                 column_states = {
                     'file_table': self.main_window.column_manager.save_column_state('file_table'),
                     'metadata_tree': self.main_window.column_manager.save_column_state('metadata_tree'),
-                    'preview_old': self.main_window.column_manager.save_column_state('preview_old'),
-                    'preview_new': self.main_window.column_manager.save_column_state('preview_new')
                 }
                 window_config.set('column_states', column_states)
 

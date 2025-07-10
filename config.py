@@ -191,13 +191,35 @@ DEFAULT_METADATA_DISPLAY_LEVEL = "essential"  # Options: "essential", "standard"
 
 # Metadata Tree View Settings
 METADATA_TREE_COLUMN_WIDTHS = {
-    "PLACEHOLDER_KEY_WIDTH": 100,
+    "PLACEHOLDER_KEY_WIDTH": 140,
     "PLACEHOLDER_VALUE_WIDTH": 250,
-    "NORMAL_KEY_INITIAL_WIDTH": 120,
-    "NORMAL_VALUE_INITIAL_WIDTH": 500,
+    "NORMAL_KEY_INITIAL_WIDTH": 140,  # Changed from 120 to match placeholder width
+    "NORMAL_VALUE_INITIAL_WIDTH": 600,  # Increased from 500 to give more space to value column
     "KEY_MIN_WIDTH": 80,
     "KEY_MAX_WIDTH": 800,
     "VALUE_MIN_WIDTH": 250,
+}
+
+# Metadata Tree Column Configuration (dictionary-based, similar to FILE_TABLE_COLUMN_CONFIG)
+METADATA_TREE_COLUMN_CONFIG = {
+    "key": {
+        "title": "Key",
+        "key": "key",
+        "default_visible": True,
+        "removable": False,  # Always visible
+        "width": 140,  # Changed from 120 to match placeholder width
+        "alignment": "left",
+        "min_width": 80,
+    },
+    "value": {
+        "title": "Value",
+        "key": "value",
+        "default_visible": True,
+        "removable": False,  # Always visible
+        "width": 600,  # Increased from 500 to match NORMAL_VALUE_INITIAL_WIDTH
+        "alignment": "left",
+        "min_width": 250,
+    },
 }
 
 # Tree View Expand/Collapse Mode
@@ -658,9 +680,9 @@ FILE_TABLE_COLUMN_CONFIG = {
         "key": "file_hash",
         "default_visible": False,
         "removable": True,
-        "width": 200,
+        "width": 90,  # Reduced from 200 to 90 (45% of original)
         "alignment": "left",  # Hash values align left
-        "min_width": 150,
+        "min_width": 70,  # Reduced min_width proportionally
     },
 }
 

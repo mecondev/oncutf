@@ -183,23 +183,13 @@ class ColumnManager:
             ),
             1: ColumnConfig(
                 column_index=1,
-                column_type=ColumnType.STRETCH,
+                column_type=ColumnType.INTERACTIVE,  # Changed from STRETCH to INTERACTIVE
                 min_width=METADATA_TREE_COLUMN_WIDTHS["VALUE_MIN_WIDTH"],
                 default_width=METADATA_TREE_COLUMN_WIDTHS["NORMAL_VALUE_INITIAL_WIDTH"]
             )
         }
 
-        # Preview tables configuration (both old and new names)
-        preview_config = {
-            0: ColumnConfig(
-                column_index=0,
-                column_type=ColumnType.STRETCH,
-                min_width=200,
-                default_width=350
-            )
-        }
-        self.table_configs['preview_old'] = preview_config.copy()
-        self.table_configs['preview_new'] = preview_config.copy()
+        # Preview tables use auto-width and don't need column management
 
     def configure_table_columns(self, table_view: Union[QTableView, QTreeView],
                                table_type: str) -> None:

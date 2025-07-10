@@ -13,17 +13,17 @@ Functions:
     main: Initializes and runs the Batch File Renamer application.
 """
 
+import os
+import sys
 import logging
 import platform
-import sys
 import time
 from pathlib import Path
 
 from core.pyqt_imports import QApplication, QStyleFactory, Qt
 
-# Add the project root to the Python path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
+# Add the project root to the path so we can import our modules
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import SPLASH_SCREEN_DURATION
 from main_window import MainWindow
@@ -32,8 +32,20 @@ from utils.logger_setup import ConfigureLogger
 from utils.theme_engine import ThemeEngine
 from widgets.custom_splash_screen import CustomSplashScreen
 
-# Configure logging first
-ConfigureLogger(log_name="oncutf")
+# Calculate the user config directory for logs
+def get_user_config_dir(app_name: str = "oncutf") -> str:
+    """Get user configuration directory based on OS."""
+    if os.name == "nt":
+        base_dir = os.environ.get("APPDATA", os.path.expanduser("~"))
+        return os.path.join(base_dir, app_name)
+    else:
+        base_dir = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
+        return os.path.join(base_dir, app_name)
+
+# Configure logging to use user config directory
+config_dir = get_user_config_dir()
+logs_dir = os.path.join(config_dir, "logs")
+ConfigureLogger(log_name="oncutf", log_dir=logs_dir)
 
 logger = logging.getLogger()
 

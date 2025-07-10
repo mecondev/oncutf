@@ -229,12 +229,17 @@ class FileTableModel(QAbstractTableModel):
                                 "device_manufacturer": "EXIF:Make"
                             }
 
-                            metadata_key = metadata_key_map.get(column_key)
+                                                        metadata_key = metadata_key_map.get(column_key)
                             if metadata_key:
                                 # Special handling for image size (combines width x height)
                                 if column_key == "image_size":
-                                    width = entry.data.get("EXIF:ImageWidth")
-                                    height = entry.data.get("EXIF:ImageHeight")
+                                    # Try different possible keys for image dimensions
+                                    width = (entry.data.get("EXIF:ImageWidth") or
+                                            entry.data.get("ImageWidth") or
+                                            entry.data.get("ExifImageWidth"))
+                                    height = (entry.data.get("EXIF:ImageHeight") or
+                                             entry.data.get("ImageHeight") or
+                                             entry.data.get("ExifImageHeight"))
                                     if width and height:
                                         return f"{width}x{height}"
                                     return ""
@@ -242,7 +247,7 @@ class FileTableModel(QAbstractTableModel):
                                     value = entry.data[metadata_key]
                                     return str(value) if value is not None else ""
 
-                            # For columns that don't have extended metadata, show placeholder
+                            # For columns that don't have extended metadata, show empty string
                             if column_key in ["rotation", "duration", "audio_channels", "audio_format",
                                             "aperture", "iso", "shutter_speed", "white_balance",
                                             "image_size", "compression", "device_model",
@@ -252,7 +257,7 @@ class FileTableModel(QAbstractTableModel):
                                 if hasattr(entry, 'is_extended') and entry.is_extended:
                                     return ""  # Extended metadata loaded but key not found
                                 else:
-                                    return "—"  # Placeholder for non-extended metadata
+                                    return ""  # Empty string for non-extended metadata
 
                             return ""
                     except Exception as e:
