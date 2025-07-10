@@ -66,10 +66,17 @@ class FileTableView(QTableView):
 
     Features:
     - Full-row selection with anchor handling
-    - Intelligent column width management
+    - Intelligent column width management with delayed save (7 seconds)
     - Drag & drop support with custom MIME types
     - Hover highlighting and visual feedback
     - Automatic placeholder management
+    - Keyboard shortcuts for column management (Ctrl+T, Ctrl+Shift+T)
+
+    Column Configuration:
+    - Column width changes are batched and saved with a 7-second delay
+    - Multiple rapid changes are consolidated into a single save operation
+    - On application shutdown, pending changes are force-saved immediately
+    - This prevents excessive I/O while maintaining user preference persistence
     """
 
     selection_changed = pyqtSignal(list)  # Emitted with list[int] of selected rows
@@ -83,8 +90,6 @@ class FileTableView(QTableView):
         self._manual_anchor_index: Optional[QModelIndex] = None
         self._drag_start_pos: Optional[QPoint] = None  # Initialize as None instead of empty QPoint
         self._active_drag = None  # Store active QDrag object for cleanup
-        self._filename_min_width: int = 250  # Will be updated in _configure_columns
-        self._user_preferred_width: Optional[int] = None  # User's preferred filename column width
         self._programmatic_resize: bool = False  # Flag to indicate programmatic resize in progress
 
         # Initialize table properties
@@ -128,6 +133,10 @@ class FileTableView(QTableView):
         self._preserve_selection_for_drag = False
         self._clicked_on_selected = False
         self._clicked_index = None
+
+        # Column configuration delayed save
+        self._config_save_timer = None
+        self._pending_column_changes = {}
 
         # Setup placeholder icon
         self.placeholder_label = QLabel(self.viewport())
@@ -375,136 +384,245 @@ class FileTableView(QTableView):
     # =====================================
 
     def _configure_columns(self) -> None:
-        """Configure column settings and initial widths from config."""
+        """Configure table columns with proper widths, alignment, and behavior."""
+        if not self.model():
+            logger.warning("No model available for column configuration")
+            return
+
+        try:
+            from config import FILE_TABLE_COLUMN_CONFIG, GLOBAL_MIN_COLUMN_WIDTH
+
+            # Get visible columns from model
+            visible_columns = []
+            if hasattr(self.model(), 'get_visible_columns'):
+                visible_columns = self.model().get_visible_columns()
+            else:
+                visible_columns = ['filename', 'file_size', 'type', 'modified']
+
+            # Configure each column
+            for i, column_key in enumerate(visible_columns):
+                column_index = i + 1  # +1 because column 0 is status column
+                column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
+
+                # Set column width - use saved width if available, otherwise use default
+                saved_width = self._load_column_width(column_key)
+                if saved_width > 0:
+                    column_width = saved_width
+                else:
+                    column_width = column_config.get('width', 100)
+
+                # Apply minimum width constraint
+                min_width = max(column_config.get('min_width', GLOBAL_MIN_COLUMN_WIDTH), GLOBAL_MIN_COLUMN_WIDTH)
+                final_width = max(column_width, min_width)
+
+                self.setColumnWidth(column_index, final_width)
+
+                # Set column alignment
+                alignment = column_config.get('alignment', 'left')
+                self._set_column_alignment(column_index, alignment)
+
+                # Make column resizable (except status column)
+                header = self.horizontalHeader()
+                if header:
+                    header.setSectionResizeMode(column_index, QHeaderView.Interactive)
+
+                logger.debug(f"Configured column '{column_key}' at index {column_index}: width={final_width}, alignment={alignment}")
+
+            # Configure status column (index 0)
+            from config import FILE_TABLE_COLUMN_WIDTHS
+            status_width = FILE_TABLE_COLUMN_WIDTHS.get("STATUS_COLUMN", 30)
+            self.setColumnWidth(0, status_width)
+
+            # Make status column non-resizable
+            if header:
+                header.setSectionResizeMode(0, QHeaderView.Fixed)
+
+            # Enable horizontal scrollbar when needed (instead of adjusting filename width)
+            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+            # Connect column resize signals for saving user preferences
+            if header:
+                header.sectionResized.connect(self._on_column_resized)
+                header.sectionMoved.connect(self._on_column_moved)
+
+        except Exception as e:
+            logger.error(f"Error configuring columns: {e}")
+
+        # Setup header context menu with sorting and column visibility
+        def on_section_clicked(logical_index):
+            """Handle header section clicks for sorting."""
+            if logical_index == 0:  # Status column - no sorting
+                return
+            # Get column key from logical index
+            column_key = self._get_column_key_from_index(logical_index)
+            if column_key:
+                # Toggle sort order
+                current_order = self.horizontalHeader().sortIndicatorOrder()
+                new_order = Qt.DescendingOrder if current_order == Qt.AscendingOrder else Qt.AscendingOrder
+                self.sortByColumn(logical_index, new_order)
+
+        # Connect header click for sorting
+        if hasattr(self.horizontalHeader(), 'sectionClicked'):
+            self.horizontalHeader().sectionClicked.connect(on_section_clicked)
+
+    def _set_column_alignment(self, column_index: int, alignment: str) -> None:
+        """Set text alignment for a specific column."""
         if not self.model():
             return
 
-        header = self.horizontalHeader()
-        if not header:
+        # Map alignment strings to Qt constants
+        alignment_map = {
+            'left': Qt.AlignLeft | Qt.AlignVCenter,
+            'right': Qt.AlignRight | Qt.AlignVCenter,
+            'center': Qt.AlignCenter,
+        }
+
+        qt_alignment = alignment_map.get(alignment, Qt.AlignLeft | Qt.AlignVCenter)
+
+        # Store alignment for use in delegates or model
+        if not hasattr(self, '_column_alignments'):
+            self._column_alignments = {}
+        self._column_alignments[column_index] = qt_alignment
+
+    def _load_column_width(self, column_key: str) -> int:
+        """Load saved column width from config.json."""
+        try:
+            from utils.json_config_manager import load_config
+            config = load_config()
+            return config.get("file_table_column_widths", {}).get(column_key, 0)
+        except Exception:
+            return 0
+
+    def _save_column_width(self, column_key: str, width: int) -> None:
+        """Save column width to config.json."""
+        try:
+            from utils.json_config_manager import load_config, save_config
+            config = load_config()
+            if "file_table_column_widths" not in config:
+                config["file_table_column_widths"] = {}
+            config["file_table_column_widths"][column_key] = width
+            save_config(config)
+        except Exception as e:
+            logger.warning(f"Failed to save column width for {column_key}: {e}")
+
+    def _schedule_column_save(self, column_key: str, width: int) -> None:
+        """Schedule delayed save of column width changes."""
+        from config import COLUMN_RESIZE_BEHAVIOR
+        if not COLUMN_RESIZE_BEHAVIOR.get("PRESERVE_USER_WIDTHS", True):
             return
+
+        # Store the pending change
+        self._pending_column_changes[column_key] = width
+
+        # Cancel existing timer if any
+        if self._config_save_timer:
+            self._config_save_timer.stop()
+            self._config_save_timer = None
+
+        # Start new timer for delayed save (7 seconds)
+        self._config_save_timer = QTimer()
+        self._config_save_timer.setSingleShot(True)
+        self._config_save_timer.timeout.connect(self._save_pending_column_changes)
+        self._config_save_timer.start(7000)  # 7 seconds delay
+
+        logger.debug(f"Scheduled delayed save for column '{column_key}' width {width}px (will save in 7 seconds)")
+
+    def _save_pending_column_changes(self) -> None:
+        """Save all pending column width changes to config.json."""
+        if not self._pending_column_changes:
+            return
+
+        try:
+            from utils.json_config_manager import load_config, save_config
+            config = load_config()
+            if "file_table_column_widths" not in config:
+                config["file_table_column_widths"] = {}
+
+            # Apply all pending changes
+            for column_key, width in self._pending_column_changes.items():
+                config["file_table_column_widths"][column_key] = width
+
+            save_config(config)
+
+            logger.info(f"Saved {len(self._pending_column_changes)} column width changes to config")
+
+            # Clear pending changes
+            self._pending_column_changes.clear()
+
+        except Exception as e:
+            logger.error(f"Failed to save pending column changes: {e}")
+        finally:
+            # Clean up timer
+            if self._config_save_timer:
+                self._config_save_timer = None
+
+    def _force_save_column_changes(self) -> None:
+        """Force immediate save of any pending column changes (called on shutdown)."""
+        if self._pending_column_changes:
+            logger.debug("Force saving pending column changes on shutdown")
+            self._save_pending_column_changes()
+
+        # Cancel any pending timer
+        if self._config_save_timer:
+            self._config_save_timer.stop()
+            self._config_save_timer = None
+
+    def _on_column_resized(self, logical_index: int, old_size: int, new_size: int) -> None:
+        """Handle column resize events and save widths to config."""
+        if logical_index == 0:  # Skip status column
+            return
+
+        # Get column key from logical index
+        column_key = self._get_column_key_from_index(logical_index)
+        if not column_key:
+            return
+
+        # Apply minimum width constraint
+        from config import FILE_TABLE_COLUMN_CONFIG, GLOBAL_MIN_COLUMN_WIDTH
+        column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
+        min_width = max(column_config.get('min_width', GLOBAL_MIN_COLUMN_WIDTH), GLOBAL_MIN_COLUMN_WIDTH)
+
+        if new_size < min_width:
+            self.setColumnWidth(logical_index, min_width)
+            new_size = min_width
+
+        # Schedule save for delayed updates
+        self._schedule_column_save(column_key, new_size)
+
+        logger.debug(f"Column '{column_key}' resized to {new_size}px")
+
+    def _on_column_moved(self, logical_index: int, old_visual_index: int, new_visual_index: int) -> None:
+        """Handle column reordering and save order to config."""
+        if logical_index == 0:  # Don't allow moving status column
+            return
+
+        # Save new column order to config
+        try:
+            from utils.json_config_manager import load_config, save_config
+            config = load_config()
+            # TODO: Implement column order saving
+            logger.debug(f"Column moved from position {old_visual_index} to {new_visual_index}")
+        except Exception as e:
+            logger.warning(f"Failed to save column order: {e}")
+
+    def _get_column_key_from_index(self, logical_index: int) -> str:
+        """Get column key from logical index."""
+        if logical_index == 0:
+            return "status"
 
         # Get visible columns from model
         visible_columns = []
         if hasattr(self.model(), 'get_visible_columns'):
             visible_columns = self.model().get_visible_columns()
         else:
-            # Fallback for old model
             visible_columns = ['filename', 'file_size', 'type', 'modified']
 
-        # Try to get fontMetrics from ApplicationContext, fallback to parent traversal
-        font_metrics = None
-        try:
-            get_app_context()
-            # Try to get main window through context for font metrics
-            # This is a transitional approach until we fully migrate font handling
-            parent_window = self.parent()
-            while parent_window and not hasattr(parent_window, "fontMetrics"):
-                parent_window = parent_window.parent()
+        # Convert logical index to column key
+        column_index = logical_index - 1  # -1 because column 0 is status
+        if 0 <= column_index < len(visible_columns):
+            return visible_columns[column_index]
 
-            if parent_window:
-                font_metrics = parent_window.fontMetrics()
-            else:
-                logger.warning(
-                    "[FileTableView] Cannot find parent window with fontMetrics",
-                    extra={"dev_only": True},
-                )
-                return
-        except RuntimeError:
-            # ApplicationContext not ready yet, use legacy approach
-            parent_window = self.parent()
-            while parent_window and not hasattr(parent_window, "fontMetrics"):
-                parent_window = parent_window.parent()
-
-            if not parent_window:
-                logger.warning(
-                    "[FileTableView] Cannot find parent window with fontMetrics",
-                    extra={"dev_only": True},
-                )
-                return
-
-            font_metrics = parent_window.fontMetrics()
-
-        # Configure status column (column 0) - always fixed width
-        from config import FILE_TABLE_COLUMN_CONFIG, FILE_TABLE_COLUMN_WIDTHS
-
-        status_width = FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"]
-        header.setSectionResizeMode(0, QHeaderView.Fixed)
-        self.setColumnWidth(0, status_width)
-
-        # Configure each visible dynamic column (starting from column 1)
-        for i, column_key in enumerate(visible_columns):
-            column_index = i + 1  # +1 because column 0 is status column
-            column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
-
-            if column_key == 'filename':
-                # Filename column - Interactive with minimum width protection and dynamic sizing
-                filename_min = font_metrics.horizontalAdvance("Long_Filename_Example_2024.jpeg") + 30
-                filename_width = self._calculate_filename_width()
-
-                header.setSectionResizeMode(column_index, QHeaderView.Interactive)
-                self.setColumnWidth(column_index, filename_width)
-
-                # Store minimum width for filename column enforcement
-                self._filename_min_width = max(filename_min, 333)
-                self._user_preferred_width = filename_width
-                self._filename_column_index = column_index  # Store the actual column index
-
-                # Initialize user preference tracking
-                if not hasattr(self, "_has_manual_preference"):
-                    self._has_manual_preference = False
-
-                # Connect signal to enforce filename column minimum width
-                header.sectionResized.connect(self._on_filename_resized)
-
-            else:
-                # Other columns - Fixed width
-                column_width = column_config.get('width', 100)
-                header.setSectionResizeMode(column_index, QHeaderView.Fixed)
-                self.setColumnWidth(column_index, column_width)
-
-        # Apply general minimum size to header (for all columns)
-        header.setMinimumSectionSize(20)
-
-        # Enable sorting but disable it specifically for status column (column 0)
-        header.setSortIndicatorShown(True)
-        header.setSectionsClickable(True)
-        self.setSortingEnabled(True)
-
-        # Override sectionClicked to prevent sorting on status column
-        def on_section_clicked(logical_index):
-            if logical_index == 0:
-                return  # Don't sort status column
-            # Let normal sorting happen for other columns
-            self.sortByColumn(logical_index, self.horizontalHeader().sortIndicatorOrder())
-
-        header.sectionClicked.connect(on_section_clicked)
-
-        # Adjust filename column width to available space after initial configuration
-        schedule_resize_adjust(self._trigger_column_adjustment, 10)
-
-    def _on_filename_resized(self, logical_index: int, old_size: int, new_size: int) -> None:
-        """Enforce minimum width and track manual user preferences for filename column."""
-        # Use stored filename column index
-        filename_column_index = getattr(self, '_filename_column_index', None)
-        if filename_column_index is None:
-            return  # Filename column not configured yet
-
-        if logical_index == filename_column_index and hasattr(self, "_filename_min_width"):
-            # Always enforce minimum width
-            if new_size < self._filename_min_width:
-                self.setColumnWidth(filename_column_index, self._filename_min_width)
-                return
-
-            # Track manual user preference only if this is NOT a programmatic resize
-            if not getattr(self, "_programmatic_resize", False):
-                self._user_preferred_width = new_size
-                self._has_manual_preference = True
-                self._recent_manual_resize = True
-
-                # Clear the flag after some time to allow auto-sizing on window changes
-                from utils.timer_manager import schedule_resize_adjust
-
-                schedule_resize_adjust(lambda: setattr(self, "_recent_manual_resize", False), 5000)
+        return ""
 
     def _update_scrollbar_visibility(self) -> None:
         """Update scrollbar visibility based on table content with anti-flickering."""
@@ -522,38 +640,15 @@ class FileTableView(QTableView):
             self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
-        """Handle horizontal splitter movement with optimized filename column sizing."""
-        if not hasattr(self, "_filename_min_width"):
-            return
-
-        # Use stored filename column index
-        filename_column_index = getattr(self, '_filename_column_index', None)
-        if filename_column_index is None:
-            return  # Filename column not configured yet
-
-        # Get current filename width and calculate new optimal width
-        current_filename_width = self.columnWidth(filename_column_index)
-        new_filename_width = self._calculate_filename_width()
-
-        # Always resize for immediate response (no threshold)
-        size_difference = abs(new_filename_width - current_filename_width)
-        should_resize = size_difference > 0  # Resize even for 1px difference
-
-        if should_resize:
-            # Set flag to indicate this is a programmatic resize
-            self._programmatic_resize = True
-            self.setColumnWidth(filename_column_index, new_filename_width)
-            self._programmatic_resize = False
-
-            # Force immediate viewport update to prevent scrollbar flicker
-            self.viewport().update()
-
-            # Update scrollbar visibility after column resize
-            self._update_scrollbar_visibility()
+        """Handle horizontal splitter movement - no longer adjusts filename column."""
+        # No longer needed - columns maintain their fixed widths
+        # Horizontal scrollbar will appear when needed
+        pass
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement."""
-        pass  # Reserved for future use
+        # No special handling needed
+        pass
 
     # =====================================
     # UI Methods
@@ -959,6 +1054,21 @@ class FileTableView(QTableView):
 
     def keyPressEvent(self, event) -> None:
         """Handle keyboard navigation, sync selection, and modifier changes during drag."""
+        # Handle column management shortcuts
+        from config import COLUMN_SHORTCUTS
+
+        # Ctrl+T: Reset column widths to default
+        if event.key() == Qt.Key_T and event.modifiers() == Qt.ControlModifier:
+            self._reset_columns_to_default()
+            event.accept()
+            return
+
+        # Ctrl+Shift+T: Auto-fit columns to content
+        if event.key() == Qt.Key_T and event.modifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
+            self._auto_fit_columns_to_content()
+            event.accept()
+            return
+
         # Don't handle ESC at all - let it pass through to dialogs and other components
         # Cursor cleanup is handled automatically by other mechanisms
 
@@ -1576,162 +1686,12 @@ class FileTableView(QTableView):
         QApplication.processEvents()
 
     def _clear_skip_flag(self):
-        """Clear the skip selection changed flag."""
+        """Clear the skip flag after a delay."""
         self._skip_selection_changed = False
 
-    def _trigger_column_adjustment(self):
-        """Trigger filename column adjustment to available space after initial configuration."""
-
-        # Try to get horizontal splitter to trigger column adjustment
-        try:
-            get_app_context()
-            # Try to get main window through context for splitter access
-            parent_window = self.parent()
-            while parent_window and not hasattr(parent_window, "horizontal_splitter"):
-                parent_window = parent_window.parent()
-
-            if parent_window and hasattr(parent_window, "horizontal_splitter"):
-                horizontal_splitter = parent_window.horizontal_splitter  # type: ignore
-                sizes = horizontal_splitter.sizes()
-                if len(sizes) > 1:
-                    # Trigger the existing column adjustment logic
-                    self.on_horizontal_splitter_moved(sizes[1], 1)
-        except RuntimeError:
-            # ApplicationContext not ready yet, use legacy approach
-            parent_window = self.parent()
-            while parent_window and not hasattr(parent_window, "horizontal_splitter"):
-                parent_window = parent_window.parent()
-
-            if parent_window and hasattr(parent_window, "horizontal_splitter"):
-                horizontal_splitter = parent_window.horizontal_splitter  # type: ignore
-                sizes = horizontal_splitter.sizes()
-                if len(sizes) > 1:
-                    # Trigger the existing column adjustment logic
-                    self.on_horizontal_splitter_moved(sizes[1], 1)
-
-    def _calculate_filename_width(self, source_width: Optional[int] = None) -> int:
-        """
-        Calculate optimal width for filename column based on available space.
-
-        Process:
-        1. Determines available viewport width
-        2. Determines if vertical scrollbar is needed
-        3. Adjusts filename column to fill remaining space without causing horizontal scrollbar
-
-        Args:
-            source_width: Optional source width (ignored - we always use available space)
-
-        Returns:
-            Calculated width that optimally fills available space
-        """
-        # Get minimum width
-        if not hasattr(self, "_filename_min_width"):
-            self._filename_min_width = 250
-
-        try:
-            # Get the actual viewport width (this is what we need to fill)
-            viewport_width = self.viewport().width()
-
-            # If viewport is not ready yet, use fallback
-            if viewport_width <= 0:
-                viewport_width = self.width()
-                if viewport_width <= 0:
-                    return max(
-                        FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"], self._filename_min_width
-                    )
-
-            # Calculate space used by other columns (dynamic columns)
-            other_columns_width = 0
-
-            # Always include status column width
-            other_columns_width += FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"]
-
-            if hasattr(self.model(), 'get_visible_columns'):
-                visible_columns = self.model().get_visible_columns()
-                from config import FILE_TABLE_COLUMN_CONFIG
-
-                for column_key in visible_columns:
-                    if column_key != 'filename':  # Skip filename column
-                        column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
-                        other_columns_width += column_config.get('width', 100)
-            else:
-                # Fallback to old hardcoded columns (excluding status column since we already added it)
-                other_columns_width += (
-                    FILE_TABLE_COLUMN_WIDTHS["FILESIZE_COLUMN"]
-                    + FILE_TABLE_COLUMN_WIDTHS["EXTENSION_COLUMN"]
-                    + FILE_TABLE_COLUMN_WIDTHS["DATE_COLUMN"]
-                )
-
-            # Check if we need vertical scrollbar
-            needs_vertical_scrollbar = self._needs_vertical_scrollbar()
-            scrollbar_width = self._get_scrollbar_width() if needs_vertical_scrollbar else 0
-
-            # Calculate available width for filename column
-            # Leave minimal margin to prevent horizontal scrollbar
-            margin = 1 if needs_vertical_scrollbar else 2  # Even smaller margin when no scrollbar
-            available_width = viewport_width - other_columns_width - scrollbar_width - margin
-
-            # Ensure we don't go below minimum
-            final_width = max(available_width, self._filename_min_width)
-            return final_width
-
-        except Exception:
-            # Fallback to config default
-            return max(FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"], self._filename_min_width)
-
-    def _needs_vertical_scrollbar(self) -> bool:
-        """
-        Determine if vertical scrollbar is needed based on content height vs viewport height.
-
-        Returns:
-            True if vertical scrollbar is needed, False otherwise
-        """
-        model = self.model()
-        if not model:
-            return False
-
-        row_count = model.rowCount()
-        if row_count == 0:
-            return False
-
-        # Get actual dimensions
-        viewport_height = self.viewport().height()
-        if viewport_height <= 0:
-            return False
-
-        # Calculate content height
-        # Use actual row height if available, otherwise estimate
-        if row_count > 0:
-            first_row_height = self.rowHeight(0)
-            row_height = first_row_height if first_row_height > 0 else 25  # fallback
-        else:
-            row_height = 25
-
-        total_content_height = row_count * row_height
-
-        # Add header height
-        header = self.horizontalHeader()
-        header_height = header.height() if header else 0
-
-        # Check if content exceeds viewport (with small buffer for safety)
-        total_needed_height = total_content_height + header_height
-        buffer = 5  # Small buffer to account for borders and margins
-        needs_scrollbar = total_needed_height > (viewport_height - buffer)
-
-        return needs_scrollbar
-
-    def _get_scrollbar_width(self) -> int:
-        """Get the width of the vertical scrollbar."""
-        try:
-            if hasattr(self, "verticalScrollBar"):
-                scrollbar = self.verticalScrollBar()
-                if scrollbar and scrollbar.isVisible():
-                    width = scrollbar.width()
-                    if width > 0:
-                        return width
-        except (AttributeError, RuntimeError):
-            pass
-        return 14  # Default estimate
+    # =====================================
+    # Column Management Methods
+    # =====================================
 
     def _load_column_visibility_config(self) -> dict:
         """Load column visibility configuration from config.json."""
@@ -1794,7 +1754,7 @@ class FileTableView(QTableView):
             if hasattr(model, 'update_visible_columns'):
                 model.update_visible_columns(self._visible_columns)
 
-                # Reconfigure columns with new layout
+                # Reconfigure columns with new layout - this will set proper widths and scrollbar policy
                 self._configure_columns()
 
                 # Force gentle refresh of the view
@@ -1824,9 +1784,8 @@ class FileTableView(QTableView):
 
         except Exception as e:
             logger.error(f"Error updating table columns: {e}")
-        finally:
-            # Trigger column width adjustment after column changes
-            self._trigger_column_adjustment()
+
+        # No longer need to trigger column adjustment - columns maintain fixed widths
 
     def _get_metadata_tree(self):
         """Get the metadata tree view."""
@@ -1866,3 +1825,79 @@ class FileTableView(QTableView):
 
         except Exception as e:
             logger.warning(f"Error clearing preview/metadata displays: {e}")
+
+    # =====================================
+    # Column Management Shortcuts
+    # =====================================
+
+    def _reset_columns_to_default(self) -> None:
+        """Reset all column widths to their default values (Ctrl+T)."""
+        try:
+            from config import FILE_TABLE_COLUMN_CONFIG
+
+            # Get visible columns from model
+            visible_columns = []
+            if hasattr(self.model(), 'get_visible_columns'):
+                visible_columns = self.model().get_visible_columns()
+            else:
+                visible_columns = ['filename', 'file_size', 'type', 'modified']
+
+            # Reset each column to its default width
+            for i, column_key in enumerate(visible_columns):
+                column_index = i + 1  # +1 because column 0 is status column
+                column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
+                default_width = column_config.get('width', 100)
+
+                self.setColumnWidth(column_index, default_width)
+
+                # Schedule save for delayed updates
+                self._schedule_column_save(column_key, default_width)
+
+            logger.info(f"Reset {len(visible_columns)} columns to default widths")
+
+        except Exception as e:
+            logger.error(f"Error resetting columns to default: {e}")
+
+    def _auto_fit_columns_to_content(self) -> None:
+        """Auto-fit all column widths to their content (Ctrl+Shift+T)."""
+        try:
+            from config import FILE_TABLE_COLUMN_CONFIG, GLOBAL_MIN_COLUMN_WIDTH
+
+            if not self.model() or self.model().rowCount() == 0:
+                logger.warning("Cannot auto-fit columns: no data available")
+                return
+
+            # Get visible columns from model
+            visible_columns = []
+            if hasattr(self.model(), 'get_visible_columns'):
+                visible_columns = self.model().get_visible_columns()
+            else:
+                visible_columns = ['filename', 'file_size', 'type', 'modified']
+
+            header = self.horizontalHeader()
+            if not header:
+                return
+
+            # Auto-fit each column to its content
+            for i, column_key in enumerate(visible_columns):
+                column_index = i + 1  # +1 because column 0 is status column
+                column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
+
+                # Use Qt's built-in resize to contents
+                header.resizeSection(column_index, header.sectionSizeHint(column_index))
+
+                # Apply minimum width constraint
+                min_width = max(column_config.get('min_width', GLOBAL_MIN_COLUMN_WIDTH), GLOBAL_MIN_COLUMN_WIDTH)
+                current_width = self.columnWidth(column_index)
+                final_width = max(current_width, min_width)
+
+                if final_width != current_width:
+                    self.setColumnWidth(column_index, final_width)
+
+                # Schedule save for delayed updates
+                self._schedule_column_save(column_key, final_width)
+
+            logger.info(f"Auto-fitted {len(visible_columns)} columns to content")
+
+        except Exception as e:
+            logger.error(f"Error auto-fitting columns to content: {e}")

@@ -470,6 +470,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": True,
         "removable": False,  # Always visible
         "width": 250,
+        "alignment": "left",
+        "min_width": 150,
     },
     "file_size": {
         "title": "File Size",
@@ -477,6 +479,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": True,
         "removable": True,
         "width": 75,
+        "alignment": "right",  # Numbers align right
+        "min_width": 60,
     },
     "type": {
         "title": "Type",
@@ -484,6 +488,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": True,
         "removable": True,
         "width": 50,
+        "alignment": "left",
+        "min_width": 40,
     },
     "modified": {
         "title": "Modified",
@@ -491,6 +497,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": True,
         "removable": True,
         "width": 115,
+        "alignment": "center",  # Dates look good centered
+        "min_width": 100,
     },
     "rotation": {
         "title": "Rotation",
@@ -498,6 +506,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 80,
+        "alignment": "right",  # Numbers align right
+        "min_width": 60,
     },
     "duration": {
         "title": "Duration",
@@ -505,6 +515,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 80,
+        "alignment": "right",  # Time values align right
+        "min_width": 60,
     },
     "audio_channels": {
         "title": "Audio Channels",
@@ -512,6 +524,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 100,
+        "alignment": "right",  # Numbers align right
+        "min_width": 80,
     },
     "audio_format": {
         "title": "Audio Format",
@@ -519,6 +533,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 100,
+        "alignment": "left",
+        "min_width": 80,
     },
     "aperture": {
         "title": "Aperture",
@@ -526,6 +542,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 80,
+        "alignment": "right",  # Camera values align right
+        "min_width": 60,
     },
     "iso": {
         "title": "ISO",
@@ -533,6 +551,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 60,
+        "alignment": "right",  # Numbers align right
+        "min_width": 50,
     },
     "shutter_speed": {
         "title": "Shutter Speed",
@@ -540,6 +560,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 100,
+        "alignment": "right",  # Camera values align right
+        "min_width": 80,
     },
     "white_balance": {
         "title": "White Balance",
@@ -547,6 +569,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 100,
+        "alignment": "left",
+        "min_width": 80,
     },
     "image_size": {
         "title": "Image Size",
@@ -554,6 +578,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 100,
+        "alignment": "right",  # Dimensions align right
+        "min_width": 80,
     },
     "compression": {
         "title": "Compression",
@@ -561,6 +587,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 100,
+        "alignment": "left",
+        "min_width": 80,
     },
     "device_model": {
         "title": "Device Model",
@@ -568,6 +596,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 120,
+        "alignment": "left",
+        "min_width": 100,
     },
     "device_serial_no": {
         "title": "Device Serial No",
@@ -575,6 +605,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 120,
+        "alignment": "left",  # Serial numbers align left
+        "min_width": 100,
     },
     "video_fps": {
         "title": "Video FPS",
@@ -582,6 +614,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 80,
+        "alignment": "right",  # Numbers align right
+        "min_width": 60,
     },
     "video_avg_bitrate": {
         "title": "Video Avg. Bitrate",
@@ -589,6 +623,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 120,
+        "alignment": "right",  # Numbers align right
+        "min_width": 100,
     },
     "video_codec": {
         "title": "Video Codec",
@@ -596,6 +632,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 100,
+        "alignment": "left",
+        "min_width": 80,
     },
     "video_format": {
         "title": "Video Format",
@@ -603,6 +641,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 100,
+        "alignment": "left",
+        "min_width": 80,
     },
     "device_manufacturer": {
         "title": "Device Manufacturer",
@@ -610,6 +650,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 120,
+        "alignment": "left",
+        "min_width": 100,
     },
     "file_hash": {
         "title": "File Hash",
@@ -617,7 +659,30 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 200,
+        "alignment": "left",  # Hash values align left
+        "min_width": 150,
     },
+}
+
+# =====================================
+# COLUMN MANAGEMENT SETTINGS
+# =====================================
+
+# Global minimum column width (applies to all columns)
+GLOBAL_MIN_COLUMN_WIDTH = 50
+
+# Keyboard shortcuts for column operations
+COLUMN_SHORTCUTS = {
+    "RESET_TO_DEFAULT": "Ctrl+T",  # Reset column widths to default
+    "AUTO_FIT_CONTENT": "Ctrl+Shift+T",  # Auto-fit columns to content
+}
+
+# Column resizing behavior
+COLUMN_RESIZE_BEHAVIOR = {
+    "ENABLE_HORIZONTAL_SCROLLBAR": True,  # Always show horizontal scrollbar when needed
+    "AUTO_ADJUST_FILENAME": False,  # Disable complex filename auto-adjustment
+    "PRESERVE_USER_WIDTHS": True,  # Save user-adjusted widths to config.json
+    "ENABLE_COLUMN_REORDERING": True,  # Allow drag & drop column reordering
 }
 
 # =====================================

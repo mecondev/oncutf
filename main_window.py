@@ -1082,8 +1082,18 @@ class MainWindow(QMainWindow):
                 logger.error(f"[CloseEvent] Error creating database backup: {e}")
 
     def _shutdown_step_config(self):
-        """Step 2: Save window configuration."""
+        """Step 2: Save window configuration and column changes."""
+        # Save window configuration
         self.window_config_manager.save_window_config()
+
+        # Force save any pending column width changes
+        try:
+            file_table = getattr(self, 'file_table', None)
+            if file_table and hasattr(file_table, '_force_save_column_changes'):
+                file_table._force_save_column_changes()
+                logger.info("[CloseEvent] Forced save of pending column changes")
+        except Exception as e:
+            logger.warning(f"[CloseEvent] Error saving pending column changes: {e}")
 
     def _shutdown_step_batch_operations(self):
         """Step 3: Flush all pending batch operations."""

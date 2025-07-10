@@ -293,10 +293,18 @@ class FileTableModel(QAbstractTableModel):
                 return ""  # Empty string for missing metadata
 
         elif role == Qt.TextAlignmentRole:
-            # Right-align numeric columns
-            if column_key in ["file_size", "duration", "iso", "video_fps", "video_avg_bitrate"]:
+            # Get alignment from configuration
+            from config import FILE_TABLE_COLUMN_CONFIG
+            column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
+            alignment = column_config.get('alignment', 'left')
+
+            # Map alignment strings to Qt constants
+            if alignment == 'right':
                 return Qt.AlignRight | Qt.AlignVCenter
-            return Qt.AlignLeft | Qt.AlignVCenter
+            elif alignment == 'center':
+                return Qt.AlignCenter
+            else:  # left or default
+                return Qt.AlignLeft | Qt.AlignVCenter
 
         return QVariant()
 
