@@ -28,6 +28,24 @@ class MetadataModule:
     """
 
     @staticmethod
+    def clean_metadata_value(value: str) -> str:
+        """
+        Clean metadata value for filename safety by replacing problematic characters.
+
+        Args:
+            value (str): The raw metadata value
+
+        Returns:
+            str: Cleaned value safe for use in filenames
+        """
+        if not value:
+            return value
+
+        # Replace colons and spaces with underscores for filename safety
+        cleaned = value.replace(':', '_').replace(' ', '_')
+        return cleaned
+
+    @staticmethod
     def apply_from_data(data: dict, file_item: FileItem, index: int = 0, metadata_cache: Optional[dict] = None) -> str:
         """
         Extracts a metadata value from the cache for use in filename.
@@ -39,7 +57,7 @@ class MetadataModule:
             metadata_cache (dict): full_path → metadata dict
 
         Returns:
-            str: The stringified metadata value or a fallback ("unknown", "invalid")
+            str: The stringified metadata value or a fallback ("missing", "invalid")
         """
         logger.debug(f"[MetadataModule] apply_from_data called with data: {data}")
 
@@ -104,11 +122,12 @@ class MetadataModule:
             value = metadata.get(field)
             if value is None:
                 logger.info(f"[MetadataModule] No '{field}' field in metadata for {file_item.filename}")
-                return "unknown"
+                return "missing"
 
-            # Format the value appropriately
+            # Format the value appropriately and clean it for filename safety
             try:
-                return str(value).strip()
+                cleaned_value = MetadataModule.clean_metadata_value(str(value).strip())
+                return cleaned_value
             except Exception as e:
                 logger.warning(f"[MetadataModule] Failed to stringify metadata value for '{field}': {e}")
                 return "invalid"
@@ -118,25 +137,26 @@ class MetadataModule:
             value = metadata.get("creation_date") or metadata.get("date_created")
             if not value:
                 logger.info(f"[MetadataModule] No 'creation_date' field in metadata for {file_item.filename}")
-                return "unknown"
-            return str(value)
+                return "missing"
+            return MetadataModule.clean_metadata_value(str(value))
 
         if field == "date":
             value = metadata.get("date")
             if not value:
                 logger.info(f"[MetadataModule] No 'date' field in metadata for {file_item.filename}")
-                return "unknown"
-            return str(value)
+                return "missing"
+            return MetadataModule.clean_metadata_value(str(value))
 
         # === Generic metadata field fallback ===
         if field:
             value = metadata.get(field)
             if value is None:
                 logger.warning(f"[MetadataModule] Field '{field}' not found in metadata for {path}")
-                return "unknown"
+                return "missing"
 
             try:
-                return str(value).strip()
+                cleaned_value = MetadataModule.clean_metadata_value(str(value).strip())
+                return cleaned_value
             except Exception as e:
                 logger.warning(f"[MetadataModule] Failed to stringify metadata value: {e}")
                 return "invalid"
