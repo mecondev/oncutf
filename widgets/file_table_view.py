@@ -1767,10 +1767,6 @@ class FileTableView(QTableView):
             logger.warning(f"Cannot toggle non-removable column: {column_key}")
             return  # Can't toggle non-removable columns
 
-        # Store current selection and metadata state before update
-        current_selection = self._get_current_selection()
-        current_metadata = self._get_current_metadata()
-
         # Toggle visibility
         current_visibility = self._visible_columns.get(column_key, column_config["default_visible"])
         self._visible_columns[column_key] = not current_visibility
@@ -1778,70 +1774,98 @@ class FileTableView(QTableView):
         # Save configuration
         self._save_column_visibility_config()
 
-        # Update table display with full refresh
+        # Update table display with gentle refresh (preserves selection)
         self._update_table_columns()
-
-        # Refresh metadata display after table update
-        self._refresh_metadata_after_header_toggle(current_selection, current_metadata)
 
         logger.info(f"Toggled column '{column_key}' visibility to {not current_visibility}")
 
-    def _get_current_metadata(self):
-        """Get current metadata from the metadata tree view."""
+    def _update_table_columns(self) -> None:
+        """Update table columns based on visibility configuration while preserving selection."""
+        model = self.model()
+        if not model:
+            logger.warning("No model available for column update")
+            return
+
         try:
-            # Get the parent window to access metadata tree
+            # Store current selection before any changes
+            selected_rows = self._get_current_selection()
+
+            # Block selection signals to prevent interference during update
+            selection_model = self.selectionModel()
+            if selection_model:
+                selection_model.blockSignals(True)
+
+            # Block view updates to prevent visual flicker
+            self.setUpdatesEnabled(False)
+
+            # Update the model with new visible columns
+            if hasattr(model, 'update_visible_columns'):
+                model.update_visible_columns(self._visible_columns)
+
+                # Reconfigure columns with new layout
+                self._configure_columns()
+
+                # Force view to update column display without losing selection
+                self.updateGeometry()
+                self.viewport().update()
+
+                # Count visible columns for logging
+                visible_count = sum(1 for visible in self._visible_columns.values() if visible)
+                logger.info(f"Table columns updated - {visible_count} columns visible")
+
+            else:
+                logger.warning("Model does not support dynamic columns")
+
+        except Exception as e:
+            logger.error(f"Error updating table columns: {e}")
+        finally:
+            # Re-enable updates first
+            self.setUpdatesEnabled(True)
+
+            # Restore selection if it existed
+            if selected_rows and selection_model:
+                selection_model.blockSignals(False)
+
+                # Clear any existing selection first
+                selection_model.clearSelection()
+
+                # Restore the selection
+                self._sync_qt_selection_model(selected_rows)
+
+                # Emit the selection changed signal to update dependent views
+                self.selection_changed.emit(list(selected_rows))
+
+                logger.debug(f"Preserved selection of {len(selected_rows)} rows after column update")
+            else:
+                # No selection to restore, just unblock signals
+                if selection_model:
+                    selection_model.blockSignals(False)
+
+            # Trigger column width adjustment after column changes
+            self._trigger_column_adjustment()
+
+    def _clear_preview_and_metadata(self) -> None:
+        """Clear preview and metadata displays when no selection exists."""
+        try:
+            # Get the parent window to access preview and metadata components
             parent_window = self.parent()
             while parent_window and not hasattr(parent_window, 'metadata_tree_view'):
                 parent_window = parent_window.parent()
 
-            if parent_window and hasattr(parent_window, 'metadata_tree_view'):
-                metadata_tree = parent_window.metadata_tree_view
-                if hasattr(metadata_tree, '_current_file_metadata'):
-                    return getattr(metadata_tree, '_current_file_metadata', None)
+            if parent_window:
+                # Clear metadata display
+                if hasattr(parent_window, 'metadata_tree_view'):
+                    metadata_tree = parent_window.metadata_tree_view
+                    if hasattr(metadata_tree, 'show_empty_state'):
+                        metadata_tree.show_empty_state("No file selected")
 
-            return None
-        except Exception as e:
-            logger.warning(f"Error getting current metadata: {e}")
-            return None
+                # Clear preview display
+                if hasattr(parent_window, 'preview_tables_view'):
+                    preview_view = parent_window.preview_tables_view
+                    if hasattr(preview_view, 'clear_view'):
+                        preview_view.clear_view()
 
-    def _refresh_metadata_after_header_toggle(self, previous_selection, previous_metadata):
-        """Refresh metadata display after header column toggle."""
-        try:
-            # Get the metadata tree view
-            parent_window = self.parent()
-            while parent_window and not hasattr(parent_window, 'metadata_tree_view'):
-                parent_window = parent_window.parent()
-
-            if not parent_window or not hasattr(parent_window, 'metadata_tree_view'):
-                return
-
-            metadata_tree = parent_window.metadata_tree_view
-
-            def delayed_refresh():
-                try:
-                    # Check if we still have the same selection
-                    current_selection = self._get_current_selection()
-
-                    if current_selection and previous_metadata:
-                        # We have metadata to restore
-                        metadata_tree.display_metadata(previous_metadata, "header_toggle_refresh")
-                        logger.debug("Refreshed metadata display after header column toggle")
-                    elif current_selection:
-                        # We have selection but no cached metadata, trigger refresh
-                        if hasattr(metadata_tree, 'handle_selection_change'):
-                            metadata_tree.handle_selection_change()
-                        logger.debug("Triggered selection refresh after header column toggle")
-                    else:
-                        # No selection, show empty state
-                        if hasattr(metadata_tree, 'show_empty_state'):
-                            metadata_tree.show_empty_state("No file selected")
-                        logger.debug("Showed empty state after header column toggle")
-
-                except Exception as e:
-                    logger.warning(f"Error in delayed metadata refresh after header toggle: {e}")
-
-            # Schedule the refresh with a small delay to ensure table is fully updated
-            QTimer.singleShot(50, delayed_refresh)
+                logger.debug("Cleared preview and metadata displays after column update")
 
         except Exception as e:
-            logger.warning(f"Error scheduling metadata refresh after header toggle: {e}")
+            logger.warning(f"Error clearing preview/metadata displays: {e}")
