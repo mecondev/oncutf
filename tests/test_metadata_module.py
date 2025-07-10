@@ -6,22 +6,15 @@ Date: 2025-05-31
 
 This module provides functionality for the OnCutF batch file renaming application.
 """
-"""
-Module: tests/test_metadata_module.py
-
-
-This module provides functionality for the OnCutF batch file renaming application.
-"""
 
 import warnings
 
 from modules.metadata_module import MetadataModule
 from tests.mocks import MockFileItem
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
-
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 
 def test_metadata_module_basic():
@@ -29,7 +22,8 @@ def test_metadata_module_basic():
     file_item = MockFileItem()
     metadata_cache = {"/mock/path/mockfile.mp3": {"date": "2024-01-01 15:30:00"}}
     result = MetadataModule.apply_from_data(data, file_item, metadata_cache=metadata_cache)
-    assert result == "2024-01-01 15:30:00"
+    # Spaces are replaced with underscores for filename safety
+    assert result == "2024-01-01_15_30_00"
 
 
 def test_metadata_module_missing_field():
@@ -37,15 +31,22 @@ def test_metadata_module_missing_field():
     file_item = MockFileItem()
     metadata_cache = {"/mock/path/mockfile.mp3": {"date": "2024-01-01"}}
     result = MetadataModule.apply_from_data(data, file_item, metadata_cache=metadata_cache)
-    assert result == "unknown"
+    # Default fallback value is now "missing" instead of "unknown"
+    assert result == "missing"
 
 
 def test_metadata_module_metadata_dict():
     data = {"type": "metadata", "field": "date", "category": "metadata_keys"}
     file_item = MockFileItem()
-    metadata_cache = {"/mock/path/mockfile.mp3": {"FileModifyDate": "2024:01:01 15:30:00", "date": "2024-01-01 15:30:00"}}
+    metadata_cache = {
+        "/mock/path/mockfile.mp3": {
+            "FileModifyDate": "2024:01:01 15:30:00",
+            "date": "2024-01-01 15:30:00",
+        },
+    }
     result = MetadataModule.apply_from_data(data, file_item, metadata_cache=metadata_cache)
-    assert result == "2024-01-01 15:30:00"
+    # Spaces are replaced with underscores for filename safety
+    assert result == "2024-01-01_15_30_00"
 
 
 def test_metadata_module_exif_style_date():
@@ -53,7 +54,8 @@ def test_metadata_module_exif_style_date():
     file_item = MockFileItem()
     metadata_cache = {"/mock/path/mockfile.mp3": {"DateTimeOriginal": "2024:05:12 10:00:00"}}
     result = MetadataModule.apply_from_data(data, file_item, metadata_cache=metadata_cache)
-    assert result == "2024:05:12 10:00:00"
+    # Colons and spaces are replaced with underscores for filename safety
+    assert result == "2024_05_12_10_00_00"
 
 
 def test_metadata_module_invalid_date_format():
@@ -61,7 +63,8 @@ def test_metadata_module_invalid_date_format():
     file_item = MockFileItem()
     metadata_cache = {"/mock/path/mockfile.mp3": {"FileModifyDate": "12-05-2024 10:00"}}
     result = MetadataModule.apply_from_data(data, file_item, metadata_cache=metadata_cache)
-    assert result == "12-05-2024 10:00"
+    # Spaces are replaced with underscores for filename safety
+    assert result == "12-05-2024_10_00"
 
 
 def test_metadata_module_date_with_timezone():
@@ -69,7 +72,8 @@ def test_metadata_module_date_with_timezone():
     file_item = MockFileItem()
     metadata_cache = {"/mock/path/mockfile.mp3": {"FileModifyDate": "2024-05-12 10:00:00+03:00"}}
     result = MetadataModule.apply_from_data(data, file_item, metadata_cache=metadata_cache)
-    assert result == "2024-05-12 10:00:00+03:00"
+    # Colons and spaces are replaced with underscores for filename safety
+    assert result == "2024-05-12_10_00_00+03_00"
 
 
 def test_metadata_module_unknown_field_type():
@@ -77,6 +81,7 @@ def test_metadata_module_unknown_field_type():
     file_item = MockFileItem()
     metadata_cache = {"/mock/path/mockfile.mp3": {"Model": "Canon"}}
     result = MetadataModule.apply_from_data(data, file_item, metadata_cache=metadata_cache)
+    # Simple text values should remain unchanged
     assert result == "Canon"
 
 
@@ -85,7 +90,8 @@ def test_metadata_module_with_cache_priority():
     file_item = MockFileItem(filename="cached.mp3")
     cache = {"/mock/path/cached.mp3": {"FileModifyDate": "2023:12:25 11:22:33"}}
     result = MetadataModule.apply_from_data(data, file_item, metadata_cache=cache)
-    assert result == "2023:12:25 11:22:33"
+    # Colons and spaces are replaced with underscores for filename safety
+    assert result == "2023_12_25_11_22_33"
 
 
 def test_metadata_module_cache_fallback_to_file_metadata():
@@ -93,4 +99,5 @@ def test_metadata_module_cache_fallback_to_file_metadata():
     file_item = MockFileItem(filename="uncached.mp3")
     cache = {}
     result = MetadataModule.apply_from_data(data, file_item, metadata_cache=cache)
-    assert result == "unknown"
+    # Default fallback value is now "missing" instead of "unknown"
+    assert result == "missing"

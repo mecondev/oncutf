@@ -9,6 +9,7 @@ A comprehensive JSON-based configuration manager for any application.
 Handles JSON serialization, deserialization, and management with support for
 multiple configuration categories, automatic backups, and thread-safe operations.
 """
+
 import json
 import os
 import shutil
@@ -22,7 +23,7 @@ from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class ConfigCategory(Generic[T]):
@@ -64,22 +65,16 @@ class WindowConfig(ConfigCategory):
 
     def __init__(self):
         defaults = {
-            'geometry': None,  # No default geometry - will trigger smart sizing
-            'window_state': 'normal',
-            'splitter_states': {
-                'horizontal': [250, 674, 250],
-                'vertical': [500, 300]
-            },
-            'column_widths': {
-                'file_table': [23, 345, 80, 60, 130],
-                'metadata_tree': [180, 500]
-            },
-            'last_folder': '',
-            'recursive_mode': False,
-            'sort_column': 1,
-            'sort_order': 0
+            "geometry": None,  # No default geometry - will trigger smart sizing
+            "window_state": "normal",
+            "splitter_states": {"horizontal": [250, 674, 250], "vertical": [500, 300]},
+            "column_widths": {"file_table": [23, 345, 80, 60, 130], "metadata_tree": [180, 500]},
+            "last_folder": "",
+            "recursive_mode": False,
+            "sort_column": 1,
+            "sort_order": 0,
         }
-        super().__init__('window', defaults)
+        super().__init__("window", defaults)
 
 
 class FileHashConfig(ConfigCategory):
@@ -87,27 +82,27 @@ class FileHashConfig(ConfigCategory):
 
     def __init__(self):
         defaults = {
-            'enabled': True,
-            'algorithm': 'CRC32',
-            'cache_size_limit': 10000,
-            'auto_cleanup_days': 30,
-            'hashes': {}
+            "enabled": True,
+            "algorithm": "CRC32",
+            "cache_size_limit": 10000,
+            "auto_cleanup_days": 30,
+            "hashes": {},
         }
-        super().__init__('file_hashes', defaults)
+        super().__init__("file_hashes", defaults)
 
     def add_file_hash(self, filepath: str, hash_value: str, file_size: int) -> None:
         """Add or update file hash entry."""
-        hashes = self.get('hashes', {})
+        hashes = self.get("hashes", {})
         hashes[filepath] = {
-            'hash': hash_value,
-            'timestamp': datetime.now().isoformat(),
-            'size': file_size
+            "hash": hash_value,
+            "timestamp": datetime.now().isoformat(),
+            "size": file_size,
         }
-        self.set('hashes', hashes)
+        self.set("hashes", hashes)
 
     def get_file_hash(self, filepath: str) -> Optional[Dict[str, Any]]:
         """Get file hash entry if exists."""
-        hashes = self.get('hashes', {})
+        hashes = self.get("hashes", {})
         return hashes.get(filepath)
 
 
@@ -116,16 +111,16 @@ class AppConfig(ConfigCategory):
 
     def __init__(self):
         defaults = {
-            'theme': 'dark',
-            'language': 'en',
-            'auto_save_config': True,
-            'recent_folders': []
+            "theme": "dark",
+            "language": "en",
+            "auto_save_config": True,
+            "recent_folders": [],
         }
-        super().__init__('app', defaults)
+        super().__init__("app", defaults)
 
     def add_recent_folder(self, folder_path: str, max_recent: int = 10) -> None:
         """Add folder to recent folders list."""
-        recent = self.get('recent_folders', [])
+        recent = self.get("recent_folders", [])
 
         if folder_path in recent:
             recent.remove(folder_path)
@@ -135,7 +130,7 @@ class AppConfig(ConfigCategory):
         if len(recent) > max_recent:
             recent = recent[:max_recent]
 
-        self.set('recent_folders', recent)
+        self.set("recent_folders", recent)
 
 
 class JSONConfigManager:
@@ -144,23 +139,26 @@ class JSONConfigManager:
     def __init__(self, app_name: str = "app", config_dir: Optional[str] = None):
         self.app_name = app_name
         self.config_dir = Path(config_dir or self._get_default_config_dir())
-        self.config_file = self.config_dir / 'config.json'
-        self.backup_file = self.config_dir / 'config.json.bak'
+        self.config_file = self.config_dir / "config.json"
+        self.backup_file = self.config_dir / "config.json.bak"
 
         self._lock = threading.RLock()
         self._categories: Dict[str, ConfigCategory] = {}
 
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"[JSONConfigManager] Initialized for '{app_name}' with dir: {self.config_dir}", extra={"dev_only": True})
+        logger.info(
+            f"[JSONConfigManager] Initialized for '{app_name}' with dir: {self.config_dir}",
+            extra={"dev_only": True},
+        )
 
     def _get_default_config_dir(self) -> str:
         """Get default configuration directory based on OS."""
-        if os.name == 'nt':
-            base_dir = os.environ.get('APPDATA', os.path.expanduser('~'))
+        if os.name == "nt":
+            base_dir = os.environ.get("APPDATA", os.path.expanduser("~"))
             return os.path.join(base_dir, self.app_name)
         else:
-            base_dir = os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
+            base_dir = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
             return os.path.join(base_dir, self.app_name)
 
     def register_category(self, category: ConfigCategory) -> None:
@@ -180,18 +178,38 @@ class JSONConfigManager:
         """Load configuration from JSON file."""
         with self._lock:
             try:
+                # Debug: Reset config if requested
+                from config import DEBUG_RESET_CONFIG
+                if DEBUG_RESET_CONFIG:
+                    if self.config_file.exists():
+                        logger.info(f"[DEBUG] Deleting config file for fresh start: {self.config_file}")
+                        try:
+                            self.config_file.unlink()
+                            # Also remove backup if it exists
+                            if self.backup_file.exists():
+                                self.backup_file.unlink()
+                            logger.info("[DEBUG] Config files deleted successfully")
+                        except Exception as e:
+                            logger.error(f"[DEBUG] Failed to delete config file: {e}")
+
                 if not self.config_file.exists():
-                    logger.info("[JSONConfigManager] No config file found, using defaults", extra={"dev_only": True})
+                    logger.info(
+                        "[JSONConfigManager] No config file found, using defaults",
+                        extra={"dev_only": True},
+                    )
                     return True
 
-                with open(self.config_file, 'r', encoding='utf-8') as f:
+                with open(self.config_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
 
                 for category_name, category in self._categories.items():
                     if category_name in data:
                         category.from_dict(data[category_name])
 
-                logger.info("[JSONConfigManager] Configuration loaded successfully", extra={"dev_only": True})
+                logger.info(
+                    "[JSONConfigManager] Configuration loaded successfully",
+                    extra={"dev_only": True},
+                )
                 return True
 
             except Exception as e:
@@ -209,13 +227,13 @@ class JSONConfigManager:
                 for category_name, category in self._categories.items():
                     data[category_name] = category.to_dict()
 
-                data['_metadata'] = {
-                    'last_saved': datetime.now().isoformat(),
-                    'version': f"v{APP_VERSION}",
-                    'app_name': self.app_name
+                data["_metadata"] = {
+                    "last_saved": datetime.now().isoformat(),
+                    "version": f"v{APP_VERSION}",
+                    "app_name": self.app_name,
                 }
 
-                with open(self.config_file, 'w', encoding='utf-8') as f:
+                with open(self.config_file, "w", encoding="utf-8") as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
 
                 logger.debug("[JSONConfigManager] Configuration saved successfully")
@@ -228,18 +246,18 @@ class JSONConfigManager:
     def get_config_info(self) -> Dict[str, Any]:
         """Get information about configuration file and categories."""
         info = {
-            'config_file': str(self.config_file),
-            'backup_file': str(self.backup_file),
-            'file_exists': self.config_file.exists(),
-            'backup_exists': self.backup_file.exists(),
-            'app_name': self.app_name,
-            'categories': {name: len(cat.to_dict()) for name, cat in self._categories.items()}
+            "config_file": str(self.config_file),
+            "backup_file": str(self.backup_file),
+            "file_exists": self.config_file.exists(),
+            "backup_exists": self.backup_file.exists(),
+            "app_name": self.app_name,
+            "categories": {name: len(cat.to_dict()) for name, cat in self._categories.items()},
         }
 
         if self.config_file.exists():
             stat = self.config_file.stat()
-            info['file_size'] = stat.st_size
-            info['last_modified'] = datetime.fromtimestamp(stat.st_mtime).isoformat()
+            info["file_size"] = stat.st_size
+            info["last_modified"] = datetime.fromtimestamp(stat.st_mtime).isoformat()
 
         return info
 
@@ -261,8 +279,43 @@ _global_manager: Optional[JSONConfigManager] = None
 
 
 def get_app_config_manager() -> JSONConfigManager:
-    """Get global application configuration manager."""
+    """Get the global application configuration manager."""
     global _global_manager
     if _global_manager is None:
         _global_manager = create_app_config_manager()
     return _global_manager
+
+
+def load_config() -> dict:
+    """Load configuration from JSON file and return as dictionary."""
+    try:
+        config_manager = get_app_config_manager()
+        if not config_manager.config_file.exists():
+            return {}
+
+        with open(config_manager.config_file, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        logger.warning(f"Failed to load config: {e}")
+        return {}
+
+
+def save_config(config_data: dict) -> bool:
+    """Save configuration dictionary to JSON file."""
+    try:
+        config_manager = get_app_config_manager()
+
+        # Create backup if file exists
+        if config_manager.config_file.exists():
+            shutil.copy2(config_manager.config_file, config_manager.backup_file)
+
+        # Save new config
+        with open(config_manager.config_file, "w", encoding="utf-8") as f:
+            json.dump(config_data, f, indent=2, ensure_ascii=False)
+
+        logger.debug(f"Configuration saved to {config_manager.config_file}")
+        return True
+
+    except Exception as e:
+        logger.error(f"Failed to save config: {e}")
+        return False
