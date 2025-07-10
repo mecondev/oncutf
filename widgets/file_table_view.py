@@ -1790,14 +1790,6 @@ class FileTableView(QTableView):
             # Store current selection before any changes
             selected_rows = self._get_current_selection()
 
-            # Block selection signals to prevent interference during update
-            selection_model = self.selectionModel()
-            if selection_model:
-                selection_model.blockSignals(True)
-
-            # Block view updates to prevent visual flicker
-            self.setUpdatesEnabled(False)
-
             # Update the model with new visible columns
             if hasattr(model, 'update_visible_columns'):
                 model.update_visible_columns(self._visible_columns)
@@ -1805,13 +1797,27 @@ class FileTableView(QTableView):
                 # Reconfigure columns with new layout
                 self._configure_columns()
 
-                # Force view to update column display without losing selection
+                # Force gentle refresh of the view
                 self.updateGeometry()
                 self.viewport().update()
 
+                # Restore selection immediately if it existed
+                if selected_rows:
+                    # Use the existing sync method which is designed for this
+                    self._sync_qt_selection_model(selected_rows)
+
+                    # Update metadata tree directly without clearing - this preserves existing metadata
+                    metadata_tree = self._get_metadata_tree()
+                    if metadata_tree and hasattr(metadata_tree, 'update_from_parent_selection'):
+                        # Use direct call to preserve metadata state during column updates
+                        metadata_tree.update_from_parent_selection()
+                    else:
+                        # Fallback to signal emission if direct method unavailable
+                        QTimer.singleShot(50, lambda: self.selection_changed.emit(list(selected_rows)))
+
                 # Count visible columns for logging
                 visible_count = sum(1 for visible in self._visible_columns.values() if visible)
-                logger.info(f"Table columns updated - {visible_count} columns visible")
+                logger.info(f"Table columns updated - {visible_count} columns visible, selection restored: {len(selected_rows)} rows")
 
             else:
                 logger.warning("Model does not support dynamic columns")
@@ -1819,30 +1825,21 @@ class FileTableView(QTableView):
         except Exception as e:
             logger.error(f"Error updating table columns: {e}")
         finally:
-            # Re-enable updates first
-            self.setUpdatesEnabled(True)
-
-            # Restore selection if it existed
-            if selected_rows and selection_model:
-                selection_model.blockSignals(False)
-
-                # Clear any existing selection first
-                selection_model.clearSelection()
-
-                # Restore the selection
-                self._sync_qt_selection_model(selected_rows)
-
-                # Emit the selection changed signal to update dependent views
-                self.selection_changed.emit(list(selected_rows))
-
-                logger.debug(f"Preserved selection of {len(selected_rows)} rows after column update")
-            else:
-                # No selection to restore, just unblock signals
-                if selection_model:
-                    selection_model.blockSignals(False)
-
             # Trigger column width adjustment after column changes
             self._trigger_column_adjustment()
+
+    def _get_metadata_tree(self):
+        """Get the metadata tree view."""
+        try:
+            parent_window = self.parent()
+            while parent_window and not hasattr(parent_window, 'metadata_tree_view'):
+                parent_window = parent_window.parent()
+
+            if parent_window and hasattr(parent_window, 'metadata_tree_view'):
+                return parent_window.metadata_tree_view
+            return None
+        except Exception:
+            return None
 
     def _clear_preview_and_metadata(self) -> None:
         """Clear preview and metadata displays when no selection exists."""
