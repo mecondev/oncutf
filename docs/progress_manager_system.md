@@ -38,7 +38,7 @@ ProgressManager(operation_type: str, parent: Optional[QWidget] = None)
 ```
 
 **Parameters:**
-- `operation_type`: Τύπος operation ("hash", "metadata", "copy")
+- `operation_type`: Operation type ("hash", "metadata", "copy")
 - `parent`: Parent widget (optional)
 
 ### Methods
@@ -211,26 +211,26 @@ manager.update_progress(processed_bytes=bytes)
 
 ### Progress Widget Integration
 
-Ο ProgressManager χρησιμοποιεί το υπάρχον ProgressWidget ως backend:
+The ProgressManager uses the existing ProgressWidget as backend:
 
-- **Hash operations**: Χρησιμοποιεί size-based progress mode
-- **Metadata operations**: Χρησιμοποιεί count-based progress mode με optional size tracking
-- **Copy operations**: Χρησιμοποιεί size-based progress mode
+- **Hash operations**: Uses size-based progress mode
+- **Metadata operations**: Uses count-based progress mode with optional size tracking
+- **Copy operations**: Uses size-based progress mode
 
 ### Throttling
 
-Το throttling γίνεται στο ProgressWidget level για optimal performance:
-- 50ms updates για small files
-- 100ms updates για large files
-- Real-time updates για files >100MB
+Throttling is done at the ProgressWidget level for optimal performance:
+- 50ms updates for small files
+- 100ms updates for large files
+- Real-time updates for files >100MB
 
 ### Thread Safety
 
-Ο ProgressManager είναι thread-safe και μπορεί να χρησιμοποιηθεί από worker threads.
+The ProgressManager is thread-safe and can be used from worker threads.
 
 ## Testing
 
-Τα tests βρίσκονται στο `tests/test_progress_manager.py`:
+Tests are located in `tests/test_progress_manager.py`:
 
 ```bash
 python -m pytest tests/test_progress_manager.py -v

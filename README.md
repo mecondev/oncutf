@@ -199,7 +199,9 @@ oncutf/
 Comprehensive documentation is available in the `docs/` directory:
 
 - **[Complete Documentation Index](docs/README.md)** - Overview and navigation
+- **[Application Workflow](docs/application_workflow.md)** - Complete application flow from startup to rename execution
 - **[Database Quick Start](docs/database_quick_start.md)** - Get started with persistent storage
+- **[Structured Metadata System](docs/structured_metadata_system.md)** - Advanced metadata organization and processing
 - **[Safe Rename Workflow](docs/safe_rename_workflow.md)** - Enhanced rename operations
 - **[Case-Sensitive Rename Guide](docs/case_sensitive_rename_guide.md)** - Cross-platform case renaming
 - **[Progress Manager System](docs/progress_manager_system.md)** - Unified progress tracking

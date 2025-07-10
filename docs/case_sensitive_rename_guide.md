@@ -28,9 +28,9 @@ The oncutf application fully supports case-only renames through an intelligent t
 
 ### Greek Files
 ```
-ΕΡΓΑΣΙΑ.docx → εργασία.docx
-ΦΩΤΟΓΡΑΦΊΑ.jpg → Φωτογραφία.jpg
-ΜΟΥΣΙΚΗ.mp3 → μουσική.mp3
+DOCUMENT.docx → document.docx
+PHOTO.jpg → Photo.jpg
+MUSIC.mp3 → music.mp3
 ```
 
 ### English Files
