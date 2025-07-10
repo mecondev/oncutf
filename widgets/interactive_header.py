@@ -34,7 +34,7 @@ class InteractiveHeader(QHeaderView):
         self.setSectionsClickable(True)
         self.setHighlightSections(True)
         self.setSortIndicatorShown(True)
-        # self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.contextMenuEvent)
 
         self.header_enabled = True
@@ -97,13 +97,11 @@ class InteractiveHeader(QHeaderView):
 
         super().mouseReleaseEvent(event)
 
-    def contextMenuEvent(self, event):
+    def contextMenuEvent(self, position):
         """
-        Show right-click context menu for sorting at header column.
+        Show unified right-click context menu for header with sorting and column visibility options.
         """
-        logical_index = self.logicalIndexAt(event.pos())
-        if logical_index <= 0:
-            return  # skip column 0 (toggle column)
+        logical_index = self.logicalIndexAt(position)
 
         menu = QMenu(self)
 
@@ -144,26 +142,31 @@ class InteractiveHeader(QHeaderView):
             }
         """)
 
-        # Add icons to sort actions
-        try:
-            from utils.icons_loader import get_menu_icon
-            sort_asc = QAction("Sort Ascending", self)
-            sort_asc.setIcon(get_menu_icon("chevron-up"))
-            sort_desc = QAction("Sort Descending", self)
-            sort_desc.setIcon(get_menu_icon("chevron-down"))
-        except ImportError:
-            sort_asc = QAction("Sort Ascending", self)
-            sort_desc = QAction("Sort Descending", self)
+        # Add sorting options for columns > 0
+        if logical_index > 0:
+            try:
+                from utils.icons_loader import get_menu_icon
+                sort_asc = QAction("Sort Ascending", self)
+                sort_asc.setIcon(get_menu_icon("chevron-up"))
+                sort_desc = QAction("Sort Descending", self)
+                sort_desc.setIcon(get_menu_icon("chevron-down"))
+            except ImportError:
+                sort_asc = QAction("Sort Ascending", self)
+                sort_desc = QAction("Sort Descending", self)
 
-        asc = getattr(Qt, 'AscendingOrder', 0)
-        desc = getattr(Qt, 'DescendingOrder', 1)
-        sort_asc.triggered.connect(lambda: self._sort(logical_index, asc))
-        sort_desc.triggered.connect(lambda: self._sort(logical_index, desc))
+            asc = getattr(Qt, 'AscendingOrder', 0)
+            desc = getattr(Qt, 'DescendingOrder', 1)
+            sort_asc.triggered.connect(lambda: self._sort(logical_index, asc))
+            sort_desc.triggered.connect(lambda: self._sort(logical_index, desc))
 
-        menu.addAction(sort_asc)
-        menu.addAction(sort_desc)
+            menu.addAction(sort_asc)
+            menu.addAction(sort_desc)
+            menu.addSeparator()
 
-        menu.exec_(event.globalPos())
+        # Add column visibility options
+        self._add_column_visibility_menu(menu)
+
+        menu.exec_(self.mapToGlobal(position))
 
     def _sort(self, column: int, order: Qt.SortOrder) -> None:
         """
@@ -172,6 +175,63 @@ class InteractiveHeader(QHeaderView):
         main_window = self._get_main_window_via_context()
         if main_window and hasattr(main_window, 'sort_by_column'):
             main_window.sort_by_column(column, force_order=order)
+
+    def _add_column_visibility_menu(self, menu):
+        """Add column visibility toggle options to the menu."""
+        try:
+            # Get the file table view to access column configuration
+            file_table_view = self._get_file_table_view()
+            if not file_table_view:
+                return
+
+            from config import FILE_TABLE_COLUMN_CONFIG
+            from utils.icons_loader import get_menu_icon
+
+            # Add submenu title
+            columns_menu = QMenu("Show Columns", menu)
+            columns_menu.setIcon(get_menu_icon("columns"))
+
+            # Add column toggle actions
+            for column_key, column_config in FILE_TABLE_COLUMN_CONFIG.items():
+                if not column_config.get("removable", True):
+                    continue  # Skip non-removable columns like filename
+
+                action = QAction(column_config["title"], columns_menu)
+
+                # Get visibility state from file table view
+                is_visible = True
+                if hasattr(file_table_view, '_visible_columns'):
+                    is_visible = file_table_view._visible_columns.get(
+                        column_key, column_config.get("default_visible", True)
+                    )
+
+                # Set toggle icon based on visibility
+                if is_visible:
+                    action.setIcon(get_menu_icon("toggle-right"))
+                else:
+                    action.setIcon(get_menu_icon("toggle-left"))
+
+                action.triggered.connect(lambda checked, key=column_key: self._toggle_column_visibility(key))
+                columns_menu.addAction(action)
+
+            menu.addMenu(columns_menu)
+
+        except Exception as e:
+            # Fallback: just add a simple label if configuration fails
+            from utils.logger_factory import get_cached_logger
+            logger = get_cached_logger(__name__)
+            logger.warning(f"Failed to add column visibility menu: {e}")
+
+    def _get_file_table_view(self):
+        """Get the file table view that this header belongs to."""
+        # The header's parent should be the table view
+        return self.parent() if hasattr(self.parent(), '_visible_columns') else None
+
+    def _toggle_column_visibility(self, column_key: str):
+        """Toggle visibility of a specific column via the file table view."""
+        file_table_view = self._get_file_table_view()
+        if file_table_view and hasattr(file_table_view, '_toggle_column_visibility'):
+            file_table_view._toggle_column_visibility(column_key)
 
 
 

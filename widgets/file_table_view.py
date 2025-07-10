@@ -1753,87 +1753,17 @@ class FileTableView(QTableView):
         except Exception as e:
             logger.warning(f"Failed to save column visibility config: {e}")
 
-    def _setup_header_context_menu(self) -> None:
-        """Setup context menu for the table header."""
-        header = self.horizontalHeader()
-        if header:
-            header.setContextMenuPolicy(Qt.CustomContextMenu)
-            header.customContextMenuRequested.connect(self._show_header_context_menu)
-
-    def _show_header_context_menu(self, position: QPoint) -> None:
-        """Show context menu for table header with column visibility options."""
-        # Don't show context menu for status column (column 0)
-        header = self.horizontalHeader()
-        if header:
-            column_index = header.logicalIndexAt(position)
-            if column_index == 0:
-                return  # No context menu for status column
-
-        from core.pyqt_imports import QMenu, QAction
-        from config import FILE_TABLE_COLUMN_CONFIG
-        from utils.icons_loader import get_menu_icon
-
-        menu = QMenu(self)
-        menu.setTitle("Show Columns")
-
-        # Apply consistent styling
-        menu.setStyleSheet("""
-            QMenu {
-                background-color: #232323;
-                color: #f0ebd8;
-                border: none;
-                border-radius: 8px;
-                font-family: "Inter", "Segoe UI", Arial, sans-serif;
-                font-size: 9pt;
-                padding: 6px 4px;
-            }
-            QMenu::item {
-                background-color: transparent;
-                padding: 3px 16px 3px 8px;
-                margin: 1px 2px;
-                border-radius: 4px;
-                min-height: 16px;
-                icon-size: 16px;
-            }
-            QMenu::item:selected {
-                background-color: #748cab;
-                color: #0d1321;
-            }
-            QMenu::item:disabled {
-                color: #888888;
-            }
-        """)
-
-        # Add column toggle actions
-        for column_key, column_config in FILE_TABLE_COLUMN_CONFIG.items():
-            if not column_config["removable"]:
-                continue  # Skip non-removable columns like filename
-
-            action = QAction(column_config["title"], menu)
-
-            # Set toggle icon based on visibility
-            is_visible = self._visible_columns.get(column_key, column_config["default_visible"])
-            if is_visible:
-                action.setIcon(get_menu_icon("toggle-right"))
-            else:
-                action.setIcon(get_menu_icon("toggle-left"))
-
-            action.triggered.connect(lambda checked, key=column_key: self._toggle_column_visibility(key))
-            menu.addAction(action)
-
-        # Show menu at cursor position
-        global_pos = self.horizontalHeader().mapToGlobal(position)
-        menu.exec_(global_pos)
-
     def _toggle_column_visibility(self, column_key: str) -> None:
-        """Toggle visibility of a specific column."""
+        """Toggle visibility of a specific column and refresh the table."""
         from config import FILE_TABLE_COLUMN_CONFIG
 
         if column_key not in FILE_TABLE_COLUMN_CONFIG:
+            logger.warning(f"Unknown column key: {column_key}")
             return
 
         column_config = FILE_TABLE_COLUMN_CONFIG[column_key]
-        if not column_config["removable"]:
+        if not column_config.get("removable", True):
+            logger.warning(f"Cannot toggle non-removable column: {column_key}")
             return  # Can't toggle non-removable columns
 
         # Toggle visibility
@@ -1843,30 +1773,53 @@ class FileTableView(QTableView):
         # Save configuration
         self._save_column_visibility_config()
 
-        # Update table display
+        # Update table display with full refresh
         self._update_table_columns()
 
-        logger.debug(f"Toggled column '{column_key}' visibility to {not current_visibility}")
+        logger.info(f"Toggled column '{column_key}' visibility to {not current_visibility}")
 
     def _update_table_columns(self) -> None:
-        """Update table columns based on visibility configuration."""
+        """Update table columns based on visibility configuration with full refresh."""
         model = self.model()
         if not model:
             logger.warning("No model available for column update")
             return
 
-        # Update the model with new visible columns
-        if hasattr(model, 'update_visible_columns'):
-            model.update_visible_columns(self._visible_columns)
+        try:
+            # Block signals during update to prevent unnecessary refreshes
+            self.setUpdatesEnabled(False)
 
-            # Reconfigure columns with new layout
-            self._configure_columns()
+            # Store current selection to restore after update
+            selected_rows = self._get_current_selection()
 
-            # Count visible columns
-            visible_count = sum(1 for visible in self._visible_columns.values() if visible)
-            logger.info(f"Table columns updated - {visible_count} columns visible")
+            # Update the model with new visible columns
+            if hasattr(model, 'update_visible_columns'):
+                model.update_visible_columns(self._visible_columns)
 
-            # Force update of the view
+                # Reconfigure columns with new layout
+                self._configure_columns()
+
+                # Force complete table refresh
+                self.reset()  # This forces a complete refresh of the view
+
+                # Restore selection
+                if selected_rows:
+                    self._update_selection_store(selected_rows, emit_signal=False)
+                    self._sync_qt_selection_model(selected_rows)
+
+                # Count visible columns for logging
+                visible_count = sum(1 for visible in self._visible_columns.values() if visible)
+                logger.info(f"Table columns updated - {visible_count} columns visible")
+
+            else:
+                logger.warning("Model does not support dynamic columns")
+
+        except Exception as e:
+            logger.error(f"Error updating table columns: {e}")
+        finally:
+            # Re-enable updates and force a single refresh
+            self.setUpdatesEnabled(True)
             self.viewport().update()
-        else:
-            logger.warning("Model does not support dynamic columns")
+
+            # Trigger column width adjustment after column changes
+            self._trigger_column_adjustment()
