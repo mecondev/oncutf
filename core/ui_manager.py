@@ -307,7 +307,10 @@ class UIManager:
         """Setup right panel (metadata tree view)."""
         self.parent_window.right_frame = QFrame()
         right_layout = QVBoxLayout(self.parent_window.right_frame)
-        right_layout.addWidget(QLabel("Information"))
+        # Information label with dynamic metadata count
+        self.parent_window.information_label = QLabel("Information")
+        self.parent_window.information_label.setObjectName("informationLabel")
+        right_layout.addWidget(self.parent_window.information_label)
 
         # Search layout
         search_layout = QHBoxLayout()

@@ -61,6 +61,14 @@ class MetadataFieldMapper:
         "video_avg_bitrate": ["AvgBitrate", "BitRate", "VideoBitrate"],
         "video_codec": ["VideoCodec", "Codec"],
         "video_format": ["MajorBrand", "Format", "FileType"],
+
+        # Unique identifiers
+        "target_umid": [
+            "TargetMaterialUMID", "UMID", "MaterialUMID",
+            "QuickTime:TargetMaterialUMID", "QuickTime:UMID", "QuickTime:MaterialUMID",
+            "XMP:TargetMaterialUMID", "XMP:UMID", "XMP:MaterialUMID",
+            "File:TargetMaterialUMID", "File:UMID", "File:MaterialUMID"
+        ],
     }
 
     @classmethod

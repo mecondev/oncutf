@@ -254,14 +254,8 @@ class FileTableModel(QAbstractTableModel):
         col = index.column()
 
         if not self.files:
-            # For empty table, only show content in filename column
-            filename_column_index = None
-            try:
-                filename_column_index = self._visible_columns.index('filename') + 1  # +1 for status column
-            except ValueError:
-                filename_column_index = 1  # Fallback to first dynamic column
-
-            if role == Qt.DisplayRole and col == filename_column_index:
+            # For empty table, return empty string for all columns
+            if role == Qt.DisplayRole:
                 return ""
             if role == Qt.TextAlignmentRole:
                 return Qt.AlignHCenter
@@ -330,10 +324,79 @@ class FileTableModel(QAbstractTableModel):
                         return "extended" if entry.is_extended else "loaded"
                 return "missing"
 
+            elif role == Qt.ToolTipRole:
+                # Create tooltip with metadata and hash status
+                entry = None
+                if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
+                    entry = self.parent_window.metadata_cache.get_entry(file.full_path)
+
+                has_hash = self._has_hash_cached(file.full_path)
+
+                tooltip_parts = []
+
+                # Metadata status
+                if entry:
+                    if hasattr(entry, "modified") and entry.modified:
+                        tooltip_parts.append("Metadata: Modified")
+                    elif entry.is_extended:
+                        tooltip_parts.append("Metadata: Extended")
+                    else:
+                        tooltip_parts.append("Metadata: Basic")
+                else:
+                    tooltip_parts.append("Metadata: Not loaded")
+
+                # Hash status
+                if has_hash:
+                    hash_value = self._get_hash_value(file.full_path)
+                    if hash_value:
+                        tooltip_parts.append(f"Hash: {hash_value[:8]}...")
+                    else:
+                        tooltip_parts.append("Hash: Available")
+                else:
+                    tooltip_parts.append("Hash: Not calculated")
+
+                # File info
+                tooltip_parts.append(f"File: {file.filename}")
+                tooltip_parts.append(f"Size: {file.get_human_readable_size()}")
+
+                return "\n".join(tooltip_parts)
+
             # No display text for status column
             return QVariant()
 
         # Handle dynamic columns (filename, file_size, etc.)
+        if role == Qt.ToolTipRole:
+            # Create tooltip for all columns
+            tooltip_parts = []
+
+            # Column-specific information
+            if column_key == "filename":
+                tooltip_parts.append(f"Filename: {file.filename}")
+                tooltip_parts.append(f"Full path: {file.full_path}")
+            elif column_key == "file_size":
+                tooltip_parts.append(f"File size: {file.get_human_readable_size()}")
+                tooltip_parts.append(f"Size in bytes: {file.file_size:,}")
+            elif column_key == "type":
+                tooltip_parts.append(f"File type: {file.extension}")
+            elif column_key == "modified":
+                if isinstance(file.modified, datetime):
+                    tooltip_parts.append(f"Modified: {file.modified.strftime('%Y-%m-%d %H:%M:%S')}")
+                else:
+                    tooltip_parts.append(f"Modified: {file.modified}")
+            else:
+                # For metadata columns, show the value and source
+                display_value = self._get_column_data(file, column_key, Qt.DisplayRole)
+                if display_value:
+                    tooltip_parts.append(f"{column_key}: {display_value}")
+                else:
+                    tooltip_parts.append(f"{column_key}: No data available")
+
+            # Add common file info
+            tooltip_parts.append(f"File: {file.filename}")
+            tooltip_parts.append(f"Size: {file.get_human_readable_size()}")
+
+            return "\n".join(tooltip_parts)
+
         return self._get_column_data(file, column_key, role)
 
     def setData(self, index: QModelIndex, value, role: int = Qt.EditRole) -> bool:  # type: ignore
@@ -452,35 +515,44 @@ class FileTableModel(QAbstractTableModel):
                     entry = self.parent_window.metadata_cache.get_entry(file.full_path)
                     if entry and hasattr(entry, 'data') and entry.data:
                         # Map column keys to metadata keys (using actual EXIF/QuickTime keys)
-                        metadata_key_map = {
-                            "rotation": "EXIF:Orientation",
-                            "duration": "QuickTime:Duration",
-                            "audio_channels": "QuickTime:AudioChannels",
-                            "audio_format": "QuickTime:AudioFormat",
-                            "aperture": "EXIF:FNumber",
-                            "iso": "EXIF:ISO",
-                            "shutter_speed": "EXIF:ExposureTime",
-                            "white_balance": "EXIF:WhiteBalance",
-                            "image_size": "EXIF:ImageWidth",
-                            "compression": "EXIF:Compression",
-                            "device_model": "EXIF:Model",
-                            "device_serial_no": "EXIF:SerialNumber",
-                            "video_fps": "QuickTime:VideoFrameRate",
-                            "video_avg_bitrate": "QuickTime:AvgBitrate",
-                            "video_codec": "QuickTime:VideoCodec",
-                            "video_format": "QuickTime:MajorBrand",
-                            "device_manufacturer": "EXIF:Make"
-                        }
+                        # Use centralized metadata field mapper for sorting
+                        from utils.metadata_field_mapper import MetadataFieldMapper
 
-                        metadata_key = metadata_key_map.get(column_key)
-                        if metadata_key:
+                        # Get possible metadata keys for this column
+                        possible_keys = MetadataFieldMapper.get_metadata_keys_for_field(column_key)
+
+                        # Find the first available key in the metadata
+                        found_value = None
+                        for key in possible_keys:
+                            if key in entry.data:
+                                found_value = entry.data[key]
+                                break
+
+                        if found_value is not None:
                             # Special handling for image size (sort by width)
                             if column_key == "image_size":
-                                width = entry.data.get("EXIF:ImageWidth")
-                                return int(width) if width and str(width).isdigit() else 0
-                            elif metadata_key in entry.data:
-                                value = entry.data[metadata_key]
-                                return str(value) if value is not None else ""
+                                try:
+                                    # Extract width from "widthxheight" format
+                                    if 'x' in str(found_value):
+                                        width = str(found_value).split('x')[0]
+                                        return int(width)
+                                    else:
+                                        return int(found_value)
+                                except (ValueError, TypeError):
+                                    return 0
+                            # For numeric values, try to convert to int/float for proper sorting
+                            elif column_key in ["iso", "video_fps", "video_avg_bitrate", "rotation"]:
+                                try:
+                                    # Extract numeric part from strings like "100" or "100.0"
+                                    numeric_str = str(found_value).split()[0]  # Take first word
+                                    if '.' in numeric_str:
+                                        return float(numeric_str)
+                                    else:
+                                        return int(numeric_str)
+                                except (ValueError, TypeError):
+                                    return 0
+                            else:
+                                return str(found_value).lower()  # String sorting (case-insensitive)
                 return ""
 
             self.files.sort(key=get_metadata_sort_key, reverse=reverse)

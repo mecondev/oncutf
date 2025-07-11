@@ -164,9 +164,8 @@ class MetadataTreeView(QTreeView):
         self._is_placeholder_mode: bool = True
 
         # Display level for metadata filtering (load from config)
-        from config import DEFAULT_METADATA_DISPLAY_LEVEL
-
-        self._current_display_level: str = DEFAULT_METADATA_DISPLAY_LEVEL
+        # Note: This must be set before any metadata loading
+        self._current_display_level: str = "essential"  # Default fallback
 
         # Scroll position memory: {file_path: scroll_position}
         self._scroll_positions: Dict[str, int] = {}
@@ -195,6 +194,9 @@ class MetadataTreeView(QTreeView):
 
         # Setup standard view properties
         self._setup_tree_view_properties()
+
+        # Load display level from config after initialization
+        self._current_display_level = self._load_display_level_from_config()
 
         # Setup icon delegate for selected state icon changes
 
@@ -1113,8 +1115,59 @@ class MetadataTreeView(QTreeView):
         self._current_display_level = level
         logger.debug(f"Display level changed to: {level}", extra={"dev_only": True})
 
+        # Save the display level to config
+        self._save_display_level_to_config(level)
+
         # Refresh the current metadata view with the new display level
         self._refresh_current_metadata_view()
+
+    def _save_display_level_to_config(self, level: str) -> None:
+        """Save the display level to the JSON config."""
+        try:
+            from utils.json_config_manager import get_app_config_manager
+
+            config_manager = get_app_config_manager()
+            # Get or create app category
+            app_category = config_manager.get_category("app")
+            if not app_category:
+                from utils.json_config_manager import AppConfig
+                app_category = AppConfig()
+                config_manager.register_category(app_category)
+
+            app_category.set("metadata_display_level", level)
+            config_manager.save()
+            logger.debug(f"Saved display level to config: {level}")
+        except Exception as e:
+            logger.warning(f"Failed to save display level to config: {e}")
+
+    def _load_display_level_from_config(self) -> str:
+        """Load the display level from the JSON config."""
+        try:
+            from utils.json_config_manager import get_app_config_manager
+            from config import DEFAULT_METADATA_DISPLAY_LEVEL
+
+            config_manager = get_app_config_manager()
+            config_manager.load()
+
+            # Get app category
+            app_category = config_manager.get_category("app")
+            if app_category:
+                level = app_category.get("metadata_display_level", DEFAULT_METADATA_DISPLAY_LEVEL)
+
+                # Validate the loaded level
+                if level not in ["essential", "standard", "all"]:
+                    logger.warning(f"Invalid display level in config: {level}, using default")
+                    return DEFAULT_METADATA_DISPLAY_LEVEL
+
+                logger.debug(f"Loaded display level from config: {level}")
+                return level
+            else:
+                logger.debug("No app category found in config, using default display level")
+                return DEFAULT_METADATA_DISPLAY_LEVEL
+        except Exception as e:
+            logger.warning(f"Failed to load display level from config: {e}")
+            from config import DEFAULT_METADATA_DISPLAY_LEVEL
+            return DEFAULT_METADATA_DISPLAY_LEVEL
 
     def _refresh_current_metadata_view(self) -> None:
         """Refresh the current metadata view with the new display level."""
@@ -1933,6 +1986,11 @@ class MetadataTreeView(QTreeView):
         # Disable search field when showing empty state
         self._update_search_field_state(False)
 
+        # Reset information label
+        parent_window = self._get_parent_with_file_table()
+        if parent_window and hasattr(parent_window, 'information_label'):
+            parent_window.information_label.setText("Information")
+
     def clear_view(self) -> None:
         """
         Clears the metadata tree view and shows a placeholder message.
@@ -2257,12 +2315,36 @@ class MetadataTreeView(QTreeView):
             # Always expand all - no collapse functionality
             self.expandAll()
 
+            # Update information label with metadata count
+            self._update_information_label(display_data)
+
             # Trigger scroll position restore AFTER expandAll
             self.restore_scroll_after_expand()
 
         except Exception as e:
             logger.exception(f"[render_metadata_view] Unexpected error while rendering: {e}")
             self.clear_view()
+
+    def _update_information_label(self, display_data: Dict[str, Any]) -> None:
+        """Update the information label with the current metadata count."""
+        try:
+            # Count total metadata fields
+            total_fields = 0
+            for key, value in display_data.items():
+                if isinstance(value, dict):
+                    total_fields += len(value)
+                else:
+                    total_fields += 1
+
+            # Get parent window to update the label
+            parent_window = self._get_parent_with_file_table()
+            if parent_window and hasattr(parent_window, 'information_label'):
+                if total_fields > 0:
+                    parent_window.information_label.setText(f"Information ({total_fields} fields)")
+                else:
+                    parent_window.information_label.setText("Information")
+        except Exception as e:
+            logger.debug(f"Error updating information label: {e}")
 
     def _apply_modified_values_to_display_data(self, display_data: Dict[str, Any]) -> None:
         """

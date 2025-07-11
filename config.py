@@ -675,6 +675,15 @@ FILE_TABLE_COLUMN_CONFIG = {
         "alignment": "left",
         "min_width": 100,
     },
+    "target_umid": {
+        "title": "Target UMID",
+        "key": "target_umid",
+        "default_visible": False,
+        "removable": True,
+        "width": 120,
+        "alignment": "left",
+        "min_width": 100,
+    },
     "file_hash": {
         "title": "File Hash",
         "key": "file_hash",

@@ -191,11 +191,17 @@ class InteractiveHeader(QHeaderView):
             columns_menu = QMenu("Show Columns", menu)
             columns_menu.setIcon(get_menu_icon("columns"))
 
-            # Add column toggle actions
+            # Add column toggle actions (sorted alphabetically by title)
+            column_items = []
             for column_key, column_config in FILE_TABLE_COLUMN_CONFIG.items():
                 if not column_config.get("removable", True):
                     continue  # Skip non-removable columns like filename
+                column_items.append((column_key, column_config))
 
+            # Sort by title alphabetically
+            column_items.sort(key=lambda x: x[1]["title"])
+
+            for column_key, column_config in column_items:
                 action = QAction(column_config["title"], columns_menu)
 
                 # Get visibility state from file table view
@@ -211,7 +217,7 @@ class InteractiveHeader(QHeaderView):
                 else:
                     action.setIcon(get_menu_icon("toggle-left"))
 
-                action.triggered.connect(lambda checked, key=column_key: self._toggle_column_visibility(key))
+                action.triggered.connect(lambda checked, key=column_key: self._toggle_column_visibility_keep_open(key, columns_menu))
                 columns_menu.addAction(action)
 
             menu.addMenu(columns_menu)
@@ -232,6 +238,62 @@ class InteractiveHeader(QHeaderView):
         file_table_view = self._get_file_table_view()
         if file_table_view and hasattr(file_table_view, '_toggle_column_visibility'):
             file_table_view._toggle_column_visibility(column_key)
+
+    def _toggle_column_visibility_keep_open(self, column_key: str, columns_menu):
+        """Toggle visibility of a specific column and update the menu without closing it."""
+        file_table_view = self._get_file_table_view()
+        if file_table_view and hasattr(file_table_view, '_toggle_column_visibility'):
+            file_table_view._toggle_column_visibility(column_key)
+
+            # Update the menu to reflect the new state
+            self._update_columns_menu(columns_menu)
+
+    def _update_columns_menu(self, columns_menu):
+        """Update the columns menu to reflect current visibility states."""
+        try:
+            file_table_view = self._get_file_table_view()
+            if not file_table_view:
+                return
+
+            from config import FILE_TABLE_COLUMN_CONFIG
+            from utils.icons_loader import get_menu_icon
+
+            # Clear existing actions
+            columns_menu.clear()
+
+            # Re-add column toggle actions (sorted alphabetically by title)
+            column_items = []
+            for column_key, column_config in FILE_TABLE_COLUMN_CONFIG.items():
+                if not column_config.get("removable", True):
+                    continue  # Skip non-removable columns like filename
+                column_items.append((column_key, column_config))
+
+            # Sort by title alphabetically
+            column_items.sort(key=lambda x: x[1]["title"])
+
+            for column_key, column_config in column_items:
+                action = QAction(column_config["title"], columns_menu)
+
+                # Get visibility state from file table view
+                is_visible = True
+                if hasattr(file_table_view, '_visible_columns'):
+                    is_visible = file_table_view._visible_columns.get(
+                        column_key, column_config.get("default_visible", True)
+                    )
+
+                # Set toggle icon based on visibility
+                if is_visible:
+                    action.setIcon(get_menu_icon("toggle-right"))
+                else:
+                    action.setIcon(get_menu_icon("toggle-left"))
+
+                action.triggered.connect(lambda checked, key=column_key: self._toggle_column_visibility_keep_open(key, columns_menu))
+                columns_menu.addAction(action)
+
+        except Exception as e:
+            from utils.logger_factory import get_cached_logger
+            logger = get_cached_logger(__name__)
+            logger.warning(f"Failed to update columns menu: {e}")
 
 
 
