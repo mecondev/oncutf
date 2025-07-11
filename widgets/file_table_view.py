@@ -105,13 +105,25 @@ class FileTableView(QTableView):
         self.setDropIndicatorShown(True)
         self.setAlternatingRowColors(False)
         self.setShowGrid(False)
-        self.setWordWrap(False)
+        self.setWordWrap(False)  # Disable word wrap
         self.setCornerButtonEnabled(False)
         self.setSortingEnabled(False)  # Disable by default, enable after configuration
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.setFocusPolicy(Qt.StrongFocus)
         self.setMouseTracking(True)
         self.setAcceptDrops(True)
+
+        # Additional settings to prevent text wrapping
+        self.setTextElideMode(Qt.ElideRight)  # Elide text with ... instead of wrapping
+        self.verticalHeader().setDefaultSectionSize(22)  # Fixed row height to prevent expansion
+
+        # Force single-line text display
+        self.setWordWrap(False)  # Ensure word wrap is disabled
+        self.setSizeAdjustPolicy(QAbstractItemView.AdjustToContents)  # Adjust to content size
+
+        # Ensure scrollbar updates properly
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
         # Custom drag settings for existing implementation
         self.setDragEnabled(False)  # Disable Qt's built-in drag for custom implementation
@@ -176,9 +188,19 @@ class FileTableView(QTableView):
         # Selection store integration (with fallback to legacy selection handling)
         self._legacy_selection_mode = True  # Start in legacy mode for compatibility
 
+    def showEvent(self, event) -> None:
+        """Handle show events and update scrollbar visibility."""
+        super().showEvent(event)
+        # Update scrollbar visibility when widget becomes visible
+        self._update_scrollbar_visibility()
+
     def paintEvent(self, event):
+        """Override paint event to ensure proper scrollbar handling."""
         # Paint the normal table
         super().paintEvent(event)
+
+        # Update scrollbar visibility after painting
+        self._update_scrollbar_visibility()
 
     def _get_selection_store(self):
         """Get SelectionStore from ApplicationContext with fallback to None."""
@@ -298,30 +320,35 @@ class FileTableView(QTableView):
             return self.anchor_row
 
     def resizeEvent(self, event) -> None:
-        """Handle resize events and update placeholder position."""
+        """Handle window resize events and update scrollbar visibility."""
         super().resizeEvent(event)
-        if self.placeholder_label:
+
+        # Update placeholder position if visible
+        if self.placeholder_label.isVisible():
             self.placeholder_label.resize(self.viewport().size())
-            self.placeholder_label.move(0, 0)
 
-        # Update filename column width when table resizes
-        if hasattr(self, "_filename_min_width") and hasattr(self, "_filename_column_index"):
-            current_filename_width = self.columnWidth(self._filename_column_index)
-            new_filename_width = self._calculate_filename_width()
+        # Update scrollbar visibility after resize
+        self._update_scrollbar_visibility()
 
-            # Always resize for immediate response (no threshold)
-            if abs(new_filename_width - current_filename_width) > 0:
-                self._programmatic_resize = True
-                self.setColumnWidth(self._filename_column_index, new_filename_width)
-                self._programmatic_resize = False
+        # Ensure word wrap is disabled for all columns
+        self._ensure_no_word_wrap()
 
-        # Note: Vertical scrollbar handling is now integrated into _calculate_filename_width
+    def _ensure_no_word_wrap(self) -> None:
+        """Ensure word wrap is disabled and text is properly elided."""
+        # Force word wrap to be disabled
+        self.setWordWrap(False)
 
-    def showEvent(self, event) -> None:
-        """Handle show events to ensure proper display after visibility changes."""
-        super().showEvent(event)
-        # Force viewport refresh when table becomes visible (e.g., after maximize/restore)
-        schedule_resize_adjust(lambda: self.viewport().update(), 5)
+        # Set fixed row height to prevent expansion
+        self.verticalHeader().setDefaultSectionSize(22)
+
+        # Ensure text eliding is enabled
+        self.setTextElideMode(Qt.ElideRight)
+
+        # Force update of all visible cells
+        if self.model():
+            top_left = self.model().index(0, 0)
+            bottom_right = self.model().index(self.model().rowCount() - 1, self.model().columnCount() - 1)
+            self.dataChanged(top_left, bottom_right)
 
     def setModel(self, model) -> None:
         """Configure columns when model is set."""
@@ -609,28 +636,28 @@ class FileTableView(QTableView):
             self._config_save_timer = None
 
     def _on_column_resized(self, logical_index: int, old_size: int, new_size: int) -> None:
-        """Handle column resize events and save widths to config."""
-        if logical_index == 0:  # Skip status column
-            return
+        """Handle column resize events and save user preferences."""
+        if self._programmatic_resize:
+            return  # Skip saving during programmatic resize
 
         # Get column key from logical index
         column_key = self._get_column_key_from_index(logical_index)
         if not column_key:
             return
 
-        # Apply minimum width constraint
-        from config import FILE_TABLE_COLUMN_CONFIG, GLOBAL_MIN_COLUMN_WIDTH
-        column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
-        min_width = max(column_config.get('min_width', GLOBAL_MIN_COLUMN_WIDTH), GLOBAL_MIN_COLUMN_WIDTH)
-
-        if new_size < min_width:
-            self.setColumnWidth(logical_index, min_width)
-            new_size = min_width
-
-        # Schedule save for delayed updates
+        # Schedule delayed save of column width
         self._schedule_column_save(column_key, new_size)
 
-        logger.debug(f"Column '{column_key}' resized to {new_size}px")
+        # Update scrollbar visibility immediately
+        self._update_scrollbar_visibility()
+
+        # Force viewport update to ensure scrollbar positioning is correct
+        self.viewport().update()
+
+        # Schedule a delayed update to ensure scrollbar is properly positioned
+        schedule_ui_update(lambda: self._update_scrollbar_visibility(), delay=100)
+
+        logger.debug(f"Column '{column_key}' resized from {old_size}px to {new_size}px")
 
     def _on_column_moved(self, logical_index: int, old_visual_index: int, new_visual_index: int) -> None:
         """Handle column reordering and save order to config."""
@@ -666,19 +693,36 @@ class FileTableView(QTableView):
         return ""
 
     def _update_scrollbar_visibility(self) -> None:
-        """Update scrollbar visibility based on table content with anti-flickering."""
+        """Update scrollbar visibility based on table content and column widths."""
         model = self.model()
         if not model:
             return
 
         is_empty = model.rowCount() == 0
-        current_policy = self.horizontalScrollBarPolicy()
 
-        # Only change policy if different to prevent unnecessary updates
-        if is_empty and current_policy != Qt.ScrollBarAlwaysOff:
+        # For empty table, always hide horizontal scrollbar
+        if is_empty:
             self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        elif not is_empty and current_policy != Qt.ScrollBarAsNeeded:
-            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            return
+
+        # For non-empty table, check if content exceeds viewport
+        # Calculate total column width
+        total_width = 0
+        for i in range(model.columnCount()):
+            total_width += self.columnWidth(i)
+
+        # Get viewport width
+        viewport_width = self.viewport().width()
+
+        # Show scrollbar if content exceeds viewport
+        if total_width > viewport_width:
+            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        else:
+            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+        # Force immediate update of scrollbar
+        self.updateGeometry()
+        self.viewport().update()
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
         """Handle horizontal splitter movement - no longer adjusts filename column."""

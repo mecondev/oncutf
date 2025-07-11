@@ -32,7 +32,6 @@ from core.pyqt_imports import (
 )
 from models.file_item import FileItem
 from utils.icons_loader import load_metadata_icons
-from utils.tooltip_helper import TooltipHelper, TooltipType
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
@@ -155,12 +154,13 @@ class FileTableModel(QAbstractTableModel):
             entry = self.parent_window.metadata_cache.get_entry(file.full_path)
             if entry and hasattr(entry, 'data') and entry.data:
                 field_count = len(entry.data)
-                if entry.data.get("__extended__", False):
+                # Check the is_extended property of the MetadataEntry object
+                if hasattr(entry, 'is_extended') and entry.is_extended:
                     tooltip_parts.append(f"{field_count} extended metadata loaded")
                 else:
                     tooltip_parts.append(f"{field_count} metadata loaded")
             else:
-                tooltip_parts.append("No metadata loaded")
+                tooltip_parts.append("no metadata")
 
         # Add hash status
         if self._has_hash_cached(file.full_path):
@@ -297,6 +297,10 @@ class FileTableModel(QAbstractTableModel):
         if not column_key:
             return QVariant()
 
+        # Return unified tooltip for all columns
+        if role == Qt.ToolTipRole:
+            return self._get_unified_tooltip(file)
+
         if role == Qt.BackgroundRole:
             status = getattr(file, "status", None)
             if status == "conflict":
@@ -353,14 +357,10 @@ class FileTableModel(QAbstractTableModel):
                         return "extended" if entry.is_extended else "loaded"
                 return "missing"
 
-
-
             # No display text for status column
             return QVariant()
 
         # Handle dynamic columns (filename, file_size, etc.)
-        # Note: Tooltips are now handled by custom tooltip system via setup_custom_tooltips()
-
         return self._get_column_data(file, column_key, role)
 
     def setData(self, index: QModelIndex, value, role: int = Qt.EditRole) -> bool:  # type: ignore
@@ -671,42 +671,12 @@ class FileTableModel(QAbstractTableModel):
 
     def setup_custom_tooltips(self, table_view) -> None:
         """Setup custom tooltips for all cells in the table view."""
+        # This method is no longer needed - tooltips are now handled through Qt.ToolTipRole in data() method
+        # Keep method for backward compatibility but make it a no-op
         if not table_view:
             return
 
         # Store reference to table view for future updates
         self._table_view_ref = table_view
 
-        if not self.files:
-            return
-
-        try:
-            # Clear any existing tooltips
-            TooltipHelper.clear_tooltips_for_widget(table_view)
-
-            # Override the table view's mouse move event to show dynamic tooltips
-            original_mouse_move = getattr(table_view, 'mouseMoveEvent', None)
-
-            def custom_mouse_move_event(event):
-                if original_mouse_move:
-                    original_mouse_move(event)
-
-                # Get the index under the cursor
-                index = table_view.indexAt(event.pos())
-                if index.isValid() and index.row() < len(self.files):
-                    file = self.files[index.row()]
-                    tooltip_text = self._get_unified_tooltip(file)
-
-                    # Show persistent tooltip
-                    TooltipHelper.setup_tooltip(
-                        table_view,
-                        tooltip_text,
-                        TooltipType.INFO
-                    )
-
-            # Replace the mouse move event
-            table_view.mouseMoveEvent = custom_mouse_move_event
-            table_view.setMouseTracking(True)
-
-        except Exception as e:
-            logger.debug(f"Error setting up custom tooltips: {e}")
+        logger.debug("Custom tooltips are now handled through Qt.ToolTipRole in data() method")
