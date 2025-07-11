@@ -191,16 +191,19 @@ class FileTableView(QTableView):
     def showEvent(self, event) -> None:
         """Handle show events and update scrollbar visibility."""
         super().showEvent(event)
-        # Update scrollbar visibility when widget becomes visible
-        self._update_scrollbar_visibility()
+
+        # Force complete refresh when widget becomes visible
+        self._force_scrollbar_update()
+
+        # Ensure proper text display
+        self._ensure_no_word_wrap()
 
     def paintEvent(self, event):
         """Override paint event to ensure proper scrollbar handling."""
         # Paint the normal table
         super().paintEvent(event)
 
-        # Update scrollbar visibility after painting
-        self._update_scrollbar_visibility()
+        # Note: Removed scrollbar update from paintEvent to prevent recursion
 
     def _get_selection_store(self):
         """Get SelectionStore from ApplicationContext with fallback to None."""
@@ -327,10 +330,10 @@ class FileTableView(QTableView):
         if self.placeholder_label.isVisible():
             self.placeholder_label.resize(self.viewport().size())
 
-        # Update scrollbar visibility after resize
-        self._update_scrollbar_visibility()
+        # Force scrollbar update after resize
+        self._force_scrollbar_update()
 
-        # Ensure word wrap is disabled for all columns
+        # Ensure word wrap is disabled after resize
         self._ensure_no_word_wrap()
 
     def _ensure_no_word_wrap(self) -> None:
@@ -340,12 +343,41 @@ class FileTableView(QTableView):
 
         # Set fixed row height to prevent expansion
         self.verticalHeader().setDefaultSectionSize(22)
+        self.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
 
         # Ensure text eliding is enabled
         self.setTextElideMode(Qt.ElideRight)
 
-        # Force update of all visible cells
+        # Force uniform row heights for all existing rows
         if self.model():
+            for row in range(self.model().rowCount()):
+                self.setRowHeight(row, 22)
+
+        # Force complete model refresh to update text display
+        if self.model():
+            self.model().layoutChanged.emit()
+
+        # Force viewport update
+        self.viewport().update()
+
+        # Schedule delayed update to ensure proper text rendering
+        schedule_ui_update(lambda: self._refresh_text_display(), delay=50)
+
+    def _refresh_text_display(self) -> None:
+        """Refresh text display in all visible cells."""
+        if not self.model():
+            return
+
+        # Get visible area
+        visible_rect = self.viewport().rect()
+        top_left = self.indexAt(visible_rect.topLeft())
+        bottom_right = self.indexAt(visible_rect.bottomRight())
+
+        if top_left.isValid() and bottom_right.isValid():
+            # Emit dataChanged for visible area to force text refresh
+            self.dataChanged(top_left, bottom_right)
+        else:
+            # Fallback: refresh all data
             top_left = self.model().index(0, 0)
             bottom_right = self.model().index(self.model().rowCount() - 1, self.model().columnCount() - 1)
             self.dataChanged(top_left, bottom_right)
@@ -398,6 +430,9 @@ class FileTableView(QTableView):
         # Reconfigure columns after model reset
         self._configure_columns()
 
+        # Ensure no word wrap after setting files
+        self._ensure_no_word_wrap()
+
         # Reset hover delegate state
         if hasattr(self, "hover_delegate"):
             self.setItemDelegate(self.hover_delegate)
@@ -421,6 +456,14 @@ class FileTableView(QTableView):
 
         try:
             from config import FILE_TABLE_COLUMN_CONFIG, GLOBAL_MIN_COLUMN_WIDTH
+
+            # Force fixed row height to prevent word wrapping
+            self.verticalHeader().setDefaultSectionSize(22)
+            self.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
+
+            # Ensure word wrap is disabled
+            self.setWordWrap(False)
+            self.setTextElideMode(Qt.ElideRight)
 
             # Get visible columns from model
             visible_columns = []
@@ -474,6 +517,9 @@ class FileTableView(QTableView):
             if header:
                 header.sectionResized.connect(self._on_column_resized)
                 header.sectionMoved.connect(self._on_column_moved)
+
+            # Force scrollbar update after column configuration
+            self._update_scrollbar_visibility()
 
         except Exception as e:
             logger.error(f"Error configuring columns: {e}")
@@ -648,16 +694,42 @@ class FileTableView(QTableView):
         # Schedule delayed save of column width
         self._schedule_column_save(column_key, new_size)
 
-        # Update scrollbar visibility immediately
-        self._update_scrollbar_visibility()
-
-        # Force viewport update to ensure scrollbar positioning is correct
-        self.viewport().update()
-
-        # Schedule a delayed update to ensure scrollbar is properly positioned
-        schedule_ui_update(lambda: self._update_scrollbar_visibility(), delay=100)
+        # Update scrollbar visibility immediately and force viewport update
+        self._force_scrollbar_update()
 
         logger.debug(f"Column '{column_key}' resized from {old_size}px to {new_size}px")
+
+    def _force_scrollbar_update(self) -> None:
+        """Force immediate scrollbar and viewport update."""
+        # Update scrollbar visibility
+        self._update_scrollbar_visibility()
+
+        # Force immediate viewport refresh
+        self.viewport().update()
+
+        # Force geometry update
+        self.updateGeometry()
+
+        # Force model data refresh to update word wrap
+        if self.model():
+            self.model().layoutChanged.emit()
+
+        # Schedule a delayed update to ensure everything is properly refreshed
+        schedule_ui_update(lambda: self._delayed_refresh(), delay=100)
+
+    def _delayed_refresh(self) -> None:
+        """Delayed refresh to ensure proper scrollbar and content updates."""
+        self._update_scrollbar_visibility()
+        self.viewport().update()
+
+        # Force text refresh in all visible cells
+        if self.model():
+            visible_rect = self.viewport().rect()
+            top_left = self.indexAt(visible_rect.topLeft())
+            bottom_right = self.indexAt(visible_rect.bottomRight())
+
+            if top_left.isValid() and bottom_right.isValid():
+                self.dataChanged(top_left, bottom_right)
 
     def _on_column_moved(self, logical_index: int, old_visual_index: int, new_visual_index: int) -> None:
         """Handle column reordering and save order to config."""
@@ -698,14 +770,11 @@ class FileTableView(QTableView):
         if not model:
             return
 
-        is_empty = model.rowCount() == 0
-
         # For empty table, always hide horizontal scrollbar
-        if is_empty:
+        if model.rowCount() == 0:
             self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             return
 
-        # For non-empty table, check if content exceeds viewport
         # Calculate total column width
         total_width = 0
         for i in range(model.columnCount()):
@@ -714,15 +783,11 @@ class FileTableView(QTableView):
         # Get viewport width
         viewport_width = self.viewport().width()
 
-        # Show scrollbar if content exceeds viewport
+        # Simple logic: show scrollbar if content is wider than viewport
         if total_width > viewport_width:
-            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         else:
             self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-
-        # Force immediate update of scrollbar
-        self.updateGeometry()
-        self.viewport().update()
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
         """Handle horizontal splitter movement - no longer adjusts filename column."""

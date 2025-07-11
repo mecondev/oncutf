@@ -189,7 +189,7 @@ class ColumnManager:
             )
         }
 
-        # Preview tables use auto-width and don't need column management
+        # Preview tables auto-regulate and don't need column management
 
     def configure_table_columns(self, table_view: Union[QTableView, QTreeView],
                                table_type: str) -> None:
@@ -200,6 +200,11 @@ class ColumnManager:
             table_view: The table/tree view to configure
             table_type: Type identifier ('file_table', 'metadata_tree', 'preview_old', 'preview_new')
         """
+        # Skip preview tables as they auto-regulate
+        if table_type in ['preview_old', 'preview_new']:
+            logger.debug(f"[ColumnManager] Skipping auto-regulating table type: {table_type}")
+            return
+
         if table_type not in self.table_configs:
             logger.warning(f"[ColumnManager] Unknown table type: {table_type}")
             return
