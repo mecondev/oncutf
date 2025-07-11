@@ -517,7 +517,12 @@ class FileTableModel(QAbstractTableModel):
                                     return 0
                             else:
                                 return str(found_value).lower()  # String sorting (case-insensitive)
-                return ""
+
+                # Return appropriate default value based on column type
+                if column_key in ["iso", "video_fps", "video_avg_bitrate", "rotation", "image_size"]:
+                    return 0  # Default numeric value for numeric columns
+                else:
+                    return ""  # Default string value for text columns
 
             self.files.sort(key=get_metadata_sort_key, reverse=reverse)
 

@@ -247,6 +247,10 @@ class ColumnManager:
         # Connect resize signals for user preference tracking
         self._connect_resize_signals(table_view, table_type)
 
+        # Ensure horizontal scrollbar state is correct
+        if isinstance(table_view, QTableView):
+            self.ensure_horizontal_scrollbar_state(table_view)
+
         logger.debug(f"[ColumnManager] Configured columns for table type: {table_type}", extra={"dev_only": True})
 
     def _update_font_metrics(self, widget: QWidget) -> None:
@@ -460,6 +464,28 @@ class ColumnManager:
             pass
         return 14  # Default estimate
 
+    def ensure_horizontal_scrollbar_state(self, table_view: QTableView) -> None:
+        """
+        Ensure that the horizontal scrollbar state is consistent with the current column layout.
+        Scrolls to leftmost if content fits, otherwise keeps the previous value.
+        """
+        try:
+            # Trigger recalculation of the scroll area
+            table_view.updateGeometries()
+            table_view.viewport().update()
+
+            # Get horizontal scrollbar
+            hbar = table_view.horizontalScrollBar()
+            if hbar:
+                # If scrollbar has range, position it at the beginning
+                if hbar.maximum() > 0:
+                    hbar.setValue(0)  # Always scroll to leftmost position
+
+                logger.debug(f"[ColumnManager] Updated horizontal scrollbar state: max={hbar.maximum()}, value={hbar.value()}")
+
+        except Exception as e:
+            logger.warning(f"[ColumnManager] Error updating horizontal scrollbar state: {e}")
+
     def _connect_resize_signals(self, table_view: Union[QTableView, QTreeView],
                                table_type: str) -> None:
         """Connect resize signals for user preference tracking."""
@@ -511,6 +537,10 @@ class ColumnManager:
                 self.state.set_user_preference(logical_index, new_size)
                 logger.debug(f"[ColumnManager] User preference set for {table_type} column {logical_index}: {new_size}", extra={"dev_only": True})
 
+                # Update horizontal scrollbar state after user resize
+                # We need to find the table view for this - this is a limitation of the current design
+                # For now, we'll rely on the table view's own resize handlers to call this method
+
     def adjust_columns_for_splitter_change(self, table_view: Union[QTableView, QTreeView],
                                          table_type: str) -> None:
         """
@@ -541,6 +571,10 @@ class ColumnManager:
                     self.state.programmatic_resize_active = True
                     table_view.setColumnWidth(column_index, new_width)
                     self.state.programmatic_resize_active = False
+
+        # Ensure horizontal scrollbar state is correct after column adjustments
+        if isinstance(table_view, QTableView):
+            self.ensure_horizontal_scrollbar_state(table_view)
 
     def reset_user_preferences(self, table_type: str, column_index: Optional[int] = None) -> None:
         """

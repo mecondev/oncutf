@@ -697,12 +697,30 @@ class FileTableView(QTableView):
         # Update scrollbar visibility immediately and force viewport update
         self._force_scrollbar_update()
 
+        # Force repaint and layout update so elidedText is recalculated
+        if self.model():
+            self.model().layoutChanged.emit()
+        self.viewport().update()
+
         logger.debug(f"Column '{column_key}' resized from {old_size}px to {new_size}px")
 
     def _force_scrollbar_update(self) -> None:
         """Force immediate scrollbar and viewport update."""
         # Update scrollbar visibility
         self._update_scrollbar_visibility()
+
+        # Use column manager's improved horizontal scrollbar handling
+        try:
+            from core.application_context import get_app_context
+            context = get_app_context()
+            if context and hasattr(context, 'column_manager'):
+                context.column_manager.ensure_horizontal_scrollbar_state(self)
+        except (RuntimeError, AttributeError):
+            # Fallback to basic scrollbar handling
+            self.updateGeometries()
+            hbar = self.horizontalScrollBar()
+            if hbar and hbar.maximum() > 0:
+                hbar.setValue(0)
 
         # Force immediate viewport refresh
         self.viewport().update()
@@ -720,6 +738,20 @@ class FileTableView(QTableView):
     def _delayed_refresh(self) -> None:
         """Delayed refresh to ensure proper scrollbar and content updates."""
         self._update_scrollbar_visibility()
+
+        # Use column manager's improved horizontal scrollbar handling
+        try:
+            from core.application_context import get_app_context
+            context = get_app_context()
+            if context and hasattr(context, 'column_manager'):
+                context.column_manager.ensure_horizontal_scrollbar_state(self)
+        except (RuntimeError, AttributeError):
+            # Fallback to basic scrollbar handling
+            self.updateGeometries()
+            hbar = self.horizontalScrollBar()
+            if hbar and hbar.maximum() > 0:
+                hbar.setValue(0)
+
         self.viewport().update()
 
         # Force text refresh in all visible cells

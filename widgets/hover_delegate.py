@@ -135,17 +135,16 @@ class HoverItemDelegate(QStyledItemDelegate):
                 # All other cases (normal, hover only, selected only): light text
                 text_color = QColor(get_theme_color("table_text"))
 
-            # Paint text manually
             painter.save()
             painter.setPen(text_color)
 
-            # Calculate text rect with proper alignment
             text_rect = option.rect.adjusted(4, 0, -4, 0)  # Small horizontal padding
 
-            # Get alignment from model
             alignment = model.data(index, Qt.TextAlignmentRole) if model else Qt.AlignLeft | Qt.AlignVCenter
             if not alignment:
                 alignment = Qt.AlignLeft | Qt.AlignVCenter
 
-            painter.drawText(text_rect, alignment, str(display_text))
+            fm = painter.fontMetrics()
+            elided = fm.elidedText(str(display_text), Qt.ElideRight, text_rect.width())
+            painter.drawText(text_rect, alignment, elided)
             painter.restore()
