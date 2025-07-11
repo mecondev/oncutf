@@ -1171,16 +1171,21 @@ class MetadataTreeView(QTreeView):
 
     def _refresh_current_metadata_view(self) -> None:
         """Refresh the current metadata view with the new display level."""
+        logger.debug(f"Refreshing metadata view with display level: {self._current_display_level}", extra={"dev_only": True})
+
         if not self._current_file_path:
+            logger.debug("No current file path, cannot refresh", extra={"dev_only": True})
             return
 
         # Get the current selection to re-display metadata
         selected_files = self._get_current_selection()
         if not selected_files:
+            logger.debug("No selected files, cannot refresh", extra={"dev_only": True})
             return
 
         # Get metadata for the current file
         file_item = selected_files[0]
+        logger.debug(f"Refreshing metadata for file: {file_item.filename}", extra={"dev_only": True})
 
         # Try to get metadata from cache first
         cache_helper = self._get_cache_helper()
@@ -1194,7 +1199,10 @@ class MetadataTreeView(QTreeView):
             metadata = file_item.metadata
 
         if metadata:
+            logger.debug(f"Refreshing with {len(metadata)} metadata fields", extra={"dev_only": True})
             self.display_metadata(metadata, context="display_level_change")
+        else:
+            logger.debug("No metadata found for refresh", extra={"dev_only": True})
 
     def _get_menu_icon(self, icon_name: str):
         """Get menu icon using the same system as specified text module."""

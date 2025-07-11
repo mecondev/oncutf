@@ -211,13 +211,14 @@ class InteractiveHeader(QHeaderView):
                         column_key, column_config.get("default_visible", True)
                     )
 
-                # Set toggle icon based on visibility
+                # Set icon based on visibility (restore the original icon behavior)
                 if is_visible:
-                    action.setIcon(get_menu_icon("toggle-right"))
+                    action.setIcon(get_menu_icon("eye"))
                 else:
-                    action.setIcon(get_menu_icon("toggle-left"))
+                    action.setIcon(get_menu_icon("eye-off"))
 
-                action.triggered.connect(lambda checked, key=column_key: self._toggle_column_visibility_keep_open(key, columns_menu))
+                # Use triggered signal (original behavior)
+                action.triggered.connect(lambda checked=False, key=column_key: self._toggle_column_visibility(key))
                 columns_menu.addAction(action)
 
             menu.addMenu(columns_menu)
@@ -235,6 +236,12 @@ class InteractiveHeader(QHeaderView):
 
     def _toggle_column_visibility(self, column_key: str):
         """Toggle visibility of a specific column via the file table view."""
+        file_table_view = self._get_file_table_view()
+        if file_table_view and hasattr(file_table_view, '_toggle_column_visibility'):
+            file_table_view._toggle_column_visibility(column_key)
+
+    def _toggle_column_visibility_simple(self, column_key: str):
+        """Toggle visibility of a specific column (simple version for checkable actions)."""
         file_table_view = self._get_file_table_view()
         if file_table_view and hasattr(file_table_view, '_toggle_column_visibility'):
             file_table_view._toggle_column_visibility(column_key)
@@ -273,6 +280,7 @@ class InteractiveHeader(QHeaderView):
 
             for column_key, column_config in column_items:
                 action = QAction(column_config["title"], columns_menu)
+                action.setCheckable(True)
 
                 # Get visibility state from file table view
                 is_visible = True
@@ -281,13 +289,11 @@ class InteractiveHeader(QHeaderView):
                         column_key, column_config.get("default_visible", True)
                     )
 
-                # Set toggle icon based on visibility
-                if is_visible:
-                    action.setIcon(get_menu_icon("toggle-right"))
-                else:
-                    action.setIcon(get_menu_icon("toggle-left"))
+                # Set checked state based on visibility
+                action.setChecked(is_visible)
 
-                action.triggered.connect(lambda checked, key=column_key: self._toggle_column_visibility_keep_open(key, columns_menu))
+                # Use toggled signal instead of triggered to keep menu open
+                action.toggled.connect(lambda checked, key=column_key: self._toggle_column_visibility_simple(key))
                 columns_menu.addAction(action)
 
         except Exception as e:

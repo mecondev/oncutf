@@ -325,7 +325,7 @@ class FileTableModel(QAbstractTableModel):
                 return "missing"
 
             elif role == Qt.ToolTipRole:
-                # Create tooltip with metadata and hash status
+                # Create tooltip with metadata count and hash status
                 entry = None
                 if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
                     entry = self.parent_window.metadata_cache.get_entry(file.full_path)
@@ -334,16 +334,17 @@ class FileTableModel(QAbstractTableModel):
 
                 tooltip_parts = []
 
-                # Metadata status
-                if entry:
+                # Metadata count and type
+                if entry and hasattr(entry, 'data') and entry.data:
+                    metadata_count = len(entry.data)
                     if hasattr(entry, "modified") and entry.modified:
-                        tooltip_parts.append("Metadata: Modified")
+                        tooltip_parts.append(f"{metadata_count} metadata loaded (modified)")
                     elif entry.is_extended:
-                        tooltip_parts.append("Metadata: Extended")
+                        tooltip_parts.append(f"{metadata_count} extended metadata loaded")
                     else:
-                        tooltip_parts.append("Metadata: Basic")
+                        tooltip_parts.append(f"{metadata_count} metadata loaded")
                 else:
-                    tooltip_parts.append("Metadata: Not loaded")
+                    tooltip_parts.append("No metadata loaded")
 
                 # Hash status
                 if has_hash:
@@ -351,13 +352,9 @@ class FileTableModel(QAbstractTableModel):
                     if hash_value:
                         tooltip_parts.append(f"Hash: {hash_value[:8]}...")
                     else:
-                        tooltip_parts.append("Hash: Available")
+                        tooltip_parts.append("Hash available")
                 else:
-                    tooltip_parts.append("Hash: Not calculated")
-
-                # File info
-                tooltip_parts.append(f"File: {file.filename}")
-                tooltip_parts.append(f"Size: {file.get_human_readable_size()}")
+                    tooltip_parts.append("No hash")
 
                 return "\n".join(tooltip_parts)
 

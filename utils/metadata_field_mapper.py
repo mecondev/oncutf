@@ -64,10 +64,10 @@ class MetadataFieldMapper:
 
         # Unique identifiers
         "target_umid": [
-            "TargetMaterialUMID", "UMID", "MaterialUMID",
-            "QuickTime:TargetMaterialUMID", "QuickTime:UMID", "QuickTime:MaterialUMID",
-            "XMP:TargetMaterialUMID", "XMP:UMID", "XMP:MaterialUMID",
-            "File:TargetMaterialUMID", "File:UMID", "File:MaterialUMID"
+            "TargetMaterialUmidRef", "TargetMaterialUMID", "UMID", "MaterialUMID",
+            "QuickTime:TargetMaterialUmidRef", "QuickTime:TargetMaterialUMID", "QuickTime:UMID", "QuickTime:MaterialUMID",
+            "XMP:TargetMaterialUmidRef", "XMP:TargetMaterialUMID", "XMP:UMID", "XMP:MaterialUMID",
+            "File:TargetMaterialUmidRef", "File:TargetMaterialUMID", "File:UMID", "File:MaterialUMID"
         ],
     }
 
@@ -106,6 +106,9 @@ class MetadataFieldMapper:
                 break
 
         if raw_value is None:
+            # Debug logging for UMID specifically
+            if field_key == "target_umid":
+                logger.debug(f"UMID not found. Available keys: {list(metadata_dict.keys())[:10]}...", extra={"dev_only": True})
             return ""
 
         # Format the value for display
