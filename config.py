@@ -183,7 +183,7 @@ CONTENT_MARGINS = {
 # =====================================
 
 # Metadata Display Level Settings
-DEFAULT_METADATA_DISPLAY_LEVEL = "essential"  # Options: "essential", "standard", "all"
+
 
 # =====================================
 # METADATA TREE VIEW SETTINGS

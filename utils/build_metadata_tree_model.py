@@ -360,7 +360,7 @@ def get_hidden_fields_for_level(level: str = "essential") -> set:
     return essential_hidden
 
 
-def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extended_keys: set = None, display_level: str = "essential") -> QStandardItemModel:
+def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extended_keys: set = None, display_level: str = "all") -> QStandardItemModel:
     """
     Build a tree model for metadata display with enhanced grouping and extended metadata indicators.
 
@@ -368,7 +368,7 @@ def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extende
         metadata: Dictionary containing metadata
         modified_keys: Set of keys that have been modified
         extended_keys: Set of keys that are only available in extended metadata mode
-        display_level: Display level - "essential", "standard", or "all"
+        display_level: Display level - always "all" (no filtering)
     """
     logger.debug(">>> build_metadata_tree_model called", extra={"dev_only": True})
     logger.debug(f"metadata type: {type(metadata)} | keys: {list(metadata.keys()) if isinstance(metadata, dict) else 'N/A'}", extra={"dev_only": True})
@@ -378,7 +378,8 @@ def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extende
     if extended_keys is None:
         extended_keys = set()
 
-    hidden_fields = get_hidden_fields_for_level(display_level)
+    # No filtering - show all metadata
+    hidden_fields = set()
 
     model = QStandardItemModel()
     model.setHorizontalHeaderLabels(["Key", "Value"])
@@ -391,10 +392,7 @@ def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extende
         if key.startswith("__"):
             continue
 
-        # Skip hidden fields
-        if key in hidden_fields:
-            logger.debug(f"Skipping hidden field: {key}", extra={"dev_only": True})
-            continue
+
 
         group = classify_key(key)
         grouped.setdefault(group, []).append((key, value))

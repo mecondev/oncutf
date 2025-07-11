@@ -298,6 +298,10 @@ class UIManager:
 
         # Show placeholder after setup is complete
         self.parent_window.file_table_view.set_placeholder_visible(True)
+
+        # Setup custom tooltips for the file table
+        self.parent_window.file_model.setup_custom_tooltips(self.parent_window.file_table_view)
+
         center_layout.addWidget(self.parent_window.file_table_view)
         # Set minimum size for center panel and add to splitter
         self.parent_window.center_frame.setMinimumWidth(230)

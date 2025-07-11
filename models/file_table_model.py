@@ -32,6 +32,7 @@ from core.pyqt_imports import (
 )
 from models.file_item import FileItem
 from utils.icons_loader import load_metadata_icons
+from utils.tooltip_helper import TooltipHelper, TooltipType
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
@@ -144,6 +145,34 @@ class FileTableModel(QAbstractTableModel):
         except (ImportError, Exception) as e:
             logger.debug(f"[FileTableModel] Could not get hash value: {e}")
             return ""
+
+    def _get_unified_tooltip(self, file) -> str:
+        """Get unified tooltip for all columns showing metadata and hash status."""
+        tooltip_parts = []
+
+        # Add metadata status
+        if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
+            entry = self.parent_window.metadata_cache.get_entry(file.full_path)
+            if entry and hasattr(entry, 'data') and entry.data:
+                field_count = len(entry.data)
+                if entry.data.get("__extended__", False):
+                    tooltip_parts.append(f"{field_count} extended metadata loaded")
+                else:
+                    tooltip_parts.append(f"{field_count} metadata loaded")
+            else:
+                tooltip_parts.append("No metadata loaded")
+
+        # Add hash status
+        if self._has_hash_cached(file.full_path):
+            hash_value = self._get_hash_value(file.full_path)
+            if hash_value:
+                tooltip_parts.append(f"Hash: {hash_value}")
+            else:
+                tooltip_parts.append("Hash available")
+        else:
+            tooltip_parts.append("No hash")
+
+        return "\n".join(tooltip_parts)
 
     def _create_combined_icon(self, metadata_status: str, hash_status: str) -> QIcon:
         """
@@ -324,75 +353,13 @@ class FileTableModel(QAbstractTableModel):
                         return "extended" if entry.is_extended else "loaded"
                 return "missing"
 
-            elif role == Qt.ToolTipRole:
-                # Create tooltip with metadata count and hash status
-                entry = None
-                if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
-                    entry = self.parent_window.metadata_cache.get_entry(file.full_path)
 
-                has_hash = self._has_hash_cached(file.full_path)
-
-                tooltip_parts = []
-
-                # Metadata count and type
-                if entry and hasattr(entry, 'data') and entry.data:
-                    metadata_count = len(entry.data)
-                    if hasattr(entry, "modified") and entry.modified:
-                        tooltip_parts.append(f"{metadata_count} metadata loaded (modified)")
-                    elif entry.is_extended:
-                        tooltip_parts.append(f"{metadata_count} extended metadata loaded")
-                    else:
-                        tooltip_parts.append(f"{metadata_count} metadata loaded")
-                else:
-                    tooltip_parts.append("No metadata loaded")
-
-                # Hash status
-                if has_hash:
-                    hash_value = self._get_hash_value(file.full_path)
-                    if hash_value:
-                        tooltip_parts.append(f"Hash: {hash_value[:8]}...")
-                    else:
-                        tooltip_parts.append("Hash available")
-                else:
-                    tooltip_parts.append("No hash")
-
-                return "\n".join(tooltip_parts)
 
             # No display text for status column
             return QVariant()
 
         # Handle dynamic columns (filename, file_size, etc.)
-        if role == Qt.ToolTipRole:
-            # Create tooltip for all columns
-            tooltip_parts = []
-
-            # Column-specific information
-            if column_key == "filename":
-                tooltip_parts.append(f"Filename: {file.filename}")
-                tooltip_parts.append(f"Full path: {file.full_path}")
-            elif column_key == "file_size":
-                tooltip_parts.append(f"File size: {file.get_human_readable_size()}")
-                tooltip_parts.append(f"Size in bytes: {file.file_size:,}")
-            elif column_key == "type":
-                tooltip_parts.append(f"File type: {file.extension}")
-            elif column_key == "modified":
-                if isinstance(file.modified, datetime):
-                    tooltip_parts.append(f"Modified: {file.modified.strftime('%Y-%m-%d %H:%M:%S')}")
-                else:
-                    tooltip_parts.append(f"Modified: {file.modified}")
-            else:
-                # For metadata columns, show the value and source
-                display_value = self._get_column_data(file, column_key, Qt.DisplayRole)
-                if display_value:
-                    tooltip_parts.append(f"{column_key}: {display_value}")
-                else:
-                    tooltip_parts.append(f"{column_key}: No data available")
-
-            # Add common file info
-            tooltip_parts.append(f"File: {file.filename}")
-            tooltip_parts.append(f"Size: {file.get_human_readable_size()}")
-
-            return "\n".join(tooltip_parts)
+        # Note: Tooltips are now handled by custom tooltip system via setup_custom_tooltips()
 
         return self._get_column_data(file, column_key, role)
 
@@ -605,6 +572,10 @@ class FileTableModel(QAbstractTableModel):
         # Immediate icon update for cached metadata/hash
         self._update_icons_immediately()
 
+        # Update custom tooltips for new files
+        if hasattr(self, '_table_view_ref') and self._table_view_ref:
+            self.setup_custom_tooltips(self._table_view_ref)
+
     def _update_icons_immediately(self) -> None:
         """Updates icons immediately for all files that have cached data."""
         if not self.files:
@@ -697,3 +668,45 @@ class FileTableModel(QAbstractTableModel):
             list[FileItem]: List of checked FileItem objects
         """
         return [f for f in self.files if f.checked]
+
+    def setup_custom_tooltips(self, table_view) -> None:
+        """Setup custom tooltips for all cells in the table view."""
+        if not table_view:
+            return
+
+        # Store reference to table view for future updates
+        self._table_view_ref = table_view
+
+        if not self.files:
+            return
+
+        try:
+            # Clear any existing tooltips
+            TooltipHelper.clear_tooltips_for_widget(table_view)
+
+            # Override the table view's mouse move event to show dynamic tooltips
+            original_mouse_move = getattr(table_view, 'mouseMoveEvent', None)
+
+            def custom_mouse_move_event(event):
+                if original_mouse_move:
+                    original_mouse_move(event)
+
+                # Get the index under the cursor
+                index = table_view.indexAt(event.pos())
+                if index.isValid() and index.row() < len(self.files):
+                    file = self.files[index.row()]
+                    tooltip_text = self._get_unified_tooltip(file)
+
+                    # Show persistent tooltip
+                    TooltipHelper.setup_tooltip(
+                        table_view,
+                        tooltip_text,
+                        TooltipType.INFO
+                    )
+
+            # Replace the mouse move event
+            table_view.mouseMoveEvent = custom_mouse_move_event
+            table_view.setMouseTracking(True)
+
+        except Exception as e:
+            logger.debug(f"Error setting up custom tooltips: {e}")

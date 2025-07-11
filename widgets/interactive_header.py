@@ -211,13 +211,13 @@ class InteractiveHeader(QHeaderView):
                         column_key, column_config.get("default_visible", True)
                     )
 
-                # Set icon based on visibility (restore the original icon behavior)
+                # Set icon based on visibility (toggle-left for hidden, toggle-right for visible)
                 if is_visible:
-                    action.setIcon(get_menu_icon("eye"))
+                    action.setIcon(get_menu_icon("toggle-right"))
                 else:
-                    action.setIcon(get_menu_icon("eye-off"))
+                    action.setIcon(get_menu_icon("toggle-left"))
 
-                # Use triggered signal (original behavior)
+                # Use triggered signal (menu will close, but it's simpler)
                 action.triggered.connect(lambda checked=False, key=column_key: self._toggle_column_visibility(key))
                 columns_menu.addAction(action)
 
@@ -240,66 +240,7 @@ class InteractiveHeader(QHeaderView):
         if file_table_view and hasattr(file_table_view, '_toggle_column_visibility'):
             file_table_view._toggle_column_visibility(column_key)
 
-    def _toggle_column_visibility_simple(self, column_key: str):
-        """Toggle visibility of a specific column (simple version for checkable actions)."""
-        file_table_view = self._get_file_table_view()
-        if file_table_view and hasattr(file_table_view, '_toggle_column_visibility'):
-            file_table_view._toggle_column_visibility(column_key)
 
-    def _toggle_column_visibility_keep_open(self, column_key: str, columns_menu):
-        """Toggle visibility of a specific column and update the menu without closing it."""
-        file_table_view = self._get_file_table_view()
-        if file_table_view and hasattr(file_table_view, '_toggle_column_visibility'):
-            file_table_view._toggle_column_visibility(column_key)
-
-            # Update the menu to reflect the new state
-            self._update_columns_menu(columns_menu)
-
-    def _update_columns_menu(self, columns_menu):
-        """Update the columns menu to reflect current visibility states."""
-        try:
-            file_table_view = self._get_file_table_view()
-            if not file_table_view:
-                return
-
-            from config import FILE_TABLE_COLUMN_CONFIG
-            from utils.icons_loader import get_menu_icon
-
-            # Clear existing actions
-            columns_menu.clear()
-
-            # Re-add column toggle actions (sorted alphabetically by title)
-            column_items = []
-            for column_key, column_config in FILE_TABLE_COLUMN_CONFIG.items():
-                if not column_config.get("removable", True):
-                    continue  # Skip non-removable columns like filename
-                column_items.append((column_key, column_config))
-
-            # Sort by title alphabetically
-            column_items.sort(key=lambda x: x[1]["title"])
-
-            for column_key, column_config in column_items:
-                action = QAction(column_config["title"], columns_menu)
-                action.setCheckable(True)
-
-                # Get visibility state from file table view
-                is_visible = True
-                if hasattr(file_table_view, '_visible_columns'):
-                    is_visible = file_table_view._visible_columns.get(
-                        column_key, column_config.get("default_visible", True)
-                    )
-
-                # Set checked state based on visibility
-                action.setChecked(is_visible)
-
-                # Use toggled signal instead of triggered to keep menu open
-                action.toggled.connect(lambda checked, key=column_key: self._toggle_column_visibility_simple(key))
-                columns_menu.addAction(action)
-
-        except Exception as e:
-            from utils.logger_factory import get_cached_logger
-            logger = get_cached_logger(__name__)
-            logger.warning(f"Failed to update columns menu: {e}")
 
 
 

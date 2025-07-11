@@ -165,7 +165,7 @@ class MetadataTreeView(QTreeView):
 
         # Display level for metadata filtering (load from config)
         # Note: This must be set before any metadata loading
-        self._current_display_level: str = "essential"  # Default fallback
+
 
         # Scroll position memory: {file_path: scroll_position}
         self._scroll_positions: Dict[str, int] = {}
@@ -195,8 +195,7 @@ class MetadataTreeView(QTreeView):
         # Setup standard view properties
         self._setup_tree_view_properties()
 
-        # Load display level from config after initialization
-        self._current_display_level = self._load_display_level_from_config()
+
 
         # Setup icon delegate for selected state icon changes
 
@@ -1007,35 +1006,7 @@ class MetadataTreeView(QTreeView):
 
         menu.addSeparator()
 
-        # Display level submenu
-        display_menu = QMenu("Display Level", menu)
-        display_menu.setIcon(self._get_menu_icon("eye"))
 
-        # Get current display level (fallback to config default)
-        from config import DEFAULT_METADATA_DISPLAY_LEVEL
-
-        current_level = getattr(self, "_current_display_level", DEFAULT_METADATA_DISPLAY_LEVEL)
-
-        # Create display level actions
-        essential_action = QAction("Essential", display_menu)
-        essential_action.setCheckable(True)
-        essential_action.setChecked(current_level == "essential")
-        essential_action.triggered.connect(lambda: self._set_display_level("essential"))
-        display_menu.addAction(essential_action)
-
-        standard_action = QAction("Standard", display_menu)
-        standard_action.setCheckable(True)
-        standard_action.setChecked(current_level == "standard")
-        standard_action.triggered.connect(lambda: self._set_display_level("standard"))
-        display_menu.addAction(standard_action)
-
-        all_action = QAction("All", display_menu)
-        all_action.setCheckable(True)
-        all_action.setChecked(current_level == "all")
-        all_action.triggered.connect(lambda: self._set_display_level("all"))
-        display_menu.addAction(all_action)
-
-        menu.addMenu(display_menu)
 
         # History submenu
         history_menu = QMenu("History", menu)
@@ -1106,103 +1077,7 @@ class MetadataTreeView(QTreeView):
         """Clean up the current menu reference."""
         self._current_menu = None
 
-    def _set_display_level(self, level: str) -> None:
-        """Set the display level and refresh the metadata view."""
-        if level not in ["essential", "standard", "all"]:
-            logger.warning(f"Invalid display level: {level}")
-            return
 
-        self._current_display_level = level
-        logger.debug(f"Display level changed to: {level}", extra={"dev_only": True})
-
-        # Save the display level to config
-        self._save_display_level_to_config(level)
-
-        # Refresh the current metadata view with the new display level
-        self._refresh_current_metadata_view()
-
-    def _save_display_level_to_config(self, level: str) -> None:
-        """Save the display level to the JSON config."""
-        try:
-            from utils.json_config_manager import get_app_config_manager
-
-            config_manager = get_app_config_manager()
-            # Get or create app category
-            app_category = config_manager.get_category("app")
-            if not app_category:
-                from utils.json_config_manager import AppConfig
-                app_category = AppConfig()
-                config_manager.register_category(app_category)
-
-            app_category.set("metadata_display_level", level)
-            config_manager.save()
-            logger.debug(f"Saved display level to config: {level}")
-        except Exception as e:
-            logger.warning(f"Failed to save display level to config: {e}")
-
-    def _load_display_level_from_config(self) -> str:
-        """Load the display level from the JSON config."""
-        try:
-            from utils.json_config_manager import get_app_config_manager
-            from config import DEFAULT_METADATA_DISPLAY_LEVEL
-
-            config_manager = get_app_config_manager()
-            config_manager.load()
-
-            # Get app category
-            app_category = config_manager.get_category("app")
-            if app_category:
-                level = app_category.get("metadata_display_level", DEFAULT_METADATA_DISPLAY_LEVEL)
-
-                # Validate the loaded level
-                if level not in ["essential", "standard", "all"]:
-                    logger.warning(f"Invalid display level in config: {level}, using default")
-                    return DEFAULT_METADATA_DISPLAY_LEVEL
-
-                logger.debug(f"Loaded display level from config: {level}")
-                return level
-            else:
-                logger.debug("No app category found in config, using default display level")
-                return DEFAULT_METADATA_DISPLAY_LEVEL
-        except Exception as e:
-            logger.warning(f"Failed to load display level from config: {e}")
-            from config import DEFAULT_METADATA_DISPLAY_LEVEL
-            return DEFAULT_METADATA_DISPLAY_LEVEL
-
-    def _refresh_current_metadata_view(self) -> None:
-        """Refresh the current metadata view with the new display level."""
-        logger.debug(f"Refreshing metadata view with display level: {self._current_display_level}", extra={"dev_only": True})
-
-        if not self._current_file_path:
-            logger.debug("No current file path, cannot refresh", extra={"dev_only": True})
-            return
-
-        # Get the current selection to re-display metadata
-        selected_files = self._get_current_selection()
-        if not selected_files:
-            logger.debug("No selected files, cannot refresh", extra={"dev_only": True})
-            return
-
-        # Get metadata for the current file
-        file_item = selected_files[0]
-        logger.debug(f"Refreshing metadata for file: {file_item.filename}", extra={"dev_only": True})
-
-        # Try to get metadata from cache first
-        cache_helper = self._get_cache_helper()
-        metadata = None
-
-        if cache_helper:
-            metadata = cache_helper.get_metadata_for_file(file_item)
-
-        # Fallback to file item metadata
-        if not metadata and hasattr(file_item, "metadata"):
-            metadata = file_item.metadata
-
-        if metadata:
-            logger.debug(f"Refreshing with {len(metadata)} metadata fields", extra={"dev_only": True})
-            self.display_metadata(metadata, context="display_level_change")
-        else:
-            logger.debug("No metadata found for refresh", extra={"dev_only": True})
 
     def _get_menu_icon(self, icon_name: str):
         """Get menu icon using the same system as specified text module."""
@@ -2306,7 +2181,7 @@ class MetadataTreeView(QTreeView):
                         extended_keys.add(key)
 
             tree_model = build_metadata_tree_model(
-                display_data, self.modified_items, extended_keys, self._current_display_level
+                display_data, self.modified_items, extended_keys, "all"
             )
 
             # Use proxy model for filtering instead of setting model directly
@@ -2353,6 +2228,8 @@ class MetadataTreeView(QTreeView):
                     parent_window.information_label.setText("Information")
         except Exception as e:
             logger.debug(f"Error updating information label: {e}")
+
+
 
     def _apply_modified_values_to_display_data(self, display_data: Dict[str, Any]) -> None:
         """
