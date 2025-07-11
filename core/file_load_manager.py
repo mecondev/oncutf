@@ -366,8 +366,7 @@ class FileLoadManager:
                 # Reset selection state to ensure clicks work
                 if hasattr(self.parent_window.file_table_view, '_sync_selection_safely'):
                     self.parent_window.file_table_view._sync_selection_safely()
-
-                logger.debug("[FileLoadManager] Refreshed file table view", extra={"dev_only": True})
+                    logger.debug("[FileLoadManager] Refreshed file table view", extra={"dev_only": True})
 
             # Update metadata tree (clear it for new files)
             if hasattr(self.parent_window, 'metadata_tree_view'):

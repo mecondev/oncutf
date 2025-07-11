@@ -147,8 +147,31 @@ class MetadataModule:
                 return "missing"
             return MetadataModule.clean_metadata_value(str(value))
 
-        # === Generic metadata field fallback ===
+        # === Generic metadata field fallback using centralized mapper ===
         if field:
+            # Try using the centralized field mapper for better key mapping
+            try:
+                from utils.metadata_field_mapper import MetadataFieldMapper
+
+                # Check if this field has a mapping in our centralized mapper
+                if MetadataFieldMapper.has_field_mapping(field):
+                    value = MetadataFieldMapper.get_metadata_value(metadata, field)
+                    if value:
+                        # For rename module, we want raw values not formatted ones
+                        # So get the raw value using the mapper's key lookup
+                        possible_keys = MetadataFieldMapper.get_metadata_keys_for_field(field)
+                        for key in possible_keys:
+                            if key in metadata:
+                                raw_value = metadata[key]
+                                if raw_value is not None:
+                                    cleaned_value = MetadataModule.clean_metadata_value(str(raw_value).strip())
+                                    return cleaned_value
+                        return "missing"
+            except ImportError:
+                # Fallback if mapper not available
+                pass
+
+            # Original direct lookup fallback
             value = metadata.get(field)
             if value is None:
                 logger.warning(f"[MetadataModule] Field '{field}' not found in metadata for {path}")

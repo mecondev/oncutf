@@ -208,100 +208,23 @@ class FileTableModel(QAbstractTableModel):
                     try:
                         entry = self.parent_window.metadata_cache.get_entry(file.full_path)
                         if entry and hasattr(entry, 'data') and entry.data:
-                            # Map column keys to metadata keys (using basic metadata keys that are available)
-                            metadata_key_map = {
-                                "rotation": "EXIF:Orientation",  # May not be available in basic metadata
-                                "duration": "QuickTime:Duration",  # May not be available in basic metadata
-                                "audio_channels": "QuickTime:AudioChannels",
-                                "audio_format": "QuickTime:AudioFormat",
-                                "aperture": "EXIF:FNumber",
-                                "iso": "EXIF:ISO",
-                                "shutter_speed": "EXIF:ExposureTime",
-                                "white_balance": "EXIF:WhiteBalance",
-                                "image_size": "EXIF:ImageWidth",  # We'll handle this specially
-                                "compression": "EXIF:Compression",
-                                "device_model": "EXIF:Model",
-                                "device_serial_no": "EXIF:SerialNumber",
-                                "video_fps": "QuickTime:VideoFrameRate",
-                                "video_avg_bitrate": "QuickTime:AvgBitrate",
-                                "video_codec": "QuickTime:VideoCodec",
-                                "video_format": "QuickTime:MajorBrand",
-                                "device_manufacturer": "EXIF:Make"
-                            }
+                            # Use centralized metadata field mapper
+                            from utils.metadata_field_mapper import MetadataFieldMapper
 
-                            metadata_key = metadata_key_map.get(column_key)
-                            if metadata_key:
-                                # Special handling for image size (combines width x height)
-                                if column_key == "image_size":
-                                    # Try different possible keys for image dimensions
-                                    width = (entry.data.get("EXIF:ImageWidth") or
-                                            entry.data.get("ImageWidth") or
-                                            entry.data.get("ExifImageWidth"))
-                                    height = (entry.data.get("EXIF:ImageHeight") or
-                                             entry.data.get("ImageHeight") or
-                                             entry.data.get("ExifImageHeight"))
-                                    if width and height:
-                                        return f"{width}x{height}"
-                                    return ""
-                                elif metadata_key in entry.data:
-                                    value = entry.data[metadata_key]
-                                    return str(value) if value is not None else ""
-                                elif column_key == "duration":
-                                    # Try different possible keys for duration
-                                    duration = (entry.data.get("QuickTime:Duration") or
-                                               entry.data.get("Duration") or
-                                               entry.data.get("MediaDuration") or
-                                               entry.data.get("VideoTrackDuration") or
-                                               entry.data.get("AudioTrackDuration"))
-                                    if duration:
-                                        return str(duration)
-                                    return ""
-
-                            # For columns that don't have extended metadata, show empty string
-                            if column_key in ["rotation", "duration", "audio_channels", "audio_format",
-                                            "aperture", "iso", "shutter_speed", "white_balance",
-                                            "image_size", "compression", "device_model",
-                                            "device_serial_no", "video_fps", "video_avg_bitrate",
-                                            "video_codec", "video_format", "device_manufacturer"]:
-                                # Check if this entry has extended metadata
-                                if hasattr(entry, 'is_extended') and entry.is_extended:
-                                    return ""  # Extended metadata loaded but key not found
-                                else:
-                                    return ""  # Empty string for non-extended metadata
-
-                            return ""
+                            value = MetadataFieldMapper.get_metadata_value(entry.data, column_key)
+                            return value
                     except Exception as e:
                         logger.debug(f"Error accessing metadata cache for {column_key}: {e}")
 
                 # Fallback: try to get from file item metadata directly
                 if hasattr(file, 'metadata') and file.metadata:
                     try:
-                        # Direct metadata access for common EXIF/QuickTime fields
-                        metadata_direct_map = {
-                            "rotation": ["EXIF:Orientation", "Orientation"],
-                            "duration": ["QuickTime:Duration", "Duration", "MediaDuration", "VideoTrackDuration", "AudioTrackDuration"],
-                            "audio_channels": ["QuickTime:AudioChannels", "AudioChannels"],
-                            "audio_format": ["QuickTime:AudioFormat", "AudioFormat"],
-                            "aperture": ["EXIF:FNumber", "FNumber", "Aperture"],
-                            "iso": ["EXIF:ISO", "ISO"],
-                            "shutter_speed": ["EXIF:ExposureTime", "ExposureTime", "ShutterSpeed"],
-                            "white_balance": ["EXIF:WhiteBalance", "WhiteBalance"],
-                            "image_size": ["EXIF:ImageWidth", "EXIF:ImageHeight", "ImageSize"],
-                            "compression": ["EXIF:Compression", "Compression"],
-                            "device_model": ["EXIF:Model", "Model"],
-                            "device_serial_no": ["EXIF:SerialNumber", "SerialNumber"],
-                            "video_fps": ["QuickTime:VideoFrameRate", "VideoFrameRate"],
-                            "video_avg_bitrate": ["QuickTime:AvgBitrate", "AvgBitrate"],
-                            "video_codec": ["QuickTime:VideoCodec", "VideoCodec"],
-                            "video_format": ["QuickTime:MajorBrand", "MajorBrand"],
-                            "device_manufacturer": ["EXIF:Make", "Make"]
-                        }
+                        # Use centralized metadata field mapper for fallback too
+                        from utils.metadata_field_mapper import MetadataFieldMapper
 
-                        possible_keys = metadata_direct_map.get(column_key, [])
-                        for key in possible_keys:
-                            if key in file.metadata:
-                                value = file.metadata[key]
-                                return str(value) if value is not None else ""
+                        value = MetadataFieldMapper.get_metadata_value(file.metadata, column_key)
+                        if value:
+                            return value
                     except Exception as e:
                         logger.debug(f"Error accessing file metadata for {column_key}: {e}")
 

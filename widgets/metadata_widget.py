@@ -150,10 +150,18 @@ class MetadataWidget(QWidget):
 
         all_keys = set()
         try:
-            for entry in metadata_cache._cache.values():
-                if isinstance(entry, MetadataEntry) and entry.data:
-                    filtered = {k for k in entry.data if not k.startswith('_') and k not in {'path', 'filename'}}
-                    all_keys.update(filtered)
+            # For PersistentMetadataCache, we need to access the memory cache
+            if hasattr(metadata_cache, '_memory_cache'):
+                for entry in metadata_cache._memory_cache.values():
+                    if isinstance(entry, MetadataEntry) and entry.data:
+                        filtered = {k for k in entry.data if not k.startswith('_') and k not in {'path', 'filename'}}
+                        all_keys.update(filtered)
+            # Fallback for other cache types
+            elif hasattr(metadata_cache, '_cache'):
+                for entry in metadata_cache._cache.values():
+                    if isinstance(entry, MetadataEntry) and entry.data:
+                        filtered = {k for k in entry.data if not k.startswith('_') and k not in {'path', 'filename'}}
+                        all_keys.update(filtered)
         except Exception as e:
             logger.warning(f"[MetadataWidget] Error accessing metadata cache: {e}")
 
