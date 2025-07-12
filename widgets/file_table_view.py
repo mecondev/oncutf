@@ -184,8 +184,8 @@ class FileTableView(QTableView):
         self.context_focused_row: Optional[int] = None
 
         # Enable hover visuals
-        self.hover_delegate = HoverItemDelegate(self)
-        self.setItemDelegate(self.hover_delegate)
+        # self.hover_delegate = HoverItemDelegate(self)
+        # self.setItemDelegate(self.hover_delegate)
 
         # Selection store integration (with fallback to legacy selection handling)
         self._legacy_selection_mode = True  # Start in legacy mode for compatibility
@@ -201,8 +201,7 @@ class FileTableView(QTableView):
         self._ensure_no_word_wrap()
 
     def paintEvent(self, event):
-        """Override paint event to ensure proper scrollbar handling."""
-        # Paint the normal table
+        logger.debug("FileTableView paintEvent called")
         super().paintEvent(event)
 
         # Note: Removed scrollbar update from paintEvent to prevent recursion
@@ -448,82 +447,85 @@ class FileTableView(QTableView):
 
         logger.debug(f"_configure_columns: model.columnCount()={self.model().columnCount()}, rowCount={self.model().rowCount()}")
 
-        try:
-            from config import FILE_TABLE_COLUMN_CONFIG, GLOBAL_MIN_COLUMN_WIDTH
+        header = self.horizontalHeader()
+        if self.model().columnCount() == 1:
+            # Only status column (empty table)
+            self.setColumnWidth(0, 45)
+            if header:
+                header.setSectionResizeMode(0, header.Fixed)
+            return
 
-            # Force fixed row height to prevent word wrapping
-            self.verticalHeader().setDefaultSectionSize(22)
-            self.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
+        # Configure status column (column 0)
+        self.setColumnWidth(0, 45)
+        if header:
+            header.setSectionResizeMode(0, header.Fixed)
 
-            # Ensure word wrap is disabled
-            self.setWordWrap(False)
-            self.setTextElideMode(Qt.ElideRight)
+        # Configure the rest of the columns
+        for col, key in self.model()._column_mapping.items():
+            if col == 0:
+                continue
+            width = self._column_widths.get(key, 100)
+            self.setColumnWidth(col, width)
+            align = self._column_alignments.get(key, Qt.AlignLeft)
+            self.model().setHeaderData(col, Qt.Horizontal, align, Qt.TextAlignmentRole)
+            if header:
+                header.setSectionResizeMode(col, header.Interactive)
 
-            # Get visible columns from model
-            visible_columns = []
-            if hasattr(self.model(), 'get_visible_columns'):
-                visible_columns = self.model().get_visible_columns()
+        # Configure each column
+        for i, column_key in enumerate(visible_columns):
+            column_index = i + 1  # +1 because column 0 is status column
+            column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
+
+            # Set column width - use saved width if available, otherwise use default
+            saved_width = self._load_column_width(column_key)
+            if saved_width > 0:
+                column_width = saved_width
             else:
-                visible_columns = ['filename', 'file_size', 'type', 'modified']
+                column_width = column_config.get('width', 100)
 
-            # Configure each column
-            for i, column_key in enumerate(visible_columns):
-                column_index = i + 1  # +1 because column 0 is status column
-                column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
+            # Apply minimum width constraint
+            min_width = max(column_config.get('min_width', GLOBAL_MIN_COLUMN_WIDTH), GLOBAL_MIN_COLUMN_WIDTH)
+            final_width = max(column_width, min_width)
 
-                # Set column width - use saved width if available, otherwise use default
-                saved_width = self._load_column_width(column_key)
-                if saved_width > 0:
-                    column_width = saved_width
-                else:
-                    column_width = column_config.get('width', 100)
+            self.setColumnWidth(column_index, final_width)
 
-                # Apply minimum width constraint
-                min_width = max(column_config.get('min_width', GLOBAL_MIN_COLUMN_WIDTH), GLOBAL_MIN_COLUMN_WIDTH)
-                final_width = max(column_width, min_width)
+            # Set column alignment
+            alignment = column_config.get('alignment', 'left')
+            self._set_column_alignment(column_index, alignment)
 
-                self.setColumnWidth(column_index, final_width)
+            # Make column resizable (except status column)
+            header = self.horizontalHeader()
+            if header:
+                header.setSectionResizeMode(column_index, QHeaderView.Interactive)
 
-                # Set column alignment
-                alignment = column_config.get('alignment', 'left')
-                self._set_column_alignment(column_index, alignment)
+            logger.debug(f"Configured column '{column_key}' at index {column_index}: width={final_width}, alignment={alignment}")
 
-                # Make column resizable (except status column)
-                header = self.horizontalHeader()
-                if header:
-                    header.setSectionResizeMode(column_index, QHeaderView.Interactive)
-
-                logger.debug(f"Configured column '{column_key}' at index {column_index}: width={final_width}, alignment={alignment}")
-
-            # Configure status column (index 0)
-            status_width = FILE_TABLE_COLUMN_CONFIG.get("status", {}).get("width", 45)
-            if self.model().columnCount() == 1:
-                # Μόνο status column - κάνε stretch για να μην φαίνεται διαχωριστική γραμμή
-                self.setColumnWidth(0, self.viewport().width())
-                if header:
-                    header.setSectionResizeMode(0, QHeaderView.Stretch)
-            else:
-                self.setColumnWidth(0, status_width)
-                if header:
-                    header.setSectionResizeMode(0, QHeaderView.Fixed)
-
-            # Make status column non-resizable
+        # Configure status column (index 0)
+        status_width = FILE_TABLE_COLUMN_CONFIG.get("status", {}).get("width", 45)
+        if self.model().columnCount() == 1:
+            # Μόνο status column - κάνε stretch για να μην φαίνεται διαχωριστική γραμμή
+            self.setColumnWidth(0, self.viewport().width())
+            if header:
+                header.setSectionResizeMode(0, QHeaderView.Stretch)
+        else:
+            self.setColumnWidth(0, status_width)
             if header:
                 header.setSectionResizeMode(0, QHeaderView.Fixed)
 
-            # Enable horizontal scrollbar when needed (instead of adjusting filename width)
-            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        # Make status column non-resizable
+        if header:
+            header.setSectionResizeMode(0, QHeaderView.Fixed)
 
-            # Connect column resize signals for saving user preferences
-            if header:
-                header.sectionResized.connect(self._on_column_resized)
-                header.sectionMoved.connect(self._on_column_moved)
+        # Enable horizontal scrollbar when needed (instead of adjusting filename width)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
-            # Force scrollbar update after column configuration
-            self._update_scrollbar_visibility()
+        # Connect column resize signals for saving user preferences
+        if header:
+            header.sectionResized.connect(self._on_column_resized)
+            header.sectionMoved.connect(self._on_column_moved)
 
-        except Exception as e:
-            logger.error(f"Error configuring columns: {e}")
+        # Force scrollbar update after column configuration
+        self._update_scrollbar_visibility()
 
         # Setup header context menu with sorting and column visibility
         def on_section_clicked(logical_index):
