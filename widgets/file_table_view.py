@@ -497,13 +497,28 @@ class FileTableView(QTableView):
             # Fallback: Configure columns manually with config.py values
             from config import FILE_TABLE_COLUMN_CONFIG
             visible_columns = ['filename', 'file_size', 'type', 'modified']
+            logger.debug(f"_configure_columns: Model columnCount={self.model().columnCount()}, visible_columns={visible_columns}")
+
             for i, column_key in enumerate(visible_columns):
                 column_index = i + 1  # +1 because column 0 is status
+                logger.debug(f"_configure_columns: Processing column {column_index} ({column_key})")
+
                 if column_index < self.model().columnCount():
                     column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
                     width = column_config.get('width', 100)
+                    logger.debug(f"_configure_columns: Setting column {column_index} ({column_key}) to {width}px")
                     self.setColumnWidth(column_index, width)
-                    logger.debug(f"_configure_columns: Manual config - set column {column_index} ({column_key}) to {width}px")
+                    # Verify the width was set
+                    actual_width = self.columnWidth(column_index)
+                    logger.debug(f"_configure_columns: Column {column_index} actual width after setting: {actual_width}px")
+                else:
+                    logger.warning(f"_configure_columns: Skipping column {column_index} - exceeds model columnCount {self.model().columnCount()}")
+
+            # Log all final column widths
+            logger.debug("_configure_columns: Final column widths after manual configuration:")
+            for i in range(self.model().columnCount()):
+                width = self.columnWidth(i)
+                logger.debug(f"_configure_columns: Column {i} final width: {width}px")
 
         # Now update header visibility based on content
         logger.debug("_configure_columns: Updating header visibility")
