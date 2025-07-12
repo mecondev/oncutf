@@ -141,11 +141,17 @@ class HoverItemDelegate(QStyledItemDelegate):
 
             text_rect = option.rect.adjusted(4, 0, -4, 0)  # Small horizontal padding
 
-            alignment = model.data(index, Qt.TextAlignmentRole) if model else Qt.AlignLeft | Qt.AlignVCenter
+            alignment = model.data(index, Qt.TextAlignmentRole) if model else Qt.AlignLeft | Qt.AlignVCenter  # type: ignore
             if not alignment:
-                alignment = Qt.AlignLeft | Qt.AlignVCenter
+                alignment = Qt.AlignLeft | Qt.AlignVCenter # type: ignore
+
+            # Ensure alignment is an integer (convert from QVariant if needed)
+            if hasattr(alignment, 'value'):  # QVariant case
+                alignment = alignment.value()
+            if not isinstance(alignment, int):
+                alignment = Qt.AlignLeft | Qt.AlignVCenter # type: ignore
 
             fm = painter.fontMetrics()
-            elided = fm.elidedText(str(display_text), Qt.ElideRight, text_rect.width())
+            elided = fm.elidedText(str(display_text), Qt.ElideRight, text_rect.width()) # type: ignore
             painter.drawText(text_rect, alignment, elided)
             painter.restore()

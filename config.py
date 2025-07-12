@@ -494,15 +494,6 @@ MAX_LABEL_LENGTH = 30
 
 # File Table Column Configuration for Context Menu
 FILE_TABLE_COLUMN_CONFIG = {
-    "status": {
-        "title": "Status",
-        "key": "status",
-        "default_visible": True,
-        "removable": False,  # Always visible - shows metadata and hash status icons
-        "width": 45,
-        "alignment": "center",
-        "min_width": 40,
-    },
     "filename": {
         "title": "Filename",
         "key": "filename",

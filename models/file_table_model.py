@@ -75,7 +75,7 @@ class FileTableModel(QAbstractTableModel):
 
     def _create_column_mapping(self) -> dict:
         """Create mapping from column index to column key."""
-        mapping = {0: "status"}  # Column 0 is always status column
+        mapping = {}  # Column 0 is hardcoded status column, not in mapping
         for i, column_key in enumerate(self._visible_columns):
             mapping[i + 1] = column_key  # Dynamic columns start from index 1
         return mapping
@@ -186,10 +186,8 @@ class FileTableModel(QAbstractTableModel):
         Returns:
             QIcon: Combined icon with metadata and hash status
         """
-        # Use the full STATUS_COLUMN width for proper spacing
-        from config import FILE_TABLE_COLUMN_CONFIG
-
-        combined_width = FILE_TABLE_COLUMN_CONFIG.get("status", {}).get("width", 45)  # 45px
+        # Use hardcoded width for status column (column 0)
+        combined_width = 50  # Fixed width for status column
         combined_height = 16
         combined_pixmap = QPixmap(combined_width, combined_height)
         combined_pixmap.fill(QColor(0, 0, 0, 0))
@@ -206,8 +204,8 @@ class FileTableModel(QAbstractTableModel):
         # Get hash icon
         hash_icon = self.metadata_icons.get(hash_status)
         if hash_icon:
-            # Draw hash icon on the right (27px from left = 45-16-2 for 2px right margin)
-            painter.drawPixmap(27, 0, hash_icon)
+            # Draw hash icon on the right (32px from left = 50-16-2 for 2px right margin)
+            painter.drawPixmap(32, 0, hash_icon)
 
         painter.end()
         return QIcon(combined_pixmap)

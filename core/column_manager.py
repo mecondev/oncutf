@@ -123,8 +123,8 @@ class ColumnManager:
             0: ColumnConfig(
                 column_index=0,
                 column_type=ColumnType.FIXED,
-                min_width=FILE_TABLE_COLUMN_CONFIG.get("status", {}).get("width", 45),
-                default_width=FILE_TABLE_COLUMN_CONFIG.get("status", {}).get("width", 45)
+                min_width=50,  # Hardcoded status column width
+                default_width=50  # Hardcoded status column width
             ),
             1: ColumnConfig(
                 column_index=1,
@@ -452,6 +452,10 @@ class ColumnManager:
         if self.state.programmatic_resize_active:
             return
 
+        # Skip column 0 (status) - it's hardcoded and shouldn't be saved
+        if logical_index == 0:
+            return
+
         # Check if this is a user-initiated resize
         if table_type in self.table_configs and logical_index in self.table_configs[table_type]:
             column_config = self.table_configs[table_type][logical_index]
@@ -544,6 +548,10 @@ class ColumnManager:
 
         if table_type in self.table_configs:
             for column_index in self.table_configs[table_type].keys():
+                # Skip column 0 (status) - it's hardcoded and shouldn't be saved
+                if column_index == 0:
+                    continue
+
                 if column_index in self.state.user_preferred_widths:
                     state_data['user_preferences'][column_index] = self.state.user_preferred_widths[column_index]
                 if column_index in self.state.manual_resize_flags:
