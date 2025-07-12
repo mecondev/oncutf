@@ -527,19 +527,31 @@ class FileTableView(QTableView):
         # Setup header context menu with sorting and column visibility
         def on_section_clicked(logical_index):
             """Handle header section clicks for sorting."""
+            header = self.horizontalHeader()
             if logical_index == 0:  # Status column - no sorting
+                # Κρύψε το βέλος ταξινόμησης αν πατηθεί η στήλη 0
+                header.setSortIndicator(-1, Qt.AscendingOrder)
                 return
             # Get column key from logical index
             column_key = self._get_column_key_from_index(logical_index)
             if column_key:
                 # Toggle sort order
-                current_order = self.horizontalHeader().sortIndicatorOrder()
+                current_order = header.sortIndicatorOrder()
                 new_order = Qt.DescendingOrder if current_order == Qt.AscendingOrder else Qt.AscendingOrder
                 self.sortByColumn(logical_index, new_order)
 
         # Connect header click for sorting
         if hasattr(self.horizontalHeader(), 'sectionClicked'):
             self.horizontalHeader().sectionClicked.connect(on_section_clicked)
+
+        # Βεβαιώσου ότι το sort indicator δεν ξεκινάει στη στήλη 0
+        header = self.horizontalHeader()
+        if header.sortIndicatorSection() == 0:
+            header.setSortIndicator(-1, Qt.AscendingOrder)
+
+        # Ορισμός προεπιλεγμένης ταξινόμησης στη στήλη 1 (filename), αύξουσα σειρά
+        header.setSortIndicator(1, Qt.AscendingOrder)
+        self.sortByColumn(1, Qt.AscendingOrder)
 
     def _set_column_alignment(self, column_index: int, alignment: str) -> None:
         """Set text alignment for a specific column."""

@@ -281,9 +281,6 @@ class FileTableModel(QAbstractTableModel):
         col = index.column()
         column_key = self._column_mapping.get(col, "status" if col == 0 else None)
 
-        # DEBUG LOGGING: Καταγραφή κάθε κλήσης data()
-        logger.debug(f"[FileTableModel] data() called: row={row}, col={col}, role={role}, column_key={column_key}")
-
         if not self.files:
             # For empty table, return empty string for all columns
             if role == Qt.DisplayRole:
@@ -320,9 +317,6 @@ class FileTableModel(QAbstractTableModel):
                 entry = None
                 if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
                     entry = self.parent_window.metadata_cache.get_entry(file.full_path)
-
-                # DEBUG LOGGING
-                logger.debug(f"[FileTableModel] Status icon check for {file.filename}: entry={entry}, has_data={hasattr(entry, 'data') and bool(getattr(entry, 'data', None))}")
 
                 # Check if file has hash cached
                 has_hash = self._has_hash_cached(file.full_path)
@@ -427,8 +421,8 @@ class FileTableModel(QAbstractTableModel):
 
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole):  # type: ignore
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            # Show column titles only when table has files loaded
-            if self.rowCount() > 0:
+            # Show column titles only when table έχει πραγματικά αρχεία
+            if len(self.files) > 0:
                 # Table has files - show column titles
                 if section == 0:
                     return ""  # No title for status column in any case
@@ -439,7 +433,7 @@ class FileTableModel(QAbstractTableModel):
                     column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
                     return column_config.get("title", column_key)
             else:
-                # Empty table - show no text in headers for better visual appearance
+                # Empty table - show no text in headers for καλύτερη εμφάνιση
                 return ""
         return QVariant()
 
