@@ -11,6 +11,7 @@ This manager centralizes keyboard shortcut handling including:
 - History dialog shortcut (Ctrl+H)
 - Future keyboard shortcuts can be added here
 """
+
 from typing import TYPE_CHECKING
 
 from core.pyqt_imports import Qt

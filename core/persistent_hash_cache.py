@@ -8,6 +8,7 @@ persistent_hash_cache.py
 Enhanced persistent hash cache using the improved database architecture.
 Provides improved performance and separation of concerns.
 """
+
 import os
 from typing import Dict, List, Optional
 

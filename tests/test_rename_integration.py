@@ -6,6 +6,7 @@ Date: 2025-05-31
 
 Integration tests for the enhanced rename workflow with validation
 """
+
 import warnings
 import pytest
 import tempfile
@@ -17,10 +18,6 @@ from datetime import datetime
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
-
-
-"""Integration tests for the enhanced rename workflow with validation
-"""
 
 from config import INVALID_FILENAME_MARKER
 from modules.specified_text_module import SpecifiedTextModule

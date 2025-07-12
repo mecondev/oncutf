@@ -4,17 +4,6 @@ Module: progress_manager.py
 Author: Michael Economou
 Date: 2025-06-25
 
-from typing import Optional
-from core.pyqt_imports import QWidget
-from utils.logger_factory import get_cached_logger
-from widgets.progress_widget import ProgressWidget, create_size_based_progress_widget
-logger = get_cached_logger(__name__)
-class ProgressManager:
-"""
-"""
-Module: progress_manager.py
-
-
 Unified Progress Manager for all file operations.
 
 This module provides a centralized, consistent API for progress tracking across

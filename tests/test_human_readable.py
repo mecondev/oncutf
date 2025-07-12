@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Module: test_human_readable.py
 
@@ -13,15 +14,6 @@ import warnings
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
-
-#!/usr/bin/env python3
-"""
-test_human_readable.py
-
-
-Test script to compare human-readable file size formatting
-between our application and system commands like ls -lh.
-"""
 
 import os
 import subprocess

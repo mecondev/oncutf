@@ -7,6 +7,7 @@ Date: 2025-05-31
 original_name_module.py
 Module for applying original name transformations.
 """
+
 import os
 
 from models.file_item import FileItem

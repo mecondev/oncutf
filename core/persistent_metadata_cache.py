@@ -9,6 +9,7 @@ Enhanced persistent metadata cache using the improved database architecture.
 Provides the same interface as the original cache but with improved performance
 and separation of concerns.
 """
+
 import time
 from typing import Dict, Optional
 

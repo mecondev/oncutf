@@ -13,6 +13,7 @@ Features:
 - Custom styling and positioning
 - Blocks application interaction until closed
 """
+
 import logging
 
 from config import APP_VERSION

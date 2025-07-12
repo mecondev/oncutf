@@ -11,6 +11,7 @@ This manager centralizes initialization and setup operations including:
 - Application component setup
 - Status and display management
 """
+
 from typing import TYPE_CHECKING
 
 from utils.logger_factory import get_cached_logger

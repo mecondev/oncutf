@@ -8,6 +8,7 @@ qt_imports.py
 Centralized PyQt5 imports to reduce import clutter in main files.
 Groups related Qt classes together for better organization.
 """
+
 # Core Qt classes
 from PyQt5.QtCore import (
     QAbstractTableModel,

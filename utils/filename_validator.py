@@ -11,6 +11,7 @@ Contains:
 - is_valid_filename_char: Check if a character is valid for filenames
 - clean_filename_text: Clean text by removing invalid characters
 """
+
 import logging
 from typing import Tuple
 

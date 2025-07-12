@@ -10,6 +10,7 @@ This module provides a lightweight ExifTool wrapper using a persistent
 it falls back to a one-shot subprocess call with '-ee'.
 Requires: exiftool installed and in PATH
 """
+
 import json
 import os
 import subprocess

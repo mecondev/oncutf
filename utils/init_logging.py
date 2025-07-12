@@ -10,6 +10,7 @@ for the application with app-specific log file names.
 Functions:
 init_logging(app_name): Sets up loggers with rotating file handlers.
 """
+
 import logging
 
 from utils.logger_factory import get_cached_logger

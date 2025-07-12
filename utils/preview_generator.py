@@ -9,6 +9,7 @@ This module provides functions to generate preview names for file renaming
 based on user-defined modules. It supports modular rename logic and allows
 integration with metadata.
 """
+
 from typing import Any, Dict, List, Optional, Tuple
 
 from models.file_item import FileItem

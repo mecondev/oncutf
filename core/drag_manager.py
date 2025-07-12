@@ -11,19 +11,6 @@ from utils.timer_manager import schedule_drag_cleanup
 logger = get_cached_logger(__name__)
 class DragManager(QObject):
 """
-"""
-Drag Manager - Unified drag & drop state management
-
-
-This module provides centralized drag & drop state management to fix
-the "sticky cursor" issue where drag operations don't clean up properly.
-
-Features:
-- Global drag state tracking
-- Smart cleanup timers (less aggressive)
-- Qt event filtering
-- Cursor restoration
-"""
 
 from typing import Optional
 

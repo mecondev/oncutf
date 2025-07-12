@@ -4,18 +4,6 @@ Module: icons_loader.py
 Author: Michael Economou
 Date: 2025-05-31
 
-import os
-from typing import Dict, Optional
-from core.pyqt_imports import QIcon, QPixmap
-from utils.logger_factory import get_cached_logger
-logger = get_cached_logger(__name__)
-# Cache for metadata icons to avoid regeneration
-_metadata_icons_cache: Optional[dict[str, QPixmap]] = None
-def load_metadata_icons(base_dir: Optional[str] = None) -> dict[str, QPixmap]:
-"""
-"""
-Icons Loader Module
-
 This module provides unified icon loading functionality for the application.
 It handles different types of icons:
 - Metadata status icons
@@ -28,7 +16,6 @@ Each icon type has its own loading function and caching mechanism.
 Usage:
     from utils.icons_loader import load_metadata_icons, get_menu_icon
     menu_icon = get_menu_icon("file")
-
 """
 
 import os

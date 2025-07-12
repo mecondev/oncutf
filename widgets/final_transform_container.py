@@ -8,6 +8,7 @@ final_transform_container.py
 Container widget for the final transformation controls.
 Uses a clean 3-column layout: Labels | Controls | Buttons
 """
+
 from typing import Optional
 
 from core.pyqt_imports import (

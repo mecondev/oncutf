@@ -11,6 +11,7 @@ Contains:
 - MetadataValidatedLineEdit: Single-line input with metadata-specific validation
 - MetadataValidatedTextEdit: Multi-line input for description fields
 """
+
 import logging
 from typing import Optional, Set, Tuple
 

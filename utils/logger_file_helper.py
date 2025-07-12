@@ -10,6 +10,7 @@ with optional filtering by level or logger name.
 Functions:
 add_file_handler: Attaches a rotating file handler with custom level and optional filter.
 """
+
 import logging
 import os
 from logging.handlers import RotatingFileHandler

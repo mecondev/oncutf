@@ -16,6 +16,7 @@ Features:
 - Keyboard modifier detection
 - Theme-aware icons from feather set
 """
+
 import os
 from enum import Enum
 from typing import Dict, Optional

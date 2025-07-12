@@ -10,6 +10,7 @@ Handles path normalization to resolve issues with mixed path separators (especia
 Also provides centralized project path management to ensure resources are loaded correctly
 regardless of current working directory.
 """
+
 import os
 from pathlib import Path
 from typing import Optional

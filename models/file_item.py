@@ -12,6 +12,7 @@ within the FileTableModel to manage file entries in a table view.
 Classes:
     FileItem: Represents a single file item in the table.
 """
+
 import os
 from datetime import datetime
 

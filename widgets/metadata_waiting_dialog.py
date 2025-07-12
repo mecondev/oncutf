@@ -9,6 +9,7 @@ Frameless waiting dialog for background operations (metadata, hash, file loading
 Provides a clean, minimal UI for displaying operation progress.
 Note: This is the legacy dialog - new code should use utils.progress_dialog.ProgressDialog
 """
+
 from typing import Callable, Optional
 
 from config import (

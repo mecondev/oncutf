@@ -9,6 +9,7 @@ UI widget for configuring NameTransformModule.
 Provides options for Greek to Greeklish conversion, case and separator transformation.
 Uses BaseRenameModule to prevent duplicate emits.
 """
+
 from typing import Optional
 
 from core.pyqt_imports import QCheckBox, QComboBox, QHBoxLayout, QLabel, Qt, QVBoxLayout, QWidget

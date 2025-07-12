@@ -16,6 +16,7 @@ This dialog is intended for consistent and modern user feedback across the appli
 and is used instead of standard QMessageBox to allow greater control over layout,
 behavior, and styling.
 """
+
 from typing import Optional
 
 from core.pyqt_imports import (

@@ -10,6 +10,7 @@ Unified file loading manager with fully optimized policy:
 - Consistent behavior between drag, import, and external operations
 - No progress dialogs, just fast os.walk() for everything
 """
+
 import os
 from typing import List, Set
 

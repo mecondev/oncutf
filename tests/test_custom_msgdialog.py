@@ -20,6 +20,7 @@ Tests in this module cover:
 - Callback triggering (e.g., accept on cancel)
 These tests ensure consistent and reliable user interaction in dialog-based flows within the application.
 """
+
 import warnings
 
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')

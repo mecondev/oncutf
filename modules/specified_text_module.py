@@ -9,6 +9,7 @@ into filenames. It allows users to prepend, append, or inject static
 text at a defined position within the filename.
 Used in the oncutf application as one of the modular renaming components.
 """
+
 import os
 from typing import Optional
 

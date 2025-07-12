@@ -5,7 +5,6 @@ Author: Michael Economou
 Date: 2025-05-31
 
 """
-# tests/test_specified_text_module.py
 
 import warnings
 

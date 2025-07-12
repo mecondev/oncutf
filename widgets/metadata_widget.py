@@ -6,6 +6,7 @@ Date: 2025-05-31
 
 Widget for metadata selection (file dates or EXIF), with optimized signal emission system.
 """
+
 from typing import Optional, Set
 
 from core.persistent_metadata_cache import MetadataEntry

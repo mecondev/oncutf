@@ -7,11 +7,6 @@ Date: 2025-06-20
 Simplified theme engine for OnCutF application.
 Applies all styling globally to handle dynamically created widgets.
 """
-"""
-Simplified theme engine for OnCutF application.
-Applies all styling globally to handle dynamically created widgets.
-
-"""
 
 import logging
 import platform

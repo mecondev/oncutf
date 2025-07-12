@@ -12,6 +12,7 @@ Custom QTableView with Windows Explorer-like behavior:
 - Hover highlighting and visual feedback
 - Automatic vertical scrollbar detection and filename column adjustment
 """
+
 from typing import Optional
 
 from config import FILE_TABLE_COLUMN_WIDTHS

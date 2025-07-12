@@ -11,6 +11,7 @@ This manager centralizes rename operations including:
 - State restoration after rename
 - Module dividers management
 """
+
 from typing import TYPE_CHECKING, List, Set
 
 from models.file_item import FileItem

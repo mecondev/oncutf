@@ -11,23 +11,12 @@ Tests the logging system setup to verify:
 - Rename logs go only to rename.log if filtered
 Run this after setting up init_logging and logger_file_helper.
 """
+
 import warnings
 
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
-
-"""
-test_logging.py
-
-Tests the logging system setup to verify:
-- General logs (info/debug) go to oncutf_activity.log
-- Errors go to oncutf_errors.log
-- Rename logs go only to rename.log if filtered
-
-Run this after setting up init_logging and logger_file_helper.
-
-"""
 
 import logging
 import os

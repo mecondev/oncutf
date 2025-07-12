@@ -9,6 +9,7 @@ This module defines the SplitterManager class, which handles all splitter-relate
 functionality for the oncutf application. It manages splitter movement events,
 optimal size calculations, and UI updates that depend on splitter positions.
 """
+
 from typing import TYPE_CHECKING
 
 from utils.logger_factory import get_cached_logger

@@ -8,6 +8,7 @@ cursor_helper.py
 Utility functions for cursor management across the application.
 Provides safe cursor operations with emergency cleanup capabilities.
 """
+
 import contextlib
 import traceback
 from typing import Optional

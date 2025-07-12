@@ -7,18 +7,12 @@ Date: 2025-05-31
 test_text_helpers.py
 Tests for text helper functions in utils/text_helpers.py
 """
+
 import warnings
 
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
-
-"""
-test_text_helpers.py
-
-
-Tests for text helper functions in utils/text_helpers.py
-"""
 
 from utils.text_helpers import format_file_size_stable, truncate_filename_middle
 

@@ -9,6 +9,7 @@ Manager for handling file table operations in the MainWindow.
 Consolidates all table-related logic including sorting, clearing,
 preparation, and selection management.
 """
+
 from typing import List
 
 from core.pyqt_imports import Qt

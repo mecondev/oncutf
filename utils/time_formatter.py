@@ -13,6 +13,7 @@ Features:
 - Progress rate calculation
 - Cross-platform time handling
 """
+
 import time
 from typing import Optional, Tuple
 

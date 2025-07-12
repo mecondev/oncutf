@@ -9,6 +9,7 @@ Implements a custom tree view with clean single-item drag implementation.
 No reliance on Qt built-in drag system - everything is manual and controlled.
 Single item selection only - no multi-selection complexity.
 """
+
 import os
 
 from config import ALLOWED_EXTENSIONS

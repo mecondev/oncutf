@@ -9,6 +9,7 @@ Provides a utility function for converting nested metadata
 (dicts/lists) into a QStandardItemModel suitable for display in a QTreeView.
 Enhanced with better metadata grouping and extended metadata indicators.
 """
+
 import re
 
 from core.pyqt_imports import QColor, QFont, QStandardItem, QStandardItemModel, Qt

@@ -12,12 +12,6 @@ warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
 
-
-"""
-Tests for filename validation utilities
-
-"""
-
 from config import INVALID_FILENAME_CHARS, INVALID_FILENAME_MARKER
 from utils.filename_validator import (
     clean_and_validate,

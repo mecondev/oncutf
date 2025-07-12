@@ -14,6 +14,7 @@ Features:
 - Status icon display for rename validation
 - Custom table widgets with resize signal handling
 """
+
 from typing import Tuple
 
 from core.pyqt_imports import (

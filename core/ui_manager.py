@@ -7,6 +7,7 @@ Date: 2025-05-31
 Manages UI setup and layout configuration for the main window.
 Handles widget initialization, signal connections, and layout management.
 """
+
 import platform
 from typing import TYPE_CHECKING
 

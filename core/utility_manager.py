@@ -12,6 +12,7 @@ This manager centralizes utility functions including:
 - Status and UI updates
 - Application lifecycle management
 """
+
 from typing import TYPE_CHECKING
 
 from core.pyqt_imports import QApplication, QEvent, Qt

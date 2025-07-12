@@ -8,6 +8,7 @@ theme.py
 Theme management system using the new ThemeEngine.
 Provides color access and theme utilities for the application.
 """
+
 from typing import Dict, Optional
 
 from config import THEME_NAME

@@ -6,12 +6,6 @@ Date: 2025-05-31
 
 This module provides functionality for the OnCutF batch file renaming application.
 """
-"""
-Module: tests/test_transform_utils.py
-
-
-This module provides functionality for the OnCutF batch file renaming application.
-"""
 
 import warnings
 

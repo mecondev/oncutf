@@ -8,6 +8,7 @@ metadata_manager.py
 Centralized metadata management operations extracted from MainWindow.
 Handles metadata loading, progress tracking, thread management, and UI coordination.
 """
+
 import os
 from typing import List, Optional
 

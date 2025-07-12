@@ -13,6 +13,7 @@ Features:
 - Undo functionality with validation
 - Operation status and file counts
 """
+
 from typing import Optional
 
 from core.pyqt_imports import (

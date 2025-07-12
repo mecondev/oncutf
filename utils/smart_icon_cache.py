@@ -16,6 +16,7 @@ Features:
 - Icon size optimization and scaling
 - Integration with existing icon systems
 """
+
 import os
 import threading
 import time

@@ -13,6 +13,7 @@ Supports:
 - In-memory caching of icons
 - Integration with GUI elements via shared cache
 """
+
 import os
 
 from config import PREVIEW_COLORS, PREVIEW_INDICATOR_SHAPE, PREVIEW_INDICATOR_SIZE

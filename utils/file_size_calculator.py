@@ -8,6 +8,7 @@ file_size_calculator.py
 Utility functions for calculating file and folder sizes for progress tracking.
 Used by progress dialogs to show size information during operations.
 """
+
 import os
 from pathlib import Path
 from typing import List, Union

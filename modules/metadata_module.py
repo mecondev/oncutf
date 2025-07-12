@@ -9,6 +9,7 @@ modification date, or EXIF tag) to include in renamed filenames.
 It is used in the oncutf tool to dynamically extract and apply file
 metadata during batch renaming.
 """
+
 import os
 from datetime import datetime
 from typing import Optional

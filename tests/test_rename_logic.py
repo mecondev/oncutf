@@ -6,12 +6,6 @@ Date: 2025-05-31
 
 This module provides functionality for the OnCutF batch file renaming application.
 """
-"""
-Module: tests/test_rename_logic.py
-
-
-This module provides functionality for the OnCutF batch file renaming application.
-"""
 
 import os
 import shutil

@@ -15,6 +15,7 @@ Classes:
 - TooltipType: Constants for different tooltip types
 - Convenience functions for easy tooltip display
 """
+
 from typing import Optional
 
 from PyQt5.QtCore import QEvent, QPoint, Qt, QTimer

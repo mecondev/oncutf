@@ -7,6 +7,7 @@ Date: 2025-01-21
 Utility functions for handling window positioning in multiscreen desktop environments.
 Ensures dialogs and progress bars appear on the correct monitor relative to their parent window.
 """
+
 from typing import Optional
 
 from core.pyqt_imports import QApplication, QWidget, QScreen, QFileDialog

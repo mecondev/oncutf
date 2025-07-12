@@ -15,6 +15,7 @@ Features:
 - Simple, clean architecture
 - Unified API for all metadata operations
 """
+
 import os
 from datetime import datetime
 from typing import List, Optional, Set

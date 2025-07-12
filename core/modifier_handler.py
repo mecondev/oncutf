@@ -8,6 +8,7 @@ modifier_handler.py
 Centralized handling of keyboard modifier combinations for file operations.
 Provides consistent logic across all file loading contexts (import, browse, drag & drop).
 """
+
 from enum import Enum
 from typing import Tuple
 

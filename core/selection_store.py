@@ -13,6 +13,7 @@ Features:
 - Performance optimizations for large file sets
 - Automatic synchronization between selection and checked states
 """
+
 import time
 from typing import Any, Dict, Optional, Set
 

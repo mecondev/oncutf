@@ -8,6 +8,7 @@ preview_manager.py
 Manages preview name generation for rename operations.
 Extracted from MainWindow to separate business logic from UI.
 """
+
 import os
 from typing import Any, Dict, List, Tuple
 

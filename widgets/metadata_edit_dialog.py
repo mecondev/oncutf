@@ -8,6 +8,7 @@ metadata_edit_dialog.py
 Generic dialog for editing metadata fields.
 Based on bulk_rotation_dialog.py but made flexible for different field types.
 """
+
 from core.pyqt_imports import (
     QCheckBox,
     QDialog,

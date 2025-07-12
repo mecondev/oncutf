@@ -13,6 +13,7 @@ Usage:
 from utils.svg_icon_generator import generate_metadata_icons
 icon_map = generate_metadata_icons()
 """
+
 from typing import Dict, Optional
 
 from config import METADATA_ICON_COLORS

@@ -13,14 +13,6 @@ warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
 
-
-"""
-test_progress_manager.py
-
-Tests for the new unified ProgressManager.
-
-"""
-
 import pytest
 from PyQt5.QtWidgets import QApplication
 

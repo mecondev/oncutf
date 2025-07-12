@@ -15,6 +15,7 @@ The tests validate:
 These tests ensure that the loading dialog provides responsive and reliable user feedback
 during asynchronous operations like metadata scanning.
 """
+
 import warnings
 
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')

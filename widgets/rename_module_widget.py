@@ -16,6 +16,7 @@ Features:
 - Fixed post-processing area (e.g., NameTransform)
 - Responsive layout with visual separation between module logic and final formatting
 """
+
 from typing import Optional
 
 from core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, Qt, QVBoxLayout, QWidget, pyqtSignal, QApplication, QGraphicsDropShadowEffect, QColor

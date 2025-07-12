@@ -8,6 +8,7 @@ window_config_manager.py
 Manages window configuration including geometry, state, and splitter positions.
 Separates window management logic from MainWindow for better code organization.
 """
+
 import os
 from typing import Tuple
 

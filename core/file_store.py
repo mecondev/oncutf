@@ -13,6 +13,7 @@ Manages:
 - File validation and filtering
 - Performance optimization for large folders
 """
+
 import glob
 import os
 from typing import Any, Dict, List, Optional, Set

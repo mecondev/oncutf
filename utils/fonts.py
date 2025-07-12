@@ -7,11 +7,6 @@ Date: 2025-05-31
 Font utilities for Inter fonts
 Manages loading and providing access to the Inter font family
 """
-"""
-Font utilities for Inter fonts
-Manages loading and providing access to the Inter font family
-
-"""
 
 import logging
 from typing import Dict

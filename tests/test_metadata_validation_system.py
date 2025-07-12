@@ -12,23 +12,12 @@ Comprehensive pytest tests for the metadata validation system including:
 - Field-specific validation rules
 - Character blocking and paste cleaning
 """
+
 import warnings
 
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
-
-"""
-Tests for metadata validation system
-
-
-Comprehensive pytest tests for the metadata validation system including:
-- MetadataFieldValidator functionality
-- BaseValidatedInput behavior
-- MetadataValidatedLineEdit and MetadataValidatedTextEdit widgets
-- Field-specific validation rules
-- Character blocking and paste cleaning
-"""
 
 from unittest.mock import Mock, patch
 

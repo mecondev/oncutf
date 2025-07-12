@@ -7,6 +7,7 @@ Date: 2025-05-31
 Manages all event handling operations for the main window.
 Handles browse, folder import, table interactions, context menus, and user actions.
 """
+
 import os
 from typing import List, Optional, cast
 

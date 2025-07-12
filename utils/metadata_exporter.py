@@ -8,6 +8,7 @@ utils/metadata_exporter.py
 Metadata export utility supporting multiple human-readable formats.
 Exports metadata with proper grouping, hash information, and application branding.
 """
+
 import json
 import os
 from collections import defaultdict

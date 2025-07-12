@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Module: test_filesize.py
 
@@ -8,20 +9,12 @@ test_filesize.py
 Test script to compare file size calculations between our application
 and system commands (ls, stat, du) on Linux.
 """
+
 import warnings
 
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
-
-#!/usr/bin/env python3
-"""
-test_filesize.py
-
-
-Test script to compare file size calculations between our application
-and system commands (ls, stat, du) on Linux.
-"""
 
 import subprocess
 import sys

@@ -21,6 +21,7 @@ worker.setup_duplicate_scan(file_paths)
 worker.duplicates_found.connect(handle_duplicates)
 worker.start()
 """
+
 import os
 from pathlib import Path
 from typing import List

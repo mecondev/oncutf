@@ -7,6 +7,7 @@ Date: 2025-06-15
 file_operations_manager.py
 Manages file operations like rename, validation, and conflict resolution.
 """
+
 import os
 from typing import List, Optional
 

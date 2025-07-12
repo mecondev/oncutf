@@ -11,6 +11,7 @@ add/remove controls.
 Designed to scale and support future drag & drop reordering.
 Now supports ApplicationContext for optimized access patterns.
 """
+
 from typing import Optional
 
 import config

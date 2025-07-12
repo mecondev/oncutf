@@ -8,6 +8,7 @@ Drag Zone Validator - Common logic for drag & drop zone validation
 This module provides shared logic for validating drop zones during drag operations,
 eliminating code duplication between FileTreeView and FileTableView.
 """
+
 from typing import Dict, List, Optional
 
 from core.drag_visual_manager import DropZoneState, update_drop_zone_state

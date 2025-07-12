@@ -8,6 +8,7 @@ This module defines a rename module that inserts an incrementing counter
 into filenames. It is used within the oncutf application to generate
 sequential file names based on configurable start value, step, and padding.
 """
+
 from typing import Optional
 
 from core.pyqt_imports import (

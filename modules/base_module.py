@@ -6,8 +6,6 @@ Date: 2025-05-31
 
 Base module for all rename modules.
 """
-"""Base module for all rename modules.
-"""
 
 import logging
 

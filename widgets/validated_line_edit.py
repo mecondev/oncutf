@@ -10,6 +10,7 @@ characters from being entered and provides visual feedback to the user.
 Contains:
 - ValidatedLineEdit: Enhanced QLineEdit with validation and tooltip support
 """
+
 import logging
 from typing import Optional, Set, Tuple
 

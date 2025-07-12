@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Module: test_hash_manager.py
 
@@ -12,14 +13,6 @@ import warnings
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
-
-#!/usr/bin/env python3
-"""
-test_hash_manager.py
-
-
-Test module for hash calculation functionality.
-"""
 
 import tempfile
 from pathlib import Path

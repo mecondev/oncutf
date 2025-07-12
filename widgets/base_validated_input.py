@@ -10,6 +10,7 @@ offering real-time character blocking, paste cleaning, and visual feedback.
 Contains:
 - BaseValidatedInput: Abstract base class for validated input widgets
 """
+
 import logging
 from typing import Set, Tuple
 

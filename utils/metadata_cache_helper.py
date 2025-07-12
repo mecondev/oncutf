@@ -8,6 +8,7 @@ utils/metadata_cache_helper.py
 Unified metadata cache access helper to eliminate duplicate patterns.
 Provides consistent interface for metadata cache operations across the application.
 """
+
 from typing import Any, Dict
 
 from utils.logger_factory import get_cached_logger

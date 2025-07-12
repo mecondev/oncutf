@@ -13,6 +13,7 @@ Features:
 - Locale-aware decimal separator (. vs ,)
 - Cross-platform compatibility (Windows, Linux, macOS)
 """
+
 import locale
 import platform
 from typing import Union

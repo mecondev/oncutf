@@ -15,6 +15,7 @@ Supported module types include:
 The function `apply_rename_modules()` is used by the main application
 to generate preview names and resolve rename plans for batch processing.
 """
+
 import os
 
 from modules.counter_module import CounterModule

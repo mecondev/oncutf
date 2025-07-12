@@ -16,6 +16,7 @@ Key Features:
 - Smart context awareness for better user feedback
 - Automatic status categorization and prioritization
 """
+
 import threading
 from dataclasses import dataclass, field
 from datetime import datetime

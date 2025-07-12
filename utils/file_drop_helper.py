@@ -9,6 +9,7 @@ This module provides modular logic for drag & drop handling in the oncutf file t
 It detects the drop type (folder, files, mixed), checks allowed file types,
 triggers custom dialogs (recursive, rejected files), and returns results for the UI.
 """
+
 import os
 from typing import Dict, List, Literal, Tuple
 

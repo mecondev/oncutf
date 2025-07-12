@@ -8,6 +8,7 @@ dpi_helper.py
 DPI adaptation utilities for cross-platform font and UI scaling.
 Handles differences between Windows and Linux DPI scaling behavior.
 """
+
 import logging
 import platform
 from typing import Dict

@@ -14,6 +14,7 @@ parent (QWidget, optional): Parent UI component.
 conflict_callback (Callable, optional): Function to handle filename conflicts.
 validator (object): Object to validate filename text.
 """
+
 import os
 from typing import Callable, List, Optional
 

@@ -16,6 +16,7 @@ DevOnlyFilter:
 A logging filter that hides dev-only debug messages from the console,
 while still allowing them to be stored in file logs.
 """
+
 import logging
 import re
 import sys

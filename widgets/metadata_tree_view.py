@@ -22,7 +22,6 @@ Expected usage:
 Designed for integration with MainWindow and MetadataReader.
 """
 
-
 from typing import Any, Dict, Optional, Set, Union
 
 from config import METADATA_TREE_COLUMN_WIDTHS
