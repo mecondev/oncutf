@@ -504,7 +504,15 @@ class FileTableView(QTableView):
 
             # Configure status column (index 0)
             status_width = FILE_TABLE_COLUMN_CONFIG.get("status", {}).get("width", 45)
-            self.setColumnWidth(0, status_width)
+            if self.model().columnCount() == 1:
+                # Μόνο status column - κάνε stretch για να μην φαίνεται διαχωριστική γραμμή
+                self.setColumnWidth(0, self.viewport().width())
+                if header:
+                    header.setSectionResizeMode(0, QHeaderView.Stretch)
+            else:
+                self.setColumnWidth(0, status_width)
+                if header:
+                    header.setSectionResizeMode(0, QHeaderView.Fixed)
 
             # Make status column non-resizable
             if header:

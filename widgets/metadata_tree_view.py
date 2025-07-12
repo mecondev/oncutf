@@ -1835,7 +1835,8 @@ class MetadataTreeView(QTreeView):
 
         # Create an empty model for placeholder mode
         model = QStandardItemModel()
-        model.setHorizontalHeaderLabels(["Key", "Value"])
+        # Δεν ορίζουμε headers ή τα αφήνουμε κενά για placeholder
+        model.setHorizontalHeaderLabels(["", ""])
 
         # If we have a PNG placeholder, use empty model (PNG will be shown by _configure_placeholder_mode)
         # If no PNG, fallback to text placeholder
@@ -1865,6 +1866,9 @@ class MetadataTreeView(QTreeView):
             # Fallback: set model directly if proxy model is not available
             self.setModel(model)
 
+        # Κρύψε το header όταν είμαστε σε placeholder mode
+        self.header().hide()
+
         # Disable search field when showing empty state
         self._update_search_field_state(False)
 
@@ -1878,9 +1882,6 @@ class MetadataTreeView(QTreeView):
         Clears the metadata tree view and shows a placeholder message.
         Does not clear scroll position memory when just showing placeholder.
         """
-
-        # Don't clear scroll position memory when just showing placeholder
-        # Only clear when actually changing folders
         self.show_empty_state("No file selected")
         # Disable search field when clearing view
         self._update_search_field_state(False)
@@ -1920,6 +1921,8 @@ class MetadataTreeView(QTreeView):
         # Enable search field when metadata is available
         self._update_search_field_state(True)
         self._render_metadata_view(metadata)
+        # Εμφάνισε το header όταν έχουμε κανονικά δεδομένα
+        self.header().show()
 
     def _update_search_field_state(self, enabled: bool):
         """Update the metadata search field enabled state and tooltip."""

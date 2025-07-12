@@ -103,7 +103,8 @@ class FileTableModel(QAbstractTableModel):
         return self._visible_columns.copy()
 
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
-        # Status column (0) + dynamic columns
+        if not self.files:
+            return 1  # Μόνο η στήλη 0 (status) όταν ο πίνακας είναι άδειος
         return 1 + len(self._visible_columns)
 
     def _has_hash_cached(self, file_path: str) -> bool:
