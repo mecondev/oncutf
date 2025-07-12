@@ -50,6 +50,7 @@ class FileTableModel(QAbstractTableModel):
 
     def __init__(self, parent_window=None):
         super().__init__()
+        logger.debug("FileTableModel __init__ called")
         self.parent_window = parent_window
         self.files = []
         self._direct_loader = None
@@ -78,6 +79,7 @@ class FileTableModel(QAbstractTableModel):
         mapping = {}  # Column 0 is hardcoded status column, not in mapping
         for i, column_key in enumerate(self._visible_columns):
             mapping[i + 1] = column_key  # Dynamic columns start from index 1
+        logger.debug(f"_create_column_mapping: {mapping}")
         return mapping
 
     def update_visible_columns(self, visible_columns: dict) -> None:
@@ -275,6 +277,7 @@ class FileTableModel(QAbstractTableModel):
         return QVariant()
 
     def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> QVariant:  # type: ignore
+        logger.debug(f"data(): row={index.row()}, col={index.column()}, role={role}, files={len(self.files)}, columns={self._column_mapping}")
         if not index.isValid():
             return QVariant()
 
@@ -576,6 +579,7 @@ class FileTableModel(QAbstractTableModel):
 
     def set_files(self, files: list[FileItem]) -> None:
         """Set the files to be displayed in the table."""
+        logger.debug(f"set_files called with {len(files)} files")
         self.beginResetModel()
         self.files = files
         self.endResetModel()
@@ -586,6 +590,10 @@ class FileTableModel(QAbstractTableModel):
         # Update custom tooltips for new files
         if hasattr(self, '_table_view_ref') and self._table_view_ref:
             self.setup_custom_tooltips(self._table_view_ref)
+            # Ensure columns are reconfigured after model reset
+            if hasattr(self._table_view_ref, 'refresh_columns_after_model_change'):
+                self._table_view_ref.refresh_columns_after_model_change()
+        logger.debug(f"set_files finished, now self.files has {len(self.files)} files")
 
     def _update_icons_immediately(self) -> None:
         """Updates icons immediately for all files that have cached data."""

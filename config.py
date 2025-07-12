@@ -28,7 +28,7 @@ DEBUG_RESET_DATABASE = False
 DEBUG_RESET_CONFIG = False
 
 # Development logging settings
-SHOW_DEV_ONLY_IN_CONSOLE = False
+SHOW_DEV_ONLY_IN_CONSOLE = True
 ENABLE_DEBUG_LOG_FILE = True
 
 # Development/Testing Settings

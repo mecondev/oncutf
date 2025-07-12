@@ -91,6 +91,7 @@ class FileTableView(QTableView):
     def __init__(self, parent=None) -> None:
         """Initialize the custom table view with Explorer-like behavior."""
         super().__init__(parent)
+        logger.debug("FileTableView __init__ called")
         self._manual_anchor_index: Optional[QModelIndex] = None
         self._drag_start_pos: Optional[QPoint] = None  # Initialize as None instead of empty QPoint
         self._active_drag = None  # Store active QDrag object for cleanup
@@ -384,7 +385,7 @@ class FileTableView(QTableView):
             self.dataChanged(top_left, bottom_right)
 
     def setModel(self, model) -> None:
-        """Configure columns when model is set."""
+        logger.debug(f"FileTableView setModel called with model: {type(model)}")
         super().setModel(model)
         if model:
             schedule_resize_adjust(self._configure_columns, 10)
@@ -394,19 +395,7 @@ class FileTableView(QTableView):
     # =====================================
 
     def prepare_table(self, file_items: list) -> None:
-        """
-        Prepare the table view with the given file items.
-
-        This method handles:
-        - Clearing selection and resetting state
-        - Setting files in the model
-        - Reconfiguring columns after model reset
-        - Updating delegates and UI elements
-        - Managing scrollbar visibility
-
-        Args:
-            file_items: List of FileItem objects to display in the table
-        """
+        logger.debug(f"prepare_table called with {len(file_items)} items")
         # Reset manual column preferences when loading new files
         self._has_manual_preference = False
         self._user_preferred_width = None
@@ -429,7 +418,7 @@ class FileTableView(QTableView):
             self.model().set_files(file_items)
 
         # Reconfigure columns after model reset
-        self._configure_columns()
+        # self._configure_columns()  # Αφαιρείται, το κάνει το μοντέλο πλέον
 
         # Ensure no word wrap after setting files
         self._ensure_no_word_wrap()
@@ -445,6 +434,8 @@ class FileTableView(QTableView):
 
         # Note: Vertical scrollbar handling is now integrated into _calculate_filename_width
 
+        logger.debug("prepare_table finished")
+
     # =====================================
     # Column Management & Scrollbar Optimization
     # =====================================
@@ -454,6 +445,8 @@ class FileTableView(QTableView):
         if not self.model():
             logger.warning("No model available for column configuration")
             return
+
+        logger.debug(f"_configure_columns: model.columnCount()={self.model().columnCount()}, rowCount={self.model().rowCount()}")
 
         try:
             from config import FILE_TABLE_COLUMN_CONFIG, GLOBAL_MIN_COLUMN_WIDTH
@@ -2126,3 +2119,12 @@ class FileTableView(QTableView):
 
         except Exception as e:
             logger.error(f"Error auto-fitting columns to content: {e}")
+
+    def refresh_columns_after_model_change(self) -> None:
+        """
+        Public slot to reconfigure columns after the model's data changes (e.g. after set_files).
+        This ensures that columns, headers, and resize modes are always correct.
+        """
+        self._configure_columns()
+        self.viewport().update()
+        self.horizontalHeader().resetDefaultSectionSize()
