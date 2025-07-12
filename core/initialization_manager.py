@@ -46,12 +46,11 @@ class InitializationManager:
     def show_metadata_status(self) -> None:
         """
         Shows a status bar message indicating the number of loaded files
-        and the type of metadata scan performed (skipped, basic, extended).
+        and the type of metadata scan performed (basic, extended).
         """
         num_files = len(self.main_window.file_model.files)
         self.main_window.status_manager.show_metadata_status(
             num_files,
-            self.main_window.skip_metadata_mode,
             self.main_window.force_extended_metadata
         )
 
@@ -102,7 +101,6 @@ class InitializationManager:
         return {
             "has_files": len(self.main_window.file_model.files) > 0,
             "current_folder": self.main_window.current_folder_path,
-            "skip_metadata_mode": self.main_window.skip_metadata_mode,
             "force_extended_metadata": self.main_window.force_extended_metadata,
             "has_status_manager": self.main_window.status_manager is not None,
             "has_file_table_view": hasattr(self.main_window, 'file_table_view')

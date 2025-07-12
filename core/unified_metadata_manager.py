@@ -235,7 +235,7 @@ class UnifiedMetadataManager(QObject):
 
     def determine_metadata_mode(self, modifier_state=None) -> tuple[bool, bool]:
         """
-        Determines whether to skip metadata scan or use extended mode based on modifier keys.
+        Determines whether to use extended mode based on modifier keys.
 
         Args:
             modifier_state: Qt.KeyboardModifiers to use, or None for current state

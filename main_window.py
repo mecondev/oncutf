@@ -104,7 +104,6 @@ class MainWindow(QMainWindow):
         self.metadata_icon_map = load_metadata_icons()
         self.preview_icons = load_preview_status_icons()
         self.force_extended_metadata = False
-        self.skip_metadata_mode = DEFAULT_SKIP_METADATA # Keeps state across folder reloads
         self.file_model = FileTableModel(parent_window=self)
 
         # --- Initialize UnifiedMetadataManager after dependencies are ready ---

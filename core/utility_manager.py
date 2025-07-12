@@ -99,7 +99,6 @@ class UtilityManager:
         # Use determine_metadata_mode method instead of deprecated resolve_skip_metadata
         skip_metadata, use_extended = self.main_window.determine_metadata_mode()
         self.main_window.force_extended_metadata = use_extended
-        self.main_window.skip_metadata_mode = skip_metadata
 
         logger.info(
             f"[ForceReload] Reloading {self.main_window.current_folder_path}, skip_metadata={skip_metadata} "

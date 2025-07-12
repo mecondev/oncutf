@@ -541,10 +541,9 @@ class StatusManager:
             priority=StatusPriority.LOW
         )
 
-    def show_metadata_status(self, num_files: int, skip_metadata_mode: bool,
-                           force_extended_metadata: bool) -> None:
+    def show_metadata_status(self, num_files: int, force_extended_metadata: bool) -> None:
         """Enhanced metadata status with operation tracking."""
-        operation_type = "skipped" if skip_metadata_mode else ("extended" if force_extended_metadata else "basic")
+        operation_type = "extended" if force_extended_metadata else "basic"
 
         self.set_metadata_status(
             f"Loaded {num_files} files",

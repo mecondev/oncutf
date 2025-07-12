@@ -209,11 +209,8 @@ class UIManager:
         self.parent_window.folder_tree.setAlternatingRowColors(True)  # Enable alternating row colors
         left_layout.addWidget(self.parent_window.folder_tree)
 
-        # Expand/collapse mode (single or double click)
-        if TREE_EXPAND_MODE == "single":
-            self.parent_window.folder_tree.setExpandsOnDoubleClick(False)  # Single click expand
-        else:
-            self.parent_window.folder_tree.setExpandsOnDoubleClick(True)   # Double click expand
+        # Use default Qt behavior (double-click to expand/collapse)
+        self.parent_window.folder_tree.setExpandsOnDoubleClick(True)
 
         btn_layout = QHBoxLayout()
         self.parent_window.select_folder_button = QPushButton("  Import")

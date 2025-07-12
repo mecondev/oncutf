@@ -261,7 +261,6 @@ class ShortcutManager:
         return {
             "has_files": len(self.main_window.file_model.files) > 0,
             "current_folder": self.main_window.current_folder_path,
-            "skip_metadata_mode": self.main_window.skip_metadata_mode,
             "force_extended_metadata": self.main_window.force_extended_metadata,
             **command_status
         }

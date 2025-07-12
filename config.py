@@ -161,10 +161,6 @@ EXPORT_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 # FILE HANDLING SETTINGS
 # =====================================
 
-# Which key skips the metadata scan when held down
-SKIP_METADATA_MODIFIER = Qt.ControlModifier  # type: ignore
-DEFAULT_SKIP_METADATA = True
-
 USE_PREVIEW_BACKGROUND = False
 LARGE_FOLDER_WARNING_THRESHOLD = 150
 EXTENDED_METADATA_SIZE_LIMIT_MB = 500
@@ -247,11 +243,6 @@ METADATA_TREE_COLUMN_CONFIG = {
         "min_width": 250,
     },
 }
-
-# Tree View Expand/Collapse Mode
-TREE_EXPAND_MODE = (
-    "double"  # Options: "single" or "double". Default: double click for expand/collapse
-)
 
 # =====================================
 # PANEL SIZE CONSTRAINTS

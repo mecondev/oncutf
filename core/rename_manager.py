@@ -165,9 +165,9 @@ class RenameManager:
             # Set last action for proper state tracking
             self.main_window.last_action = "rename"
 
-            # Reload folder with skip_metadata=True for faster loading
+            # Reload folder for faster loading
             logger.debug("[RenameManager] Reloading folder after rename")
-            self.main_window.load_files_from_folder(current_folder, skip_metadata=True)
+            self.main_window.load_files_from_folder(current_folder)
 
             # Schedule state restoration after folder load completes
             def restore_state():
@@ -248,7 +248,7 @@ class RenameManager:
         """
         # Post-rename workflow
         self.main_window.last_action = "rename"
-        self.main_window.load_files_from_folder(self.main_window.current_folder_path, skip_metadata=True)
+        self.main_window.load_files_from_folder(self.main_window.current_folder_path)
 
         # Restore checked state
         restored_count = self._restore_checked_state(checked_paths)
