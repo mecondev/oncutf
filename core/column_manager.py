@@ -34,9 +34,7 @@ from utils.logger_helper import get_cached_logger
 logger = get_cached_logger(__name__)
 
 
-def _get_column_width(column_key: str, default: int = 100) -> int:
-    """Helper function to get column width from FILE_TABLE_COLUMN_CONFIG."""
-    return FILE_TABLE_COLUMN_CONFIG.get(column_key, {}).get("width", default)
+
 
 
 class ColumnType(Enum):
@@ -125,33 +123,32 @@ class ColumnManager:
             0: ColumnConfig(
                 column_index=0,
                 column_type=ColumnType.FIXED,
-                min_width=FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"],
-                default_width=FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"]
+                min_width=FILE_TABLE_COLUMN_CONFIG.get("status", {}).get("width", 45),
+                default_width=FILE_TABLE_COLUMN_CONFIG.get("status", {}).get("width", 45)
             ),
             1: ColumnConfig(
                 column_index=1,
                 column_type=ColumnType.INTERACTIVE,
-                min_width=180,  # More reasonable minimum for filename column
-                default_width=FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"],
-                priority=1  # Highest priority for space allocation
+                min_width=150,  # Reasonable minimum for filename column
+                default_width=FILE_TABLE_COLUMN_CONFIG.get("filename", {}).get("width", 250)
             ),
             2: ColumnConfig(
                 column_index=2,
-                column_type=ColumnType.FIXED,
-                min_width=FILE_TABLE_COLUMN_WIDTHS["FILESIZE_COLUMN"],
-                default_width=FILE_TABLE_COLUMN_WIDTHS["FILESIZE_COLUMN"]
+                column_type=ColumnType.INTERACTIVE,
+                min_width=FILE_TABLE_COLUMN_CONFIG.get("file_size", {}).get("min_width", 60),
+                default_width=FILE_TABLE_COLUMN_CONFIG.get("file_size", {}).get("width", 75)
             ),
             3: ColumnConfig(
                 column_index=3,
-                column_type=ColumnType.FIXED,
-                min_width=FILE_TABLE_COLUMN_WIDTHS["EXTENSION_COLUMN"],
-                default_width=FILE_TABLE_COLUMN_WIDTHS["EXTENSION_COLUMN"]
+                column_type=ColumnType.INTERACTIVE,
+                min_width=FILE_TABLE_COLUMN_CONFIG.get("type", {}).get("min_width", 40),
+                default_width=FILE_TABLE_COLUMN_CONFIG.get("type", {}).get("width", 50)
             ),
             4: ColumnConfig(
                 column_index=4,
-                column_type=ColumnType.FIXED,
-                min_width=FILE_TABLE_COLUMN_WIDTHS["DATE_COLUMN"],
-                default_width=FILE_TABLE_COLUMN_WIDTHS["DATE_COLUMN"]
+                column_type=ColumnType.INTERACTIVE,
+                min_width=FILE_TABLE_COLUMN_CONFIG.get("modified", {}).get("min_width", 100),
+                default_width=FILE_TABLE_COLUMN_CONFIG.get("modified", {}).get("width", 115)
             )
         }
 
@@ -281,12 +278,8 @@ class ColumnManager:
             return column_config.default_width
 
         elif column_config.column_type == ColumnType.INTERACTIVE:
-            # For interactive columns, calculate based on available space
-            if table_type == 'file_table' and column_config.column_index == 1:
-                # Special handling for filename column
-                return self._calculate_filename_column_width(table_view)
-            else:
-                return max(column_config.default_width, column_config.min_width)
+            # For interactive columns, use default width from config
+            return max(column_config.default_width, column_config.min_width)
 
         elif column_config.column_type == ColumnType.STRETCH:
             # Calculate remaining space after other columns
@@ -298,58 +291,9 @@ class ColumnManager:
 
         return column_config.default_width
 
-    def _calculate_filename_column_width(self, table_view: QTableView) -> int:
-        """
-        Calculate optimal width for the filename column in file table.
 
-        Args:
-            table_view: The file table view
 
-        Returns:
-            Calculated width in pixels
-        """
-        try:
-            # Get viewport width
-            viewport_width = table_view.viewport().width()
-            if viewport_width <= 0:
-                viewport_width = table_view.width()
-                if viewport_width <= 0:
-                    return FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
 
-            # Calculate space used by other columns
-            other_columns_width = (
-                FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"] +
-                FILE_TABLE_COLUMN_WIDTHS["FILESIZE_COLUMN"] +
-                FILE_TABLE_COLUMN_WIDTHS["EXTENSION_COLUMN"] +
-                FILE_TABLE_COLUMN_WIDTHS["DATE_COLUMN"]
-            )
-
-            # Check if vertical scrollbar is needed
-            needs_scrollbar = self._needs_vertical_scrollbar(table_view)
-            scrollbar_width = self._get_scrollbar_width(table_view) if needs_scrollbar else 0
-
-            # Calculate available width with small margin
-            margin = 1 if needs_scrollbar else 2
-            available_width = viewport_width - other_columns_width - scrollbar_width - margin
-
-            # Calculate minimum width based on font metrics
-            min_width = self._calculate_filename_min_width()
-
-            # Return the larger of available width or minimum width
-            return max(available_width, min_width)
-
-        except Exception as e:
-            logger.warning(f"[ColumnManager] Error calculating filename column width: {e}")
-            return FILE_TABLE_COLUMN_WIDTHS["FILENAME_COLUMN"]
-
-    def _calculate_filename_min_width(self) -> int:
-        """Calculate minimum width for filename column based on font metrics."""
-        if self.state.font_metrics:
-            # Calculate based on a typical medium filename
-            sample_text = "Medium_Filename_2024.pdf"
-            text_width = self.state.font_metrics.horizontalAdvance(sample_text)
-            return text_width + 20  # Add reasonable padding
-        return 180  # More reasonable fallback minimum
 
     def _calculate_stretch_column_width(self, table_view: Union[QTableView, QTreeView],
                                        table_type: str, column_config: ColumnConfig) -> int:
@@ -450,21 +394,27 @@ class ColumnManager:
     def ensure_horizontal_scrollbar_state(self, table_view: QTableView) -> None:
         """
         Ensure that the horizontal scrollbar state is consistent with the current column layout.
-        Scrolls to leftmost if content fits, otherwise keeps the previous value.
+        Forces proper recalculation when viewport changes.
         """
         try:
-            # Trigger recalculation of the scroll area
+            # Force complete geometry recalculation
             table_view.updateGeometries()
+
+            # Force layout recalculation to update elided text
+            if table_view.model():
+                table_view.model().layoutChanged.emit()
+
+            # Update viewport to refresh display
             table_view.viewport().update()
 
             # Get horizontal scrollbar
             hbar = table_view.horizontalScrollBar()
             if hbar:
-                # If scrollbar has range, position it at the beginning
+                # Reset to leftmost position when content changes
                 if hbar.maximum() > 0:
-                    hbar.setValue(0)  # Always scroll to leftmost position
+                    hbar.setValue(0)
 
-                logger.debug(f"[ColumnManager] Updated horizontal scrollbar state: max={hbar.maximum()}, value={hbar.value()}")
+                logger.debug(f"[ColumnManager] Updated horizontal scrollbar: max={hbar.maximum()}, value={hbar.value()}")
 
         except Exception as e:
             logger.warning(f"[ColumnManager] Error updating horizontal scrollbar state: {e}")

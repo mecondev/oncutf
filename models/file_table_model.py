@@ -187,9 +187,9 @@ class FileTableModel(QAbstractTableModel):
             QIcon: Combined icon with metadata and hash status
         """
         # Use the full STATUS_COLUMN width for proper spacing
-        from config import FILE_TABLE_COLUMN_WIDTHS
+        from config import FILE_TABLE_COLUMN_CONFIG
 
-        combined_width = FILE_TABLE_COLUMN_WIDTHS["STATUS_COLUMN"]  # 45px
+        combined_width = FILE_TABLE_COLUMN_CONFIG.get("status", {}).get("width", 45)  # 45px
         combined_height = 16
         combined_pixmap = QPixmap(combined_width, combined_height)
         combined_pixmap.fill(QColor(0, 0, 0, 0))
@@ -422,14 +422,20 @@ class FileTableModel(QAbstractTableModel):
 
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole):  # type: ignore
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            if section == 0:
-                return ""  # No title for status column
+            # Show column titles only when table has files loaded
+            if self.rowCount() > 0:
+                # Table has files - show column titles
+                if section == 0:
+                    return ""  # No title for status column in any case
 
-            column_key = self._column_mapping.get(section)
-            if column_key:
-                from config import FILE_TABLE_COLUMN_CONFIG
-                column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
-                return column_config.get("title", column_key)
+                column_key = self._column_mapping.get(section)
+                if column_key:
+                    from config import FILE_TABLE_COLUMN_CONFIG
+                    column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
+                    return column_config.get("title", column_key)
+            else:
+                # Empty table - show no text in headers for better visual appearance
+                return ""
         return QVariant()
 
     def sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None:  # type: ignore

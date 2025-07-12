@@ -766,6 +766,10 @@ class FileTableView(QTableView):
     def _on_column_moved(self, logical_index: int, old_visual_index: int, new_visual_index: int) -> None:
         """Handle column reordering and save order to config."""
         if logical_index == 0:  # Don't allow moving status column
+            # Revert the move by moving it back to position 0
+            header = self.horizontalHeader()
+            if header and new_visual_index != 0:
+                header.moveSection(new_visual_index, 0)
             return
 
         # Save new column order to config
