@@ -170,9 +170,16 @@ class JSONConfigManager:
         with self._lock:
             self._categories[category.name] = category
 
-    def get_category(self, category_name: str) -> Optional[ConfigCategory]:
+    def get_category(self, category_name: str, create_if_not_exists: bool = False) -> Optional[ConfigCategory]:
         """Get configuration category by name."""
-        return self._categories.get(category_name)
+        category = self._categories.get(category_name)
+        if not category and create_if_not_exists:
+            # Dynamically create a generic category if it doesn't exist
+            logger.debug(f"Category '{category_name}' not found, creating it dynamically.")
+            new_category = ConfigCategory(category_name, {})
+            self.register_category(new_category)
+            return new_category
+        return category
 
     def list_categories(self) -> list[str]:
         """Get list of registered category names."""
