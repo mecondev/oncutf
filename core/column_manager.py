@@ -27,11 +27,17 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, Optional, Union
 
-from core.config_imports import FILE_TABLE_COLUMN_WIDTHS, METADATA_TREE_COLUMN_WIDTHS
+from core.config_imports import FILE_TABLE_COLUMN_CONFIG, METADATA_TREE_COLUMN_WIDTHS
 from core.pyqt_imports import QFontMetrics, QHeaderView, QTableView, QTreeView, QWidget
 from utils.logger_helper import get_cached_logger
 
 logger = get_cached_logger(__name__)
+
+
+def _get_column_width(column_key: str, default: int = 100) -> int:
+    """Helper function to get column width from FILE_TABLE_COLUMN_CONFIG."""
+    return FILE_TABLE_COLUMN_CONFIG.get(column_key, {}).get("width", default)
+
 
 class ColumnType(Enum):
     """Enum for different column types and their resize behavior."""

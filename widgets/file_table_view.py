@@ -15,7 +15,7 @@ Custom QTableView with Windows Explorer-like behavior:
 
 from typing import Optional
 
-from config import FILE_TABLE_COLUMN_WIDTHS
+from config import FILE_TABLE_COLUMN_CONFIG
 from core.application_context import get_app_context
 from core.drag_manager import DragManager
 from core.drag_visual_manager import (
@@ -503,8 +503,7 @@ class FileTableView(QTableView):
                 logger.debug(f"Configured column '{column_key}' at index {column_index}: width={final_width}, alignment={alignment}")
 
             # Configure status column (index 0)
-            from config import FILE_TABLE_COLUMN_WIDTHS
-            status_width = FILE_TABLE_COLUMN_WIDTHS.get("STATUS_COLUMN", 30)
+            status_width = FILE_TABLE_COLUMN_CONFIG.get("status", {}).get("width", 45)
             self.setColumnWidth(0, status_width)
 
             # Make status column non-resizable

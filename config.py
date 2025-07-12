@@ -44,9 +44,35 @@ DEV_SIMULATED_SCREEN = {"width": 1280, "height": 1024, "name": "Simulated Screen
 # App info
 APP_NAME = "oncutf"
 APP_VERSION = "1.3"
+APP_AUTHOR = "Michael Economou"
 
 # Window
 WINDOW_TITLE = "Batch File Renamer"
+
+# =====================================
+# LOGGING CONFIGURATION
+# =====================================
+
+# Logging settings
+LOG_LEVEL = "INFO"
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# =====================================
+# DIALOG PATHS
+# =====================================
+
+# Dialog paths
+DIALOG_PATHS = {"last_used": ""}
+
+# =====================================
+# WINDOW GEOMETRY AND STATE
+# =====================================
+
+# Main window geometry and state (will be loaded from config.json)
+MAIN_WINDOW_GEOMETRY = None
+MAIN_WINDOW_STATE = None
+
+
 
 # =====================================
 # ALLOWED FILE EXTENSIONS
@@ -477,6 +503,15 @@ MAX_LABEL_LENGTH = 30
 
 # File Table Column Configuration for Context Menu
 FILE_TABLE_COLUMN_CONFIG = {
+    "status": {
+        "title": "Status",
+        "key": "status",
+        "default_visible": True,
+        "removable": False,  # Always visible - shows metadata and hash status icons
+        "width": 45,
+        "alignment": "center",
+        "min_width": 40,
+    },
     "filename": {
         "title": "Filename",
         "key": "filename",
