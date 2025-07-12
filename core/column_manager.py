@@ -218,16 +218,16 @@ class ColumnManager:
 
             # Set resize mode
             header.setSectionResizeMode(column_index, column_config.resize_mode)
+            logger.debug(f"[ColumnManager] SectionResizeMode for column {column_index}: {column_config.resize_mode}")
 
             # Calculate and set width
             width = self._calculate_column_width(table_view, table_type, column_config)
+            logger.debug(f"[ColumnManager] Will set column {column_index} width to {width}px (config default: {column_config.default_width}px, min: {column_config.min_width}px)")
             table_view.setColumnWidth(column_index, width)
 
-            logger.debug(f"[ColumnManager] Set column {column_index} width to {width}px")
-
-            # Update minimum section size if needed
-            if column_config.min_width > 0:
-                header.setMinimumSectionSize(column_config.min_width)
+        # Μετά το configuration, log τα actual πλάτη
+        for i in range(table_view.model().columnCount()):
+            logger.debug(f"[ColumnManager] Actual width for column {i}: {table_view.columnWidth(i)}px")
 
         # Connect resize signals for user preference tracking
         self._connect_resize_signals(table_view, table_type)
@@ -261,76 +261,85 @@ class ColumnManager:
 
     def _calculate_column_width(self, table_view: Union[QTableView, QTreeView],
                                table_type: str, column_config: ColumnConfig) -> int:
-        """
-        Calculate optimal width for a column based on its configuration and available space.
-
-        Args:
-            table_view: The table/tree view
-            table_type: Type identifier
-            column_config: Configuration for the column
-
-        Returns:
-            Calculated width in pixels
-        """
+        logger.debug(f"[ColumnManager] Calculating width for column {column_config.column_index} (type: {column_config.column_type})")
         # Check if user has a preference for this column
         if self.state.has_user_preference(column_config.column_index):
             user_width = self.state.user_preferred_widths.get(column_config.column_index)
             if user_width and user_width >= column_config.min_width:
+                logger.debug(f"[ColumnManager] Using user preference: {user_width}px for column {column_config.column_index}")
                 return user_width
 
         # Try to load saved width from config system
         if table_type == 'file_table' and column_config.column_index > 0:
             saved_width = self._load_saved_column_width(column_config.column_index)
             if saved_width and saved_width >= column_config.min_width:
+                logger.debug(f"[ColumnManager] Using saved width: {saved_width}px for column {column_config.column_index}")
                 return saved_width
 
         # Handle different column types
         if column_config.column_type == ColumnType.FIXED:
+            logger.debug(f"[ColumnManager] Using fixed width: {column_config.default_width}px for column {column_config.column_index}")
             return column_config.default_width
 
         elif column_config.column_type == ColumnType.INTERACTIVE:
-            # For interactive columns, use default width from config
-            return max(column_config.default_width, column_config.min_width)
+            width = max(column_config.default_width, column_config.min_width)
+            logger.debug(f"[ColumnManager] Using interactive width: {width}px (default: {column_config.default_width}, min: {column_config.min_width}) for column {column_config.column_index}")
+            return width
 
         elif column_config.column_type == ColumnType.STRETCH:
-            # Calculate remaining space after other columns
-            return self._calculate_stretch_column_width(table_view, table_type, column_config)
+            width = self._calculate_stretch_column_width(table_view, table_type, column_config)
+            logger.debug(f"[ColumnManager] Using stretch width: {width}px for column {column_config.column_index}")
+            return width
 
         elif column_config.column_type == ColumnType.CONTENT_BASED:
-            # Calculate based on content (not implemented yet)
+            logger.debug(f"[ColumnManager] Using content-based width: {column_config.default_width}px for column {column_config.column_index}")
             return column_config.default_width
 
+        logger.debug(f"[ColumnManager] Using fallback width: {column_config.default_width}px for column {column_config.column_index}")
         return column_config.default_width
 
     def _load_saved_column_width(self, column_index: int) -> Optional[int]:
         """Load saved column width from config system."""
         try:
+            logger.debug(f"[ColumnManager] Loading saved width for column {column_index}")
+
             if hasattr(self.main_window, 'window_config_manager'):
                 config_manager = self.main_window.window_config_manager.config_manager
                 window_config = config_manager.get_category('window')
                 column_widths = window_config.get('file_table_column_widths', {})
+
+                logger.debug(f"[ColumnManager] Found column widths in window config: {column_widths}")
 
                 # Map column index to column key
                 column_keys = ['filename', 'file_size', 'type', 'modified']
                 if column_index <= len(column_keys):
                     column_key = column_keys[column_index - 1]  # -1 because column 0 is status
                     if column_key in column_widths:
-                        return column_widths[column_key]
+                        width = column_widths[column_key]
+                        logger.debug(f"[ColumnManager] Found saved width for {column_key}: {width}px")
+                        return width
+                    else:
+                        logger.debug(f"[ColumnManager] No saved width found for {column_key}")
 
             # Fallback to old config system
             from utils.json_config_manager import load_config
             config = load_config()
             column_widths = config.get("file_table_column_widths", {})
 
+            logger.debug(f"[ColumnManager] Found column widths in old config: {column_widths}")
+
             column_keys = ['filename', 'file_size', 'type', 'modified']
             if column_index <= len(column_keys):
                 column_key = column_keys[column_index - 1]
                 if column_key in column_widths:
-                    return column_widths[column_key]
+                    width = column_widths[column_key]
+                    logger.debug(f"[ColumnManager] Found saved width in old config for {column_key}: {width}px")
+                    return width
 
         except Exception as e:
             logger.warning(f"[ColumnManager] Error loading saved column width: {e}")
 
+        logger.debug(f"[ColumnManager] No saved width found for column {column_index}")
         return None
 
 

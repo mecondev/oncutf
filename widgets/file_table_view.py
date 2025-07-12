@@ -463,26 +463,61 @@ class FileTableView(QTableView):
         header.setSectionResizeMode(0, header.Fixed)
         logger.debug("_configure_columns: Configured status column")
 
+                # RESTORE COLUMNMANAGER
         # Call ColumnManager to configure all other columns
+        column_manager = None
+
+        # Try different ways to get column_manager
         if hasattr(self.window(), 'column_manager'):
+            column_manager = self.window().column_manager
+            logger.debug("_configure_columns: Found column_manager via self.window()")
+        else:
+            # Try to get column_manager from main_window
+            main_window = self._get_main_window()
+            if main_window and hasattr(main_window, 'column_manager'):
+                column_manager = main_window.column_manager
+                logger.debug("_configure_columns: Found column_manager via main_window")
+            else:
+                # Try to get column_manager from application context
+                try:
+                    from core.application_context import get_app_context
+                    context = get_app_context()
+                    if context and hasattr(context, 'column_manager'):
+                        column_manager = context.column_manager
+                        logger.debug("_configure_columns: Found column_manager via application context")
+                except Exception as e:
+                    logger.warning(f"_configure_columns: Error accessing application context: {e}")
+
+        if column_manager:
             logger.debug("_configure_columns: Calling ColumnManager.configure_table_columns")
-            self.window().column_manager.configure_table_columns(self, 'file_table')
+            column_manager.configure_table_columns(self, 'file_table')
             logger.debug("_configure_columns: ColumnManager configuration finished")
         else:
-            logger.warning("_configure_columns: No column_manager available")
+            logger.warning("_configure_columns: No column_manager found anywhere - using manual configuration")
+            # Fallback: Configure columns manually with config.py values
+            from config import FILE_TABLE_COLUMN_CONFIG
+            visible_columns = ['filename', 'file_size', 'type', 'modified']
+            for i, column_key in enumerate(visible_columns):
+                column_index = i + 1  # +1 because column 0 is status
+                if column_index < self.model().columnCount():
+                    column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
+                    width = column_config.get('width', 100)
+                    self.setColumnWidth(column_index, width)
+                    logger.debug(f"_configure_columns: Manual config - set column {column_index} ({column_key}) to {width}px")
 
         # Now update header visibility based on content
         logger.debug("_configure_columns: Updating header visibility")
         self._update_header_visibility()
         logger.debug("_configure_columns: Header visibility update finished")
 
-        def _update_header_visibility(self) -> None:
+    def _update_header_visibility(self) -> None:
         """Update header visibility based on whether there are files in the model."""
         header = self.horizontalHeader()
         if not header:
             logger.warning("_update_header_visibility: No header available")
             return
 
+                # RESTORE NORMAL HEADER VISIBILITY LOGIC
         if hasattr(self.model(), 'files'):
             has_files = len(self.model().files) > 0
             if has_files:
@@ -517,6 +552,7 @@ class FileTableView(QTableView):
         if not header:
             return
 
+        # RESTORE NORMAL HEADER VISIBILITY LOGIC
         if hasattr(self.model(), 'files'):
             has_files = len(self.model().files) > 0
             should_be_visible = has_files
@@ -871,9 +907,11 @@ class FileTableView(QTableView):
                 # Re-enable interactions when hiding placeholder
                 header = self.horizontalHeader()
                 if header:
+                    header.show()  # CRITICAL: Show the header
                     header.setEnabled(True)
                     header.setSectionsClickable(True)
                     header.setSortIndicatorShown(True)
+                    header.repaint()  # Force repaint
 
                 self.setSelectionMode(QAbstractItemView.ExtendedSelection)
                 self.setContextMenuPolicy(Qt.CustomContextMenu)
