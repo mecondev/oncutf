@@ -193,8 +193,8 @@ CONTENT_MARGINS = {
 METADATA_TREE_COLUMN_WIDTHS = {
     "PLACEHOLDER_KEY_WIDTH": 140,
     "PLACEHOLDER_VALUE_WIDTH": 250,
-    "NORMAL_KEY_INITIAL_WIDTH": 140,  # Changed from 120 to match placeholder width
-    "NORMAL_VALUE_INITIAL_WIDTH": 600,  # Increased from 500 to give more space to value column
+    "NORMAL_KEY_INITIAL_WIDTH": 140,
+    "NORMAL_VALUE_INITIAL_WIDTH": 600,
     "KEY_MIN_WIDTH": 80,
     "KEY_MAX_WIDTH": 800,
     "VALUE_MIN_WIDTH": 250,
@@ -207,7 +207,7 @@ METADATA_TREE_COLUMN_CONFIG = {
         "key": "key",
         "default_visible": True,
         "removable": False,  # Always visible
-        "width": 140,  # Changed from 120 to match placeholder width
+        "width": 140,
         "alignment": "left",
         "min_width": 80,
     },
@@ -216,7 +216,7 @@ METADATA_TREE_COLUMN_CONFIG = {
         "key": "value",
         "default_visible": True,
         "removable": False,  # Always visible
-        "width": 600,  # Increased from 500 to match NORMAL_VALUE_INITIAL_WIDTH
+        "width": 600,
         "alignment": "left",
         "min_width": 250,
     },
