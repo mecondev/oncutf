@@ -299,8 +299,6 @@ class FileTableView(QTableView):
 
     def _get_current_selection_safe(self) -> set:
         """Get current selection safely - SIMPLIFIED VERSION."""
-        # Always use the current Qt selection for consistency
-        # This is more reliable than trying to preserve drag selections
         selection_model = self.selectionModel()
         if selection_model:
             return set(index.row() for index in selection_model.selectedRows())
@@ -396,21 +394,12 @@ class FileTableView(QTableView):
 
         super().setModel(model)
 
-        # Log column widths AFTER calling super().setModel()
-        if model:
-            logger.debug("Column widths AFTER super().setModel():")
-            for i in range(min(5, model.columnCount())):
-                width = self.columnWidth(i)
-                logger.debug(f"  Column {i}: {width}px")
+        # Don't configure columns here - let refresh_columns_after_model_change() handle it
+        # This avoids double configuration
+        logger.debug("setModel: Column configuration will be handled by refresh_columns_after_model_change()")
 
-            # Configure columns immediately after setModel
-            self._configure_columns()
-
-            # Log column widths AFTER _configure_columns()
-            logger.debug("Column widths AFTER _configure_columns():")
-            for i in range(min(5, model.columnCount())):
-                width = self.columnWidth(i)
-                logger.debug(f"  Column {i}: {width}px")
+        # Auto-update placeholder visibility after model is set
+        self._auto_update_placeholder_visibility()
 
     # =====================================
     # Table Preparation & Management
@@ -467,6 +456,8 @@ class FileTableView(QTableView):
         if not self.model():
             return
 
+        logger.debug("_configure_columns: Starting configuration")
+
         header = self.horizontalHeader()
         if not header:
             return
@@ -504,14 +495,7 @@ class FileTableView(QTableView):
             width = self.columnWidth(i)
             logger.debug(f"  Column {i}: {width}px")
 
-        # Schedule delayed verification
-        from utils.timer_manager import schedule_ui_update
-        def verify_widths():
-            logger.debug("Column widths after 200ms:")
-            for i in range(min(5, self.model().columnCount())):
-                width = self.columnWidth(i)
-                logger.debug(f"  Column {i}: {width}px")
-        schedule_ui_update(verify_widths, 200)
+        logger.debug("_configure_columns: Configuration finished")
 
     def _update_header_visibility(self) -> None:
         """Update header visibility based on whether there are files in the model."""
@@ -824,8 +808,6 @@ class FileTableView(QTableView):
 
     def set_placeholder_visible(self, visible: bool) -> None:
         """Show or hide the placeholder icon and configure table state."""
-        assert self.model() is not None, "Model must be set before showing placeholder"
-
         if visible and not self.placeholder_icon.isNull():
             self.placeholder_label.raise_()
             self.placeholder_label.show()
@@ -875,6 +857,11 @@ class FileTableView(QTableView):
                 # Re-enable updates and force a single refresh
                 self.setUpdatesEnabled(True)
                 self.viewport().update()
+
+    def _auto_update_placeholder_visibility(self) -> None:
+        """Automatically update placeholder visibility based on model state."""
+        should_show_placeholder = self.is_empty()
+        self.set_placeholder_visible(should_show_placeholder)
 
     def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
         """Handle selection logic with anchor and modifier support."""
@@ -1751,8 +1738,10 @@ class FileTableView(QTableView):
         super().focusInEvent(event)
 
         # Simple sync: update SelectionStore with current Qt selection
-        selected_rows = set(index.row() for index in self.selectionModel().selectedRows())
-        self._update_selection_store(selected_rows, emit_signal=False)  # Don't emit signal on focus
+        selection_model = self.selectionModel()
+        if selection_model is not None:
+            selected_rows = set(index.row() for index in selection_model.selectedRows())
+            self._update_selection_store(selected_rows, emit_signal=False)  # Don't emit signal on focus
 
         self.viewport().update()
 
@@ -2099,4 +2088,8 @@ class FileTableView(QTableView):
         logger.debug("refresh_columns_after_model_change: Starting column reconfiguration")
         self._configure_columns()
         logger.debug("refresh_columns_after_model_change: Column reconfiguration finished")
+
+        # Auto-update placeholder visibility after column configuration
+        self._auto_update_placeholder_visibility()
+
         self.viewport().update()
