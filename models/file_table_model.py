@@ -279,6 +279,10 @@ class FileTableModel(QAbstractTableModel):
 
         row = index.row()
         col = index.column()
+        column_key = self._column_mapping.get(col, "status" if col == 0 else None)
+
+        # DEBUG LOGGING: Καταγραφή κάθε κλήσης data()
+        logger.debug(f"[FileTableModel] data() called: row={row}, col={col}, role={role}, column_key={column_key}")
 
         if not self.files:
             # For empty table, return empty string for all columns
@@ -291,7 +295,7 @@ class FileTableModel(QAbstractTableModel):
         file = self.files[row]
 
         # Get column key from mapping
-        column_key = self._column_mapping.get(col)
+        # column_key = self._column_mapping.get(col)
         if not column_key:
             return QVariant()
 
@@ -306,7 +310,7 @@ class FileTableModel(QAbstractTableModel):
             elif status == "duplicate":
                 return QColor("#444400")
             elif status == "valid":
-                return QColor("#223344")
+                return QColor("#224422")
             return QVariant()
 
         # Handle status column (column 0)
@@ -316,6 +320,9 @@ class FileTableModel(QAbstractTableModel):
                 entry = None
                 if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
                     entry = self.parent_window.metadata_cache.get_entry(file.full_path)
+
+                # DEBUG LOGGING
+                logger.debug(f"[FileTableModel] Status icon check for {file.filename}: entry={entry}, has_data={hasattr(entry, 'data') and bool(getattr(entry, 'data', None))}")
 
                 # Check if file has hash cached
                 has_hash = self._has_hash_cached(file.full_path)

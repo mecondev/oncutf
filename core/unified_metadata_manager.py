@@ -384,6 +384,10 @@ class UnifiedMetadataManager(QObject):
         if not needs_loading:
             logger.info(f"[{source}] All {len(items)} files already cached")
 
+            # Ενημέρωση εικονιδίων file table για να εμφανιστούν τα metadata icons
+            if self.parent_window and hasattr(self.parent_window, 'file_model'):
+                self.parent_window.file_model.refresh_icons()
+
             # Always display metadata for cached items too
             if metadata_tree_view and items:
                 # Always display metadata - same logic as loaded items
