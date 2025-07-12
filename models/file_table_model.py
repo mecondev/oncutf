@@ -292,7 +292,10 @@ class FileTableModel(QAbstractTableModel):
                 logger.debug("data(): empty table, returning ''")
                 return ""
             if role == Qt.TextAlignmentRole:
-                return Qt.AlignHCenter
+                return Qt.AlignCenter
+            return QVariant()
+        # Αφαιρώ εντελώς το Qt.CheckStateRole για να μην εμφανίζεται checkbox
+        if role == Qt.CheckStateRole:
             return QVariant()
         file = self.files[row]
         if not column_key:
@@ -562,18 +565,17 @@ class FileTableModel(QAbstractTableModel):
         logger.debug(f"set_files called with {len(files)} files")
         self.beginResetModel()
         self.files = files
-        self.endResetModel()
-
-        # Immediate icon update for cached metadata/hash
+        # self._update_column_mapping()  # Αφαιρείται γιατί δεν χρειάζεται και προκαλεί σφάλμα
         self._update_icons_immediately()
-
+        self.endResetModel()
+        logger.debug(f"set_files finished, now self.files has {len(self.files)} files")
         # Update custom tooltips for new files
         if hasattr(self, '_table_view_ref') and self._table_view_ref:
             self.setup_custom_tooltips(self._table_view_ref)
             # Ensure columns are reconfigured after model reset
             if hasattr(self._table_view_ref, 'refresh_columns_after_model_change'):
+                logger.debug(f"Calling refresh_columns_after_model_change, files in model: {len(self.files)}")
                 self._table_view_ref.refresh_columns_after_model_change()
-        logger.debug(f"set_files finished, now self.files has {len(self.files)} files")
 
     def _update_icons_immediately(self) -> None:
         """Updates icons immediately for all files that have cached data."""

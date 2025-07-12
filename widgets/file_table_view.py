@@ -440,7 +440,7 @@ class FileTableView(QTableView):
     # =====================================
 
     def _configure_columns(self) -> None:
-        """Configure table columns with proper widths, alignment, and behavior."""
+        """Configure only status column here. All other columns are managed by ColumnManager."""
         if not self.model():
             logger.warning("No model available for column configuration")
             return
@@ -448,113 +448,21 @@ class FileTableView(QTableView):
         logger.debug(f"_configure_columns: model.columnCount()={self.model().columnCount()}, rowCount={self.model().rowCount()}")
 
         header = self.horizontalHeader()
-        if self.model().columnCount() == 1:
-            # Only status column (empty table)
-            self.setColumnWidth(0, 45)
-            if header:
-                header.setSectionResizeMode(0, header.Fixed)
-            return
-
-        # Configure status column (column 0)
+        # Always configure status column (column 0)
         self.setColumnWidth(0, 45)
         if header:
             header.setSectionResizeMode(0, header.Fixed)
 
-        # Configure the rest of the columns
-        for col, key in self.model()._column_mapping.items():
-            if col == 0:
-                continue
-            width = self._column_widths.get(key, 100)
-            self.setColumnWidth(col, width)
-            align = self._column_alignments.get(key, Qt.AlignLeft)
-            self.model().setHeaderData(col, Qt.Horizontal, align, Qt.TextAlignmentRole)
-            if header:
-                header.setSectionResizeMode(col, header.Interactive)
-
-        # Configure each column
-        for i, column_key in enumerate(visible_columns):
-            column_index = i + 1  # +1 because column 0 is status column
-            column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
-
-            # Set column width - use saved width if available, otherwise use default
-            saved_width = self._load_column_width(column_key)
-            if saved_width > 0:
-                column_width = saved_width
+        # Hide header if no files, show if there are files (if supported)
+        if hasattr(self.model(), 'files') and hasattr(header, 'hide') and hasattr(header, 'show'):
+            if len(self.model().files) == 0:
+                header.hide()
             else:
-                column_width = column_config.get('width', 100)
+                header.show()
 
-            # Apply minimum width constraint
-            min_width = max(column_config.get('min_width', GLOBAL_MIN_COLUMN_WIDTH), GLOBAL_MIN_COLUMN_WIDTH)
-            final_width = max(column_width, min_width)
-
-            self.setColumnWidth(column_index, final_width)
-
-            # Set column alignment
-            alignment = column_config.get('alignment', 'left')
-            self._set_column_alignment(column_index, alignment)
-
-            # Make column resizable (except status column)
-            header = self.horizontalHeader()
-            if header:
-                header.setSectionResizeMode(column_index, QHeaderView.Interactive)
-
-            logger.debug(f"Configured column '{column_key}' at index {column_index}: width={final_width}, alignment={alignment}")
-
-        # Configure status column (index 0)
-        status_width = FILE_TABLE_COLUMN_CONFIG.get("status", {}).get("width", 45)
-        if self.model().columnCount() == 1:
-            # Μόνο status column - κάνε stretch για να μην φαίνεται διαχωριστική γραμμή
-            self.setColumnWidth(0, self.viewport().width())
-            if header:
-                header.setSectionResizeMode(0, QHeaderView.Stretch)
-        else:
-            self.setColumnWidth(0, status_width)
-            if header:
-                header.setSectionResizeMode(0, QHeaderView.Fixed)
-
-        # Make status column non-resizable
-        if header:
-            header.setSectionResizeMode(0, QHeaderView.Fixed)
-
-        # Enable horizontal scrollbar when needed (instead of adjusting filename width)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-
-        # Connect column resize signals for saving user preferences
-        if header:
-            header.sectionResized.connect(self._on_column_resized)
-            header.sectionMoved.connect(self._on_column_moved)
-
-        # Force scrollbar update after column configuration
-        self._update_scrollbar_visibility()
-
-        # Setup header context menu with sorting and column visibility
-        def on_section_clicked(logical_index):
-            """Handle header section clicks for sorting."""
-            header = self.horizontalHeader()
-            if logical_index == 0:  # Status column - no sorting
-                # Κρύψε το βέλος ταξινόμησης αν πατηθεί η στήλη 0
-                header.setSortIndicator(-1, Qt.AscendingOrder)
-                return
-            # Get column key from logical index
-            column_key = self._get_column_key_from_index(logical_index)
-            if column_key:
-                # Toggle sort order
-                current_order = header.sortIndicatorOrder()
-                new_order = Qt.DescendingOrder if current_order == Qt.AscendingOrder else Qt.AscendingOrder
-                self.sortByColumn(logical_index, new_order)
-
-        # Connect header click for sorting
-        if hasattr(self.horizontalHeader(), 'sectionClicked'):
-            self.horizontalHeader().sectionClicked.connect(on_section_clicked)
-
-        # Βεβαιώσου ότι το sort indicator δεν ξεκινάει στη στήλη 0
-        header = self.horizontalHeader()
-        if header.sortIndicatorSection() == 0:
-            header.setSortIndicator(-1, Qt.AscendingOrder)
-
-        # Ορισμός προεπιλεγμένης ταξινόμησης στη στήλη 1 (filename), αύξουσα σειρά
-        header.setSortIndicator(1, Qt.AscendingOrder)
-        self.sortByColumn(1, Qt.AscendingOrder)
+        # Call ColumnManager to configure all other columns
+        if hasattr(self.window(), 'column_manager'):
+            self.window().column_manager.configure_columns_for_table(self)
 
     def _set_column_alignment(self, column_index: int, alignment: str) -> None:
         """Set text alignment for a specific column."""
