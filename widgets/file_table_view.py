@@ -138,6 +138,9 @@ class FileTableView(QTableView):
         # Check and fix column widths if needed
         self._check_and_fix_column_widths()
 
+        # Schedule initial column configuration with delay to ensure UI is ready
+        QTimer.singleShot(100, self._configure_columns_on_startup)
+
         # Initialize selection tracking
         self._manual_anchor_index = None
         self._legacy_selection_mode = False
@@ -203,6 +206,9 @@ class FileTableView(QTableView):
 
         # Ensure proper text display
         self._ensure_no_word_wrap()
+
+        # Also ensure columns are configured when the widget is shown
+        QTimer.singleShot(200, self._configure_columns)
 
     def paintEvent(self, event):
         logger.debug("FileTableView paintEvent called")
@@ -432,7 +438,11 @@ class FileTableView(QTableView):
             self.model().set_files(file_items)
 
         # Reconfigure columns after model reset
-        # self._configure_columns()  # Αφαιρείται, το κάνει το μοντέλο πλέον
+        # Schedule column configuration to ensure proper timing
+        QTimer.singleShot(50, self._configure_columns)
+
+        # Also schedule a second configuration with more delay to ensure it works
+        QTimer.singleShot(250, self._configure_columns)
 
         # Ensure no word wrap after setting files
         self._ensure_no_word_wrap()
@@ -456,21 +466,28 @@ class FileTableView(QTableView):
 
     def _configure_columns(self) -> None:
         """Configure columns with values from config.py."""
+        logger.debug("[ColumnConfig] _configure_columns called")
         if not self.model():
+            logger.debug("[ColumnConfig] No model available, skipping column configuration")
             return
 
-        logger.debug("_configure_columns: Starting configuration")
+        logger.debug("[ColumnConfig] Starting column configuration")
 
         header = self.horizontalHeader()
         if not header:
+            logger.debug("[ColumnConfig] No header available, skipping column configuration")
             return
+
+        logger.debug("[ColumnConfig] Header found, proceeding with configuration")
 
         # Show header first
         header.show()
+        logger.debug("[ColumnConfig] Header shown")
 
         # Configure status column (column 0) - always fixed
         self.setColumnWidth(0, 45)
         header.setSectionResizeMode(0, header.Fixed)
+        logger.debug("[ColumnConfig] Status column configured: 45px, Fixed mode")
 
         # Load column configuration from config.py (already imported at top)
 
@@ -478,13 +495,13 @@ class FileTableView(QTableView):
         visible_columns = ['filename', 'file_size', 'type', 'modified']
         if hasattr(self.model(), 'get_visible_columns'):
             visible_columns = self.model().get_visible_columns()
-            logger.debug(f"Got visible columns from model: {visible_columns}")
+            logger.debug(f"[ColumnConfig] Got visible columns from model: {visible_columns}")
         else:
-            logger.debug(f"Model doesn't have get_visible_columns, using defaults: {visible_columns}")
+            logger.debug(f"[ColumnConfig] Model doesn't have get_visible_columns, using defaults: {visible_columns}")
 
                 # Configure each visible column with delay to avoid timing issues
         def configure_columns_delayed():
-            logger.debug("Configuring columns with delay...")
+            logger.debug("[ColumnConfig] Configuring columns with delay...")
             for column_index, column_key in enumerate(visible_columns):
                 actual_column_index = column_index + 1  # +1 because column 0 is status
 
@@ -492,7 +509,7 @@ class FileTableView(QTableView):
                     # Get width from saved config or use defaults from config.py
                     width = self._load_column_width(column_key)
 
-                    logger.debug(f"Setting column {actual_column_index} ({column_key}) to {width}px")
+                    logger.debug(f"[ColumnConfig] Setting column {actual_column_index} ({column_key}) to {width}px")
 
                     # Set resize mode first, then width
                     header.setSectionResizeMode(actual_column_index, header.Interactive)
@@ -502,29 +519,37 @@ class FileTableView(QTableView):
 
                     # Verify the width was set correctly
                     actual_width = self.columnWidth(actual_column_index)
-                    logger.debug(f"Verified column {actual_column_index} width: {actual_width}px")
+                    logger.debug(f"[ColumnConfig] Verified column {actual_column_index} width: {actual_width}px")
+
+                    # If width wasn't set correctly, try again with a longer delay
+                    if actual_width != width:
+                        logger.warning(f"[ColumnConfig] Column {actual_column_index} width mismatch! Expected {width}px, got {actual_width}px. Retrying...")
+                        QTimer.singleShot(100, lambda idx=actual_column_index, w=width: self.setColumnWidth(idx, w))
+                else:
+                    logger.debug(f"[ColumnConfig] Column index {actual_column_index} exceeds model column count")
 
         # Configure columns with a small delay to avoid timing issues
-        QTimer.singleShot(10, configure_columns_delayed)
+        logger.debug("[ColumnConfig] Scheduling delayed column configuration")
+        QTimer.singleShot(50, configure_columns_delayed)
 
         # Update header visibility
         if hasattr(self.model(), 'files') and len(self.model().files) > 0:
             header.show()
-            logger.debug("Header shown")
+            logger.debug("[ColumnConfig] Header shown (files present)")
         else:
             header.hide()
-            logger.debug("Header hidden")
+            logger.debug("[ColumnConfig] Header hidden (no files)")
 
         # Check if header has any automatic resize settings that might interfere
-        logger.debug(f"Header stretch last section: {header.stretchLastSection()}")
-        logger.debug(f"Header cascade section resizes: {header.cascadingSectionResizes()}")
+        logger.debug(f"[ColumnConfig] Header stretch last section: {header.stretchLastSection()}")
+        logger.debug(f"[ColumnConfig] Header cascade section resizes: {header.cascadingSectionResizes()}")
 
         # Ensure these don't interfere with our column widths
         header.setStretchLastSection(False)
         header.setCascadingSectionResizes(False)
-        logger.debug("Disabled header auto-resize features")
+        logger.debug("[ColumnConfig] Disabled header auto-resize features")
 
-        logger.debug("_configure_columns: Configuration finished")
+        logger.debug("[ColumnConfig] Configuration finished")
 
     def _update_header_visibility(self) -> None:
         """Update header visibility based on whether there are files in the model."""
@@ -557,48 +582,65 @@ class FileTableView(QTableView):
 
     def _load_column_width(self, column_key: str) -> int:
         """Load column width from main config system with fallback to defaults."""
+        logger.debug(f"[ColumnWidth] Loading width for column '{column_key}'")
         try:
             # First, get the default width from config.py
             from config import FILE_TABLE_COLUMN_CONFIG
             default_width = FILE_TABLE_COLUMN_CONFIG.get(column_key, {}).get("width", 100)
+            logger.debug(f"[ColumnWidth] Default width for '{column_key}': {default_width}px")
 
             # Try main config system first
             main_window = self._get_main_window()
             if main_window and hasattr(main_window, 'window_config_manager'):
+                logger.debug(f"[ColumnWidth] Found main window with config manager")
                 config_manager = main_window.window_config_manager.config_manager
                 window_config = config_manager.get_category('window')
                 column_widths = window_config.get('file_table_column_widths', {})
+                logger.debug(f"[ColumnWidth] Loaded column widths from main config: {column_widths}")
 
                 if column_key in column_widths:
                     saved_width = column_widths[column_key]
+                    logger.debug(f"[ColumnWidth] Found saved width for '{column_key}': {saved_width}px")
                     # Check if saved width is reasonable (not the default Qt 100px for all columns)
                     # If all columns are 100px, it means they were saved incorrectly
                     if saved_width == 100 and default_width != 100:
-                        logger.debug(f"Column '{column_key}' has suspicious saved width (100px), using default {default_width}px")
+                        logger.debug(f"[ColumnWidth] Column '{column_key}' has suspicious saved width (100px), using default {default_width}px")
                         return default_width
+                    logger.debug(f"[ColumnWidth] Using saved width for '{column_key}': {saved_width}px")
                     return saved_width
+                else:
+                    logger.debug(f"[ColumnWidth] No saved width found for '{column_key}' in main config")
 
             # Fallback to old method
+            logger.debug(f"[ColumnWidth] Trying fallback config loading for '{column_key}'")
             from utils.json_config_manager import load_config
             config = load_config()
             column_widths = config.get("file_table_column_widths", {})
+            logger.debug(f"[ColumnWidth] Loaded column widths from fallback config: {column_widths}")
             if column_key in column_widths:
                 saved_width = column_widths[column_key]
+                logger.debug(f"[ColumnWidth] Found saved width in fallback for '{column_key}': {saved_width}px")
                 # Same check for old config format
                 if saved_width == 100 and default_width != 100:
-                    logger.debug(f"Column '{column_key}' has suspicious saved width (100px), using default {default_width}px")
+                    logger.debug(f"[ColumnWidth] Column '{column_key}' has suspicious saved width (100px), using default {default_width}px")
                     return default_width
+                logger.debug(f"[ColumnWidth] Using fallback saved width for '{column_key}': {saved_width}px")
                 return saved_width
+            else:
+                logger.debug(f"[ColumnWidth] No saved width found for '{column_key}' in fallback config")
 
             # Return default width from config.py
+            logger.debug(f"[ColumnWidth] Using default width for '{column_key}': {default_width}px")
             return default_width
 
         except Exception as e:
-            logger.warning(f"Failed to load column width for {column_key}: {e}")
+            logger.warning(f"[ColumnWidth] Failed to load column width for {column_key}: {e}")
             # Emergency fallback to config.py defaults
             from config import FILE_TABLE_COLUMN_CONFIG
             column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
-            return column_config.get("width", 100)
+            fallback_width = column_config.get("width", 100)
+            logger.debug(f"[ColumnWidth] Using emergency fallback width for '{column_key}': {fallback_width}px")
+            return fallback_width
 
     def _reset_column_widths_to_defaults(self) -> None:
         """Reset all column widths to their default values from config.py."""
@@ -2169,8 +2211,8 @@ class FileTableView(QTableView):
 
             self.viewport().update()
 
-        # Use a timer to delay the configuration
-        QTimer.singleShot(50, delayed_configure)
+        # Use a longer delay to avoid timing issues with Qt
+        QTimer.singleShot(150, delayed_configure)
 
     def _check_and_fix_column_widths(self) -> None:
         """Check if column widths need to be reset due to incorrect saved values."""
@@ -2213,3 +2255,25 @@ class FileTableView(QTableView):
 
         except Exception as e:
             logger.error(f"Failed to check column widths: {e}")
+
+    def _configure_columns_on_startup(self) -> None:
+        """Configure columns on startup with proper timing."""
+        logger.debug("[ColumnConfig] _configure_columns_on_startup called")
+
+        # Check if we have a model and it has files
+        if not self.model():
+            logger.debug("[ColumnConfig] No model available on startup, scheduling retry")
+            # Retry after a bit more delay
+            QTimer.singleShot(200, self._configure_columns_on_startup)
+            return
+
+        # Always configure columns on startup, even if model is empty
+        # This ensures the header is set up correctly
+        logger.debug("[ColumnConfig] Configuring columns on startup")
+        self._configure_columns()
+
+        # If model has files, also ensure proper configuration
+        if hasattr(self.model(), 'files') and len(self.model().files) > 0:
+            logger.debug(f"[ColumnConfig] Model has {len(self.model().files)} files, ensuring proper column configuration")
+            # Schedule another configuration to ensure everything is set up correctly
+            QTimer.singleShot(50, self._configure_columns)
