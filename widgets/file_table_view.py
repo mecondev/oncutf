@@ -386,9 +386,31 @@ class FileTableView(QTableView):
 
     def setModel(self, model) -> None:
         logger.debug(f"FileTableView setModel called with model: {type(model)}")
+
+        # Log column widths BEFORE calling super().setModel()
+        if self.model():
+            logger.debug("Column widths BEFORE super().setModel():")
+            for i in range(min(5, self.model().columnCount())):
+                width = self.columnWidth(i)
+                logger.debug(f"  Column {i}: {width}px")
+
         super().setModel(model)
+
+        # Log column widths AFTER calling super().setModel()
         if model:
-            schedule_resize_adjust(self._configure_columns, 10)
+            logger.debug("Column widths AFTER super().setModel():")
+            for i in range(min(5, model.columnCount())):
+                width = self.columnWidth(i)
+                logger.debug(f"  Column {i}: {width}px")
+
+            # Configure columns immediately after setModel
+            self._configure_columns()
+
+            # Log column widths AFTER _configure_columns()
+            logger.debug("Column widths AFTER _configure_columns():")
+            for i in range(min(5, model.columnCount())):
+                width = self.columnWidth(i)
+                logger.debug(f"  Column {i}: {width}px")
 
     # =====================================
     # Table Preparation & Management
@@ -441,150 +463,65 @@ class FileTableView(QTableView):
     # =====================================
 
     def _configure_columns(self) -> None:
-        """Configure columns and header visibility."""
+        """Configure columns with simple, reliable approach."""
         if not self.model():
-            logger.warning("No model available for column configuration")
             return
-
-        logger.debug(f"_configure_columns: model.columnCount()={self.model().columnCount()}, rowCount={self.model().rowCount()}")
 
         header = self.horizontalHeader()
         if not header:
-            logger.warning("_configure_columns: No header available")
             return
 
-        # First, ensure header is visible so column widths can be applied properly
-        logger.debug("_configure_columns: Ensuring header is visible for column configuration")
+        # Show header first
         header.show()
-        header.repaint()
 
-        # Always configure status column (column 0)
+        # Configure status column (column 0) - always fixed
         self.setColumnWidth(0, 45)
         header.setSectionResizeMode(0, header.Fixed)
-        logger.debug("_configure_columns: Configured status column")
 
-                # RESTORE COLUMNMANAGER
-        # Call ColumnManager to configure all other columns
-        column_manager = None
+        # Configure other columns with hardcoded values from config
+        column_widths = {
+            1: 524,  # filename
+            2: 75,   # file_size
+            3: 50,   # type
+            4: 134   # modified
+        }
 
-        # Try different ways to get column_manager
-        if hasattr(self.window(), 'column_manager'):
-            column_manager = self.window().column_manager
-            logger.debug("_configure_columns: Found column_manager via self.window()")
+        for column_index, width in column_widths.items():
+            if column_index < self.model().columnCount():
+                header.setSectionResizeMode(column_index, header.Interactive)
+                self.setColumnWidth(column_index, width)
+                logger.debug(f"Set column {column_index} to {width}px")
+
+        # Update header visibility
+        if hasattr(self.model(), 'files') and len(self.model().files) > 0:
+            header.show()
         else:
-            # Try to get column_manager from main_window
-            main_window = self._get_main_window()
-            if main_window and hasattr(main_window, 'column_manager'):
-                column_manager = main_window.column_manager
-                logger.debug("_configure_columns: Found column_manager via main_window")
-            else:
-                # Try to get column_manager from application context
-                try:
-                    from core.application_context import get_app_context
-                    context = get_app_context()
-                    if context and hasattr(context, 'column_manager'):
-                        column_manager = context.column_manager
-                        logger.debug("_configure_columns: Found column_manager via application context")
-                except Exception as e:
-                    logger.warning(f"_configure_columns: Error accessing application context: {e}")
+            header.hide()
 
-        if column_manager:
-            logger.debug("_configure_columns: Calling ColumnManager.configure_table_columns")
-            column_manager.configure_table_columns(self, 'file_table')
-            logger.debug("_configure_columns: ColumnManager configuration finished")
-        else:
-            logger.warning("_configure_columns: No column_manager found anywhere - using manual configuration")
-            # Fallback: Configure columns manually with config.py values
-            from config import FILE_TABLE_COLUMN_CONFIG
-            visible_columns = ['filename', 'file_size', 'type', 'modified']
-            logger.debug(f"_configure_columns: Model columnCount={self.model().columnCount()}, visible_columns={visible_columns}")
+        # Log current widths immediately
+        logger.debug("Column widths immediately after configuration:")
+        for i in range(min(5, self.model().columnCount())):
+            width = self.columnWidth(i)
+            logger.debug(f"  Column {i}: {width}px")
 
-            for i, column_key in enumerate(visible_columns):
-                column_index = i + 1  # +1 because column 0 is status
-                logger.debug(f"_configure_columns: Processing column {column_index} ({column_key})")
-
-                if column_index < self.model().columnCount():
-                    column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
-                    width = column_config.get('width', 100)
-                    logger.debug(f"_configure_columns: Setting column {column_index} ({column_key}) to {width}px")
-                    self.setColumnWidth(column_index, width)
-                    # Verify the width was set
-                    actual_width = self.columnWidth(column_index)
-                    logger.debug(f"_configure_columns: Column {column_index} actual width after setting: {actual_width}px")
-                else:
-                    logger.warning(f"_configure_columns: Skipping column {column_index} - exceeds model columnCount {self.model().columnCount()}")
-
-            # Log all final column widths
-            logger.debug("_configure_columns: Final column widths after manual configuration:")
-            for i in range(self.model().columnCount()):
+        # Schedule delayed verification
+        from utils.timer_manager import schedule_ui_update
+        def verify_widths():
+            logger.debug("Column widths after 200ms:")
+            for i in range(min(5, self.model().columnCount())):
                 width = self.columnWidth(i)
-                logger.debug(f"_configure_columns: Column {i} final width: {width}px")
-
-        # Now update header visibility based on content
-        logger.debug("_configure_columns: Updating header visibility")
-        self._update_header_visibility()
-        logger.debug("_configure_columns: Header visibility update finished")
+                logger.debug(f"  Column {i}: {width}px")
+        schedule_ui_update(verify_widths, 200)
 
     def _update_header_visibility(self) -> None:
         """Update header visibility based on whether there are files in the model."""
-        header = self.horizontalHeader()
-        if not header:
-            logger.warning("_update_header_visibility: No header available")
-            return
-
-                # RESTORE NORMAL HEADER VISIBILITY LOGIC
-        if hasattr(self.model(), 'files'):
-            has_files = len(self.model().files) > 0
-            if has_files:
-                header.show()
-                header.repaint()
-                logger.debug(f"_update_header_visibility: Showing header (has_files={has_files})")
-            else:
-                header.hide()
-                logger.debug(f"_update_header_visibility: Hiding header (has_files={has_files})")
-        else:
-            # Fallback: show header if there are rows
-            has_rows = self.model().rowCount() > 0
-            if has_rows:
-                header.show()
-                header.repaint()
-                logger.debug(f"_update_header_visibility: Showing header (has_rows={has_rows})")
-            else:
-                header.hide()
-                logger.debug(f"_update_header_visibility: Hiding header (has_rows={has_rows})")
-
-        # Force update and ensure header state is applied
-        header.update()
-        self.viewport().update()
-
-        # Double-check header visibility after a short delay
-        from utils.timer_manager import schedule_ui_update
-        schedule_ui_update(lambda: self._ensure_header_visibility(), 100)
+        # This method is now handled in _configure_columns - do nothing
+        pass
 
     def _ensure_header_visibility(self) -> None:
         """Ensure header visibility is correct after column configuration."""
-        header = self.horizontalHeader()
-        if not header:
-            return
-
-        # RESTORE NORMAL HEADER VISIBILITY LOGIC
-        if hasattr(self.model(), 'files'):
-            has_files = len(self.model().files) > 0
-            should_be_visible = has_files
-        else:
-            has_rows = self.model().rowCount() > 0
-            should_be_visible = has_rows
-
-        is_visible = header.isVisible()
-
-        if should_be_visible and not is_visible:
-            logger.debug("_ensure_header_visibility: Forcing header to show")
-            header.show()
-            header.repaint()
-            header.update()
-        elif not should_be_visible and is_visible:
-            logger.debug("_ensure_header_visibility: Forcing header to hide")
-            header.hide()
+        # This method is now handled in _configure_columns - do nothing
+        pass
 
     def _set_column_alignment(self, column_index: int, alignment: str) -> None:
         """Set text alignment for a specific column."""
