@@ -453,6 +453,11 @@ class FileTableView(QTableView):
             logger.warning("_configure_columns: No header available")
             return
 
+        # First, ensure header is visible so column widths can be applied properly
+        logger.debug("_configure_columns: Ensuring header is visible for column configuration")
+        header.show()
+        header.repaint()
+
         # Always configure status column (column 0)
         self.setColumnWidth(0, 45)
         header.setSectionResizeMode(0, header.Fixed)
@@ -466,12 +471,12 @@ class FileTableView(QTableView):
         else:
             logger.warning("_configure_columns: No column_manager available")
 
-        # Update header visibility based on content
+        # Now update header visibility based on content
         logger.debug("_configure_columns: Updating header visibility")
         self._update_header_visibility()
         logger.debug("_configure_columns: Header visibility update finished")
 
-    def _update_header_visibility(self) -> None:
+        def _update_header_visibility(self) -> None:
         """Update header visibility based on whether there are files in the model."""
         header = self.horizontalHeader()
         if not header:
@@ -498,9 +503,37 @@ class FileTableView(QTableView):
                 header.hide()
                 logger.debug(f"_update_header_visibility: Hiding header (has_rows={has_rows})")
 
-        # Force update
+        # Force update and ensure header state is applied
         header.update()
         self.viewport().update()
+
+        # Double-check header visibility after a short delay
+        from utils.timer_manager import schedule_ui_update
+        schedule_ui_update(lambda: self._ensure_header_visibility(), 100)
+
+    def _ensure_header_visibility(self) -> None:
+        """Ensure header visibility is correct after column configuration."""
+        header = self.horizontalHeader()
+        if not header:
+            return
+
+        if hasattr(self.model(), 'files'):
+            has_files = len(self.model().files) > 0
+            should_be_visible = has_files
+        else:
+            has_rows = self.model().rowCount() > 0
+            should_be_visible = has_rows
+
+        is_visible = header.isVisible()
+
+        if should_be_visible and not is_visible:
+            logger.debug("_ensure_header_visibility: Forcing header to show")
+            header.show()
+            header.repaint()
+            header.update()
+        elif not should_be_visible and is_visible:
+            logger.debug("_ensure_header_visibility: Forcing header to hide")
+            header.hide()
 
     def _set_column_alignment(self, column_index: int, alignment: str) -> None:
         """Set text alignment for a specific column."""

@@ -209,8 +209,11 @@ class ColumnManager:
 
         # Configure each column
         config = self.table_configs[table_type]
+        logger.debug(f"[ColumnManager] Configuring {len(config)} columns for {table_type}")
+
         for column_index, column_config in config.items():
             if column_index >= table_view.model().columnCount():
+                logger.debug(f"[ColumnManager] Skipping column {column_index} - exceeds model column count")
                 continue
 
             # Set resize mode
@@ -219,6 +222,8 @@ class ColumnManager:
             # Calculate and set width
             width = self._calculate_column_width(table_view, table_type, column_config)
             table_view.setColumnWidth(column_index, width)
+
+            logger.debug(f"[ColumnManager] Set column {column_index} width to {width}px")
 
             # Update minimum section size if needed
             if column_config.min_width > 0:
@@ -231,7 +236,7 @@ class ColumnManager:
         if isinstance(table_view, QTableView):
             self.ensure_horizontal_scrollbar_state(table_view)
 
-        logger.debug(f"[ColumnManager] Configured columns for table type: {table_type}", extra={"dev_only": True})
+        logger.debug(f"[ColumnManager] Configured columns for table type: {table_type}")
 
     def _update_font_metrics(self, widget: QWidget) -> None:
         """Update font metrics for text-based calculations."""
@@ -273,6 +278,12 @@ class ColumnManager:
             if user_width and user_width >= column_config.min_width:
                 return user_width
 
+        # Try to load saved width from config system
+        if table_type == 'file_table' and column_config.column_index > 0:
+            saved_width = self._load_saved_column_width(column_config.column_index)
+            if saved_width and saved_width >= column_config.min_width:
+                return saved_width
+
         # Handle different column types
         if column_config.column_type == ColumnType.FIXED:
             return column_config.default_width
@@ -290,6 +301,37 @@ class ColumnManager:
             return column_config.default_width
 
         return column_config.default_width
+
+    def _load_saved_column_width(self, column_index: int) -> Optional[int]:
+        """Load saved column width from config system."""
+        try:
+            if hasattr(self.main_window, 'window_config_manager'):
+                config_manager = self.main_window.window_config_manager.config_manager
+                window_config = config_manager.get_category('window')
+                column_widths = window_config.get('file_table_column_widths', {})
+
+                # Map column index to column key
+                column_keys = ['filename', 'file_size', 'type', 'modified']
+                if column_index <= len(column_keys):
+                    column_key = column_keys[column_index - 1]  # -1 because column 0 is status
+                    if column_key in column_widths:
+                        return column_widths[column_key]
+
+            # Fallback to old config system
+            from utils.json_config_manager import load_config
+            config = load_config()
+            column_widths = config.get("file_table_column_widths", {})
+
+            column_keys = ['filename', 'file_size', 'type', 'modified']
+            if column_index <= len(column_keys):
+                column_key = column_keys[column_index - 1]
+                if column_key in column_widths:
+                    return column_widths[column_key]
+
+        except Exception as e:
+            logger.warning(f"[ColumnManager] Error loading saved column width: {e}")
+
+        return None
 
 
 
