@@ -135,6 +135,9 @@ class FileTableView(QTableView):
         # Load column visibility configuration
         self._visible_columns = self._load_column_visibility_config()
 
+        # Check and fix column widths if needed
+        self._check_and_fix_column_widths()
+
         # Initialize selection tracking
         self._manual_anchor_index = None
         self._legacy_selection_mode = False
@@ -479,48 +482,47 @@ class FileTableView(QTableView):
         else:
             logger.debug(f"Model doesn't have get_visible_columns, using defaults: {visible_columns}")
 
-        # Configure each visible column
-        for column_index, column_key in enumerate(visible_columns):
-            actual_column_index = column_index + 1  # +1 because column 0 is status
+                # Configure each visible column with delay to avoid timing issues
+        def configure_columns_delayed():
+            logger.debug("Configuring columns with delay...")
+            for column_index, column_key in enumerate(visible_columns):
+                actual_column_index = column_index + 1  # +1 because column 0 is status
 
-            if actual_column_index < self.model().columnCount():
-                # Get width from config
-                column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
-                width = column_config.get('width', 100)
+                if actual_column_index < self.model().columnCount():
+                    # Get width from saved config or use defaults from config.py
+                    width = self._load_column_width(column_key)
 
-                logger.debug(f"Column {column_key} config: {column_config}")
-                logger.debug(f"Setting column {actual_column_index} ({column_key}) to {width}px")
+                    logger.debug(f"Setting column {actual_column_index} ({column_key}) to {width}px")
 
-                # Set resize mode first, then width
-                header.setSectionResizeMode(actual_column_index, header.Interactive)
+                    # Set resize mode first, then width
+                    header.setSectionResizeMode(actual_column_index, header.Interactive)
 
-                # Force the width setting with processEvents
-                self.setColumnWidth(actual_column_index, width)
-                QApplication.processEvents()  # Force immediate processing
-
-                # Verify the width was set correctly
-                actual_width = self.columnWidth(actual_column_index)
-                logger.debug(f"Verified column {actual_column_index} width: {actual_width}px")
-
-                # If width was reset, try setting it again
-                if actual_width != width:
-                    logger.debug(f"Width was reset! Trying to set again...")
+                    # Set the width
                     self.setColumnWidth(actual_column_index, width)
-                    QApplication.processEvents()
-                    final_width = self.columnWidth(actual_column_index)
-                    logger.debug(f"Final width after retry: {final_width}px")
+
+                    # Verify the width was set correctly
+                    actual_width = self.columnWidth(actual_column_index)
+                    logger.debug(f"Verified column {actual_column_index} width: {actual_width}px")
+
+        # Configure columns with a small delay to avoid timing issues
+        QTimer.singleShot(10, configure_columns_delayed)
 
         # Update header visibility
         if hasattr(self.model(), 'files') and len(self.model().files) > 0:
             header.show()
+            logger.debug("Header shown")
         else:
             header.hide()
+            logger.debug("Header hidden")
 
-        # Log current widths immediately
-        logger.debug("Column widths immediately after configuration:")
-        for i in range(min(5, self.model().columnCount())):
-            width = self.columnWidth(i)
-            logger.debug(f"  Column {i}: {width}px")
+        # Check if header has any automatic resize settings that might interfere
+        logger.debug(f"Header stretch last section: {header.stretchLastSection()}")
+        logger.debug(f"Header cascade section resizes: {header.cascadingSectionResizes()}")
+
+        # Ensure these don't interfere with our column widths
+        header.setStretchLastSection(False)
+        header.setCascadingSectionResizes(False)
+        logger.debug("Disabled header auto-resize features")
 
         logger.debug("_configure_columns: Configuration finished")
 
@@ -556,6 +558,10 @@ class FileTableView(QTableView):
     def _load_column_width(self, column_key: str) -> int:
         """Load column width from main config system with fallback to defaults."""
         try:
+            # First, get the default width from config.py
+            from config import FILE_TABLE_COLUMN_CONFIG
+            default_width = FILE_TABLE_COLUMN_CONFIG.get(column_key, {}).get("width", 100)
+
             # Try main config system first
             main_window = self._get_main_window()
             if main_window and hasattr(main_window, 'window_config_manager'):
@@ -564,26 +570,64 @@ class FileTableView(QTableView):
                 column_widths = window_config.get('file_table_column_widths', {})
 
                 if column_key in column_widths:
-                    return column_widths[column_key]
+                    saved_width = column_widths[column_key]
+                    # Check if saved width is reasonable (not the default Qt 100px for all columns)
+                    # If all columns are 100px, it means they were saved incorrectly
+                    if saved_width == 100 and default_width != 100:
+                        logger.debug(f"Column '{column_key}' has suspicious saved width (100px), using default {default_width}px")
+                        return default_width
+                    return saved_width
 
             # Fallback to old method
             from utils.json_config_manager import load_config
             config = load_config()
             column_widths = config.get("file_table_column_widths", {})
             if column_key in column_widths:
-                return column_widths[column_key]
+                saved_width = column_widths[column_key]
+                # Same check for old config format
+                if saved_width == 100 and default_width != 100:
+                    logger.debug(f"Column '{column_key}' has suspicious saved width (100px), using default {default_width}px")
+                    return default_width
+                return saved_width
 
-            # Final fallback to config.py defaults
-            from config import FILE_TABLE_COLUMN_CONFIG
-            column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
-            return column_config.get("width", 100)
+            # Return default width from config.py
+            return default_width
 
         except Exception as e:
             logger.warning(f"Failed to load column width for {column_key}: {e}")
-            # Emergency fallback
+            # Emergency fallback to config.py defaults
             from config import FILE_TABLE_COLUMN_CONFIG
             column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
             return column_config.get("width", 100)
+
+    def _reset_column_widths_to_defaults(self) -> None:
+        """Reset all column widths to their default values from config.py."""
+        try:
+            from config import FILE_TABLE_COLUMN_CONFIG
+
+            logger.info("Resetting column widths to defaults from config.py")
+
+            # Clear saved column widths
+            main_window = self._get_main_window()
+            if main_window and hasattr(main_window, 'window_config_manager'):
+                config_manager = main_window.window_config_manager.config_manager
+                window_config = config_manager.get_category('window')
+                window_config.set('file_table_column_widths', {})
+                config_manager.save()
+
+            # Also clear from old format
+            from utils.json_config_manager import load_config, save_config
+            config = load_config()
+            config["file_table_column_widths"] = {}
+            save_config(config)
+
+            # Reconfigure columns with defaults
+            self._configure_columns()
+
+            logger.info("Column widths reset to defaults successfully")
+
+        except Exception as e:
+            logger.error(f"Failed to reset column widths to defaults: {e}")
 
     def _save_column_width(self, column_key: str, width: int) -> None:
         """Save column width to main config system."""
@@ -2127,3 +2171,45 @@ class FileTableView(QTableView):
 
         # Use a timer to delay the configuration
         QTimer.singleShot(50, delayed_configure)
+
+    def _check_and_fix_column_widths(self) -> None:
+        """Check if column widths need to be reset due to incorrect saved values."""
+        try:
+            from config import FILE_TABLE_COLUMN_CONFIG
+
+            # Get current saved widths
+            main_window = self._get_main_window()
+            saved_widths = {}
+
+            if main_window and hasattr(main_window, 'window_config_manager'):
+                config_manager = main_window.window_config_manager.config_manager
+                window_config = config_manager.get_category('window')
+                saved_widths = window_config.get('file_table_column_widths', {})
+
+            if not saved_widths:
+                # Try fallback method
+                from utils.json_config_manager import load_config
+                config = load_config()
+                saved_widths = config.get("file_table_column_widths", {})
+
+            # Check if most columns are set to 100px (suspicious)
+            suspicious_count = 0
+            total_count = 0
+
+            for column_key, column_config in FILE_TABLE_COLUMN_CONFIG.items():
+                if column_config.get("default_visible", False):  # Only check visible columns
+                    total_count += 1
+                    default_width = column_config.get("width", 100)
+                    saved_width = saved_widths.get(column_key, default_width)
+
+                    # If saved width is 100px but default is different, it's suspicious
+                    if saved_width == 100 and default_width != 100:
+                        suspicious_count += 1
+
+            # If most visible columns have suspicious widths, reset them
+            if total_count > 0 and suspicious_count >= (total_count * 0.5):  # 50% threshold
+                logger.info(f"Found {suspicious_count}/{total_count} columns with suspicious widths, resetting to defaults")
+                self._reset_column_widths_to_defaults()
+
+        except Exception as e:
+            logger.error(f"Failed to check column widths: {e}")

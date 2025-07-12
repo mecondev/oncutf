@@ -185,6 +185,11 @@ class ColumnManager:
             logger.debug(f"[ColumnManager] Skipping auto-regulating table type: {table_type}")
             return
 
+        # TEMPORARILY skip file_table to avoid conflicts with FileTableView column management
+        if table_type == 'file_table':
+            logger.debug(f"[ColumnManager] Skipping file_table - managed by FileTableView directly")
+            return
+
         if table_type not in self.table_configs:
             logger.warning(f"[ColumnManager] Unknown table type: {table_type}")
             return
