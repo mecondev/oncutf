@@ -668,7 +668,7 @@ class FileTreeView(QTreeView):
             with wait_cursor():
                 # Brief delay to show wait cursor during expansion
                 QApplication.processEvents()
-                schedule_ui_update(lambda: None, delay=10)  # 10ms delay
+                schedule_ui_update(lambda: None, delay=100)  # 100ms delay for visibility
 
         # Schedule wait cursor for expansion
         schedule_ui_update(show_wait_cursor, delay=1)

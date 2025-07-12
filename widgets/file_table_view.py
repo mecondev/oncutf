@@ -452,7 +452,7 @@ class FileTableView(QTableView):
     # =====================================
 
     def _configure_columns(self) -> None:
-        """Configure columns with simple, reliable approach."""
+        """Configure columns with values from config.py."""
         if not self.model():
             return
 
@@ -469,19 +469,46 @@ class FileTableView(QTableView):
         self.setColumnWidth(0, 45)
         header.setSectionResizeMode(0, header.Fixed)
 
-        # Configure other columns with hardcoded values from config
-        column_widths = {
-            1: 524,  # filename
-            2: 75,   # file_size
-            3: 50,   # type
-            4: 134   # modified
-        }
+        # Load column configuration from config.py (already imported at top)
 
-        for column_index, width in column_widths.items():
-            if column_index < self.model().columnCount():
-                header.setSectionResizeMode(column_index, header.Interactive)
-                self.setColumnWidth(column_index, width)
-                logger.debug(f"Set column {column_index} to {width}px")
+        # Get visible columns from model or use defaults
+        visible_columns = ['filename', 'file_size', 'type', 'modified']
+        if hasattr(self.model(), 'get_visible_columns'):
+            visible_columns = self.model().get_visible_columns()
+            logger.debug(f"Got visible columns from model: {visible_columns}")
+        else:
+            logger.debug(f"Model doesn't have get_visible_columns, using defaults: {visible_columns}")
+
+        # Configure each visible column
+        for column_index, column_key in enumerate(visible_columns):
+            actual_column_index = column_index + 1  # +1 because column 0 is status
+
+            if actual_column_index < self.model().columnCount():
+                # Get width from config
+                column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
+                width = column_config.get('width', 100)
+
+                logger.debug(f"Column {column_key} config: {column_config}")
+                logger.debug(f"Setting column {actual_column_index} ({column_key}) to {width}px")
+
+                # Set resize mode first, then width
+                header.setSectionResizeMode(actual_column_index, header.Interactive)
+
+                # Force the width setting with processEvents
+                self.setColumnWidth(actual_column_index, width)
+                QApplication.processEvents()  # Force immediate processing
+
+                # Verify the width was set correctly
+                actual_width = self.columnWidth(actual_column_index)
+                logger.debug(f"Verified column {actual_column_index} width: {actual_width}px")
+
+                # If width was reset, try setting it again
+                if actual_width != width:
+                    logger.debug(f"Width was reset! Trying to set again...")
+                    self.setColumnWidth(actual_column_index, width)
+                    QApplication.processEvents()
+                    final_width = self.columnWidth(actual_column_index)
+                    logger.debug(f"Final width after retry: {final_width}px")
 
         # Update header visibility
         if hasattr(self.model(), 'files') and len(self.model().files) > 0:
@@ -2086,10 +2113,17 @@ class FileTableView(QTableView):
         This ensures that columns, headers, and resize modes are always correct.
         """
         logger.debug("refresh_columns_after_model_change: Starting column reconfiguration")
-        self._configure_columns()
-        logger.debug("refresh_columns_after_model_change: Column reconfiguration finished")
 
-        # Auto-update placeholder visibility after column configuration
-        self._auto_update_placeholder_visibility()
+        # Add a small delay to ensure model is fully ready
+        def delayed_configure():
+            logger.debug("refresh_columns_after_model_change: Delayed column configuration")
+            self._configure_columns()
+            logger.debug("refresh_columns_after_model_change: Column reconfiguration finished")
 
-        self.viewport().update()
+            # Auto-update placeholder visibility after column configuration
+            self._auto_update_placeholder_visibility()
+
+            self.viewport().update()
+
+        # Use a timer to delay the configuration
+        QTimer.singleShot(50, delayed_configure)
