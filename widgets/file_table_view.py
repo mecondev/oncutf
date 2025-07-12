@@ -158,12 +158,12 @@ class FileTableView(QTableView):
         self._config_save_timer = None
         self._pending_column_changes = {}
 
-        # Setup placeholder icon
+        # Setup placeholder icon/label
         self.placeholder_label = QLabel(self.viewport())
-        self.placeholder_label.setAlignment(Qt.AlignCenter)  # type: ignore
-        self.placeholder_label.setVisible(False)
-        # Set background color to match table background (needed even with transparent PNG)
-        self.placeholder_label.setStyleSheet("background-color: #181818;")
+        self.placeholder_label.setAlignment(Qt.AlignCenter)
+        self.placeholder_label.setStyleSheet("background-color: #181818; color: #fff; font-size: 18px;")
+        self.placeholder_label.setText("No files loaded")
+        self.placeholder_label.hide()
 
         from utils.path_utils import get_images_dir
 
@@ -328,10 +328,7 @@ class FileTableView(QTableView):
     def resizeEvent(self, event) -> None:
         """Handle window resize events and update scrollbar visibility."""
         super().resizeEvent(event)
-
-        # Update placeholder position if visible
-        if self.placeholder_label.isVisible():
-            self.placeholder_label.resize(self.viewport().size())
+        self.placeholder_label.resize(self.viewport().size())
 
         # Force scrollbar update after resize
         self._force_scrollbar_update()
@@ -387,21 +384,22 @@ class FileTableView(QTableView):
 
     def setModel(self, model) -> None:
         logger.debug(f"FileTableView setModel called with model: {type(model)}")
-
-        # Log column widths BEFORE calling super().setModel()
-        if self.model():
-            logger.debug("Column widths BEFORE super().setModel():")
-            for i in range(min(5, self.model().columnCount())):
-                width = self.columnWidth(i)
-                logger.debug(f"  Column {i}: {width}px")
-
         super().setModel(model)
-
-        # Configure columns synchronously now that the model is set
-        self._configure_columns()
-
-        # Auto-update placeholder visibility after model is set
-        self._auto_update_placeholder_visibility()
+        if model:
+            # Συνδέουμε τα σήματα αλλαγής στηλών για δυναμικό table
+            if hasattr(model, 'columnsInserted'):
+                model.columnsInserted.connect(self._configure_columns)
+            if hasattr(model, 'columnsRemoved'):
+                model.columnsRemoved.connect(self._configure_columns)
+            if hasattr(model, 'modelReset'):
+                model.modelReset.connect(self._configure_columns)
+            # Αν το μοντέλο έχει columns, κάνουμε setup αμέσως, αλλιώς με μικρή καθυστέρηση
+            if model.columnCount() > 0:
+                self._configure_columns()
+            else:
+                from utils.timer_manager import schedule_ui_update
+                schedule_ui_update(self._configure_columns, delay=50)
+        self.update_placeholder_visibility()
 
     # =====================================
     # Table Preparation & Management
@@ -409,44 +407,33 @@ class FileTableView(QTableView):
 
     def prepare_table(self, file_items: list) -> None:
         logger.debug(f"prepare_table called with {len(file_items)} items")
-        # Reset manual column preferences when loading new files
         self._has_manual_preference = False
         self._user_preferred_width = None
-
-        # Clear selection and reset checked state
         for file_item in file_items:
             file_item.checked = False
-
         self.clearSelection()
         self.selected_rows.clear()
-
-        # Clear selection in SelectionStore as well
         selection_store = self._get_selection_store()
         if selection_store:
             selection_store.clear_selection(emit_signal=False)
             selection_store.set_anchor_row(None, emit_signal=False)
-
-        # Set files in model (this triggers beginResetModel/endResetModel)
         if self.model() and hasattr(self.model(), "set_files"):
             self.model().set_files(file_items)
-
-        # Reconfigure columns after model reset
+        self.show()  # Ensure table is visible for column setup
         self._configure_columns()
-
-        # Ensure no word wrap after setting files
+        # Log column widths after configuration
+        if self.model():
+            logger.debug("Column widths AFTER _configure_columns (prepare_table):")
+            for i in range(self.model().columnCount()):
+                width = self.columnWidth(i)
+                logger.debug(f"  Column {i}: {width}px")
         self._ensure_no_word_wrap()
-
-        # Reset hover delegate state
         if hasattr(self, "hover_delegate"):
             self.setItemDelegate(self.hover_delegate)
             self.hover_delegate.hovered_row = -1
-
-        # Update UI
         self.viewport().update()
         self._update_scrollbar_visibility()
-
-        # Note: Vertical scrollbar handling is now integrated into _calculate_filename_width
-
+        self.update_placeholder_visibility()
         logger.debug("prepare_table finished")
 
     # =====================================
@@ -456,70 +443,27 @@ class FileTableView(QTableView):
     def _configure_columns(self) -> None:
         """Configure columns with values from config.py."""
         logger.debug("[ColumnConfig] _configure_columns called")
-        if not self.model():
-            logger.debug("[ColumnConfig] No model available, skipping column configuration")
+        if not self.model() or self.model().columnCount() == 0:
+            logger.debug("[ColumnConfig] No model or no columns, skipping column configuration")
             return
-
-        logger.debug("[ColumnConfig] Starting column configuration")
-
         header = self.horizontalHeader()
         if not header:
             logger.debug("[ColumnConfig] No header available, skipping column configuration")
             return
-
-        logger.debug("[ColumnConfig] Header found, proceeding with configuration")
-
-        # Show header first
         header.show()
-        logger.debug("[ColumnConfig] Header shown")
-
-        # Configure status column (column 0) - always fixed
         self.setColumnWidth(0, 45)
         header.setSectionResizeMode(0, header.Fixed)
-        logger.debug("[ColumnConfig] Status column configured: 45px, Fixed mode")
-
-        # Get visible columns from model or use defaults
         visible_columns = ['filename', 'file_size', 'type', 'modified']
         if hasattr(self.model(), 'get_visible_columns'):
             visible_columns = self.model().get_visible_columns()
-            logger.debug(f"[ColumnConfig] Got visible columns from model: {visible_columns}")
-        else:
-            logger.debug(f"[ColumnConfig] Model doesn't have get_visible_columns, using defaults: {visible_columns}")
-
-        # Configure each visible column synchronously
         for column_index, column_key in enumerate(visible_columns):
-            actual_column_index = column_index + 1  # +1 because column 0 is status
-
+            actual_column_index = column_index + 1
             if actual_column_index < self.model().columnCount():
                 width = self._load_column_width(column_key)
-                logger.debug(f"[ColumnConfig] Setting column {actual_column_index} ({column_key}) to {width}px")
-
                 header.setSectionResizeMode(actual_column_index, header.Interactive)
                 self.setColumnWidth(actual_column_index, width)
-
-                # Verify the width was set correctly
-                actual_width = self.columnWidth(actual_column_index)
-                logger.debug(f"[ColumnConfig] Verified column {actual_column_index} width: {actual_width}px")
-                if actual_width != width:
-                    logger.warning(f"[ColumnConfig] Column {actual_column_index} width mismatch! Expected {width}px, got {actual_width}px.")
-            else:
-                logger.debug(f"[ColumnConfig] Column index {actual_column_index} exceeds model column count")
-
-        # Update header visibility
-        if hasattr(self.model(), 'files') and len(self.model().files) > 0:
-            header.show()
-            logger.debug("[ColumnConfig] Header shown (files present)")
-
-        # Check if header has any automatic resize settings that might interfere
-        logger.debug(f"[ColumnConfig] Header stretch last section: {header.stretchLastSection()}")
-        logger.debug(f"[ColumnConfig] Header cascade section resizes: {header.cascadingSectionResizes()}")
-
-        # Ensure these don't interfere with our column widths
-        header.setStretchLastSection(False)
-        header.setCascadingSectionResizes(False)
-        logger.debug("[ColumnConfig] Disabled header auto-resize features")
-
-        logger.debug("[ColumnConfig] Configuration finished")
+                logger.debug(f"[ColumnConfig] Set column {actual_column_index} ({column_key}) to {width}px")
+        logger.debug("[ColumnConfig] Column setup complete")
 
     def _update_header_visibility(self) -> None:
         """Update header visibility based on whether there are files in the model."""
@@ -2164,13 +2108,9 @@ class FileTableView(QTableView):
             logger.error(f"Error auto-fitting columns to content: {e}")
 
     def refresh_columns_after_model_change(self) -> None:
-        """
-        Public slot to reconfigure columns after the model's data changes (e.g. after set_files).
-        This ensures that columns, headers, and resize modes are always correct.
-        """
         logger.debug("refresh_columns_after_model_change: Starting column reconfiguration")
         self._configure_columns()
-        self._auto_update_placeholder_visibility()
+        self.update_placeholder_visibility()
         self.viewport().update()
         logger.debug("refresh_columns_after_model_change: Column reconfiguration finished")
 
@@ -2215,3 +2155,11 @@ class FileTableView(QTableView):
 
         except Exception as e:
             logger.error(f"Failed to check column widths: {e}")
+
+    def update_placeholder_visibility(self):
+        model = self.model()
+        if model and hasattr(model, 'rowCount') and model.rowCount() == 0:
+            self.placeholder_label.show()
+            self.placeholder_label.raise_()
+        else:
+            self.placeholder_label.hide()
