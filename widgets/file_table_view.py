@@ -184,8 +184,9 @@ class FileTableView(QTableView):
         self.context_focused_row: Optional[int] = None
 
         # Enable hover visuals
-        # self.hover_delegate = HoverItemDelegate(self)
-        # self.setItemDelegate(self.hover_delegate)
+        from widgets.hover_delegate import HoverItemDelegate
+        self.hover_delegate = HoverItemDelegate(self)
+        self.setItemDelegate(self.hover_delegate)
 
         # Selection store integration (with fallback to legacy selection handling)
         self._legacy_selection_mode = True  # Start in legacy mode for compatibility
@@ -2036,5 +2037,12 @@ class FileTableView(QTableView):
         This ensures that columns, headers, and resize modes are always correct.
         """
         self._configure_columns()
+        header = self.horizontalHeader()
+        if hasattr(self.model(), 'files') and hasattr(header, 'hide') and hasattr(header, 'show'):
+            logger.debug(f"refresh_columns_after_model_change: files in model: {len(self.model().files)}")
+            if len(self.model().files) == 0:
+                header.hide()
+            else:
+                header.show()
+                header.repaint()
         self.viewport().update()
-        self.horizontalHeader().resetDefaultSectionSize()
