@@ -441,7 +441,7 @@ class FileTableView(QTableView):
     # =====================================
 
     def _configure_columns(self) -> None:
-        """Configure only status column here. All other columns are managed by ColumnManager."""
+        """Configure columns and header visibility."""
         if not self.model():
             logger.warning("No model available for column configuration")
             return
@@ -449,21 +449,58 @@ class FileTableView(QTableView):
         logger.debug(f"_configure_columns: model.columnCount()={self.model().columnCount()}, rowCount={self.model().rowCount()}")
 
         header = self.horizontalHeader()
+        if not header:
+            logger.warning("_configure_columns: No header available")
+            return
+
         # Always configure status column (column 0)
         self.setColumnWidth(0, 45)
-        if header:
-            header.setSectionResizeMode(0, header.Fixed)
-
-        # Hide header if no files, show if there are files (if supported)
-        if hasattr(self.model(), 'files') and hasattr(header, 'hide') and hasattr(header, 'show'):
-            if len(self.model().files) == 0:
-                header.hide()
-            else:
-                header.show()
+        header.setSectionResizeMode(0, header.Fixed)
+        logger.debug("_configure_columns: Configured status column")
 
         # Call ColumnManager to configure all other columns
         if hasattr(self.window(), 'column_manager'):
-            self.window().column_manager.configure_columns_for_table(self)
+            logger.debug("_configure_columns: Calling ColumnManager.configure_table_columns")
+            self.window().column_manager.configure_table_columns(self, 'file_table')
+            logger.debug("_configure_columns: ColumnManager configuration finished")
+        else:
+            logger.warning("_configure_columns: No column_manager available")
+
+        # Update header visibility based on content
+        logger.debug("_configure_columns: Updating header visibility")
+        self._update_header_visibility()
+        logger.debug("_configure_columns: Header visibility update finished")
+
+    def _update_header_visibility(self) -> None:
+        """Update header visibility based on whether there are files in the model."""
+        header = self.horizontalHeader()
+        if not header:
+            logger.warning("_update_header_visibility: No header available")
+            return
+
+        if hasattr(self.model(), 'files'):
+            has_files = len(self.model().files) > 0
+            if has_files:
+                header.show()
+                header.repaint()
+                logger.debug(f"_update_header_visibility: Showing header (has_files={has_files})")
+            else:
+                header.hide()
+                logger.debug(f"_update_header_visibility: Hiding header (has_files={has_files})")
+        else:
+            # Fallback: show header if there are rows
+            has_rows = self.model().rowCount() > 0
+            if has_rows:
+                header.show()
+                header.repaint()
+                logger.debug(f"_update_header_visibility: Showing header (has_rows={has_rows})")
+            else:
+                header.hide()
+                logger.debug(f"_update_header_visibility: Hiding header (has_rows={has_rows})")
+
+        # Force update
+        header.update()
+        self.viewport().update()
 
     def _set_column_alignment(self, column_index: int, alignment: str) -> None:
         """Set text alignment for a specific column."""
@@ -2036,13 +2073,7 @@ class FileTableView(QTableView):
         Public slot to reconfigure columns after the model's data changes (e.g. after set_files).
         This ensures that columns, headers, and resize modes are always correct.
         """
+        logger.debug("refresh_columns_after_model_change: Starting column reconfiguration")
         self._configure_columns()
-        header = self.horizontalHeader()
-        if hasattr(self.model(), 'files') and hasattr(header, 'hide') and hasattr(header, 'show'):
-            logger.debug(f"refresh_columns_after_model_change: files in model: {len(self.model().files)}")
-            if len(self.model().files) == 0:
-                header.hide()
-            else:
-                header.show()
-                header.repaint()
+        logger.debug("refresh_columns_after_model_change: Column reconfiguration finished")
         self.viewport().update()

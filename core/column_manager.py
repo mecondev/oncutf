@@ -433,15 +433,17 @@ class ColumnManager:
             if header:
                 # Disconnect any existing connections to avoid duplicates
                 try:
+                    # Use a more specific disconnect approach
                     header.sectionResized.disconnect()
                 except (AttributeError, RuntimeError, TypeError):
+                    # If disconnect fails, it's okay - we'll just connect again
                     pass
 
-                # Connect new handler
-                header.sectionResized.connect(
-                    lambda logical_index, old_size, new_size:
+                # Connect new handler with proper lambda capture
+                def resize_handler(logical_index, old_size, new_size):
                     self._on_column_resized(table_type, logical_index, old_size, new_size)
-                )
+
+                header.sectionResized.connect(resize_handler)
 
         except Exception as e:
             logger.warning(f"[ColumnManager] Error connecting resize signals: {e}")
