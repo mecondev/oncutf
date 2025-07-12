@@ -10,6 +10,7 @@ the need for complex parent-child traversal patterns throughout the codebase.
 Current implementation is a skeleton that will gradually replace
 distributed state management across widgets.
 """
+
 from typing import TYPE_CHECKING, Any, Dict, Optional, Set
 
 from core.pyqt_imports import QObject, pyqtSignal

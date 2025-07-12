@@ -8,6 +8,7 @@ dialog_manager.py
 Manages all dialog and validation operations for the application.
 Centralizes dialog creation, validation logic, and user confirmations.
 """
+
 import os
 from typing import List, Tuple
 

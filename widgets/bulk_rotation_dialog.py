@@ -7,12 +7,6 @@ Date: 2025-06-01
 bulk_rotation_dialog.py
 Dialog for bulk rotation operations.
 """
-"""
-bulk_rotation_dialog.py
-
-Dialog for bulk rotation operations.
-
-"""
 
 from pathlib import Path
 from typing import List, Optional

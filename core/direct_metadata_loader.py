@@ -14,6 +14,7 @@ Features:
 - Thread-based loading for UI responsiveness
 - Simple, clean architecture
 """
+
 from typing import List, Optional, Set
 
 from PyQt5.QtCore import QObject, QThread, pyqtSignal

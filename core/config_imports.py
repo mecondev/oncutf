@@ -8,6 +8,7 @@ config_imports.py
 Centralized config imports to reduce clutter in main files.
 Re-exports commonly used configuration constants.
 """
+
 from config import (
     ALLOWED_EXTENSIONS,
     APP_NAME,

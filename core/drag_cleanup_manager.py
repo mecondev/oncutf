@@ -11,6 +11,7 @@ This manager centralizes drag cleanup operations including:
 - Widget drag state cleanup
 - Cursor management
 """
+
 from typing import TYPE_CHECKING
 
 from config import STATUS_COLORS

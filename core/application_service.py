@@ -8,6 +8,7 @@ core/application_service.py
 Application Service Layer that provides a unified interface to all application operations.
 This reduces the need for delegate methods in MainWindow and creates better separation of concerns.
 """
+
 from typing import List, Optional
 
 from core.pyqt_imports import QModelIndex, Qt
