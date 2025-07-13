@@ -467,6 +467,21 @@ class FileTableView(QTableView):
         self._configuring_columns = True
 
         try:
+            # Small delay to ensure model synchronization
+            from core.pyqt_imports import QTimer
+            QTimer.singleShot(10, self._configure_columns_delayed)
+        except Exception as e:
+            logger.error(f"[ColumnConfig] Error during column configuration: {e}")
+            self._configuring_columns = False
+
+    def _configure_columns_delayed(self) -> None:
+        """Delayed column configuration to ensure model synchronization."""
+        try:
+            header = self.horizontalHeader()
+            if not header or not self.model():
+                logger.debug("[ColumnConfig] No header or model available for delayed configuration")
+                return
+
             header.show()
             # Configure status column (always column 0)
             self.setColumnWidth(0, 45)
@@ -504,9 +519,13 @@ class FileTableView(QTableView):
                 header.sectionResized.connect(self._on_column_resized)
                 self._header_resize_connected = True
 
+            # Force a viewport update to ensure visual refresh
+            self.viewport().update()
+            self.updateGeometry()
+
             logger.debug("[ColumnConfig] Column setup complete")
         except Exception as e:
-            logger.error(f"[ColumnConfig] Error during column configuration: {e}")
+            logger.error(f"[ColumnConfig] Error during delayed column configuration: {e}")
         finally:
             self._configuring_columns = False
 
