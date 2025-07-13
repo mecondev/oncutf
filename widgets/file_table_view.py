@@ -91,7 +91,7 @@ class FileTableView(QTableView):
     def __init__(self, parent=None) -> None:
         """Initialize the custom table view with Explorer-like behavior."""
         super().__init__(parent)
-        logger.debug("FileTableView __init__ called")
+        logger.debug("FileTableView __init__ called", extra={"dev_only": True})
         self._manual_anchor_index: Optional[QModelIndex] = None
         self._drag_start_pos: Optional[QPoint] = None  # Initialize as None instead of empty QPoint
         self._active_drag = None  # Store active QDrag object for cleanup
@@ -205,7 +205,8 @@ class FileTableView(QTableView):
         self._ensure_no_word_wrap()
 
     def paintEvent(self, event):
-        logger.debug("FileTableView paintEvent called")
+        # Remove this debug log as it's too verbose
+        # logger.debug("FileTableView paintEvent called")
         super().paintEvent(event)
 
         # Note: Removed scrollbar update from paintEvent to prevent recursion
@@ -383,11 +384,11 @@ class FileTableView(QTableView):
             self.dataChanged(top_left, bottom_right)
 
     def setModel(self, model) -> None:
-        logger.debug(f"FileTableView setModel called with model: {type(model)}")
+        """Set the model for the table view."""
+        logger.debug(f"FileTableView setModel called with model: {type(model)}", extra={"dev_only": True})
 
-        # Avoid setting the same model multiple times
         if model is self.model():
-            logger.debug("FileTableView setModel: Same model, skipping")
+            logger.debug("FileTableView setModel: Same model, skipping", extra={"dev_only": True})
             return
 
         super().setModel(model)
@@ -414,7 +415,8 @@ class FileTableView(QTableView):
     # =====================================
 
     def prepare_table(self, file_items: list) -> None:
-        logger.debug(f"prepare_table called with {len(file_items)} items")
+        """Prepare the table for display with file items."""
+        logger.debug(f"prepare_table called with {len(file_items)} items", extra={"dev_only": True})
         self._has_manual_preference = False
         self._user_preferred_width = None
         for file_item in file_items:
@@ -429,12 +431,7 @@ class FileTableView(QTableView):
             self.model().set_files(file_items)
         self.show()  # Ensure table is visible for column setup
         self._configure_columns()
-        # Log column widths after configuration
-        if self.model():
-            logger.debug("Column widths AFTER _configure_columns (prepare_table):")
-            for i in range(self.model().columnCount()):
-                width = self.columnWidth(i)
-                logger.debug(f"  Column {i}: {width}px")
+        logger.debug("prepare_table finished", extra={"dev_only": True})
         self._ensure_no_word_wrap()
         if hasattr(self, "hover_delegate"):
             self.setItemDelegate(self.hover_delegate)
@@ -442,7 +439,6 @@ class FileTableView(QTableView):
         self.viewport().update()
         self._update_scrollbar_visibility()
         self.update_placeholder_visibility()
-        logger.debug("prepare_table finished")
 
     # =====================================
     # Column Management & Scrollbar Optimization
@@ -450,18 +446,18 @@ class FileTableView(QTableView):
 
     def _configure_columns(self) -> None:
         """Configure columns with values from config.py."""
-        logger.debug("[ColumnConfig] _configure_columns called")
+        logger.debug("[ColumnConfig] _configure_columns called", extra={"dev_only": True})
         if not self.model() or self.model().columnCount() == 0:
-            logger.debug("[ColumnConfig] No model or no columns, skipping column configuration")
+            logger.debug("[ColumnConfig] No model or no columns, skipping column configuration", extra={"dev_only": True})
             return
         header = self.horizontalHeader()
         if not header:
-            logger.debug("[ColumnConfig] No header available, skipping column configuration")
+            logger.debug("[ColumnConfig] No header available, skipping column configuration", extra={"dev_only": True})
             return
 
         # Prevent recursive calls during column configuration
         if hasattr(self, '_configuring_columns') and self._configuring_columns:
-            logger.debug("[ColumnConfig] Already configuring columns, skipping")
+            logger.debug("[ColumnConfig] Already configuring columns, skipping", extra={"dev_only": True})
             return
 
         self._configuring_columns = True
@@ -483,7 +479,7 @@ class FileTableView(QTableView):
         try:
             header = self.horizontalHeader()
             if not header or not self.model():
-                logger.debug("[ColumnConfig] No header or model available for delayed configuration")
+                logger.debug("[ColumnConfig] No header or model available for delayed configuration", extra={"dev_only": True})
                 return
 
             header.show()
@@ -495,7 +491,7 @@ class FileTableView(QTableView):
             visible_columns = []
             if hasattr(self.model(), 'get_visible_columns'):
                 visible_columns = self.model().get_visible_columns()
-                logger.debug(f"[ColumnConfig] Got visible columns from model: {visible_columns}")
+                logger.debug(f"[ColumnConfig] Got visible columns from model: {visible_columns}", extra={"dev_only": True})
             else:
                 # Emergency fallback - load from config
                 from config import FILE_TABLE_COLUMN_CONFIG
@@ -503,8 +499,8 @@ class FileTableView(QTableView):
                                  if cfg.get("default_visible", False)]
                 logger.warning(f"[ColumnConfig] Model doesn't have get_visible_columns, using fallback: {visible_columns}")
 
-            logger.debug(f"[ColumnConfig] Configuring {len(visible_columns)} visible columns: {visible_columns}")
-            logger.debug(f"[ColumnConfig] Model columnCount: {self.model().columnCount()}")
+            logger.debug(f"[ColumnConfig] Configuring {len(visible_columns)} visible columns: {visible_columns}", extra={"dev_only": True})
+            logger.debug(f"[ColumnConfig] Model columnCount: {self.model().columnCount()}", extra={"dev_only": True})
 
             # Configure each visible column
             for column_index, column_key in enumerate(visible_columns):
@@ -513,7 +509,8 @@ class FileTableView(QTableView):
                     width = self._load_column_width(column_key)
                     header.setSectionResizeMode(actual_column_index, header.Interactive)
                     self.setColumnWidth(actual_column_index, width)
-                    logger.debug(f"[ColumnConfig] Set column {actual_column_index} ({column_key}) to {width}px")
+                    # Remove verbose column width logging
+                    # logger.debug(f"[ColumnConfig] Set column {actual_column_index} ({column_key}) to {width}px")
                 else:
                     logger.error(f"[ColumnConfig] CRITICAL: Column {actual_column_index} ({column_key}) exceeds model columnCount {self.model().columnCount()}")
                     logger.error(f"[ColumnConfig] This indicates a sync issue between view and model visible columns")
@@ -527,7 +524,7 @@ class FileTableView(QTableView):
             self.viewport().update()
             self.updateGeometry()
 
-            logger.debug("[ColumnConfig] Column setup complete")
+            logger.debug("[ColumnConfig] Column setup complete", extra={"dev_only": True})
         except Exception as e:
             logger.error(f"[ColumnConfig] Error during delayed column configuration: {e}")
         finally:
@@ -564,12 +561,13 @@ class FileTableView(QTableView):
 
     def _load_column_width(self, column_key: str) -> int:
         """Load column width from main config system with fallback to defaults."""
-        logger.debug(f"[ColumnWidth] Loading width for column '{column_key}'")
+        # Remove verbose column width loading logs
+        # logger.debug(f"[ColumnWidth] Loading width for column '{column_key}'")
         try:
             # First, get the default width from config.py
             from config import FILE_TABLE_COLUMN_CONFIG
             default_width = FILE_TABLE_COLUMN_CONFIG.get(column_key, {}).get("width", 100)
-            logger.debug(f"[ColumnWidth] Default width for '{column_key}': {default_width}px")
+            # logger.debug(f"[ColumnWidth] Default width for '{column_key}': {default_width}px")
 
             # Try main config system first
             main_window = self._get_main_window()
