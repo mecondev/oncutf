@@ -60,7 +60,7 @@ class ApplicationService:
     # File Operations
     # =====================================
 
-    def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False, force: bool = False):
+    def load_files_from_folder(self, folder_path: str, force: bool = False):
         """Load files from folder via FileLoadManager."""
         # Use the remembered recursive state for consistent behavior
         recursive = getattr(self.main_window, 'current_folder_is_recursive', False)

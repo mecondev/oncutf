@@ -86,7 +86,7 @@ class TestRenameIntegration:
 
             # Verify main window methods were called
             assert mock_main_window.last_action == "rename"
-            mock_main_window.load_files_from_folder.assert_called_once_with("/test/folder", skip_metadata=True)
+            mock_main_window.load_files_from_folder.assert_called_once_with("/test/folder")
 
     def test_restore_checked_state_safe(self):
         """Test safe restoration of checked state."""

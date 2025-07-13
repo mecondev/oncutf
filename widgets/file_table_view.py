@@ -467,9 +467,13 @@ class FileTableView(QTableView):
         self._configuring_columns = True
 
         try:
-            # Small delay to ensure model synchronization
-            from core.pyqt_imports import QTimer
-            QTimer.singleShot(10, self._configure_columns_delayed)
+            # Small delay to ensure model synchronization using global timer manager
+            from utils.timer_manager import schedule_ui_update
+            schedule_ui_update(
+                self._configure_columns_delayed,
+                delay=10,
+                timer_id=f"column_config_{id(self)}"
+            )
         except Exception as e:
             logger.error(f"[ColumnConfig] Error during column configuration: {e}")
             self._configuring_columns = False

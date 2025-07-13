@@ -313,8 +313,7 @@ class RenameHistoryDialog(QDialog):
                 if hasattr(self.parent_window, 'load_files_from_folder') and hasattr(self.parent_window, 'current_folder_path'):
                     if self.parent_window.current_folder_path:
                         self.parent_window.load_files_from_folder(
-                            self.parent_window.current_folder_path,
-                            skip_metadata=True
+                            self.parent_window.current_folder_path
                         )
 
                 # Refresh history list

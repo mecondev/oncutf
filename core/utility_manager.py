@@ -105,7 +105,7 @@ class UtilityManager:
             f"(use_extended={use_extended})"
         )
 
-        self.main_window.load_files_from_folder(self.main_window.current_folder_path, skip_metadata=skip_metadata, force=True)
+        self.main_window.load_files_from_folder(self.main_window.current_folder_path, force=True)
 
     def find_consecutive_ranges(self, indices: list[int]) -> list[tuple[int, int]]:
         """

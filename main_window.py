@@ -285,9 +285,9 @@ class MainWindow(QMainWindow):
     # File Operations via Application Service
     # =====================================
 
-    def load_files_from_folder(self, folder_path: str, skip_metadata: bool = False, force: bool = False):
+    def load_files_from_folder(self, folder_path: str, force: bool = False):
         """Load files from folder via Application Service."""
-        self.app_service.load_files_from_folder(folder_path, skip_metadata, force)
+        self.app_service.load_files_from_folder(folder_path, force)
 
     def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> None:
         """Load files from paths via Application Service."""

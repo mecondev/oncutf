@@ -57,7 +57,7 @@ class TestSafeRenameWorkflow:
 
             # Verify folder reload was called
             self.mock_main_window.load_files_from_folder.assert_called_once_with(
-                "/test/folder", skip_metadata=True
+                "/test/folder"
             )
 
             # Verify timer was scheduled for state restoration
