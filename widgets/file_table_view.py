@@ -754,11 +754,18 @@ class FileTableView(QTableView):
             if context and hasattr(context, 'column_manager'):
                 context.column_manager.ensure_horizontal_scrollbar_state(self)
         except (RuntimeError, AttributeError):
-            # Fallback to basic scrollbar handling
-            self.updateGeometries()
+            # Fallback to basic scrollbar handling - preserve scroll position
             hbar = self.horizontalScrollBar()
+            current_position = hbar.value() if hbar else 0
+
+            self.updateGeometries()
+
+            # Restore scroll position if still valid
             if hbar and hbar.maximum() > 0:
-                hbar.setValue(0)
+                if current_position <= hbar.maximum():
+                    hbar.setValue(current_position)
+                else:
+                    hbar.setValue(hbar.maximum())
 
         # Force immediate viewport refresh
         self.viewport().update()
@@ -784,11 +791,18 @@ class FileTableView(QTableView):
             if context and hasattr(context, 'column_manager'):
                 context.column_manager.ensure_horizontal_scrollbar_state(self)
         except (RuntimeError, AttributeError):
-            # Fallback to basic scrollbar handling
-            self.updateGeometries()
+            # Fallback to basic scrollbar handling - preserve scroll position
             hbar = self.horizontalScrollBar()
+            current_position = hbar.value() if hbar else 0
+
+            self.updateGeometries()
+
+            # Restore scroll position if still valid
             if hbar and hbar.maximum() > 0:
-                hbar.setValue(0)
+                if current_position <= hbar.maximum():
+                    hbar.setValue(current_position)
+                else:
+                    hbar.setValue(hbar.maximum())
 
         self.viewport().update()
 
@@ -862,6 +876,12 @@ class FileTableView(QTableView):
             self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         else:
             self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+    def _smart_scrollbar_adjustment(self, column_added: bool = False) -> None:
+        """Smart scrollbar position adjustment when columns are added/removed."""
+        # This method is currently disabled to prevent issues with table content
+        # The scrollbar position is now handled by ensure_horizontal_scrollbar_state
+        pass
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
         """Handle horizontal splitter movement - no longer adjusts filename column."""

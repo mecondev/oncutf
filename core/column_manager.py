@@ -453,6 +453,10 @@ class ColumnManager:
         Forces proper recalculation when viewport changes.
         """
         try:
+            # Store current scrollbar position to preserve user's scroll position
+            hbar = table_view.horizontalScrollBar()
+            current_scroll_position = hbar.value() if hbar else 0
+
             # Force complete geometry recalculation
             table_view.updateGeometries()
 
@@ -463,12 +467,23 @@ class ColumnManager:
             # Update viewport to refresh display
             table_view.viewport().update()
 
-            # Get horizontal scrollbar
-            hbar = table_view.horizontalScrollBar()
+            # Restore scrollbar position if it's still valid
             if hbar:
-                # Reset to leftmost position when content changes
+                # Only reset to 0 if the current position is invalid
+                # (i.e., beyond the new maximum range)
                 if hbar.maximum() > 0:
+                    # If the stored position is still valid, restore it
+                    if current_scroll_position <= hbar.maximum():
+                        hbar.setValue(current_scroll_position)
+                        logger.debug(f"[ColumnManager] Restored horizontal scrollbar to position: {current_scroll_position}")
+                    else:
+                        # If the stored position is beyond the new range, go to the rightmost valid position
+                        hbar.setValue(hbar.maximum())
+                        logger.debug(f"[ColumnManager] Adjusted horizontal scrollbar to maximum: {hbar.maximum()}")
+                else:
+                    # No scrolling needed, reset to 0
                     hbar.setValue(0)
+                    logger.debug("[ColumnManager] Reset horizontal scrollbar to 0 (no scrolling needed)")
 
                 logger.debug(f"[ColumnManager] Updated horizontal scrollbar: max={hbar.maximum()}, value={hbar.value()}")
 

@@ -95,7 +95,6 @@ class FileTableModel(QAbstractTableModel):
 
             logger.debug(f"[FileTableModel] Column count changing from {old_column_count} to {new_column_count}")
             logger.debug(f"[FileTableModel] files: {len(self.files)} files")
-            logger.debug(f"[FileTableModel] parent_window: {self.parent_window}")
 
             # Debug state before changes
             logger.debug("[FileTableModel] STATE BEFORE UPDATE:")
@@ -111,29 +110,24 @@ class FileTableModel(QAbstractTableModel):
             logger.debug(f"[FileTableModel] Added columns: {added_columns}")
             logger.debug(f"[FileTableModel] Removed columns: {removed_columns}")
 
-            # Handle column changes more efficiently
-            if len(added_columns) == 0 and len(removed_columns) == 0:
-                # Only reordering - use reset for simplicity
-                logger.debug("[FileTableModel] Only reordering columns - using reset")
-                self.beginResetModel()
-                self._visible_columns = visible_columns.copy()
-                self._column_mapping = self._create_column_mapping()
-                self.endResetModel()
-            elif len(added_columns) > 0 and len(removed_columns) == 0:
-                # Only adding columns
-                logger.debug("[FileTableModel] Only adding columns - using insertColumns")
-                self._handle_column_addition(visible_columns, added_columns)
-            elif len(added_columns) == 0 and len(removed_columns) > 0:
-                # Only removing columns
-                logger.debug("[FileTableModel] Only removing columns - using removeColumns")
-                self._handle_column_removal(visible_columns, removed_columns)
-            else:
-                # Complex changes (both add and remove) - use reset for reliability
-                logger.debug("[FileTableModel] Complex column changes - using reset")
-                self.beginResetModel()
-                self._visible_columns = visible_columns.copy()
-                self._column_mapping = self._create_column_mapping()
-                self.endResetModel()
+            # Since we always add/remove one column at a time, use the optimized methods
+            # with fallback to reset if something goes wrong
+            try:
+                if len(added_columns) == 1 and len(removed_columns) == 0:
+                    # Single column addition
+                    logger.debug("[FileTableModel] Single column addition - using insertColumns")
+                    self._handle_single_column_addition(visible_columns, list(added_columns)[0])
+                elif len(added_columns) == 0 and len(removed_columns) == 1:
+                    # Single column removal
+                    logger.debug("[FileTableModel] Single column removal - using removeColumns")
+                    self._handle_single_column_removal(visible_columns, list(removed_columns)[0])
+                else:
+                    # Should not happen in normal use, but handle gracefully
+                    logger.warning(f"[FileTableModel] Unexpected column change pattern: +{len(added_columns)}, -{len(removed_columns)}")
+                    self._handle_reset_model(visible_columns)
+            except Exception as e:
+                logger.warning(f"[FileTableModel] Column operation failed: {e}, falling back to reset")
+                self._handle_reset_model(visible_columns)
 
             # Debug state after changes
             logger.debug("[FileTableModel] STATE AFTER UPDATE:")
@@ -151,86 +145,107 @@ class FileTableModel(QAbstractTableModel):
         else:
             logger.debug("[FileTableModel] No column changes needed - visible columns are the same")
 
-    def _handle_column_addition(self, new_visible_columns: list, added_columns: set) -> None:
-        """Handle adding new columns efficiently."""
-        logger.debug(f"[FileTableModel] Adding columns: {added_columns}")
+    def _handle_reset_model(self, visible_columns: list) -> None:
+        """Handle column changes using resetModel - safe but less efficient."""
+        logger.debug("[FileTableModel] Using resetModel for column changes")
 
-        # For simplicity, handle multiple additions by doing them one at a time
-        # We'll sort them by their position in the new list to maintain order
-        columns_to_add = []
-        for col in added_columns:
-            if col in new_visible_columns:
-                new_index = new_visible_columns.index(col)
-                columns_to_add.append((new_index, col))
+        # Store current files to preserve them
+        current_files = self.files.copy() if self.files else []
+        logger.debug(f"[FileTableModel] Storing {len(current_files)} files before reset")
 
-        # Sort by position to add them in the correct order
-        columns_to_add.sort(key=lambda x: x[0])
+        self.beginResetModel()
 
-        # Add columns one by one
-        for new_index, col_name in columns_to_add:
-            # Update the internal state to reflect this specific addition
-            if col_name not in self._visible_columns:
-                # Find the correct insertion position in current state
-                insert_pos = 0
-                for i, existing_col in enumerate(new_visible_columns):
-                    if existing_col == col_name:
-                        insert_pos = i
-                        break
-                    elif existing_col in self._visible_columns:
-                        insert_pos = i + 1
+        # Update the visible columns and mapping
+        self._visible_columns = visible_columns.copy()
+        self._column_mapping = self._create_column_mapping()
 
+        # Always restore files after reset (they should be preserved)
+        self.files = current_files
+        logger.debug(f"[FileTableModel] Restored {len(self.files)} files after reset")
+
+        self.endResetModel()
+
+    def _handle_single_column_addition(self, new_visible_columns: list, added_column: str) -> None:
+        """Handle adding a single column efficiently."""
+        logger.debug(f"[FileTableModel] Adding single column: {added_column}")
+        logger.debug(f"[FileTableModel] Current visible columns: {self._visible_columns}")
+        logger.debug(f"[FileTableModel] New visible columns: {new_visible_columns}")
+
+        try:
+            # Find where this column should be inserted
+            new_index = new_visible_columns.index(added_column)
+            # Convert to actual column index (+1 for status column)
+            insert_position = new_index + 1
+
+            logger.debug(f"[FileTableModel] Inserting column '{added_column}' at position {insert_position}")
+            logger.debug(f"[FileTableModel] Current column count: {self.columnCount()}")
+
+            # Signal that we're inserting a column
+            self.beginInsertColumns(QModelIndex(), insert_position, insert_position)
+
+            # Update internal state
+            self._visible_columns = new_visible_columns.copy()
+            self._column_mapping = self._create_column_mapping()
+
+            logger.debug(f"[FileTableModel] Updated column mapping: {self._column_mapping}")
+            logger.debug(f"[FileTableModel] New column count will be: {len(self._visible_columns) + 1}")
+
+            self.endInsertColumns()
+
+            logger.debug(f"[FileTableModel] Single column addition completed successfully")
+
+        except Exception as e:
+            logger.error(f"[FileTableModel] Error in _handle_single_column_addition: {e}", exc_info=True)
+            raise  # Re-raise to trigger fallback
+
+    def _handle_single_column_removal(self, new_visible_columns: list, removed_column: str) -> None:
+        """Handle removing a single column efficiently."""
+        logger.debug(f"[FileTableModel] Removing single column: {removed_column}")
+        logger.debug(f"[FileTableModel] Current visible columns: {self._visible_columns}")
+        logger.debug(f"[FileTableModel] New visible columns: {new_visible_columns}")
+
+        try:
+            # Find where this column currently is
+            if removed_column in self._visible_columns:
+                old_index = self._visible_columns.index(removed_column)
                 # Convert to actual column index (+1 for status column)
-                insert_position = insert_pos + 1
+                remove_position = old_index + 1
 
-                logger.debug(f"[FileTableModel] Inserting column '{col_name}' at position {insert_position}")
+                logger.debug(f"[FileTableModel] Removing column '{removed_column}' from position {remove_position}")
+                logger.debug(f"[FileTableModel] Current column count: {self.columnCount()}")
 
-                # Signal that we're inserting a column
-                self.beginInsertColumns(QModelIndex(), insert_position, insert_position)
+                # Signal that we're removing a column
+                self.beginRemoveColumns(QModelIndex(), remove_position, remove_position)
 
                 # Update internal state
-                self._visible_columns.insert(insert_pos, col_name)
+                self._visible_columns = new_visible_columns.copy()
                 self._column_mapping = self._create_column_mapping()
 
-                self.endInsertColumns()
+                logger.debug(f"[FileTableModel] Updated column mapping: {self._column_mapping}")
+                logger.debug(f"[FileTableModel] New column count will be: {len(self._visible_columns) + 1}")
 
-        # Final update to ensure we have the exact order requested
-        self._visible_columns = new_visible_columns.copy()
-        self._column_mapping = self._create_column_mapping()
+                self.endRemoveColumns()
+
+                logger.debug(f"[FileTableModel] Single column removal completed successfully")
+            else:
+                logger.warning(f"[FileTableModel] Column '{removed_column}' not found in current visible columns")
+                raise ValueError(f"Column '{removed_column}' not found in current visible columns")
+
+        except Exception as e:
+            logger.error(f"[FileTableModel] Error in _handle_single_column_removal: {e}", exc_info=True)
+            raise  # Re-raise to trigger fallback
+
+    def _handle_column_addition(self, new_visible_columns: list, added_columns: set) -> None:
+        """Handle adding new columns efficiently."""
+        # This method is deprecated and no longer used
+        logger.warning("[FileTableModel] _handle_column_addition is deprecated")
+        self._handle_reset_model(new_visible_columns)
 
     def _handle_column_removal(self, new_visible_columns: list, removed_columns: set) -> None:
         """Handle removing columns efficiently."""
-        logger.debug(f"[FileTableModel] Removing columns: {removed_columns}")
-
-        # For simplicity, handle multiple removals by doing them one at a time
-        # We'll sort them by their current position (in reverse order to avoid index shifts)
-        columns_to_remove = []
-        for col in removed_columns:
-            if col in self._visible_columns:
-                old_index = self._visible_columns.index(col)
-                columns_to_remove.append((old_index, col))
-
-        # Sort by position in reverse order to avoid index confusion
-        columns_to_remove.sort(key=lambda x: x[0], reverse=True)
-
-        # Remove columns one by one (from right to left)
-        for old_index, col_name in columns_to_remove:
-            # Convert to actual column index (+1 for status column)
-            remove_position = old_index + 1
-
-            logger.debug(f"[FileTableModel] Removing column '{col_name}' from position {remove_position}")
-
-            # Signal that we're removing a column
-            self.beginRemoveColumns(QModelIndex(), remove_position, remove_position)
-
-            # Update internal state
-            self._visible_columns.remove(col_name)
-            self._column_mapping = self._create_column_mapping()
-
-            self.endRemoveColumns()
-
-        # Final update to ensure we have the exact order requested
-        self._visible_columns = new_visible_columns.copy()
-        self._column_mapping = self._create_column_mapping()
+        # This method is deprecated and no longer used
+        logger.warning("[FileTableModel] _handle_column_removal is deprecated")
+        self._handle_reset_model(new_visible_columns)
 
     def get_visible_columns(self) -> list:
         return self._visible_columns.copy()
