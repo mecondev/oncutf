@@ -62,7 +62,7 @@ class FileLoadManager:
 
         # CRITICAL: Force cleanup any active drag state immediately
         if is_dragging():
-            logger.debug("[FileLoadManager] Active drag detected, forcing cleanup before loading")
+            logger.debug("[FileLoadManager] Active drag detected, forcing cleanup before loading", extra={"dev_only": True})
             force_cleanup_drag()
 
         # Clear any existing cursors immediately and stop all drag visuals
@@ -95,7 +95,7 @@ class FileLoadManager:
 
         # Force cleanup any active drag state (import button shouldn't have drag, but safety first)
         if is_dragging():
-            logger.debug("[FileLoadManager] Active drag detected during import, forcing cleanup")
+            logger.debug("[FileLoadManager] Active drag detected during import, forcing cleanup", extra={"dev_only": True})
             force_cleanup_drag()
 
         # Process all paths with fast wait cursor approach (same as drag operations)
@@ -128,7 +128,12 @@ class FileLoadManager:
         recursive = ctrl
         merge_mode = shift
 
-        logger.debug(f"[Drop] Modifiers: ctrl={ctrl}, shift={shift} → recursive={recursive}, merge={merge_mode}")
+        logger.debug(f"[Drop] Modifiers: ctrl={ctrl}, shift={shift} → recursive={recursive}, merge={merge_mode}", extra={"dev_only": True})
+
+        # CRITICAL: Force cleanup any active drag state immediately
+        if is_dragging():
+            logger.debug("[FileLoadManager] Active drag detected during single file drop, forcing cleanup", extra={"dev_only": True})
+            force_cleanup_drag()
 
         if os.path.isdir(path):
             # Use unified folder loading (will handle drag cleanup internally)
@@ -413,6 +418,6 @@ class FileLoadManager:
         logger.info(f"[FileLoadManager] Updated allowed extensions: {extensions}")
 
     def clear_metadata_operation_flag(self) -> None:
-        """Clear the metadata operation flag. Called after metadata operations complete."""
+        """Clear the metadata operation flag."""
         self._metadata_operation_in_progress = False
-        logger.debug("[FileLoadManager] Cleared metadata operation flag")
+        logger.debug("[FileLoadManager] Cleared metadata operation flag", extra={"dev_only": True})

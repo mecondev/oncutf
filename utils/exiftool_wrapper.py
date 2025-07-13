@@ -122,7 +122,7 @@ class ExifToolWrapper:
 
         except json.JSONDecodeError as e:
             logger.error(f"[ExifToolWrapper] JSON decode error: {e}")
-            logger.debug(f"[ExifToolWrapper] Raw output was: {repr(output)}")
+            logger.debug(f"[ExifToolWrapper] Raw output was: {repr(output)}", extra={"dev_only": True})
             return None
         except Exception as e:
             logger.error(f"[ExifToolWrapper] Error parsing output: {e}")
@@ -234,7 +234,7 @@ class ExifToolWrapper:
 
             cmd.append(file_path)
 
-            logger.debug(f"[ExifToolWrapper] Writing metadata with command: {' '.join(cmd)}")
+            logger.debug(f"[ExifToolWrapper] Writing metadata with command: {' '.join(cmd)}", extra={"dev_only": True})
             logger.debug(f"[ExifToolWrapper] Original metadata_changes: {metadata_changes}", extra={"dev_only": True})
 
             # Execute the command
@@ -274,7 +274,7 @@ class ExifToolWrapper:
                         self.process.stdin.flush()
                     except (BrokenPipeError, OSError, ValueError) as e:
                         # Process may have already terminated or stdin is closed
-                        logger.debug(f"[ExifToolWrapper] Expected error during graceful close: {e}")
+                        logger.debug(f"[ExifToolWrapper] Expected error during graceful close: {e}", extra={"dev_only": True})
                     finally:
                         try:
                             self.process.stdin.close()
@@ -285,24 +285,24 @@ class ExifToolWrapper:
                 # Wait for process to terminate gracefully
                 try:
                     self.process.wait(timeout=3)
-                    logger.debug("[ExifToolWrapper] Process terminated gracefully")
+                    logger.debug("[ExifToolWrapper] Process terminated gracefully", extra={"dev_only": True})
                 except subprocess.TimeoutExpired:
                     # Force terminate if it doesn't close gracefully
-                    logger.warning("[ExifToolWrapper] Process didn't terminate gracefully, forcing termination")
+                    logger.warning("[ExifToolWrapper] Process didn't terminate gracefully, forcing termination", extra={"dev_only": True})
                     self.process.terminate()
                     try:
                         self.process.wait(timeout=2)
                     except subprocess.TimeoutExpired:
                         # Last resort: kill the process
-                        logger.warning("[ExifToolWrapper] Force killing ExifTool process")
+                        logger.warning("[ExifToolWrapper] Force killing ExifTool process", extra={"dev_only": True})
                         self.process.kill()
                         try:
                             self.process.wait(timeout=1)
                         except subprocess.TimeoutExpired:
-                            logger.error("[ExifToolWrapper] Process refused to die, may be zombie")
+                            logger.error("[ExifToolWrapper] Process refused to die, may be zombie", extra={"dev_only": True})
 
         except Exception as e:
-            logger.warning(f"[ExifToolWrapper] Error during shutdown: {e}")
+            logger.error(f"[ExifToolWrapper] Error during shutdown: {e}", exc_info=True)
             # Force kill as last resort
             try:
                 if self.process and self.process.poll() is None:
@@ -310,63 +310,71 @@ class ExifToolWrapper:
                     try:
                         self.process.wait(timeout=1)
                     except subprocess.TimeoutExpired:
-                        logger.error("[ExifToolWrapper] Zombie process detected")
+                        logger.error("[ExifToolWrapper] Zombie process detected", extra={"dev_only": True})
             except Exception:
                 pass
         finally:
             self.process = None
-            logger.debug("[ExifToolWrapper] ExifTool wrapper closed")
+            logger.debug("[ExifToolWrapper] ExifTool wrapper closed", extra={"dev_only": True})
 
     @staticmethod
     def force_cleanup_all_exiftool_processes() -> None:
         """Force cleanup all ExifTool processes system-wide."""
         try:
             import psutil
-            killed_count = 0
+            import time
 
+            exiftool_processes = []
             for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
                 try:
                     if proc.info['name'] and 'exiftool' in proc.info['name'].lower():
-                        logger.warning(f"[ExifToolWrapper] Killing orphaned ExifTool process: PID {proc.info['pid']}")
-                        proc.kill()
-                        killed_count += 1
+                        exiftool_processes.append(proc)
                     elif proc.info['cmdline']:
                         cmdline = ' '.join(proc.info['cmdline']).lower()
                         if 'exiftool' in cmdline and '-stay_open' in cmdline:
-                            logger.warning(f"[ExifToolWrapper] Killing orphaned ExifTool process: PID {proc.info['pid']}")
-                            proc.kill()
-                            killed_count += 1
+                            exiftool_processes.append(proc)
                 except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                     pass
 
-            if killed_count > 0:
-                logger.info(f"[ExifToolWrapper] Cleaned up {killed_count} orphaned ExifTool processes")
+            if not exiftool_processes:
+                logger.debug("[ExifToolWrapper] No orphaned ExifTool processes found", extra={"dev_only": True})
+                return
+
+            logger.warning(f"[ExifToolWrapper] Found {len(exiftool_processes)} orphaned ExifTool processes", extra={"dev_only": True})
+
+            # Try to terminate gracefully first
+            for proc in exiftool_processes:
+                try:
+                    proc.terminate()
+                except psutil.NoSuchProcess:
+                    pass
+
+            # Wait a bit for graceful termination
+            time.sleep(0.5)
+
+            # Force kill any remaining processes
+            remaining_processes = []
+            for proc in exiftool_processes:
+                try:
+                    if proc.is_running():
+                        remaining_processes.append(proc)
+                except psutil.NoSuchProcess:
+                    pass
+
+            if remaining_processes:
+                logger.warning(f"[ExifToolWrapper] Force killing {len(remaining_processes)} ExifTool processes", extra={"dev_only": True})
+                for proc in remaining_processes:
+                    try:
+                        proc.kill()
+                    except psutil.NoSuchProcess:
+                        pass
             else:
-                logger.debug("[ExifToolWrapper] No orphaned ExifTool processes found")
+                logger.debug("[ExifToolWrapper] No ExifTool processes to clean up", extra={"dev_only": True})
 
         except ImportError:
-            # Fallback to system commands if psutil not available
-            try:
-                import os
-                import subprocess
-
-                if os.name == 'posix':  # Linux/macOS
-                    result = subprocess.run(['pkill', '-f', 'exiftool.*stay_open'],
-                                          capture_output=True, text=True)
-                    if result.returncode == 0:
-                        logger.info("[ExifToolWrapper] Cleaned up ExifTool processes via pkill")
-                    else:
-                        logger.debug("[ExifToolWrapper] No ExifTool processes to clean up")
-                else:  # Windows
-                    result = subprocess.run(['taskkill', '/F', '/IM', 'exiftool.exe'],
-                                          capture_output=True, text=True)
-                    if result.returncode == 0:
-                        logger.info("[ExifToolWrapper] Cleaned up ExifTool processes via taskkill")
-                    else:
-                        logger.debug("[ExifToolWrapper] No ExifTool processes to clean up")
-
-            except Exception as e:
-                logger.warning(f"[ExifToolWrapper] Failed to cleanup ExifTool processes: {e}")
-
+            logger.warning("[ExifToolWrapper] psutil not available, cannot clean up orphaned processes", extra={"dev_only": True})
         except Exception as e:
-            logger.warning(f"[ExifToolWrapper] Error during force cleanup: {e}")
+            if "exiftool" in str(e).lower():
+                logger.warning(f"[ExifToolWrapper] Error during ExifTool cleanup: {e}", extra={"dev_only": True})
+            else:
+                logger.debug("[ExifToolWrapper] No ExifTool processes to clean up", extra={"dev_only": True})

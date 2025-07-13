@@ -82,40 +82,35 @@ class MetadataManager:
 
     def determine_metadata_mode(self, modifier_state=None) -> tuple[bool, bool]:
         """
-        Determines whether to use extended mode based on modifier keys.
-
-        Args:
-            modifier_state: Qt.KeyboardModifiers to use, or None for current state
+        Determine metadata loading mode based on modifier keys.
 
         Returns:
             tuple: (skip_metadata, use_extended)
-
-            - skip_metadata = True ➜ No metadata scan (no modifiers)
-            - skip_metadata = False & use_extended = False ➜ Fast scan (Ctrl)
-            - skip_metadata = False & use_extended = True ➜ Extended scan (Ctrl+Shift)
         """
-        modifiers = modifier_state
-        if modifiers is None:
-            if self.parent_window and hasattr(self.parent_window, 'modifier_state'):
-                modifiers = self.parent_window.modifier_state
-            else:
-                modifiers = QApplication.keyboardModifiers()
+        # Default mode
+        skip_metadata = False
+        use_extended = False
 
-        if modifiers == Qt.NoModifier: # type: ignore
-            modifiers = QApplication.keyboardModifiers()  # fallback to current
+        # Check modifier state
+        if modifier_state is not None:
+            modifiers = modifier_state
+        else:
+            modifiers = QApplication.keyboardModifiers()
 
-        ctrl = bool(modifiers & Qt.ControlModifier) # type: ignore
-        shift = bool(modifiers & Qt.ShiftModifier) # type: ignore
+        # Check for Ctrl and Shift keys
+        ctrl = bool(modifiers & Qt.ControlModifier)
+        shift = bool(modifiers & Qt.ShiftModifier)
 
-        # - No modifiers: skip metadata
-        # - With Ctrl: load basic metadata
-        # - With Ctrl+Shift: load extended metadata
-        skip_metadata = not ctrl
-        use_extended = ctrl and shift
+        # Determine loading mode
+        if ctrl and shift:
+            use_extended = True
+        elif ctrl:
+            skip_metadata = True
 
         logger.debug(
             f"[determine_metadata_mode] modifiers={int(modifiers)}, "
-            f"ctrl={ctrl}, shift={shift}, skip_metadata={skip_metadata}, use_extended={use_extended}"
+            f"ctrl={ctrl}, shift={shift}, skip_metadata={skip_metadata}, use_extended={use_extended}",
+            extra={"dev_only": True}
         )
 
         return skip_metadata, use_extended
@@ -286,7 +281,7 @@ class MetadataManager:
 
         # First, clean up any existing metadata worker/thread to prevent conflicts
         if hasattr(self, 'metadata_worker') and self.metadata_worker:
-            logger.debug("[MetadataManager] Cleaning up existing metadata worker before starting new one...")
+            logger.debug("[MetadataManager] Cleaning up existing metadata worker before starting new one...", extra={"dev_only": True})
             self._cleanup_metadata_worker_and_thread()
 
         # Calculate total size for enhanced progress tracking
@@ -440,407 +435,255 @@ class MetadataManager:
         self._cleanup_metadata_worker_and_thread()
 
     def _cleanup_metadata_worker_and_thread(self) -> None:
-        """
-        Properly clean up the metadata worker and thread.
-        This ensures the thread is stopped before clearing references.
-        """
+        """Clean up metadata worker and thread properly."""
         try:
-            # Clean up the worker first to signal it to stop
+            # Clean up worker
             if hasattr(self, 'metadata_worker') and self.metadata_worker:
-                logger.debug("[MetadataManager] Cleaning up metadata worker...")
-
-                # Cancel the worker to signal it to stop gracefully
+                logger.debug("[MetadataManager] Cleaning up metadata worker...", extra={"dev_only": True})
                 try:
-                    self.metadata_worker.cancel()
-                except (AttributeError, RuntimeError):
-                    pass
+                    self.metadata_worker.stop()
+                    self.metadata_worker.deleteLater()
+                except Exception as e:
+                    logger.warning(f"[MetadataManager] Error cleaning up metadata worker: {e}")
+                finally:
+                    self.metadata_worker = None
 
-                # The worker should be deleted by deleteLater(), but clear our reference
-                self.metadata_worker = None
-
-            # Clean up the thread
+            # Clean up thread
             if hasattr(self, 'metadata_thread') and self.metadata_thread:
-                logger.debug("[MetadataManager] Cleaning up metadata thread...")
+                logger.debug("[MetadataManager] Cleaning up metadata thread...", extra={"dev_only": True})
+                try:
+                    self.metadata_thread.quit()
 
-                # Wait for thread to finish naturally (it should quit after finished signal)
-                if self.metadata_thread.isRunning():
-                    try:
-                        # First try to quit gracefully
-                        self.metadata_thread.quit()
+                    # Wait for thread to finish with timeout
+                    if self.metadata_thread.wait(2000):  # 2 second timeout
+                        logger.debug("[MetadataManager] Thread finished gracefully", extra={"dev_only": True})
+                    else:
+                        logger.debug("[MetadataManager] Thread cleanup taking longer than expected, allowing background termination", extra={"dev_only": True})
+                        # Allow thread to finish in background
 
-                        # Give more time for graceful shutdown (5 seconds)
-                        if self.metadata_thread.wait(5000):  # Wait max 5 seconds
-                            logger.debug("[MetadataManager] Thread finished gracefully")
-                        else:
-                            # Only log as debug, not info - this is normal during shutdown
-                            logger.debug("[MetadataManager] Thread cleanup taking longer than expected, allowing background termination")
-                            # Don't force terminate - let it finish in background
-                            # The thread will clean up itself when the worker finishes
-                    except Exception as thread_error:
-                        logger.debug(f"[MetadataManager] Thread cleanup completed: {thread_error}")
+                    thread_error = None
+                    logger.debug(f"[MetadataManager] Thread cleanup completed: {thread_error}", extra={"dev_only": True})
 
-                # Clear reference regardless
-                self.metadata_thread = None
+                except Exception as thread_error:
+                    logger.warning(f"[MetadataManager] Error cleaning up metadata thread: {thread_error}")
+                finally:
+                    self.metadata_thread = None
 
         except Exception as e:
-            logger.debug(f"[MetadataManager] Worker/thread cleanup completed: {e}")
+            logger.debug(f"[MetadataManager] Worker/thread cleanup completed: {e}", extra={"dev_only": True})
 
     def save_metadata_for_selected(self) -> None:
-        """
-        Save modified metadata for the currently selected file(s) only.
-        """
-        if not hasattr(self.parent_window, 'metadata_tree_view'):
-            logger.warning("[MetadataManager] No metadata tree view available")
-            return
+        """Save metadata modifications for currently selected files."""
+        try:
+            # Get metadata tree view
+            metadata_tree_view = self._get_metadata_tree_view()
+            if not metadata_tree_view:
+                logger.warning("[MetadataManager] No metadata tree view available for saving")
+                return
 
-        # Get all modified metadata for all files
-        all_modified_metadata = self.parent_window.metadata_tree_view.get_all_modified_metadata_for_files()
+            # Get current selection
+            selected_files = self._get_current_selection()
+            if not selected_files:
+                logger.info("[MetadataManager] No files selected for metadata saving")
+                return
 
-        if not all_modified_metadata:
-            logger.info("[MetadataManager] No metadata modifications to save")
-            return
-
-        # Get selected files for filtering
-        selected_files = []
-        if hasattr(self.parent_window, 'file_table_view'):
-            selected_rows = self.parent_window.file_table_view._get_current_selection()
-            if selected_rows and hasattr(self.parent_window, 'file_model'):
-                # Sort rows to maintain file table display order
-                selected_rows_sorted = sorted(selected_rows)
-                for row in selected_rows_sorted:
-                    if 0 <= row < len(self.parent_window.file_model.files):
-                        selected_files.append(self.parent_window.file_model.files[row])
-
-        if not selected_files:
-            logger.warning("[MetadataManager] No files selected for metadata save")
-            return
-
-        # Find files that have modifications AND are selected using path-aware comparison
-        files_to_save = []
-        for file_path, modified_metadata in all_modified_metadata.items():
-            if modified_metadata:  # Only files with actual modifications
-                # Use path-aware lookup to find corresponding FileItem
-                file_item = find_file_by_path(selected_files, file_path, 'full_path')
-                if file_item:
+            # Get files with modifications
+            files_to_save = []
+            for file_item in selected_files:
+                if metadata_tree_view.has_modifications_for_file(file_item.full_path):
                     files_to_save.append(file_item)
                     logger.debug(f"[MetadataManager] Selected file with modifications: {file_item.filename}", extra={"dev_only": True})
 
-        if not files_to_save:
-            logger.info("[MetadataManager] No selected files have metadata modifications")
-            return
+            if not files_to_save:
+                logger.info("[MetadataManager] No selected files have metadata modifications to save")
+                return
 
-        logger.info(f"[MetadataManager] Saving metadata for {len(files_to_save)} selected file(s)")
-        self._save_metadata_files(files_to_save, all_modified_metadata)
+            # Get all modified metadata
+            all_modified_metadata = metadata_tree_view.get_all_modified_metadata_for_files()
+
+            # Save metadata for selected files
+            self._save_metadata_files(files_to_save, all_modified_metadata)
+
+        except Exception as e:
+            logger.error(f"[MetadataManager] Error saving metadata for selected files: {e}")
 
     def save_all_modified_metadata(self) -> None:
-        """
-        Save modified metadata for ALL files that have modifications, regardless of selection.
-        """
-        if not hasattr(self.parent_window, 'metadata_tree_view'):
-            logger.warning("[MetadataManager] No metadata tree view available")
-            return
+        """Save all modified metadata for all files."""
+        try:
+            # Get metadata tree view
+            metadata_tree_view = self._get_metadata_tree_view()
+            if not metadata_tree_view:
+                logger.warning("[MetadataManager] No metadata tree view available for saving")
+                return
 
-        # CRITICAL: Ensure current file's modifications are saved to per-file storage BEFORE getting all modifications
-        tree_view = self.parent_window.metadata_tree_view
-        if tree_view._current_file_path and tree_view.modified_items:
-            logger.debug(f"[MetadataManager] Saving current file modifications before collecting all: {tree_view._current_file_path}", extra={"dev_only": True})
-            tree_view._set_in_path_dict(tree_view._current_file_path, tree_view.modified_items.copy(), tree_view.modified_items_per_file)
+            # Save current file modifications before collecting all
+            if hasattr(metadata_tree_view, '_current_file_path') and metadata_tree_view._current_file_path:
+                logger.debug(f"[MetadataManager] Saving current file modifications before collecting all: {metadata_tree_view._current_file_path}", extra={"dev_only": True})
+                metadata_tree_view._save_current_file_state()
 
-        # Get all modified metadata for all files
-        all_modified_metadata = tree_view.get_all_modified_metadata_for_files()
+            # Get all modified metadata
+            all_modified_metadata = metadata_tree_view.get_all_modified_metadata_for_files()
 
-        if not all_modified_metadata:
-            logger.info("[MetadataManager] No metadata modifications to save")
-            return
+            if not all_modified_metadata:
+                logger.info("[MetadataManager] No metadata modifications to save")
+                return
 
-        # Get all files from file model to find corresponding FileItems
-        all_files = []
-        if hasattr(self.parent_window, 'file_model') and self.parent_window.file_model.files:
-            all_files = self.parent_window.file_model.files
+            # Get all files from current context
+            all_files = self._get_files_from_source("all")
+            if not all_files:
+                logger.warning("[MetadataManager] No files available for metadata saving")
+                return
 
-        if not all_files:
-            logger.warning("[MetadataManager] No files available in file model")
-            return
+            # Filter files that have modifications
+            files_to_save = []
 
-        # DEBUG: Log what we got from MetadataTree
-        logger.debug(f"[MetadataManager] Got modifications for {len(all_modified_metadata)} files:", extra={"dev_only": True})
-        for file_path, modifications in all_modified_metadata.items():
-            logger.debug(f"[MetadataManager]   - {file_path}: {list(modifications.keys())}", extra={"dev_only": True})
+            logger.debug(f"[MetadataManager] Got modifications for {len(all_modified_metadata)} files:", extra={"dev_only": True})
+            for file_path, modifications in all_modified_metadata.items():
+                logger.debug(f"[MetadataManager]   - {file_path}: {list(modifications.keys())}", extra={"dev_only": True})
 
-        # Find FileItems for all files that have modifications using path-aware comparison
-        files_to_save = []
-        for file_path, modified_metadata in all_modified_metadata.items():
-            if modified_metadata:  # Only files with actual modifications
-                logger.debug(f"[MetadataManager] Looking for FileItem with path: {file_path}", extra={"dev_only": True})
+                # Find corresponding FileItem
+                for file_item in all_files:
+                    logger.debug(f"[MetadataManager] Looking for FileItem with path: {file_path}", extra={"dev_only": True})
+                    if paths_equal(file_item.full_path, file_path):
+                        files_to_save.append(file_item)
+                        logger.debug(f"[MetadataManager] MATCH found for: {file_item.filename}", extra={"dev_only": True})
+                        break
 
-                # Use path-aware lookup to find corresponding FileItem
-                file_item = find_file_by_path(all_files, file_path, 'full_path')
-                if file_item:
-                    files_to_save.append(file_item)
-                    logger.debug(f"[MetadataManager] MATCH found for: {file_item.filename}", extra={"dev_only": True})
-                else:
-                    logger.warning(f"[MetadataManager] NO MATCH found for path: {file_path}")
+            logger.debug(f"[MetadataManager] Found {len(files_to_save)} FileItems to save", extra={"dev_only": True})
 
-        logger.debug(f"[MetadataManager] Found {len(files_to_save)} FileItems to save", extra={"dev_only": True})
+            if not files_to_save:
+                logger.warning("[MetadataManager] No FileItems found for modified metadata")
+                return
 
-        if not files_to_save:
-            logger.info("[MetadataManager] No files with metadata modifications found")
-            return
+            # Save metadata for all modified files
+            self._save_metadata_files(files_to_save, all_modified_metadata)
 
-        logger.info(f"[MetadataManager] Saving metadata for ALL {len(files_to_save)} modified file(s)")
-        self._save_metadata_files(files_to_save, all_modified_metadata)
+        except Exception as e:
+            logger.error(f"[MetadataManager] Error saving all modified metadata: {e}")
 
     def _get_modified_metadata_for_file(self, file_path: str, all_modified_metadata: dict) -> dict:
-        """
-        Get modified metadata for a file using path-aware lookup.
+        """Get modified metadata for a specific file."""
+        try:
+            # Direct lookup first
+            if file_path in all_modified_metadata:
+                return all_modified_metadata[file_path]
 
-        Args:
-            file_path: Path of the file to get metadata for
-            all_modified_metadata: Dictionary with all modified metadata
+            # Fallback: try path comparison
+            for stored_path, modifications in all_modified_metadata.items():
+                if paths_equal(stored_path, file_path):
+                    return modifications
 
-        Returns:
-            dict: Modified metadata for the file, or empty dict if not found
-        """
-        # First try direct lookup (fastest)
-        if file_path in all_modified_metadata:
-            return all_modified_metadata[file_path]
+            # Alternative: single file metadata from tree view
+            metadata_tree_view = self._get_metadata_tree_view()
+            if metadata_tree_view and hasattr(metadata_tree_view, '_current_file_path'):
+                if paths_equal(metadata_tree_view._current_file_path, file_path):
+                    current_modifications = metadata_tree_view.get_modified_metadata()
+                    if current_modifications:
+                        logger.debug(f"[MetadataManager] Metadata to save: {list(current_modifications.keys())}", extra={"dev_only": True})
+                        logger.debug(f"[MetadataManager] Metadata values: {current_modifications}", extra={"dev_only": True})
+                        return current_modifications
 
-        # If not found, try normalized path comparison
-        for stored_path, metadata in all_modified_metadata.items():
-            if paths_equal(file_path, stored_path):
-                return metadata
+            return {}
 
-        return {}
+        except Exception as e:
+            logger.error(f"[MetadataManager] Error getting modified metadata for {file_path}: {e}")
+            return {}
 
     def _save_metadata_files(self, files_to_save: list, all_modified_metadata: dict) -> None:
-        """
-        Common method to save metadata for a list of files.
-
-        Args:
-            files_to_save: List of FileItem objects to save
-            all_modified_metadata: Dictionary of all modified metadata
-        """
-        # Create ExifToolWrapper instance
-        from utils.exiftool_wrapper import ExifToolWrapper
-        exiftool = ExifToolWrapper()
+        """Save metadata for multiple files."""
+        if not files_to_save:
+            logger.warning("[MetadataManager] No files to save metadata for")
+            return
 
         success_count = 0
         failed_files = []
 
         try:
-            if len(files_to_save) == 1:
-                # Single file: Use wait cursor
-                from utils.cursor_helper import wait_cursor
-                with wait_cursor():
-                    file_item = files_to_save[0]
+            # Get metadata tree view for clearing modifications
+            metadata_tree_view = self._get_metadata_tree_view()
+
+            for file_item in files_to_save:
+                try:
+                    # Get modifications for this file
                     modified_metadata = self._get_modified_metadata_for_file(file_item.full_path, all_modified_metadata)
 
                     if modified_metadata:
-                        logger.info(f"[MetadataManager] Saving metadata for: {file_item.filename}")
                         logger.debug(f"[MetadataManager] Metadata to save: {list(modified_metadata.keys())}", extra={"dev_only": True})
                         logger.debug(f"[MetadataManager] Metadata values: {modified_metadata}", extra={"dev_only": True})
-                        success = exiftool.write_metadata(file_item.full_path, modified_metadata)
 
-                        if success:
-                            logger.info(f"[MetadataManager] Successfully saved metadata to: {file_item.filename}")
-                            success_count += 1
-                            self._update_file_after_save(file_item, modified_metadata)
-                        else:
-                            logger.error(f"[MetadataManager] Failed to save metadata to: {file_item.filename}")
-                            failed_files.append(file_item.filename)
-                    else:
-                        logger.warning(f"[MetadataManager] No modified metadata found for: {file_item.filename}")
-            else:
-                # Multiple files: Use progress dialog
-                # Calculate total size for enhanced progress tracking
-                from utils.file_size_calculator import calculate_files_total_size
-                from utils.progress_dialog import ProgressDialog
-                total_size = calculate_files_total_size(files_to_save)
+                        # Save metadata using UnifiedMetadataManager
+                        from core.unified_metadata_manager import UnifiedMetadataManager
+                        metadata_manager = UnifiedMetadataManager()
 
-                # Create save dialog with size-based progress
-                save_dialog = ProgressDialog.create_metadata_dialog(
-                    parent=self.parent_window,
-                    is_extended=False,  # Save operation, not extended metadata
-                    cancel_callback=None,  # No cancellation for save operations
-                    use_size_based_progress=True  # Use size-based progress for consistency
-                )
-                save_dialog.set_status("Saving metadata...")
+                        # Save each metadata field
+                        for key_path, new_value in modified_metadata.items():
+                            try:
+                                metadata_manager.set_metadata_value(file_item.full_path, key_path, new_value)
+                            except Exception as field_error:
+                                logger.error(f"[MetadataManager] Failed to save {key_path} for {file_item.filename}: {field_error}")
+                                raise field_error
 
-                # Start enhanced tracking with total size
-                save_dialog.start_progress_tracking(total_size)
-
-                # Show dialog with smooth appearance to prevent shadow flicker
-                from utils.dialog_utils import show_dialog_smooth
-                show_dialog_smooth(save_dialog)
-
-                # Initialize incremental size tracking for better performance
-                processed_size = 0
-
-                # Process each file
-                for i, file_item in enumerate(files_to_save):
-                    # Use cached file size if available to avoid repeated os.path.getsize() calls
-                    try:
-                        if hasattr(file_item, 'file_size') and file_item.file_size is not None:
-                            current_file_size = file_item.file_size
-                        elif hasattr(file_item, 'full_path') and os.path.exists(file_item.full_path):
-                            current_file_size = os.path.getsize(file_item.full_path)
-                            # Cache it for future use
-                            if hasattr(file_item, 'file_size'):
-                                file_item.file_size = current_file_size
-                        else:
-                            current_file_size = 0
-
-                        processed_size += current_file_size
-                    except (OSError, AttributeError):
-                        current_file_size = 0
-
-                    # Update progress using unified method
-                    save_dialog.update_progress(
-                        file_count=i + 1,
-                        total_files=len(files_to_save),
-                        processed_bytes=processed_size,
-                        total_bytes=total_size
-                    )
-                    save_dialog.set_filename(file_item.filename)
-                    save_dialog.set_count(i + 1, len(files_to_save))
-
-                    # Reduced frequency of processEvents() for better performance
-                    # Only process events every 5 files or for large files (>10MB)
-                    if (i + 1) % 5 == 0 or current_file_size > 10 * 1024 * 1024:
-                        from core.pyqt_imports import QApplication
-                        QApplication.processEvents()
-
-                    # Use path-aware lookup for modified metadata
-                    modified_metadata = self._get_modified_metadata_for_file(file_item.full_path, all_modified_metadata)
-                    if not modified_metadata:
-                        logger.warning(f"[MetadataManager] No modified metadata found for: {file_item.filename}")
-                        continue
-
-                    logger.info(f"[MetadataManager] Saving metadata for: {file_item.filename}")
-                    logger.debug(f"[MetadataManager] Metadata to save: {list(modified_metadata.keys())}", extra={"dev_only": True})
-                    logger.debug(f"[MetadataManager] Metadata values: {modified_metadata}", extra={"dev_only": True})
-
-                    # Write metadata to file
-                    success = exiftool.write_metadata(file_item.full_path, modified_metadata)
-
-                    if success:
-                        logger.info(f"[MetadataManager] Successfully saved metadata to: {file_item.filename}")
-                        success_count += 1
+                        # Update file after successful save
                         self._update_file_after_save(file_item, modified_metadata)
+
+                        # Clear modifications for this file
+                        if metadata_tree_view:
+                            metadata_tree_view.clear_modifications_for_file(file_item.full_path)
+
+                        success_count += 1
+                        logger.info(f"[MetadataManager] Successfully saved metadata for: {file_item.filename}")
+
                     else:
-                        logger.error(f"[MetadataManager] Failed to save metadata to: {file_item.filename}")
-                        failed_files.append(file_item.filename)
+                        logger.warning(f"[MetadataManager] No modifications found for: {file_item.filename}")
 
-                # Complete progress and close dialog
-                save_dialog.set_progress(len(files_to_save), len(files_to_save))
-                save_dialog.set_status("Save complete!")
+                except Exception as file_error:
+                    logger.error(f"[MetadataManager] Failed to save metadata for {file_item.filename}: {file_error}")
+                    failed_files.append((file_item.filename, str(file_error)))
 
-                # Use timer manager instead of processEvents for UI update
-                from utils.timer_manager import schedule_dialog_close, schedule_ui_update
-                schedule_ui_update(lambda: None, delay=1)  # Allow UI to update
+        except Exception as e:
+            logger.error(f"[MetadataManager] Error in metadata saving process: {e}")
 
-                # Keep dialog visible for a moment to show completion
-                schedule_dialog_close(save_dialog.close, 500)
-
-            # Show result message
-            self._show_save_results(success_count, failed_files, files_to_save)
-
-        finally:
-            exiftool.close()
+        # Show results
+        self._show_save_results(success_count, failed_files, files_to_save)
 
     def _update_file_after_save(self, file_item, saved_metadata: dict = None):
-        """
-        Update file state after successful metadata save.
+        """Update file item and UI after successful metadata save."""
+        try:
+            # Update cache with saved metadata
+            if saved_metadata:
+                logger.debug(f"[MetadataManager] Updating cache with saved metadata for: {file_item.filename}", extra={"dev_only": True})
+                if hasattr(file_item, 'metadata') and file_item.metadata:
+                    for key_path, new_value in saved_metadata.items():
+                        logger.debug(f"[MetadataManager] Updating cache: {key_path} = {new_value}", extra={"dev_only": True})
+                        # Update nested dictionary
+                        self._update_nested_dict(file_item.metadata, key_path, new_value)
 
-        Args:
-            file_item: The FileItem that was saved
-            saved_metadata: The metadata that was actually saved to the file
-        """
-        # Clear modifications for this file in tree view
-        self.parent_window.metadata_tree_view.clear_modifications_for_file(file_item.full_path)
+            # Update file icon status
+            file_item.metadata_status = "valid"
 
-        # CRITICAL: Update cache with the saved values to prevent stale data
-        metadata_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
-        if metadata_entry and saved_metadata:
-            logger.debug(f"[MetadataManager] Updating cache with saved metadata for: {file_item.filename}", extra={"dev_only": True})
+            # Get file table model for updates
+            from core.application_context import ApplicationContext
+            app_context = ApplicationContext()
+            file_table_model = app_context.get_file_table_model()
 
-            # Update the cache data with the values that were actually saved
-            for key_path, new_value in saved_metadata.items():
-                logger.debug(f"[MetadataManager] Updating cache: {key_path} = {new_value}", extra={"dev_only": True})
+            if file_table_model:
+                # Find and update the file in the model
+                for row in range(file_table_model.rowCount()):
+                    model_file_item = file_table_model.get_file_item(row)
+                    if model_file_item and paths_equal(model_file_item.full_path, file_item.full_path):
+                        # Update the model
+                        file_table_model.update_file_item(row, file_item)
+                        break
 
-                # Handle nested keys (e.g., "EXIF:Rotation")
-                if '/' in key_path or ':' in key_path:
-                    # Split by either / or : to handle both formats
-                    if '/' in key_path:
-                        parts = key_path.split('/', 1)
-                    else:
-                        parts = key_path.split(':', 1)
+            # Refresh metadata view if this is the currently displayed file
+            metadata_tree_view = self._get_metadata_tree_view()
+            if metadata_tree_view and hasattr(metadata_tree_view, '_current_file_path'):
+                if paths_equal(metadata_tree_view._current_file_path, file_item.full_path):
+                    logger.debug(f"[MetadataManager] Refreshing metadata view for updated file: {file_item.filename}", extra={"dev_only": True})
+                    metadata_tree_view.display_file_metadata(file_item, "after_save")
 
-                    if len(parts) == 2:
-                        group, key = parts
-                        if group not in metadata_entry.data:
-                            metadata_entry.data[group] = {}
-                        if isinstance(metadata_entry.data[group], dict):
-                            metadata_entry.data[group][key] = new_value
-                        else:
-                            # If group is not a dict, make it one
-                            metadata_entry.data[group] = {key: new_value}
-                    else:
-                        # Fallback: treat as top-level key
-                        metadata_entry.data[key_path] = new_value
-                else:
-                    # Top-level key (e.g., "Rotation")
-                    metadata_entry.data[key_path] = new_value
-
-            # Mark cache as clean but keep the data
-            metadata_entry.modified = False
-
-            # Update file_item.metadata if it exists for consistency
-            if hasattr(file_item, 'metadata') and file_item.metadata:
-                for key_path, new_value in saved_metadata.items():
-                    if '/' in key_path or ':' in key_path:
-                        # For nested keys, update the top-level key (most common case)
-                        if '/' in key_path:
-                            top_level_key = key_path.split('/', 1)[1]
-                        else:
-                            top_level_key = key_path.split(':', 1)[1]
-                        file_item.metadata[top_level_key] = new_value
-                    else:
-                        file_item.metadata[key_path] = new_value
-
-        elif metadata_entry:
-            # No saved_metadata provided - just mark as clean
-            metadata_entry.modified = False
-
-        # Update file icon
-        file_item.metadata_status = "loaded"
-
-        # Refresh file table to show updated icon
-        if hasattr(self.parent_window, 'file_model'):
-            try:
-                row = self.parent_window.file_model.files.index(file_item)
-                icon_index = self.parent_window.file_model.index(row, 0)
-                from core.pyqt_imports import Qt
-                self.parent_window.file_model.dataChanged.emit(
-                    icon_index,
-                    icon_index,
-                    [Qt.DecorationRole] # type: ignore
-                )
-            except ValueError:
-                pass  # File not in model
-
-        # Force refresh metadata view if this file is currently displayed
-        if (hasattr(self.parent_window, 'metadata_tree_view') and
-            hasattr(self.parent_window.metadata_tree_view, '_current_file_path') and
-            self.parent_window.metadata_tree_view._current_file_path == file_item.full_path):
-
-            logger.debug(f"[MetadataManager] Refreshing metadata view for updated file: {file_item.filename}", extra={"dev_only": True})
-
-            # Use the updated cache data to refresh the display
-            if metadata_entry and hasattr(metadata_entry, 'data'):
-                display_data = dict(metadata_entry.data)
-                display_data["FileName"] = file_item.filename
-                self.parent_window.metadata_tree_view.display_metadata(display_data, context="after_save")
+        except Exception as e:
+            logger.error(f"[MetadataManager] Error updating file after save: {e}")
 
     def _show_save_results(self, success_count, failed_files, files_to_save):
         """Show results status message after save operation."""

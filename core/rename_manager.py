@@ -42,7 +42,8 @@ class RenameManager:
             main_window: Reference to the main window instance
         """
         self.main_window = main_window
-        logger.debug("[RenameManager] Initialized")
+        self.pending_completion_dialog = None
+        logger.debug("[RenameManager] Initialized", extra={"dev_only": True})
 
     def rename_files(self) -> None:
         """

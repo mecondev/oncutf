@@ -495,7 +495,7 @@ class EventHandlerManager:
         DEPRECATED: This functionality has been moved to SplitterManager.
         This method is kept for backward compatibility and delegates to SplitterManager.
         """
-        logger.debug("[EventHandlerManager] DEPRECATED: Delegating splitter handling to SplitterManager")
+        logger.debug("[EventHandlerManager] DEPRECATED: Delegating splitter handling to SplitterManager", extra={"dev_only": True})
 
         if hasattr(self.parent_window, 'splitter_manager'):
             self.parent_window.splitter_manager.on_horizontal_splitter_moved(pos, index)
@@ -516,7 +516,7 @@ class EventHandlerManager:
         DEPRECATED: This functionality has been moved to SplitterManager.
         This method is kept for backward compatibility and delegates to SplitterManager.
         """
-        logger.debug("[EventHandlerManager] DEPRECATED: Delegating splitter handling to SplitterManager")
+        logger.debug("[EventHandlerManager] DEPRECATED: Delegating splitter handling to SplitterManager", extra={"dev_only": True})
 
         if hasattr(self.parent_window, 'splitter_manager'):
             self.parent_window.splitter_manager.on_vertical_splitter_moved(pos, index)
@@ -558,7 +558,7 @@ class EventHandlerManager:
             )
 
             if not files_to_process:
-                logger.debug("[BulkRotation] User cancelled bulk rotation or no files selected")
+                logger.debug("[BulkRotation] User cancelled bulk rotation or no files selected", extra={"dev_only": True})
                 return
 
             if not files_to_process:
@@ -610,7 +610,7 @@ class EventHandlerManager:
 
                 # Skip files that already have 0° rotation
                 if current_rotation == "0":
-                    logger.debug(f"[BulkRotation] Skipping {file_item.filename} - already has 0° rotation")
+                    logger.debug(f"[BulkRotation] Skipping {file_item.filename} - already has 0° rotation", extra={"dev_only": True})
                     skipped_count += 1
                     continue
 
@@ -636,7 +636,7 @@ class EventHandlerManager:
                     file_item.metadata_status = "modified"
                     modified_count += 1
 
-                    logger.debug(f"[BulkRotation] Set rotation=0 for {file_item.filename} (was: {current_rotation})")
+                    logger.debug(f"[BulkRotation] Set rotation=0 for {file_item.filename} (was: {current_rotation})", extra={"dev_only": True})
 
             # Update UI to reflect changes
             if modified_count > 0:
@@ -798,7 +798,7 @@ class EventHandlerManager:
                     PathWrapper(path) if not hasattr(path, 'full_path') else path
                     for path in file_paths
                 ])
-                logger.debug(f"[HashManager] Total size calculated: {self._total_size_bytes} bytes")
+                logger.debug(f"[HashManager] Total size calculated: {self._total_size_bytes} bytes", extra={"dev_only": True})
             except Exception as e:
                 logger.warning(f"[HashManager] Could not calculate total size: {e}")
                 self._total_size_bytes = 0
@@ -951,7 +951,7 @@ class EventHandlerManager:
                         # Emit dataChanged signal for the first column (icon column) only
                         index = self.parent_window.file_model.index(i, 0)
                         self.parent_window.file_model.dataChanged.emit(index, index, [Qt.DecorationRole, Qt.ToolTipRole]) # type: ignore
-                        logger.debug(f"[HashWorker] Updated icon for: {os.path.basename(file_path)}")
+                        logger.debug(f"[HashWorker] Updated icon for: {os.path.basename(file_path)}", extra={"dev_only": True})
                         break
         except Exception as e:
             logger.warning(f"[HashWorker] Error updating icon for {file_path}: {e}")
@@ -983,7 +983,7 @@ class EventHandlerManager:
         if hasattr(self.parent_window, 'file_table_model') and self.parent_window.file_table_model:
             if hasattr(self.parent_window.file_table_model, 'refresh_icons'):
                 self.parent_window.file_table_model.refresh_icons()
-                logger.debug("[EventHandler] Refreshed file table icons after hash operation")
+                logger.debug("[EventHandler] Refreshed file table icons after hash operation", extra={"dev_only": True})
 
         # Clean up worker
         if hasattr(self, 'hash_worker') and self.hash_worker:
@@ -1042,7 +1042,7 @@ class EventHandlerManager:
             )
 
             if not external_folder:
-                logger.debug("[HashManager] User cancelled external folder selection")
+                logger.debug("[HashManager] User cancelled external folder selection", extra={"dev_only": True})
                 return
 
             logger.info(f"[HashManager] Comparing {len(selected_files)} files with {external_folder}")
@@ -1405,13 +1405,13 @@ class EventHandlerManager:
             bool: True if ALL selected files support the field, False otherwise
         """
         if not selected_files:
-            logger.debug(f"[FieldCompatibility] No files provided for {field_name} compatibility check")
+            logger.debug(f"[FieldCompatibility] No files provided for {field_name} compatibility check", extra={"dev_only": True})
             return False
 
         # Check if all files have metadata loaded
         files_with_metadata = [f for f in selected_files if self._file_has_metadata(f)]
         if len(files_with_metadata) != len(selected_files):
-            logger.debug(f"[FieldCompatibility] Not all files have metadata loaded for {field_name} check")
+            logger.debug(f"[FieldCompatibility] Not all files have metadata loaded for {field_name} check", extra={"dev_only": True})
             return False
 
         # Check if all files support the specific field
@@ -1422,8 +1422,7 @@ class EventHandlerManager:
 
         # Enable only if ALL selected files support the field
         result = supported_count == len(selected_files)
-        logger.debug(f"[FieldCompatibility] {field_name} support: {supported_count}/{len(selected_files)} files, enabled: {result}")
-
+        logger.debug(f"[FieldCompatibility] {field_name} support: {supported_count}/{len(selected_files)} files, enabled: {result}", extra={"dev_only": True})
         return result
 
     def _file_supports_field(self, file_item, field_name: str) -> bool:
@@ -1442,7 +1441,7 @@ class EventHandlerManager:
             # Get metadata from cache
             cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
             if not cache_entry or not hasattr(cache_entry, 'data') or not cache_entry.data:
-                logger.debug(f"[FieldSupport] No metadata cache for {file_item.filename}")
+                logger.debug(f"[FieldSupport] No metadata cache for {file_item.filename}", extra={"dev_only": True})
                 return False
 
             # Field support mapping based on exiftool output
@@ -1459,7 +1458,7 @@ class EventHandlerManager:
             # Get supported fields for this field name
             supported_fields = field_support_map.get(field_name, [])
             if not supported_fields:
-                logger.debug(f"[FieldSupport] Unknown field name: {field_name}")
+                logger.debug(f"[FieldSupport] Unknown field name: {field_name}", extra={"dev_only": True})
                 return False
 
             # Check if any of the supported fields exist in metadata OR could be written

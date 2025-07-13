@@ -192,8 +192,6 @@ class FileTableModel(QAbstractTableModel):
     def _handle_single_column_removal(self, new_visible_columns: list, removed_column: str) -> None:
         """Handle removing a single column efficiently."""
         logger.debug(f"[FileTableModel] Removing single column: {removed_column}")
-        logger.debug(f"[FileTableModel] Current visible columns: {self._visible_columns}")
-        logger.debug(f"[FileTableModel] New visible columns: {new_visible_columns}")
 
         try:
             # Find where this column currently is
@@ -202,8 +200,7 @@ class FileTableModel(QAbstractTableModel):
                 # Convert to actual column index (+1 for status column)
                 remove_position = old_index + 1
 
-                logger.debug(f"[FileTableModel] Removing column '{removed_column}' from position {remove_position}")
-                logger.debug(f"[FileTableModel] Current column count: {self.columnCount()}")
+                logger.debug(f"[FileTableModel] Removing column '{removed_column}' from position {remove_position}", extra={"dev_only": True})
 
                 # Signal that we're removing a column
                 self.beginRemoveColumns(QModelIndex(), remove_position, remove_position)
@@ -212,12 +209,11 @@ class FileTableModel(QAbstractTableModel):
                 self._visible_columns = new_visible_columns.copy()
                 self._column_mapping = self._create_column_mapping()
 
-                logger.debug(f"[FileTableModel] Updated column mapping: {self._column_mapping}")
-                logger.debug(f"[FileTableModel] New column count will be: {len(self._visible_columns) + 1}")
+                logger.debug(f"[FileTableModel] Updated column mapping: {self._column_mapping}", extra={"dev_only": True})
 
                 self.endRemoveColumns()
 
-                logger.debug(f"[FileTableModel] Single column removal completed successfully")
+                logger.debug(f"[FileTableModel] Single column removal completed successfully", extra={"dev_only": True})
             else:
                 logger.warning(f"[FileTableModel] Column '{removed_column}' not found in current visible columns")
                 raise ValueError(f"Column '{removed_column}' not found in current visible columns")
@@ -271,7 +267,7 @@ class FileTableModel(QAbstractTableModel):
             cache = get_persistent_hash_cache()
             return cache.has_hash(file_path)
         except (ImportError, Exception) as e:
-            logger.debug(f"[FileTableModel] Could not check hash cache: {e}")
+            logger.debug(f"[FileTableModel] Could not check hash cache: {e}", extra={"dev_only": True})
             return False
 
     def _get_hash_value(self, file_path: str) -> str:
@@ -291,7 +287,7 @@ class FileTableModel(QAbstractTableModel):
             hash_value = cache.get_hash(file_path)
             return hash_value if hash_value else ""
         except (ImportError, Exception) as e:
-            logger.debug(f"[FileTableModel] Could not get hash value: {e}")
+            logger.debug(f"[FileTableModel] Could not get hash value: {e}", extra={"dev_only": True})
             return ""
 
     def _get_unified_tooltip(self, file) -> str:
@@ -361,7 +357,6 @@ class FileTableModel(QAbstractTableModel):
 
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         count = len(self.files)
-        logger.debug(f"[FileTableModel] rowCount called, returning {count}")
         return count
 
     def _get_column_data(self, file, column_key: str, role: int):
@@ -392,7 +387,7 @@ class FileTableModel(QAbstractTableModel):
                             value = MetadataFieldMapper.get_metadata_value(entry.data, column_key)
                             return value
                     except Exception as e:
-                        logger.debug(f"Error accessing metadata cache for {column_key}: {e}")
+                        logger.debug(f"Error accessing metadata cache for {column_key}: {e}", extra={"dev_only": True})
 
                 # Fallback: try to get from file item metadata directly
                 if hasattr(file, 'metadata') and file.metadata:
@@ -404,7 +399,7 @@ class FileTableModel(QAbstractTableModel):
                         if value:
                             return value
                     except Exception as e:
-                        logger.debug(f"Error accessing file metadata for {column_key}: {e}")
+                        logger.debug(f"Error accessing file metadata for {column_key}: {e}", extra={"dev_only": True})
 
                 return ""  # Empty string for missing metadata
 
@@ -521,7 +516,6 @@ class FileTableModel(QAbstractTableModel):
         return base_flags
 
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole):  # type: ignore
-        logger.debug(f"[HeaderData] section={section}, orientation={orientation}, role={role}, files={len(self.files)}")
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
                 return ""  # Δεν εμφανίζουμε τίτλο στη status column
@@ -531,11 +525,11 @@ class FileTableModel(QAbstractTableModel):
                 # Get the proper title from configuration
                 from config import FILE_TABLE_COLUMN_CONFIG
                 title = FILE_TABLE_COLUMN_CONFIG.get(col_key, {}).get("title", col_key)
-                logger.debug(f"[HeaderData] Section {section} -> column '{col_key}' -> title '{title}'")
+                logger.debug(f"[HeaderData] Section {section} -> column '{col_key}' -> title '{title}'", extra={"dev_only": True})
                 return title
             else:
                 logger.warning(f"[HeaderData] No column mapping found for section {section}")
-                logger.debug(f"[HeaderData] Available mappings: {self._column_mapping}")
+                logger.debug(f"[HeaderData] Available mappings: {self._column_mapping}", extra={"dev_only": True})
                 return ""
         return super().headerData(section, orientation, role)
 
@@ -654,7 +648,7 @@ class FileTableModel(QAbstractTableModel):
                 bottom_right = self.index(row, self.columnCount() - 1)
                 selection_range = QItemSelectionRange(top_left, bottom_right)
                 selection.append(selection_range)
-                logger.debug(f"[Model] dataChanged.emit() for row {row}")
+                logger.debug(f"[Model] dataChanged.emit() for row {row}", extra={"dev_only": True})
 
         selection_model.select(selection, QItemSelectionModel.Select)
 
@@ -677,13 +671,13 @@ class FileTableModel(QAbstractTableModel):
 
     def set_files(self, files: list[FileItem]) -> None:
         """Set the files to be displayed in the table."""
-        logger.debug(f"set_files called with {len(files)} files")
+        logger.debug(f"set_files called with {len(files)} files", extra={"dev_only": True})
         self.beginResetModel()
         self.files = files
         # self._update_column_mapping()  # Αφαιρείται γιατί δεν χρειάζεται και προκαλεί σφάλμα
         self._update_icons_immediately()
         self.endResetModel()
-        logger.debug(f"set_files finished, now self.files has {len(self.files)} files")
+        logger.debug(f"set_files finished, now self.files has {len(self.files)} files", extra={"dev_only": True})
         # Update custom tooltips for new files
         if hasattr(self, '_table_view_ref') and self._table_view_ref:
             self.setup_custom_tooltips(self._table_view_ref)
@@ -701,7 +695,7 @@ class FileTableModel(QAbstractTableModel):
         top_left = self.index(0, 0)
         bottom_right = self.index(len(self.files) - 1, 0)
         self.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole])
-        logger.debug(f"[FileTableModel] Updated icons immediately for {len(self.files)} files")
+        logger.debug(f"[FileTableModel] Updated icons immediately for {len(self.files)} files", extra={"dev_only": True})
 
     def _delayed_icon_update(self) -> None:
         """Delayed icon update to ensure all cached data is available."""
@@ -756,7 +750,7 @@ class FileTableModel(QAbstractTableModel):
         top_left = self.index(0, 0)
         bottom_right = self.index(len(self.files) - 1, 0)
         self.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole])
-        logger.debug(f"[FileTableModel] Refreshed icons for {len(self.files)} files")
+        logger.debug(f"[FileTableModel] Refreshed icons for {len(self.files)} files", extra={"dev_only": True})
 
     def refresh_icon_for_file(self, file_path: str):
         """
@@ -771,10 +765,10 @@ class FileTableModel(QAbstractTableModel):
             if file_item.full_path == file_path:
                 index = self.index(i, 0)
                 self.dataChanged.emit(index, index, [Qt.DecorationRole, Qt.ToolTipRole])
-                logger.debug(f"[FileTableModel] Refreshed icon for {file_item.filename}")
+                logger.debug(f"[FileTableModel] Refreshed icon for {file_item.filename}", extra={"dev_only": True})
                 return
 
-        logger.debug(f"[FileTableModel] File not found for icon refresh: {file_path}")
+        logger.debug(f"[FileTableModel] File not found for icon refresh: {file_path}", extra={"dev_only": True})
 
     def get_checked_files(self) -> list[FileItem]:
         """
@@ -795,4 +789,4 @@ class FileTableModel(QAbstractTableModel):
         # Store reference to table view for future updates
         self._table_view_ref = table_view
 
-        logger.debug("Custom tooltips are now handled through Qt.ToolTipRole in data() method")
+        logger.debug("Custom tooltips are now handled through Qt.ToolTipRole in data() method", extra={"dev_only": True})

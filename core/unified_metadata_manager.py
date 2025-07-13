@@ -106,13 +106,13 @@ class UnifiedMetadataManager(QObject):
                     # Filter out internal markers to check if there's real metadata
                     real_metadata = {k: v for k, v in metadata.items() if not k.startswith('__')}
                     if real_metadata:
-                        logger.debug(f"[UnifiedMetadataManager] Cache hit for {file_item.filename}")
+                        logger.debug(f"[UnifiedMetadataManager] Cache hit for {file_item.filename}", extra={"dev_only": True})
                         return metadata
                     else:
-                        logger.debug(f"[UnifiedMetadataManager] Empty metadata for {file_item.filename}")
+                        logger.debug(f"[UnifiedMetadataManager] Empty metadata for {file_item.filename}", extra={"dev_only": True})
                         return None
 
-            logger.debug(f"[UnifiedMetadataManager] No cached metadata for {file_item.filename}")
+            logger.debug(f"[UnifiedMetadataManager] No cached metadata for {file_item.filename}", extra={"dev_only": True})
             return None
 
         except Exception as e:
@@ -137,10 +137,10 @@ class UnifiedMetadataManager(QObject):
             # Get hash directly from persistent cache using get() method
             hash_value = cache.get(file_item.full_path)
             if hash_value:
-                logger.debug(f"[UnifiedMetadataManager] Hash cache hit for {file_item.filename}")
+                logger.debug(f"[UnifiedMetadataManager] Hash cache hit for {file_item.filename}", extra={"dev_only": True})
                 return hash_value
 
-            logger.debug(f"[UnifiedMetadataManager] No cached hash for {file_item.filename}")
+            logger.debug(f"[UnifiedMetadataManager] No cached hash for {file_item.filename}", extra={"dev_only": True})
             return None
 
         except Exception as e:
@@ -834,7 +834,7 @@ class UnifiedMetadataManager(QObject):
                     # Fallback to full refresh if method not available
                     self.parent_window.file_model.refresh_icons()
 
-        logger.debug(f"[UnifiedMetadataManager] Metadata loaded for {file_path}")
+        logger.debug(f"[UnifiedMetadataManager] Metadata loaded for {file_path}", extra={"dev_only": True})
 
     def _on_file_hash_calculated(self, file_path: str) -> None:
         """Handle individual file hash calculated."""
@@ -851,7 +851,7 @@ class UnifiedMetadataManager(QObject):
                     # Fallback to full refresh if method not available
                     self.parent_window.file_model.refresh_icons()
 
-        logger.debug(f"[UnifiedMetadataManager] Hash calculated for {file_path}")
+        logger.debug(f"[UnifiedMetadataManager] Hash calculated for {file_path}", extra={"dev_only": True})
 
     def _on_metadata_finished(self) -> None:
         """Handle metadata loading completion."""
@@ -1014,7 +1014,7 @@ class UnifiedMetadataManager(QObject):
                     if success:
                         success_count += 1
                         self._update_file_after_save(file_item, modifications)
-                        logger.debug(f"[UnifiedMetadataManager] Successfully saved metadata for {file_item.filename}")
+                        logger.debug(f"[UnifiedMetadataManager] Successfully saved metadata for {file_item.filename}", extra={"dev_only": True})
                     else:
                         failed_files.append(file_item.filename)
                         logger.warning(f"[UnifiedMetadataManager] Failed to save metadata for {file_item.filename}")
@@ -1056,7 +1056,7 @@ class UnifiedMetadataManager(QObject):
 
                         # Execute command (this just records the save operation)
                         command_manager.execute_command(save_command)
-                        logger.debug(f"[UnifiedMetadataManager] Recorded save command for {len(successful_files)} files")
+                        logger.debug(f"[UnifiedMetadataManager] Recorded save command for {len(successful_files)} files", extra={"dev_only": True})
 
             except Exception as e:
                 logger.warning(f"[UnifiedMetadataManager] Error recording save command: {e}")

@@ -19,7 +19,7 @@ Features:
 import os
 import threading
 import time
-from typing import Optional
+from typing import Optional, List
 
 from core.pyqt_imports import QObject, pyqtSignal, pyqtSlot
 
@@ -27,6 +27,8 @@ from core.pyqt_imports import QObject, pyqtSignal, pyqtSlot
 from utils.logger_factory import get_cached_logger
 from utils.metadata_cache_helper import MetadataCacheHelper
 from utils.metadata_loader import MetadataLoader
+from core.batch_operations_manager import BatchOperationsManager
+from core.file_item import FileItem
 
 logger = get_cached_logger(__name__)
 
@@ -50,23 +52,13 @@ class MetadataWorker(QObject):
     # Real-time UI update signal - same as HashWorker
     file_metadata_loaded = pyqtSignal(str)  # file_path - emitted when individual file metadata is loaded
 
-    def __init__(self, *, reader: MetadataLoader, metadata_cache, parent: Optional[QObject] = None):
+    def __init__(self, files: List[FileItem], use_extended: bool = False, parent=None):
         super().__init__(parent)
-        logger.debug("[Worker] __init__ called")
-        self.main_window = parent
-        self.reader = reader
-        self.file_path = []
-        self.metadata_cache = metadata_cache
-        self._cache_helper = MetadataCacheHelper(metadata_cache)
-        self._cancelled = False
-        self.use_extended = False
-        self._total_size = 0
-        self._processed_size = 0
-
-        # Batch operations optimization
-        self._batch_manager = None
-        self._enable_batching = True
-        self._batch_operations = []  # Store operations for final batch
+        self.files = files
+        self.use_extended = use_extended
+        self.cancelled = False
+        self.batch_operations_enabled = True
+        logger.debug("[Worker] __init__ called", extra={"dev_only": True})
 
     def set_total_size(self, total_size: int) -> None:
         """Set the total size of all files to process."""
@@ -74,9 +66,9 @@ class MetadataWorker(QObject):
         self._processed_size = 0
 
     def enable_batch_operations(self, enabled: bool = True) -> None:
-        """Enable or disable batch operations optimization."""
-        self._enable_batching = enabled
-        logger.debug(f"[Worker] Batch operations {'enabled' if enabled else 'disabled'}")
+        """Enable or disable batch operations."""
+        self.batch_operations_enabled = enabled
+        logger.debug(f"[Worker] Batch operations {'enabled' if enabled else 'disabled'}", extra={"dev_only": True})
 
     @pyqtSlot()
     def run_batch(self) -> None:
@@ -95,15 +87,11 @@ class MetadataWorker(QObject):
 
         start_total = time.time()
 
-        # Initialize batch manager if enabled
-        if self._enable_batching:
-            try:
-                from core.batch_operations_manager import get_batch_manager
-                self._batch_manager = get_batch_manager(self.main_window)
-                logger.debug("[Worker] Batch operations manager initialized")
-            except Exception as e:
-                logger.warning(f"[Worker] Failed to initialize batch manager: {e}")
-                self._enable_batching = False
+        # Initialize batch operations manager if enabled
+        if self.batch_operations_enabled:
+            logger.debug("[Worker] Batch operations manager initialized", extra={"dev_only": True})
+            batch_manager = BatchOperationsManager()
+            batch_manager.start_batch_operation()
 
         try:
             total = len(self.file_path)
