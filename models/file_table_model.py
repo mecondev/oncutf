@@ -80,30 +80,64 @@ class FileTableModel(QAbstractTableModel):
         mapping = {}  # Column 0 is hardcoded status column, not in mapping
         for i, column_key in enumerate(self._visible_columns):
             mapping[i + 1] = column_key  # Dynamic columns start from index 1
-        logger.debug(f"_create_column_mapping: {mapping}")
+        logger.debug(f"[ColumnMapping] Created mapping: {mapping}")
+        logger.debug(f"[ColumnMapping] Visible columns: {self._visible_columns}")
+        logger.debug(f"[ColumnMapping] Total columns will be: {len(self._visible_columns) + 1}")
         return mapping
 
     def update_visible_columns(self, visible_columns: list) -> None:
         logger.debug(f"[FileTableModel] update_visible_columns called with: {visible_columns}")
+        logger.debug(f"[FileTableModel] Current visible columns: {self._visible_columns}")
+
         if visible_columns != self._visible_columns:
+            old_column_count = len(self._visible_columns) + 1
+            new_column_count = len(visible_columns) + 1
+
+            logger.debug(f"[FileTableModel] Column count changing from {old_column_count} to {new_column_count}")
+            logger.debug(f"[FileTableModel] files: {len(self.files)} files")
+            logger.debug(f"[FileTableModel] parent_window: {self.parent_window}")
+
+            # Debug state before changes
+            logger.debug("[FileTableModel] STATE BEFORE UPDATE:")
+            self.debug_column_state()
+
+            # Always use reset model for column changes to avoid issues
             self.beginResetModel()
+
+            # Update the visible columns and mapping
             self._visible_columns = visible_columns.copy()
             self._column_mapping = self._create_column_mapping()
-            logger.debug(f"[FileTableModel] _column_mapping after update: {self._column_mapping}")
-            logger.debug(f"[FileTableModel] files after update: {len(self.files)} files")
-            logger.debug(f"[FileTableModel] parent_window after update: {self.parent_window}")
+
+            # Debug state after changes
+            logger.debug("[FileTableModel] STATE AFTER UPDATE:")
+            self.debug_column_state()
+
             self.endResetModel()
+
             # Ενημέρωση του view για αλλαγή στηλών
             if hasattr(self, '_table_view_ref') and self._table_view_ref:
+                logger.debug("[FileTableModel] Calling table view refresh methods")
                 if hasattr(self._table_view_ref, 'refresh_columns_after_model_change'):
                     logger.debug("[FileTableModel] Calling refresh_columns_after_model_change after visible columns update")
                     self._table_view_ref.refresh_columns_after_model_change()
                 if hasattr(self._table_view_ref, '_update_scrollbar_visibility'):
                     logger.debug("[FileTableModel] Forcing horizontal scrollbar update after visible columns update")
                     self._table_view_ref._update_scrollbar_visibility()
+        else:
+            logger.debug("[FileTableModel] No column changes needed - visible columns are the same")
 
     def get_visible_columns(self) -> list:
         return self._visible_columns.copy()
+
+    def debug_column_state(self) -> None:
+        """Debug method to print current column state."""
+        logger.debug(f"[ColumnDebug] === FileTableModel Column State ===")
+        logger.debug(f"[ColumnDebug] Visible columns: {self._visible_columns}")
+        logger.debug(f"[ColumnDebug] Column mapping: {self._column_mapping}")
+        logger.debug(f"[ColumnDebug] Column count: {self.columnCount()}")
+        logger.debug(f"[ColumnDebug] Row count: {self.rowCount()}")
+        logger.debug(f"[ColumnDebug] Files loaded: {len(self.files)}")
+        logger.debug(f"[ColumnDebug] =========================================")
 
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
         count = len(self._visible_columns) + 1  # +1 για τη status column
@@ -290,8 +324,26 @@ class FileTableModel(QAbstractTableModel):
             if role == Qt.DisplayRole:
                 return ""
             if role == Qt.DecorationRole:
-                # Επιστροφή icon ανάλογα με το status
-                return QVariant()  # ή το κατάλληλο QIcon
+                # Determine metadata status
+                metadata_status = "none"
+                if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
+                    entry = self.parent_window.metadata_cache.get_entry(file.full_path)
+                    if entry and hasattr(entry, 'data') and entry.data:
+                        if hasattr(entry, 'is_extended') and entry.is_extended:
+                            metadata_status = "extended"
+                        else:
+                            metadata_status = "loaded"
+
+                # Determine hash status
+                hash_status = "hash" if self._has_hash_cached(file.full_path) else "none"
+
+                # Create and return combined icon
+                icon = self._create_combined_icon(metadata_status, hash_status)
+                return icon
+            if role == Qt.CheckStateRole:
+                return Qt.Checked if file.checked else Qt.Unchecked
+            if role == Qt.ToolTipRole:
+                return self._get_unified_tooltip(file)
             return QVariant()
         col_key = self._column_mapping.get(index.column())
         if not col_key:
@@ -363,12 +415,22 @@ class FileTableModel(QAbstractTableModel):
         return base_flags
 
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole):  # type: ignore
-        logger.debug(f"headerData called, section={section}, orientation={orientation}, role={role}, files={len(self.files)}")
+        logger.debug(f"[HeaderData] section={section}, orientation={orientation}, role={role}, files={len(self.files)}")
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
                 return ""  # Δεν εμφανίζουμε τίτλο στη status column
+
             col_key = self._column_mapping.get(section)
-            return col_key if col_key else ""
+            if col_key:
+                # Get the proper title from configuration
+                from config import FILE_TABLE_COLUMN_CONFIG
+                title = FILE_TABLE_COLUMN_CONFIG.get(col_key, {}).get("title", col_key)
+                logger.debug(f"[HeaderData] Section {section} -> column '{col_key}' -> title '{title}'")
+                return title
+            else:
+                logger.warning(f"[HeaderData] No column mapping found for section {section}")
+                logger.debug(f"[HeaderData] Available mappings: {self._column_mapping}")
+                return ""
         return super().headerData(section, orientation, role)
 
     def sort(self, column: int, order: Qt.SortOrder = Qt.AscendingOrder) -> None:  # type: ignore

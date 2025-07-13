@@ -384,8 +384,16 @@ class FileTableView(QTableView):
 
     def setModel(self, model) -> None:
         logger.debug(f"FileTableView setModel called with model: {type(model)}")
+
+        # Avoid setting the same model multiple times
+        if model is self.model():
+            logger.debug("FileTableView setModel: Same model, skipping")
+            return
+
         super().setModel(model)
         if model:
+            # Store reference to table view in model for callbacks
+            model._table_view_ref = self
             # Συνδέουμε τα σήματα αλλαγής στηλών για δυναμικό table
             if hasattr(model, 'columnsInserted'):
                 model.columnsInserted.connect(self._configure_columns)
@@ -450,20 +458,57 @@ class FileTableView(QTableView):
         if not header:
             logger.debug("[ColumnConfig] No header available, skipping column configuration")
             return
-        header.show()
-        self.setColumnWidth(0, 45)
-        header.setSectionResizeMode(0, header.Fixed)
-        visible_columns = ['filename', 'file_size', 'type', 'modified']
-        if hasattr(self.model(), 'get_visible_columns'):
-            visible_columns = self.model().get_visible_columns()
-        for column_index, column_key in enumerate(visible_columns):
-            actual_column_index = column_index + 1
-            if actual_column_index < self.model().columnCount():
-                width = self._load_column_width(column_key)
-                header.setSectionResizeMode(actual_column_index, header.Interactive)
-                self.setColumnWidth(actual_column_index, width)
-                logger.debug(f"[ColumnConfig] Set column {actual_column_index} ({column_key}) to {width}px")
-        logger.debug("[ColumnConfig] Column setup complete")
+
+        # Prevent recursive calls during column configuration
+        if hasattr(self, '_configuring_columns') and self._configuring_columns:
+            logger.debug("[ColumnConfig] Already configuring columns, skipping")
+            return
+
+        self._configuring_columns = True
+
+        try:
+            header.show()
+            # Configure status column (always column 0)
+            self.setColumnWidth(0, 45)
+            header.setSectionResizeMode(0, header.Fixed)
+
+            # Get visible columns from model (this is the authoritative source)
+            visible_columns = []
+            if hasattr(self.model(), 'get_visible_columns'):
+                visible_columns = self.model().get_visible_columns()
+                logger.debug(f"[ColumnConfig] Got visible columns from model: {visible_columns}")
+            else:
+                # Emergency fallback - load from config
+                from config import FILE_TABLE_COLUMN_CONFIG
+                visible_columns = [key for key, cfg in FILE_TABLE_COLUMN_CONFIG.items()
+                                 if cfg.get("default_visible", False)]
+                logger.warning(f"[ColumnConfig] Model doesn't have get_visible_columns, using fallback: {visible_columns}")
+
+            logger.debug(f"[ColumnConfig] Configuring {len(visible_columns)} visible columns: {visible_columns}")
+            logger.debug(f"[ColumnConfig] Model columnCount: {self.model().columnCount()}")
+
+            # Configure each visible column
+            for column_index, column_key in enumerate(visible_columns):
+                actual_column_index = column_index + 1  # +1 because column 0 is status
+                if actual_column_index < self.model().columnCount():
+                    width = self._load_column_width(column_key)
+                    header.setSectionResizeMode(actual_column_index, header.Interactive)
+                    self.setColumnWidth(actual_column_index, width)
+                    logger.debug(f"[ColumnConfig] Set column {actual_column_index} ({column_key}) to {width}px")
+                else:
+                    logger.error(f"[ColumnConfig] CRITICAL: Column {actual_column_index} ({column_key}) exceeds model columnCount {self.model().columnCount()}")
+                    logger.error(f"[ColumnConfig] This indicates a sync issue between view and model visible columns")
+
+            # Connect header resize signal if not already connected
+            if not hasattr(self, '_header_resize_connected'):
+                header.sectionResized.connect(self._on_column_resized)
+                self._header_resize_connected = True
+
+            logger.debug("[ColumnConfig] Column setup complete")
+        except Exception as e:
+            logger.error(f"[ColumnConfig] Error during column configuration: {e}")
+        finally:
+            self._configuring_columns = False
 
     def _update_header_visibility(self) -> None:
         """Update header visibility based on whether there are files in the model."""
@@ -1882,13 +1927,48 @@ class FileTableView(QTableView):
     def _load_column_visibility_config(self) -> dict:
         """Load column visibility configuration from config.json."""
         try:
+            # Try main config system first
+            main_window = self._get_main_window()
+            if main_window and hasattr(main_window, 'window_config_manager'):
+                config_manager = main_window.window_config_manager.config_manager
+                window_config = config_manager.get_category('window')
+                saved_visibility = window_config.get('file_table_columns', {})
+
+                if saved_visibility:
+                    logger.debug(f"[ColumnVisibility] Loaded from main config: {saved_visibility}")
+                    # Ensure we have all columns from config, not just saved ones
+                    from config import FILE_TABLE_COLUMN_CONFIG
+                    complete_visibility = {}
+                    for key, cfg in FILE_TABLE_COLUMN_CONFIG.items():
+                        # Use saved value if available, otherwise use default
+                        complete_visibility[key] = saved_visibility.get(key, cfg["default_visible"])
+                    logger.debug(f"[ColumnVisibility] Complete visibility state: {complete_visibility}")
+                    return complete_visibility
+
+            # Fallback to old method
             from utils.json_config_manager import load_config
             config = load_config()
-            return config.get("file_table_columns", {})
-        except Exception:
-            # Return default configuration
-            from config import FILE_TABLE_COLUMN_CONFIG
-            return {key: cfg["default_visible"] for key, cfg in FILE_TABLE_COLUMN_CONFIG.items()}
+            saved_visibility = config.get("file_table_columns", {})
+
+            if saved_visibility:
+                logger.debug(f"[ColumnVisibility] Loaded from fallback config: {saved_visibility}")
+                # Ensure we have all columns from config, not just saved ones
+                from config import FILE_TABLE_COLUMN_CONFIG
+                complete_visibility = {}
+                for key, cfg in FILE_TABLE_COLUMN_CONFIG.items():
+                    # Use saved value if available, otherwise use default
+                    complete_visibility[key] = saved_visibility.get(key, cfg["default_visible"])
+                logger.debug(f"[ColumnVisibility] Complete visibility state: {complete_visibility}")
+                return complete_visibility
+
+        except Exception as e:
+            logger.warning(f"[ColumnVisibility] Error loading config: {e}")
+
+        # Return default configuration
+        from config import FILE_TABLE_COLUMN_CONFIG
+        default_visibility = {key: cfg["default_visible"] for key, cfg in FILE_TABLE_COLUMN_CONFIG.items()}
+        logger.debug(f"[ColumnVisibility] Using default config: {default_visibility}")
+        return default_visibility
 
     def _save_column_visibility_config(self) -> None:
         """Save column visibility configuration to main config system."""
@@ -1899,9 +1979,9 @@ class FileTableView(QTableView):
                 config_manager = main_window.window_config_manager.config_manager
                 window_config = config_manager.get_category('window')
 
-                # Get current column visibility
-                current_visibility = self._load_column_visibility_config()
-                window_config.set('file_table_columns', current_visibility)
+                # Save current visibility state
+                window_config.set('file_table_columns', self._visible_columns)
+                logger.debug(f"[ColumnVisibility] Saved to main config: {self._visible_columns}")
 
                 # Save immediately
                 config_manager.save()
@@ -1909,10 +1989,60 @@ class FileTableView(QTableView):
                 # Fallback to old method
                 from utils.json_config_manager import load_config, save_config
                 config = load_config()
-                config["file_table_columns"] = self._load_column_visibility_config()
+                config["file_table_columns"] = self._visible_columns
                 save_config(config)
+                logger.debug(f"[ColumnVisibility] Saved to fallback config: {self._visible_columns}")
         except Exception as e:
             logger.warning(f"Failed to save column visibility config: {e}")
+
+    def _sync_view_model_columns(self) -> None:
+        """Ensure view and model have synchronized column visibility."""
+        model = self.model()
+        if not model or not hasattr(model, 'get_visible_columns'):
+            logger.debug("[ColumnSync] No model or model doesn't support get_visible_columns")
+            return
+
+        try:
+            # Ensure we have complete visibility state
+            if not hasattr(self, '_visible_columns') or not self._visible_columns:
+                logger.warning("[ColumnSync] _visible_columns not initialized, reloading")
+                self._visible_columns = self._load_column_visibility_config()
+
+            # Get current state from both view and model
+            view_visible = [key for key, visible in self._visible_columns.items() if visible]
+            model_visible = model.get_visible_columns()
+
+            logger.debug(f"[ColumnSync] View visible: {view_visible}")
+            logger.debug(f"[ColumnSync] Model visible: {model_visible}")
+
+            # Sort both lists to ensure consistent comparison
+            view_visible_sorted = sorted(view_visible)
+            model_visible_sorted = sorted(model_visible)
+
+            # If they don't match, update model to match view (view is authoritative)
+            if view_visible_sorted != model_visible_sorted:
+                logger.warning(f"[ColumnSync] Columns out of sync! Updating model to match view")
+                logger.debug(f"[ColumnSync] View wants: {view_visible_sorted}")
+                logger.debug(f"[ColumnSync] Model has: {model_visible_sorted}")
+
+                if hasattr(model, 'update_visible_columns'):
+                    model.update_visible_columns(view_visible)
+
+                    # Verify the update worked
+                    updated_model_visible = model.get_visible_columns()
+                    logger.debug(f"[ColumnSync] Model updated to: {sorted(updated_model_visible)}")
+
+                    if sorted(updated_model_visible) != view_visible_sorted:
+                        logger.error(f"[ColumnSync] CRITICAL: Model update failed!")
+                        logger.error(f"[ColumnSync] Expected: {view_visible_sorted}")
+                        logger.error(f"[ColumnSync] Got: {sorted(updated_model_visible)}")
+                else:
+                    logger.error("[ColumnSync] Model doesn't support update_visible_columns")
+            else:
+                logger.debug("[ColumnSync] View and model are already synchronized")
+
+        except Exception as e:
+            logger.error(f"[ColumnSync] Error syncing columns: {e}", exc_info=True)
 
     def _toggle_column_visibility(self, column_key: str) -> None:
         """Toggle visibility of a specific column and refresh the table."""
@@ -1927,17 +2057,126 @@ class FileTableView(QTableView):
             logger.warning(f"Cannot toggle non-removable column: {column_key}")
             return  # Can't toggle non-removable columns
 
+        # Ensure we have complete visibility state
+        if not hasattr(self, '_visible_columns') or not self._visible_columns:
+            logger.warning("[ColumnToggle] _visible_columns not initialized, reloading config")
+            self._visible_columns = self._load_column_visibility_config()
+
         # Toggle visibility
         current_visibility = self._visible_columns.get(column_key, column_config["default_visible"])
-        self._visible_columns[column_key] = not current_visibility
+        new_visibility = not current_visibility
+        self._visible_columns[column_key] = new_visibility
 
-        # Save configuration
+        logger.info(f"Toggled column '{column_key}' visibility to {new_visibility}")
+        logger.debug(f"[ColumnToggle] Current visibility state: {self._visible_columns}")
+
+        # Verify we have all columns in visibility state
+        for key, cfg in FILE_TABLE_COLUMN_CONFIG.items():
+            if key not in self._visible_columns:
+                self._visible_columns[key] = cfg["default_visible"]
+                logger.debug(f"[ColumnToggle] Added missing column '{key}' with default visibility {cfg['default_visible']}")
+
+        # Save configuration immediately
         self._save_column_visibility_config()
+
+        # Ensure view and model are synchronized before updating
+        self._sync_view_model_columns()
 
         # Update table display with gentle refresh (preserves selection)
         self._update_table_columns()
 
-        logger.info(f"Toggled column '{column_key}' visibility to {not current_visibility}")
+        logger.info(f"Column '{column_key}' visibility toggle completed")
+
+        # Debug: Show current visible columns
+        visible_cols = [key for key, visible in self._visible_columns.items() if visible]
+        logger.debug(f"[ColumnToggle] Currently visible columns: {visible_cols}")
+
+    def add_column(self, column_key: str) -> None:
+        """Add a column to the table (make it visible)."""
+        from config import FILE_TABLE_COLUMN_CONFIG
+
+        if column_key not in FILE_TABLE_COLUMN_CONFIG:
+            logger.warning(f"Cannot add unknown column: {column_key}")
+            return
+
+        # Ensure we have complete visibility state
+        if not hasattr(self, '_visible_columns') or not self._visible_columns:
+            self._visible_columns = self._load_column_visibility_config()
+
+        # Make column visible
+        if not self._visible_columns.get(column_key, False):
+            self._visible_columns[column_key] = True
+            logger.info(f"Added column '{column_key}' to table")
+
+            # Save and update
+            self._save_column_visibility_config()
+            self._sync_view_model_columns()
+            self._update_table_columns()
+
+            # Debug
+            visible_cols = [key for key, visible in self._visible_columns.items() if visible]
+            logger.debug(f"[AddColumn] Currently visible columns: {visible_cols}")
+        else:
+            logger.debug(f"Column '{column_key}' is already visible")
+
+    def remove_column(self, column_key: str) -> None:
+        """Remove a column from the table (make it invisible)."""
+        from config import FILE_TABLE_COLUMN_CONFIG
+
+        if column_key not in FILE_TABLE_COLUMN_CONFIG:
+            logger.warning(f"Cannot remove unknown column: {column_key}")
+            return
+
+        column_config = FILE_TABLE_COLUMN_CONFIG[column_key]
+        if not column_config.get("removable", True):
+            logger.warning(f"Cannot remove non-removable column: {column_key}")
+            return
+
+        # Ensure we have complete visibility state
+        if not hasattr(self, '_visible_columns') or not self._visible_columns:
+            self._visible_columns = self._load_column_visibility_config()
+
+        # Make column invisible
+        if self._visible_columns.get(column_key, False):
+            self._visible_columns[column_key] = False
+            logger.info(f"Removed column '{column_key}' from table")
+
+            # Save and update
+            self._save_column_visibility_config()
+            self._sync_view_model_columns()
+            self._update_table_columns()
+
+            # Debug
+            visible_cols = [key for key, visible in self._visible_columns.items() if visible]
+            logger.debug(f"[RemoveColumn] Currently visible columns: {visible_cols}")
+        else:
+            logger.debug(f"Column '{column_key}' is already invisible")
+
+    def get_visible_columns_list(self) -> list:
+        """Get list of currently visible column keys."""
+        if not hasattr(self, '_visible_columns') or not self._visible_columns:
+            self._visible_columns = self._load_column_visibility_config()
+        return [key for key, visible in self._visible_columns.items() if visible]
+
+    def debug_column_state(self) -> None:
+        """Debug method to print current column state."""
+        logger.debug(f"[ColumnDebug] === FileTableView Column State ===")
+        logger.debug(f"[ColumnDebug] _visible_columns: {self._visible_columns}")
+        visible_cols = self.get_visible_columns_list()
+        logger.debug(f"[ColumnDebug] Visible columns list: {visible_cols}")
+
+        model = self.model()
+        if model and hasattr(model, 'get_visible_columns'):
+            model_visible = model.get_visible_columns()
+            logger.debug(f"[ColumnDebug] Model visible columns: {model_visible}")
+            logger.debug(f"[ColumnDebug] Model column count: {model.columnCount()}")
+
+            if hasattr(model, 'debug_column_state'):
+                model.debug_column_state()
+        else:
+            logger.debug(f"[ColumnDebug] No model or model doesn't support get_visible_columns")
+
+        logger.debug(f"[ColumnDebug] =========================================")
 
     def _update_table_columns(self) -> None:
         """Update table columns based on visibility configuration while preserving selection."""
@@ -1947,14 +2186,34 @@ class FileTableView(QTableView):
             return
 
         try:
+            # Debug state before update
+            logger.debug("[ColumnUpdate] STATE BEFORE UPDATE:")
+            self.debug_column_state()
+
             # Store current selection before any changes
             selected_rows = self._get_current_selection()
+            logger.debug(f"[ColumnUpdate] Stored selection: {len(selected_rows)} rows")
 
             # Update the model with new visible columns
             if hasattr(model, 'update_visible_columns'):
-                model.update_visible_columns(self._visible_columns)
+                # Convert visibility dict to list of visible column keys
+                visible_columns_list = [key for key, visible in self._visible_columns.items() if visible]
+                logger.debug(f"[ColumnUpdate] Updating model with visible columns: {visible_columns_list}")
 
-                # Reconfigure columns with new layout - this will set proper widths and scrollbar policy
+                # CRITICAL: Update model first, then configure view
+                model.update_visible_columns(visible_columns_list)
+
+                # Verify model was updated correctly
+                if hasattr(model, 'get_visible_columns'):
+                    model_visible = model.get_visible_columns()
+                    logger.debug(f"[ColumnUpdate] Model now reports visible columns: {model_visible}")
+
+                    # Verify sync between view and model
+                    if model_visible != visible_columns_list:
+                        logger.error(f"[ColumnUpdate] SYNC ERROR: View wants {visible_columns_list}, model has {model_visible}")
+
+                # Now reconfigure columns with new layout
+                logger.debug("[ColumnUpdate] Reconfiguring columns...")
                 self._configure_columns()
 
                 # Force gentle refresh of the view
@@ -1963,6 +2222,7 @@ class FileTableView(QTableView):
 
                 # Restore selection immediately if it existed
                 if selected_rows:
+                    logger.debug(f"[ColumnUpdate] Restoring selection: {len(selected_rows)} rows")
                     # Use the existing sync method which is designed for this
                     self._sync_qt_selection_model(selected_rows)
 
@@ -1973,17 +2233,22 @@ class FileTableView(QTableView):
                         metadata_tree.update_from_parent_selection()
                     else:
                         # Fallback to signal emission if direct method unavailable
+                        from core.pyqt_imports import QTimer
                         QTimer.singleShot(50, lambda: self.selection_changed.emit(list(selected_rows)))
 
                 # Count visible columns for logging
                 visible_count = sum(1 for visible in self._visible_columns.values() if visible)
                 logger.info(f"Table columns updated - {visible_count} columns visible, selection restored: {len(selected_rows)} rows")
 
+                # Debug state after update
+                logger.debug("[ColumnUpdate] STATE AFTER UPDATE:")
+                self.debug_column_state()
+
             else:
-                logger.warning("Model does not support dynamic columns")
+                logger.error("Model does not support dynamic columns - this is a critical error")
 
         except Exception as e:
-            logger.error(f"Error updating table columns: {e}")
+            logger.error(f"Error updating table columns: {e}", exc_info=True)
 
         # No longer need to trigger column adjustment - columns maintain fixed widths
 

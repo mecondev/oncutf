@@ -267,7 +267,6 @@ class UIManager:
         self.parent_window.file_table_view.verticalHeader().setVisible(False)
         self.parent_window.file_table_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.parent_window.file_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.parent_window.file_model = FileTableModel(parent_window=self.parent_window)
         self.parent_window.file_table_view.setModel(self.parent_window.file_model)
 
         # Header setup
