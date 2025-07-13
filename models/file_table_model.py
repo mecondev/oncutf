@@ -101,18 +101,43 @@ class FileTableModel(QAbstractTableModel):
             logger.debug("[FileTableModel] STATE BEFORE UPDATE:")
             self.debug_column_state()
 
-            # Always use reset model for column changes to avoid issues
-            self.beginResetModel()
+            # Find which columns are being added or removed
+            old_columns = set(self._visible_columns)
+            new_columns = set(visible_columns)
 
-            # Update the visible columns and mapping
-            self._visible_columns = visible_columns.copy()
-            self._column_mapping = self._create_column_mapping()
+            added_columns = new_columns - old_columns
+            removed_columns = old_columns - new_columns
+
+            logger.debug(f"[FileTableModel] Added columns: {added_columns}")
+            logger.debug(f"[FileTableModel] Removed columns: {removed_columns}")
+
+            # Handle column changes more efficiently
+            if len(added_columns) == 0 and len(removed_columns) == 0:
+                # Only reordering - use reset for simplicity
+                logger.debug("[FileTableModel] Only reordering columns - using reset")
+                self.beginResetModel()
+                self._visible_columns = visible_columns.copy()
+                self._column_mapping = self._create_column_mapping()
+                self.endResetModel()
+            elif len(added_columns) > 0 and len(removed_columns) == 0:
+                # Only adding columns
+                logger.debug("[FileTableModel] Only adding columns - using insertColumns")
+                self._handle_column_addition(visible_columns, added_columns)
+            elif len(added_columns) == 0 and len(removed_columns) > 0:
+                # Only removing columns
+                logger.debug("[FileTableModel] Only removing columns - using removeColumns")
+                self._handle_column_removal(visible_columns, removed_columns)
+            else:
+                # Complex changes (both add and remove) - use reset for reliability
+                logger.debug("[FileTableModel] Complex column changes - using reset")
+                self.beginResetModel()
+                self._visible_columns = visible_columns.copy()
+                self._column_mapping = self._create_column_mapping()
+                self.endResetModel()
 
             # Debug state after changes
             logger.debug("[FileTableModel] STATE AFTER UPDATE:")
             self.debug_column_state()
-
-            self.endResetModel()
 
             # Ενημέρωση του view για αλλαγή στηλών
             if hasattr(self, '_table_view_ref') and self._table_view_ref:
@@ -125,6 +150,87 @@ class FileTableModel(QAbstractTableModel):
                     self._table_view_ref._update_scrollbar_visibility()
         else:
             logger.debug("[FileTableModel] No column changes needed - visible columns are the same")
+
+    def _handle_column_addition(self, new_visible_columns: list, added_columns: set) -> None:
+        """Handle adding new columns efficiently."""
+        logger.debug(f"[FileTableModel] Adding columns: {added_columns}")
+
+        # For simplicity, handle multiple additions by doing them one at a time
+        # We'll sort them by their position in the new list to maintain order
+        columns_to_add = []
+        for col in added_columns:
+            if col in new_visible_columns:
+                new_index = new_visible_columns.index(col)
+                columns_to_add.append((new_index, col))
+
+        # Sort by position to add them in the correct order
+        columns_to_add.sort(key=lambda x: x[0])
+
+        # Add columns one by one
+        for new_index, col_name in columns_to_add:
+            # Update the internal state to reflect this specific addition
+            if col_name not in self._visible_columns:
+                # Find the correct insertion position in current state
+                insert_pos = 0
+                for i, existing_col in enumerate(new_visible_columns):
+                    if existing_col == col_name:
+                        insert_pos = i
+                        break
+                    elif existing_col in self._visible_columns:
+                        insert_pos = i + 1
+
+                # Convert to actual column index (+1 for status column)
+                insert_position = insert_pos + 1
+
+                logger.debug(f"[FileTableModel] Inserting column '{col_name}' at position {insert_position}")
+
+                # Signal that we're inserting a column
+                self.beginInsertColumns(QModelIndex(), insert_position, insert_position)
+
+                # Update internal state
+                self._visible_columns.insert(insert_pos, col_name)
+                self._column_mapping = self._create_column_mapping()
+
+                self.endInsertColumns()
+
+        # Final update to ensure we have the exact order requested
+        self._visible_columns = new_visible_columns.copy()
+        self._column_mapping = self._create_column_mapping()
+
+    def _handle_column_removal(self, new_visible_columns: list, removed_columns: set) -> None:
+        """Handle removing columns efficiently."""
+        logger.debug(f"[FileTableModel] Removing columns: {removed_columns}")
+
+        # For simplicity, handle multiple removals by doing them one at a time
+        # We'll sort them by their current position (in reverse order to avoid index shifts)
+        columns_to_remove = []
+        for col in removed_columns:
+            if col in self._visible_columns:
+                old_index = self._visible_columns.index(col)
+                columns_to_remove.append((old_index, col))
+
+        # Sort by position in reverse order to avoid index confusion
+        columns_to_remove.sort(key=lambda x: x[0], reverse=True)
+
+        # Remove columns one by one (from right to left)
+        for old_index, col_name in columns_to_remove:
+            # Convert to actual column index (+1 for status column)
+            remove_position = old_index + 1
+
+            logger.debug(f"[FileTableModel] Removing column '{col_name}' from position {remove_position}")
+
+            # Signal that we're removing a column
+            self.beginRemoveColumns(QModelIndex(), remove_position, remove_position)
+
+            # Update internal state
+            self._visible_columns.remove(col_name)
+            self._column_mapping = self._create_column_mapping()
+
+            self.endRemoveColumns()
+
+        # Final update to ensure we have the exact order requested
+        self._visible_columns = new_visible_columns.copy()
+        self._column_mapping = self._create_column_mapping()
 
     def get_visible_columns(self) -> list:
         return self._visible_columns.copy()
