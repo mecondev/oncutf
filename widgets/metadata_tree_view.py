@@ -1511,25 +1511,35 @@ class MetadataTreeView(QTreeView):
         if not parent_window:
             return []
 
-        # Get the current selected file
-        selection = parent_window.file_table_view.selectionModel()
-        if not selection or not selection.hasSelection():
-            return []
-
-        selected_rows = selection.selectedRows()
-        if not selected_rows:
-            return []
-
-        # Get the file model
-        file_model = parent_window.file_model
-        if not file_model:
-            return []
-
+        # Try multiple methods to get selection
         selected_files = []
-        for index in selected_rows:
-            row = index.row()
-            if 0 <= row < len(file_model.files):
-                selected_files.append(file_model.files[row])
+
+        # Method 1: Use selection model directly
+        try:
+            selection = parent_window.file_table_view.selectionModel()
+            if selection and selection.hasSelection():
+                selected_rows = selection.selectedRows()
+                if selected_rows and hasattr(parent_window, 'file_model'):
+                    file_model = parent_window.file_model
+                    for index in selected_rows:
+                        row = index.row()
+                        if 0 <= row < len(file_model.files):
+                            selected_files.append(file_model.files[row])
+        except Exception as e:
+            logger.debug(f"[MetadataTree] Method 1 failed: {e}", extra={"dev_only": True})
+
+        # Method 2: Use file table view's internal selection method
+        if not selected_files:
+            try:
+                if hasattr(parent_window.file_table_view, '_get_current_selection'):
+                    selected_rows = parent_window.file_table_view._get_current_selection()
+                    if selected_rows and hasattr(parent_window, 'file_model'):
+                        file_model = parent_window.file_model
+                        for row in selected_rows:
+                            if 0 <= row < len(file_model.files):
+                                selected_files.append(file_model.files[row])
+            except Exception as e:
+                logger.debug(f"[MetadataTree] Method 2 failed: {e}", extra={"dev_only": True})
 
         return selected_files
 
@@ -2310,8 +2320,19 @@ class MetadataTreeView(QTreeView):
             # Get current selection from parent
             selection = self._get_current_selection()
             if not selection:
-                self.show_empty_state("No file selected")
-                return
+                # Try alternative method to get selection if first method failed
+                parent_window = self._get_parent_with_file_table()
+                if parent_window and hasattr(parent_window, 'file_table_view'):
+                    file_table_view = parent_window.file_table_view
+                    if hasattr(file_table_view, '_get_current_selection'):
+                        selected_rows = file_table_view._get_current_selection()
+                        if selected_rows and hasattr(parent_window, 'file_model'):
+                            file_model = parent_window.file_model
+                            selection = [file_model.files[row] for row in selected_rows if 0 <= row < len(file_model.files)]
+
+                if not selection:
+                    self.show_empty_state("No file selected")
+                    return
 
             # Handle single file selection
             if len(selection) == 1:

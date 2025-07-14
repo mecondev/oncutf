@@ -301,9 +301,9 @@ class FileTableModel(QAbstractTableModel):
                 field_count = len(entry.data)
                 # Check the is_extended property of the MetadataEntry object
                 if hasattr(entry, 'is_extended') and entry.is_extended:
-                    tooltip_parts.append(f"{field_count} extended metadata loaded")
+                    tooltip_parts.append(f"{field_count} extended metadata")
                 else:
-                    tooltip_parts.append(f"{field_count} metadata loaded")
+                    tooltip_parts.append(f"{field_count} metadata")
             else:
                 tooltip_parts.append("no metadata")
 
@@ -311,11 +311,12 @@ class FileTableModel(QAbstractTableModel):
         if self._has_hash_cached(file.full_path):
             hash_value = self._get_hash_value(file.full_path)
             if hash_value:
-                tooltip_parts.append(f"Hash: {hash_value}")
+                # Show full hash value
+                tooltip_parts.append(f"hash {hash_value}")
             else:
-                tooltip_parts.append("Hash available")
+                tooltip_parts.append("hash available")
         else:
-            tooltip_parts.append("No hash")
+            tooltip_parts.append("no hash")
 
         return "\n".join(tooltip_parts)
 
@@ -454,7 +455,8 @@ class FileTableModel(QAbstractTableModel):
             return QVariant()
         file = self.files[index.row()]
         if role == Qt.ToolTipRole:
-            pass
+            # Return unified tooltip for all columns
+            return self._get_unified_tooltip(file)
         result = self._get_column_data(file, col_key, role)
         return result
 

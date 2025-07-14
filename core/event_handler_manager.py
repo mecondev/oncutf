@@ -162,15 +162,17 @@ class EventHandlerManager:
             }
         """)
 
-        # Smart Metadata actions
+        # Smart Metadata actions - only analyze selected files for speed
         selected_analysis = self._analyze_metadata_state(selected_files)
-        all_files_analysis = self._analyze_metadata_state(self.parent_window.file_model.files)
+
+        # Use simple analysis for all files to avoid performance issues
+        all_files_analysis = self._get_simple_metadata_analysis()
 
         # Create actions with smart labels and tooltips
         action_load_sel = create_action_with_shortcut(get_menu_icon("file"), f"{selected_analysis['fast_label']} for selected file(s)", "Ctrl+M")
-        action_load_all = create_action_with_shortcut(get_menu_icon("folder"), f"{all_files_analysis['fast_label']} for all files", "Shift+Ctrl+M")
+        action_load_all = create_action_with_shortcut(get_menu_icon("folder"), "Load Fast Metadata for all files", "Shift+Ctrl+M")
         action_load_ext_sel = create_action_with_shortcut(get_menu_icon("file-plus"), f"{selected_analysis['extended_label']} for selected file(s)", "Ctrl+E")
-        action_load_ext_all = create_action_with_shortcut(get_menu_icon("folder-plus"), f"{all_files_analysis['extended_label']} for all files", "Shift+Ctrl+E")
+        action_load_ext_all = create_action_with_shortcut(get_menu_icon("folder-plus"), "Load Extended Metadata for all files", "Shift+Ctrl+E")
 
         menu.addAction(action_load_sel)
         menu.addAction(action_load_all)
@@ -180,14 +182,14 @@ class EventHandlerManager:
         # Smart enable/disable logic based on analysis
         action_load_sel.setEnabled(has_selection and selected_analysis['enable_fast_selected'])
         action_load_ext_sel.setEnabled(has_selection and selected_analysis['enable_extended_selected'])
-        action_load_all.setEnabled(total_files > 0 and all_files_analysis['enable_fast_selected'])
-        action_load_ext_all.setEnabled(total_files > 0 and all_files_analysis['enable_extended_selected'])
+        action_load_all.setEnabled(total_files > 0)
+        action_load_ext_all.setEnabled(total_files > 0)
 
         # Set smart tooltips
         action_load_sel.setToolTip(selected_analysis['fast_tooltip'])
         action_load_ext_sel.setToolTip(selected_analysis['extended_tooltip'])
-        action_load_all.setToolTip(all_files_analysis['fast_tooltip'])
-        action_load_ext_all.setToolTip(all_files_analysis['extended_tooltip'])
+        action_load_all.setToolTip(f"Load fast metadata for {total_files} file(s)")
+        action_load_ext_all.setToolTip(f"Load extended metadata for {total_files} file(s)")
 
         menu.addSeparator()
 
@@ -215,24 +217,26 @@ class EventHandlerManager:
         action_calculate_hashes = create_action_with_shortcut(get_menu_icon("hash"), "Calculate checksums for selected", "Ctrl+H")
         action_calculate_hashes_all = create_action_with_shortcut(get_menu_icon("hash"), "Calculate checksums for all files", "Shift+Ctrl+H")
 
-        # Smart hash state analysis
+        # Smart hash state analysis - only analyze selected files for speed
         selected_hash_analysis = self._analyze_hash_state(selected_files)
-        all_files_hash_analysis = self._analyze_hash_state(self.parent_window.file_model.files)
+
+        # Use simple analysis for all files to avoid performance issues
+        all_files_hash_analysis = self._get_simple_hash_analysis()
 
         # Update hash actions with smart logic
         action_calculate_hashes.setText(selected_hash_analysis['selected_label'] + "\tCtrl+H")
-        action_calculate_hashes_all.setText(all_files_hash_analysis['selected_label'].replace("selected", "all files") + "\tShift+Ctrl+H")
+        action_calculate_hashes_all.setText("Calculate checksums for all files\tShift+Ctrl+H")
 
         menu.addAction(action_calculate_hashes)
         menu.addAction(action_calculate_hashes_all)
 
         # Smart enable/disable for hash actions
         action_calculate_hashes.setEnabled(has_selection and selected_hash_analysis['enable_selected'])
-        action_calculate_hashes_all.setEnabled(total_files > 0 and all_files_hash_analysis['enable_selected'])
+        action_calculate_hashes_all.setEnabled(total_files > 0)
 
         # Set smart tooltips for hash actions
         action_calculate_hashes.setToolTip(selected_hash_analysis['selected_tooltip'])
-        action_calculate_hashes_all.setToolTip(all_files_hash_analysis['selected_tooltip'].replace("selected", "all files"))
+        action_calculate_hashes_all.setToolTip(f"Calculate checksums for {total_files} file(s)")
 
         menu.addSeparator()
 
@@ -253,25 +257,12 @@ class EventHandlerManager:
 
         menu.addSeparator()
 
-        # Bulk rotation action
+        # Bulk rotation action - simplified for performance
         action_bulk_rotation = create_action_with_shortcut(get_menu_icon("rotate-ccw"), "Set All Files to 0° Rotation...", None)
         menu.addAction(action_bulk_rotation)
         action_bulk_rotation.setEnabled(len(selected_files) > 0)
         if len(selected_files) > 0:
-            # Count how many files actually need rotation changes
-            files_needing_rotation = 0
-            for file_item in selected_files:
-                current_rotation = self._get_current_rotation_for_file(file_item)
-                if current_rotation != "0":
-                    files_needing_rotation += 1
-
-            if files_needing_rotation == 0:
-                action_bulk_rotation.setToolTip("All selected files already have 0° rotation")
-                action_bulk_rotation.setEnabled(False)
-            elif files_needing_rotation == len(selected_files):
-                action_bulk_rotation.setToolTip(f"Reset rotation to 0° for {files_needing_rotation} selected file(s)")
-            else:
-                action_bulk_rotation.setToolTip(f"Reset rotation to 0° for {files_needing_rotation} of {len(selected_files)} selected file(s)")
+            action_bulk_rotation.setToolTip(f"Reset rotation to 0° for {len(selected_files)} selected file(s)")
         else:
             action_bulk_rotation.setToolTip("Select files first to reset their rotation")
 
@@ -324,7 +315,7 @@ class EventHandlerManager:
         action_find_duplicates_all.setEnabled(total_files >= 2)
         action_compare_external.setEnabled(has_selection)  # Need selection to compare
         action_calculate_hashes.setEnabled(has_selection and selected_hash_analysis['enable_selected'])
-        action_calculate_hashes_all.setEnabled(total_files > 0 and all_files_hash_analysis['enable_selected'])
+        action_calculate_hashes_all.setEnabled(total_files > 0)
 
         # Update hash tooltip
         if has_selection:
@@ -333,7 +324,7 @@ class EventHandlerManager:
             action_calculate_hashes.setToolTip("Select files first to calculate their checksums")
 
         if total_files > 0:
-            action_calculate_hashes_all.setToolTip(all_files_hash_analysis['selected_tooltip'].replace("selected", "all files"))
+            action_calculate_hashes_all.setToolTip(f"Calculate checksums for {total_files} file(s)")
         else:
             action_calculate_hashes_all.setToolTip("No files available to calculate checksums")
 
@@ -2088,4 +2079,23 @@ class EventHandlerManager:
                 'with_hash': with_hash_count,
                 'without_hash': without_hash_count
             }
+        }
+
+    def _get_simple_metadata_analysis(self) -> dict:
+        """Get simple metadata analysis for all files without detailed scanning."""
+        return {
+            'enable_fast_selected': True,
+            'enable_extended_selected': True,
+            'fast_label': 'Load Fast Metadata',
+            'extended_label': 'Load Extended Metadata',
+            'fast_tooltip': 'Load fast metadata for all files',
+            'extended_tooltip': 'Load extended metadata for all files'
+        }
+
+    def _get_simple_hash_analysis(self) -> dict:
+        """Get simple hash analysis for all files without detailed scanning."""
+        return {
+            'enable_selected': True,
+            'selected_label': 'Calculate checksums for all files',
+            'selected_tooltip': 'Calculate checksums for all files'
         }

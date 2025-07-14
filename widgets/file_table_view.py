@@ -176,6 +176,11 @@ class FileTableView(QTableView):
         # Selection store integration (with fallback to legacy selection handling)
         self._legacy_selection_mode = True  # Start in legacy mode for compatibility
 
+        # Ensure header visibility is set correctly from the start
+        # This will be called again after model is set, but ensures initial state
+        from utils.timer_manager import schedule_ui_update
+        schedule_ui_update(self._update_header_visibility, delay=100)
+
     def showEvent(self, event) -> None:
         """Handle show events and update scrollbar visibility."""
         super().showEvent(event)
@@ -185,6 +190,9 @@ class FileTableView(QTableView):
 
         # Ensure proper text display
         self._ensure_no_word_wrap()
+
+        # Update header visibility when widget becomes visible
+        self._update_header_visibility()
 
     def paintEvent(self, event):
         # Remove this debug log as it's too verbose
@@ -222,14 +230,17 @@ class FileTableView(QTableView):
         """Ensure Qt selection model matches our internal selection state."""
         selection_model = self.selectionModel()
         if not selection_model or not self.model():
+            logger.debug("[SyncQt] No selection model or model available", extra={"dev_only": True})
             return
 
         # Prevent recursive calls during Qt model synchronization
         if hasattr(self, "_syncing_qt_model") and self._syncing_qt_model:
+            logger.debug("[SyncQt] Already syncing, skipping", extra={"dev_only": True})
             return
 
         # Get current Qt selection
         current_qt_selection = set(index.row() for index in selection_model.selectedRows())
+        logger.debug(f"[SyncQt] Current Qt selection: {current_qt_selection}, Target: {selected_rows}", extra={"dev_only": True})
 
         # Only update if there's a significant difference (avoid unnecessary updates)
         if current_qt_selection != selected_rows:
@@ -244,6 +255,7 @@ class FileTableView(QTableView):
                     from core.pyqt_imports import QItemSelection
 
                     full_selection = QItemSelection()
+                    valid_rows = 0
 
                     for row in selected_rows:
                         if 0 <= row < self.model().rowCount():  # type: ignore
@@ -252,13 +264,24 @@ class FileTableView(QTableView):
                             if left_index.isValid() and right_index.isValid():
                                 row_selection = QItemSelection(left_index, right_index)
                                 full_selection.merge(row_selection, selection_model.Select)  # type: ignore
+                                valid_rows += 1
+                            else:
+                                logger.debug(f"[SyncQt] Invalid indices for row {row}", extra={"dev_only": True})
+                        else:
+                            logger.debug(f"[SyncQt] Row {row} out of range (model has {self.model().rowCount()} rows)", extra={"dev_only": True})
+
+                    logger.debug(f"[SyncQt] Built selection with {valid_rows} valid rows", extra={"dev_only": True})
 
                     if not full_selection.isEmpty():
                         # Use ClearAndSelect in one atomic operation to avoid intermediate empty selection
                         selection_model.select(full_selection, selection_model.ClearAndSelect)  # type: ignore
+                        logger.debug(f"[SyncQt] Applied selection with {valid_rows} rows", extra={"dev_only": True})
+                    else:
+                        logger.warning("[SyncQt] No valid selection could be built")
                 else:
                     # Only clear if we actually need an empty selection
                     selection_model.clearSelection()
+                    logger.debug("[SyncQt] Cleared selection", extra={"dev_only": True})
 
                 # Force visual update
                 self.viewport().update()  # type: ignore
@@ -267,6 +290,8 @@ class FileTableView(QTableView):
                 self.blockSignals(False)
                 # Clear the flag
                 self._syncing_qt_model = False
+        else:
+            logger.debug("[SyncQt] Selection already matches, no update needed", extra={"dev_only": True})
 
     def _get_current_selection(self) -> set:
         """Get current selection from SelectionStore or fallback to Qt model."""
@@ -389,7 +414,7 @@ class FileTableView(QTableView):
                 from utils.timer_manager import schedule_ui_update
                 schedule_ui_update(self._configure_columns, delay=50)
         self.update_placeholder_visibility()
-        self._update_header_visibility()
+        # Δεν καλούμε _update_header_visibility() εδώ γιατί θα κληθεί από _configure_columns_delayed()
 
     # =====================================
     # Table Preparation & Management
@@ -505,6 +530,9 @@ class FileTableView(QTableView):
             # Force a viewport update to ensure visual refresh
             self.viewport().update()
             self.updateGeometry()
+
+            # Update header visibility after column configuration is complete
+            self._update_header_visibility()
 
             logger.debug("[ColumnConfig] Column setup complete", extra={"dev_only": True})
         except Exception as e:
@@ -752,6 +780,9 @@ class FileTableView(QTableView):
             self.model().layoutChanged.emit()
         self.viewport().update()
 
+        # Update header visibility after column resize
+        self._update_header_visibility()
+
         logger.debug(f"Column '{column_key}' resized from {old_size}px to {new_size}px")
 
     def _force_scrollbar_update(self) -> None:
@@ -792,6 +823,9 @@ class FileTableView(QTableView):
         # Schedule a delayed update to ensure everything is properly refreshed
         schedule_ui_update(lambda: self._delayed_refresh(), delay=100)
 
+        # Update header visibility after scrollbar update
+        self._update_header_visibility()
+
     def _delayed_refresh(self) -> None:
         """Delayed refresh to ensure proper scrollbar and content updates."""
         self._update_scrollbar_visibility()
@@ -827,6 +861,9 @@ class FileTableView(QTableView):
             if top_left.isValid() and bottom_right.isValid():
                 self.dataChanged(top_left, bottom_right)
 
+        # Update header visibility after delayed refresh
+        self._update_header_visibility()
+
     def _on_column_moved(self, logical_index: int, old_visual_index: int, new_visual_index: int) -> None:
         """Handle column reordering and save order to config."""
         if logical_index == 0:  # Don't allow moving status column
@@ -844,6 +881,9 @@ class FileTableView(QTableView):
             logger.debug(f"Column moved from position {old_visual_index} to {new_visual_index}")
         except Exception as e:
             logger.warning(f"Failed to save column order: {e}")
+
+        # Update header visibility after column move
+        self._update_header_visibility()
 
     def _get_column_key_from_index(self, logical_index: int) -> str:
         """Get column key from logical index."""
@@ -917,11 +957,15 @@ class FileTableView(QTableView):
                 self.placeholder_helper.show()
             else:
                 self.placeholder_helper.hide()
+        # Update header visibility when placeholder state changes
+        self._update_header_visibility()
 
     def update_placeholder_visibility(self):
         """Update placeholder visibility based on table content."""
         is_empty = self.is_empty() if hasattr(self, 'is_empty') else False
         self.set_placeholder_visible(is_empty)
+        # Update header visibility when placeholder visibility changes
+        self._update_header_visibility()
 
     def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
         """Handle selection logic with anchor and modifier support."""
@@ -1691,6 +1735,15 @@ class FileTableView(QTableView):
                 )
                 return
 
+            # PROTECTION: Ignore empty selections that come during column updates
+            # This prevents Qt's automatic clearSelection() from clearing our metadata display
+            if not selected_rows and hasattr(self, "_syncing_qt_model") and self._syncing_qt_model:
+                logger.debug(
+                    "[FileTableView] Ignoring empty selection during Qt model sync",
+                    extra={"dev_only": True},
+                )
+                return
+
             self._update_selection_store(selected_rows, emit_signal=True)
 
         if self.context_focused_row is not None:
@@ -2202,63 +2255,66 @@ class FileTableView(QTableView):
             logger.debug("[ColumnUpdate] STATE BEFORE UPDATE:")
             self.debug_column_state()
 
-            # Store current selection before any changes
+            # Store current selection as file paths before any changes
             selected_rows = self._get_current_selection()
-            logger.debug(f"[ColumnUpdate] Stored selection: {len(selected_rows)} rows")
+            selected_file_paths = []
+            if selected_rows and hasattr(model, 'files'):
+                for row in selected_rows:
+                    if 0 <= row < len(model.files):
+                        selected_file_paths.append(getattr(model.files[row], 'full_path', None))
+            logger.debug(f"[ColumnUpdate] Stored selection file paths: {selected_file_paths}")
 
             # Update the model with new visible columns
             if hasattr(model, 'update_visible_columns'):
-                # Convert visibility dict to list of visible column keys
                 visible_columns_list = [key for key, visible in self._visible_columns.items() if visible]
                 logger.debug(f"[ColumnUpdate] Updating model with visible columns: {visible_columns_list}")
-
-                # CRITICAL: Update model first, then configure view
                 model.update_visible_columns(visible_columns_list)
 
                 # Verify model was updated correctly
                 if hasattr(model, 'get_visible_columns'):
                     model_visible = model.get_visible_columns()
                     logger.debug(f"[ColumnUpdate] Model now reports visible columns: {model_visible}")
-
-                    # Verify sync between view and model
                     if model_visible != visible_columns_list:
                         logger.error(f"[ColumnUpdate] SYNC ERROR: View wants {visible_columns_list}, model has {model_visible}")
 
-                # Now reconfigure columns with new layout
                 logger.debug("[ColumnUpdate] Reconfiguring columns...")
                 self._configure_columns()
-
-                # Force gentle refresh of the view
                 self.updateGeometry()
                 self.viewport().update()
 
-                # Restore selection immediately if it existed
-                if selected_rows:
-                    logger.debug(f"[ColumnUpdate] Restoring selection: {len(selected_rows)} rows")
-                    # Use the existing sync method which is designed for this
-                    self._sync_qt_selection_model(selected_rows)
+                # Restore selection by matching file paths
+                restored_rows = set()
+                if selected_file_paths and hasattr(model, 'files'):
+                    for i, file_item in enumerate(model.files):
+                        if getattr(file_item, 'full_path', None) in selected_file_paths:
+                            restored_rows.add(i)
+                logger.debug(f"[ColumnUpdate] Restoring selection by file paths: {restored_rows}")
+                if restored_rows:
+                    self._sync_qt_selection_model(restored_rows)
+                    selection_store = self._get_selection_store()
+                    if selection_store and not self._legacy_selection_mode:
+                        selection_store.set_selected_rows(restored_rows, emit_signal=False)
+                    from core.pyqt_imports import QTimer
+                    def update_metadata_after_selection():
+                        metadata_tree = self._get_metadata_tree()
+                        if metadata_tree and hasattr(metadata_tree, 'update_from_parent_selection'):
+                            metadata_tree.update_from_parent_selection()
+                        else:
+                            self.selection_changed.emit(list(restored_rows))
+                    QTimer.singleShot(100, update_metadata_after_selection)
 
-                    # Update metadata tree directly without clearing - this preserves existing metadata
-                    metadata_tree = self._get_metadata_tree()
-                    if metadata_tree and hasattr(metadata_tree, 'update_from_parent_selection'):
-                        # Use direct call to preserve metadata state during column updates
-                        metadata_tree.update_from_parent_selection()
-                    else:
-                        # Fallback to signal emission if direct method unavailable
-                        from core.pyqt_imports import QTimer
-                        QTimer.singleShot(50, lambda: self.selection_changed.emit(list(selected_rows)))
+                # Ενεργοποίηση header αν είναι απενεργοποιημένο
+                header = self.horizontalHeader() if hasattr(self, 'horizontalHeader') else None
+                if header and not header.isEnabled():
+                    header.setEnabled(True)
+                    logger.debug("[ColumnUpdate] Header re-enabled after column update")
 
-                # Count visible columns for logging
                 visible_count = sum(1 for visible in self._visible_columns.values() if visible)
-                logger.info(f"Table columns updated - {visible_count} columns visible, selection restored: {len(selected_rows)} rows")
-
-                # Debug state after update
+                logger.info(f"Table columns updated - {visible_count} columns visible, selection restored: {len(restored_rows)} rows")
                 logger.debug("[ColumnUpdate] STATE AFTER UPDATE:")
                 self.debug_column_state()
-
             else:
                 logger.error("Model does not support dynamic columns - this is a critical error")
-
         except Exception as e:
             logger.error(f"Error updating table columns: {e}", exc_info=True)
 
@@ -2270,6 +2326,8 @@ class FileTableView(QTableView):
         while parent:
             if hasattr(parent, 'metadata_tree'):
                 return parent.metadata_tree
+            elif hasattr(parent, 'metadata_tree_view'):
+                return parent.metadata_tree_view
             parent = parent.parent()
         return None
 
@@ -2337,6 +2395,9 @@ class FileTableView(QTableView):
 
             logger.info(f"Reset {len(visible_columns)} columns to default widths")
 
+            # Update header visibility after resetting columns
+            self._update_header_visibility()
+
         except Exception as e:
             logger.error(f"Error resetting columns to default: {e}")
 
@@ -2380,6 +2441,9 @@ class FileTableView(QTableView):
                 self._schedule_column_save(column_key, final_width)
 
             logger.info(f"Auto-fitted {len(visible_columns)} columns to content")
+
+            # Update header visibility after auto-fitting
+            self._update_header_visibility()
 
         except Exception as e:
             logger.error(f"Error auto-fitting columns to content: {e}")
