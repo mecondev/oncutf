@@ -555,3 +555,37 @@ stats = thread_pool.get_stats()
 **Ημερομηνία δημιουργίας**: 2025-01-31
 **Ημερομηνία ολοκλήρωσης**: 2025-07-06
 **Κατάσταση**: 🎉 **ΠΛΉΡΩΣ ΟΛΟΚΛΗΡΩΜΈΝΟ - 100% ΕΠΙΤΥΧΊΑ**
+
+Προτεινόμενη Στρατηγική Απλοποίησης
+1. Απομόνωση και Επαναχρησιμοποίηση Κοινής Λογικής
+Εντοπισμός κοινών patterns (π.χ. placeholder handling, selection sync, drag & drop, column/row state management).
+Δημιουργία base κλάσεων ή mixins για κοινή συμπεριφορά (π.χ. BaseTableView, BaseTreeView, PlaceholderMixin).
+2. Αφαίρεση Legacy/Redundant Κώδικα
+Αφαίρεση legacy selection mode και διπλών flags.
+Ενοποίηση του selection flow ώστε να υπάρχει μόνο ένα σημείο αλήθειας για την επιλογή (π.χ. μέσω SelectionStore).
+Αφαίρεση παλιών signals που δεν χρησιμοποιούνται πλέον (π.χ. files_dropped στο MetadataTreeView).
+3. Απλοποίηση Placeholder/Empty State
+Ενοποίηση του placeholder logic σε ένα helper/mixin.
+Ενιαία μέθοδος για εμφάνιση/απόκρυψη placeholder, με κοινό interface και για τα δύο views.
+4. Ενιαία Διαχείριση Drag & Drop
+Ενοποίηση του drag & drop logic ώστε να υπάρχει κοινή διαχείριση MIME types, feedback, cleanup.
+Αφαίρεση custom state flags που δεν χρειάζονται πλέον.
+5. Απλοποίηση Column/Row State Management
+Ενοποίηση delayed save logic για columns (π.χ. widths, visibility) σε utility/helper.
+Αφαίρεση διπλών/περιττών flags και timers.
+6. Απλοποίηση Hover/Selection Visuals
+Ενοποίηση delegate logic (π.χ. hover, selection) σε έναν κοινό delegate που μπορεί να χρησιμοποιηθεί και στα δύο views.
+
+Επόμενα Βήματα (Step-by-step):
+Εντοπισμός και απομόνωση κοινών μεθόδων/συμπεριφορών
+Θα ξεκινήσω με τη δημιουργία ενός mixin/helper για το placeholder logic, που θα χρησιμοποιείται και από τα δύο views.
+Αφαίρεση legacy selection mode και διπλών signals
+Θα αφαιρέσω το _legacy_selection_mode και θα ενοποιήσω το selection flow στο FileTableView.
+Ενοποίηση drag & drop logic
+Θα μεταφέρω το κοινό drag & drop handling σε helper ή base κλάση.
+Ενοποίηση hover delegate
+Θα κάνω τον hover delegate πιο γενικό ώστε να μπορεί να χρησιμοποιηθεί και σε tree/table.
+Απλοποίηση column/row state management
+Θα μεταφέρω το delayed save logic σε utility/helper.
+Refactor & cleanup
+Θα αφαιρέσω περιττό/διπλό κώδικα και θα βελτιώσω τα docstrings.

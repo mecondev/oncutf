@@ -109,12 +109,12 @@ class PreviewTablesView(QWidget):
         self._setup_placeholders()
         self._setup_signals()
 
-        # Don't show placeholders initially - they will be shown after proper positioning
-        # This prevents the "jump" effect where placeholders appear top-left then move to center
-        self._placeholders_ready = False
+        # Show placeholders immediately during initialization
+        self._placeholders_ready = True
+        self._set_placeholders_visible(True)
 
-        # Schedule initial placeholder setup with positioning
-        schedule_ui_update(self._initialize_placeholders, 10)
+        # Κεντράρισμα placeholders αμέσως μετά το layout
+        self._handle_table_resize()
 
         logger.debug("[PreviewTablesView] Initialized with intelligent scrolling", extra={"dev_only": True})
 
@@ -225,6 +225,7 @@ class PreviewTablesView(QWidget):
 
     def _set_placeholders_visible(self, visible: bool, defer_width_adjustment: bool = False):
         """Show or hide preview table placeholders using the unified helper."""
+        logger.debug(f"[PreviewTablesView] Setting placeholders visible: {visible}", extra={"dev_only": True})
         if visible:
             self.old_names_placeholder_helper.show()
             self.new_names_placeholder_helper.show()
