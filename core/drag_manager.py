@@ -108,7 +108,7 @@ class DragManager(QObject):
             logger.warning(f"[DragManager] Drag end from {source} but started from {self._drag_source}")
 
         self._perform_cleanup()
-        logger.debug(f"[DragManager] Drag ended from: {source or self._drag_source}")
+        logger.debug(f"[DragManager] Drag ended from: {source or self._drag_source}", extra={"dev_only": True})
 
     def is_drag_active(self) -> bool:
         """Check if a drag operation is currently active."""
@@ -134,7 +134,7 @@ class DragManager(QObject):
     def _perform_cleanup(self) -> None:
         """Perform actual cleanup operations."""
         if not self._can_cleanup():
-            logger.debug("[DragManager] Cleanup skipped - too soon after last cleanup")
+            logger.debug("[DragManager] Cleanup skipped - too soon after last cleanup", extra={"dev_only": True})
             return
 
         import time
@@ -195,7 +195,7 @@ class DragManager(QObject):
     def force_cleanup(self) -> None:
         """Public method to force immediate cleanup (used by Escape key)."""
         if not self._drag_active:
-            logger.debug("[DragManager] Force cleanup called but no drag active")
+            logger.debug("[DragManager] Force cleanup called but no drag active", extra={"dev_only": True})
             return
 
         logger.info("[DragManager] Manual forced cleanup requested", extra={"dev_only": True})
@@ -217,22 +217,20 @@ class DragManager(QObject):
             if hasattr(event, 'key'):
                 key = event.key()
                 if key == Qt.Key_Escape:
-                    logger.debug("[DragManager] Escape key pressed during drag")
+                    logger.debug("[DragManager] Escape key pressed during drag", extra={"dev_only": True})
 
-                    # CRITICAL FIX: Don't consume ESC if there's an active FileLoadingDialog
-                    # Check if there's a modal dialog (FileLoadingDialog) that should handle ESC
-                    app = QApplication.instance()
-                    if app:
-                        active_modal = app.activeModalWidget()
-                        if active_modal and active_modal.__class__.__name__ == 'FileLoadingDialog':
-                            logger.debug("[DragManager] FileLoadingDialog is active, allowing it to handle ESC")
-                            # Force cleanup drag state but don't consume the ESC key
-                            self.force_cleanup()
-                            return False  # Let the dialog handle ESC
+                    # Check if FileLoadingDialog is active
+                    from widgets.metadata_waiting_dialog import MetadataWaitingDialog
+                    active_dialogs = [w for w in QApplication.topLevelWidgets()
+                                    if isinstance(w, MetadataWaitingDialog) and w.isVisible()]
 
-                    # Normal case: consume ESC and cleanup drag
+                    if active_dialogs:
+                        logger.debug("[DragManager] FileLoadingDialog is active, allowing it to handle ESC", extra={"dev_only": True})
+                        return False  # Let dialog handle ESC
+
+                    # Force cleanup on ESC
                     self.force_cleanup()
-                    return True  # Consume the escape key
+                    return True  # Event handled
 
         # Mouse release - check after a delay
         if event_type == QEvent.MouseButtonRelease:
@@ -245,7 +243,7 @@ class DragManager(QObject):
                 import time
                 elapsed = time.time() - self._drag_start_time
                 if elapsed > 3.0:  # Only cleanup after 3 seconds
-                    logger.debug("[DragManager] Window deactivated after long drag")
+                    logger.debug("[DragManager] Window deactivated after long drag", extra={"dev_only": True})
                     schedule_drag_cleanup(self.force_cleanup, 500)
 
         return False
@@ -258,7 +256,7 @@ class DragManager(QObject):
                 import time
                 elapsed = time.time() - self._drag_start_time
                 if elapsed > 2.0:  # Only cleanup long-running drags
-                    logger.debug("[DragManager] Long drag still active after mouse release")
+                    logger.debug("[DragManager] Long drag still active after mouse release", extra={"dev_only": True})
                     self._perform_cleanup()
 
 

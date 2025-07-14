@@ -70,6 +70,12 @@ except ImportError:
     EditMetadataFieldCommand = None
     ResetMetadataFieldCommand = None
 
+# Unified metadata manager integration
+try:
+    from core.unified_metadata_manager import UnifiedMetadataManager
+except ImportError:
+    UnifiedMetadataManager = None
+
 logger = get_cached_logger(__name__)
 
 
@@ -229,8 +235,12 @@ class MetadataTreeView(QTreeView):
     def _initialize_direct_loader(self) -> None:
         """Initialize the direct metadata loader."""
         try:
-            self._direct_loader = UnifiedMetadataManager()
-            logger.debug("[MetadataTreeView] UnifiedMetadataManager initialized", extra={"dev_only": True})
+            if UnifiedMetadataManager is not None:
+                self._direct_loader = UnifiedMetadataManager()
+                logger.debug("[MetadataTreeView] UnifiedMetadataManager initialized", extra={"dev_only": True})
+            else:
+                logger.debug("[MetadataTreeView] UnifiedMetadataManager not available", extra={"dev_only": True})
+                self._direct_loader = None
         except Exception as e:
             logger.error(f"[MetadataTreeView] Failed to initialize UnifiedMetadataManager: {e}")
             self._direct_loader = None
@@ -2464,7 +2474,10 @@ class MetadataTreeView(QTreeView):
     ) -> None:
         """Smart display logic for metadata or empty state."""
         try:
+            logger.debug(f"[MetadataTree] smart_display_metadata_or_empty_state called: metadata={bool(metadata)}, selected_count={selected_count}, context={context}", extra={"dev_only": True})
+
             if metadata and self.should_display_metadata_for_selection(selected_count):
+                logger.debug(f"[MetadataTree] Displaying metadata for {selected_count} selected file(s)", extra={"dev_only": True})
                 self.display_metadata(metadata, context)
                 logger.debug(
                     f"[MetadataTree] Smart display: showing metadata (context: {context})",
@@ -2766,7 +2779,7 @@ class MetadataTreeView(QTreeView):
         """Fallback metadata loading method."""
         try:
             if self._metadata_cache_helper:
-                metadata = self._metadata_cache_helper.get_metadata(file_item.full_path)
+                metadata = self._metadata_cache_helper.get_metadata_for_file(file_item)
                 if metadata:
                     logger.debug(
                         f"[MetadataTree] Loaded metadata via cache helper for {file_item.filename}",
@@ -2774,7 +2787,10 @@ class MetadataTreeView(QTreeView):
                     )
                     return metadata
 
-            logger.warning(f"[MetadataTree] No metadata loading method available for {file_item.filename}")
+            logger.debug(
+                f"[MetadataTree] No metadata found for {file_item.filename}",
+                extra={"dev_only": True},
+            )
             return None
 
         except Exception as e:

@@ -28,7 +28,7 @@ from utils.logger_factory import get_cached_logger
 from utils.metadata_cache_helper import MetadataCacheHelper
 from utils.metadata_loader import MetadataLoader
 from core.batch_operations_manager import BatchOperationsManager
-from core.file_item import FileItem
+from models.file_item import FileItem
 
 logger = get_cached_logger(__name__)
 

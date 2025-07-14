@@ -316,6 +316,8 @@ class SelectionManager:
 
                     if should_display and cache_helper:
                         metadata = cache_helper.get_metadata_for_file(file_item)
+                        logger.debug(f"[SelectionManager] Updating metadata tree for file: {file_item.filename}, metadata available: {bool(metadata)}", extra={"dev_only": True})
+
                         if hasattr(metadata_tree_view, 'smart_display_metadata_or_empty_state'):
                             metadata_tree_view.smart_display_metadata_or_empty_state(
                                 metadata, len(selected_rows), context="selection_update"
@@ -324,6 +326,7 @@ class SelectionManager:
                             metadata_tree_view.display_metadata(metadata, context="selection_update")
                     else:
                         # Multiple files - show empty state
+                        logger.debug(f"[SelectionManager] Showing empty state for {len(selected_rows)} selected files", extra={"dev_only": True})
                         if hasattr(metadata_tree_view, 'show_empty_state'):
                             metadata_tree_view.show_empty_state("Multiple files selected")
         else:

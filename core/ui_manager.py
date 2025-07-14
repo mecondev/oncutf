@@ -522,7 +522,8 @@ class UIManager:
         self.parent_window.vertical_splitter.splitterMoved.connect(self.parent_window.preview_tables_view.handle_splitter_moved)
 
         self.parent_window.file_table_view.clicked.connect(self.parent_window.on_table_row_clicked)
-        self.parent_window.file_table_view.selection_changed.connect(self.parent_window.update_preview_from_selection)
+        # NOTE: selection_changed connection is now handled in initialization_manager.py via SelectionStore
+        # to avoid duplicate signal connections that can cause race conditions
         self.parent_window.file_table_view.files_dropped.connect(self.parent_window.load_files_from_dropped_items)
         self.parent_window.file_model.sort_changed.connect(self.parent_window.request_preview_update)
         self.parent_window.file_table_view.setContextMenuPolicy(Qt.CustomContextMenu)

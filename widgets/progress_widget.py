@@ -116,7 +116,7 @@ class ProgressWidget(QWidget):
         self._setup_ui()
         self._apply_styling()
 
-        logger.debug(f"[ProgressWidget] Initialized (size_info: {show_size_info}, time_info: {show_time_info}, progress_mode: {progress_mode})")
+        logger.debug(f"[ProgressWidget] Initialized (size_info: {show_size_info}, time_info: {show_time_info}, progress_mode: {progress_mode})", extra={"dev_only": True})
 
     def _setup_ui(self):
         """Setup the UI components with compact layout."""
@@ -317,10 +317,10 @@ class ProgressWidget(QWidget):
         self.progress_bar.setValue(percentage)
         self.percentage_label.setText(f"{percentage}%")
 
-        # Only log significant progress milestones (every 5%) to reduce spam
-        if percentage % 5 == 0 and percentage != getattr(self, '_last_logged_percentage', -1):
-            logger.debug(f"[ProgressWidget] Progress milestone: {percentage}% ({processed_bytes:,}/{total_bytes:,} bytes)")
-            self._last_logged_percentage = percentage
+        # Log milestone progress (every 10%)
+        if percentage % 10 == 0 and percentage != getattr(self, '_last_milestone', -1):
+            self._last_milestone = percentage
+            logger.debug(f"[ProgressWidget] Progress milestone: {percentage}% ({processed_bytes:,}/{total_bytes:,} bytes)", extra={"dev_only": True})
 
     def set_status(self, text: str):
         """
@@ -364,7 +364,7 @@ class ProgressWidget(QWidget):
         self.count_label.setText("")
         self.progress_bar.show()
         self.percentage_label.hide()
-        logger.debug("[ProgressWidget] Progress bar set to indeterminate mode")
+        logger.debug("[ProgressWidget] Progress bar set to indeterminate mode", extra={"dev_only": True})
 
     def set_determinate_mode(self):
         """Set progress bar back to normal determinate mode."""
@@ -373,7 +373,7 @@ class ProgressWidget(QWidget):
         self.percentage_label.setText("0%")
         self.percentage_label.show()
         self.count_label.setText("0 of 0")
-        logger.debug("[ProgressWidget] Progress bar set to determinate mode")
+        logger.debug("[ProgressWidget] Progress bar set to determinate mode", extra={"dev_only": True})
 
     def set_progress_mode(self, mode: str):
         """
@@ -390,12 +390,12 @@ class ProgressWidget(QWidget):
         self.progress_mode = mode
 
         if old_mode != mode:
-            logger.debug(f"[ProgressWidget] Progress mode changed: {old_mode} -> {mode}")
+            logger.debug(f"[ProgressWidget] Progress mode changed: {old_mode} -> {mode}", extra={"dev_only": True})
 
             # Only warn if switching to size mode and no total size will be set
             # (This warning is mainly for debugging, not a real problem)
             if mode == "size" and self.total_size <= 0:
-                logger.debug("[ProgressWidget] Switched to size mode without total size. Size will be set via start_progress_tracking().")
+                logger.debug("[ProgressWidget] Switched to size mode without total size. Size will be set via start_progress_tracking().", extra={"dev_only": True})
 
     def start_progress_tracking(self, total_size: int = 0):
         """Start progress tracking with optional size tracking."""
@@ -417,9 +417,9 @@ class ProgressWidget(QWidget):
             self._time_timer = QTimer(self)
             self._time_timer.timeout.connect(self._update_time_display)
             self._time_timer.start(500)  # Update every 500ms for smoother time display
-            logger.debug("[ProgressWidget] Timer started for time updates (500ms interval)")
+            logger.debug("[ProgressWidget] Timer started for time updates (500ms interval)", extra={"dev_only": True})
 
-        logger.debug(f"[ProgressWidget] Started tracking (total_size: {total_size})")
+        logger.debug(f"[ProgressWidget] Started tracking (total_size: {total_size})", extra={"dev_only": True})
 
     def update_progress(self, file_count: int = 0, total_files: int = 0,
                        processed_bytes: int = 0, total_bytes: int = 0):
@@ -491,7 +491,7 @@ class ProgressWidget(QWidget):
         elapsed = time.time() - self.start_time
 
         # Debug logging to see if this method is being called
-        logger.debug(f"[ProgressWidget] _update_time_display called: elapsed={elapsed:.1f}s, processed={self.processed_size}, total={self.total_size}")
+        logger.debug(f"[ProgressWidget] _update_time_display called: elapsed={elapsed:.1f}s, processed={self.processed_size}, total={self.total_size}", extra={"dev_only": True})
 
         # Stable estimation based on cumulative progress - no more resets between files
         if self.processed_size > 0 and self.total_size > 0:
@@ -524,17 +524,17 @@ class ProgressWidget(QWidget):
 
                 time_text = f"{elapsed_str} of {estimated_total_str} Est."  # Use "of" and "Est."
                 self.time_label.setText(time_text)
-                logger.debug(f"[ProgressWidget] Time updated: {time_text}")
+                logger.debug(f"[ProgressWidget] Time updated: {time_text}", extra={"dev_only": True})
             else:
                 # Early stage - just show elapsed time until we have stable estimation
                 elapsed_str = self._format_time_hms(elapsed)
                 time_text = f"{elapsed_str} of calculating... Est."
                 self.time_label.setText(time_text)
-                logger.debug(f"[ProgressWidget] Time updated (early): {time_text}")
+                logger.debug(f"[ProgressWidget] Time updated (early): {time_text}", extra={"dev_only": True})
         else:
             elapsed_str = self._format_time_hms(elapsed)
             self.time_label.setText(elapsed_str)
-            logger.debug(f"[ProgressWidget] Time updated (no progress): {elapsed_str}")
+            logger.debug(f"[ProgressWidget] Time updated (no progress): {elapsed_str}", extra={"dev_only": True})
 
     def _format_time_hms(self, seconds: float) -> str:
         """
