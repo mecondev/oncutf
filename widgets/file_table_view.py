@@ -233,8 +233,8 @@ class FileTableView(QTableView):
         # This prevents blue highlighting desync issues
         if emit_signal:  # Only sync Qt model when we're not in a batch operation
             self._sync_qt_selection_model(selected_rows)
-            # Emit selection change signal immediately
-            self.selection_changed.emit(list(selected_rows))
+            # NOTE: Do NOT emit selection_changed signal here - SelectionStore already emits it
+            # This prevents double signal emission which causes metadata flickering
 
     def _sync_qt_selection_model(self, selected_rows: set) -> None:
         """Ensure Qt selection model matches our internal selection state."""
@@ -257,10 +257,7 @@ class FileTableView(QTableView):
             # Block signals to prevent recursive calls
             self.blockSignals(True)
             try:
-                # Clear current selection
-                selection_model.clearSelection()
-
-                # Select the new rows
+                # Build the new selection without clearing first to avoid empty selection events
                 if selected_rows:
                     from core.pyqt_imports import QItemSelection
 
@@ -275,7 +272,11 @@ class FileTableView(QTableView):
                                 full_selection.merge(row_selection, selection_model.Select)  # type: ignore
 
                     if not full_selection.isEmpty():
-                        selection_model.select(full_selection, selection_model.Select)  # type: ignore
+                        # Use ClearAndSelect in one atomic operation to avoid intermediate empty selection
+                        selection_model.select(full_selection, selection_model.ClearAndSelect)  # type: ignore
+                else:
+                    # Only clear if we actually need an empty selection
+                    selection_model.clearSelection()
 
                 # Force visual update
                 self.viewport().update()  # type: ignore
@@ -1002,9 +1003,14 @@ class FileTableView(QTableView):
 
                 # Create selection from anchor to current index
                 selection = QItemSelection(self._manual_anchor_index, index)
-                # Use ClearAndSelect to replace existing selection with the range
-                sm.select(selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
-                sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
+                # Block signals to prevent metadata flickering during selection changes
+                self.blockSignals(True)
+                try:
+                    # Use ClearAndSelect to replace existing selection with the range
+                    sm.select(selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+                    sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
+                finally:
+                    self.blockSignals(False)
 
             # Update SelectionStore to match Qt selection model
             selection_store = self._get_selection_store()
@@ -1276,8 +1282,22 @@ class FileTableView(QTableView):
                 # Schedule final status update after everything is settled
                 schedule_ui_update(final_status_update, delay=50)
 
+        # Debug: Check selection before calling parent
+        current_selection_before = self._get_current_selection()
+        logger.debug(
+            f"[FileTableView] mouseReleaseEvent - before super(): {len(current_selection_before)} rows",
+            extra={"dev_only": True},
+        )
+
         # Call parent implementation
         super().mouseReleaseEvent(event)
+
+        # Debug: Check selection after calling parent
+        current_selection_after = self._get_current_selection()
+        logger.debug(
+            f"[FileTableView] mouseReleaseEvent - after super(): {len(current_selection_after)} rows",
+            extra={"dev_only": True},
+        )
 
     def mouseMoveEvent(self, event) -> None:
         """
@@ -1687,6 +1707,13 @@ class FileTableView(QTableView):
         selection_model = self.selectionModel()
         if selection_model is not None:
             selected_rows = set(index.row() for index in selection_model.selectedRows())
+
+            # Debug logging
+            print(f"[DEBUG] [FileTableView] selectionChanged: {len(selected_rows)} rows selected")
+            logger.debug(
+                f"[FileTableView] selectionChanged: {len(selected_rows)} rows selected",
+                extra={"dev_only": True},
+            )
 
             # PROTECTION: Ignore empty selections that come immediately after SUCCESSFUL metadata drops
             # This prevents Qt's automatic clearSelection() from clearing our metadata display

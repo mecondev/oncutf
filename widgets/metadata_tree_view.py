@@ -177,6 +177,9 @@ class MetadataTreeView(QTreeView):
         self._current_file_path: Optional[str] = None
         self._pending_restore_timer_id: Optional[str] = None
 
+        # Expanded items per file: {file_path: [expanded_item_paths]}
+        self._expanded_items_per_file: Dict[str, list] = {}
+
         # Setup placeholder icon
         self.placeholder_label = QLabel(self.viewport())
         self.placeholder_label.setAlignment(Qt.AlignCenter)
@@ -1856,9 +1859,6 @@ class MetadataTreeView(QTreeView):
             return
 
         try:
-            # Clear search before rendering
-            self._clear_search_field()
-
             # Render the metadata view
             self._render_metadata_view(metadata)
 
