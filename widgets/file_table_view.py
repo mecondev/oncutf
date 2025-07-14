@@ -561,39 +561,37 @@ class FileTableView(QTableView):
 
     def _load_column_width(self, column_key: str) -> int:
         """Load column width from main config system with fallback to defaults."""
-        # Remove verbose column width loading logs
-        # logger.debug(f"[ColumnWidth] Loading width for column '{column_key}'")
+        logger.debug(f"[ColumnWidth] Loading width for column '{column_key}'", extra={"dev_only": True})
         try:
             # First, get the default width from config.py
             from config import FILE_TABLE_COLUMN_CONFIG
             default_width = FILE_TABLE_COLUMN_CONFIG.get(column_key, {}).get("width", 100)
-            # logger.debug(f"[ColumnWidth] Default width for '{column_key}': {default_width}px")
+            logger.debug(f"[ColumnWidth] Default width for '{column_key}': {default_width}px", extra={"dev_only": True})
 
             # Try main config system first
             main_window = self._get_main_window()
             if main_window and hasattr(main_window, 'window_config_manager'):
-                logger.debug(f"[ColumnWidth] Found main window with config manager")
+                logger.debug(f"[ColumnWidth] Found main window with config manager", extra={"dev_only": True})
                 config_manager = main_window.window_config_manager.config_manager
                 window_config = config_manager.get_category('window')
                 column_widths = window_config.get('file_table_column_widths', {})
-                logger.debug(f"[ColumnWidth] Loaded column widths from main config: {column_widths}")
+                logger.debug(f"[ColumnWidth] Loaded column widths from main config: {column_widths}", extra={"dev_only": True})
 
                 if column_key in column_widths:
                     saved_width = column_widths[column_key]
-                    logger.debug(f"[ColumnWidth] Found saved width for '{column_key}': {saved_width}px")
+                    logger.debug(f"[ColumnWidth] Found saved width for '{column_key}': {saved_width}px", extra={"dev_only": True})
                     # Check if saved width is reasonable (not the default Qt 100px for all columns)
                     # If all columns are 100px, it means they were saved incorrectly
                     if saved_width == 100 and default_width != 100:
                         logger.debug(f"[ColumnWidth] Column '{column_key}' has suspicious saved width (100px), using default {default_width}px")
                         return default_width
-                    logger.debug(f"[ColumnWidth] Using saved width for '{column_key}': {saved_width}px")
+                    logger.debug(f"[ColumnWidth] Using saved width for '{column_key}': {saved_width}px", extra={"dev_only": True})
                     return saved_width
                 else:
-                    logger.debug(f"[ColumnWidth] No saved width found for '{column_key}' in main config")
+                    logger.debug(f"[ColumnWidth] No saved width found for '{column_key}' in main config", extra={"dev_only": True})
 
             # Fallback to old method
             logger.debug(f"[ColumnWidth] Trying fallback config loading for '{column_key}'")
-            from utils.json_config_manager import load_config
             config = load_config()
             column_widths = config.get("file_table_column_widths", {})
             logger.debug(f"[ColumnWidth] Loaded column widths from fallback config: {column_widths}")

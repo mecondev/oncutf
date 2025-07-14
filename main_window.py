@@ -510,7 +510,10 @@ class MainWindow(QMainWindow):
         self.initialization_manager.show_metadata_status()
 
     def _enable_selection_store_mode(self):
-        """Enable selection store mode in file table view after UI initialization."""
+        """Enable SelectionStore mode in FileTableView."""
+        print("[DEBUG] _enable_selection_store_mode called")
+        if hasattr(self, 'initialization_manager'):
+            self.initialization_manager.enable_selection_store_mode()
         if hasattr(self, 'file_table_view'):
             logger.debug("[MainWindow] Enabling SelectionStore mode in FileTableView", extra={"dev_only": True})
             self.file_table_view.enable_selection_store_mode()

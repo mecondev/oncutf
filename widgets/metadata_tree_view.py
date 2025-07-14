@@ -1857,7 +1857,7 @@ class MetadataTreeView(QTreeView):
 
         try:
             # Clear search before rendering
-            self._clear_search()
+            self._clear_search_field()
 
             # Render the metadata view
             self._render_metadata_view(metadata)
@@ -1962,6 +1962,21 @@ class MetadataTreeView(QTreeView):
             """)
             # Don't clear the search text - preserve it for when metadata is available again
 
+    def _clear_search_field(self):
+        """Clear the metadata search field."""
+        parent_window = self._get_parent_with_file_table()
+        if not parent_window:
+            return
+
+        # Call the UI manager's clear method if available
+        if hasattr(parent_window, "ui_manager"):
+            parent_window.ui_manager._clear_metadata_search()
+        elif hasattr(parent_window, "metadata_search_field"):
+            # Fallback: clear the field directly
+            parent_window.metadata_search_field.clear()
+            if hasattr(parent_window, "clear_search_action"):
+                parent_window.clear_search_action.setVisible(False)
+
     def _update_search_suggestions(self):
         """Update search suggestions based on current metadata."""
         try:
@@ -1995,8 +2010,17 @@ class MetadataTreeView(QTreeView):
         if not model:
             return
 
+        # If it's a proxy model, get the source model
+        source_model = model
+        if hasattr(model, 'sourceModel'):
+            source_model = model.sourceModel()
+
+        # Check if the source model has invisibleRootItem (QStandardItemModel)
+        if not hasattr(source_model, 'invisibleRootItem'):
+            return
+
         # Traverse the tree model to collect keys and values
-        root_item = model.invisibleRootItem()
+        root_item = source_model.invisibleRootItem()
         if not root_item:
             return
 
@@ -2475,9 +2499,11 @@ class MetadataTreeView(QTreeView):
         """Smart display logic for metadata or empty state."""
         try:
             logger.debug(f"[MetadataTree] smart_display_metadata_or_empty_state called: metadata={bool(metadata)}, selected_count={selected_count}, context={context}", extra={"dev_only": True})
+            print(f"[DEBUG] MetadataTree smart_display called: metadata={bool(metadata)}, selected_count={selected_count}, context={context}")
 
             if metadata and self.should_display_metadata_for_selection(selected_count):
                 logger.debug(f"[MetadataTree] Displaying metadata for {selected_count} selected file(s)", extra={"dev_only": True})
+                print(f"[DEBUG] MetadataTree displaying metadata for {selected_count} selected file(s)")
                 self.display_metadata(metadata, context)
                 logger.debug(
                     f"[MetadataTree] Smart display: showing metadata (context: {context})",
@@ -2495,9 +2521,11 @@ class MetadataTreeView(QTreeView):
                     f"[MetadataTree] Smart display: showing empty state (selected: {selected_count})",
                     extra={"dev_only": True},
                 )
+                print(f"[DEBUG] MetadataTree showing empty state (selected: {selected_count})")
 
         except Exception as e:
             logger.error(f"[MetadataTree] Error in smart display: {e}")
+            print(f"[ERROR] MetadataTree error in smart display: {e}")
             self.show_empty_state("Error loading metadata")
 
     def get_modified_metadata(self) -> Dict[str, str]:
