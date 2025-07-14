@@ -476,7 +476,7 @@ class EventHandlerManager:
     def on_table_row_clicked(self, index: QModelIndex) -> None:
         """
         Handles single clicks on table rows.
-        Updates metadata view based on the clicked file.
+        Metadata updates are handled by the selection system, not here.
         """
         if not index.isValid():
             return
@@ -486,8 +486,8 @@ class EventHandlerManager:
             file = self.parent_window.file_model.files[row]
             logger.debug(f"[RowClick] Clicked on: {file.filename}", extra={"dev_only": True})
 
-            # Update metadata view for clicked file
-            self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
+            # NOTE: Metadata updates are handled by the selection system automatically
+            # Removed redundant refresh_metadata_from_selection() call that was causing conflicts
 
     def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
         """

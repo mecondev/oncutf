@@ -310,11 +310,11 @@ class FileTableView(QTableView):
         else:
             return set()
 
-    def _set_anchor_row(self, row: Optional[int]) -> None:
+    def _set_anchor_row(self, row: Optional[int], emit_signal: bool = True) -> None:
         """Set anchor row in SelectionStore or fallback to legacy."""
         selection_store = self._get_selection_store()
         if selection_store and not self._legacy_selection_mode:
-            selection_store.set_anchor_row(row)
+            selection_store.set_anchor_row(row, emit_signal=emit_signal)
 
         # Always update legacy state for compatibility
         self.anchor_row = row
@@ -1096,9 +1096,9 @@ class FileTableView(QTableView):
             # If clicking on empty space, clear selection
             if not index.isValid():
                 if modifiers == Qt.NoModifier:
+                    self._set_anchor_row(None, emit_signal=False)
+                    # Let Qt handle clearing selection via clearSelection()
                     self.clearSelection()
-                    self._set_anchor_row(None)
-                    self._update_selection_store(set(), emit_signal=True)
                 # Don't call super() for empty space clicks to avoid Qt's default behavior
                 return
 
@@ -1117,8 +1117,8 @@ class FileTableView(QTableView):
 
                 else:
                     # Single click - select single row
-                    self._set_anchor_row(index.row())
-                    self._update_selection_store({index.row()})
+                    # Set anchor without emitting signal during mouse press (avoid premature preview updates)
+                    self._set_anchor_row(index.row(), emit_signal=False)
             elif modifiers == Qt.ControlModifier:
                 # Check if we're on a selected item for potential drag
                 current_selection = self._get_current_selection()
@@ -1131,14 +1131,9 @@ class FileTableView(QTableView):
                     return  # Don't call super() - we'll handle in mouseReleaseEvent
                 else:
                     # Ctrl+click on unselected - add to selection (toggle)
-                    current_selection = (
-                        current_selection.copy()
-                    )  # Make a copy to avoid modifying the original
-                    current_selection.add(index.row())
-                    self._set_anchor_row(index.row())  # Set anchor for future range selections
-                    self._update_selection_store(current_selection)
-                    # Don't call super() - we handled the selection ourselves
-                    return
+                    # Set anchor and let Qt handle the selection in selectionChanged
+                    self._set_anchor_row(index.row(), emit_signal=False)  # Set anchor for future range selections
+                    # Let Qt's default Ctrl+click behavior handle adding to selection
             elif modifiers == Qt.ShiftModifier:
                 # Check if we're clicking on a selected item for potential drag
                 current_selection = self._get_current_selection()
@@ -1154,11 +1149,11 @@ class FileTableView(QTableView):
                     anchor = self._get_anchor_row()
                     if anchor is not None:
                         self.select_rows_range(anchor, index.row())
+                        # Don't call super() - we handled the selection ourselves
+                        return
                     else:
-                        self._set_anchor_row(index.row())
-                        self._update_selection_store({index.row()})
-                    # Don't call super() - we handled the selection ourselves
-                    return
+                        self._set_anchor_row(index.row(), emit_signal=False)
+                        # Let Qt handle single selection
 
         # Call parent implementation
         super().mousePressEvent(event)
@@ -1709,7 +1704,6 @@ class FileTableView(QTableView):
             selected_rows = set(index.row() for index in selection_model.selectedRows())
 
             # Debug logging
-            print(f"[DEBUG] [FileTableView] selectionChanged: {len(selected_rows)} rows selected")
             logger.debug(
                 f"[FileTableView] selectionChanged: {len(selected_rows)} rows selected",
                 extra={"dev_only": True},

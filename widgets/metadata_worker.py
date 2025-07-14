@@ -52,12 +52,43 @@ class MetadataWorker(QObject):
     # Real-time UI update signal - same as HashWorker
     file_metadata_loaded = pyqtSignal(str)  # file_path - emitted when individual file metadata is loaded
 
-    def __init__(self, files: List[FileItem], use_extended: bool = False, parent=None):
+    def __init__(self, reader=None, metadata_cache=None, files=None, use_extended: bool = False, parent=None):
         super().__init__(parent)
-        self.files = files
+        # Handle both old-style (reader, metadata_cache) and new-style (files) initialization
+        if files is not None:
+            # New style initialization
+            self.files = files
+            self.file_path = [f.full_path for f in files]
+            self.reader = None  # Will be created as needed
+            self.metadata_cache = None  # Will use cache helper
+        else:
+            # Old style initialization for backward compatibility
+            self.files = []
+            self.file_path = []
+            self.reader = reader
+            self.metadata_cache = metadata_cache
+
         self.use_extended = use_extended
         self.cancelled = False
+        self._cancelled = False  # Alias for compatibility
         self.batch_operations_enabled = True
+
+        # Initialize cache helper and batch manager attributes
+        self._cache_helper = None
+        self._batch_manager = None
+        self._batch_operations = []
+        self._enable_batching = False
+        self._total_size = 0
+        self._processed_size = 0
+
+        # Initialize cache helper if not provided
+        if not self.metadata_cache and reader:
+            try:
+                from utils.metadata_cache_helper import MetadataCacheHelper
+                self._cache_helper = MetadataCacheHelper()
+            except ImportError:
+                logger.warning("MetadataCacheHelper not available")
+
         logger.debug("[Worker] __init__ called", extra={"dev_only": True})
 
     def set_total_size(self, total_size: int) -> None:
@@ -85,13 +116,25 @@ class MetadataWorker(QObject):
         logger.debug(f"[Worker] run_batch() started — use_extended = {self.use_extended}", extra={"dev_only": True})
         logger.warning(f"[Worker] run_batch() running in thread: {threading.current_thread().name}")
 
+        # Ensure we have a reader if not provided
+        if not self.reader:
+            logger.debug("[Worker] Creating MetadataLoader for worker", extra={"dev_only": True})
+            self.reader = MetadataLoader()
+
+        # Ensure we have cache helper if not provided
+        if not self._cache_helper and not self.metadata_cache:
+            try:
+                self._cache_helper = MetadataCacheHelper()
+            except Exception as e:
+                logger.warning(f"[Worker] Could not create cache helper: {e}")
+
         start_total = time.time()
 
         # Initialize batch operations manager if enabled
         if self.batch_operations_enabled:
             logger.debug("[Worker] Batch operations manager initialized", extra={"dev_only": True})
-            batch_manager = BatchOperationsManager()
-            batch_manager.start_batch_operation()
+            self._batch_manager = BatchOperationsManager()
+            self._enable_batching = True
 
         try:
             total = len(self.file_path)
@@ -124,9 +167,14 @@ class MetadataWorker(QObject):
 
                     temp_file_item = TempFileItem(path)
 
-                    # Get previous entry using cache helper
-                    previous_entry = self._cache_helper.get_cache_entry_for_file(temp_file_item)
-                    previous_extended = previous_entry.is_extended if previous_entry else False
+                    # Get previous entry using cache helper if available
+                    previous_extended = False
+                    if self._cache_helper:
+                        try:
+                            previous_entry = self._cache_helper.get_cache_entry_for_file(temp_file_item)
+                            previous_extended = previous_entry.is_extended if previous_entry else False
+                        except Exception as e:
+                            logger.debug(f"[Worker] Cache helper error: {e}", extra={"dev_only": True})
 
                     # Check if metadata has the extended flag directly
                     metadata_has_extended = isinstance(metadata, dict) and metadata.get("__extended__") is True
@@ -238,6 +286,7 @@ class MetadataWorker(QObject):
         """
         logger.info("[Worker] cancel() requested — will cancel after current file")
         self._cancelled = True
+        self.cancelled = True  # Also set the old attribute for compatibility
 
         # Also flush any pending batch operations on cancellation
         if self._enable_batching and self._batch_manager and self._batch_operations:

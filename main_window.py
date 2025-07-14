@@ -1169,6 +1169,14 @@ class MainWindow(QMainWindow):
         from core.unified_metadata_manager import cleanup_unified_metadata_manager
         cleanup_unified_metadata_manager()
 
+        # Force cleanup any remaining ExifTool processes
+        try:
+            from utils.exiftool_wrapper import ExifToolWrapper
+            ExifToolWrapper.force_cleanup_all_exiftool_processes()
+            logger.info("[Shutdown] ExifTool processes cleaned up")
+        except Exception as e:
+            logger.warning(f"[Shutdown] Error cleaning up ExifTool processes: {e}")
+
     def _shutdown_step_background(self):
         """Step 7: Clean up background workers."""
         self._force_cleanup_background_workers()

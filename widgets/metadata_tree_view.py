@@ -1798,7 +1798,6 @@ class MetadataTreeView(QTreeView):
         Args:
             message (str): The message to display if PNG is not available
         """
-
         # Create an empty model for placeholder mode
         model = QStandardItemModel()
         # Δεν ορίζουμε headers ή τα αφήνουμε κενά για placeholder

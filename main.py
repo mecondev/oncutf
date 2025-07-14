@@ -13,10 +13,12 @@ Functions:
     main: Initializes and runs the Batch File Renamer application.
 """
 
+import atexit
 import os
 import sys
 import logging
 import platform
+import signal
 import time
 from pathlib import Path
 
@@ -55,6 +57,28 @@ logger.info(f"Application started at {now}")
 
 logger_effective_level = logger.getEffectiveLevel()
 logger.debug(f"Effective logging level: {logger_effective_level}", extra={"dev_only": True})
+
+def cleanup_on_exit():
+    """Cleanup function to run on application exit or signal."""
+    try:
+        from utils.exiftool_wrapper import ExifToolWrapper
+        ExifToolWrapper.force_cleanup_all_exiftool_processes()
+        logger.info("Emergency ExifTool cleanup completed")
+    except Exception as e:
+        logger.warning(f"Error in emergency cleanup: {e}")
+
+def signal_handler(signum, frame):
+    """Handle signals for graceful shutdown."""
+    logger.info(f"Received signal {signum}, performing cleanup...")
+    cleanup_on_exit()
+    sys.exit(0)
+
+# Register signal handlers
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
+
+# Register atexit cleanup
+atexit.register(cleanup_on_exit)
 
 def main() -> int:
     """
@@ -160,6 +184,14 @@ def main() -> int:
 
         # Clean up before exit
         logger.info("Application shutting down with exit code: %d", exit_code)
+
+        # Force cleanup any remaining ExifTool processes
+        try:
+            from utils.exiftool_wrapper import ExifToolWrapper
+            ExifToolWrapper.force_cleanup_all_exiftool_processes()
+            logger.info("ExifTool processes cleaned up")
+        except Exception as e:
+            logger.warning(f"Error cleaning up ExifTool processes: {e}")
 
         # Force quit any remaining processes
         app.quit()
