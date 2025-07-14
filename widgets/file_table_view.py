@@ -389,6 +389,7 @@ class FileTableView(QTableView):
                 from utils.timer_manager import schedule_ui_update
                 schedule_ui_update(self._configure_columns, delay=50)
         self.update_placeholder_visibility()
+        self._update_header_visibility()
 
     # =====================================
     # Table Preparation & Management
@@ -419,6 +420,7 @@ class FileTableView(QTableView):
         self.viewport().update()
         self._update_scrollbar_visibility()
         self.update_placeholder_visibility()
+        self._update_header_visibility()
 
     # =====================================
     # Column Management & Scrollbar Optimization
@@ -512,13 +514,24 @@ class FileTableView(QTableView):
 
     def _update_header_visibility(self) -> None:
         """Update header visibility based on whether there are files in the model."""
-        # This method is now handled in _configure_columns - do nothing
-        pass
+        if not self.model():
+            logger.debug("[FileTableView] No model - header hidden", extra={"dev_only": True})
+            return
+
+        header = self.horizontalHeader()
+        if not header:
+            logger.debug("[FileTableView] No header - cannot update visibility", extra={"dev_only": True})
+            return
+
+        # Hide header when table is empty, show when it has content
+        is_empty = self.is_empty()
+        header.setVisible(not is_empty)
+
+        logger.debug(f"[FileTableView] Header visibility: {'hidden' if is_empty else 'visible'} (empty: {is_empty})", extra={"dev_only": True})
 
     def _ensure_header_visibility(self) -> None:
         """Ensure header visibility is correct after column configuration."""
-        # This method is now handled in _configure_columns - do nothing
-        pass
+        self._update_header_visibility()
 
     def _set_column_alignment(self, column_index: int, alignment: str) -> None:
         """Set text alignment for a specific column."""
@@ -1792,7 +1805,11 @@ class FileTableView(QTableView):
             self.viewport().update()
 
     def is_empty(self) -> bool:
-        return not getattr(self.model(), "files", [])
+        """Check if the table is empty (no files or no model)."""
+        if not self.model():
+            return True
+        files = getattr(self.model(), "files", [])
+        return not files or len(files) == 0
 
     def focusOutEvent(self, event) -> None:
         super().focusOutEvent(event)
@@ -2371,6 +2388,7 @@ class FileTableView(QTableView):
         logger.debug("refresh_columns_after_model_change: Starting column reconfiguration")
         self._configure_columns()
         self.update_placeholder_visibility()
+        self._update_header_visibility()
         self.viewport().update()
         logger.debug("refresh_columns_after_model_change: Column reconfiguration finished")
 

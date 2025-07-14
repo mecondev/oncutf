@@ -1781,44 +1781,22 @@ class MetadataTreeView(QTreeView):
 
     def show_empty_state(self, message: str = "No file selected") -> None:
         """
-        Displays a placeholder in the metadata tree view.
-        Uses PNG icon if available, otherwise shows text message.
-
-        Args:
-            message (str): The message to display if PNG is not available
+        Shows empty state using unified placeholder helper.
+        No longer creates text model - uses only the placeholder helper.
         """
-        # Create an empty model for placeholder mode
+        # Create empty model to trigger placeholder mode
         model = QStandardItemModel()
-        # Δεν ορίζουμε headers ή τα αφήνουμε κενά για placeholder
         model.setHorizontalHeaderLabels(["", ""])
 
-        # Always use text placeholder since we now use unified placeholder helper
-        key_item = QStandardItem(message)
-        key_item.setTextAlignment(Qt.AlignLeft)
-        font = key_item.font()
-        font.setItalic(True)
-        key_item.setFont(font)
-        key_item.setForeground(Qt.gray)
-        key_item.setSelectable(False)  # Make placeholder non-selectable
-
-        value_item = QStandardItem("-")
-        value_item.setForeground(Qt.gray)
-        value_item.setSelectable(False)  # Make placeholder non-selectable
-
-        model.appendRow([key_item, value_item])
-
-        # Use proxy model for consistency, even for placeholder content
+        # Use proxy model for consistency
         parent_window = self._get_parent_with_file_table()
         if parent_window and hasattr(parent_window, "metadata_proxy_model"):
-            # Set the placeholder model as source model to the proxy model
             parent_window.metadata_proxy_model.setSourceModel(model)
-            # ALWAYS call setModel to trigger placeholder mode detection
             self.setModel(parent_window.metadata_proxy_model)
         else:
-            # Fallback: set model directly if proxy model is not available
             self.setModel(model)
 
-        # Κρύψε το header όταν είμαστε σε placeholder mode
+        # Hide header in placeholder mode
         self.header().hide()
 
         # Disable search field when showing empty state

@@ -113,8 +113,8 @@ class PreviewTablesView(QWidget):
         self._placeholders_ready = True
         self._set_placeholders_visible(True)
 
-        # Κεντράρισμα placeholders αμέσως μετά το layout
-        self._handle_table_resize()
+        # Κεντράρισμα placeholders μετά το layout με μικρό delay
+        schedule_ui_update(self._handle_table_resize, 50)
 
         logger.debug("[PreviewTablesView] Initialized with intelligent scrolling", extra={"dev_only": True})
 
@@ -166,6 +166,8 @@ class PreviewTablesView(QWidget):
             table.setMouseTracking(False)  # Disable mouse tracking to prevent hover
             # Set same row height as icon table
             table.verticalHeader().setDefaultSectionSize(22) # type: ignore
+            # Set minimum height for proper placeholder centering
+            table.setMinimumHeight(200)
             # Reduce flickering during updates
             table.setUpdatesEnabled(True)
             table.viewport().setUpdatesEnabled(True) # type: ignore
