@@ -34,6 +34,7 @@ from utils.filename_validator import get_validation_error_message, is_validation
 from utils.logger_factory import get_cached_logger
 from utils.theme import get_theme_color
 from utils.timer_manager import schedule_scroll_adjust, schedule_ui_update
+from utils.placeholder_helper import create_placeholder_helper
 
 logger = get_cached_logger(__name__)
 
@@ -86,7 +87,7 @@ class PreviewTablesView(QWidget):
     View that manages the preview tables for old/new filenames.
 
     Features:
-    - Intelligent placeholder management
+    - Unified placeholder management using PlaceholderHelper
     - Synchronized scrolling between tables
     - Intelligent horizontal scrollbar management
     - Status icon display for rename validation
@@ -197,56 +198,13 @@ class PreviewTablesView(QWidget):
         layout.addLayout(tables_layout)
 
     def _setup_placeholders(self):
-        """Setup placeholder labels for the preview tables."""
-        # Get background color for placeholders
-        bg_color = get_theme_color("table_background")
-
-        # Setup old names placeholder
-        self.old_names_placeholder = QLabel(self.old_names_table.viewport())
-        self.old_names_placeholder.setAlignment(Qt.AlignCenter)
-        self.old_names_placeholder.setVisible(False)
-
-        # Set background color to match main application
-        self.old_names_placeholder.setStyleSheet(f"background-color: {bg_color};")
-
-        from utils.path_utils import get_images_dir
-        old_icon_path = get_images_dir() / "old_names-preview_placeholder.png"
-        self.old_names_placeholder_icon = QPixmap(str(old_icon_path))
-
-        if not self.old_names_placeholder_icon.isNull():
-            scaled_old = self.old_names_placeholder_icon.scaled(
-                self.PLACEHOLDER_SIZE, self.PLACEHOLDER_SIZE,
-                Qt.KeepAspectRatio, Qt.SmoothTransformation
-            )
-            self.old_names_placeholder.setPixmap(scaled_old)
-            # Store the actual scaled size for accurate centering
-            self.old_placeholder_actual_size = scaled_old.size()
-        else:
-            logger.warning("Old names placeholder icon could not be loaded.")
-            self.old_placeholder_actual_size = None
-
-        # Setup new names placeholder
-        self.new_names_placeholder = QLabel(self.new_names_table.viewport())
-        self.new_names_placeholder.setAlignment(Qt.AlignCenter)
-        self.new_names_placeholder.setVisible(False)
-
-        # Set background color to match main application
-        self.new_names_placeholder.setStyleSheet(f"background-color: {bg_color};")
-
-        new_icon_path = get_images_dir() / "new_names-preview_placeholder.png"
-        self.new_names_placeholder_icon = QPixmap(str(new_icon_path))
-
-        if not self.new_names_placeholder_icon.isNull():
-            scaled_new = self.new_names_placeholder_icon.scaled(
-                self.PLACEHOLDER_SIZE, self.PLACEHOLDER_SIZE,
-                Qt.KeepAspectRatio, Qt.SmoothTransformation # type: ignore
-            )
-            self.new_names_placeholder.setPixmap(scaled_new)
-            # Store the actual scaled size for accurate centering
-            self.new_placeholder_actual_size = scaled_new.size()
-        else:
-            logger.warning("New names placeholder icon could not be loaded.")
-            self.new_placeholder_actual_size = None
+        """Setup placeholder helpers for the preview tables."""
+        self.old_names_placeholder_helper = create_placeholder_helper(
+            self.old_names_table, 'preview_old', icon_size=self.PLACEHOLDER_SIZE
+        )
+        self.new_names_placeholder_helper = create_placeholder_helper(
+            self.new_names_table, 'preview_new', icon_size=self.PLACEHOLDER_SIZE
+        )
 
     def _setup_signals(self):
         """Setup signal connections for table interactions."""
@@ -266,58 +224,32 @@ class PreviewTablesView(QWidget):
         )
 
     def _set_placeholders_visible(self, visible: bool, defer_width_adjustment: bool = False):
-        """Show or hide preview table placeholders and configure table states accordingly."""
+        """Show or hide preview table placeholders using the unified helper."""
         if visible:
-            # Show placeholders
-            if hasattr(self, 'old_names_placeholder'):
-                self.old_names_placeholder.raise_()
-                self.old_names_placeholder.show()
-
-            if hasattr(self, 'new_names_placeholder'):
-                self.new_names_placeholder.raise_()
-                self.new_names_placeholder.show()
-
+            self.old_names_placeholder_helper.show()
+            self.new_names_placeholder_helper.show()
             # Disable scrollbars and interactions when showing placeholders
             for table in [self.old_names_table, self.new_names_table]:
                 table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
                 table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-                table.setEnabled(False)  # Disable all interactions
-
-            # Keep icon table minimal
+                table.setEnabled(False)
             self.icon_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             self.icon_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-
             logger.debug("[PreviewTablesView] Placeholders enabled - tables disabled", extra={"dev_only": True})
-
-            # Center placeholders immediately if they are ready, otherwise they will be centered during initialization
             if hasattr(self, '_placeholders_ready') and self._placeholders_ready:
                 schedule_ui_update(self._handle_table_resize, 5)
             else:
-                # Do immediate centering for initialization
                 self._handle_table_resize()
-
         else:
-            # Hide placeholders
-            if hasattr(self, 'old_names_placeholder'):
-                self.old_names_placeholder.hide()
-
-            if hasattr(self, 'new_names_placeholder'):
-                self.new_names_placeholder.hide()
-
-            # Re-enable interactions first
+            self.old_names_placeholder_helper.hide()
+            self.new_names_placeholder_helper.hide()
             for table in [self.old_names_table, self.new_names_table]:
-                table.setEnabled(True)  # Re-enable interactions
-
-            # Defer scrollbar policy changes to avoid flickering when content is about to be added
+                table.setEnabled(True)
             if not defer_width_adjustment:
-                # Re-enable intelligent scrollbars immediately
                 for table in [self.old_names_table, self.new_names_table]:
                     table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
                     table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-
-                # Update column widths for intelligent horizontal scrolling
                 self._adjust_table_widths()
-
             logger.debug(f"[PreviewTablesView] Placeholders disabled - tables enabled {'(deferred)' if defer_width_adjustment else '(immediate)'}", extra={"dev_only": True})
 
     def _finalize_scrollbar_setup(self):
@@ -392,48 +324,12 @@ class PreviewTablesView(QWidget):
 
     def _handle_table_resize(self):
         """Handle resize events for preview tables to update placeholder positions and column widths."""
-        # Update placeholder positions - center them properly in viewport (only if visible)
-        if hasattr(self, 'old_names_placeholder') and self.old_names_placeholder.isVisible():
-            viewport_size = self.old_names_table.viewport().size()
-
-            # Use the stored scaled size for accurate centering
-            if hasattr(self, 'old_placeholder_actual_size') and self.old_placeholder_actual_size:
-                placeholder_width = self.old_placeholder_actual_size.width()
-                placeholder_height = self.old_placeholder_actual_size.height()
-            else:
-                # Fallback to placeholder size if no stored size
-                placeholder_width = self.PLACEHOLDER_SIZE
-                placeholder_height = self.PLACEHOLDER_SIZE
-
-            # Calculate center position
-            x = max(0, (viewport_size.width() - placeholder_width) // 2)
-            y = max(0, (viewport_size.height() - placeholder_height) // 2)
-
-            self.old_names_placeholder.resize(placeholder_width, placeholder_height)
-            self.old_names_placeholder.move(x, y)
-
-        if hasattr(self, 'new_names_placeholder') and self.new_names_placeholder.isVisible():
-            viewport_size = self.new_names_table.viewport().size()
-
-            # Use the stored scaled size for accurate centering
-            if hasattr(self, 'new_placeholder_actual_size') and self.new_placeholder_actual_size:
-                placeholder_width = self.new_placeholder_actual_size.width()
-                placeholder_height = self.new_placeholder_actual_size.height()
-            else:
-                # Fallback to placeholder size if no stored size
-                placeholder_width = self.PLACEHOLDER_SIZE
-                placeholder_height = self.PLACEHOLDER_SIZE
-
-            # Calculate center position
-            x = max(0, (viewport_size.width() - placeholder_width) // 2)
-            y = max(0, (viewport_size.height() - placeholder_height) // 2)
-
-            self.new_names_placeholder.resize(placeholder_width, placeholder_height)
-            self.new_names_placeholder.move(x, y)
-
+        if self.old_names_placeholder_helper.is_visible():
+            self.old_names_placeholder_helper.update_position()
+        if self.new_names_placeholder_helper.is_visible():
+            self.new_names_placeholder_helper.update_position()
         # Update column widths if tables are active (not in placeholder mode)
-        if (hasattr(self, 'old_names_placeholder') and
-            not self.old_names_placeholder.isVisible()):
+        if not self.old_names_placeholder_helper.is_visible():
             self._adjust_table_widths()
 
     def update_from_pairs(self, name_pairs: list[Tuple[str, str]], preview_icons: dict, icon_paths: dict):
@@ -575,6 +471,7 @@ class PreviewTablesView(QWidget):
 
     def _initialize_placeholders(self):
         """Initialize placeholders after they are ready to be shown."""
+        logger.debug("[PreviewTablesView] Initializing placeholders", extra={"dev_only": True})
         self._set_placeholders_visible(True)
         self._placeholders_ready = True
-        logger.debug("[PreviewTablesView] Placeholders initialized", extra={"dev_only": True})
+        logger.debug("[PreviewTablesView] Placeholders initialized and shown", extra={"dev_only": True})

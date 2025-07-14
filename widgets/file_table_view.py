@@ -51,13 +51,13 @@ from utils.timer_manager import (
     schedule_resize_adjust,
     schedule_ui_update,
 )
+from utils.placeholder_helper import create_placeholder_helper
 
 from .hover_delegate import HoverItemDelegate
 
 logger = get_cached_logger(__name__)
 
 # Constants for better maintainability
-PLACEHOLDER_ICON_SIZE = 160
 SCROLLBAR_MARGIN = 40
 
 
@@ -71,7 +71,7 @@ class FileTableView(QTableView):
     - Horizontal scrollbar appears when columns exceed viewport width
     - Drag & drop support with custom MIME types
     - Hover highlighting and visual feedback
-    - Automatic placeholder management (no scrollbar in placeholder mode)
+    - Unified placeholder management using PlaceholderHelper
     - Keyboard shortcuts for column management (Ctrl+T, Ctrl+Shift+T)
 
     Column Configuration:
@@ -158,28 +158,10 @@ class FileTableView(QTableView):
         self._config_save_timer = None
         self._pending_column_changes = {}
 
-        # Setup placeholder icon/label
-        self.placeholder_label = QLabel(self.viewport())
-        self.placeholder_label.setAlignment(Qt.AlignCenter)
-        self.placeholder_label.setStyleSheet("background-color: #181818; color: #fff; font-size: 18px;")
-        self.placeholder_label.setText("No files loaded")
-        self.placeholder_label.hide()
-
-        from utils.path_utils import get_images_dir
-
-        icon_path = get_images_dir() / "File_table_placeholder_fixed.png"
-        self.placeholder_icon = QPixmap(str(icon_path))
-
-        if not self.placeholder_icon.isNull():
-            scaled = self.placeholder_icon.scaled(
-                PLACEHOLDER_ICON_SIZE,
-                PLACEHOLDER_ICON_SIZE,
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation,  # type: ignore
-            )
-            self.placeholder_label.setPixmap(scaled)
-        else:
-            logger.warning("Placeholder icon could not be loaded.")
+        # Setup placeholder using unified helper
+        self.placeholder_helper = create_placeholder_helper(
+            self, 'file_table', text="No files loaded", icon_size=160
+        )
 
         # Selection and interaction state
         self.selected_rows: set[int] = set()
@@ -328,14 +310,11 @@ class FileTableView(QTableView):
             return self.anchor_row
 
     def resizeEvent(self, event) -> None:
-        """Handle window resize events and update scrollbar visibility."""
+        """Handle resize events and update scrollbar visibility."""
         super().resizeEvent(event)
-        self.placeholder_label.resize(self.viewport().size())
-
-        # Force scrollbar update after resize
+        if hasattr(self, 'placeholder_helper'):
+            self.placeholder_helper.update_position()
         self._force_scrollbar_update()
-
-        # Ensure word wrap is disabled after resize
         self._ensure_no_word_wrap()
 
     def _ensure_no_word_wrap(self) -> None:
@@ -919,61 +898,17 @@ class FileTableView(QTableView):
     # =====================================
 
     def set_placeholder_visible(self, visible: bool) -> None:
-        """Show or hide the placeholder icon and configure table state."""
-        if visible and not self.placeholder_icon.isNull():
-            self.placeholder_label.raise_()
-            self.placeholder_label.show()
+        """Show or hide the placeholder using the unified helper."""
+        if hasattr(self, 'placeholder_helper'):
+            if visible:
+                self.placeholder_helper.show()
+            else:
+                self.placeholder_helper.hide()
 
-            # Force hide horizontal scrollbar when showing placeholder
-            self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-
-            # Disable interactions when showing placeholder but keep drag & drop
-            header = self.horizontalHeader()
-            if header:
-                header.setEnabled(False)
-                header.setSectionsClickable(False)
-                header.setSortIndicatorShown(False)
-
-            self.setSelectionMode(QAbstractItemView.NoSelection)
-            self.setContextMenuPolicy(Qt.NoContextMenu)
-
-            # Set placeholder property for styling
-            self.setProperty("placeholder", True)
-
-        else:
-            # Use batch updates to prevent flickering when re-enabling content
-            self.setUpdatesEnabled(False)
-
-            try:
-                self.placeholder_label.hide()
-
-                # Re-enable scrollbar policy based on content
-                self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-
-                # Re-enable interactions when hiding placeholder
-                header = self.horizontalHeader()
-                if header:
-                    header.show()  # CRITICAL: Show the header
-                    header.setEnabled(True)
-                    header.setSectionsClickable(True)
-                    header.setSortIndicatorShown(True)
-                    header.repaint()  # Force repaint
-
-                self.setSelectionMode(QAbstractItemView.ExtendedSelection)
-                self.setContextMenuPolicy(Qt.CustomContextMenu)
-
-                # Clear placeholder property
-                self.setProperty("placeholder", False)
-
-            finally:
-                # Re-enable updates and force a single refresh
-                self.setUpdatesEnabled(True)
-                self.viewport().update()
-
-    def _auto_update_placeholder_visibility(self) -> None:
-        """Automatically update placeholder visibility based on model state."""
-        should_show_placeholder = self.is_empty()
-        self.set_placeholder_visible(should_show_placeholder)
+    def update_placeholder_visibility(self):
+        """Update placeholder visibility based on table content."""
+        is_empty = self.is_empty() if hasattr(self, 'is_empty') else False
+        self.set_placeholder_visible(is_empty)
 
     def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
         """Handle selection logic with anchor and modifier support."""
@@ -2480,11 +2415,3 @@ class FileTableView(QTableView):
 
         except Exception as e:
             logger.error(f"Failed to check column widths: {e}")
-
-    def update_placeholder_visibility(self):
-        model = self.model()
-        if model and hasattr(model, 'rowCount') and model.rowCount() == 0:
-            self.placeholder_label.show()
-            self.placeholder_label.raise_()
-        else:
-            self.placeholder_label.hide()
