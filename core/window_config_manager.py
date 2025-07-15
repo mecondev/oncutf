@@ -44,7 +44,7 @@ class WindowConfigManager:
                     geometry['x'], geometry['y'],
                     geometry['width'], geometry['height']
                 )
-                logger.info(f"[Config] Applied saved window geometry: {geometry}")
+                logger.debug(f"[Config] Applied saved window geometry: {geometry}", extra={"dev_only": True})
             else:
                 # No saved geometry - set smart defaults based on screen size
                 logger.info("[Config] No saved geometry found, applying smart defaults")

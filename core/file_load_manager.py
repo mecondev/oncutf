@@ -296,10 +296,7 @@ class FileLoadManager:
                 self.parent_window.file_model.set_files(combined_files)
 
                 # Log the results
-                if duplicate_count > 0:
-                    logger.info(f"[FileLoadManager] Added {len(new_items)} new items, skipped {duplicate_count} duplicates (total: {len(combined_files)})")
-                else:
-                    logger.info(f"[FileLoadManager] Added {len(new_items)} new items to existing {len(existing_files)} files (total: {len(combined_files)})")
+
 
             # CRITICAL: Update all UI elements after file loading
             self._refresh_ui_after_file_load()

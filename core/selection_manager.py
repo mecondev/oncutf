@@ -278,7 +278,7 @@ class SelectionManager:
         Args:
             selected_rows (List[int]): The indices of selected rows (from custom selection).
         """
-        print(f"[DEBUG] update_preview_from_selection called with rows: {selected_rows}")
+        logger.debug(f"[Selection] update_preview_from_selection called with rows: {selected_rows}", extra={"dev_only": True})
 
         if not self.parent_window:
             print("[DEBUG] No parent window, returning")
@@ -330,7 +330,7 @@ class SelectionManager:
                 return
 
             logger.debug(f"[Sync] update_preview_from_selection: {selected_rows}", extra={"dev_only": True})
-            print(f"[DEBUG] Processing selection: {selected_rows}")
+            logger.debug(f"[Selection] Processing selection: {selected_rows}", extra={"dev_only": True})
             timer = QElapsedTimer()
             timer.start()
 
@@ -345,10 +345,10 @@ class SelectionManager:
             # Show metadata using centralized logic and update current file for context menus
             if selected_rows:
                 last_row = selected_rows[-1]
-                print(f"[DEBUG] Last selected row: {last_row}, total files: {len(file_model.files)}")
+                logger.debug(f"[Selection] Last selected row: {last_row}, total files: {len(file_model.files)}", extra={"dev_only": True})
                 if 0 <= last_row < len(file_model.files):
                     file_item = file_model.files[last_row]
-                    print(f"[DEBUG] Selected file: {file_item.filename}")
+                    logger.debug(f"[Selection] Selected file: {file_item.filename}", extra={"dev_only": True})
 
                     # Update current file for SpecifiedText modules context menu
                     if rename_modules_area and hasattr(rename_modules_area, 'set_current_file_for_modules'):
@@ -356,16 +356,16 @@ class SelectionManager:
 
                     # Use centralized metadata display logic
                     if metadata_tree_view:
-                        print(f"[DEBUG] Metadata tree view available")
+                        logger.debug(f"[Selection] Metadata tree view available", extra={"dev_only": True})
                         should_display = (hasattr(metadata_tree_view, 'should_display_metadata_for_selection') and
                                         metadata_tree_view.should_display_metadata_for_selection(len(selected_rows)))
-                        print(f"[DEBUG] Should display metadata: {should_display}")
+                        logger.debug(f"[Selection] Should display metadata: {should_display}", extra={"dev_only": True})
 
                         if should_display and cache_helper:
-                            print(f"[DEBUG] Cache helper available, getting metadata...")
+                            logger.debug(f"[Selection] Cache helper available, getting metadata...", extra={"dev_only": True})
                             metadata = cache_helper.get_metadata_for_file(file_item)
                             logger.debug(f"[SelectionManager] Updating metadata tree for file: {file_item.filename}, metadata available: {bool(metadata)}", extra={"dev_only": True})
-                            print(f"[DEBUG] Updating metadata tree for file: {file_item.filename}, metadata available: {bool(metadata)}")
+                            logger.debug(f"[Selection] Updating metadata tree for file: {file_item.filename}, metadata available: {bool(metadata)}", extra={"dev_only": True})
 
                             if hasattr(metadata_tree_view, 'smart_display_metadata_or_empty_state'):
                                 metadata_tree_view.smart_display_metadata_or_empty_state(
@@ -376,15 +376,15 @@ class SelectionManager:
                         else:
                             # Multiple files - show empty state
                             logger.debug(f"[SelectionManager] Showing empty state for {len(selected_rows)} selected files", extra={"dev_only": True})
-                            print(f"[DEBUG] Showing empty state for {len(selected_rows)} selected files")
+                            logger.debug(f"[Selection] Showing empty state for {len(selected_rows)} selected files", extra={"dev_only": True})
                             if hasattr(metadata_tree_view, 'show_empty_state'):
                                 metadata_tree_view.show_empty_state("Multiple files selected")
                     else:
-                        print(f"[DEBUG] No metadata tree view available")
+                        logger.debug(f"[Selection] No metadata tree view available", extra={"dev_only": True})
                 else:
-                    print(f"[DEBUG] Invalid row index: {last_row}")
+                    logger.debug(f"[Selection] Invalid row index: {last_row}", extra={"dev_only": True})
             else:
-                print(f"[DEBUG] No selected rows")
+                logger.debug(f"[Selection] No selected rows", extra={"dev_only": True})
                 # Clear current file when no selection
                 if rename_modules_area and hasattr(rename_modules_area, 'set_current_file_for_modules'):
                     rename_modules_area.set_current_file_for_modules(None)

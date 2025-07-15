@@ -529,6 +529,15 @@ class FileTreeView(QTreeView):
         # Restore hover state with fake mouse move event
         self._restore_hover_after_drag()
 
+        # Restore folder selection if it was lost during drag
+        if self._drag_path and os.path.isdir(self._drag_path):
+            # Check if the dragged folder is still selected
+            current_selection = self.get_selected_path()
+            if current_selection != self._drag_path:
+                # Selection was lost, restore it
+                self.select_path(self._drag_path)
+                logger.debug(f"[FileTreeView] Restored folder selection: {self._drag_path}", extra={"dev_only": True})
+
         logger.debug(f"[FileTreeView] Custom drag ended: {self._drag_path} (valid_drop: {valid_drop})", extra={"dev_only": True})
 
     def _restore_hover_after_drag(self):

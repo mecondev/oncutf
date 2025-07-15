@@ -14,6 +14,7 @@ Many of the linter warnings are false positives and can be safely ignored.
 
 # type: ignore (PyQt5 attributes not recognized by linter)
 
+from datetime import datetime
 from typing import Optional
 
 # Import all config constants from centralized module
@@ -783,7 +784,7 @@ class MainWindow(QMainWindow):
             event.ignore()
             return
 
-        logger.info("Application shutting down...")
+        logger.info(f"Application shutting down at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}...")
 
         # 0. Check for unsaved metadata changes
         if self._check_for_unsaved_changes():

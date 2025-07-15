@@ -114,7 +114,7 @@ class ColumnManager:
         # Initialize default configurations
         self._initialize_default_configs()
 
-        logger.info("[ColumnManager] Initialized column management system")
+
 
     def _initialize_default_configs(self) -> None:
         """Initialize default column configurations for different table types."""

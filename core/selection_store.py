@@ -64,15 +64,13 @@ class SelectionStore(QObject):
         # Protection against infinite loops
         self._syncing_selection: bool = False
 
-        # Additional loop protection
-        self._last_set_selected_call_time = 0
-        self._set_selected_call_count = 0
-        self._max_calls_per_second = 5
+        # Loop protection
+        self._syncing_selection: bool = False
 
-        # Debouncing timer for high-frequency updates
+        # OPTIMIZED: Faster debouncing timer for better responsiveness
         self._update_timer = QTimer(self)
         self._update_timer.setSingleShot(True)
-        self._update_timer.setInterval(10)  # 10ms debounce
+        self._update_timer.setInterval(5)  # 5ms debounce for faster response
         self._update_timer.timeout.connect(self._emit_deferred_signals)
 
         # Pending signal emissions (for debouncing)
@@ -96,35 +94,18 @@ class SelectionStore(QObject):
 
     def set_selected_rows(self, rows: Set[int], *, emit_signal: bool = True, force_emit: bool = False) -> None:
         """
-        Set selected row indices.
+        Set selected row indices with optimized debouncing.
 
         Args:
             rows: Set of row indices to select
             emit_signal: Whether to emit selection_changed signal
             force_emit: Whether to emit signal even if no change (for delayed updates)
         """
-        current_time = time.time()
-
-        # Improved rate limiting protection - more lenient for column updates
-        if current_time - self._last_set_selected_call_time < 0.1:  # Less than 100ms (was 200ms)
-            self._set_selected_call_count += 1
-            if self._set_selected_call_count > 10:  # Increased from 5 to 10
-                logger.warning(f"[SelectionStore] set_selected_rows rate limit exceeded ({self._set_selected_call_count} calls). Ignoring.")
-                return
-        else:
-            # Reset counter if enough time has passed
-            self._set_selected_call_count = 1
-            self._last_set_selected_call_time = current_time
-
-        logger.debug(f"[SelectionStore] set_selected_rows called with rows={rows}, emit_signal={emit_signal}, force_emit={force_emit}, _syncing_selection={self._syncing_selection}, call_count={self._set_selected_call_count}")
-
         # Protection against infinite loops during sync operations
         if self._syncing_selection:
-            logger.debug("[SelectionStore] Ignoring selection update during sync operation", extra={"dev_only": True})
             return
 
         if rows == self._selected_rows and not force_emit:
-            logger.debug(f"[SelectionStore] set_selected_rows: No change (rows == self._selected_rows)")
             return  # No change
 
         old_count = len(self._selected_rows)
@@ -133,11 +114,9 @@ class SelectionStore(QObject):
 
         self._last_operation_time = time.time()
 
-        # Emit signal if requested
+        # OPTIMIZED: Use debounced signal emission for better performance
         if emit_signal:
-            logger.debug(f"[SelectionStore] Emitting selection_changed with rows={self._selected_rows}")
-            self.selection_changed.emit(list(self._selected_rows))
-            logger.debug(f"Selection updated: {old_count} -> {new_count} rows", extra={"dev_only": True})
+            self._schedule_selection_signal()
 
     def add_selected_rows(self, rows: Set[int], *, emit_signal: bool = True) -> None:
         """
@@ -155,9 +134,7 @@ class SelectionStore(QObject):
         new_count = len(self._selected_rows)
 
         if new_count != old_count:
-            # Emit signal
-            self.selection_changed.emit(list(self._selected_rows))
-            logger.debug(f"Selection extended: +{new_count - old_count} rows (total: {new_count})", extra={"dev_only": True})
+            # OPTIMIZED: Use debounced signal emission
             if emit_signal:
                 self._schedule_selection_signal()
 
@@ -177,9 +154,7 @@ class SelectionStore(QObject):
         new_count = len(self._selected_rows)
 
         if new_count != old_count:
-            # Emit signal
-            self.selection_changed.emit(list(self._selected_rows))
-            logger.debug(f"Selection reduced: -{old_count - new_count} rows (total: {new_count})", extra={"dev_only": True})
+            # OPTIMIZED: Use debounced signal emission
             if emit_signal:
                 self._schedule_selection_signal()
 
@@ -193,11 +168,9 @@ class SelectionStore(QObject):
         if not self._selected_rows:
             return
 
-        count = len(self._selected_rows)
         self._selected_rows.clear()
         if emit_signal:
-            self.selection_changed.emit([])
-            logger.debug(f"Selection cleared: {count} rows", extra={"dev_only": True})
+            self._schedule_selection_signal()
 
     # =====================================
     # Checked State Management
