@@ -173,6 +173,12 @@ class FileTableView(QTableView):
         self.hover_delegate = HoverItemDelegate(self)
         self.setItemDelegate(self.hover_delegate)
 
+        # Setup viewport events to hide tooltips when mouse leaves viewport
+        self.viewport()._original_leave_event = self.viewport().leaveEvent
+        self.viewport()._original_enter_event = self.viewport().enterEvent
+        self.viewport().leaveEvent = self._viewport_leave_event
+        self.viewport().enterEvent = self._viewport_enter_event
+
         # Selection store integration (with fallback to legacy selection handling)
         self._legacy_selection_mode = True  # Start in legacy mode for compatibility
 
@@ -1868,7 +1874,22 @@ class FileTableView(QTableView):
         super().focusOutEvent(event)
         if self.context_focused_row is not None:
             self.context_focused_row = None
-            self.viewport().update()
+
+        # Clear hover state and hide tooltips when focus is lost
+        if hasattr(self, "hover_delegate"):
+            old_row = self.hover_delegate.hovered_row
+            self.hover_delegate.update_hover_row(-1)
+            if old_row >= 0:
+                left = self.model().index(old_row, 0)
+                right = self.model().index(old_row, self.model().columnCount() - 1)
+                row_rect = self.visualRect(left).united(self.visualRect(right))
+                self.viewport().update(row_rect)
+
+        # Hide any active tooltips
+        from utils.tooltip_helper import TooltipHelper
+        TooltipHelper.clear_tooltips_for_widget(self)
+
+        self.viewport().update()
 
     def focusInEvent(self, event) -> None:
         """SIMPLIFIED focus handling - just sync selection, no special cases"""
@@ -1881,6 +1902,82 @@ class FileTableView(QTableView):
             self._update_selection_store(selected_rows, emit_signal=False)  # Don't emit signal on focus
 
         self.viewport().update()
+
+    def leaveEvent(self, event) -> None:
+        """Handle mouse leave events to hide tooltips and clear hover state."""
+        # Clear hover state when mouse leaves the table
+        if hasattr(self, "hover_delegate"):
+            old_row = self.hover_delegate.hovered_row
+            self.hover_delegate.update_hover_row(-1)
+            if old_row >= 0:
+                left = self.model().index(old_row, 0)
+                right = self.model().index(old_row, self.model().columnCount() - 1)
+                row_rect = self.visualRect(left).united(self.visualRect(right))
+                self.viewport().update(row_rect)
+
+        # Hide any active tooltips
+        from utils.tooltip_helper import TooltipHelper
+        TooltipHelper.clear_tooltips_for_widget(self)
+
+        super().leaveEvent(event)
+
+    def _viewport_leave_event(self, event) -> None:
+        """Handle viewport leave events to hide tooltips and clear hover state."""
+        # Clear hover state when mouse leaves the viewport
+        if hasattr(self, "hover_delegate"):
+            old_row = self.hover_delegate.hovered_row
+            self.hover_delegate.update_hover_row(-1)
+            if old_row >= 0:
+                left = self.model().index(old_row, 0)
+                right = self.model().index(old_row, self.model().columnCount() - 1)
+                row_rect = self.visualRect(left).united(self.visualRect(right))
+                self.viewport().update(row_rect)
+
+        # Hide any active tooltips
+        from utils.tooltip_helper import TooltipHelper
+        TooltipHelper.clear_tooltips_for_widget(self)
+
+        # Call original viewport leaveEvent if it exists
+        original_leave_event = getattr(self.viewport(), '_original_leave_event', None)
+        if original_leave_event:
+            original_leave_event(event)
+
+    def _viewport_enter_event(self, event) -> None:
+        """Handle viewport enter events to restore hover state."""
+        # Update hover state when mouse enters the viewport
+        pos = self.viewport().mapFromGlobal(QCursor.pos())
+        index = self.indexAt(pos)
+        hovered_row = index.row() if index.isValid() else -1
+
+        if hasattr(self, "hover_delegate"):
+            self.hover_delegate.update_hover_row(hovered_row)
+            if hovered_row >= 0:
+                left = self.model().index(hovered_row, 0)
+                right = self.model().index(hovered_row, self.model().columnCount() - 1)
+                row_rect = self.visualRect(left).united(self.visualRect(right))
+                self.viewport().update(row_rect)
+
+        # Call original viewport enterEvent if it exists
+        original_enter_event = getattr(self.viewport(), '_original_enter_event', None)
+        if original_enter_event:
+            original_enter_event(event)
+
+    def enterEvent(self, event) -> None:
+        """Handle mouse enter events to restore hover state."""
+        # Update hover state when mouse enters the table
+        pos = self.viewport().mapFromGlobal(QCursor.pos())
+        index = self.indexAt(pos)
+        hovered_row = index.row() if index.isValid() else -1
+
+        if hasattr(self, "hover_delegate"):
+            self.hover_delegate.update_hover_row(hovered_row)
+            if hovered_row >= 0:
+                left = self.model().index(hovered_row, 0)
+                right = self.model().index(hovered_row, self.model().columnCount() - 1)
+                row_rect = self.visualRect(left).united(self.visualRect(right))
+                self.viewport().update(row_rect)
+
+        super().enterEvent(event)
 
     def wheelEvent(self, event) -> None:
         super().wheelEvent(event)

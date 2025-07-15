@@ -10,7 +10,7 @@ The hover background color is provided via constructor and is applied
 only when the row is not selected.
 """
 
-from core.pyqt_imports import QColor, QIcon, QPen, QStyle, QStyledItemDelegate, Qt, QTableView
+from core.pyqt_imports import QColor, QIcon, QPen, QStyle, QStyledItemDelegate, Qt, QTableView, QCursor
 from utils.theme import get_qcolor, get_theme_color
 
 
@@ -34,6 +34,34 @@ class HoverItemDelegate(QStyledItemDelegate):
         Updates the row that should be highlighted on hover.
         """
         self.hovered_row = row
+
+    def leaveEvent(self, event) -> None:
+        """Handle mouse leave events to hide tooltips."""
+        # Hide any active tooltips when mouse leaves the delegate
+        from utils.tooltip_helper import TooltipHelper
+        TooltipHelper.clear_tooltips_for_widget(self.parent())
+
+        super().leaveEvent(event)
+
+    def enterEvent(self, event) -> None:
+        """Handle mouse enter events to restore hover state."""
+        # Update hover state when mouse enters the delegate
+        table = self.parent()
+        if isinstance(table, QTableView):
+            pos = table.viewport().mapFromGlobal(QCursor.pos())
+            index = table.indexAt(pos)
+            hovered_row = index.row() if index.isValid() else -1
+            self.update_hover_row(hovered_row)
+
+        super().enterEvent(event)
+
+    def focusOutEvent(self, event) -> None:
+        """Handle focus loss events to hide tooltips."""
+        # Hide any active tooltips when focus is lost
+        from utils.tooltip_helper import TooltipHelper
+        TooltipHelper.clear_tooltips_for_widget(self.parent())
+
+        super().focusOutEvent(event)
 
     def paint(self, painter, option, index):
         """
