@@ -238,35 +238,22 @@ class UtilityManager:
         super(type(self.main_window), self.main_window).closeEvent(event)
 
     def generate_preview_names(self) -> None:
-        """
-        Generate new preview names for all selected files using current rename modules.
-        Updates the preview map and UI elements accordingly.
-        """
+        """Generate new preview names for all selected files using current rename modules."""
         selected_files = self.main_window.get_selected_files()
-        logger.debug("[Preview] Triggered! Selected rows: %s", [f.filename for f in selected_files], extra={"dev_only": True})
 
-        # Create hash of current selection for comparison
+        # Check if data changed to avoid unnecessary regeneration
         selected_files_hash = hash(tuple(f.full_path for f in selected_files)) if selected_files else None
-
-        # Get rename data and modules
         rename_data = self.main_window.rename_modules_area.get_all_data()
+        rename_data["post_transform"] = self.main_window.final_transform_container.get_data()
 
-        # Add post_transform data from final transform container
-        post_transform_data = self.main_window.final_transform_container.get_data()
-        rename_data["post_transform"] = post_transform_data
-
-        # Create hash of rename data for comparison
         import json
         try:
             rename_data_hash = hash(json.dumps(rename_data, sort_keys=True, default=str))
         except (TypeError, ValueError):
-            # Fallback to string representation if JSON serialization fails
             rename_data_hash = hash(str(rename_data))
 
-        # Check if we need to regenerate preview
         if (selected_files_hash == self._last_selected_files_hash and
             rename_data_hash == self._last_rename_data_hash):
-            logger.debug("[Preview] Data unchanged, skipping preview generation", extra={"dev_only": True})
             return
 
         # Update cache
@@ -274,62 +261,43 @@ class UtilityManager:
         self._last_rename_data_hash = rename_data_hash
 
         if not selected_files:
-            logger.debug("[Preview] No selected files — skipping preview generation.", extra={"dev_only": True})
             self.main_window.update_preview_tables_from_pairs([])
             self.main_window.rename_button.setEnabled(False)
             return
 
+        # Generate previews
         all_modules = self.main_window.rename_modules_area.get_all_module_instances()
-
-        # Use PreviewManager to generate previews
         name_pairs, has_changes = self.main_window.preview_manager.generate_preview_names(
             selected_files, rename_data, self.main_window.metadata_cache, all_modules
         )
 
-        # Update preview map from manager
+        # Update UI
         self.main_window.preview_map = self.main_window.preview_manager.get_preview_map()
+        self.main_window.update_preview_tables_from_pairs(name_pairs)
 
-        # Handle UI updates based on results
+        # Handle rename button state
+        self._update_rename_button_state(name_pairs, has_changes)
+
+    def _update_rename_button_state(self, name_pairs: list, has_changes: bool) -> None:
+        """Update rename button state and tooltip."""
         if not name_pairs:
-            # No modules at all → clear preview completely
-            self.main_window.update_preview_tables_from_pairs([])
             self.main_window.rename_button.setEnabled(False)
-            if hasattr(self.main_window, 'status_manager'):
-                self.main_window.status_manager.set_validation_status(
-                    "No rename modules defined",
-                    validation_type="info",
-                    auto_reset=True
-                )
             return
 
         if not has_changes:
-            # Modules exist but inactive → show identity mapping
             self.main_window.rename_button.setEnabled(False)
             setup_tooltip(self.main_window.rename_button, "No changes to apply", TooltipType.WARNING)
-            self.main_window.update_preview_tables_from_pairs(name_pairs)
-            if hasattr(self.main_window, 'status_manager'):
-                self.main_window.status_manager.set_validation_status(
-                    "Rename modules present but inactive",
-                    validation_type="info",
-                    auto_reset=True
-                )
             return
 
-        # Update preview tables with changes
-        self.main_window.update_preview_tables_from_pairs(name_pairs)
-
-        # Enable rename button and set tooltip
-        valid_pairs = [p for p in name_pairs if p[0] != p[1]]
-
-        # Check for validation errors in new names
+        # Check for validation errors
         from utils.filename_validator import is_validation_error_marker
+        valid_pairs = [p for p in name_pairs if p[0] != p[1]]
         has_validation_errors = any(is_validation_error_marker(new_name) for _, new_name in name_pairs)
 
-        # Rename button should be enabled only if we have changes AND no validation errors
         can_rename = bool(valid_pairs) and not has_validation_errors
         self.main_window.rename_button.setEnabled(can_rename)
 
-        # Set appropriate tooltip message
+        # Set tooltip
         if has_validation_errors:
             error_count = sum(1 for _, new_name in name_pairs if is_validation_error_marker(new_name))
             tooltip_msg = f"Cannot rename: {error_count} validation error(s) found"
@@ -347,6 +315,5 @@ class UtilityManager:
         """Clear the preview generation cache to force next update."""
         self._last_selected_files_hash = None
         self._last_rename_data_hash = None
-        logger.debug("[Preview] Cache cleared, next generation will be forced", extra={"dev_only": True})
 
 

@@ -336,34 +336,25 @@ class PreviewTablesView(QWidget):
             self._adjust_table_widths()
 
     def update_from_pairs(self, name_pairs: list[Tuple[str, str]], preview_icons: dict, icon_paths: dict):
-        """
-        Update preview tables with name pairs and status validation.
-
-        Args:
-            name_pairs: List of (old_name, new_name) tuples
-            preview_icons: Dictionary of status icons
-            icon_paths: Dictionary of icon file paths for HTML rendering
-        """
-        # Disable updates to prevent flickering during batch operations
+        """Update preview tables with name pairs and status validation."""
+        # Disable updates to prevent flickering
         self.old_names_table.setUpdatesEnabled(False)
         self.new_names_table.setUpdatesEnabled(False)
         self.icon_table.setUpdatesEnabled(False)
 
         try:
-            # Clear all preview tables before updating
+            # Clear tables
             self.old_names_table.setRowCount(0)
             self.new_names_table.setRowCount(0)
             self.icon_table.setRowCount(0)
 
             if not name_pairs:
-                # Show placeholders when no content
                 self._set_placeholders_visible(True)
                 self.status_updated.emit("No files selected.")
                 return
 
-            # Hide placeholders when we have content (defer scrollbar setup to avoid flickering)
+            # Hide placeholders
             self._set_placeholders_visible(False, defer_width_adjustment=True)
-            logger.debug(f"[PreviewTablesView] Processing {len(name_pairs)} name pairs - scrollbar setup deferred", extra={"dev_only": True})
 
             # Precompute duplicates
             seen, duplicates = set(), set()
@@ -373,82 +364,83 @@ class PreviewTablesView(QWidget):
                 else:
                     seen.add(new_name)
 
-            # Initialize status counters
+            # Process name pairs
             stats = {"unchanged": 0, "invalid": 0, "duplicate": 0, "valid": 0}
+            self._process_name_pairs(name_pairs, duplicates, stats, preview_icons)
 
-            for row, (old_name, new_name) in enumerate(name_pairs):
-                self.old_names_table.insertRow(row)
-                self.new_names_table.insertRow(row)
-                self.icon_table.insertRow(row)
+            # Update status
+            self._update_status_summary(stats, icon_paths)
 
-                # Create table items
-                old_item = QTableWidgetItem(old_name)
-                new_item = QTableWidgetItem(new_name)
-
-                # Determine rename status
-                if old_name == new_name:
-                    status = "unchanged"
-                    tooltip = "Unchanged filename"
-                else:
-                    # Check for validation error marker first
-                    if is_validation_error_marker(new_name):
-                        status = "invalid"
-                        tooltip = get_validation_error_message(old_name)  # Get detailed error for original name
-                    else:
-                        # Use new validation system
-                        import os
-
-                        from utils.filename_validator import validate_filename_part
-                        # Get filename without extension for validation
-                        basename = os.path.splitext(new_name)[0]
-                        is_valid, _ = validate_filename_part(basename)
-                        if not is_valid:
-                            status = "invalid"
-                            tooltip = "Invalid filename"
-                        elif new_name in duplicates:
-                            status = "duplicate"
-                            tooltip = "Duplicate name"
-                        else:
-                            status = "valid"
-                            tooltip = "Ready to rename"
-
-                # Update status counts
-                stats[status] += 1
-
-                # Prepare status icon
-                icon_item = QTableWidgetItem()
-                icon = preview_icons.get(status)
-                if icon:
-                    icon_item.setIcon(icon)
-                # Use setToolTip for QTableWidgetItem (not a QWidget, so can't use setup_tooltip)
-                icon_item.setToolTip(tooltip)
-
-                # Insert items into corresponding tables
-                self.old_names_table.setItem(row, 0, old_item)
-                self.new_names_table.setItem(row, 0, new_item)
-                self.icon_table.setItem(row, 0, icon_item)
-
-            # Render bottom status summary (valid, unchanged, invalid, duplicate)
-            status_msg = (
-                f"<img src='{icon_paths['valid']}' width='14' height='14' style='vertical-align: middle';/>"
-                f"<span style='color:#ccc;'> Valid: {stats['valid']}</span>&nbsp;&nbsp;&nbsp;"
-                f"<img src='{icon_paths['unchanged']}' width='14' height='14' style='vertical-align: middle';/>"
-                f"<span style='color:#ccc;'> Unchanged: {stats['unchanged']}</span>&nbsp;&nbsp;&nbsp;"
-                f"<img src='{icon_paths['invalid']}' width='14' height='14' style='vertical-align: middle';/>"
-                f"<span style='color:#ccc;'> Invalid: {stats['invalid']}</span>&nbsp;&nbsp;&nbsp;"
-                f"<img src='{icon_paths['duplicate']}' width='14' height='14' style='vertical-align: middle';/>"
-                f"<span style='color:#ccc;'> Duplicates: {stats['duplicate']}</span>"
-            )
-            self.status_updated.emit(status_msg)
-
-            # Schedule scrollbar setup
+            # Setup scrollbars
             schedule_scroll_adjust(self._finalize_scrollbar_setup, 15)
 
         finally:
-            # Re-enable updates after all operations are complete
+            # Re-enable updates
             self.old_names_table.setUpdatesEnabled(True)
             self.new_names_table.setUpdatesEnabled(True)
             self.icon_table.setUpdatesEnabled(True)
+
+    def _process_name_pairs(self, name_pairs: list, duplicates: set, stats: dict, preview_icons: dict) -> None:
+        """Process name pairs and populate tables."""
+        for row, (old_name, new_name) in enumerate(name_pairs):
+            self.old_names_table.insertRow(row)
+            self.new_names_table.insertRow(row)
+            self.icon_table.insertRow(row)
+
+            # Create items
+            old_item = QTableWidgetItem(old_name)
+            new_item = QTableWidgetItem(new_name)
+
+            # Determine status
+            status, tooltip = self._determine_rename_status(old_name, new_name, duplicates)
+            stats[status] += 1
+
+            # Set icon
+            icon_item = QTableWidgetItem()
+            icon = preview_icons.get(status)
+            if icon:
+                icon_item.setIcon(icon)
+            icon_item.setToolTip(tooltip)
+
+            # Insert items
+            self.old_names_table.setItem(row, 0, old_item)
+            self.new_names_table.setItem(row, 0, new_item)
+            self.icon_table.setItem(row, 0, icon_item)
+
+    def _determine_rename_status(self, old_name: str, new_name: str, duplicates: set) -> tuple[str, str]:
+        """Determine rename status and tooltip for a name pair."""
+        if old_name == new_name:
+            return "unchanged", "Unchanged filename"
+
+        if is_validation_error_marker(new_name):
+            return "invalid", get_validation_error_message(old_name)
+
+        import os
+        from utils.filename_validator import validate_filename_part
+
+        basename = os.path.splitext(new_name)[0]
+        is_valid, _ = validate_filename_part(basename)
+
+        if not is_valid:
+            return "invalid", "Invalid filename"
+        elif new_name in duplicates:
+            return "duplicate", "Duplicate name"
+        else:
+            return "valid", "Ready to rename"
+
+    def _update_status_summary(self, stats: dict, icon_paths: dict) -> None:
+        """Update status summary with statistics."""
+        status_msg = (
+            f"<img src='{icon_paths['valid']}' width='14' height='14' style='vertical-align: middle';/>"
+            f"<span style='color:#ccc;'> Valid: {stats['valid']}</span>&nbsp;&nbsp;&nbsp;"
+            f"<img src='{icon_paths['unchanged']}' width='14' height='14' style='vertical-align: middle';/>"
+            f"<span style='color:#ccc;'> Unchanged: {stats['unchanged']}</span>&nbsp;&nbsp;&nbsp;"
+            f"<img src='{icon_paths['invalid']}' width='14' height='14' style='vertical-align: middle';/>"
+            f"<span style='color:#ccc;'> Invalid: {stats['invalid']}</span>&nbsp;&nbsp;&nbsp;"
+            f"<img src='{icon_paths['duplicate']}' width='14' height='14' style='vertical-align: middle';/>"
+            f"<span style='color:#ccc;'> Duplicates: {stats['duplicate']}</span>"
+        )
+        self.status_updated.emit(status_msg)
 
     def clear_tables(self):
         """Clear all tables and show placeholders."""

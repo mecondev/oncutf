@@ -39,35 +39,28 @@ class PreviewManager:
         all_modules: List[Any]
     ) -> Tuple[List[Tuple[str, str]], bool]:
         """Generate preview names for selected files."""
-        with wait_cursor():
-            timer = QElapsedTimer()
-            timer.start()
+        if not selected_files:
+            return [], False
 
-            if not selected_files:
+        modules_data = rename_data.get("modules", [])
+        post_transform = rename_data.get("post_transform", {})
+
+        # Check if all modules are no-op
+        is_noop = self._check_if_noop(all_modules, post_transform)
+        self.preview_map = {file.filename: file for file in selected_files}
+
+        if is_noop:
+            if not all_modules and not NameTransformModule.is_effective(post_transform):
                 return [], False
+            else:
+                name_pairs = [(f.filename, f.filename) for f in selected_files]
+                return name_pairs, False
 
-            modules_data = rename_data.get("modules", [])
-            post_transform = rename_data.get("post_transform", {})
+        name_pairs = self._generate_name_pairs(selected_files, modules_data, post_transform, metadata_cache)
+        self._update_preview_map_with_new_names(name_pairs)
 
-            # Check if all modules are no-op
-            is_noop = self._check_if_noop(all_modules, post_transform)
-            self.preview_map = {file.filename: file for file in selected_files}
-
-            if is_noop:
-                if not all_modules and not NameTransformModule.is_effective(post_transform):
-                    return [], False
-                else:
-                    name_pairs = [(f.filename, f.filename) for f in selected_files]
-                    return name_pairs, False
-
-            name_pairs = self._generate_name_pairs(selected_files, modules_data, post_transform, metadata_cache)
-            self._update_preview_map_with_new_names(name_pairs)
-
-            elapsed = timer.elapsed()
-            logger.debug(f"[Performance] generate_preview_names took {elapsed} ms", extra={"dev_only": True})
-
-            has_changes = any(old_name != new_name for old_name, new_name in name_pairs)
-            return name_pairs, has_changes
+        has_changes = any(old_name != new_name for old_name, new_name in name_pairs)
+        return name_pairs, has_changes
 
     def _check_if_noop(self, all_modules: List[Any], post_transform: Dict[str, Any]) -> bool:
         """Check if all modules are no-op."""

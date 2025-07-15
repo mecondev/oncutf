@@ -2198,104 +2198,42 @@ class FileTableView(QTableView):
         logger.debug(f"[ColumnDebug] =========================================")
 
     def _clear_selection_for_column_update(self, force_emit_signal: bool = False) -> None:
-        """
-        Clear selection during column updates.
-
-        Args:
-            force_emit_signal: If True, forces emission of selection_changed signal
-                              to ensure preview and metadata are updated
-        """
-        logger.debug(f"[ColumnUpdate] Clearing selection for column update (force_emit={force_emit_signal})")
-
-        # Clear Qt selection model
+        """Clear selection during column updates."""
         self.clearSelection()
 
-        # Clear SelectionStore
         selection_store = self._get_selection_store()
         if selection_store and not self._legacy_selection_mode:
-            if force_emit_signal:
-                # Force emit signal to clear preview and metadata tree
-                selection_store.set_selected_rows(set(), emit_signal=True, force_emit=True)
-                logger.debug("[ColumnUpdate] Selection cleared with signal emission")
-            else:
-                # Silent clear to avoid loops during updates
-                selection_store.set_selected_rows(set(), emit_signal=False)
-                logger.debug("[ColumnUpdate] Selection cleared silently")
+            selection_store.set_selected_rows(set(), emit_signal=force_emit_signal)
 
     def _handle_column_update_lifecycle(self, update_function: callable) -> None:
-        """
-        Handle the complete lifecycle of a column update operation.
-
-        This method ensures proper state management during column updates:
-        - Sets update flags to prevent loops
-        - Clears selection appropriately
-        - Executes the update function
-        - Ensures final cleanup with signal emission
-
-        Args:
-            update_function: Function that performs the actual column update
-        """
+        """Handle the complete lifecycle of a column update operation."""
         try:
-            # Set flag to prevent infinite loops during update
             self._updating_columns = True
-
-            # Debug state before update
-            logger.debug("[ColumnUpdate] STATE BEFORE UPDATE:")
-            self.debug_column_state()
-
-            # Clear selection during update (silent to avoid loops)
             self._clear_selection_for_column_update(force_emit_signal=False)
-
-            # Execute the actual update
             update_function()
-
-            # Debug state after update
-            logger.debug("[ColumnUpdate] STATE AFTER UPDATE:")
-            self.debug_column_state()
-
         except Exception as e:
             logger.error(f"[ColumnUpdate] Error during column update: {e}")
             raise
         finally:
-            # Always clear the update flag
             self._updating_columns = False
-
-        # Ensure preview and metadata are cleared after column updates
-        # This is needed because not all column operations trigger selectionChanged
-        # Always clear preview/metadata immediately after column updates
-        self._clear_selection_for_column_update(force_emit_signal=True)
-        logger.debug("[ColumnUpdate] Final preview/metadata clear after column update")
+            self._clear_selection_for_column_update(force_emit_signal=True)
 
     def _update_table_columns(self) -> None:
         """Update table columns based on visibility configuration."""
         model = self.model()
         if not model:
-            logger.warning("No model available for column update")
             return
 
         def perform_column_update():
-            """Internal function that performs the actual column update."""
-            # Update model with visible columns
             visible_columns = self.get_visible_columns_list()
-            logger.debug(f"[ColumnUpdate] Updating model with visible columns: {visible_columns}")
 
             if hasattr(model, 'update_visible_columns'):
                 model.update_visible_columns(visible_columns)
-                logger.debug(f"[ColumnUpdate] Model now reports visible columns: {getattr(model, 'get_visible_columns', lambda: [])()}")
 
-            # Reconfigure columns
-            logger.debug("[ColumnUpdate] Reconfiguring columns...")
             self._configure_columns()
-
-            # Update header visibility
             self._update_header_visibility()
-
-            # Force scrollbar update
             self._force_scrollbar_update()
 
-            logger.info(f"Table columns updated - {len(visible_columns)} columns visible")
-
-        # Use the lifecycle handler for proper state management
         self._handle_column_update_lifecycle(perform_column_update)
 
     def _restore_pending_selection(self) -> None:
@@ -2326,25 +2264,20 @@ class FileTableView(QTableView):
     def _clear_preview_and_metadata(self) -> None:
         """Clear preview and metadata displays when no selection exists."""
         try:
-            # Get the parent window to access preview and metadata components
             parent_window = self.parent()
             while parent_window and not hasattr(parent_window, 'metadata_tree_view'):
                 parent_window = parent_window.parent()
 
             if parent_window:
-                # Clear metadata display
                 if hasattr(parent_window, 'metadata_tree_view'):
                     metadata_tree = parent_window.metadata_tree_view
                     if hasattr(metadata_tree, 'show_empty_state'):
                         metadata_tree.show_empty_state("No file selected")
 
-                # Clear preview display
                 if hasattr(parent_window, 'preview_tables_view'):
                     preview_view = parent_window.preview_tables_view
                     if hasattr(preview_view, 'clear_view'):
                         preview_view.clear_view()
-
-                logger.debug("Cleared preview and metadata displays after column update")
 
         except Exception as e:
             logger.warning(f"Error clearing preview/metadata displays: {e}")
@@ -2358,27 +2291,20 @@ class FileTableView(QTableView):
         try:
             from config import FILE_TABLE_COLUMN_CONFIG
 
-            # Get visible columns from model
             visible_columns = []
             if hasattr(self.model(), 'get_visible_columns'):
                 visible_columns = self.model().get_visible_columns()
             else:
                 visible_columns = ['filename', 'file_size', 'type', 'modified']
 
-            # Reset each column to its default width
             for i, column_key in enumerate(visible_columns):
                 column_index = i + 1  # +1 because column 0 is status column
                 column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
                 default_width = column_config.get('width', 100)
 
                 self.setColumnWidth(column_index, default_width)
-
-                # Schedule save for delayed updates
                 self._schedule_column_save(column_key, default_width)
 
-            logger.info(f"Reset {len(visible_columns)} columns to default widths")
-
-            # Update header visibility after resetting columns
             self._update_header_visibility()
 
         except Exception as e:
@@ -2390,10 +2316,8 @@ class FileTableView(QTableView):
             from config import FILE_TABLE_COLUMN_CONFIG, GLOBAL_MIN_COLUMN_WIDTH
 
             if not self.model() or self.model().rowCount() == 0:
-                logger.warning("Cannot auto-fit columns: no data available")
                 return
 
-            # Get visible columns from model
             visible_columns = []
             if hasattr(self.model(), 'get_visible_columns'):
                 visible_columns = self.model().get_visible_columns()
@@ -2404,7 +2328,6 @@ class FileTableView(QTableView):
             if not header:
                 return
 
-            # Auto-fit each column to its content
             for i, column_key in enumerate(visible_columns):
                 column_index = i + 1  # +1 because column 0 is status column
                 column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
@@ -2420,12 +2343,8 @@ class FileTableView(QTableView):
                 if final_width != current_width:
                     self.setColumnWidth(column_index, final_width)
 
-                # Schedule save for delayed updates
                 self._schedule_column_save(column_key, final_width)
 
-            logger.info(f"Auto-fitted {len(visible_columns)} columns to content")
-
-            # Update header visibility after auto-fitting
             self._update_header_visibility()
 
         except Exception as e:
@@ -2452,42 +2371,31 @@ class FileTableView(QTableView):
                     config_manager = main_window.window_config_manager.config_manager
                     window_config = config_manager.get_category('window')
                     saved_widths = window_config.get('file_table_column_widths', {})
-
-                except Exception as e:
-                    logger.warning(f"[ColumnWidth] Error accessing main config: {e}")
-                    # Continue to fallback method
-
-            if not saved_widths:
-                # Try fallback method
-                from utils.json_config_manager import load_config
-                config = load_config()
-                saved_widths = config.get("file_table_column_widths", {})
-
+                except Exception:
+                    # Try fallback method
+                    from utils.json_config_manager import load_config
+                    config = load_config()
+                    saved_widths = config.get("file_table_column_widths", {})
 
             # Check if most columns are set to 100px (suspicious)
             suspicious_count = 0
             total_count = 0
 
             for column_key, column_config in FILE_TABLE_COLUMN_CONFIG.items():
-                if column_config.get("default_visible", False):  # Only check visible columns
+                if column_config.get("default_visible", False):
                     total_count += 1
                     default_width = column_config.get("width", 100)
                     saved_width = saved_widths.get(column_key, default_width)
 
-                    # If saved width is 100px but default is significantly different, it's suspicious
                     if saved_width == 100 and default_width > 120:
                         suspicious_count += 1
-                        logger.debug(f"[ColumnWidth] Suspicious column '{column_key}': saved={saved_width}px, default={default_width}px")
 
             # If most visible columns have suspicious widths, reset them
-            if total_count > 0 and suspicious_count >= (total_count * 0.5):  # 50% threshold
-                logger.info(f"Found {suspicious_count}/{total_count} columns with suspicious widths, resetting to defaults")
+            if total_count > 0 and suspicious_count >= (total_count * 0.5):
                 self._reset_column_widths_to_defaults()
-                # Reconfigure columns after reset (only if model is available)
                 if self.model() and self.model().columnCount() > 0:
                     from utils.timer_manager import schedule_ui_update
                     schedule_ui_update(self._configure_columns, delay=10)
-
 
         except Exception as e:
             logger.error(f"Failed to check column widths: {e}")

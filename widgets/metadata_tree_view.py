@@ -675,15 +675,9 @@ class MetadataTreeView(QTreeView):
     # =====================================
 
     def set_current_file_path(self, file_path: str) -> None:
-        """
-        Set the current file path and manage scroll position restoration.
-        """
+        """Set the current file path and manage scroll position restoration."""
         # If it's the same file, don't do anything
         if paths_equal(self._current_file_path, file_path):
-            logger.debug(
-                f"[MetadataTreeView] set_current_file_path: Same file, skipping: {file_path}",
-                extra={"dev_only": True},
-            )
             return
 
         # Save current file state before switching
@@ -692,10 +686,6 @@ class MetadataTreeView(QTreeView):
         # Update current file
         previous_file_path = self._current_file_path
         self._current_file_path = file_path
-        logger.debug(
-            f"[MetadataTreeView] set_current_file_path: Switching to file: {file_path}",
-            extra={"dev_only": True},
-        )
 
         # Load state for the new file
         self._load_file_state(file_path, previous_file_path)
@@ -718,13 +708,8 @@ class MetadataTreeView(QTreeView):
                     expanded_items.append(index.data())
             self._expanded_items_per_file[self._current_file_path] = expanded_items
 
-        logger.debug(
-            f"[MetadataTreeView] Saved state for file: {self._current_file_path}",
-            extra={"dev_only": True},
-        )
-
     def _load_file_state(self, file_path: str, previous_file_path: str) -> None:
-        """Load the state for a specific file."""
+        """Load the state for a specific file with improved performance."""
         if not file_path:
             return
 
@@ -737,19 +722,8 @@ class MetadataTreeView(QTreeView):
                 if index.data() in expanded_items:
                     self.expand(index)
 
-        logger.debug(
-            f"[MetadataTreeView] Loaded state for file: {file_path}",
-            extra={"dev_only": True},
-        )
-
-        # Schedule scroll position restoration
-        if file_path in self._scroll_positions:
-            QTimer.singleShot(50, self._restore_scroll_position_for_current_file)
-        else:
-            logger.debug(
-                f"[MetadataTreeView] No scroll position saved for file: {file_path}",
-                extra={"dev_only": True},
-            )
+        # Restore scroll position immediately
+        self._restore_scroll_position_for_current_file()
 
     def _save_current_scroll_position(self) -> None:
         """Save the current scroll position for the current file."""
@@ -758,64 +732,36 @@ class MetadataTreeView(QTreeView):
             self._scroll_positions[self._current_file_path] = scroll_value
 
     def _restore_scroll_position_for_current_file(self) -> None:
-        """Restore the scroll position for the current file."""
-        if self._current_file_path and not self._is_placeholder_mode:
-            # Check if this is the first time viewing this file
-            if self._current_file_path not in self._scroll_positions:
-                # First time viewing - go to top with smooth animation
-                self._smooth_scroll_to_position(0)
-                # Mark this file as visited with position 0
-                self._scroll_positions[self._current_file_path] = 0
-            else:
-                # Restore saved position with smooth animation
-                saved_position = self._scroll_positions[self._current_file_path]
+        """Restore the scroll position for the current file with improved UX."""
+        if not self._current_file_path or self._is_placeholder_mode:
+            return
 
-                # Validate scroll position against current content
-                scrollbar = self.verticalScrollBar()
-                max_scroll = scrollbar.maximum()
+        scrollbar = self.verticalScrollBar()
 
-                # Clamp the saved position to valid range
-                valid_position = min(saved_position, max_scroll)
-                valid_position = max(valid_position, 0)
+        # Check if this is the first time viewing this file
+        if self._current_file_path not in self._scroll_positions:
+            # First time viewing - go to top immediately (no animation for better UX)
+            scrollbar.setValue(0)
+            self._scroll_positions[self._current_file_path] = 0
+        else:
+            # Restore saved position
+            saved_position = self._scroll_positions[self._current_file_path]
 
-                # Apply with smooth animation
-                self._smooth_scroll_to_position(valid_position)
+            # Validate scroll position against current content
+            max_scroll = scrollbar.maximum()
+            valid_position = max(0, min(saved_position, max_scroll))
 
-                # Smooth scroll to the valid position
+            # Apply immediately for better responsiveness
+            scrollbar.setValue(valid_position)
 
         # Clean up the timer
         if self._pending_restore_timer_id is not None:
             self._pending_restore_timer_id = None
 
     def _smooth_scroll_to_position(self, target_position: int) -> None:
-        """Smoothly scroll to the target position using animation."""
+        """Immediate scroll to position for better performance."""
         scrollbar = self.verticalScrollBar()
-        current_position = scrollbar.value()
-
-        # If already at target position, no need to animate
-        if current_position == target_position:
-            return
-
-        # Calculate animation duration based on distance
-        distance = abs(target_position - current_position)
-        # Base duration 150ms, with additional time for longer distances
-        duration = min(150 + (distance // 10), 400)  # Max 400ms
-
-        # Create animation
-        if hasattr(self, "_scroll_animation"):
-            self._scroll_animation.stop()
-
-        from core.pyqt_imports import QEasingCurve, QPropertyAnimation
-
-        self._scroll_animation = QPropertyAnimation(scrollbar, b"value")
-        self._scroll_animation.setDuration(duration)
-        self._scroll_animation.setStartValue(current_position)
-        self._scroll_animation.setEndValue(target_position)
-        self._scroll_animation.setEasingCurve(QEasingCurve.OutCubic)  # Smooth deceleration
-        # self._scroll_animation.setEasingCurve(QEasingCurve.InOutSine)  # Smooth sine wave motion
-
-        # Start animation
-        self._scroll_animation.start()
+        scrollbar.setValue(target_position)
 
     def clear_scroll_memory(self) -> None:
         """Clear all saved scroll positions (useful when changing folders)."""
