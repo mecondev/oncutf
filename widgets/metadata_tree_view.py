@@ -2475,8 +2475,8 @@ class MetadataTreeView(QTreeView):
         Returns:
             bool: True if metadata should be displayed, False if empty state should be shown
         """
-        # Always display metadata (for last file if multiple)
-        return selected_files_count > 0
+        # Only display metadata for single file selection
+        return selected_files_count == 1
 
     def smart_display_metadata_or_empty_state(
         self, metadata: Optional[Dict[str, Any]], selected_count: int, context: str = ""

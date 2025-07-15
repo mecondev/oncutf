@@ -1143,6 +1143,8 @@ class FileTableView(QTableView):
                     self._preserve_selection_for_drag = True
                     self._clicked_on_selected = True
                     self._skip_selection_changed = True
+                    # Block signals to prevent premature selection changes
+                    self.blockSignals(True)
                     schedule_ui_update(self._clear_skip_flag, 50)
                     return  # Don't change selection - preserve for drag
 
@@ -2149,8 +2151,9 @@ class FileTableView(QTableView):
         QApplication.processEvents()
 
     def _clear_skip_flag(self):
-        """Clear the skip flag after a delay."""
+        """Clear the skip flag after a delay and unblock signals."""
         self._skip_selection_changed = False
+        self.blockSignals(False)  # Unblock signals after delay
 
     # =====================================
     # Column Management Methods
@@ -2475,16 +2478,9 @@ class FileTableView(QTableView):
 
         # Ensure preview and metadata are cleared after column updates
         # This is needed because not all column operations trigger selectionChanged
-        selection_store = self._get_selection_store()
-        if selection_store and not self._legacy_selection_mode:
-            # Use delayed call to avoid conflicts with model updates
-            from utils.timer_manager import schedule_ui_update
-            def ensure_clear_preview():
-                # Force clear with signal emission to update preview and metadata
-                self._clear_selection_for_column_update(force_emit_signal=True)
-                logger.debug("[ColumnUpdate] Final preview/metadata clear after column update")
-
-            schedule_ui_update(ensure_clear_preview, delay=50)  # Short delay to let model settle
+        # Always clear preview/metadata immediately after column updates
+        self._clear_selection_for_column_update(force_emit_signal=True)
+        logger.debug("[ColumnUpdate] Final preview/metadata clear after column update")
 
     def _update_table_columns(self) -> None:
         """Update table columns based on visibility configuration."""
