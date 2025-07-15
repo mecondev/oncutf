@@ -233,71 +233,30 @@ class FileTableView(QTableView):
             # This prevents double signal emission which causes metadata flickering
 
     def _sync_qt_selection_model(self, selected_rows: set) -> None:
-        """Ensure Qt selection model matches our internal selection state."""
-        selection_model = self.selectionModel()
-        if not selection_model or not self.model():
-            logger.debug("[SyncQt] No selection model or model available", extra={"dev_only": True})
-            return
+        """Simple and direct synchronization of Qt's selection model."""
+        try:
+            selection_model = self.selectionModel()
+            if not selection_model or not self.model():
+                return
 
-        # Prevent recursive calls during Qt model synchronization
-        if hasattr(self, "_syncing_qt_model") and self._syncing_qt_model:
-            logger.debug("[SyncQt] Already syncing, skipping", extra={"dev_only": True})
-            return
+            # Clear current selection
+            selection_model.clearSelection()
 
-        # Get current Qt selection
-        current_qt_selection = set(index.row() for index in selection_model.selectedRows())
-        logger.debug(f"[SyncQt] Current Qt selection: {current_qt_selection}, Target: {selected_rows}", extra={"dev_only": True})
+            if selected_rows:
+                # Simple row-by-row selection
+                for row in selected_rows:
+                    if 0 <= row < self.model().rowCount():
+                        start_index = self.model().index(row, 0)
+                        end_index = self.model().index(row, self.model().columnCount() - 1)
+                        if start_index.isValid() and end_index.isValid():
+                            from core.pyqt_imports import QItemSelection
+                            selection_model.select(
+                                QItemSelection(start_index, end_index),
+                                selection_model.Select
+                            )
 
-        # Only update if there's a significant difference (avoid unnecessary updates)
-        if current_qt_selection != selected_rows:
-            # Set flag to prevent recursive calls
-            self._syncing_qt_model = True
-
-            # Block signals to prevent recursive calls
-            self.blockSignals(True)
-            try:
-                # Build the new selection without clearing first to avoid empty selection events
-                if selected_rows:
-                    from core.pyqt_imports import QItemSelection
-
-                    full_selection = QItemSelection()
-                    valid_rows = 0
-
-                    for row in selected_rows:
-                        if 0 <= row < self.model().rowCount():  # type: ignore
-                            left_index = self.model().index(row, 0)  # type: ignore
-                            right_index = self.model().index(row, self.model().columnCount() - 1)  # type: ignore
-                            if left_index.isValid() and right_index.isValid():
-                                row_selection = QItemSelection(left_index, right_index)
-                                full_selection.merge(row_selection, selection_model.Select)  # type: ignore
-                                valid_rows += 1
-                            else:
-                                logger.debug(f"[SyncQt] Invalid indices for row {row}", extra={"dev_only": True})
-                        else:
-                            logger.debug(f"[SyncQt] Row {row} out of range (model has {self.model().rowCount()} rows)", extra={"dev_only": True})
-
-                    logger.debug(f"[SyncQt] Built selection with {valid_rows} valid rows", extra={"dev_only": True})
-
-                    if not full_selection.isEmpty():
-                        # Use ClearAndSelect in one atomic operation to avoid intermediate empty selection
-                        selection_model.select(full_selection, selection_model.ClearAndSelect)  # type: ignore
-                        logger.debug(f"[SyncQt] Applied selection with {valid_rows} rows", extra={"dev_only": True})
-                    else:
-                        logger.warning("[SyncQt] No valid selection could be built")
-                else:
-                    # Only clear if we actually need an empty selection
-                    selection_model.clearSelection()
-                    logger.debug("[SyncQt] Cleared selection", extra={"dev_only": True})
-
-                # Force visual update
-                self.viewport().update()  # type: ignore
-
-            finally:
-                self.blockSignals(False)
-                # Clear the flag
-                self._syncing_qt_model = False
-        else:
-            logger.debug("[SyncQt] Selection already matches, no update needed", extra={"dev_only": True})
+        except Exception as e:
+            logger.error(f"[SyncQt] Error syncing selection: {e}")
 
     def _get_current_selection(self) -> set:
         """Get current selection from SelectionStore or fallback to Qt model."""
@@ -1750,6 +1709,11 @@ class FileTableView(QTableView):
                 )
                 return
 
+            # PROTECTION: Prevent infinite loops during column updates
+            if hasattr(self, "_updating_columns") and self._updating_columns:
+                logger.debug("[FileTableView] Ignoring selection change during column update")
+                return
+
             self._update_selection_store(selected_rows, emit_signal=True)
 
         if self.context_focused_row is not None:
@@ -2348,6 +2312,9 @@ class FileTableView(QTableView):
             return
 
         try:
+            # Set flag to prevent infinite loops
+            self._updating_columns = True
+
             # Debug state before update
             logger.debug("[ColumnUpdate] STATE BEFORE UPDATE:")
             self.debug_column_state()
@@ -2379,26 +2346,12 @@ class FileTableView(QTableView):
                 self.updateGeometry()
                 self.viewport().update()
 
-                # Restore selection by matching file paths
-                restored_rows = set()
-                if selected_file_paths and hasattr(model, 'files'):
-                    for i, file_item in enumerate(model.files):
-                        if getattr(file_item, 'full_path', None) in selected_file_paths:
-                            restored_rows.add(i)
-                logger.debug(f"[ColumnUpdate] Restoring selection by file paths: {restored_rows}")
-                if restored_rows:
-                    self._sync_qt_selection_model(restored_rows)
-                    selection_store = self._get_selection_store()
-                    if selection_store and not self._legacy_selection_mode:
-                        selection_store.set_selected_rows(restored_rows, emit_signal=False)
-                    from core.pyqt_imports import QTimer
-                    def update_metadata_after_selection():
-                        metadata_tree = self._get_metadata_tree()
-                        if metadata_tree and hasattr(metadata_tree, 'update_from_parent_selection'):
-                            metadata_tree.update_from_parent_selection()
-                        else:
-                            self.selection_changed.emit(list(restored_rows))
-                    QTimer.singleShot(100, update_metadata_after_selection)
+                # Store selection for later restoration (don't restore immediately)
+                if selected_file_paths:
+                    self._pending_selection_restore = selected_file_paths
+                    logger.debug(f"[ColumnUpdate] Stored selection for later restoration: {selected_file_paths}")
+                else:
+                    self._pending_selection_restore = None
 
                 # Ενεργοποίηση header αν είναι απενεργοποιημένο
                 header = self.horizontalHeader() if hasattr(self, 'horizontalHeader') else None
@@ -2407,13 +2360,16 @@ class FileTableView(QTableView):
                     logger.debug("[ColumnUpdate] Header re-enabled after column update")
 
                 visible_count = sum(1 for visible in self._visible_columns.values() if visible)
-                logger.info(f"Table columns updated - {visible_count} columns visible, selection restored: {len(restored_rows)} rows")
+                logger.info(f"Table columns updated - {visible_count} columns visible, selection pending restoration")
                 logger.debug("[ColumnUpdate] STATE AFTER UPDATE:")
                 self.debug_column_state()
             else:
                 logger.error("Model does not support dynamic columns - this is a critical error")
         except Exception as e:
             logger.error(f"Error updating table columns: {e}", exc_info=True)
+        finally:
+            # Clear flag to allow normal selection handling
+            self._updating_columns = False
 
         # No longer need to trigger column adjustment - columns maintain fixed widths
 
