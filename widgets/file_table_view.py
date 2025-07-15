@@ -190,7 +190,7 @@ class FileTableView(QTableView):
         # Selection loop protection
         self._selection_change_count = 0
         self._last_selection_change_time = 0
-        self._max_selection_changes_per_second = 10  # Max 10 changes per second
+        self._max_selection_changes_per_second = 20  # Increased to 20 for better performance
 
     def showEvent(self, event) -> None:
         """Handle show events and update scrollbar visibility."""
@@ -1680,8 +1680,8 @@ class FileTableView(QTableView):
         import time
         current_time = time.time()
 
-        # Rate limiting protection
-        if current_time - self._last_selection_change_time < 0.1:  # Less than 100ms
+        # Improved rate limiting protection - more lenient for column updates
+        if current_time - self._last_selection_change_time < 0.05:  # Less than 50ms (was 100ms)
             self._selection_change_count += 1
             if self._selection_change_count > self._max_selection_changes_per_second:
                 logger.warning(f"[FileTableView] Selection change rate limit exceeded ({self._selection_change_count} changes). Ignoring.")
@@ -2352,14 +2352,26 @@ class FileTableView(QTableView):
             logger.debug("[ColumnUpdate] STATE BEFORE UPDATE:")
             self.debug_column_state()
 
-            # Store current selection as file paths before any changes
+            # Store current selection and anchor BEFORE any changes
             selected_rows = self._get_current_selection()
+            anchor_row = self._get_anchor_row()
             selected_file_paths = []
-            if selected_rows and hasattr(model, 'files'):
-                for row in selected_rows:
-                    if 0 <= row < len(model.files):
-                        selected_file_paths.append(getattr(model.files[row], 'full_path', None))
-            logger.debug(f"[ColumnUpdate] Stored selection file paths: {selected_file_paths}")
+            anchor_file_path = None
+
+            if hasattr(model, 'files'):
+                # Store selected file paths
+                if selected_rows:
+                    for row in selected_rows:
+                        if 0 <= row < len(model.files):
+                            file_path = getattr(model.files[row], 'full_path', None)
+                            if file_path:
+                                selected_file_paths.append(file_path)
+
+                # Store anchor file path
+                if anchor_row is not None and 0 <= anchor_row < len(model.files):
+                    anchor_file_path = getattr(model.files[anchor_row], 'full_path', None)
+
+            logger.debug(f"[ColumnUpdate] Stored selection: {len(selected_file_paths)} files, anchor: {anchor_file_path}")
 
             # Update the model with new visible columns
             if hasattr(model, 'update_visible_columns'):
@@ -2379,18 +2391,21 @@ class FileTableView(QTableView):
                 self.updateGeometry()
                 self.viewport().update()
 
-                # Store selection for later restoration (don't restore immediately)
-                if selected_file_paths:
-                    self._pending_selection_restore = selected_file_paths
-                    logger.debug(f"[ColumnUpdate] Stored selection for later restoration: {selected_file_paths}")
+                # Store selection and anchor for later restoration
+                if selected_file_paths or anchor_file_path:
+                    self._pending_selection_restore = {
+                        'selected_files': selected_file_paths,
+                        'anchor_file': anchor_file_path
+                    }
+                    logger.debug(f"[ColumnUpdate] Stored selection for restoration: {len(selected_file_paths)} files, anchor: {anchor_file_path}")
+
+                    # Schedule automatic restoration after column update completes
+                    schedule_ui_update(self._restore_pending_selection, delay=50)  # Increased delay to avoid flicker
                 else:
                     self._pending_selection_restore = None
 
-                # Clear current selection to avoid visual confusion
-                selection_model = self.selectionModel()
-                if selection_model:
-                    selection_model.clearSelection()
-                    self.viewport().update()
+                # DON'T clear selection immediately - let the restoration handle it
+                # This prevents flicker and maintains visual continuity
 
                 # Ενεργοποίηση header αν είναι απενεργοποιημένο
                 header = self.horizontalHeader() if hasattr(self, 'horizontalHeader') else None
@@ -2418,38 +2433,76 @@ class FileTableView(QTableView):
             try:
                 model = self.model()
                 if model and hasattr(model, 'files'):
+                    # Handle both old format (list) and new format (dict)
+                    if isinstance(self._pending_selection_restore, list):
+                        # Old format - just selected files
+                        selected_files = self._pending_selection_restore
+                        anchor_file = None
+                    else:
+                        # New format - selected files and anchor
+                        selected_files = self._pending_selection_restore.get('selected_files', [])
+                        anchor_file = self._pending_selection_restore.get('anchor_file')
+
                     restored_rows = set()
+                    anchor_row = None
+
+                    # Find rows for selected files
                     for i, file_item in enumerate(model.files):
-                        if getattr(file_item, 'full_path', None) in self._pending_selection_restore:
+                        file_path = getattr(file_item, 'full_path', None)
+                        if file_path in selected_files:
                             restored_rows.add(i)
+                        # Find anchor row
+                        if anchor_file and file_path == anchor_file:
+                            anchor_row = i
 
                     if restored_rows:
-                        logger.debug(f"[SelectionRestore] Restoring selection: {restored_rows}")
+                        logger.debug(f"[SelectionRestore] Restoring selection: {restored_rows}, anchor: {anchor_row}")
 
-                        # Simple restoration without complex logic
-                        selection_model = self.selectionModel()
-                        if selection_model:
-                            # Clear and restore in one simple operation
-                            selection_model.clearSelection()
+                        # Block signals during restoration to prevent loops and rate limiting
+                        self.blockSignals(True)
+                        try:
+                            # Clear current selection first
+                            selection_model = self.selectionModel()
+                            if selection_model:
+                                selection_model.clearSelection()
 
-                            # Select each row individually
-                            for row in restored_rows:
-                                if 0 <= row < model.rowCount():
-                                    start_index = model.index(row, 0)
-                                    end_index = model.index(row, model.columnCount() - 1)
-                                    from core.pyqt_imports import QItemSelection
-                                    selection_model.select(
-                                        QItemSelection(start_index, end_index),
-                                        selection_model.Select
+                                # Restore anchor first if available
+                                if anchor_row is not None:
+                                    self._set_anchor_row(anchor_row, emit_signal=False)
+                                    logger.debug(f"[SelectionRestore] Restored anchor to row {anchor_row}")
+
+                                # Select each row individually
+                                for row in restored_rows:
+                                    if 0 <= row < model.rowCount():
+                                        start_index = model.index(row, 0)
+                                        end_index = model.index(row, model.columnCount() - 1)
+                                        selection_model.select(
+                                            QItemSelection(start_index, end_index),
+                                            selection_model.Select
+                                        )
+
+                                # Update selection store with emit_signal=True to trigger preview update
+                                # But only if we're not in legacy mode
+                                selection_store = self._get_selection_store()
+                                if selection_store and not self._legacy_selection_mode:
+                                    # Use emit_signal=False to avoid rate limiting, then emit manually
+                                    selection_store.set_selected_rows(restored_rows, emit_signal=False)
+                                    # Emit signal manually after a short delay to avoid rate limiting
+                                    schedule_ui_update(
+                                        lambda: selection_store.set_selected_rows(restored_rows, emit_signal=True),
+                                        delay=100
                                     )
 
-                            # Update selection store
-                            selection_store = self._get_selection_store()
-                            if selection_store and not self._legacy_selection_mode:
-                                selection_store.set_selected_rows(restored_rows, emit_signal=False)
+                                # Force visual update
+                                self.viewport().update()
 
-                            # Force visual update
-                            self.viewport().update()
+                                logger.debug(f"[SelectionRestore] Successfully restored {len(restored_rows)} rows")
+                            else:
+                                logger.warning("[SelectionRestore] No selection model available")
+                        finally:
+                            self.blockSignals(False)
+                    else:
+                        logger.debug("[SelectionRestore] No rows to restore (files not found in model)")
 
                 # Clear pending selection
                 self._pending_selection_restore = None

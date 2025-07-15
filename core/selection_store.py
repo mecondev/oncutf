@@ -104,17 +104,19 @@ class SelectionStore(QObject):
         """
         current_time = time.time()
 
-        # Rate limiting protection
-        if current_time - self._last_set_selected_call_time < 0.2:  # Less than 200ms
+        # Improved rate limiting protection - more lenient for column updates
+        if current_time - self._last_set_selected_call_time < 0.1:  # Less than 100ms (was 200ms)
             self._set_selected_call_count += 1
-            if self._set_selected_call_count > self._max_calls_per_second:
+            if self._set_selected_call_count > 10:  # Increased from 5 to 10
                 logger.warning(f"[SelectionStore] set_selected_rows rate limit exceeded ({self._set_selected_call_count} calls). Ignoring.")
                 return
         else:
+            # Reset counter if enough time has passed
             self._set_selected_call_count = 1
             self._last_set_selected_call_time = current_time
 
         logger.debug(f"[SelectionStore] set_selected_rows called with rows={rows}, emit_signal={emit_signal}, _syncing_selection={self._syncing_selection}, call_count={self._set_selected_call_count}")
+
         # Protection against infinite loops during sync operations
         if self._syncing_selection:
             logger.debug("[SelectionStore] Ignoring selection update during sync operation", extra={"dev_only": True})
