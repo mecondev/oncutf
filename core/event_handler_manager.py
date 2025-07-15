@@ -332,9 +332,9 @@ class EventHandlerManager:
         action = menu.exec_(self.parent_window.file_table_view.viewport().mapToGlobal(position))
 
         self.parent_window.file_table_view.context_focused_row = None
-        self.parent_window.file_table_view.viewport().update()
-        # Force full repaint of the table to avoid stale selection highlight
-        self.parent_window.file_table_view.update()
+        # Remove the problematic update() calls that can cause loops
+        # self.parent_window.file_table_view.viewport().update()
+        # self.parent_window.file_table_view.update()
 
         # === Handlers ===
         if action == action_load_sel:

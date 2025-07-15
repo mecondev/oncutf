@@ -88,8 +88,8 @@ class FileTableView(QTableView):
         list, object
     )  # Emitted with list of dropped paths and keyboard modifiers
 
-    def __init__(self, parent=None) -> None:
-        """Initialize the custom table view with Explorer-like behavior."""
+    def __init__(self, parent=None):
+        """Initialize the file table view with all configurations."""
         super().__init__(parent)
         logger.debug("FileTableView __init__ called", extra={"dev_only": True})
         self._manual_anchor_index: Optional[QModelIndex] = None
@@ -134,9 +134,6 @@ class FileTableView(QTableView):
 
         # Load column visibility configuration
         self._visible_columns = self._load_column_visibility_config()
-
-        # Check and fix column widths if needed
-        self._check_and_fix_column_widths()
 
         # Initialize selection tracking
         self._manual_anchor_index = None
@@ -191,6 +188,12 @@ class FileTableView(QTableView):
         self._selection_change_count = 0
         self._last_selection_change_time = 0
         self._max_selection_changes_per_second = 20  # Increased to 20 for better performance
+
+        # Protection against infinite loops in ensure_anchor_or_select
+        self._ensuring_selection = False
+
+        # Protection against infinite loops in selectionChanged
+        self._processing_selection_change = False
 
     def showEvent(self, event) -> None:
         """Handle show events and update scrollbar visibility."""
@@ -392,6 +395,10 @@ class FileTableView(QTableView):
                 model.modelReset.connect(self._configure_columns)
             # Αν το μοντέλο έχει columns, κάνουμε setup αμέσως, αλλιώς με μικρή καθυστέρηση
             if model.columnCount() > 0:
+                # Check and fix column widths if needed (only when model is set)
+                # Delay this check to ensure model is fully initialized
+                from utils.timer_manager import schedule_ui_update
+                schedule_ui_update(self._check_and_fix_column_widths, delay=50)
                 self._configure_columns()
             else:
                 from utils.timer_manager import schedule_ui_update
@@ -499,8 +506,7 @@ class FileTableView(QTableView):
                     width = self._load_column_width(column_key)
                     header.setSectionResizeMode(actual_column_index, header.Interactive)
                     self.setColumnWidth(actual_column_index, width)
-                    # Remove verbose column width logging
-                    # logger.debug(f"[ColumnConfig] Set column {actual_column_index} ({column_key}) to {width}px")
+                    logger.debug(f"[ColumnConfig] Set column {actual_column_index} ({column_key}) to {width}px")
                 else:
                     logger.error(f"[ColumnConfig] CRITICAL: Column {actual_column_index} ({column_key}) exceeds model columnCount {self.model().columnCount()}")
                     logger.error(f"[ColumnConfig] This indicates a sync issue between view and model visible columns")
@@ -575,27 +581,32 @@ class FileTableView(QTableView):
             # Try main config system first
             main_window = self._get_main_window()
             if main_window and hasattr(main_window, 'window_config_manager'):
-                logger.debug(f"[ColumnWidth] Found main window with config manager", extra={"dev_only": True})
-                config_manager = main_window.window_config_manager.config_manager
-                window_config = config_manager.get_category('window')
-                column_widths = window_config.get('file_table_column_widths', {})
-                logger.debug(f"[ColumnWidth] Loaded column widths from main config: {column_widths}", extra={"dev_only": True})
+                try:
+                    logger.debug(f"[ColumnWidth] Found main window with config manager", extra={"dev_only": True})
+                    config_manager = main_window.window_config_manager.config_manager
+                    window_config = config_manager.get_category('window')
+                    column_widths = window_config.get('file_table_column_widths', {})
+                    logger.debug(f"[ColumnWidth] Loaded column widths from main config: {column_widths}", extra={"dev_only": True})
 
-                if column_key in column_widths:
-                    saved_width = column_widths[column_key]
-                    logger.debug(f"[ColumnWidth] Found saved width for '{column_key}': {saved_width}px", extra={"dev_only": True})
-                    # Check if saved width is reasonable (not the default Qt 100px for all columns)
-                    # If all columns are 100px, it means they were saved incorrectly
-                    if saved_width == 100 and default_width != 100:
-                        logger.debug(f"[ColumnWidth] Column '{column_key}' has suspicious saved width (100px), using default {default_width}px")
-                        return default_width
-                    logger.debug(f"[ColumnWidth] Using saved width for '{column_key}': {saved_width}px", extra={"dev_only": True})
-                    return saved_width
-                else:
-                    logger.debug(f"[ColumnWidth] No saved width found for '{column_key}' in main config", extra={"dev_only": True})
+                    if column_key in column_widths:
+                        saved_width = column_widths[column_key]
+                        logger.debug(f"[ColumnWidth] Found saved width for '{column_key}': {saved_width}px", extra={"dev_only": True})
+                        # Only check for suspicious 100px width if the default is significantly different
+                        # This prevents false positives when the default width is actually close to 100px
+                        if saved_width == 100 and default_width > 120:
+                            logger.debug(f"[ColumnWidth] Column '{column_key}' has suspicious saved width (100px), using default {default_width}px")
+                            return default_width
+                        logger.debug(f"[ColumnWidth] Using saved width for '{column_key}': {saved_width}px", extra={"dev_only": True})
+                        return saved_width
+                    else:
+                        logger.debug(f"[ColumnWidth] No saved width found for '{column_key}' in main config", extra={"dev_only": True})
+                except Exception as e:
+                    logger.warning(f"[ColumnWidth] Error accessing main config for '{column_key}': {e}")
+                    # Continue to fallback method
 
             # Fallback to old method
             logger.debug(f"[ColumnWidth] Trying fallback config loading for '{column_key}'")
+            from utils.json_config_manager import load_config
             config = load_config()
             column_widths = config.get("file_table_column_widths", {})
             logger.debug(f"[ColumnWidth] Loaded column widths from fallback config: {column_widths}")
@@ -603,7 +614,7 @@ class FileTableView(QTableView):
                 saved_width = column_widths[column_key]
                 logger.debug(f"[ColumnWidth] Found saved width in fallback for '{column_key}': {saved_width}px")
                 # Same check for old config format
-                if saved_width == 100 and default_width != 100:
+                if saved_width == 100 and default_width > 120:
                     logger.debug(f"[ColumnWidth] Column '{column_key}' has suspicious saved width (100px), using default {default_width}px")
                     return default_width
                 logger.debug(f"[ColumnWidth] Using fallback saved width for '{column_key}': {saved_width}px")
@@ -634,10 +645,14 @@ class FileTableView(QTableView):
             # Clear saved column widths
             main_window = self._get_main_window()
             if main_window and hasattr(main_window, 'window_config_manager'):
-                config_manager = main_window.window_config_manager.config_manager
-                window_config = config_manager.get_category('window')
-                window_config.set('file_table_column_widths', {})
-                config_manager.save()
+                try:
+                    config_manager = main_window.window_config_manager.config_manager
+                    window_config = config_manager.get_category('window')
+                    window_config.set('file_table_column_widths', {})
+                    config_manager.save()
+                except Exception as e:
+                    logger.warning(f"[ColumnWidth] Error clearing main config: {e}")
+                    # Continue to old format
 
             # Also clear from old format
             from utils.json_config_manager import load_config, save_config
@@ -645,8 +660,9 @@ class FileTableView(QTableView):
             config["file_table_column_widths"] = {}
             save_config(config)
 
-            # Reconfigure columns with defaults
-            self._configure_columns()
+            # Reconfigure columns with defaults (only if model is available)
+            if self.model() and self.model().columnCount() > 0:
+                self._configure_columns()
 
             logger.info("Column widths reset to defaults successfully")
 
@@ -659,16 +675,20 @@ class FileTableView(QTableView):
             # Get the main window and its config manager
             main_window = self._get_main_window()
             if main_window and hasattr(main_window, 'window_config_manager'):
-                config_manager = main_window.window_config_manager.config_manager
-                window_config = config_manager.get_category('window')
+                try:
+                    config_manager = main_window.window_config_manager.config_manager
+                    window_config = config_manager.get_category('window')
 
-                # Get current column widths
-                column_widths = window_config.get('file_table_column_widths', {})
-                column_widths[column_key] = width
-                window_config.set('file_table_column_widths', column_widths)
+                    # Get current column widths
+                    column_widths = window_config.get('file_table_column_widths', {})
+                    column_widths[column_key] = width
+                    window_config.set('file_table_column_widths', column_widths)
 
-                # Save immediately for individual changes
-                config_manager.save()
+                    # Save immediately for individual changes
+                    config_manager.save()
+                except Exception as e:
+                    logger.warning(f"[ColumnWidth] Error saving to main config: {e}")
+                    # Continue to fallback method
             else:
                 # Fallback to old method if main window not available
                 from utils.json_config_manager import load_config, save_config
@@ -708,6 +728,31 @@ class FileTableView(QTableView):
             return
 
         try:
+            # Try main config system first
+            main_window = self._get_main_window()
+            if main_window and hasattr(main_window, 'window_config_manager'):
+                try:
+                    config_manager = main_window.window_config_manager.config_manager
+                    window_config = config_manager.get_category('window')
+                    column_widths = window_config.get('file_table_column_widths', {})
+
+                    # Apply all pending changes
+                    for column_key, width in self._pending_column_changes.items():
+                        column_widths[column_key] = width
+
+                    window_config.set('file_table_column_widths', column_widths)
+                    config_manager.save()
+
+                    logger.info(f"Saved {len(self._pending_column_changes)} column width changes to main config")
+
+                    # Clear pending changes
+                    self._pending_column_changes.clear()
+                    return
+
+                except Exception as e:
+                    logger.warning(f"Failed to save to main config: {e}, trying fallback")
+
+            # Fallback to old method
             from utils.json_config_manager import load_config, save_config
             config = load_config()
             if "file_table_column_widths" not in config:
@@ -719,7 +764,7 @@ class FileTableView(QTableView):
 
             save_config(config)
 
-            logger.info(f"Saved {len(self._pending_column_changes)} column width changes to config")
+            logger.info(f"Saved {len(self._pending_column_changes)} column width changes to fallback config")
 
             # Clear pending changes
             self._pending_column_changes.clear()
@@ -952,102 +997,110 @@ class FileTableView(QTableView):
 
     def ensure_anchor_or_select(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers) -> None:
         """Handle selection logic with anchor and modifier support."""
-        sm = self.selectionModel()
-        model = self.model()
-        if sm is None or model is None:
+        # Add protection against infinite loops
+        if hasattr(self, '_ensuring_selection') and self._ensuring_selection:
+            logger.debug("[FileTableView] ensure_anchor_or_select already running, skipping")
             return
 
-        if modifiers & Qt.ShiftModifier:
-            # Check if we're clicking on an already selected item
-            current_selection = set(idx.row() for idx in sm.selectedRows())
-            clicked_row = index.row()
+        self._ensuring_selection = True
+        try:
+            sm = self.selectionModel()
+            model = self.model()
+            if sm is None or model is None:
+                return
 
-            # If clicking on an already selected item, don't change selection
-            if clicked_row in current_selection:
-                # Just update the current index without changing selection
-                sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
-            else:
-                # Normal Shift+Click behavior for unselected items
-                if self._manual_anchor_index is None:
-                    # If no anchor exists, use the first selected item as anchor
-                    selected_indexes = sm.selectedRows()
-                    if selected_indexes:
-                        self._manual_anchor_index = selected_indexes[0]
-                else:
-                    self._manual_anchor_index = index
+            if modifiers & Qt.ShiftModifier:
+                # Check if we're clicking on an already selected item
+                current_selection = set(idx.row() for idx in sm.selectedRows())
+                clicked_row = index.row()
 
-                # Create selection from anchor to current index
-                selection = QItemSelection(self._manual_anchor_index, index)
-                # Block signals to prevent metadata flickering during selection changes
-                self.blockSignals(True)
-                try:
-                    # Use ClearAndSelect to replace existing selection with the range
-                    sm.select(selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+                # If clicking on an already selected item, don't change selection
+                if clicked_row in current_selection:
+                    # Just update the current index without changing selection
                     sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
-                finally:
-                    self.blockSignals(False)
+                else:
+                    # Normal Shift+Click behavior for unselected items
+                    if self._manual_anchor_index is None:
+                        # If no anchor exists, use the first selected item as anchor
+                        selected_indexes = sm.selectedRows()
+                        if selected_indexes:
+                            self._manual_anchor_index = selected_indexes[0]
+                    else:
+                        self._manual_anchor_index = index
 
-            # Update SelectionStore to match Qt selection model
-            selection_store = self._get_selection_store()
-            if selection_store and not self._legacy_selection_mode:
-                current_qt_selection = set(idx.row() for idx in sm.selectedRows())
-                selection_store.set_selected_rows(current_qt_selection, emit_signal=True)
-                if self._manual_anchor_index:
-                    selection_store.set_anchor_row(
-                        self._manual_anchor_index.row(), emit_signal=False
-                    )
+                    # Create selection from anchor to current index
+                    selection = QItemSelection(self._manual_anchor_index, index)
+                    # Block signals to prevent metadata flickering during selection changes
+                    self.blockSignals(True)
+                    try:
+                        # Use ClearAndSelect to replace existing selection with the range
+                        sm.select(selection, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+                        sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
+                    finally:
+                        self.blockSignals(False)
 
-            # Force visual update
-            left = model.index(index.row(), 0)
-            right = model.index(index.row(), model.columnCount() - 1)
-            self.viewport().update(self.visualRect(left).united(self.visualRect(right)))
+                # Update SelectionStore to match Qt selection model
+                selection_store = self._get_selection_store()
+                if selection_store and not self._legacy_selection_mode:
+                    current_qt_selection = set(idx.row() for idx in sm.selectedRows())
+                    selection_store.set_selected_rows(current_qt_selection, emit_signal=False)  # Don't emit signal to prevent loops
+                    if self._manual_anchor_index:
+                        selection_store.set_anchor_row(
+                            self._manual_anchor_index.row(), emit_signal=False
+                        )
 
-        elif modifiers & Qt.ControlModifier:
-            self._manual_anchor_index = index
-            row = index.row()
+                # Force visual update
+                left = model.index(index.row(), 0)
+                right = model.index(index.row(), model.columnCount() - 1)
+                self.viewport().update(self.visualRect(left).united(self.visualRect(right)))
 
-            # Get current selection state before making changes
-            was_selected = sm.isSelected(index)
+            elif modifiers & Qt.ControlModifier:
+                self._manual_anchor_index = index
+                row = index.row()
 
-            # Toggle selection in Qt selection model
-            if was_selected:
-                sm.select(index, QItemSelectionModel.Deselect | QItemSelectionModel.Rows)
+                # Get current selection state before making changes
+                was_selected = sm.isSelected(index)
+
+                # Toggle selection in Qt selection model
+                if was_selected:
+                    sm.select(index, QItemSelectionModel.Deselect | QItemSelectionModel.Rows)
+                else:
+                    sm.select(index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+
+                # Set current index without clearing selection
+                sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
+
+                # Update SelectionStore to match Qt selection model
+                selection_store = self._get_selection_store()
+                if selection_store and not self._legacy_selection_mode:
+                    current_qt_selection = set(idx.row() for idx in sm.selectedRows())
+                    selection_store.set_selected_rows(current_qt_selection, emit_signal=False)  # Don't emit signal to prevent loops
+                    selection_store.set_anchor_row(row, emit_signal=False)
+
+                # Force visual update
+                left = model.index(row, 0)
+                right = model.index(row, model.columnCount() - 1)
+                self.viewport().update(self.visualRect(left).united(self.visualRect(right)))
+
             else:
-                sm.select(index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+                self._manual_anchor_index = index
+                sm.select(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+                sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
 
-            # Set current index without clearing selection
-            sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
-
-            # Update SelectionStore to match Qt selection model
-            selection_store = self._get_selection_store()
-            if selection_store and not self._legacy_selection_mode:
-                current_qt_selection = set(idx.row() for idx in sm.selectedRows())
-                selection_store.set_selected_rows(current_qt_selection, emit_signal=True)
-                selection_store.set_anchor_row(row, emit_signal=False)
-
-            # Force visual update
-            left = model.index(row, 0)
-            right = model.index(row, model.columnCount() - 1)
-            self.viewport().update(self.visualRect(left).united(self.visualRect(right)))
-
-        else:
-            self._manual_anchor_index = index
-            sm.select(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
-            sm.setCurrentIndex(index, QItemSelectionModel.NoUpdate)
-
-            # Update SelectionStore to match Qt selection model
-            selection_store = self._get_selection_store()
-            if selection_store and not self._legacy_selection_mode:
-                current_qt_selection = set(idx.row() for idx in sm.selectedRows())
-                selection_store.set_selected_rows(current_qt_selection, emit_signal=True)
-                selection_store.set_anchor_row(index.row(), emit_signal=False)
+                # Update SelectionStore to match Qt selection model
+                selection_store = self._get_selection_store()
+                if selection_store and not self._legacy_selection_mode:
+                    current_qt_selection = set(idx.row() for idx in sm.selectedRows())
+                    selection_store.set_selected_rows(current_qt_selection, emit_signal=False)  # Don't emit signal to prevent loops
+                    selection_store.set_anchor_row(index.row(), emit_signal=False)
+        finally:
+            self._ensuring_selection = False
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """
         Handle mouse press events for selection and drag initiation.
         """
-        # Restore pending selection if exists
-        self._restore_pending_selection()
+        # SIMPLIFIED: No longer needed - selection is cleared during column updates
 
         # Get the index under the mouse
         index = self.indexAt(event.pos())
@@ -1315,8 +1368,7 @@ class FileTableView(QTableView):
 
     def keyPressEvent(self, event) -> None:
         """Handle keyboard navigation, sync selection, and modifier changes during drag."""
-        # Restore pending selection if exists
-        self._restore_pending_selection()
+        # SIMPLIFIED: No longer needed - selection is cleared during column updates
 
         # Handle column management shortcuts
         from config import COLUMN_SHORTCUTS
@@ -1690,70 +1742,91 @@ class FileTableView(QTableView):
             self._selection_change_count = 1
             self._last_selection_change_time = current_time
 
-        logger.debug(f"[FileTableView] selectionChanged called. selected={selected.count()}, deselected={deselected.count()}, count={self._selection_change_count}")
-        super().selectionChanged(selected, deselected)
+        # CRITICAL: Add protection against infinite loops
+        if hasattr(self, '_processing_selection_change') and self._processing_selection_change:
+            logger.debug("[FileTableView] selectionChanged already processing, skipping")
+            return
 
-        selection_model = self.selectionModel()
-        if selection_model is not None:
-            selected_rows = set(index.row() for index in selection_model.selectedRows())
-            logger.debug(f"[FileTableView] selectionChanged: selected_rows after Qt={selected_rows}")
+        self._processing_selection_change = True
+        try:
+            logger.debug(f"[FileTableView] selectionChanged called. selected={selected.count()}, deselected={deselected.count()}, count={self._selection_change_count}")
+            super().selectionChanged(selected, deselected)
 
-            # PROTECTION: Ignore empty selections that come immediately after SUCCESSFUL metadata drops
-            # This prevents Qt's automatic clearSelection() from clearing our metadata display
-            if (
-                not selected_rows
-                and hasattr(self, "_successful_metadata_drop")
-                and self._successful_metadata_drop
-            ):
-                logger.debug(
-                    "[FileTableView] Ignoring empty selection after successful metadata drop",
-                    extra={"dev_only": True},
-                )
-                # Clear the flag and restore the selection
-                self._successful_metadata_drop = False
-                # Try to restore the selection from SelectionStore
-                selection_store = self._get_selection_store()
-                if selection_store and not self._legacy_selection_mode:
-                    stored_selection = selection_store.get_selected_rows()
-                    if stored_selection:
-                        logger.debug(
-                            f"[FileTableView] Restoring {len(stored_selection)} files from SelectionStore",
-                            extra={"dev_only": True},
-                        )
-                        self._sync_qt_selection_model(stored_selection)
-                        self.viewport().update()
-                return
+            selection_model = self.selectionModel()
+            if selection_model is not None:
+                selected_rows = set(index.row() for index in selection_model.selectedRows())
+                logger.debug(f"[FileTableView] selectionChanged: selected_rows after Qt={selected_rows}")
 
-            # Also ignore empty selections during active drag operations
-            if not selected_rows and hasattr(self, "_is_dragging") and self._is_dragging:
-                logger.debug(
-                    "[FileTableView] Ignoring empty selection during drag operation",
-                    extra={"dev_only": True},
-                )
-                return
+                # PROTECTION: Ignore empty selections that come immediately after SUCCESSFUL metadata drops
+                # This prevents Qt's automatic clearSelection() from clearing our metadata display
+                if (
+                    not selected_rows
+                    and hasattr(self, "_successful_metadata_drop")
+                    and self._successful_metadata_drop
+                ):
+                    logger.debug(
+                        "[FileTableView] Ignoring empty selection after successful metadata drop",
+                        extra={"dev_only": True},
+                    )
+                    # Clear the flag and restore the selection
+                    self._successful_metadata_drop = False
+                    # Try to restore the selection from SelectionStore
+                    selection_store = self._get_selection_store()
+                    if selection_store and not self._legacy_selection_mode:
+                        stored_selection = selection_store.get_selected_rows()
+                        if stored_selection:
+                            logger.debug(
+                                f"[FileTableView] Restoring {len(stored_selection)} files from SelectionStore",
+                                extra={"dev_only": True},
+                            )
+                            self._sync_qt_selection_model(stored_selection)
+                            self.viewport().update()
+                    return
 
-            # PROTECTION: Ignore empty selections that come during column updates
-            # This prevents Qt's automatic clearSelection() from clearing our metadata display
-            if not selected_rows and hasattr(self, "_syncing_qt_model") and self._syncing_qt_model:
-                logger.debug(
-                    "[FileTableView] Ignoring empty selection during Qt model sync",
-                    extra={"dev_only": True},
-                )
-                return
+                # Also ignore empty selections during active drag operations
+                if not selected_rows and hasattr(self, "_is_dragging") and self._is_dragging:
+                    logger.debug(
+                        "[FileTableView] Ignoring empty selection during drag operation",
+                        extra={"dev_only": True},
+                    )
+                    return
 
-            # PROTECTION: Prevent infinite loops during column updates
-            if hasattr(self, "_updating_columns") and self._updating_columns:
-                logger.debug("[FileTableView] Ignoring selection change during column update")
-                return
+                # PROTECTION: Ignore empty selections that come during column updates
+                # This prevents Qt's automatic clearSelection() from clearing our metadata display
+                if not selected_rows and hasattr(self, "_syncing_qt_model") and self._syncing_qt_model:
+                    logger.debug(
+                        "[FileTableView] Ignoring empty selection during Qt model sync",
+                        extra={"dev_only": True},
+                    )
+                    return
 
-            # CRITICAL: Update SelectionStore with emit_signal=True when selection changes from Qt
-            self._update_selection_store(selected_rows, emit_signal=True)
+                # PROTECTION: Prevent infinite loops during column updates
+                if hasattr(self, "_updating_columns") and self._updating_columns:
+                    logger.debug("[FileTableView] Ignoring selection change during column update")
+                    return
 
-        if self.context_focused_row is not None:
-            self.context_focused_row = None
+                # CRITICAL: Update SelectionStore with emit_signal=False to prevent loops
+                self._update_selection_store(selected_rows, emit_signal=False)
 
-        if hasattr(self, "viewport"):
-            self.viewport().update()
+                # Schedule preview update after a short delay to prevent loops
+                from utils.timer_manager import schedule_ui_update
+                def delayed_preview_update():
+                    selection_store = self._get_selection_store()
+                    if selection_store and not self._legacy_selection_mode:
+                        # Force emit signal to update preview and metadata tree
+                        # Call set_selected_rows with force_emit=True to ensure signal is emitted
+                        selection_store.set_selected_rows(selected_rows, emit_signal=True, force_emit=True)
+                        logger.debug(f"[FileTableView] Delayed preview update for {len(selected_rows)} files")
+
+                schedule_ui_update(delayed_preview_update, delay=100)  # 100ms delay for better reliability
+
+            if self.context_focused_row is not None:
+                self.context_focused_row = None
+
+            if hasattr(self, "viewport"):
+                self.viewport().update()
+        finally:
+            self._processing_selection_change = False
 
     def select_rows_range(self, start_row: int, end_row: int) -> None:
         """Select a range of rows efficiently."""
@@ -2241,7 +2314,7 @@ class FileTableView(QTableView):
         # Ensure view and model are synchronized before updating
         self._sync_view_model_columns()
 
-        # Update table display with gentle refresh (preserves selection)
+        # Update table display (clears selection)
         self._update_table_columns()
 
         logger.info(f"Column '{column_key}' visibility toggle completed")
@@ -2337,179 +2410,118 @@ class FileTableView(QTableView):
 
         logger.debug(f"[ColumnDebug] =========================================")
 
-    def _update_table_columns(self) -> None:
-        """Update table columns based on visibility configuration while preserving selection."""
-        model = self.model()
-        if not model:
-            logger.warning("No model available for column update")
-            return
+    def _clear_selection_for_column_update(self, force_emit_signal: bool = False) -> None:
+        """
+        Clear selection during column updates.
 
+        Args:
+            force_emit_signal: If True, forces emission of selection_changed signal
+                              to ensure preview and metadata are updated
+        """
+        logger.debug(f"[ColumnUpdate] Clearing selection for column update (force_emit={force_emit_signal})")
+
+        # Clear Qt selection model
+        self.clearSelection()
+
+        # Clear SelectionStore
+        selection_store = self._get_selection_store()
+        if selection_store and not self._legacy_selection_mode:
+            if force_emit_signal:
+                # Force emit signal to clear preview and metadata tree
+                selection_store.set_selected_rows(set(), emit_signal=True, force_emit=True)
+                logger.debug("[ColumnUpdate] Selection cleared with signal emission")
+            else:
+                # Silent clear to avoid loops during updates
+                selection_store.set_selected_rows(set(), emit_signal=False)
+                logger.debug("[ColumnUpdate] Selection cleared silently")
+
+        def _handle_column_update_lifecycle(self, update_function: callable) -> None:
+        """
+        Handle the complete lifecycle of a column update operation.
+
+        This method ensures proper state management during column updates:
+        - Sets update flags to prevent loops
+        - Clears selection appropriately
+        - Executes the update function
+        - Ensures final cleanup with signal emission
+
+        Args:
+            update_function: Function that performs the actual column update
+        """
         try:
-            # Set flag to prevent infinite loops
+            # Set flag to prevent infinite loops during update
             self._updating_columns = True
 
             # Debug state before update
             logger.debug("[ColumnUpdate] STATE BEFORE UPDATE:")
             self.debug_column_state()
 
-            # Store current selection and anchor BEFORE any changes
-            selected_rows = self._get_current_selection()
-            anchor_row = self._get_anchor_row()
-            selected_file_paths = []
-            anchor_file_path = None
+            # Clear selection during update (silent to avoid loops)
+            self._clear_selection_for_column_update(force_emit_signal=False)
 
-            if hasattr(model, 'files'):
-                # Store selected file paths
-                if selected_rows:
-                    for row in selected_rows:
-                        if 0 <= row < len(model.files):
-                            file_path = getattr(model.files[row], 'full_path', None)
-                            if file_path:
-                                selected_file_paths.append(file_path)
+            # Execute the actual update
+            update_function()
 
-                # Store anchor file path
-                if anchor_row is not None and 0 <= anchor_row < len(model.files):
-                    anchor_file_path = getattr(model.files[anchor_row], 'full_path', None)
+            # Debug state after update
+            logger.debug("[ColumnUpdate] STATE AFTER UPDATE:")
+            self.debug_column_state()
 
-            logger.debug(f"[ColumnUpdate] Stored selection: {len(selected_file_paths)} files, anchor: {anchor_file_path}")
-
-            # Update the model with new visible columns
-            if hasattr(model, 'update_visible_columns'):
-                visible_columns_list = [key for key, visible in self._visible_columns.items() if visible]
-                logger.debug(f"[ColumnUpdate] Updating model with visible columns: {visible_columns_list}")
-                model.update_visible_columns(visible_columns_list)
-
-                # Verify model was updated correctly
-                if hasattr(model, 'get_visible_columns'):
-                    model_visible = model.get_visible_columns()
-                    logger.debug(f"[ColumnUpdate] Model now reports visible columns: {model_visible}")
-                    if model_visible != visible_columns_list:
-                        logger.error(f"[ColumnUpdate] SYNC ERROR: View wants {visible_columns_list}, model has {model_visible}")
-
-                logger.debug("[ColumnUpdate] Reconfiguring columns...")
-                self._configure_columns()
-                self.updateGeometry()
-                self.viewport().update()
-
-                # Store selection and anchor for later restoration
-                if selected_file_paths or anchor_file_path:
-                    self._pending_selection_restore = {
-                        'selected_files': selected_file_paths,
-                        'anchor_file': anchor_file_path
-                    }
-                    logger.debug(f"[ColumnUpdate] Stored selection for restoration: {len(selected_file_paths)} files, anchor: {anchor_file_path}")
-
-                    # Schedule automatic restoration after column update completes
-                    schedule_ui_update(self._restore_pending_selection, delay=50)  # Increased delay to avoid flicker
-                else:
-                    self._pending_selection_restore = None
-
-                # DON'T clear selection immediately - let the restoration handle it
-                # This prevents flicker and maintains visual continuity
-
-                # Ενεργοποίηση header αν είναι απενεργοποιημένο
-                header = self.horizontalHeader() if hasattr(self, 'horizontalHeader') else None
-                if header and not header.isEnabled():
-                    header.setEnabled(True)
-                    logger.debug("[ColumnUpdate] Header re-enabled after column update")
-
-                visible_count = sum(1 for visible in self._visible_columns.values() if visible)
-                logger.info(f"Table columns updated - {visible_count} columns visible, selection pending restoration")
-                logger.debug("[ColumnUpdate] STATE AFTER UPDATE:")
-                self.debug_column_state()
-            else:
-                logger.error("Model does not support dynamic columns - this is a critical error")
         except Exception as e:
-            logger.error(f"Error updating table columns: {e}", exc_info=True)
+            logger.error(f"[ColumnUpdate] Error during column update: {e}")
+            raise
         finally:
-            # Clear flag to allow normal selection handling
+            # Always clear the update flag
             self._updating_columns = False
 
-        # No longer need to trigger column adjustment - columns maintain fixed widths
+        # Ensure preview and metadata are cleared after column updates
+        # This is needed because not all column operations trigger selectionChanged
+        selection_store = self._get_selection_store()
+        if selection_store and not self._legacy_selection_mode:
+            # Use delayed call to avoid conflicts with model updates
+            from utils.timer_manager import schedule_ui_update
+            def ensure_clear_preview():
+                # Force clear with signal emission to update preview and metadata
+                self._clear_selection_for_column_update(force_emit_signal=True)
+                logger.debug("[ColumnUpdate] Final preview/metadata clear after column update")
+
+            schedule_ui_update(ensure_clear_preview, delay=50)  # Short delay to let model settle
+
+    def _update_table_columns(self) -> None:
+        """Update table columns based on visibility configuration."""
+        model = self.model()
+        if not model:
+            logger.warning("No model available for column update")
+            return
+
+        def perform_column_update():
+            """Internal function that performs the actual column update."""
+            # Update model with visible columns
+            visible_columns = self.get_visible_columns_list()
+            logger.debug(f"[ColumnUpdate] Updating model with visible columns: {visible_columns}")
+
+            if hasattr(model, 'update_visible_columns'):
+                model.update_visible_columns(visible_columns)
+                logger.debug(f"[ColumnUpdate] Model now reports visible columns: {getattr(model, 'get_visible_columns', lambda: [])()}")
+
+            # Reconfigure columns
+            logger.debug("[ColumnUpdate] Reconfiguring columns...")
+            self._configure_columns()
+
+            # Update header visibility
+            self._update_header_visibility()
+
+            # Force scrollbar update
+            self._force_scrollbar_update()
+
+            logger.info(f"Table columns updated - {len(visible_columns)} columns visible")
+
+        # Use the lifecycle handler for proper state management
+        self._handle_column_update_lifecycle(perform_column_update)
 
     def _restore_pending_selection(self) -> None:
         """Restore pending selection if it exists."""
-        if hasattr(self, '_pending_selection_restore') and self._pending_selection_restore:
-            try:
-                model = self.model()
-                if model and hasattr(model, 'files'):
-                    # Handle both old format (list) and new format (dict)
-                    if isinstance(self._pending_selection_restore, list):
-                        # Old format - just selected files
-                        selected_files = self._pending_selection_restore
-                        anchor_file = None
-                    else:
-                        # New format - selected files and anchor
-                        selected_files = self._pending_selection_restore.get('selected_files', [])
-                        anchor_file = self._pending_selection_restore.get('anchor_file')
-
-                    restored_rows = set()
-                    anchor_row = None
-
-                    # Find rows for selected files
-                    for i, file_item in enumerate(model.files):
-                        file_path = getattr(file_item, 'full_path', None)
-                        if file_path in selected_files:
-                            restored_rows.add(i)
-                        # Find anchor row
-                        if anchor_file and file_path == anchor_file:
-                            anchor_row = i
-
-                    if restored_rows:
-                        logger.debug(f"[SelectionRestore] Restoring selection: {restored_rows}, anchor: {anchor_row}")
-
-                        # Block signals during restoration to prevent loops and rate limiting
-                        self.blockSignals(True)
-                        try:
-                            # Clear current selection first
-                            selection_model = self.selectionModel()
-                            if selection_model:
-                                selection_model.clearSelection()
-
-                                # Restore anchor first if available
-                                if anchor_row is not None:
-                                    self._set_anchor_row(anchor_row, emit_signal=False)
-                                    logger.debug(f"[SelectionRestore] Restored anchor to row {anchor_row}")
-
-                                # Select each row individually
-                                for row in restored_rows:
-                                    if 0 <= row < model.rowCount():
-                                        start_index = model.index(row, 0)
-                                        end_index = model.index(row, model.columnCount() - 1)
-                                        selection_model.select(
-                                            QItemSelection(start_index, end_index),
-                                            selection_model.Select
-                                        )
-
-                                # Update selection store with emit_signal=True to trigger preview update
-                                # But only if we're not in legacy mode
-                                selection_store = self._get_selection_store()
-                                if selection_store and not self._legacy_selection_mode:
-                                    # Use emit_signal=False to avoid rate limiting, then emit manually
-                                    selection_store.set_selected_rows(restored_rows, emit_signal=False)
-                                    # Emit signal manually after a short delay to avoid rate limiting
-                                    schedule_ui_update(
-                                        lambda: selection_store.set_selected_rows(restored_rows, emit_signal=True),
-                                        delay=100
-                                    )
-
-                                # Force visual update
-                                self.viewport().update()
-
-                                logger.debug(f"[SelectionRestore] Successfully restored {len(restored_rows)} rows")
-                            else:
-                                logger.warning("[SelectionRestore] No selection model available")
-                        finally:
-                            self.blockSignals(False)
-                    else:
-                        logger.debug("[SelectionRestore] No rows to restore (files not found in model)")
-
-                # Clear pending selection
-                self._pending_selection_restore = None
-
-            except Exception as e:
-                logger.error(f"[SelectionRestore] Error restoring selection: {e}")
-                self._pending_selection_restore = None
+        # SIMPLIFIED: No longer needed - selection is cleared during column updates
+        pass
 
     def _get_metadata_tree(self):
         """Get the metadata tree widget from the parent hierarchy."""
@@ -2657,15 +2669,21 @@ class FileTableView(QTableView):
             saved_widths = {}
 
             if main_window and hasattr(main_window, 'window_config_manager'):
-                config_manager = main_window.window_config_manager.config_manager
-                window_config = config_manager.get_category('window')
-                saved_widths = window_config.get('file_table_column_widths', {})
+                try:
+                    config_manager = main_window.window_config_manager.config_manager
+                    window_config = config_manager.get_category('window')
+                    saved_widths = window_config.get('file_table_column_widths', {})
+                    logger.debug(f"[ColumnWidth] Loaded {len(saved_widths)} widths from main config")
+                except Exception as e:
+                    logger.warning(f"[ColumnWidth] Error accessing main config: {e}")
+                    # Continue to fallback method
 
             if not saved_widths:
                 # Try fallback method
                 from utils.json_config_manager import load_config
                 config = load_config()
                 saved_widths = config.get("file_table_column_widths", {})
+                logger.debug(f"[ColumnWidth] Loaded {len(saved_widths)} widths from fallback config")
 
             # Check if most columns are set to 100px (suspicious)
             suspicious_count = 0
@@ -2677,14 +2695,23 @@ class FileTableView(QTableView):
                     default_width = column_config.get("width", 100)
                     saved_width = saved_widths.get(column_key, default_width)
 
-                    # If saved width is 100px but default is different, it's suspicious
-                    if saved_width == 100 and default_width != 100:
+                    # If saved width is 100px but default is significantly different, it's suspicious
+                    if saved_width == 100 and default_width > 120:
                         suspicious_count += 1
+                        logger.debug(f"[ColumnWidth] Suspicious column '{column_key}': saved={saved_width}px, default={default_width}px")
 
             # If most visible columns have suspicious widths, reset them
             if total_count > 0 and suspicious_count >= (total_count * 0.5):  # 50% threshold
                 logger.info(f"Found {suspicious_count}/{total_count} columns with suspicious widths, resetting to defaults")
                 self._reset_column_widths_to_defaults()
+                # Reconfigure columns after reset (only if model is available)
+                if self.model() and self.model().columnCount() > 0:
+                    from utils.timer_manager import schedule_ui_update
+                    schedule_ui_update(self._configure_columns, delay=10)
+            else:
+                logger.debug(f"Column widths check passed: {suspicious_count}/{total_count} suspicious columns")
 
         except Exception as e:
             logger.error(f"Failed to check column widths: {e}")
+
+

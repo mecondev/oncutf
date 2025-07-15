@@ -2930,7 +2930,7 @@ class MetadataTreeView(QTreeView):
                 if hasattr(file_table_view, '_save_column_visibility_config'):
                     file_table_view._save_column_visibility_config()
 
-                # Update table display (now preserves selection automatically)
+                # Update table display (clears selection)
                 if hasattr(file_table_view, '_update_table_columns'):
                     file_table_view._update_table_columns()
 
@@ -2960,7 +2960,7 @@ class MetadataTreeView(QTreeView):
                 if hasattr(file_table_view, '_save_column_visibility_config'):
                     file_table_view._save_column_visibility_config()
 
-                # Update table display (now preserves selection automatically)
+                # Update table display (clears selection)
                 if hasattr(file_table_view, '_update_table_columns'):
                     file_table_view._update_table_columns()
 
