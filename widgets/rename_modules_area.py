@@ -102,7 +102,6 @@ class RenameModulesArea(QWidget):
 
     def _on_module_updated(self):
         """Handle module updates with debouncing to prevent duplicates."""
-        logger.debug("[RenameModulesArea] Module updated, restarting timer", extra={"dev_only": True})
         self._update_timer.stop()
         self._update_timer.start()
 
@@ -115,11 +114,9 @@ class RenameModulesArea(QWidget):
         if context:
             # ApplicationContext available - create module without parent_window
             module = RenameModuleWidget(parent=self)
-            logger.debug("[RenameModulesArea] Created RenameModuleWidget via ApplicationContext", extra={"dev_only": True})
         else:
             # Fallback to legacy approach with parent_window
             module = RenameModuleWidget(parent=self, parent_window=self.parent_window)
-            logger.debug("[RenameModulesArea] Created RenameModuleWidget via parent_window fallback", extra={"dev_only": True})
 
         module.remove_requested.connect(lambda m=module: self.remove_module(m))
         module.updated.connect(lambda: self._on_module_updated())
@@ -153,7 +150,6 @@ class RenameModulesArea(QWidget):
             # After removal, scroll to bottom to show remaining modules
             # Schedule scroll to bottom
             schedule_scroll_adjust(lambda: self._scroll_to_bottom(), 50)
-            logger.debug(f"[RenameModulesArea] Scrolled to bottom after removal ({len(self.module_widgets)} modules remain)", extra={"dev_only": True})
 
             self.updated.emit()
 
@@ -161,14 +157,11 @@ class RenameModulesArea(QWidget):
         """Remove the last module (allows removal of all modules)."""
         if len(self.module_widgets) > 0:
             self.remove_module(self.module_widgets[-1])
-        else:
-            logger.debug("[RenameModulesArea] No modules to remove", extra={"dev_only": True})
 
     def _scroll_to_bottom(self):
         """Scroll to the bottom of the modules area."""
         scroll_bar = self.scroll_area.verticalScrollBar()
         scroll_bar.setValue(scroll_bar.maximum())
-        logger.debug(f"[RenameModulesArea] Scrolled to bottom ({len(self.module_widgets)} modules)", extra={"dev_only": True})
 
     def _update_layout_stretch(self):
         """Update stretch to prevent modules from expanding to fill container."""

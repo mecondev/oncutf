@@ -239,44 +239,47 @@ class UtilityManager:
 
     def generate_preview_names(self) -> None:
         """Generate new preview names for all selected files using current rename modules."""
-        selected_files = self.main_window.get_selected_files()
+        from utils.cursor_helper import wait_cursor
 
-        # Check if data changed to avoid unnecessary regeneration
-        selected_files_hash = hash(tuple(f.full_path for f in selected_files)) if selected_files else None
-        rename_data = self.main_window.rename_modules_area.get_all_data()
-        rename_data["post_transform"] = self.main_window.final_transform_container.get_data()
+        with wait_cursor():
+            selected_files = self.main_window.get_selected_files()
 
-        import json
-        try:
-            rename_data_hash = hash(json.dumps(rename_data, sort_keys=True, default=str))
-        except (TypeError, ValueError):
-            rename_data_hash = hash(str(rename_data))
+            # Check if data changed to avoid unnecessary regeneration
+            selected_files_hash = hash(tuple(f.full_path for f in selected_files)) if selected_files else None
+            rename_data = self.main_window.rename_modules_area.get_all_data()
+            rename_data["post_transform"] = self.main_window.final_transform_container.get_data()
 
-        if (selected_files_hash == self._last_selected_files_hash and
-            rename_data_hash == self._last_rename_data_hash):
-            return
+            import json
+            try:
+                rename_data_hash = hash(json.dumps(rename_data, sort_keys=True, default=str))
+            except (TypeError, ValueError):
+                rename_data_hash = hash(str(rename_data))
 
-        # Update cache
-        self._last_selected_files_hash = selected_files_hash
-        self._last_rename_data_hash = rename_data_hash
+            if (selected_files_hash == self._last_selected_files_hash and
+                rename_data_hash == self._last_rename_data_hash):
+                return
 
-        if not selected_files:
-            self.main_window.update_preview_tables_from_pairs([])
-            self.main_window.rename_button.setEnabled(False)
-            return
+            # Update cache
+            self._last_selected_files_hash = selected_files_hash
+            self._last_rename_data_hash = rename_data_hash
 
-        # Generate previews
-        all_modules = self.main_window.rename_modules_area.get_all_module_instances()
-        name_pairs, has_changes = self.main_window.preview_manager.generate_preview_names(
-            selected_files, rename_data, self.main_window.metadata_cache, all_modules
-        )
+            if not selected_files:
+                self.main_window.update_preview_tables_from_pairs([])
+                self.main_window.rename_button.setEnabled(False)
+                return
 
-        # Update UI
-        self.main_window.preview_map = self.main_window.preview_manager.get_preview_map()
-        self.main_window.update_preview_tables_from_pairs(name_pairs)
+            # Generate previews
+            all_modules = self.main_window.rename_modules_area.get_all_module_instances()
+            name_pairs, has_changes = self.main_window.preview_manager.generate_preview_names(
+                selected_files, rename_data, self.main_window.metadata_cache, all_modules
+            )
 
-        # Handle rename button state
-        self._update_rename_button_state(name_pairs, has_changes)
+            # Update UI
+            self.main_window.preview_map = self.main_window.preview_manager.get_preview_map()
+            self.main_window.update_preview_tables_from_pairs(name_pairs)
+
+            # Handle rename button state
+            self._update_rename_button_state(name_pairs, has_changes)
 
     def _update_rename_button_state(self, name_pairs: list, has_changes: bool) -> None:
         """Update rename button state and tooltip."""

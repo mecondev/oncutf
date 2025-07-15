@@ -80,6 +80,15 @@ class MetadataModule:
 
         logger.debug(f"[MetadataModule] apply_from_data for {file_item.filename} with field='{field}', path='{path}'")
 
+        # Handle hash fields
+        if field and field.startswith("hash_"):
+            try:
+                hash_type = field.replace("hash_", "").upper()
+                return MetadataModule._get_file_hash(path, hash_type)
+            except Exception as e:
+                logger.warning(f"[MetadataModule] Failed to get hash for {file_item.filename}: {e}")
+                return "invalid"
+
         # Handle filesystem-based date formats
         if field and field.startswith("last_modified_"):
             try:
@@ -188,6 +197,48 @@ class MetadataModule:
         # No valid field specified
         logger.warning("[MetadataModule] No valid field specified in data config")
         return "invalid"
+
+    @staticmethod
+    def _get_file_hash(file_path: str, hash_type: str) -> str:
+        """
+        Get file hash using the hash cache or calculate it.
+
+        Args:
+            file_path: Path to the file
+            hash_type: Type of hash (CRC32, MD5, SHA1, SHA256)
+
+        Returns:
+            str: Hash value or "missing" if not available
+        """
+        try:
+            # Try to get hash from cache first
+            from core.persistent_hash_cache import get_persistent_hash_cache
+            hash_cache = get_persistent_hash_cache()
+
+            # Check if hash exists in cache
+            if hash_cache.has_hash(file_path, hash_type):
+                hash_value = hash_cache.get_hash(file_path, hash_type)
+                if hash_value:
+                    return hash_value
+
+            # If not in cache, try to calculate it
+            from core.hash_manager import HashManager
+            hash_manager = HashManager()
+
+            # For now, only CRC32 is supported by HashManager
+            if hash_type == "CRC32":
+                hash_value = hash_manager.calculate_hash(file_path)
+                if hash_value:
+                    return hash_value
+
+            # For other hash types, we would need to implement them
+            # For now, return "missing" for unsupported types
+            logger.info(f"[MetadataModule] Hash type {hash_type} not yet supported for {file_path}")
+            return "missing"
+
+        except Exception as e:
+            logger.warning(f"[MetadataModule] Error getting hash for {file_path}: {e}")
+            return "missing"
 
     @staticmethod
     def is_effective(data: dict) -> bool:

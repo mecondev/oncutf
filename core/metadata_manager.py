@@ -390,6 +390,26 @@ class MetadataManager:
                 total_bytes=total
             )
 
+    def _refresh_metadata_widgets(self) -> None:
+        """Refresh all metadata widgets to show newly loaded metadata keys."""
+        try:
+            if not self.parent_window or not hasattr(self.parent_window, 'rename_modules_area'):
+                logger.debug("[MetadataManager] No rename_modules_area found for refresh")
+                return
+
+            # Find all metadata widgets in rename modules
+            refresh_count = 0
+            for module in self.parent_window.rename_modules_area.findChildren(QWidget):
+                if hasattr(module, 'refresh_metadata_keys'):
+                    logger.debug(f"[MetadataManager] Refreshing metadata widget: {module.__class__.__name__}")
+                    module.refresh_metadata_keys()
+                    refresh_count += 1
+
+            logger.info(f"[MetadataManager] Refreshed {refresh_count} metadata widgets")
+
+        except Exception as e:
+            logger.warning(f"[MetadataManager] Error refreshing metadata widgets: {e}")
+
     def _on_file_metadata_loaded(self, file_path: str) -> None:
         """Handle real-time metadata loading completion for individual files (same as HashWorker)."""
         try:
@@ -397,14 +417,24 @@ class MetadataManager:
             if self.parent_window and hasattr(self.parent_window, 'file_model'):
                 for i, file_item in enumerate(self.parent_window.file_model.files):
                     if paths_equal(file_item.full_path, file_path):
-                        # Update file icon to show metadata status
-                        index = self.parent_window.file_model.index(i, 0)
-                        self.parent_window.file_model.dataChanged.emit(index, index, [Qt.DecorationRole, Qt.ToolTipRole]) # type: ignore
-                        logger.debug(f"[MetadataManager] Updated icon for: {os.path.basename(file_path)}", extra={"dev_only": True})
+                        # Emit dataChanged for the entire row to update metadata status
+                        top_left = self.parent_window.file_model.index(i, 0)
+                        bottom_right = self.parent_window.file_model.index(i, self.parent_window.file_model.columnCount() - 1)
+                        self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]) # type: ignore
                         break
 
+            # Refresh metadata widgets periodically (every 10 files to avoid too frequent updates)
+            if hasattr(self, '_metadata_files_loaded'):
+                self._metadata_files_loaded += 1
+            else:
+                self._metadata_files_loaded = 1
+
+            if self._metadata_files_loaded % 10 == 0:
+                logger.debug(f"[MetadataManager] Refreshing metadata widgets after {self._metadata_files_loaded} files loaded")
+                self._refresh_metadata_widgets()
+
         except Exception as e:
-            logger.warning(f"[MetadataManager] Error updating icon for {file_path}: {e}")
+            logger.warning(f"[MetadataManager] Error in file metadata loaded handler: {e}")
 
     def _on_metadata_finished(self, loading_dialog, files_to_load: List[FileItem], metadata_tree_view) -> None:
         """Handle metadata worker completion."""
@@ -430,6 +460,9 @@ class MetadataManager:
         if metadata_tree_view and files_to_load:
             display_file = files_to_load[0] if len(files_to_load) == 1 else files_to_load[-1]
             metadata_tree_view.display_file_metadata(display_file)
+
+        # Refresh metadata widgets to show new available keys
+        self._refresh_metadata_widgets()
 
         # Clean up thread and worker properly
         self._cleanup_metadata_worker_and_thread()

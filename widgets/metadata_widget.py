@@ -37,6 +37,7 @@ class MetadataWidget(QWidget):
         self.parent_window = parent_window  # Keep for backward compatibility
         self.setProperty("module", True)
         self._last_data: Optional[dict] = None  # For change tracking
+        self._cached_metadata_keys: Optional[Set[str]] = None  # Cache for metadata keys
         self.setup_ui()
 
     def setup_ui(self) -> None:
@@ -86,7 +87,7 @@ class MetadataWidget(QWidget):
     def update_options(self) -> None:
         """Updates fields according to the selected category."""
         category = self.category_combo.currentData()
-        logger.debug(f"[MetadataWidget] Updating options for category: {category}", extra={"dev_only": True})
+        logger.debug(f"[MetadataWidget] Updating options for category: {category}")
         self.options_combo.clear()
 
         if category == "file_dates":
@@ -107,18 +108,31 @@ class MetadataWidget(QWidget):
         ]
         for label, val in file_date_options:
             self.options_combo.addItem(label, userData=val)
-        logger.debug(f"[MetadataWidget] Populated {len(file_date_options)} file date options", extra={"dev_only": True})
 
     def populate_metadata_keys(self) -> None:
         keys = self.get_available_metadata_keys()
         if not keys:
-            self.options_combo.addItem("(No metadata loaded)", userData=None)
-            logger.info("[MetadataWidget] No metadata keys available")
+            # Check if metadata cache exists but is empty vs not loaded
+            metadata_cache = self._get_metadata_cache_via_context()
+            if metadata_cache and hasattr(metadata_cache, '_memory_cache') and metadata_cache._memory_cache:
+                self.options_combo.addItem("(No metadata found in files)", userData=None)
+            else:
+                self.options_combo.addItem("(No metadata loaded)", userData=None)
             return
+
+        # Add hash options first
+        self.options_combo.addItem("CRC32 Hash", userData="hash_crc32")
+        self.options_combo.addItem("MD5 Hash", userData="hash_md5")
+        self.options_combo.addItem("SHA1 Hash", userData="hash_sha1")
+        self.options_combo.addItem("SHA256 Hash", userData="hash_sha256")
+
+        # Add separator
+        self.options_combo.addItem("─" * 20, userData=None)
+
+        # Add metadata keys
         for key in sorted(keys):
             display = self.format_metadata_key_name(key)
             self.options_combo.addItem(display, userData=key)
-        logger.debug(f"[MetadataWidget] Populated {len(keys)} metadata keys", extra={"dev_only": True})
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
@@ -135,19 +149,42 @@ class MetadataWidget(QWidget):
         # Try ApplicationContext first
         context = self._get_app_context()
         if context and hasattr(context, '_metadata_cache'):
+            logger.debug(f"[MetadataWidget] Found metadata cache via ApplicationContext")
             return context._metadata_cache
 
         # Fallback to legacy parent_window approach
         if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
+            logger.debug(f"[MetadataWidget] Found metadata cache via parent_window")
             return self.parent_window.metadata_cache
 
+        # Try to find metadata cache in main window
+        if self.parent_window and hasattr(self.parent_window, 'main_window') and self.parent_window.main_window:
+            main_window = self.parent_window.main_window
+            if hasattr(main_window, 'metadata_cache'):
+                logger.debug(f"[MetadataWidget] Found metadata cache via main_window")
+                return main_window.metadata_cache
+
+        # Try to find metadata cache in rename modules area
+        if self.parent_window and hasattr(self.parent_window, 'rename_modules_area'):
+            rename_area = self.parent_window.rename_modules_area
+            if hasattr(rename_area, 'parent') and rename_area.parent():
+                parent = rename_area.parent()
+                if hasattr(parent, 'metadata_cache'):
+                    logger.debug(f"[MetadataWidget] Found metadata cache via rename area parent")
+                    return parent.metadata_cache
+
+        logger.warning("[MetadataWidget] No metadata cache found")
         return None
 
     def get_available_metadata_keys(self) -> Set[str]:
+        # Return cached keys if available
+        if self._cached_metadata_keys is not None:
+            return self._cached_metadata_keys
+
         metadata_cache = self._get_metadata_cache_via_context()
         if not metadata_cache:
-            logger.warning("[MetadataWidget] No access to metadata cache")
-            return set()
+            self._cached_metadata_keys = set()
+            return self._cached_metadata_keys
 
         all_keys = set()
         try:
@@ -163,9 +200,24 @@ class MetadataWidget(QWidget):
                     if isinstance(entry, MetadataEntry) and entry.data:
                         filtered = {k for k in entry.data if not k.startswith('_') and k not in {'path', 'filename'}}
                         all_keys.update(filtered)
+            # Additional fallback for different cache structures
+            elif hasattr(metadata_cache, 'get_all_entries'):
+                entries = metadata_cache.get_all_entries()
+                for entry in entries:
+                    if hasattr(entry, 'data') and entry.data:
+                        filtered = {k for k in entry.data if not k.startswith('_') and k not in {'path', 'filename'}}
+                        all_keys.update(filtered)
+            # Direct dictionary access fallback
+            elif isinstance(metadata_cache, dict):
+                for entry in metadata_cache.values():
+                    if isinstance(entry, dict):
+                        filtered = {k for k in entry if not k.startswith('_') and k not in {'path', 'filename'}}
+                        all_keys.update(filtered)
         except Exception as e:
             logger.warning(f"[MetadataWidget] Error accessing metadata cache: {e}")
 
+        # Cache the result
+        self._cached_metadata_keys = all_keys
         return all_keys
 
     def format_metadata_key_name(self, key: str) -> str:
@@ -191,9 +243,23 @@ class MetadataWidget(QWidget):
         """Emits updated signal only if the state has changed."""
         new_data = self.get_data()
         if new_data != self._last_data:
-            logger.debug(f"[MetadataWidget] Emitting updated with data: {new_data}")
             self._last_data = new_data
             self.updated.emit(self)
+
+    def clear_cache(self) -> None:
+        """Clear the metadata keys cache to force refresh."""
+        self._cached_metadata_keys = None
+
+    def refresh_metadata_keys(self) -> None:
+        """Refresh metadata keys and update the combo box if currently showing metadata."""
+        logger.debug("[MetadataWidget] Refreshing metadata keys")
+        self.clear_cache()
+        if self.category_combo.currentData() == "metadata_keys":
+            logger.debug("[MetadataWidget] Currently showing metadata keys, updating combo box")
+            self.populate_metadata_keys()
+            self.emit_if_changed()
+        else:
+            logger.debug("[MetadataWidget] Not currently showing metadata keys, cache cleared for next time")
 
     @staticmethod
     def is_effective(data: dict) -> bool:

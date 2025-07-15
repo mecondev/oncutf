@@ -181,12 +181,9 @@ class RenameModuleWidget(QWidget):
         self.type_combo.setCurrentText('Specified Text')
 
         # Load default module
-        logger.debug(f"[RenameModuleWidget] Before QTimer.singleShot: content_container_layout is {'initialized' if hasattr(self, 'content_container_layout') else 'not initialized'}")
         schedule_ui_update(lambda: self.update_module_content(self.type_combo.currentText()), 0)
 
         # CSS styling is now applied via external stylesheet
-
-        logger.debug(f"[RenameModuleWidget] Before update_module_content: content_container_layout is {'initialized' if hasattr(self, 'content_container_layout') else 'not initialized'}")
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
@@ -201,18 +198,13 @@ class RenameModuleWidget(QWidget):
 
 
     def connect_signals_for_module(self, module_widget: QWidget) -> None:
+        """Connect the module's updated signal to our updated signal."""
         if hasattr(module_widget, "updated"):
             try:
                 # Connect the module's updated signal to emit our updated signal
                 module_widget.updated.connect(lambda _: self.updated.emit(self))
-                logger.info("[RenameModuleWidget] Connected module.updated -> self.updated", extra={"dev_only": True})
-
             except Exception as e:
                 logger.warning(f"[RenameModuleWidget] Signal connection failed: {e}")
-
-        else:
-            logger.warning("[RenameModuleWidget] Could not connect signal. Has updated: %s",
-                        hasattr(module_widget, "updated"))
 
     def update_module_content(self, module_name: str) -> None:
         """
@@ -233,11 +225,9 @@ class RenameModuleWidget(QWidget):
                 if context:
                     # ApplicationContext available - MetadataWidget can find what it needs
                     self.current_module_widget = module_class()
-                    logger.debug("[RenameModuleWidget] Created MetadataWidget via ApplicationContext")
                 else:
                     # Fallback to legacy approach with parent_window
                     self.current_module_widget = module_class(parent_window=self.parent_window)
-                    logger.debug("[RenameModuleWidget] Created MetadataWidget via parent_window fallback")
             else:
                 self.current_module_widget = module_class()
 
@@ -252,7 +242,6 @@ class RenameModuleWidget(QWidget):
             self.connect_signals_for_module(self.current_module_widget)
 
         # Emit updated signal to refresh preview
-        logger.debug(f"[RenameModuleWidget] Emitting updated signal for module: {module_name}", extra={"dev_only": True})
         self.updated.emit(self)
 
     def get_data(self) -> dict:
@@ -299,13 +288,11 @@ class RenameModuleWidget(QWidget):
         """Handle mouse enter on drag handle - change cursor."""
         from core.pyqt_imports import QCursor
         QApplication.setOverrideCursor(QCursor(Qt.OpenHandCursor))
-        logger.debug("[RenameModuleWidget] Mouse entered drag handle", extra={"dev_only": True})
 
     def drag_handle_leave(self, event):
         """Handle mouse leave on drag handle - restore cursor."""
         if not self.is_dragging:
             QApplication.restoreOverrideCursor()
-            logger.debug("[RenameModuleWidget] Mouse left drag handle", extra={"dev_only": True})
 
     def drag_handle_mouse_press(self, event):
         """Handle mouse press on drag handle - prepare for dragging."""
@@ -313,7 +300,6 @@ class RenameModuleWidget(QWidget):
             self.drag_start_position = event.pos()
             from core.pyqt_imports import QCursor
             QApplication.setOverrideCursor(QCursor(Qt.ClosedHandCursor))
-            logger.debug("[RenameModuleWidget] Drag handle pressed", extra={"dev_only": True})
             event.accept()
 
     def drag_handle_mouse_move(self, event):
@@ -346,13 +332,11 @@ class RenameModuleWidget(QWidget):
             else:
                 QApplication.restoreOverrideCursor()
             self.drag_start_position = None
-            logger.debug("[RenameModuleWidget] Drag handle released", extra={"dev_only": True})
             event.accept()
 
     def start_drag(self):
         """Start the drag operation."""
         self.is_dragging = True
-        logger.info("[RenameModuleWidget] Starting drag operation", extra={"dev_only": True})
 
         # Enhanced visual feedback during dragging
         self.setWindowOpacity(0.8)
@@ -376,17 +360,13 @@ class RenameModuleWidget(QWidget):
         parent = self.parent()
         while parent:
             if hasattr(parent, 'module_drag_started'):
-                logger.info(f"[RenameModuleWidget] Found drag handler in {type(parent).__name__}", extra={"dev_only": True})
                 parent.module_drag_started(self)
                 break
             parent = parent.parent()
-        else:
-            logger.warning("[RenameModuleWidget] No drag handler found in parent chain", extra={"dev_only": True})
 
     def end_drag(self):
         """End the drag operation."""
         self.is_dragging = False
-        logger.info("[RenameModuleWidget] Ending drag operation", extra={"dev_only": True})
 
         # Restore normal appearance
         self.setWindowOpacity(1.0)
@@ -404,12 +384,9 @@ class RenameModuleWidget(QWidget):
         parent = self.parent()
         while parent:
             if hasattr(parent, 'module_drag_ended'):
-                logger.info(f"[RenameModuleWidget] Found drag end handler in {type(parent).__name__}", extra={"dev_only": True})
                 parent.module_drag_ended(self)
                 break
             parent = parent.parent()
-        else:
-            logger.warning("[RenameModuleWidget] No drag end handler found in parent chain", extra={"dev_only": True})
 
     def restore_original_position(self):
         """Restore the module to its proper position in the layout."""

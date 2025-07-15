@@ -9,6 +9,7 @@ Centralized selection management operations extracted from MainWindow.
 Handles file table selection operations, preview updates, and metadata synchronization.
 """
 
+import time
 from typing import List
 
 from core.pyqt_imports import QElapsedTimer
