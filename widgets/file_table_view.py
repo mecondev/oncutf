@@ -2435,7 +2435,7 @@ class FileTableView(QTableView):
                 selection_store.set_selected_rows(set(), emit_signal=False)
                 logger.debug("[ColumnUpdate] Selection cleared silently")
 
-        def _handle_column_update_lifecycle(self, update_function: callable) -> None:
+    def _handle_column_update_lifecycle(self, update_function: callable) -> None:
         """
         Handle the complete lifecycle of a column update operation.
 
