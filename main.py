@@ -14,13 +14,12 @@ Functions:
 """
 
 import atexit
-import os
-import sys
 import logging
+import os
 import platform
 import signal
+import sys
 import time
-from pathlib import Path
 
 from core.pyqt_imports import QApplication, QStyleFactory, Qt
 
@@ -33,6 +32,7 @@ from utils.fonts import _get_inter_fonts
 from utils.logger_setup import ConfigureLogger
 from utils.theme_engine import ThemeEngine
 from widgets.custom_splash_screen import CustomSplashScreen
+
 
 # Calculate the user config directory for logs
 def get_user_config_dir(app_name: str = "oncutf") -> str:

@@ -8,8 +8,6 @@ Unified placeholder management system for all widgets.
 Provides consistent placeholder behavior across FileTableView, MetadataTreeView, and PreviewTablesView.
 """
 
-from typing import Optional, Union
-from pathlib import Path
 
 from core.pyqt_imports import QLabel, QPixmap, Qt, QWidget
 from utils.logger_factory import get_cached_logger

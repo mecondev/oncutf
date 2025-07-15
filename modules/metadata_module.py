@@ -43,11 +43,13 @@ class MetadataModule:
             return value
 
         # Replace colons and spaces with underscores for filename safety
-        cleaned = value.replace(':', '_').replace(' ', '_')
+        cleaned = value.replace(":", "_").replace(" ", "_")
         return cleaned
 
     @staticmethod
-    def apply_from_data(data: dict, file_item: FileItem, index: int = 0, metadata_cache: Optional[dict] = None) -> str:
+    def apply_from_data(
+        data: dict, file_item: FileItem, index: int = 0, metadata_cache: Optional[dict] = None
+    ) -> str:
         """
         Extracts a metadata value from the cache for use in filename.
 
@@ -78,7 +80,9 @@ class MetadataModule:
             logger.warning(f"[MetadataModule] No metadata dict found for {path}")
             metadata = {}  # fallback to empty
 
-        logger.debug(f"[MetadataModule] apply_from_data for {file_item.filename} with field='{field}', path='{path}'")
+        logger.debug(
+            f"[MetadataModule] apply_from_data for {file_item.filename} with field='{field}', path='{path}'"
+        )
 
         # Handle hash fields
         if field and field.startswith("hash_"):
@@ -131,7 +135,9 @@ class MetadataModule:
             # Access custom metadata key from file metadata
             value = metadata.get(field)
             if value is None:
-                logger.info(f"[MetadataModule] No '{field}' field in metadata for {file_item.filename}")
+                logger.info(
+                    f"[MetadataModule] No '{field}' field in metadata for {file_item.filename}"
+                )
                 return "missing"
 
             # Format the value appropriately and clean it for filename safety
@@ -139,21 +145,27 @@ class MetadataModule:
                 cleaned_value = MetadataModule.clean_metadata_value(str(value).strip())
                 return cleaned_value
             except Exception as e:
-                logger.warning(f"[MetadataModule] Failed to stringify metadata value for '{field}': {e}")
+                logger.warning(
+                    f"[MetadataModule] Failed to stringify metadata value for '{field}': {e}"
+                )
                 return "invalid"
 
         # Handle legacy metadata-based fields for backwards compatibility
         if field == "creation_date":
             value = metadata.get("creation_date") or metadata.get("date_created")
             if not value:
-                logger.info(f"[MetadataModule] No 'creation_date' field in metadata for {file_item.filename}")
+                logger.info(
+                    f"[MetadataModule] No 'creation_date' field in metadata for {file_item.filename}"
+                )
                 return "missing"
             return MetadataModule.clean_metadata_value(str(value))
 
         if field == "date":
             value = metadata.get("date")
             if not value:
-                logger.info(f"[MetadataModule] No 'date' field in metadata for {file_item.filename}")
+                logger.info(
+                    f"[MetadataModule] No 'date' field in metadata for {file_item.filename}"
+                )
                 return "missing"
             return MetadataModule.clean_metadata_value(str(value))
 
@@ -174,7 +186,9 @@ class MetadataModule:
                             if key in metadata:
                                 raw_value = metadata[key]
                                 if raw_value is not None:
-                                    cleaned_value = MetadataModule.clean_metadata_value(str(raw_value).strip())
+                                    cleaned_value = MetadataModule.clean_metadata_value(
+                                        str(raw_value).strip()
+                                    )
                                     return cleaned_value
                         return "missing"
             except ImportError:
@@ -213,6 +227,7 @@ class MetadataModule:
         try:
             # Try to get hash from cache first
             from core.persistent_hash_cache import get_persistent_hash_cache
+
             hash_cache = get_persistent_hash_cache()
 
             # Check if hash exists in cache
@@ -223,6 +238,7 @@ class MetadataModule:
 
             # If not in cache, try to calculate it
             from core.hash_manager import HashManager
+
             hash_manager = HashManager()
 
             # For now, only CRC32 is supported by HashManager
@@ -243,6 +259,5 @@ class MetadataModule:
     @staticmethod
     def is_effective(data: dict) -> bool:
         # All metadata fields are effective, including last_modified
-        field = data.get('field')
+        field = data.get("field")
         return bool(field)  # True if we have a valid field
-

@@ -89,8 +89,8 @@ from PyQt5.QtWidgets import (
     QFileDialog,
     QFileSystemModel,
     QFrame,
-    QGraphicsOpacityEffect,
     QGraphicsDropShadowEffect,
+    QGraphicsOpacityEffect,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
@@ -113,7 +113,6 @@ from PyQt5.QtWidgets import (
     QStyledItemDelegate,
     QStyleFactory,
     QStyleOption,
-
     QStyleOptionViewItem,
     QTableView,
     QTableWidget,

@@ -32,7 +32,9 @@ class MetadataWidget(QWidget):
 
     updated = pyqtSignal(object)
 
-    def __init__(self, parent: Optional[QWidget] = None, parent_window: Optional[QWidget] = None) -> None:
+    def __init__(
+        self, parent: Optional[QWidget] = None, parent_window: Optional[QWidget] = None
+    ) -> None:
         super().__init__(parent)
         self.parent_window = parent_window  # Keep for backward compatibility
         self.setProperty("module", True)
@@ -47,11 +49,13 @@ class MetadataWidget(QWidget):
 
         # Row 1: Category
         category_row = QHBoxLayout()
-        category_row.setContentsMargins(0, 0, 0, 0)  # Removed vertical margins to allow spacing control
+        category_row.setContentsMargins(
+            0, 0, 0, 0
+        )  # Removed vertical margins to allow spacing control
         category_row.setSpacing(8)  # Match final transformer spacing between label and control
         category_label = QLabel("Category")
         category_label.setFixedWidth(70)  # Increased width by 10px
-        category_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter) # type: ignore
+        category_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
         self.category_combo = QComboBox()
         self.category_combo.addItem("File Dates", userData="file_dates")
         self.category_combo.addItem("EXIF/Metadata", userData="metadata_keys")
@@ -64,11 +68,13 @@ class MetadataWidget(QWidget):
 
         # Row 2: Field
         options_row = QHBoxLayout()
-        options_row.setContentsMargins(0, 0, 0, 0)  # Removed vertical margins to allow spacing control
+        options_row.setContentsMargins(
+            0, 0, 0, 0
+        )  # Removed vertical margins to allow spacing control
         options_row.setSpacing(8)  # Match final transformer spacing between label and control
         options_label = QLabel("Field")
         options_label.setFixedWidth(70)  # Increased width by 10px
-        options_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter) # type: ignore
+        options_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
         self.options_combo = QComboBox()
         self.options_combo.setFixedWidth(120)  # Reduced width by 10px
         self.options_combo.setFixedHeight(22)  # Match final transformer combo height
@@ -114,7 +120,11 @@ class MetadataWidget(QWidget):
         if not keys:
             # Check if metadata cache exists but is empty vs not loaded
             metadata_cache = self._get_metadata_cache_via_context()
-            if metadata_cache and hasattr(metadata_cache, '_memory_cache') and metadata_cache._memory_cache:
+            if (
+                metadata_cache
+                and hasattr(metadata_cache, "_memory_cache")
+                and metadata_cache._memory_cache
+            ):
                 self.options_combo.addItem("(No metadata found in files)", userData=None)
             else:
                 self.options_combo.addItem("(No metadata loaded)", userData=None)
@@ -148,29 +158,33 @@ class MetadataWidget(QWidget):
         """Get metadata cache via ApplicationContext with fallback to parent traversal."""
         # Try ApplicationContext first
         context = self._get_app_context()
-        if context and hasattr(context, '_metadata_cache'):
-            logger.debug(f"[MetadataWidget] Found metadata cache via ApplicationContext")
+        if context and hasattr(context, "_metadata_cache"):
+            logger.debug("[MetadataWidget] Found metadata cache via ApplicationContext")
             return context._metadata_cache
 
         # Fallback to legacy parent_window approach
-        if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
-            logger.debug(f"[MetadataWidget] Found metadata cache via parent_window")
+        if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
+            logger.debug("[MetadataWidget] Found metadata cache via parent_window")
             return self.parent_window.metadata_cache
 
         # Try to find metadata cache in main window
-        if self.parent_window and hasattr(self.parent_window, 'main_window') and self.parent_window.main_window:
+        if (
+            self.parent_window
+            and hasattr(self.parent_window, "main_window")
+            and self.parent_window.main_window
+        ):
             main_window = self.parent_window.main_window
-            if hasattr(main_window, 'metadata_cache'):
-                logger.debug(f"[MetadataWidget] Found metadata cache via main_window")
+            if hasattr(main_window, "metadata_cache"):
+                logger.debug("[MetadataWidget] Found metadata cache via main_window")
                 return main_window.metadata_cache
 
         # Try to find metadata cache in rename modules area
-        if self.parent_window and hasattr(self.parent_window, 'rename_modules_area'):
+        if self.parent_window and hasattr(self.parent_window, "rename_modules_area"):
             rename_area = self.parent_window.rename_modules_area
-            if hasattr(rename_area, 'parent') and rename_area.parent():
+            if hasattr(rename_area, "parent") and rename_area.parent():
                 parent = rename_area.parent()
-                if hasattr(parent, 'metadata_cache'):
-                    logger.debug(f"[MetadataWidget] Found metadata cache via rename area parent")
+                if hasattr(parent, "metadata_cache"):
+                    logger.debug("[MetadataWidget] Found metadata cache via rename area parent")
                     return parent.metadata_cache
 
         logger.warning("[MetadataWidget] No metadata cache found")
@@ -189,29 +203,45 @@ class MetadataWidget(QWidget):
         all_keys = set()
         try:
             # For PersistentMetadataCache, we need to access the memory cache
-            if hasattr(metadata_cache, '_memory_cache'):
+            if hasattr(metadata_cache, "_memory_cache"):
                 for entry in metadata_cache._memory_cache.values():
                     if isinstance(entry, MetadataEntry) and entry.data:
-                        filtered = {k for k in entry.data if not k.startswith('_') and k not in {'path', 'filename'}}
+                        filtered = {
+                            k
+                            for k in entry.data
+                            if not k.startswith("_") and k not in {"path", "filename"}
+                        }
                         all_keys.update(filtered)
             # Fallback for other cache types
-            elif hasattr(metadata_cache, '_cache'):
+            elif hasattr(metadata_cache, "_cache"):
                 for entry in metadata_cache._cache.values():
                     if isinstance(entry, MetadataEntry) and entry.data:
-                        filtered = {k for k in entry.data if not k.startswith('_') and k not in {'path', 'filename'}}
+                        filtered = {
+                            k
+                            for k in entry.data
+                            if not k.startswith("_") and k not in {"path", "filename"}
+                        }
                         all_keys.update(filtered)
             # Additional fallback for different cache structures
-            elif hasattr(metadata_cache, 'get_all_entries'):
+            elif hasattr(metadata_cache, "get_all_entries"):
                 entries = metadata_cache.get_all_entries()
                 for entry in entries:
-                    if hasattr(entry, 'data') and entry.data:
-                        filtered = {k for k in entry.data if not k.startswith('_') and k not in {'path', 'filename'}}
+                    if hasattr(entry, "data") and entry.data:
+                        filtered = {
+                            k
+                            for k in entry.data
+                            if not k.startswith("_") and k not in {"path", "filename"}
+                        }
                         all_keys.update(filtered)
             # Direct dictionary access fallback
             elif isinstance(metadata_cache, dict):
                 for entry in metadata_cache.values():
                     if isinstance(entry, dict):
-                        filtered = {k for k in entry if not k.startswith('_') and k not in {'path', 'filename'}}
+                        filtered = {
+                            k
+                            for k in entry
+                            if not k.startswith("_") and k not in {"path", "filename"}
+                        }
                         all_keys.update(filtered)
         except Exception as e:
             logger.warning(f"[MetadataWidget] Error accessing metadata cache: {e}")
@@ -221,12 +251,8 @@ class MetadataWidget(QWidget):
         return all_keys
 
     def format_metadata_key_name(self, key: str) -> str:
-        formatted = key.replace('_', ' ').title()
-        replacements = {'Exif': 'EXIF',
-            'Gps': 'GPS',
-            'Iso': 'ISO',
-            'Rgb': 'RGB',
-            'Dpi': 'DPI'}
+        formatted = key.replace("_", " ").title()
+        replacements = {"Exif": "EXIF", "Gps": "GPS", "Iso": "ISO", "Rgb": "RGB", "Dpi": "DPI"}
         for old, new in replacements.items():
             formatted = formatted.replace(old, new)
         return formatted
@@ -259,7 +285,9 @@ class MetadataWidget(QWidget):
             self.populate_metadata_keys()
             self.emit_if_changed()
         else:
-            logger.debug("[MetadataWidget] Not currently showing metadata keys, cache cleared for next time")
+            logger.debug(
+                "[MetadataWidget] Not currently showing metadata keys, cache cleared for next time"
+            )
 
     @staticmethod
     def is_effective(data: dict) -> bool:

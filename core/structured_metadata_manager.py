@@ -5,12 +5,11 @@ This module handles the conversion of raw metadata from ExifTool to structured m
 that can be stored in the database with proper categorization and field definitions.
 """
 
-import json
-from typing import Dict, Any, List, Optional, Tuple
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from utils.logger_factory import get_cached_logger
 from core.database_manager import get_database_manager
+from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -109,7 +108,7 @@ class StructuredMetadataManager:
                 return str(field_value)
 
             data_type = field_info.get('data_type', 'text')
-            display_format = field_info.get('display_format')
+            # display_format = field_info.get('display_format')
 
             # Handle different data types
             if data_type == 'number':
@@ -362,7 +361,7 @@ class StructuredMetadataManager:
 
             # This would require a more complex query - for now, return empty list
             # TODO: Implement database search functionality
-            logger.info(f"[StructuredMetadataManager] Search functionality not yet implemented")
+            logger.info("[StructuredMetadataManager] Search functionality not yet implemented")
             return []
 
         except Exception as e:

@@ -5,8 +5,9 @@ Author: Michael Economou
 Date: 2025-01-24
 """
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
 
 from modules.text_removal_module import TextRemovalModule
 
@@ -124,15 +125,15 @@ class TestTextRemovalModule:
         """Test is_effective method."""
         # Effective - has text to remove
         data = {"text_to_remove": "_copy"}
-        assert TextRemovalModule.is_effective(data) == True
+        assert TextRemovalModule.is_effective(data)
 
         # Not effective - empty text
         data = {"text_to_remove": ""}
-        assert TextRemovalModule.is_effective(data) == False
+        assert not TextRemovalModule.is_effective(data)
 
         # Not effective - only spaces
         data = {"text_to_remove": "   "}
-        assert TextRemovalModule.is_effective(data) == False
+        assert not TextRemovalModule.is_effective(data)
 
     def test_no_extension(self):
         """Test with filename without extension."""

@@ -15,7 +15,6 @@ Classes:
 from datetime import datetime
 
 from core.application_context import get_app_context
-from core.persistent_metadata_cache import MetadataEntry
 from core.pyqt_imports import (
     QAbstractTableModel,
     QColor,
@@ -183,7 +182,7 @@ class FileTableModel(QAbstractTableModel):
 
             self.endInsertColumns()
 
-            logger.debug(f"[FileTableModel] Single column addition completed successfully", extra={"dev_only": True})
+            logger.debug("[FileTableModel] Single column addition completed successfully", extra={"dev_only": True})
 
         except Exception as e:
             logger.error(f"[FileTableModel] Error in _handle_single_column_addition: {e}", exc_info=True)
@@ -213,7 +212,7 @@ class FileTableModel(QAbstractTableModel):
 
                 self.endRemoveColumns()
 
-                logger.debug(f"[FileTableModel] Single column removal completed successfully", extra={"dev_only": True})
+                logger.debug("[FileTableModel] Single column removal completed successfully", extra={"dev_only": True})
             else:
                 logger.warning(f"[FileTableModel] Column '{removed_column}' not found in current visible columns")
                 raise ValueError(f"Column '{removed_column}' not found in current visible columns")
@@ -239,13 +238,13 @@ class FileTableModel(QAbstractTableModel):
 
     def debug_column_state(self) -> None:
         """Debug method to print current column state."""
-        logger.debug(f"[ColumnDebug] === FileTableModel Column State ===", extra={"dev_only": True})
+        logger.debug("[ColumnDebug] === FileTableModel Column State ===", extra={"dev_only": True})
         logger.debug(f"[ColumnDebug] Visible columns: {self._visible_columns}", extra={"dev_only": True})
         logger.debug(f"[ColumnDebug] Column mapping: {self._column_mapping}", extra={"dev_only": True})
         logger.debug(f"[ColumnDebug] Column count: {self.columnCount()}", extra={"dev_only": True})
         logger.debug(f"[ColumnDebug] Row count: {self.rowCount()}", extra={"dev_only": True})
         logger.debug(f"[ColumnDebug] Files loaded: {len(self.files)}", extra={"dev_only": True})
-        logger.debug(f"[ColumnDebug] =========================================", extra={"dev_only": True})
+        logger.debug("[ColumnDebug] =========================================", extra={"dev_only": True})
 
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
         count = len(self._visible_columns) + 1  # +1 για τη status column

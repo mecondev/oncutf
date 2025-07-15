@@ -10,7 +10,16 @@ The hover background color is provided via constructor and is applied
 only when the row is not selected.
 """
 
-from core.pyqt_imports import QColor, QIcon, QPen, QStyle, QStyledItemDelegate, Qt, QTableView, QCursor
+from core.pyqt_imports import (
+    QColor,
+    QCursor,
+    QIcon,
+    QPen,
+    QStyle,
+    QStyledItemDelegate,
+    Qt,
+    QTableView,
+)
 from utils.theme import get_qcolor, get_theme_color
 
 

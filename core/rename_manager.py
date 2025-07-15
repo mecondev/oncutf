@@ -115,7 +115,7 @@ class RenameManager:
             # Execute post-rename workflow with safe delayed execution
             if renamed_count > 0:
                 # Use TimerManager for safe delayed execution to avoid Qt object lifecycle issues
-                from utils.timer_manager import get_timer_manager, TimerType, TimerPriority
+                from utils.timer_manager import TimerPriority, TimerType, get_timer_manager
 
                 def safe_post_rename_workflow():
                     """Safe wrapper for post-rename workflow with error handling."""
@@ -144,7 +144,7 @@ class RenameManager:
 
                 logger.info(f"[RenameManager] Scheduled post-rename workflow for {renamed_count} files")
             else:
-                logger.info(f"[RenameManager] No files renamed, skipping post-rename workflow")
+                logger.info("[RenameManager] No files renamed, skipping post-rename workflow")
 
     def _execute_post_rename_workflow_safe(self, checked_paths: Set[str]) -> None:
         """
@@ -210,7 +210,11 @@ class RenameManager:
                         if completion_dialog:
                             logger.debug("[RenameManager] Executing pending completion dialog")
                             # Schedule the dialog with a small delay to ensure UI is fully updated
-                            from utils.timer_manager import get_timer_manager, TimerType, TimerPriority
+                            from utils.timer_manager import (
+                                TimerPriority,
+                                TimerType,
+                                get_timer_manager,
+                            )
                             get_timer_manager().schedule(
                                 completion_dialog,
                                 delay=100,  # 100ms delay to ensure UI is updated
@@ -231,7 +235,7 @@ class RenameManager:
 
             # Schedule state restoration with a small delay
             logger.debug("[RenameManager] Scheduling restore_state function")
-            from utils.timer_manager import get_timer_manager, TimerType, TimerPriority
+            from utils.timer_manager import TimerPriority, TimerType, get_timer_manager
             get_timer_manager().schedule(
                 restore_state,
                 delay=50,  # 50ms delay to let folder load complete

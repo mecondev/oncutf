@@ -17,12 +17,23 @@ Features:
 
 from typing import Optional
 
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QKeySequence
 from PyQt5.QtWidgets import (
-    QAbstractItemView, QDialog, QDialogButtonBox, QHBoxLayout, QHeaderView,
-    QLabel, QPushButton, QShortcut, QSplitter, QTableWidget, QTableWidgetItem,
-    QTextEdit, QVBoxLayout, QWidget
+    QAbstractItemView,
+    QDialog,
+    QDialogButtonBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QPushButton,
+    QShortcut,
+    QSplitter,
+    QTableWidget,
+    QTableWidgetItem,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
 
 from config import UNDO_REDO_SETTINGS
@@ -339,7 +350,7 @@ class MetadataHistoryDialog(QDialog):
             if operation_data['type'] == 'metadata':
                 # Metadata command details
                 cmd_data = operation_data['data']
-                details.append(f"METADATA COMMAND")
+                details.append("METADATA COMMAND")
                 details.append(f"Command ID: {cmd_data['command_id']}")
                 details.append(f"Type: {cmd_data['command_type']}")
                 details.append(f"Description: {cmd_data['description']}")
@@ -351,7 +362,7 @@ class MetadataHistoryDialog(QDialog):
             elif operation_data['type'] == 'rename':
                 # Rename operation details
                 op_data = operation_data['data']
-                details.append(f"RENAME OPERATION")
+                details.append("RENAME OPERATION")
                 details.append(f"Operation ID: {op_data['operation_id']}")
                 details.append(f"File Count: {op_data['file_count']}")
                 details.append(f"Timestamp: {op_data['timestamp']}")
@@ -360,7 +371,7 @@ class MetadataHistoryDialog(QDialog):
                 # Get detailed rename information
                 rename_details = self.rename_history_manager.get_operation_details(op_data['operation_id'])
                 if rename_details:
-                    details.append(f"\nRENAME DETAILS:")
+                    details.append("\nRENAME DETAILS:")
                     for i, rename_op in enumerate(rename_details.operations[:10]):  # Show first 10
                         details.append(f"  {i+1}. {rename_op.old_filename} → {rename_op.new_filename}")
 

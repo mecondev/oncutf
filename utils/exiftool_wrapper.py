@@ -321,8 +321,9 @@ class ExifToolWrapper:
     def force_cleanup_all_exiftool_processes() -> None:
         """Force cleanup all ExifTool processes system-wide."""
         try:
-            import psutil
             import time
+
+            import psutil
 
             exiftool_processes = []
             for proc in psutil.process_iter(['pid', 'name', 'cmdline']):

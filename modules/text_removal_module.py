@@ -9,11 +9,20 @@ It supports removing text from the start, end, or anywhere in the filename,
 with case-sensitive or case-insensitive matching.
 """
 
+import logging
 import re
 from typing import Optional
-from core.pyqt_imports import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QCheckBox
+
+from core.pyqt_imports import (
+    QCheckBox,
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QVBoxLayout,
+    QWidget,
+)
 from modules.base_module import BaseRenameModule
-import logging
 
 logger = logging.getLogger(__name__)
 

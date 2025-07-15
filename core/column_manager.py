@@ -187,7 +187,7 @@ class ColumnManager:
 
         # TEMPORARILY skip file_table to avoid conflicts with FileTableView column management
         if table_type == 'file_table':
-            logger.debug(f"[ColumnManager] Skipping file_table - managed by FileTableView directly", extra={"dev_only": True})
+            logger.debug("[ColumnManager] Skipping file_table - managed by FileTableView directly", extra={"dev_only": True})
             return
 
         if table_type not in self.table_configs:

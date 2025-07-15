@@ -10,7 +10,8 @@ Maps column keys to metadata keys and formats values for compact display.
 Based on comprehensive analysis of fast vs extended metadata across multiple file types.
 """
 
-from typing import Dict, List, Optional, Any, Union
+from typing import Any, Dict, List
+
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

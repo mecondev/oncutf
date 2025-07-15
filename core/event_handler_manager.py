@@ -9,11 +9,11 @@ Handles browse, folder import, table interactions, context menus, and user actio
 """
 
 import os
-from typing import List, Optional, cast
+from typing import List, Optional
 
 from config import STATUS_COLORS
 from core.modifier_handler import decode_modifiers_to_flags
-from core.pyqt_imports import QAction, QApplication, QFileDialog, QMenu, QModelIndex, Qt
+from core.pyqt_imports import QAction, QApplication, QMenu, QModelIndex, Qt
 from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
 from utils.path_utils import paths_equal
@@ -102,7 +102,6 @@ class EventHandlerManager:
             return
 
         from utils.icons_loader import get_menu_icon
-        from config import QLABEL_MUTED_TEXT
 
 
                         # Helper function to create actions with shortcuts
@@ -166,7 +165,7 @@ class EventHandlerManager:
         selected_analysis = self._analyze_metadata_state(selected_files)
 
         # Use simple analysis for all files to avoid performance issues
-        all_files_analysis = self._get_simple_metadata_analysis()
+        # all_files_analysis = self._get_simple_metadata_analysis()
 
         # Create actions with smart labels and tooltips
         action_load_sel = create_action_with_shortcut(get_menu_icon("file"), f"{selected_analysis['fast_label']} for selected file(s)", "Ctrl+M")
@@ -221,7 +220,7 @@ class EventHandlerManager:
         selected_hash_analysis = self._analyze_hash_state(selected_files)
 
         # Use simple analysis for all files to avoid performance issues
-        all_files_hash_analysis = self._get_simple_hash_analysis()
+        # all_files_hash_analysis = self._get_simple_hash_analysis()
 
         # Update hash actions with smart logic
         action_calculate_hashes.setText(selected_hash_analysis['selected_label'] + "\tCtrl+H")

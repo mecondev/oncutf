@@ -10,7 +10,7 @@ Ensures dialogs and progress bars appear on the correct monitor relative to thei
 
 from typing import Optional
 
-from core.pyqt_imports import QApplication, QWidget, QScreen, QFileDialog
+from core.pyqt_imports import QApplication, QFileDialog, QScreen, QWidget
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)

@@ -15,7 +15,16 @@ Now supports ApplicationContext for optimized access patterns.
 from typing import Optional
 
 import config
-from core.pyqt_imports import QScrollArea, Qt, QTimer, QVBoxLayout, QWidget, pyqtSignal, QFrame, QCursor
+from core.pyqt_imports import (
+    QCursor,
+    QFrame,
+    QScrollArea,
+    Qt,
+    QTimer,
+    QVBoxLayout,
+    QWidget,
+    pyqtSignal,
+)
 from modules.base_module import BaseRenameModule
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_scroll_adjust

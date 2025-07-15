@@ -8,23 +8,19 @@ Integration tests for the enhanced rename workflow with validation
 """
 
 import warnings
-import pytest
-import tempfile
-import os
-from pathlib import Path
-from unittest.mock import MagicMock, patch, call
 from datetime import datetime
+from unittest.mock import MagicMock, patch
 
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
 
 from config import INVALID_FILENAME_MARKER
+from core.rename_manager import RenameManager
+from models.file_item import FileItem
 from modules.specified_text_module import SpecifiedTextModule
 from tests.mocks import MockFileItem
 from utils.filename_validator import is_validation_error_marker
-from models.file_item import FileItem
-from core.rename_manager import RenameManager
 
 
 class TestRenameIntegration:

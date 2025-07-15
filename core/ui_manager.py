@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING
 
 from core.config_imports import *
 from core.pyqt_imports import *
-from models.file_table_model import FileTableModel
 from utils.icons_loader import get_app_icon, get_menu_icon
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_selection_update, schedule_ui_update

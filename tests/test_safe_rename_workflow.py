@@ -5,12 +5,11 @@ This module tests the enhanced rename workflow that prevents Qt object lifecycle
 while ensuring proper UI state restoration after rename operations.
 """
 
-import pytest
-from unittest.mock import MagicMock, patch, call
 from datetime import datetime
+from unittest.mock import MagicMock, patch
 
-from models.file_item import FileItem
 from core.rename_manager import RenameManager
+from models.file_item import FileItem
 
 
 class TestSafeRenameWorkflow:

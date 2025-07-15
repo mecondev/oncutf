@@ -22,7 +22,6 @@ from core.pyqt_imports import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
-    QPixmap,
     Qt,
     QTableWidget,
     QTableWidgetItem,
@@ -32,9 +31,9 @@ from core.pyqt_imports import (
 )
 from utils.filename_validator import get_validation_error_message, is_validation_error_marker
 from utils.logger_factory import get_cached_logger
+from utils.placeholder_helper import create_placeholder_helper
 from utils.theme import get_theme_color
 from utils.timer_manager import schedule_scroll_adjust, schedule_ui_update
-from utils.placeholder_helper import create_placeholder_helper
 
 logger = get_cached_logger(__name__)
 
@@ -188,7 +187,6 @@ class PreviewTablesView(QWidget):
         self.icon_table.setShowGrid(False)
         self.icon_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
         # Set background color to match main application (#232323)
-        from utils.theme import get_theme_color
         bg_color = get_theme_color("button_background_disabled")
         self.icon_table.setStyleSheet(f"background-color: {bg_color};")
         self.icon_table.verticalHeader().setDefaultSectionSize(22)
@@ -416,6 +414,7 @@ class PreviewTablesView(QWidget):
             return "invalid", get_validation_error_message(old_name)
 
         import os
+
         from utils.filename_validator import validate_filename_part
 
         basename = os.path.splitext(new_name)[0]

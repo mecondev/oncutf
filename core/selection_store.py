@@ -108,9 +108,9 @@ class SelectionStore(QObject):
         if rows == self._selected_rows and not force_emit:
             return  # No change
 
-        old_count = len(self._selected_rows)
+        # old_count = len(self._selected_rows)
         self._selected_rows = rows.copy()
-        new_count = len(self._selected_rows)
+        # new_count = len(self._selected_rows)
 
         self._last_operation_time = time.time()
 

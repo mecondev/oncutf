@@ -35,25 +35,20 @@ from core.pyqt_imports import (
     QItemSelection,
     QItemSelectionModel,
     QKeySequence,
-    QLabel,
     QModelIndex,
     QMouseEvent,
-    QPixmap,
     QPoint,
     Qt,
     QTableView,
-    pyqtSignal,
     QTimer,
+    pyqtSignal,
 )
 from utils.file_drop_helper import extract_file_paths
 from utils.logger_factory import get_cached_logger
+from utils.placeholder_helper import create_placeholder_helper
 from utils.timer_manager import (
-    schedule_resize_adjust,
     schedule_ui_update,
 )
-from utils.placeholder_helper import create_placeholder_helper
-
-from .hover_delegate import HoverItemDelegate
 
 logger = get_cached_logger(__name__)
 
@@ -491,7 +486,7 @@ class FileTableView(QTableView):
 
                 else:
                     logger.error(f"[ColumnConfig] CRITICAL: Column {actual_column_index} ({column_key}) exceeds model columnCount {self.model().columnCount()}")
-                    logger.error(f"[ColumnConfig] This indicates a sync issue between view and model visible columns")
+                    logger.error("[ColumnConfig] This indicates a sync issue between view and model visible columns")
 
             # Connect header resize signal if not already connected
             if not hasattr(self, '_header_resize_connected'):
@@ -616,7 +611,6 @@ class FileTableView(QTableView):
     def _reset_column_widths_to_defaults(self) -> None:
         """Reset all column widths to their default values from config.py."""
         try:
-            from config import FILE_TABLE_COLUMN_CONFIG
 
             logger.info("Resetting column widths to defaults from config.py")
 
@@ -881,8 +875,7 @@ class FileTableView(QTableView):
 
         # Save new column order to config
         try:
-            from utils.json_config_manager import load_config, save_config
-            config = load_config()
+            # config = load_config()
             # TODO: Implement column order saving
             logger.debug(f"Column moved from position {old_visual_index} to {new_visual_index}")
         except Exception as e:
@@ -1233,7 +1226,6 @@ class FileTableView(QTableView):
         # SIMPLIFIED: No longer needed - selection is cleared during column updates
 
         # Handle column management shortcuts
-        from config import COLUMN_SHORTCUTS
 
         # Ctrl+T: Reset column widths to default
         if event.key() == Qt.Key_T and event.modifiers() == Qt.ControlModifier:
@@ -2040,7 +2032,7 @@ class FileTableView(QTableView):
 
             # If they don't match, update model to match view (view is authoritative)
             if view_visible_sorted != model_visible_sorted:
-                logger.warning(f"[ColumnSync] Columns out of sync! Updating model to match view")
+                logger.warning("[ColumnSync] Columns out of sync! Updating model to match view")
                 logger.debug(f"[ColumnSync] View wants: {view_visible_sorted}")
                 logger.debug(f"[ColumnSync] Model has: {model_visible_sorted}")
 
@@ -2052,7 +2044,7 @@ class FileTableView(QTableView):
                     logger.debug(f"[ColumnSync] Model updated to: {sorted(updated_model_visible)}")
 
                     if sorted(updated_model_visible) != view_visible_sorted:
-                        logger.error(f"[ColumnSync] CRITICAL: Model update failed!")
+                        logger.error("[ColumnSync] CRITICAL: Model update failed!")
                         logger.error(f"[ColumnSync] Expected: {view_visible_sorted}")
                         logger.error(f"[ColumnSync] Got: {sorted(updated_model_visible)}")
                 else:
@@ -2065,7 +2057,6 @@ class FileTableView(QTableView):
 
     def _toggle_column_visibility(self, column_key: str) -> None:
         """Toggle visibility of a specific column and refresh the table."""
-        from config import FILE_TABLE_COLUMN_CONFIG
 
         if column_key not in FILE_TABLE_COLUMN_CONFIG:
             logger.warning(f"Unknown column key: {column_key}")
@@ -2112,7 +2103,6 @@ class FileTableView(QTableView):
 
     def add_column(self, column_key: str) -> None:
         """Add a column to the table (make it visible)."""
-        from config import FILE_TABLE_COLUMN_CONFIG
 
         if column_key not in FILE_TABLE_COLUMN_CONFIG:
             logger.warning(f"Cannot add unknown column: {column_key}")
@@ -2140,7 +2130,6 @@ class FileTableView(QTableView):
 
     def remove_column(self, column_key: str) -> None:
         """Remove a column from the table (make it invisible)."""
-        from config import FILE_TABLE_COLUMN_CONFIG
 
         if column_key not in FILE_TABLE_COLUMN_CONFIG:
             logger.warning(f"Cannot remove unknown column: {column_key}")
@@ -2179,7 +2168,7 @@ class FileTableView(QTableView):
 
     def debug_column_state(self) -> None:
         """Debug method to print current column state."""
-        logger.debug(f"[ColumnDebug] === FileTableView Column State ===")
+        logger.debug("[ColumnDebug] === FileTableView Column State ===")
         logger.debug(f"[ColumnDebug] _visible_columns: {self._visible_columns}")
         visible_cols = self.get_visible_columns_list()
         logger.debug(f"[ColumnDebug] Visible columns list: {visible_cols}")
@@ -2193,9 +2182,9 @@ class FileTableView(QTableView):
             if hasattr(model, 'debug_column_state'):
                 model.debug_column_state()
         else:
-            logger.debug(f"[ColumnDebug] No model or model doesn't support get_visible_columns")
+            logger.debug("[ColumnDebug] No model or model doesn't support get_visible_columns")
 
-        logger.debug(f"[ColumnDebug] =========================================")
+        logger.debug("[ColumnDebug] =========================================")
 
     def _clear_selection_for_column_update(self, force_emit_signal: bool = False) -> None:
         """Clear selection during column updates."""

@@ -4,7 +4,7 @@ Test script για να ελέγξουμε αν το πρόβλημα των inf
 """
 
 import sys
-import time
+
 
 def test_selection_sync():
     """Test για να ελέγξουμε αν το selection sync λειτουργεί σωστά."""
@@ -12,8 +12,8 @@ def test_selection_sync():
 
     # Εισαγωγή των απαραίτητων modules
     try:
+        # from core.application_context import ApplicationContext
         from core.selection_store import SelectionStore
-        from core.application_context import ApplicationContext
         print("✓ Modules imported successfully")
     except ImportError as e:
         print(f"✗ Import error: {e}")

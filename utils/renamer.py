@@ -160,7 +160,7 @@ class Renamer:
             # File rename
             try:
                 # Import the safe case rename function
-                from utils.rename_logic import safe_case_rename, is_case_only_change
+                from utils.rename_logic import is_case_only_change, safe_case_rename
 
                 src_name = os.path.basename(src)
                 dst_name = os.path.basename(dst)

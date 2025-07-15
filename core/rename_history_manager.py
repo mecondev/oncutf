@@ -260,7 +260,7 @@ class RenameHistoryManager:
 
                     # Perform the rename (revert)
                     # Use safe case rename for case-only changes
-                    from utils.rename_logic import safe_case_rename, is_case_only_change
+                    from utils.rename_logic import is_case_only_change, safe_case_rename
 
                     current_name = os.path.basename(current_path)
                     target_name = os.path.basename(target_path)

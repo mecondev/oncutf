@@ -15,7 +15,6 @@ Contains:
 - Paths to resources and stylesheets
 """
 
-from core.pyqt_imports import Qt
 
 # =====================================
 # DEBUG SETTINGS

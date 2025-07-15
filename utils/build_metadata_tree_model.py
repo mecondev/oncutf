@@ -380,7 +380,7 @@ def build_metadata_tree_model(metadata: dict, modified_keys: set = None, extende
         extended_keys = set()
 
     # No filtering - show all metadata
-    hidden_fields = set()
+    # hidden_fields = set()
 
     model = QStandardItemModel()
     model.setHorizontalHeaderLabels(["Key", "Value"])

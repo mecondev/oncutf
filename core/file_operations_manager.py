@@ -149,7 +149,7 @@ class FileOperationsManager:
                 self.parent_window.pending_completion_dialog = show_completion_dialog
             else:
                 # Fallback: schedule with timer manager for delayed execution
-                from utils.timer_manager import get_timer_manager, TimerType, TimerPriority
+                from utils.timer_manager import TimerPriority, TimerType, get_timer_manager
                 get_timer_manager().schedule(
                     show_completion_dialog,
                     delay=300,  # 300ms delay to let post-rename workflow complete

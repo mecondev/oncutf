@@ -11,24 +11,23 @@ This module tests the undo/redo functionality for metadata operations,
 including individual commands, batch operations, and command manager behavior.
 """
 
-import pytest
-import tempfile
-import os
-from unittest.mock import Mock, MagicMock, patch
-from datetime import datetime
-from pathlib import Path
 
 # Add project root to path
 import sys
+from pathlib import Path
+from unittest.mock import Mock
+
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from core.metadata_command_manager import MetadataCommandManager
 from core.metadata_commands import (
+    BatchMetadataCommand,
     EditMetadataFieldCommand,
     ResetMetadataFieldCommand,
     SaveMetadataCommand,
-    BatchMetadataCommand
 )
-from core.metadata_command_manager import MetadataCommandManager
 
 
 class TestEditMetadataFieldCommand:
@@ -615,7 +614,7 @@ class TestIntegration:
             assert cmd.executed is True
 
         # Test undo functionality regardless of grouping
-        initial_stack_size = len(self.manager._undo_stack)
+        # initial_stack_size = len(self.manager._undo_stack)
 
         # Undo all commands
         undo_count = 0

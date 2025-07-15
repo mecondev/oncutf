@@ -22,6 +22,7 @@ Expected usage:
 Designed for integration with MainWindow and MetadataReader.
 """
 
+import os
 from typing import Any, Dict, Optional, Set, Union
 
 from config import METADATA_TREE_COLUMN_WIDTHS
@@ -33,28 +34,22 @@ from core.pyqt_imports import (
     QDragMoveEvent,
     QDropEvent,
     QHeaderView,
-    QLabel,
     QMenu,
     QModelIndex,
-    QPixmap,
     QPoint,
     QSortFilterProxyModel,
-    QStandardItem,
     QStandardItemModel,
     Qt,
     QTreeView,
     QWidget,
     pyqtSignal,
-    QMessageBox,
-    QTimer,
 )
 from utils.logger_factory import get_cached_logger
 from utils.metadata_cache_helper import MetadataCacheHelper
 from utils.path_utils import find_parent_with_attribute, paths_equal
-from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust, schedule_ui_update
-from widgets.file_tree_view import _drag_cancel_filter
-from widgets.metadata_edit_dialog import MetadataEditDialog
 from utils.placeholder_helper import create_placeholder_helper
+from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust, schedule_ui_update
+from widgets.metadata_edit_dialog import MetadataEditDialog
 
 # ApplicationContext integration
 try:
@@ -159,9 +154,7 @@ class MetadataTreeView(QTreeView):
         self.setTextElideMode(Qt.ElideRight)
 
         # Unified placeholder helper
-        self.placeholder_helper = create_placeholder_helper(
-            self, 'metadata_tree', icon_size=120
-        )
+        self.placeholder_helper = create_placeholder_helper(self, "metadata_tree", icon_size=120)
 
         # Modified metadata items per file
         self.modified_items_per_file: Dict[str, Set[str]] = {}
@@ -178,7 +171,6 @@ class MetadataTreeView(QTreeView):
         # Display level for metadata filtering (load from config)
         # Note: This must be set before any metadata loading
 
-
         # Scroll position memory: {file_path: scroll_position}
         self._scroll_positions: Dict[str, int] = {}
         self._current_file_path: Optional[str] = None
@@ -188,14 +180,10 @@ class MetadataTreeView(QTreeView):
         self._expanded_items_per_file: Dict[str, list] = {}
 
         # Unified placeholder helper (replaces old QLabel/QPixmap approach)
-        self.placeholder_helper = create_placeholder_helper(
-            self, 'metadata_tree', icon_size=120
-        )
+        self.placeholder_helper = create_placeholder_helper(self, "metadata_tree", icon_size=120)
 
         # Setup standard view properties
         self._setup_tree_view_properties()
-
-
 
         # Setup icon delegate for selected state icon changes
 
@@ -216,7 +204,9 @@ class MetadataTreeView(QTreeView):
         """Initialize the metadata cache helper."""
         try:
             self._metadata_cache_helper = MetadataCacheHelper()
-            logger.debug("[MetadataTreeView] MetadataCacheHelper initialized", extra={"dev_only": True})
+            logger.debug(
+                "[MetadataTreeView] MetadataCacheHelper initialized", extra={"dev_only": True}
+            )
         except Exception as e:
             logger.error(f"[MetadataTreeView] Failed to initialize MetadataCacheHelper: {e}")
             self._metadata_cache_helper = None
@@ -232,9 +222,15 @@ class MetadataTreeView(QTreeView):
         try:
             if UnifiedMetadataManager is not None:
                 self._direct_loader = UnifiedMetadataManager()
-                logger.debug("[MetadataTreeView] UnifiedMetadataManager initialized", extra={"dev_only": True})
+                logger.debug(
+                    "[MetadataTreeView] UnifiedMetadataManager initialized",
+                    extra={"dev_only": True},
+                )
             else:
-                logger.debug("[MetadataTreeView] UnifiedMetadataManager not available", extra={"dev_only": True})
+                logger.debug(
+                    "[MetadataTreeView] UnifiedMetadataManager not available",
+                    extra={"dev_only": True},
+                )
                 self._direct_loader = None
         except Exception as e:
             logger.error(f"[MetadataTreeView] Failed to initialize UnifiedMetadataManager: {e}")
@@ -372,7 +368,7 @@ class MetadataTreeView(QTreeView):
     def resizeEvent(self, event):
         """Handle resize events to adjust placeholder label size."""
         super().resizeEvent(event)
-        if hasattr(self, 'placeholder_helper'):
+        if hasattr(self, "placeholder_helper"):
             self.placeholder_helper.update_position()
 
     # =====================================
@@ -531,9 +527,7 @@ class MetadataTreeView(QTreeView):
             if self.placeholder_helper:
                 self.placeholder_helper.show()
             else:
-                logger.warning(
-                    "[MetadataTree] Could not show placeholder - missing helper"
-                )
+                logger.warning("[MetadataTree] Could not show placeholder - missing helper")
 
             # Placeholder mode: Fixed columns, no selection, no hover, NO HORIZONTAL SCROLLBAR
             self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # type: ignore
@@ -952,8 +946,6 @@ class MetadataTreeView(QTreeView):
 
         menu.addSeparator()
 
-
-
         # History submenu
         history_menu = QMenu("History", menu)
         history_menu.setIcon(self._get_menu_icon("clock"))
@@ -1022,8 +1014,6 @@ class MetadataTreeView(QTreeView):
     def _cleanup_menu(self) -> None:
         """Clean up the current menu reference."""
         self._current_menu = None
-
-
 
     def _get_menu_icon(self, icon_name: str):
         """Get menu icon using the same system as specified text module."""
@@ -1270,7 +1260,10 @@ class MetadataTreeView(QTreeView):
         if metadata and key_path in metadata:
             current_value = metadata[key_path]
             if current_value in ["0", "0°", 0]:
-                logger.debug(f"[MetadataTree] Rotation already set to 0° for {file_item.filename}", extra={"dev_only": True})
+                logger.debug(
+                    f"[MetadataTree] Rotation already set to 0° for {file_item.filename}",
+                    extra={"dev_only": True},
+                )
                 return
 
         # Use unified metadata manager if available
@@ -1295,7 +1288,9 @@ class MetadataTreeView(QTreeView):
 
                 return
             except Exception as e:
-                logger.error(f"[MetadataTree] Failed to set rotation via UnifiedMetadataManager: {e}")
+                logger.error(
+                    f"[MetadataTree] Failed to set rotation via UnifiedMetadataManager: {e}"
+                )
 
         # Fallback to manual method
         self._fallback_set_rotation_to_zero(key_path, "0", current_value)
@@ -1345,7 +1340,9 @@ class MetadataTreeView(QTreeView):
         if self._direct_loader:
             try:
                 # Reset to original value
-                self._direct_loader.set_metadata_value(file_item.full_path, key_path, str(original_value))
+                self._direct_loader.set_metadata_value(
+                    file_item.full_path, key_path, str(original_value)
+                )
 
                 # Update tree display
                 self._update_tree_item_value(key_path, str(original_value))
@@ -1354,7 +1351,10 @@ class MetadataTreeView(QTreeView):
                 if key_path in self._modified_values:
                     del self._modified_values[key_path]
 
-                logger.debug(f"[MetadataTree] Executed reset command for {file_item.filename}", extra={"dev_only": True})
+                logger.debug(
+                    f"[MetadataTree] Executed reset command for {file_item.filename}",
+                    extra={"dev_only": True},
+                )
 
                 # Emit signal
                 self.value_reset.emit(key_path)
@@ -1465,7 +1465,7 @@ class MetadataTreeView(QTreeView):
             selection = parent_window.file_table_view.selectionModel()
             if selection and selection.hasSelection():
                 selected_rows = selection.selectedRows()
-                if selected_rows and hasattr(parent_window, 'file_model'):
+                if selected_rows and hasattr(parent_window, "file_model"):
                     file_model = parent_window.file_model
                     for index in selected_rows:
                         row = index.row()
@@ -1477,9 +1477,9 @@ class MetadataTreeView(QTreeView):
         # Method 2: Use file table view's internal selection method
         if not selected_files:
             try:
-                if hasattr(parent_window.file_table_view, '_get_current_selection'):
+                if hasattr(parent_window.file_table_view, "_get_current_selection"):
                     selected_rows = parent_window.file_table_view._get_current_selection()
-                    if selected_rows and hasattr(parent_window, 'file_model'):
+                    if selected_rows and hasattr(parent_window, "file_model"):
                         file_model = parent_window.file_model
                         for row in selected_rows:
                             if 0 <= row < len(file_model.files):
@@ -1760,7 +1760,7 @@ class MetadataTreeView(QTreeView):
 
         # Reset information label
         parent_window = self._get_parent_with_file_table()
-        if parent_window and hasattr(parent_window, 'information_label'):
+        if parent_window and hasattr(parent_window, "information_label"):
             parent_window.information_label.setText("Information")
 
     def clear_view(self) -> None:
@@ -1910,11 +1910,11 @@ class MetadataTreeView(QTreeView):
             # Get suggestions from all loaded files
             all_files = self._get_all_loaded_files()
             for file_item in all_files:
-                if hasattr(file_item, 'metadata') and file_item.metadata:
+                if hasattr(file_item, "metadata") and file_item.metadata:
                     self._collect_suggestions_from_metadata(file_item.metadata, suggestions)
 
             # Update search field suggestions
-            if hasattr(self, '_search_field') and self._search_field:
+            if hasattr(self, "_search_field") and self._search_field:
                 self._search_field.update_suggestions(sorted(suggestions))
 
             logger.debug(
@@ -1932,11 +1932,11 @@ class MetadataTreeView(QTreeView):
 
         # If it's a proxy model, get the source model
         source_model = model
-        if hasattr(model, 'sourceModel'):
+        if hasattr(model, "sourceModel"):
             source_model = model.sourceModel()
 
         # Check if the source model has invisibleRootItem (QStandardItemModel)
-        if not hasattr(source_model, 'invisibleRootItem'):
+        if not hasattr(source_model, "invisibleRootItem"):
             return
 
         # Traverse the tree model to collect keys and values
@@ -2133,13 +2133,11 @@ class MetadataTreeView(QTreeView):
             if modified_fields > 0:
                 info_text += f" (Modified: {modified_fields})"
 
-            if hasattr(self, '_info_label') and self._info_label:
+            if hasattr(self, "_info_label") and self._info_label:
                 self._info_label.setText(info_text)
 
         except Exception as e:
             logger.debug(f"Error updating information label: {e}", extra={"dev_only": True})
-
-
 
     def _apply_modified_values_to_display_data(self, display_data: Dict[str, Any]) -> None:
         """
@@ -2268,13 +2266,17 @@ class MetadataTreeView(QTreeView):
             if not selection:
                 # Try alternative method to get selection if first method failed
                 parent_window = self._get_parent_with_file_table()
-                if parent_window and hasattr(parent_window, 'file_table_view'):
+                if parent_window and hasattr(parent_window, "file_table_view"):
                     file_table_view = parent_window.file_table_view
-                    if hasattr(file_table_view, '_get_current_selection'):
+                    if hasattr(file_table_view, "_get_current_selection"):
                         selected_rows = file_table_view._get_current_selection()
-                        if selected_rows and hasattr(parent_window, 'file_model'):
+                        if selected_rows and hasattr(parent_window, "file_model"):
                             file_model = parent_window.file_model
-                            selection = [file_model.files[row] for row in selected_rows if 0 <= row < len(file_model.files)]
+                            selection = [
+                                file_model.files[row]
+                                for row in selected_rows
+                                if 0 <= row < len(file_model.files)
+                            ]
 
                 if not selection:
                     self.show_empty_state("No file selected")
@@ -2429,12 +2431,22 @@ class MetadataTreeView(QTreeView):
     ) -> None:
         """Smart display logic for metadata or empty state."""
         try:
-            logger.debug(f"[MetadataTree] smart_display_metadata_or_empty_state called: metadata={bool(metadata)}, selected_count={selected_count}, context={context}", extra={"dev_only": True})
-            print(f"[DEBUG] MetadataTree smart_display called: metadata={bool(metadata)}, selected_count={selected_count}, context={context}")
+            logger.debug(
+                f"[MetadataTree] smart_display_metadata_or_empty_state called: metadata={bool(metadata)}, selected_count={selected_count}, context={context}",
+                extra={"dev_only": True},
+            )
+            print(
+                f"[DEBUG] MetadataTree smart_display called: metadata={bool(metadata)}, selected_count={selected_count}, context={context}"
+            )
 
             if metadata and self.should_display_metadata_for_selection(selected_count):
-                logger.debug(f"[MetadataTree] Displaying metadata for {selected_count} selected file(s)", extra={"dev_only": True})
-                print(f"[DEBUG] MetadataTree displaying metadata for {selected_count} selected file(s)")
+                logger.debug(
+                    f"[MetadataTree] Displaying metadata for {selected_count} selected file(s)",
+                    extra={"dev_only": True},
+                )
+                print(
+                    f"[DEBUG] MetadataTree displaying metadata for {selected_count} selected file(s)"
+                )
                 self.display_metadata(metadata, context)
                 logger.debug(
                     f"[MetadataTree] Smart display: showing metadata (context: {context})",
@@ -2837,7 +2849,7 @@ class MetadataTreeView(QTreeView):
                 return False
 
             # Check if column is in visible columns configuration
-            visible_columns = getattr(file_table_view, '_visible_columns', {})
+            visible_columns = getattr(file_table_view, "_visible_columns", {})
 
             # Map metadata key to column key
             column_key = self._map_metadata_key_to_column_key(key_path)
@@ -2846,6 +2858,7 @@ class MetadataTreeView(QTreeView):
 
             # Check if column is visible
             from config import FILE_TABLE_COLUMN_CONFIG
+
             if column_key in FILE_TABLE_COLUMN_CONFIG:
                 default_visible = FILE_TABLE_COLUMN_CONFIG[column_key]["default_visible"]
                 return visible_columns.get(column_key, default_visible)
@@ -2869,15 +2882,15 @@ class MetadataTreeView(QTreeView):
                 return
 
             # Update visibility configuration
-            if hasattr(file_table_view, '_visible_columns'):
+            if hasattr(file_table_view, "_visible_columns"):
                 file_table_view._visible_columns[column_key] = True
 
                 # Save configuration
-                if hasattr(file_table_view, '_save_column_visibility_config'):
+                if hasattr(file_table_view, "_save_column_visibility_config"):
                     file_table_view._save_column_visibility_config()
 
                 # Update table display (clears selection)
-                if hasattr(file_table_view, '_update_table_columns'):
+                if hasattr(file_table_view, "_update_table_columns"):
                     file_table_view._update_table_columns()
 
                 logger.info(f"Added column '{key_path}' -> '{column_key}' to file view")
@@ -2899,15 +2912,15 @@ class MetadataTreeView(QTreeView):
                 return
 
             # Update visibility configuration
-            if hasattr(file_table_view, '_visible_columns'):
+            if hasattr(file_table_view, "_visible_columns"):
                 file_table_view._visible_columns[column_key] = False
 
                 # Save configuration
-                if hasattr(file_table_view, '_save_column_visibility_config'):
+                if hasattr(file_table_view, "_save_column_visibility_config"):
                     file_table_view._save_column_visibility_config()
 
                 # Update table display (clears selection)
-                if hasattr(file_table_view, '_update_table_columns'):
+                if hasattr(file_table_view, "_update_table_columns"):
                     file_table_view._update_table_columns()
 
                 logger.info(f"Removed column '{key_path}' -> '{column_key}' from file view")
@@ -2921,16 +2934,17 @@ class MetadataTreeView(QTreeView):
             # Look for file table view in parent hierarchy
             parent = self.parent()
             while parent:
-                if hasattr(parent, 'file_table_view'):
+                if hasattr(parent, "file_table_view"):
                     return parent.file_table_view
 
                 # Check if parent has file_table attribute
-                if hasattr(parent, 'file_table'):
+                if hasattr(parent, "file_table"):
                     return parent.file_table
 
                 # Check for main window with file table
-                if hasattr(parent, 'findChild'):
+                if hasattr(parent, "findChild"):
                     from widgets.file_table_view import FileTableView
+
                     file_table = parent.findChild(FileTableView)
                     if file_table:
                         return file_table
@@ -2945,8 +2959,6 @@ class MetadataTreeView(QTreeView):
     def _map_metadata_key_to_column_key(self, metadata_key: str) -> Optional[str]:
         """Map a metadata key path to a file table column key."""
         try:
-            from config import FILE_TABLE_COLUMN_CONFIG
-
             # Create mapping from metadata keys to column keys
             metadata_to_column_mapping = {
                 # Image metadata
@@ -2961,18 +2973,15 @@ class MetadataTreeView(QTreeView):
                 "EXIF:Make": "device_manufacturer",
                 "EXIF:Model": "device_model",
                 "EXIF:SerialNumber": "device_serial_no",
-
                 # Video metadata
                 "QuickTime:Duration": "duration",
                 "QuickTime:VideoFrameRate": "video_fps",
                 "QuickTime:AvgBitrate": "video_avg_bitrate",
                 "QuickTime:VideoCodec": "video_codec",
                 "QuickTime:MajorBrand": "video_format",
-
                 # Audio metadata
                 "QuickTime:AudioChannels": "audio_channels",
                 "QuickTime:AudioFormat": "audio_format",
-
                 # File metadata
                 "File:FileSize": "file_size",
                 "File:FileType": "type",
@@ -3022,7 +3031,9 @@ class MetadataTreeView(QTreeView):
                     return "video_format"
             elif "channels" in key_lower and "audio" in key_lower:
                 return "audio_channels"
-            elif "size" in key_lower and ("image" in key_lower or "width" in key_lower or "height" in key_lower):
+            elif "size" in key_lower and (
+                "image" in key_lower or "width" in key_lower or "height" in key_lower
+            ):
                 return "image_size"
             elif "hash" in key_lower or "md5" in key_lower or "sha" in key_lower:
                 return "file_hash"
@@ -3034,7 +3045,7 @@ class MetadataTreeView(QTreeView):
 
     def set_placeholder_visible(self, visible: bool) -> None:
         """Show or hide the placeholder using the unified helper."""
-        if hasattr(self, 'placeholder_helper'):
+        if hasattr(self, "placeholder_helper"):
             if visible:
                 self.placeholder_helper.show()
             else:
@@ -3042,7 +3053,60 @@ class MetadataTreeView(QTreeView):
 
     def update_placeholder_visibility(self):
         """Update placeholder visibility based on tree content."""
-        is_empty = self._is_placeholder_mode if hasattr(self, '_is_placeholder_mode') else False
+        is_empty = self._is_placeholder_mode if hasattr(self, "_is_placeholder_mode") else False
         self.set_placeholder_visible(is_empty)
 
+    def _handle_metadata_field_click(self, field: str, value: str) -> None:
+        """Handle click on metadata field that might be a file path."""
+        import os
 
+        if not value:
+            return
+
+        # Try to interpret the value as a file path
+        if os.path.exists(value):
+            self.set_current_file_path(value)
+            logger.debug(
+                f"[MetadataTreeView] Set current file from metadata field '{field}': {value}"
+            )
+            return
+
+        # Try to construct path from directory and filename
+        file_path = None
+        filename = None
+
+        # Check if value looks like a filename
+        if os.path.basename(value) == value and "." in value:
+            filename = value
+            # Try to get directory from current file
+            if self._current_file_path:
+                file_path = os.path.dirname(self._current_file_path)
+
+        # Check if value looks like a directory
+        elif os.path.isdir(value):
+            file_path = value
+            # Try to get filename from current file
+            if self._current_file_path:
+                filename = os.path.basename(self._current_file_path)
+
+        # Try to construct full path
+        if file_path and filename:
+            full_path = os.path.join(file_path, filename)
+            if os.path.exists(full_path):
+                self.set_current_file_path(full_path)
+                logger.debug(
+                    f"[MetadataTreeView] Set current file from constructed path: {full_path}"
+                )
+                return
+
+        # Try to find file in metadata that might be a path
+        if self._current_file_item and self._current_file_item.metadata:
+            metadata = self._current_file_item.metadata
+            if field in metadata:
+                potential_path = metadata[field]
+                if os.path.exists(potential_path):
+                    self.set_current_file_path(potential_path)
+                    logger.debug(
+                        f"[MetadataTreeView] Set current file from metadata field '{field}': {potential_path}"
+                    )
+                    return

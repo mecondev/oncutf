@@ -17,7 +17,6 @@ Functions:
 
 import os
 import platform
-import tempfile
 from typing import Callable, Dict, List, Tuple
 
 from utils.logger_factory import get_cached_logger

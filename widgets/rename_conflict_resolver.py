@@ -15,8 +15,8 @@ Classes:
 
 import logging
 from enum import Enum
-from typing import Optional, Callable, Dict, Any
 from pathlib import Path
+from typing import Callable, Dict, Optional
 
 from core.pyqt_imports import QObject, pyqtSignal
 

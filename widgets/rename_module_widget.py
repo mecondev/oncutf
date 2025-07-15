@@ -19,7 +19,18 @@ Features:
 
 from typing import Optional
 
-from core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, Qt, QVBoxLayout, QWidget, pyqtSignal, QApplication, QGraphicsDropShadowEffect, QColor
+from core.pyqt_imports import (
+    QApplication,
+    QColor,
+    QComboBox,
+    QGraphicsDropShadowEffect,
+    QHBoxLayout,
+    QLabel,
+    Qt,
+    QVBoxLayout,
+    QWidget,
+    pyqtSignal,
+)
 from modules.counter_module import CounterModule
 
 # Lazy import to avoid circular import: from modules.specified_text_module import SpecifiedTextModule
