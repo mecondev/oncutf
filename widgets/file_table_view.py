@@ -187,6 +187,11 @@ class FileTableView(QTableView):
         from utils.timer_manager import schedule_ui_update
         schedule_ui_update(self._update_header_visibility, delay=100)
 
+        # Selection loop protection
+        self._selection_change_count = 0
+        self._last_selection_change_time = 0
+        self._max_selection_changes_per_second = 10  # Max 10 changes per second
+
     def showEvent(self, event) -> None:
         """Handle show events and update scrollbar visibility."""
         super().showEvent(event)
@@ -217,7 +222,7 @@ class FileTableView(QTableView):
             return None
 
     def _update_selection_store(self, selected_rows: set, emit_signal: bool = True) -> None:
-        """Update SelectionStore with current selection and ensure Qt model is synchronized."""
+        logger.debug(f"[FileTableView] _update_selection_store called with selected_rows={selected_rows}, emit_signal={emit_signal}")
         selection_store = self._get_selection_store()
         if selection_store and not self._legacy_selection_mode:
             selection_store.set_selected_rows(selected_rows, emit_signal=emit_signal)
@@ -233,27 +238,40 @@ class FileTableView(QTableView):
             # This prevents double signal emission which causes metadata flickering
 
     def _sync_qt_selection_model(self, selected_rows: set) -> None:
-        """Simple and direct synchronization of Qt's selection model."""
+        """Simple and direct synchronization of Qt's selection model with rate limiting."""
+        import time
         try:
             selection_model = self.selectionModel()
             if not selection_model or not self.model():
                 return
 
-            # Clear current selection
-            selection_model.clearSelection()
+            # Rate limiting protection for Qt sync
+            current_time = time.time()
+            if hasattr(self, '_last_qt_sync_time') and current_time - self._last_qt_sync_time < 0.05:  # 50ms minimum interval
+                logger.debug("[FileTableView] Qt sync rate limited, skipping")
+                return
+            self._last_qt_sync_time = current_time
 
-            if selected_rows:
-                # Simple row-by-row selection
-                for row in selected_rows:
-                    if 0 <= row < self.model().rowCount():
-                        start_index = self.model().index(row, 0)
-                        end_index = self.model().index(row, self.model().columnCount() - 1)
-                        if start_index.isValid() and end_index.isValid():
-                            from core.pyqt_imports import QItemSelection
-                            selection_model.select(
-                                QItemSelection(start_index, end_index),
-                                selection_model.Select
-                            )
+            # Block signals during sync to prevent loops
+            self.blockSignals(True)
+            try:
+                # Clear current selection
+                selection_model.clearSelection()
+
+                if selected_rows:
+                    # Simple row-by-row selection
+                    for row in selected_rows:
+                        if 0 <= row < self.model().rowCount():
+                            start_index = self.model().index(row, 0)
+                            end_index = self.model().index(row, self.model().columnCount() - 1)
+                            if start_index.isValid() and end_index.isValid():
+                                from core.pyqt_imports import QItemSelection
+                                selection_model.select(
+                                    QItemSelection(start_index, end_index),
+                                    selection_model.Select
+                                )
+            finally:
+                self.blockSignals(False)
 
         except Exception as e:
             logger.error(f"[SyncQt] Error syncing selection: {e}")
@@ -1659,18 +1677,26 @@ class FileTableView(QTableView):
     # =====================================
 
     def selectionChanged(self, selected, deselected) -> None:
-        """SIMPLIFIED selection handling with protection against post-drag empty selections"""
+        import time
+        current_time = time.time()
+
+        # Rate limiting protection
+        if current_time - self._last_selection_change_time < 0.1:  # Less than 100ms
+            self._selection_change_count += 1
+            if self._selection_change_count > self._max_selection_changes_per_second:
+                logger.warning(f"[FileTableView] Selection change rate limit exceeded ({self._selection_change_count} changes). Ignoring.")
+                return
+        else:
+            self._selection_change_count = 1
+            self._last_selection_change_time = current_time
+
+        logger.debug(f"[FileTableView] selectionChanged called. selected={selected.count()}, deselected={deselected.count()}, count={self._selection_change_count}")
         super().selectionChanged(selected, deselected)
 
         selection_model = self.selectionModel()
         if selection_model is not None:
             selected_rows = set(index.row() for index in selection_model.selectedRows())
-
-            # Debug logging
-            logger.debug(
-                f"[FileTableView] selectionChanged: {len(selected_rows)} rows selected",
-                extra={"dev_only": True},
-            )
+            logger.debug(f"[FileTableView] selectionChanged: selected_rows after Qt={selected_rows}")
 
             # PROTECTION: Ignore empty selections that come immediately after SUCCESSFUL metadata drops
             # This prevents Qt's automatic clearSelection() from clearing our metadata display
@@ -1720,6 +1746,7 @@ class FileTableView(QTableView):
                 logger.debug("[FileTableView] Ignoring selection change during column update")
                 return
 
+            # CRITICAL: Update SelectionStore with emit_signal=True when selection changes from Qt
             self._update_selection_store(selected_rows, emit_signal=True)
 
         if self.context_focused_row is not None:

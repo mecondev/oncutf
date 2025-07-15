@@ -64,6 +64,11 @@ class SelectionStore(QObject):
         # Protection against infinite loops
         self._syncing_selection: bool = False
 
+        # Additional loop protection
+        self._last_set_selected_call_time = 0
+        self._set_selected_call_count = 0
+        self._max_calls_per_second = 5
+
         # Debouncing timer for high-frequency updates
         self._update_timer = QTimer(self)
         self._update_timer.setSingleShot(True)
@@ -97,12 +102,26 @@ class SelectionStore(QObject):
             rows: Set of row indices to select
             emit_signal: Whether to emit selection_changed signal
         """
+        current_time = time.time()
+
+        # Rate limiting protection
+        if current_time - self._last_set_selected_call_time < 0.2:  # Less than 200ms
+            self._set_selected_call_count += 1
+            if self._set_selected_call_count > self._max_calls_per_second:
+                logger.warning(f"[SelectionStore] set_selected_rows rate limit exceeded ({self._set_selected_call_count} calls). Ignoring.")
+                return
+        else:
+            self._set_selected_call_count = 1
+            self._last_set_selected_call_time = current_time
+
+        logger.debug(f"[SelectionStore] set_selected_rows called with rows={rows}, emit_signal={emit_signal}, _syncing_selection={self._syncing_selection}, call_count={self._set_selected_call_count}")
         # Protection against infinite loops during sync operations
         if self._syncing_selection:
             logger.debug("[SelectionStore] Ignoring selection update during sync operation", extra={"dev_only": True})
             return
 
         if rows == self._selected_rows:
+            logger.debug(f"[SelectionStore] set_selected_rows: No change (rows == self._selected_rows)")
             return  # No change
 
         old_count = len(self._selected_rows)
@@ -113,6 +132,7 @@ class SelectionStore(QObject):
 
         # Emit signal if requested
         if emit_signal:
+            logger.debug(f"[SelectionStore] Emitting selection_changed with rows={self._selected_rows}")
             self.selection_changed.emit(list(self._selected_rows))
             logger.debug(f"Selection updated: {old_count} -> {new_count} rows", extra={"dev_only": True})
 
@@ -293,45 +313,7 @@ class SelectionStore(QObject):
     # Synchronization Operations
     # =====================================
 
-    def sync_selection_to_checked(self) -> None:
-        """
-        Synchronize checked state to match current selection.
-        This is the primary sync direction for UI operations.
-        """
-        if self._selected_rows == self._checked_rows:
-            return  # Already synchronized
-
-        # Set sync flag to prevent infinite loops
-        self._syncing_selection = True
-        try:
-            old_checked = len(self._checked_rows)
-            self._checked_rows = self._selected_rows.copy()
-            new_checked = len(self._checked_rows)
-
-            logger.debug(f"Synced selection->checked: {old_checked} -> {new_checked} rows", extra={"dev_only": True})
-            self._schedule_checked_signal()
-        finally:
-            self._syncing_selection = False
-
-    def sync_checked_to_selection(self) -> None:
-        """
-        Synchronize selection to match current checked state.
-        Used when programmatically updating checked state.
-        """
-        if self._checked_rows == self._selected_rows:
-            return  # Already synchronized
-
-        # Set sync flag to prevent infinite loops
-        self._syncing_selection = True
-        try:
-            old_selected = len(self._selected_rows)
-            self._selected_rows = self._checked_rows.copy()
-            new_selected = len(self._selected_rows)
-
-            logger.debug(f"Synced checked->selection: {old_selected} -> {new_selected} rows", extra={"dev_only": True})
-            self._schedule_selection_signal()
-        finally:
-            self._syncing_selection = False
+    # (Οι μέθοδοι sync_selection_to_checked και sync_checked_to_selection διαγράφηκαν ως legacy)
 
     # =====================================
     # Batch Operations
