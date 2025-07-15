@@ -277,86 +277,97 @@ class SelectionManager:
         import time
         self._last_preview_update_time = time.time()
 
-        if not selected_rows:
-            logger.debug("[Sync] No selection - clearing preview", extra={"dev_only": True})
-            print("[DEBUG] No selection - clearing preview")
-            # Clear all checked states
-            for file in file_model.files:
-                file.checked = False
+        # PROTECTION: Block signals during checked state updates to prevent infinite loops
+        file_table_view = getattr(self.parent_window, 'file_table_view', None)
+        if file_table_view:
+            file_table_view.blockSignals(True)
+
+        try:
+            if not selected_rows:
+                logger.debug("[Sync] No selection - clearing preview", extra={"dev_only": True})
+                print("[DEBUG] No selection - clearing preview")
+                # Clear all checked states
+                for file in file_model.files:
+                    file.checked = False
+
+                if hasattr(self.parent_window, 'update_files_label'):
+                    self.parent_window.update_files_label()
+                if hasattr(self.parent_window, 'update_preview_tables_from_pairs'):
+                    self.parent_window.update_preview_tables_from_pairs([])
+
+                if metadata_tree_view and hasattr(metadata_tree_view, 'clear_view'):
+                    metadata_tree_view.clear_view()
+                return
+
+            logger.debug(f"[Sync] update_preview_from_selection: {selected_rows}", extra={"dev_only": True})
+            print(f"[DEBUG] Processing selection: {selected_rows}")
+            timer = QElapsedTimer()
+            timer.start()
+
+            for row, file in enumerate(file_model.files):
+                file.checked = row in selected_rows
 
             if hasattr(self.parent_window, 'update_files_label'):
                 self.parent_window.update_files_label()
-            if hasattr(self.parent_window, 'update_preview_tables_from_pairs'):
-                self.parent_window.update_preview_tables_from_pairs([])
+            if hasattr(self.parent_window, 'request_preview_update'):
+                self.parent_window.request_preview_update()
 
-            if metadata_tree_view and hasattr(metadata_tree_view, 'clear_view'):
-                metadata_tree_view.clear_view()
-            return
+            # Show metadata using centralized logic and update current file for context menus
+            if selected_rows:
+                last_row = selected_rows[-1]
+                print(f"[DEBUG] Last selected row: {last_row}, total files: {len(file_model.files)}")
+                if 0 <= last_row < len(file_model.files):
+                    file_item = file_model.files[last_row]
+                    print(f"[DEBUG] Selected file: {file_item.filename}")
 
-        logger.debug(f"[Sync] update_preview_from_selection: {selected_rows}", extra={"dev_only": True})
-        print(f"[DEBUG] Processing selection: {selected_rows}")
-        timer = QElapsedTimer()
-        timer.start()
+                    # Update current file for SpecifiedText modules context menu
+                    if rename_modules_area and hasattr(rename_modules_area, 'set_current_file_for_modules'):
+                        rename_modules_area.set_current_file_for_modules(file_item)
 
-        for row, file in enumerate(file_model.files):
-            file.checked = row in selected_rows
+                    # Use centralized metadata display logic
+                    if metadata_tree_view:
+                        print(f"[DEBUG] Metadata tree view available")
+                        should_display = (hasattr(metadata_tree_view, 'should_display_metadata_for_selection') and
+                                        metadata_tree_view.should_display_metadata_for_selection(len(selected_rows)))
+                        print(f"[DEBUG] Should display metadata: {should_display}")
 
-        if hasattr(self.parent_window, 'update_files_label'):
-            self.parent_window.update_files_label()
-        if hasattr(self.parent_window, 'request_preview_update'):
-            self.parent_window.request_preview_update()
+                        if should_display and cache_helper:
+                            print(f"[DEBUG] Cache helper available, getting metadata...")
+                            metadata = cache_helper.get_metadata_for_file(file_item)
+                            logger.debug(f"[SelectionManager] Updating metadata tree for file: {file_item.filename}, metadata available: {bool(metadata)}", extra={"dev_only": True})
+                            print(f"[DEBUG] Updating metadata tree for file: {file_item.filename}, metadata available: {bool(metadata)}")
 
-        # Show metadata using centralized logic and update current file for context menus
-        if selected_rows:
-            last_row = selected_rows[-1]
-            print(f"[DEBUG] Last selected row: {last_row}, total files: {len(file_model.files)}")
-            if 0 <= last_row < len(file_model.files):
-                file_item = file_model.files[last_row]
-                print(f"[DEBUG] Selected file: {file_item.filename}")
-
-                # Update current file for SpecifiedText modules context menu
-                if rename_modules_area and hasattr(rename_modules_area, 'set_current_file_for_modules'):
-                    rename_modules_area.set_current_file_for_modules(file_item)
-
-                # Use centralized metadata display logic
-                if metadata_tree_view:
-                    print(f"[DEBUG] Metadata tree view available")
-                    should_display = (hasattr(metadata_tree_view, 'should_display_metadata_for_selection') and
-                                    metadata_tree_view.should_display_metadata_for_selection(len(selected_rows)))
-                    print(f"[DEBUG] Should display metadata: {should_display}")
-
-                    if should_display and cache_helper:
-                        print(f"[DEBUG] Cache helper available, getting metadata...")
-                        metadata = cache_helper.get_metadata_for_file(file_item)
-                        logger.debug(f"[SelectionManager] Updating metadata tree for file: {file_item.filename}, metadata available: {bool(metadata)}", extra={"dev_only": True})
-                        print(f"[DEBUG] Updating metadata tree for file: {file_item.filename}, metadata available: {bool(metadata)}")
-
-                        if hasattr(metadata_tree_view, 'smart_display_metadata_or_empty_state'):
-                            metadata_tree_view.smart_display_metadata_or_empty_state(
-                                metadata, len(selected_rows), context="selection_update"
-                            )
-                        elif hasattr(metadata_tree_view, 'display_metadata'):
-                            metadata_tree_view.display_metadata(metadata, context="selection_update")
+                            if hasattr(metadata_tree_view, 'smart_display_metadata_or_empty_state'):
+                                metadata_tree_view.smart_display_metadata_or_empty_state(
+                                    metadata, len(selected_rows), context="selection_update"
+                                )
+                            elif hasattr(metadata_tree_view, 'display_metadata'):
+                                metadata_tree_view.display_metadata(metadata, context="selection_update")
+                        else:
+                            # Multiple files - show empty state
+                            logger.debug(f"[SelectionManager] Showing empty state for {len(selected_rows)} selected files", extra={"dev_only": True})
+                            print(f"[DEBUG] Showing empty state for {len(selected_rows)} selected files")
+                            if hasattr(metadata_tree_view, 'show_empty_state'):
+                                metadata_tree_view.show_empty_state("Multiple files selected")
                     else:
-                        # Multiple files - show empty state
-                        logger.debug(f"[SelectionManager] Showing empty state for {len(selected_rows)} selected files", extra={"dev_only": True})
-                        print(f"[DEBUG] Showing empty state for {len(selected_rows)} selected files")
-                        if hasattr(metadata_tree_view, 'show_empty_state'):
-                            metadata_tree_view.show_empty_state("Multiple files selected")
+                        print(f"[DEBUG] No metadata tree view available")
                 else:
-                    print(f"[DEBUG] No metadata tree view available")
+                    print(f"[DEBUG] Invalid row index: {last_row}")
             else:
-                print(f"[DEBUG] Invalid row index: {last_row}")
-        else:
-            print(f"[DEBUG] No selected rows")
-            # Clear current file when no selection
-            if rename_modules_area and hasattr(rename_modules_area, 'set_current_file_for_modules'):
-                rename_modules_area.set_current_file_for_modules(None)
-            if metadata_tree_view and hasattr(metadata_tree_view, 'clear_view'):
-                metadata_tree_view.clear_view()
+                print(f"[DEBUG] No selected rows")
+                # Clear current file when no selection
+                if rename_modules_area and hasattr(rename_modules_area, 'set_current_file_for_modules'):
+                    rename_modules_area.set_current_file_for_modules(None)
+                if metadata_tree_view and hasattr(metadata_tree_view, 'clear_view'):
+                    metadata_tree_view.clear_view()
 
-        elapsed = timer.elapsed()
-        logger.debug(f"[Performance] Full preview update took {elapsed} ms")
+            elapsed = timer.elapsed()
+            logger.debug(f"[Performance] Full preview update took {elapsed} ms")
+
+        finally:
+            # Restore signals
+            if file_table_view:
+                file_table_view.blockSignals(False)
 
     def force_preview_update(self) -> None:
         """

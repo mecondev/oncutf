@@ -1028,6 +1028,9 @@ class FileTableView(QTableView):
         """
         Handle mouse press events for selection and drag initiation.
         """
+        # Restore pending selection if exists
+        self._restore_pending_selection()
+
         # Get the index under the mouse
         index = self.indexAt(event.pos())
         modifiers = event.modifiers()
@@ -1294,6 +1297,9 @@ class FileTableView(QTableView):
 
     def keyPressEvent(self, event) -> None:
         """Handle keyboard navigation, sync selection, and modifier changes during drag."""
+        # Restore pending selection if exists
+        self._restore_pending_selection()
+
         # Handle column management shortcuts
         from config import COLUMN_SHORTCUTS
 
@@ -2353,6 +2359,12 @@ class FileTableView(QTableView):
                 else:
                     self._pending_selection_restore = None
 
+                # Clear current selection to avoid visual confusion
+                selection_model = self.selectionModel()
+                if selection_model:
+                    selection_model.clearSelection()
+                    self.viewport().update()
+
                 # Ενεργοποίηση header αν είναι απενεργοποιημένο
                 header = self.horizontalHeader() if hasattr(self, 'horizontalHeader') else None
                 if header and not header.isEnabled():
@@ -2372,6 +2384,52 @@ class FileTableView(QTableView):
             self._updating_columns = False
 
         # No longer need to trigger column adjustment - columns maintain fixed widths
+
+    def _restore_pending_selection(self) -> None:
+        """Restore pending selection if it exists."""
+        if hasattr(self, '_pending_selection_restore') and self._pending_selection_restore:
+            try:
+                model = self.model()
+                if model and hasattr(model, 'files'):
+                    restored_rows = set()
+                    for i, file_item in enumerate(model.files):
+                        if getattr(file_item, 'full_path', None) in self._pending_selection_restore:
+                            restored_rows.add(i)
+
+                    if restored_rows:
+                        logger.debug(f"[SelectionRestore] Restoring selection: {restored_rows}")
+
+                        # Simple restoration without complex logic
+                        selection_model = self.selectionModel()
+                        if selection_model:
+                            # Clear and restore in one simple operation
+                            selection_model.clearSelection()
+
+                            # Select each row individually
+                            for row in restored_rows:
+                                if 0 <= row < model.rowCount():
+                                    start_index = model.index(row, 0)
+                                    end_index = model.index(row, model.columnCount() - 1)
+                                    from core.pyqt_imports import QItemSelection
+                                    selection_model.select(
+                                        QItemSelection(start_index, end_index),
+                                        selection_model.Select
+                                    )
+
+                            # Update selection store
+                            selection_store = self._get_selection_store()
+                            if selection_store and not self._legacy_selection_mode:
+                                selection_store.set_selected_rows(restored_rows, emit_signal=False)
+
+                            # Force visual update
+                            self.viewport().update()
+
+                # Clear pending selection
+                self._pending_selection_restore = None
+
+            except Exception as e:
+                logger.error(f"[SelectionRestore] Error restoring selection: {e}")
+                self._pending_selection_restore = None
 
     def _get_metadata_tree(self):
         """Get the metadata tree widget from the parent hierarchy."""

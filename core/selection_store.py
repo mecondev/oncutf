@@ -61,6 +61,9 @@ class SelectionStore(QObject):
         self._last_operation_time = time.time()
         self._batch_operations: Dict[str, int] = {}
 
+        # Protection against infinite loops
+        self._syncing_selection: bool = False
+
         # Debouncing timer for high-frequency updates
         self._update_timer = QTimer(self)
         self._update_timer.setSingleShot(True)
@@ -94,6 +97,11 @@ class SelectionStore(QObject):
             rows: Set of row indices to select
             emit_signal: Whether to emit selection_changed signal
         """
+        # Protection against infinite loops during sync operations
+        if self._syncing_selection:
+            logger.debug("[SelectionStore] Ignoring selection update during sync operation", extra={"dev_only": True})
+            return
+
         if rows == self._selected_rows:
             return  # No change
 
@@ -293,12 +301,17 @@ class SelectionStore(QObject):
         if self._selected_rows == self._checked_rows:
             return  # Already synchronized
 
-        old_checked = len(self._checked_rows)
-        self._checked_rows = self._selected_rows.copy()
-        new_checked = len(self._checked_rows)
+        # Set sync flag to prevent infinite loops
+        self._syncing_selection = True
+        try:
+            old_checked = len(self._checked_rows)
+            self._checked_rows = self._selected_rows.copy()
+            new_checked = len(self._checked_rows)
 
-        logger.debug(f"Synced selection->checked: {old_checked} -> {new_checked} rows", extra={"dev_only": True})
-        self._schedule_checked_signal()
+            logger.debug(f"Synced selection->checked: {old_checked} -> {new_checked} rows", extra={"dev_only": True})
+            self._schedule_checked_signal()
+        finally:
+            self._syncing_selection = False
 
     def sync_checked_to_selection(self) -> None:
         """
@@ -308,12 +321,17 @@ class SelectionStore(QObject):
         if self._checked_rows == self._selected_rows:
             return  # Already synchronized
 
-        old_selected = len(self._selected_rows)
-        self._selected_rows = self._checked_rows.copy()
-        new_selected = len(self._selected_rows)
+        # Set sync flag to prevent infinite loops
+        self._syncing_selection = True
+        try:
+            old_selected = len(self._selected_rows)
+            self._selected_rows = self._checked_rows.copy()
+            new_selected = len(self._selected_rows)
 
-        logger.debug(f"Synced checked->selection: {old_selected} -> {new_selected} rows", extra={"dev_only": True})
-        self._schedule_selection_signal()
+            logger.debug(f"Synced checked->selection: {old_selected} -> {new_selected} rows", extra={"dev_only": True})
+            self._schedule_selection_signal()
+        finally:
+            self._syncing_selection = False
 
     # =====================================
     # Batch Operations
