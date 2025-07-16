@@ -19,6 +19,7 @@ Features:
 
 from typing import Optional
 
+from config import ICON_SIZES
 from core.pyqt_imports import (
     QApplication,
     QColor,
@@ -136,7 +137,7 @@ class RenameModuleWidget(QWidget):
 
         # Set drag handle icon
         drag_icon = get_menu_icon("more-vertical")
-        self.drag_handle.setPixmap(drag_icon.pixmap(16, 16))
+        self.drag_handle.setPixmap(drag_icon.pixmap(ICON_SIZES["SMALL"], ICON_SIZES["SMALL"]))
 
         # Enable drag functionality
         self.drag_handle.setAcceptDrops(True)

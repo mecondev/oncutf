@@ -24,6 +24,7 @@ from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
+from config import ICON_SIZES
 from core.pyqt_imports import QIcon, QObject, QPixmap, QSize, QTimer, pyqtSignal
 from utils.logger_factory import get_cached_logger
 
@@ -97,10 +98,10 @@ class SmartIconCache(QObject):
 
         # Common icon sizes for preloading
         self._common_sizes = [
-            QSize(16, 16),   # Small icons (menu items, tree view)
-            QSize(24, 24),   # Medium icons (toolbars, buttons)
-            QSize(32, 32),   # Large icons (dialogs, headers)
-            QSize(48, 48),   # Extra large icons (splash, about)
+            QSize(ICON_SIZES["SMALL"], ICON_SIZES["SMALL"]),   # Small icons (menu items, tree view)
+            QSize(ICON_SIZES["MEDIUM"], ICON_SIZES["MEDIUM"]),   # Medium icons (toolbars, buttons)
+            QSize(ICON_SIZES["LARGE"], ICON_SIZES["LARGE"]),   # Large icons (dialogs, headers)
+            QSize(ICON_SIZES["EXTRA_LARGE"], ICON_SIZES["EXTRA_LARGE"]),   # Extra large icons (splash, about)
         ]
 
         # Commonly used icons for preloading
@@ -134,7 +135,7 @@ class SmartIconCache(QObject):
             QIcon object
         """
         if size is None:
-            size = QSize(16, 16)
+            size = QSize(ICON_SIZES["SMALL"], ICON_SIZES["SMALL"])
         if theme is None:
             theme = self._current_theme
 
@@ -366,7 +367,7 @@ class SmartIconCache(QObject):
     def remove_icon(self, name: str, size: QSize = None, theme: str = None) -> bool:
         """Remove specific icon from cache."""
         if size is None:
-            size = QSize(16, 16)
+            size = QSize(ICON_SIZES["SMALL"], ICON_SIZES["SMALL"])
         if theme is None:
             theme = self._current_theme
 

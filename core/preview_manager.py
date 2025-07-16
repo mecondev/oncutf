@@ -264,3 +264,19 @@ class PreviewManager:
             )
         else:
             logger.warning("[PreviewManager] Preview tables view not available")
+
+    def on_hash_calculation_completed(self) -> None:
+        """
+        Called when hash calculation is completed.
+        Triggers preview refresh to update hash-based metadata.
+        """
+        logger.debug("[PreviewManager] Hash calculation completed, refreshing preview", extra={"dev_only": True})
+
+        # Clear caches to force fresh preview generation
+        self.clear_cache()
+
+        # Trigger preview refresh if parent window has the method
+        if self.parent_window and hasattr(self.parent_window, 'refresh_preview'):
+            self.parent_window.refresh_preview()
+        elif self.parent_window and hasattr(self.parent_window, 'update_preview'):
+            self.parent_window.update_preview()

@@ -23,6 +23,7 @@ from core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
+from config import ICON_SIZES
 from modules.base_module import BaseRenameModule
 from utils.icons_loader import get_menu_icon
 
@@ -117,8 +118,8 @@ class CounterModule(BaseRenameModule):
         btn_plus.setIcon(get_menu_icon("plus"))
         btn_minus.setFixedSize(24, 24)  # Reduced by 2px (1px each side)
         btn_plus.setFixedSize(24, 24)   # Reduced by 2px (1px each side)
-        btn_minus.setIconSize(QSize(16, 16))  # Even larger icons
-        btn_plus.setIconSize(QSize(16, 16))   # Even larger icons
+        btn_minus.setIconSize(QSize(ICON_SIZES["SMALL"], ICON_SIZES["SMALL"]))  # Small icons for buttons
+        btn_plus.setIconSize(QSize(ICON_SIZES["SMALL"], ICON_SIZES["SMALL"]))   # Small icons for buttons
 
         # Setup custom tooltips for plus/minus buttons
         setup_tooltip(btn_minus, "Decrease value", TooltipType.INFO)

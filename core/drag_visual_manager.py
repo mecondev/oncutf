@@ -21,6 +21,7 @@ import os
 from enum import Enum
 from typing import Dict, Optional
 
+from config import ICON_SIZES
 from core.pyqt_imports import QApplication, QColor, QCursor, QIcon, QPainter, QPixmap, Qt, QWidget
 from utils.icons_loader import get_menu_icon
 from utils.logger_factory import get_cached_logger
@@ -310,12 +311,12 @@ class DragVisualManager:
         # Draw base icon
         base_qicon = get_menu_icon(base_icon)
         if not base_qicon.isNull():
-            base_pixmap = base_qicon.pixmap(28, 28)
+            base_pixmap = base_qicon.pixmap(ICON_SIZES["LARGE"], ICON_SIZES["LARGE"])
             painter.drawPixmap(4, 8, base_pixmap)
 
         # Draw action icons side by side
         if action_icons:
-            icon_size = 22
+            icon_size = ICON_SIZES["MEDIUM"]
             start_x = 24 if len(action_icons) <= 1 else 26
 
             for i, action_icon in enumerate(action_icons):

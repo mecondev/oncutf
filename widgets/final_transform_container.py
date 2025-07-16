@@ -11,6 +11,7 @@ Uses a clean 3-column layout: Labels | Controls | Buttons
 
 from typing import Optional
 
+from config import ICON_SIZES
 from core.pyqt_imports import (
     QCheckBox,
     QComboBox,
@@ -84,7 +85,7 @@ class FinalTransformContainer(QWidget):
         self.add_button = QPushButton()
         self.add_button.setIcon(get_menu_icon("plus"))
         self.add_button.setFixedSize(30, 30)
-        self.add_button.setIconSize(QSize(24, 24))
+        self.add_button.setIconSize(QSize(ICON_SIZES["MEDIUM"], ICON_SIZES["MEDIUM"]))
         self.add_button.clicked.connect(self.add_module_requested.emit)
         self.add_button.setCursor(Qt.PointingHandCursor)  # type: ignore
         setup_tooltip(self.add_button, "Add new module", TooltipType.INFO)
@@ -93,7 +94,7 @@ class FinalTransformContainer(QWidget):
         self.remove_button = QPushButton()
         self.remove_button.setIcon(get_menu_icon("minus"))
         self.remove_button.setFixedSize(30, 30)
-        self.remove_button.setIconSize(QSize(24, 24))
+        self.remove_button.setIconSize(QSize(ICON_SIZES["MEDIUM"], ICON_SIZES["MEDIUM"]))
         self.remove_button.clicked.connect(self.remove_module_requested.emit)
         self.remove_button.setCursor(Qt.PointingHandCursor)  # type: ignore
         setup_tooltip(self.remove_button, "Remove last module", TooltipType.INFO)
@@ -192,7 +193,7 @@ class FinalTransformContainer(QWidget):
 
             # Get the original icon
             original_icon = get_menu_icon("minus")
-            original_pixmap = original_icon.pixmap(24, 24)
+            original_pixmap = original_icon.pixmap(ICON_SIZES["MEDIUM"], ICON_SIZES["MEDIUM"])
 
             # Create a new pixmap with reduced opacity
             disabled_pixmap = QPixmap(original_pixmap.size())
