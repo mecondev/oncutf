@@ -121,8 +121,16 @@ class CustomMessageDialog(QDialog):
         from utils.multiscreen_helper import position_dialog_relative_to_parent
         position_dialog_relative_to_parent(self)
 
-        # Set normal cursor on the dialog itself (not wait cursor)
+        # Force normal cursor on the dialog and all its children
         self.setCursor(Qt.ArrowCursor)  # type: ignore
+
+        # Apply normal cursor to all child widgets recursively
+        for child in self.findChildren(QWidget):
+            child.setCursor(Qt.ArrowCursor)  # type: ignore
+
+        # Process events to ensure cursor change takes effect
+        from core.pyqt_imports import QApplication
+        QApplication.processEvents()
 
         # Don't clear wait cursor from parent - let it remain on the main window
         # The wait cursor should be visible on the main window but not on the dialog

@@ -13,7 +13,7 @@ metadata during batch renaming.
 import os
 import time
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 from models.file_item import FileItem
 
@@ -237,14 +237,14 @@ class MetadataModule:
     @staticmethod
     def _get_file_hash(file_path: str, hash_type: str) -> str:
         """
-        Get file hash using the hash cache only. Does not calculate hashes automatically.
+        Get file hash using the hash cache. If hash is missing, ask user if they want to calculate it.
 
         Args:
             file_path: Path to the file
             hash_type: Type of hash (CRC32, MD5, SHA1, SHA256)
 
         Returns:
-            str: Hash value or "missing" if not available
+            str: Hash value or "missing" if not available or user cancelled
         """
         try:
             # Try to get hash from cache only
@@ -258,13 +258,78 @@ class MetadataModule:
                 if hash_value:
                     return hash_value
 
-            # Hash not found in cache - return "missing" instead of calculating
+            # Hash not found in cache - ask user if they want to calculate it
             logger.debug(f"[MetadataModule] Hash {hash_type} not found in cache for {os.path.basename(file_path)}")
-            return "missing"
+
+            # Ask user if they want to calculate the hash
+            if MetadataModule._ask_user_for_hash_calculation(file_path, hash_type):
+                # User wants to calculate - start the process and return "calculating"
+                # The preview will be updated when calculation completes
+                return "calculating"
+            else:
+                # User cancelled - return "missing"
+                return "missing"
 
         except Exception as e:
             logger.warning(f"[MetadataModule] Error getting hash for {file_path}: {e}")
             return "missing"
+
+    @staticmethod
+    def _ask_user_for_hash_calculation(file_path: str, hash_type: str) -> bool:
+        """
+        Ask user if they want to calculate missing hash.
+
+        Returns:
+            bool: True if user wants to calculate, False if cancelled
+        """
+        try:
+            from widgets.custom_message_dialog import CustomMessageDialog
+
+            filename = os.path.basename(file_path)
+            message = f"Hash value ({hash_type}) not calculated for '{filename}'.\nWould you like to calculate it now?"
+
+            dialog = CustomMessageDialog(
+                title="Hash calculation required",
+                message=message,
+                buttons=["Calculate Hash", "Cancel"],
+                parent=None  # Let it find the parent automatically
+            )
+
+            dialog.exec_()
+
+            if dialog.selected == "Calculate Hash":
+                MetadataModule._start_hash_calculation(file_path, hash_type)
+                return True
+            else:
+                return False
+
+        except Exception as e:
+            logger.warning(f"[MetadataModule] Error showing hash dialog: {e}")
+            return False
+
+    @staticmethod
+    def _start_hash_calculation(file_path: str, hash_type: str) -> None:
+        """Start hash calculation for the given file."""
+        try:
+            # Use the application service to start hash calculation
+            from core.application_context import get_app_context
+            context = get_app_context()
+
+            if context and hasattr(context, "main_window"):
+                main_window = context.main_window
+
+                if hasattr(main_window, "application_service"):
+                    main_window.application_service.calculate_hash_selected()
+                elif hasattr(main_window, "unified_metadata_manager"):
+                    # Create a temporary file item for the calculation
+                    from models.file_item import FileItem
+                    file_item = FileItem(file_path)
+                    main_window.unified_metadata_manager.load_hashes_for_files(
+                        [file_item], source="metadata_module_hash_request"
+                    )
+
+        except Exception as e:
+            logger.warning(f"[MetadataModule] Error starting hash calculation: {e}")
 
     @staticmethod
     def is_effective(data: dict) -> bool:
