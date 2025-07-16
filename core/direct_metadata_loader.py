@@ -569,6 +569,10 @@ class DirectMetadataLoader(QObject):
             if self.parent_window and hasattr(self.parent_window, 'file_model'):
                 self.parent_window.file_model.refresh_icons()
 
+            # Notify preview manager about hash calculation completion
+            if self.parent_window and hasattr(self.parent_window, 'preview_manager') and self.parent_window.preview_manager:
+                self.parent_window.preview_manager.on_hash_calculation_completed()
+
             logger.debug("[DirectMetadataLoader] Hash loading finished")
 
         except Exception as e:

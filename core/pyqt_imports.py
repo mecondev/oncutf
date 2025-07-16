@@ -17,6 +17,7 @@ from PyQt5.QtCore import (
     QEasingCurve,
     QElapsedTimer,
     QEvent,
+    QEventLoop,
     QItemSelection,
     QItemSelectionModel,
     QItemSelectionRange,
@@ -128,9 +129,9 @@ from PyQt5.QtWidgets import (
 # Re-export all imports for easy access
 __all__ = [
     # Core
-    'QAbstractTableModel', 'QByteArray', 'QDir', 'QEasingCurve', 'QElapsedTimer', 'QEvent', 'QItemSelection', 'QItemSelectionModel',
+    'QAbstractTableModel', 'QByteArray', 'QDir', 'QEasingCurve', 'QElapsedTimer', 'QEvent', 'QEventLoop', 'QItemSelection', 'QItemSelectionModel',
     'QItemSelectionRange', 'QMimeData', 'QModelIndex', 'QMutex', 'QMutexLocker', 'QObject', 'QPoint', 'QPropertyAnimation', 'QRect', 'QResource', 'QSize', 'QSortFilterProxyModel', 'QStringListModel', 'Qt', 'QThread',
-    'QTimer', 'QUrl', 'QVariant', 'pyqtSignal', 'pyqtSlot',
+    'QTimer', 'QUrl', 'QVariant', 'pyqtSignal', 'pyqtSlot', 'QEventLoop',
 
     # GUI
     'QColor', 'QCursor', 'QDesktopServices', 'QDrag', 'QDragEnterEvent', 'QDragMoveEvent', 'QDropEvent', 'QFont', 'QFontDatabase', 'QFontMetrics', 'QIcon', 'QIntValidator', 'QKeyEvent',

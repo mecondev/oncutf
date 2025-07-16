@@ -887,6 +887,10 @@ class UnifiedMetadataManager(QObject):
             if hasattr(self.parent_window, 'file_model'):
                 self.parent_window.file_model.refresh_icons()
 
+            # Notify preview manager about hash calculation completion
+            if hasattr(self.parent_window, 'preview_manager') and self.parent_window.preview_manager:
+                self.parent_window.preview_manager.on_hash_calculation_completed()
+
         logger.info("[UnifiedMetadataManager] Hash loading completed")
 
     def _cleanup_metadata_worker_and_thread(self) -> None:

@@ -43,6 +43,14 @@ class PreviewManager:
         modules_data = rename_data.get("modules", [])
         post_transform = rename_data.get("post_transform", {})
 
+        # Check if hash calculation is needed for hash modules
+        if self._needs_hash_calculation(modules_data, selected_files):
+            if not self._ask_user_for_hash_calculation(selected_files):
+                # User cancelled - return empty preview with unchanged names
+                logger.info("[PreviewManager] User cancelled hash calculation, showing unchanged names")
+                name_pairs = [(f.filename, f.filename) for f in selected_files]
+                return name_pairs, False
+
         # Check if all modules are no-op
         is_noop = self._check_if_noop(all_modules, post_transform)
         self.preview_map = {file.filename: file for file in selected_files}
@@ -183,3 +191,170 @@ class PreviewManager:
             )
         else:
             logger.warning("[PreviewManager] Preview tables view not available")
+
+            def _needs_hash_calculation(self, modules_data: List[Dict[str, Any]], selected_files: List[FileItem]) -> bool:
+        """
+        Check if any hash modules are used and if selected files need hash calculation.
+
+        Returns:
+            bool: True if hash calculation is needed, False otherwise
+        """
+        # Check if any modules are hash modules
+        has_hash_modules = False
+        for module in modules_data:
+            if module.get("type") == "metadata" and module.get("category") == "hash":
+                has_hash_modules = True
+                break
+
+        if not has_hash_modules:
+            logger.debug("[PreviewManager] No hash modules found, skipping hash calculation check")
+            return False
+
+        # Check if any selected files don't have hashes
+        try:
+            from core.persistent_hash_cache import get_persistent_hash_cache
+            hash_cache = get_persistent_hash_cache()
+
+            files_without_hash = 0
+            for file_item in selected_files:
+                if not hash_cache.has_hash(file_item.full_path, "CRC32"):
+                    files_without_hash += 1
+                    logger.debug(f"[PreviewManager] File {file_item.filename} needs hash calculation")
+
+            if files_without_hash > 0:
+                logger.info(f"[PreviewManager] {files_without_hash} out of {len(selected_files)} files need hash calculation")
+                return True
+            else:
+                logger.debug("[PreviewManager] All files have hashes, no calculation needed")
+
+        except Exception as e:
+            logger.warning(f"[PreviewManager] Error checking hash cache: {e}")
+            return False
+
+        return False
+
+                    def _ask_user_for_hash_calculation(self, selected_files: List[FileItem]) -> bool:
+        """
+        Ask user if they want to calculate missing hashes.
+
+        Args:
+            selected_files: List of selected files
+
+        Returns:
+            bool: True if user wants to proceed, False if cancelled
+        """
+        try:
+            from widgets.custom_message_dialog import CustomMessageDialog
+            from core.persistent_hash_cache import get_persistent_hash_cache
+
+            # Count files that need hash calculation
+            hash_cache = get_persistent_hash_cache()
+            files_without_hash = 0
+            for file_item in selected_files:
+                if not hash_cache.has_hash(file_item.full_path, "CRC32"):
+                    files_without_hash += 1
+
+            message = f"Some selected files don't have calculated hash values ({files_without_hash} out of {len(selected_files)} files).\n\nCalculating hashes may take some time depending on file sizes.\n\nWould you like to calculate the missing hashes now?"
+
+            dialog = CustomMessageDialog(
+                title="Hash calculation required",
+                message=message,
+                buttons=["Calculate Hashes", "Cancel"],
+                parent=self.parent_window if self.parent_window else None
+            )
+
+            dialog.exec_()
+
+            if dialog.selected == "Calculate Hashes":
+                logger.info(f"[PreviewManager] User agreed to calculate hashes for {files_without_hash} files")
+                # Start hash calculation
+                self._start_hash_calculation(selected_files)
+
+                # Don't wait here - let the hash calculation run in background
+                # The preview will be regenerated when hash calculation completes
+                return True
+            else:
+                logger.info("[PreviewManager] User cancelled hash calculation")
+                return False
+
+        except Exception as e:
+            logger.warning(f"[PreviewManager] Error showing hash calculation dialog: {e}")
+            return False
+
+        def _start_hash_calculation(self, selected_files: List[FileItem]) -> None:
+        """
+        Start hash calculation for selected files that don't have hashes.
+
+        Args:
+            selected_files: List of files to calculate hashes for
+        """
+        try:
+            # Filter files that don't have hashes
+            from core.persistent_hash_cache import get_persistent_hash_cache
+            hash_cache = get_persistent_hash_cache()
+
+            files_without_hash = []
+            for file_item in selected_files:
+                if not hash_cache.has_hash(file_item.full_path, "CRC32"):
+                    files_without_hash.append(file_item)
+
+            if not files_without_hash:
+                return
+
+            logger.info(f"[PreviewManager] Starting hash calculation for {len(files_without_hash)} files")
+
+            # Start hash calculation using the existing system
+            if self.parent_window:
+                # Try to use ApplicationService if available
+                if hasattr(self.parent_window, "application_service"):
+                    self.parent_window.application_service.calculate_hash_selected()
+                # Fallback to EventHandlerManager
+                elif hasattr(self.parent_window, "event_handler_manager"):
+                    self.parent_window.event_handler_manager._handle_calculate_hashes(selected_files)
+                # Fallback to UnifiedMetadataManager
+                elif hasattr(self.parent_window, "unified_metadata_manager"):
+                    self.parent_window.unified_metadata_manager.load_hashes_for_files(
+                        files_without_hash, source="preview_manager_hash_calculation"
+                    )
+                # Final fallback to DirectMetadataLoader
+                elif hasattr(self.parent_window, "direct_metadata_loader"):
+                    self.parent_window.direct_metadata_loader.load_hashes_for_files(
+                        files_without_hash, source="preview_manager_hash_calculation"
+                    )
+
+        except Exception as e:
+            logger.warning(f"[PreviewManager] Failed to start hash calculation: {e}")
+
+            def on_hash_calculation_completed(self) -> None:
+        """
+        Called when hash calculation is completed.
+        Triggers preview regeneration if hash modules are active.
+        """
+        try:
+            if not self.parent_window:
+                return
+
+            # Check if any hash modules are currently active
+            rename_data = self.parent_window.rename_modules_area.get_all_data()
+            modules_data = rename_data.get("modules", [])
+
+            has_hash_modules = False
+            for module in modules_data:
+                if module.get("type") == "metadata" and module.get("category") == "hash":
+                    has_hash_modules = True
+                    break
+
+            if has_hash_modules:
+                logger.info("[PreviewManager] Hash calculation completed, regenerating preview")
+                # Trigger preview regeneration
+                if hasattr(self.parent_window, "utility_manager"):
+                    self.parent_window.utility_manager.generate_preview_names()
+                else:
+                    logger.warning("[PreviewManager] No utility_manager available for preview regeneration")
+            else:
+                logger.debug("[PreviewManager] Hash calculation completed but no hash modules active")
+
+        except Exception as e:
+            logger.warning(f"[PreviewManager] Error handling hash calculation completion: {e}")
+
+

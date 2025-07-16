@@ -241,6 +241,7 @@ class MetadataModule:
                     return hash_value
 
             # Hash not found in cache - return "missing" instead of calculating
+            logger.debug(f"[MetadataModule] Hash {hash_type} not found in cache for {os.path.basename(file_path)}")
             return "missing"
 
         except Exception as e:

@@ -975,6 +975,10 @@ class EventHandlerManager:
                 self.parent_window.file_table_model.refresh_icons()
                 logger.debug("[EventHandler] Refreshed file table icons after hash operation", extra={"dev_only": True})
 
+        # Notify preview manager about hash calculation completion
+        if hasattr(self.parent_window, 'preview_manager') and self.parent_window.preview_manager:
+            self.parent_window.preview_manager.on_hash_calculation_completed()
+
         # Clean up worker
         if hasattr(self, 'hash_worker') and self.hash_worker:
             self.hash_worker.quit()

@@ -86,13 +86,19 @@ class MetadataWidget(QWidget):
 
         # Connections
         self.category_combo.currentIndexChanged.connect(self.update_options)
+        self.options_combo.currentIndexChanged.connect(self._store_previous_option)
         self.options_combo.currentIndexChanged.connect(self.emit_if_changed)
 
         # Schedule options update
         schedule_ui_update(self.update_options, 0)
 
-        # Store previous category for rollback
+        # Store previous category and option for rollback
         self._previous_category = "file_dates"
+        self._previous_option = None
+
+    def _store_previous_option(self):
+        # Αποθηκεύει το προηγούμενο επιλεγμένο option (field)
+        self._previous_option = self.options_combo.currentData()
 
     def update_options(self) -> None:
         """Updates fields according to the selected category."""
@@ -102,8 +108,9 @@ class MetadataWidget(QWidget):
         # Handle hash category selection with dialog confirmation
         if category == "hash":
             if not self._check_hash_selection():
-                # User cancelled or dialog failed, rollback to previous category
+                # User cancelled or dialog failed, rollback to previous category/option
                 self._rollback_to_previous_category()
+                self._rollback_to_previous_option()
                 return
 
         # Store current category as previous for next time
@@ -117,6 +124,13 @@ class MetadataWidget(QWidget):
             self.populate_hash_options()
         elif category == "metadata_keys":
             self.populate_metadata_keys()
+
+        # Μετά το update, αν υπάρχει προηγούμενο option, το επαναφέρουμε
+        if self._previous_option is not None:
+            idx = self.options_combo.findData(self._previous_option)
+            if idx != -1:
+                self.options_combo.setCurrentIndex(idx)
+            self._previous_option = None
 
         self.emit_if_changed()
 
@@ -249,6 +263,17 @@ class MetadataWidget(QWidget):
             if self.category_combo.itemData(i) == self._previous_category:
                 self.category_combo.setCurrentIndex(i)
                 break
+
+    def _rollback_to_previous_option(self):
+        # Επαναφέρει το options combo στην προηγούμενη επιλογή (αν υπάρχει)
+        if self._previous_option is not None:
+            idx = self.options_combo.findData(self._previous_option)
+            if idx != -1:
+                self.options_combo.setCurrentIndex(idx)
+            else:
+                self.options_combo.setCurrentIndex(0)
+        else:
+            self.options_combo.setCurrentIndex(0)
 
     def populate_file_dates(self) -> None:
         file_date_options = [
