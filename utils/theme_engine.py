@@ -503,6 +503,17 @@ class ThemeEngine:
                 color: {self.colors['input_selection_text']};
             }}
 
+            QComboBox QAbstractItemView::item:disabled {{
+                background-color: transparent;
+                color: {self.colors['disabled_text']};
+                opacity: 0.6;
+            }}
+
+            QComboBox QAbstractItemView::item:disabled:hover {{
+                background-color: transparent;
+                color: {self.colors['disabled_text']};
+            }}
+
             /* SCROLLBARS */
             QScrollBar:vertical {{
                 background: {self.colors['scroll_track_background']};

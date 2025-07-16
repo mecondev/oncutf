@@ -252,9 +252,8 @@ class MetadataModule:
                     return hash_value
 
             # For other hash types, we would need to implement them
-            # For now, return "missing" for unsupported types
-            logger.info(f"[MetadataModule] Hash type {hash_type} not yet supported for {file_path}")
-            return "missing"
+            # For now, return "not_supported" for unsupported types
+            return "not_supported"
 
         except Exception as e:
             logger.warning(f"[MetadataModule] Error getting hash for {file_path}: {e}")

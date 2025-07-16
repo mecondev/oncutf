@@ -121,13 +121,18 @@ class MetadataWidget(QWidget):
     def populate_hash_options(self) -> None:
         """Populate hash options for the hash category."""
         hash_options = [
-            ("CRC32 Hash", "hash_crc32"),
-            ("MD5 Hash", "hash_md5"),
-            ("SHA1 Hash", "hash_sha1"),
-            ("SHA256 Hash", "hash_sha256"),
+            ("CRC32 Hash", "hash_crc32", True),  # Supported
+            ("MD5 Hash", "hash_md5", False),  # Not yet supported
+            ("SHA1 Hash", "hash_sha1", False),  # Not yet supported
+            ("SHA256 Hash", "hash_sha256", False),  # Not yet supported
         ]
-        for label, val in hash_options:
+        for label, val, enabled in hash_options:
+            # Get the row index before adding the item
+            row = self.options_combo.count()
             self.options_combo.addItem(label, userData=val)
+            if not enabled:
+                # Disable the item (make it non-selectable)
+                self.options_combo.model().item(row).setEnabled(False)
 
     def populate_metadata_keys(self) -> None:
         keys = self.get_available_metadata_keys()
@@ -139,9 +144,13 @@ class MetadataWidget(QWidget):
                 and hasattr(metadata_cache, "_memory_cache")
                 and metadata_cache._memory_cache
             ):
+                row = self.options_combo.count()
                 self.options_combo.addItem("(No metadata found in files)", userData=None)
+                self.options_combo.model().item(row).setEnabled(False)
             else:
+                row = self.options_combo.count()
                 self.options_combo.addItem("(No metadata loaded)", userData=None)
+                self.options_combo.model().item(row).setEnabled(False)
             return
 
         # Add metadata keys
@@ -275,6 +284,17 @@ class MetadataWidget(QWidget):
                 field = "hash_crc32"
             elif category == "metadata_keys":
                 field = "last_modified_yymmdd"  # Fallback
+
+        # For hash category, ensure we only return supported hash types
+        if category == "hash" and field and not field.startswith("hash_crc32"):
+            # If user somehow selected an unsupported hash, fallback to CRC32
+            field = "hash_crc32"
+
+        # For metadata_keys category, ensure we don't return None field
+        if category == "metadata_keys" and not field:
+            # If user somehow selected a disabled metadata item, fallback to file dates
+            category = "file_dates"
+            field = "last_modified_yymmdd"
 
         return {
             "type": "metadata",
