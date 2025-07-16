@@ -96,9 +96,11 @@ class PreviewManager:
         # Check if hash calculation is needed for hash modules
         if self._needs_hash_calculation(modules_data, selected_files):
             if not self._ask_user_for_hash_calculation(selected_files):
-                # User cancelled - return original names unchanged
+                # User cancelled - return original names unchanged but still show preview
                 name_pairs = [(f.filename, f.filename) for f in selected_files]
                 self.preview_map = {file.filename: file for file in selected_files}
+                # Always update preview tables even with no changes
+                self.update_preview_tables_from_pairs(name_pairs)
                 return name_pairs, False
 
         # Check if all modules are no-op
@@ -107,13 +109,20 @@ class PreviewManager:
 
         if is_noop:
             if not all_modules and not NameTransformModule.is_effective(post_transform):
+                # No modules at all - show empty preview
+                self.update_preview_tables_from_pairs([])
                 return [], False
             else:
+                # Modules exist but are no-op - show original names
                 name_pairs = [(f.filename, f.filename) for f in selected_files]
+                self.update_preview_tables_from_pairs(name_pairs)
                 return name_pairs, False
 
         name_pairs = self._generate_name_pairs(selected_files, modules_data, post_transform, metadata_cache)
         self._update_preview_map_with_new_names(name_pairs)
+
+        # Always update preview tables
+        self.update_preview_tables_from_pairs(name_pairs)
 
         has_changes = any(old_name != new_name for old_name, new_name in name_pairs)
         return name_pairs, has_changes

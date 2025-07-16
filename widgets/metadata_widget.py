@@ -106,6 +106,10 @@ class MetadataWidget(QWidget):
         category = self.category_combo.currentData()
         logger.debug(f"[MetadataWidget] Updating options for category: {category}")
 
+        # Store current category and option BEFORE checking hash selection
+        current_category = self.category_combo.currentData()
+        current_option = self.options_combo.currentData() if self.options_combo.count() > 0 else None
+
         # Handle hash category selection with dialog confirmation
         if category == "hash":
             if not self._check_hash_selection():
@@ -113,8 +117,10 @@ class MetadataWidget(QWidget):
                 self._rollback_to_previous_category()
                 return
 
-        # Store current category as previous for next time
-        self._previous_category = category
+        # Store current category as previous for next time (only if not cancelled)
+        self._previous_category = current_category
+        if current_option is not None:
+            self._previous_option = current_option
 
         self.options_combo.clear()
 
@@ -125,16 +131,11 @@ class MetadataWidget(QWidget):
         elif category == "metadata_keys":
             self.populate_metadata_keys()
 
-        # Μετά το update, αν υπάρχει προηγούμενο option, το επαναφέρουμε
-        if self._previous_option is not None:
-            idx = self.options_combo.findData(self._previous_option)
-            if idx != -1:
-                self.options_combo.setCurrentIndex(idx)
-            else:
-                # Fallback to first available option (usually "date")
-                self.options_combo.setCurrentIndex(0)
-                # Update stored option to match what was actually set
-                self._previous_option = self.options_combo.currentData()
+        # Set to first option by default (usually "date" for file_dates)
+        if self.options_combo.count() > 0:
+            self.options_combo.setCurrentIndex(0)
+            # Update stored option to match what was actually set
+            self._previous_option = self.options_combo.currentData()
 
         self.emit_if_changed()
 
@@ -158,19 +159,24 @@ class MetadataWidget(QWidget):
             file_paths = [file_item.full_path for file_item in selected_files]
 
             # Check which files have hashes using batch query
-            files_with_hash = hash_cache.get_files_with_hash(file_paths, "CRC32")
-            files_without_hash = [path for path in file_paths if path not in files_with_hash]
+            files_with_hash = hash_cache.get_files_with_hash_batch(file_paths, 'CRC32')
+
+            # Count files with and without hashes
+            with_hash_count = len(files_with_hash)
+            total_count = len(selected_files)
+
+            logger.debug(f"[MetadataWidget] Hash check: {with_hash_count}/{total_count} files have hashes")
 
             # If all files have hashes, proceed normally
-            if not files_without_hash:
+            if with_hash_count == total_count:
                 return True
 
-            # Show dialog asking user if they want to calculate missing hashes
-            return self._show_hash_calculation_dialog(len(files_with_hash), len(selected_files))
+            # If some files don't have hashes, show dialog
+            return self._show_hash_calculation_dialog(with_hash_count, total_count)
 
         except Exception as e:
-            logger.warning(f"[MetadataWidget] Error checking hash status: {e}")
-            # Fallback to individual file checking
+            logger.warning(f"[MetadataWidget] Error in optimized hash check: {e}")
+            # Fallback to individual file check
             return self._check_hash_selection_fallback(selected_files)
 
     def _check_hash_selection_fallback(self, selected_files) -> bool:

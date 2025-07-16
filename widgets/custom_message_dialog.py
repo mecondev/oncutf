@@ -126,6 +126,7 @@ class CustomMessageDialog(QDialog):
 
         # Don't clear wait cursor from parent - let it remain on the main window
         # The wait cursor should be visible on the main window but not on the dialog
+        # We need to ensure the dialog has normal cursor while parent keeps wait cursor
 
     def _on_button(self, btn_text: str):
         """

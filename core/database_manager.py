@@ -624,28 +624,47 @@ class DatabaseManager:
             return None
 
     def has_hash(self, file_path: str, algorithm: str = "CRC32") -> bool:
-        """Check if file has hash stored."""
-        try:
-            path_id = self.get_path_id(file_path)
-            if not path_id:
-                return False
+        """Check if hash exists for a file."""
+        norm_path = self._normalize_path(file_path)
 
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    """
-                    SELECT 1 FROM file_hashes
-                    WHERE path_id = ? AND algorithm = ?
-                    LIMIT 1
-                """,
-                    (path_id, algorithm),
-                )
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
 
-                return cursor.fetchone() is not None
+            cursor.execute("""
+                SELECT 1 FROM file_hashes h
+                JOIN file_paths p ON h.path_id = p.id
+                WHERE p.file_path = ? AND h.algorithm = ?
+                LIMIT 1
+            """, (norm_path, algorithm))
 
-        except Exception as e:
-            logger.error(f"[DatabaseManager] Error checking hash for {file_path}: {e}")
-            return False
+            return cursor.fetchone() is not None
+
+    def get_files_with_hash_batch(self, file_paths: List[str], algorithm: str = "CRC32") -> List[str]:
+        """Get all files from the list that have a hash stored using batch database query."""
+        if not file_paths:
+            return []
+
+        # Normalize all paths
+        norm_paths = [self._normalize_path(path) for path in file_paths]
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Create placeholders for the IN clause
+            placeholders = ','.join(['?' for _ in norm_paths])
+
+            cursor.execute(f"""
+                SELECT p.file_path FROM file_paths p
+                JOIN file_hashes h ON h.path_id = p.id
+                WHERE p.file_path IN ({placeholders}) AND h.algorithm = ?
+            """, norm_paths + [algorithm])
+
+            # Get all file paths that have hashes
+            files_with_hash = [row['file_path'] for row in cursor.fetchall()]
+
+            logger.debug(f"[DatabaseManager] Batch hash check: {len(files_with_hash)}/{len(file_paths)} files have {algorithm} hashes")
+
+            return files_with_hash
 
     # =====================================
     # Metadata Categories & Fields Management
