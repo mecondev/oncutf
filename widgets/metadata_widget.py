@@ -58,6 +58,7 @@ class MetadataWidget(QWidget):
         category_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
         self.category_combo = QComboBox()
         self.category_combo.addItem("File Dates", userData="file_dates")
+        self.category_combo.addItem("Hash", userData="hash")
         self.category_combo.addItem("EXIF/Metadata", userData="metadata_keys")
         self.category_combo.setFixedWidth(120)  # Reduced width by 10px
         self.category_combo.setFixedHeight(22)  # Match final transformer combo height
@@ -98,6 +99,8 @@ class MetadataWidget(QWidget):
 
         if category == "file_dates":
             self.populate_file_dates()
+        elif category == "hash":
+            self.populate_hash_options()
         elif category == "metadata_keys":
             self.populate_metadata_keys()
 
@@ -115,6 +118,17 @@ class MetadataWidget(QWidget):
         for label, val in file_date_options:
             self.options_combo.addItem(label, userData=val)
 
+    def populate_hash_options(self) -> None:
+        """Populate hash options for the hash category."""
+        hash_options = [
+            ("CRC32 Hash", "hash_crc32"),
+            ("MD5 Hash", "hash_md5"),
+            ("SHA1 Hash", "hash_sha1"),
+            ("SHA256 Hash", "hash_sha256"),
+        ]
+        for label, val in hash_options:
+            self.options_combo.addItem(label, userData=val)
+
     def populate_metadata_keys(self) -> None:
         keys = self.get_available_metadata_keys()
         if not keys:
@@ -129,15 +143,6 @@ class MetadataWidget(QWidget):
             else:
                 self.options_combo.addItem("(No metadata loaded)", userData=None)
             return
-
-        # Add hash options first
-        self.options_combo.addItem("CRC32 Hash", userData="hash_crc32")
-        self.options_combo.addItem("MD5 Hash", userData="hash_md5")
-        self.options_combo.addItem("SHA1 Hash", userData="hash_sha1")
-        self.options_combo.addItem("SHA256 Hash", userData="hash_sha256")
-
-        # Add separator
-        self.options_combo.addItem("─" * 20, userData=None)
 
         # Add metadata keys
         for key in sorted(keys):
@@ -259,10 +264,22 @@ class MetadataWidget(QWidget):
 
     def get_data(self) -> dict:
         """Returns the state for use in the rename system."""
+        category = self.category_combo.currentData() or "file_dates"
+        field = self.options_combo.currentData()
+
+        # Set default field based on category
+        if not field:
+            if category == "file_dates":
+                field = "last_modified_yymmdd"
+            elif category == "hash":
+                field = "hash_crc32"
+            elif category == "metadata_keys":
+                field = "last_modified_yymmdd"  # Fallback
+
         return {
             "type": "metadata",
-            "category": self.category_combo.currentData() or "file_dates",
-            "field": self.options_combo.currentData() or "last_modified_yymmdd",
+            "category": category,
+            "field": field,
         }
 
     def emit_if_changed(self) -> None:
@@ -280,19 +297,31 @@ class MetadataWidget(QWidget):
         """Refresh metadata keys and update the combo box if currently showing metadata."""
         logger.debug("[MetadataWidget] Refreshing metadata keys")
         self.clear_cache()
-        if self.category_combo.currentData() == "metadata_keys":
+        category = self.category_combo.currentData()
+        if category == "metadata_keys":
             logger.debug("[MetadataWidget] Currently showing metadata keys, updating combo box")
             self.populate_metadata_keys()
             self.emit_if_changed()
+        elif category == "hash":
+            logger.debug("[MetadataWidget] Currently showing hash options, updating combo box")
+            self.populate_hash_options()
+            self.emit_if_changed()
         else:
             logger.debug(
-                "[MetadataWidget] Not currently showing metadata keys, cache cleared for next time"
+                f"[MetadataWidget] Not currently showing metadata keys or hash, cache cleared for next time (category: {category})"
             )
 
     @staticmethod
     def is_effective(data: dict) -> bool:
         """
-        The metadata module is always effective because it always produces output
-        (either file dates or metadata values).
+        The metadata module is effective if it has a valid field for the selected category.
         """
-        return True
+        field = data.get("field")
+        category = data.get("category", "file_dates")
+
+        # For hash category, check if field is a valid hash type
+        if category == "hash":
+            return field and field.startswith("hash_")
+
+        # For other categories, any field is effective
+        return bool(field)

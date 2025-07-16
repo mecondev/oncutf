@@ -84,15 +84,6 @@ class MetadataModule:
             f"[MetadataModule] apply_from_data for {file_item.filename} with field='{field}', path='{path}'"
         )
 
-        # Handle hash fields
-        if field and field.startswith("hash_"):
-            try:
-                hash_type = field.replace("hash_", "").upper()
-                return MetadataModule._get_file_hash(path, hash_type)
-            except Exception as e:
-                logger.warning(f"[MetadataModule] Failed to get hash for {file_item.filename}: {e}")
-                return "invalid"
-
         # Handle filesystem-based date formats
         if field and field.startswith("last_modified_"):
             try:
@@ -130,6 +121,19 @@ class MetadataModule:
 
         # Handle category-based metadata access
         category = data.get("category", "file_dates")
+
+        if category == "hash" and field:
+            # Handle hash fields for the hash category
+            if field.startswith("hash_"):
+                try:
+                    hash_type = field.replace("hash_", "").upper()
+                    return MetadataModule._get_file_hash(path, hash_type)
+                except Exception as e:
+                    logger.warning(f"[MetadataModule] Failed to get hash for {file_item.filename}: {e}")
+                    return "invalid"
+            else:
+                logger.warning(f"[MetadataModule] Invalid hash field '{field}' for hash category")
+                return "invalid"
 
         if category == "metadata_keys" and field:
             # Access custom metadata key from file metadata
@@ -258,6 +262,13 @@ class MetadataModule:
 
     @staticmethod
     def is_effective(data: dict) -> bool:
-        # All metadata fields are effective, including last_modified
+        # All metadata fields are effective, including last_modified and hash
         field = data.get("field")
-        return bool(field)  # True if we have a valid field
+        category = data.get("category", "file_dates")
+
+        # For hash category, check if field is a valid hash type
+        if category == "hash":
+            return field and field.startswith("hash_")
+
+        # For other categories, any field is effective
+        return bool(field)
