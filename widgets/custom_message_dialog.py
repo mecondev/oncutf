@@ -121,6 +121,12 @@ class CustomMessageDialog(QDialog):
         from utils.multiscreen_helper import position_dialog_relative_to_parent
         position_dialog_relative_to_parent(self)
 
+        # Set normal cursor on the dialog itself (not wait cursor)
+        self.setCursor(Qt.ArrowCursor)  # type: ignore
+
+        # Don't clear wait cursor from parent - let it remain on the main window
+        # The wait cursor should be visible on the main window but not on the dialog
+
     def _on_button(self, btn_text: str):
         """
         Handles button click events, setting the selected button text

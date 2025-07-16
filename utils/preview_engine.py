@@ -48,6 +48,8 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
     """
     Applies the rename modules to the basename only. The extension (with the dot) is always appended at the end, unchanged.
     """
+    global _cache_timestamp
+
     original_base_name, ext = os.path.splitext(file_item.filename)
 
     # Performance optimization: Check cache first

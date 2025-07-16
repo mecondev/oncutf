@@ -274,7 +274,7 @@ PREVIEW_COLORS = {
 }
 
 PREVIEW_INDICATOR_SHAPE = "circle"
-PREVIEW_INDICATOR_SIZE = (10, 10)
+PREVIEW_INDICATOR_SIZE = (16, 16)
 PREVIEW_INDICATOR_BORDER = {"color": "#222222", "thickness": 1}
 
 # =====================================

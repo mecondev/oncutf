@@ -147,11 +147,28 @@ class PersistentHashCache:
         logger.debug(f"[PersistentHashCache] Integrity check requested for: {file_path}")
         return None  # Implementation would go here
 
-    def get_files_with_hash(self, hash_value: str, algorithm: str = 'CRC32') -> List[str]:
-        """Get all files that have a specific hash value."""
-        # This would require a new query method in database_manager_v2
-        # For now, return empty list
-        return []
+    def get_files_with_hash(self, file_paths: List[str], algorithm: str = 'CRC32') -> List[str]:
+        """Get all files from the list that have a hash stored."""
+        files_with_hash = []
+
+        for file_path in file_paths:
+            if self.has_hash(file_path, algorithm):
+                files_with_hash.append(file_path)
+
+        return files_with_hash
+
+    def get_files_with_hash_batch(self, file_paths: List[str], algorithm: str = 'CRC32') -> List[str]:
+        """Get all files from the list that have a hash stored using batch database query."""
+        try:
+            # Use database manager for batch query if available
+            if hasattr(self._db_manager, 'get_files_with_hash_batch'):
+                return self._db_manager.get_files_with_hash_batch(file_paths, algorithm)
+            else:
+                # Fallback to individual checking
+                return self.get_files_with_hash(file_paths, algorithm)
+        except Exception as e:
+            logger.warning(f"[PersistentHashCache] Batch query failed, falling back to individual checks: {e}")
+            return self.get_files_with_hash(file_paths, algorithm)
 
     def clear_memory_cache(self):
         """Clear memory cache (database remains intact)."""

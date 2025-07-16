@@ -40,6 +40,11 @@ class MetadataWidget(QWidget):
         self.setProperty("module", True)
         self._last_data: Optional[dict] = None  # For change tracking
         self._cached_metadata_keys: Optional[Set[str]] = None  # Cache for metadata keys
+
+        # Store previous category and option for rollback
+        self._previous_category = "file_dates"
+        self._previous_option = "last_modified_yymmdd"  # Default to first option
+
         self.setup_ui()
 
     def setup_ui(self) -> None:
@@ -92,10 +97,6 @@ class MetadataWidget(QWidget):
         # Schedule options update
         schedule_ui_update(self.update_options, 0)
 
-        # Store previous category and option for rollback
-        self._previous_category = "file_dates"
-        self._previous_option = None
-
     def _store_previous_option(self):
         # Αποθηκεύει το προηγούμενο επιλεγμένο option (field)
         self._previous_option = self.options_combo.currentData()
@@ -110,7 +111,6 @@ class MetadataWidget(QWidget):
             if not self._check_hash_selection():
                 # User cancelled or dialog failed, rollback to previous category/option
                 self._rollback_to_previous_category()
-                self._rollback_to_previous_option()
                 return
 
         # Store current category as previous for next time
@@ -130,7 +130,11 @@ class MetadataWidget(QWidget):
             idx = self.options_combo.findData(self._previous_option)
             if idx != -1:
                 self.options_combo.setCurrentIndex(idx)
-            self._previous_option = None
+            else:
+                # Fallback to first available option (usually "date")
+                self.options_combo.setCurrentIndex(0)
+                # Update stored option to match what was actually set
+                self._previous_option = self.options_combo.currentData()
 
         self.emit_if_changed()
 
@@ -145,6 +149,32 @@ class MetadataWidget(QWidget):
         if not selected_files:
             return True  # No files selected, allow hash selection
 
+        # Optimized hash check using database query
+        try:
+            from core.persistent_hash_cache import get_persistent_hash_cache
+            hash_cache = get_persistent_hash_cache()
+
+            # Get all file paths
+            file_paths = [file_item.full_path for file_item in selected_files]
+
+            # Check which files have hashes using batch query
+            files_with_hash = hash_cache.get_files_with_hash(file_paths, "CRC32")
+            files_without_hash = [path for path in file_paths if path not in files_with_hash]
+
+            # If all files have hashes, proceed normally
+            if not files_without_hash:
+                return True
+
+            # Show dialog asking user if they want to calculate missing hashes
+            return self._show_hash_calculation_dialog(len(files_with_hash), len(selected_files))
+
+        except Exception as e:
+            logger.warning(f"[MetadataWidget] Error checking hash status: {e}")
+            # Fallback to individual file checking
+            return self._check_hash_selection_fallback(selected_files)
+
+    def _check_hash_selection_fallback(self, selected_files) -> bool:
+        """Fallback method for hash checking when batch query fails."""
         # Check which files have hashes
         files_with_hash = 0
         total_files = len(selected_files)
@@ -258,11 +288,37 @@ class MetadataWidget(QWidget):
 
     def _rollback_to_previous_category(self):
         """Rollback combo selection to previous category."""
-        # Find the index of the previous category
-        for i in range(self.category_combo.count()):
-            if self.category_combo.itemData(i) == self._previous_category:
-                self.category_combo.setCurrentIndex(i)
-                break
+        # Temporarily block signals to prevent recursive calls
+        self.category_combo.blockSignals(True)
+        self.options_combo.blockSignals(True)
+
+        try:
+            # Find the index of the previous category
+            for i in range(self.category_combo.count()):
+                if self.category_combo.itemData(i) == self._previous_category:
+                    self.category_combo.setCurrentIndex(i)
+                    break
+
+            # Clear and repopulate options for the previous category
+            self.options_combo.clear()
+
+            if self._previous_category == "file_dates":
+                self.populate_file_dates()
+            elif self._previous_category == "hash":
+                self.populate_hash_options()
+            elif self._previous_category == "metadata_keys":
+                self.populate_metadata_keys()
+
+            # Also restore the previous option for that category
+            self._rollback_to_previous_option()
+
+        finally:
+            # Restore signals
+            self.category_combo.blockSignals(False)
+            self.options_combo.blockSignals(False)
+
+            # Emit change signal after rollback to trigger preview update
+            self.emit_if_changed()
 
     def _rollback_to_previous_option(self):
         # Επαναφέρει το options combo στην προηγούμενη επιλογή (αν υπάρχει)
@@ -273,9 +329,13 @@ class MetadataWidget(QWidget):
             else:
                 # Fallback to first available option (usually "date")
                 self.options_combo.setCurrentIndex(0)
+                # Update stored option to match what was actually set
+                self._previous_option = self.options_combo.currentData()
         else:
             # If no previous option, default to first option (usually "date")
             self.options_combo.setCurrentIndex(0)
+            # Update stored option to match what was actually set
+            self._previous_option = self.options_combo.currentData()
 
     def populate_file_dates(self) -> None:
         file_date_options = [
