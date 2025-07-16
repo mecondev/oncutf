@@ -487,14 +487,19 @@ class PreviewTablesView(QWidget):
 
     def _update_status_summary(self, stats: dict, icon_paths: dict) -> None:
         """Update status summary with statistics."""
+        from config import PREVIEW_INDICATOR_SIZE
+
+        # Get icon size from config
+        icon_width, icon_height = PREVIEW_INDICATOR_SIZE
+
         status_msg = (
-            f"<img src='{icon_paths['valid']}' width='14' height='14' style='vertical-align: middle';/>"
+            f"<img src='{icon_paths['valid']}' width='{icon_width}' height='{icon_height}' style='vertical-align: middle';/>"
             f"<span style='color:#ccc;'> Valid: {stats['valid']}</span>&nbsp;&nbsp;&nbsp;"
-            f"<img src='{icon_paths['unchanged']}' width='14' height='14' style='vertical-align: middle';/>"
+            f"<img src='{icon_paths['unchanged']}' width='{icon_width}' height='{icon_height}' style='vertical-align: middle';/>"
             f"<span style='color:#ccc;'> Unchanged: {stats['unchanged']}</span>&nbsp;&nbsp;&nbsp;"
-            f"<img src='{icon_paths['invalid']}' width='14' height='14' style='vertical-align: middle';/>"
+            f"<img src='{icon_paths['invalid']}' width='{icon_width}' height='{icon_height}' style='vertical-align: middle';/>"
             f"<span style='color:#ccc;'> Invalid: {stats['invalid']}</span>&nbsp;&nbsp;&nbsp;"
-            f"<img src='{icon_paths['duplicate']}' width='14' height='14' style='vertical-align: middle';/>"
+            f"<img src='{icon_paths['duplicate']}' width='{icon_width}' height='{icon_height}' style='vertical-align: middle';/>"
             f"<span style='color:#ccc;'> Duplicates: {stats['duplicate']}</span>"
         )
         self.status_updated.emit(status_msg)

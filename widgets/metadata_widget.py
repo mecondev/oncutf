@@ -41,6 +41,11 @@ class MetadataWidget(QWidget):
         self._last_data: Optional[dict] = None  # For change tracking
         self._cached_metadata_keys: Optional[Set[str]] = None  # Cache for metadata keys
 
+        # Store previous state for rollback
+        self._previous_category: Optional[str] = None
+        self._previous_field: Optional[str] = None
+        self._previous_option: Optional[str] = None
+
         self.setup_ui()
 
     def setup_ui(self) -> None:
@@ -86,16 +91,63 @@ class MetadataWidget(QWidget):
         layout.addLayout(options_row)
 
         # Connections
+        self.category_combo.currentIndexChanged.connect(self._store_previous_state)
         self.category_combo.currentIndexChanged.connect(self.update_options)
-        self.options_combo.currentIndexChanged.connect(self._store_previous_option)
+        self.options_combo.currentIndexChanged.connect(self._store_previous_state)
         self.options_combo.currentIndexChanged.connect(self.emit_if_changed)
 
         # Schedule options update
         schedule_ui_update(self.update_options, 0)
 
-    def _store_previous_option(self):
-        # Αποθηκεύει το προηγούμενο επιλεγμένο option (field)
+    def _store_previous_state(self):
+        """Store the previous state before any change for potential rollback."""
+        # Store previous category and field
+        self._previous_category = self.category_combo.currentData()
+        self._previous_field = self.options_combo.currentData()
         self._previous_option = self.options_combo.currentData()
+
+    def rollback_to_previous_state(self):
+        """Rollback to the previous state if available."""
+        if self._previous_category is not None:
+            # Temporarily disconnect signals to avoid storing state during rollback
+            self.category_combo.currentIndexChanged.disconnect()
+            self.options_combo.currentIndexChanged.disconnect()
+
+            try:
+                # Find and set the previous category
+                for i in range(self.category_combo.count()):
+                    if self.category_combo.itemData(i) == self._previous_category:
+                        self.category_combo.setCurrentIndex(i)
+                        break
+
+                # Manually update options for the previous category without triggering signals
+                category = self.category_combo.currentData()
+                self.options_combo.clear()
+
+                if category == "file_dates":
+                    self.populate_file_dates()
+                elif category == "hash":
+                    self.populate_hash_options()
+                elif category == "metadata_keys":
+                    self.populate_metadata_keys()
+
+                # Set to first option by default
+                if self.options_combo.count() > 0:
+                    self.options_combo.setCurrentIndex(0)
+
+                # Then find and set the previous field
+                if self._previous_field is not None:
+                    for i in range(self.options_combo.count()):
+                        if self.options_combo.itemData(i) == self._previous_field:
+                            self.options_combo.setCurrentIndex(i)
+                            break
+
+            finally:
+                # Reconnect signals
+                self.category_combo.currentIndexChanged.connect(self._store_previous_state)
+                self.category_combo.currentIndexChanged.connect(self.update_options)
+                self.options_combo.currentIndexChanged.connect(self._store_previous_state)
+                self.options_combo.currentIndexChanged.connect(self.emit_if_changed)
 
     def update_options(self) -> None:
         """Updates fields according to the selected category."""
@@ -130,20 +182,127 @@ class MetadataWidget(QWidget):
             self.options_combo.addItem(label, userData=val)
 
     def populate_hash_options(self) -> None:
-        """Populate hash options for the hash category."""
-        hash_options = [
-            ("CRC32 Hash", "hash_crc32", True),  # Supported
-            ("MD5 Hash", "hash_md5", False),  # Not yet supported
-            ("SHA1 Hash", "hash_sha1", False),  # Not yet supported
-            ("SHA256 Hash", "hash_sha256", False),  # Not yet supported
-        ]
-        for label, val, enabled in hash_options:
-            # Get the row index before adding the item
-            row = self.options_combo.count()
-            self.options_combo.addItem(label, userData=val)
-            if not enabled:
-                # Disable the item (make it non-selectable)
-                self.options_combo.model().item(row).setEnabled(False)
+        """Populate hash options with smart hash availability checking."""
+        self.options_combo.clear()
+
+        # Get selected files to check hash availability
+        selected_files = self._get_selected_files()
+
+        if not selected_files:
+            # No files selected - show all hash options but disable them
+            self.options_combo.addItem("CRC32 (No files selected)", userData="hash_crc32")
+            self.options_combo.addItem("MD5 (No files selected)", userData="hash_md5")
+            self.options_combo.addItem("SHA1 (No files selected)", userData="hash_sha1")
+            self.options_combo.addItem("SHA256 (No files selected)", userData="hash_sha256")
+
+            # Disable all options when no files are selected
+            for i in range(self.options_combo.count()):
+                self.options_combo.model().item(i).setEnabled(False)
+            return
+
+        # Check which files need hash calculation
+        files_needing_hash = []
+        for file_item in selected_files:
+            if not self._file_has_hash(file_item):
+                files_needing_hash.append(file_item)
+
+        if files_needing_hash:
+            # Some files need hash calculation - show dialog for all files
+            self._show_hash_calculation_dialog(files_needing_hash)
+        else:
+            # All files have hashes - show all options
+            self.options_combo.addItem("CRC32", userData="hash_crc32")
+            self.options_combo.addItem("MD5", userData="hash_md5")
+            self.options_combo.addItem("SHA1", userData="hash_sha1")
+            self.options_combo.addItem("SHA256", userData="hash_sha256")
+
+    def _get_selected_files(self):
+        """Get selected files from the main window."""
+        try:
+            # Try to get selected files from parent window
+            if self.parent_window and hasattr(self.parent_window, 'get_selected_files_ordered'):
+                return self.parent_window.get_selected_files_ordered()
+
+            # Try to get from ApplicationContext
+            context = self._get_app_context()
+            if context and hasattr(context, 'main_window'):
+                return context.main_window.get_selected_files_ordered()
+
+        except Exception as e:
+            logger.warning(f"[MetadataWidget] Error getting selected files: {e}")
+
+        return []
+
+    def _file_has_hash(self, file_item) -> bool:
+        """Check if a file has a hash value calculated."""
+        try:
+            # Check hash cache if available
+            from core.persistent_hash_cache import get_persistent_hash_cache
+            hash_cache = get_persistent_hash_cache()
+
+            return hash_cache.has_hash(file_item.full_path, 'CRC32')
+
+        except Exception as e:
+            logger.debug(f"[MetadataWidget] Error checking hash for {getattr(file_item, 'filename', 'unknown')}: {e}")
+            return False
+
+    def _show_hash_calculation_dialog(self, files_needing_hash):
+        """Show dialog to calculate hashes for all files that need them."""
+        try:
+            from widgets.custom_message_dialog import CustomMessageDialog
+
+            # Create dialog message
+            file_count = len(files_needing_hash)
+            message = f"{file_count} file(s) need hash calculation.\n\nWould you like to calculate hashes for all files now?\n\nThis will allow you to use hash values in your filename transformations."
+
+            # Show dialog
+            result = CustomMessageDialog.question(
+                self.parent_window,
+                "Hash Calculation Required",
+                message,
+                yes_text="Calculate Hashes",
+                no_text="Cancel"
+            )
+
+            if result:
+                # User chose to calculate hashes
+                self._calculate_hashes_for_files(files_needing_hash)
+            else:
+                # User cancelled - rollback to previous state
+                self.rollback_to_previous_state()
+
+        except Exception as e:
+            logger.error(f"[MetadataWidget] Error showing hash calculation dialog: {e}")
+            # Rollback on error
+            self.rollback_to_previous_state()
+
+    def _calculate_hashes_for_files(self, files_needing_hash):
+        """Calculate hashes for the given files."""
+        try:
+            # Get main window for hash calculation
+            main_window = None
+            if self.parent_window and hasattr(self.parent_window, 'main_window'):
+                main_window = self.parent_window.main_window
+            elif self.parent_window:
+                main_window = self.parent_window
+            else:
+                context = self._get_app_context()
+                if context and hasattr(context, 'main_window'):
+                    main_window = context.main_window
+
+            if main_window and hasattr(main_window, 'event_handler_manager'):
+                # Use the existing hash calculation method
+                main_window.event_handler_manager._handle_calculate_hashes(files_needing_hash)
+
+                # The hash calculation will trigger a preview update automatically
+                # No need to manually add options here
+            else:
+                logger.error("[MetadataWidget] Could not find main window for hash calculation")
+                self.rollback_to_previous_state()
+
+        except Exception as e:
+            logger.error(f"[MetadataWidget] Error calculating hashes: {e}")
+            self.rollback_to_previous_state()
 
     def populate_metadata_keys(self) -> None:
         keys = self.get_available_metadata_keys()

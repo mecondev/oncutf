@@ -64,16 +64,20 @@ def prepare_status_icons(base_dir: str = None) -> dict[str, str]:
 
     return ICON_PATHS
 
-def load_preview_status_icons(size: tuple[int, int] = (14, 14)) -> dict[str, QIcon]:
+def load_preview_status_icons(size: tuple[int, int] = None) -> dict[str, QIcon]:
     """
     Loads and scales preview status icons (valid, invalid, etc.) for use in the UI.
 
     Args:
-        size (tuple[int, int]): Size to scale icons to. Default is (14, 14).
+        size (tuple[int, int]): Size to scale icons to. Default uses PREVIEW_INDICATOR_SIZE from config.
 
     Returns:
         dict[str, QIcon]: Mapping from status to QIcon.
     """
+    # Use config size if not specified
+    if size is None:
+        size = PREVIEW_INDICATOR_SIZE
+
     paths = prepare_status_icons()  # ensures icons exist
     icon_map = {}
 

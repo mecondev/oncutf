@@ -9,6 +9,7 @@ Handles browse, folder import, table interactions, context menus, and user actio
 """
 
 import os
+import time
 from typing import List, Optional
 
 from config import STATUS_COLORS
@@ -2044,15 +2045,52 @@ class EventHandlerManager:
                 'all_tooltip': 'No files available'
             }
 
-        # Analyze hash state for selected files
+        start_time = time.time()
+
+        # Use batch query to check which files have hashes
         files_with_hash = []
         files_without_hash = []
 
-        for file_item in files:
-            if self._file_has_hash(file_item):
-                files_with_hash.append(file_item)
+        try:
+            # Get file paths
+            file_paths = [file_item.full_path for file_item in files]
+
+            # Use batch query to get files with hashes
+            if hasattr(self.parent_window, 'hash_cache') and hasattr(self.parent_window.hash_cache, 'get_files_with_hash_batch'):
+                files_with_hash_paths = self.parent_window.hash_cache.get_files_with_hash_batch(file_paths, 'CRC32')
+                files_with_hash_set = set(files_with_hash_paths)
+
+                # Categorize files based on batch query results
+                for file_item in files:
+                    if file_item.full_path in files_with_hash_set:
+                        files_with_hash.append(file_item)
+                    else:
+                        files_without_hash.append(file_item)
+
+                elapsed_time = time.time() - start_time
+                logger.debug(f"[EventHandler] Batch hash check completed in {elapsed_time:.3f}s: {len(files_with_hash)}/{len(files)} files have hashes")
             else:
-                files_without_hash.append(file_item)
+                # Fallback to individual checking
+                for file_item in files:
+                    if self._file_has_hash(file_item):
+                        files_with_hash.append(file_item)
+                    else:
+                        files_without_hash.append(file_item)
+
+                elapsed_time = time.time() - start_time
+                logger.debug(f"[EventHandler] Individual hash check completed in {elapsed_time:.3f}s: {len(files_with_hash)}/{len(files)} files have hashes")
+
+        except Exception as e:
+            logger.warning(f"[EventHandler] Batch hash check failed, falling back to individual checks: {e}")
+            # Fallback to individual checking
+            for file_item in files:
+                if self._file_has_hash(file_item):
+                    files_with_hash.append(file_item)
+                else:
+                    files_without_hash.append(file_item)
+
+            elapsed_time = time.time() - start_time
+            logger.debug(f"[EventHandler] Fallback hash check completed in {elapsed_time:.3f}s: {len(files_with_hash)}/{len(files)} files have hashes")
 
         total = len(files)
         with_hash_count = len(files_with_hash)

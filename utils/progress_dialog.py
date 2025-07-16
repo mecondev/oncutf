@@ -124,27 +124,27 @@ class ProgressDialog(QDialog):
         setup_dialog_size_and_center(self, self.waiting_widget)
 
     def _setup_wait_cursor(self) -> None:
-        """Setup wait cursor for the dialog and parent."""
-        # Set wait cursor on parent if available
+        """Setup wait cursor for the parent window only, not the dialog."""
+        # Set wait cursor on parent if available (main window)
         if self.parent():
             self.parent().setCursor(Qt.WaitCursor) # type: ignore
 
-        # Set wait cursor on the dialog itself
-        self.setCursor(Qt.WaitCursor) # type: ignore
+        # Set normal cursor on the dialog itself to avoid wait cursor on dialog
+        self.setCursor(Qt.ArrowCursor) # type: ignore
 
-        logger.debug("[ProgressDialog] Wait cursor set")
+        logger.debug("[ProgressDialog] Wait cursor set on parent, normal cursor on dialog")
 
     def _restore_cursors(self) -> None:
-        """Restore normal cursors on dialog and parent."""
+        """Restore normal cursors on parent window and dialog."""
         # Force cleanup of all override cursors
         force_restore_cursor()
 
-        # Set normal cursor on parent and dialog
+        # Set normal cursor on parent (main window) and dialog
         if self.parent():
             self.parent().setCursor(Qt.ArrowCursor) # type: ignore
         self.setCursor(Qt.ArrowCursor) # type: ignore
 
-        logger.debug("[ProgressDialog] Cursors restored")
+        logger.debug("[ProgressDialog] Cursors restored on parent and dialog")
 
     def keyPressEvent(self, event) -> None:
         """Handle ESC key for cancellation with improved responsiveness."""
