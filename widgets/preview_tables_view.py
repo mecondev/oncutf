@@ -28,6 +28,7 @@ from core.pyqt_imports import (
     QVBoxLayout,
     QWidget,
     pyqtSignal,
+    QIcon,
 )
 from utils.filename_validator import get_validation_error_message, is_validation_error_marker
 from utils.logger_factory import get_cached_logger
@@ -334,14 +335,12 @@ class PreviewTablesView(QWidget):
             self._adjust_table_widths()
 
     def update_from_pairs(self, name_pairs: list[Tuple[str, str]], preview_icons: dict, icon_paths: dict):
-        """Update preview tables with name pairs and status validation."""
-        # Disable updates to prevent flickering
-        self.old_names_table.setUpdatesEnabled(False)
-        self.new_names_table.setUpdatesEnabled(False)
-        self.icon_table.setUpdatesEnabled(False)
+        """Update preview tables with name pairs and status validation with performance optimizations."""
+        # Performance optimization: Disable all updates at once
+        self.setUpdatesEnabled(False)
 
         try:
-            # Clear tables
+            # Clear tables efficiently
             self.old_names_table.setRowCount(0)
             self.new_names_table.setRowCount(0)
             self.icon_table.setRowCount(0)
@@ -354,7 +353,7 @@ class PreviewTablesView(QWidget):
             # Hide placeholders
             self._set_placeholders_visible(False, defer_width_adjustment=True)
 
-            # Precompute duplicates
+            # Performance optimization: Precompute duplicates in one pass
             seen, duplicates = set(), set()
             for _, new_name in name_pairs:
                 if new_name in seen:
@@ -362,48 +361,107 @@ class PreviewTablesView(QWidget):
                 else:
                     seen.add(new_name)
 
-            # Process name pairs
+            # Performance optimization: Batch process name pairs
             stats = {"unchanged": 0, "invalid": 0, "duplicate": 0, "valid": 0}
-            self._process_name_pairs(name_pairs, duplicates, stats, preview_icons)
+            self._process_name_pairs_batch(name_pairs, duplicates, stats, preview_icons, icon_paths)
 
             # Update status
             self._update_status_summary(stats, icon_paths)
 
-            # Setup scrollbars
+            # Setup scrollbars with delay
             schedule_scroll_adjust(self._finalize_scrollbar_setup, 15)
 
         finally:
             # Re-enable updates
-            self.old_names_table.setUpdatesEnabled(True)
-            self.new_names_table.setUpdatesEnabled(True)
-            self.icon_table.setUpdatesEnabled(True)
+            self.setUpdatesEnabled(True)
 
-    def _process_name_pairs(self, name_pairs: list, duplicates: set, stats: dict, preview_icons: dict) -> None:
-        """Process name pairs and populate tables."""
-        for row, (old_name, new_name) in enumerate(name_pairs):
-            self.old_names_table.insertRow(row)
-            self.new_names_table.insertRow(row)
-            self.icon_table.insertRow(row)
+    def _process_name_pairs_batch(self, name_pairs: list[Tuple[str, str]], duplicates: set,
+                                 stats: dict, preview_icons: dict, icon_paths: dict):
+        """Process name pairs in batches for better performance."""
+        # Pre-allocate table rows
+        row_count = len(name_pairs)
+        self.old_names_table.setRowCount(row_count)
+        self.new_names_table.setRowCount(row_count)
+        self.icon_table.setRowCount(row_count)
 
-            # Create items
-            old_item = QTableWidgetItem(old_name)
-            new_item = QTableWidgetItem(new_name)
+        # Process in batches
+        batch_size = 50
+        for batch_start in range(0, row_count, batch_size):
+            batch_end = min(batch_start + batch_size, row_count)
+            self._process_name_pairs_batch_range(
+                name_pairs[batch_start:batch_end],
+                duplicates, stats, preview_icons,
+                batch_start, icon_paths
+            )
 
-            # Determine status
-            status, tooltip = self._determine_rename_status(old_name, new_name, duplicates)
-            stats[status] += 1
+    def _process_name_pairs_batch_range(self, name_pairs_batch: list[Tuple[str, str]],
+                                       duplicates: set, stats: dict, preview_icons: dict,
+                                       start_row: int, icon_paths: dict):
+        """Process a batch of name pairs.
+
+        Το icon_path είναι το path (διαδρομή) προς το αρχείο εικόνας (icon) που εμφανίζεται δίπλα στο νέο όνομα αρχείου στο preview table.
+        Κάθε κατάσταση (valid, invalid, unchanged, duplicate) έχει το δικό της εικονίδιο, π.χ. assets/valid.png, assets/invalid.png κλπ.
+        """
+        from core.pyqt_imports import QIcon, QTableWidgetItem
+        import os
+        for i, (old_name, new_name) in enumerate(name_pairs_batch):
+            row = start_row + i
+
+            # Set old name
+            self.old_names_table.setItem(row, 0, QTableWidgetItem(old_name))
+
+            # Set new name
+            new_name_item = QTableWidgetItem(new_name)
+            self.new_names_table.setItem(row, 0, new_name_item)
+
+            # Determine status and update stats
+            if old_name == new_name:
+                status = "unchanged"
+                icon_path = icon_paths.get("unchanged", "")
+                stats["unchanged"] += 1
+            elif new_name in duplicates:
+                status = "duplicate"
+                icon_path = icon_paths.get("duplicate", "")
+                stats["duplicate"] += 1
+            else:
+                # Check if filename is valid
+                try:
+                    from utils.validate_filename_text import is_valid_filename_text
+                    basename, _ = os.path.splitext(new_name)
+                    if is_valid_filename_text(basename):
+                        status = "valid"
+                        icon_path = icon_paths.get("valid", "")
+                        stats["valid"] += 1
+                    else:
+                        status = "invalid"
+                        icon_path = icon_paths.get("invalid", "")
+                        stats["invalid"] += 1
+                except ImportError:
+                    status = "valid"
+                    icon_path = icon_paths.get("valid", "")
+                    stats["valid"] += 1
 
             # Set icon
             icon_item = QTableWidgetItem()
-            icon = preview_icons.get(status)
-            if icon:
-                icon_item.setIcon(icon)
-            icon_item.setToolTip(tooltip)
-
-            # Insert items
-            self.old_names_table.setItem(row, 0, old_item)
-            self.new_names_table.setItem(row, 0, new_item)
+            if icon_path and os.path.exists(icon_path):
+                icon_item.setIcon(QIcon(icon_path))
             self.icon_table.setItem(row, 0, icon_item)
+
+            # Set tooltip for new name
+            if status != "valid":
+                tooltip = self._get_status_tooltip(status, new_name)
+                new_name_item.setToolTip(tooltip)
+
+    def _get_status_tooltip(self, status: str, new_name: str) -> str:
+        """Get tooltip text for a given status."""
+        if status == "duplicate":
+            return f"Duplicate filename: {new_name}"
+        elif status == "invalid":
+            return f"Invalid filename: {new_name}"
+        elif status == "unchanged":
+            return f"No change: {new_name}"
+        else:
+            return f"Valid filename: {new_name}"
 
     def _determine_rename_status(self, old_name: str, new_name: str, duplicates: set) -> tuple[str, str]:
         """Determine rename status and tooltip for a name pair."""

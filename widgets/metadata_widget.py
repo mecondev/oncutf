@@ -271,8 +271,10 @@ class MetadataWidget(QWidget):
             if idx != -1:
                 self.options_combo.setCurrentIndex(idx)
             else:
+                # Fallback to first available option (usually "date")
                 self.options_combo.setCurrentIndex(0)
         else:
+            # If no previous option, default to first option (usually "date")
             self.options_combo.setCurrentIndex(0)
 
     def populate_file_dates(self) -> None:

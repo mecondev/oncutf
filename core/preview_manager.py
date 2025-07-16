@@ -10,6 +10,7 @@ Extracted from MainWindow to separate business logic from UI.
 """
 
 import os
+import time
 from typing import Any, Dict, List, Tuple
 
 from models.file_item import FileItem
@@ -27,6 +28,12 @@ class PreviewManager:
         """Initialize PreviewManager with reference to parent window."""
         self.parent_window = parent_window
         self.preview_map: Dict[str, FileItem] = {}
+
+        # Performance optimization: Cache for preview results
+        self._preview_cache: Dict[str, Tuple[List[Tuple[str, str]], bool]] = {}
+        self._cache_timestamp = 0
+        self._cache_validity_duration = 0.1  # 100ms cache validity
+
         logger.debug("[PreviewManager] Initialized", extra={"dev_only": True})
 
     def generate_preview_names(
@@ -36,19 +43,62 @@ class PreviewManager:
         metadata_cache: Any,
         all_modules: List[Any]
     ) -> Tuple[List[Tuple[str, str]], bool]:
-        """Generate preview names for selected files."""
+        """Generate preview names for selected files with caching."""
         if not selected_files:
             return [], False
 
+        # Performance optimization: Check cache first
+        cache_key = self._generate_cache_key(selected_files, rename_data)
+        current_time = time.time()
+
+        if (cache_key in self._preview_cache and
+            current_time - self._cache_timestamp < self._cache_validity_duration):
+            logger.debug("[PreviewManager] Using cached preview result", extra={"dev_only": True})
+            return self._preview_cache[cache_key]
+
+        # Generate new preview
+        start_time = time.time()
+        result = self._generate_preview_names_internal(selected_files, rename_data, metadata_cache, all_modules)
+
+        # Cache the result
+        self._preview_cache[cache_key] = result
+        self._cache_timestamp = current_time
+
+        elapsed = time.time() - start_time
+        if elapsed > 0.1:  # Log slow preview generation
+            logger.info(f"[PreviewManager] Preview generation took {elapsed:.3f}s for {len(selected_files)} files")
+
+        return result
+
+    def _generate_cache_key(self, selected_files: List[FileItem], rename_data: Dict[str, Any]) -> str:
+        """Generate cache key for preview results."""
+        # Create a hash based on file paths and rename data
+        file_paths = tuple(f.full_path for f in selected_files)
+        import json
+        try:
+            rename_hash = hash(json.dumps(rename_data, sort_keys=True, default=str))
+        except (TypeError, ValueError):
+            rename_hash = hash(str(rename_data))
+
+        return f"{hash(file_paths)}_{rename_hash}"
+
+    def _generate_preview_names_internal(
+        self,
+        selected_files: List[FileItem],
+        rename_data: Dict[str, Any],
+        metadata_cache: Any,
+        all_modules: List[Any]
+    ) -> Tuple[List[Tuple[str, str]], bool]:
+        """Internal preview generation method."""
         modules_data = rename_data.get("modules", [])
         post_transform = rename_data.get("post_transform", {})
 
         # Check if hash calculation is needed for hash modules
         if self._needs_hash_calculation(modules_data, selected_files):
             if not self._ask_user_for_hash_calculation(selected_files):
-                # User cancelled - return empty preview with unchanged names
-                logger.info("[PreviewManager] User cancelled hash calculation, showing unchanged names")
+                # User cancelled - return original names unchanged
                 name_pairs = [(f.filename, f.filename) for f in selected_files]
+                self.preview_map = {file.filename: file for file in selected_files}
                 return name_pairs, False
 
         # Check if all modules are no-op
@@ -86,8 +136,12 @@ class PreviewManager:
         post_transform: Dict[str, Any],
         metadata_cache: Any
     ) -> List[Tuple[str, str]]:
-        """Generate name pairs by applying modules."""
+        """Generate name pairs by applying modules with performance optimizations."""
         name_pairs = []
+
+        # Performance optimization: Pre-compute common values
+        has_name_transform = NameTransformModule.is_effective(post_transform)
+
         for idx, file in enumerate(selected_files):
             try:
                 basename, extension = os.path.splitext(file.filename)
@@ -98,7 +152,7 @@ class PreviewManager:
                 else:
                     new_basename = new_fullname
 
-                if NameTransformModule.is_effective(post_transform):
+                if has_name_transform:
                     new_basename = NameTransformModule.apply_from_data(post_transform, new_basename)
 
                 if not self._is_valid_filename_text(new_basename):
@@ -137,6 +191,26 @@ class PreviewManager:
     def clear_preview_map(self) -> None:
         """Clear the preview map."""
         self.preview_map.clear()
+
+    def clear_cache(self) -> None:
+        """Clear the preview cache."""
+        self._preview_cache.clear()
+        self._cache_timestamp = 0
+
+    def clear_all_caches(self) -> None:
+        """Clear all caches used by the preview system."""
+        # Clear preview cache
+        self.clear_cache()
+
+        # Clear module cache
+        from utils.preview_engine import clear_module_cache
+        clear_module_cache()
+
+        # Clear metadata cache
+        from modules.metadata_module import MetadataModule
+        MetadataModule.clear_cache()
+
+        logger.debug("[PreviewManager] All caches cleared", extra={"dev_only": True})
 
     def compute_max_filename_width(self, file_list: List[FileItem]) -> int:
         """
@@ -192,7 +266,7 @@ class PreviewManager:
         else:
             logger.warning("[PreviewManager] Preview tables view not available")
 
-            def _needs_hash_calculation(self, modules_data: List[Dict[str, Any]], selected_files: List[FileItem]) -> bool:
+    def _needs_hash_calculation(self, modules_data: List[Dict[str, Any]], selected_files: List[FileItem]) -> bool:
         """
         Check if any hash modules are used and if selected files need hash calculation.
 
@@ -233,7 +307,7 @@ class PreviewManager:
 
         return False
 
-                    def _ask_user_for_hash_calculation(self, selected_files: List[FileItem]) -> bool:
+    def _ask_user_for_hash_calculation(self, selected_files: List[FileItem]) -> bool:
         """
         Ask user if they want to calculate missing hashes.
 
@@ -281,7 +355,7 @@ class PreviewManager:
             logger.warning(f"[PreviewManager] Error showing hash calculation dialog: {e}")
             return False
 
-        def _start_hash_calculation(self, selected_files: List[FileItem]) -> None:
+    def _start_hash_calculation(self, selected_files: List[FileItem]) -> None:
         """
         Start hash calculation for selected files that don't have hashes.
 
@@ -325,7 +399,7 @@ class PreviewManager:
         except Exception as e:
             logger.warning(f"[PreviewManager] Failed to start hash calculation: {e}")
 
-            def on_hash_calculation_completed(self) -> None:
+    def on_hash_calculation_completed(self) -> None:
         """
         Called when hash calculation is completed.
         Triggers preview regeneration if hash modules are active.
@@ -356,5 +430,3 @@ class PreviewManager:
 
         except Exception as e:
             logger.warning(f"[PreviewManager] Error handling hash calculation completion: {e}")
-
-

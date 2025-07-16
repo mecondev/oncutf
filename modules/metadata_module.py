@@ -11,6 +11,7 @@ metadata during batch renaming.
 """
 
 import os
+import time
 from datetime import datetime
 from typing import Optional
 
@@ -20,6 +21,14 @@ from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
+
+# Performance optimization: Cache for metadata lookups
+_metadata_cache: dict = {}
+_cache_timestamp = 0
+_cache_validity_duration = 0.1  # 100ms cache validity
+
+# Global cache variables to avoid UnboundLocalError
+_global_cache_timestamp = 0
 
 
 class MetadataModule:
@@ -62,27 +71,28 @@ class MetadataModule:
         Returns:
             str: The stringified metadata value or a fallback ("missing", "invalid")
         """
-        logger.debug(f"[MetadataModule] apply_from_data called with data: {data}")
+        global _metadata_cache, _global_cache_timestamp
+
+        # Performance optimization: Check cache first
+        cache_key = f"{file_item.full_path}_{hash(str(data))}"
+        current_time = time.time()
+
+        if (cache_key in _metadata_cache and
+            current_time - _global_cache_timestamp < _cache_validity_duration):
+            return _metadata_cache[cache_key]
 
         field = data.get("field")
         if not field:
-            logger.warning("[MetadataModule] Missing 'field' in data config.")
             return "invalid"
 
         path = file_item.full_path
         if not path:
-            logger.warning(f"[MetadataModule] No full_path available for {file_item.filename}")
             return "invalid"
 
         metadata = metadata_cache.get(path) if metadata_cache else {}
 
         if not isinstance(metadata, dict):
-            logger.warning(f"[MetadataModule] No metadata dict found for {path}")
             metadata = {}  # fallback to empty
-
-        logger.debug(
-            f"[MetadataModule] apply_from_data for {file_item.filename} with field='{field}', path='{path}'"
-        )
 
         # Handle filesystem-based date formats
         if field and field.startswith("last_modified_"):
@@ -91,32 +101,38 @@ class MetadataModule:
                 dt = datetime.fromtimestamp(ts)
 
                 if field == "last_modified_yymmdd":
-                    return dt.strftime("%y%m%d")
+                    result = dt.strftime("%y%m%d")
                 elif field == "last_modified_iso":
-                    return dt.strftime("%Y-%m-%d")
+                    result = dt.strftime("%Y-%m-%d")
                 elif field == "last_modified_eu":
-                    return dt.strftime("%d/%m/%Y")
+                    result = dt.strftime("%d/%m/%Y")
                 elif field == "last_modified_us":
-                    return dt.strftime("%m-%d-%Y")
+                    result = dt.strftime("%m-%d-%Y")
                 elif field == "last_modified_year":
-                    return dt.strftime("%Y")
+                    result = dt.strftime("%Y")
                 elif field == "last_modified_month":
-                    return dt.strftime("%Y-%m")
+                    result = dt.strftime("%Y-%m")
                 else:
                     # Fallback to YYMMDD format for unknown last_modified variants
-                    return dt.strftime("%y%m%d")
+                    result = dt.strftime("%y%m%d")
+
+                # Cache the result
+                _metadata_cache[cache_key] = result
+                _global_cache_timestamp = current_time
+                return result
 
             except Exception as e:
-                logger.warning(f"[MetadataModule] Failed to read last modified time: {e}")
                 return "invalid"
 
         # Legacy support for old "last_modified" field name
         if field == "last_modified":
             try:
                 ts = os.path.getmtime(path)
-                return datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
+                result = datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
+                _metadata_cache[cache_key] = result
+                _global_cache_timestamp = current_time
+                return result
             except Exception as e:
-                logger.warning(f"[MetadataModule] Failed to read last modified time: {e}")
                 return "invalid"
 
         # Handle category-based metadata access
@@ -127,51 +143,48 @@ class MetadataModule:
             if field.startswith("hash_"):
                 try:
                     hash_type = field.replace("hash_", "").upper()
-                    return MetadataModule._get_file_hash(path, hash_type)
+                    result = MetadataModule._get_file_hash(path, hash_type)
+                    _metadata_cache[cache_key] = result
+                    _global_cache_timestamp = current_time
+                    return result
                 except Exception as e:
-                    logger.warning(f"[MetadataModule] Failed to get hash for {file_item.filename}: {e}")
                     return "invalid"
             else:
-                logger.warning(f"[MetadataModule] Invalid hash field '{field}' for hash category")
                 return "invalid"
 
         if category == "metadata_keys" and field:
             # Access custom metadata key from file metadata
             value = metadata.get(field)
             if value is None:
-                logger.info(
-                    f"[MetadataModule] No '{field}' field in metadata for {file_item.filename}"
-                )
                 return "missing"
 
             # Format the value appropriately and clean it for filename safety
             try:
                 cleaned_value = MetadataModule.clean_metadata_value(str(value).strip())
+                _metadata_cache[cache_key] = cleaned_value
+                _global_cache_timestamp = current_time
                 return cleaned_value
             except Exception as e:
-                logger.warning(
-                    f"[MetadataModule] Failed to stringify metadata value for '{field}': {e}"
-                )
                 return "invalid"
 
         # Handle legacy metadata-based fields for backwards compatibility
         if field == "creation_date":
             value = metadata.get("creation_date") or metadata.get("date_created")
             if not value:
-                logger.info(
-                    f"[MetadataModule] No 'creation_date' field in metadata for {file_item.filename}"
-                )
                 return "missing"
-            return MetadataModule.clean_metadata_value(str(value))
+            result = MetadataModule.clean_metadata_value(str(value))
+            _metadata_cache[cache_key] = result
+            _global_cache_timestamp = current_time
+            return result
 
         if field == "date":
             value = metadata.get("date")
             if not value:
-                logger.info(
-                    f"[MetadataModule] No 'date' field in metadata for {file_item.filename}"
-                )
                 return "missing"
-            return MetadataModule.clean_metadata_value(str(value))
+            result = MetadataModule.clean_metadata_value(str(value))
+            _metadata_cache[cache_key] = result
+            _global_cache_timestamp = current_time
+            return result
 
         # === Generic metadata field fallback using centralized mapper ===
         if field:
@@ -193,28 +206,33 @@ class MetadataModule:
                                     cleaned_value = MetadataModule.clean_metadata_value(
                                         str(raw_value).strip()
                                     )
+                                    _metadata_cache[cache_key] = cleaned_value
+                                    _global_cache_timestamp = current_time
                                     return cleaned_value
                         return "missing"
             except ImportError:
                 # Fallback if mapper not available
                 pass
 
-            # Original direct lookup fallback
-            value = metadata.get(field)
-            if value is None:
-                logger.warning(f"[MetadataModule] Field '{field}' not found in metadata for {path}")
-                return "missing"
-
+        # Final fallback: try direct metadata access
+        value = metadata.get(field)
+        if value is not None:
             try:
                 cleaned_value = MetadataModule.clean_metadata_value(str(value).strip())
+                _metadata_cache[cache_key] = cleaned_value
+                _global_cache_timestamp = current_time
                 return cleaned_value
             except Exception as e:
-                logger.warning(f"[MetadataModule] Failed to stringify metadata value: {e}")
                 return "invalid"
 
-        # No valid field specified
-        logger.warning("[MetadataModule] No valid field specified in data config")
-        return "invalid"
+        return "missing"
+
+    @staticmethod
+    def clear_cache():
+        """Clear the metadata cache."""
+        global _metadata_cache, _global_cache_timestamp
+        _metadata_cache.clear()
+        _global_cache_timestamp = 0
 
     @staticmethod
     def _get_file_hash(file_path: str, hash_type: str) -> str:

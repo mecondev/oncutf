@@ -292,6 +292,10 @@ class SelectionManager:
         self._last_selected_rows = selected_rows[:]
         self._last_preview_update_time = time.time()
 
+        # Performance optimization: Clear preview caches when selection changes
+        if hasattr(self.parent_window, 'utility_manager'):
+            self.parent_window.utility_manager.clear_preview_caches()
+
         # Block signals to prevent loops
         file_table_view = getattr(self.parent_window, 'file_table_view', None)
         if file_table_view:

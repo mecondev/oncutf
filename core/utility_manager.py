@@ -237,8 +237,17 @@ class UtilityManager:
         # Call the original closeEvent
         super(type(self.main_window), self.main_window).closeEvent(event)
 
+    def clear_preview_caches(self) -> None:
+        """Clear all preview-related caches when files change."""
+        if hasattr(self.main_window, 'preview_manager'):
+            self.main_window.preview_manager.clear_all_caches()
+
+        # Reset cache hashes
+        self._last_selected_files_hash = None
+        self._last_rename_data_hash = None
+
     def generate_preview_names(self) -> None:
-        """Generate new preview names for all selected files using current rename modules."""
+        """Generate preview names for selected files with performance optimizations."""
         from utils.cursor_helper import wait_cursor
 
         with wait_cursor():
@@ -268,18 +277,28 @@ class UtilityManager:
                 self.main_window.rename_button.setEnabled(False)
                 return
 
-            # Generate previews
-            all_modules = self.main_window.rename_modules_area.get_all_module_instances()
-            name_pairs, has_changes = self.main_window.preview_manager.generate_preview_names(
-                selected_files, rename_data, self.main_window.metadata_cache, all_modules
-            )
+            # Performance optimization: Block UI updates during preview generation
+            if hasattr(self.main_window, 'preview_tables_view'):
+                self.main_window.preview_tables_view.setUpdatesEnabled(False)
 
-            # Update UI
-            self.main_window.preview_map = self.main_window.preview_manager.get_preview_map()
-            self.main_window.update_preview_tables_from_pairs(name_pairs)
+            try:
+                # Generate previews using the optimized preview manager
+                all_modules = self.main_window.rename_modules_area.get_all_module_instances()
+                name_pairs, has_changes = self.main_window.preview_manager.generate_preview_names(
+                    selected_files, rename_data, self.main_window.metadata_cache, all_modules
+                )
 
-            # Handle rename button state
-            self._update_rename_button_state(name_pairs, has_changes)
+                # Update UI components
+                self.main_window.preview_map = self.main_window.preview_manager.get_preview_map()
+                self.main_window.update_preview_tables_from_pairs(name_pairs)
+
+                # Handle rename button state
+                self._update_rename_button_state(name_pairs, has_changes)
+
+            finally:
+                # Re-enable UI updates
+                if hasattr(self.main_window, 'preview_tables_view'):
+                    self.main_window.preview_tables_view.setUpdatesEnabled(True)
 
     def _update_rename_button_state(self, name_pairs: list, has_changes: bool) -> None:
         """Update rename button state and tooltip."""
