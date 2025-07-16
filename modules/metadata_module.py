@@ -219,7 +219,7 @@ class MetadataModule:
     @staticmethod
     def _get_file_hash(file_path: str, hash_type: str) -> str:
         """
-        Get file hash using the hash cache or calculate it.
+        Get file hash using the hash cache only. Does not calculate hashes automatically.
 
         Args:
             file_path: Path to the file
@@ -229,7 +229,7 @@ class MetadataModule:
             str: Hash value or "missing" if not available
         """
         try:
-            # Try to get hash from cache first
+            # Try to get hash from cache only
             from core.persistent_hash_cache import get_persistent_hash_cache
 
             hash_cache = get_persistent_hash_cache()
@@ -240,20 +240,8 @@ class MetadataModule:
                 if hash_value:
                     return hash_value
 
-            # If not in cache, try to calculate it
-            from core.hash_manager import HashManager
-
-            hash_manager = HashManager()
-
-            # For now, only CRC32 is supported by HashManager
-            if hash_type == "CRC32":
-                hash_value = hash_manager.calculate_hash(file_path)
-                if hash_value:
-                    return hash_value
-
-            # For other hash types, we would need to implement them
-            # For now, return "not_supported" for unsupported types
-            return "not_supported"
+            # Hash not found in cache - return "missing" instead of calculating
+            return "missing"
 
         except Exception as e:
             logger.warning(f"[MetadataModule] Error getting hash for {file_path}: {e}")

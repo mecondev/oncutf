@@ -91,10 +91,24 @@ class MetadataWidget(QWidget):
         # Schedule options update
         schedule_ui_update(self.update_options, 0)
 
+        # Store previous category for rollback
+        self._previous_category = "file_dates"
+
     def update_options(self) -> None:
         """Updates fields according to the selected category."""
         category = self.category_combo.currentData()
         logger.debug(f"[MetadataWidget] Updating options for category: {category}")
+
+        # Handle hash category selection with dialog confirmation
+        if category == "hash":
+            if not self._check_hash_selection():
+                # User cancelled or dialog failed, rollback to previous category
+                self._rollback_to_previous_category()
+                return
+
+        # Store current category as previous for next time
+        self._previous_category = category
+
         self.options_combo.clear()
 
         if category == "file_dates":
@@ -105,6 +119,136 @@ class MetadataWidget(QWidget):
             self.populate_metadata_keys()
 
         self.emit_if_changed()
+
+    def _check_hash_selection(self) -> bool:
+        """
+        Check if selected files have hashes and show dialog if needed.
+
+        Returns:
+            bool: True if user wants to proceed, False if cancelled
+        """
+        selected_files = self._get_selected_files()
+        if not selected_files:
+            return True  # No files selected, allow hash selection
+
+        # Check which files have hashes
+        files_with_hash = 0
+        total_files = len(selected_files)
+
+        for file_item in selected_files:
+            if self._file_has_hash(file_item):
+                files_with_hash += 1
+
+        # If all files have hashes, proceed normally
+        if files_with_hash == total_files:
+            return True
+
+        # Show dialog asking user if they want to calculate missing hashes
+        return self._show_hash_calculation_dialog(files_with_hash, total_files)
+
+    def _file_has_hash(self, file_item) -> bool:
+        """Check if a file has a hash calculated."""
+        try:
+            from core.persistent_hash_cache import get_persistent_hash_cache
+            cache = get_persistent_hash_cache()
+            return cache.has_hash(file_item.full_path, "CRC32")
+        except Exception:
+            return False
+
+    def _get_selected_files(self):
+        """Get currently selected files."""
+        # Try to get files via parent window
+        if self.parent_window:
+            if hasattr(self.parent_window, "get_selected_files_ordered"):
+                return self.parent_window.get_selected_files_ordered()
+            elif hasattr(self.parent_window, "file_model") and hasattr(self.parent_window, "file_table_view"):
+                # Fallback method
+                selected_rows = self.parent_window.file_table_view._get_current_selection()
+                return [self.parent_window.file_model.files[r] for r in selected_rows
+                       if 0 <= r < len(self.parent_window.file_model.files)]
+
+        # Try via ApplicationContext
+        context = self._get_app_context()
+        if context and hasattr(context, "get_selected_files"):
+            return context.get_selected_files()
+
+        return []
+
+    def _show_hash_calculation_dialog(self, with_hash: int, total: int) -> bool:
+        """
+        Show dialog asking user if they want to calculate missing hashes.
+
+        Args:
+            with_hash: Number of files that have hashes
+            total: Total number of selected files
+
+        Returns:
+            bool: True if user wants to proceed, False if cancelled
+        """
+        from widgets.custom_message_dialog import CustomMessageDialog
+
+        message = f"Not all selected files have a calculated hash (only {with_hash} out of {total} files).\nCalculating hashes may take some time.\nWould you like to calculate the missing hashes now?"
+
+        dialog = CustomMessageDialog(
+            title="Some files are missing hash values",
+            message=message,
+            buttons=["OK", "Cancel"],
+            parent=self.window() if self.window() else None
+        )
+
+        dialog.exec_()
+
+        if dialog.selected == "OK":
+            # Start hash calculation for files that don't have hashes
+            self._start_hash_calculation()
+            return True
+        else:
+            return False
+
+    def _start_hash_calculation(self):
+        """Start hash calculation for selected files that don't have hashes."""
+        selected_files = self._get_selected_files()
+        if not selected_files:
+            return
+
+        # Filter files that don't have hashes
+        files_without_hash = []
+        for file_item in selected_files:
+            if not self._file_has_hash(file_item):
+                files_without_hash.append(file_item)
+
+        if not files_without_hash:
+            return
+
+        # Start hash calculation using the existing system
+        try:
+            # Try to use ApplicationService if available
+            context = self._get_app_context()
+            if context and hasattr(context, "main_window") and hasattr(context.main_window, "application_service"):
+                context.main_window.application_service.calculate_hash_selected()
+            # Fallback to direct hash loading
+            elif self.parent_window and hasattr(self.parent_window, "event_handler_manager"):
+                self.parent_window.event_handler_manager._handle_calculate_hashes(selected_files)
+            # Fallback to UnifiedMetadataManager
+            elif self.parent_window and hasattr(self.parent_window, "unified_metadata_manager"):
+                self.parent_window.unified_metadata_manager.load_hashes_for_files(
+                    files_without_hash, source="metadata_widget_hash_selection"
+                )
+            # Final fallback to DirectMetadataLoader
+            elif self.parent_window and hasattr(self.parent_window, "direct_metadata_loader"):
+                self.parent_window.direct_metadata_loader.load_hashes_for_files(
+                    files_without_hash, source="metadata_widget_hash_selection"
+                )
+        except Exception as e:
+            logger.warning(f"[MetadataWidget] Failed to start hash calculation: {e}")
+
+    def _rollback_to_previous_category(self):
+        """Rollback combo selection to previous category."""
+        # Find the index of the previous category
+        for i in range(self.category_combo.count()):
+            if self.category_combo.itemData(i) == self._previous_category:
+                self.category_combo.setCurrentIndex(i)
+                break
 
     def populate_file_dates(self) -> None:
         file_date_options = [
