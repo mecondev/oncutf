@@ -188,16 +188,35 @@ class MetadataWidget(QWidget):
         # Get selected files to check hash availability
         selected_files = self._get_selected_files()
 
+        # Get supported hash algorithms
+        supported_algorithms = self._get_supported_hash_algorithms()
+
         if not selected_files:
             # No files selected - show all hash options but disable them
-            self.options_combo.addItem("CRC32 (No files selected)", userData="hash_crc32")
-            self.options_combo.addItem("MD5 (No files selected)", userData="hash_md5")
-            self.options_combo.addItem("SHA1 (No files selected)", userData="hash_sha1")
-            self.options_combo.addItem("SHA256 (No files selected)", userData="hash_sha256")
+            hash_options = [
+                ("CRC32", "hash_crc32"),
+                ("MD5", "hash_md5"),
+                ("SHA1", "hash_sha1"),
+                ("SHA256", "hash_sha256")
+            ]
+
+            for label, user_data in hash_options:
+                algorithm = user_data.replace("hash_", "").upper()
+                if algorithm in supported_algorithms:
+                    self.options_combo.addItem(label, userData=user_data)
+                else:
+                    # Add disabled item with indication
+                    self.options_combo.addItem(f"{label} (not supported)", userData=user_data)
 
             # Disable all options when no files are selected
             for i in range(self.options_combo.count()):
-                self.options_combo.model().item(i).setEnabled(False)
+                algorithm = self.options_combo.itemData(i).replace("hash_", "").upper()
+                if algorithm not in supported_algorithms:
+                    # Keep unsupported algorithms disabled permanently
+                    self.options_combo.model().item(i).setEnabled(False)
+                else:
+                    # Disable supported algorithms only because no files selected
+                    self.options_combo.model().item(i).setEnabled(False)
             return
 
         # Check which files need hash calculation
@@ -210,11 +229,24 @@ class MetadataWidget(QWidget):
             # Some files need hash calculation - show dialog for all files
             self._show_hash_calculation_dialog(files_needing_hash)
         else:
-            # All files have hashes - show all options
-            self.options_combo.addItem("CRC32", userData="hash_crc32")
-            self.options_combo.addItem("MD5", userData="hash_md5")
-            self.options_combo.addItem("SHA1", userData="hash_sha1")
-            self.options_combo.addItem("SHA256", userData="hash_sha256")
+            # All files have hashes - show all options but enable only supported ones
+            hash_options = [
+                ("CRC32", "hash_crc32"),
+                ("MD5", "hash_md5"),
+                ("SHA1", "hash_sha1"),
+                ("SHA256", "hash_sha256")
+            ]
+
+            for label, user_data in hash_options:
+                algorithm = user_data.replace("hash_", "").upper()
+                if algorithm in supported_algorithms:
+                    self.options_combo.addItem(label, userData=user_data)
+                else:
+                    # Add disabled item with indication
+                    self.options_combo.addItem(f"{label} (not supported)", userData=user_data)
+                    # Disable the item
+                    item_index = self.options_combo.count() - 1
+                    self.options_combo.model().item(item_index).setEnabled(False)
 
     def _get_selected_files(self):
         """Get selected files from the main window."""
@@ -456,9 +488,15 @@ class MetadataWidget(QWidget):
                 field = "last_modified_yymmdd"  # Fallback
 
         # For hash category, ensure we only return supported hash types
-        if category == "hash" and field and not field.startswith("hash_crc32"):
-            # If user somehow selected an unsupported hash, fallback to CRC32
-            field = "hash_crc32"
+        if category == "hash" and field:
+            # Check if the selected hash algorithm is supported
+            algorithm = field.replace("hash_", "").upper()
+            supported_algorithms = self._get_supported_hash_algorithms()
+
+            if algorithm not in supported_algorithms:
+                # If user somehow selected an unsupported hash, fallback to CRC32
+                logger.warning(f"[MetadataWidget] Unsupported hash algorithm '{algorithm}', falling back to CRC32")
+                field = "hash_crc32"
 
         # For metadata_keys category, ensure we don't return None field
         if category == "metadata_keys" and not field:
@@ -515,3 +553,8 @@ class MetadataWidget(QWidget):
 
         # For other categories, any field is effective
         return bool(field)
+
+    def _get_supported_hash_algorithms(self) -> set:
+        """Get list of supported hash algorithms from the async operations manager."""
+        # Based on async_operations_manager.py supported algorithms
+        return {"CRC32", "MD5", "SHA256"}
