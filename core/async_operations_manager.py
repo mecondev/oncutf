@@ -136,12 +136,8 @@ class AsyncFileOperations:
                 import zlib
                 hash_obj = zlib.crc32
                 hash_value = 0
-            elif algorithm == 'MD5':
-                hash_obj = hashlib.md5()
-            elif algorithm == 'SHA256':
-                hash_obj = hashlib.sha256()
             else:
-                logger.error(f"[AsyncFileOps] Unsupported hash algorithm: {algorithm}")
+                logger.error(f"[AsyncFileOps] Unsupported hash algorithm: {algorithm}. Only CRC32 is supported.")
                 return None
 
             file_size = os.path.getsize(file_path)

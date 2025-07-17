@@ -241,7 +241,7 @@ class MetadataModule:
 
         Args:
             file_path: Path to the file
-            hash_type: Type of hash (CRC32, MD5, SHA1, SHA256)
+            hash_type: Type of hash (CRC32 only)
 
         Returns:
             str: Hash value or "missing" if not available

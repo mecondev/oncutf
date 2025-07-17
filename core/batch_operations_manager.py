@@ -101,7 +101,7 @@ class BatchOperationsManager:
         )
         self._queue_operation(operation)
 
-    def queue_hash_store(self, file_path: str, hash_value: str, algorithm: str = 'md5',
+    def queue_hash_store(self, file_path: str, hash_value: str, algorithm: str = 'crc32',
                         callback: Optional[Callable] = None, priority: int = 50) -> None:
         """Queue a hash cache store operation for batching."""
         operation = BatchOperation(
@@ -345,14 +345,14 @@ class BatchOperationsManager:
                         cache.store_hash(
                             operation.key,
                             operation.data['hash_value'],
-                            operation.data.get('algorithm', 'md5')
+                            operation.data.get('algorithm', 'crc32')
                         )
                     else:
                         # Fallback to direct database access
                         cache._db_manager.store_hash(
                             operation.key,
                             operation.data['hash_value'],
-                            operation.data.get('algorithm', 'md5')
+                            operation.data.get('algorithm', 'crc32')
                         )
 
                     success_count += 1
