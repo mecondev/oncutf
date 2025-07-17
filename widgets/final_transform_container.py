@@ -112,6 +112,8 @@ class FinalTransformContainer(QWidget):
         self.case_combo.addItems(["original", "lower", "UPPER", "Capitalize"])
         self.case_combo.setFixedWidth(116)  # Reduced by 10px
         self.case_combo.setFixedHeight(18)
+        # Ensure combo box drops down instead of popping up
+        self.case_combo.view().window().setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
         self.case_combo.currentIndexChanged.connect(self._on_value_change)
 
         # Add to case row: Label + Combo (left), Stretch (middle), Add Button (right)
@@ -134,6 +136,8 @@ class FinalTransformContainer(QWidget):
         self.separator_combo.addItems(["as-is", "snake_case", "kebab-case", "space"])
         self.separator_combo.setFixedWidth(116)  # Reduced by 10px
         self.separator_combo.setFixedHeight(18)
+        # Ensure combo box drops down instead of popping up
+        self.separator_combo.view().window().setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
         self.separator_combo.currentIndexChanged.connect(self._on_value_change)
 
         # Add to separator row: Label + Combo (left), Stretch (middle), Remove Button (right)

@@ -27,9 +27,6 @@ class BaseRenameModule(QWidget):
         self._last_value: str = ""
         self._is_validating: bool = False
 
-        # Ensure theme inheritance for all modules
-        self._ensure_theme_inheritance()
-
     def emit_if_changed(self, value: str) -> None:
         """
         Emits the updated signal only if the value differs from the last known.
