@@ -27,6 +27,9 @@ class BaseRenameModule(QWidget):
         self._last_value: str = ""
         self._is_validating: bool = False
 
+        # Ensure theme inheritance for all modules
+        self._ensure_theme_inheritance()
+
     def emit_if_changed(self, value: str) -> None:
         """
         Emits the updated signal only if the value differs from the last known.
@@ -60,3 +63,79 @@ class BaseRenameModule(QWidget):
         By default, delegates to the staticmethod is_effective(data).
         """
         return self.__class__.is_effective(self.get_data())
+
+    def _ensure_theme_inheritance(self) -> None:
+        """
+        Ensure that child widgets inherit theme styles properly.
+        This is needed because child widgets sometimes don't inherit
+        the global application stylesheet correctly.
+
+        Override this method in subclasses to provide specific styling.
+        """
+        try:
+            # Get theme colors
+            from utils.theme_engine import ThemeEngine
+            theme = ThemeEngine()
+
+            # Apply base module styling - minimal styles to avoid affecting combo boxes
+            module_styles = f"""
+                QLabel {{
+                    background-color: transparent;
+                    color: {theme.get_color('app_text')};
+                    border: none;
+                    padding: 2px;
+                    margin: 0px;
+                }}
+
+                QLineEdit {{
+                    background-color: {theme.get_color('input_background')};
+                    border: 1px solid {theme.get_color('input_border')};
+                    border-radius: 4px;
+                    color: {theme.get_color('input_text')};
+                    padding: 2px 8px;
+                    font-family: "{theme.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                    font-size: {theme.fonts['base_size']};
+                }}
+
+                QLineEdit:hover {{
+                    background-color: {theme.get_color('input_background_hover')};
+                    border-color: {theme.get_color('input_border_hover')};
+                }}
+
+                QLineEdit:focus {{
+                    background-color: {theme.get_color('input_background_focus')};
+                    border-color: {theme.get_color('input_border_focus')};
+                }}
+
+                QPushButton {{
+                    background-color: {theme.get_color('button_background')};
+                    color: {theme.get_color('button_text')};
+                    border: 1px solid {theme.get_color('button_border')};
+                    border-radius: 4px;
+                    padding: 4px 12px;
+                    font-family: "{theme.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                    font-size: {theme.fonts['base_size']};
+                }}
+
+                QPushButton:hover {{
+                    background-color: {theme.get_color('button_background_hover')};
+                }}
+
+                QPushButton:pressed {{
+                    background-color: {theme.get_color('button_background_pressed')};
+                    color: {theme.get_color('button_text_pressed')};
+                }}
+
+                QPushButton:disabled {{
+                    background-color: {theme.get_color('button_background_disabled')};
+                    color: {theme.get_color('button_text_disabled')};
+                }}
+            """
+
+            # Apply styles to the module
+            self.setStyleSheet(module_styles)
+
+            logger.debug(f"[{self.__class__.__name__}] Theme inheritance ensured")
+
+        except Exception as e:
+            logger.warning(f"[{self.__class__.__name__}] Failed to ensure theme inheritance: {e}")

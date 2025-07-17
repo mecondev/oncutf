@@ -48,6 +48,9 @@ class MetadataWidget(QWidget):
 
         self.setup_ui()
 
+        # Ensure theme inheritance for child widgets
+        self._ensure_theme_inheritance()
+
     def setup_ui(self) -> None:
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)  # Match final transformer margins
@@ -193,10 +196,7 @@ class MetadataWidget(QWidget):
         # Get selected files to check hash availability
         selected_files = self._get_selected_files()
 
-        # Get supported hash algorithms
-        supported_algorithms = self._get_supported_hash_algorithms()
-
-                # Hash category always shows CRC32 and is always disabled (no choice needed)
+        # Hash category always shows CRC32 and is always disabled (no choice needed)
         self.options_combo.addItem("CRC32", userData="hash_crc32")
         self.options_combo.setEnabled(False)
 
@@ -517,3 +517,66 @@ class MetadataWidget(QWidget):
         """Get list of supported hash algorithms from the async operations manager."""
         # Only CRC32 is supported and implemented
         return {"CRC32"}
+
+    def _ensure_theme_inheritance(self) -> None:
+        """
+        Ensure that child widgets inherit theme styles properly.
+        This is needed because child widgets sometimes don't inherit
+        the global application stylesheet correctly.
+        """
+        try:
+            # Get theme colors
+            from utils.theme_engine import ThemeEngine
+            theme = ThemeEngine()
+
+            # Apply specific styles to combo boxes to ensure they inherit theme
+            combo_styles = f"""
+                QComboBox {{
+                    background-color: {theme.get_color('combo_background')};
+                    color: {theme.get_color('combo_text')};
+                    border: 1px solid {theme.get_color('combo_border')};
+                    border-radius: 4px;
+                    padding: 2px 8px;
+                    font-family: "{theme.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
+                    font-size: {theme.fonts['base_size']};
+                }}
+
+                QComboBox:hover {{
+                    background-color: {theme.get_color('combo_background_hover')};
+                    border-color: {theme.get_color('input_border_hover')};
+                }}
+
+                QComboBox:disabled {{
+                    background-color: {theme.get_color('disabled_background')};
+                    color: {theme.get_color('disabled_text')};
+                    border-color: {theme.get_color('input_border')};
+                }}
+
+                QComboBox::drop-down {{
+                    border: none;
+                    background-color: transparent;
+                    width: 18px;
+                    subcontrol-origin: padding;
+                    subcontrol-position: center right;
+                }}
+
+                QComboBox::down-arrow {{
+                    image: url(resources/icons/feather_icons/chevrons-down.svg);
+                    width: 12px;
+                    height: 12px;
+                }}
+
+                QComboBox::down-arrow:disabled {{
+                    opacity: 0.5;
+                }}
+            """
+
+            # Apply styles to combo boxes
+            self.category_combo.setStyleSheet(combo_styles)
+            self.options_combo.setStyleSheet(combo_styles)
+
+            logger.debug("[MetadataWidget] Theme inheritance ensured for combo boxes")
+
+        except Exception as e:
+            logger.warning(f"[MetadataWidget] Failed to ensure theme inheritance: {e}")
+
