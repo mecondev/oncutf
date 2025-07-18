@@ -230,16 +230,10 @@ class RenameModuleWidget(QWidget):
 
         module_class = self.module_instances.get(module_name)
         if module_class:
-            # MetadataWidget now supports ApplicationContext, no need for parent_window
+            # MetadataWidget needs parent_window to get selected files
             if module_name == "Metadata":
-                # Try ApplicationContext approach first, fallback to parent_window
-                context = self._get_app_context()
-                if context:
-                    # ApplicationContext available - MetadataWidget can find what it needs
-                    self.current_module_widget = module_class()
-                else:
-                    # Fallback to legacy approach with parent_window
-                    self.current_module_widget = module_class(parent_window=self.parent_window)
+                # Always pass parent_window for MetadataWidget
+                self.current_module_widget = module_class(parent_window=self.parent_window)
             else:
                 self.current_module_widget = module_class()
 

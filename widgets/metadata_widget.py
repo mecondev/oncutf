@@ -95,7 +95,9 @@ class MetadataWidget(QWidget):
 
         # Connections
         self.category_combo.currentIndexChanged.connect(self._store_previous_state)
-        self.category_combo.currentIndexChanged.connect(self.update_options)
+        self.category_combo.currentIndexChanged.connect(
+            lambda: schedule_ui_update(self.update_options)
+        )
         self.options_combo.currentIndexChanged.connect(self._store_previous_state)
         self.options_combo.currentIndexChanged.connect(self.emit_if_changed)
 
@@ -198,6 +200,7 @@ class MetadataWidget(QWidget):
 
         # Get selected files to check hash availability
         selected_files = self._get_selected_files()
+        logger.debug(f"[HASH_DEBUG] Found {len(selected_files)} selected files.")
 
         # Hash category always shows CRC32 and is always disabled (no choice needed)
         self.options_combo.addItem("CRC32", userData="hash_crc32")
@@ -207,31 +210,60 @@ class MetadataWidget(QWidget):
         if selected_files:
             files_needing_hash = []
             for file_item in selected_files:
-                if not self._file_has_hash(file_item):
+                has_hash = self._file_has_hash(file_item)
+                logger.debug(f"[HASH_DEBUG] File '{getattr(file_item, 'filename', 'N/A')}' has hash: {has_hash}")
+                if not has_hash:
                     files_needing_hash.append(file_item)
 
+            logger.debug(f"[HASH_DEBUG] Found {len(files_needing_hash)} files needing hash calculation.")
+
             if files_needing_hash:
+                logger.debug("[HASH_DEBUG] Condition met, showing hash calculation dialog.")
                 # Some files need hash calculation - show dialog for all files
                 self._show_hash_calculation_dialog(files_needing_hash)
                 return True  # Indicate that a dialog is being shown
 
+        logger.debug("[HASH_DEBUG] No dialog to show, proceeding normally.")
         return False  # No dialog shown, proceed normally
 
     def _get_selected_files(self):
         """Get selected files from the main window."""
+        logger.debug(f"[HASH_DEBUG] _get_selected_files called. parent_window: {self.parent_window}")
+
         try:
             # Try to get selected files from parent window
             if self.parent_window and hasattr(self.parent_window, 'get_selected_files_ordered'):
-                return self.parent_window.get_selected_files_ordered()
+                logger.debug("[HASH_DEBUG] Getting files from parent_window")
+                files = self.parent_window.get_selected_files_ordered()
+                logger.debug(f"[HASH_DEBUG] Got {len(files)} files from parent_window")
+                return files
 
             # Try to get from ApplicationContext
             context = self._get_app_context()
-            if context and hasattr(context, 'main_window'):
-                return context.main_window.get_selected_files_ordered()
+            logger.debug(f"[HASH_DEBUG] ApplicationContext: {context}")
+
+            # Try to get from FileStore
+            if context and hasattr(context, '_file_store') and context._file_store:
+                logger.debug("[HASH_DEBUG] Trying to get files from FileStore")
+                selected_files = context._file_store.get_selected_files()
+                if selected_files:
+                    logger.debug(f"[HASH_DEBUG] Got {len(selected_files)} files from FileStore")
+                    return selected_files
+
+            # Try to get from SelectionStore
+            if context and hasattr(context, '_selection_store') and context._selection_store:
+                logger.debug("[HASH_DEBUG] Trying to get files from SelectionStore")
+                selected_files = context._selection_store.get_selected_files()
+                if selected_files:
+                    logger.debug(f"[HASH_DEBUG] Got {len(selected_files)} files from SelectionStore")
+                    return selected_files
+
+            logger.debug("[HASH_DEBUG] No files found in ApplicationContext stores")
 
         except Exception as e:
             logger.warning(f"[MetadataWidget] Error getting selected files: {e}")
 
+        logger.debug("[HASH_DEBUG] Returning empty list - no source found")
         return []
 
     def _file_has_hash(self, file_item) -> bool:
@@ -249,6 +281,7 @@ class MetadataWidget(QWidget):
 
     def _show_hash_calculation_dialog(self, files_needing_hash):
         """Show dialog to calculate hashes for all files that need them."""
+        logger.debug("[HASH_DEBUG] Entered _show_hash_calculation_dialog.")
         try:
             from widgets.custom_message_dialog import CustomMessageDialog
 

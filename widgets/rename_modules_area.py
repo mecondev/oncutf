@@ -119,13 +119,8 @@ class RenameModulesArea(QWidget):
         Add a new RenameModuleWidget to the area.
         Now uses ApplicationContext-optimized approach when available.
         """
-        context = self._get_app_context()
-        if context:
-            # ApplicationContext available - create module without parent_window
-            module = RenameModuleWidget(parent=self)
-        else:
-            # Fallback to legacy approach with parent_window
-            module = RenameModuleWidget(parent=self, parent_window=self.parent_window)
+        # Πάντα περνάμε το parent_window για σταθερότητα
+        module = RenameModuleWidget(parent=self, parent_window=self.parent_window)
 
         module.remove_requested.connect(lambda m=module: self.remove_module(m))
         module.updated.connect(lambda: self._on_module_updated())
