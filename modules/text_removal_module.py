@@ -81,6 +81,8 @@ class TextRemovalModule(BaseRenameModule):
             "Anywhere (all)"
         ])
         self.position_combo.setCurrentText("End of name")
+        # Ensure combo box drops down instead of popping up
+        self.position_combo.view().window().setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
         self.position_combo.currentTextChanged.connect(self.on_position_changed)
 
         self.case_sensitive_check = QCheckBox("Case sensitive")
