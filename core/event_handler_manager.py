@@ -169,9 +169,9 @@ class EventHandlerManager:
         # all_files_analysis = self._get_simple_metadata_analysis()
 
         # Create actions with smart labels and tooltips
-        action_load_sel = create_action_with_shortcut(get_menu_icon("file"), f"{selected_analysis['fast_label']} for selected file(s)", "Ctrl+M")
+        action_load_sel = create_action_with_shortcut(get_menu_icon("file"), f"{selected_analysis['fast_label']} for selection", "Ctrl+M")
         action_load_all = create_action_with_shortcut(get_menu_icon("folder"), "Load Fast Metadata for all files", "Shift+Ctrl+M")
-        action_load_ext_sel = create_action_with_shortcut(get_menu_icon("file-plus"), f"{selected_analysis['extended_label']} for selected file(s)", "Ctrl+E")
+        action_load_ext_sel = create_action_with_shortcut(get_menu_icon("file-plus"), f"{selected_analysis['extended_label']} for selection", "Ctrl+E")
         action_load_ext_all = create_action_with_shortcut(get_menu_icon("folder-plus"), "Load Extended Metadata for all files", "Shift+Ctrl+E")
 
         menu.addAction(action_load_sel)
@@ -241,7 +241,7 @@ class EventHandlerManager:
         menu.addSeparator()
 
         # Save actions
-        action_save_sel = create_action_with_shortcut(get_menu_icon("save"), "Save metadata for selected file(s)", "Ctrl+S")
+        action_save_sel = create_action_with_shortcut(get_menu_icon("save"), "Save metadata for selection", "Ctrl+S")
         action_save_all = create_action_with_shortcut(get_menu_icon("save"), "Save ALL modified metadata", "Ctrl+Shift+S")
 
         menu.addAction(action_save_sel)
@@ -280,7 +280,7 @@ class EventHandlerManager:
         menu.addSeparator()
 
         # Export actions
-        action_export_sel = create_action_with_shortcut(get_menu_icon("download"), "Export metadata for selected file(s)", None)
+        action_export_sel = create_action_with_shortcut(get_menu_icon("download"), "Export metadata for selection", None)
         action_export_all = create_action_with_shortcut(get_menu_icon("download"), "Export metadata for all files", None)
 
         menu.addAction(action_export_sel)

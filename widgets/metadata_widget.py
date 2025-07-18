@@ -141,17 +141,8 @@ class MetadataWidget(QWidget):
                         self.category_combo.setCurrentIndex(i)
                         break
 
-                # Manually update options for the previous category without triggering signals
-                category = self.category_combo.currentData()
-                self.options_combo.clear()
-
-                if category == "file_dates":
-                    self.populate_file_dates()
-                elif category == "hash":
-                    self.populate_hash_options()
-                elif category == "metadata_keys":
-                    self.populate_metadata_keys()
-
+                # Πάντα ανανεώνω τα options με βάση τα τρέχοντα αρχεία
+                self.update_options()
                 # Set to first option by default
                 if self.options_combo.count() > 0:
                     self.options_combo.setCurrentIndex(0)
@@ -166,9 +157,11 @@ class MetadataWidget(QWidget):
             finally:
                 # Reconnect signals
                 self.category_combo.currentIndexChanged.connect(self._store_previous_state)
-                self.category_combo.currentIndexChanged.connect(self.update_options)
+                self.category_combo.currentIndexChanged.connect(lambda: self.update_options())
                 self.options_combo.currentIndexChanged.connect(self._store_previous_state)
                 self.options_combo.currentIndexChanged.connect(self.emit_if_changed)
+
+            self.emit_if_changed()  # Always refresh preview after rollback
 
     def update_options(self) -> None:
         """Updates fields according to the selected category."""
@@ -176,24 +169,24 @@ class MetadataWidget(QWidget):
         category = self.category_combo.currentData()
         logger.debug(f"[MetadataWidget] Updating options for category: {category}")
 
-        self.options_combo.clear()
+        self.options_combo.clear()  # Πάντα καθαρίζω το combo
+
+        # Guard: avoid dialog loop if in rollback
+        if hasattr(self, '_in_rollback') and self._in_rollback:
+            self._in_rollback = False
+            return
 
         if category == "file_dates":
             self.populate_file_dates()
-            # Always enable combo box for file_dates
             self.options_combo.setEnabled(True)
         elif category == "hash":
-            # If populate_hash_options shows a dialog, it will return True.
-            # In that case, we should stop here and not emit any signals,
-            # as the hash calculation process will handle the update.
             if self.populate_hash_options():
                 return
         elif category == "metadata_keys":
             self.populate_metadata_keys()
-            # Always enable combo box for metadata_keys
             self.options_combo.setEnabled(True)
 
-        # Set to first option by default (usually "date" for file_dates)
+        # Set to first option by default (αν υπάρχει)
         if self.options_combo.count() > 0:
             self.options_combo.setCurrentIndex(0)
 

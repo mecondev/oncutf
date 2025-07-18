@@ -27,6 +27,7 @@ from core.pyqt_imports import (
 from utils.icons_loader import get_menu_icon
 from utils.logger_factory import get_cached_logger
 from utils.tooltip_helper import TooltipType, setup_tooltip
+from widgets.toggle_switch import ToggleSwitch
 
 logger = get_cached_logger(__name__)
 
@@ -70,9 +71,8 @@ class FinalTransformContainer(QWidget):
         greeklish_text_label = QLabel("Convert Greek to Greeklish")
 
         # Checkbox for Greek to Greeklish conversion
-        self.greeklish_checkbox = QCheckBox()  # Removed "Greeklish" text
+        self.greeklish_checkbox = ToggleSwitch()
         self.greeklish_checkbox.setChecked(False)
-        # Setup custom tooltip for greeklish checkbox
         setup_tooltip(self.greeklish_checkbox, "Toggle Greek to Greeklish conversion", TooltipType.INFO)
         self.greeklish_checkbox.toggled.connect(self._on_value_change)
 
