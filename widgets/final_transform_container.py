@@ -23,11 +23,14 @@ from core.pyqt_imports import (
     QVBoxLayout,
     QWidget,
     pyqtSignal,
+    QPixmap,
+    QPainter,
 )
-from utils.icons_loader import get_menu_icon
+from utils.icons_loader import get_menu_icon, get_menu_icon_path
 from utils.logger_factory import get_cached_logger
 from utils.tooltip_helper import TooltipType, setup_tooltip
-from widgets.toggle_switch import ToggleSwitch
+# from widgets.toggle_switch import ToggleSwitch  # ΑΦΑΙΡΕΣΕ ΤΟ, δεν υπάρχει πια
+
 
 logger = get_cached_logger(__name__)
 
@@ -65,19 +68,20 @@ class FinalTransformContainer(QWidget):
         # Greeklish row (alone, touching left)
         greeklish_layout = QHBoxLayout()
         greeklish_layout.setContentsMargins(0, 0, 0, 0)
-        greeklish_layout.setSpacing(4)  # Reduced spacing from 8 to 4
+        greeklish_layout.setSpacing(0)  # Ελάχιστο spacing
 
         # Label for the checkbox (first)
         greeklish_text_label = QLabel("Convert Greek to Greeklish")
+        greeklish_text_label.setAlignment(Qt.AlignVCenter)
 
         # Checkbox for Greek to Greeklish conversion
-        self.greeklish_checkbox = ToggleSwitch()
+        self.greeklish_checkbox = GreeklishToggle()
         self.greeklish_checkbox.setChecked(False)
         setup_tooltip(self.greeklish_checkbox, "Toggle Greek to Greeklish conversion", TooltipType.INFO)
         self.greeklish_checkbox.toggled.connect(self._on_value_change)
 
-        greeklish_layout.addWidget(greeklish_text_label)
-        greeklish_layout.addWidget(self.greeklish_checkbox)
+        greeklish_layout.addWidget(greeklish_text_label, 0, Qt.AlignVCenter)
+        greeklish_layout.addWidget(self.greeklish_checkbox, 0, Qt.AlignVCenter)
         greeklish_layout.addStretch()  # Push everything to the left
 
         # Create buttons separately for each row
@@ -212,3 +216,45 @@ class FinalTransformContainer(QWidget):
             from PyQt5.QtGui import QIcon
             disabled_icon = QIcon(disabled_pixmap)
             self.remove_button.setIcon(disabled_icon)
+
+
+# Απλό toggle με QLabel (χωρίς hover)
+class GreeklishToggle(QLabel):
+    toggled = pyqtSignal(bool)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._checked = False
+        self._icon_left = get_menu_icon("toggle-left")
+        self._icon_right = get_menu_icon("toggle-right")
+        self.setCursor(Qt.PointingHandCursor)
+        self.setFixedSize(28, 28)  # Λίγο μεγαλύτερο για padding
+        self.setAlignment(Qt.AlignCenter)
+        self._update_icon()
+
+    def mousePressEvent(self, event):
+        self.setChecked(not self._checked)
+        self.toggled.emit(self._checked)
+        super().mousePressEvent(event)
+
+    def setChecked(self, checked: bool):
+        self._checked = bool(checked)
+        self._update_icon()
+
+    def isChecked(self) -> bool:
+        return self._checked
+
+    def _update_icon(self):
+        # Παίρνουμε QPixmap ~19x19 από το QIcon, 20% μεγαλύτερο από 16x16
+        icon = self._icon_right if self._checked else self._icon_left
+        pixmap = icon.pixmap(19, 19)
+        # Δημιουργούμε ένα νέο pixmap με padding (28x28)
+        padded = QPixmap(28, 28)
+        padded.fill(Qt.transparent)
+        painter = QPainter(padded)
+        # Κεντράρουμε το 19x19 εικονίδιο
+        x = (28 - 19) // 2
+        y = (28 - 19) // 2
+        painter.drawPixmap(x, y, pixmap)
+        painter.end()
+        self.setPixmap(padded)
