@@ -24,6 +24,7 @@ class BaseRenameModule(QWidget):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
+        self.setProperty("class", "RenameModule")
         self._last_value: str = ""
         self._is_validating: bool = False
 

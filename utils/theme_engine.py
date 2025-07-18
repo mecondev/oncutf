@@ -75,7 +75,7 @@ class ThemeEngine:
             'scroll_area_background': '#181818',
             'scroll_track_background': '#2c2c2c',
             'scroll_handle_background': '#555555',
-            'scroll_handle_hover': '#4a6fa5',
+            'scroll_handle_hover': '#3e5c76',
             'scroll_handle_pressed': '#748cab',
 
             # Module/Card colors
@@ -1267,6 +1267,17 @@ class ThemeEngine:
             QComboBox QAbstractItemView::item:last-child {{
                 margin-bottom: 0px !important;
                 padding-bottom: 6px !important;
+            }}
+
+            /* Simplified styling for all combo boxes within rename modules */
+            QWidget[class="RenameModule"] QComboBox QAbstractItemView {{
+                padding: 4px; /* Add some padding to the dropdown view */
+                margin: 0px;
+            }}
+
+            QWidget[class="RenameModule"] QComboBox QAbstractItemView::item {{
+                margin: 0px; /* Remove margin from items */
+                padding: 4px 8px; /* Control spacing with padding */
             }}
 
         """

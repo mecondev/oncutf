@@ -19,6 +19,7 @@ from core.pyqt_imports import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    Qt,
     QVBoxLayout,
     QWidget,
 )

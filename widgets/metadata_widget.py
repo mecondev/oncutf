@@ -164,8 +164,11 @@ class MetadataWidget(QWidget):
             # Always enable combo box for file_dates
             self.options_combo.setEnabled(True)
         elif category == "hash":
-            self.populate_hash_options()
-            # Hash options handles its own enable/disable logic
+            # If populate_hash_options shows a dialog, it will return True.
+            # In that case, we should stop here and not emit any signals,
+            # as the hash calculation process will handle the update.
+            if self.populate_hash_options():
+                return
         elif category == "metadata_keys":
             self.populate_metadata_keys()
             # Always enable combo box for metadata_keys
@@ -189,7 +192,7 @@ class MetadataWidget(QWidget):
         for label, val in file_date_options:
             self.options_combo.addItem(label, userData=val)
 
-    def populate_hash_options(self) -> None:
+    def populate_hash_options(self) -> bool:
         """Populate hash options with smart hash availability checking."""
         self.options_combo.clear()
 
@@ -210,6 +213,9 @@ class MetadataWidget(QWidget):
             if files_needing_hash:
                 # Some files need hash calculation - show dialog for all files
                 self._show_hash_calculation_dialog(files_needing_hash)
+                return True  # Indicate that a dialog is being shown
+
+        return False  # No dialog shown, proceed normally
 
     def _get_selected_files(self):
         """Get selected files from the main window."""
