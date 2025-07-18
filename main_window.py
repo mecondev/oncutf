@@ -1344,16 +1344,29 @@ class MainWindow(QMainWindow):
             return False
 
     def refresh_metadata_widgets(self):
-        """Refresh all active MetadataWidget instances (emit_if_changed)."""
+        """Refresh all active MetadataWidget instances (emit_if_changed and update options)."""
         try:
             from widgets.metadata_widget import MetadataWidget
             for module_widget in self.rename_modules_area.module_widgets:
                 if hasattr(module_widget, "current_module_widget"):
                     widget = module_widget.current_module_widget
                     if isinstance(widget, MetadataWidget):
+                        widget.trigger_update_options()
                         widget.emit_if_changed()
         except Exception as e:
             print(f"[MainWindow] Error refreshing metadata widgets: {e}")
+
+    def update_active_metadata_widget_options(self):
+        """Find the active MetadataWidget and call update_options (for selection change)."""
+        try:
+            from widgets.metadata_widget import MetadataWidget
+            for module_widget in self.rename_modules_area.module_widgets:
+                if hasattr(module_widget, "current_module_widget"):
+                    widget = module_widget.current_module_widget
+                    if isinstance(widget, MetadataWidget):
+                        widget.update_options()
+        except Exception as e:
+            print(f"[MainWindow] Error updating metadata widget options: {e}")
 
     def setup_metadata_refresh_signals(self):
         """Connect signals for hash, selection, and metadata changes to refresh metadata widgets."""
@@ -1363,6 +1376,7 @@ class MainWindow(QMainWindow):
         # Selection refresh
         if hasattr(self, 'selection_store'):
             self.selection_store.selection_changed.connect(lambda _: self.refresh_metadata_widgets())
+            self.selection_store.selection_changed.connect(lambda _: self.update_active_metadata_widget_options())
         # Metadata refresh (try ApplicationContext or UnifiedMetadataManager)
         try:
             from core.application_context import get_app_context

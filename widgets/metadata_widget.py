@@ -172,6 +172,7 @@ class MetadataWidget(QWidget):
 
     def update_options(self) -> None:
         """Updates fields according to the selected category."""
+        self._store_previous_state()  # Always store previous state before updating
         category = self.category_combo.currentData()
         logger.debug(f"[MetadataWidget] Updating options for category: {category}")
 
@@ -216,33 +217,33 @@ class MetadataWidget(QWidget):
             logger.debug("[HASH_DEBUG] Hash dialog already active, skipping.")
             return True
         self.options_combo.clear()
+        try:
+            # Get selected files to check hash availability
+            selected_files = self._get_selected_files()
+            logger.debug(f"[HASH_DEBUG] Found {len(selected_files)} selected files.")
 
-        # Get selected files to check hash availability
-        selected_files = self._get_selected_files()
-        logger.debug(f"[HASH_DEBUG] Found {len(selected_files)} selected files.")
+            # Hash category always shows CRC32 and is always disabled (no choice needed)
+            self.options_combo.addItem("CRC32", userData="hash_crc32")
+            self.options_combo.setEnabled(False)
 
-        # Hash category always shows CRC32 and is always disabled (no choice needed)
-        self.options_combo.addItem("CRC32", userData="hash_crc32")
-        self.options_combo.setEnabled(False)
+            # Check if files need hash calculation
+            if selected_files:
+                files_needing_hash = []
+                for file_item in selected_files:
+                    has_hash = self._file_has_hash(file_item)
+                    logger.debug(f"[HASH_DEBUG] File '{getattr(file_item, 'filename', 'N/A')}' has hash: {has_hash}")
+                    if not has_hash:
+                        files_needing_hash.append(file_item)
 
-        # Check if files need hash calculation
-        if selected_files:
-            files_needing_hash = []
-            for file_item in selected_files:
-                has_hash = self._file_has_hash(file_item)
-                logger.debug(f"[HASH_DEBUG] File '{getattr(file_item, 'filename', 'N/A')}' has hash: {has_hash}")
-                if not has_hash:
-                    files_needing_hash.append(file_item)
+                logger.debug(f"[HASH_DEBUG] Found {len(files_needing_hash)} files needing hash calculation.")
 
-            logger.debug(f"[HASH_DEBUG] Found {len(files_needing_hash)} files needing hash calculation.")
-
-            if files_needing_hash:
-                logger.debug("[HASH_DEBUG] Condition met, showing hash calculation dialog.")
-                self._hash_dialog_active = True
-                self._show_hash_calculation_dialog(files_needing_hash)
-                self._hash_dialog_active = False
-                return True  # Indicate that a dialog is being shown
-
+                if files_needing_hash:
+                    logger.debug("[HASH_DEBUG] Condition met, showing hash calculation dialog.")
+                    self._hash_dialog_active = True
+                    self._show_hash_calculation_dialog(files_needing_hash)
+                    return True  # Indicate that a dialog is being shown
+        finally:
+            self._hash_dialog_active = False
         logger.debug("[HASH_DEBUG] No dialog to show, proceeding normally.")
         return False  # No dialog shown, proceed normally
 
@@ -322,13 +323,15 @@ class MetadataWidget(QWidget):
                 # User chose to calculate hashes
                 self._calculate_hashes_for_files(files_needing_hash)
             else:
-                # User cancelled - rollback to previous state
+                # User cancelled - rollback to previous state and force preview update
                 self.rollback_to_previous_state()
+                self.emit_if_changed()
 
         except Exception as e:
             logger.error(f"[MetadataWidget] Error showing hash calculation dialog: {e}")
             # Rollback on error
             self.rollback_to_previous_state()
+            self.emit_if_changed()
 
     def _calculate_hashes_for_files(self, files_needing_hash):
         """Calculate hashes for the given files."""
@@ -639,4 +642,8 @@ class MetadataWidget(QWidget):
 
         except Exception as e:
             logger.warning(f"[MetadataWidget] Failed to ensure theme inheritance: {e}")
+
+    def trigger_update_options(self):
+        """Public method to trigger update_options from outside (e.g. on selection change)."""
+        self.update_options()
 
