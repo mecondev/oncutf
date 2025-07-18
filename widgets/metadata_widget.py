@@ -46,6 +46,8 @@ class MetadataWidget(QWidget):
         self._previous_field: Optional[str] = None
         self._previous_option: Optional[str] = None
 
+        self._hash_dialog_active = False  # Flag to prevent multiple dialogs
+
         self.setup_ui()
 
         # Ensure theme inheritance for child widgets
@@ -115,8 +117,22 @@ class MetadataWidget(QWidget):
         """Rollback to the previous state if available."""
         if self._previous_category is not None:
             # Temporarily disconnect signals to avoid storing state during rollback
-            self.category_combo.currentIndexChanged.disconnect()
-            self.options_combo.currentIndexChanged.disconnect()
+            try:
+                self.category_combo.currentIndexChanged.disconnect(self._store_previous_state)
+            except Exception:
+                pass
+            try:
+                self.category_combo.currentIndexChanged.disconnect()
+            except Exception:
+                pass
+            try:
+                self.options_combo.currentIndexChanged.disconnect(self._store_previous_state)
+            except Exception:
+                pass
+            try:
+                self.options_combo.currentIndexChanged.disconnect(self.emit_if_changed)
+            except Exception:
+                pass
 
             try:
                 # Find and set the previous category
@@ -196,6 +212,9 @@ class MetadataWidget(QWidget):
 
     def populate_hash_options(self) -> bool:
         """Populate hash options with smart hash availability checking."""
+        if self._hash_dialog_active:
+            logger.debug("[HASH_DEBUG] Hash dialog already active, skipping.")
+            return True
         self.options_combo.clear()
 
         # Get selected files to check hash availability
@@ -219,8 +238,9 @@ class MetadataWidget(QWidget):
 
             if files_needing_hash:
                 logger.debug("[HASH_DEBUG] Condition met, showing hash calculation dialog.")
-                # Some files need hash calculation - show dialog for all files
+                self._hash_dialog_active = True
                 self._show_hash_calculation_dialog(files_needing_hash)
+                self._hash_dialog_active = False
                 return True  # Indicate that a dialog is being shown
 
         logger.debug("[HASH_DEBUG] No dialog to show, proceeding normally.")
@@ -330,6 +350,7 @@ class MetadataWidget(QWidget):
 
                 # The hash calculation will trigger a preview update automatically
                 # No need to manually add options here
+                self.emit_if_changed()  # Force preview update after hash calculation
             else:
                 logger.error("[MetadataWidget] Could not find main window for hash calculation")
                 self.rollback_to_previous_state()

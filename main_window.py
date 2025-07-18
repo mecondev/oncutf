@@ -191,6 +191,8 @@ class MainWindow(QMainWindow):
         self.batch_manager = get_batch_manager(self)
         logger.info("[MainWindow] Batch Operations Manager initialized")
 
+        self.setup_metadata_refresh_signals()
+
     # --- Method definitions ---
 
     # =====================================
@@ -1340,3 +1342,37 @@ class MainWindow(QMainWindow):
         except Exception as e:
             logger.warning(f"[CloseEvent] Error checking for unsaved changes: {e}")
             return False
+
+    def refresh_metadata_widgets(self):
+        """Refresh all active MetadataWidget instances (emit_if_changed)."""
+        try:
+            from widgets.metadata_widget import MetadataWidget
+            for module_widget in self.rename_modules_area.module_widgets:
+                if hasattr(module_widget, "current_module_widget"):
+                    widget = module_widget.current_module_widget
+                    if isinstance(widget, MetadataWidget):
+                        widget.emit_if_changed()
+        except Exception as e:
+            print(f"[MainWindow] Error refreshing metadata widgets: {e}")
+
+    def setup_metadata_refresh_signals(self):
+        """Connect signals for hash, selection, and metadata changes to refresh metadata widgets."""
+        # Hash refresh
+        if hasattr(self, 'event_handler_manager') and hasattr(self.event_handler_manager, 'hash_worker'):
+            self.event_handler_manager.hash_worker.file_hash_calculated.connect(self.refresh_metadata_widgets)
+        # Selection refresh
+        if hasattr(self, 'selection_store'):
+            self.selection_store.selection_changed.connect(lambda _: self.refresh_metadata_widgets())
+        # Metadata refresh (try ApplicationContext or UnifiedMetadataManager)
+        try:
+            from core.application_context import get_app_context
+            context = get_app_context()
+            if context and hasattr(context, 'metadata_changed'):
+                context.metadata_changed.connect(lambda *_: self.refresh_metadata_widgets())
+        except Exception:
+            pass
+        try:
+            if hasattr(self, 'unified_metadata_manager') and hasattr(self.unified_metadata_manager, 'metadata_changed'):
+                self.unified_metadata_manager.metadata_changed.connect(lambda *_: self.refresh_metadata_widgets())
+        except Exception:
+            pass
