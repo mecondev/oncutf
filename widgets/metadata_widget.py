@@ -40,6 +40,7 @@ class MetadataWidget(QWidget):
         self.setProperty("module", True)
         self._last_data: Optional[dict] = None  # For change tracking
         self._cached_metadata_keys: Optional[Set[str]] = None  # Cache for metadata keys
+        self._last_category: Optional[str] = None  # For category change tracking
 
         self._hash_dialog_active = False  # Flag to prevent multiple dialogs
 
@@ -79,13 +80,13 @@ class MetadataWidget(QWidget):
             0, 0, 0, 0
         )  # Removed vertical margins to allow spacing control
         options_row.setSpacing(8)  # Match final transformer spacing between label and control
-        options_label = QLabel("Field")
-        options_label.setFixedWidth(70)  # Increased width by 10px
-        options_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
+        self.options_label = QLabel("Field")  # Will be updated based on category
+        self.options_label.setFixedWidth(70)  # Increased width by 10px
+        self.options_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
         self.options_combo = QComboBox()
         self.options_combo.setFixedWidth(120)  # Reduced width by 10px
         self.options_combo.setFixedHeight(22)  # Match final transformer combo height
-        options_row.addWidget(options_label)
+        options_row.addWidget(self.options_label)
         options_row.addWidget(self.options_combo)
         options_row.addStretch()
         layout.addLayout(options_row)
@@ -107,11 +108,14 @@ class MetadataWidget(QWidget):
         self.options_combo.clear()
 
         if category == "file_dates":
+            self.options_label.setText("Type")
             self.populate_file_dates()
             self.options_combo.setEnabled(True)
         elif category == "hash":
+            self.options_label.setText("Type")
             self.populate_hash_options()
         elif category == "metadata_keys":
+            self.options_label.setText("Field")
             self.populate_metadata_keys()
             self.options_combo.setEnabled(True)
 
@@ -165,8 +169,9 @@ class MetadataWidget(QWidget):
 
             logger.debug(f"[HASH_DEBUG] {len(files_with_hash)}/{len(file_paths)} files have hashes")
 
-            # Always add CRC32 option (disabled if no choice)
+            # Always add CRC32 option (always disabled since it's the only choice)
             self.options_combo.addItem("CRC32", userData="hash_crc32")
+            self.options_combo.setEnabled(False)  # Always disabled for hash category
 
             if files_needing_hash:
                 # Some files need hash calculation - show dialog
@@ -175,8 +180,8 @@ class MetadataWidget(QWidget):
                 self._show_hash_calculation_dialog(files_needing_hash)
                 return True
             else:
-                # All files have hashes - enable the option
-                self.options_combo.setEnabled(True)
+                # All files have hashes - combo remains disabled (only CRC32 available)
+                logger.debug("[HASH_DEBUG] All files have hashes, combo remains disabled")
                 return False
 
         except Exception as e:
@@ -292,9 +297,12 @@ class MetadataWidget(QWidget):
                 # Use the existing hash calculation method
                 main_window.event_handler_manager._handle_calculate_hashes(file_items_needing_hash)
 
-                # Enable hash option after calculation
-                self.options_combo.setEnabled(True)
-                logger.debug("[MetadataWidget] Hash calculation completed")
+                # Force preview update after hash calculation
+                # This ensures preview updates even if data hasn't changed
+                schedule_ui_update(self.force_preview_update, 100)  # Small delay to ensure hash calculation completes
+
+                # Combo remains disabled (only CRC32 available)
+                logger.debug("[MetadataWidget] Hash calculation completed, preview update scheduled")
             else:
                 logger.error("[MetadataWidget] Could not find main window for hash calculation")
                 self.options_combo.setEnabled(False)
@@ -304,28 +312,54 @@ class MetadataWidget(QWidget):
             self.options_combo.setEnabled(False)
 
     def populate_metadata_keys(self) -> None:
-        keys = self.get_available_metadata_keys()
-        if not keys:
-            # Check if metadata cache exists but is empty vs not loaded
-            metadata_cache = self._get_metadata_cache_via_context()
-            if (
-                metadata_cache
-                and hasattr(metadata_cache, "_memory_cache")
-                and metadata_cache._memory_cache
-            ):
-                row = self.options_combo.count()
-                self.options_combo.addItem("(No metadata found in files)", userData=None)
-                self.options_combo.model().item(row).setEnabled(False)
-            else:
-                row = self.options_combo.count()
-                self.options_combo.addItem("(No metadata loaded)", userData=None)
-                self.options_combo.model().item(row).setEnabled(False)
-            return
+        """Populate metadata keys με smart availability checking."""
+        try:
+            # Get selected files
+            selected_files = self._get_selected_files()
+            if not selected_files:
+                # No files selected - disable metadata option
+                self.options_combo.addItem("(No files selected)", userData=None)
+                self.options_combo.setEnabled(False)
+                return
 
-        # Add metadata keys
-        for key in sorted(keys):
-            display = self.format_metadata_key_name(key)
-            self.options_combo.addItem(display, userData=key)
+            # Use batch query για metadata availability
+            from core.unified_rename_engine import UnifiedRenameEngine
+            engine = UnifiedRenameEngine()
+            metadata_availability = engine.get_metadata_availability(selected_files)
+
+            # Count files with metadata
+            files_with_metadata = sum(1 for has_meta in metadata_availability.values() if has_meta)
+            total_files = len(selected_files)
+
+            logger.debug(f"[MetadataWidget] {files_with_metadata}/{total_files} files have metadata")
+
+            if files_with_metadata == 0:
+                # No files have metadata - disable combo
+                self.options_combo.addItem("(No metadata found in files)", userData=None)
+                self.options_combo.setEnabled(False)
+                return
+
+            # Get available metadata keys
+            keys = self.get_available_metadata_keys()
+            if not keys:
+                # No metadata keys available - disable combo
+                self.options_combo.addItem("(No metadata fields available)", userData=None)
+                self.options_combo.setEnabled(False)
+                return
+
+            # Some files have metadata - enable combo
+            self.options_combo.setEnabled(True)
+
+            # Add metadata keys
+            for key in sorted(keys):
+                display = self.format_metadata_key_name(key)
+                self.options_combo.addItem(display, userData=key)
+
+        except Exception as e:
+            logger.error(f"[MetadataWidget] Error in populate_metadata_keys: {e}")
+            # On error, disable metadata option
+            self.options_combo.addItem("(Error loading metadata)", userData=None)
+            self.options_combo.setEnabled(False)
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
@@ -479,6 +513,22 @@ class MetadataWidget(QWidget):
         if new_data != self._last_data:
             self._last_data = new_data
             self.updated.emit(self)
+        else:
+            # If data is the same but category changed, still emit for preview update
+            # This handles the case where user switches from file_dates to hash and back
+            current_category = self.category_combo.currentData()
+            if hasattr(self, '_last_category') and self._last_category != current_category:
+                self._last_category = current_category
+                self.updated.emit(self)
+                logger.debug(f"[MetadataWidget] Category changed to {current_category}, forcing preview update")
+            elif not hasattr(self, '_last_category'):
+                self._last_category = current_category
+
+    def force_preview_update(self) -> None:
+        """Force preview update even if data hasn't changed (for hash calculation)."""
+        # Always emit signal to trigger preview update
+        self.updated.emit(self)
+        logger.debug("[MetadataWidget] Forced preview update")
 
     def clear_cache(self) -> None:
         """Clear the metadata keys cache to force refresh."""

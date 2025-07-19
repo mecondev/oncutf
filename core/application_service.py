@@ -247,8 +247,90 @@ class ApplicationService:
     # =====================================
 
     def rename_files(self):
-        """Execute batch rename."""
-        return self.main_window.rename_manager.rename_files()
+        """Execute batch rename using UnifiedRenameEngine."""
+        try:
+            # Get selected files and rename data
+            selected_files = self.get_selected_files()
+            rename_data = self.main_window.rename_modules_area.get_all_data()
+            post_transform_data = self.main_window.final_transform_container.get_data()
+            rename_data["post_transform"] = post_transform_data
+
+            if not selected_files:
+                self.main_window.status_manager.set_selection_status(
+                    "No files selected for renaming",
+                    selected_count=0,
+                    total_count=0,
+                    auto_reset=True
+                )
+                return
+
+            # Generate preview using UnifiedRenameEngine
+            preview_result = self.main_window.unified_rename_engine.generate_preview(
+                files=selected_files,
+                modules_data=rename_data.get("modules", []),
+                post_transform=post_transform_data,
+                metadata_cache=self.main_window.metadata_cache
+            )
+
+            if not preview_result.has_changes:
+                self.main_window.status_manager.set_validation_status(
+                    "No changes detected",
+                    validation_type="warning",
+                    auto_reset=True
+                )
+                return
+
+            # Validate preview
+            name_pairs = preview_result.name_pairs
+            validation_result = self.main_window.unified_rename_engine.validate_preview(name_pairs)
+
+            if validation_result.has_errors:
+                self.main_window.status_manager.set_validation_status(
+                    f"Validation errors found: {validation_result.has_errors}",
+                    validation_type="error",
+                    auto_reset=True
+                )
+                return
+
+            # Execute rename using UnifiedRenameEngine
+            new_names = [new_name for _, new_name in name_pairs]
+
+            # Create conflict callback
+            def conflict_callback(parent, filename):
+                return self.prompt_file_conflict(filename)
+
+            # Execute rename
+            execution_result = self.main_window.unified_rename_engine.execute_rename(
+                files=selected_files,
+                new_names=new_names,
+                conflict_callback=conflict_callback,
+                validator=self.main_window.file_validation_manager.validate_filename
+            )
+
+            # Handle results
+            if execution_result.success_count > 0:
+                self.main_window.status_manager.set_validation_status(
+                    f"Successfully renamed {execution_result.success_count} files",
+                    validation_type="success",
+                    auto_reset=True
+                )
+
+                # Reload folder to reflect changes
+                self.reload_current_folder()
+            else:
+                self.main_window.status_manager.set_validation_status(
+                    f"Rename failed: {execution_result.error_count} errors",
+                    validation_type="error",
+                    auto_reset=True
+                )
+
+        except Exception as e:
+            logger.error(f"[ApplicationService] Error in unified rename: {e}")
+            self.main_window.status_manager.set_validation_status(
+                f"Rename error: {str(e)}",
+                validation_type="error",
+                auto_reset=True
+            )
 
     def update_module_dividers(self):
         """Update module dividers."""

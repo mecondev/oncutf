@@ -56,6 +56,10 @@ class RenameModulesArea(QWidget):
 
         self.setObjectName("RenameModulesArea")
 
+        # Initialize UnifiedRenameEngine
+        self.rename_engine = None
+        self._setup_rename_engine()
+
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(6, 2, 6, 2)  # Reduced bottom margin from 6 to 2
         main_layout.setSpacing(0)  # Control spacing manually like metadata dialog
@@ -222,10 +226,35 @@ class RenameModulesArea(QWidget):
         # Theme styling is now handled by the global theme engine
         logger.debug(f"[RenameModulesArea] Theme changed to: {theme}", extra={"dev_only": True})
 
+    def _setup_rename_engine(self):
+        """Setup UnifiedRenameEngine."""
+        try:
+            from core.unified_rename_engine import UnifiedRenameEngine
+            self.rename_engine = UnifiedRenameEngine()
+            logger.debug("[RenameModulesArea] UnifiedRenameEngine initialized")
+        except Exception as e:
+            logger.error(f"[RenameModulesArea] Error initializing UnifiedRenameEngine: {e}")
+
     def _emit_updated_signal(self):
         """Emit the updated signal after debouncing."""
         logger.debug("[RenameModulesArea] Timer timeout - emitting updated signal", extra={"dev_only": True})
         self.updated.emit()
+        # Trigger central preview update
+        self._trigger_central_preview_update()
+
+    def _trigger_central_preview_update(self):
+        """Trigger central preview update."""
+        try:
+            if self.rename_engine:
+                # Clear cache to force fresh preview
+                self.rename_engine.clear_cache()
+                logger.debug("[RenameModulesArea] Central preview update triggered")
+        except Exception as e:
+            logger.error(f"[RenameModulesArea] Error in central preview update: {e}")
+
+    def trigger_preview_update(self):
+        """Public method to trigger preview update."""
+        self._trigger_central_preview_update()
 
     # Drag & Drop functionality
     def module_drag_started(self, module):

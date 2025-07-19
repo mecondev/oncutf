@@ -25,11 +25,11 @@ from core.pyqt_imports import (
     pyqtSignal,
     QPixmap,
     QPainter,
+    QTimer,
 )
 from utils.icons_loader import get_menu_icon, get_menu_icon_path
 from utils.logger_factory import get_cached_logger
 from utils.tooltip_helper import TooltipType, setup_tooltip
-# from widgets.toggle_switch import ToggleSwitch  # ΑΦΑΙΡΕΣΕ ΤΟ, δεν υπάρχει πια
 
 
 logger = get_cached_logger(__name__)
@@ -54,10 +54,20 @@ class FinalTransformContainer(QWidget):
         # Set transparent background to avoid white borders around rounded corners
         self.setAttribute(Qt.WA_TranslucentBackground, True)  # type: ignore
 
+        # Initialize UnifiedRenameEngine
+        self.rename_engine = None
+        self._setup_rename_engine()
+
         self._setup_ui()
 
         # Initialize last value for change detection
         self._last_value = str(self.get_data())
+
+        # Central preview update timer
+        self._preview_timer = QTimer()
+        self._preview_timer.setSingleShot(True)
+        self._preview_timer.setInterval(50)  # 50ms delay
+        self._preview_timer.timeout.connect(self._trigger_central_preview_update)
 
     def _setup_ui(self):
         """Setup the UI with grid layout for better alignment."""
@@ -162,6 +172,37 @@ class FinalTransformContainer(QWidget):
         if current_data != self._last_value:
             self._last_value = current_data
             self.updated.emit()
+            # Trigger central preview update
+            self._schedule_central_preview_update()
+
+    def _setup_rename_engine(self):
+        """Setup UnifiedRenameEngine."""
+        try:
+            from core.unified_rename_engine import UnifiedRenameEngine
+            self.rename_engine = UnifiedRenameEngine()
+            logger.debug("[FinalTransformContainer] UnifiedRenameEngine initialized")
+        except Exception as e:
+            logger.error(f"[FinalTransformContainer] Error initializing UnifiedRenameEngine: {e}")
+
+    def _schedule_central_preview_update(self):
+        """Schedule central preview update with delay."""
+        if self._preview_timer.isActive():
+            self._preview_timer.stop()
+        self._preview_timer.start()
+
+    def _trigger_central_preview_update(self):
+        """Trigger central preview update."""
+        try:
+            if self.rename_engine:
+                # Clear cache to force fresh preview
+                self.rename_engine.clear_cache()
+                logger.debug("[FinalTransformContainer] Central preview update triggered")
+        except Exception as e:
+            logger.error(f"[FinalTransformContainer] Error in central preview update: {e}")
+
+    def trigger_preview_update(self):
+        """Public method to trigger preview update."""
+        self._trigger_central_preview_update()
 
     def get_data(self) -> dict:
         """Get the current transformation data."""

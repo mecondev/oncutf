@@ -71,6 +71,10 @@ class MainWindow(QMainWindow):
         # --- Initialize PreviewManager ---
         self.preview_manager = PreviewManager(parent_window=self)
 
+        # --- Initialize UnifiedRenameEngine ---
+        from core.unified_rename_engine import UnifiedRenameEngine
+        self.unified_rename_engine = UnifiedRenameEngine()
+
         # --- Initialize FileOperationsManager ---
         self.file_operations_manager = FileOperationsManager(parent_window=self)
 
@@ -1344,7 +1348,7 @@ class MainWindow(QMainWindow):
             return False
 
     def refresh_metadata_widgets(self):
-        """Refresh all active MetadataWidget instances (emit_if_changed and update options)."""
+        """Refresh all active MetadataWidget instances and trigger preview update."""
         try:
             from widgets.metadata_widget import MetadataWidget
             for module_widget in self.rename_modules_area.module_widgets:
@@ -1353,8 +1357,26 @@ class MainWindow(QMainWindow):
                     if isinstance(widget, MetadataWidget):
                         widget.trigger_update_options()
                         widget.emit_if_changed()
+
+            # Force preview update after metadata widget changes using UnifiedRenameEngine
+            self._trigger_unified_preview_update()
         except Exception as e:
             print(f"[MainWindow] Error refreshing metadata widgets: {e}")
+
+    def _trigger_unified_preview_update(self):
+        """Trigger preview update using UnifiedRenameEngine."""
+        try:
+            if hasattr(self, 'unified_rename_engine') and self.unified_rename_engine:
+                # Clear cache to force fresh preview
+                self.unified_rename_engine.clear_cache()
+                logger.debug("[MainWindow] Unified preview update triggered")
+
+                # Also trigger traditional preview update for compatibility
+                self.request_preview_update()
+        except Exception as e:
+            logger.error(f"[MainWindow] Error in unified preview update: {e}")
+            # Fallback to traditional preview update
+            self.request_preview_update()
 
     def update_active_metadata_widget_options(self):
         """Find the active MetadataWidget and call update_options (for selection change)."""
