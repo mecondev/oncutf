@@ -41,11 +41,6 @@ class MetadataWidget(QWidget):
         self._last_data: Optional[dict] = None  # For change tracking
         self._cached_metadata_keys: Optional[Set[str]] = None  # Cache for metadata keys
 
-        # Store previous state for rollback
-        self._previous_category: Optional[str] = None
-        self._previous_field: Optional[str] = None
-        self._previous_option: Optional[str] = None
-
         self._hash_dialog_active = False  # Flag to prevent multiple dialogs
 
         self.setup_ui()
@@ -96,92 +91,26 @@ class MetadataWidget(QWidget):
         layout.addLayout(options_row)
 
         # Connections
-        self.category_combo.currentIndexChanged.connect(self._store_previous_state)
         self.category_combo.currentIndexChanged.connect(
             lambda: schedule_ui_update(self.update_options)
         )
-        self.options_combo.currentIndexChanged.connect(self._store_previous_state)
         self.options_combo.currentIndexChanged.connect(self.emit_if_changed)
 
         # Schedule options update
         schedule_ui_update(self.update_options, 0)
 
-    def _store_previous_state(self):
-        """Store the previous state before any change for potential rollback."""
-        # Store previous category and field
-        self._previous_category = self.category_combo.currentData()
-        self._previous_field = self.options_combo.currentData()
-        self._previous_option = self.options_combo.currentData()
-
-    def rollback_to_previous_state(self):
-        """Rollback to the previous state if available."""
-        if self._previous_category is not None:
-            # Temporarily disconnect signals to avoid storing state during rollback
-            try:
-                self.category_combo.currentIndexChanged.disconnect(self._store_previous_state)
-            except Exception:
-                pass
-            try:
-                self.category_combo.currentIndexChanged.disconnect()
-            except Exception:
-                pass
-            try:
-                self.options_combo.currentIndexChanged.disconnect(self._store_previous_state)
-            except Exception:
-                pass
-            try:
-                self.options_combo.currentIndexChanged.disconnect(self.emit_if_changed)
-            except Exception:
-                pass
-
-            try:
-                # Find and set the previous category
-                for i in range(self.category_combo.count()):
-                    if self.category_combo.itemData(i) == self._previous_category:
-                        self.category_combo.setCurrentIndex(i)
-                        break
-
-                # Πάντα ανανεώνω τα options με βάση τα τρέχοντα αρχεία
-                self.update_options()
-                # Set to first option by default
-                if self.options_combo.count() > 0:
-                    self.options_combo.setCurrentIndex(0)
-
-                # Then find and set the previous field
-                if self._previous_field is not None:
-                    for i in range(self.options_combo.count()):
-                        if self.options_combo.itemData(i) == self._previous_field:
-                            self.options_combo.setCurrentIndex(i)
-                            break
-
-            finally:
-                # Reconnect signals
-                self.category_combo.currentIndexChanged.connect(self._store_previous_state)
-                self.category_combo.currentIndexChanged.connect(lambda: self.update_options())
-                self.options_combo.currentIndexChanged.connect(self._store_previous_state)
-                self.options_combo.currentIndexChanged.connect(self.emit_if_changed)
-
-            self.emit_if_changed()  # Always refresh preview after rollback
-
     def update_options(self) -> None:
         """Updates fields according to the selected category."""
-        self._store_previous_state()  # Always store previous state before updating
         category = self.category_combo.currentData()
         logger.debug(f"[MetadataWidget] Updating options for category: {category}")
 
-        self.options_combo.clear()  # Πάντα καθαρίζω το combo
-
-        # Guard: avoid dialog loop if in rollback
-        if hasattr(self, '_in_rollback') and self._in_rollback:
-            self._in_rollback = False
-            return
+        self.options_combo.clear()
 
         if category == "file_dates":
             self.populate_file_dates()
             self.options_combo.setEnabled(True)
         elif category == "hash":
-            if self.populate_hash_options():
-                return
+            self.populate_hash_options()
         elif category == "metadata_keys":
             self.populate_metadata_keys()
             self.options_combo.setEnabled(True)
@@ -205,40 +134,59 @@ class MetadataWidget(QWidget):
             self.options_combo.addItem(label, userData=val)
 
     def populate_hash_options(self) -> bool:
-        """Populate hash options with smart hash availability checking."""
+        """Populate hash options with efficient batch hash checking."""
         if self._hash_dialog_active:
             logger.debug("[HASH_DEBUG] Hash dialog already active, skipping.")
             return True
+
         self.options_combo.clear()
+
         try:
-            # Get selected files to check hash availability
+            # Get selected files
             selected_files = self._get_selected_files()
             logger.debug(f"[HASH_DEBUG] Found {len(selected_files)} selected files.")
 
-            # Hash category always shows CRC32 and is always disabled (no choice needed)
+            if not selected_files:
+                # No files selected - disable hash option
+                self.options_combo.addItem("CRC32", userData="hash_crc32")
+                self.options_combo.setEnabled(False)
+                return False
+
+            # Use efficient batch checking via database
+            file_paths = [file_item.full_path for file_item in selected_files]
+
+            # Get files that have hashes using batch query
+            from core.persistent_hash_cache import get_persistent_hash_cache
+            hash_cache = get_persistent_hash_cache()
+
+            # Use batch method for efficiency
+            files_with_hash = hash_cache.get_files_with_hash_batch(file_paths, 'CRC32')
+            files_needing_hash = [path for path in file_paths if path not in files_with_hash]
+
+            logger.debug(f"[HASH_DEBUG] {len(files_with_hash)}/{len(file_paths)} files have hashes")
+
+            # Always add CRC32 option (disabled if no choice)
+            self.options_combo.addItem("CRC32", userData="hash_crc32")
+
+            if files_needing_hash:
+                # Some files need hash calculation - show dialog
+                logger.debug(f"[HASH_DEBUG] {len(files_needing_hash)} files need hash calculation")
+                self._hash_dialog_active = True
+                self._show_hash_calculation_dialog(files_needing_hash)
+                return True
+            else:
+                # All files have hashes - enable the option
+                self.options_combo.setEnabled(True)
+                return False
+
+        except Exception as e:
+            logger.error(f"[MetadataWidget] Error in populate_hash_options: {e}")
+            # On error, disable hash option
             self.options_combo.addItem("CRC32", userData="hash_crc32")
             self.options_combo.setEnabled(False)
-
-            # Check if files need hash calculation
-            if selected_files:
-                files_needing_hash = []
-                for file_item in selected_files:
-                    has_hash = self._file_has_hash(file_item)
-                    logger.debug(f"[HASH_DEBUG] File '{getattr(file_item, 'filename', 'N/A')}' has hash: {has_hash}")
-                    if not has_hash:
-                        files_needing_hash.append(file_item)
-
-                logger.debug(f"[HASH_DEBUG] Found {len(files_needing_hash)} files needing hash calculation.")
-
-                if files_needing_hash:
-                    logger.debug("[HASH_DEBUG] Condition met, showing hash calculation dialog.")
-                    self._hash_dialog_active = True
-                    self._show_hash_calculation_dialog(files_needing_hash)
-                    return True  # Indicate that a dialog is being shown
+            return False
         finally:
             self._hash_dialog_active = False
-        logger.debug("[HASH_DEBUG] No dialog to show, proceeding normally.")
-        return False  # No dialog shown, proceed normally
 
     def _get_selected_files(self):
         """Get selected files from the main window."""
@@ -280,22 +228,9 @@ class MetadataWidget(QWidget):
         logger.debug("[HASH_DEBUG] Returning empty list - no source found")
         return []
 
-    def _file_has_hash(self, file_item) -> bool:
-        """Check if a file has a hash value calculated."""
-        try:
-            # Check hash cache if available
-            from core.persistent_hash_cache import get_persistent_hash_cache
-            hash_cache = get_persistent_hash_cache()
-
-            return hash_cache.has_hash(file_item.full_path, 'CRC32')
-
-        except Exception as e:
-            logger.debug(f"[MetadataWidget] Error checking hash for {getattr(file_item, 'filename', 'unknown')}: {e}")
-            return False
-
     def _show_hash_calculation_dialog(self, files_needing_hash):
-        """Show dialog to calculate hashes for all files that need them."""
-        logger.debug("[HASH_DEBUG] Entered _show_hash_calculation_dialog.")
+        """Show dialog to calculate hashes for files that need them."""
+        logger.debug(f"[HASH_DEBUG] Showing hash dialog for {len(files_needing_hash)} files")
         try:
             from widgets.custom_message_dialog import CustomMessageDialog
 
@@ -316,19 +251,32 @@ class MetadataWidget(QWidget):
                 # User chose to calculate hashes
                 self._calculate_hashes_for_files(files_needing_hash)
             else:
-                # User cancelled - rollback to previous state and force preview update
-                self.rollback_to_previous_state()
-                self.emit_if_changed()
+                # User cancelled - just disable the hash option
+                logger.debug("[HASH_DEBUG] User cancelled hash calculation")
+                self.options_combo.setEnabled(False)
 
         except Exception as e:
             logger.error(f"[MetadataWidget] Error showing hash calculation dialog: {e}")
-            # Rollback on error
-            self.rollback_to_previous_state()
-            self.emit_if_changed()
+            # On error, disable the hash option
+            self.options_combo.setEnabled(False)
 
     def _calculate_hashes_for_files(self, files_needing_hash):
-        """Calculate hashes for the given files."""
+        """Calculate hashes for the given file paths."""
         try:
+            # Convert file paths back to FileItem objects for hash calculation
+            selected_files = self._get_selected_files()
+            file_items_needing_hash = []
+
+            for file_path in files_needing_hash:
+                for file_item in selected_files:
+                    if file_item.full_path == file_path:
+                        file_items_needing_hash.append(file_item)
+                        break
+
+            if not file_items_needing_hash:
+                logger.warning("[MetadataWidget] No file items found for hash calculation")
+                return
+
             # Get main window for hash calculation
             main_window = None
             if self.parent_window and hasattr(self.parent_window, 'main_window'):
@@ -342,18 +290,18 @@ class MetadataWidget(QWidget):
 
             if main_window and hasattr(main_window, 'event_handler_manager'):
                 # Use the existing hash calculation method
-                main_window.event_handler_manager._handle_calculate_hashes(files_needing_hash)
+                main_window.event_handler_manager._handle_calculate_hashes(file_items_needing_hash)
 
-                # The hash calculation will trigger a preview update automatically
-                # No need to manually add options here
-                self.emit_if_changed()  # Force preview update after hash calculation
+                # Enable hash option after calculation
+                self.options_combo.setEnabled(True)
+                logger.debug("[MetadataWidget] Hash calculation completed")
             else:
                 logger.error("[MetadataWidget] Could not find main window for hash calculation")
-                self.rollback_to_previous_state()
+                self.options_combo.setEnabled(False)
 
         except Exception as e:
             logger.error(f"[MetadataWidget] Error calculating hashes: {e}")
-            self.rollback_to_previous_state()
+            self.options_combo.setEnabled(False)
 
     def populate_metadata_keys(self) -> None:
         keys = self.get_available_metadata_keys()
