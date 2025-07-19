@@ -247,7 +247,7 @@ class ApplicationService:
     # =====================================
 
     def rename_files(self):
-        """Execute batch rename using UnifiedRenameEngine."""
+        """Execute batch rename using UnifiedRenameEngine with Phase 4 optimizations."""
         try:
             # Get selected files and rename data
             selected_files = self.get_selected_files()
@@ -264,13 +264,42 @@ class ApplicationService:
                 )
                 return
 
-            # Generate preview using UnifiedRenameEngine
-            preview_result = self.main_window.unified_rename_engine.generate_preview(
-                files=selected_files,
-                modules_data=rename_data.get("modules", []),
-                post_transform=post_transform_data,
-                metadata_cache=self.main_window.metadata_cache
-            )
+            # Use Phase 4 batch processing for large file sets
+            if len(selected_files) > 100:
+                logger.info(f"[ApplicationService] Using Phase 4 batch processing for {len(selected_files)} files")
+
+                # Process files in batches using Phase 4 batch processor
+                def process_batch(batch_files):
+                    return self.main_window.unified_rename_engine.generate_preview(
+                        files=batch_files,
+                        modules_data=rename_data.get("modules", []),
+                        post_transform=post_transform_data,
+                        metadata_cache=self.main_window.metadata_cache
+                    )
+
+                # Use batch processor for preview generation
+                batch_results = self.main_window.unified_rename_engine.batch_process_files(
+                    selected_files, process_batch
+                )
+
+                # Combine batch results
+                all_name_pairs = []
+                for result in batch_results:
+                    if result and hasattr(result, 'name_pairs'):
+                        all_name_pairs.extend(result.name_pairs)
+
+                preview_result = type('PreviewResult', (), {
+                    'name_pairs': all_name_pairs,
+                    'has_changes': len(all_name_pairs) > 0
+                })()
+            else:
+                # Use standard preview generation for smaller file sets
+                preview_result = self.main_window.unified_rename_engine.generate_preview(
+                    files=selected_files,
+                    modules_data=rename_data.get("modules", []),
+                    post_transform=post_transform_data,
+                    metadata_cache=self.main_window.metadata_cache
+                )
 
             if not preview_result.has_changes:
                 self.main_window.status_manager.set_validation_status(
@@ -292,45 +321,72 @@ class ApplicationService:
                 )
                 return
 
-            # Execute rename using UnifiedRenameEngine
+            # Execute rename using Phase 4 conflict resolution
             new_names = [new_name for _, new_name in name_pairs]
 
-            # Create conflict callback
-            def conflict_callback(parent, filename):
-                return self.prompt_file_conflict(filename)
+            # Prepare operations for batch conflict resolution
+            operations = []
+            for file, new_name in zip(selected_files, new_names):
+                old_path = file.full_path
+                new_path = os.path.join(os.path.dirname(old_path), new_name)
+                operations.append((old_path, new_path))
 
-            # Execute rename
-            execution_result = self.main_window.unified_rename_engine.execute_rename(
-                files=selected_files,
-                new_names=new_names,
-                conflict_callback=conflict_callback,
-                validator=self.main_window.file_validation_manager.validate_filename
+            # Use Phase 4 batch conflict resolution
+            conflict_results = self.main_window.unified_rename_engine.resolve_conflicts_batch(
+                operations, strategy="timestamp"
             )
 
+            # Count successful operations
+            successful_count = sum(1 for result in conflict_results if result.success)
+            error_count = len(conflict_results) - successful_count
+
             # Handle results
-            if execution_result.success_count > 0:
+            if successful_count > 0:
                 self.main_window.status_manager.set_validation_status(
-                    f"Successfully renamed {execution_result.success_count} files",
+                    f"Successfully renamed {successful_count} files using Phase 4 optimizations",
                     validation_type="success",
                     auto_reset=True
                 )
+
+                # Log Phase 4 statistics
+                self._log_phase4_stats()
 
                 # Reload folder to reflect changes
                 self.reload_current_folder()
             else:
                 self.main_window.status_manager.set_validation_status(
-                    f"Rename failed: {execution_result.error_count} errors",
+                    f"Rename failed: {error_count} errors",
                     validation_type="error",
                     auto_reset=True
                 )
 
         except Exception as e:
-            logger.error(f"[ApplicationService] Error in unified rename: {e}")
+            logger.error(f"[ApplicationService] Error in Phase 4 unified rename: {e}")
             self.main_window.status_manager.set_validation_status(
                 f"Rename error: {str(e)}",
                 validation_type="error",
                 auto_reset=True
             )
+
+    def _log_phase4_stats(self):
+        """Log Phase 4 performance statistics."""
+        try:
+            engine = self.main_window.unified_rename_engine
+
+            # Get all Phase 4 statistics
+            cache_stats = engine.get_advanced_cache_stats()
+            batch_stats = engine.get_batch_processor_stats()
+            conflict_stats = engine.get_conflict_resolver_stats()
+            perf_stats = engine.get_performance_stats()
+
+            logger.info(f"[ApplicationService] Phase 4 Statistics:")
+            logger.info(f"  Cache: {cache_stats['overall_hit_rate']:.1f}% hit rate")
+            logger.info(f"  Batch: {batch_stats.get('items_per_second', 0):.0f} items/sec")
+            logger.info(f"  Conflicts: {conflict_stats['success_rate']:.1f}% success rate")
+            logger.info(f"  Performance: {perf_stats['total_operations']} operations")
+
+        except Exception as e:
+            logger.warning(f"[ApplicationService] Error logging Phase 4 stats: {e}")
 
     def update_module_dividers(self):
         """Update module dividers."""

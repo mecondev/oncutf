@@ -17,6 +17,9 @@ from core.pyqt_imports import pyqtSignal, QObject
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
 from core.performance_monitor import monitor_performance, get_performance_monitor
+from core.advanced_cache_manager import AdvancedCacheManager
+from core.batch_processor import BatchProcessorFactory
+from core.conflict_resolver import ConflictResolver
 
 logger = get_cached_logger(__name__)
 
@@ -638,10 +641,15 @@ class UnifiedRenameEngine(QObject):
         self.execution_manager = UnifiedExecutionManager()
         self.state_manager = RenameStateManager()
 
+        # Initialize Phase 4 components
+        self.advanced_cache_manager = AdvancedCacheManager()
+        self.batch_processor = BatchProcessorFactory.create_processor("smart")
+        self.conflict_resolver = ConflictResolver()
+
         # Initialize performance monitor
         self.performance_monitor = get_performance_monitor()
 
-        logger.debug("[UnifiedRenameEngine] Initialized")
+        logger.debug("[UnifiedRenameEngine] Initialized with Phase 4 components")
 
     @monitor_performance("generate_preview")
     def generate_preview(
@@ -726,3 +734,41 @@ class UnifiedRenameEngine(QObject):
     def clear_performance_metrics(self) -> None:
         """Clear performance metrics."""
         self.performance_monitor.clear_metrics()
+
+    # Phase 4 Integration Methods
+
+    def get_advanced_cache_stats(self) -> Dict[str, any]:
+        """Get advanced cache statistics."""
+        return self.advanced_cache_manager.get_stats()
+
+    def clear_advanced_cache(self) -> None:
+        """Clear advanced cache."""
+        self.advanced_cache_manager.clear()
+
+    def get_batch_processor_stats(self) -> Dict[str, any]:
+        """Get batch processor statistics."""
+        return self.batch_processor.get_stats()
+
+    def reset_batch_processor_stats(self) -> None:
+        """Reset batch processor statistics."""
+        self.batch_processor.reset_stats()
+
+    def get_conflict_resolver_stats(self) -> Dict[str, any]:
+        """Get conflict resolver statistics."""
+        return self.conflict_resolver.get_stats()
+
+    def undo_last_operation(self) -> Optional[Any]:
+        """Undo last operation."""
+        return self.conflict_resolver.undo_last_operation()
+
+    def clear_conflict_history(self) -> None:
+        """Clear conflict resolution history."""
+        self.conflict_resolver.clear_history()
+
+    def batch_process_files(self, files: List[FileItem], processor_func: callable) -> List[Any]:
+        """Process files using batch processor."""
+        return self.batch_processor.process_batches(files, processor_func)
+
+    def resolve_conflicts_batch(self, operations: List[Tuple[str, str]], strategy: str = "timestamp") -> List[Any]:
+        """Resolve conflicts in batch."""
+        return self.conflict_resolver.batch_resolve_conflicts(operations, strategy)

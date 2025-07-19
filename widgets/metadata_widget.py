@@ -67,8 +67,8 @@ class MetadataWidget(QWidget):
         self.category_combo.addItem("File Dates", userData="file_dates")
         self.category_combo.addItem("Hash", userData="hash")
         self.category_combo.addItem("EXIF/Metadata", userData="metadata_keys")
-        self.category_combo.setFixedWidth(120)  # Reduced width by 10px
-        self.category_combo.setFixedHeight(22)  # Match final transformer combo height
+        self.category_combo.setFixedWidth(150)
+        self.category_combo.setFixedHeight(22)
         category_row.addWidget(category_label)
         category_row.addWidget(self.category_combo)
         category_row.addStretch()
@@ -84,7 +84,7 @@ class MetadataWidget(QWidget):
         self.options_label.setFixedWidth(70)  # Increased width by 10px
         self.options_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
         self.options_combo = QComboBox()
-        self.options_combo.setFixedWidth(120)  # Reduced width by 10px
+        self.options_combo.setFixedWidth(200)  # Increased width for metadata field names
         self.options_combo.setFixedHeight(22)  # Match final transformer combo height
         options_row.addWidget(self.options_label)
         options_row.addWidget(self.options_combo)
@@ -92,13 +92,23 @@ class MetadataWidget(QWidget):
         layout.addLayout(options_row)
 
         # Connections
-        self.category_combo.currentIndexChanged.connect(
-            lambda: schedule_ui_update(self.update_options)
-        )
+        self.category_combo.currentIndexChanged.connect(self._on_category_changed)
         self.options_combo.currentIndexChanged.connect(self.emit_if_changed)
 
-        # Schedule options update
-        schedule_ui_update(self.update_options, 0)
+        # Schedule options update (only if timer manager is available)
+        try:
+            schedule_ui_update(self.update_options, 0)
+        except Exception:
+            # Fallback for testing or when timer manager is not available
+            self.update_options()
+
+    def _on_category_changed(self) -> None:
+        """Handle category combo box changes with safe timer scheduling."""
+        try:
+            schedule_ui_update(self.update_options)
+        except Exception:
+            # Fallback for testing or when timer manager is not available
+            self.update_options()
 
     def update_options(self) -> None:
         """Updates fields according to the selected category."""
@@ -110,14 +120,16 @@ class MetadataWidget(QWidget):
         if category == "file_dates":
             self.options_label.setText("Type")
             self.populate_file_dates()
+            # File dates are always enabled
             self.options_combo.setEnabled(True)
         elif category == "hash":
             self.options_label.setText("Type")
             self.populate_hash_options()
+            # Hash combo is managed by populate_hash_options
         elif category == "metadata_keys":
             self.options_label.setText("Field")
             self.populate_metadata_keys()
-            self.options_combo.setEnabled(True)
+            # Metadata combo is managed by populate_metadata_keys
 
         # Set to first option by default (αν υπάρχει)
         if self.options_combo.count() > 0:
@@ -169,19 +181,21 @@ class MetadataWidget(QWidget):
 
             logger.debug(f"[HASH_DEBUG] {len(files_with_hash)}/{len(file_paths)} files have hashes")
 
-            # Always add CRC32 option (always disabled since it's the only choice)
+            # Always add CRC32 option (only hash type supported)
             self.options_combo.addItem("CRC32", userData="hash_crc32")
-            self.options_combo.setEnabled(False)  # Always disabled for hash category
 
             if files_needing_hash:
                 # Some files need hash calculation - show dialog
                 logger.debug(f"[HASH_DEBUG] {len(files_needing_hash)} files need hash calculation")
                 self._hash_dialog_active = True
                 self._show_hash_calculation_dialog(files_needing_hash)
+                # Combo remains disabled until hashes are calculated
+                self.options_combo.setEnabled(False)
                 return True
             else:
                 # All files have hashes - combo remains disabled (only CRC32 available)
                 logger.debug("[HASH_DEBUG] All files have hashes, combo remains disabled")
+                self.options_combo.setEnabled(False)
                 return False
 
         except Exception as e:
@@ -320,6 +334,7 @@ class MetadataWidget(QWidget):
                 # No files selected - disable metadata option
                 self.options_combo.addItem("(No files selected)", userData=None)
                 self.options_combo.setEnabled(False)
+                logger.debug("[MetadataWidget] No files selected - disabled metadata combo")
                 return
 
             # Use batch query για metadata availability
@@ -337,6 +352,7 @@ class MetadataWidget(QWidget):
                 # No files have metadata - disable combo
                 self.options_combo.addItem("(No metadata found in files)", userData=None)
                 self.options_combo.setEnabled(False)
+                logger.debug("[MetadataWidget] No metadata found - disabled metadata combo")
                 return
 
             # Get available metadata keys
@@ -345,10 +361,12 @@ class MetadataWidget(QWidget):
                 # No metadata keys available - disable combo
                 self.options_combo.addItem("(No metadata fields available)", userData=None)
                 self.options_combo.setEnabled(False)
+                logger.debug("[MetadataWidget] No metadata keys available - disabled metadata combo")
                 return
 
             # Some files have metadata - enable combo
             self.options_combo.setEnabled(True)
+            logger.debug(f"[MetadataWidget] {len(keys)} metadata keys available - enabled combo")
 
             # Add metadata keys
             for key in sorted(keys):
@@ -360,6 +378,7 @@ class MetadataWidget(QWidget):
             # On error, disable metadata option
             self.options_combo.addItem("(Error loading metadata)", userData=None)
             self.options_combo.setEnabled(False)
+            logger.debug("[MetadataWidget] Error occurred - disabled metadata combo")
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
