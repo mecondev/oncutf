@@ -10,7 +10,16 @@ The hover background color is provided via constructor and is applied
 only when the row is not selected.
 """
 
-from core.pyqt_imports import QColor, QIcon, QPen, QStyle, QStyledItemDelegate, Qt, QTableView
+from core.pyqt_imports import (
+    QColor,
+    QCursor,
+    QIcon,
+    QPen,
+    QStyle,
+    QStyledItemDelegate,
+    Qt,
+    QTableView,
+)
 from utils.theme import get_qcolor, get_theme_color
 
 
@@ -34,6 +43,36 @@ class HoverItemDelegate(QStyledItemDelegate):
         Updates the row that should be highlighted on hover.
         """
         self.hovered_row = row
+
+    def leaveEvent(self, event) -> None:
+        """Handle mouse leave events to hide tooltips."""
+        # Hide any active tooltips when mouse leaves the delegate
+        from utils.tooltip_helper import TooltipHelper
+
+        TooltipHelper.clear_tooltips_for_widget(self.parent())
+
+        super().leaveEvent(event)
+
+    def enterEvent(self, event) -> None:
+        """Handle mouse enter events to restore hover state."""
+        # Update hover state when mouse enters the delegate
+        table = self.parent()
+        if isinstance(table, QTableView):
+            pos = table.viewport().mapFromGlobal(QCursor.pos())
+            index = table.indexAt(pos)
+            hovered_row = index.row() if index.isValid() else -1
+            self.update_hover_row(hovered_row)
+
+        super().enterEvent(event)
+
+    def focusOutEvent(self, event) -> None:
+        """Handle focus loss events to hide tooltips."""
+        # Hide any active tooltips when focus is lost
+        from utils.tooltip_helper import TooltipHelper
+
+        TooltipHelper.clear_tooltips_for_widget(self.parent())
+
+        super().focusOutEvent(event)
 
     def paint(self, painter, option, index):
         """
@@ -125,7 +164,7 @@ class HoverItemDelegate(QStyledItemDelegate):
             # Don't call super().paint() for column 0 since we handled the icon ourselves
             return
 
-                # For all other columns, paint everything manually - no super().paint()
+            # For all other columns, paint everything manually - no super().paint()
         display_text = model.data(index, Qt.DisplayRole) if model else ""
         if display_text:
             # Determine text color based on selection and hover state
@@ -143,15 +182,15 @@ class HoverItemDelegate(QStyledItemDelegate):
 
             alignment = model.data(index, Qt.TextAlignmentRole) if model else Qt.AlignLeft | Qt.AlignVCenter  # type: ignore
             if not alignment:
-                alignment = Qt.AlignLeft | Qt.AlignVCenter # type: ignore
+                alignment = Qt.AlignLeft | Qt.AlignVCenter  # type: ignore
 
             # Ensure alignment is an integer (convert from QVariant if needed)
-            if hasattr(alignment, 'value'):  # QVariant case
+            if hasattr(alignment, "value"):  # QVariant case
                 alignment = alignment.value()
             if not isinstance(alignment, int):
-                alignment = Qt.AlignLeft | Qt.AlignVCenter # type: ignore
+                alignment = Qt.AlignLeft | Qt.AlignVCenter  # type: ignore
 
             fm = painter.fontMetrics()
-            elided = fm.elidedText(str(display_text), Qt.ElideRight, text_rect.width()) # type: ignore
+            elided = fm.elidedText(str(display_text), Qt.ElideRight, text_rect.width())  # type: ignore
             painter.drawText(text_rect, alignment, elided)
             painter.restore()

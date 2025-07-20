@@ -27,103 +27,94 @@ class ThemeEngine:
         # Color definitions
         self.colors = {
             # Base application colors
-            'app_background': '#212121',
-            'app_text': '#f0ebd8',
-
+            "app_background": "#212121",
+            "app_text": "#f0ebd8",
             # Input field colors
-            'input_background': '#181818',
-            'input_text': '#f0ebd8',
-            'input_border': '#3a3b40',
-            'input_border_hover': '#555555',
-            'input_border_focus': '#748cab',
-            'input_background_hover': '#1f1f1f',
-            'input_background_focus': '#181818',
-            'input_selection_bg': '#748cab',
-            'input_selection_text': '#0d1321',
-
+            "input_background": "#181818",
+            "input_text": "#f0ebd8",
+            "input_border": "#3a3b40",
+            "input_border_hover": "#555555",
+            "input_border_focus": "#748cab",
+            "input_background_hover": "#1f1f1f",
+            "input_background_focus": "#181818",
+            "input_selection_bg": "#748cab",
+            "input_selection_text": "#0d1321",
             # Button colors
-            'button_background': '#2a2a2a',
-            'button_text': '#f0ebd8',
-            'button_background_hover': '#3e5c76',
-            'button_background_pressed': '#748cab',
-            'button_text_pressed': '#0d1321',
-            'button_background_disabled': '#232323',
-            'button_text_disabled': '#888888',
-            'button_border': '#3a3b40',
-
+            "button_background": "#2a2a2a",
+            "button_text": "#f0ebd8",
+            "button_background_hover": "#3e5c76",
+            "button_background_pressed": "#748cab",
+            "button_text_pressed": "#0d1321",
+            "button_background_disabled": "#232323",
+            "button_text_disabled": "#888888",
+            "button_border": "#3a3b40",
             # ComboBox colors
-            'combo_background': '#2a2a2a',
-            'combo_text': '#f0ebd8',
-            'combo_background_hover': '#3e5c76',
-            'combo_background_pressed': '#748cab',
-            'combo_text_pressed': '#0d1321',
-            'combo_dropdown_background': '#181818',
-            'combo_item_background_hover': '#3e5c76',
-            'combo_item_background_selected': '#748cab',
-            'combo_border': '#3a3b40',
-
+            "combo_background": "#2a2a2a",
+            "combo_text": "#f0ebd8",
+            "combo_background_hover": "#3e5c76",
+            "combo_background_pressed": "#748cab",
+            "combo_text_pressed": "#0d1321",
+            "combo_dropdown_background": "#181818",
+            "combo_item_background_hover": "#3e5c76",
+            "combo_item_background_selected": "#748cab",
+            "combo_border": "#3a3b40",
             # Table/Tree view colors
-            'table_background': '#181818',
-            'table_text': '#f0ebd8',
-            'table_alternate_background': '#232323',
-            'table_selection_background': '#748cab',
-            'table_selection_text': '#0d1321',
-            'table_header_background': '#181818',
-            'table_hover_background': '#3e5c76',
-
+            "table_background": "#181818",
+            "table_text": "#f0ebd8",
+            "table_alternate_background": "#232323",
+            "table_selection_background": "#748cab",
+            "table_selection_text": "#0d1321",
+            "table_header_background": "#181818",
+            "table_hover_background": "#3e5c76",
             # Scroll area colors
-            'scroll_area_background': '#181818',
-            'scroll_track_background': '#2c2c2c',
-            'scroll_handle_background': '#555555',
-            'scroll_handle_hover': '#4a6fa5',
-            'scroll_handle_pressed': '#748cab',
-
+            "scroll_area_background": "#181818",
+            "scroll_track_background": "#2c2c2c",
+            "scroll_handle_background": "#555555",
+            "scroll_handle_hover": "#3e5c76",
+            "scroll_handle_pressed": "#748cab",
             # Module/Card colors
-            'module_background': '#181818',
-            'module_border': '#3a3b40',
-            'module_drag_handle': '#2a2a2a',
-
+            "module_background": "#181818",
+            "module_border": "#3a3b40",
+            "module_drag_handle": "#2a2a2a",
             # Dialog colors
-            'dialog_background': '#2a2a2a',
-            'dialog_text': '#f0ebd8',
-
+            "dialog_background": "#2a2a2a",
+            "dialog_text": "#f0ebd8",
             # Tooltip colors
-            'tooltip_background': '#2b2b2b',
-            'tooltip_text': '#f0ebd8',
-            'tooltip_border': '#555555',
-            'tooltip_error_background': '#3d1e1e',
-            'tooltip_error_text': '#ffaaaa',
-            'tooltip_error_border': '#cc4444',
-            'tooltip_warning_background': '#3d3d1e',
-            'tooltip_warning_text': '#ffffaa',
-            'tooltip_warning_border': '#cccc44',
-            'tooltip_info_background': '#1e2d3d',
-            'tooltip_info_text': '#aaccff',
-            'tooltip_info_border': '#4488cc',
-            'tooltip_success_background': '#1e3d1e',
-            'tooltip_success_text': '#aaffaa',
-            'tooltip_success_border': '#44cc44',
-
+            "tooltip_background": "#2b2b2b",
+            "tooltip_text": "#f0ebd8",
+            "tooltip_border": "#555555",
+            "tooltip_error_background": "#3d1e1e",
+            "tooltip_error_text": "#ffaaaa",
+            "tooltip_error_border": "#cc4444",
+            "tooltip_warning_background": "#3d3d1e",
+            "tooltip_warning_text": "#ffffaa",
+            "tooltip_warning_border": "#cccc44",
+            "tooltip_info_background": "#1e2d3d",
+            "tooltip_info_text": "#aaccff",
+            "tooltip_info_border": "#4488cc",
+            "tooltip_success_background": "#1e3d1e",
+            "tooltip_success_text": "#aaffaa",
+            "tooltip_success_border": "#44cc44",
             # Special colors
-            'highlight_blue': '#4a6fa5',
-            'highlight_light_blue': '#8a9bb4',
-            'accent_color': '#748cab',
-            'separator_background': '#444444',
-            'separator_light': '#555555',
-            'border_color': '#3a3b40',
-            'disabled_background': '#181818',
-            'disabled_text': '#666666',
+            "highlight_blue": "#4a6fa5",
+            "highlight_light_blue": "#8a9bb4",
+            "accent_color": "#748cab",
+            "separator_background": "#444444",
+            "separator_light": "#555555",
+            "border_color": "#3a3b40",
+            "disabled_background": "#181818",
+            "disabled_text": "#666666",
         }
 
         # Font definitions (using Inter fonts for all platforms)
         self.fonts = {
-            'base_family': 'Inter',
-            'base_size': '9pt',
-            'base_weight': '400',
-            'interface_size': '9pt',
-            'tree_size': '10pt',
-            'medium_weight': '500',
-            'semibold_weight': '600',
+            "base_family": "Inter",
+            "base_size": "9pt",
+            "base_weight": "400",
+            "interface_size": "9pt",
+            "tree_size": "10pt",
+            "medium_weight": "500",
+            "semibold_weight": "600",
         }
 
     def apply_complete_theme(self, app: QApplication, main_window: QMainWindow):
@@ -137,7 +128,8 @@ class ThemeEngine:
 
         # Set application font programmatically for better consistency
         from utils.fonts import get_inter_font
-        app_font = get_inter_font('base', int(self.fonts['base_size'].replace('pt', '')))
+
+        app_font = get_inter_font("base", int(self.fonts["base_size"].replace("pt", "")))
         app.setFont(app_font)
 
         # Create complete global stylesheet with DPI awareness
@@ -146,6 +138,7 @@ class ThemeEngine:
         # Add DPI-aware font styling
         try:
             from utils.theme_font_generator import generate_dpi_aware_css
+
             dpi_css = generate_dpi_aware_css()
             global_style += "\n" + dpi_css
         except ImportError:
@@ -162,6 +155,7 @@ class ThemeEngine:
         """Load Inter fonts from resources"""
         try:
             from utils.fonts import _get_inter_fonts
+
             inter_fonts = _get_inter_fonts()
             logger.debug(f"[Theme] Inter fonts loaded: {len(inter_fonts.loaded_fonts)} fonts")
         except Exception as e:
@@ -501,6 +495,17 @@ class ThemeEngine:
             QComboBox QAbstractItemView::item:selected:hover {{
                 background-color: {self.colors['highlight_light_blue']};
                 color: {self.colors['input_selection_text']};
+            }}
+
+            QComboBox QAbstractItemView::item:disabled {{
+                background-color: transparent;
+                color: {self.colors['disabled_text']};
+                opacity: 0.6;
+            }}
+
+            QComboBox QAbstractItemView::item:disabled:hover {{
+                background-color: transparent;
+                color: {self.colors['disabled_text']};
             }}
 
             /* SCROLLBARS */
@@ -1258,6 +1263,17 @@ class ThemeEngine:
                 padding-bottom: 6px !important;
             }}
 
+            /* Simplified styling for all combo boxes within rename modules */
+            QWidget[class="RenameModule"] QComboBox QAbstractItemView {{
+                padding: 4px; /* Add some padding to the dropdown view */
+                margin: 0px;
+            }}
+
+            QWidget[class="RenameModule"] QComboBox QAbstractItemView::item {{
+                margin: 0px; /* Remove margin from items */
+                padding: 4px 8px; /* Control spacing with padding */
+            }}
+
         """
 
     def get_color(self, color_key: str) -> str:
@@ -1270,7 +1286,6 @@ class ThemeEngine:
 
     def apply_windows_font_fixes(self, main_window: QMainWindow):
         """Apply Windows-specific font fixes."""
-        pass
 
     def _apply_windows_combobox_fixes(self, app: QApplication):
         """Apply Windows-specific ComboBox dropdown fixes."""
@@ -1278,7 +1293,8 @@ class ThemeEngine:
 
         for widget in app.allWidgets():
             if isinstance(widget, QComboBox):
-                widget.setStyleSheet(f"""
+                widget.setStyleSheet(
+                    f"""
                     QComboBox {{
                         background-color: {self.colors['combo_background']};
                         border: 1px solid {self.colors['combo_border']};
@@ -1331,4 +1347,5 @@ class ThemeEngine:
                         background-color: {self.colors['combo_item_background_selected']} !important;
                         color: {self.colors['input_selection_text']} !important;
                     }}
-                """)
+                """
+                )

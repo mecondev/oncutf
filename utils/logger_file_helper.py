@@ -23,7 +23,7 @@ def add_file_handler(
     level: int = logging.INFO,
     max_bytes: int = 1_000_000,
     backup_count: int = 3,
-    filter_by_name: Optional[str] = None
+    filter_by_name: Optional[str] = None,
 ) -> None:
     """
     Attaches a rotating file handler to a logger.
@@ -39,20 +39,21 @@ def add_file_handler(
     os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
     file_handler = RotatingFileHandler(
-        log_path, maxBytes=max_bytes, backupCount=backup_count, encoding='utf-8'
+        log_path, maxBytes=max_bytes, backupCount=backup_count, encoding="utf-8"
     )
     file_handler.setLevel(level)
 
     formatter = logging.Formatter(
-        "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
+        "%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
     )
     file_handler.setFormatter(formatter)
 
     if filter_by_name:
+
         class NameFilter(logging.Filter):
             def filter(self, record):
                 return record.name == filter_by_name
+
         file_handler.addFilter(NameFilter())
 
     logger.addHandler(file_handler)

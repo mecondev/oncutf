@@ -46,11 +46,15 @@ class BackupManager(QObject):
 
     # Signals
     backup_completed = pyqtSignal(str)  # Emitted when backup is completed (filepath)
-    backup_failed = pyqtSignal(str)     # Emitted when backup fails (error message)
+    backup_failed = pyqtSignal(str)  # Emitted when backup fails (error message)
 
-    def __init__(self, database_path: str, backup_count: int = DEFAULT_BACKUP_COUNT,
-                 backup_interval: int = DEFAULT_BACKUP_INTERVAL,
-                 periodic_enabled: bool = DEFAULT_PERIODIC_BACKUP_ENABLED):
+    def __init__(
+        self,
+        database_path: str,
+        backup_count: int = DEFAULT_BACKUP_COUNT,
+        backup_interval: int = DEFAULT_BACKUP_INTERVAL,
+        periodic_enabled: bool = DEFAULT_PERIODIC_BACKUP_ENABLED,
+    ):
         """
         Initialize the backup manager.
 
@@ -76,7 +80,9 @@ class BackupManager(QObject):
             self.start_periodic_backups()
 
         logger.info(f"BackupManager initialized for {self.database_path}")
-        logger.info(f"Backup count: {self.backup_count}, Interval: {self.backup_interval}s, Periodic: {self.periodic_enabled}")
+        logger.info(
+            f"Backup count: {self.backup_count}, Interval: {self.backup_interval}s, Periodic: {self.periodic_enabled}"
+        )
 
     def create_backup(self, reason: str = "manual") -> Optional[str]:
         """
@@ -97,10 +103,7 @@ class BackupManager(QObject):
             # Generate backup filename
             timestamp = datetime.now().strftime(BACKUP_TIMESTAMP_FORMAT)
             basename = self.database_path.stem
-            backup_filename = BACKUP_FILENAME_FORMAT.format(
-                basename=basename,
-                timestamp=timestamp
-            )
+            backup_filename = BACKUP_FILENAME_FORMAT.format(basename=basename, timestamp=timestamp)
             backup_path = self.database_path.parent / backup_filename
 
             # Create the backup
@@ -136,7 +139,7 @@ class BackupManager(QObject):
 
             # Remove excess backups
             if len(backup_files) > self.backup_count:
-                files_to_remove = backup_files[self.backup_count:]
+                files_to_remove = backup_files[self.backup_count :]
                 for old_backup in files_to_remove:
                     try:
                         old_backup.unlink()

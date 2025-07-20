@@ -21,6 +21,7 @@ import os
 from enum import Enum
 from typing import Dict, Optional
 
+from config import ICON_SIZES
 from core.pyqt_imports import QApplication, QColor, QCursor, QIcon, QPainter, QPixmap, Qt, QWidget
 from utils.icons_loader import get_menu_icon
 from utils.logger_factory import get_cached_logger
@@ -30,6 +31,7 @@ logger = get_cached_logger(__name__)
 
 class DragType(Enum):
     """Types of items being dragged"""
+
     FILE = "file"
     FOLDER = "folder"
     MULTIPLE = "multiple"
@@ -37,6 +39,7 @@ class DragType(Enum):
 
 class DropZoneState(Enum):
     """States of drop zones"""
+
     VALID = "valid"
     INVALID = "invalid"
     NEUTRAL = "neutral"
@@ -44,9 +47,10 @@ class DropZoneState(Enum):
 
 class ModifierState(Enum):
     """Keyboard modifier states for drag operations"""
-    NORMAL = "normal"          # No modifiers - Replace + Shallow
-    SHIFT = "shift"            # Shift only - Merge + Shallow
-    CTRL = "ctrl"              # Ctrl only - Replace + Recursive
+
+    NORMAL = "normal"  # No modifiers - Replace + Shallow
+    SHIFT = "shift"  # Shift only - Merge + Shallow
+    CTRL = "ctrl"  # Ctrl only - Replace + Recursive
     CTRL_SHIFT = "ctrl_shift"  # Ctrl+Shift - Merge + Recursive
 
 
@@ -60,7 +64,7 @@ class DragVisualManager:
     - Keyboard modifier states (normal/extended metadata)
     """
 
-    _instance: Optional['DragVisualManager'] = None
+    _instance: Optional["DragVisualManager"] = None
 
     def __init__(self):
         # Ensure singleton
@@ -88,7 +92,7 @@ class DragVisualManager:
         self._cursor_cache.clear()
 
     @classmethod
-    def get_instance(cls) -> 'DragVisualManager':
+    def get_instance(cls) -> "DragVisualManager":
         """Get the singleton instance."""
         if cls._instance is None:
             cls._instance = cls()
@@ -98,7 +102,9 @@ class DragVisualManager:
     # Drag State Management
     # =====================================
 
-    def start_drag_visual(self, drag_type: DragType, source_info: str, drag_source: str = None) -> None:
+    def start_drag_visual(
+        self, drag_type: DragType, source_info: str, drag_source: str = None
+    ) -> None:
         """
         Start visual feedback for a drag operation.
 
@@ -310,12 +316,12 @@ class DragVisualManager:
         # Draw base icon
         base_qicon = get_menu_icon(base_icon)
         if not base_qicon.isNull():
-            base_pixmap = base_qicon.pixmap(28, 28)
+            base_pixmap = base_qicon.pixmap(ICON_SIZES["LARGE"], ICON_SIZES["LARGE"])
             painter.drawPixmap(4, 8, base_pixmap)
 
         # Draw action icons side by side
         if action_icons:
-            icon_size = 22
+            icon_size = ICON_SIZES["MEDIUM"]
             start_x = 24 if len(action_icons) <= 1 else 26
 
             for i, action_icon in enumerate(action_icons):
@@ -340,7 +346,10 @@ class DragVisualManager:
                         color_painter.end()
                         action_pixmap = colored_pixmap
 
-                    elif action_icon in ["download", "download-cloud"] and self._drag_source == "file_table":
+                    elif (
+                        action_icon in ["download", "download-cloud"]
+                        and self._drag_source == "file_table"
+                    ):
                         # Green for metadata drops
                         colored_pixmap = QPixmap(action_pixmap.size())
                         colored_pixmap.fill(Qt.transparent)
@@ -424,11 +433,11 @@ class DragVisualManager:
         if is_ctrl and is_shift:
             result = ModifierState.CTRL_SHIFT  # Ctrl+Shift = Merge + Recursive
         elif is_shift:
-            result = ModifierState.SHIFT       # Shift only = Merge + Shallow
+            result = ModifierState.SHIFT  # Shift only = Merge + Shallow
         elif is_ctrl:
-            result = ModifierState.CTRL        # Ctrl only = Replace + Recursive
+            result = ModifierState.CTRL  # Ctrl only = Replace + Recursive
         else:
-            result = ModifierState.NORMAL      # No modifiers = Replace + Shallow
+            result = ModifierState.NORMAL  # No modifiers = Replace + Shallow
 
         return result
 
@@ -491,7 +500,7 @@ class DragVisualManager:
         icon_map = {
             DropZoneState.VALID: "check-circle",
             DropZoneState.INVALID: "x-circle",
-            DropZoneState.NEUTRAL: "target"
+            DropZoneState.NEUTRAL: "target",
         }
 
         icon_name = icon_map.get(state, "target")
@@ -503,32 +512,38 @@ class DragVisualManager:
             ModifierState.NORMAL: "check",
             ModifierState.SHIFT: "plus",
             ModifierState.CTRL: "arrow-down",
-            ModifierState.CTRL_SHIFT: "plus-circle"
+            ModifierState.CTRL_SHIFT: "plus-circle",
         }
 
         icon_name = icon_map.get(state, "check")
         return get_menu_icon(icon_name)
+
 
 # Global convenience functions
 def start_drag_visual(drag_type: DragType, source_info: str, drag_source: str = None) -> None:
     """Start visual feedback for drag operation."""
     DragVisualManager.get_instance().start_drag_visual(drag_type, source_info, drag_source)
 
+
 def end_drag_visual() -> None:
     """End visual feedback for drag operation."""
     DragVisualManager.get_instance().end_drag_visual()
+
 
 def update_drop_zone_state(state: DropZoneState) -> None:
     """Update drop zone state."""
     DragVisualManager.get_instance().update_drop_zone_state(state)
 
+
 def update_modifier_state() -> None:
     """Update modifier state."""
     DragVisualManager.get_instance().update_modifier_state()
 
+
 def is_valid_drop_target(widget: QWidget, drag_source: str) -> bool:
     """Check if widget is valid drop target."""
     return DragVisualManager.get_instance().is_valid_drop_target(widget, drag_source)
+
 
 def update_drag_feedback_for_widget(source_widget, drag_source: str) -> bool:
     """
@@ -541,4 +556,6 @@ def update_drag_feedback_for_widget(source_widget, drag_source: str) -> bool:
     Returns:
         bool: True to continue drag, False to end drag
     """
-    return DragVisualManager.get_instance().update_drag_feedback_for_widget(source_widget, drag_source)
+    return DragVisualManager.get_instance().update_drag_feedback_for_widget(
+        source_widget, drag_source
+    )

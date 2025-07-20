@@ -46,7 +46,7 @@ class FileItem:
         return f"FileItem(full_path='{self.full_path}', extension='{self.extension}', modified='{self.modified}')"
 
     @classmethod
-    def from_path(cls, file_path: str) -> 'FileItem':
+    def from_path(cls, file_path: str) -> "FileItem":
         """
         Create a FileItem from a file path by auto-detecting properties.
 
@@ -59,7 +59,7 @@ class FileItem:
 
         filename = os.path.basename(file_path)
         _, ext = os.path.splitext(filename)
-        extension = ext[1:].lower() if ext.startswith('.') else ''
+        extension = ext[1:].lower() if ext.startswith(".") else ""
 
         # Get modification time
         try:
@@ -83,7 +83,7 @@ class FileItem:
 
     @property
     def metadata_extended(self) -> bool:
-        return isinstance(self.metadata, dict) and self.metadata.get('__extended__') is True
+        return isinstance(self.metadata, dict) and self.metadata.get("__extended__") is True
 
     def _detect_size(self) -> int:
         """
@@ -103,4 +103,5 @@ class FileItem:
         Uses cross-platform formatting that respects system locale and conventions.
         """
         from utils.file_size_formatter import format_file_size_system_compatible
+
         return format_file_size_system_compatible(self.size)

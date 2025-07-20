@@ -16,7 +16,7 @@ Features:
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, List, Optional
 
 from config import COMMAND_TYPES
 from utils.logger_factory import get_cached_logger
@@ -54,7 +54,6 @@ class MetadataCommand(ABC):
         Returns:
             True if successful, False otherwise
         """
-        pass
 
     @abstractmethod
     def undo(self) -> bool:
@@ -64,7 +63,6 @@ class MetadataCommand(ABC):
         Returns:
             True if successful, False otherwise
         """
-        pass
 
     @abstractmethod
     def get_description(self) -> str:
@@ -74,7 +72,6 @@ class MetadataCommand(ABC):
         Returns:
             Description string for UI display
         """
-        pass
 
     @abstractmethod
     def get_command_type(self) -> str:
@@ -84,7 +81,6 @@ class MetadataCommand(ABC):
         Returns:
             Command type string
         """
-        pass
 
     def can_execute(self) -> bool:
         """Check if command can be executed."""
@@ -101,6 +97,7 @@ class MetadataCommand(ABC):
     def get_file_basename(self) -> str:
         """Get the basename of the file for display."""
         import os
+
         return os.path.basename(self.file_path)
 
 
@@ -109,7 +106,14 @@ class EditMetadataFieldCommand(MetadataCommand):
     Command for editing a single metadata field.
     """
 
-    def __init__(self, file_path: str, field_path: str, new_value: Any, old_value: Any, metadata_tree_view=None):
+    def __init__(
+        self,
+        file_path: str,
+        field_path: str,
+        new_value: Any,
+        old_value: Any,
+        metadata_tree_view=None,
+    ):
         """
         Initialize edit metadata field command.
 
@@ -138,7 +142,9 @@ class EditMetadataFieldCommand(MetadataCommand):
             if success:
                 self.executed = True
                 self.undone = False
-                logger.debug(f"[EditMetadataFieldCommand] Executed: {self.field_path} = {self.new_value}")
+                logger.debug(
+                    f"[EditMetadataFieldCommand] Executed: {self.field_path} = {self.new_value}"
+                )
                 return True
             else:
                 logger.warning(f"[EditMetadataFieldCommand] Failed to execute: {self.field_path}")
@@ -159,7 +165,9 @@ class EditMetadataFieldCommand(MetadataCommand):
 
             if success:
                 self.undone = True
-                logger.debug(f"[EditMetadataFieldCommand] Undone: {self.field_path} = {self.old_value}")
+                logger.debug(
+                    f"[EditMetadataFieldCommand] Undone: {self.field_path} = {self.old_value}"
+                )
                 return True
             else:
                 logger.warning(f"[EditMetadataFieldCommand] Failed to undo: {self.field_path}")
@@ -183,7 +191,9 @@ class EditMetadataFieldCommand(MetadataCommand):
         try:
             # Use the passed metadata tree view reference
             if not self.metadata_tree_view:
-                logger.warning("[EditMetadataFieldCommand] No metadata tree view reference available")
+                logger.warning(
+                    "[EditMetadataFieldCommand] No metadata tree view reference available"
+                )
                 return False
 
             # Update metadata in cache
@@ -218,7 +228,14 @@ class ResetMetadataFieldCommand(MetadataCommand):
     Command for resetting a metadata field to its original value.
     """
 
-    def __init__(self, file_path: str, field_path: str, current_value: Any, original_value: Any, metadata_tree_view=None):
+    def __init__(
+        self,
+        file_path: str,
+        field_path: str,
+        current_value: Any,
+        original_value: Any,
+        metadata_tree_view=None,
+    ):
         """
         Initialize reset metadata field command.
 
@@ -247,7 +264,9 @@ class ResetMetadataFieldCommand(MetadataCommand):
             if success:
                 self.executed = True
                 self.undone = False
-                logger.debug(f"[ResetMetadataFieldCommand] Executed: {self.field_path} reset to {self.original_value}")
+                logger.debug(
+                    f"[ResetMetadataFieldCommand] Executed: {self.field_path} reset to {self.original_value}"
+                )
                 return True
             else:
                 logger.warning(f"[ResetMetadataFieldCommand] Failed to execute: {self.field_path}")
@@ -268,7 +287,9 @@ class ResetMetadataFieldCommand(MetadataCommand):
 
             if success:
                 self.undone = True
-                logger.debug(f"[ResetMetadataFieldCommand] Undone: {self.field_path} = {self.current_value}")
+                logger.debug(
+                    f"[ResetMetadataFieldCommand] Undone: {self.field_path} = {self.current_value}"
+                )
                 return True
             else:
                 logger.warning(f"[ResetMetadataFieldCommand] Failed to undo: {self.field_path}")
@@ -292,7 +313,9 @@ class ResetMetadataFieldCommand(MetadataCommand):
         try:
             # Use the passed metadata tree view reference
             if not self.metadata_tree_view:
-                logger.warning("[ResetMetadataFieldCommand] No metadata tree view reference available")
+                logger.warning(
+                    "[ResetMetadataFieldCommand] No metadata tree view reference available"
+                )
                 return False
 
             # Reset metadata in cache
@@ -369,7 +392,9 @@ class SaveMetadataCommand(MetadataCommand):
             # Note: Undoing a save operation is complex because it involves
             # reverting file changes. For now, we'll just mark as undone
             # but not actually revert the files.
-            logger.warning("[SaveMetadataCommand] Save undo not implemented - files remain modified")
+            logger.warning(
+                "[SaveMetadataCommand] Save undo not implemented - files remain modified"
+            )
 
             self.undone = True
             return True
@@ -421,12 +446,16 @@ class BatchMetadataCommand(MetadataCommand):
                 if command.execute():
                     success_count += 1
                 else:
-                    logger.warning(f"[BatchMetadataCommand] Failed to execute: {command.get_description()}")
+                    logger.warning(
+                        f"[BatchMetadataCommand] Failed to execute: {command.get_description()}"
+                    )
 
             if success_count > 0:
                 self.executed = True
                 self.undone = False
-                logger.debug(f"[BatchMetadataCommand] Executed: {success_count}/{len(self.commands)} commands")
+                logger.debug(
+                    f"[BatchMetadataCommand] Executed: {success_count}/{len(self.commands)} commands"
+                )
                 return True
             else:
                 logger.warning("[BatchMetadataCommand] No commands executed successfully")
@@ -448,11 +477,15 @@ class BatchMetadataCommand(MetadataCommand):
                 if command.undo():
                     success_count += 1
                 else:
-                    logger.warning(f"[BatchMetadataCommand] Failed to undo: {command.get_description()}")
+                    logger.warning(
+                        f"[BatchMetadataCommand] Failed to undo: {command.get_description()}"
+                    )
 
             if success_count > 0:
                 self.undone = True
-                logger.debug(f"[BatchMetadataCommand] Undone: {success_count}/{len(self.commands)} commands")
+                logger.debug(
+                    f"[BatchMetadataCommand] Undone: {success_count}/{len(self.commands)} commands"
+                )
                 return True
             else:
                 logger.warning("[BatchMetadataCommand] No commands undone successfully")

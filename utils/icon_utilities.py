@@ -21,13 +21,14 @@ from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
+
 def create_colored_icon(
     fill_color: str,
     shape: str = "circle",
     size_x: int = 10,
     size_y: int = 10,
     border_color: str = None,
-    border_thickness: int = 0
+    border_thickness: int = 0,
 ) -> QPixmap:
     """
     Creates a small colored shape (circle or rectangle) as a QPixmap icon.
@@ -65,4 +66,3 @@ def create_colored_icon(
 
     painter.end()
     return pixmap
-

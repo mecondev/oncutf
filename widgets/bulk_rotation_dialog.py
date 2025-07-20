@@ -44,7 +44,8 @@ class BulkRotationDialog(QDialog):
         self.setModal(True)
         self.setFixedSize(600, 450)
 
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QDialog {
                 background-color: #212121;
                 color: #f0ebd8;
@@ -87,19 +88,21 @@ class BulkRotationDialog(QDialog):
             QScrollArea QWidget {
                 background-color: transparent;
             }
-        """)
+        """
+        )
 
         self._setup_ui()
         self._analyze_files()
 
-
-
     def _apply_info_label_style(self, color: str, opacity: str = "1.0"):
         """Apply consistent font styling to info label."""
         from utils.fonts import get_inter_css_weight, get_inter_family
-        font_family = get_inter_family('base')
-        font_weight = get_inter_css_weight('base')
-        self.info_label.setStyleSheet(f"color: {color}; font-family: '{font_family}', Arial, sans-serif; font-size: 8pt; font-weight: {font_weight}; opacity: {opacity};")
+
+        font_family = get_inter_family("base")
+        font_weight = get_inter_css_weight("base")
+        self.info_label.setStyleSheet(
+            f"color: {color}; font-family: '{font_family}', Arial, sans-serif; font-size: 8pt; font-weight: {font_weight}; opacity: {opacity};"
+        )
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -153,7 +156,8 @@ class BulkRotationDialog(QDialog):
         self.cancel_button.setFocus()
         self.cancel_button.clicked.connect(self.reject)
 
-        self.cancel_button.setStyleSheet("""
+        self.cancel_button.setStyleSheet(
+            """
             QPushButton {
                 background-color: #2a2a2a;
                 color: #f0ebd8;
@@ -169,13 +173,15 @@ class BulkRotationDialog(QDialog):
             QPushButton:pressed {
                 background-color: #1a1a1a;
             }
-        """)
+        """
+        )
 
         # Apply button
         self.apply_button = QPushButton("Apply")
         self.apply_button.clicked.connect(self.accept)
 
-        self.apply_button.setStyleSheet("""
+        self.apply_button.setStyleSheet(
+            """
             QPushButton {
                 background-color: #2a2a2a;
                 color: #f0ebd8;
@@ -191,7 +197,8 @@ class BulkRotationDialog(QDialog):
             QPushButton:pressed {
                 background-color: #5a6b7a;
             }
-        """)
+        """
+        )
 
         button_layout.addStretch()
         button_layout.addWidget(self.cancel_button)
@@ -211,47 +218,49 @@ class BulkRotationDialog(QDialog):
 
         for file_item in self.selected_files:
             ext = Path(file_item.filename).suffix.lower()
-            if ext.startswith('.'):
+            if ext.startswith("."):
                 ext = ext[1:]
 
-            if ext in ['jpg', 'jpeg', 'png', 'tiff', 'tif', 'bmp', 'gif']:
+            if ext in ["jpg", "jpeg", "png", "tiff", "tif", "bmp", "gif"]:
                 file_type = "Images"
-            elif ext in ['mp4', 'avi', 'mov', 'mkv', 'wmv', 'flv', 'm4v']:
+            elif ext in ["mp4", "avi", "mov", "mkv", "wmv", "flv", "m4v"]:
                 file_type = "Videos"
-            elif ext in ['mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg']:
+            elif ext in ["mp3", "wav", "flac", "aac", "m4a", "ogg"]:
                 file_type = "Audio"
             else:
                 file_type = "Other"
 
             if file_type not in file_types:
                 file_types[file_type] = {
-                    'all_files': [],
-                    'files_needing_change': [],
-                    'extensions': set()
+                    "all_files": [],
+                    "files_needing_change": [],
+                    "extensions": set(),
                 }
 
-            file_types[file_type]['all_files'].append(file_item)
-            file_types[file_type]['extensions'].add(ext.upper())
+            file_types[file_type]["all_files"].append(file_item)
+            file_types[file_type]["extensions"].add(ext.upper())
 
             # Check if this file needs rotation change
             current_rotation = self._get_current_rotation(file_item)
             if current_rotation is None:
                 files_missing_metadata += 1
                 # Files without metadata will be treated as needing change (assume non-zero)
-                file_types[file_type]['files_needing_change'].append(file_item)
+                file_types[file_type]["files_needing_change"].append(file_item)
                 total_needing_rotation += 1
             elif current_rotation != "0":
-                file_types[file_type]['files_needing_change'].append(file_item)
+                file_types[file_type]["files_needing_change"].append(file_item)
                 total_needing_rotation += 1
 
         # Only create UI for file types that have files needing rotation change
         groups_with_changes = 0
         for file_type, data in file_types.items():
-            if data['files_needing_change']:  # Only show groups with files that need changes
-                files_needing_change = data['files_needing_change']
-                total_files_in_group = len(data['all_files'])
-                extensions = sorted(data['extensions'])
-                self._create_group_widget(file_type, files_needing_change, total_files_in_group, extensions)
+            if data["files_needing_change"]:  # Only show groups with files that need changes
+                files_needing_change = data["files_needing_change"]
+                total_files_in_group = len(data["all_files"])
+                extensions = sorted(data["extensions"])
+                self._create_group_widget(
+                    file_type, files_needing_change, total_files_in_group, extensions
+                )
                 groups_with_changes += 1
 
         # Update info label with meaningful information
@@ -263,7 +272,9 @@ class BulkRotationDialog(QDialog):
             # Update dialog title to reflect no changes needed
             self.setWindowTitle("Bulk Rotation - No Changes Needed")
         else:
-            info_text = f"{total_needing_rotation} of {total_files} files will be set to 0° rotation"
+            info_text = (
+                f"{total_needing_rotation} of {total_files} files will be set to 0° rotation"
+            )
             if files_missing_metadata > 0:
                 info_text += f" ({files_missing_metadata} without metadata)"
             self.info_label.setText(info_text)
@@ -277,13 +288,13 @@ class BulkRotationDialog(QDialog):
 
         # Check metadata cache first (includes any pending modifications)
         metadata_entry = self.metadata_cache.get_entry(file_item.full_path)
-        if metadata_entry and hasattr(metadata_entry, 'data'):
+        if metadata_entry and hasattr(metadata_entry, "data"):
             rotation = metadata_entry.data.get("Rotation")
             if rotation is not None:
                 return str(rotation)
 
         # Fallback to file metadata
-        if hasattr(file_item, 'metadata') and file_item.metadata:
+        if hasattr(file_item, "metadata") and file_item.metadata:
             rotation = file_item.metadata.get("Rotation")
             if rotation is not None:
                 return str(rotation)
@@ -291,7 +302,13 @@ class BulkRotationDialog(QDialog):
         # Return None for files without rotation metadata (will be treated as needing change)
         return None
 
-    def _create_group_widget(self, file_type: str, files_needing_change: List, total_files_in_group: int, extensions: List[str]):
+    def _create_group_widget(
+        self,
+        file_type: str,
+        files_needing_change: List,
+        total_files_in_group: int,
+        extensions: List[str],
+    ):
         frame = QFrame()
         frame.setFrameStyle(QFrame.StyledPanel)
 
@@ -317,7 +334,9 @@ class BulkRotationDialog(QDialog):
             label_text = f"{file_type} ({files_to_change} files): {extensions_text}"
         else:
             # Some files already have 0° rotation
-            label_text = f"{file_type} ({files_to_change}/{total_files_in_group} files): {extensions_text}"
+            label_text = (
+                f"{file_type} ({files_to_change}/{total_files_in_group} files): {extensions_text}"
+            )
 
         label = QLabel(label_text)
         label.setWordWrap(True)

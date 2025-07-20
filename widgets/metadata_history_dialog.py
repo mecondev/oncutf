@@ -17,12 +17,23 @@ Features:
 
 from typing import Optional
 
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QKeySequence
 from PyQt5.QtWidgets import (
-    QAbstractItemView, QDialog, QDialogButtonBox, QHBoxLayout, QHeaderView,
-    QLabel, QPushButton, QShortcut, QSplitter, QTableWidget, QTableWidgetItem,
-    QTextEdit, QVBoxLayout, QWidget
+    QAbstractItemView,
+    QDialog,
+    QDialogButtonBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QPushButton,
+    QShortcut,
+    QSplitter,
+    QTableWidget,
+    QTableWidgetItem,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
 
 from config import UNDO_REDO_SETTINGS
@@ -57,8 +68,7 @@ class MetadataHistoryDialog(QDialog):
         self.setWindowTitle("Command History - Undo/Redo Operations")
         self.setModal(True)
         self.resize(
-            UNDO_REDO_SETTINGS["HISTORY_DIALOG_WIDTH"],
-            UNDO_REDO_SETTINGS["HISTORY_DIALOG_HEIGHT"]
+            UNDO_REDO_SETTINGS["HISTORY_DIALOG_WIDTH"], UNDO_REDO_SETTINGS["HISTORY_DIALOG_HEIGHT"]
         )
 
         self._setup_ui()
@@ -86,7 +96,9 @@ class MetadataHistoryDialog(QDialog):
         layout.addWidget(title_label)
 
         # Info label
-        info_label = QLabel("Recent metadata and rename operations. Use Ctrl+Z/Ctrl+Shift+Z for quick undo/redo.")
+        info_label = QLabel(
+            "Recent metadata and rename operations. Use Ctrl+Z/Ctrl+Shift+Z for quick undo/redo."
+        )
         info_label.setStyleSheet("color: #888888; font-size: 11px; margin-bottom: 10px;")
         layout.addWidget(info_label)
 
@@ -150,7 +162,9 @@ class MetadataHistoryDialog(QDialog):
         self.redo_button = QPushButton("Redo")
         self.redo_button.setEnabled(False)
         self.redo_button.clicked.connect(self._redo_selected)
-        setup_tooltip(self.redo_button, "Redo the selected operation (Ctrl+Shift+Z)", TooltipType.INFO)
+        setup_tooltip(
+            self.redo_button, "Redo the selected operation (Ctrl+Shift+Z)", TooltipType.INFO
+        )
         button_layout.addWidget(self.redo_button)
 
         button_layout.addStretch()
@@ -244,36 +258,44 @@ class MetadataHistoryDialog(QDialog):
 
             # Add metadata commands
             for cmd in metadata_commands:
-                all_operations.append({
-                    'timestamp': cmd['timestamp'],
-                    'operation': cmd['description'],
-                    'file': self._get_file_basename(cmd['file_path']),
-                    'status': 'Can Undo' if cmd['can_undo'] else 'Can Redo' if cmd['can_redo'] else 'Done',
-                    'type': 'metadata',
-                    'data': cmd
-                })
+                all_operations.append(
+                    {
+                        "timestamp": cmd["timestamp"],
+                        "operation": cmd["description"],
+                        "file": self._get_file_basename(cmd["file_path"]),
+                        "status": (
+                            "Can Undo"
+                            if cmd["can_undo"]
+                            else "Can Redo" if cmd["can_redo"] else "Done"
+                        ),
+                        "type": "metadata",
+                        "data": cmd,
+                    }
+                )
 
             # Add rename operations
             for op in rename_operations:
-                all_operations.append({
-                    'timestamp': op['timestamp'],
-                    'operation': op['display_text'],
-                    'file': f"{op['file_count']} files",
-                    'status': 'Rename Operation',
-                    'type': 'rename',
-                    'data': op
-                })
+                all_operations.append(
+                    {
+                        "timestamp": op["timestamp"],
+                        "operation": op["display_text"],
+                        "file": f"{op['file_count']} files",
+                        "status": "Rename Operation",
+                        "type": "rename",
+                        "data": op,
+                    }
+                )
 
             # Sort by timestamp (most recent first)
-            all_operations.sort(key=lambda x: x['timestamp'], reverse=True)
+            all_operations.sort(key=lambda x: x["timestamp"], reverse=True)
 
             # Populate table
             self.operations_table.setRowCount(len(all_operations))
 
             for row, operation in enumerate(all_operations):
                 # Time
-                timestamp = operation['timestamp']
-                if hasattr(timestamp, 'strftime'):
+                timestamp = operation["timestamp"]
+                if hasattr(timestamp, "strftime"):
                     time_str = timestamp.strftime("%H:%M:%S")
                 else:
                     time_str = str(timestamp)[:8] if len(str(timestamp)) > 8 else str(timestamp)
@@ -283,22 +305,22 @@ class MetadataHistoryDialog(QDialog):
                 self.operations_table.setItem(row, 0, time_item)
 
                 # Operation
-                op_item = QTableWidgetItem(operation['operation'])
+                op_item = QTableWidgetItem(operation["operation"])
                 self.operations_table.setItem(row, 1, op_item)
 
                 # File
-                file_item = QTableWidgetItem(operation['file'])
+                file_item = QTableWidgetItem(operation["file"])
                 self.operations_table.setItem(row, 2, file_item)
 
                 # Status
-                status_item = QTableWidgetItem(operation['status'])
+                status_item = QTableWidgetItem(operation["status"])
 
                 # Color code status
-                if operation['status'] == 'Can Undo':
+                if operation["status"] == "Can Undo":
                     status_item.setForeground(Qt.darkGreen)
-                elif operation['status'] == 'Can Redo':
+                elif operation["status"] == "Can Redo":
                     status_item.setForeground(Qt.darkBlue)
-                elif operation['status'] == 'Rename Operation':
+                elif operation["status"] == "Rename Operation":
                     status_item.setForeground(Qt.darkMagenta)
                 else:
                     status_item.setForeground(Qt.gray)
@@ -336,10 +358,10 @@ class MetadataHistoryDialog(QDialog):
         try:
             details = []
 
-            if operation_data['type'] == 'metadata':
+            if operation_data["type"] == "metadata":
                 # Metadata command details
-                cmd_data = operation_data['data']
-                details.append(f"METADATA COMMAND")
+                cmd_data = operation_data["data"]
+                details.append("METADATA COMMAND")
                 details.append(f"Command ID: {cmd_data['command_id']}")
                 details.append(f"Type: {cmd_data['command_type']}")
                 details.append(f"Description: {cmd_data['description']}")
@@ -348,26 +370,32 @@ class MetadataHistoryDialog(QDialog):
                 details.append(f"Can Undo: {cmd_data['can_undo']}")
                 details.append(f"Can Redo: {cmd_data['can_redo']}")
 
-            elif operation_data['type'] == 'rename':
+            elif operation_data["type"] == "rename":
                 # Rename operation details
-                op_data = operation_data['data']
-                details.append(f"RENAME OPERATION")
+                op_data = operation_data["data"]
+                details.append("RENAME OPERATION")
                 details.append(f"Operation ID: {op_data['operation_id']}")
                 details.append(f"File Count: {op_data['file_count']}")
                 details.append(f"Timestamp: {op_data['timestamp']}")
                 details.append(f"Operation Type: {op_data['operation_type']}")
 
                 # Get detailed rename information
-                rename_details = self.rename_history_manager.get_operation_details(op_data['operation_id'])
+                rename_details = self.rename_history_manager.get_operation_details(
+                    op_data["operation_id"]
+                )
                 if rename_details:
-                    details.append(f"\nRENAME DETAILS:")
+                    details.append("\nRENAME DETAILS:")
                     for i, rename_op in enumerate(rename_details.operations[:10]):  # Show first 10
-                        details.append(f"  {i+1}. {rename_op.old_filename} → {rename_op.new_filename}")
+                        details.append(
+                            f"  {i+1}. {rename_op.old_filename} → {rename_op.new_filename}"
+                        )
 
                     if len(rename_details.operations) > 10:
-                        details.append(f"  ... and {len(rename_details.operations) - 10} more files")
+                        details.append(
+                            f"  ... and {len(rename_details.operations) - 10} more files"
+                        )
 
-            self.details_text.setPlainText('\n'.join(details))
+            self.details_text.setPlainText("\n".join(details))
 
         except Exception as e:
             logger.error(f"[MetadataHistoryDialog] Error loading operation details: {e}")
@@ -387,10 +415,10 @@ class MetadataHistoryDialog(QDialog):
         time_item = self.operations_table.item(row, 0)
         operation_data = time_item.data(Qt.UserRole)
 
-        if operation_data and operation_data['type'] == 'metadata':
-            cmd_data = operation_data['data']
-            self.undo_button.setEnabled(cmd_data['can_undo'])
-            self.redo_button.setEnabled(cmd_data['can_redo'])
+        if operation_data and operation_data["type"] == "metadata":
+            cmd_data = operation_data["data"]
+            self.undo_button.setEnabled(cmd_data["can_undo"])
+            self.redo_button.setEnabled(cmd_data["can_redo"])
         else:
             # For rename operations, use general undo/redo state
             self.undo_button.setEnabled(self.command_manager.can_undo())
@@ -402,7 +430,7 @@ class MetadataHistoryDialog(QDialog):
             self._load_history()
 
             # Show status message
-            if self.parent_window and hasattr(self.parent_window, 'status_bar'):
+            if self.parent_window and hasattr(self.parent_window, "status_bar"):
                 self.parent_window.status_bar.showMessage("Operation undone", 2000)
 
     def _redo_selected(self):
@@ -411,7 +439,7 @@ class MetadataHistoryDialog(QDialog):
             self._load_history()
 
             # Show status message
-            if self.parent_window and hasattr(self.parent_window, 'status_bar'):
+            if self.parent_window and hasattr(self.parent_window, "status_bar"):
                 self.parent_window.status_bar.showMessage("Operation redone", 2000)
 
     def _clear_history(self):
@@ -422,7 +450,7 @@ class MetadataHistoryDialog(QDialog):
             self,
             "Clear History",
             "Are you sure you want to clear all command history?\n\n"
-            "This action cannot be undone and will remove all undo/redo capabilities."
+            "This action cannot be undone and will remove all undo/redo capabilities.",
         )
 
         if result:
@@ -430,12 +458,13 @@ class MetadataHistoryDialog(QDialog):
             self._load_history()
 
             # Show status message
-            if self.parent_window and hasattr(self.parent_window, 'status_bar'):
+            if self.parent_window and hasattr(self.parent_window, "status_bar"):
                 self.parent_window.status_bar.showMessage("Command history cleared", 2000)
 
     def _get_file_basename(self, file_path: str) -> str:
         """Get the basename of a file path."""
         import os
+
         return os.path.basename(file_path) if file_path else ""
 
 

@@ -29,6 +29,7 @@ logger = get_logger(__name__)
 
 class TooltipType:
     """Tooltip type constants"""
+
     DEFAULT = "default"
     ERROR = "error"
     WARNING = "warning"
@@ -39,7 +40,13 @@ class TooltipType:
 class CustomTooltip(QLabel):
     """Custom tooltip widget with enhanced styling and behavior"""
 
-    def __init__(self, parent: QWidget, text: str, tooltip_type: str = TooltipType.DEFAULT, persistent: bool = False):
+    def __init__(
+        self,
+        parent: QWidget,
+        text: str,
+        tooltip_type: str = TooltipType.DEFAULT,
+        persistent: bool = False,
+    ):
         super().__init__(text, parent)
         self.tooltip_type = tooltip_type
         self.persistent = persistent
@@ -52,10 +59,10 @@ class CustomTooltip(QLabel):
         # Set window flags for tooltip behavior
         if self.persistent:
             # Persistent tooltips behave like Qt standard tooltips
-            self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint) # type: ignore[attr-defined]
+            self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint)  # type: ignore[attr-defined]
         else:
             # Temporary tooltips with auto-hide
-            self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint) # type: ignore[attr-defined]
+            self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)  # type: ignore[attr-defined]
 
         # Apply styling based on tooltip type
         style_classes = {
@@ -63,7 +70,7 @@ class CustomTooltip(QLabel):
             TooltipType.WARNING: "WarningTooltip",
             TooltipType.INFO: "InfoTooltip",
             TooltipType.SUCCESS: "SuccessTooltip",
-            TooltipType.DEFAULT: "InfoTooltip"  # Default to info style
+            TooltipType.DEFAULT: "InfoTooltip",  # Default to info style
         }.get(self.tooltip_type, "InfoTooltip")
 
         self.setProperty("class", style_classes)
@@ -100,12 +107,14 @@ class TooltipHelper:
     _persistent_tooltips: dict = {}  # widget -> tooltip mapping for persistent tooltips
 
     @classmethod
-    def show_tooltip(cls,
-                    widget: QWidget,
-                    message: str,
-                    tooltip_type: str = TooltipType.DEFAULT,
-                    duration: Optional[int] = None,
-                    persistent: bool = False) -> None:
+    def show_tooltip(
+        cls,
+        widget: QWidget,
+        message: str,
+        tooltip_type: str = TooltipType.DEFAULT,
+        duration: Optional[int] = None,
+        persistent: bool = False,
+    ) -> None:
         """
         Show a custom tooltip near the specified widget
 
@@ -126,7 +135,9 @@ class TooltipHelper:
             logger.error(f"[TooltipHelper] Failed to show tooltip: {e}")
 
     @classmethod
-    def _show_temporary_tooltip(cls, widget: QWidget, message: str, tooltip_type: str, duration: Optional[int]) -> None:
+    def _show_temporary_tooltip(
+        cls, widget: QWidget, message: str, tooltip_type: str, duration: Optional[int]
+    ) -> None:
         """Show a temporary tooltip that auto-hides"""
         # Clear any existing tooltip for this widget
         cls.clear_tooltips_for_widget(widget)
@@ -134,8 +145,9 @@ class TooltipHelper:
         # Create new tooltip
         tooltip = CustomTooltip(widget.window(), message, tooltip_type, persistent=False)
 
-                        # Calculate position relative to cursor for better UX
+        # Calculate position relative to cursor for better UX
         from PyQt5.QtGui import QCursor
+
         try:
             # Get current cursor position
             global_pos = QCursor.pos()
@@ -158,7 +170,9 @@ class TooltipHelper:
         # Track active tooltip
         cls._active_tooltips.append((widget, tooltip))
 
-        logger.debug(f"[TooltipHelper] Showed {tooltip_type} tooltip: {message[:50]}{'...' if len(message) > 50 else ''}")
+        logger.debug(
+            f"[TooltipHelper] Showed {tooltip_type} tooltip: {message[:50]}{'...' if len(message) > 50 else ''}"
+        )
 
     @classmethod
     def _setup_persistent_tooltip(cls, widget: QWidget, message: str, tooltip_type: str) -> None:
@@ -183,9 +197,9 @@ class TooltipHelper:
         # Setup hover events
         widget.setMouseTracking(True)
 
-                # Store original event handlers
-        original_enter = getattr(widget, 'enterEvent', None)
-        original_leave = getattr(widget, 'leaveEvent', None)
+        # Store original event handlers
+        original_enter = getattr(widget, "enterEvent", None)
+        original_leave = getattr(widget, "leaveEvent", None)
 
         # Store timer ID for cleanup
         tooltip._timer_id = None
@@ -195,10 +209,11 @@ class TooltipHelper:
                 original_enter(event)
             # Schedule tooltip show with 600ms delay using global timer manager
             from utils.timer_manager import schedule_ui_update
+
             tooltip._timer_id = schedule_ui_update(
                 lambda: cls._show_persistent_tooltip(widget, tooltip),
                 delay=600,
-                timer_id=f"tooltip_show_{id(widget)}"
+                timer_id=f"tooltip_show_{id(widget)}",
             )
 
         def leave_event(event: QEvent):
@@ -206,13 +221,17 @@ class TooltipHelper:
                 if original_leave:
                     original_leave(event)
                 # Cancel the timer if still running
-                if hasattr(tooltip, '_timer_id') and tooltip._timer_id:
+                if hasattr(tooltip, "_timer_id") and tooltip._timer_id:
                     from utils.timer_manager import cancel_timer
+
                     cancel_timer(tooltip._timer_id)
                     tooltip._timer_id = None
                 # Check if tooltip still exists before trying to hide it
                 widget_id = id(widget)
-                if widget_id in cls._persistent_tooltips and cls._persistent_tooltips[widget_id] == tooltip:
+                if (
+                    widget_id in cls._persistent_tooltips
+                    and cls._persistent_tooltips[widget_id] == tooltip
+                ):
                     tooltip.hide()
             except RuntimeError as e:
                 # Qt object has been deleted - remove from tracking
@@ -231,11 +250,15 @@ class TooltipHelper:
         try:
             # Check if widget and tooltip still exist
             widget_id = id(widget)
-            if widget_id not in cls._persistent_tooltips or cls._persistent_tooltips[widget_id] != tooltip:
+            if (
+                widget_id not in cls._persistent_tooltips
+                or cls._persistent_tooltips[widget_id] != tooltip
+            ):
                 return
 
             # Calculate position relative to cursor for better UX
             from PyQt5.QtGui import QCursor
+
             try:
                 # Get current cursor position
                 global_pos = QCursor.pos()
@@ -264,7 +287,9 @@ class TooltipHelper:
             logger.error(f"[TooltipHelper] Failed to show persistent tooltip: {e}")
 
     @classmethod
-    def setup_tooltip(cls, widget: QWidget, message: str, tooltip_type: str = TooltipType.DEFAULT) -> None:
+    def setup_tooltip(
+        cls, widget: QWidget, message: str, tooltip_type: str = TooltipType.DEFAULT
+    ) -> None:
         """
         Setup a persistent tooltip for a widget (replacement for setToolTip)
 
@@ -276,19 +301,27 @@ class TooltipHelper:
         cls._setup_persistent_tooltip(widget, message, tooltip_type)
 
     @classmethod
-    def show_error_tooltip(cls, widget: QWidget, message: str, duration: Optional[int] = None) -> None:
+    def show_error_tooltip(
+        cls, widget: QWidget, message: str, duration: Optional[int] = None
+    ) -> None:
         cls.show_tooltip(widget, message, TooltipType.ERROR, duration)
 
     @classmethod
-    def show_warning_tooltip(cls, widget: QWidget, message: str, duration: Optional[int] = None) -> None:
+    def show_warning_tooltip(
+        cls, widget: QWidget, message: str, duration: Optional[int] = None
+    ) -> None:
         cls.show_tooltip(widget, message, TooltipType.WARNING, duration)
 
     @classmethod
-    def show_info_tooltip(cls, widget: QWidget, message: str, duration: Optional[int] = None) -> None:
+    def show_info_tooltip(
+        cls, widget: QWidget, message: str, duration: Optional[int] = None
+    ) -> None:
         cls.show_tooltip(widget, message, TooltipType.INFO, duration)
 
     @classmethod
-    def show_success_tooltip(cls, widget: QWidget, message: str, duration: Optional[int] = None) -> None:
+    def show_success_tooltip(
+        cls, widget: QWidget, message: str, duration: Optional[int] = None
+    ) -> None:
         cls.show_tooltip(widget, message, TooltipType.SUCCESS, duration)
 
     @classmethod
@@ -303,8 +336,9 @@ class TooltipHelper:
             tooltip = cls._persistent_tooltips[widget_id]
             try:
                 # Cancel any pending timer
-                if hasattr(tooltip, '_timer_id') and tooltip._timer_id:
+                if hasattr(tooltip, "_timer_id") and tooltip._timer_id:
                     from utils.timer_manager import cancel_timer
+
                     cancel_timer(tooltip._timer_id)
                 tooltip.hide()
                 tooltip.deleteLater()
@@ -329,8 +363,9 @@ class TooltipHelper:
         try:
             for tooltip in cls._persistent_tooltips.values():
                 # Cancel any pending timer
-                if hasattr(tooltip, '_timer_id') and tooltip._timer_id:
+                if hasattr(tooltip, "_timer_id") and tooltip._timer_id:
                     from utils.timer_manager import cancel_timer
+
                     cancel_timer(tooltip._timer_id)
                 tooltip.hide()
                 tooltip.deleteLater()
@@ -345,19 +380,19 @@ class TooltipHelper:
         try:
             # Use modern QScreen API instead of deprecated QDesktopWidget
             app = QApplication.instance()
-            if not app or not hasattr(app, 'primaryScreen'):
+            if not app or not hasattr(app, "primaryScreen"):
                 return position
 
             # Find the screen containing the tooltip position
             target_screen = None
-            for screen in app.screens(): # type: ignore[attr-defined]
+            for screen in app.screens():  # type: ignore[attr-defined]
                 if screen.geometry().contains(position):
                     target_screen = screen
                     break
 
             # If not found on any screen, use primary screen
             if not target_screen:
-                target_screen = app.primaryScreen() # type: ignore[attr-defined]
+                target_screen = app.primaryScreen()  # type: ignore[attr-defined]
                 if not target_screen:
                     return position
 
@@ -385,25 +420,36 @@ class TooltipHelper:
 # Global Convenience Functions
 # =====================================
 
-def show_tooltip(widget: QWidget, message: str, tooltip_type: str = TooltipType.DEFAULT, duration: Optional[int] = None) -> None:
+
+def show_tooltip(
+    widget: QWidget,
+    message: str,
+    tooltip_type: str = TooltipType.DEFAULT,
+    duration: Optional[int] = None,
+) -> None:
     """Global convenience function to show tooltip"""
     TooltipHelper.show_tooltip(widget, message, tooltip_type, duration)
+
 
 def show_error_tooltip(widget: QWidget, message: str, duration: Optional[int] = None) -> None:
     """Global convenience function to show error tooltip"""
     TooltipHelper.show_error_tooltip(widget, message, duration)
 
+
 def show_warning_tooltip(widget: QWidget, message: str, duration: Optional[int] = None) -> None:
     """Global convenience function to show warning tooltip"""
     TooltipHelper.show_warning_tooltip(widget, message, duration)
+
 
 def show_info_tooltip(widget: QWidget, message: str, duration: Optional[int] = None) -> None:
     """Global convenience function to show info tooltip"""
     TooltipHelper.show_info_tooltip(widget, message, duration)
 
+
 def show_success_tooltip(widget: QWidget, message: str, duration: Optional[int] = None) -> None:
     """Global convenience function to show success tooltip"""
     TooltipHelper.show_success_tooltip(widget, message, duration)
+
 
 def setup_tooltip(widget: QWidget, message: str, tooltip_type: str = TooltipType.DEFAULT) -> None:
     """Global convenience function to setup persistent tooltip (replacement for setToolTip)"""

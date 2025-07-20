@@ -9,9 +9,9 @@ Centralized selection management operations extracted from MainWindow.
 Handles file table selection operations, preview updates, and metadata synchronization.
 """
 
+import time
 from typing import List
 
-from core.pyqt_imports import QElapsedTimer
 from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
 from utils.metadata_cache_helper import MetadataCacheHelper
@@ -42,7 +42,7 @@ class SelectionManager:
     def _get_cache_helper(self) -> MetadataCacheHelper:
         """Get or create the MetadataCacheHelper instance."""
         if self._cache_helper is None and self.parent_window:
-            metadata_cache = getattr(self.parent_window, 'metadata_cache', None)
+            metadata_cache = getattr(self.parent_window, "metadata_cache", None)
             if metadata_cache:
                 self._cache_helper = MetadataCacheHelper(metadata_cache)
         return self._cache_helper
@@ -54,16 +54,13 @@ class SelectionManager:
         if not self.parent_window:
             return
 
-        file_model = getattr(self.parent_window, 'file_model', None)
-        file_table_view = getattr(self.parent_window, 'file_table_view', None)
+        file_model = getattr(self.parent_window, "file_model", None)
+        file_table_view = getattr(self.parent_window, "file_table_view", None)
 
         if not file_model or not file_table_view or not file_model.files:
-            if hasattr(self.parent_window, 'status_manager'):
+            if hasattr(self.parent_window, "status_manager"):
                 self.parent_window.status_manager.set_selection_status(
-                    "No files to select",
-                    selected_count=0,
-                    total_count=0,
-                    auto_reset=True
+                    "No files to select", selected_count=0, total_count=0, auto_reset=True
                 )
             return
 
@@ -71,37 +68,50 @@ class SelectionManager:
             # Clear cache to force update
             self.clear_preview_cache()
 
-            for file in file_model.files:
-                file.checked = True
+            # PROTECTION: Block signals during checked state updates to prevent infinite loops
+            if file_table_view:
+                file_table_view.blockSignals(True)
 
-            file_table_view.select_rows_range(0, len(file_model.files) - 1)
-            if hasattr(file_table_view, 'anchor_row'):
-                file_table_view.anchor_row = 0
+            try:
+                for file in file_model.files:
+                    file.checked = True
 
-            if hasattr(self.parent_window, 'update_files_label'):
-                self.parent_window.update_files_label()
+                file_table_view.select_rows_range(0, len(file_model.files) - 1)
+                if hasattr(file_table_view, "anchor_row"):
+                    file_table_view.anchor_row = 0
 
-            # Step 4: Request preview update (this can be async to avoid blocking)
-            if hasattr(self.parent_window, 'request_preview_update'):
-                self.parent_window.request_preview_update()
+                if hasattr(self.parent_window, "update_files_label"):
+                    self.parent_window.update_files_label()
 
-            # Step 5: Handle metadata display using centralized logic (async)
-            def show_metadata_later():
-                metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
-                cache_helper = self._get_cache_helper()
-                if metadata_tree_view:
-                    # Use centralized logic - select_all means multiple files, so show empty state
-                    if (hasattr(metadata_tree_view, 'should_display_metadata_for_selection') and
-                        not metadata_tree_view.should_display_metadata_for_selection(len(file_model.files))):
-                        metadata_tree_view.show_empty_state("Multiple files selected")
-                    else:
-                        # Fallback for single file case (shouldn't happen with select_all)
-                        last_file = file_model.files[-1]
-                        if cache_helper:
-                            metadata = cache_helper.get_metadata_for_file(last_file)
-                            metadata_tree_view.display_metadata(metadata, context="select_all")
+                # Step 4: Request preview update (this can be async to avoid blocking)
+                if hasattr(self.parent_window, "request_preview_update"):
+                    self.parent_window.request_preview_update()
 
-            schedule_metadata_load(show_metadata_later, 15)
+                # Step 5: Handle metadata display using centralized logic (async)
+                def show_metadata_later():
+                    metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
+                    cache_helper = self._get_cache_helper()
+                    if metadata_tree_view:
+                        # Use centralized logic - select_all means multiple files, so show empty state
+                        if hasattr(
+                            metadata_tree_view, "should_display_metadata_for_selection"
+                        ) and not metadata_tree_view.should_display_metadata_for_selection(
+                            len(file_model.files)
+                        ):
+                            metadata_tree_view.show_empty_state("Multiple files selected")
+                        else:
+                            # Fallback for single file case (shouldn't happen with select_all)
+                            last_file = file_model.files[-1]
+                            if cache_helper:
+                                metadata = cache_helper.get_metadata_for_file(last_file)
+                                metadata_tree_view.display_metadata(metadata, context="select_all")
+
+                schedule_metadata_load(show_metadata_later, 15)
+
+            finally:
+                # Restore signals
+                if file_table_view:
+                    file_table_view.blockSignals(False)
 
     def clear_all_selection(self) -> None:
         """
@@ -110,8 +120,8 @@ class SelectionManager:
         if not self.parent_window:
             return
 
-        file_model = getattr(self.parent_window, 'file_model', None)
-        file_table_view = getattr(self.parent_window, 'file_table_view', None)
+        file_model = getattr(self.parent_window, "file_model", None)
+        file_table_view = getattr(self.parent_window, "file_table_view", None)
 
         if not file_model or not file_table_view:
             return
@@ -125,23 +135,33 @@ class SelectionManager:
             # Clear cache to force update
             self.clear_preview_cache()
 
-            selection_model = file_table_view.selectionModel()
-            if selection_model:
-                selection_model.clearSelection()
+            # PROTECTION: Block signals during checked state updates to prevent infinite loops
+            if file_table_view:
+                file_table_view.blockSignals(True)
 
-            for file in file_model.files:
-                file.checked = False
+            try:
+                selection_model = file_table_view.selectionModel()
+                if selection_model:
+                    selection_model.clearSelection()
 
-            file_table_view.viewport().update()
+                for file in file_model.files:
+                    file.checked = False
 
-            if hasattr(self.parent_window, 'update_files_label'):
-                self.parent_window.update_files_label()
-            if hasattr(self.parent_window, 'request_preview_update'):
-                self.parent_window.request_preview_update()
+                file_table_view.viewport().update()
 
-            metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
-            if metadata_tree_view and hasattr(metadata_tree_view, 'clear_view'):
-                metadata_tree_view.clear_view()
+                if hasattr(self.parent_window, "update_files_label"):
+                    self.parent_window.update_files_label()
+                if hasattr(self.parent_window, "request_preview_update"):
+                    self.parent_window.request_preview_update()
+
+                metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
+                if metadata_tree_view and hasattr(metadata_tree_view, "clear_view"):
+                    metadata_tree_view.clear_view()
+
+            finally:
+                # Restore signals
+                if file_table_view:
+                    file_table_view.blockSignals(False)
 
     def invert_selection(self) -> None:
         """
@@ -151,16 +171,13 @@ class SelectionManager:
         if not self.parent_window:
             return
 
-        file_model = getattr(self.parent_window, 'file_model', None)
-        file_table_view = getattr(self.parent_window, 'file_table_view', None)
+        file_model = getattr(self.parent_window, "file_model", None)
+        file_table_view = getattr(self.parent_window, "file_table_view", None)
 
         if not file_model or not file_table_view or not file_model.files:
-            if hasattr(self.parent_window, 'status_manager'):
+            if hasattr(self.parent_window, "status_manager"):
                 self.parent_window.status_manager.set_selection_status(
-                    "No files to invert selection",
-                    selected_count=0,
-                    total_count=0,
-                    auto_reset=True
+                    "No files to invert selection", selected_count=0, total_count=0, auto_reset=True
                 )
             return
 
@@ -168,195 +185,191 @@ class SelectionManager:
             # Clear cache to force update
             self.clear_preview_cache()
 
-            selection_model = file_table_view.selectionModel()
-            current_selected = set()
-            if selection_model:
-                current_selected = set(idx.row() for idx in selection_model.selectedRows())
+            # PROTECTION: Block signals during checked state updates to prevent infinite loops
+            if file_table_view:
+                file_table_view.blockSignals(True)
 
-            # Uncheck all selected, check all unselected
-            for row, file in enumerate(file_model.files):
-                file.checked = row not in current_selected
+            try:
+                selection_model = file_table_view.selectionModel()
+                current_selected = set()
+                if selection_model:
+                    current_selected = set(idx.row() for idx in selection_model.selectedRows())
 
-            # Find all checked rows (i.e. those that were previously unselected)
-            checked_rows = [row for row, file in enumerate(file_model.files) if file.checked]
-            checked_rows.sort()
+                # Uncheck all selected, check all unselected
+                for row, file in enumerate(file_model.files):
+                    file.checked = row not in current_selected
 
-            # Use parent's _find_consecutive_ranges if available
-            ranges = []
-            if hasattr(self.parent_window, '_find_consecutive_ranges'):
-                ranges = self.parent_window._find_consecutive_ranges(checked_rows)
-            else:
-                # Fallback: simple range creation
-                if checked_rows:
-                    ranges = [(checked_rows[0], checked_rows[-1])]
+                # Find all checked rows (i.e. those that were previously unselected)
+                checked_rows = [row for row, file in enumerate(file_model.files) if file.checked]
+                checked_rows.sort()
 
-            if selection_model:
-                selection_model.clearSelection()
-
-            logger.info(f"[InvertSelection] Selecting {len(checked_rows)} rows in {len(ranges)} ranges.")
-
-            for start, end in ranges:
-                if hasattr(file_table_view, 'select_rows_range'):
-                    file_table_view.select_rows_range(start, end)
-
-            if hasattr(file_table_view, 'anchor_row') and checked_rows:
-                file_table_view.anchor_row = checked_rows[0]
-            elif hasattr(file_table_view, 'anchor_row'):
-                file_table_view.anchor_row = 0
-
-            file_table_view.viewport().update()
-
-            if hasattr(self.parent_window, 'update_files_label'):
-                self.parent_window.update_files_label()
-            if hasattr(self.parent_window, 'request_preview_update'):
-                self.parent_window.request_preview_update()
-
-            # Handle metadata display using centralized logic
-            metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
-            cache_helper = self._get_cache_helper()
-
-            if metadata_tree_view:
-                # Use centralized logic to determine if metadata should be displayed
-                should_display = (hasattr(metadata_tree_view, 'should_display_metadata_for_selection') and
-                                metadata_tree_view.should_display_metadata_for_selection(len(checked_rows)))
-
-                if should_display and checked_rows and cache_helper:
-                    def show_metadata_later():
-                        last_row = checked_rows[-1]
-                        file_item = file_model.files[last_row]
-                        metadata = cache_helper.get_metadata_for_file(file_item)
-                        if hasattr(metadata_tree_view, 'handle_invert_selection'):
-                            metadata_tree_view.handle_invert_selection(metadata)
-                        elif hasattr(metadata_tree_view, 'display_metadata'):
-                            metadata_tree_view.display_metadata(metadata, context="invert_selection")
-                    schedule_metadata_load(show_metadata_later, 20)
+                # Use parent's _find_consecutive_ranges if available
+                ranges = []
+                if hasattr(self.parent_window, "_find_consecutive_ranges"):
+                    ranges = self.parent_window._find_consecutive_ranges(checked_rows)
                 else:
-                    # Multiple files or no files - show empty state
-                    if hasattr(metadata_tree_view, 'handle_invert_selection'):
-                        metadata_tree_view.handle_invert_selection(None)
-                    elif hasattr(metadata_tree_view, 'show_empty_state'):
-                        if checked_rows:
-                            metadata_tree_view.show_empty_state("Multiple files selected")
-                        else:
-                            metadata_tree_view.show_empty_state("No file selected")
+                    # Fallback: simple range creation
+                    if checked_rows:
+                        ranges = [(checked_rows[0], checked_rows[-1])]
+
+                if selection_model:
+                    selection_model.clearSelection()
+
+                logger.info(
+                    f"[InvertSelection] Selecting {len(checked_rows)} rows in {len(ranges)} ranges."
+                )
+
+                for start, end in ranges:
+                    if hasattr(file_table_view, "select_rows_range"):
+                        file_table_view.select_rows_range(start, end)
+
+                if hasattr(file_table_view, "anchor_row") and checked_rows:
+                    file_table_view.anchor_row = checked_rows[0]
+                elif hasattr(file_table_view, "anchor_row"):
+                    file_table_view.anchor_row = 0
+
+                file_table_view.viewport().update()
+
+                if hasattr(self.parent_window, "update_files_label"):
+                    self.parent_window.update_files_label()
+                if hasattr(self.parent_window, "request_preview_update"):
+                    self.parent_window.request_preview_update()
+
+                # Handle metadata display using centralized logic
+                metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
+                cache_helper = self._get_cache_helper()
+
+                if metadata_tree_view:
+                    # Use centralized logic to determine if metadata should be displayed
+                    should_display = hasattr(
+                        metadata_tree_view, "should_display_metadata_for_selection"
+                    ) and metadata_tree_view.should_display_metadata_for_selection(
+                        len(checked_rows)
+                    )
+
+                    if should_display and checked_rows and cache_helper:
+
+                        def show_metadata_later():
+                            last_row = checked_rows[-1]
+                            file_item = file_model.files[last_row]
+                            metadata = cache_helper.get_metadata_for_file(file_item)
+                            if hasattr(metadata_tree_view, "handle_invert_selection"):
+                                metadata_tree_view.handle_invert_selection(metadata)
+                            elif hasattr(metadata_tree_view, "display_metadata"):
+                                metadata_tree_view.display_metadata(
+                                    metadata, context="invert_selection"
+                                )
+
+                        schedule_metadata_load(show_metadata_later, 20)
+                    else:
+                        # Multiple files or no files - show empty state
+                        if hasattr(metadata_tree_view, "handle_invert_selection"):
+                            metadata_tree_view.handle_invert_selection(None)
+                        elif hasattr(metadata_tree_view, "show_empty_state"):
+                            if checked_rows:
+                                metadata_tree_view.show_empty_state("Multiple files selected")
+                            else:
+                                metadata_tree_view.show_empty_state("No file selected")
+
+            finally:
+                # Restore signals
+                if file_table_view:
+                    file_table_view.blockSignals(False)
 
     def update_preview_from_selection(self, selected_rows: List[int]) -> None:
         """
-        Synchronizes the checked state of files and updates preview + metadata panel,
-        based on selected rows emitted from the custom table view.
-
-        Args:
-            selected_rows (List[int]): The indices of selected rows (from custom selection).
+        Synchronizes the checked state of files and updates preview + metadata panel.
+        Optimized for performance with minimal logging and simplified logic.
         """
-        print(f"[DEBUG] update_preview_from_selection called with rows: {selected_rows}")
-
         if not self.parent_window:
-            print("[DEBUG] No parent window, returning")
             return
 
-        file_model = getattr(self.parent_window, 'file_model', None)
-        cache_helper = self._get_cache_helper()
-        metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
-        rename_modules_area = getattr(self.parent_window, 'rename_modules_area', None)
-
+        file_model = getattr(self.parent_window, "file_model", None)
         if not file_model:
-            print("[DEBUG] No file model, returning")
             return
 
-        # Check if the selection has actually changed to avoid unnecessary updates
+        # Check if selection actually changed
         selected_rows_set = set(selected_rows) if selected_rows else set()
         last_selected_set = set(self._last_selected_rows) if self._last_selected_rows else set()
-
         if selected_rows_set == last_selected_set:
-            logger.debug(f"[Sync] Selection unchanged ({len(selected_rows)} rows), skipping preview update", extra={"dev_only": True})
-            print(f"[DEBUG] Selection unchanged ({len(selected_rows)} rows), skipping preview update")
             return
 
-        # Update the cache
+        # Update cache
         self._last_selected_rows = selected_rows[:]
-        import time
         self._last_preview_update_time = time.time()
 
-        if not selected_rows:
-            logger.debug("[Sync] No selection - clearing preview", extra={"dev_only": True})
-            print("[DEBUG] No selection - clearing preview")
-            # Clear all checked states
-            for file in file_model.files:
-                file.checked = False
+        # Performance optimization: Clear preview caches when selection changes
+        if hasattr(self.parent_window, "utility_manager"):
+            self.parent_window.utility_manager.clear_preview_caches()
 
-            if hasattr(self.parent_window, 'update_files_label'):
+        # Block signals to prevent loops
+        file_table_view = getattr(self.parent_window, "file_table_view", None)
+        if file_table_view:
+            file_table_view.blockSignals(True)
+
+        try:
+            # Update checked states
+            for row, file in enumerate(file_model.files):
+                file.checked = row in selected_rows
+
+            # Update UI components
+            if hasattr(self.parent_window, "update_files_label"):
                 self.parent_window.update_files_label()
-            if hasattr(self.parent_window, 'update_preview_tables_from_pairs'):
-                self.parent_window.update_preview_tables_from_pairs([])
+            if hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
 
-            if metadata_tree_view and hasattr(metadata_tree_view, 'clear_view'):
-                metadata_tree_view.clear_view()
+            # Handle metadata display
+            self._update_metadata_display(selected_rows)
+
+        finally:
+            if file_table_view:
+                file_table_view.blockSignals(False)
+
+    def _update_metadata_display(self, selected_rows: List[int]) -> None:
+        """Simplified metadata display logic."""
+        if not selected_rows:
+            self._clear_metadata_display()
             return
 
-        logger.debug(f"[Sync] update_preview_from_selection: {selected_rows}", extra={"dev_only": True})
-        print(f"[DEBUG] Processing selection: {selected_rows}")
-        timer = QElapsedTimer()
-        timer.start()
+        file_model = getattr(self.parent_window, "file_model", None)
+        metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
+        rename_modules_area = getattr(self.parent_window, "rename_modules_area", None)
+        cache_helper = self._get_cache_helper()
 
-        for row, file in enumerate(file_model.files):
-            file.checked = row in selected_rows
+        if not file_model or not metadata_tree_view:
+            return
 
-        if hasattr(self.parent_window, 'update_files_label'):
-            self.parent_window.update_files_label()
-        if hasattr(self.parent_window, 'request_preview_update'):
-            self.parent_window.request_preview_update()
+        last_row = selected_rows[-1]
+        if 0 <= last_row < len(file_model.files):
+            file_item = file_model.files[last_row]
 
-        # Show metadata using centralized logic and update current file for context menus
-        if selected_rows:
-            last_row = selected_rows[-1]
-            print(f"[DEBUG] Last selected row: {last_row}, total files: {len(file_model.files)}")
-            if 0 <= last_row < len(file_model.files):
-                file_item = file_model.files[last_row]
-                print(f"[DEBUG] Selected file: {file_item.filename}")
+            # Update current file for modules
+            if rename_modules_area and hasattr(rename_modules_area, "set_current_file_for_modules"):
+                rename_modules_area.set_current_file_for_modules(file_item)
 
-                # Update current file for SpecifiedText modules context menu
-                if rename_modules_area and hasattr(rename_modules_area, 'set_current_file_for_modules'):
-                    rename_modules_area.set_current_file_for_modules(file_item)
-
-                # Use centralized metadata display logic
-                if metadata_tree_view:
-                    print(f"[DEBUG] Metadata tree view available")
-                    should_display = (hasattr(metadata_tree_view, 'should_display_metadata_for_selection') and
-                                    metadata_tree_view.should_display_metadata_for_selection(len(selected_rows)))
-                    print(f"[DEBUG] Should display metadata: {should_display}")
-
-                    if should_display and cache_helper:
-                        print(f"[DEBUG] Cache helper available, getting metadata...")
-                        metadata = cache_helper.get_metadata_for_file(file_item)
-                        logger.debug(f"[SelectionManager] Updating metadata tree for file: {file_item.filename}, metadata available: {bool(metadata)}", extra={"dev_only": True})
-                        print(f"[DEBUG] Updating metadata tree for file: {file_item.filename}, metadata available: {bool(metadata)}")
-
-                        if hasattr(metadata_tree_view, 'smart_display_metadata_or_empty_state'):
-                            metadata_tree_view.smart_display_metadata_or_empty_state(
-                                metadata, len(selected_rows), context="selection_update"
-                            )
-                        elif hasattr(metadata_tree_view, 'display_metadata'):
-                            metadata_tree_view.display_metadata(metadata, context="selection_update")
-                    else:
-                        # Multiple files - show empty state
-                        logger.debug(f"[SelectionManager] Showing empty state for {len(selected_rows)} selected files", extra={"dev_only": True})
-                        print(f"[DEBUG] Showing empty state for {len(selected_rows)} selected files")
-                        if hasattr(metadata_tree_view, 'show_empty_state'):
-                            metadata_tree_view.show_empty_state("Multiple files selected")
-                else:
-                    print(f"[DEBUG] No metadata tree view available")
+            # Display metadata
+            if len(selected_rows) == 1 and cache_helper:
+                metadata = cache_helper.get_metadata_for_file(file_item)
+                if hasattr(metadata_tree_view, "smart_display_metadata_or_empty_state"):
+                    metadata_tree_view.smart_display_metadata_or_empty_state(
+                        metadata, len(selected_rows), context="selection_update"
+                    )
+                elif hasattr(metadata_tree_view, "display_metadata"):
+                    metadata_tree_view.display_metadata(metadata, context="selection_update")
             else:
-                print(f"[DEBUG] Invalid row index: {last_row}")
-        else:
-            print(f"[DEBUG] No selected rows")
-            # Clear current file when no selection
-            if rename_modules_area and hasattr(rename_modules_area, 'set_current_file_for_modules'):
-                rename_modules_area.set_current_file_for_modules(None)
-            if metadata_tree_view and hasattr(metadata_tree_view, 'clear_view'):
-                metadata_tree_view.clear_view()
+                # Multiple files - show empty state
+                if hasattr(metadata_tree_view, "show_empty_state"):
+                    metadata_tree_view.show_empty_state("Multiple files selected")
 
-        elapsed = timer.elapsed()
-        logger.debug(f"[Performance] Full preview update took {elapsed} ms")
+    def _clear_metadata_display(self) -> None:
+        """Clear metadata display and current file."""
+        metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
+        rename_modules_area = getattr(self.parent_window, "rename_modules_area", None)
+
+        if metadata_tree_view and hasattr(metadata_tree_view, "clear_view"):
+            metadata_tree_view.clear_view()
+        if rename_modules_area and hasattr(rename_modules_area, "set_current_file_for_modules"):
+            rename_modules_area.set_current_file_for_modules(None)
 
     def force_preview_update(self) -> None:
         """
@@ -369,7 +382,7 @@ class SelectionManager:
         self._last_preview_update_time = 0
 
         # Get current selection and trigger update
-        if self.parent_window and hasattr(self.parent_window, 'file_table_view'):
+        if self.parent_window and hasattr(self.parent_window, "file_table_view"):
             selection_model = self.parent_window.file_table_view.selectionModel()
             if selection_model:
                 selected_rows = [idx.row() for idx in selection_model.selectedRows()]

@@ -111,22 +111,22 @@ class FileTreeView(QTreeView):
 
             # Set the icons on the style
             style = self.style()
-            if hasattr(style, 'setPixmap'):
+            if hasattr(style, "setPixmap"):
                 # Note: This approach may not work in all Qt versions
                 # The QSS approach is usually more reliable
                 pass
 
-            logger.debug("[FileTreeView] Custom branch icons setup attempted", extra={"dev_only": True})
+            logger.debug(
+                "[FileTreeView] Custom branch icons setup attempted", extra={"dev_only": True}
+            )
 
         except Exception as e:
             logger.warning(f"[FileTreeView] Failed to setup custom branch icons: {e}")
             # Fallback to default Qt icons
-            pass
 
     def _setup_icon_delegate(self) -> None:
         """Setup the icon delegate for selection-based icon changes."""
         # Icon delegate functionality removed for simplicity
-        pass
 
     def selectionChanged(self, selected, deselected) -> None:
         """Override to emit custom signal with selected path (single item only)"""
@@ -135,7 +135,7 @@ class FileTreeView(QTreeView):
         # Get single selected path
         selected_path = ""
         indexes = self.selectedIndexes()
-        if indexes and self.model() and hasattr(self.model(), 'filePath'):
+        if indexes and self.model() and hasattr(self.model(), "filePath"):
             # Take first index (should be only one in single selection mode)
             path = self.model().filePath(indexes[0])
             if path:
@@ -164,7 +164,10 @@ class FileTreeView(QTreeView):
             for col in range(1, self.model().columnCount() if self.model() else 4):
                 self.setColumnHidden(col, True)
 
-            logger.debug("[FileTreeView] Header configured for single column display", extra={"dev_only": True})
+            logger.debug(
+                "[FileTreeView] Header configured for single column display",
+                extra={"dev_only": True},
+            )
 
     def _adjust_column_width(self) -> None:
         """Adjust column width for optimal horizontal scrolling"""
@@ -182,11 +185,17 @@ class FileTreeView(QTreeView):
             if content_width <= viewport_width:
                 header.setSectionResizeMode(0, QHeaderView.Stretch)
                 self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-                logger.debug("[FileTreeView] Content fits viewport - stretching column", extra={"dev_only": True})
+                logger.debug(
+                    "[FileTreeView] Content fits viewport - stretching column",
+                    extra={"dev_only": True},
+                )
             else:
                 header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
                 self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-                logger.debug(f"[FileTreeView] Content exceeds viewport ({content_width} > {viewport_width}) - enabling scrollbar", extra={"dev_only": True})
+                logger.debug(
+                    f"[FileTreeView] Content exceeds viewport ({content_width} > {viewport_width}) - enabling scrollbar",
+                    extra={"dev_only": True},
+                )
 
     def _on_model_changed(self) -> None:
         """Called when model data changes to update column width"""
@@ -205,7 +214,7 @@ class FileTreeView(QTreeView):
 
         # Get first (and only) selected item
         index = selected_rows[0]
-        if self.model() and hasattr(self.model(), 'filePath'):
+        if self.model() and hasattr(self.model(), "filePath"):
             path = self.model().filePath(index)
             return path if path else ""
 
@@ -213,7 +222,7 @@ class FileTreeView(QTreeView):
 
     def select_path(self, path: str) -> None:
         """Select item by its file path"""
-        if not self.model() or not hasattr(self.model(), 'index'):
+        if not self.model() or not hasattr(self.model(), "index"):
             return
 
         selection_model = self.selectionModel()
@@ -302,15 +311,14 @@ class FileTreeView(QTreeView):
                 cursor_count += 1
 
             if cursor_count > 0:
-                logger.debug(f"[FileTreeView] Cleaned {cursor_count} stuck cursors after drag", extra={"dev_only": True})
+                logger.debug(
+                    f"[FileTreeView] Cleaned {cursor_count} stuck cursors after drag",
+                    extra={"dev_only": True},
+                )
 
             # Create a fake mouse move event to restore hover state
             fake_move_event = QMouseEvent(
-                QEvent.MouseMove,
-                event.pos(),
-                Qt.NoButton,
-                Qt.NoButton,
-                Qt.NoModifier
+                QEvent.MouseMove, event.pos(), Qt.NoButton, Qt.NoButton, Qt.NoModifier
             )
             QApplication.postEvent(self, fake_move_event)
 
@@ -326,7 +334,7 @@ class FileTreeView(QTreeView):
 
         # Get the path under mouse
         model = self.model()
-        if not model or not hasattr(model, 'filePath'):
+        if not model or not hasattr(model, "filePath"):
             return
 
         clicked_path = model.filePath(index)
@@ -365,26 +373,35 @@ class FileTreeView(QTreeView):
         start_drag_visual(drag_type, clicked_path, "file_tree")
 
         # Set initial drag widget for zone validation
-        logger.debug("[FileTreeView] Setting up initial drag widget for zone validation", extra={"dev_only": True})
+        logger.debug(
+            "[FileTreeView] Setting up initial drag widget for zone validation",
+            extra={"dev_only": True},
+        )
         DragZoneValidator.set_initial_drag_widget("file_tree", "FileTreeView")
 
         # Start drag feedback timer for real-time visual updates using timer_manager
-        if hasattr(self, '_drag_feedback_timer_id') and self._drag_feedback_timer_id:
+        if hasattr(self, "_drag_feedback_timer_id") and self._drag_feedback_timer_id:
             from utils.timer_manager import cancel_timer
+
             cancel_timer(self._drag_feedback_timer_id)
 
         # Schedule repeated updates using timer_manager
         self._start_drag_feedback_loop()
 
-        logger.debug(f"[FileTreeView] Custom drag started: {clicked_path}", extra={"dev_only": True})
+        logger.debug(
+            f"[FileTreeView] Custom drag started: {clicked_path}", extra={"dev_only": True}
+        )
 
     def _start_drag_feedback_loop(self):
         """Start repeated drag feedback updates using timer_manager"""
         from utils.timer_manager import schedule_ui_update
+
         if self._is_dragging:
             self._update_drag_feedback()
             # Schedule next update
-            self._drag_feedback_timer_id = schedule_ui_update(self._start_drag_feedback_loop, delay=50)
+            self._drag_feedback_timer_id = schedule_ui_update(
+                self._start_drag_feedback_loop, delay=50
+            )
 
     def _update_drag_feedback(self):
         """Update visual feedback based on current cursor position during drag"""
@@ -406,35 +423,37 @@ class FileTreeView(QTreeView):
         # Check if drag has been cancelled by external force cleanup
         drag_manager = DragManager.get_instance()
         if not drag_manager.is_drag_active():
-            logger.debug("[FileTreeView] Drag was cancelled, skipping drop", extra={"dev_only": True})
+            logger.debug(
+                "[FileTreeView] Drag was cancelled, skipping drop", extra={"dev_only": True}
+            )
             # Clean up drag state without performing drop
             self._is_dragging = False
             self._drag_start_pos = None
 
             # Stop and cleanup drag feedback timer
-            if hasattr(self, '_drag_feedback_timer') and self._drag_feedback_timer is not None:
+            if hasattr(self, "_drag_feedback_timer") and self._drag_feedback_timer is not None:
                 self._drag_feedback_timer.stop()
                 self._drag_feedback_timer.deleteLater()
                 self._drag_feedback_timer = None
 
             # Restore mouse tracking to original state
-            if hasattr(self, '_original_mouse_tracking'):
+            if hasattr(self, "_original_mouse_tracking"):
                 self.setMouseTracking(self._original_mouse_tracking)
-                delattr(self, '_original_mouse_tracking')
+                delattr(self, "_original_mouse_tracking")
 
             # Restore hover attribute
-            if hasattr(self, '_original_hover_enabled'):
+            if hasattr(self, "_original_hover_enabled"):
                 self.setAttribute(Qt.WA_Hover, self._original_hover_enabled)
-                delattr(self, '_original_hover_enabled')
+                delattr(self, "_original_hover_enabled")
 
             # Restore viewport attributes
-            if hasattr(self, '_original_viewport_hover'):
+            if hasattr(self, "_original_viewport_hover"):
                 self.viewport().setAttribute(Qt.WA_Hover, self._original_viewport_hover)
-                delattr(self, '_original_viewport_hover')
+                delattr(self, "_original_viewport_hover")
 
-            if hasattr(self, '_original_viewport_tracking'):
+            if hasattr(self, "_original_viewport_tracking"):
                 self.viewport().setMouseTracking(self._original_viewport_tracking)
-                delattr(self, '_original_viewport_tracking')
+                delattr(self, "_original_viewport_tracking")
 
             # End visual feedback
             end_drag_visual()
@@ -444,12 +463,17 @@ class FileTreeView(QTreeView):
             # Restore hover state with fake mouse move event
             self._restore_hover_after_drag()
 
-            logger.debug(f"[FileTreeView] Custom drag ended (cancelled): {self._drag_path}", extra={"dev_only": True})
+            logger.debug(
+                f"[FileTreeView] Custom drag ended (cancelled): {self._drag_path}",
+                extra={"dev_only": True},
+            )
             return
 
         # Check if we dropped on a valid target (only FileTableView allowed)
         widget_under_cursor = QApplication.widgetAt(QCursor.pos())
-        logger.debug(f"[FileTreeView] Widget under cursor: {widget_under_cursor}", extra={"dev_only": True})
+        logger.debug(
+            f"[FileTreeView] Widget under cursor: {widget_under_cursor}", extra={"dev_only": True}
+        )
 
         # Use visual manager to validate drop target
         visual_manager = DragVisualManager.get_instance()
@@ -460,26 +484,38 @@ class FileTreeView(QTreeView):
             # Look for FileTableView in parent hierarchy
             parent = widget_under_cursor
             while parent:
-                logger.debug(f"[FileTreeView] Checking parent: {parent.__class__.__name__}", extra={"dev_only": True})
+                logger.debug(
+                    f"[FileTreeView] Checking parent: {parent.__class__.__name__}",
+                    extra={"dev_only": True},
+                )
 
                 # Check with visual manager
                 if visual_manager.is_valid_drop_target(parent, "file_tree"):
-                    logger.debug(f"[FileTreeView] Valid drop target found: {parent.__class__.__name__}", extra={"dev_only": True})
+                    logger.debug(
+                        f"[FileTreeView] Valid drop target found: {parent.__class__.__name__}",
+                        extra={"dev_only": True},
+                    )
                     self._handle_drop_on_table()
                     valid_drop = True
                     break
 
                 # Also check viewport of FileTableView
-                if hasattr(parent, 'parent') and parent.parent():
+                if hasattr(parent, "parent") and parent.parent():
                     if visual_manager.is_valid_drop_target(parent.parent(), "file_tree"):
-                        logger.debug(f"[FileTreeView] Valid drop target found via viewport: {parent.parent().__class__.__name__}", extra={"dev_only": True})
+                        logger.debug(
+                            f"[FileTreeView] Valid drop target found via viewport: {parent.parent().__class__.__name__}",
+                            extra={"dev_only": True},
+                        )
                         self._handle_drop_on_table()
                         valid_drop = True
                         break
 
                 # Check for policy violations
-                if parent.__class__.__name__ in ['FileTreeView', 'MetadataTreeView']:
-                    logger.debug(f"[FileTreeView] Rejecting drop on {parent.__class__.__name__} (policy violation)", extra={"dev_only": True})
+                if parent.__class__.__name__ in ["FileTreeView", "MetadataTreeView"]:
+                    logger.debug(
+                        f"[FileTreeView] Rejecting drop on {parent.__class__.__name__} (policy violation)",
+                        extra={"dev_only": True},
+                    )
                     break
 
                 parent = parent.parent()
@@ -493,29 +529,30 @@ class FileTreeView(QTreeView):
         self._drag_start_pos = None
 
         # Stop and cleanup drag feedback timer
-        if hasattr(self, '_drag_feedback_timer_id') and self._drag_feedback_timer_id:
+        if hasattr(self, "_drag_feedback_timer_id") and self._drag_feedback_timer_id:
             from utils.timer_manager import cancel_timer
+
             cancel_timer(self._drag_feedback_timer_id)
             self._drag_feedback_timer_id = None
 
         # Restore mouse tracking to original state
-        if hasattr(self, '_original_mouse_tracking'):
+        if hasattr(self, "_original_mouse_tracking"):
             self.setMouseTracking(self._original_mouse_tracking)
-            delattr(self, '_original_mouse_tracking')
+            delattr(self, "_original_mouse_tracking")
 
         # Restore hover attribute
-        if hasattr(self, '_original_hover_enabled'):
+        if hasattr(self, "_original_hover_enabled"):
             self.setAttribute(Qt.WA_Hover, self._original_hover_enabled)
-            delattr(self, '_original_hover_enabled')
+            delattr(self, "_original_hover_enabled")
 
         # Restore viewport attributes
-        if hasattr(self, '_original_viewport_hover'):
+        if hasattr(self, "_original_viewport_hover"):
             self.viewport().setAttribute(Qt.WA_Hover, self._original_viewport_hover)
-            delattr(self, '_original_viewport_hover')
+            delattr(self, "_original_viewport_hover")
 
-        if hasattr(self, '_original_viewport_tracking'):
+        if hasattr(self, "_original_viewport_tracking"):
             self.viewport().setMouseTracking(self._original_viewport_tracking)
-            delattr(self, '_original_viewport_tracking')
+            delattr(self, "_original_viewport_tracking")
 
         # End visual feedback
         end_drag_visual()
@@ -529,7 +566,22 @@ class FileTreeView(QTreeView):
         # Restore hover state with fake mouse move event
         self._restore_hover_after_drag()
 
-        logger.debug(f"[FileTreeView] Custom drag ended: {self._drag_path} (valid_drop: {valid_drop})", extra={"dev_only": True})
+        # Restore folder selection if it was lost during drag
+        if self._drag_path and os.path.isdir(self._drag_path):
+            # Check if the dragged folder is still selected
+            current_selection = self.get_selected_path()
+            if current_selection != self._drag_path:
+                # Selection was lost, restore it
+                self.select_path(self._drag_path)
+                logger.debug(
+                    f"[FileTreeView] Restored folder selection: {self._drag_path}",
+                    extra={"dev_only": True},
+                )
+
+        logger.debug(
+            f"[FileTreeView] Custom drag ended: {self._drag_path} (valid_drop: {valid_drop})",
+            extra={"dev_only": True},
+        )
 
     def _restore_hover_after_drag(self):
         """Restore hover state after drag ends by sending a fake mouse move event"""
@@ -541,11 +593,7 @@ class FileTreeView(QTreeView):
         if self.rect().contains(local_pos):
             # Create and post a fake mouse move event
             fake_move_event = QMouseEvent(
-                QEvent.MouseMove,
-                local_pos,
-                Qt.NoButton,
-                Qt.NoButton,
-                Qt.NoModifier
+                QEvent.MouseMove, local_pos, Qt.NoButton, Qt.NoButton, Qt.NoModifier
             )
             QApplication.postEvent(self, fake_move_event)
 
@@ -563,7 +611,9 @@ class FileTreeView(QTreeView):
         # Log the action for debugging using centralized logic
         _, _, action = decode_modifiers_to_flags(modifiers)
 
-        logger.info(f"[FileTreeView] Dropped: {self._drag_path} ({action})", extra={"dev_only": True})
+        logger.info(
+            f"[FileTreeView] Dropped: {self._drag_path} ({action})", extra={"dev_only": True}
+        )
 
     def _is_valid_drag_target(self, path: str) -> bool:
         """Check if path is valid for dragging"""
@@ -572,11 +622,14 @@ class FileTreeView(QTreeView):
 
         # For files, check extension
         _, ext = os.path.splitext(path)
-        if ext.startswith('.'):
+        if ext.startswith("."):
             ext = ext[1:].lower()
 
         if ext not in ALLOWED_EXTENSIONS:
-            logger.debug(f"[FileTreeView] Skipping drag for non-allowed extension: {ext}", extra={"dev_only": True})
+            logger.debug(
+                f"[FileTreeView] Skipping drag for non-allowed extension: {ext}",
+                extra={"dev_only": True},
+            )
             return False
 
         return True
@@ -635,7 +688,6 @@ class FileTreeView(QTreeView):
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
         """Handle vertical splitter movement (placeholder for future use)"""
-        pass
 
     def scrollTo(self, index, hint=None) -> None:
         """Override to ensure optimal scrolling behavior"""
@@ -644,9 +696,10 @@ class FileTreeView(QTreeView):
     def event(self, event):
         """Override event handling to block hover events during drag"""
         # Block hover events during drag or drag preparation (with safe attribute check)
-        if ((hasattr(self, '_is_dragging') and self._is_dragging) or
-            (hasattr(self, '_drag_start_pos') and self._drag_start_pos)) and \
-            event.type() in (QEvent.HoverEnter, QEvent.HoverMove, QEvent.HoverLeave):
+        if (
+            (hasattr(self, "_is_dragging") and self._is_dragging)
+            or (hasattr(self, "_drag_start_pos") and self._drag_start_pos)
+        ) and event.type() in (QEvent.HoverEnter, QEvent.HoverMove, QEvent.HoverLeave):
             return True  # Consume the event without processing
 
         return super().event(event)
@@ -655,7 +708,10 @@ class FileTreeView(QTreeView):
         """Override Qt's built-in drag to prevent it from interfering with our custom drag"""
         # Do nothing - we handle all drag operations through our custom system
         # This prevents Qt from starting its own drag which could cause hover issues
-        logger.debug("[FileTreeView] Built-in startDrag called but ignored - using custom drag system", extra={"dev_only": True})
+        logger.debug(
+            "[FileTreeView] Built-in startDrag called but ignored - using custom drag system",
+            extra={"dev_only": True},
+        )
         return
 
     def _on_item_expanded(self, index):
@@ -683,6 +739,7 @@ class FileTreeView(QTreeView):
 # DRAG CANCEL FILTER (Global Instance)
 # =====================================
 
+
 class DragCancelFilter:
     """
     Filter that prevents selection clearing during drag operations.
@@ -698,7 +755,9 @@ class DragCancelFilter:
     def activate(self):
         """Activate the filter to preserve current selection"""
         self._active = True
-        logger.debug("[DragCancelFilter] Activated - preserving selection", extra={"dev_only": True})
+        logger.debug(
+            "[DragCancelFilter] Activated - preserving selection", extra={"dev_only": True}
+        )
 
     def deactivate(self):
         """Deactivate the filter"""

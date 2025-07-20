@@ -15,6 +15,7 @@ from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
+
 def validate_rotation(value: str) -> Tuple[bool, Optional[str], Optional[str]]:
     """
     Validates rotation values.
@@ -52,10 +53,19 @@ def validate_rotation(value: str) -> Tuple[bool, Optional[str], Optional[str]]:
 
         # For other values, find the closest valid value
         closest = min(valid_rotations, key=lambda x: abs(int(x) - int_value))
-        return False, None, f"Value {int_value} is not valid. Allowed values are: 0, 90, 180, 270. Closest value: {closest}"
+        return (
+            False,
+            None,
+            f"Value {int_value} is not valid. Allowed values are: 0, 90, 180, 270. Closest value: {closest}",
+        )
 
     except (ValueError, TypeError):
-        return False, None, f"Value '{stripped_value}' is not valid. Allowed values are: 0, 90, 180, 270."
+        return (
+            False,
+            None,
+            f"Value '{stripped_value}' is not valid. Allowed values are: 0, 90, 180, 270.",
+        )
+
 
 def get_validator_for_key(key_path: str):
     """

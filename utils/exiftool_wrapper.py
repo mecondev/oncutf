@@ -32,7 +32,7 @@ class ExifToolWrapper:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            bufsize=1  # line buffered
+            bufsize=1,  # line buffered
         )
         self.lock = threading.Lock()  # Ensure thread-safe access
         self.counter = 0  # To generate unique termination tags
@@ -81,18 +81,15 @@ class ExifToolWrapper:
             logger.warning(f"[ExifToolWrapper] File not found: {file_path}")
             return None
 
-        cmd = [
-            'exiftool',
-            '-json',
-            '-charset', 'filename=UTF8',
-            file_path
-        ]
+        cmd = ["exiftool", "-json", "-charset", "filename=UTF8", file_path]
 
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=10)
 
             if result.returncode != 0:
-                logger.warning(f"[ExifToolWrapper] ExifTool returned error code {result.returncode} for {file_path}")
+                logger.warning(
+                    f"[ExifToolWrapper] ExifTool returned error code {result.returncode} for {file_path}"
+                )
                 if result.stderr:
                     logger.warning(f"[ExifToolWrapper] ExifTool stderr: {result.stderr}")
                 return None
@@ -122,7 +119,9 @@ class ExifToolWrapper:
 
         except json.JSONDecodeError as e:
             logger.error(f"[ExifToolWrapper] JSON decode error: {e}")
-            logger.debug(f"[ExifToolWrapper] Raw output was: {repr(output)}", extra={"dev_only": True})
+            logger.debug(
+                f"[ExifToolWrapper] Raw output was: {repr(output)}", extra={"dev_only": True}
+            )
             return None
         except Exception as e:
             logger.error(f"[ExifToolWrapper] Error parsing output: {e}")
@@ -143,7 +142,7 @@ class ExifToolWrapper:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                timeout=15
+                timeout=15,
             )
             data = json.loads(result.stdout)
 
@@ -151,8 +150,13 @@ class ExifToolWrapper:
                 logger.warning("[ExtendedReader] No metadata returned.")
                 return None
 
-            logger.debug(f"[ExtendedReader] JSON object count: {len(data)}", extra={"dev_only": True})
-            logger.debug(f"[ExtendedReader] Top-level keys: {list(data[0].keys())[:10]}", extra={"dev_only": True})
+            logger.debug(
+                f"[ExtendedReader] JSON object count: {len(data)}", extra={"dev_only": True}
+            )
+            logger.debug(
+                f"[ExtendedReader] Top-level keys: {list(data[0].keys())[:10]}",
+                extra={"dev_only": True},
+            )
 
             result_dict = data[0]
             if len(data) > 1:
@@ -160,13 +164,26 @@ class ExifToolWrapper:
                     for key, value in extra.items():
                         new_key = f"[Segment {i}] {key}"
                         result_dict[new_key] = value
-                logger.debug(f"[ExtendedReader] Merged {len(data) - 1} embedded segments into result.", extra={"dev_only": True})
+                logger.debug(
+                    f"[ExtendedReader] Merged {len(data) - 1} embedded segments into result.",
+                    extra={"dev_only": True},
+                )
 
             result_dict["__extended__"] = True
-            logger.debug(f"[ExtendedReader] Marked as extended: {file_path}", extra={"dev_only": True})
-            logger.debug(f"[ExtendedReader] Final keys: {list(result_dict.keys())[:10]}", extra={"dev_only": True})
-            logger.debug(f"[ExtendedReader] __extended__ present? {'__extended__' in result_dict}", extra={"dev_only": True})
-            logger.debug(f"[ExtendedReader] Returning result for {file_path}", extra={"dev_only": True})
+            logger.debug(
+                f"[ExtendedReader] Marked as extended: {file_path}", extra={"dev_only": True}
+            )
+            logger.debug(
+                f"[ExtendedReader] Final keys: {list(result_dict.keys())[:10]}",
+                extra={"dev_only": True},
+            )
+            logger.debug(
+                f"[ExtendedReader] __extended__ present? {'__extended__' in result_dict}",
+                extra={"dev_only": True},
+            )
+            logger.debug(
+                f"[ExtendedReader] Returning result for {file_path}", extra={"dev_only": True}
+            )
 
             return result_dict
 
@@ -206,18 +223,18 @@ class ExifToolWrapper:
                     # Use the appropriate rotation tag based on file type
                     file_ext = os.path.splitext(file_path)[1].lower()
 
-                    if file_ext in ['.jpg', '.jpeg']:
+                    if file_ext in [".jpg", ".jpeg"]:
                         # For JPEG files, use EXIF:Orientation (1-8) or Rotation (0, 90, 180, 270)
-                        if value in ['0', '90', '180', '270']:
+                        if value in ["0", "90", "180", "270"]:
                             tag_name = "Rotation"
                         else:
                             tag_name = "EXIF:Orientation"
-                    elif file_ext in ['.png']:
+                    elif file_ext in [".png"]:
                         # PNG doesn't support EXIF rotation, try XMP or just Rotation
                         tag_name = "Rotation"
-                    elif file_ext in ['.tiff', '.tif']:
+                    elif file_ext in [".tiff", ".tif"]:
                         # TIFF supports EXIF:Orientation
-                        if value in ['0', '90', '180', '270']:
+                        if value in ["0", "90", "180", "270"]:
                             tag_name = "Rotation"
                         else:
                             tag_name = "EXIF:Orientation"
@@ -225,7 +242,10 @@ class ExifToolWrapper:
                         # Generic rotation tag for other formats
                         tag_name = "Rotation"
 
-                    logger.debug(f"[ExifToolWrapper] Rotation: {key} -> {tag_name} = {value} for {file_ext}", extra={"dev_only": True})
+                    logger.debug(
+                        f"[ExifToolWrapper] Rotation: {key} -> {tag_name} = {value} for {file_ext}",
+                        extra={"dev_only": True},
+                    )
                 else:
                     # Convert our format (e.g., "EXIF/DateTimeOriginal") to exiftool format
                     tag_name = key.replace("/", ":")
@@ -234,16 +254,18 @@ class ExifToolWrapper:
 
             cmd.append(file_path)
 
-            logger.debug(f"[ExifToolWrapper] Writing metadata with command: {' '.join(cmd)}", extra={"dev_only": True})
-            logger.debug(f"[ExifToolWrapper] Original metadata_changes: {metadata_changes}", extra={"dev_only": True})
+            logger.debug(
+                f"[ExifToolWrapper] Writing metadata with command: {' '.join(cmd)}",
+                extra={"dev_only": True},
+            )
+            logger.debug(
+                f"[ExifToolWrapper] Original metadata_changes: {metadata_changes}",
+                extra={"dev_only": True},
+            )
 
             # Execute the command
             result = subprocess.run(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                timeout=10
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10
             )
 
             if result.returncode == 0:
@@ -274,7 +296,10 @@ class ExifToolWrapper:
                         self.process.stdin.flush()
                     except (BrokenPipeError, OSError, ValueError) as e:
                         # Process may have already terminated or stdin is closed
-                        logger.debug(f"[ExifToolWrapper] Expected error during graceful close: {e}", extra={"dev_only": True})
+                        logger.debug(
+                            f"[ExifToolWrapper] Expected error during graceful close: {e}",
+                            extra={"dev_only": True},
+                        )
                     finally:
                         try:
                             self.process.stdin.close()
@@ -285,21 +310,32 @@ class ExifToolWrapper:
                 # Wait for process to terminate gracefully
                 try:
                     self.process.wait(timeout=3)
-                    logger.debug("[ExifToolWrapper] Process terminated gracefully", extra={"dev_only": True})
+                    logger.debug(
+                        "[ExifToolWrapper] Process terminated gracefully", extra={"dev_only": True}
+                    )
                 except subprocess.TimeoutExpired:
                     # Force terminate if it doesn't close gracefully
-                    logger.warning("[ExifToolWrapper] Process didn't terminate gracefully, forcing termination", extra={"dev_only": True})
+                    logger.warning(
+                        "[ExifToolWrapper] Process didn't terminate gracefully, forcing termination",
+                        extra={"dev_only": True},
+                    )
                     self.process.terminate()
                     try:
                         self.process.wait(timeout=2)
                     except subprocess.TimeoutExpired:
                         # Last resort: kill the process
-                        logger.warning("[ExifToolWrapper] Force killing ExifTool process", extra={"dev_only": True})
+                        logger.warning(
+                            "[ExifToolWrapper] Force killing ExifTool process",
+                            extra={"dev_only": True},
+                        )
                         self.process.kill()
                         try:
                             self.process.wait(timeout=1)
                         except subprocess.TimeoutExpired:
-                            logger.error("[ExifToolWrapper] Process refused to die, may be zombie", extra={"dev_only": True})
+                            logger.error(
+                                "[ExifToolWrapper] Process refused to die, may be zombie",
+                                extra={"dev_only": True},
+                            )
 
         except Exception as e:
             logger.error(f"[ExifToolWrapper] Error during shutdown: {e}", exc_info=True)
@@ -310,7 +346,9 @@ class ExifToolWrapper:
                     try:
                         self.process.wait(timeout=1)
                     except subprocess.TimeoutExpired:
-                        logger.error("[ExifToolWrapper] Zombie process detected", extra={"dev_only": True})
+                        logger.error(
+                            "[ExifToolWrapper] Zombie process detected", extra={"dev_only": True}
+                        )
             except Exception:
                 pass
         finally:
@@ -321,26 +359,33 @@ class ExifToolWrapper:
     def force_cleanup_all_exiftool_processes() -> None:
         """Force cleanup all ExifTool processes system-wide."""
         try:
-            import psutil
             import time
 
+            import psutil
+
             exiftool_processes = []
-            for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            for proc in psutil.process_iter(["pid", "name", "cmdline"]):
                 try:
-                    if proc.info['name'] and 'exiftool' in proc.info['name'].lower():
+                    if proc.info["name"] and "exiftool" in proc.info["name"].lower():
                         exiftool_processes.append(proc)
-                    elif proc.info['cmdline']:
-                        cmdline = ' '.join(proc.info['cmdline']).lower()
-                        if 'exiftool' in cmdline and '-stay_open' in cmdline:
+                    elif proc.info["cmdline"]:
+                        cmdline = " ".join(proc.info["cmdline"]).lower()
+                        if "exiftool" in cmdline and "-stay_open" in cmdline:
                             exiftool_processes.append(proc)
                 except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                     pass
 
             if not exiftool_processes:
-                logger.debug("[ExifToolWrapper] No orphaned ExifTool processes found", extra={"dev_only": True})
+                logger.debug(
+                    "[ExifToolWrapper] No orphaned ExifTool processes found",
+                    extra={"dev_only": True},
+                )
                 return
 
-            logger.warning(f"[ExifToolWrapper] Found {len(exiftool_processes)} orphaned ExifTool processes", extra={"dev_only": True})
+            logger.warning(
+                f"[ExifToolWrapper] Found {len(exiftool_processes)} orphaned ExifTool processes",
+                extra={"dev_only": True},
+            )
 
             # Try to terminate gracefully first
             for proc in exiftool_processes:
@@ -362,19 +407,32 @@ class ExifToolWrapper:
                     pass
 
             if remaining_processes:
-                logger.warning(f"[ExifToolWrapper] Force killing {len(remaining_processes)} ExifTool processes", extra={"dev_only": True})
+                logger.warning(
+                    f"[ExifToolWrapper] Force killing {len(remaining_processes)} ExifTool processes",
+                    extra={"dev_only": True},
+                )
                 for proc in remaining_processes:
                     try:
                         proc.kill()
                     except psutil.NoSuchProcess:
                         pass
             else:
-                logger.debug("[ExifToolWrapper] No ExifTool processes to clean up", extra={"dev_only": True})
+                logger.debug(
+                    "[ExifToolWrapper] No ExifTool processes to clean up", extra={"dev_only": True}
+                )
 
         except ImportError:
-            logger.warning("[ExifToolWrapper] psutil not available, cannot clean up orphaned processes", extra={"dev_only": True})
+            logger.warning(
+                "[ExifToolWrapper] psutil not available, cannot clean up orphaned processes",
+                extra={"dev_only": True},
+            )
         except Exception as e:
             if "exiftool" in str(e).lower():
-                logger.warning(f"[ExifToolWrapper] Error during ExifTool cleanup: {e}", extra={"dev_only": True})
+                logger.warning(
+                    f"[ExifToolWrapper] Error during ExifTool cleanup: {e}",
+                    extra={"dev_only": True},
+                )
             else:
-                logger.debug("[ExifToolWrapper] No ExifTool processes to clean up", extra={"dev_only": True})
+                logger.debug(
+                    "[ExifToolWrapper] No ExifTool processes to clean up", extra={"dev_only": True}
+                )

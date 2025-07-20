@@ -47,12 +47,13 @@ class DialogManager:
     def confirm_large_folder(self, folder_path: str, file_count: int) -> bool:
         """Show confirmation dialog for large folders"""
         from widgets.custom_message_dialog import CustomMessageDialog
+
         return CustomMessageDialog.question(
             None,
             "Large Folder Detected",
             f"Folder contains {file_count} files.\n\nThis may take a while to process.\n\n{folder_path}",
             yes_text="Continue",
-            no_text="Cancel"
+            no_text="Cancel",
         )
 
     def check_large_files(self, files: List[str], max_size_mb: int = 100) -> Tuple[bool, List[str]]:
@@ -77,9 +78,9 @@ class DialogManager:
         large_files = []
         for f in files:
             size_mb = 0
-            if hasattr(f, 'size') and f.size > 0:  # FileItem object with size
+            if hasattr(f, "size") and f.size > 0:  # FileItem object with size
                 size_mb = f.size / (1024 * 1024)
-            elif hasattr(f, 'full_path'):  # FileItem object, check file system
+            elif hasattr(f, "full_path"):  # FileItem object, check file system
                 try:
                     size_mb = os.path.getsize(f.full_path) / (1024 * 1024)
                 except OSError:
@@ -102,7 +103,7 @@ class DialogManager:
         # Handle both FileItem objects and string paths
         file_names = []
         for f in large_files[:5]:
-            if hasattr(f, 'filename'):  # FileItem object
+            if hasattr(f, "filename"):  # FileItem object
                 file_names.append(f.filename)
             else:  # String path
                 file_names.append(os.path.basename(f))
@@ -114,22 +115,19 @@ class DialogManager:
         message = f"Found {len(large_files)} files larger than {max_size_mb}MB:\n\n{file_list}\n\nProcessing may take longer."
 
         return CustomMessageDialog.question(
-            None,
-            "Large Files Detected",
-            message,
-            yes_text="Continue",
-            no_text="Cancel"
+            None, "Large Files Detected", message, yes_text="Continue", no_text="Cancel"
         )
 
     def prompt_file_conflict(self, old_name: str, new_name: str) -> bool:
         """Show confirmation dialog for file rename conflicts"""
         from widgets.custom_message_dialog import CustomMessageDialog
+
         return CustomMessageDialog.question(
             None,
             "File Conflict",
             f"File already exists:\n{new_name}\n\nDo you want to overwrite it?",
             yes_text="Overwrite",
-            no_text="Cancel"
+            no_text="Cancel",
         )
 
     def confirm_unsaved_changes(self, parent: QWidget = None) -> str:
@@ -140,6 +138,7 @@ class DialogManager:
             str: One of 'save_and_close', 'close_without_saving', 'cancel'
         """
         from widgets.custom_message_dialog import CustomMessageDialog
+
         return CustomMessageDialog.unsaved_changes(parent)
 
     def center_window(self, window: QWidget):
@@ -148,6 +147,7 @@ class DialogManager:
             return
 
         from utils.multiscreen_helper import center_dialog_on_screen
+
         center_dialog_on_screen(window)
 
     def should_skip_folder_reload(self, folder_path: str) -> bool:
@@ -172,7 +172,7 @@ class DialogManager:
         """Close all open dialogs and clean up resources."""
         # Close any open message dialogs
         for widget in QApplication.topLevelWidgets():
-            if hasattr(widget, 'close') and 'Dialog' in widget.__class__.__name__:
+            if hasattr(widget, "close") and "Dialog" in widget.__class__.__name__:
                 widget.close()
 
         # Close any open file dialogs

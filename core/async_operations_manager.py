@@ -19,14 +19,14 @@ Features:
 """
 
 import asyncio
-import hashlib
 import os
 import threading
 import time
+from collections.abc import Coroutine
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from queue import Queue
-from typing import Any, Callable, Coroutine, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import aiofiles
 
@@ -39,6 +39,7 @@ logger = get_cached_logger(__name__)
 @dataclass
 class AsyncTask:
     """Represents an asynchronous task."""
+
     task_id: str
     task_type: str
     coroutine: Coroutine
@@ -81,7 +82,7 @@ class AsyncFileOperations:
     async def read_file_async(file_path: str) -> Optional[bytes]:
         """Read file asynchronously."""
         try:
-            async with aiofiles.open(file_path, 'rb') as file:
+            async with aiofiles.open(file_path, "rb") as file:
                 content = await file.read()
                 return content
         except Exception as e:
@@ -92,7 +93,7 @@ class AsyncFileOperations:
     async def write_file_async(file_path: str, content: bytes) -> bool:
         """Write file asynchronously."""
         try:
-            async with aiofiles.open(file_path, 'wb') as file:
+            async with aiofiles.open(file_path, "wb") as file:
                 await file.write(content)
                 return True
         except Exception as e:
@@ -100,16 +101,17 @@ class AsyncFileOperations:
             return False
 
     @staticmethod
-    async def copy_file_async(source: str, destination: str,
-                            progress_callback: Optional[Callable] = None) -> bool:
+    async def copy_file_async(
+        source: str, destination: str, progress_callback: Optional[Callable] = None
+    ) -> bool:
         """Copy file asynchronously with progress tracking."""
         try:
             file_size = os.path.getsize(source)
             chunk_size = 64 * 1024  # 64KB chunks
             bytes_copied = 0
 
-            async with aiofiles.open(source, 'rb') as src:
-                async with aiofiles.open(destination, 'wb') as dst:
+            async with aiofiles.open(source, "rb") as src:
+                async with aiofiles.open(destination, "wb") as dst:
                     while True:
                         chunk = await src.read(chunk_size)
                         if not chunk:
@@ -128,33 +130,33 @@ class AsyncFileOperations:
             return False
 
     @staticmethod
-    async def calculate_hash_async(file_path: str, algorithm: str = 'CRC32',
-                                 progress_callback: Optional[Callable] = None) -> Optional[str]:
+    async def calculate_hash_async(
+        file_path: str, algorithm: str = "CRC32", progress_callback: Optional[Callable] = None
+    ) -> Optional[str]:
         """Calculate file hash asynchronously."""
         try:
-            if algorithm == 'CRC32':
+            if algorithm == "CRC32":
                 import zlib
+
                 hash_obj = zlib.crc32
                 hash_value = 0
-            elif algorithm == 'MD5':
-                hash_obj = hashlib.md5()
-            elif algorithm == 'SHA256':
-                hash_obj = hashlib.sha256()
             else:
-                logger.error(f"[AsyncFileOps] Unsupported hash algorithm: {algorithm}")
+                logger.error(
+                    f"[AsyncFileOps] Unsupported hash algorithm: {algorithm}. Only CRC32 is supported."
+                )
                 return None
 
             file_size = os.path.getsize(file_path)
             chunk_size = 64 * 1024  # 64KB chunks
             bytes_processed = 0
 
-            async with aiofiles.open(file_path, 'rb') as file:
+            async with aiofiles.open(file_path, "rb") as file:
                 while True:
                     chunk = await file.read(chunk_size)
                     if not chunk:
                         break
 
-                    if algorithm == 'CRC32':
+                    if algorithm == "CRC32":
                         hash_value = hash_obj(chunk, hash_value)
                     else:
                         hash_obj.update(chunk)
@@ -166,7 +168,7 @@ class AsyncFileOperations:
                         progress_callback(progress)
 
             # Return hash value
-            if algorithm == 'CRC32':
+            if algorithm == "CRC32":
                 return f"{hash_value & 0xffffffff:08X}"
             else:
                 return hash_obj.hexdigest().upper()
@@ -184,6 +186,7 @@ class AsyncFileOperations:
 
             def extract_metadata():
                 from utils.metadata_loader import MetadataLoader
+
                 loader = MetadataLoader()
                 return loader.load_metadata(file_path, extended=False)
 
@@ -208,9 +211,9 @@ class AsyncTaskManager(QObject):
     """
 
     # Signals
-    task_started = pyqtSignal(str)          # task_id
-    task_completed = pyqtSignal(str, object) # task_id, result
-    task_failed = pyqtSignal(str, str)      # task_id, error_message
+    task_started = pyqtSignal(str)  # task_id
+    task_completed = pyqtSignal(str, object)  # task_id, result
+    task_failed = pyqtSignal(str, str)  # task_id, error_message
     task_progress = pyqtSignal(str, float)  # task_id, progress
 
     def __init__(self, max_workers: int = 4, parent=None):
@@ -247,6 +250,7 @@ class AsyncTaskManager(QObject):
 
     def _start_event_loop(self):
         """Start asyncio event loop in separate thread."""
+
         def run_event_loop():
             self._event_loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self._event_loop)
@@ -317,8 +321,9 @@ class AsyncTaskManager(QObject):
             self.task_failed.emit(task.task_id, str(e))
             logger.error(f"[AsyncTaskManager] Task {task.task_id} failed: {e}")
 
-    def submit_task(self, task_id: str, coroutine: Coroutine,
-                   task_type: str = 'generic', priority: int = 5) -> bool:
+    def submit_task(
+        self, task_id: str, coroutine: Coroutine, task_type: str = "generic", priority: int = 5
+    ) -> bool:
         """
         Submit a task for async execution.
 
@@ -338,10 +343,7 @@ class AsyncTaskManager(QObject):
                     return False
 
                 task = AsyncTask(
-                    task_id=task_id,
-                    task_type=task_type,
-                    coroutine=coroutine,
-                    priority=priority
+                    task_id=task_id, task_type=task_type, coroutine=coroutine, priority=priority
                 )
 
                 self._tasks[task_id] = task
@@ -385,26 +387,26 @@ class AsyncTaskManager(QObject):
 
             task = self._tasks[task_id]
             return {
-                'task_id': task.task_id,
-                'task_type': task.task_type,
-                'priority': task.priority,
-                'progress': task.progress,
-                'is_running': task.is_running,
-                'is_completed': task.is_completed,
-                'execution_time': task.execution_time,
-                'error': str(task.error) if task.error else None
+                "task_id": task.task_id,
+                "task_type": task.task_type,
+                "priority": task.priority,
+                "progress": task.progress,
+                "is_running": task.is_running,
+                "is_completed": task.is_completed,
+                "execution_time": task.execution_time,
+                "error": str(task.error) if task.error else None,
             }
 
     def get_stats(self) -> Dict[str, Any]:
         """Get task manager statistics."""
         with QMutexLocker(self._mutex):
             return {
-                'total_tasks': self._total_tasks,
-                'completed_tasks': self._completed_tasks,
-                'failed_tasks': self._failed_tasks,
-                'running_tasks': len(self._running_tasks),
-                'pending_tasks': self._task_queue.qsize(),
-                'max_workers': self.max_workers
+                "total_tasks": self._total_tasks,
+                "completed_tasks": self._completed_tasks,
+                "failed_tasks": self._failed_tasks,
+                "running_tasks": len(self._running_tasks),
+                "pending_tasks": self._task_queue.qsize(),
+                "max_workers": self.max_workers,
             }
 
     def shutdown(self):
@@ -441,10 +443,10 @@ class AsyncOperationsManager(QObject):
     """
 
     # Signals
-    operation_started = pyqtSignal(str, str)    # operation_id, operation_type
-    operation_completed = pyqtSignal(str, object) # operation_id, result
-    operation_failed = pyqtSignal(str, str)     # operation_id, error_message
-    operation_progress = pyqtSignal(str, float) # operation_id, progress
+    operation_started = pyqtSignal(str, str)  # operation_id, operation_type
+    operation_completed = pyqtSignal(str, object)  # operation_id, result
+    operation_failed = pyqtSignal(str, str)  # operation_id, error_message
+    operation_progress = pyqtSignal(str, float)  # operation_id, progress
 
     def __init__(self, max_workers: int = 4, parent=None):
         """
@@ -471,7 +473,7 @@ class AsyncOperationsManager(QObject):
         """Handle task started signal."""
         status = self.task_manager.get_task_status(task_id)
         if status:
-            self.operation_started.emit(task_id, status['task_type'])
+            self.operation_started.emit(task_id, status["task_type"])
 
     def _on_task_completed(self, task_id: str, result: Any):
         """Handle task completed signal."""
@@ -485,8 +487,9 @@ class AsyncOperationsManager(QObject):
         """Handle task progress signal."""
         self.operation_progress.emit(task_id, progress)
 
-    def calculate_file_hash_async(self, file_path: str, algorithm: str = 'CRC32',
-                                operation_id: Optional[str] = None) -> str:
+    def calculate_file_hash_async(
+        self, file_path: str, algorithm: str = "CRC32", operation_id: Optional[str] = None
+    ) -> str:
         """
         Calculate file hash asynchronously.
 
@@ -505,12 +508,11 @@ class AsyncOperationsManager(QObject):
             self.operation_progress.emit(operation_id, progress)
 
         coroutine = self.file_ops.calculate_hash_async(file_path, algorithm, progress_callback)
-        self.task_manager.submit_task(operation_id, coroutine, 'hash_calculation')
+        self.task_manager.submit_task(operation_id, coroutine, "hash_calculation")
 
         return operation_id
 
-    def extract_metadata_async(self, file_path: str,
-                             operation_id: Optional[str] = None) -> str:
+    def extract_metadata_async(self, file_path: str, operation_id: Optional[str] = None) -> str:
         """
         Extract file metadata asynchronously.
 
@@ -525,13 +527,16 @@ class AsyncOperationsManager(QObject):
             operation_id = f"metadata_{int(time.time() * 1000)}"
 
         coroutine = self.file_ops.get_file_metadata_async(file_path)
-        self.task_manager.submit_task(operation_id, coroutine, 'metadata_extraction')
+        self.task_manager.submit_task(operation_id, coroutine, "metadata_extraction")
 
         return operation_id
 
-    def process_files_batch_async(self, file_paths: List[str],
-                                operation_type: str = 'hash',
-                                operation_id: Optional[str] = None) -> str:
+    def process_files_batch_async(
+        self,
+        file_paths: List[str],
+        operation_type: str = "hash",
+        operation_id: Optional[str] = None,
+    ) -> str:
         """
         Process multiple files asynchronously.
 
@@ -552,9 +557,9 @@ class AsyncOperationsManager(QObject):
 
             for i, file_path in enumerate(file_paths):
                 try:
-                    if operation_type == 'hash':
+                    if operation_type == "hash":
                         result = await self.file_ops.calculate_hash_async(file_path)
-                    elif operation_type == 'metadata':
+                    elif operation_type == "metadata":
                         result = await self.file_ops.get_file_metadata_async(file_path)
                     else:
                         result = None
@@ -571,7 +576,7 @@ class AsyncOperationsManager(QObject):
 
             return results
 
-        self.task_manager.submit_task(operation_id, batch_processor(), f'batch_{operation_type}')
+        self.task_manager.submit_task(operation_id, batch_processor(), f"batch_{operation_type}")
         return operation_id
 
     def get_operation_status(self, operation_id: str) -> Optional[Dict[str, Any]]:

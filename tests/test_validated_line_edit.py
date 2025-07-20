@@ -9,9 +9,9 @@ Tests for ValidatedLineEdit widget
 
 import warnings
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 import pytest
 
@@ -90,7 +90,7 @@ class TestValidatedLineEdit:
 
         assert self.widget.text() == "test"  # Text should remain
         assert self.widget.is_valid() is True
-        assert not hasattr(self.widget, '_has_had_content') or not self.widget._has_had_content
+        assert not hasattr(self.widget, "_has_had_content") or not self.widget._has_had_content
 
     def test_validation_error_message(self, qtbot):
         """Test validation error message generation"""

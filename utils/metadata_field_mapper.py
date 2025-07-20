@@ -10,7 +10,8 @@ Maps column keys to metadata keys and formats values for compact display.
 Based on comprehensive analysis of fast vs extended metadata across multiple file types.
 """
 
-from typing import Dict, List, Optional, Any, Union
+from typing import Any, Dict, List
+
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -31,43 +32,47 @@ class MetadataFieldMapper:
     FIELD_KEY_MAPPING = {
         # Rotation/Orientation (images use "Orientation", videos use "Rotation")
         "rotation": ["Orientation", "Rotation", "CameraOrientation", "AutoRotate"],
-
         # Duration (videos and audio files)
         "duration": ["Duration", "MediaDuration", "VideoTrackDuration", "AudioTrackDuration"],
-
         # Audio properties
         "audio_channels": ["AudioChannels", "Channels"],
         "audio_format": ["AudioFormat", "AudioEncoding", "AudioCodec"],
-
         # Camera settings (available in extended metadata for some videos)
         "aperture": ["FNumber", "Aperture", "ApertureValue"],
         "iso": ["ISO", "ISOSpeeds"],
         "shutter_speed": ["ExposureTime", "ShutterSpeed", "ExposureTimes"],
         "white_balance": ["WhiteBalance", "WhiteBalanceRGB"],
-
         # Image dimensions (special handling - combines width x height)
         "image_size": ["ImageWidth", "ImageHeight"],  # Handled specially in get_value()
-
         # Compression and encoding
         "compression": ["Compression", "CompressionType"],
-
         # Device information
         "device_model": ["Model", "CameraModel"],
         "device_manufacturer": ["Make", "Manufacturer"],
         "device_serial_no": ["SerialNumber", "CameraSerialNumber", "OtherSerialNumber"],
-
         # Video properties
         "video_fps": ["VideoFrameRate", "FrameRate"],
         "video_avg_bitrate": ["AvgBitrate", "BitRate", "VideoBitrate"],
         "video_codec": ["VideoCodec", "Codec"],
         "video_format": ["MajorBrand", "Format", "FileType"],
-
         # Unique identifiers
         "target_umid": [
-            "TargetMaterialUmidRef", "TargetMaterialUMID", "UMID", "MaterialUMID",
-            "QuickTime:TargetMaterialUmidRef", "QuickTime:TargetMaterialUMID", "QuickTime:UMID", "QuickTime:MaterialUMID",
-            "XMP:TargetMaterialUmidRef", "XMP:TargetMaterialUMID", "XMP:UMID", "XMP:MaterialUMID",
-            "File:TargetMaterialUmidRef", "File:TargetMaterialUMID", "File:UMID", "File:MaterialUMID"
+            "TargetMaterialUmidRef",
+            "TargetMaterialUMID",
+            "UMID",
+            "MaterialUMID",
+            "QuickTime:TargetMaterialUmidRef",
+            "QuickTime:TargetMaterialUMID",
+            "QuickTime:UMID",
+            "QuickTime:MaterialUMID",
+            "XMP:TargetMaterialUmidRef",
+            "XMP:TargetMaterialUMID",
+            "XMP:UMID",
+            "XMP:MaterialUMID",
+            "File:TargetMaterialUmidRef",
+            "File:TargetMaterialUMID",
+            "File:UMID",
+            "File:MaterialUMID",
         ],
     }
 
@@ -108,13 +113,19 @@ class MetadataFieldMapper:
         if raw_value is None:
             # Debug logging for UMID specifically
             if field_key == "target_umid":
-                logger.debug(f"UMID not found. Available keys: {list(metadata_dict.keys())[:10]}...", extra={"dev_only": True})
+                logger.debug(
+                    f"UMID not found. Available keys: {list(metadata_dict.keys())[:10]}...",
+                    extra={"dev_only": True},
+                )
             return ""
 
         # Format the value for display
         formatted_value = cls._format_value_for_display(field_key, found_key, raw_value)
 
-        logger.debug(f"Mapped {field_key} -> {found_key} = '{raw_value}' -> '{formatted_value}'", extra={"dev_only": True})
+        logger.debug(
+            f"Mapped {field_key} -> {found_key} = '{raw_value}' -> '{formatted_value}'",
+            extra={"dev_only": True},
+        )
         return formatted_value
 
     @classmethod

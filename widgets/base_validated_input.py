@@ -110,7 +110,7 @@ class BaseValidatedInput:
         if not blocked_chars:
             return text, set()
 
-        cleaned_text = ''.join(char for char in text if char not in blocked_chars)
+        cleaned_text = "".join(char for char in text if char not in blocked_chars)
         removed_chars = set(text) - set(cleaned_text)
 
         return cleaned_text, removed_chars
@@ -148,7 +148,7 @@ class BaseValidatedInput:
         """
         try:
             # Allow control characters (backspace, delete, arrow keys, etc.)
-            if event.text() == '' or len(event.text()) == 0:
+            if event.text() == "" or len(event.text()) == 0:
                 return True
 
             # Check if character should be blocked
@@ -185,12 +185,14 @@ class BaseValidatedInput:
 
             # Show notification about removed characters
             if removed_chars:
-                char_list = ', '.join(f"'{char}'" for char in sorted(removed_chars))
+                char_list = ", ".join(f"'{char}'" for char in sorted(removed_chars))
                 error_msg = f"Removed invalid characters: {char_list}"
                 # Cast self to QWidget for tooltip (safe since concrete classes inherit from QWidget)
                 show_error_tooltip(self, error_msg)  # type: ignore
 
-                logger.debug(f"[BaseValidatedInput] Cleaned paste content. Removed: {removed_chars}")
+                logger.debug(
+                    f"[BaseValidatedInput] Cleaned paste content. Removed: {removed_chars}"
+                )
 
             return cleaned_text
 

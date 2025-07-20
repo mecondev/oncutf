@@ -23,9 +23,9 @@ These tests ensure consistent and reliable user interaction in dialog-based flow
 
 import warnings
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 #!/usr/bin/python3
 # coding: utf-8
@@ -112,13 +112,17 @@ def test_information_dialog_sets_message(qtbot, monkeypatch) -> None:
 
 
 def test_conflict_dialog_selection_skip(qtbot, monkeypatch) -> None:
-    monkeypatch.setattr(CustomMessageDialog, "exec_", lambda self: setattr(self, "selected", "Skip"))
+    monkeypatch.setattr(
+        CustomMessageDialog, "exec_", lambda self: setattr(self, "selected", "Skip")
+    )
     result = CustomMessageDialog.rename_conflict_dialog(QWidget(), "example.txt")
     assert result == "skip"
 
 
 def test_conflict_dialog_selection_overwrite(qtbot, monkeypatch) -> None:
-    monkeypatch.setattr(CustomMessageDialog, "exec_", lambda self: setattr(self, "selected", "Overwrite"))
+    monkeypatch.setattr(
+        CustomMessageDialog, "exec_", lambda self: setattr(self, "selected", "Overwrite")
+    )
     result = CustomMessageDialog.rename_conflict_dialog(QWidget(), "example.txt")
     assert result == "overwrite"
 

@@ -70,14 +70,16 @@ class ProgressWidget(QWidget):
     - Optimized layout for long paths and recursive imports
     """
 
-    def __init__(self,
-                 parent: Optional[QWidget] = None,
-                 bar_color: str = "#64b5f6",
-                 bar_bg_color: str = "#0a1a2a",
-                 show_size_info: bool = False,
-                 show_time_info: bool = False,
-                 fixed_width: int = 400,
-                 progress_mode: str = "count"):
+    def __init__(
+        self,
+        parent: Optional[QWidget] = None,
+        bar_color: str = "#64b5f6",
+        bar_bg_color: str = "#0a1a2a",
+        show_size_info: bool = False,
+        show_time_info: bool = False,
+        fixed_width: int = 400,
+        progress_mode: str = "count",
+    ):
         """
         Initialize the progress widget.
 
@@ -116,7 +118,10 @@ class ProgressWidget(QWidget):
         self._setup_ui()
         self._apply_styling()
 
-        logger.debug(f"[ProgressWidget] Initialized (size_info: {show_size_info}, time_info: {show_time_info}, progress_mode: {progress_mode})", extra={"dev_only": True})
+        logger.debug(
+            f"[ProgressWidget] Initialized (size_info: {show_size_info}, time_info: {show_time_info}, progress_mode: {progress_mode})",
+            extra={"dev_only": True},
+        )
 
     def _setup_ui(self):
         """Setup the UI components with compact layout."""
@@ -131,13 +136,13 @@ class ProgressWidget(QWidget):
 
         self.status_label = QLabel("Please wait...")
         self.status_label.setObjectName("status_label")
-        self.status_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter) # type: ignore
+        self.status_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # type: ignore
         self.status_label.setWordWrap(True)
         self.status_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         self.count_label = QLabel("")
         self.count_label.setObjectName("count_label")
-        self.count_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter) # type: ignore
+        self.count_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
         self.count_label.setFixedWidth(90)
 
         status_row.addWidget(self.status_label)
@@ -152,6 +157,7 @@ class ProgressWidget(QWidget):
         self.progress_bar.setTextVisible(False)
         # DPI-aware progress bar height (8px at 96 DPI)
         from PyQt5.QtWidgets import QApplication
+
         dpi_scale = QApplication.instance().devicePixelRatio() if QApplication.instance() else 1.0
         progress_height = max(6, int(8 * dpi_scale))  # Minimum 6px, scaled for DPI
         self.progress_bar.setFixedHeight(progress_height)
@@ -165,11 +171,11 @@ class ProgressWidget(QWidget):
         self.percentage_label = QLabel("0%")
         self.percentage_label.setObjectName("percentage_label")
         self.percentage_label.setFixedWidth(40)
-        self.percentage_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter) # type: ignore
+        self.percentage_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
 
         self.filename_label = QLabel("")
         self.filename_label.setObjectName("filename_label")
-        self.filename_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter) # type: ignore
+        self.filename_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # type: ignore
         self.filename_label.setWordWrap(True)
         self.filename_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
@@ -192,7 +198,7 @@ class ProgressWidget(QWidget):
         if self.show_size_info:
             self.size_label = QLabel("Ready...")
             self.size_label.setObjectName("size_info_label")
-            self.size_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter) # type: ignore
+            self.size_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)  # type: ignore
             self.size_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
             enhanced_row.addWidget(self.size_label)
 
@@ -202,7 +208,7 @@ class ProgressWidget(QWidget):
         if self.show_time_info:
             self.time_label = QLabel("Ready...")
             self.time_label.setObjectName("time_info_label")
-            self.time_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter) # type: ignore
+            self.time_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
             self.time_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
             enhanced_row.addWidget(self.time_label)
 
@@ -318,9 +324,12 @@ class ProgressWidget(QWidget):
         self.percentage_label.setText(f"{percentage}%")
 
         # Log milestone progress (every 10%)
-        if percentage % 10 == 0 and percentage != getattr(self, '_last_milestone', -1):
+        if percentage % 10 == 0 and percentage != getattr(self, "_last_milestone", -1):
             self._last_milestone = percentage
-            logger.debug(f"[ProgressWidget] Progress milestone: {percentage}% ({processed_bytes:,}/{total_bytes:,} bytes)", extra={"dev_only": True})
+            logger.debug(
+                f"[ProgressWidget] Progress milestone: {percentage}% ({processed_bytes:,}/{total_bytes:,} bytes)",
+                extra={"dev_only": True},
+            )
 
     def set_status(self, text: str):
         """
@@ -337,11 +346,11 @@ class ProgressWidget(QWidget):
         max_length = 80
         if len(text) > max_length:
             # Try to truncate at last space before limit
-            truncate_pos = text.rfind(' ', 0, max_length - 3)
+            truncate_pos = text.rfind(" ", 0, max_length - 3)
             if truncate_pos > max_length // 2:  # Only if we find a reasonable break point
                 truncated_text = text[:truncate_pos] + "..."
             else:
-                truncated_text = text[:max_length - 3] + "..."
+                truncated_text = text[: max_length - 3] + "..."
             self.status_label.setText(truncated_text)
         else:
             self.status_label.setText(text)
@@ -364,7 +373,9 @@ class ProgressWidget(QWidget):
         self.count_label.setText("")
         self.progress_bar.show()
         self.percentage_label.hide()
-        logger.debug("[ProgressWidget] Progress bar set to indeterminate mode", extra={"dev_only": True})
+        logger.debug(
+            "[ProgressWidget] Progress bar set to indeterminate mode", extra={"dev_only": True}
+        )
 
     def set_determinate_mode(self):
         """Set progress bar back to normal determinate mode."""
@@ -373,7 +384,9 @@ class ProgressWidget(QWidget):
         self.percentage_label.setText("0%")
         self.percentage_label.show()
         self.count_label.setText("0 of 0")
-        logger.debug("[ProgressWidget] Progress bar set to determinate mode", extra={"dev_only": True})
+        logger.debug(
+            "[ProgressWidget] Progress bar set to determinate mode", extra={"dev_only": True}
+        )
 
     def set_progress_mode(self, mode: str):
         """
@@ -390,12 +403,18 @@ class ProgressWidget(QWidget):
         self.progress_mode = mode
 
         if old_mode != mode:
-            logger.debug(f"[ProgressWidget] Progress mode changed: {old_mode} -> {mode}", extra={"dev_only": True})
+            logger.debug(
+                f"[ProgressWidget] Progress mode changed: {old_mode} -> {mode}",
+                extra={"dev_only": True},
+            )
 
             # Only warn if switching to size mode and no total size will be set
             # (This warning is mainly for debugging, not a real problem)
             if mode == "size" and self.total_size <= 0:
-                logger.debug("[ProgressWidget] Switched to size mode without total size. Size will be set via start_progress_tracking().", extra={"dev_only": True})
+                logger.debug(
+                    "[ProgressWidget] Switched to size mode without total size. Size will be set via start_progress_tracking().",
+                    extra={"dev_only": True},
+                )
 
     def start_progress_tracking(self, total_size: int = 0):
         """Start progress tracking with optional size tracking."""
@@ -403,26 +422,38 @@ class ProgressWidget(QWidget):
         self.total_size = total_size
         self.processed_size = 0
 
-        if self.show_size_info and hasattr(self, 'size_label'):
+        if self.show_size_info and hasattr(self, "size_label"):
             if total_size > 0:
                 from utils.file_size_formatter import format_file_size_system_compatible
+
                 total_str = format_file_size_system_compatible(total_size)
                 self.size_label.setText(f"0 B/{total_str}")
             else:
                 self.size_label.setText("0 B")
 
-        if self.show_time_info and hasattr(self, 'time_label'):
+        if self.show_time_info and hasattr(self, "time_label"):
             self.time_label.setText("0s")
             # Start timer to update time display every 500ms for smoother updates
             self._time_timer = QTimer(self)
             self._time_timer.timeout.connect(self._update_time_display)
             self._time_timer.start(500)  # Update every 500ms for smoother time display
-            logger.debug("[ProgressWidget] Timer started for time updates (500ms interval)", extra={"dev_only": True})
+            logger.debug(
+                "[ProgressWidget] Timer started for time updates (500ms interval)",
+                extra={"dev_only": True},
+            )
 
-        logger.debug(f"[ProgressWidget] Started tracking (total_size: {total_size})", extra={"dev_only": True})
+        logger.debug(
+            f"[ProgressWidget] Started tracking (total_size: {total_size})",
+            extra={"dev_only": True},
+        )
 
-    def update_progress(self, file_count: int = 0, total_files: int = 0,
-                       processed_bytes: int = 0, total_bytes: int = 0):
+    def update_progress(
+        self,
+        file_count: int = 0,
+        total_files: int = 0,
+        processed_bytes: int = 0,
+        total_bytes: int = 0,
+    ):
         """
         Unified method to update progress regardless of mode.
 
@@ -455,10 +486,10 @@ class ProgressWidget(QWidget):
                     self.set_progress_by_size(self.processed_size, self.total_size)
 
         # Update displays
-        if self.show_size_info and hasattr(self, 'size_label'):
+        if self.show_size_info and hasattr(self, "size_label"):
             self._update_size_display()
 
-        if self.show_time_info and hasattr(self, 'time_label'):
+        if self.show_time_info and hasattr(self, "time_label"):
             self._update_time_display()
 
     def _update_size_display(self):
@@ -480,7 +511,7 @@ class ProgressWidget(QWidget):
         Improved estimation (2025): More stable time calculation that doesn't reset
         between files - better than old approach that lost estimation accuracy.
         """
-        if not self.show_time_info or not hasattr(self, 'time_label'):
+        if not self.show_time_info or not hasattr(self, "time_label"):
             return
 
         if self.start_time is None:
@@ -491,16 +522,19 @@ class ProgressWidget(QWidget):
         elapsed = time.time() - self.start_time
 
         # Debug logging to see if this method is being called
-        logger.debug(f"[ProgressWidget] _update_time_display called: elapsed={elapsed:.1f}s, processed={self.processed_size}, total={self.total_size}", extra={"dev_only": True})
+        logger.debug(
+            f"[ProgressWidget] _update_time_display called: elapsed={elapsed:.1f}s, processed={self.processed_size}, total={self.total_size}",
+            extra={"dev_only": True},
+        )
 
         # Stable estimation based on cumulative progress - no more resets between files
         if self.processed_size > 0 and self.total_size > 0:
             progress_ratio = self.processed_size / self.total_size
 
             # Store previous estimation for stability check
-            if not hasattr(self, '_last_progress_ratio'):
+            if not hasattr(self, "_last_progress_ratio"):
                 self._last_progress_ratio = 0.0
-            if not hasattr(self, '_last_estimation'):
+            if not hasattr(self, "_last_estimation"):
                 self._last_estimation = None
 
             # Only update estimation if progress has changed significantly (>0.5%)
@@ -524,17 +558,24 @@ class ProgressWidget(QWidget):
 
                 time_text = f"{elapsed_str} of {estimated_total_str} Est."  # Use "of" and "Est."
                 self.time_label.setText(time_text)
-                logger.debug(f"[ProgressWidget] Time updated: {time_text}", extra={"dev_only": True})
+                logger.debug(
+                    f"[ProgressWidget] Time updated: {time_text}", extra={"dev_only": True}
+                )
             else:
                 # Early stage - just show elapsed time until we have stable estimation
                 elapsed_str = self._format_time_hms(elapsed)
                 time_text = f"{elapsed_str} of calculating... Est."
                 self.time_label.setText(time_text)
-                logger.debug(f"[ProgressWidget] Time updated (early): {time_text}", extra={"dev_only": True})
+                logger.debug(
+                    f"[ProgressWidget] Time updated (early): {time_text}", extra={"dev_only": True}
+                )
         else:
             elapsed_str = self._format_time_hms(elapsed)
             self.time_label.setText(elapsed_str)
-            logger.debug(f"[ProgressWidget] Time updated (no progress): {elapsed_str}", extra={"dev_only": True})
+            logger.debug(
+                f"[ProgressWidget] Time updated (no progress): {elapsed_str}",
+                extra={"dev_only": True},
+            )
 
     def _format_time_hms(self, seconds: float) -> str:
         """
@@ -597,7 +638,7 @@ class ProgressWidget(QWidget):
             processed_size: Cumulative bytes processed (always increasing, 64-bit)
             total_size: Total bytes to process (optional, uses stored value if 0, 64-bit)
         """
-        if not self.show_size_info or not hasattr(self, 'size_label'):
+        if not self.show_size_info or not hasattr(self, "size_label"):
             return
 
         # Convert to Python integers to handle 64-bit values properly
@@ -614,6 +655,7 @@ class ProgressWidget(QWidget):
 
         # Debug logging to track what's happening - improved logic
         import logging
+
         logger = logging.getLogger()
 
         # Only log significant changes to avoid spam
@@ -694,9 +736,9 @@ class ProgressWidget(QWidget):
         self.processed_size = 0
 
         # Reset time estimation tracking variables
-        if hasattr(self, '_last_progress_ratio'):
+        if hasattr(self, "_last_progress_ratio"):
             self._last_progress_ratio = 0.0
-        if hasattr(self, '_last_estimation'):
+        if hasattr(self, "_last_estimation"):
             self._last_estimation = None
 
         # Stop timer if running
@@ -704,10 +746,10 @@ class ProgressWidget(QWidget):
             self._time_timer.stop()
             self._time_timer = None
 
-        if self.show_size_info and hasattr(self, 'size_label'):
+        if self.show_size_info and hasattr(self, "size_label"):
             self.size_label.setText("Ready...")
 
-        if self.show_time_info and hasattr(self, 'time_label'):
+        if self.show_time_info and hasattr(self, "time_label"):
             self.time_label.setText("Ready...")
 
 
@@ -716,6 +758,9 @@ def create_basic_progress_widget(parent=None, **kwargs):
     """Create a basic progress widget (no enhanced tracking)."""
     return ProgressWidget(parent, show_size_info=False, show_time_info=False, **kwargs)
 
+
 def create_size_based_progress_widget(parent=None, **kwargs):
     """Create a progress widget with size-based progress bar and full tracking."""
-    return ProgressWidget(parent, show_size_info=True, show_time_info=True, progress_mode="size", **kwargs)
+    return ProgressWidget(
+        parent, show_size_info=True, show_time_info=True, progress_mode="size", **kwargs
+    )

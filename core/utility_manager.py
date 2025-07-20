@@ -37,7 +37,7 @@ class UtilityManager:
     - File selection utilities
     """
 
-    def __init__(self, main_window: 'MainWindow'):
+    def __init__(self, main_window: "MainWindow"):
         """
         Initialize the UtilityManager.
 
@@ -56,7 +56,10 @@ class UtilityManager:
         """
         if event.type() in (QEvent.KeyPress, QEvent.KeyRelease):
             self.main_window.modifier_state = QApplication.keyboardModifiers()
-            logger.debug(f"[Modifiers] eventFilter saw: {event.type()} with modifiers={int(event.modifiers())}", extra={"dev_only": True})
+            logger.debug(
+                f"[Modifiers] eventFilter saw: {event.type()} with modifiers={int(event.modifiers())}",
+                extra={"dev_only": True},
+            )
 
         return super(type(self.main_window), self.main_window).eventFilter(obj, event)
 
@@ -84,16 +87,21 @@ class UtilityManager:
         self.main_window.modifier_state = QApplication.keyboardModifiers()
 
         if not self.main_window.current_folder_path:
-            if hasattr(self.main_window, 'status_manager'):
+            if hasattr(self.main_window, "status_manager"):
                 self.main_window.status_manager.set_file_operation_status(
-                    "No folder loaded",
-                    success=False,
-                    auto_reset=True
+                    "No folder loaded", success=False, auto_reset=True
                 )
             return
 
         from widgets.custom_message_dialog import CustomMessageDialog
-        if not CustomMessageDialog.question(self.main_window, "Reload Folder", "Reload current folder?", yes_text="Reload", no_text="Cancel"):
+
+        if not CustomMessageDialog.question(
+            self.main_window,
+            "Reload Folder",
+            "Reload current folder?",
+            yes_text="Reload",
+            no_text="Cancel",
+        ):
             return
 
         # Use determine_metadata_mode method instead of deprecated resolve_skip_metadata
@@ -139,7 +147,7 @@ class UtilityManager:
         try:
             # Use modern QScreen API instead of deprecated QDesktopWidget
             app = QApplication.instance()
-            if not app or not hasattr(app, 'screens'):
+            if not app or not hasattr(app, "screens"):
                 logger.warning("No QApplication instance found for centering window")
                 return
 
@@ -171,7 +179,9 @@ class UtilityManager:
             # Reposition the window's top-left corner to match the new centered geometry
             self.main_window.move(window_geometry.topLeft())
 
-            logger.debug(f"Main window centered on screen {target_screen.name()}", extra={"dev_only": True})
+            logger.debug(
+                f"Main window centered on screen {target_screen.name()}", extra={"dev_only": True}
+            )
 
         except Exception as e:
             logger.error(f"Failed to center window: {e}")
@@ -189,14 +199,20 @@ class UtilityManager:
         total = len(self.main_window.file_model.files)
         selected = len(self.main_window.get_selected_files()) if total else 0
 
-        self.main_window.status_manager.update_files_label(self.main_window.files_label, total, selected)
+        self.main_window.status_manager.update_files_label(
+            self.main_window.files_label, total, selected
+        )
 
     def get_selected_rows_files(self) -> list:
         """
         Returns a list of FileItem objects currently selected (blue-highlighted) in the table view.
         """
         selected_indexes = self.main_window.file_table_view.selectionModel().selectedRows()
-        return [self.main_window.file_model.files[i.row()] for i in selected_indexes if 0 <= i.row() < len(self.main_window.file_model.files)]
+        return [
+            self.main_window.file_model.files[i.row()]
+            for i in selected_indexes
+            if 0 <= i.row() < len(self.main_window.file_model.files)
+        ]
 
     def get_modifier_flags(self) -> tuple[bool, bool]:
         """
@@ -231,107 +247,109 @@ class UtilityManager:
             self.main_window.metadata_loader.close()
 
         # Clean up application context
-        if hasattr(self.main_window, 'context'):
+        if hasattr(self.main_window, "context"):
             self.main_window.context.cleanup()
 
         # Call the original closeEvent
         super(type(self.main_window), self.main_window).closeEvent(event)
 
+    def clear_preview_caches(self) -> None:
+        """Clear all preview-related caches when files change."""
+        if hasattr(self.main_window, "preview_manager"):
+            self.main_window.preview_manager.clear_all_caches()
+
+        # Reset cache hashes
+        self._last_selected_files_hash = None
+        self._last_rename_data_hash = None
+
     def generate_preview_names(self) -> None:
-        """
-        Generate new preview names for all selected files using current rename modules.
-        Updates the preview map and UI elements accordingly.
-        """
-        selected_files = self.main_window.get_selected_files()
-        logger.debug("[Preview] Triggered! Selected rows: %s", [f.filename for f in selected_files], extra={"dev_only": True})
+        """Generate preview names for selected files with performance optimizations."""
+        from utils.cursor_helper import wait_cursor
 
-        # Create hash of current selection for comparison
-        selected_files_hash = hash(tuple(f.full_path for f in selected_files)) if selected_files else None
+        with wait_cursor():
+            selected_files = self.main_window.get_selected_files()
 
-        # Get rename data and modules
-        rename_data = self.main_window.rename_modules_area.get_all_data()
+            # Check if data changed to avoid unnecessary regeneration
+            selected_files_hash = (
+                hash(tuple(f.full_path for f in selected_files)) if selected_files else None
+            )
+            rename_data = self.main_window.rename_modules_area.get_all_data()
+            rename_data["post_transform"] = self.main_window.final_transform_container.get_data()
 
-        # Add post_transform data from final transform container
-        post_transform_data = self.main_window.final_transform_container.get_data()
-        rename_data["post_transform"] = post_transform_data
+            import json
 
-        # Create hash of rename data for comparison
-        import json
-        try:
-            rename_data_hash = hash(json.dumps(rename_data, sort_keys=True, default=str))
-        except (TypeError, ValueError):
-            # Fallback to string representation if JSON serialization fails
-            rename_data_hash = hash(str(rename_data))
+            try:
+                rename_data_hash = hash(json.dumps(rename_data, sort_keys=True, default=str))
+            except (TypeError, ValueError):
+                rename_data_hash = hash(str(rename_data))
 
-        # Check if we need to regenerate preview
-        if (selected_files_hash == self._last_selected_files_hash and
-            rename_data_hash == self._last_rename_data_hash):
-            logger.debug("[Preview] Data unchanged, skipping preview generation", extra={"dev_only": True})
-            return
+            if (
+                selected_files_hash == self._last_selected_files_hash
+                and rename_data_hash == self._last_rename_data_hash
+            ):
+                return
 
-        # Update cache
-        self._last_selected_files_hash = selected_files_hash
-        self._last_rename_data_hash = rename_data_hash
+            # Update cache
+            self._last_selected_files_hash = selected_files_hash
+            self._last_rename_data_hash = rename_data_hash
 
-        if not selected_files:
-            logger.debug("[Preview] No selected files — skipping preview generation.", extra={"dev_only": True})
-            self.main_window.update_preview_tables_from_pairs([])
-            self.main_window.rename_button.setEnabled(False)
-            return
+            if not selected_files:
+                self.main_window.update_preview_tables_from_pairs([])
+                self.main_window.rename_button.setEnabled(False)
+                return
 
-        all_modules = self.main_window.rename_modules_area.get_all_module_instances()
+            # Performance optimization: Block UI updates during preview generation
+            if hasattr(self.main_window, "preview_tables_view"):
+                self.main_window.preview_tables_view.setUpdatesEnabled(False)
 
-        # Use PreviewManager to generate previews
-        name_pairs, has_changes = self.main_window.preview_manager.generate_preview_names(
-            selected_files, rename_data, self.main_window.metadata_cache, all_modules
-        )
-
-        # Update preview map from manager
-        self.main_window.preview_map = self.main_window.preview_manager.get_preview_map()
-
-        # Handle UI updates based on results
-        if not name_pairs:
-            # No modules at all → clear preview completely
-            self.main_window.update_preview_tables_from_pairs([])
-            self.main_window.rename_button.setEnabled(False)
-            if hasattr(self.main_window, 'status_manager'):
-                self.main_window.status_manager.set_validation_status(
-                    "No rename modules defined",
-                    validation_type="info",
-                    auto_reset=True
+            try:
+                # Generate previews using the optimized preview manager
+                all_modules = self.main_window.rename_modules_area.get_all_module_instances()
+                name_pairs, has_changes = self.main_window.preview_manager.generate_preview_names(
+                    selected_files, rename_data, self.main_window.metadata_cache, all_modules
                 )
+
+                # Update UI components
+                self.main_window.preview_map = self.main_window.preview_manager.get_preview_map()
+                self.main_window.update_preview_tables_from_pairs(name_pairs)
+
+                # Handle rename button state
+                self._update_rename_button_state(name_pairs, has_changes)
+
+            finally:
+                # Re-enable UI updates
+                if hasattr(self.main_window, "preview_tables_view"):
+                    self.main_window.preview_tables_view.setUpdatesEnabled(True)
+
+    def _update_rename_button_state(self, name_pairs: list, has_changes: bool) -> None:
+        """Update rename button state and tooltip."""
+        if not name_pairs:
+            self.main_window.rename_button.setEnabled(False)
             return
 
         if not has_changes:
-            # Modules exist but inactive → show identity mapping
             self.main_window.rename_button.setEnabled(False)
-            setup_tooltip(self.main_window.rename_button, "No changes to apply", TooltipType.WARNING)
-            self.main_window.update_preview_tables_from_pairs(name_pairs)
-            if hasattr(self.main_window, 'status_manager'):
-                self.main_window.status_manager.set_validation_status(
-                    "Rename modules present but inactive",
-                    validation_type="info",
-                    auto_reset=True
-                )
+            setup_tooltip(
+                self.main_window.rename_button, "No changes to apply", TooltipType.WARNING
+            )
             return
 
-        # Update preview tables with changes
-        self.main_window.update_preview_tables_from_pairs(name_pairs)
-
-        # Enable rename button and set tooltip
-        valid_pairs = [p for p in name_pairs if p[0] != p[1]]
-
-        # Check for validation errors in new names
+        # Check for validation errors
         from utils.filename_validator import is_validation_error_marker
-        has_validation_errors = any(is_validation_error_marker(new_name) for _, new_name in name_pairs)
 
-        # Rename button should be enabled only if we have changes AND no validation errors
+        valid_pairs = [p for p in name_pairs if p[0] != p[1]]
+        has_validation_errors = any(
+            is_validation_error_marker(new_name) for _, new_name in name_pairs
+        )
+
         can_rename = bool(valid_pairs) and not has_validation_errors
         self.main_window.rename_button.setEnabled(can_rename)
 
-        # Set appropriate tooltip message
+        # Set tooltip
         if has_validation_errors:
-            error_count = sum(1 for _, new_name in name_pairs if is_validation_error_marker(new_name))
+            error_count = sum(
+                1 for _, new_name in name_pairs if is_validation_error_marker(new_name)
+            )
             tooltip_msg = f"Cannot rename: {error_count} validation error(s) found"
             tooltip_type = TooltipType.ERROR
         elif valid_pairs:
@@ -347,6 +365,3 @@ class UtilityManager:
         """Clear the preview generation cache to force next update."""
         self._last_selected_files_hash = None
         self._last_rename_data_hash = None
-        logger.debug("[Preview] Cache cleared, next generation will be forced", extra={"dev_only": True})
-
-

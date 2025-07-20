@@ -39,9 +39,9 @@ class MetadataCommandManager(QObject):
     can_undo_changed = pyqtSignal(bool)
     can_redo_changed = pyqtSignal(bool)
     command_executed = pyqtSignal(str)  # description
-    command_undone = pyqtSignal(str)    # description
-    command_redone = pyqtSignal(str)    # description
-    history_changed = pyqtSignal()      # general history change
+    command_undone = pyqtSignal(str)  # description
+    command_redone = pyqtSignal(str)  # description
+    history_changed = pyqtSignal()  # general history change
 
     def __init__(self, max_history: Optional[int] = None):
         """
@@ -78,7 +78,9 @@ class MetadataCommandManager(QObject):
         try:
             # Execute the command
             if not command.execute():
-                logger.warning(f"[MetadataCommandManager] Failed to execute command: {command.get_description()}")
+                logger.warning(
+                    f"[MetadataCommandManager] Failed to execute command: {command.get_description()}"
+                )
                 return False
 
             # Handle command grouping
@@ -135,7 +137,9 @@ class MetadataCommandManager(QObject):
             else:
                 # If undo failed, put command back
                 self._undo_stack.append(command)
-                logger.warning(f"[MetadataCommandManager] Failed to undo: {command.get_description()}")
+                logger.warning(
+                    f"[MetadataCommandManager] Failed to undo: {command.get_description()}"
+                )
                 return False
 
         except Exception as e:
@@ -169,7 +173,9 @@ class MetadataCommandManager(QObject):
             else:
                 # If redo failed, put command back
                 self._redo_stack.append(command)
-                logger.warning(f"[MetadataCommandManager] Failed to redo: {command.get_description()}")
+                logger.warning(
+                    f"[MetadataCommandManager] Failed to redo: {command.get_description()}"
+                )
                 return False
 
         except Exception as e:
@@ -214,29 +220,33 @@ class MetadataCommandManager(QObject):
 
         # Add undo stack (most recent first)
         for i, command in enumerate(reversed(self._undo_stack)):
-            history.append({
-                'command_id': command.command_id,
-                'description': command.get_description(),
-                'timestamp': command.timestamp,
-                'file_path': command.file_path,
-                'command_type': command.get_command_type(),
-                'can_undo': True,
-                'can_redo': False,
-                'stack_position': i
-            })
+            history.append(
+                {
+                    "command_id": command.command_id,
+                    "description": command.get_description(),
+                    "timestamp": command.timestamp,
+                    "file_path": command.file_path,
+                    "command_type": command.get_command_type(),
+                    "can_undo": True,
+                    "can_redo": False,
+                    "stack_position": i,
+                }
+            )
 
         # Add redo stack
         for i, command in enumerate(self._redo_stack):
-            history.append({
-                'command_id': command.command_id,
-                'description': command.get_description(),
-                'timestamp': command.timestamp,
-                'file_path': command.file_path,
-                'command_type': command.get_command_type(),
-                'can_undo': False,
-                'can_redo': True,
-                'stack_position': i
-            })
+            history.append(
+                {
+                    "command_id": command.command_id,
+                    "description": command.get_description(),
+                    "timestamp": command.timestamp,
+                    "file_path": command.file_path,
+                    "command_type": command.get_command_type(),
+                    "can_undo": False,
+                    "can_redo": True,
+                    "stack_position": i,
+                }
+            )
 
         # Apply limit if specified
         if limit:
@@ -276,21 +286,27 @@ class MetadataCommandManager(QObject):
         if self._pending_commands:
             # Check if same file and similar operation
             last_command = self._pending_commands[-1]
-            return (command.file_path == last_command.file_path and
-                   command.get_command_type() == last_command.get_command_type())
+            return (
+                command.file_path == last_command.file_path
+                and command.get_command_type() == last_command.get_command_type()
+            )
 
         if self._undo_stack:
             # Check if same file and similar operation
             last_command = self._undo_stack[-1]
-            return (command.file_path == last_command.file_path and
-                   command.get_command_type() == last_command.get_command_type())
+            return (
+                command.file_path == last_command.file_path
+                and command.get_command_type() == last_command.get_command_type()
+            )
 
         return False
 
     def _add_to_pending_group(self, command: MetadataCommand) -> None:
         """Add command to pending group."""
         self._pending_commands.append(command)
-        logger.debug(f"[MetadataCommandManager] Added to pending group: {command.get_description()}")
+        logger.debug(
+            f"[MetadataCommandManager] Added to pending group: {command.get_description()}"
+        )
 
     def _finalize_pending_group(self) -> None:
         """Finalize any pending command group."""
@@ -303,8 +319,7 @@ class MetadataCommandManager(QObject):
         else:
             # Multiple commands, create batch
             batch_command = BatchMetadataCommand(
-                self._pending_commands,
-                f"Batch edit: {len(self._pending_commands)} operations"
+                self._pending_commands, f"Batch edit: {len(self._pending_commands)} operations"
             )
             self._add_to_undo_stack(batch_command)
 

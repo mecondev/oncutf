@@ -33,14 +33,14 @@ class SVGIconGenerator:
 
     # Icon mappings - feather icon name for each status
     ICON_MAPPINGS = {
-        'basic': 'info',
-        'extended': 'info',
-        'invalid': 'alert-circle',
-        'loaded': 'check-circle',
-        'modified': 'edit-2',
-        'partial': 'alert-triangle',
-        'hash': 'key',
-        'none': 'circle',  # Empty circle for no metadata
+        "basic": "info",
+        "extended": "info",
+        "invalid": "alert-circle",
+        "loaded": "check-circle",
+        "modified": "edit-2",
+        "partial": "alert-triangle",
+        "hash": "key",
+        "none": "circle",  # Empty circle for no metadata
     }
 
     def __init__(self, size: int = 16):
@@ -67,7 +67,7 @@ class SVGIconGenerator:
         svg_path = self.feather_dir / f"{icon_name}.svg"
 
         try:
-            with open(svg_path, 'r', encoding='utf-8') as f:
+            with open(svg_path, encoding="utf-8") as f:
                 return f.read()
         except FileNotFoundError:
             logger.error(f"[SVGIconGenerator] Feather icon not found: {svg_path}")
@@ -90,7 +90,9 @@ class SVGIconGenerator:
         # Replace various stroke color formats used in feather icons
         svg_content = svg_content.replace('stroke="currentColor"', f'stroke="{color}"')
         svg_content = svg_content.replace("stroke='currentColor'", f"stroke='{color}'")
-        svg_content = svg_content.replace('stroke="#d6d6d6"', f'stroke="{color}"')  # Feather default
+        svg_content = svg_content.replace(
+            'stroke="#d6d6d6"', f'stroke="{color}"'
+        )  # Feather default
         svg_content = svg_content.replace('stroke="#000"', f'stroke="{color}"')
         svg_content = svg_content.replace('stroke="#000000"', f'stroke="{color}"')
         svg_content = svg_content.replace('stroke="black"', f'stroke="{color}"')
@@ -100,8 +102,8 @@ class SVGIconGenerator:
         svg_content = svg_content.replace("fill='currentColor'", f"fill='{color}'")
 
         # If no stroke attribute exists, add it to the main SVG element
-        if 'stroke=' not in svg_content:
-            svg_content = svg_content.replace('<svg', f'<svg stroke="{color}"')
+        if "stroke=" not in svg_content:
+            svg_content = svg_content.replace("<svg", f'<svg stroke="{color}"')
 
         return svg_content
 
@@ -151,7 +153,7 @@ class SVGIconGenerator:
         try:
             # Create SVG renderer
             renderer = QSvgRenderer()
-            success = renderer.load(QByteArray(svg_content.encode('utf-8')))
+            success = renderer.load(QByteArray(svg_content.encode("utf-8")))
 
             if not success:
                 logger.warning("[SVGIconGenerator] Failed to load SVG content")
@@ -200,14 +202,19 @@ class SVGIconGenerator:
         if size is None:
             size = self.size
 
-        logger.debug(f"[SVGIconGenerator] Generating all metadata icons at {size}px", extra={"dev_only": True})
+        logger.debug(
+            f"[SVGIconGenerator] Generating all metadata icons at {size}px",
+            extra={"dev_only": True},
+        )
 
         icons = {}
         for status in METADATA_ICON_COLORS.keys():
             # Generate all icons including hash since we use it in file table model
             icons[status] = self.generate_icon(status, size)
 
-        logger.debug(f"[SVGIconGenerator] Generated {len(icons)} metadata icons", extra={"dev_only": True})
+        logger.debug(
+            f"[SVGIconGenerator] Generated {len(icons)} metadata icons", extra={"dev_only": True}
+        )
         return icons
 
     def generate_inverted_icon(self, icon_name: str, size: Optional[int] = None) -> QPixmap:
@@ -217,7 +224,9 @@ class SVGIconGenerator:
         """
         return QPixmap()
 
-    def generate_icon_pair(self, icon_name: str, size: Optional[int] = None) -> tuple[QPixmap, QPixmap]:
+    def generate_icon_pair(
+        self, icon_name: str, size: Optional[int] = None
+    ) -> tuple[QPixmap, QPixmap]:
         """
         Generate both normal and inverted versions of an icon.
         REMOVED: This functionality was too complex and not needed.
@@ -252,4 +261,4 @@ def generate_hash_icon(size: int = 16) -> QPixmap:
         QPixmap with hash icon
     """
     generator = SVGIconGenerator(size)
-    return generator.generate_icon('hash', size)
+    return generator.generate_icon("hash", size)

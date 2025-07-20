@@ -34,7 +34,7 @@ class RenameManager:
     - Rename-related UI updates
     """
 
-    def __init__(self, main_window: 'MainWindow'):
+    def __init__(self, main_window: "MainWindow"):
         """
         Initialize the RenameManager.
 
@@ -52,96 +52,111 @@ class RenameManager:
         This method handles the complete rename workflow including validation,
         execution, folder reload, and state restoration.
         """
-        selected_files = self.main_window.get_selected_files()
-        rename_data = self.main_window.rename_modules_area.get_all_data()
+        from utils.cursor_helper import wait_cursor
 
-        # Add post_transform data from final transform container
-        post_transform_data = self.main_window.final_transform_container.get_data()
-        rename_data["post_transform"] = post_transform_data
+        with wait_cursor():
+            selected_files = self.main_window.get_selected_files()
+            rename_data = self.main_window.rename_modules_area.get_all_data()
 
-        post_transform = rename_data.get("post_transform", {})
-        modules_data = rename_data.get("modules", [])
+            # Add post_transform data from final transform container
+            post_transform_data = self.main_window.final_transform_container.get_data()
+            rename_data["post_transform"] = post_transform_data
 
-        # Store checked paths for restoration
-        checked_paths = {f.full_path for f in self.main_window.file_model.files if f.checked}
+            post_transform = rename_data.get("post_transform", {})
+            modules_data = rename_data.get("modules", [])
 
-        # Use FileOperationsManager to perform rename
-        try:
-            renamed_count = self.main_window.file_operations_manager.rename_files(
-                selected_files=selected_files,
-                modules_data=modules_data,
-                post_transform=post_transform,
-                metadata_cache=self.main_window.metadata_cache,
-                current_folder_path=self.main_window.current_folder_path
-            )
-        except Exception as e:
-            logger.error(f"[RenameManager] Critical error during rename: {e}")
-            return
+            # Store checked paths for restoration
+            checked_paths = {f.full_path for f in self.main_window.file_model.files if f.checked}
 
-        # Record rename operation in history for undo functionality
-        if renamed_count > 0:
+            # Use FileOperationsManager to perform rename
             try:
-                # Collect actual rename operations that succeeded
-                rename_pairs = []
-                for file_item in selected_files:
-                    if hasattr(file_item, 'original_path') and file_item.original_path:
-                        # File was renamed, record the operation
-                        rename_pairs.append((file_item.original_path, file_item.full_path))
-                    else:
-                        # Fallback: assume rename based on current path and modules
-                        old_path = file_item.full_path  # This might not be accurate
-                        new_path = file_item.full_path  # Current path after rename
-                        if old_path != new_path:
-                            rename_pairs.append((old_path, new_path))
-
-                if rename_pairs and hasattr(self.main_window, 'rename_history_manager'):
-                    operation_id = self.main_window.rename_history_manager.record_rename_batch(
-                        renames=rename_pairs,
-                        modules_data=modules_data,
-                        post_transform_data=post_transform
-                    )
-                    if operation_id:
-                        logger.info(f"[RenameManager] Recorded rename operation {operation_id[:8]}... for undo")
-
+                renamed_count = self.main_window.file_operations_manager.rename_files(
+                    selected_files=selected_files,
+                    modules_data=modules_data,
+                    post_transform=post_transform,
+                    metadata_cache=self.main_window.metadata_cache,
+                    current_folder_path=self.main_window.current_folder_path,
+                )
             except Exception as e:
-                logger.warning(f"[RenameManager] Failed to record rename history: {e}")
+                logger.error(f"[RenameManager] Critical error during rename: {e}")
+                return
 
-        if renamed_count == 0:
-            return
-
-        # Execute post-rename workflow with safe delayed execution
-        if renamed_count > 0:
-            # Use TimerManager for safe delayed execution to avoid Qt object lifecycle issues
-            from utils.timer_manager import get_timer_manager, TimerType, TimerPriority
-
-            def safe_post_rename_workflow():
-                """Safe wrapper for post-rename workflow with error handling."""
+            # Record rename operation in history for undo functionality
+            if renamed_count > 0:
                 try:
-                    # Check if main window is still valid
-                    if not self.main_window or not hasattr(self.main_window, 'current_folder_path'):
-                        logger.warning("[RenameManager] Main window no longer valid, skipping post-rename workflow")
-                        return
+                    # Collect actual rename operations that succeeded
+                    rename_pairs = []
+                    for file_item in selected_files:
+                        if hasattr(file_item, "original_path") and file_item.original_path:
+                            # File was renamed, record the operation
+                            rename_pairs.append((file_item.original_path, file_item.full_path))
+                        else:
+                            # Fallback: assume rename based on current path and modules
+                            old_path = file_item.full_path  # This might not be accurate
+                            new_path = file_item.full_path  # Current path after rename
+                            if old_path != new_path:
+                                rename_pairs.append((old_path, new_path))
 
-                    logger.info("[RenameManager] Starting safe post-rename workflow")
-                    self._execute_post_rename_workflow_safe(checked_paths)
+                    if rename_pairs and hasattr(self.main_window, "rename_history_manager"):
+                        operation_id = self.main_window.rename_history_manager.record_rename_batch(
+                            renames=rename_pairs,
+                            modules_data=modules_data,
+                            post_transform_data=post_transform,
+                        )
+                        if operation_id:
+                            logger.info(
+                                f"[RenameManager] Recorded rename operation {operation_id[:8]}... for undo"
+                            )
+
                 except Exception as e:
-                    logger.error(f"[RenameManager] Error in post-rename workflow: {e}", exc_info=True)
-                    # Fallback: just show a simple status message
-                    if hasattr(self.main_window, 'set_status'):
-                        self.main_window.set_status(f"Rename completed: {renamed_count} files", auto_reset=True)
+                    logger.warning(f"[RenameManager] Failed to record rename history: {e}")
 
-            # Schedule the workflow with a small delay to let the rename operation complete
-            get_timer_manager().schedule(
-                safe_post_rename_workflow,
-                delay=100,  # 100ms delay to ensure file system operations are complete
-                priority=TimerPriority.HIGH,
-                timer_type=TimerType.GENERIC,
-                timer_id="post_rename_workflow"
-            )
+            if renamed_count == 0:
+                return
 
-            logger.info(f"[RenameManager] Scheduled post-rename workflow for {renamed_count} files")
-        else:
-            logger.info(f"[RenameManager] No files renamed, skipping post-rename workflow")
+            # Execute post-rename workflow with safe delayed execution
+            if renamed_count > 0:
+                # Use TimerManager for safe delayed execution to avoid Qt object lifecycle issues
+                from utils.timer_manager import TimerPriority, TimerType, get_timer_manager
+
+                def safe_post_rename_workflow():
+                    """Safe wrapper for post-rename workflow with error handling."""
+                    try:
+                        # Check if main window is still valid
+                        if not self.main_window or not hasattr(
+                            self.main_window, "current_folder_path"
+                        ):
+                            logger.warning(
+                                "[RenameManager] Main window no longer valid, skipping post-rename workflow"
+                            )
+                            return
+
+                        logger.info("[RenameManager] Starting safe post-rename workflow")
+                        self._execute_post_rename_workflow_safe(checked_paths)
+                    except Exception as e:
+                        logger.error(
+                            f"[RenameManager] Error in post-rename workflow: {e}", exc_info=True
+                        )
+                        # Fallback: just show a simple status message
+                        if hasattr(self.main_window, "set_status"):
+                            self.main_window.set_status(
+                                f"Rename completed: {renamed_count} files", auto_reset=True
+                            )
+
+                # Schedule the workflow with a small delay to let the rename operation complete
+                get_timer_manager().schedule(
+                    safe_post_rename_workflow,
+                    delay=100,  # 100ms delay to ensure file system operations are complete
+                    priority=TimerPriority.HIGH,
+                    timer_type=TimerType.GENERIC,
+                    timer_id="post_rename_workflow",
+                )
+
+                logger.info(
+                    f"[RenameManager] Scheduled post-rename workflow for {renamed_count} files"
+                )
+            else:
+                logger.info("[RenameManager] No files renamed, skipping post-rename workflow")
 
     def _execute_post_rename_workflow_safe(self, checked_paths: Set[str]) -> None:
         """
@@ -152,7 +167,7 @@ class RenameManager:
         """
         try:
             # Validate main window state
-            if not self.main_window or not hasattr(self.main_window, 'current_folder_path'):
+            if not self.main_window or not hasattr(self.main_window, "current_folder_path"):
                 logger.warning("[RenameManager] Main window invalid, aborting post-rename workflow")
                 return
 
@@ -175,8 +190,10 @@ class RenameManager:
                 """Restore UI state after folder reload."""
                 logger.debug("[RenameManager] restore_state function called")
                 try:
-                    if not self.main_window or not hasattr(self.main_window, 'file_model'):
-                        logger.debug("[RenameManager] restore_state: main_window or file_model not available")
+                    if not self.main_window or not hasattr(self.main_window, "file_model"):
+                        logger.debug(
+                            "[RenameManager] restore_state: main_window or file_model not available"
+                        )
                         return
 
                     # Restore checked state
@@ -184,12 +201,12 @@ class RenameManager:
                     restored_count = self._restore_checked_state_safe(checked_paths)
 
                     # Restore metadata from cache
-                    if hasattr(self.main_window, 'restore_fileitem_metadata_from_cache'):
+                    if hasattr(self.main_window, "restore_fileitem_metadata_from_cache"):
                         logger.debug("[RenameManager] restore_state: restoring metadata from cache")
                         self.main_window.restore_fileitem_metadata_from_cache()
 
                     # Regenerate preview with new filenames
-                    if hasattr(self.main_window, 'request_preview_update'):
+                    if hasattr(self.main_window, "request_preview_update"):
                         logger.debug("[RenameManager] restore_state: regenerating preview")
                         self.main_window.request_preview_update()
 
@@ -197,23 +214,34 @@ class RenameManager:
                     logger.debug("[RenameManager] restore_state: updating info icons")
                     self._update_info_icons_safe()
 
-                    logger.info(f"[RenameManager] Post-rename workflow completed: {restored_count} files restored")
+                    logger.info(
+                        f"[RenameManager] Post-rename workflow completed: {restored_count} files restored"
+                    )
 
                     # Execute pending completion dialog if available
-                    logger.debug("[RenameManager] restore_state: checking for pending completion dialog")
-                    if hasattr(self.main_window, 'pending_completion_dialog'):
+                    logger.debug(
+                        "[RenameManager] restore_state: checking for pending completion dialog"
+                    )
+                    if hasattr(self.main_window, "pending_completion_dialog"):
                         completion_dialog = self.main_window.pending_completion_dialog
-                        logger.debug(f"[RenameManager] restore_state: pending_completion_dialog exists: {completion_dialog is not None}")
+                        logger.debug(
+                            f"[RenameManager] restore_state: pending_completion_dialog exists: {completion_dialog is not None}"
+                        )
                         if completion_dialog:
                             logger.debug("[RenameManager] Executing pending completion dialog")
                             # Schedule the dialog with a small delay to ensure UI is fully updated
-                            from utils.timer_manager import get_timer_manager, TimerType, TimerPriority
+                            from utils.timer_manager import (
+                                TimerPriority,
+                                TimerType,
+                                get_timer_manager,
+                            )
+
                             get_timer_manager().schedule(
                                 completion_dialog,
                                 delay=100,  # 100ms delay to ensure UI is updated
                                 priority=TimerPriority.LOW,
                                 timer_type=TimerType.GENERIC,
-                                timer_id="completion_dialog_execution"
+                                timer_id="completion_dialog_execution",
                             )
                             # Clear the pending dialog
                             self.main_window.pending_completion_dialog = None
@@ -228,17 +256,20 @@ class RenameManager:
 
             # Schedule state restoration with a small delay
             logger.debug("[RenameManager] Scheduling restore_state function")
-            from utils.timer_manager import get_timer_manager, TimerType, TimerPriority
+            from utils.timer_manager import TimerPriority, TimerType, get_timer_manager
+
             get_timer_manager().schedule(
                 restore_state,
                 delay=50,  # 50ms delay to let folder load complete
                 priority=TimerPriority.HIGH,
                 timer_type=TimerType.UI_UPDATE,
-                timer_id="post_rename_state_restore"
+                timer_id="post_rename_state_restore",
             )
 
         except Exception as e:
-            logger.error(f"[RenameManager] Critical error in post-rename workflow: {e}", exc_info=True)
+            logger.error(
+                f"[RenameManager] Critical error in post-rename workflow: {e}", exc_info=True
+            )
 
     def _execute_post_rename_workflow(self, checked_paths: Set[str]) -> None:
         """
@@ -259,13 +290,17 @@ class RenameManager:
 
         # Regenerate preview with new filenames
         if self.main_window.last_action == "rename":
-            logger.debug("[PostRename] Regenerating preview with new filenames and restored checked state")
+            logger.debug(
+                "[PostRename] Regenerating preview with new filenames and restored checked state"
+            )
             self.main_window.request_preview_update()
 
         # Force update info icons in column 0
         self._update_info_icons()
 
-        logger.debug(f"[Rename] Restored {restored_count} checked out of {len(self.main_window.file_model.files)} files")
+        logger.debug(
+            f"[Rename] Restored {restored_count} checked out of {len(self.main_window.file_model.files)} files"
+        )
 
     def _restore_checked_state_safe(self, checked_paths: Set[str]) -> int:
         """
@@ -279,7 +314,7 @@ class RenameManager:
         """
         restored_count = 0
         try:
-            if not self.main_window or not hasattr(self.main_window, 'find_fileitem_by_path'):
+            if not self.main_window or not hasattr(self.main_window, "find_fileitem_by_path"):
                 return 0
 
             for path in checked_paths:
@@ -318,14 +353,14 @@ class RenameManager:
     def _update_info_icons_safe(self) -> None:
         """Safely update info icons in column 0 after rename."""
         try:
-            if not self.main_window or not hasattr(self.main_window, 'file_model'):
+            if not self.main_window or not hasattr(self.main_window, "file_model"):
                 return
 
             file_model = self.main_window.file_model
-            if not hasattr(file_model, 'files') or not hasattr(file_model, 'rowCount'):
+            if not hasattr(file_model, "files") or not hasattr(file_model, "rowCount"):
                 return
 
-            file_table_view = getattr(self.main_window, 'file_table_view', None)
+            file_table_view = getattr(self.main_window, "file_table_view", None)
             if not file_table_view:
                 return
 
@@ -334,7 +369,9 @@ class RenameManager:
                 try:
                     if row < len(file_model.files):
                         file_item = file_model.files[row]
-                        if hasattr(self.main_window, 'metadata_cache') and self.main_window.metadata_cache.has(file_item.full_path):
+                        if hasattr(
+                            self.main_window, "metadata_cache"
+                        ) and self.main_window.metadata_cache.has(file_item.full_path):
                             index = file_model.index(row, 0)
                             rect = file_table_view.visualRect(index)
                             file_table_view.viewport().update(rect)
@@ -374,11 +411,11 @@ class RenameManager:
         Returns:
             Dictionary containing modules data and post_transform settings
         """
-        if hasattr(self.main_window, 'rename_modules_area'):
+        if hasattr(self.main_window, "rename_modules_area"):
             rename_data = self.main_window.rename_modules_area.get_all_data()
 
             # Add post_transform data from final transform container
-            if hasattr(self.main_window, 'final_transform_container'):
+            if hasattr(self.main_window, "final_transform_container"):
                 post_transform_data = self.main_window.final_transform_container.get_data()
                 rename_data["post_transform"] = post_transform_data
             else:

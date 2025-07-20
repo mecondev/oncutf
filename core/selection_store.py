@@ -40,12 +40,12 @@ class SelectionStore(QObject):
 
     # Signals for state changes
     selection_changed = pyqtSignal(list)  # Emitted when selected rows change
-    checked_changed = pyqtSignal(list)    # Emitted when checked rows change
-    anchor_changed = pyqtSignal(int)     # Emitted when anchor row changes
+    checked_changed = pyqtSignal(list)  # Emitted when checked rows change
+    anchor_changed = pyqtSignal(int)  # Emitted when anchor row changes
 
     # Combined signals for coordinated updates
     selection_sync_requested = pyqtSignal()  # Request sync from selection to checked
-    checked_sync_requested = pyqtSignal()    # Request sync from checked to selection
+    checked_sync_requested = pyqtSignal()  # Request sync from checked to selection
 
     def __init__(self, parent: Optional[QObject] = None):
         super().__init__(parent)
@@ -61,10 +61,16 @@ class SelectionStore(QObject):
         self._last_operation_time = time.time()
         self._batch_operations: Dict[str, int] = {}
 
-        # Debouncing timer for high-frequency updates
+        # Protection against infinite loops
+        self._syncing_selection: bool = False
+
+        # Loop protection
+        self._syncing_selection: bool = False
+
+        # OPTIMIZED: Faster debouncing timer for better responsiveness
         self._update_timer = QTimer(self)
         self._update_timer.setSingleShot(True)
-        self._update_timer.setInterval(10)  # 10ms debounce
+        self._update_timer.setInterval(5)  # 5ms debounce for faster response
         self._update_timer.timeout.connect(self._emit_deferred_signals)
 
         # Pending signal emissions (for debouncing)
@@ -86,27 +92,33 @@ class SelectionStore(QObject):
         """
         return self._selected_rows.copy()
 
-    def set_selected_rows(self, rows: Set[int], *, emit_signal: bool = True) -> None:
+    def set_selected_rows(
+        self, rows: Set[int], *, emit_signal: bool = True, force_emit: bool = False
+    ) -> None:
         """
-        Set selected row indices.
+        Set selected row indices with optimized debouncing.
 
         Args:
             rows: Set of row indices to select
             emit_signal: Whether to emit selection_changed signal
+            force_emit: Whether to emit signal even if no change (for delayed updates)
         """
-        if rows == self._selected_rows:
+        # Protection against infinite loops during sync operations
+        if self._syncing_selection:
+            return
+
+        if rows == self._selected_rows and not force_emit:
             return  # No change
 
-        old_count = len(self._selected_rows)
+        # old_count = len(self._selected_rows)
         self._selected_rows = rows.copy()
-        new_count = len(self._selected_rows)
+        # new_count = len(self._selected_rows)
 
         self._last_operation_time = time.time()
 
-        # Emit signal if requested
+        # OPTIMIZED: Use debounced signal emission for better performance
         if emit_signal:
-            self.selection_changed.emit(list(self._selected_rows))
-            logger.debug(f"Selection updated: {old_count} -> {new_count} rows", extra={"dev_only": True})
+            self._schedule_selection_signal()
 
     def add_selected_rows(self, rows: Set[int], *, emit_signal: bool = True) -> None:
         """
@@ -124,9 +136,7 @@ class SelectionStore(QObject):
         new_count = len(self._selected_rows)
 
         if new_count != old_count:
-            # Emit signal
-            self.selection_changed.emit(list(self._selected_rows))
-            logger.debug(f"Selection extended: +{new_count - old_count} rows (total: {new_count})", extra={"dev_only": True})
+            # OPTIMIZED: Use debounced signal emission
             if emit_signal:
                 self._schedule_selection_signal()
 
@@ -146,9 +156,7 @@ class SelectionStore(QObject):
         new_count = len(self._selected_rows)
 
         if new_count != old_count:
-            # Emit signal
-            self.selection_changed.emit(list(self._selected_rows))
-            logger.debug(f"Selection reduced: -{old_count - new_count} rows (total: {new_count})", extra={"dev_only": True})
+            # OPTIMIZED: Use debounced signal emission
             if emit_signal:
                 self._schedule_selection_signal()
 
@@ -162,11 +170,9 @@ class SelectionStore(QObject):
         if not self._selected_rows:
             return
 
-        count = len(self._selected_rows)
         self._selected_rows.clear()
         if emit_signal:
-            self.selection_changed.emit([])
-            logger.debug(f"Selection cleared: {count} rows", extra={"dev_only": True})
+            self._schedule_selection_signal()
 
     # =====================================
     # Checked State Management
@@ -197,7 +203,10 @@ class SelectionStore(QObject):
         new_count = len(self._checked_rows)
 
         if emit_signal and old_count != new_count:
-            logger.debug(f"Synced selection->checked: {old_count} -> {new_count} rows", extra={"dev_only": True})
+            logger.debug(
+                f"Synced selection->checked: {old_count} -> {new_count} rows",
+                extra={"dev_only": True},
+            )
             self._schedule_checked_signal()
 
     def add_checked_rows(self, rows: Set[int], *, emit_signal: bool = True) -> None:
@@ -216,7 +225,10 @@ class SelectionStore(QObject):
         new_count = len(self._checked_rows)
 
         if new_count != old_count:
-            logger.debug(f"Checked state extended: +{new_count - old_count} rows (total: {new_count})", extra={"dev_only": True})
+            logger.debug(
+                f"Checked state extended: +{new_count - old_count} rows (total: {new_count})",
+                extra={"dev_only": True},
+            )
             if emit_signal:
                 self._schedule_checked_signal()
 
@@ -236,7 +248,10 @@ class SelectionStore(QObject):
         new_count = len(self._checked_rows)
 
         if new_count != old_count:
-            logger.debug(f"Checked state reduced: -{old_count - new_count} rows (total: {new_count})", extra={"dev_only": True})
+            logger.debug(
+                f"Checked state reduced: -{old_count - new_count} rows (total: {new_count})",
+                extra={"dev_only": True},
+            )
             if emit_signal:
                 self._schedule_checked_signal()
 
@@ -285,35 +300,7 @@ class SelectionStore(QObject):
     # Synchronization Operations
     # =====================================
 
-    def sync_selection_to_checked(self) -> None:
-        """
-        Synchronize checked state to match current selection.
-        This is the primary sync direction for UI operations.
-        """
-        if self._selected_rows == self._checked_rows:
-            return  # Already synchronized
-
-        old_checked = len(self._checked_rows)
-        self._checked_rows = self._selected_rows.copy()
-        new_checked = len(self._checked_rows)
-
-        logger.debug(f"Synced selection->checked: {old_checked} -> {new_checked} rows", extra={"dev_only": True})
-        self._schedule_checked_signal()
-
-    def sync_checked_to_selection(self) -> None:
-        """
-        Synchronize selection to match current checked state.
-        Used when programmatically updating checked state.
-        """
-        if self._checked_rows == self._selected_rows:
-            return  # Already synchronized
-
-        old_selected = len(self._selected_rows)
-        self._selected_rows = self._checked_rows.copy()
-        new_selected = len(self._selected_rows)
-
-        logger.debug(f"Synced checked->selection: {old_selected} -> {new_selected} rows", extra={"dev_only": True})
-        self._schedule_selection_signal()
+    # (Οι μέθοδοι sync_selection_to_checked και sync_checked_to_selection διαγράφηκαν ως legacy)
 
     # =====================================
     # Batch Operations
@@ -431,7 +418,7 @@ class SelectionStore(QObject):
             "total_files": self._total_files,
             "anchor_row": self._anchor_row,
             "last_operation_time": self._last_operation_time,
-            "batch_operations": self._batch_operations.copy()
+            "batch_operations": self._batch_operations.copy(),
         }
 
     # =====================================

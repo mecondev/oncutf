@@ -159,7 +159,7 @@ def normalize_path(path: str) -> str:
         return path
 
     # First normalize separators to forward slashes for cross-platform compatibility
-    normalized = path.replace('\\', '/')
+    normalized = path.replace("\\", "/")
 
     # Then use os.path.normpath for final normalization
     return os.path.normpath(normalized)
@@ -190,23 +190,25 @@ def paths_equal(path1: str, path2: str) -> bool:
         return path1 == path2
 
     # Normalize both paths to use forward slashes for comparison
-    norm1 = path1.replace('\\', '/').replace('//', '/')
-    norm2 = path2.replace('\\', '/').replace('//', '/')
+    norm1 = path1.replace("\\", "/").replace("//", "/")
+    norm2 = path2.replace("\\", "/").replace("//", "/")
 
     # Remove trailing slashes for consistent comparison (except for root)
-    if len(norm1) > 1 and norm1.endswith('/'):
-        norm1 = norm1.rstrip('/')
-    if len(norm2) > 1 and norm2.endswith('/'):
-        norm2 = norm2.rstrip('/')
+    if len(norm1) > 1 and norm1.endswith("/"):
+        norm1 = norm1.rstrip("/")
+    if len(norm2) > 1 and norm2.endswith("/"):
+        norm2 = norm2.rstrip("/")
 
     # Case-insensitive comparison for Windows-style paths
-    if ':' in norm1 or ':' in norm2:  # Likely Windows paths
+    if ":" in norm1 or ":" in norm2:  # Likely Windows paths
         return norm1.lower() == norm2.lower()
     else:
         return norm1 == norm2
 
 
-def find_file_by_path(files: list, target_path: str, path_attr: str = 'full_path') -> Optional[object]:
+def find_file_by_path(
+    files: list, target_path: str, path_attr: str = "full_path"
+) -> Optional[object]:
     """
     Find a file object in a list by comparing paths with normalization.
 
@@ -249,10 +251,10 @@ def find_parent_with_attribute(widget, attribute_name: str):
     if not widget:
         return None
 
-    parent = widget.parent() if hasattr(widget, 'parent') else None
+    parent = widget.parent() if hasattr(widget, "parent") else None
     while parent:
         if hasattr(parent, attribute_name):
             return parent
-        parent = parent.parent() if hasattr(parent, 'parent') else None
+        parent = parent.parent() if hasattr(parent, "parent") else None
 
     return None

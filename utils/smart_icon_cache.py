@@ -24,6 +24,7 @@ from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
 
+from config import ICON_SIZES
 from core.pyqt_imports import QIcon, QObject, QPixmap, QSize, QTimer, pyqtSignal
 from utils.logger_factory import get_cached_logger
 
@@ -33,6 +34,7 @@ logger = get_cached_logger(__name__)
 @dataclass
 class IconCacheEntry:
     """Represents a cached icon with metadata."""
+
     icon: QIcon
     size: QSize
     theme: str
@@ -67,8 +69,8 @@ class SmartIconCache(QObject):
     """
 
     # Signals
-    cache_hit = pyqtSignal(str)      # cache_key
-    cache_miss = pyqtSignal(str)     # cache_key
+    cache_hit = pyqtSignal(str)  # cache_key
+    cache_miss = pyqtSignal(str)  # cache_key
     cache_evicted = pyqtSignal(str)  # cache_key
 
     def __init__(self, max_entries: int = 500, max_memory_mb: float = 50.0, parent=None):
@@ -97,29 +99,50 @@ class SmartIconCache(QObject):
 
         # Common icon sizes for preloading
         self._common_sizes = [
-            QSize(16, 16),   # Small icons (menu items, tree view)
-            QSize(24, 24),   # Medium icons (toolbars, buttons)
-            QSize(32, 32),   # Large icons (dialogs, headers)
-            QSize(48, 48),   # Extra large icons (splash, about)
+            QSize(ICON_SIZES["SMALL"], ICON_SIZES["SMALL"]),  # Small icons (menu items, tree view)
+            QSize(ICON_SIZES["MEDIUM"], ICON_SIZES["MEDIUM"]),  # Medium icons (toolbars, buttons)
+            QSize(ICON_SIZES["LARGE"], ICON_SIZES["LARGE"]),  # Large icons (dialogs, headers)
+            QSize(
+                ICON_SIZES["EXTRA_LARGE"], ICON_SIZES["EXTRA_LARGE"]
+            ),  # Extra large icons (splash, about)
         ]
 
         # Commonly used icons for preloading
         self._common_icons = [
-            'file', 'folder', 'image', 'video', 'audio', 'document',
-            'valid', 'invalid', 'unchanged', 'duplicate',
-            'plus', 'minus', 'edit', 'delete', 'save', 'open',
-            'settings', 'info', 'warning', 'error', 'success'
+            "file",
+            "folder",
+            "image",
+            "video",
+            "audio",
+            "document",
+            "valid",
+            "invalid",
+            "unchanged",
+            "duplicate",
+            "plus",
+            "minus",
+            "edit",
+            "delete",
+            "save",
+            "open",
+            "settings",
+            "info",
+            "warning",
+            "error",
+            "success",
         ]
 
         # Theme tracking
-        self._current_theme = 'dark'
+        self._current_theme = "dark"
 
         # Cleanup timer
         self._cleanup_timer = QTimer()
         self._cleanup_timer.timeout.connect(self._perform_cleanup)
         self._cleanup_timer.start(300000)  # 5 minutes
 
-        logger.info(f"[SmartIconCache] Initialized with {max_entries} entries, {max_memory_mb}MB limit")
+        logger.info(
+            f"[SmartIconCache] Initialized with {max_entries} entries, {max_memory_mb}MB limit"
+        )
 
     def get_icon(self, name: str, size: QSize = None, theme: str = None) -> QIcon:
         """
@@ -134,7 +157,7 @@ class SmartIconCache(QObject):
             QIcon object
         """
         if size is None:
-            size = QSize(16, 16)
+            size = QSize(ICON_SIZES["SMALL"], ICON_SIZES["SMALL"])
         if theme is None:
             theme = self._current_theme
 
@@ -175,10 +198,12 @@ class SmartIconCache(QObject):
                     scaled_pixmap = pixmap.scaled(
                         size,
                         aspectRatioMode=1,  # Qt.KeepAspectRatio
-                        transformMode=1     # Qt.SmoothTransformation
+                        transformMode=1,  # Qt.SmoothTransformation
                     )
                     icon = QIcon(scaled_pixmap)
-                    logger.debug(f"[SmartIconCache] Loaded icon: {name} ({size.width()}x{size.height()})")
+                    logger.debug(
+                        f"[SmartIconCache] Loaded icon: {name} ({size.width()}x{size.height()})"
+                    )
                     return icon
 
             # Fallback to system icon or empty icon
@@ -201,7 +226,7 @@ class SmartIconCache(QObject):
             f"{name}.svg",
             f"{name}.png",
             f"{theme}/{name}.svg",
-            f"{theme}/{name}.png"
+            f"{theme}/{name}.png",
         ]
 
         for pattern in search_patterns:
@@ -219,11 +244,7 @@ class SmartIconCache(QObject):
 
             # Create cache entry
             entry = IconCacheEntry(
-                icon=icon,
-                size=size,
-                theme=theme,
-                file_path=name,
-                memory_size_bytes=memory_size
+                icon=icon, size=size, theme=theme, file_path=name, memory_size_bytes=memory_size
             )
 
             # Store in cache
@@ -301,7 +322,9 @@ class SmartIconCache(QObject):
             for key in keys_to_remove:
                 del self._cache[key]
 
-            logger.debug(f"[SmartIconCache] Cleared {len(keys_to_remove)} entries for theme: {old_theme}")
+            logger.debug(
+                f"[SmartIconCache] Cleared {len(keys_to_remove)} entries for theme: {old_theme}"
+            )
 
     def get_memory_usage_mb(self) -> float:
         """Get current memory usage in MB."""
@@ -316,17 +339,17 @@ class SmartIconCache(QObject):
             hit_rate = self._hits / total_requests if total_requests > 0 else 0.0
 
             return {
-                'entries': len(self._cache),
-                'hits': self._hits,
-                'misses': self._misses,
-                'evictions': self._evictions,
-                'preloads': self._preloads,
-                'hit_rate': hit_rate,
-                'miss_rate': 1.0 - hit_rate,
-                'memory_mb': self.get_memory_usage_mb(),
-                'max_memory_mb': self.max_memory_mb,
-                'max_entries': self.max_entries,
-                'current_theme': self._current_theme
+                "entries": len(self._cache),
+                "hits": self._hits,
+                "misses": self._misses,
+                "evictions": self._evictions,
+                "preloads": self._preloads,
+                "hit_rate": hit_rate,
+                "miss_rate": 1.0 - hit_rate,
+                "memory_mb": self.get_memory_usage_mb(),
+                "max_memory_mb": self.max_memory_mb,
+                "max_entries": self.max_entries,
+                "current_theme": self._current_theme,
             }
 
     def _perform_cleanup(self):
@@ -366,7 +389,7 @@ class SmartIconCache(QObject):
     def remove_icon(self, name: str, size: QSize = None, theme: str = None) -> bool:
         """Remove specific icon from cache."""
         if size is None:
-            size = QSize(16, 16)
+            size = QSize(ICON_SIZES["SMALL"], ICON_SIZES["SMALL"])
         if theme is None:
             theme = self._current_theme
 
@@ -399,7 +422,9 @@ def get_smart_icon_cache() -> SmartIconCache:
     return _smart_icon_cache_instance
 
 
-def initialize_smart_icon_cache(max_entries: int = 500, max_memory_mb: float = 50.0) -> SmartIconCache:
+def initialize_smart_icon_cache(
+    max_entries: int = 500, max_memory_mb: float = 50.0
+) -> SmartIconCache:
     """Initialize smart icon cache with configuration."""
     global _smart_icon_cache_instance
     _smart_icon_cache_instance = SmartIconCache(max_entries, max_memory_mb)

@@ -11,6 +11,7 @@ sequential file names based on configurable start value, step, and padding.
 
 from typing import Optional
 
+from config import ICON_SIZES
 from core.pyqt_imports import (
     QHBoxLayout,
     QIntValidator,
@@ -52,21 +53,15 @@ class CounterModule(BaseRenameModule):
         layout.setSpacing(2)  # Increased spacing between rows by 2px
 
         # Row 1: Start Number
-        self.start_input, row1 = self._create_row(
-            "Start Number", initial_value=1, min_val=0
-        )
+        self.start_input, row1 = self._create_row("Start Number", initial_value=1, min_val=0)
         layout.addLayout(row1)
 
         # Row 2: Number of Digits
-        self.padding_input, row2 = self._create_row(
-            "Number of Digits", initial_value=4, min_val=1
-        )
+        self.padding_input, row2 = self._create_row("Number of Digits", initial_value=4, min_val=1)
         layout.addLayout(row2)
 
         # Row 3: Increment By
-        self.increment_input, row3 = self._create_row(
-            "Increment By", initial_value=1, min_val=1
-        )
+        self.increment_input, row3 = self._create_row("Increment By", initial_value=1, min_val=1)
         layout.addLayout(row3)
 
         # Connect inputs to update signal (debounced)
@@ -77,8 +72,6 @@ class CounterModule(BaseRenameModule):
         # Initialize _last_value to prevent duplicate signals
         self._last_value = str(self.get_data())
 
-
-
     def _on_value_change(self) -> None:
         """
         Triggered when any of the spinboxes change.
@@ -87,11 +80,7 @@ class CounterModule(BaseRenameModule):
         self.emit_if_changed(str(self.get_data()))
 
     def _create_row(
-        self,
-        label_text: str,
-        initial_value: int = 1,
-        min_val: int = 0,
-        max_val: int = 999999
+        self, label_text: str, initial_value: int = 1, min_val: int = 0, max_val: int = 999999
     ) -> tuple[QLineEdit, QHBoxLayout]:
         """
         Create a row layout with:
@@ -101,7 +90,7 @@ class CounterModule(BaseRenameModule):
         # Label with fixed width and right alignment
         label = QLabel(label_text)
         label.setFixedWidth(self.LABEL_WIDTH)
-        label.setAlignment(Qt.AlignRight | Qt.AlignVCenter) # type: ignore
+        label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
 
         # Input field with integer validator
         input_field = QLineEdit(str(initial_value))
@@ -116,9 +105,13 @@ class CounterModule(BaseRenameModule):
         btn_minus.setIcon(get_menu_icon("minus"))
         btn_plus.setIcon(get_menu_icon("plus"))
         btn_minus.setFixedSize(24, 24)  # Reduced by 2px (1px each side)
-        btn_plus.setFixedSize(24, 24)   # Reduced by 2px (1px each side)
-        btn_minus.setIconSize(QSize(16, 16))  # Even larger icons
-        btn_plus.setIconSize(QSize(16, 16))   # Even larger icons
+        btn_plus.setFixedSize(24, 24)  # Reduced by 2px (1px each side)
+        btn_minus.setIconSize(
+            QSize(ICON_SIZES["SMALL"], ICON_SIZES["SMALL"])
+        )  # Small icons for buttons
+        btn_plus.setIconSize(
+            QSize(ICON_SIZES["SMALL"], ICON_SIZES["SMALL"])
+        )  # Small icons for buttons
 
         # Setup custom tooltips for plus/minus buttons
         setup_tooltip(btn_minus, "Decrease value", TooltipType.INFO)
@@ -170,7 +163,7 @@ class CounterModule(BaseRenameModule):
             "type": "counter",
             "start": int(self.start_input.text() or "0"),
             "padding": int(self.padding_input.text() or "0"),
-            "step": int(self.increment_input.text() or "0")
+            "step": int(self.increment_input.text() or "0"),
         }
 
     def apply(self, file_item, index=0, metadata_cache=None) -> str:
@@ -178,10 +171,7 @@ class CounterModule(BaseRenameModule):
 
     @staticmethod
     def apply_from_data(
-        data: dict,
-        file_item,
-        index: int = 0,
-        metadata_cache: Optional[dict] = None
+        data: dict, file_item, index: int = 0, metadata_cache: Optional[dict] = None
     ) -> str:
         """
         Applies a counter-based transformation using the given config and index.

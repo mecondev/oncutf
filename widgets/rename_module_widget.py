@@ -19,7 +19,19 @@ Features:
 
 from typing import Optional
 
-from core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, Qt, QVBoxLayout, QWidget, pyqtSignal, QApplication, QGraphicsDropShadowEffect, QColor
+from config import ICON_SIZES
+from core.pyqt_imports import (
+    QApplication,
+    QColor,
+    QComboBox,
+    QGraphicsDropShadowEffect,
+    QHBoxLayout,
+    QLabel,
+    Qt,
+    QVBoxLayout,
+    QWidget,
+    pyqtSignal,
+)
 from modules.counter_module import CounterModule
 
 # Lazy import to avoid circular import: from modules.specified_text_module import SpecifiedTextModule
@@ -37,6 +49,7 @@ except ImportError:
 
 logger = get_cached_logger(__name__)
 
+
 class RenameModuleWidget(QWidget):
     """
     Container widget that hosts all rename modules and a fixed post-processing section.
@@ -45,12 +58,15 @@ class RenameModuleWidget(QWidget):
     Now supports ApplicationContext for optimized access patterns while maintaining
     backward compatibility with parent_window parameter.
     """
+
     remove_requested = pyqtSignal(QWidget)
     updated = pyqtSignal(QWidget)
 
     LABEL_WIDTH = 80  # Consistent label width for alignment
 
-    def __init__(self, parent: Optional[QWidget] = None, parent_window: Optional[QWidget] = None) -> None:
+    def __init__(
+        self, parent: Optional[QWidget] = None, parent_window: Optional[QWidget] = None
+    ) -> None:
         super().__init__(parent)
 
         self.parent_window = parent_window  # Keep for backward compatibility
@@ -69,40 +85,43 @@ class RenameModuleWidget(QWidget):
             "Metadata": MetadataWidget,
             "Original Name": OriginalNameWidget,
             "Remove Text from Original Name": TextRemovalModule,
-            "Specified Text": SpecifiedTextModule
+            "Specified Text": SpecifiedTextModule,
         }
 
         self.module_heights = {
             "Counter": 88,  # Increased: 4px more space to prevent focus border clipping
-            "Metadata": 74,   # Increased: 12px more space for increased row spacing
+            "Metadata": 66,  # Reduced: 8px less space due to reduced row spacing
             "Original Name": 34,  # Reduced: just one line with minimal padding
             "Remove Text from Original Name": 64,  # Two rows: text input + options
-            "Specified Text": 37  # Increased: 3px more space to prevent clipping
+            "Specified Text": 37,  # Increased: 3px more space to prevent clipping
         }
 
         self.current_module_widget = None
 
-                # --- Layout setup ---
+        # --- Layout setup ---
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(2, 2, 2, 2)  # 2px margins around the plate
         self.main_layout.setSpacing(0)
 
-                # Get colors from theme engine
+        # Get colors from theme engine
         from utils.theme_engine import ThemeEngine
+
         theme = ThemeEngine()
-        app_background = theme.get_color('app_background')
-        drag_handle_background = theme.get_color('module_drag_handle')
+        app_background = theme.get_color("app_background")
+        drag_handle_background = theme.get_color("module_drag_handle")
 
         # --- Main plate container ---
         self.plate_widget = QWidget()
         self.plate_widget.setObjectName("module_plate")
         # Apply plate styling: app background, rounded corners
-        self.plate_widget.setStyleSheet(f"""
+        self.plate_widget.setStyleSheet(
+            f"""
             QWidget[objectName="module_plate"] {{
                 background-color: {app_background};
                 border-radius: 8px;
             }}
-        """)
+        """
+        )
 
         # Plate layout with drag handle + content
         plate_layout = QHBoxLayout(self.plate_widget)
@@ -111,21 +130,24 @@ class RenameModuleWidget(QWidget):
 
         # --- Drag Handle Area ---
         from utils.icons_loader import get_menu_icon
+
         self.drag_handle = QLabel()
         self.drag_handle.setFixedWidth(30)
         self.drag_handle.setAlignment(Qt.AlignCenter)  # type: ignore
         # Subtle background for handle area
-        self.drag_handle.setStyleSheet(f"""
+        self.drag_handle.setStyleSheet(
+            f"""
             QLabel {{
                 background-color: {drag_handle_background};
                 border-top-left-radius: 8px;
                 border-bottom-left-radius: 8px;
             }}
-        """)
+        """
+        )
 
         # Set drag handle icon
         drag_icon = get_menu_icon("more-vertical")
-        self.drag_handle.setPixmap(drag_icon.pixmap(16, 16))
+        self.drag_handle.setPixmap(drag_icon.pixmap(ICON_SIZES["SMALL"], ICON_SIZES["SMALL"]))
 
         # Enable drag functionality
         self.drag_handle.setAcceptDrops(True)
@@ -145,7 +167,9 @@ class RenameModuleWidget(QWidget):
         # --- Content Area ---
         content_widget = QWidget()
         content_layout = QVBoxLayout(content_widget)
-        content_layout.setContentsMargins(8, 6, 3, 6)  # Padding inside content area (reduced right margin for more space)
+        content_layout.setContentsMargins(
+            8, 6, 3, 6
+        )  # Padding inside content area (reduced right margin for more space)
         content_layout.setSpacing(4)
 
         # Row for "Type" label and combo box
@@ -159,7 +183,7 @@ class RenameModuleWidget(QWidget):
         self.type_combo = QComboBox()
         self.type_combo.addItems(self.module_instances.keys())
         self.type_combo.setMaximumWidth(140)
-        self.type_combo.setFixedHeight(20)
+        self.type_combo.setFixedHeight(24)  # Match metadata_widget height
         self.type_combo.currentTextChanged.connect(self.update_module_content)
 
         type_row.addWidget(type_label, 0, Qt.AlignVCenter)  # type: ignore
@@ -178,15 +202,12 @@ class RenameModuleWidget(QWidget):
         self.main_layout.addWidget(self.plate_widget)
 
         # Set default module AFTER layout initialization
-        self.type_combo.setCurrentText('Specified Text')
+        self.type_combo.setCurrentText("Specified Text")
 
         # Load default module
-        logger.debug(f"[RenameModuleWidget] Before QTimer.singleShot: content_container_layout is {'initialized' if hasattr(self, 'content_container_layout') else 'not initialized'}")
         schedule_ui_update(lambda: self.update_module_content(self.type_combo.currentText()), 0)
 
         # CSS styling is now applied via external stylesheet
-
-        logger.debug(f"[RenameModuleWidget] Before update_module_content: content_container_layout is {'initialized' if hasattr(self, 'content_container_layout') else 'not initialized'}")
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
@@ -198,21 +219,14 @@ class RenameModuleWidget(QWidget):
             # ApplicationContext not ready yet
             return None
 
-
-
     def connect_signals_for_module(self, module_widget: QWidget) -> None:
+        """Connect the module's updated signal to our updated signal."""
         if hasattr(module_widget, "updated"):
             try:
                 # Connect the module's updated signal to emit our updated signal
                 module_widget.updated.connect(lambda _: self.updated.emit(self))
-                logger.info("[RenameModuleWidget] Connected module.updated -> self.updated", extra={"dev_only": True})
-
             except Exception as e:
                 logger.warning(f"[RenameModuleWidget] Signal connection failed: {e}")
-
-        else:
-            logger.warning("[RenameModuleWidget] Could not connect signal. Has updated: %s",
-                        hasattr(module_widget, "updated"))
 
     def update_module_content(self, module_name: str) -> None:
         """
@@ -226,18 +240,10 @@ class RenameModuleWidget(QWidget):
 
         module_class = self.module_instances.get(module_name)
         if module_class:
-            # MetadataWidget now supports ApplicationContext, no need for parent_window
+            # MetadataWidget needs parent_window to get selected files
             if module_name == "Metadata":
-                # Try ApplicationContext approach first, fallback to parent_window
-                context = self._get_app_context()
-                if context:
-                    # ApplicationContext available - MetadataWidget can find what it needs
-                    self.current_module_widget = module_class()
-                    logger.debug("[RenameModuleWidget] Created MetadataWidget via ApplicationContext")
-                else:
-                    # Fallback to legacy approach with parent_window
-                    self.current_module_widget = module_class(parent_window=self.parent_window)
-                    logger.debug("[RenameModuleWidget] Created MetadataWidget via parent_window fallback")
+                # Always pass parent_window for MetadataWidget
+                self.current_module_widget = module_class(parent_window=self.parent_window)
             else:
                 self.current_module_widget = module_class()
 
@@ -252,7 +258,6 @@ class RenameModuleWidget(QWidget):
             self.connect_signals_for_module(self.current_module_widget)
 
         # Emit updated signal to refresh preview
-        logger.debug(f"[RenameModuleWidget] Emitting updated signal for module: {module_name}", extra={"dev_only": True})
         self.updated.emit(self)
 
     def get_data(self) -> dict:
@@ -298,22 +303,21 @@ class RenameModuleWidget(QWidget):
     def drag_handle_enter(self, event):
         """Handle mouse enter on drag handle - change cursor."""
         from core.pyqt_imports import QCursor
+
         QApplication.setOverrideCursor(QCursor(Qt.OpenHandCursor))
-        logger.debug("[RenameModuleWidget] Mouse entered drag handle", extra={"dev_only": True})
 
     def drag_handle_leave(self, event):
         """Handle mouse leave on drag handle - restore cursor."""
         if not self.is_dragging:
             QApplication.restoreOverrideCursor()
-            logger.debug("[RenameModuleWidget] Mouse left drag handle", extra={"dev_only": True})
 
     def drag_handle_mouse_press(self, event):
         """Handle mouse press on drag handle - prepare for dragging."""
         if event.button() == Qt.LeftButton:
             self.drag_start_position = event.pos()
             from core.pyqt_imports import QCursor
+
             QApplication.setOverrideCursor(QCursor(Qt.ClosedHandCursor))
-            logger.debug("[RenameModuleWidget] Drag handle pressed", extra={"dev_only": True})
             event.accept()
 
     def drag_handle_mouse_move(self, event):
@@ -325,8 +329,9 @@ class RenameModuleWidget(QWidget):
             return
 
         # Check if we've moved far enough to start dragging
-        if ((event.pos() - self.drag_start_position).manhattanLength() <
-            QApplication.startDragDistance()):
+        if (
+            event.pos() - self.drag_start_position
+        ).manhattanLength() < QApplication.startDragDistance():
             return
 
         if not self.is_dragging:
@@ -346,13 +351,11 @@ class RenameModuleWidget(QWidget):
             else:
                 QApplication.restoreOverrideCursor()
             self.drag_start_position = None
-            logger.debug("[RenameModuleWidget] Drag handle released", extra={"dev_only": True})
             event.accept()
 
     def start_drag(self):
         """Start the drag operation."""
         self.is_dragging = True
-        logger.info("[RenameModuleWidget] Starting drag operation", extra={"dev_only": True})
 
         # Enhanced visual feedback during dragging
         self.setWindowOpacity(0.8)
@@ -366,27 +369,25 @@ class RenameModuleWidget(QWidget):
         self.setGraphicsEffect(shadow)
 
         # Scale up slightly to show it's being dragged
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
             QWidget[objectName="RenameModuleWidget"] {
                 transform: scale(1.02);
             }
-        """)
+        """
+        )
 
         # Notify parent that dragging started - try different parent levels
         parent = self.parent()
         while parent:
-            if hasattr(parent, 'module_drag_started'):
-                logger.info(f"[RenameModuleWidget] Found drag handler in {type(parent).__name__}", extra={"dev_only": True})
+            if hasattr(parent, "module_drag_started"):
                 parent.module_drag_started(self)
                 break
             parent = parent.parent()
-        else:
-            logger.warning("[RenameModuleWidget] No drag handler found in parent chain", extra={"dev_only": True})
 
     def end_drag(self):
         """End the drag operation."""
         self.is_dragging = False
-        logger.info("[RenameModuleWidget] Ending drag operation", extra={"dev_only": True})
 
         # Restore normal appearance
         self.setWindowOpacity(1.0)
@@ -398,18 +399,16 @@ class RenameModuleWidget(QWidget):
         if self.parent():
             # Get the correct position from the layout
             from utils.timer_manager import schedule_ui_update
+
             schedule_ui_update(self.restore_original_position, 10)
 
         # Notify parent that dragging ended - try different parent levels
         parent = self.parent()
         while parent:
-            if hasattr(parent, 'module_drag_ended'):
-                logger.info(f"[RenameModuleWidget] Found drag end handler in {type(parent).__name__}", extra={"dev_only": True})
+            if hasattr(parent, "module_drag_ended"):
                 parent.module_drag_ended(self)
                 break
             parent = parent.parent()
-        else:
-            logger.warning("[RenameModuleWidget] No drag end handler found in parent chain", extra={"dev_only": True})
 
     def restore_original_position(self):
         """Restore the module to its proper position in the layout."""
@@ -443,10 +442,7 @@ class RenameModuleWidget(QWidget):
             # Notify parent for auto-scroll handling
             parent = self.parent()
             while parent:
-                if hasattr(parent, 'handle_drag_auto_scroll'):
+                if hasattr(parent, "handle_drag_auto_scroll"):
                     parent.handle_drag_auto_scroll(global_pos)
                     break
                 parent = parent.parent()
-
-
-

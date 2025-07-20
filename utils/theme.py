@@ -22,6 +22,7 @@ def _get_theme_engine():
     global _theme_engine
     if _theme_engine is None:
         from utils.theme_engine import ThemeEngine
+
         _theme_engine = ThemeEngine(THEME_NAME)
     return _theme_engine
 
@@ -41,4 +42,5 @@ def get_current_theme_colors() -> Dict[str, str]:
 def get_qcolor(color_key: str, theme_name: Optional[str] = None):
     """Get a QColor object from theme colors."""
     from core.pyqt_imports import QColor
+
     return QColor(get_theme_color(color_key, theme_name))

@@ -31,7 +31,7 @@ class SplitterManager:
     - Coordination between different UI elements affected by splitter changes
     """
 
-    def __init__(self, parent_window: 'MainWindow') -> None:
+    def __init__(self, parent_window: "MainWindow") -> None:
         """
         Initialize the SplitterManager.
 
@@ -50,13 +50,16 @@ class SplitterManager:
             pos: New position of the splitter
             index: Index of the splitter section that moved
         """
-        logger.debug(f"[SplitterManager] Horizontal moved: pos={pos}, index={index}", extra={"dev_only": True})
+        logger.debug(
+            f"[SplitterManager] Horizontal moved: pos={pos}, index={index}",
+            extra={"dev_only": True},
+        )
 
         # Update any UI elements that need to respond to horizontal space changes
-        if hasattr(self.parent_window, 'folder_tree'):
+        if hasattr(self.parent_window, "folder_tree"):
             self.parent_window.folder_tree.on_horizontal_splitter_moved(pos, index)
 
-        if hasattr(self.parent_window, 'file_table_view'):
+        if hasattr(self.parent_window, "file_table_view"):
             self.parent_window.file_table_view.on_horizontal_splitter_moved(pos, index)
 
     def on_vertical_splitter_moved(self, pos: int, index: int) -> None:
@@ -68,16 +71,18 @@ class SplitterManager:
             pos: New position of the splitter
             index: Index of the splitter section that moved
         """
-        logger.debug(f"[SplitterManager] Vertical moved: pos={pos}, index={index}", extra={"dev_only": True})
+        logger.debug(
+            f"[SplitterManager] Vertical moved: pos={pos}, index={index}", extra={"dev_only": True}
+        )
 
         # Update any UI elements that need to respond to vertical space changes
-        if hasattr(self.parent_window, 'folder_tree'):
+        if hasattr(self.parent_window, "folder_tree"):
             self.parent_window.folder_tree.on_vertical_splitter_moved(pos, index)
 
-        if hasattr(self.parent_window, 'file_table_view'):
+        if hasattr(self.parent_window, "file_table_view"):
             self.parent_window.file_table_view.on_vertical_splitter_moved(pos, index)
 
-        if hasattr(self.parent_window, 'preview_tables_view'):
+        if hasattr(self.parent_window, "preview_tables_view"):
             self.parent_window.preview_tables_view.handle_splitter_moved(pos, index)
 
     def calculate_optimal_splitter_sizes(self, window_width: int) -> list[int]:
@@ -107,7 +112,10 @@ class SplitterManager:
             right_width = min(RIGHT_PANEL_MAX_WIDTH + 100, int(window_width * 0.25))
             center_width = window_width - left_width - right_width
             optimal_sizes = [left_width, center_width, right_width]
-            logger.debug(f"[SplitterManager] Ultra-wide screen layout: {optimal_sizes}", extra={"dev_only": True})
+            logger.debug(
+                f"[SplitterManager] Ultra-wide screen layout: {optimal_sizes}",
+                extra={"dev_only": True},
+            )
 
         elif window_width >= WIDE_SCREEN_THRESHOLD:
             # Wide screens: balanced increase for all panels
@@ -115,7 +123,9 @@ class SplitterManager:
             right_width = min(RIGHT_PANEL_MAX_WIDTH, int(window_width * 0.22))
             center_width = window_width - left_width - right_width
             optimal_sizes = [left_width, center_width, right_width]
-            logger.debug(f"[SplitterManager] Wide screen layout: {optimal_sizes}", extra={"dev_only": True})
+            logger.debug(
+                f"[SplitterManager] Wide screen layout: {optimal_sizes}", extra={"dev_only": True}
+            )
 
         else:
             # Standard screens: use minimum viable sizes
@@ -131,11 +141,17 @@ class SplitterManager:
                 center_width = window_width - left_width - right_width
 
             optimal_sizes = [left_width, center_width, right_width]
-            logger.debug(f"[SplitterManager] Standard screen layout: {optimal_sizes}", extra={"dev_only": True})
+            logger.debug(
+                f"[SplitterManager] Standard screen layout: {optimal_sizes}",
+                extra={"dev_only": True},
+            )
 
         # Log the calculation details
-        logger.debug(f"[SplitterManager] Calculated splitter sizes for {window_width}px: {optimal_sizes} "
-                    f"(left: {optimal_sizes[0]}, center: {optimal_sizes[1]}, right: {optimal_sizes[2]})", extra={"dev_only": True})
+        logger.debug(
+            f"[SplitterManager] Calculated splitter sizes for {window_width}px: {optimal_sizes} "
+            f"(left: {optimal_sizes[0]}, center: {optimal_sizes[1]}, right: {optimal_sizes[2]})",
+            extra={"dev_only": True},
+        )
 
         return optimal_sizes
 
@@ -146,7 +162,7 @@ class SplitterManager:
         Args:
             window_width: New window width in pixels
         """
-        if not hasattr(self.parent_window, 'horizontal_splitter'):
+        if not hasattr(self.parent_window, "horizontal_splitter"):
             logger.debug("[SplitterManager] No horizontal splitter found, skipping size update")
             return
 
@@ -160,11 +176,15 @@ class SplitterManager:
         if self._sizes_differ_significantly(current_sizes, optimal_sizes):
             # Update splitter sizes
             self.parent_window.horizontal_splitter.setSizes(optimal_sizes)
-            logger.debug(f"[SplitterManager] Updated splitter sizes for {window_width}px: {optimal_sizes}")
+            logger.debug(
+                f"[SplitterManager] Updated splitter sizes for {window_width}px: {optimal_sizes}"
+            )
         else:
             logger.debug(f"[SplitterManager] Splitter sizes already optimal for {window_width}px")
 
-    def _sizes_differ_significantly(self, current_sizes: list[int], optimal_sizes: list[int], threshold: int = 50) -> bool:
+    def _sizes_differ_significantly(
+        self, current_sizes: list[int], optimal_sizes: list[int], threshold: int = 50
+    ) -> bool:
         """
         Check if current and optimal sizes differ significantly.
 
@@ -195,10 +215,10 @@ class SplitterManager:
         horizontal_sizes = []
         vertical_sizes = []
 
-        if hasattr(self.parent_window, 'horizontal_splitter'):
+        if hasattr(self.parent_window, "horizontal_splitter"):
             horizontal_sizes = self.parent_window.horizontal_splitter.sizes()
 
-        if hasattr(self.parent_window, 'vertical_splitter'):
+        if hasattr(self.parent_window, "vertical_splitter"):
             vertical_sizes = self.parent_window.vertical_splitter.sizes()
 
         return horizontal_sizes, vertical_sizes
@@ -209,30 +229,30 @@ class SplitterManager:
         This is useful when splitter movements affect column layouts.
         """
         # For file table, use the original sophisticated logic
-        if hasattr(self.parent_window, 'file_table_view'):
+        if hasattr(self.parent_window, "file_table_view"):
             # Use existing splitter logic for column sizing (original implementation)
-            if hasattr(self.parent_window, 'horizontal_splitter'):
+            if hasattr(self.parent_window, "horizontal_splitter"):
                 sizes = self.parent_window.horizontal_splitter.sizes()
                 self.parent_window.file_table_view.on_horizontal_splitter_moved(sizes[1], 1)
                 logger.debug("[SplitterManager] Triggered original file table column adjustment")
 
         # Use ColumnManager for other table views that don't have sophisticated logic
-        if hasattr(self.parent_window, 'column_manager'):
+        if hasattr(self.parent_window, "column_manager"):
             # Adjust metadata tree columns
-            if hasattr(self.parent_window, 'metadata_tree_view'):
+            if hasattr(self.parent_window, "metadata_tree_view"):
                 self.parent_window.column_manager.adjust_columns_for_splitter_change(
-                    self.parent_window.metadata_tree_view, 'metadata_tree'
+                    self.parent_window.metadata_tree_view, "metadata_tree"
                 )
 
             # Adjust preview table columns
-            if hasattr(self.parent_window, 'preview_tables_view'):
-                if hasattr(self.parent_window.preview_tables_view, 'old_names_table'):
+            if hasattr(self.parent_window, "preview_tables_view"):
+                if hasattr(self.parent_window.preview_tables_view, "old_names_table"):
                     self.parent_window.column_manager.adjust_columns_for_splitter_change(
-                        self.parent_window.preview_tables_view.old_names_table, 'preview_old'
+                        self.parent_window.preview_tables_view.old_names_table, "preview_old"
                     )
-                if hasattr(self.parent_window.preview_tables_view, 'new_names_table'):
+                if hasattr(self.parent_window.preview_tables_view, "new_names_table"):
                     self.parent_window.column_manager.adjust_columns_for_splitter_change(
-                        self.parent_window.preview_tables_view.new_names_table, 'preview_new'
+                        self.parent_window.preview_tables_view.new_names_table, "preview_new"
                     )
 
             logger.debug("[SplitterManager] Triggered ColumnManager adjustment for other tables")

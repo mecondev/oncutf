@@ -11,9 +11,9 @@ Tests cross-platform file size formatting with various units and locales.
 """
 import warnings
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 import sys
 import unittest
@@ -114,7 +114,7 @@ class TestFileSizeFormatter(unittest.TestCase):
         self.assertEqual(result, "0 B")
 
         # Very large size
-        very_large = 1024 ** 6  # 1 EB
+        very_large = 1024**6  # 1 EB
         result = formatter.format_size(very_large)
         self.assertIsInstance(result, str)
         self.assertGreater(len(result), 0)
@@ -213,7 +213,7 @@ def run_comparison_test():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == '--comparison':
+    if len(sys.argv) > 1 and sys.argv[1] == "--comparison":
         run_comparison_test()
     else:
         unittest.main()

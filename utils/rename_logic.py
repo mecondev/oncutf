@@ -17,7 +17,6 @@ Functions:
 
 import os
 import platform
-import tempfile
 from typing import Callable, Dict, List, Tuple
 
 from utils.logger_factory import get_cached_logger
@@ -92,7 +91,11 @@ def safe_case_rename(src_path: str, dst_path: str) -> bool:
 
         # Cleanup: if we created a temp file but failed, try to restore original
         try:
-            if platform.system() == "Windows" and 'temp_path' in locals() and os.path.exists(temp_path):
+            if (
+                platform.system() == "Windows"
+                and "temp_path" in locals()
+                and os.path.exists(temp_path)
+            ):
                 if not os.path.exists(src_path):
                     os.rename(temp_path, src_path)
                     logger.info(f"Restored original file after failed case rename: {src_path}")
@@ -103,9 +106,7 @@ def safe_case_rename(src_path: str, dst_path: str) -> bool:
 
 
 def build_rename_plan(
-    file_items: List[object],
-    preview_pairs: List[Tuple[str, str]],
-    folder_path: str
+    file_items: List[object], preview_pairs: List[Tuple[str, str]], folder_path: str
 ) -> List[Dict]:
     """
     Builds a plan of rename operations with conflict detection.
@@ -121,7 +122,7 @@ def build_rename_plan(
 
     plan = []
 
-    for (old_name, new_name) in preview_pairs:
+    for old_name, new_name in preview_pairs:
         src_path = os.path.join(folder_path, old_name)
         dst_path = os.path.join(folder_path, new_name)
 
@@ -135,19 +136,24 @@ def build_rename_plan(
             and os.path.abspath(dst_path) != os.path.abspath(src_path)
         )
 
-        plan.append({
-            "src": old_name,
-            "dst": new_name,
-            "src_path": src_path,
-            "dst_path": dst_path,
-            "conflict": conflict,
-            "is_case_only": is_case_only,
-            "action": "undecided"
-        })
+        plan.append(
+            {
+                "src": old_name,
+                "dst": new_name,
+                "src_path": src_path,
+                "dst_path": dst_path,
+                "conflict": conflict,
+                "is_case_only": is_case_only,
+                "action": "undecided",
+            }
+        )
 
     return plan
 
-def resolve_rename_conflicts(plan: List[Dict], ask_user_callback: Callable[[str, str], Tuple[str, bool]]) -> List[Dict]:
+
+def resolve_rename_conflicts(
+    plan: List[Dict], ask_user_callback: Callable[[str, str], Tuple[str, bool]]
+) -> List[Dict]:
     """
     Resolves rename conflicts by prompting the user.
 
@@ -184,6 +190,7 @@ def resolve_rename_conflicts(plan: List[Dict], ask_user_callback: Callable[[str,
 
     return resolved_plan
 
+
 def execute_rename_plan(plan: List[Dict]) -> int:
     """
     Executes the rename plan based on resolved actions.
@@ -217,7 +224,10 @@ def execute_rename_plan(plan: List[Dict]) -> int:
 
     return success_count
 
-def get_preview_pairs(file_items: List[object], rename_function: Callable[[object], str]) -> List[Tuple[str, str]]:
+
+def get_preview_pairs(
+    file_items: List[object], rename_function: Callable[[object], str]
+) -> List[Tuple[str, str]]:
     """
     Generates preview name pairs (old, new) for the selected files using rename logic.
 

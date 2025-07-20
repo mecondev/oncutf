@@ -49,7 +49,7 @@ class DirectMetadataLoader(QObject):
 
     def initialize_cache_helper(self) -> None:
         """Initialize the cache helper if parent window is available."""
-        if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
+        if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
             self._cache_helper = MetadataCacheHelper(self.parent_window.metadata_cache)
             logger.debug("[DirectMetadataLoader] Cache helper initialized")
 
@@ -66,6 +66,7 @@ class DirectMetadataLoader(QObject):
         try:
             # Direct cache check using persistent cache (same as has_cached_metadata)
             from core.persistent_metadata_cache import get_persistent_metadata_cache
+
             cache = get_persistent_metadata_cache()
 
             # First check if metadata exists using has() method
@@ -74,19 +75,23 @@ class DirectMetadataLoader(QObject):
                 metadata = cache.get(file_item.full_path)
                 if metadata:
                     # Filter out internal markers to check if there's real metadata
-                    real_metadata = {k: v for k, v in metadata.items() if not k.startswith('__')}
+                    real_metadata = {k: v for k, v in metadata.items() if not k.startswith("__")}
                     if real_metadata:
                         logger.debug(f"[DirectMetadataLoader] Cache hit for {file_item.filename}")
                         return metadata
                     else:
-                        logger.debug(f"[DirectMetadataLoader] Empty metadata for {file_item.filename}")
+                        logger.debug(
+                            f"[DirectMetadataLoader] Empty metadata for {file_item.filename}"
+                        )
                         return None
 
             logger.debug(f"[DirectMetadataLoader] No cached metadata for {file_item.filename}")
             return None
 
         except Exception as e:
-            logger.warning(f"[DirectMetadataLoader] Error checking cache for {file_item.filename}: {e}")
+            logger.warning(
+                f"[DirectMetadataLoader] Error checking cache for {file_item.filename}: {e}"
+            )
             return None
 
     def check_cached_hash(self, file_item: FileItem) -> Optional[str]:
@@ -102,6 +107,7 @@ class DirectMetadataLoader(QObject):
         try:
             # Direct cache check using persistent hash cache
             from core.persistent_hash_cache import get_persistent_hash_cache
+
             cache = get_persistent_hash_cache()
 
             # Get hash directly from persistent cache using get() method
@@ -114,7 +120,9 @@ class DirectMetadataLoader(QObject):
             return None
 
         except Exception as e:
-            logger.warning(f"[DirectMetadataLoader] Error checking hash cache for {file_item.filename}: {e}")
+            logger.warning(
+                f"[DirectMetadataLoader] Error checking hash cache for {file_item.filename}: {e}"
+            )
             return None
 
     def has_cached_metadata(self, file_item: FileItem) -> bool:
@@ -130,13 +138,16 @@ class DirectMetadataLoader(QObject):
         try:
             # Direct cache check using persistent cache
             from core.persistent_metadata_cache import get_persistent_metadata_cache
+
             cache = get_persistent_metadata_cache()
 
             # Use has() method to check existence
             return cache.has(file_item.full_path)
 
         except Exception as e:
-            logger.warning(f"[DirectMetadataLoader] Error checking metadata existence for {file_item.filename}: {e}")
+            logger.warning(
+                f"[DirectMetadataLoader] Error checking metadata existence for {file_item.filename}: {e}"
+            )
             return False
 
     def has_cached_hash(self, file_item: FileItem) -> bool:
@@ -152,20 +163,20 @@ class DirectMetadataLoader(QObject):
         try:
             # Direct cache check using persistent hash cache
             from core.persistent_hash_cache import get_persistent_hash_cache
+
             cache = get_persistent_hash_cache()
 
             # Use has_hash() method to check existence
             return cache.has_hash(file_item.full_path)
 
         except Exception as e:
-            logger.warning(f"[DirectMetadataLoader] Error checking hash existence for {file_item.filename}: {e}")
+            logger.warning(
+                f"[DirectMetadataLoader] Error checking hash existence for {file_item.filename}: {e}"
+            )
             return False
 
     def load_metadata_for_files(
-        self,
-        files: List[FileItem],
-        use_extended: bool = False,
-        source: str = "user_request"
+        self, files: List[FileItem], use_extended: bool = False, source: str = "user_request"
     ) -> None:
         """
         Load metadata for files that don't have it cached.
@@ -188,10 +199,14 @@ class DirectMetadataLoader(QObject):
                     self._currently_loading.add(file_item.full_path)
 
         if not files_to_load:
-            logger.info(f"[DirectMetadataLoader] All {len(files)} files already have cached metadata")
+            logger.info(
+                f"[DirectMetadataLoader] All {len(files)} files already have cached metadata"
+            )
             return
 
-        logger.info(f"[DirectMetadataLoader] Loading metadata for {len(files_to_load)} files ({source})")
+        logger.info(
+            f"[DirectMetadataLoader] Loading metadata for {len(files_to_load)} files ({source})"
+        )
 
         # Show progress dialog for multiple files
         if len(files_to_load) > 1:
@@ -201,10 +216,7 @@ class DirectMetadataLoader(QObject):
             self._start_metadata_loading(files_to_load, use_extended, source)
 
     def _show_metadata_progress_dialog(
-        self,
-        files: List[FileItem],
-        use_extended: bool,
-        source: str
+        self, files: List[FileItem], use_extended: bool, source: str
     ) -> None:
         """Show progress dialog for metadata loading."""
         try:
@@ -220,7 +232,7 @@ class DirectMetadataLoader(QObject):
                 parent=self.parent_window,
                 is_extended=use_extended,
                 cancel_callback=cancel_metadata_loading,
-                show_enhanced_info=True
+                show_enhanced_info=True,
             )
 
             # Set initial status
@@ -229,11 +241,12 @@ class DirectMetadataLoader(QObject):
             self._progress_dialog.set_count(0, len(files))
 
             # Calculate total size for progress tracking
-            total_size = sum(getattr(f, 'size', 0) for f in files)
+            total_size = sum(getattr(f, "size", 0) for f in files)
             self._progress_dialog.start_progress_tracking(total_size)
 
             # Show dialog
             from utils.dialog_utils import show_dialog_smooth
+
             show_dialog_smooth(self._progress_dialog)
 
             # Start loading with progress tracking
@@ -245,10 +258,7 @@ class DirectMetadataLoader(QObject):
             self._start_metadata_loading(files, use_extended, source)
 
     def _start_metadata_loading_with_progress(
-        self,
-        files: List[FileItem],
-        use_extended: bool,
-        source: str
+        self, files: List[FileItem], use_extended: bool, source: str
     ) -> None:
         """Start metadata loading with progress tracking."""
         from utils.metadata_loader import MetadataLoader
@@ -259,7 +269,7 @@ class DirectMetadataLoader(QObject):
         self._metadata_worker = MetadataWorker(
             reader=MetadataLoader(),
             metadata_cache=self.parent_window.metadata_cache,
-            parent=None  # No parent to avoid moveToThread issues
+            parent=None,  # No parent to avoid moveToThread issues
         )
 
         # Set up worker
@@ -268,7 +278,7 @@ class DirectMetadataLoader(QObject):
         self._metadata_worker.main_window = self.parent_window
 
         # Connect progress signals
-        if hasattr(self, '_progress_dialog') and self._progress_dialog:
+        if hasattr(self, "_progress_dialog") and self._progress_dialog:
             self._metadata_worker.progress.connect(
                 lambda current, total: self._on_metadata_progress(current, total)
             )
@@ -292,30 +302,26 @@ class DirectMetadataLoader(QObject):
 
     def _on_metadata_progress(self, current: int, total: int) -> None:
         """Handle metadata loading progress updates."""
-        if hasattr(self, '_progress_dialog') and self._progress_dialog:
+        if hasattr(self, "_progress_dialog") and self._progress_dialog:
             self._progress_dialog.set_count(current, total)
             self._progress_dialog.set_progress(current, total)
 
     def _on_metadata_size_progress(self, processed: int, total: int) -> None:
         """Handle metadata loading size progress updates."""
-        if hasattr(self, '_progress_dialog') and self._progress_dialog:
+        if hasattr(self, "_progress_dialog") and self._progress_dialog:
             self._progress_dialog.set_size_info(processed, total)
 
     def _cancel_current_loading(self) -> None:
         """Cancel current loading operation."""
-        if hasattr(self, '_metadata_worker') and self._metadata_worker:
+        if hasattr(self, "_metadata_worker") and self._metadata_worker:
             self._metadata_worker.cancel()
-        if hasattr(self, '_hash_worker') and self._hash_worker:
+        if hasattr(self, "_hash_worker") and self._hash_worker:
             self._hash_worker.cancel()
 
         # Clear loading flags
         self._currently_loading.clear()
 
-    def load_hashes_for_files(
-        self,
-        files: List[FileItem],
-        source: str = "user_request"
-    ) -> None:
+    def load_hashes_for_files(self, files: List[FileItem], source: str = "user_request") -> None:
         """
         Load hashes for files that don't have them cached.
 
@@ -340,7 +346,9 @@ class DirectMetadataLoader(QObject):
             logger.info(f"[DirectMetadataLoader] All {len(files)} files already have cached hashes")
             return
 
-        logger.info(f"[DirectMetadataLoader] Loading hashes for {len(files_to_load)} files ({source})")
+        logger.info(
+            f"[DirectMetadataLoader] Loading hashes for {len(files_to_load)} files ({source})"
+        )
 
         # Show progress dialog for multiple files
         if len(files_to_load) > 1:
@@ -349,11 +357,7 @@ class DirectMetadataLoader(QObject):
             # Single file - no progress dialog needed
             self._start_hash_loading(files_to_load, source)
 
-    def _show_hash_progress_dialog(
-        self,
-        files: List[FileItem],
-        source: str
-    ) -> None:
+    def _show_hash_progress_dialog(self, files: List[FileItem], source: str) -> None:
         """Show progress dialog for hash loading."""
         try:
             from utils.progress_dialog import ProgressDialog
@@ -367,7 +371,7 @@ class DirectMetadataLoader(QObject):
             self._progress_dialog = ProgressDialog.create_hash_dialog(
                 parent=self.parent_window,
                 cancel_callback=cancel_hash_loading,
-                show_enhanced_info=True
+                show_enhanced_info=True,
             )
 
             # Set initial status
@@ -375,11 +379,12 @@ class DirectMetadataLoader(QObject):
             self._progress_dialog.set_count(0, len(files))
 
             # Calculate total size for progress tracking
-            total_size = sum(getattr(f, 'size', 0) for f in files)
+            total_size = sum(getattr(f, "size", 0) for f in files)
             self._progress_dialog.start_progress_tracking(total_size)
 
             # Show dialog
             from utils.dialog_utils import show_dialog_smooth
+
             show_dialog_smooth(self._progress_dialog)
 
             # Start loading with progress tracking
@@ -390,19 +395,13 @@ class DirectMetadataLoader(QObject):
             # Fallback to loading without progress dialog
             self._start_hash_loading(files, source)
 
-    def _start_hash_loading_with_progress(
-        self,
-        files: List[FileItem],
-        source: str
-    ) -> None:
+    def _start_hash_loading_with_progress(self, files: List[FileItem], source: str) -> None:
         """Start hash loading with progress tracking."""
         from core.hash_worker import HashWorker
 
         # Create worker and thread
         self._hash_thread = QThread()
-        self._hash_worker = HashWorker(
-            parent=None  # No parent to avoid moveToThread issues
-        )
+        self._hash_worker = HashWorker(parent=None)  # No parent to avoid moveToThread issues
 
         # Set up worker
         file_paths = [f.full_path for f in files]
@@ -410,7 +409,7 @@ class DirectMetadataLoader(QObject):
         self._hash_worker.main_window = self.parent_window
 
         # Connect progress signals
-        if hasattr(self, '_progress_dialog') and self._progress_dialog:
+        if hasattr(self, "_progress_dialog") and self._progress_dialog:
             self._hash_worker.progress.connect(
                 lambda current, total: self._on_hash_progress(current, total)
             )
@@ -434,20 +433,17 @@ class DirectMetadataLoader(QObject):
 
     def _on_hash_progress(self, current: int, total: int) -> None:
         """Handle hash loading progress updates."""
-        if hasattr(self, '_progress_dialog') and self._progress_dialog:
+        if hasattr(self, "_progress_dialog") and self._progress_dialog:
             self._progress_dialog.set_count(current, total)
             self._progress_dialog.set_progress(current, total)
 
     def _on_hash_size_progress(self, processed: int, total: int) -> None:
         """Handle hash loading size progress updates."""
-        if hasattr(self, '_progress_dialog') and self._progress_dialog:
+        if hasattr(self, "_progress_dialog") and self._progress_dialog:
             self._progress_dialog.set_size_info(processed, total)
 
     def _start_metadata_loading(
-        self,
-        files: List[FileItem],
-        use_extended: bool,
-        source: str
+        self, files: List[FileItem], use_extended: bool, source: str
     ) -> None:
         """Start metadata loading in background thread."""
         from utils.metadata_loader import MetadataLoader
@@ -458,7 +454,7 @@ class DirectMetadataLoader(QObject):
         self._metadata_worker = MetadataWorker(
             reader=MetadataLoader(),
             metadata_cache=self.parent_window.metadata_cache,
-            parent=self.parent_window
+            parent=self.parent_window,
         )
 
         # Set up worker
@@ -477,7 +473,9 @@ class DirectMetadataLoader(QObject):
         # Start thread
         self._metadata_thread.start()
 
-        logger.debug(f"[DirectMetadataLoader] Started metadata loading thread for {len(files)} files")
+        logger.debug(
+            f"[DirectMetadataLoader] Started metadata loading thread for {len(files)} files"
+        )
 
     def _start_hash_loading(self, files: List[FileItem], source: str) -> None:
         """Start hash loading in background thread."""
@@ -488,7 +486,7 @@ class DirectMetadataLoader(QObject):
         self._hash_worker = HashWorker(
             file_paths=[f.full_path for f in files],
             hash_cache=self.parent_window.hash_cache,
-            parent=self.parent_window
+            parent=self.parent_window,
         )
 
         # Move worker to thread
@@ -514,7 +512,7 @@ class DirectMetadataLoader(QObject):
         self.metadata_loaded.emit(file_path, {})
 
         # Update file table icons
-        if self.parent_window and hasattr(self.parent_window, 'file_model'):
+        if self.parent_window and hasattr(self.parent_window, "file_model"):
             self.parent_window.file_model.refresh_icons()
 
         logger.debug(f"[DirectMetadataLoader] Metadata loaded for {file_path}")
@@ -526,7 +524,7 @@ class DirectMetadataLoader(QObject):
         self._currently_loading.discard(hash_key)
 
         # Update file table icons
-        if self.parent_window and hasattr(self.parent_window, 'file_model'):
+        if self.parent_window and hasattr(self.parent_window, "file_model"):
             self.parent_window.file_model.refresh_icons()
 
         logger.debug(f"[DirectMetadataLoader] Hash calculated for {file_path}")
@@ -535,7 +533,7 @@ class DirectMetadataLoader(QObject):
         """Handle metadata loading completion."""
         try:
             # Close progress dialog if it exists
-            if hasattr(self, '_progress_dialog') and self._progress_dialog:
+            if hasattr(self, "_progress_dialog") and self._progress_dialog:
                 self._progress_dialog.close()
                 self._progress_dialog = None
 
@@ -543,7 +541,7 @@ class DirectMetadataLoader(QObject):
             self._currently_loading.clear()
 
             # Update file icons
-            if self.parent_window and hasattr(self.parent_window, 'file_model'):
+            if self.parent_window and hasattr(self.parent_window, "file_model"):
                 self.parent_window.file_model.refresh_icons()
 
             logger.debug("[DirectMetadataLoader] Metadata loading finished")
@@ -558,7 +556,7 @@ class DirectMetadataLoader(QObject):
         """Handle hash loading completion."""
         try:
             # Close progress dialog if it exists
-            if hasattr(self, '_progress_dialog') and self._progress_dialog:
+            if hasattr(self, "_progress_dialog") and self._progress_dialog:
                 self._progress_dialog.close()
                 self._progress_dialog = None
 
@@ -566,8 +564,16 @@ class DirectMetadataLoader(QObject):
             self._currently_loading.clear()
 
             # Update file icons
-            if self.parent_window and hasattr(self.parent_window, 'file_model'):
+            if self.parent_window and hasattr(self.parent_window, "file_model"):
                 self.parent_window.file_model.refresh_icons()
+
+            # Notify preview manager about hash calculation completion
+            if (
+                self.parent_window
+                and hasattr(self.parent_window, "preview_manager")
+                and self.parent_window.preview_manager
+            ):
+                self.parent_window.preview_manager.on_hash_calculation_completed()
 
             logger.debug("[DirectMetadataLoader] Hash loading finished")
 
@@ -588,19 +594,19 @@ class DirectMetadataLoader(QObject):
             self._cancel_current_loading()
 
             # Close progress dialog if open
-            if hasattr(self, '_progress_dialog') and self._progress_dialog:
+            if hasattr(self, "_progress_dialog") and self._progress_dialog:
                 self._progress_dialog.close()
                 self._progress_dialog = None
 
             # Clean up threads
-            if hasattr(self, '_metadata_thread') and self._metadata_thread:
+            if hasattr(self, "_metadata_thread") and self._metadata_thread:
                 if self._metadata_thread.isRunning():
                     self._metadata_thread.quit()
                     self._metadata_thread.wait(3000)  # Wait max 3 seconds
                 self._metadata_thread = None
                 self._metadata_worker = None
 
-            if hasattr(self, '_hash_thread') and self._hash_thread:
+            if hasattr(self, "_hash_thread") and self._hash_thread:
                 if self._hash_thread.isRunning():
                     self._hash_thread.quit()
                     self._hash_thread.wait(3000)  # Wait max 3 seconds

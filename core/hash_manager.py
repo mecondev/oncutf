@@ -35,6 +35,7 @@ class HashManager:
         # Use persistent hash cache for better performance and persistence
         try:
             from core.persistent_hash_cache import get_persistent_hash_cache
+
             self._persistent_cache = get_persistent_hash_cache()
             self._use_persistent_cache = True
         except ImportError:
@@ -170,7 +171,9 @@ class HashManager:
             logger.error(f"[HashManager] Unexpected error hashing file {file_path}: {e}")
             return None
 
-    def compare_folders(self, folder1: Union[str, Path], folder2: Union[str, Path]) -> Dict[str, Tuple[bool, str, str]]:
+    def compare_folders(
+        self, folder1: Union[str, Path], folder2: Union[str, Path]
+    ) -> Dict[str, Tuple[bool, str, str]]:
         """
         Compare two folders and return file comparison results.
 
@@ -187,11 +190,15 @@ class HashManager:
             folder2 = Path(folder2)
 
         if not folder1.exists() or not folder1.is_dir():
-            logger.error(f"[HashManager] First folder does not exist or is not a directory: {folder1}")
+            logger.error(
+                f"[HashManager] First folder does not exist or is not a directory: {folder1}"
+            )
             return {}
 
         if not folder2.exists() or not folder2.is_dir():
-            logger.error(f"[HashManager] Second folder does not exist or is not a directory: {folder2}")
+            logger.error(
+                f"[HashManager] Second folder does not exist or is not a directory: {folder2}"
+            )
             return {}
 
         result = {}
@@ -211,7 +218,9 @@ class HashManager:
                         result[file1.name] = (hash1 == hash2, hash1, hash2)
                         files_processed += 1
                     else:
-                        logger.warning(f"[HashManager] Could not hash one or both files: {file1.name}")
+                        logger.warning(
+                            f"[HashManager] Could not hash one or both files: {file1.name}"
+                        )
 
             logger.info(f"[HashManager] Compared {files_processed} files between folders")
             return result
@@ -250,12 +259,16 @@ class HashManager:
                 logger.error(f"[HashManager] Error processing file {file_item.filename}: {e}")
 
         # Filter to only return groups with duplicates
-        duplicates = {hash_val: files for hash_val, files in hash_to_files.items() if len(files) > 1}
+        duplicates = {
+            hash_val: files for hash_val, files in hash_to_files.items() if len(files) > 1
+        }
 
         duplicate_count = sum(len(files) for files in duplicates.values())
         duplicate_groups = len(duplicates)
 
-        logger.info(f"[HashManager] Found {duplicate_count} duplicate files in {duplicate_groups} groups")
+        logger.info(
+            f"[HashManager] Found {duplicate_count} duplicate files in {duplicate_groups} groups"
+        )
 
         return duplicates
 
@@ -289,12 +302,16 @@ class HashManager:
                 logger.error(f"[HashManager] Error processing file {file_path}: {e}")
 
         # Filter to only return groups with duplicates
-        duplicates = {hash_val: paths for hash_val, paths in hash_to_paths.items() if len(paths) > 1}
+        duplicates = {
+            hash_val: paths for hash_val, paths in hash_to_paths.items() if len(paths) > 1
+        }
 
         duplicate_count = sum(len(paths) for paths in duplicates.values())
         duplicate_groups = len(duplicates)
 
-        logger.info(f"[HashManager] Found {duplicate_count} duplicate files in {duplicate_groups} groups")
+        logger.info(
+            f"[HashManager] Found {duplicate_count} duplicate files in {duplicate_groups} groups"
+        )
 
         return duplicates
 
@@ -331,20 +348,20 @@ class HashManager:
             # Get persistent cache stats
             persistent_stats = self._persistent_cache.get_cache_stats()
             return {
-                'cache_type': 'persistent',
-                'memory_entries': persistent_stats.get('memory_entries', 0),
-                'cache_hits': persistent_stats.get('cache_hits', 0),
-                'cache_misses': persistent_stats.get('cache_misses', 0),
-                'hit_rate_percent': persistent_stats.get('hit_rate_percent', 0.0)
+                "cache_type": "persistent",
+                "memory_entries": persistent_stats.get("memory_entries", 0),
+                "cache_hits": persistent_stats.get("cache_hits", 0),
+                "cache_misses": persistent_stats.get("cache_misses", 0),
+                "hit_rate_percent": persistent_stats.get("hit_rate_percent", 0.0),
             }
         else:
             # Memory cache only
             return {
-                'cache_type': 'memory',
-                'memory_entries': len(self._hash_cache),
-                'cache_hits': 0,  # Not tracked in memory-only mode
-                'cache_misses': 0,  # Not tracked in memory-only mode
-                'hit_rate_percent': 0.0
+                "cache_type": "memory",
+                "memory_entries": len(self._hash_cache),
+                "cache_hits": 0,  # Not tracked in memory-only mode
+                "cache_misses": 0,  # Not tracked in memory-only mode
+                "hit_rate_percent": 0.0,
             }
 
     def clear_cache(self) -> None:
@@ -374,7 +391,9 @@ def calculate_crc32(file_path: Union[str, Path]) -> Optional[str]:
     return manager.calculate_hash(file_path)
 
 
-def compare_folders(folder1: Union[str, Path], folder2: Union[str, Path]) -> Dict[str, Tuple[bool, str, str]]:
+def compare_folders(
+    folder1: Union[str, Path], folder2: Union[str, Path]
+) -> Dict[str, Tuple[bool, str, str]]:
     """
     Compare two folders and return file comparison results (convenience function).
 

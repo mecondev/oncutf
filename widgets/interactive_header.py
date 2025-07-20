@@ -57,7 +57,7 @@ class InteractiveHeader(QHeaderView):
         """Get main window via ApplicationContext with fallback to parent traversal."""
         # Try ApplicationContext first
         context = self._get_app_context()
-        if context and hasattr(context, '_main_window'):
+        if context and hasattr(context, "_main_window"):
             return context._main_window
 
         # Fallback to legacy parent_window approach
@@ -66,7 +66,8 @@ class InteractiveHeader(QHeaderView):
 
         # Last resort: traverse parents to find main window
         from utils.path_utils import find_parent_with_attribute
-        return find_parent_with_attribute(self, 'handle_header_toggle')
+
+        return find_parent_with_attribute(self, "handle_header_toggle")
 
     def mousePressEvent(self, event) -> None:
         self._press_pos = event.pos()
@@ -88,12 +89,12 @@ class InteractiveHeader(QHeaderView):
         main_window = self._get_main_window_via_context()
 
         if released_index == 0:
-            if main_window and hasattr(main_window, 'handle_header_toggle'):
+            if main_window and hasattr(main_window, "handle_header_toggle"):
                 # Qt.Checked may not always exist as attribute
-                checked = getattr(Qt, 'Checked', 2)
+                checked = getattr(Qt, "Checked", 2)
                 main_window.handle_header_toggle(checked)
         else:
-            if main_window and hasattr(main_window, 'sort_by_column'):
+            if main_window and hasattr(main_window, "sort_by_column"):
                 main_window.sort_by_column(released_index)
 
         super().mouseReleaseEvent(event)
@@ -107,7 +108,8 @@ class InteractiveHeader(QHeaderView):
         menu = QMenu(self)
 
         # Apply consistent styling with Inter fonts
-        menu.setStyleSheet("""
+        menu.setStyleSheet(
+            """
             QMenu {
                 background-color: #232323;
                 color: #f0ebd8;
@@ -141,12 +143,14 @@ class InteractiveHeader(QHeaderView):
                 height: 1px;
                 margin: 4px 8px;
             }
-        """)
+        """
+        )
 
         # Add sorting options for columns > 0
         if logical_index > 0:
             try:
                 from utils.icons_loader import get_menu_icon
+
                 sort_asc = QAction("Sort Ascending", self)
                 sort_asc.setIcon(get_menu_icon("chevron-up"))
                 sort_desc = QAction("Sort Descending", self)
@@ -155,8 +159,8 @@ class InteractiveHeader(QHeaderView):
                 sort_asc = QAction("Sort Ascending", self)
                 sort_desc = QAction("Sort Descending", self)
 
-            asc = getattr(Qt, 'AscendingOrder', 0)
-            desc = getattr(Qt, 'DescendingOrder', 1)
+            asc = getattr(Qt, "AscendingOrder", 0)
+            desc = getattr(Qt, "DescendingOrder", 1)
             sort_asc.triggered.connect(lambda: self._sort(logical_index, asc))
             sort_desc.triggered.connect(lambda: self._sort(logical_index, desc))
 
@@ -174,7 +178,7 @@ class InteractiveHeader(QHeaderView):
         Calls MainWindow.sort_by_column() with forced order from context menu.
         """
         main_window = self._get_main_window_via_context()
-        if main_window and hasattr(main_window, 'sort_by_column'):
+        if main_window and hasattr(main_window, "sort_by_column"):
             main_window.sort_by_column(column, force_order=order)
 
     def _add_column_visibility_menu(self, menu):
@@ -207,7 +211,7 @@ class InteractiveHeader(QHeaderView):
 
                 # Get visibility state from file table view
                 is_visible = True
-                if hasattr(file_table_view, '_visible_columns'):
+                if hasattr(file_table_view, "_visible_columns"):
                     is_visible = file_table_view._visible_columns.get(
                         column_key, column_config.get("default_visible", True)
                     )
@@ -219,7 +223,9 @@ class InteractiveHeader(QHeaderView):
                     action.setIcon(get_menu_icon("toggle-left"))
 
                 # Use triggered signal (menu will close, but it's simpler)
-                action.triggered.connect(lambda checked=False, key=column_key: self._toggle_column_visibility(key))
+                action.triggered.connect(
+                    lambda checked=False, key=column_key: self._toggle_column_visibility(key)
+                )
                 columns_menu.addAction(action)
 
             menu.addMenu(columns_menu)
@@ -227,22 +233,17 @@ class InteractiveHeader(QHeaderView):
         except Exception as e:
             # Fallback: just add a simple label if configuration fails
             from utils.logger_factory import get_cached_logger
+
             logger = get_cached_logger(__name__)
             logger.warning(f"Failed to add column visibility menu: {e}")
 
     def _get_file_table_view(self):
         """Get the file table view that this header belongs to."""
         # The header's parent should be the table view
-        return self.parent() if hasattr(self.parent(), '_visible_columns') else None
+        return self.parent() if hasattr(self.parent(), "_visible_columns") else None
 
     def _toggle_column_visibility(self, column_key: str):
         """Toggle visibility of a specific column via the file table view."""
         file_table_view = self._get_file_table_view()
-        if file_table_view and hasattr(file_table_view, '_toggle_column_visibility'):
+        if file_table_view and hasattr(file_table_view, "_toggle_column_visibility"):
             file_table_view._toggle_column_visibility(column_key)
-
-
-
-
-
-

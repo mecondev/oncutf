@@ -56,7 +56,9 @@ class FileStore(QObject):
     # File Scanning Operations
     # =====================================
 
-    def get_file_items_from_folder(self, folder_path: str, *, use_cache: bool = True) -> List[FileItem]:
+    def get_file_items_from_folder(
+        self, folder_path: str, *, use_cache: bool = True
+    ) -> List[FileItem]:
         """
         Scans a folder and returns FileItem objects for supported files.
 
@@ -77,7 +79,9 @@ class FileStore(QObject):
         # Check cache first
         if use_cache and folder_path in self._file_cache:
             cached_items = self._file_cache[folder_path]
-            logger.debug(f"[FileStore] Using cached files for {folder_path}: {len(cached_items)} items")
+            logger.debug(
+                f"[FileStore] Using cached files for {folder_path}: {len(cached_items)} items"
+            )
             return cached_items.copy()
 
         # Scan folder
@@ -137,7 +141,9 @@ class FileStore(QObject):
                     # Load folder contents
                     folder_items = self.get_file_items_from_folder(path)
                     file_items.extend(folder_items)
-                    logger.debug(f"[FileStore] Loaded {len(folder_items)} files from folder: {path}")
+                    logger.debug(
+                        f"[FileStore] Loaded {len(folder_items)} files from folder: {path}"
+                    )
 
                 elif os.path.isfile(path):
                     # Load individual file
@@ -226,7 +232,7 @@ class FileStore(QObject):
         return {
             "cached_folders": len(self._file_cache),
             "total_cached_files": sum(len(items) for items in self._file_cache.values()),
-            "loaded_files": len(self._loaded_files)
+            "loaded_files": len(self._loaded_files),
         }
 
     # =====================================
@@ -238,5 +244,5 @@ class FileStore(QObject):
         cache_stats = self.get_cache_stats()
         return {
             "last_load_time_ms": self._load_timer.elapsed() if self._load_timer.isValid() else 0,
-            **cache_stats
+            **cache_stats,
         }

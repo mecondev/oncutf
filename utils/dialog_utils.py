@@ -23,6 +23,7 @@ def center_widget_on_parent(widget: QWidget, parent: Optional[QWidget] = None) -
         parent: The parent widget to center on. If None, uses widget.parent()
     """
     from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+
     ensure_dialog_on_parent_screen(widget, parent)
 
 
@@ -56,6 +57,7 @@ def show_dialog_smooth(dialog: QWidget) -> None:
     # Use the global timer manager to show dialog after layout is complete
     # This prevents the shadow-first appearance issue
     from utils.timer_manager import schedule_ui_update
+
     schedule_ui_update(dialog.show, delay=1)  # 1ms delay allows layout to complete
 
 
@@ -69,6 +71,7 @@ def show_info_message(parent: Optional[QWidget], title: str, message: str) -> No
         message: Message to display
     """
     from widgets.custom_message_dialog import CustomMessageDialog
+
     CustomMessageDialog.information(parent, title, message)
 
 
@@ -82,4 +85,5 @@ def show_error_message(parent: Optional[QWidget], title: str, message: str) -> N
         message: Message to display
     """
     from widgets.custom_message_dialog import CustomMessageDialog
+
     CustomMessageDialog.information(parent, title, message)

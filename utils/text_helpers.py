@@ -29,7 +29,7 @@ def elide_text(text: str, max_len: int) -> str:
     """
     if len(text) <= max_len:
         return text
-    return text[:max_len - 1] + "…"
+    return text[: max_len - 1] + "…"
 
 
 def truncate_filename_middle(filename: str, max_length: int = 60) -> str:

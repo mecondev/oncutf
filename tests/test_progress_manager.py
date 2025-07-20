@@ -7,11 +7,12 @@ Date: 2025-05-31
 test_progress_manager.py
 Tests for the new unified ProgressManager.
 """
+
 import warnings
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 import pytest
 from PyQt5.QtWidgets import QApplication

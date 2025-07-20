@@ -10,9 +10,9 @@ Test module for hash calculation functionality.
 """
 import warnings
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 import tempfile
 from pathlib import Path
@@ -29,18 +29,18 @@ class TestHashManager:
         """Test HashManager initialization."""
         manager = HashManager()
         # With persistent cache, we check for the cache attribute
-        if hasattr(manager, '_persistent_cache'):
+        if hasattr(manager, "_persistent_cache"):
             assert manager._use_persistent_cache is True
         else:
             # Fallback mode
-            assert hasattr(manager, '_hash_cache')
+            assert hasattr(manager, "_hash_cache")
             assert manager._hash_cache == {}
 
     def test_calculate_crc32_success(self):
         """Test successful CRC32 calculation."""
         manager = HashManager()
 
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
             f.write("test")
             temp_path = f.name
 
@@ -55,7 +55,7 @@ class TestHashManager:
         """Test that cached hashes are returned."""
         manager = HashManager()
 
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
             f.write("cached content")
             temp_path = f.name
 
@@ -64,7 +64,7 @@ class TestHashManager:
             result1 = manager.calculate_hash(temp_path)
 
             # Second call should use cache
-            with patch('builtins.open') as mock_open:
+            with patch("builtins.open") as mock_open:
                 result2 = manager.calculate_hash(temp_path)
                 mock_open.assert_not_called()  # File should not be opened again
                 assert result1 == result2
@@ -88,9 +88,9 @@ class TestHashManager:
         """Test handling of permission errors."""
         manager = HashManager()
 
-        with patch('pathlib.Path.open', side_effect=PermissionError("Access denied")):
-            with patch('pathlib.Path.exists', return_value=True):
-                with patch('pathlib.Path.is_file', return_value=True):
+        with patch("pathlib.Path.open", side_effect=PermissionError("Access denied")):
+            with patch("pathlib.Path.exists", return_value=True):
+                with patch("pathlib.Path.is_file", return_value=True):
                     result = manager.calculate_hash("/mock/path/file.txt")
                     assert result is None
 
@@ -98,7 +98,7 @@ class TestHashManager:
         """Test CRC32 calculation with string path."""
         manager = HashManager()
 
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
             f.write("string path test")
             temp_path = f.name
 
@@ -114,13 +114,10 @@ class TestHashManager:
         """Test duplicate detection with no duplicates."""
         manager = HashManager()
 
-        with patch.object(manager, 'calculate_hash') as mock_calc:
+        with patch.object(manager, "calculate_hash") as mock_calc:
             mock_calc.side_effect = ["hash1", "hash2"]
 
-            files = [
-                MockFileItem(filename="file1.txt"),
-                MockFileItem(filename="file2.txt")
-            ]
+            files = [MockFileItem(filename="file1.txt"), MockFileItem(filename="file2.txt")]
 
             result = manager.find_duplicates_in_list(files)
             assert result == {}
@@ -129,12 +126,9 @@ class TestHashManager:
         """Test duplicate detection with duplicates found."""
         manager = HashManager()
 
-        files = [
-            MockFileItem(filename="file1.txt"),
-            MockFileItem(filename="file2.txt")
-        ]
+        files = [MockFileItem(filename="file1.txt"), MockFileItem(filename="file2.txt")]
 
-        with patch.object(manager, 'calculate_hash') as mock_calc:
+        with patch.object(manager, "calculate_hash") as mock_calc:
             mock_calc.side_effect = ["same_hash", "same_hash"]
 
             result = manager.find_duplicates_in_list(files)
@@ -155,7 +149,7 @@ class TestHashManager:
 
         files = [MockFileItem(filename="file1.txt")]
 
-        with patch.object(manager, 'calculate_hash', return_value=None):
+        with patch.object(manager, "calculate_hash", return_value=None):
             result = manager.find_duplicates_in_list(files)
             assert result == {}
 
@@ -224,7 +218,7 @@ class TestHashManager:
         """Test successful file integrity verification with CRC32."""
         manager = HashManager()
 
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
             f.write("integrity test")
             temp_path = f.name
 
@@ -239,7 +233,7 @@ class TestHashManager:
         """Test file integrity verification with hash mismatch."""
         manager = HashManager()
 
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
             f.write("test content")
             temp_path = f.name
 
@@ -254,7 +248,7 @@ class TestHashManager:
         """Test file integrity verification is case insensitive with CRC32."""
         manager = HashManager()
 
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
             f.write("case test")
             temp_path = f.name
 
@@ -272,7 +266,7 @@ class TestHashManager:
         manager = HashManager()
 
         # Add some test data first
-        if hasattr(manager, '_persistent_cache'):
+        if hasattr(manager, "_persistent_cache"):
             # With persistent cache
             manager._persistent_cache.store_hash("test_file", "test_hash")
             manager.clear_cache()
@@ -288,7 +282,7 @@ class TestHashManager:
         """Test cache information retrieval."""
         manager = HashManager()
 
-        if hasattr(manager, '_persistent_cache'):
+        if hasattr(manager, "_persistent_cache"):
             # With persistent cache, the return format is different
             info = manager.get_cache_info()
             assert "memory_entries" in info
@@ -307,7 +301,7 @@ class TestConvenienceFunctions:
 
     def test_calculate_crc32_function(self):
         """Test standalone calculate_crc32 function."""
-        with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
             f.write("convenience test")
             temp_path = f.name
 
@@ -350,8 +344,8 @@ class TestEventHandlerIntegration:
 
         # Verify basic initialization
         assert handler.parent_window == mock_parent
-        assert hasattr(handler, '_handle_find_duplicates')
-        assert hasattr(handler, '_handle_calculate_hashes')
+        assert hasattr(handler, "_handle_find_duplicates")
+        assert hasattr(handler, "_handle_calculate_hashes")
 
     def test_hash_manager_integration(self):
         """Test that HashManager can be imported and used."""
@@ -359,9 +353,9 @@ class TestEventHandlerIntegration:
 
         # This is a basic integration test
         manager = HashManager()
-        assert hasattr(manager, 'calculate_hash')
-        assert hasattr(manager, 'find_duplicates_in_list')
-        assert hasattr(manager, 'compare_folders')
+        assert hasattr(manager, "calculate_hash")
+        assert hasattr(manager, "find_duplicates_in_list")
+        assert hasattr(manager, "compare_folders")
 
 
 class TestErrorHandling:
@@ -371,9 +365,9 @@ class TestErrorHandling:
         """Test HashManager handles exceptions gracefully."""
         manager = HashManager()
 
-        with patch('pathlib.Path.open', side_effect=Exception("Unexpected error")):
-            with patch('pathlib.Path.exists', return_value=True):
-                with patch('pathlib.Path.is_file', return_value=True):
+        with patch("pathlib.Path.open", side_effect=Exception("Unexpected error")):
+            with patch("pathlib.Path.exists", return_value=True):
+                with patch("pathlib.Path.is_file", return_value=True):
                     result = manager.calculate_hash("/mock/path")
                     assert result is None
 
@@ -383,7 +377,7 @@ class TestErrorHandling:
 
         files = [MockFileItem(filename="error_file.txt")]
 
-        with patch.object(manager, 'calculate_hash', side_effect=Exception("Hash error")):
+        with patch.object(manager, "calculate_hash", side_effect=Exception("Hash error")):
             result = manager.find_duplicates_in_list(files)
             assert result == {}
 
@@ -398,7 +392,9 @@ class TestPerformance:
         manager = HashManager()
 
         # Create a larger test file (10MB) for more accurate performance measurement
-        test_data = b'Performance test data for CRC32 optimization with memoryview and bytearray' * 135000  # ~10MB
+        test_data = (
+            b"Performance test data for CRC32 optimization with memoryview and bytearray" * 135000
+        )  # ~10MB
 
         with tempfile.NamedTemporaryFile(delete=False) as f:
             f.write(test_data)
@@ -413,7 +409,8 @@ class TestPerformance:
 
             # Use the internal CRC32 calculation method directly to avoid database overhead
             import zlib
-            with open(temp_path, 'rb') as file:
+
+            with open(temp_path, "rb") as file:
                 crc32_hash = 0
                 while True:
                     chunk = file.read(65536)  # 64KB chunks
@@ -435,7 +432,9 @@ class TestPerformance:
             # Performance should be reasonable (at least 50 MB/s for pure CRC32 calculation)
             assert throughput > 50, f"Performance too slow: {throughput:.1f} MB/s"
 
-            print(f"\nPerformance test: {file_size_mb:.1f} MB processed in {calculation_time:.4f}s ({throughput:.1f} MB/s)")
+            print(
+                f"\nPerformance test: {file_size_mb:.1f} MB processed in {calculation_time:.4f}s ({throughput:.1f} MB/s)"
+            )
 
         finally:
             Path(temp_path).unlink()
@@ -445,7 +444,7 @@ class TestPerformance:
         manager = HashManager()
 
         # Create a test file with enough data to trigger multiple buffer reads
-        test_data = b'Progress callback test data' * 20000  # ~500KB
+        test_data = b"Progress callback test data" * 20000  # ~500KB
 
         with tempfile.NamedTemporaryFile(delete=False) as f:
             f.write(test_data)
@@ -470,13 +469,19 @@ class TestPerformance:
 
             # Verify progress values make sense
             assert progress_calls[0] > 0, "First progress call should be > 0"
-            assert progress_calls[-1] == len(test_data), f"Final progress should equal file size: {progress_calls[-1]} vs {len(test_data)}"
+            assert progress_calls[-1] == len(
+                test_data
+            ), f"Final progress should equal file size: {progress_calls[-1]} vs {len(test_data)}"
 
             # Verify progress is monotonically increasing
             for i in range(1, len(progress_calls)):
-                assert progress_calls[i] >= progress_calls[i-1], "Progress should be monotonically increasing"
+                assert (
+                    progress_calls[i] >= progress_calls[i - 1]
+                ), "Progress should be monotonically increasing"
 
-            print(f"\nProgress test: {len(progress_calls)} callbacks, final: {progress_calls[-1]:,} bytes")
+            print(
+                f"\nProgress test: {len(progress_calls)} callbacks, final: {progress_calls[-1]:,} bytes"
+            )
 
         finally:
             Path(temp_path).unlink()

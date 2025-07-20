@@ -54,7 +54,9 @@ class DPIHelper:
             logger.debug(f"[DPI] System: {self.system}", extra={"dev_only": True})
             logger.debug(f"[DPI] Logical DPI: {logical_dpi}", extra={"dev_only": True})
             logger.debug(f"[DPI] Physical DPI: {physical_dpi}", extra={"dev_only": True})
-            logger.debug(f"[DPI] Device Pixel Ratio: {device_pixel_ratio}", extra={"dev_only": True})
+            logger.debug(
+                f"[DPI] Device Pixel Ratio: {device_pixel_ratio}", extra={"dev_only": True}
+            )
 
             # Calculate base DPI scale (96 DPI is standard)
             base_dpi = 96.0
@@ -71,7 +73,10 @@ class DPIHelper:
                     # For normal DPI, use slight reduction
                     self.font_scale = 0.9
 
-                logger.debug(f"[DPI] Windows font scale adjustment: {self.font_scale}", extra={"dev_only": True})
+                logger.debug(
+                    f"[DPI] Windows font scale adjustment: {self.font_scale}",
+                    extra={"dev_only": True},
+                )
 
             elif self.system == "Linux":
                 # Linux generally handles DPI scaling better
@@ -82,13 +87,19 @@ class DPIHelper:
                 else:
                     self.font_scale = 1.0
 
-                logger.debug(f"[DPI] Linux font scale adjustment: {self.font_scale}", extra={"dev_only": True})
+                logger.debug(
+                    f"[DPI] Linux font scale adjustment: {self.font_scale}",
+                    extra={"dev_only": True},
+                )
 
             else:
                 # macOS or other systems - use default
                 self.font_scale = 1.0
 
-            logger.debug(f"[DPI] Final scaling - DPI: {self.dpi_scale:.2f}, Font: {self.font_scale:.2f}", extra={"dev_only": True})
+            logger.debug(
+                f"[DPI] Final scaling - DPI: {self.dpi_scale:.2f}, Font: {self.font_scale:.2f}",
+                extra={"dev_only": True},
+            )
 
         except Exception as e:
             logger.error(f"[DPI] Error calculating scaling: {e}")
@@ -133,12 +144,12 @@ class DPIHelper:
             Dictionary with font sizes for different use cases
         """
         base_sizes = {
-            'small': 8,      # Small labels, status text
-            'normal': 9,     # Default UI text
-            'medium': 10,    # Buttons, headers
-            'large': 11,     # Titles
-            'tree': 9,       # Tree views (file/metadata trees)
-            'table': 9,      # Table views
+            "small": 8,  # Small labels, status text
+            "normal": 9,  # Default UI text
+            "medium": 10,  # Buttons, headers
+            "large": 11,  # Titles
+            "tree": 9,  # Tree views (file/metadata trees)
+            "table": 9,  # Table views
         }
 
         # Apply scaling to all sizes
@@ -149,8 +160,8 @@ class DPIHelper:
         # Special handling for tree/table views on Windows
         if self.system == "Windows":
             # Windows tends to make tree/table fonts too large
-            scaled_sizes['tree'] = max(8, scaled_sizes['tree'] - 1)
-            scaled_sizes['table'] = max(8, scaled_sizes['table'] - 1)
+            scaled_sizes["tree"] = max(8, scaled_sizes["tree"] - 1)
+            scaled_sizes["table"] = max(8, scaled_sizes["table"] - 1)
 
         logger.debug(f"[DPI] Font sizes: {scaled_sizes}", extra={"dev_only": True})
         return scaled_sizes

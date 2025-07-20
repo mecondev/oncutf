@@ -44,7 +44,7 @@ def clean_filename_text(text: str) -> str:
         str: Cleaned text with invalid characters removed
     """
     # Remove invalid characters
-    cleaned = ''.join(char for char in text if is_valid_filename_char(char))
+    cleaned = "".join(char for char in text if is_valid_filename_char(char))
 
     logger.debug(f"[FilenameValidator] Cleaned text: '{text}' → '{cleaned}'")
     return cleaned
@@ -99,9 +99,28 @@ def validate_filename_part(filename_part: str) -> Tuple[bool, str]:
 
     # Check for Windows reserved names
     reserved_names = {
-        'CON', 'PRN', 'AUX', 'NUL',
-        'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
-        'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'
+        "CON",
+        "PRN",
+        "AUX",
+        "NUL",
+        "COM1",
+        "COM2",
+        "COM3",
+        "COM4",
+        "COM5",
+        "COM6",
+        "COM7",
+        "COM8",
+        "COM9",
+        "LPT1",
+        "LPT2",
+        "LPT3",
+        "LPT4",
+        "LPT5",
+        "LPT6",
+        "LPT7",
+        "LPT8",
+        "LPT9",
     }
 
     if cleaned.upper() in reserved_names:
@@ -150,9 +169,28 @@ def get_validation_error_message(filename_part: str) -> str:
 
     # Check for Windows reserved names
     reserved_names = {
-        'CON', 'PRN', 'AUX', 'NUL',
-        'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
-        'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'
+        "CON",
+        "PRN",
+        "AUX",
+        "NUL",
+        "COM1",
+        "COM2",
+        "COM3",
+        "COM4",
+        "COM5",
+        "COM6",
+        "COM7",
+        "COM8",
+        "COM9",
+        "LPT1",
+        "LPT2",
+        "LPT3",
+        "LPT4",
+        "LPT5",
+        "LPT6",
+        "LPT7",
+        "LPT8",
+        "LPT9",
     }
 
     if filename_part.upper() in reserved_names:
@@ -215,11 +253,13 @@ def prepare_final_filename(filename_part: str, extension: str = "") -> str:
     cleaned_part = clean_trailing_chars(filename_part)
 
     # Handle extension
-    if extension and not extension.startswith('.'):
-        extension = '.' + extension
+    if extension and not extension.startswith("."):
+        extension = "." + extension
 
     final_filename = cleaned_part + extension
 
-    logger.debug(f"[FilenameValidator] Prepared final filename: '{filename_part}' + '{extension}' → '{final_filename}'")
+    logger.debug(
+        f"[FilenameValidator] Prepared final filename: '{filename_part}' + '{extension}' → '{final_filename}'"
+    )
 
     return final_filename

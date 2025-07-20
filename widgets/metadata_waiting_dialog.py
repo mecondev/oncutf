@@ -38,14 +38,19 @@ class OperationDialog(QDialog):
 
     Note: For new code, use utils.progress_dialog.ProgressDialog instead
     """
-    def __init__(self, parent: Optional[QWidget] = None, is_extended: bool = False,
-                 cancel_callback: Optional[Callable] = None) -> None:
+
+    def __init__(
+        self,
+        parent: Optional[QWidget] = None,
+        is_extended: bool = False,
+        cancel_callback: Optional[Callable] = None,
+    ) -> None:
         super().__init__(parent)
         self.cancel_callback = cancel_callback
 
         # Frameless and styled externally
-        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint) # type: ignore
-        self.setAttribute(Qt.WA_TranslucentBackground, False) # type: ignore
+        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)  # type: ignore
+        self.setAttribute(Qt.WA_TranslucentBackground, False)  # type: ignore
         self.setModal(True)
 
         layout = QVBoxLayout(self)
@@ -66,7 +71,7 @@ class OperationDialog(QDialog):
             bar_bg_color=bar_bg_color,
             show_size_info=False,
             show_time_info=False,
-            fixed_width=400
+            fixed_width=400,
         )
 
         layout.addWidget(self.waiting_widget)
@@ -78,7 +83,7 @@ class OperationDialog(QDialog):
 
     def keyPressEvent(self, event):
         """Handle ESC key to cancel operation."""
-        if event.key() == Qt.Key_Escape: # type: ignore
+        if event.key() == Qt.Key_Escape:  # type: ignore
             logger.info("[OperationDialog] User cancelled operation")
             self.waiting_widget.set_status("Cancelling...")
 

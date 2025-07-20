@@ -15,8 +15,8 @@ Classes:
 
 import logging
 from enum import Enum
-from typing import Optional, Callable, Dict, Any
 from pathlib import Path
+from typing import Callable, Dict, Optional
 
 from core.pyqt_imports import QObject, pyqtSignal
 
@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class ConflictResolutionStrategy(Enum):
     """Strategies for resolving file rename conflicts."""
+
     SKIP = "skip"
     OVERWRITE = "overwrite"
     RENAME_WITH_SUFFIX = "rename_with_suffix"
@@ -63,8 +64,12 @@ class RenameConflictResolver(QObject):
         self.default_strategy = strategy
         logger.debug(f"Default conflict resolution strategy set to: {strategy.value}")
 
-    def resolve_conflict(self, original_path: str, target_path: str,
-                        strategy: Optional[ConflictResolutionStrategy] = None) -> str:
+    def resolve_conflict(
+        self,
+        original_path: str,
+        target_path: str,
+        strategy: Optional[ConflictResolutionStrategy] = None,
+    ) -> str:
         """
         Resolve a file rename conflict using the specified strategy.
 
@@ -79,7 +84,9 @@ class RenameConflictResolver(QObject):
         if strategy is None:
             strategy = self.default_strategy
 
-        logger.debug(f"Resolving conflict for {original_path} -> {target_path} using {strategy.value}")
+        logger.debug(
+            f"Resolving conflict for {original_path} -> {target_path} using {strategy.value}"
+        )
 
         try:
             if strategy == ConflictResolutionStrategy.SKIP:

@@ -35,75 +35,70 @@ class CustomFileSystemModel(QFileSystemModel):
     # File type to icon mapping
     FILE_TYPE_ICONS = {
         # Images
-        'jpg': 'image',
-        'jpeg': 'image',
-        'png': 'image',
-        'gif': 'image',
-        'bmp': 'image',
-        'tiff': 'image',
-        'tif': 'image',
-        'webp': 'image',
-        'svg': 'image',
-        'ico': 'image',
-        'raw': 'image',
-        'cr2': 'image',
-        'nef': 'image',
-        'dng': 'image',
-
+        "jpg": "image",
+        "jpeg": "image",
+        "png": "image",
+        "gif": "image",
+        "bmp": "image",
+        "tiff": "image",
+        "tif": "image",
+        "webp": "image",
+        "svg": "image",
+        "ico": "image",
+        "raw": "image",
+        "cr2": "image",
+        "nef": "image",
+        "dng": "image",
         # Videos
-        'mp4': 'video',
-        'avi': 'video',
-        'mov': 'video',
-        'mkv': 'video',
-        'wmv': 'video',
-        'flv': 'video',
-        'webm': 'video',
-        'm4v': 'video',
-        '3gp': 'video',
-        'mpg': 'video',
-        'mpeg': 'video',
-
+        "mp4": "video",
+        "avi": "video",
+        "mov": "video",
+        "mkv": "video",
+        "wmv": "video",
+        "flv": "video",
+        "webm": "video",
+        "m4v": "video",
+        "3gp": "video",
+        "mpg": "video",
+        "mpeg": "video",
         # Audio
-        'mp3': 'music',
-        'wav': 'music',
-        'flac': 'music',
-        'aac': 'music',
-        'ogg': 'music',
-        'wma': 'music',
-        'm4a': 'music',
-        'opus': 'music',
-
+        "mp3": "music",
+        "wav": "music",
+        "flac": "music",
+        "aac": "music",
+        "ogg": "music",
+        "wma": "music",
+        "m4a": "music",
+        "opus": "music",
         # Text/Documents
-        'txt': 'file-text',
-        'md': 'file-text',
-        'rtf': 'file-text',
-        'doc': 'file-text',
-        'docx': 'file-text',
-        'pdf': 'file-text',
-        'odt': 'file-text',
-
+        "txt": "file-text",
+        "md": "file-text",
+        "rtf": "file-text",
+        "doc": "file-text",
+        "docx": "file-text",
+        "pdf": "file-text",
+        "odt": "file-text",
         # Archives
-        'zip': 'archive',
-        'rar': 'archive',
-        '7z': 'archive',
-        'tar': 'archive',
-        'gz': 'archive',
-        'bz2': 'archive',
-        'xz': 'archive',
-
+        "zip": "archive",
+        "rar": "archive",
+        "7z": "archive",
+        "tar": "archive",
+        "gz": "archive",
+        "bz2": "archive",
+        "xz": "archive",
         # Code files
-        'py': 'code',
-        'js': 'code',
-        'html': 'code',
-        'css': 'code',
-        'cpp': 'code',
-        'c': 'code',
-        'java': 'code',
-        'php': 'code',
-        'xml': 'code',
-        'json': 'code',
-        'yaml': 'code',
-        'yml': 'code',
+        "py": "code",
+        "js": "code",
+        "html": "code",
+        "css": "code",
+        "cpp": "code",
+        "c": "code",
+        "java": "code",
+        "php": "code",
+        "xml": "code",
+        "json": "code",
+        "yaml": "code",
+        "yml": "code",
     }
 
     def __init__(self, parent=None):
@@ -115,18 +110,23 @@ class CustomFileSystemModel(QFileSystemModel):
         # Preload common icons
         self._preload_icons()
 
-        logger.debug("[CustomFileSystemModel] Initialized with feather icons", extra={"dev_only": True})
+        logger.debug(
+            "[CustomFileSystemModel] Initialized with feather icons", extra={"dev_only": True}
+        )
 
     def _preload_icons(self):
         """Preload commonly used icons into cache for better performance"""
-        common_icons = ['folder', 'file', 'image', 'video', 'music', 'file-text', 'archive', 'code']
+        common_icons = ["folder", "file", "image", "video", "music", "file-text", "archive", "code"]
 
         for icon_name in common_icons:
             try:
                 icon = get_menu_icon(icon_name)
                 if not icon.isNull():
                     self._icon_cache[icon_name] = icon
-                    logger.debug(f"[CustomFileSystemModel] Preloaded icon: {icon_name}", extra={"dev_only": True})
+                    logger.debug(
+                        f"[CustomFileSystemModel] Preloaded icon: {icon_name}",
+                        extra={"dev_only": True},
+                    )
                 else:
                     logger.warning(f"[CustomFileSystemModel] Failed to load icon: {icon_name}")
             except Exception as e:
@@ -141,12 +141,12 @@ class CustomFileSystemModel(QFileSystemModel):
                     self._icon_cache[icon_name] = icon
                 else:
                     # Fallback to default file icon
-                    icon = self._icon_cache.get('file', QIcon())
+                    icon = self._icon_cache.get("file", QIcon())
                     self._icon_cache[icon_name] = icon
             except Exception as e:
                 logger.error(f"[CustomFileSystemModel] Error loading icon {icon_name}: {e}")
                 # Fallback to default file icon
-                icon = self._icon_cache.get('file', QIcon())
+                icon = self._icon_cache.get("file", QIcon())
                 self._icon_cache[icon_name] = icon
 
         return self._icon_cache[icon_name]
@@ -154,25 +154,25 @@ class CustomFileSystemModel(QFileSystemModel):
     def _get_file_type_icon(self, file_path: str) -> str:
         """Determine the appropriate icon name based on file extension"""
         if self.isDir(self.index(file_path)):
-            return 'folder'
+            return "folder"
 
         # Get file extension
         _, ext = os.path.splitext(file_path)
-        if ext.startswith('.'):
+        if ext.startswith("."):
             ext = ext[1:].lower()
 
         # Check if extension is in our allowed list
         if ext not in ALLOWED_EXTENSIONS:
-            return 'file'  # Default icon for unsupported files
+            return "file"  # Default icon for unsupported files
 
         # Return specific icon based on file type
-        return self.FILE_TYPE_ICONS.get(ext, 'file')
+        return self.FILE_TYPE_ICONS.get(ext, "file")
 
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any: # type: ignore
+    def data(self, index: QModelIndex, role: int = Qt.DisplayRole) -> Any:  # type: ignore
         """Override data method to provide custom icons"""
 
         # Handle decoration role (icons)
-        if role == Qt.DecorationRole: # type: ignore
+        if role == Qt.DecorationRole:  # type: ignore
             if index.isValid():
                 file_path = self.filePath(index)
                 if file_path:

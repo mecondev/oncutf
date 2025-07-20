@@ -15,7 +15,16 @@ Now supports ApplicationContext for optimized access patterns.
 from typing import Optional
 
 import config
-from core.pyqt_imports import QScrollArea, Qt, QTimer, QVBoxLayout, QWidget, pyqtSignal, QFrame, QCursor
+from core.pyqt_imports import (
+    QCursor,
+    QFrame,
+    QScrollArea,
+    Qt,
+    QTimer,
+    QVBoxLayout,
+    QWidget,
+    pyqtSignal,
+)
 from modules.base_module import BaseRenameModule
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_scroll_adjust
@@ -38,14 +47,21 @@ class RenameModulesArea(QWidget):
     Now supports ApplicationContext for optimized access patterns while maintaining
     backward compatibility with parent_window parameter.
     """
+
     updated = pyqtSignal()
 
-    def __init__(self, parent: Optional[QWidget] = None, parent_window: Optional[QWidget] = None) -> None:
+    def __init__(
+        self, parent: Optional[QWidget] = None, parent_window: Optional[QWidget] = None
+    ) -> None:
         super().__init__(parent)
         self.parent_window = parent_window  # Keep for backward compatibility
         self.module_widgets: list[RenameModuleWidget] = []
 
         self.setObjectName("RenameModulesArea")
+
+        # Initialize UnifiedRenameEngine
+        self.rename_engine = None
+        self._setup_rename_engine()
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(6, 2, 6, 2)  # Reduced bottom margin from 6 to 2
@@ -102,7 +118,6 @@ class RenameModulesArea(QWidget):
 
     def _on_module_updated(self):
         """Handle module updates with debouncing to prevent duplicates."""
-        logger.debug("[RenameModulesArea] Module updated, restarting timer", extra={"dev_only": True})
         self._update_timer.stop()
         self._update_timer.start()
 
@@ -111,15 +126,8 @@ class RenameModulesArea(QWidget):
         Add a new RenameModuleWidget to the area.
         Now uses ApplicationContext-optimized approach when available.
         """
-        context = self._get_app_context()
-        if context:
-            # ApplicationContext available - create module without parent_window
-            module = RenameModuleWidget(parent=self)
-            logger.debug("[RenameModulesArea] Created RenameModuleWidget via ApplicationContext", extra={"dev_only": True})
-        else:
-            # Fallback to legacy approach with parent_window
-            module = RenameModuleWidget(parent=self, parent_window=self.parent_window)
-            logger.debug("[RenameModulesArea] Created RenameModuleWidget via parent_window fallback", extra={"dev_only": True})
+        # Πάντα περνάμε το parent_window για σταθερότητα
+        module = RenameModuleWidget(parent=self, parent_window=self.parent_window)
 
         module.remove_requested.connect(lambda m=module: self.remove_module(m))
         module.updated.connect(lambda: self._on_module_updated())
@@ -153,7 +161,6 @@ class RenameModulesArea(QWidget):
             # After removal, scroll to bottom to show remaining modules
             # Schedule scroll to bottom
             schedule_scroll_adjust(lambda: self._scroll_to_bottom(), 50)
-            logger.debug(f"[RenameModulesArea] Scrolled to bottom after removal ({len(self.module_widgets)} modules remain)", extra={"dev_only": True})
 
             self.updated.emit()
 
@@ -161,14 +168,11 @@ class RenameModulesArea(QWidget):
         """Remove the last module (allows removal of all modules)."""
         if len(self.module_widgets) > 0:
             self.remove_module(self.module_widgets[-1])
-        else:
-            logger.debug("[RenameModulesArea] No modules to remove", extra={"dev_only": True})
 
     def _scroll_to_bottom(self):
         """Scroll to the bottom of the modules area."""
         scroll_bar = self.scroll_area.verticalScrollBar()
         scroll_bar.setValue(scroll_bar.maximum())
-        logger.debug(f"[RenameModulesArea] Scrolled to bottom ({len(self.module_widgets)} modules)", extra={"dev_only": True})
 
     def _update_layout_stretch(self):
         """Update stretch to prevent modules from expanding to fill container."""
@@ -189,10 +193,13 @@ class RenameModulesArea(QWidget):
             file_item: The FileItem object representing the currently selected file
         """
         for module_widget in self.module_widgets:
-            if hasattr(module_widget, 'current_module_widget') and module_widget.current_module_widget:
+            if (
+                hasattr(module_widget, "current_module_widget")
+                and module_widget.current_module_widget
+            ):
                 # Check if this is a SpecifiedTextModule
                 module_instance = module_widget.current_module_widget
-                if hasattr(module_instance, 'set_current_file'):
+                if hasattr(module_instance, "set_current_file"):
                     module_instance.set_current_file(file_item)
 
     def get_all_data(self) -> dict:
@@ -200,9 +207,7 @@ class RenameModulesArea(QWidget):
         Collects data from all modules.
         Note: post_transform data is now handled by FinalTransformContainer.
         """
-        return {
-            "modules": [m.to_dict() for m in self.module_widgets]
-        }
+        return {"modules": [m.to_dict() for m in self.module_widgets]}
 
     def get_all_module_instances(self) -> list[BaseRenameModule]:
         """
@@ -210,7 +215,11 @@ class RenameModulesArea(QWidget):
         Useful for checking is_effective() per module.
         """
         logger.debug("[Preview] Modules: %s", self.module_widgets, extra={"dev_only": True})
-        logger.debug("[Preview] Effective check: %s", [m.is_effective() for m in self.module_widgets], extra={"dev_only": True})
+        logger.debug(
+            "[Preview] Effective check: %s",
+            [m.is_effective() for m in self.module_widgets],
+            extra={"dev_only": True},
+        )
 
         return self.module_widgets
 
@@ -225,10 +234,38 @@ class RenameModulesArea(QWidget):
         # Theme styling is now handled by the global theme engine
         logger.debug(f"[RenameModulesArea] Theme changed to: {theme}", extra={"dev_only": True})
 
+    def _setup_rename_engine(self):
+        """Setup UnifiedRenameEngine."""
+        try:
+            from core.unified_rename_engine import UnifiedRenameEngine
+
+            self.rename_engine = UnifiedRenameEngine()
+            logger.debug("[RenameModulesArea] UnifiedRenameEngine initialized")
+        except Exception as e:
+            logger.error(f"[RenameModulesArea] Error initializing UnifiedRenameEngine: {e}")
+
     def _emit_updated_signal(self):
         """Emit the updated signal after debouncing."""
-        logger.debug("[RenameModulesArea] Timer timeout - emitting updated signal", extra={"dev_only": True})
+        logger.debug(
+            "[RenameModulesArea] Timer timeout - emitting updated signal", extra={"dev_only": True}
+        )
         self.updated.emit()
+        # Trigger central preview update
+        self._trigger_central_preview_update()
+
+    def _trigger_central_preview_update(self):
+        """Trigger central preview update."""
+        try:
+            if self.rename_engine:
+                # Clear cache to force fresh preview
+                self.rename_engine.clear_cache()
+                logger.debug("[RenameModulesArea] Central preview update triggered")
+        except Exception as e:
+            logger.error(f"[RenameModulesArea] Error in central preview update: {e}")
+
+    def trigger_preview_update(self):
+        """Public method to trigger preview update."""
+        self._trigger_central_preview_update()
 
     # Drag & Drop functionality
     def module_drag_started(self, module):
@@ -263,7 +300,9 @@ class RenameModulesArea(QWidget):
 
         # Don't show indicator at the start if dragging the first module
         # Don't show indicator at the end if dragging the last module
-        dragged_index = self.module_widgets.index(self.dragged_module) if self.dragged_module else -1
+        dragged_index = (
+            self.module_widgets.index(self.dragged_module) if self.dragged_module else -1
+        )
 
         # Create drop indicators between each module and at the ends
         for i in range(len(self.module_widgets) + 1):
@@ -291,7 +330,8 @@ class RenameModulesArea(QWidget):
         indicator = QFrame()
         indicator.setObjectName("drop_indicator")
         indicator.setFixedHeight(4)  # Slightly thinner
-        indicator.setStyleSheet("""
+        indicator.setStyleSheet(
+            """
             QFrame#drop_indicator {
                 background-color: rgba(62, 92, 118, 0.8);
                 border: 1px solid rgba(62, 92, 118, 1.0);
@@ -301,7 +341,8 @@ class RenameModulesArea(QWidget):
             QFrame#drop_indicator:hover {
                 background-color: rgba(62, 92, 118, 1.0);
             }
-        """)
+        """
+        )
         indicator.hide()  # Initially hidden
         return indicator
 
@@ -342,7 +383,10 @@ class RenameModulesArea(QWidget):
         if old_index == new_index:
             return
 
-        logger.debug(f"[RenameModulesArea] Reordering module from {old_index} to {new_index}", extra={"dev_only": True})
+        logger.debug(
+            f"[RenameModulesArea] Reordering module from {old_index} to {new_index}",
+            extra={"dev_only": True},
+        )
 
         # Remove module from old position
         self.module_widgets.pop(old_index)

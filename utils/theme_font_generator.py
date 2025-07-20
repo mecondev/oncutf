@@ -23,16 +23,17 @@ def generate_dpi_aware_css() -> str:
     """
     try:
         from utils.dpi_helper import get_font_sizes
+
         font_sizes = get_font_sizes()
     except ImportError:
         logger.warning("[Theme] DPI helper not available, using default font sizes")
         font_sizes = {
-            'small': 8,
-            'normal': 9,
-            'medium': 10,
-            'large': 11,
-            'tree': 9,
-            'table': 9,
+            "small": 8,
+            "normal": 9,
+            "medium": 10,
+            "large": 11,
+            "tree": 9,
+            "table": 9,
         }
 
     css_template = f"""
@@ -174,7 +175,8 @@ def get_tree_font_size() -> int:
     """Get the appropriate font size for tree views."""
     try:
         from utils.dpi_helper import get_font_sizes
-        return get_font_sizes()['tree']
+
+        return get_font_sizes()["tree"]
     except ImportError:
         return 9
 
@@ -183,7 +185,8 @@ def get_table_font_size() -> int:
     """Get the appropriate font size for table views."""
     try:
         from utils.dpi_helper import get_font_sizes
-        return get_font_sizes()['table']
+
+        return get_font_sizes()["table"]
     except ImportError:
         return 9
 
@@ -192,13 +195,14 @@ def get_ui_font_sizes() -> Dict[str, int]:
     """Get all UI font sizes for programmatic use."""
     try:
         from utils.dpi_helper import get_font_sizes
+
         return get_font_sizes()
     except ImportError:
         return {
-            'small': 8,
-            'normal': 9,
-            'medium': 10,
-            'large': 11,
-            'tree': 9,
-            'table': 9,
+            "small": 8,
+            "normal": 9,
+            "medium": 10,
+            "large": 11,
+            "tree": 9,
+            "table": 9,
         }

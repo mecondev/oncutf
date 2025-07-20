@@ -14,13 +14,12 @@ Functions:
 """
 
 import atexit
-import os
-import sys
 import logging
+import os
 import platform
 import signal
+import sys
 import time
-from pathlib import Path
 
 from core.pyqt_imports import QApplication, QStyleFactory, Qt
 
@@ -34,6 +33,7 @@ from utils.logger_setup import ConfigureLogger
 from utils.theme_engine import ThemeEngine
 from widgets.custom_splash_screen import CustomSplashScreen
 
+
 # Calculate the user config directory for logs
 def get_user_config_dir(app_name: str = "oncutf") -> str:
     """Get user configuration directory based on OS."""
@@ -43,6 +43,7 @@ def get_user_config_dir(app_name: str = "oncutf") -> str:
     else:
         base_dir = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
         return os.path.join(base_dir, app_name)
+
 
 # Configure logging to use user config directory
 config_dir = get_user_config_dir()
@@ -58,14 +59,17 @@ logger.info(f"Application started at {now}")
 logger_effective_level = logger.getEffectiveLevel()
 logger.debug(f"Effective logging level: {logger_effective_level}", extra={"dev_only": True})
 
+
 def cleanup_on_exit():
     """Cleanup function to run on application exit or signal."""
     try:
         from utils.exiftool_wrapper import ExifToolWrapper
+
         ExifToolWrapper.force_cleanup_all_exiftool_processes()
         logger.info("Emergency ExifTool cleanup completed")
     except Exception as e:
         logger.warning(f"Error in emergency cleanup: {e}")
+
 
 def signal_handler(signum, frame):
     """Handle signals for graceful shutdown."""
@@ -73,12 +77,14 @@ def signal_handler(signum, frame):
     cleanup_on_exit()
     sys.exit(0)
 
+
 # Register signal handlers
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
 # Register atexit cleanup
 atexit.register(cleanup_on_exit)
+
 
 def main() -> int:
     """
@@ -97,12 +103,14 @@ def main() -> int:
 
         # Initialize DPI helper early
         from utils.dpi_helper import get_dpi_helper, log_dpi_info
+
         get_dpi_helper()  # Initialize but don't store
         log_dpi_info()
 
         # Log font sizes for debugging
         try:
             from utils.theme_font_generator import get_ui_font_sizes
+
             font_sizes = get_ui_font_sizes()
             logger.debug(f"Applied font sizes: {font_sizes}", extra={"dev_only": True})
         except ImportError:
@@ -130,11 +138,12 @@ def main() -> int:
 
         # Create custom splash screen
         from utils.path_utils import get_images_dir
+
         splash_path = get_images_dir() / "splash.png"
         logger.debug(f"Loading splash screen from: {splash_path}", extra={"dev_only": True})
 
         # Set application-wide wait cursor
-        app.setOverrideCursor(Qt.WaitCursor) # type: ignore[attr-defined]
+        app.setOverrideCursor(Qt.WaitCursor)  # type: ignore[attr-defined]
 
         try:
             # Create custom splash screen
@@ -144,7 +153,10 @@ def main() -> int:
             splash.activateWindow()
             app.processEvents()
 
-            logger.debug(f"Splash screen displayed (size: {splash.splash_width}x{splash.splash_height})", extra={"dev_only": True})
+            logger.debug(
+                f"Splash screen displayed (size: {splash.splash_width}x{splash.splash_height})",
+                extra={"dev_only": True},
+            )
 
             # Initialize app
             window = MainWindow()
@@ -164,10 +176,9 @@ def main() -> int:
 
             # Use configurable delay for splash screen with timer manager
             from utils.timer_manager import TimerType, get_timer_manager
+
             get_timer_manager().schedule(
-                show_main,
-                delay=SPLASH_SCREEN_DURATION,
-                timer_type=TimerType.GENERIC
+                show_main, delay=SPLASH_SCREEN_DURATION, timer_type=TimerType.GENERIC
             )
 
         except Exception as e:
@@ -188,6 +199,7 @@ def main() -> int:
         # Force cleanup any remaining ExifTool processes
         try:
             from utils.exiftool_wrapper import ExifToolWrapper
+
             ExifToolWrapper.force_cleanup_all_exiftool_processes()
             logger.info("ExifTool processes cleaned up")
         except Exception as e:
@@ -202,7 +214,6 @@ def main() -> int:
         logger.critical("Fatal error in main: %s", str(e), exc_info=True)
         return 1
 
+
 if __name__ == "__main__":
     sys.exit(main())
-
-

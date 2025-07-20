@@ -5,12 +5,11 @@ This module handles the conversion of raw metadata from ExifTool to structured m
 that can be stored in the database with proper categorization and field definitions.
 """
 
-import json
-from typing import Dict, Any, List, Optional, Tuple
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
-from utils.logger_factory import get_cached_logger
 from core.database_manager import get_database_manager
+from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
@@ -37,13 +36,15 @@ class StructuredMetadataManager:
         try:
             # Load categories
             categories = self.db_manager.get_metadata_categories()
-            self._category_cache = {cat['category_name']: cat for cat in categories}
+            self._category_cache = {cat["category_name"]: cat for cat in categories}
 
             # Load fields
             fields = self.db_manager.get_metadata_fields()
-            self._field_cache = {field['field_key']: field for field in fields}
+            self._field_cache = {field["field_key"]: field for field in fields}
 
-            logger.debug(f"[StructuredMetadataManager] Loaded {len(self._category_cache)} categories and {len(self._field_cache)} fields")
+            logger.debug(
+                f"[StructuredMetadataManager] Loaded {len(self._category_cache)} categories and {len(self._field_cache)} fields"
+            )
 
         except Exception as e:
             logger.error(f"[StructuredMetadataManager] Error loading caches: {e}")
@@ -75,7 +76,9 @@ class StructuredMetadataManager:
                 if field_key not in self._field_cache:
                     # For unknown fields, we could either skip them or create dynamic fields
                     # For now, we'll skip them but log for debugging
-                    logger.debug(f"[StructuredMetadataManager] Unknown field '{field_key}' - skipping")
+                    logger.debug(
+                        f"[StructuredMetadataManager] Unknown field '{field_key}' - skipping"
+                    )
                     continue
 
                 # Convert value to string for storage
@@ -85,11 +88,15 @@ class StructuredMetadataManager:
                 if self.db_manager.store_structured_metadata(file_path, field_key, field_value_str):
                     stored_count += 1
 
-            logger.debug(f"[StructuredMetadataManager] Stored {stored_count} structured metadata fields for {Path(file_path).name}")
+            logger.debug(
+                f"[StructuredMetadataManager] Stored {stored_count} structured metadata fields for {Path(file_path).name}"
+            )
             return True
 
         except Exception as e:
-            logger.error(f"[StructuredMetadataManager] Error processing metadata for {file_path}: {e}")
+            logger.error(
+                f"[StructuredMetadataManager] Error processing metadata for {file_path}: {e}"
+            )
             return False
 
     def _format_field_value(self, field_key: str, field_value: Any) -> str:
@@ -108,36 +115,37 @@ class StructuredMetadataManager:
             if not field_info:
                 return str(field_value)
 
-            data_type = field_info.get('data_type', 'text')
-            display_format = field_info.get('display_format')
+            data_type = field_info.get("data_type", "text")
+            # display_format = field_info.get('display_format')
 
             # Handle different data types
-            if data_type == 'number':
+            if data_type == "number":
                 if isinstance(field_value, (int, float)):
                     return str(field_value)
                 else:
                     # Try to extract number from string
                     import re
-                    match = re.search(r'[\d.]+', str(field_value))
+
+                    match = re.search(r"[\d.]+", str(field_value))
                     if match:
                         return match.group()
                     return str(field_value)
 
-            elif data_type == 'size':
+            elif data_type == "size":
                 # Handle file size formatting
                 if isinstance(field_value, (int, float)):
                     return str(int(field_value))
                 return str(field_value)
 
-            elif data_type == 'datetime':
+            elif data_type == "datetime":
                 # Handle datetime formatting
                 return str(field_value)
 
-            elif data_type == 'duration':
+            elif data_type == "duration":
                 # Handle duration formatting
                 return str(field_value)
 
-            elif data_type == 'coordinate':
+            elif data_type == "coordinate":
                 # Handle GPS coordinate formatting
                 if isinstance(field_value, (int, float)):
                     return f"{field_value:.6f}"
@@ -168,26 +176,28 @@ class StructuredMetadataManager:
             categorized = {}
 
             for field_key, field_data in raw_structured.items():
-                category_name = field_data['category_name']
-                category_display_name = field_data['category_display_name']
+                category_name = field_data["category_name"]
+                category_display_name = field_data["category_display_name"]
 
                 if category_name not in categorized:
                     categorized[category_name] = {
-                        'display_name': category_display_name,
-                        'fields': {}
+                        "display_name": category_display_name,
+                        "fields": {},
                     }
 
-                categorized[category_name]['fields'][field_key] = {
-                    'value': field_data['value'],
-                    'field_name': field_data['field_name'],
-                    'data_type': field_data['data_type'],
-                    'display_format': field_data['display_format']
+                categorized[category_name]["fields"][field_key] = {
+                    "value": field_data["value"],
+                    "field_name": field_data["field_name"],
+                    "data_type": field_data["data_type"],
+                    "display_format": field_data["display_format"],
                 }
 
             return categorized
 
         except Exception as e:
-            logger.error(f"[StructuredMetadataManager] Error getting structured metadata for {file_path}: {e}")
+            logger.error(
+                f"[StructuredMetadataManager] Error getting structured metadata for {file_path}: {e}"
+            )
             return {}
 
     def get_field_value(self, file_path: str, field_key: str) -> Optional[str]:
@@ -204,10 +214,12 @@ class StructuredMetadataManager:
         try:
             structured_data = self.db_manager.get_structured_metadata(file_path)
             field_data = structured_data.get(field_key)
-            return field_data['value'] if field_data else None
+            return field_data["value"] if field_data else None
 
         except Exception as e:
-            logger.error(f"[StructuredMetadataManager] Error getting field '{field_key}' for {file_path}: {e}")
+            logger.error(
+                f"[StructuredMetadataManager] Error getting field '{field_key}' for {file_path}: {e}"
+            )
             return None
 
     def get_available_fields(self, category_name: str = None) -> List[Dict[str, Any]]:
@@ -227,7 +239,7 @@ class StructuredMetadataManager:
                 if not category_info:
                     return []
 
-                return self.db_manager.get_metadata_fields(category_info['id'])
+                return self.db_manager.get_metadata_fields(category_info["id"])
             else:
                 return self.db_manager.get_metadata_fields()
 
@@ -256,7 +268,7 @@ class StructuredMetadataManager:
         data_type: str = "text",
         is_editable: bool = True,
         is_searchable: bool = True,
-        display_format: str = None
+        display_format: str = None,
     ) -> bool:
         """
         Add a custom metadata field.
@@ -282,8 +294,13 @@ class StructuredMetadataManager:
 
             # Create the field
             field_id = self.db_manager.create_metadata_field(
-                field_key, field_name, category_info['id'], data_type,
-                is_editable, is_searchable, display_format
+                field_key,
+                field_name,
+                category_info["id"],
+                data_type,
+                is_editable,
+                is_searchable,
+                display_format,
             )
 
             if field_id:
@@ -295,7 +312,9 @@ class StructuredMetadataManager:
             return False
 
         except Exception as e:
-            logger.error(f"[StructuredMetadataManager] Error adding custom field '{field_key}': {e}")
+            logger.error(
+                f"[StructuredMetadataManager] Error adding custom field '{field_key}': {e}"
+            )
             return False
 
     def update_field_value(self, file_path: str, field_key: str, new_value: str) -> bool:
@@ -317,7 +336,7 @@ class StructuredMetadataManager:
                 logger.error(f"[StructuredMetadataManager] Field '{field_key}' not found")
                 return False
 
-            if not field_info.get('is_editable', False):
+            if not field_info.get("is_editable", False):
                 logger.error(f"[StructuredMetadataManager] Field '{field_key}' is not editable")
                 return False
 
@@ -325,10 +344,14 @@ class StructuredMetadataManager:
             formatted_value = self._format_field_value(field_key, new_value)
 
             # Store the updated value
-            success = self.db_manager.store_structured_metadata(file_path, field_key, formatted_value)
+            success = self.db_manager.store_structured_metadata(
+                file_path, field_key, formatted_value
+            )
 
             if success:
-                logger.info(f"[StructuredMetadataManager] Updated field '{field_key}' for {Path(file_path).name}")
+                logger.info(
+                    f"[StructuredMetadataManager] Updated field '{field_key}' for {Path(file_path).name}"
+                )
 
             return success
 
@@ -337,10 +360,7 @@ class StructuredMetadataManager:
             return False
 
     def search_files_by_metadata(
-        self,
-        field_key: str,
-        search_value: str,
-        search_type: str = "contains"
+        self, field_key: str, search_value: str, search_type: str = "contains"
     ) -> List[str]:
         """
         Search files by metadata field value.
@@ -356,13 +376,13 @@ class StructuredMetadataManager:
         try:
             # Check if field is searchable
             field_info = self._field_cache.get(field_key)
-            if not field_info or not field_info.get('is_searchable', True):
+            if not field_info or not field_info.get("is_searchable", True):
                 logger.warning(f"[StructuredMetadataManager] Field '{field_key}' is not searchable")
                 return []
 
             # This would require a more complex query - for now, return empty list
             # TODO: Implement database search functionality
-            logger.info(f"[StructuredMetadataManager] Search functionality not yet implemented")
+            logger.info("[StructuredMetadataManager] Search functionality not yet implemented")
             return []
 
         except Exception as e:

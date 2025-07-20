@@ -16,6 +16,7 @@ from utils.transform_utils import apply_transform
 
 logger = get_cached_logger(__name__)
 
+
 class OriginalNameModule:
     """
     Logic component (non-UI) for applying original name transformations.
@@ -23,7 +24,9 @@ class OriginalNameModule:
     """
 
     @staticmethod
-    def apply_from_data(data: dict, file_item: FileItem, index: int = 0, metadata_cache: dict = None) -> str:
+    def apply_from_data(
+        data: dict, file_item: FileItem, index: int = 0, metadata_cache: dict = None
+    ) -> str:
         """
         Applies original filename with optional Greeklish transformation.
         Case and separator transformations are handled by NameTransformModule.
@@ -43,10 +46,14 @@ class OriginalNameModule:
         # Only apply Greeklish transformation if requested
         if data.get("greeklish"):
             base_name = apply_transform(base_name, "greeklish")
-            logger.debug(f"[OriginalNameModule] After Greeklish: {base_name}", extra={"dev_only": True})
+            logger.debug(
+                f"[OriginalNameModule] After Greeklish: {base_name}", extra={"dev_only": True}
+            )
 
         if not base_name.strip():
-            logger.warning(f"[OriginalNameModule] Empty result fallback to original filename: {file_item.filename}")
+            logger.warning(
+                f"[OriginalNameModule] Empty result fallback to original filename: {file_item.filename}"
+            )
             base_name = os.path.splitext(file_item.filename)[0]
 
         return base_name

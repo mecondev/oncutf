@@ -36,13 +36,14 @@ def safe_text(text: str) -> str:
         str: A version of the text with replacements for problematic characters.
     """
     replacements = {
-        '\u2192': '->',  # -> Right arrow
-        '\u2014': '--',  # — em dash
-        '\u2013': '-',   # – en dash
-        '\u2026': '...', # … ellipsis
+        "\u2192": "->",  # -> Right arrow
+        "\u2014": "--",  # — em dash
+        "\u2013": "-",  # – en dash
+        "\u2026": "...",  # … ellipsis
     }
-    pattern = re.compile('|'.join(map(re.escape, replacements.keys())))
+    pattern = re.compile("|".join(map(re.escape, replacements.keys())))
     return pattern.sub(lambda m: replacements[m.group(0)], text)
+
 
 def safe_log(logger_func, message: str, *args, **kwargs):
     """
@@ -60,13 +61,15 @@ def safe_log(logger_func, message: str, *args, **kwargs):
     except UnicodeEncodeError:
         logger_func(safe_text(str(message)), *args, **kwargs)
 
+
 def patch_logger_safe_methods(logger: logging.Logger):
     """
     Replaces logger's logging methods with safe_log-wrapped versions.
     """
-    for method_name in ['debug', 'info', 'warning', 'error', 'critical']:
+    for method_name in ["debug", "info", "warning", "error", "critical"]:
         orig_func = getattr(logger, method_name)
         setattr(logger, method_name, partial(safe_log, orig_func))
+
 
 def get_logger(name: str = None) -> logging.Logger:
     """
@@ -92,7 +95,7 @@ def get_logger(name: str = None) -> logging.Logger:
         handler.setFormatter(formatter)
 
         try:
-            handler.stream.reconfigure(encoding='utf-8')
+            handler.stream.reconfigure(encoding="utf-8")
         except Exception:
             pass
 
@@ -103,6 +106,7 @@ def get_logger(name: str = None) -> logging.Logger:
         logger._patched_for_safe_log = True
 
     return logger
+
 
 class DevOnlyFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:

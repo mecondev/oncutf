@@ -10,12 +10,11 @@ Extracted from MainWindow to separate business logic from UI.
 """
 
 import os
+import time
 from typing import Any, Dict, List, Tuple
 
-from core.pyqt_imports import QElapsedTimer
 from models.file_item import FileItem
 from modules.name_transform_module import NameTransformModule
-from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
 from utils.preview_engine import apply_rename_modules
 
@@ -29,6 +28,12 @@ class PreviewManager:
         """Initialize PreviewManager with reference to parent window."""
         self.parent_window = parent_window
         self.preview_map: Dict[str, FileItem] = {}
+
+        # Performance optimization: Cache for preview results
+        self._preview_cache: Dict[str, Tuple[List[Tuple[str, str]], bool]] = {}
+        self._cache_timestamp = 0
+        self._cache_validity_duration = 0.1  # 100ms cache validity
+
         logger.debug("[PreviewManager] Initialized", extra={"dev_only": True})
 
     def generate_preview_names(
@@ -36,38 +41,92 @@ class PreviewManager:
         selected_files: List[FileItem],
         rename_data: Dict[str, Any],
         metadata_cache: Any,
-        all_modules: List[Any]
+        all_modules: List[Any],
     ) -> Tuple[List[Tuple[str, str]], bool]:
-        """Generate preview names for selected files."""
-        with wait_cursor():
-            timer = QElapsedTimer()
-            timer.start()
+        """Generate preview names for selected files with caching."""
+        if not selected_files:
+            return [], False
 
-            if not selected_files:
+        # Performance optimization: Check cache first
+        cache_key = self._generate_cache_key(selected_files, rename_data)
+        current_time = time.time()
+
+        if (
+            cache_key in self._preview_cache
+            and current_time - self._cache_timestamp < self._cache_validity_duration
+        ):
+            logger.debug("[PreviewManager] Using cached preview result", extra={"dev_only": True})
+            return self._preview_cache[cache_key]
+
+        # Generate new preview
+        start_time = time.time()
+        result = self._generate_preview_names_internal(
+            selected_files, rename_data, metadata_cache, all_modules
+        )
+
+        # Cache the result
+        self._preview_cache[cache_key] = result
+        self._cache_timestamp = current_time
+
+        elapsed = time.time() - start_time
+        if elapsed > 0.1:  # Log slow preview generation
+            logger.info(
+                f"[PreviewManager] Preview generation took {elapsed:.3f}s for {len(selected_files)} files"
+            )
+
+        return result
+
+    def _generate_cache_key(
+        self, selected_files: List[FileItem], rename_data: Dict[str, Any]
+    ) -> str:
+        """Generate cache key for preview results."""
+        # Create a hash based on file paths and rename data
+        file_paths = tuple(f.full_path for f in selected_files)
+        import json
+
+        try:
+            rename_hash = hash(json.dumps(rename_data, sort_keys=True, default=str))
+        except (TypeError, ValueError):
+            rename_hash = hash(str(rename_data))
+
+        return f"{hash(file_paths)}_{rename_hash}"
+
+    def _generate_preview_names_internal(
+        self,
+        selected_files: List[FileItem],
+        rename_data: Dict[str, Any],
+        metadata_cache: Any,
+        all_modules: List[Any],
+    ) -> Tuple[List[Tuple[str, str]], bool]:
+        """Internal preview generation method."""
+        modules_data = rename_data.get("modules", [])
+        post_transform = rename_data.get("post_transform", {})
+
+        # Check if all modules are no-op
+        is_noop = self._check_if_noop(all_modules, post_transform)
+        self.preview_map = {file.filename: file for file in selected_files}
+
+        if is_noop:
+            if not all_modules and not NameTransformModule.is_effective(post_transform):
+                # No modules at all - show empty preview
+                self.update_preview_tables_from_pairs([])
                 return [], False
+            else:
+                # Modules exist but are no-op - show original names
+                name_pairs = [(f.filename, f.filename) for f in selected_files]
+                self.update_preview_tables_from_pairs(name_pairs)
+                return name_pairs, False
 
-            modules_data = rename_data.get("modules", [])
-            post_transform = rename_data.get("post_transform", {})
+        name_pairs = self._generate_name_pairs(
+            selected_files, modules_data, post_transform, metadata_cache
+        )
+        self._update_preview_map_with_new_names(name_pairs)
 
-            # Check if all modules are no-op
-            is_noop = self._check_if_noop(all_modules, post_transform)
-            self.preview_map = {file.filename: file for file in selected_files}
+        # Always update preview tables
+        self.update_preview_tables_from_pairs(name_pairs)
 
-            if is_noop:
-                if not all_modules and not NameTransformModule.is_effective(post_transform):
-                    return [], False
-                else:
-                    name_pairs = [(f.filename, f.filename) for f in selected_files]
-                    return name_pairs, False
-
-            name_pairs = self._generate_name_pairs(selected_files, modules_data, post_transform, metadata_cache)
-            self._update_preview_map_with_new_names(name_pairs)
-
-            elapsed = timer.elapsed()
-            logger.debug(f"[Performance] generate_preview_names took {elapsed} ms", extra={"dev_only": True})
-
-            has_changes = any(old_name != new_name for old_name, new_name in name_pairs)
-            return name_pairs, has_changes
+        has_changes = any(old_name != new_name for old_name, new_name in name_pairs)
+        return name_pairs, has_changes
 
     def _check_if_noop(self, all_modules: List[Any], post_transform: Dict[str, Any]) -> bool:
         """Check if all modules are no-op."""
@@ -85,21 +144,25 @@ class PreviewManager:
         selected_files: List[FileItem],
         modules_data: List[Dict[str, Any]],
         post_transform: Dict[str, Any],
-        metadata_cache: Any
+        metadata_cache: Any,
     ) -> List[Tuple[str, str]]:
-        """Generate name pairs by applying modules."""
+        """Generate name pairs by applying modules with performance optimizations."""
         name_pairs = []
+
+        # Performance optimization: Pre-compute common values
+        has_name_transform = NameTransformModule.is_effective(post_transform)
+
         for idx, file in enumerate(selected_files):
             try:
                 basename, extension = os.path.splitext(file.filename)
                 new_fullname = apply_rename_modules(modules_data, idx, file, metadata_cache)
 
                 if extension and new_fullname.lower().endswith(extension.lower()):
-                    new_basename = new_fullname[:-(len(extension))]
+                    new_basename = new_fullname[: -(len(extension))]
                 else:
                     new_basename = new_fullname
 
-                if NameTransformModule.is_effective(post_transform):
+                if has_name_transform:
                     new_basename = NameTransformModule.apply_from_data(post_transform, new_basename)
 
                 if not self._is_valid_filename_text(new_basename):
@@ -127,6 +190,7 @@ class PreviewManager:
         """Validate filename text."""
         try:
             from utils.validate_filename_text import is_valid_filename_text
+
             return is_valid_filename_text(basename)
         except ImportError:
             return True
@@ -138,6 +202,28 @@ class PreviewManager:
     def clear_preview_map(self) -> None:
         """Clear the preview map."""
         self.preview_map.clear()
+
+    def clear_cache(self) -> None:
+        """Clear the preview cache."""
+        self._preview_cache.clear()
+        self._cache_timestamp = 0
+
+    def clear_all_caches(self) -> None:
+        """Clear all caches used by the preview system."""
+        # Clear preview cache
+        self.clear_cache()
+
+        # Clear module cache
+        from utils.preview_engine import clear_module_cache
+
+        clear_module_cache()
+
+        # Clear metadata cache
+        from modules.metadata_module import MetadataModule
+
+        MetadataModule.clear_cache()
+
+        logger.debug("[PreviewManager] All caches cleared", extra={"dev_only": True})
 
     def compute_max_filename_width(self, file_list: List[FileItem]) -> int:
         """
@@ -160,12 +246,14 @@ class PreviewManager:
         pixel_width = 8 * max_len
         clamped_width = min(max(pixel_width, 250), 1000)
 
-        logger.debug(f'Longest filename length: {max_len} chars -> width: {clamped_width} px (clamped)')
+        logger.debug(
+            f"Longest filename length: {max_len} chars -> width: {clamped_width} px (clamped)"
+        )
         return clamped_width
 
     def update_status_from_preview(self, status_html: str) -> None:
         """Update the status label from preview widget status updates."""
-        if self.parent_window and hasattr(self.parent_window, 'status_manager'):
+        if self.parent_window and hasattr(self.parent_window, "status_manager"):
             self.parent_window.status_manager.update_status_from_preview(status_html)
 
     def get_identity_name_pairs(self, file_list: List[FileItem]) -> List[Tuple[str, str]]:
@@ -184,11 +272,30 @@ class PreviewManager:
             return
 
         # Delegate to the preview tables view
-        if hasattr(self.parent_window, 'preview_tables_view'):
+        if hasattr(self.parent_window, "preview_tables_view"):
             self.parent_window.preview_tables_view.update_from_pairs(
                 name_pairs,
-                getattr(self.parent_window, 'preview_icons', {}),
-                getattr(self.parent_window, 'icon_paths', {})
+                getattr(self.parent_window, "preview_icons", {}),
+                getattr(self.parent_window, "icon_paths", {}),
             )
         else:
             logger.warning("[PreviewManager] Preview tables view not available")
+
+    def on_hash_calculation_completed(self) -> None:
+        """
+        Called when hash calculation is completed.
+        Triggers preview refresh to update hash-based metadata.
+        """
+        logger.debug(
+            "[PreviewManager] Hash calculation completed, refreshing preview",
+            extra={"dev_only": True},
+        )
+
+        # Clear caches to force fresh preview generation
+        self.clear_cache()
+
+        # Trigger preview refresh if parent window has the method
+        if self.parent_window and hasattr(self.parent_window, "refresh_preview"):
+            self.parent_window.refresh_preview()
+        elif self.parent_window and hasattr(self.parent_window, "update_preview"):
+            self.parent_window.update_preview()

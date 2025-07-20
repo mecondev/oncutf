@@ -10,9 +10,9 @@ Tests basic functionality without complex mocking or timing dependencies.
 
 import warnings
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 import tempfile
 from pathlib import Path
@@ -88,9 +88,7 @@ class TestBackupSimple:
             custom_interval = 1800  # 30 minutes
 
             backup_manager = BackupManager(
-                str(db_path),
-                backup_count=custom_count,
-                backup_interval=custom_interval
+                str(db_path), backup_count=custom_count, backup_interval=custom_interval
             )
 
             assert backup_manager.backup_count == custom_count

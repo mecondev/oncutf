@@ -22,17 +22,19 @@ logger = get_cached_logger(__name__)
 
 class TimerPriority(Enum):
     """Timer priority levels for better scheduling."""
-    IMMEDIATE = 0      # 0ms - immediate execution
-    HIGH = 5          # 5ms - high priority UI updates
-    NORMAL = 15       # 15ms - normal UI operations
-    LOW = 50          # 50ms - low priority operations
+
+    IMMEDIATE = 0  # 0ms - immediate execution
+    HIGH = 5  # 5ms - high priority UI updates
+    NORMAL = 15  # 15ms - normal UI operations
+    LOW = 50  # 50ms - low priority operations
     BACKGROUND = 100  # 100ms - background tasks
-    CLEANUP = 200     # 200ms - cleanup operations
-    DELAYED = 500     # 500ms - delayed operations
+    CLEANUP = 200  # 200ms - cleanup operations
+    DELAYED = 500  # 500ms - delayed operations
 
 
 class TimerType(Enum):
     """Common timer operation types."""
+
     UI_UPDATE = "ui_update"
     DRAG_CLEANUP = "drag_cleanup"
     SELECTION_UPDATE = "selection_update"
@@ -58,7 +60,7 @@ class TimerManager(QObject):
 
     # Signals for monitoring
     timer_started = pyqtSignal(str, int)  # timer_id, delay
-    timer_finished = pyqtSignal(str)      # timer_id
+    timer_finished = pyqtSignal(str)  # timer_id
 
     def __init__(self, parent: Optional[QObject] = None):
         super().__init__(parent)
@@ -78,7 +80,9 @@ class TimerManager(QObject):
         # Cleanup tracking
         self._cleanup_refs: Set[weakref.ref] = set()
 
-        logger.debug("[TimerManager] Initialized with centralized timer control", extra={"dev_only": True})
+        logger.debug(
+            "[TimerManager] Initialized with centralized timer control", extra={"dev_only": True}
+        )
 
     def schedule(
         self,
@@ -87,7 +91,7 @@ class TimerManager(QObject):
         priority: TimerPriority = TimerPriority.NORMAL,
         timer_type: TimerType = TimerType.GENERIC,
         timer_id: Optional[str] = None,
-        consolidate: bool = True
+        consolidate: bool = True,
     ) -> str:
         """
         Schedule a callback to run after a delay.
@@ -117,7 +121,10 @@ class TimerManager(QObject):
             if consolidate:
                 existing_id = self._find_consolidatable_timer(timer_type, delay)
                 if existing_id:
-                    logger.debug(f"[TimerManager] Consolidating timer {timer_id} with {existing_id}", extra={"dev_only": True})
+                    logger.debug(
+                        f"[TimerManager] Consolidating timer {timer_id} with {existing_id}",
+                        extra={"dev_only": True},
+                    )
                     # Cancel the new timer request and use existing
                     return existing_id
 
@@ -138,7 +145,10 @@ class TimerManager(QObject):
             # Start timer
             timer.start(delay)
 
-            logger.debug(f"[TimerManager] Scheduled {timer_type.value} timer '{timer_id}' with {delay}ms delay", extra={"dev_only": True})
+            logger.debug(
+                f"[TimerManager] Scheduled {timer_type.value} timer '{timer_id}' with {delay}ms delay",
+                extra={"dev_only": True},
+            )
             self.timer_started.emit(timer_id, delay)
 
             return timer_id
@@ -180,10 +190,7 @@ class TimerManager(QObject):
         """
         # Create a copy to avoid dictionary changed size during iteration
         timer_items = list(self._timer_types.items())
-        to_cancel = [
-            timer_id for timer_id, t_type in timer_items
-            if t_type == timer_type
-        ]
+        to_cancel = [timer_id for timer_id, t_type in timer_items if t_type == timer_type]
 
         cancelled_count = 0
         for timer_id in to_cancel:
@@ -191,7 +198,10 @@ class TimerManager(QObject):
                 cancelled_count += 1
 
         if cancelled_count > 0:
-            logger.debug(f"[TimerManager] Cancelled {cancelled_count} timers of type {timer_type.value}", extra={"dev_only": True})
+            logger.debug(
+                f"[TimerManager] Cancelled {cancelled_count} timers of type {timer_type.value}",
+                extra={"dev_only": True},
+            )
 
         return cancelled_count
 
@@ -213,7 +223,10 @@ class TimerManager(QObject):
                                 return timer_id
                     except RuntimeError:
                         # Timer has been deleted, remove it from our tracking
-                        logger.debug(f"[TimerManager] Removing deleted timer '{timer_id}'", extra={"dev_only": True})
+                        logger.debug(
+                            f"[TimerManager] Removing deleted timer '{timer_id}'",
+                            extra={"dev_only": True},
+                        )
                         self._cleanup_deleted_timer(timer_id)
         return None
 
@@ -246,7 +259,10 @@ class TimerManager(QObject):
             try:
                 callback()
                 self._completed_timers += 1
-                logger.debug(f"[TimerManager] Executed {timer_type.value if timer_type else 'unknown'} timer '{timer_id}'", extra={"dev_only": True})
+                logger.debug(
+                    f"[TimerManager] Executed {timer_type.value if timer_type else 'unknown'} timer '{timer_id}'",
+                    extra={"dev_only": True},
+                )
             except Exception as e:
                 logger.error(f"[TimerManager] Error executing timer '{timer_id}': {e}")
 
@@ -262,7 +278,7 @@ class TimerManager(QObject):
             "active_timers": len(self._active_timers),
             "total_scheduled": self._timer_count,
             "completed_timers": self._completed_timers,
-            "pending_timers": len(self._active_timers)
+            "pending_timers": len(self._active_timers),
         }
 
     def cleanup_all(self) -> int:
@@ -278,7 +294,10 @@ class TimerManager(QObject):
         self._timer_types.clear()
 
         if cancelled_count > 0:
-            logger.debug(f"[TimerManager] Cleaned up {cancelled_count} active timers", extra={"dev_only": True})
+            logger.debug(
+                f"[TimerManager] Cleaned up {cancelled_count} active timers",
+                extra={"dev_only": True},
+            )
 
         return cancelled_count
 
@@ -303,42 +322,54 @@ def schedule_ui_update(callback: Callable, delay: int = 15, timer_id: Optional[s
     )
 
 
-def schedule_drag_cleanup(callback: Callable, delay: int = 50, timer_id: Optional[str] = None) -> str:
+def schedule_drag_cleanup(
+    callback: Callable, delay: int = 50, timer_id: Optional[str] = None
+) -> str:
     """Schedule a drag cleanup operation."""
     return get_timer_manager().schedule(
         callback, delay, TimerPriority.LOW, TimerType.DRAG_CLEANUP, timer_id
     )
 
 
-def schedule_selection_update(callback: Callable, delay: int = 15, timer_id: Optional[str] = None) -> str:
+def schedule_selection_update(
+    callback: Callable, delay: int = 15, timer_id: Optional[str] = None
+) -> str:
     """Schedule a selection update operation."""
     return get_timer_manager().schedule(
         callback, delay, TimerPriority.NORMAL, TimerType.SELECTION_UPDATE, timer_id
     )
 
 
-def schedule_metadata_load(callback: Callable, delay: int = 100, timer_id: Optional[str] = None) -> str:
+def schedule_metadata_load(
+    callback: Callable, delay: int = 100, timer_id: Optional[str] = None
+) -> str:
     """Schedule a metadata loading operation."""
     return get_timer_manager().schedule(
         callback, delay, TimerPriority.BACKGROUND, TimerType.METADATA_LOAD, timer_id
     )
 
 
-def schedule_scroll_adjust(callback: Callable, delay: int = 10, timer_id: Optional[str] = None) -> str:
+def schedule_scroll_adjust(
+    callback: Callable, delay: int = 10, timer_id: Optional[str] = None
+) -> str:
     """Schedule a scroll adjustment operation."""
     return get_timer_manager().schedule(
         callback, delay, TimerPriority.HIGH, TimerType.SCROLL_ADJUST, timer_id
     )
 
 
-def schedule_resize_adjust(callback: Callable, delay: int = 10, timer_id: Optional[str] = None) -> str:
+def schedule_resize_adjust(
+    callback: Callable, delay: int = 10, timer_id: Optional[str] = None
+) -> str:
     """Schedule a resize adjustment operation."""
     return get_timer_manager().schedule(
         callback, delay, TimerPriority.HIGH, TimerType.RESIZE_ADJUST, timer_id
     )
 
 
-def schedule_dialog_close(callback: Callable, delay: int = 500, timer_id: Optional[str] = None) -> str:
+def schedule_dialog_close(
+    callback: Callable, delay: int = 500, timer_id: Optional[str] = None
+) -> str:
     """Schedule a dialog close operation with delay."""
     return get_timer_manager().schedule(
         callback, delay, TimerPriority.DELAYED, TimerType.GENERIC, timer_id

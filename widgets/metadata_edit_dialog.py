@@ -36,8 +36,14 @@ class MetadataEditDialog(QDialog):
     - Dynamic UI based on field type (single-line vs multi-line)
     """
 
-    def __init__(self, parent=None, selected_files=None, metadata_cache=None,
-                 field_name: str = "Title", field_value: str = ""):
+    def __init__(
+        self,
+        parent=None,
+        selected_files=None,
+        metadata_cache=None,
+        field_name: str = "Title",
+        field_value: str = "",
+    ):
         super().__init__(parent)
         self.selected_files = selected_files or []
         self.metadata_cache = metadata_cache
@@ -72,27 +78,28 @@ class MetadataEditDialog(QDialog):
         self._setup_styles()
         self._setup_ui()
 
-
-
     def _setup_styles(self):
         """Set up dialog styling using theme system."""
         # All styling now handled by the QSS theme system
-        pass
 
     def _apply_info_label_style(self, color: str, opacity: str = "1.0"):
         """Apply consistent font styling to info label with DPI awareness."""
         from utils.fonts import get_inter_css_weight, get_inter_family
-        font_family = get_inter_family('base')
-        font_weight = get_inter_css_weight('base')
+
+        font_family = get_inter_family("base")
+        font_weight = get_inter_css_weight("base")
 
         # Get DPI-aware font size
         try:
             from utils.theme_font_generator import get_ui_font_sizes
-            font_size = get_ui_font_sizes()['small']
+
+            font_size = get_ui_font_sizes()["small"]
         except ImportError:
             font_size = 8
 
-        self.info_label.setStyleSheet(f"color: {color}; font-family: '{font_family}', Arial, sans-serif; font-size: {font_size}pt; font-weight: {font_weight}; opacity: {opacity};")
+        self.info_label.setStyleSheet(
+            f"color: {color}; font-family: '{font_family}', Arial, sans-serif; font-size: {font_size}pt; font-weight: {font_weight}; opacity: {opacity};"
+        )
 
     def _setup_ui(self):
         """Set up the main UI layout."""
@@ -124,7 +131,8 @@ class MetadataEditDialog(QDialog):
         self.info_label = QLabel()
         self.info_label.setWordWrap(True)
         from utils.theme import get_theme_color
-        muted_color = get_theme_color('text')
+
+        muted_color = get_theme_color("text")
         self._apply_info_label_style(muted_color, opacity="0.7")
         layout.addWidget(self.info_label)
 
@@ -134,7 +142,7 @@ class MetadataEditDialog(QDialog):
         # Larger space before buttons
         layout.addSpacing(20)
 
-                # Buttons
+        # Buttons
         self._setup_buttons(layout)
 
         # Setup tab order after all widgets are created
@@ -192,8 +200,8 @@ class MetadataEditDialog(QDialog):
 
         # Create checkboxes for each file type
         for file_type, file_data in self.file_groups.items():
-            files_list = file_data['files']
-            extensions = sorted(file_data['extensions'])
+            files_list = file_data["files"]
+            extensions = sorted(file_data["extensions"])
 
             # Create checkbox
             checkbox = QCheckBox()
@@ -224,31 +232,50 @@ class MetadataEditDialog(QDialog):
             file_type = self._get_file_type_category(file_item)
 
             if file_type not in self.file_groups:
-                self.file_groups[file_type] = {
-                    'files': [],
-                    'extensions': set()
-                }
+                self.file_groups[file_type] = {"files": [], "extensions": set()}
 
-            self.file_groups[file_type]['files'].append(file_item)
+            self.file_groups[file_type]["files"].append(file_item)
 
             # Get extension for display
-            ext = file_item.filename.split('.')[-1].upper() if '.' in file_item.filename else 'UNKNOWN'
-            self.file_groups[file_type]['extensions'].add(ext)
+            ext = (
+                file_item.filename.split(".")[-1].upper()
+                if "." in file_item.filename
+                else "UNKNOWN"
+            )
+            self.file_groups[file_type]["extensions"].add(ext)
 
     def _get_file_type_category(self, file_item) -> str:
         """Get file type category for grouping."""
-        if not hasattr(file_item, 'filename'):
+        if not hasattr(file_item, "filename"):
             return "Other"
 
-        ext = file_item.filename.lower().split('.')[-1] if '.' in file_item.filename else ''
+        ext = file_item.filename.lower().split(".")[-1] if "." in file_item.filename else ""
 
-        if ext in ['jpg', 'jpeg', 'png', 'tiff', 'tif', 'bmp', 'gif', 'webp', 'heic', 'arw', 'nef', 'cr2', 'cr3', 'dng', 'raf', 'orf', 'rw2']:
+        if ext in [
+            "jpg",
+            "jpeg",
+            "png",
+            "tiff",
+            "tif",
+            "bmp",
+            "gif",
+            "webp",
+            "heic",
+            "arw",
+            "nef",
+            "cr2",
+            "cr3",
+            "dng",
+            "raf",
+            "orf",
+            "rw2",
+        ]:
             return "Images"
-        elif ext in ['mp4', 'avi', 'mov', 'mkv', 'wmv', 'flv', 'm4v', 'webm']:
+        elif ext in ["mp4", "avi", "mov", "mkv", "wmv", "flv", "m4v", "webm"]:
             return "Videos"
-        elif ext in ['mp3', 'wav', 'flac', 'aac', 'm4a', 'ogg', 'opus']:
+        elif ext in ["mp3", "wav", "flac", "aac", "m4a", "ogg", "opus"]:
             return "Audio"
-        elif ext in ['pdf', 'doc', 'docx', 'txt']:
+        elif ext in ["pdf", "doc", "docx", "txt"]:
             return "Documents"
         else:
             return "Other"
@@ -264,16 +291,14 @@ class MetadataEditDialog(QDialog):
 
         # Create validated input widget
         self.input_field = create_metadata_input_widget(
-            field_name=self.field_name,
-            is_multiline=self.is_multiline,
-            parent=self
+            field_name=self.field_name, is_multiline=self.is_multiline, parent=self
         )
 
         # Set the initial value
         self.input_field.setText(field_value)
 
         # Select all text for single file editing
-        if not self.is_multi_file and hasattr(self.input_field, 'selectAll'):
+        if not self.is_multi_file and hasattr(self.input_field, "selectAll"):
             self.input_field.selectAll()
 
         # Add field-specific placeholder text
@@ -282,24 +307,22 @@ class MetadataEditDialog(QDialog):
             self.input_field.setPlaceholderText(placeholder)
 
         # Connect validation state changes to update info display
-        if hasattr(self.input_field, 'validation_changed'):
+        if hasattr(self.input_field, "validation_changed"):
             self.input_field.validation_changed.connect(self._on_validation_state_changed)
 
         # Install event filter for keyboard shortcuts
         self.input_field.installEventFilter(self)
 
-
-
     def eventFilter(self, obj, event):
         """Handle keyboard events for input field."""
         if obj == self.input_field and event.type() == event.KeyPress:
             # Handle Enter/Return key
-            if event.key() in (Qt.Key_Return, Qt.Key_Enter): # type: ignore
+            if event.key() in (Qt.Key_Return, Qt.Key_Enter):  # type: ignore
                 modifiers = event.modifiers()
 
                 # For multiline fields (QTextEdit)
                 if self.is_multiline:
-                    if modifiers & Qt.ShiftModifier: # type: ignore
+                    if modifiers & Qt.ShiftModifier:  # type: ignore
                         # Shift+Enter: Insert new line (default behavior)
                         return False  # Let QTextEdit handle it
                     else:
@@ -312,7 +335,7 @@ class MetadataEditDialog(QDialog):
                     return True  # Event handled
 
             # Handle Escape key
-            elif event.key() == Qt.Key_Escape: # type: ignore
+            elif event.key() == Qt.Key_Escape:  # type: ignore
                 self.reject()
                 return True  # Event handled
 
@@ -328,7 +351,7 @@ class MetadataEditDialog(QDialog):
             "Copyright": "Enter copyright information...",
             "Description": "Enter description...",
             "Keywords": "Enter keywords (comma-separated)...",
-            "Rotation": "Select rotation angle..."
+            "Rotation": "Select rotation angle...",
         }
         return placeholders.get(self.field_name, "")
 
@@ -336,7 +359,7 @@ class MetadataEditDialog(QDialog):
         """Handle validation state changes from the input widget."""
         if not is_valid:
             # Get error message from the input widget
-            if hasattr(self.input_field, 'get_validation_error_message'):
+            if hasattr(self.input_field, "get_validation_error_message"):
                 error_message = self.input_field.get_validation_error_message()
                 if error_message:
                     self.info_label.setText(f"Error: {error_message}")
@@ -355,7 +378,9 @@ class MetadataEditDialog(QDialog):
         elif self.field_name == "Rotation":
             self.info_label.setText("Select from standard rotation angles: 0°, 90°, 180°, 270°.")
         else:
-            max_length = getattr(MetadataFieldValidator, f'MAX_{self.field_name.upper()}_LENGTH', None)
+            max_length = getattr(
+                MetadataFieldValidator, f"MAX_{self.field_name.upper()}_LENGTH", None
+            )
             if max_length:
                 self.info_label.setText(f"Maximum {max_length} characters.")
 
@@ -365,9 +390,9 @@ class MetadataEditDialog(QDialog):
         value = self.input_field.text()
 
         # Check if the input widget is valid
-        if hasattr(self.input_field, 'is_valid') and not self.input_field.is_valid():
+        if hasattr(self.input_field, "is_valid") and not self.input_field.is_valid():
             # Get error message from the input widget
-            if hasattr(self.input_field, 'get_validation_error_message'):
+            if hasattr(self.input_field, "get_validation_error_message"):
                 error_message = self.input_field.get_validation_error_message()
                 if error_message:
                     self.info_label.setText(f"Error: {error_message}")
@@ -389,7 +414,7 @@ class MetadataEditDialog(QDialog):
 
     def get_validated_value(self) -> str:
         """Get the validated input value."""
-        return getattr(self, 'validated_value', '')
+        return getattr(self, "validated_value", "")
 
     def _get_common_field_value(self):
         """Get common field value if all selected files have the same value."""
@@ -411,7 +436,7 @@ class MetadataEditDialog(QDialog):
 
         # Check metadata cache first
         cache_entry = self.metadata_cache.get_entry(file_item.full_path)
-        if cache_entry and hasattr(cache_entry, 'data'):
+        if cache_entry and hasattr(cache_entry, "data"):
             # Try different field standards
             standards = self._get_field_standards()
             for standard in standards:
@@ -420,7 +445,7 @@ class MetadataEditDialog(QDialog):
                     return str(value)
 
         # Fallback to file metadata
-        if hasattr(file_item, 'metadata') and file_item.metadata:
+        if hasattr(file_item, "metadata") and file_item.metadata:
             standards = self._get_field_standards()
             for standard in standards:
                 value = file_item.metadata.get(standard)
@@ -438,7 +463,7 @@ class MetadataEditDialog(QDialog):
             "Copyright": ["XMP:Rights", "IPTC:CopyrightNotice", "EXIF:Copyright"],
             "Description": ["XMP:Description", "IPTC:Caption-Abstract", "EXIF:ImageDescription"],
             "Keywords": ["XMP:Keywords", "IPTC:Keywords"],
-            "Rotation": ["Rotation", "EXIF:Orientation", "XMP:Orientation"]
+            "Rotation": ["Rotation", "EXIF:Orientation", "XMP:Orientation"],
         }
         return field_standards.get(self.field_name, [])
 
@@ -451,13 +476,13 @@ class MetadataEditDialog(QDialog):
         selected = []
         for file_type, checkbox in self.checkboxes.items():
             if checkbox.isChecked():
-                selected.extend(self.file_groups[file_type]['files'])
+                selected.extend(self.file_groups[file_type]["files"])
         return selected
 
-
-
     @staticmethod
-    def edit_metadata_field(parent, selected_files, metadata_cache, field_name: str, current_value: str = ""):
+    def edit_metadata_field(
+        parent, selected_files, metadata_cache, field_name: str, current_value: str = ""
+    ):
         """
         Static method to show metadata edit dialog and return results.
 
@@ -471,7 +496,9 @@ class MetadataEditDialog(QDialog):
         Returns:
             Tuple of (success: bool, value: str, files_to_modify: List)
         """
-        dialog = MetadataEditDialog(parent, selected_files, metadata_cache, field_name, current_value)
+        dialog = MetadataEditDialog(
+            parent, selected_files, metadata_cache, field_name, current_value
+        )
 
         if dialog.exec_() == QDialog.Accepted:
             return True, dialog.get_validated_value(), dialog.get_selected_files()

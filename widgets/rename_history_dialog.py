@@ -68,6 +68,7 @@ class RenameHistoryDialog(QDialog):
         super().showEvent(event)
         # Ensure dialog appears centered on the same screen as its parent
         from utils.multiscreen_helper import position_dialog_relative_to_parent
+
         position_dialog_relative_to_parent(self)
 
     def _setup_ui(self):
@@ -171,24 +172,24 @@ class RenameHistoryDialog(QDialog):
 
             for row, operation in enumerate(operations):
                 # Date/Time
-                timestamp = operation.get('timestamp', '')
-                if 'T' in timestamp:
-                    display_time = timestamp[:19].replace('T', ' ')
+                timestamp = operation.get("timestamp", "")
+                if "T" in timestamp:
+                    display_time = timestamp[:19].replace("T", " ")
                 else:
                     display_time = timestamp
 
                 time_item = QTableWidgetItem(display_time)
-                time_item.setData(Qt.UserRole, operation['operation_id'])
+                time_item.setData(Qt.UserRole, operation["operation_id"])
                 self.operations_table.setItem(row, 0, time_item)
 
                 # File count
-                file_count = operation.get('file_count', 0)
+                file_count = operation.get("file_count", 0)
                 count_item = QTableWidgetItem(f"{file_count} files")
                 count_item.setTextAlignment(Qt.AlignCenter)
                 self.operations_table.setItem(row, 1, count_item)
 
                 # Status (check if can undo)
-                operation_id = operation['operation_id']
+                operation_id = operation["operation_id"]
                 can_undo, reason = self.history_manager.can_undo_operation(operation_id)
 
                 if can_undo:
@@ -271,7 +272,7 @@ class RenameHistoryDialog(QDialog):
                 details.append("")
                 details.append("Modules used:")
                 for i, module_data in enumerate(batch.modules_data, 1):
-                    module_type = module_data.get('type', 'Unknown')
+                    module_type = module_data.get("type", "Unknown")
                     details.append(f"  {i}. {module_type}")
 
             self.details_text.setPlainText("\n".join(details))
@@ -298,19 +299,22 @@ class RenameHistoryDialog(QDialog):
             message += f"Operation from: {batch.timestamp[:19].replace('T', ' ')}"
 
             if not CustomMessageDialog.question(
-                self, "Confirm Undo", message,
-                yes_text="Undo", no_text="Cancel"
+                self, "Confirm Undo", message, yes_text="Undo", no_text="Cancel"
             ):
                 return
 
             # Perform undo
-            success, message, files_processed = self.history_manager.undo_operation(self.current_operation_id)
+            success, message, files_processed = self.history_manager.undo_operation(
+                self.current_operation_id
+            )
 
             if success:
                 CustomMessageDialog.information(self, "Undo Complete", message)
 
                 # Refresh the parent window if available
-                if hasattr(self.parent_window, 'load_files_from_folder') and hasattr(self.parent_window, 'current_folder_path'):
+                if hasattr(self.parent_window, "load_files_from_folder") and hasattr(
+                    self.parent_window, "current_folder_path"
+                ):
                     if self.parent_window.current_folder_path:
                         self.parent_window.load_files_from_folder(
                             self.parent_window.current_folder_path
@@ -329,9 +333,11 @@ class RenameHistoryDialog(QDialog):
         """Clean up old history records."""
         try:
             if not CustomMessageDialog.question(
-                self, "Cleanup History",
+                self,
+                "Cleanup History",
                 "This will remove old rename history records.\nContinue?",
-                yes_text="Cleanup", no_text="Cancel"
+                yes_text="Cleanup",
+                no_text="Cancel",
             ):
                 return
 
@@ -339,14 +345,12 @@ class RenameHistoryDialog(QDialog):
 
             if cleaned_count > 0:
                 CustomMessageDialog.information(
-                    self, "Cleanup Complete",
-                    f"Cleaned up {cleaned_count} old history records."
+                    self, "Cleanup Complete", f"Cleaned up {cleaned_count} old history records."
                 )
                 self._load_history()
             else:
                 CustomMessageDialog.information(
-                    self, "Cleanup Complete",
-                    "No old records found to clean up."
+                    self, "Cleanup Complete", "No old records found to clean up."
                 )
 
         except Exception as e:
@@ -366,6 +370,7 @@ def show_rename_history_dialog(parent: Optional[QWidget] = None) -> None:
     # Ensure proper positioning on multiscreen setups before showing
     if parent:
         from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+
         ensure_dialog_on_parent_screen(dialog, parent)
 
     dialog.exec_()

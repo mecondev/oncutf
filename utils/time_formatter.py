@@ -70,7 +70,7 @@ class TimeTracker:
             return None
 
         # Use recent measurements for more accurate estimation
-        recent_history = self.progress_history[-min(5, len(self.progress_history)):]
+        recent_history = self.progress_history[-min(5, len(self.progress_history)) :]
 
         if len(recent_history) < 2:
             return None
@@ -242,13 +242,13 @@ class ProgressEstimator:
         processed_str, total_str = self.get_size_info()
 
         return {
-            'elapsed_time': elapsed,
-            'estimated_total_time': estimated_total,
-            'estimated_remaining_time': self.time_tracker.get_estimated_remaining_time(),
-            'processed_size': self.processed_size,
-            'total_size': self.total_size,
-            'processed_size_str': processed_str,
-            'total_size_str': total_str,
-            'size_range': self.get_size_range(),
-            'time_range': self.get_time_range()
+            "elapsed_time": elapsed,
+            "estimated_total_time": estimated_total,
+            "estimated_remaining_time": self.time_tracker.get_estimated_remaining_time(),
+            "processed_size": self.processed_size,
+            "total_size": self.total_size,
+            "processed_size_str": processed_str,
+            "total_size_str": total_str,
+            "size_range": self.get_size_range(),
+            "time_range": self.get_time_range(),
         }

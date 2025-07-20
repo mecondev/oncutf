@@ -59,10 +59,13 @@ def load_metadata_icons(base_dir: Optional[str] = None) -> dict[str, QPixmap]:
 
     # Add basic info icon (not included in generate_metadata_icons by default)
     from utils.svg_icon_generator import SVGIconGenerator
-    generator = SVGIconGenerator(size=16)
-    icon_map['basic'] = generator.generate_icon('basic')
 
-    logger.debug(f"[IconLoader] Generated {len(icon_map)} SVG metadata icons", extra={"dev_only": True})
+    generator = SVGIconGenerator(size=16)
+    icon_map["basic"] = generator.generate_icon("basic")
+
+    logger.debug(
+        f"[IconLoader] Generated {len(icon_map)} SVG metadata icons", extra={"dev_only": True}
+    )
 
     # Cache the result
     _metadata_icons_cache = icon_map
@@ -88,15 +91,13 @@ class ThemeIconLoader:
             theme: The current theme ("dark" or "light")
         """
         self.theme = theme
-        self.icon_cache: Dict[str, Dict[str, QIcon]] = {
-            "dark": {},
-            "light": {}
-        }
+        self.icon_cache: Dict[str, Dict[str, QIcon]] = {"dark": {}, "light": {}}
         self.base_dir = self._get_base_dir()
 
     def _get_base_dir(self) -> str:
         """Returns the base directory for icon resources."""
         from utils.path_utils import get_icons_dir
+
         return str(get_icons_dir())
 
     def get_icon_path(self, name: str, theme: Optional[str] = None) -> str:
@@ -187,6 +188,7 @@ class ThemeIconLoader:
             QIcon object for the application icon
         """
         from utils.path_utils import get_assets_dir
+
         favicon_path = get_assets_dir() / "favicon.ico"
 
         if os.path.exists(str(favicon_path)):

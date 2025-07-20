@@ -21,7 +21,7 @@ import sqlite3
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
 from utils.logger_factory import get_cached_logger
 
@@ -65,14 +65,15 @@ class DatabaseManager:
 
         # Debug: Reset database if requested
         from config import DEBUG_RESET_DATABASE
+
         if DEBUG_RESET_DATABASE:
             if self.db_path.exists():
                 logger.info(f"[DEBUG] Deleting database for fresh start: {self.db_path}")
                 try:
                     self.db_path.unlink()
                     # Also remove WAL and SHM files if they exist
-                    wal_path = self.db_path.with_suffix('.db-wal')
-                    shm_path = self.db_path.with_suffix('.db-shm')
+                    wal_path = self.db_path.with_suffix(".db-wal")
+                    shm_path = self.db_path.with_suffix(".db-shm")
                     if wal_path.exists():
                         wal_path.unlink()
                     if shm_path.exists():
@@ -115,13 +116,15 @@ class DatabaseManager:
             cursor = conn.cursor()
 
             # Check current schema version
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS schema_info (
                     version INTEGER PRIMARY KEY,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """)
+            """
+            )
 
             cursor.execute("SELECT version FROM schema_info ORDER BY version DESC LIMIT 1")
             row = cursor.fetchone()
@@ -157,7 +160,8 @@ class DatabaseManager:
         """Create the new v2 schema with separated tables."""
 
         # 1. Central file paths table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS file_paths (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 file_path TEXT NOT NULL UNIQUE,
@@ -167,10 +171,12 @@ class DatabaseManager:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        """)
+        """
+        )
 
         # 2. Dedicated metadata table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS file_metadata (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 path_id INTEGER NOT NULL,
@@ -181,10 +187,12 @@ class DatabaseManager:
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (path_id) REFERENCES file_paths (id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
         # 3. Dedicated hash table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS file_hashes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 path_id INTEGER NOT NULL,
@@ -194,10 +202,12 @@ class DatabaseManager:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (path_id) REFERENCES file_paths (id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
         # 4. Dedicated rename history table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS file_rename_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 operation_id TEXT NOT NULL,
@@ -212,10 +222,12 @@ class DatabaseManager:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (path_id) REFERENCES file_paths (id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
         # 5. Metadata categories table for organizing metadata groups
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS metadata_categories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 category_name TEXT NOT NULL UNIQUE,
@@ -224,10 +236,12 @@ class DatabaseManager:
                 sort_order INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        """)
+        """
+        )
 
         # 6. Metadata fields table for individual metadata fields
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS metadata_fields (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 field_key TEXT NOT NULL UNIQUE,
@@ -241,10 +255,12 @@ class DatabaseManager:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (category_id) REFERENCES metadata_categories (id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
         # 7. Structured metadata storage table
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS file_metadata_structured (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 path_id INTEGER NOT NULL,
@@ -256,7 +272,8 @@ class DatabaseManager:
                 FOREIGN KEY (field_id) REFERENCES metadata_fields (id) ON DELETE CASCADE,
                 UNIQUE(path_id, field_id)
             )
-        """)
+        """
+        )
 
         logger.debug("[DatabaseManager] Schema v2 created")
 
@@ -271,7 +288,8 @@ class DatabaseManager:
             logger.info("[DatabaseManager] Adding structured metadata tables...")
 
             # Add metadata categories table
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS metadata_categories (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     category_name TEXT NOT NULL UNIQUE,
@@ -280,10 +298,12 @@ class DatabaseManager:
                     sort_order INTEGER DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            """)
+            """
+            )
 
             # Add metadata fields table
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS metadata_fields (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     field_key TEXT NOT NULL UNIQUE,
@@ -297,10 +317,12 @@ class DatabaseManager:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (category_id) REFERENCES metadata_categories (id) ON DELETE CASCADE
                 )
-            """)
+            """
+            )
 
             # Add structured metadata storage table
-            cursor.execute("""
+            cursor.execute(
+                """
                 CREATE TABLE IF NOT EXISTS file_metadata_structured (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     path_id INTEGER NOT NULL,
@@ -312,7 +334,8 @@ class DatabaseManager:
                     FOREIGN KEY (field_id) REFERENCES metadata_fields (id) ON DELETE CASCADE,
                     UNIQUE(path_id, field_id)
                 )
-            """)
+            """
+            )
 
             logger.info("[DatabaseManager] Structured metadata tables added successfully")
 
@@ -624,39 +647,64 @@ class DatabaseManager:
             return None
 
     def has_hash(self, file_path: str, algorithm: str = "CRC32") -> bool:
-        """Check if file has hash stored."""
-        try:
-            path_id = self.get_path_id(file_path)
-            if not path_id:
-                return False
+        """Check if hash exists for a file."""
+        norm_path = self._normalize_path(file_path)
 
-            with self._get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute(
-                    """
-                    SELECT 1 FROM file_hashes
-                    WHERE path_id = ? AND algorithm = ?
-                    LIMIT 1
-                """,
-                    (path_id, algorithm),
-                )
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
 
-                return cursor.fetchone() is not None
+            cursor.execute(
+                """
+                SELECT 1 FROM file_hashes h
+                JOIN file_paths p ON h.path_id = p.id
+                WHERE p.file_path = ? AND h.algorithm = ?
+                LIMIT 1
+            """,
+                (norm_path, algorithm),
+            )
 
-        except Exception as e:
-            logger.error(f"[DatabaseManager] Error checking hash for {file_path}: {e}")
-            return False
+            return cursor.fetchone() is not None
+
+    def get_files_with_hash_batch(
+        self, file_paths: List[str], algorithm: str = "CRC32"
+    ) -> List[str]:
+        """Get all files from the list that have a hash stored using batch database query."""
+        if not file_paths:
+            return []
+
+        # Normalize all paths
+        norm_paths = [self._normalize_path(path) for path in file_paths]
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Create placeholders for the IN clause
+            placeholders = ",".join(["?" for _ in norm_paths])
+
+            cursor.execute(
+                f"""
+                SELECT p.file_path FROM file_paths p
+                JOIN file_hashes h ON h.path_id = p.id
+                WHERE p.file_path IN ({placeholders}) AND h.algorithm = ?
+            """,
+                norm_paths + [algorithm],
+            )
+
+            # Get all file paths that have hashes
+            files_with_hash = [row["file_path"] for row in cursor.fetchall()]
+
+            logger.debug(
+                f"[DatabaseManager] Batch hash check: {len(files_with_hash)}/{len(file_paths)} files have {algorithm} hashes"
+            )
+
+            return files_with_hash
 
     # =====================================
     # Metadata Categories & Fields Management
     # =====================================
 
     def create_metadata_category(
-        self,
-        category_name: str,
-        display_name: str,
-        description: str = None,
-        sort_order: int = 0
+        self, category_name: str, display_name: str, description: str = None, sort_order: int = 0
     ) -> Optional[int]:
         """Create a new metadata category."""
         try:
@@ -668,12 +716,14 @@ class DatabaseManager:
                     (category_name, display_name, description, sort_order)
                     VALUES (?, ?, ?, ?)
                     """,
-                    (category_name, display_name, description, sort_order)
+                    (category_name, display_name, description, sort_order),
                 )
                 conn.commit()
                 return cursor.lastrowid
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error creating metadata category '{category_name}': {e}")
+            logger.error(
+                f"[DatabaseManager] Error creating metadata category '{category_name}': {e}"
+            )
             return None
 
     def get_metadata_categories(self) -> List[Dict[str, Any]]:
@@ -702,7 +752,7 @@ class DatabaseManager:
         is_editable: bool = False,
         is_searchable: bool = True,
         display_format: str = None,
-        sort_order: int = 0
+        sort_order: int = 0,
     ) -> Optional[int]:
         """Create a new metadata field."""
         try:
@@ -715,8 +765,16 @@ class DatabaseManager:
                      is_searchable, display_format, sort_order)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     """,
-                    (field_key, field_name, category_id, data_type, is_editable,
-                     is_searchable, display_format, sort_order)
+                    (
+                        field_key,
+                        field_name,
+                        category_id,
+                        data_type,
+                        is_editable,
+                        is_searchable,
+                        display_format,
+                        sort_order,
+                    ),
                 )
                 conn.commit()
                 return cursor.lastrowid
@@ -741,7 +799,7 @@ class DatabaseManager:
                         WHERE f.category_id = ?
                         ORDER BY f.sort_order, f.field_name
                         """,
-                        (category_id,)
+                        (category_id,),
                     )
                 else:
                     cursor.execute(
@@ -774,7 +832,7 @@ class DatabaseManager:
                     JOIN metadata_categories c ON f.category_id = c.id
                     WHERE f.field_key = ?
                     """,
-                    (field_key,)
+                    (field_key,),
                 )
                 row = cursor.fetchone()
                 return dict(row) if row else None
@@ -782,12 +840,7 @@ class DatabaseManager:
             logger.error(f"[DatabaseManager] Error getting metadata field '{field_key}': {e}")
             return None
 
-    def store_structured_metadata(
-        self,
-        file_path: str,
-        field_key: str,
-        field_value: str
-    ) -> bool:
+    def store_structured_metadata(self, file_path: str, field_key: str, field_value: str) -> bool:
         """Store structured metadata for a file."""
         try:
             path_id = self.get_or_create_path_id(file_path)
@@ -795,7 +848,9 @@ class DatabaseManager:
             # Get field info
             field_info = self.get_metadata_field_by_key(field_key)
             if not field_info:
-                logger.warning(f"[DatabaseManager] Field '{field_key}' not found in metadata_fields")
+                logger.warning(
+                    f"[DatabaseManager] Field '{field_key}' not found in metadata_fields"
+                )
                 return False
 
             with self._get_connection() as conn:
@@ -808,13 +863,15 @@ class DatabaseManager:
                     (path_id, field_id, field_value, updated_at)
                     VALUES (?, ?, ?, CURRENT_TIMESTAMP)
                     """,
-                    (path_id, field_info['id'], field_value)
+                    (path_id, field_info["id"], field_value),
                 )
                 conn.commit()
                 return True
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error storing structured metadata for {file_path}: {e}")
+            logger.error(
+                f"[DatabaseManager] Error storing structured metadata for {file_path}: {e}"
+            )
             return False
 
     def get_structured_metadata(self, file_path: str) -> Dict[str, Any]:
@@ -837,24 +894,26 @@ class DatabaseManager:
                     WHERE s.path_id = ?
                     ORDER BY c.sort_order, f.sort_order
                     """,
-                    (path_id,)
+                    (path_id,),
                 )
 
                 result = {}
                 for row in cursor.fetchall():
-                    result[row['field_key']] = {
-                        'value': row['field_value'],
-                        'field_name': row['field_name'],
-                        'data_type': row['data_type'],
-                        'display_format': row['display_format'],
-                        'category_name': row['category_name'],
-                        'category_display_name': row['category_display_name']
+                    result[row["field_key"]] = {
+                        "value": row["field_value"],
+                        "field_name": row["field_name"],
+                        "data_type": row["data_type"],
+                        "display_format": row["display_format"],
+                        "category_name": row["category_name"],
+                        "category_display_name": row["category_display_name"],
                     }
 
                 return result
 
         except Exception as e:
-            logger.error(f"[DatabaseManager] Error getting structured metadata for {file_path}: {e}")
+            logger.error(
+                f"[DatabaseManager] Error getting structured metadata for {file_path}: {e}"
+            )
             return {}
 
     def initialize_default_metadata_schema(self) -> bool:
@@ -871,50 +930,43 @@ class DatabaseManager:
 
             # Basic File Information
             cat_id = self.create_metadata_category(
-                "file_basic", "File Information",
-                "Basic file properties and information", 0
+                "file_basic", "File Information", "Basic file properties and information", 0
             )
             category_mapping["file_basic"] = cat_id
 
             # Image Information
             cat_id = self.create_metadata_category(
-                "image", "Image Properties",
-                "Image-specific metadata and properties", 1
+                "image", "Image Properties", "Image-specific metadata and properties", 1
             )
             category_mapping["image"] = cat_id
 
             # Camera/Device Information
             cat_id = self.create_metadata_category(
-                "camera", "Camera & Device",
-                "Camera settings and device information", 2
+                "camera", "Camera & Device", "Camera settings and device information", 2
             )
             category_mapping["camera"] = cat_id
 
             # Video Information
             cat_id = self.create_metadata_category(
-                "video", "Video Properties",
-                "Video-specific metadata and properties", 3
+                "video", "Video Properties", "Video-specific metadata and properties", 3
             )
             category_mapping["video"] = cat_id
 
             # Audio Information
             cat_id = self.create_metadata_category(
-                "audio", "Audio Properties",
-                "Audio-specific metadata and properties", 4
+                "audio", "Audio Properties", "Audio-specific metadata and properties", 4
             )
             category_mapping["audio"] = cat_id
 
             # GPS/Location Information
             cat_id = self.create_metadata_category(
-                "location", "Location & GPS",
-                "GPS coordinates and location information", 5
+                "location", "Location & GPS", "GPS coordinates and location information", 5
             )
             category_mapping["location"] = cat_id
 
             # Technical Information
             cat_id = self.create_metadata_category(
-                "technical", "Technical Details",
-                "Technical metadata and processing information", 6
+                "technical", "Technical Details", "Technical metadata and processing information", 6
             )
             category_mapping["technical"] = cat_id
 
@@ -923,19 +975,44 @@ class DatabaseManager:
                 # File Basic
                 ("System:FileName", "Filename", "file_basic", "text", False, True, None, 0),
                 ("System:FileSize", "File Size", "file_basic", "size", False, True, "bytes", 1),
-                ("System:FileModifyDate", "Modified Date", "file_basic", "datetime", False, True, None, 2),
-                ("System:FileCreateDate", "Created Date", "file_basic", "datetime", False, True, None, 3),
+                (
+                    "System:FileModifyDate",
+                    "Modified Date",
+                    "file_basic",
+                    "datetime",
+                    False,
+                    True,
+                    None,
+                    2,
+                ),
+                (
+                    "System:FileCreateDate",
+                    "Created Date",
+                    "file_basic",
+                    "datetime",
+                    False,
+                    True,
+                    None,
+                    3,
+                ),
                 ("File:FileType", "File Type", "file_basic", "text", False, True, None, 4),
                 ("File:MIMEType", "MIME Type", "file_basic", "text", False, True, None, 5),
-
                 # Image
                 ("EXIF:ImageWidth", "Image Width", "image", "number", False, True, "pixels", 0),
                 ("EXIF:ImageHeight", "Image Height", "image", "number", False, True, "pixels", 1),
                 ("EXIF:Orientation", "Orientation", "image", "text", True, True, None, 2),
                 ("EXIF:ColorSpace", "Color Space", "image", "text", False, True, None, 3),
-                ("EXIF:BitsPerSample", "Bits Per Sample", "image", "number", False, True, "bits", 4),
+                (
+                    "EXIF:BitsPerSample",
+                    "Bits Per Sample",
+                    "image",
+                    "number",
+                    False,
+                    True,
+                    "bits",
+                    4,
+                ),
                 ("EXIF:Compression", "Compression", "image", "text", False, True, None, 5),
-
                 # Camera
                 ("EXIF:Make", "Camera Make", "camera", "text", True, True, None, 0),
                 ("EXIF:Model", "Camera Model", "camera", "text", True, True, None, 1),
@@ -946,38 +1023,139 @@ class DatabaseManager:
                 ("EXIF:FocalLength", "Focal Length", "camera", "text", True, True, "mm", 6),
                 ("EXIF:WhiteBalance", "White Balance", "camera", "text", True, True, None, 7),
                 ("EXIF:Flash", "Flash", "camera", "text", True, True, None, 8),
-
                 # Video
-                ("QuickTime:ImageWidth", "Video Width", "video", "number", False, True, "pixels", 0),
-                ("QuickTime:ImageHeight", "Video Height", "video", "number", False, True, "pixels", 1),
+                (
+                    "QuickTime:ImageWidth",
+                    "Video Width",
+                    "video",
+                    "number",
+                    False,
+                    True,
+                    "pixels",
+                    0,
+                ),
+                (
+                    "QuickTime:ImageHeight",
+                    "Video Height",
+                    "video",
+                    "number",
+                    False,
+                    True,
+                    "pixels",
+                    1,
+                ),
                 ("QuickTime:Duration", "Duration", "video", "duration", False, True, "seconds", 2),
-                ("QuickTime:VideoFrameRate", "Frame Rate", "video", "number", False, True, "fps", 3),
+                (
+                    "QuickTime:VideoFrameRate",
+                    "Frame Rate",
+                    "video",
+                    "number",
+                    False,
+                    True,
+                    "fps",
+                    3,
+                ),
                 ("QuickTime:VideoCodec", "Video Codec", "video", "text", False, True, None, 4),
-                ("QuickTime:AvgBitrate", "Average Bitrate", "video", "number", False, True, "kbps", 5),
-
+                (
+                    "QuickTime:AvgBitrate",
+                    "Average Bitrate",
+                    "video",
+                    "number",
+                    False,
+                    True,
+                    "kbps",
+                    5,
+                ),
                 # Audio
-                ("QuickTime:AudioChannels", "Audio Channels", "audio", "number", False, True, None, 0),
-                ("QuickTime:AudioSampleRate", "Sample Rate", "audio", "number", False, True, "Hz", 1),
+                (
+                    "QuickTime:AudioChannels",
+                    "Audio Channels",
+                    "audio",
+                    "number",
+                    False,
+                    True,
+                    None,
+                    0,
+                ),
+                (
+                    "QuickTime:AudioSampleRate",
+                    "Sample Rate",
+                    "audio",
+                    "number",
+                    False,
+                    True,
+                    "Hz",
+                    1,
+                ),
                 ("QuickTime:AudioFormat", "Audio Format", "audio", "text", False, True, None, 2),
-                ("QuickTime:AudioBitrate", "Audio Bitrate", "audio", "number", False, True, "kbps", 3),
-
+                (
+                    "QuickTime:AudioBitrate",
+                    "Audio Bitrate",
+                    "audio",
+                    "number",
+                    False,
+                    True,
+                    "kbps",
+                    3,
+                ),
                 # Location
                 ("GPS:GPSLatitude", "Latitude", "location", "coordinate", True, True, "degrees", 0),
-                ("GPS:GPSLongitude", "Longitude", "location", "coordinate", True, True, "degrees", 1),
+                (
+                    "GPS:GPSLongitude",
+                    "Longitude",
+                    "location",
+                    "coordinate",
+                    True,
+                    True,
+                    "degrees",
+                    1,
+                ),
                 ("GPS:GPSAltitude", "Altitude", "location", "number", True, True, "meters", 2),
                 ("GPS:GPSMapDatum", "Map Datum", "location", "text", True, True, None, 3),
-
                 # Technical
-                ("ExifTool:ExifToolVersion", "ExifTool Version", "technical", "text", False, False, None, 0),
-                ("File:FilePermissions", "File Permissions", "technical", "text", False, False, None, 1),
+                (
+                    "ExifTool:ExifToolVersion",
+                    "ExifTool Version",
+                    "technical",
+                    "text",
+                    False,
+                    False,
+                    None,
+                    0,
+                ),
+                (
+                    "File:FilePermissions",
+                    "File Permissions",
+                    "technical",
+                    "text",
+                    False,
+                    False,
+                    None,
+                    1,
+                ),
             ]
 
-            for field_key, field_name, category_name, data_type, is_editable, is_searchable, display_format, sort_order in default_fields:
+            for (
+                field_key,
+                field_name,
+                category_name,
+                data_type,
+                is_editable,
+                is_searchable,
+                display_format,
+                sort_order,
+            ) in default_fields:
                 category_id = category_mapping.get(category_name)
                 if category_id:
                     self.create_metadata_field(
-                        field_key, field_name, category_id, data_type,
-                        is_editable, is_searchable, display_format, sort_order
+                        field_key,
+                        field_name,
+                        category_id,
+                        data_type,
+                        is_editable,
+                        is_searchable,
+                        display_format,
+                        sort_order,
                     )
 
             logger.info("[DatabaseManager] Default metadata schema initialized")
@@ -1000,8 +1178,15 @@ class DatabaseManager:
                 stats = {}
 
                 # Count records in each table
-                tables = ["file_paths", "file_metadata", "file_hashes", "file_rename_history",
-                         "metadata_categories", "metadata_fields", "file_metadata_structured"]
+                tables = [
+                    "file_paths",
+                    "file_metadata",
+                    "file_hashes",
+                    "file_rename_history",
+                    "metadata_categories",
+                    "metadata_fields",
+                    "file_metadata_structured",
+                ]
                 for table in tables:
                     cursor.execute(f"SELECT COUNT(*) as count FROM {table}")
                     row = cursor.fetchone()

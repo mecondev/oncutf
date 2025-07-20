@@ -47,9 +47,7 @@ class OriginalNameWidget(BaseRenameModule):
         self._last_value = str(self.get_data())
 
     def get_data(self) -> dict:
-        return {
-            "type": "original_name"
-        }
+        return {"type": "original_name"}
 
     def set_data(self, data: dict) -> None:
         # Nothing to set for original name module

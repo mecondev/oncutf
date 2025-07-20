@@ -8,11 +8,12 @@ test_hash_worker_progress.py
 Tests for HashWorker cumulative progress tracking.
 Ensures that progress never goes backwards and accumulates correctly.
 """
+
 import warnings
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 import os
 import tempfile
@@ -45,8 +46,8 @@ class TestHashWorkerProgress:
             # Create test files
             for i, size in enumerate([10000, 20000, 30000]):
                 file_path = os.path.join(temp_dir, f"test_file_{i}.txt")
-                with open(file_path, 'wb') as f:
-                    f.write(b'A' * size)
+                with open(file_path, "wb") as f:
+                    f.write(b"A" * size)
                 files.append(file_path)
 
             total_size = 60000
@@ -77,8 +78,9 @@ class TestHashWorkerProgress:
                 time.sleep(0.01)
 
             # Check final state - cumulative bytes should equal total
-            assert self.worker._cumulative_processed_bytes == total_size, \
-                f"Expected cumulative bytes {total_size}, got {self.worker._cumulative_processed_bytes}"
+            assert (
+                self.worker._cumulative_processed_bytes == total_size
+            ), f"Expected cumulative bytes {total_size}, got {self.worker._cumulative_processed_bytes}"
 
     def test_worker_overflow_protection(self):
         """Test that worker handles large files without overflow."""
@@ -88,8 +90,8 @@ class TestHashWorkerProgress:
             # Create a moderately large file
             file_path = os.path.join(temp_dir, "large_file.txt")
             size = 50_000_000  # 50MB
-            with open(file_path, 'wb') as f:
-                f.write(b'B' * size)
+            with open(file_path, "wb") as f:
+                f.write(b"B" * size)
             files.append(file_path)
 
             # Setup worker
@@ -118,12 +120,14 @@ class TestHashWorkerProgress:
                 time.sleep(0.01)
 
             # Check that we didn't overflow (no negative values)
-            assert self.worker._cumulative_processed_bytes >= 0, \
-                f"Cumulative bytes went negative: {self.worker._cumulative_processed_bytes}"
+            assert (
+                self.worker._cumulative_processed_bytes >= 0
+            ), f"Cumulative bytes went negative: {self.worker._cumulative_processed_bytes}"
 
             # Should have processed the full file
-            assert self.worker._cumulative_processed_bytes == size, \
-                f"Expected {size} bytes processed, got {self.worker._cumulative_processed_bytes}"
+            assert (
+                self.worker._cumulative_processed_bytes == size
+            ), f"Expected {size} bytes processed, got {self.worker._cumulative_processed_bytes}"
 
     def test_duplicate_scan_functionality(self):
         """Test that duplicate scan maintains correct state."""
@@ -134,10 +138,10 @@ class TestHashWorkerProgress:
             file1_path = os.path.join(temp_dir, "file1.txt")
             file2_path = os.path.join(temp_dir, "file2.txt")
 
-            with open(file1_path, 'wb') as f:
-                f.write(b'X' * 15000)
-            with open(file2_path, 'wb') as f:
-                f.write(b'Y' * 10000)
+            with open(file1_path, "wb") as f:
+                f.write(b"X" * 15000)
+            with open(file2_path, "wb") as f:
+                f.write(b"Y" * 10000)
 
             files = [file1_path, file2_path]
             total_size = 25000
@@ -168,8 +172,9 @@ class TestHashWorkerProgress:
                 time.sleep(0.01)
 
             # Check final state
-            assert self.worker._cumulative_processed_bytes == total_size, \
-                f"Expected {total_size} bytes processed, got {self.worker._cumulative_processed_bytes}"
+            assert (
+                self.worker._cumulative_processed_bytes == total_size
+            ), f"Expected {total_size} bytes processed, got {self.worker._cumulative_processed_bytes}"
 
     def test_worker_cancellation(self):
         """Test that worker can be cancelled properly."""
@@ -179,8 +184,8 @@ class TestHashWorkerProgress:
             # Create multiple files
             for i in range(5):
                 file_path = os.path.join(temp_dir, f"cancel_test_{i}.txt")
-                with open(file_path, 'wb') as f:
-                    f.write(b'C' * 10000)
+                with open(file_path, "wb") as f:
+                    f.write(b"C" * 10000)
                 files.append(file_path)
 
             total_size = 50000
@@ -216,8 +221,8 @@ class TestHashWorkerProgress:
             # Create test files
             for i in range(3):
                 file_path = os.path.join(temp_dir, f"reset_test_{i}.txt")
-                with open(file_path, 'wb') as f:
-                    f.write(b'D' * 5000)
+                with open(file_path, "wb") as f:
+                    f.write(b"D" * 5000)
                 files.append(file_path)
 
             total_size = 15000

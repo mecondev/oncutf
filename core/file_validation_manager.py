@@ -34,13 +34,15 @@ logger = get_cached_logger(__name__)
 
 class ValidationAccuracy(Enum):
     """Validation accuracy levels"""
-    LOW = "low"           # Only existence check
-    MEDIUM = "medium"     # mtime + size check
-    HIGH = "high"         # Full hash verification
+
+    LOW = "low"  # Only existence check
+    MEDIUM = "medium"  # mtime + size check
+    HIGH = "high"  # Full hash verification
 
 
 class OperationType(Enum):
     """Types of operations for adaptive thresholds"""
+
     METADATA_FAST = "metadata_fast"
     METADATA_EXTENDED = "metadata_extended"
     HASH_CALCULATION = "hash_calculation"
@@ -51,13 +53,14 @@ class OperationType(Enum):
 @dataclass
 class FileSignature:
     """File signature for content-based identification"""
+
     content_hash: str
     file_size: int
     filename: str
     quick_signature: str  # size_filename for fast lookups
 
     @classmethod
-    def create(cls, file_path: str, content_hash: str = None) -> 'FileSignature':
+    def create(cls, file_path: str, content_hash: str = None) -> "FileSignature":
         """Create file signature from path"""
         path = Path(file_path)
         size = path.stat().st_size if path.exists() else 0
@@ -67,13 +70,14 @@ class FileSignature:
             content_hash=content_hash or "",
             file_size=size,
             filename=filename,
-            quick_signature=f"{size}_{filename}"
+            quick_signature=f"{size}_{filename}",
         )
 
 
 @dataclass
 class ValidationResult:
     """Result of file validation"""
+
     is_valid: bool
     file_exists: bool
     content_changed: bool
@@ -85,6 +89,7 @@ class ValidationResult:
 @dataclass
 class ValidationThresholds:
     """Validation thresholds for different operations"""
+
     max_files: int
     max_size_mb: int
     batch_size: int
@@ -111,23 +116,53 @@ class FileValidationManager:
         # Smart TTL settings (in seconds)
         self.ttl_settings = {
             # Media files (rarely change)
-            'media': 7 * 24 * 3600,  # 7 days
+            "media": 7 * 24 * 3600,  # 7 days
             # Documents (change occasionally)
-            'document': 24 * 3600,    # 1 day
+            "document": 24 * 3600,  # 1 day
             # Temporary files (change frequently)
-            'temporary': 3600,        # 1 hour
+            "temporary": 3600,  # 1 hour
             # Default for unknown types
-            'default': 12 * 3600      # 12 hours
+            "default": 12 * 3600,  # 12 hours
         }
 
         # File type classifications
         self.file_types = {
-            'media': {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp',
-                     '.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm',
-                     '.mp3', '.wav', '.flac', '.aac', '.ogg', '.m4a'},
-            'document': {'.pdf', '.doc', '.docx', '.txt', '.rtf', '.odt',
-                        '.xls', '.xlsx', '.ppt', '.pptx', '.csv'},
-            'temporary': {'.tmp', '.temp', '.log', '.cache', '.bak'}
+            "media": {
+                ".jpg",
+                ".jpeg",
+                ".png",
+                ".gif",
+                ".bmp",
+                ".tiff",
+                ".webp",
+                ".mp4",
+                ".avi",
+                ".mkv",
+                ".mov",
+                ".wmv",
+                ".flv",
+                ".webm",
+                ".mp3",
+                ".wav",
+                ".flac",
+                ".aac",
+                ".ogg",
+                ".m4a",
+            },
+            "document": {
+                ".pdf",
+                ".doc",
+                ".docx",
+                ".txt",
+                ".rtf",
+                ".odt",
+                ".xls",
+                ".xlsx",
+                ".ppt",
+                ".pptx",
+                ".csv",
+            },
+            "temporary": {".tmp", ".temp", ".log", ".cache", ".bak"},
         }
 
         # Default thresholds for different operations
@@ -138,7 +173,7 @@ class FileValidationManager:
             OperationType.METADATA_EXTENDED: ValidationThresholds(
                 max_files=LARGE_FOLDER_WARNING_THRESHOLD,
                 max_size_mb=EXTENDED_METADATA_SIZE_LIMIT_MB,
-                batch_size=20
+                batch_size=20,
             ),
             OperationType.HASH_CALCULATION: ValidationThresholds(
                 max_files=1000, max_size_mb=1000, batch_size=25
@@ -148,7 +183,7 @@ class FileValidationManager:
             ),
             OperationType.FILE_LOADING: ValidationThresholds(
                 max_files=1000, max_size_mb=2000, batch_size=100
-            )
+            ),
         }
 
         # User preferences cache
@@ -164,7 +199,7 @@ class FileValidationManager:
             if extension in extensions:
                 return category
 
-        return 'default'
+        return "default"
 
     def calculate_smart_ttl(self, file_path: str, file_size: int = None) -> int:
         """Calculate smart TTL based on file characteristics."""
@@ -197,7 +232,7 @@ class FileValidationManager:
                     file_exists=False,
                     content_changed=False,
                     path_changed=True,
-                    confidence=0.8
+                    confidence=0.8,
                 )
 
             # Get current file stats
@@ -206,13 +241,13 @@ class FileValidationManager:
             current_size = stat.st_size
 
             # Compare with cached data
-            cached_mtime = cached_data.get('modified_time', 0)
-            cached_size = cached_data.get('file_size', 0)
+            cached_mtime = cached_data.get("modified_time", 0)
+            cached_size = cached_data.get("file_size", 0)
 
             # Check if file content likely changed
             content_changed = (
-                abs(current_mtime - cached_mtime) > 1.0 or  # 1 second tolerance
-                current_size != cached_size
+                abs(current_mtime - cached_mtime) > 1.0  # 1 second tolerance
+                or current_size != cached_size
             )
 
             return ValidationResult(
@@ -220,7 +255,7 @@ class FileValidationManager:
                 file_exists=True,
                 content_changed=content_changed,
                 path_changed=False,
-                confidence=0.95 if not content_changed else 0.3
+                confidence=0.95 if not content_changed else 0.3,
             )
 
         except OSError as e:
@@ -230,7 +265,7 @@ class FileValidationManager:
                 file_exists=False,
                 content_changed=True,
                 path_changed=True,
-                confidence=0.1
+                confidence=0.1,
             )
 
     def find_moved_file_by_content(self, target_signature: FileSignature) -> Optional[Dict]:
@@ -247,7 +282,8 @@ class FileValidationManager:
                 cursor = conn.cursor()
 
                 # First try: exact content match (hash + size + filename)
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT fp.*, fh.hash_value, fh.file_size_at_hash
                     FROM file_paths fp
                     JOIN file_hashes fh ON fp.id = fh.path_id
@@ -256,15 +292,24 @@ class FileValidationManager:
                     AND fp.filename = ?
                     ORDER BY fp.updated_at DESC
                     LIMIT 1
-                """, (target_signature.content_hash, target_signature.file_size, target_signature.filename))
+                """,
+                    (
+                        target_signature.content_hash,
+                        target_signature.file_size,
+                        target_signature.filename,
+                    ),
+                )
 
                 row = cursor.fetchone()
                 if row:
-                    logger.info(f"[FileValidationManager] Found moved file by exact content match: {row['filename']}")
+                    logger.info(
+                        f"[FileValidationManager] Found moved file by exact content match: {row['filename']}"
+                    )
                     return dict(row)
 
                 # Second try: content hash + size (filename might have changed)
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT fp.*, fh.hash_value, fh.file_size_at_hash
                     FROM file_paths fp
                     JOIN file_hashes fh ON fp.id = fh.path_id
@@ -272,11 +317,15 @@ class FileValidationManager:
                     AND fh.file_size_at_hash = ?
                     ORDER BY fp.updated_at DESC
                     LIMIT 1
-                """, (target_signature.content_hash, target_signature.file_size))
+                """,
+                    (target_signature.content_hash, target_signature.file_size),
+                )
 
                 row = cursor.fetchone()
                 if row:
-                    logger.info(f"[FileValidationManager] Found moved file by content hash + size: {row['filename']}")
+                    logger.info(
+                        f"[FileValidationManager] Found moved file by content hash + size: {row['filename']}"
+                    )
                     return dict(row)
 
         except Exception as e:
@@ -323,9 +372,13 @@ class FileValidationManager:
 
     def get_operation_thresholds(self, operation: OperationType) -> ValidationThresholds:
         """Get validation thresholds for specific operation type."""
-        return self.default_thresholds.get(operation, self.default_thresholds[OperationType.FILE_LOADING])
+        return self.default_thresholds.get(
+            operation, self.default_thresholds[OperationType.FILE_LOADING]
+        )
 
-    def should_warn_user(self, operation: OperationType, file_count: int, total_size_mb: float) -> bool:
+    def should_warn_user(
+        self, operation: OperationType, file_count: int, total_size_mb: float
+    ) -> bool:
         """
         Determine if user should be warned about operation size.
         Considers user preferences and operation-specific thresholds.
@@ -339,8 +392,8 @@ class FileValidationManager:
         pref_key = f"{operation.value}_{file_count//100*100}_{int(total_size_mb//100*100)}"
         if pref_key in self.user_preferences:
             pref = self.user_preferences[pref_key]
-            if time.time() - pref['timestamp'] < pref.get('ttl', 3600):  # 1 hour default
-                return pref['should_warn']
+            if time.time() - pref["timestamp"] < pref.get("ttl", 3600):  # 1 hour default
+                return pref["should_warn"]
 
         # Apply thresholds
         exceeds_file_limit = file_count > thresholds.max_files
@@ -348,27 +401,37 @@ class FileValidationManager:
 
         return exceeds_file_limit or exceeds_size_limit
 
-    def remember_user_choice(self, operation: OperationType, file_count: int,
-                           total_size_mb: float, choice: str, remember_duration: int = 3600):
+    def remember_user_choice(
+        self,
+        operation: OperationType,
+        file_count: int,
+        total_size_mb: float,
+        choice: str,
+        remember_duration: int = 3600,
+    ):
         """Remember user's validation choice for similar scenarios."""
         pref_key = f"{operation.value}_{file_count//100*100}_{int(total_size_mb//100*100)}"
 
         self.user_preferences[pref_key] = {
-            'should_warn': choice == 'cancel',
-            'timestamp': time.time(),
-            'ttl': remember_duration,
-            'choice': choice
+            "should_warn": choice == "cancel",
+            "timestamp": time.time(),
+            "ttl": remember_duration,
+            "choice": choice,
         }
 
-        logger.debug(f"[FileValidationManager] Remembered user choice: {choice} for {operation.value}")
+        logger.debug(
+            f"[FileValidationManager] Remembered user choice: {choice} for {operation.value}"
+        )
 
-    def validate_operation_batch(self, files: List[str], operation: OperationType) -> Dict[str, Any]:
+    def validate_operation_batch(
+        self, files: List[str], operation: OperationType
+    ) -> Dict[str, Any]:
         """
         Validate a batch of files for specific operation.
         Returns validation summary and recommendations.
         """
         if not files:
-            return {'proceed': True, 'warnings': [], 'file_count': 0, 'total_size_mb': 0}
+            return {"proceed": True, "warnings": [], "file_count": 0, "total_size_mb": 0}
 
         # Calculate total size efficiently
         total_size_bytes = calculate_files_total_size(files)
@@ -384,41 +447,56 @@ class FileValidationManager:
         # Generate warnings and recommendations
         warnings = []
         if file_count > thresholds.max_files:
-            warnings.append(f"Large number of files: {file_count} (threshold: {thresholds.max_files})")
+            warnings.append(
+                f"Large number of files: {file_count} (threshold: {thresholds.max_files})"
+            )
 
         if total_size_mb > thresholds.max_size_mb:
-            warnings.append(f"Large total size: {total_size_mb:.1f} MB (threshold: {thresholds.max_size_mb} MB)")
+            warnings.append(
+                f"Large total size: {total_size_mb:.1f} MB (threshold: {thresholds.max_size_mb} MB)"
+            )
 
         # Estimate operation time
         estimated_time = self._estimate_operation_time(file_count, total_size_bytes, operation)
 
         return {
-            'proceed': not should_warn,
-            'should_warn': should_warn,
-            'warnings': warnings,
-            'file_count': file_count,
-            'total_size_mb': total_size_mb,
-            'estimated_time_seconds': estimated_time,
-            'recommended_batch_size': thresholds.batch_size,
-            'operation': operation.value
+            "proceed": not should_warn,
+            "should_warn": should_warn,
+            "warnings": warnings,
+            "file_count": file_count,
+            "total_size_mb": total_size_mb,
+            "estimated_time_seconds": estimated_time,
+            "recommended_batch_size": thresholds.batch_size,
+            "operation": operation.value,
         }
 
-    def _estimate_operation_time(self, file_count: int, total_size_bytes: int, operation: OperationType) -> float:
+    def _estimate_operation_time(
+        self, file_count: int, total_size_bytes: int, operation: OperationType
+    ) -> float:
         """Estimate operation time based on file count, size, and operation type."""
         # Base rates (conservative estimates for archival scenarios)
         rates = {
-            OperationType.METADATA_FAST: {'files_per_sec': 15, 'bytes_per_sec': 80 * 1024 * 1024},
-            OperationType.METADATA_EXTENDED: {'files_per_sec': 5, 'bytes_per_sec': 30 * 1024 * 1024},
-            OperationType.HASH_CALCULATION: {'files_per_sec': 8, 'bytes_per_sec': 120 * 1024 * 1024},
-            OperationType.RENAME_OPERATION: {'files_per_sec': 100, 'bytes_per_sec': 1000 * 1024 * 1024},
-            OperationType.FILE_LOADING: {'files_per_sec': 200, 'bytes_per_sec': 2000 * 1024 * 1024}
+            OperationType.METADATA_FAST: {"files_per_sec": 15, "bytes_per_sec": 80 * 1024 * 1024},
+            OperationType.METADATA_EXTENDED: {
+                "files_per_sec": 5,
+                "bytes_per_sec": 30 * 1024 * 1024,
+            },
+            OperationType.HASH_CALCULATION: {
+                "files_per_sec": 8,
+                "bytes_per_sec": 120 * 1024 * 1024,
+            },
+            OperationType.RENAME_OPERATION: {
+                "files_per_sec": 100,
+                "bytes_per_sec": 1000 * 1024 * 1024,
+            },
+            OperationType.FILE_LOADING: {"files_per_sec": 200, "bytes_per_sec": 2000 * 1024 * 1024},
         }
 
         rate = rates.get(operation, rates[OperationType.FILE_LOADING])
 
         # Calculate time estimates
-        time_by_files = file_count / rate['files_per_sec']
-        time_by_size = total_size_bytes / rate['bytes_per_sec']
+        time_by_files = file_count / rate["files_per_sec"]
+        time_by_size = total_size_bytes / rate["bytes_per_sec"]
 
         # Use the larger estimate (bottleneck) with minimum time
         estimated_time = max(time_by_files, time_by_size, 1.0)
@@ -439,12 +517,12 @@ class FileValidationManager:
             stats = self.db_manager.get_database_stats()
 
             return {
-                'total_files_tracked': stats.get('file_paths', 0),
-                'files_with_metadata': stats.get('file_metadata', 0),
-                'files_with_hashes': stats.get('file_hashes', 0),
-                'user_preferences_cached': len(self.user_preferences),
-                'content_based_identification_enabled': self.enable_content_based_identification,
-                'default_accuracy': self.default_accuracy.value
+                "total_files_tracked": stats.get("file_paths", 0),
+                "files_with_metadata": stats.get("file_metadata", 0),
+                "files_with_hashes": stats.get("file_hashes", 0),
+                "user_preferences_cached": len(self.user_preferences),
+                "content_based_identification_enabled": self.enable_content_based_identification,
+                "default_accuracy": self.default_accuracy.value,
             }
 
         except Exception as e:
@@ -454,6 +532,7 @@ class FileValidationManager:
 
 # Global instance
 _file_validation_manager = None
+
 
 def get_file_validation_manager() -> FileValidationManager:
     """Get the global FileValidationManager instance."""

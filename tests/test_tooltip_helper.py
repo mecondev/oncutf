@@ -9,9 +9,9 @@ Tests for tooltip helper system
 
 import warnings
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 import pytest
 from PyQt5.QtCore import QPoint
@@ -69,7 +69,7 @@ class TestTooltipHelper:
             self.test_widget,
             "Test message",
             TooltipType.INFO,
-            duration=100  # Short duration for testing
+            duration=100,  # Short duration for testing
         )
 
         # Check that tooltip was tracked
@@ -146,8 +146,7 @@ class TestTooltipHelper:
         try:
             # Should not raise exceptions when adjusting position
             adjusted_pos = TooltipHelper._adjust_position_to_screen(
-                position,
-                self.test_widget.size()
+                position, self.test_widget.size()
             )
             assert isinstance(adjusted_pos, QPoint)
         except Exception as e:

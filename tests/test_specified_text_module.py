@@ -11,10 +11,9 @@ import warnings
 from modules.specified_text_module import SpecifiedTextModule
 from tests.mocks import MockFileItem
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
-
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 
 def test_specified_text_valid():
@@ -36,6 +35,7 @@ def test_specified_text_invalid_characters():
     file_item = MockFileItem(filename="example.txt")
     result = SpecifiedTextModule.apply_from_data(data, file_item)
     from config import INVALID_FILENAME_MARKER
+
     assert result == INVALID_FILENAME_MARKER
 
 

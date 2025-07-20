@@ -24,6 +24,7 @@ from utils.timer_manager import get_timer_manager
 
 logger = get_cached_logger(__name__)
 
+
 class FileLoadManager:
     """
     Unified file loading manager with fully optimized policy:
@@ -39,9 +40,13 @@ class FileLoadManager:
         self.timer_manager = get_timer_manager()
         # Flag to prevent metadata tree refresh conflicts during metadata operations
         self._metadata_operation_in_progress = False
-        logger.debug("[FileLoadManager] Initialized with unified loading policy", extra={"dev_only": True})
+        logger.debug(
+            "[FileLoadManager] Initialized with unified loading policy", extra={"dev_only": True}
+        )
 
-    def load_folder(self, folder_path: str, merge_mode: bool = False, recursive: bool = False) -> None:
+    def load_folder(
+        self, folder_path: str, merge_mode: bool = False, recursive: bool = False
+    ) -> None:
         """
         Unified folder loading method for both drag and import operations.
 
@@ -49,20 +54,28 @@ class FileLoadManager:
         - All operations: wait_cursor only (fast, synchronous like external drops)
         - Consistent behavior between internal and external drag operations
         """
-        logger.info(f"[FileLoadManager] load_folder: {folder_path} (merge={merge_mode}, recursive={recursive})", extra={"dev_only": True})
+        logger.info(
+            f"[FileLoadManager] load_folder: {folder_path} (merge={merge_mode}, recursive={recursive})",
+            extra={"dev_only": True},
+        )
 
         if not os.path.isdir(folder_path):
             logger.error(f"Path is not a directory: {folder_path}")
             return
 
         # Store the recursive state for future reloads (if not merging)
-        if not merge_mode and hasattr(self.parent_window, 'current_folder_is_recursive'):
+        if not merge_mode and hasattr(self.parent_window, "current_folder_is_recursive"):
             self.parent_window.current_folder_is_recursive = recursive
-            logger.info(f"[FileLoadManager] Stored recursive state: {recursive}", extra={"dev_only": True})
+            logger.info(
+                f"[FileLoadManager] Stored recursive state: {recursive}", extra={"dev_only": True}
+            )
 
         # CRITICAL: Force cleanup any active drag state immediately
         if is_dragging():
-            logger.debug("[FileLoadManager] Active drag detected, forcing cleanup before loading", extra={"dev_only": True})
+            logger.debug(
+                "[FileLoadManager] Active drag detected, forcing cleanup before loading",
+                extra={"dev_only": True},
+            )
             force_cleanup_drag()
 
         # Clear any existing cursors immediately and stop all drag visuals
@@ -70,10 +83,12 @@ class FileLoadManager:
 
         # Force stop any drag visual feedback
         from core.drag_visual_manager import end_drag_visual
+
         end_drag_visual()
 
         # Clear drag zone validator for all possible sources
         from utils.drag_zone_validator import DragZoneValidator
+
         DragZoneValidator.clear_initial_drag_widget("file_tree")
         DragZoneValidator.clear_initial_drag_widget("file_table")
 
@@ -82,7 +97,9 @@ class FileLoadManager:
         self._load_folder_with_wait_cursor(folder_path, merge_mode, recursive)
 
     # Legacy method name for compatibility
-    def handle_folder_drop(self, folder_path: str, merge_mode: bool = False, recursive: bool = False) -> None:
+    def handle_folder_drop(
+        self, folder_path: str, merge_mode: bool = False, recursive: bool = False
+    ) -> None:
         """Legacy method - redirects to unified load_folder."""
         self.load_folder(folder_path, merge_mode, recursive)
 
@@ -91,11 +108,16 @@ class FileLoadManager:
         Load files from multiple paths (used by import button).
         Now uses same fast approach as drag operations for consistency.
         """
-        logger.info(f"[FileLoadManager] load_files_from_paths: {len(paths)} paths", extra={"dev_only": True})
+        logger.info(
+            f"[FileLoadManager] load_files_from_paths: {len(paths)} paths", extra={"dev_only": True}
+        )
 
         # Force cleanup any active drag state (import button shouldn't have drag, but safety first)
         if is_dragging():
-            logger.debug("[FileLoadManager] Active drag detected during import, forcing cleanup", extra={"dev_only": True})
+            logger.debug(
+                "[FileLoadManager] Active drag detected during import, forcing cleanup",
+                extra={"dev_only": True},
+            )
             force_cleanup_drag()
 
         # Process all paths with fast wait cursor approach (same as drag operations)
@@ -115,12 +137,16 @@ class FileLoadManager:
         if all_file_paths:
             self._update_ui_with_files(all_file_paths, clear=clear)
 
-    def load_single_item_from_drop(self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
+    def load_single_item_from_drop(
+        self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier
+    ) -> None:
         """
         Handle single item drop with modifier support.
         Uses unified load_folder method for consistent behavior.
         """
-        logger.info(f"[FileLoadManager] load_single_item_from_drop: {path}", extra={"dev_only": True})
+        logger.info(
+            f"[FileLoadManager] load_single_item_from_drop: {path}", extra={"dev_only": True}
+        )
 
         # Parse modifiers
         ctrl = bool(modifiers & Qt.ControlModifier)
@@ -128,11 +154,17 @@ class FileLoadManager:
         recursive = ctrl
         merge_mode = shift
 
-        logger.debug(f"[Drop] Modifiers: ctrl={ctrl}, shift={shift} → recursive={recursive}, merge={merge_mode}", extra={"dev_only": True})
+        logger.debug(
+            f"[Drop] Modifiers: ctrl={ctrl}, shift={shift} → recursive={recursive}, merge={merge_mode}",
+            extra={"dev_only": True},
+        )
 
         # CRITICAL: Force cleanup any active drag state immediately
         if is_dragging():
-            logger.debug("[FileLoadManager] Active drag detected during single file drop, forcing cleanup", extra={"dev_only": True})
+            logger.debug(
+                "[FileLoadManager] Active drag detected during single file drop, forcing cleanup",
+                extra={"dev_only": True},
+            )
             force_cleanup_drag()
 
         if os.path.isdir(path):
@@ -141,13 +173,17 @@ class FileLoadManager:
         else:
             # Handle single file - cleanup drag state first
             if is_dragging():
-                logger.debug("[FileLoadManager] Active drag detected during single file drop, forcing cleanup")
+                logger.debug(
+                    "[FileLoadManager] Active drag detected during single file drop, forcing cleanup"
+                )
                 force_cleanup_drag()
 
             if self._is_allowed_extension(path):
                 self._update_ui_with_files([path], clear=not merge_mode)
 
-    def load_files_from_dropped_items(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
+    def load_files_from_dropped_items(
+        self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier
+    ) -> None:
         """
         Handle multiple dropped items (table drop).
         Uses unified loading for consistent behavior.
@@ -180,9 +216,14 @@ class FileLoadManager:
         if all_file_paths:
             self._update_ui_with_files(all_file_paths, clear=not merge_mode)
 
-    def _load_folder_with_wait_cursor(self, folder_path: str, merge_mode: bool, recursive: bool = False) -> None:
+    def _load_folder_with_wait_cursor(
+        self, folder_path: str, merge_mode: bool, recursive: bool = False
+    ) -> None:
         """Load folder with wait cursor only (fast approach for all operations)."""
-        logger.debug(f"[FileLoadManager] Loading folder with wait cursor: {folder_path} (recursive={recursive})", extra={"dev_only": True})
+        logger.debug(
+            f"[FileLoadManager] Loading folder with wait cursor: {folder_path} (recursive={recursive})",
+            extra={"dev_only": True},
+        )
 
         with wait_cursor():
             file_paths = self._get_files_from_folder(folder_path, recursive)
@@ -213,7 +254,7 @@ class FileLoadManager:
     def _is_allowed_extension(self, path: str) -> bool:
         """Check if file has allowed extension."""
         ext = os.path.splitext(path)[1].lower()
-        if ext.startswith('.'):
+        if ext.startswith("."):
             ext = ext[1:]
         return ext in self.allowed_extensions
 
@@ -226,7 +267,10 @@ class FileLoadManager:
             logger.info("[FileLoadManager] No files to update UI with")
             return
 
-        logger.info(f"[FileLoadManager] Updating UI with {len(file_paths)} files (clear={clear})", extra={"dev_only": True})
+        logger.info(
+            f"[FileLoadManager] Updating UI with {len(file_paths)} files (clear={clear})",
+            extra={"dev_only": True},
+        )
 
         # Convert file paths to FileItem objects
         file_items = []
@@ -249,7 +293,7 @@ class FileLoadManager:
         Update UI after loading files.
         Handles model updates and UI refresh with duplicate detection in merge mode.
         """
-        if not hasattr(self.parent_window, 'file_model'):
+        if not hasattr(self.parent_window, "file_model"):
             logger.error("[FileLoadManager] Parent window has no file_model attribute")
             return
 
@@ -260,19 +304,28 @@ class FileLoadManager:
                 if first_file_path:
                     folder_path = os.path.dirname(first_file_path)
                     self.parent_window.current_folder_path = folder_path
-                    logger.info(f"[FileLoadManager] Set current_folder_path to: {folder_path}", extra={"dev_only": True})
+                    logger.info(
+                        f"[FileLoadManager] Set current_folder_path to: {folder_path}",
+                        extra={"dev_only": True},
+                    )
 
                     # Check if this was a recursive load by looking for files in subdirectories
                     has_subdirectory_files = any(
                         os.path.dirname(item.full_path) != folder_path for item in items
                     )
                     self.parent_window.current_folder_is_recursive = has_subdirectory_files
-                    logger.info(f"[FileLoadManager] Set recursive mode to: {has_subdirectory_files}", extra={"dev_only": True})
+                    logger.info(
+                        f"[FileLoadManager] Set recursive mode to: {has_subdirectory_files}",
+                        extra={"dev_only": True},
+                    )
 
             if clear:
                 # Replace existing files
                 self.parent_window.file_model.set_files(items)
-                logger.info(f"[FileLoadManager] Replaced files with {len(items)} new items", extra={"dev_only": True})
+                logger.info(
+                    f"[FileLoadManager] Replaced files with {len(items)} new items",
+                    extra={"dev_only": True},
+                )
             else:
                 # Add to existing files with duplicate detection
                 existing_files = self.parent_window.file_model.files
@@ -287,7 +340,9 @@ class FileLoadManager:
                 for item in items:
                     if item.full_path not in existing_paths:
                         new_items.append(item)
-                        existing_paths.add(item.full_path)  # Add to set to avoid duplicates within the new items too
+                        existing_paths.add(
+                            item.full_path
+                        )  # Add to set to avoid duplicates within the new items too
                     else:
                         duplicate_count += 1
 
@@ -296,10 +351,6 @@ class FileLoadManager:
                 self.parent_window.file_model.set_files(combined_files)
 
                 # Log the results
-                if duplicate_count > 0:
-                    logger.info(f"[FileLoadManager] Added {len(new_items)} new items, skipped {duplicate_count} duplicates (total: {len(combined_files)})")
-                else:
-                    logger.info(f"[FileLoadManager] Added {len(new_items)} new items to existing {len(existing_files)} files (total: {len(combined_files)})")
 
             # CRITICAL: Update all UI elements after file loading
             self._refresh_ui_after_file_load()
@@ -314,47 +365,61 @@ class FileLoadManager:
         """
         try:
             # Update files label (shows count)
-            if hasattr(self.parent_window, 'update_files_label'):
+            if hasattr(self.parent_window, "update_files_label"):
                 self.parent_window.update_files_label()
                 logger.debug("[FileLoadManager] Updated files label", extra={"dev_only": True})
 
             total_files = len(self.parent_window.file_model.files)
 
             # Hide file table placeholder when files are loaded
-            if hasattr(self.parent_window, 'file_table_view'):
+            if hasattr(self.parent_window, "file_table_view"):
                 if total_files > 0:
                     # Hide file table placeholder when files are loaded
                     self.parent_window.file_table_view.set_placeholder_visible(False)
-                    logger.debug("[FileLoadManager] Hidden file table placeholder", extra={"dev_only": True})
+                    logger.debug(
+                        "[FileLoadManager] Hidden file table placeholder", extra={"dev_only": True}
+                    )
                 else:
                     # Show file table placeholder when no files
                     self.parent_window.file_table_view.set_placeholder_visible(True)
-                    logger.debug("[FileLoadManager] Shown file table placeholder", extra={"dev_only": True})
+                    logger.debug(
+                        "[FileLoadManager] Shown file table placeholder", extra={"dev_only": True}
+                    )
 
             # Hide placeholders in preview tables (if files are loaded)
-            if hasattr(self.parent_window, 'preview_tables_view'):
+            if hasattr(self.parent_window, "preview_tables_view"):
                 if total_files > 0:
                     # Hide placeholders when files are loaded
                     self.parent_window.preview_tables_view._set_placeholders_visible(False)
-                    logger.debug("[FileLoadManager] Hidden preview table placeholders", extra={"dev_only": True})
+                    logger.debug(
+                        "[FileLoadManager] Hidden preview table placeholders",
+                        extra={"dev_only": True},
+                    )
                 else:
                     # Show placeholders when no files
                     self.parent_window.preview_tables_view._set_placeholders_visible(True)
-                    logger.debug("[FileLoadManager] Shown preview table placeholders", extra={"dev_only": True})
+                    logger.debug(
+                        "[FileLoadManager] Shown preview table placeholders",
+                        extra={"dev_only": True},
+                    )
 
             # Update preview tables
-            if hasattr(self.parent_window, 'request_preview_update'):
+            if hasattr(self.parent_window, "request_preview_update"):
                 self.parent_window.request_preview_update()
                 logger.debug("[FileLoadManager] Requested preview update", extra={"dev_only": True})
 
             # Ensure file table selection works properly
-            if hasattr(self.parent_window, 'file_table_view'):
+            if hasattr(self.parent_window, "file_table_view"):
                 # Restore previous sorting state for consistency
-                if (hasattr(self.parent_window, 'current_sort_column') and
-                    hasattr(self.parent_window, 'current_sort_order')):
+                if hasattr(self.parent_window, "current_sort_column") and hasattr(
+                    self.parent_window, "current_sort_order"
+                ):
                     sort_column = self.parent_window.current_sort_column
                     sort_order = self.parent_window.current_sort_order
-                    logger.debug(f"[FileLoadManager] Restoring sort state: column={sort_column}, order={sort_order}", extra={"dev_only": True})
+                    logger.debug(
+                        f"[FileLoadManager] Restoring sort state: column={sort_column}, order={sort_order}",
+                        extra={"dev_only": True},
+                    )
 
                     # Apply sorting through the model and header
                     self.parent_window.file_model.sort(sort_column, sort_order)
@@ -365,36 +430,52 @@ class FileLoadManager:
                 self.parent_window.file_table_view.viewport().update()
 
                 # Refresh icons to show any cached metadata/hash status
-                if hasattr(self.parent_window.file_model, 'refresh_icons'):
+                if hasattr(self.parent_window.file_model, "refresh_icons"):
                     self.parent_window.file_model.refresh_icons()
-                    logger.debug("[FileLoadManager] Refreshed file table icons", extra={"dev_only": True})
+                    logger.debug(
+                        "[FileLoadManager] Refreshed file table icons", extra={"dev_only": True}
+                    )
 
                 # Reset selection state to ensure clicks work
-                if hasattr(self.parent_window.file_table_view, '_sync_selection_safely'):
+                if hasattr(self.parent_window.file_table_view, "_sync_selection_safely"):
                     self.parent_window.file_table_view._sync_selection_safely()
-                    logger.debug("[FileLoadManager] Refreshed file table view", extra={"dev_only": True})
+                    logger.debug(
+                        "[FileLoadManager] Refreshed file table view", extra={"dev_only": True}
+                    )
 
             # Update metadata tree (clear it for new files)
-            if hasattr(self.parent_window, 'metadata_tree_view'):
+            if hasattr(self.parent_window, "metadata_tree_view"):
                 # Only refresh metadata tree if we're not in the middle of a metadata operation
                 # This prevents conflicts with metadata loading operations (drag & drop, context menu, etc.)
                 if not self._metadata_operation_in_progress:
-                    if hasattr(self.parent_window.metadata_tree_view, 'refresh_metadata_from_selection'):
+                    if hasattr(
+                        self.parent_window.metadata_tree_view, "refresh_metadata_from_selection"
+                    ):
                         self.parent_window.metadata_tree_view.refresh_metadata_from_selection()
-                        logger.debug("[FileLoadManager] Refreshed metadata tree", extra={"dev_only": True})
+                        logger.debug(
+                            "[FileLoadManager] Refreshed metadata tree", extra={"dev_only": True}
+                        )
                 else:
-                    logger.debug("[FileLoadManager] Skipped metadata tree refresh (metadata operation in progress)", extra={"dev_only": True})
+                    logger.debug(
+                        "[FileLoadManager] Skipped metadata tree refresh (metadata operation in progress)",
+                        extra={"dev_only": True},
+                    )
 
             # Let metadata tree view handle search field state based on metadata availability
             # Don't directly enable/disable here - the metadata tree view will manage this
             # when metadata is loaded or cleared
-            if total_files == 0 and hasattr(self.parent_window, 'metadata_tree_view'):
+            if total_files == 0 and hasattr(self.parent_window, "metadata_tree_view"):
                 # Only force disable when no files at all
-                if hasattr(self.parent_window.metadata_tree_view, '_update_search_field_state'):
+                if hasattr(self.parent_window.metadata_tree_view, "_update_search_field_state"):
                     self.parent_window.metadata_tree_view._update_search_field_state(False)
-                    logger.debug("[FileLoadManager] Disabled metadata search field (no files)", extra={"dev_only": True})
+                    logger.debug(
+                        "[FileLoadManager] Disabled metadata search field (no files)",
+                        extra={"dev_only": True},
+                    )
 
-            logger.info("[FileLoadManager] UI refresh completed successfully", extra={"dev_only": True})
+            logger.info(
+                "[FileLoadManager] UI refresh completed successfully", extra={"dev_only": True}
+            )
 
         except Exception as e:
             logger.error(f"[FileLoadManager] Error refreshing UI: {e}")

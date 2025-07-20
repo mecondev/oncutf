@@ -46,7 +46,7 @@ class PersistentHashCache:
         except Exception:
             return os.path.normpath(file_path)
 
-    def store_hash(self, file_path: str, hash_value: str, algorithm: str = 'CRC32') -> bool:
+    def store_hash(self, file_path: str, hash_value: str, algorithm: str = "CRC32") -> bool:
         """Store hash for a file with database persistence."""
         norm_path = self._normalize_path(file_path)
 
@@ -58,14 +58,16 @@ class PersistentHashCache:
         try:
             success = self._db_manager.store_hash(norm_path, hash_value, algorithm)
             if success:
-                logger.debug(f"[PersistentHashCache] Stored {algorithm} hash for: {os.path.basename(file_path)}")
+                logger.debug(
+                    f"[PersistentHashCache] Stored {algorithm} hash for: {os.path.basename(file_path)}"
+                )
             return success
 
         except Exception as e:
             logger.error(f"[PersistentHashCache] Error storing hash for {file_path}: {e}")
             return False
 
-    def get_hash(self, file_path: str, algorithm: str = 'CRC32') -> Optional[str]:
+    def get_hash(self, file_path: str, algorithm: str = "CRC32") -> Optional[str]:
         """Retrieve hash for a file, checking memory cache first."""
         norm_path = self._normalize_path(file_path)
         cache_key = f"{norm_path}:{algorithm}"
@@ -89,7 +91,7 @@ class PersistentHashCache:
 
         return None
 
-    def has_hash(self, file_path: str, algorithm: str = 'CRC32') -> bool:
+    def has_hash(self, file_path: str, algorithm: str = "CRC32") -> bool:
         """Check if hash exists for a file."""
         norm_path = self._normalize_path(file_path)
         cache_key = f"{norm_path}:{algorithm}"
@@ -110,7 +112,9 @@ class PersistentHashCache:
         norm_path = self._normalize_path(file_path)
 
         # Remove from memory cache (all algorithms)
-        keys_to_remove = [key for key in self._memory_cache.keys() if key.startswith(f"{norm_path}:")]
+        keys_to_remove = [
+            key for key in self._memory_cache.keys() if key.startswith(f"{norm_path}:")
+        ]
         for key in keys_to_remove:
             self._memory_cache.pop(key, None)
 
@@ -119,7 +123,9 @@ class PersistentHashCache:
         logger.debug(f"[PersistentHashCache] Removed from memory cache: {file_path}")
         return True
 
-    def find_duplicates(self, file_paths: List[str], algorithm: str = 'CRC32') -> Dict[str, List[str]]:
+    def find_duplicates(
+        self, file_paths: List[str], algorithm: str = "CRC32"
+    ) -> Dict[str, List[str]]:
         """Find duplicate files based on stored hashes."""
         hash_to_paths: Dict[str, List[str]] = {}
 
@@ -131,12 +137,16 @@ class PersistentHashCache:
                 hash_to_paths[hash_value].append(file_path)
 
         # Filter to only return groups with duplicates
-        duplicates = {hash_val: paths for hash_val, paths in hash_to_paths.items() if len(paths) > 1}
+        duplicates = {
+            hash_val: paths for hash_val, paths in hash_to_paths.items() if len(paths) > 1
+        }
 
-        logger.info(f"[PersistentHashCache] Found {len(duplicates)} duplicate groups from {len(file_paths)} files")
+        logger.info(
+            f"[PersistentHashCache] Found {len(duplicates)} duplicate groups from {len(file_paths)} files"
+        )
         return duplicates
 
-    def verify_file_integrity(self, file_path: str, algorithm: str = 'CRC32') -> Optional[bool]:
+    def verify_file_integrity(self, file_path: str, algorithm: str = "CRC32") -> Optional[bool]:
         """Verify file integrity by comparing current hash with stored hash."""
         stored_hash = self.get_hash(file_path, algorithm)
         if not stored_hash:
@@ -147,11 +157,32 @@ class PersistentHashCache:
         logger.debug(f"[PersistentHashCache] Integrity check requested for: {file_path}")
         return None  # Implementation would go here
 
-    def get_files_with_hash(self, hash_value: str, algorithm: str = 'CRC32') -> List[str]:
-        """Get all files that have a specific hash value."""
-        # This would require a new query method in database_manager_v2
-        # For now, return empty list
-        return []
+    def get_files_with_hash(self, file_paths: List[str], algorithm: str = "CRC32") -> List[str]:
+        """Get all files from the list that have a hash stored."""
+        files_with_hash = []
+
+        for file_path in file_paths:
+            if self.has_hash(file_path, algorithm):
+                files_with_hash.append(file_path)
+
+        return files_with_hash
+
+    def get_files_with_hash_batch(
+        self, file_paths: List[str], algorithm: str = "CRC32"
+    ) -> List[str]:
+        """Get all files from the list that have a hash stored using batch database query."""
+        try:
+            # Use database manager for batch query if available
+            if hasattr(self._db_manager, "get_files_with_hash_batch"):
+                return self._db_manager.get_files_with_hash_batch(file_paths, algorithm)
+            else:
+                # Fallback to individual checking
+                return self.get_files_with_hash(file_paths, algorithm)
+        except Exception as e:
+            logger.warning(
+                f"[PersistentHashCache] Batch query failed, falling back to individual checks: {e}"
+            )
+            return self.get_files_with_hash(file_paths, algorithm)
 
     def clear_memory_cache(self):
         """Clear memory cache (database remains intact)."""
@@ -164,10 +195,10 @@ class PersistentHashCache:
         hit_rate = (self._cache_hits / total_requests * 100) if total_requests > 0 else 0
 
         return {
-            'memory_entries': len(self._memory_cache),
-            'cache_hits': self._cache_hits,
-            'cache_misses': self._cache_misses,
-            'hit_rate_percent': round(hit_rate, 2)
+            "memory_entries": len(self._memory_cache),
+            "cache_hits": self._cache_hits,
+            "cache_misses": self._cache_misses,
+            "hit_rate_percent": round(hit_rate, 2),
         }
 
     # Backward compatibility methods
@@ -185,6 +216,7 @@ class PersistentHashCache:
 # =====================================
 
 _persistent_hash_cache_instance = None
+
 
 def get_persistent_hash_cache() -> PersistentHashCache:
     """Get global persistent hash cache instance."""

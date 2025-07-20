@@ -35,13 +35,13 @@ def calculate_files_total_size(file_items: List) -> int:
     for item in file_items:
         try:
             # Handle FileItem objects with cached size first (fastest path)
-            if hasattr(item, 'file_size') and item.file_size is not None:
+            if hasattr(item, "file_size") and item.file_size is not None:
                 total_size += item.file_size
                 files_cached += 1
                 continue
 
             # Handle full_path attribute
-            if hasattr(item, 'full_path'):
+            if hasattr(item, "full_path"):
                 file_path = item.full_path
             else:
                 file_path = str(item)
@@ -53,15 +53,17 @@ def calculate_files_total_size(file_items: List) -> int:
                 files_checked += 1
 
                 # Cache size in FileItem if available and attribute exists
-                if hasattr(item, 'file_size'):
+                if hasattr(item, "file_size"):
                     item.file_size = size
 
         except (OSError, AttributeError) as e:
             logger.debug(f"[FileSizeCalculator] Error getting size for {item}: {e}")
             continue
 
-    logger.debug(f"[FileSizeCalculator] Total size: {total_size} bytes for {len(file_items)} files "
-                f"({files_cached} cached, {files_checked} checked)")
+    logger.debug(
+        f"[FileSizeCalculator] Total size: {total_size} bytes for {len(file_items)} files "
+        f"({files_cached} cached, {files_checked} checked)"
+    )
     return total_size
 
 
@@ -85,9 +87,9 @@ def calculate_processed_size(file_items: List, current_index: int) -> int:
         item = file_items[i]
         try:
             # Handle both FileItem objects and path strings
-            if hasattr(item, 'full_path'):
+            if hasattr(item, "full_path"):
                 file_path = item.full_path
-            elif hasattr(item, 'file_size') and item.file_size is not None:
+            elif hasattr(item, "file_size") and item.file_size is not None:
                 # FileItem already has cached size
                 processed_size += item.file_size
                 continue
@@ -123,7 +125,7 @@ def calculate_folder_size(folder_path: Union[str, Path], recursive: bool = True)
     try:
         if recursive:
             # Recursive calculation
-            for item in folder_path.rglob('*'):
+            for item in folder_path.rglob("*"):
                 if item.is_file():
                     try:
                         total_size += item.stat().st_size
@@ -141,11 +143,15 @@ def calculate_folder_size(folder_path: Union[str, Path], recursive: bool = True)
     except (OSError, PermissionError) as e:
         logger.debug(f"[FileSizeCalculator] Error calculating folder size for {folder_path}: {e}")
 
-    logger.debug(f"[FileSizeCalculator] Folder size calculated: {total_size} bytes for {folder_path}")
+    logger.debug(
+        f"[FileSizeCalculator] Folder size calculated: {total_size} bytes for {folder_path}"
+    )
     return total_size
 
 
-def estimate_operation_time(file_count: int, total_size: int, operation_type: str = "metadata") -> float:
+def estimate_operation_time(
+    file_count: int, total_size: int, operation_type: str = "metadata"
+) -> float:
     """
     Estimate operation time based on file count and size.
 
@@ -178,5 +184,7 @@ def estimate_operation_time(file_count: int, total_size: int, operation_type: st
     # Add minimum time for UI updates
     estimated_time = max(estimated_time, 1.0)
 
-    logger.debug(f"[FileSizeCalculator] Estimated {operation_type} time: {estimated_time:.1f}s for {file_count} files ({total_size} bytes)")
+    logger.debug(
+        f"[FileSizeCalculator] Estimated {operation_type} time: {estimated_time:.1f}s for {file_count} files ({total_size} bytes)"
+    )
     return estimated_time

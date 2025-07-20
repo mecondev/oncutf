@@ -30,8 +30,14 @@ logger = get_cached_logger(__name__)
 
 
 class RenameResult:
-    def __init__(self, old_path: str, new_path: str, success: bool,
-                 skip_reason: Optional[str] = None, error: Optional[str] = None):
+    def __init__(
+        self,
+        old_path: str,
+        new_path: str,
+        success: bool,
+        skip_reason: Optional[str] = None,
+        error: Optional[str] = None,
+    ):
         self.old_path = old_path
         self.new_path = new_path
         self.success = success
@@ -48,7 +54,7 @@ class Renamer:
         post_transform: Optional[dict] = None,
         parent: Optional[QWidget] = None,
         conflict_callback: Optional[Callable[[QWidget, str], str]] = None,
-        validator: Optional[object] = None
+        validator: Optional[object] = None,
     ) -> None:
         """
         Initializes the Renamer with required inputs for batch renaming.
@@ -80,13 +86,13 @@ class Renamer:
         Returns:
             List[RenameResult]: Outcome of each rename attempt.
         """
-        logger.debug(f"Starting rename process for {len(self.files)} files...", extra={"dev_only": True})
+        logger.debug(
+            f"Starting rename process for {len(self.files)} files...", extra={"dev_only": True}
+        )
 
         # Step 1: Generate preview names from modules
         preview_pairs, has_error, tooltip = generate_preview_names(
-            files=self.files,
-            modules_data=self.modules_data,
-            metadata_cache=self.metadata_cache
+            files=self.files, modules_data=self.modules_data, metadata_cache=self.metadata_cache
         )
 
         if has_error:
@@ -99,13 +105,15 @@ class Renamer:
             # Remove extension if already present (work with basename only)
             basename, extension = os.path.splitext(f.filename)
             if extension and new_name.lower().endswith(extension.lower()):
-                new_basename = new_name[:-(len(extension))]
+                new_basename = new_name[: -(len(extension))]
             else:
                 new_basename = new_name
 
             # Apply name transform (case, separator) to basename only - same logic as preview
             if NameTransformModule.is_effective(self.post_transform):
-                new_basename = NameTransformModule.apply_from_data(self.post_transform, new_basename)
+                new_basename = NameTransformModule.apply_from_data(
+                    self.post_transform, new_basename
+                )
                 logger.debug(f"Transform applied: {new_basename}")
 
             # Final cleanup: strip any remaining leading/trailing spaces from basename
@@ -139,7 +147,9 @@ class Renamer:
             # Conflict resolution
             if os.path.exists(dst):
                 if skip_all:
-                    results.append(RenameResult(src, dst, success=False, skip_reason="conflict (skip all)"))
+                    results.append(
+                        RenameResult(src, dst, success=False, skip_reason="conflict (skip all)")
+                    )
                     continue
 
                 action = self.conflict_callback(self.parent, new_filename)
@@ -147,11 +157,15 @@ class Renamer:
                 if action == "overwrite":
                     pass  # Proceed
                 elif action == "skip":
-                    results.append(RenameResult(src, dst, success=False, skip_reason="conflict (skipped)"))
+                    results.append(
+                        RenameResult(src, dst, success=False, skip_reason="conflict (skipped)")
+                    )
                     continue
                 elif action == "skip_all":
                     skip_all = True
-                    results.append(RenameResult(src, dst, success=False, skip_reason="conflict (skip all)"))
+                    results.append(
+                        RenameResult(src, dst, success=False, skip_reason="conflict (skip all)")
+                    )
                     continue
                 else:
                     logger.info("Rename cancelled by user.")
@@ -160,7 +174,7 @@ class Renamer:
             # File rename
             try:
                 # Import the safe case rename function
-                from utils.rename_logic import safe_case_rename, is_case_only_change
+                from utils.rename_logic import is_case_only_change, safe_case_rename
 
                 src_name = os.path.basename(src)
                 dst_name = os.path.basename(dst)
@@ -171,7 +185,9 @@ class Renamer:
                         results.append(RenameResult(src, dst, success=True))
                         logger.info(f"Case-only rename successful: {src_name} -> {dst_name}")
                     else:
-                        results.append(RenameResult(src, dst, success=False, error="Case-only rename failed"))
+                        results.append(
+                            RenameResult(src, dst, success=False, error="Case-only rename failed")
+                        )
                         logger.error(f"Case-only rename failed: {src_name} -> {dst_name}")
                 else:
                     # Regular rename
@@ -196,6 +212,7 @@ class Renamer:
 
         return results
 
+
 def filter_metadata_safe(metadata: dict) -> dict:
     """
     Returns a shallow copy of metadata with only JSON-safe primitive fields.
@@ -207,7 +224,4 @@ def filter_metadata_safe(metadata: dict) -> dict:
     Returns:
         dict: Filtered dictionary with only str, int, float, bool, or None values.
     """
-    return {
-        k: v for k, v in metadata.items()
-        if isinstance(v, (str, int, float, bool, type(None)))
-    }
+    return {k: v for k, v in metadata.items() if isinstance(v, (str, int, float, bool, type(None)))}

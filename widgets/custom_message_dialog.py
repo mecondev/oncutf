@@ -43,9 +43,16 @@ class CustomMessageDialog(QDialog):
     A custom-styled message dialog to replace QMessageBox.
     Supports question dialogs and information dialogs.
     """
-    def __init__(self, title: str, message: str, buttons: Optional[list[str]] = None,
-                parent: Optional[QWidget] = None, show_progress: bool = False,
-                show_checkbox: bool = False):
+
+    def __init__(
+        self,
+        title: str,
+        message: str,
+        buttons: Optional[list[str]] = None,
+        parent: Optional[QWidget] = None,
+        show_progress: bool = False,
+        show_checkbox: bool = False,
+    ):
         """
         Initialize a CustomMessageDialog.
 
@@ -85,7 +92,10 @@ class CustomMessageDialog(QDialog):
             self.progress_bar.setRange(0, 0)  # Indeterminate
             # DPI-aware progress bar height (8px at 96 DPI)
             from PyQt5.QtWidgets import QApplication
-            dpi_scale = QApplication.instance().devicePixelRatio() if QApplication.instance() else 1.0
+
+            dpi_scale = (
+                QApplication.instance().devicePixelRatio() if QApplication.instance() else 1.0
+            )
             progress_height = max(6, int(8 * dpi_scale))  # Minimum 6px, scaled for DPI
             self.progress_bar.setFixedHeight(progress_height)
             layout.addWidget(self.progress_bar)
@@ -119,7 +129,24 @@ class CustomMessageDialog(QDialog):
         super().showEvent(event)
         # Ensure dialog appears centered on the same screen as its parent
         from utils.multiscreen_helper import position_dialog_relative_to_parent
+
         position_dialog_relative_to_parent(self)
+
+        # Force normal cursor on the dialog and all its children
+        self.setCursor(Qt.ArrowCursor)  # type: ignore
+
+        # Apply normal cursor to all child widgets recursively
+        for child in self.findChildren(QWidget):
+            child.setCursor(Qt.ArrowCursor)  # type: ignore
+
+        # Process events to ensure cursor change takes effect
+        from core.pyqt_imports import QApplication
+
+        QApplication.processEvents()
+
+        # Don't clear wait cursor from parent - let it remain on the main window
+        # The wait cursor should be visible on the main window but not on the dialog
+        # We need to ensure the dialog has normal cursor while parent keeps wait cursor
 
     def _on_button(self, btn_text: str):
         """
@@ -139,8 +166,9 @@ class CustomMessageDialog(QDialog):
         return self.checkbox is not None and self.checkbox.isChecked()
 
     @staticmethod
-    def question(parent: QWidget, title: str, message: str,
-                 yes_text: str = "Yes", no_text: str = "No") -> bool:
+    def question(
+        parent: QWidget, title: str, message: str, yes_text: str = "Yes", no_text: str = "No"
+    ) -> bool:
         """
         Displays a question dialog, returning True if the "Yes" button was
         clicked and False if the "No" button was clicked.
@@ -168,6 +196,7 @@ class CustomMessageDialog(QDialog):
         # Ensure proper positioning on multiscreen setups before showing
         if parent:
             from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+
             ensure_dialog_on_parent_screen(dlg, parent)
 
         dlg.exec_()
@@ -199,13 +228,17 @@ class CustomMessageDialog(QDialog):
         # Ensure proper positioning on multiscreen setups before showing
         if parent:
             from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+
             ensure_dialog_on_parent_screen(dlg, parent)
 
         dlg.exec_()
 
     @staticmethod
-    def unsaved_changes(parent: QWidget, title: str = "Unsaved Changes",
-                       message: str = "You have unsaved metadata changes. What would you like to do?") -> str:
+    def unsaved_changes(
+        parent: QWidget,
+        title: str = "Unsaved Changes",
+        message: str = "You have unsaved metadata changes. What would you like to do?",
+    ) -> str:
         """
         Displays a dialog for handling unsaved changes with three options.
 
@@ -229,6 +262,7 @@ class CustomMessageDialog(QDialog):
         # Ensure proper positioning on multiscreen setups before showing
         if parent:
             from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+
             ensure_dialog_on_parent_screen(dlg, parent)
 
         dlg.exec_()
@@ -237,7 +271,7 @@ class CustomMessageDialog(QDialog):
         button_map = {
             "Save & Close": "save_and_close",
             "Close without saving": "close_without_saving",
-            "Cancel": "cancel"
+            "Cancel": "cancel",
         }
 
         return button_map.get(dlg.selected, "cancel")
@@ -291,6 +325,7 @@ class CustomMessageDialog(QDialog):
         # Ensure proper positioning on multiscreen setups before showing
         if parent:
             from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+
             ensure_dialog_on_parent_screen(dlg, parent)
 
         dlg.exec_()
@@ -299,7 +334,7 @@ class CustomMessageDialog(QDialog):
             "Overwrite": "overwrite",
             "Skip": "skip",
             "Skip All": "skip_all",
-            "Cancel": "cancel"
+            "Cancel": "cancel",
         }
 
         return label_map.get(dlg.selected, "cancel")  # fallback = cancel
@@ -335,7 +370,9 @@ class CustomMessageDialog(QDialog):
         """
         logger.debug(f"Creating waiting dialog: {message}")
 
-        dlg = CustomMessageDialog("Please Wait", message, buttons=None, parent=parent, show_progress=True)
+        dlg = CustomMessageDialog(
+            "Please Wait", message, buttons=None, parent=parent, show_progress=True
+        )
         # dlg.setModal(True)
         dlg.show()
         dlg.raise_()
@@ -362,11 +399,8 @@ class CustomMessageDialog(QDialog):
 
     @staticmethod
     def choice_with_apply_all(
-        parent: QWidget,
-        title: str,
-        message: str,
-        buttons: dict[str, str]
-        ) -> tuple[str, bool]:
+        parent: QWidget, title: str, message: str, buttons: dict[str, str]
+    ) -> tuple[str, bool]:
         """
         Show a custom dialog using CustomMessageDialog with a checkbox.
         Returns (selected_key, apply_to_all)
@@ -376,12 +410,13 @@ class CustomMessageDialog(QDialog):
             message=message,
             buttons=list(buttons.keys()),
             parent=parent,
-            show_checkbox=True
+            show_checkbox=True,
         )
 
         # Ensure proper positioning on multiscreen setups before showing
         if parent:
             from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+
             ensure_dialog_on_parent_screen(dlg, parent)
 
         dlg.exec_()
@@ -400,4 +435,3 @@ class CustomMessageDialog(QDialog):
         logger.warning("[CustomMessageDialog] reject() CALLED via ESC or close")
         super().reject()
         self.close()
-

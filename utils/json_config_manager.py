@@ -170,7 +170,9 @@ class JSONConfigManager:
         with self._lock:
             self._categories[category.name] = category
 
-    def get_category(self, category_name: str, create_if_not_exists: bool = False) -> Optional[ConfigCategory]:
+    def get_category(
+        self, category_name: str, create_if_not_exists: bool = False
+    ) -> Optional[ConfigCategory]:
         """Get configuration category by name."""
         category = self._categories.get(category_name)
         if not category and create_if_not_exists:
@@ -191,9 +193,12 @@ class JSONConfigManager:
             try:
                 # Debug: Reset config if requested
                 from config import DEBUG_RESET_CONFIG
+
                 if DEBUG_RESET_CONFIG:
                     if self.config_file.exists():
-                        logger.info(f"[DEBUG] Deleting config file for fresh start: {self.config_file}")
+                        logger.info(
+                            f"[DEBUG] Deleting config file for fresh start: {self.config_file}"
+                        )
                         try:
                             self.config_file.unlink()
                             # Also remove backup if it exists
@@ -210,7 +215,7 @@ class JSONConfigManager:
                     )
                     return True
 
-                with open(self.config_file, "r", encoding="utf-8") as f:
+                with open(self.config_file, encoding="utf-8") as f:
                     data = json.load(f)
 
                 for category_name, category in self._categories.items():
@@ -304,7 +309,7 @@ def load_config() -> dict:
         if not config_manager.config_file.exists():
             return {}
 
-        with open(config_manager.config_file, "r", encoding="utf-8") as f:
+        with open(config_manager.config_file, encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         logger.warning(f"Failed to load config: {e}")

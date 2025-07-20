@@ -65,14 +65,14 @@ class CustomSplashScreen(QSplashScreen):
         if not original_pixmap.isNull():
             # Scale to our desired size
             scaled_pixmap = original_pixmap.scaled(
-                self.splash_width,
-                self.splash_height,
-                Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
+                self.splash_width, self.splash_height, Qt.KeepAspectRatio, Qt.SmoothTransformation
             )
 
             # Create a new pixmap with exact dimensions if scaling didn't match
-            if scaled_pixmap.width() != self.splash_width or scaled_pixmap.height() != self.splash_height:
+            if (
+                scaled_pixmap.width() != self.splash_width
+                or scaled_pixmap.height() != self.splash_height
+            ):
                 final_pixmap = QPixmap(self.splash_width, self.splash_height)
                 final_pixmap.fill(Qt.black)  # Fill with black background
 
@@ -95,20 +95,17 @@ class CustomSplashScreen(QSplashScreen):
 
             painter = QPainter(fallback_pixmap)
             painter.setRenderHint(QPainter.Antialiasing)
-            painter.setPen(QPen(Qt.white)) # type: ignore
+            painter.setPen(QPen(Qt.white))  # type: ignore
 
             # Use our custom InterDisplay-SemiBold for title
             from utils.fonts import get_inter_font
+
             try:
-                font = get_inter_font('titles', 24)  # Uses InterDisplay-SemiBold
+                font = get_inter_font("titles", 24)  # Uses InterDisplay-SemiBold
             except (ImportError, AttributeError):
                 font = QFont("Inter", 24, QFont.Bold)  # Fallback
             painter.setFont(font)
-            painter.drawText(
-                fallback_pixmap.rect(),
-                Qt.AlignCenter,
-                "OnCutF"
-            )
+            painter.drawText(fallback_pixmap.rect(), Qt.AlignCenter, "OnCutF")
             painter.end()
 
             super().__init__(fallback_pixmap)
@@ -131,29 +128,38 @@ class CustomSplashScreen(QSplashScreen):
         try:
             # Try to get the saved main window position from config
             from utils.json_config_manager import get_app_config_manager
+
             config_manager = get_app_config_manager()
-            window_config = config_manager.get_category('window')
+            window_config = config_manager.get_category("window")
 
             target_screen = None
             target_x = None
             target_y = None
 
             if window_config:
-                geometry = window_config.get('geometry')
+                geometry = window_config.get("geometry")
                 if geometry:
                     # Calculate center of the saved main window position
-                    main_window_center_x = geometry['x'] + geometry['width'] // 2
-                    main_window_center_y = geometry['y'] + geometry['height'] // 2
+                    main_window_center_x = geometry["x"] + geometry["width"] // 2
+                    main_window_center_y = geometry["y"] + geometry["height"] // 2
 
                     # Find which screen contains the main window center point
                     app = QApplication.instance()
                     if app:
                         for screen in app.screens():
                             screen_geometry = screen.geometry()
-                            if (screen_geometry.x() <= main_window_center_x <= screen_geometry.x() + screen_geometry.width() and
-                                screen_geometry.y() <= main_window_center_y <= screen_geometry.y() + screen_geometry.height()):
+                            if (
+                                screen_geometry.x()
+                                <= main_window_center_x
+                                <= screen_geometry.x() + screen_geometry.width()
+                                and screen_geometry.y()
+                                <= main_window_center_y
+                                <= screen_geometry.y() + screen_geometry.height()
+                            ):
                                 target_screen = screen
-                                logger.debug(f"[Splash] Found target screen for saved main window position: {screen.name()}")
+                                logger.debug(
+                                    f"[Splash] Found target screen for saved main window position: {screen.name()}"
+                                )
                                 break
 
                     if target_screen:
@@ -163,13 +169,25 @@ class CustomSplashScreen(QSplashScreen):
 
                         # Make sure splash screen stays within the target screen bounds
                         screen_geometry = target_screen.geometry()
-                        target_x = max(screen_geometry.x(),
-                                     min(target_x, screen_geometry.x() + screen_geometry.width() - self.splash_width))
-                        target_y = max(screen_geometry.y(),
-                                     min(target_y, screen_geometry.y() + screen_geometry.height() - self.splash_height))
+                        target_x = max(
+                            screen_geometry.x(),
+                            min(
+                                target_x,
+                                screen_geometry.x() + screen_geometry.width() - self.splash_width,
+                            ),
+                        )
+                        target_y = max(
+                            screen_geometry.y(),
+                            min(
+                                target_y,
+                                screen_geometry.y() + screen_geometry.height() - self.splash_height,
+                            ),
+                        )
 
                         self.move(target_x, target_y)
-                        logger.debug(f"[Splash] Positioned on screen where main window will appear: {target_x}, {target_y}")
+                        logger.debug(
+                            f"[Splash] Positioned on screen where main window will appear: {target_x}, {target_y}"
+                        )
                         return
 
         except Exception as e:
@@ -181,25 +199,41 @@ class CustomSplashScreen(QSplashScreen):
             if app:
                 # First try to get the primary screen (this should work better for dual monitor)
                 target_screen = app.primaryScreen()
-                logger.debug(f"[Splash] Using primary screen: {target_screen.name() if target_screen else 'None'}")
+                logger.debug(
+                    f"[Splash] Using primary screen: {target_screen.name() if target_screen else 'None'}"
+                )
 
                 # If no primary screen found, try to get the screen containing the mouse cursor
                 if not target_screen:
-                    cursor_pos = app.desktop().cursor().pos() if hasattr(app.desktop().cursor(), 'pos') else None
+                    cursor_pos = (
+                        app.desktop().cursor().pos()
+                        if hasattr(app.desktop().cursor(), "pos")
+                        else None
+                    )
                     logger.debug(f"[Splash] Cursor position: {cursor_pos}")
 
                     if cursor_pos:
                         for screen in app.screens():
                             screen_geometry = screen.geometry()
-                            if (screen_geometry.x() <= cursor_pos.x() <= screen_geometry.x() + screen_geometry.width() and
-                                screen_geometry.y() <= cursor_pos.y() <= screen_geometry.y() + screen_geometry.height()):
+                            if (
+                                screen_geometry.x()
+                                <= cursor_pos.x()
+                                <= screen_geometry.x() + screen_geometry.width()
+                                and screen_geometry.y()
+                                <= cursor_pos.y()
+                                <= screen_geometry.y() + screen_geometry.height()
+                            ):
                                 target_screen = screen
-                                logger.debug(f"[Splash] Found screen containing cursor: {screen.name()}")
+                                logger.debug(
+                                    f"[Splash] Found screen containing cursor: {screen.name()}"
+                                )
                                 break
 
                 if target_screen:
                     screen_geometry = target_screen.availableGeometry()
-                    logger.debug(f"[Splash] Target screen geometry: {screen_geometry.x()}, {screen_geometry.y()}, {screen_geometry.width()}x{screen_geometry.height()}")
+                    logger.debug(
+                        f"[Splash] Target screen geometry: {screen_geometry.x()}, {screen_geometry.y()}, {screen_geometry.width()}x{screen_geometry.height()}"
+                    )
 
                     # Calculate center position on the target screen
                     x = screen_geometry.x() + (screen_geometry.width() - self.splash_width) // 2
@@ -215,12 +249,14 @@ class CustomSplashScreen(QSplashScreen):
         # Ultimate fallback: use modern QScreen API instead of deprecated QDesktopWidget
         try:
             app = QApplication.instance()
-            if app and hasattr(app, 'primaryScreen'):
-                primary_screen = app.primaryScreen() # type: ignore[attr-defined]
+            if app and hasattr(app, "primaryScreen"):
+                primary_screen = app.primaryScreen()  # type: ignore[attr-defined]
                 if primary_screen:
                     screen_geometry = primary_screen.availableGeometry()
 
-                    logger.debug(f"[Splash] Fallback using QScreen API primary screen: {screen_geometry.width()}x{screen_geometry.height()}")
+                    logger.debug(
+                        f"[Splash] Fallback using QScreen API primary screen: {screen_geometry.width()}x{screen_geometry.height()}"
+                    )
 
                     # Calculate center position on primary screen
                     x = screen_geometry.x() + (screen_geometry.width() - self.splash_width) // 2
@@ -242,7 +278,9 @@ class CustomSplashScreen(QSplashScreen):
         self.dots_count = (self.dots_count + 1) % (self.max_dots + 1)
         self.repaint()  # Force repaint to show new dots
 
-    def showMessage(self, message: str, alignment: int = Qt.AlignBottom | Qt.AlignCenter, color=None):
+    def showMessage(
+        self, message: str, alignment: int = Qt.AlignBottom | Qt.AlignCenter, color=None
+    ):
         """
         Override showMessage to add custom text rendering.
 
@@ -252,7 +290,6 @@ class CustomSplashScreen(QSplashScreen):
             color: Text color (optional)
         """
         # Don't use the default showMessage, we'll handle text in drawContents
-        pass
 
     def drawContents(self, painter: QPainter):
         """
@@ -265,9 +302,10 @@ class CustomSplashScreen(QSplashScreen):
 
         # Set up fonts using our custom font system
         from utils.fonts import get_inter_font
+
         try:
-            version_font = get_inter_font('base', 11)  # Uses Inter-Regular
-            init_font = get_inter_font('base', 9)     # Uses Inter-Regular
+            version_font = get_inter_font("base", 11)  # Uses Inter-Regular
+            init_font = get_inter_font("base", 9)  # Uses Inter-Regular
         except (ImportError, AttributeError):
             # Fallback to system fonts
             version_font = QFont("Inter", 11, QFont.Normal)
@@ -313,7 +351,7 @@ class CustomSplashScreen(QSplashScreen):
             widget: Widget to finish splash for
         """
         # Stop the dots animation timer
-        if hasattr(self, 'dots_timer'):
+        if hasattr(self, "dots_timer"):
             self.dots_timer.stop()
 
         # Restore cursor before finishing
@@ -324,7 +362,7 @@ class CustomSplashScreen(QSplashScreen):
     def close(self):
         """Override close to restore cursor and stop animation."""
         # Stop the dots animation timer
-        if hasattr(self, 'dots_timer'):
+        if hasattr(self, "dots_timer"):
             self.dots_timer.stop()
 
         self.setCursor(Qt.ArrowCursor)

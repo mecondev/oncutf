@@ -5,12 +5,11 @@ This module tests the enhanced rename workflow that prevents Qt object lifecycle
 while ensuring proper UI state restoration after rename operations.
 """
 
-import pytest
-from unittest.mock import MagicMock, patch, call
 from datetime import datetime
+from unittest.mock import MagicMock, patch
 
-from models.file_item import FileItem
 from core.rename_manager import RenameManager
+from models.file_item import FileItem
 
 
 class TestSafeRenameWorkflow:
@@ -45,7 +44,7 @@ class TestSafeRenameWorkflow:
         """Test that the safe post-rename workflow executes all steps properly."""
         checked_paths = {"/test/folder/file1.txt", "/test/folder/file2.txt"}
 
-        with patch('utils.timer_manager.get_timer_manager') as mock_timer_manager:
+        with patch("utils.timer_manager.get_timer_manager") as mock_timer_manager:
             mock_timer = MagicMock()
             mock_timer_manager.return_value = mock_timer
 
@@ -56,15 +55,13 @@ class TestSafeRenameWorkflow:
             assert self.mock_main_window.last_action == "rename"
 
             # Verify folder reload was called
-            self.mock_main_window.load_files_from_folder.assert_called_once_with(
-                "/test/folder"
-            )
+            self.mock_main_window.load_files_from_folder.assert_called_once_with("/test/folder")
 
             # Verify timer was scheduled for state restoration
             assert mock_timer.schedule.called
             schedule_call = mock_timer.schedule.call_args
-            assert schedule_call[1]['delay'] == 50
-            assert schedule_call[1]['timer_id'] == "post_rename_state_restore"
+            assert schedule_call[1]["delay"] == 50
+            assert schedule_call[1]["timer_id"] == "post_rename_state_restore"
 
     def test_safe_post_rename_workflow_with_invalid_main_window(self):
         """Test workflow handles invalid main window gracefully."""
@@ -124,6 +121,7 @@ class TestSafeRenameWorkflow:
 
     def test_restore_checked_state_safe_with_missing_files(self):
         """Test safe restoration handles missing files gracefully."""
+
         # Mock find_fileitem_by_path to return None for some files
         def mock_find_file(path):
             if path == "/test/folder/file1.txt":
@@ -214,9 +212,11 @@ class TestSafeRenameWorkflow:
         self.mock_main_window.get_selected_files.return_value = []
         self.mock_main_window.rename_modules_area.get_all_data.return_value = {"modules": []}
         self.mock_main_window.final_transform_container.get_data.return_value = {}
-        self.mock_main_window.file_operations_manager.rename_files.return_value = 2  # 2 files renamed
+        self.mock_main_window.file_operations_manager.rename_files.return_value = (
+            2  # 2 files renamed
+        )
 
-        with patch('utils.timer_manager.get_timer_manager') as mock_timer_manager:
+        with patch("utils.timer_manager.get_timer_manager") as mock_timer_manager:
             mock_timer = MagicMock()
             mock_timer_manager.return_value = mock_timer
 
@@ -226,8 +226,8 @@ class TestSafeRenameWorkflow:
             # Verify timer was scheduled for post-rename workflow
             assert mock_timer.schedule.called
             schedule_call = mock_timer.schedule.call_args
-            assert schedule_call[1]['delay'] == 100
-            assert schedule_call[1]['timer_id'] == "post_rename_workflow"
+            assert schedule_call[1]["delay"] == 100
+            assert schedule_call[1]["timer_id"] == "post_rename_workflow"
 
     def test_rename_files_skips_workflow_when_no_files_renamed(self):
         """Test that rename_files skips workflow when no files are renamed."""
@@ -235,9 +235,11 @@ class TestSafeRenameWorkflow:
         self.mock_main_window.get_selected_files.return_value = []
         self.mock_main_window.rename_modules_area.get_all_data.return_value = {"modules": []}
         self.mock_main_window.final_transform_container.get_data.return_value = {}
-        self.mock_main_window.file_operations_manager.rename_files.return_value = 0  # No files renamed
+        self.mock_main_window.file_operations_manager.rename_files.return_value = (
+            0  # No files renamed
+        )
 
-        with patch('utils.timer_manager.get_timer_manager') as mock_timer_manager:
+        with patch("utils.timer_manager.get_timer_manager") as mock_timer_manager:
             mock_timer = MagicMock()
             mock_timer_manager.return_value = mock_timer
 

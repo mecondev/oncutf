@@ -32,15 +32,17 @@ logger = get_cached_logger(__name__)
 
 class StatusPriority(Enum):
     """Priority levels for status messages."""
-    LOW = 1          # General info, auto-reset quickly
-    NORMAL = 2       # Standard operations
-    HIGH = 3         # Important operations, user actions
-    CRITICAL = 4     # Errors, warnings that need attention
-    SYSTEM = 5       # System-level messages, always visible
+
+    LOW = 1  # General info, auto-reset quickly
+    NORMAL = 2  # Standard operations
+    HIGH = 3  # Important operations, user actions
+    CRITICAL = 4  # Errors, warnings that need attention
+    SYSTEM = 5  # System-level messages, always visible
 
 
 class StatusCategory(Enum):
     """Categories of status messages for better organization."""
+
     GENERAL = "general"
     FILE_OPERATIONS = "file_ops"
     METADATA = "metadata"
@@ -55,6 +57,7 @@ class StatusCategory(Enum):
 @dataclass
 class StatusEntry:
     """Represents a status message with metadata."""
+
     message: str
     color: str
     category: StatusCategory
@@ -84,10 +87,16 @@ class StatusManager:
     # Core Status Methods (Enhanced)
     # =====================================
 
-    def set_status(self, text: str, color: str = "", auto_reset: bool = False,
-                   reset_delay: int = 3000, category: StatusCategory = StatusCategory.GENERAL,
-                   priority: StatusPriority = StatusPriority.NORMAL,
-                   operation_id: Optional[str] = None) -> None:
+    def set_status(
+        self,
+        text: str,
+        color: str = "",
+        auto_reset: bool = False,
+        reset_delay: int = 3000,
+        category: StatusCategory = StatusCategory.GENERAL,
+        priority: StatusPriority = StatusPriority.NORMAL,
+        operation_id: Optional[str] = None,
+    ) -> None:
         """
         Enhanced status setting with categorization and priority.
 
@@ -112,7 +121,7 @@ class StatusManager:
             priority=priority,
             auto_reset=auto_reset,
             reset_delay=reset_delay,
-            operation_id=operation_id or self._current_operation
+            operation_id=operation_id or self._current_operation,
         )
 
         # Add to history
@@ -146,15 +155,20 @@ class StatusManager:
             color=STATUS_COLORS["ready"],
             auto_reset=False,
             category=StatusCategory.GENERAL,
-            priority=StatusPriority.LOW
+            priority=StatusPriority.LOW,
         )
 
     # =====================================
     # Specialized Status Methods
     # =====================================
 
-    def set_file_operation_status(self, message: str, success: bool = True,
-                                  auto_reset: bool = True, operation_id: Optional[str] = None) -> None:
+    def set_file_operation_status(
+        self,
+        message: str,
+        success: bool = True,
+        auto_reset: bool = True,
+        operation_id: Optional[str] = None,
+    ) -> None:
         """Set status for file operations (load, save, rename, etc.)."""
         color = STATUS_COLORS["operation_success"] if success else STATUS_COLORS["error"]
         priority = StatusPriority.HIGH if not success else StatusPriority.NORMAL
@@ -165,11 +179,16 @@ class StatusManager:
             auto_reset=auto_reset,
             category=StatusCategory.FILE_OPERATIONS,
             priority=priority,
-            operation_id=operation_id
+            operation_id=operation_id,
         )
 
-    def set_metadata_status(self, message: str, operation_type: str = "basic",
-                           file_count: int = 0, auto_reset: bool = True) -> None:
+    def set_metadata_status(
+        self,
+        message: str,
+        operation_type: str = "basic",
+        file_count: int = 0,
+        auto_reset: bool = True,
+    ) -> None:
         """Set status for metadata operations with smart formatting."""
         # Determine color based on operation type
         color_map = {
@@ -177,7 +196,7 @@ class StatusManager:
             "extended": STATUS_COLORS["metadata_extended"],
             "skipped": STATUS_COLORS["metadata_skipped"],
             "success": STATUS_COLORS["metadata_success"],
-            "error": STATUS_COLORS["error"]
+            "error": STATUS_COLORS["error"],
         }
 
         color = color_map.get(operation_type, STATUS_COLORS["info"])
@@ -198,18 +217,23 @@ class StatusManager:
             color=color,
             auto_reset=auto_reset,
             category=StatusCategory.METADATA,
-            priority=StatusPriority.NORMAL
+            priority=StatusPriority.NORMAL,
         )
 
-    def set_hash_status(self, message: str, file_count: int = 0,
-                       operation_type: str = "calculation", auto_reset: bool = True) -> None:
+    def set_hash_status(
+        self,
+        message: str,
+        file_count: int = 0,
+        operation_type: str = "calculation",
+        auto_reset: bool = True,
+    ) -> None:
         """Set status for hash operations with progress context."""
         color_map = {
             "calculation": STATUS_COLORS["info"],
             "success": STATUS_COLORS["hash_success"],
             "duplicate_found": STATUS_COLORS["duplicate_found"],
             "no_duplicates": STATUS_COLORS["operation_success"],
-            "error": STATUS_COLORS["error"]
+            "error": STATUS_COLORS["error"],
         }
 
         color = color_map.get(operation_type, STATUS_COLORS["info"])
@@ -225,11 +249,12 @@ class StatusManager:
             color=color,
             auto_reset=auto_reset,
             category=StatusCategory.HASH,
-            priority=StatusPriority.NORMAL
+            priority=StatusPriority.NORMAL,
         )
 
-    def set_rename_status(self, message: str, renamed_count: int = 0,
-                         success: bool = True, auto_reset: bool = True) -> None:
+    def set_rename_status(
+        self, message: str, renamed_count: int = 0, success: bool = True, auto_reset: bool = True
+    ) -> None:
         """Set status for rename operations with count information."""
         if success:
             color = STATUS_COLORS["rename_success"]
@@ -246,11 +271,12 @@ class StatusManager:
             color=color,
             auto_reset=auto_reset,
             category=StatusCategory.RENAME,
-            priority=StatusPriority.HIGH if not success else StatusPriority.NORMAL
+            priority=StatusPriority.HIGH if not success else StatusPriority.NORMAL,
         )
 
-    def set_selection_status(self, message: str, selected_count: int = 0,
-                           total_count: int = 0, auto_reset: bool = True) -> None:
+    def set_selection_status(
+        self, message: str, selected_count: int = 0, total_count: int = 0, auto_reset: bool = True
+    ) -> None:
         """Set status for selection operations with count information."""
         if selected_count == 0 and "No" not in message:
             color = STATUS_COLORS["no_action"]
@@ -267,24 +293,25 @@ class StatusManager:
             color=color,
             auto_reset=auto_reset,
             category=StatusCategory.SELECTION,
-            priority=StatusPriority.LOW
+            priority=StatusPriority.LOW,
         )
 
-    def set_validation_status(self, message: str, validation_type: str = "info",
-                            auto_reset: bool = True) -> None:
+    def set_validation_status(
+        self, message: str, validation_type: str = "info", auto_reset: bool = True
+    ) -> None:
         """Set status for validation operations."""
         color_map = {
             "info": STATUS_COLORS["info"],
             "warning": STATUS_COLORS["warning"],
             "error": STATUS_COLORS["error"],
-            "success": STATUS_COLORS["operation_success"]
+            "success": STATUS_COLORS["operation_success"],
         }
 
         priority_map = {
             "info": StatusPriority.LOW,
             "warning": StatusPriority.HIGH,
             "error": StatusPriority.CRITICAL,
-            "success": StatusPriority.NORMAL
+            "success": StatusPriority.NORMAL,
         }
 
         self.set_status(
@@ -292,11 +319,12 @@ class StatusManager:
             color=color_map.get(validation_type, STATUS_COLORS["info"]),
             auto_reset=auto_reset,
             category=StatusCategory.VALIDATION,
-            priority=priority_map.get(validation_type, StatusPriority.NORMAL)
+            priority=priority_map.get(validation_type, StatusPriority.NORMAL),
         )
 
-    def set_progress_status(self, message: str, progress_percent: int = 0,
-                          operation_id: Optional[str] = None) -> None:
+    def set_progress_status(
+        self, message: str, progress_percent: int = 0, operation_id: Optional[str] = None
+    ) -> None:
         """Set status for progress operations with percentage."""
         if 0 < progress_percent < 100:
             formatted_message = f"{message} ({progress_percent}%)"
@@ -309,24 +337,25 @@ class StatusManager:
             auto_reset=False,
             category=StatusCategory.PROGRESS,
             priority=StatusPriority.NORMAL,
-            operation_id=operation_id
+            operation_id=operation_id,
         )
 
     # =====================================
     # Operation Context Management
     # =====================================
 
-    def start_operation(self, operation_id: str, operation_type: str,
-                       description: str = "") -> None:
+    def start_operation(
+        self, operation_id: str, operation_type: str, description: str = ""
+    ) -> None:
         """Start tracking a new operation context."""
         with self._lock:
             self._current_operation = operation_id
             self._operation_contexts[operation_id] = {
-                'type': operation_type,
-                'description': description,
-                'start_time': datetime.now(),
-                'status_count': 0,
-                'last_update': datetime.now()
+                "type": operation_type,
+                "description": description,
+                "start_time": datetime.now(),
+                "status_count": 0,
+                "last_update": datetime.now(),
             }
 
         logger.debug(f"[StatusManager] Started operation: {operation_id} ({operation_type})")
@@ -336,10 +365,11 @@ class StatusManager:
         with self._lock:
             if operation_id in self._operation_contexts:
                 self._operation_contexts[operation_id].update(kwargs)
-                self._operation_contexts[operation_id]['last_update'] = datetime.now()
+                self._operation_contexts[operation_id]["last_update"] = datetime.now()
 
-    def finish_operation(self, operation_id: str, success: bool = True,
-                        final_message: str = "") -> None:
+    def finish_operation(
+        self, operation_id: str, success: bool = True, final_message: str = ""
+    ) -> None:
         """Finish an operation and clean up context."""
         # First, prepare the status data without holding the lock
         status_data = None
@@ -347,29 +377,30 @@ class StatusManager:
         with self._lock:
             if operation_id in self._operation_contexts:
                 context = self._operation_contexts[operation_id]
-                duration = (datetime.now() - context['start_time']).total_seconds()
+                duration = (datetime.now() - context["start_time"]).total_seconds()
 
                 if final_message:
                     category_map = {
-                        'metadata': StatusCategory.METADATA,
-                        'hash': StatusCategory.HASH,
-                        'rename': StatusCategory.RENAME,
-                        'file': StatusCategory.FILE_OPERATIONS
+                        "metadata": StatusCategory.METADATA,
+                        "hash": StatusCategory.HASH,
+                        "rename": StatusCategory.RENAME,
+                        "file": StatusCategory.FILE_OPERATIONS,
                     }
 
-                    category = category_map.get(
-                        context['type'],
-                        StatusCategory.GENERAL
-                    )
+                    category = category_map.get(context["type"], StatusCategory.GENERAL)
 
                     # Prepare status data to call set_status outside the lock
                     status_data = {
-                        'message': final_message,
-                        'color': STATUS_COLORS["operation_success"] if success else STATUS_COLORS["error"],
-                        'auto_reset': True,
-                        'category': category,
-                        'priority': StatusPriority.HIGH if not success else StatusPriority.NORMAL,
-                        'operation_id': operation_id
+                        "message": final_message,
+                        "color": (
+                            STATUS_COLORS["operation_success"]
+                            if success
+                            else STATUS_COLORS["error"]
+                        ),
+                        "auto_reset": True,
+                        "category": category,
+                        "priority": StatusPriority.HIGH if not success else StatusPriority.NORMAL,
+                        "operation_id": operation_id,
                     }
 
                 logger.info(
@@ -386,21 +417,26 @@ class StatusManager:
         # Call set_status outside the lock to avoid deadlock
         if status_data:
             self.set_status(
-                status_data['message'],
-                color=status_data['color'],
-                auto_reset=status_data['auto_reset'],
-                category=status_data['category'],
-                priority=status_data['priority'],
-                operation_id=status_data['operation_id']
+                status_data["message"],
+                color=status_data["color"],
+                auto_reset=status_data["auto_reset"],
+                category=status_data["category"],
+                priority=status_data["priority"],
+                operation_id=status_data["operation_id"],
             )
 
     # =====================================
     # Bulk Operations Support
     # =====================================
 
-    def set_bulk_operation_status(self, operation_type: str, processed: int,
-                                 total: int, current_item: str = "",
-                                 operation_id: Optional[str] = None) -> None:
+    def set_bulk_operation_status(
+        self,
+        operation_type: str,
+        processed: int,
+        total: int,
+        current_item: str = "",
+        operation_id: Optional[str] = None,
+    ) -> None:
         """Set status for bulk operations with progress tracking."""
         progress_percent = int((processed / total) * 100) if total > 0 else 0
 
@@ -411,8 +447,9 @@ class StatusManager:
 
         self.set_progress_status(message, progress_percent, operation_id)
 
-    def set_batch_completion_status(self, operation_type: str, total_processed: int,
-                                   successful: int, failed: int = 0) -> None:
+    def set_batch_completion_status(
+        self, operation_type: str, total_processed: int, successful: int, failed: int = 0
+    ) -> None:
         """Set status for completed batch operations with summary."""
         if failed == 0:
             message = f"{operation_type} completed: {successful} files processed"
@@ -422,10 +459,10 @@ class StatusManager:
             color = STATUS_COLORS["warning"]
 
         category_map = {
-            'Metadata loading': StatusCategory.METADATA,
-            'Hash calculation': StatusCategory.HASH,
-            'File rename': StatusCategory.RENAME,
-            'File validation': StatusCategory.VALIDATION
+            "Metadata loading": StatusCategory.METADATA,
+            "Hash calculation": StatusCategory.HASH,
+            "File rename": StatusCategory.RENAME,
+            "File validation": StatusCategory.VALIDATION,
         }
 
         category = category_map.get(operation_type, StatusCategory.FILE_OPERATIONS)
@@ -435,7 +472,7 @@ class StatusManager:
             color=color,
             auto_reset=True,
             category=category,
-            priority=StatusPriority.HIGH if failed > 0 else StatusPriority.NORMAL
+            priority=StatusPriority.HIGH if failed > 0 else StatusPriority.NORMAL,
         )
 
     # =====================================
@@ -449,7 +486,7 @@ class StatusManager:
             color=STATUS_COLORS["error"],
             auto_reset=auto_reset,
             category=StatusCategory.SYSTEM,
-            priority=StatusPriority.CRITICAL
+            priority=StatusPriority.CRITICAL,
         )
 
     def set_success(self, message: str, auto_reset: bool = True) -> None:
@@ -459,7 +496,7 @@ class StatusManager:
             color=STATUS_COLORS["success"],
             auto_reset=auto_reset,
             category=StatusCategory.GENERAL,
-            priority=StatusPriority.NORMAL
+            priority=StatusPriority.NORMAL,
         )
 
     def set_warning(self, message: str, auto_reset: bool = True) -> None:
@@ -469,7 +506,7 @@ class StatusManager:
             color=STATUS_COLORS["warning"],
             auto_reset=auto_reset,
             category=StatusCategory.SYSTEM,
-            priority=StatusPriority.HIGH
+            priority=StatusPriority.HIGH,
         )
 
     def set_info(self, message: str, auto_reset: bool = True) -> None:
@@ -479,7 +516,7 @@ class StatusManager:
             color=STATUS_COLORS["info"],
             auto_reset=auto_reset,
             category=StatusCategory.GENERAL,
-            priority=StatusPriority.LOW
+            priority=StatusPriority.LOW,
         )
 
     def set_loading(self, message: str = "Loading...") -> None:
@@ -489,7 +526,7 @@ class StatusManager:
             color=STATUS_COLORS["loading"],
             auto_reset=False,
             category=StatusCategory.PROGRESS,
-            priority=StatusPriority.NORMAL
+            priority=StatusPriority.NORMAL,
         )
 
     # =====================================
@@ -520,12 +557,12 @@ class StatusManager:
                     f"Selected {selection_percent}% of files",
                     selected_files,
                     total_files,
-                    auto_reset=True
+                    auto_reset=True,
                 )
 
         logger.debug(
             f"[StatusManager] Files label updated: {total_files} total, {selected_files} selected",
-            extra={"dev_only": True}
+            extra={"dev_only": True},
         )
 
     def clear_file_table_status(self, files_label, message: str = "No folder selected") -> None:
@@ -538,7 +575,7 @@ class StatusManager:
             color=STATUS_COLORS["loading"],
             auto_reset=False,
             category=StatusCategory.FILE_OPERATIONS,
-            priority=StatusPriority.LOW
+            priority=StatusPriority.LOW,
         )
 
     def show_metadata_status(self, num_files: int, force_extended_metadata: bool) -> None:
@@ -549,7 +586,7 @@ class StatusManager:
             f"Loaded {num_files} files",
             operation_type=operation_type,
             file_count=num_files,
-            auto_reset=True
+            auto_reset=True,
         )
 
     def update_status_from_preview(self, status_html: str) -> None:
@@ -559,22 +596,24 @@ class StatusManager:
 
         # Clean HTML for logging
         import re
-        clean_text = re.sub('<[^<]+?>', '', status_html)
+
+        clean_text = re.sub("<[^<]+?>", "", status_html)
 
         self.status_label.setText(status_html)
 
         # Add to history as preview category
-        self._add_to_history(StatusEntry(
-            message=clean_text,
-            color="",
-            category=StatusCategory.PROGRESS,
-            priority=StatusPriority.LOW,
-            operation_id=self._current_operation
-        ))
+        self._add_to_history(
+            StatusEntry(
+                message=clean_text,
+                color="",
+                category=StatusCategory.PROGRESS,
+                priority=StatusPriority.LOW,
+                operation_id=self._current_operation,
+            )
+        )
 
         logger.debug(
-            f"[StatusManager] Preview status: {clean_text[:50]}...",
-            extra={"dev_only": True}
+            f"[StatusManager] Preview status: {clean_text[:50]}...", extra={"dev_only": True}
         )
 
     # =====================================
@@ -588,10 +627,11 @@ class StatusManager:
 
             # Trim history if too large
             if len(self._status_history) > self._max_history_size:
-                self._status_history = self._status_history[-self._max_history_size:]
+                self._status_history = self._status_history[-self._max_history_size :]
 
-    def get_status_history(self, category: Optional[StatusCategory] = None,
-                          limit: int = 20) -> List[StatusEntry]:
+    def get_status_history(
+        self, category: Optional[StatusCategory] = None, limit: int = 20
+    ) -> List[StatusEntry]:
         """Get recent status history, optionally filtered by category."""
         with self._lock:
             history = self._status_history.copy()
@@ -609,11 +649,10 @@ class StatusManager:
 
                 # Add status history for this operation
                 operation_statuses = [
-                    entry for entry in self._status_history
-                    if entry.operation_id == operation_id
+                    entry for entry in self._status_history if entry.operation_id == operation_id
                 ]
-                context['status_history'] = operation_statuses
-                context['status_count'] = len(operation_statuses)
+                context["status_history"] = operation_statuses
+                context["status_count"] = len(operation_statuses)
 
                 return context
 

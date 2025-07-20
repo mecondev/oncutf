@@ -43,12 +43,7 @@ def analyze_drop(paths: List[str]) -> Dict:
     else:
         drop_type = "unknown"
 
-    return {
-        "type": drop_type,
-        "folders": folders,
-        "files": files,
-        "rejected": rejected
-    }
+    return {"type": drop_type, "folders": folders, "files": files, "rejected": rejected}
 
 
 def filter_allowed_files(files: List[str]) -> Tuple[List[str], List[str]]:
@@ -72,9 +67,16 @@ def ask_recursive_dialog(folder_path: str, parent=None) -> bool:
     Returns True if the user selects Yes.
     """
     from widgets.custom_message_dialog import CustomMessageDialog
+
     folder_name = os.path.basename(folder_path)
     message = f"Do you want to import files from all subfolders of '{folder_name}' as well?"
-    return CustomMessageDialog.question(parent, "Recursive Import", message, yes_text="Yes (recursive)", no_text="No (top folder only)")
+    return CustomMessageDialog.question(
+        parent,
+        "Recursive Import",
+        message,
+        yes_text="Yes (recursive)",
+        no_text="No (top folder only)",
+    )
 
 
 def show_rejected_dialog(rejected: list[str], imported_count: int = 0, parent=None) -> None:
@@ -82,6 +84,7 @@ def show_rejected_dialog(rejected: list[str], imported_count: int = 0, parent=No
     Show a custom dialog listing the rejected files/folders, with a summary message above a scrollable area.
     """
     from widgets.custom_message_dialog import CustomMessageDialog
+
     skipped_count = len(rejected)
     if skipped_count == 0:
         return
@@ -93,6 +96,7 @@ def show_rejected_dialog(rejected: list[str], imported_count: int = 0, parent=No
     else:
         # Show summary and scrollable list
         from core.pyqt_imports import QDialog, QLabel, QPushButton, QTextEdit, QVBoxLayout
+
         dialog = QDialog(parent)
         dialog.setWindowTitle("Some files were skipped")
         layout = QVBoxLayout(dialog)
@@ -107,6 +111,7 @@ def show_rejected_dialog(rejected: list[str], imported_count: int = 0, parent=No
         ok_btn.clicked.connect(dialog.accept)
         layout.addWidget(ok_btn)
         dialog.exec_()
+
 
 def extract_file_paths(mime_data: QMimeData) -> List[str]:
     """

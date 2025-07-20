@@ -17,6 +17,7 @@ from core.pyqt_imports import Qt
 
 class ModifierAction(Enum):
     """Enumeration of available modifier actions for file operations."""
+
     REPLACE_SHALLOW = "replace_shallow"
     REPLACE_RECURSIVE = "replace_recursive"
     MERGE_SHALLOW = "merge_shallow"
@@ -101,7 +102,7 @@ def get_action_description(action: ModifierAction) -> str:
         ModifierAction.REPLACE_SHALLOW: "Replace + Shallow",
         ModifierAction.REPLACE_RECURSIVE: "Replace + Recursive",
         ModifierAction.MERGE_SHALLOW: "Merge + Shallow",
-        ModifierAction.MERGE_RECURSIVE: "Merge + Recursive"
+        ModifierAction.MERGE_RECURSIVE: "Merge + Recursive",
     }
     return descriptions.get(action, "Unknown")
 

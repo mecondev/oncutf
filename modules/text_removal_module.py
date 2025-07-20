@@ -9,11 +9,21 @@ It supports removing text from the start, end, or anywhere in the filename,
 with case-sensitive or case-insensitive matching.
 """
 
+import logging
 import re
 from typing import Optional
-from core.pyqt_imports import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QCheckBox
+
+from core.pyqt_imports import (
+    QCheckBox,
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    Qt,
+    QVBoxLayout,
+    QWidget,
+)
 from modules.base_module import BaseRenameModule
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -65,13 +75,12 @@ class TextRemovalModule(BaseRenameModule):
         position_label = QLabel("From:")
         position_label.setFixedWidth(80)
         self.position_combo = QComboBox()
-        self.position_combo.addItems([
-            "End of name",
-            "Start of name",
-            "Anywhere (first)",
-            "Anywhere (all)"
-        ])
+        self.position_combo.addItems(
+            ["End of name", "Start of name", "Anywhere (first)", "Anywhere (all)"]
+        )
         self.position_combo.setCurrentText("End of name")
+        # Ensure combo box drops down instead of popping up
+        self.position_combo.view().window().setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
         self.position_combo.currentTextChanged.connect(self.on_position_changed)
 
         self.case_sensitive_check = QCheckBox("Case sensitive")
@@ -99,7 +108,9 @@ class TextRemovalModule(BaseRenameModule):
     def on_case_changed(self):
         """Handle case sensitivity changes."""
         case_sensitive = self.case_sensitive_check.isChecked()
-        logger.debug(f"[TextRemoval] Case sensitivity changed to: {case_sensitive}", extra={"dev_only": True})
+        logger.debug(
+            f"[TextRemoval] Case sensitivity changed to: {case_sensitive}", extra={"dev_only": True}
+        )
         self.updated.emit(self)
 
     def get_data(self) -> dict:
@@ -112,7 +123,7 @@ class TextRemovalModule(BaseRenameModule):
         return {
             "text_to_remove": self.text_input.text(),
             "position": self.position_combo.currentText(),
-            "case_sensitive": self.case_sensitive_check.isChecked()
+            "case_sensitive": self.case_sensitive_check.isChecked(),
         }
 
     def set_data(self, data: dict):
@@ -184,17 +195,17 @@ class TextRemovalModule(BaseRenameModule):
             if target_text.endswith(search_text):
                 # Remove from end
                 if case_sensitive:
-                    result_name = name_without_ext[:-len(text_to_remove)]
+                    result_name = name_without_ext[: -len(text_to_remove)]
                 else:
-                    result_name = name_without_ext[:-len(text_to_remove)]
+                    result_name = name_without_ext[: -len(text_to_remove)]
 
         elif position == "Start of name":
             if target_text.startswith(search_text):
                 # Remove from start
                 if case_sensitive:
-                    result_name = name_without_ext[len(text_to_remove):]
+                    result_name = name_without_ext[len(text_to_remove) :]
                 else:
-                    result_name = name_without_ext[len(text_to_remove):]
+                    result_name = name_without_ext[len(text_to_remove) :]
 
         elif position == "Anywhere (first)":
             # Remove first occurrence

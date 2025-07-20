@@ -27,13 +27,14 @@ def safe_text(text: str) -> str:
     Replaces unsupported Unicode characters with ASCII-safe alternatives.
     """
     replacements = {
-        '\u2192': '->',  # → Right arrow
-        '\u2014': '--',  # — em dash
-        '\u2013': '-',   # – en dash
-        '\u2026': '...', # … ellipsis
+        "\u2192": "->",  # → Right arrow
+        "\u2014": "--",  # — em dash
+        "\u2013": "-",  # – en dash
+        "\u2026": "...",  # … ellipsis
     }
-    pattern = re.compile('|'.join(map(re.escape, replacements.keys())))
+    pattern = re.compile("|".join(map(re.escape, replacements.keys())))
     return pattern.sub(lambda m: replacements[m.group(0)], text)
+
 
 def safe_log(logger_func, message: str):
     """
@@ -43,6 +44,7 @@ def safe_log(logger_func, message: str):
         logger_func(message)
     except UnicodeEncodeError:
         logger_func(safe_text(message))
+
 
 class ConfigureLogger:
     """
@@ -58,7 +60,7 @@ class ConfigureLogger:
         console_level: int = logging.INFO,
         file_level: int = logging.ERROR,
         max_bytes: int = 1_000_000,
-        backup_count: int = 3
+        backup_count: int = 3,
     ):
         """
         Initializes and configures the logger.
@@ -87,18 +89,14 @@ class ConfigureLogger:
 
             # Extra handler for DEBUG level (e.g., dev-only logs)
             if ENABLE_DEBUG_LOG_FILE:
-                add_file_handler(
-                    logger=self.logger,
-                    log_path=debug_file_path,
-                    level=logging.DEBUG
-                )
+                add_file_handler(logger=self.logger, log_path=debug_file_path, level=logging.DEBUG)
 
     def _setup_console_handler(self, level: int):
         """Sets up console handler with UTF-8-safe formatting."""
         console_handler = logging.StreamHandler(sys.stdout)
 
         try:
-            console_handler.stream.reconfigure(encoding='utf-8')
+            console_handler.stream.reconfigure(encoding="utf-8")
         except Exception:
             pass
 
@@ -112,8 +110,7 @@ class ConfigureLogger:
         file_handler = RotatingFileHandler(path, maxBytes=max_bytes, backupCount=backup_count)
         file_handler.setLevel(level)
         formatter = logging.Formatter(
-            "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
+            "%(asctime)s [%(levelname)s] %(name)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
         )
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)

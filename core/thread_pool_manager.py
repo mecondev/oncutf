@@ -35,6 +35,7 @@ logger = get_cached_logger(__name__)
 
 class TaskPriority(Enum):
     """Task priority levels."""
+
     CRITICAL = 1
     HIGH = 2
     NORMAL = 3
@@ -45,6 +46,7 @@ class TaskPriority(Enum):
 @dataclass
 class WorkerTask:
     """Represents a worker task."""
+
     task_id: str
     function: Callable
     args: tuple
@@ -79,6 +81,7 @@ class WorkerTask:
 @dataclass
 class ThreadPoolStats:
     """Thread pool statistics."""
+
     active_threads: int
     max_threads: int
     queued_tasks: int
@@ -99,9 +102,7 @@ class PriorityQueue:
 
     def __init__(self):
         """Initialize priority queue."""
-        self._queues: Dict[TaskPriority, deque] = {
-            priority: deque() for priority in TaskPriority
-        }
+        self._queues: Dict[TaskPriority, deque] = {priority: deque() for priority in TaskPriority}
         self._lock = threading.RLock()
         self._size = 0
 
@@ -150,8 +151,8 @@ class SmartWorkerThread(QThread):
     """
 
     task_completed = pyqtSignal(str, object)  # task_id, result
-    task_failed = pyqtSignal(str, str)        # task_id, error_message
-    task_progress = pyqtSignal(str, float)    # task_id, progress
+    task_failed = pyqtSignal(str, str)  # task_id, error_message
+    task_progress = pyqtSignal(str, float)  # task_id, progress
 
     def __init__(self, worker_id: str, task_queue: PriorityQueue, parent=None):
         """
@@ -241,15 +242,16 @@ class SmartWorkerThread(QThread):
     def get_stats(self) -> Dict[str, Any]:
         """Get worker statistics."""
         return {
-            'worker_id': self.worker_id,
-            'is_running': self.isRunning(),
-            'tasks_processed': self._tasks_processed,
-            'total_execution_time': self._total_execution_time,
-            'average_execution_time': (
+            "worker_id": self.worker_id,
+            "is_running": self.isRunning(),
+            "tasks_processed": self._tasks_processed,
+            "total_execution_time": self._total_execution_time,
+            "average_execution_time": (
                 self._total_execution_time / self._tasks_processed
-                if self._tasks_processed > 0 else 0.0
+                if self._tasks_processed > 0
+                else 0.0
             ),
-            'current_task': self._current_task.task_id if self._current_task else None
+            "current_task": self._current_task.task_id if self._current_task else None,
         }
 
 
@@ -266,10 +268,10 @@ class ThreadPoolManager(QObject):
     """
 
     # Signals
-    task_submitted = pyqtSignal(str, str)      # task_id, priority
-    task_completed = pyqtSignal(str, object)   # task_id, result
-    task_failed = pyqtSignal(str, str)         # task_id, error_message
-    pool_resized = pyqtSignal(int)             # new_size
+    task_submitted = pyqtSignal(str, str)  # task_id, priority
+    task_completed = pyqtSignal(str, object)  # task_id, result
+    task_failed = pyqtSignal(str, str)  # task_id, error_message
+    pool_resized = pyqtSignal(int)  # new_size
 
     def __init__(self, min_threads: int = 2, max_threads: int = None, parent=None):
         """
@@ -309,11 +311,19 @@ class ThreadPoolManager(QObject):
         # Start with minimum threads
         self._resize_pool(self.min_threads)
 
-        logger.info(f"[ThreadPoolManager] Initialized with {min_threads}-{self.max_threads} threads")
+        logger.info(
+            f"[ThreadPoolManager] Initialized with {min_threads}-{self.max_threads} threads"
+        )
 
-    def submit_task(self, task_id: str, function: Callable, args: tuple = (),
-                   kwargs: dict = None, priority: TaskPriority = TaskPriority.NORMAL,
-                   callback: Optional[Callable] = None) -> bool:
+    def submit_task(
+        self,
+        task_id: str,
+        function: Callable,
+        args: tuple = (),
+        kwargs: dict = None,
+        priority: TaskPriority = TaskPriority.NORMAL,
+        callback: Optional[Callable] = None,
+    ) -> bool:
         """
         Submit a task for execution.
 
@@ -343,7 +353,7 @@ class ThreadPoolManager(QObject):
                     args=args,
                     kwargs=kwargs,
                     priority=priority,
-                    callback=callback
+                    callback=callback,
                 )
 
                 self._tasks[task_id] = task
@@ -375,8 +385,9 @@ class ThreadPoolManager(QObject):
         elif queue_size == 0 and current_threads > self.min_threads:
             # Check if workers are idle
             idle_workers = [
-                worker_id for worker_id, worker in self._workers.items()
-                if worker.get_stats()['current_task'] is None
+                worker_id
+                for worker_id, worker in self._workers.items()
+                if worker.get_stats()["current_task"] is None
             ]
 
             if len(idle_workers) > 1:  # Keep at least one idle worker
@@ -395,7 +406,7 @@ class ThreadPoolManager(QObject):
 
         elif new_size < current_size:
             # Remove workers
-            workers_to_remove = list(self._workers.keys())[:current_size - new_size]
+            workers_to_remove = list(self._workers.keys())[: current_size - new_size]
             for worker_id in workers_to_remove:
                 self._remove_worker(worker_id)
 
@@ -450,17 +461,19 @@ class ThreadPoolManager(QObject):
             stats = self.get_stats()
 
             # Log performance metrics
-            logger.debug(f"[ThreadPoolManager] Pool stats: {stats['active_threads']} threads, "
-                        f"{stats['queued_tasks']} queued, {stats['cpu_usage_percent']:.1f}% CPU")
+            logger.debug(
+                f"[ThreadPoolManager] Pool stats: {stats['active_threads']} threads, "
+                f"{stats['queued_tasks']} queued, {stats['cpu_usage_percent']:.1f}% CPU"
+            )
 
             # Check for performance issues
-            if stats['cpu_usage_percent'] > 90 and stats['active_threads'] < self.max_threads:
+            if stats["cpu_usage_percent"] > 90 and stats["active_threads"] < self.max_threads:
                 # High CPU usage, consider adding threads
-                self._resize_pool(min(stats['active_threads'] + 1, self.max_threads))
+                self._resize_pool(min(stats["active_threads"] + 1, self.max_threads))
 
-            elif stats['cpu_usage_percent'] < 30 and stats['active_threads'] > self.min_threads:
+            elif stats["cpu_usage_percent"] < 30 and stats["active_threads"] > self.min_threads:
                 # Low CPU usage, consider removing threads
-                self._resize_pool(max(stats['active_threads'] - 1, self.min_threads))
+                self._resize_pool(max(stats["active_threads"] - 1, self.min_threads))
 
         except Exception as e:
             logger.error(f"[ThreadPoolManager] Monitor error: {e}")
@@ -481,10 +494,11 @@ class ThreadPoolManager(QObject):
                 total_execution_time=self._total_execution_time,
                 average_execution_time=(
                     self._total_execution_time / self._completed_tasks
-                    if self._completed_tasks > 0 else 0.0
+                    if self._completed_tasks > 0
+                    else 0.0
                 ),
                 cpu_usage_percent=cpu_percent,
-                memory_usage_mb=memory_info.used / (1024 * 1024)
+                memory_usage_mb=memory_info.used / (1024 * 1024),
             )
 
     def get_worker_stats(self) -> List[Dict[str, Any]]:
@@ -496,8 +510,7 @@ class ThreadPoolManager(QObject):
         """Clear completed tasks from memory."""
         with QMutexLocker(self._mutex):
             completed_tasks = [
-                task_id for task_id, task in self._tasks.items()
-                if task.is_completed
+                task_id for task_id, task in self._tasks.items() if task.is_completed
             ]
 
             for task_id in completed_tasks:
@@ -543,11 +556,18 @@ def initialize_thread_pool(min_threads: int = 2, max_threads: int = None) -> Thr
 
 
 # Convenience functions
-def submit_task(task_id: str, function: Callable, args: tuple = (),
-               kwargs: dict = None, priority: TaskPriority = TaskPriority.NORMAL,
-               callback: Optional[Callable] = None) -> bool:
+def submit_task(
+    task_id: str,
+    function: Callable,
+    args: tuple = (),
+    kwargs: dict = None,
+    priority: TaskPriority = TaskPriority.NORMAL,
+    callback: Optional[Callable] = None,
+) -> bool:
     """Submit task using global thread pool."""
-    return get_thread_pool_manager().submit_task(task_id, function, args, kwargs, priority, callback)
+    return get_thread_pool_manager().submit_task(
+        task_id, function, args, kwargs, priority, callback
+    )
 
 
 def get_pool_stats() -> ThreadPoolStats:

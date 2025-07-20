@@ -42,7 +42,7 @@ class ApplicationContext(QObject):
     selection_changed = pyqtSignal(list)  # Emitted when selection changes
     metadata_changed = pyqtSignal(str, dict)  # Emitted when metadata updates (path, metadata)
 
-    _instance: Optional['ApplicationContext'] = None
+    _instance: Optional["ApplicationContext"] = None
 
     def __init__(self, parent: Optional[QObject] = None):
         super().__init__(parent)
@@ -53,8 +53,8 @@ class ApplicationContext(QObject):
         ApplicationContext._instance = self
 
         # Core stores (will be initialized gradually)
-        self._file_store: Optional['FileStore'] = None
-        self._selection_store: Optional['SelectionStore'] = None
+        self._file_store: Optional[FileStore] = None
+        self._selection_store: Optional[SelectionStore] = None
 
         # Legacy state containers (will be removed gradually)
         self._files: list = []
@@ -95,18 +95,25 @@ class ApplicationContext(QObject):
             self._selection_store.selection_changed.connect(self._on_selection_changed)
             self._selection_store.checked_changed.connect(self._on_checked_changed)
 
-            logger.info("SelectionStore initialized in ApplicationContext", extra={"dev_only": True})
+            logger.info(
+                "SelectionStore initialized in ApplicationContext", extra={"dev_only": True}
+            )
 
     def _on_files_loaded(self, files: list) -> None:
         """Handle files loaded from FileStore."""
         self._files = files.copy()
         self.files_changed.emit(self._files)
-        logger.debug(f"ApplicationContext: Files loaded signal relayed: {len(files)} files", extra={"dev_only": True})
+        logger.debug(
+            f"ApplicationContext: Files loaded signal relayed: {len(files)} files",
+            extra={"dev_only": True},
+        )
 
     def _on_folder_changed(self, folder_path: str) -> None:
         """Handle folder change from FileStore."""
         self._current_folder = folder_path
-        logger.debug(f"ApplicationContext: Folder changed to {folder_path}", extra={"dev_only": True})
+        logger.debug(
+            f"ApplicationContext: Folder changed to {folder_path}", extra={"dev_only": True}
+        )
 
     def _on_selection_changed(self, selected_rows: list[int]) -> None:
         """Handle selection changed from SelectionStore."""
@@ -117,10 +124,16 @@ class ApplicationContext(QObject):
             self.selection_changed.emit(selected_rows)
         except TypeError:
             # Fallback: convert to set if the signal expects set type
-            logger.debug("ApplicationContext: Converting list to set for signal compatibility", extra={"dev_only": True})
+            logger.debug(
+                "ApplicationContext: Converting list to set for signal compatibility",
+                extra={"dev_only": True},
+            )
             self.selection_changed.emit(set(selected_rows))
 
-        logger.debug(f"ApplicationContext: Selection changed signal relayed: {len(selected_rows)} rows", extra={"dev_only": True})
+        logger.debug(
+            f"ApplicationContext: Selection changed signal relayed: {len(selected_rows)} rows",
+            extra={"dev_only": True},
+        )
 
     def _on_checked_changed(self, checked_rows: list[int]) -> None:
         """Handle checked state changed from SelectionStore."""
@@ -128,7 +141,7 @@ class ApplicationContext(QObject):
         logger.debug(f"ApplicationContext: Checked state changed: {len(checked_rows)} rows")
 
     @classmethod
-    def get_instance(cls) -> 'ApplicationContext':
+    def get_instance(cls) -> "ApplicationContext":
         """
         Get the singleton instance of ApplicationContext.
 
@@ -143,7 +156,7 @@ class ApplicationContext(QObject):
         return cls._instance
 
     @classmethod
-    def create_instance(cls, parent: Optional[QObject] = None) -> 'ApplicationContext':
+    def create_instance(cls, parent: Optional[QObject] = None) -> "ApplicationContext":
         """
         Create the singleton instance of ApplicationContext.
 
@@ -164,14 +177,14 @@ class ApplicationContext(QObject):
     # =====================================
 
     @property
-    def file_store(self) -> 'FileStore':
+    def file_store(self) -> "FileStore":
         """Get the FileStore instance, initializing if needed."""
         if self._file_store is None:
             self.initialize_stores()
         return self._file_store
 
     @property
-    def selection_store(self) -> 'SelectionStore':
+    def selection_store(self) -> "SelectionStore":
         """Get the SelectionStore instance, initializing if needed."""
         if self._selection_store is None:
             self.initialize_stores()

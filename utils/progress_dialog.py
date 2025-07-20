@@ -49,28 +49,28 @@ class ProgressDialog(QDialog):
 
     # Predefined color schemes for different operations
     COLOR_SCHEMES = {
-        'metadata_basic': {
-            'bar_color': FAST_METADATA_COLOR,
-            'bar_bg_color': FAST_METADATA_BG_COLOR
+        "metadata_basic": {
+            "bar_color": FAST_METADATA_COLOR,
+            "bar_bg_color": FAST_METADATA_BG_COLOR,
         },
-        'metadata_extended': {
-            'bar_color': EXTENDED_METADATA_COLOR,
-            'bar_bg_color': EXTENDED_METADATA_BG_COLOR
+        "metadata_extended": {
+            "bar_color": EXTENDED_METADATA_COLOR,
+            "bar_bg_color": EXTENDED_METADATA_BG_COLOR,
         },
-        'file_loading': {
-            'bar_color': FILE_LOADING_COLOR,
-            'bar_bg_color': FILE_LOADING_BG_COLOR
+        "file_loading": {"bar_color": FILE_LOADING_COLOR, "bar_bg_color": FILE_LOADING_BG_COLOR},
+        "hash_calculation": {
+            "bar_color": HASH_CALCULATION_COLOR,
+            "bar_bg_color": HASH_CALCULATION_BG_COLOR,
         },
-        'hash_calculation': {
-            'bar_color': HASH_CALCULATION_COLOR,
-            'bar_bg_color': HASH_CALCULATION_BG_COLOR
-        }
     }
 
-    def __init__(self, parent: Optional[QWidget] = None,
-                 operation_type: str = 'metadata_basic',
-                 cancel_callback: Optional[Callable] = None,
-                 show_enhanced_info: bool = True) -> None:
+    def __init__(
+        self,
+        parent: Optional[QWidget] = None,
+        operation_type: str = "metadata_basic",
+        cancel_callback: Optional[Callable] = None,
+        show_enhanced_info: bool = True,
+    ) -> None:
         """
         Initialize the progress dialog.
 
@@ -91,13 +91,15 @@ class ProgressDialog(QDialog):
         self._setup_dialog()
         self._setup_wait_cursor()
 
-        logger.debug(f"[ProgressDialog] Created for operation: {operation_type} (enhanced: {show_enhanced_info})")
+        logger.debug(
+            f"[ProgressDialog] Created for operation: {operation_type} (enhanced: {show_enhanced_info})"
+        )
 
     def _setup_dialog(self) -> None:
         """Setup the dialog UI and properties."""
         # Frameless dialog
-        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint) # type: ignore
-        self.setAttribute(Qt.WA_TranslucentBackground, False) # type: ignore
+        self.setWindowFlags(Qt.Dialog | Qt.FramelessWindowHint)  # type: ignore
+        self.setAttribute(Qt.WA_TranslucentBackground, False)  # type: ignore
         self.setModal(True)
 
         # Layout
@@ -106,16 +108,18 @@ class ProgressDialog(QDialog):
         layout.setSpacing(0)
 
         # Get color scheme for operation type
-        color_scheme = self.COLOR_SCHEMES.get(self.operation_type, self.COLOR_SCHEMES['metadata_basic'])
+        color_scheme = self.COLOR_SCHEMES.get(
+            self.operation_type, self.COLOR_SCHEMES["metadata_basic"]
+        )
 
         # Create the unified progress widget
         self.waiting_widget = ProgressWidget(
             parent=self,
-            bar_color=color_scheme['bar_color'],
-            bar_bg_color=color_scheme['bar_bg_color'],
+            bar_color=color_scheme["bar_color"],
+            bar_bg_color=color_scheme["bar_bg_color"],
             show_size_info=self.show_enhanced_info,
             show_time_info=self.show_enhanced_info,
-            fixed_width=400  # Original compact width
+            fixed_width=400,  # Original compact width
         )
 
         layout.addWidget(self.waiting_widget)
@@ -124,31 +128,31 @@ class ProgressDialog(QDialog):
         setup_dialog_size_and_center(self, self.waiting_widget)
 
     def _setup_wait_cursor(self) -> None:
-        """Setup wait cursor for the dialog and parent."""
-        # Set wait cursor on parent if available
+        """Setup wait cursor for the parent window only, not the dialog."""
+        # Set wait cursor on parent if available (main window)
         if self.parent():
-            self.parent().setCursor(Qt.WaitCursor) # type: ignore
+            self.parent().setCursor(Qt.WaitCursor)  # type: ignore
 
-        # Set wait cursor on the dialog itself
-        self.setCursor(Qt.WaitCursor) # type: ignore
+        # Set normal cursor on the dialog itself to avoid wait cursor on dialog
+        self.setCursor(Qt.ArrowCursor)  # type: ignore
 
-        logger.debug("[ProgressDialog] Wait cursor set")
+        logger.debug("[ProgressDialog] Wait cursor set on parent, normal cursor on dialog")
 
     def _restore_cursors(self) -> None:
-        """Restore normal cursors on dialog and parent."""
+        """Restore normal cursors on parent window and dialog."""
         # Force cleanup of all override cursors
         force_restore_cursor()
 
-        # Set normal cursor on parent and dialog
+        # Set normal cursor on parent (main window) and dialog
         if self.parent():
-            self.parent().setCursor(Qt.ArrowCursor) # type: ignore
-        self.setCursor(Qt.ArrowCursor) # type: ignore
+            self.parent().setCursor(Qt.ArrowCursor)  # type: ignore
+        self.setCursor(Qt.ArrowCursor)  # type: ignore
 
-        logger.debug("[ProgressDialog] Cursors restored")
+        logger.debug("[ProgressDialog] Cursors restored on parent and dialog")
 
     def keyPressEvent(self, event) -> None:
         """Handle ESC key for cancellation with improved responsiveness."""
-        if event.key() == Qt.Key_Escape and not self._is_cancelling: # type: ignore
+        if event.key() == Qt.Key_Escape and not self._is_cancelling:  # type: ignore
             self._handle_cancellation()
         else:
             super().keyPressEvent(event)
@@ -185,7 +189,7 @@ class ProgressDialog(QDialog):
             self._restore_cursors()
 
         # Clean up progress widget timer to prevent orphaned timers
-        if hasattr(self.waiting_widget, 'reset'):
+        if hasattr(self.waiting_widget, "reset"):
             self.waiting_widget.reset()
 
         super().closeEvent(event)
@@ -221,13 +225,13 @@ class ProgressDialog(QDialog):
     # Enhanced progress methods (only available with enhanced widget)
     def start_progress_tracking(self, total_size: int = 0) -> None:
         """Start progress tracking with optional total size."""
-        if hasattr(self.waiting_widget, 'start_progress_tracking'):
+        if hasattr(self.waiting_widget, "start_progress_tracking"):
             self.waiting_widget.start_progress_tracking(total_size)
             logger.debug(f"[ProgressDialog] Started progress tracking (total_size: {total_size})")
 
     def update_progress_with_size(self, current: int, total: int, current_size: int = 0) -> None:
         """Update progress with size tracking."""
-        if hasattr(self.waiting_widget, 'update_progress_with_size'):
+        if hasattr(self.waiting_widget, "update_progress_with_size"):
             self.waiting_widget.update_progress_with_size(current, total, current_size)
         else:
             # Fallback to standard progress update
@@ -235,16 +239,21 @@ class ProgressDialog(QDialog):
 
     def set_size_info(self, processed_size: int, total_size: int = 0) -> None:
         """Set size information manually."""
-        if hasattr(self.waiting_widget, 'set_size_info'):
+        if hasattr(self.waiting_widget, "set_size_info"):
             self.waiting_widget.set_size_info(processed_size, total_size)
 
     def set_time_info(self, elapsed: float, estimated_total: Optional[float] = None) -> None:
         """Set time information manually."""
-        if hasattr(self.waiting_widget, 'set_time_info'):
-            self.waiting_widget.set_time_info(elapsed, estimated_total) # type: ignore
+        if hasattr(self.waiting_widget, "set_time_info"):
+            self.waiting_widget.set_time_info(elapsed, estimated_total)  # type: ignore
 
-    def update_progress(self, file_count: int = 0, total_files: int = 0,
-                       processed_bytes: int = 0, total_bytes: int = 0) -> None:
+    def update_progress(
+        self,
+        file_count: int = 0,
+        total_files: int = 0,
+        processed_bytes: int = 0,
+        total_bytes: int = 0,
+    ) -> None:
         """
         Unified method to update progress regardless of mode.
 
@@ -257,8 +266,10 @@ class ProgressDialog(QDialog):
             processed_bytes: Current bytes processed (cumulative)
             total_bytes: Total bytes to process (optional, uses stored value if 0)
         """
-        if hasattr(self.waiting_widget, 'update_progress'):
-            self.waiting_widget.update_progress(file_count, total_files, processed_bytes, total_bytes)
+        if hasattr(self.waiting_widget, "update_progress"):
+            self.waiting_widget.update_progress(
+                file_count, total_files, processed_bytes, total_bytes
+            )
         else:
             # Fallback to standard progress update
             if total_files > 0:
@@ -266,16 +277,19 @@ class ProgressDialog(QDialog):
 
     def get_progress_summary(self) -> dict:
         """Get comprehensive progress summary (enhanced widget only)."""
-        if hasattr(self.waiting_widget, 'get_progress_summary'):
+        if hasattr(self.waiting_widget, "get_progress_summary"):
             return self.waiting_widget.get_progress_summary()
         return {}
 
     @classmethod
-    def create_metadata_dialog(cls, parent: Optional[QWidget] = None,
-                             is_extended: bool = False,
-                             cancel_callback: Optional[Callable] = None,
-                             show_enhanced_info: bool = True,
-                             use_size_based_progress: bool = True) -> 'ProgressDialog':
+    def create_metadata_dialog(
+        cls,
+        parent: Optional[QWidget] = None,
+        is_extended: bool = False,
+        cancel_callback: Optional[Callable] = None,
+        show_enhanced_info: bool = True,
+        use_size_based_progress: bool = True,
+    ) -> "ProgressDialog":
         """
         Create a progress dialog for metadata operations.
 
@@ -289,21 +303,30 @@ class ProgressDialog(QDialog):
         Returns:
             ProgressDialog configured for metadata operations with optional size-based progress
         """
-        operation_type = 'metadata_extended' if is_extended else 'metadata_basic'
-        dialog = cls(parent=parent, operation_type=operation_type,
-                    cancel_callback=cancel_callback, show_enhanced_info=show_enhanced_info)
+        operation_type = "metadata_extended" if is_extended else "metadata_basic"
+        dialog = cls(
+            parent=parent,
+            operation_type=operation_type,
+            cancel_callback=cancel_callback,
+            show_enhanced_info=show_enhanced_info,
+        )
 
         # If size-based progress is requested, update the progress widget mode
-        if use_size_based_progress and hasattr(dialog.waiting_widget, 'set_progress_mode'):
+        if use_size_based_progress and hasattr(dialog.waiting_widget, "set_progress_mode"):
             dialog.waiting_widget.set_progress_mode("size")
-            logger.debug(f"[ProgressDialog] Metadata dialog configured with size-based progress (extended: {is_extended})")
+            logger.debug(
+                f"[ProgressDialog] Metadata dialog configured with size-based progress (extended: {is_extended})"
+            )
 
         return dialog
 
     @classmethod
-    def create_file_loading_dialog(cls, parent: Optional[QWidget] = None,
-                                 cancel_callback: Optional[Callable] = None,
-                                 show_enhanced_info: bool = True) -> 'ProgressDialog':
+    def create_file_loading_dialog(
+        cls,
+        parent: Optional[QWidget] = None,
+        cancel_callback: Optional[Callable] = None,
+        show_enhanced_info: bool = True,
+    ) -> "ProgressDialog":
         """
         Create a progress dialog for file loading operations.
 
@@ -315,13 +338,21 @@ class ProgressDialog(QDialog):
         Returns:
             ProgressDialog configured for file loading operations
         """
-        return cls(parent=parent, operation_type='file_loading', cancel_callback=cancel_callback, show_enhanced_info=show_enhanced_info)
+        return cls(
+            parent=parent,
+            operation_type="file_loading",
+            cancel_callback=cancel_callback,
+            show_enhanced_info=show_enhanced_info,
+        )
 
     @classmethod
-    def create_hash_dialog(cls, parent: Optional[QWidget] = None,
-                         cancel_callback: Optional[Callable] = None,
-                         show_enhanced_info: bool = True,
-                         use_size_based_progress: bool = True) -> 'ProgressDialog':
+    def create_hash_dialog(
+        cls,
+        parent: Optional[QWidget] = None,
+        cancel_callback: Optional[Callable] = None,
+        show_enhanced_info: bool = True,
+        use_size_based_progress: bool = True,
+    ) -> "ProgressDialog":
         """
         Create a progress dialog for hash/checksum operations.
 
@@ -334,11 +365,15 @@ class ProgressDialog(QDialog):
         Returns:
             ProgressDialog configured for hash operations with optional size-based progress
         """
-        dialog = cls(parent=parent, operation_type='hash_calculation',
-                    cancel_callback=cancel_callback, show_enhanced_info=show_enhanced_info)
+        dialog = cls(
+            parent=parent,
+            operation_type="hash_calculation",
+            cancel_callback=cancel_callback,
+            show_enhanced_info=show_enhanced_info,
+        )
 
         # If size-based progress is requested, update the progress widget mode
-        if use_size_based_progress and hasattr(dialog.waiting_widget, 'set_progress_mode'):
+        if use_size_based_progress and hasattr(dialog.waiting_widget, "set_progress_mode"):
             dialog.waiting_widget.set_progress_mode("size")
             logger.debug("[ProgressDialog] Hash dialog configured with size-based progress")
 

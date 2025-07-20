@@ -64,8 +64,10 @@ class ProgressManager:
             parent: Parent widget for the progress widget
         """
         if operation_type not in self.SUPPORTED_OPERATIONS:
-            raise ValueError(f"Unsupported operation type: {operation_type}. "
-                           f"Supported: {self.SUPPORTED_OPERATIONS}")
+            raise ValueError(
+                f"Unsupported operation type: {operation_type}. "
+                f"Supported: {self.SUPPORTED_OPERATIONS}"
+            )
 
         self.operation_type = operation_type
         self.parent = parent
@@ -81,22 +83,15 @@ class ProgressManager:
         """Create the appropriate progress widget based on operation type."""
         if self.operation_type == "hash":
             # Hash operations: size-based progress with full tracking
-            self.progress_widget = create_size_based_progress_widget(
-                parent=self.parent
-            )
+            self.progress_widget = create_size_based_progress_widget(parent=self.parent)
         elif self.operation_type == "metadata":
             # Metadata operations: count-based with optional size tracking
             self.progress_widget = ProgressWidget(
-                parent=self.parent,
-                progress_mode="count",
-                show_size_info=True,
-                show_time_info=True
+                parent=self.parent, progress_mode="count", show_size_info=True, show_time_info=True
             )
         elif self.operation_type == "copy":
             # Copy operations: size-based progress (future)
-            self.progress_widget = create_size_based_progress_widget(
-                parent=self.parent
-            )
+            self.progress_widget = create_size_based_progress_widget(parent=self.parent)
 
     def start_tracking(self, total_size: int = 0, total_files: int = 0):
         """
@@ -115,10 +110,14 @@ class ProgressManager:
         if self.operation_type in ["hash", "copy"]:
             # Size-based operations
             if total_size <= 0:
-                logger.warning(f"[ProgressManager] {self.operation_type} operation requires total_size > 0")
+                logger.warning(
+                    f"[ProgressManager] {self.operation_type} operation requires total_size > 0"
+                )
                 return
             self.progress_widget.start_progress_tracking(total_size)
-            logger.debug(f"[ProgressManager] Started {self.operation_type} tracking: {total_size:,} bytes")
+            logger.debug(
+                f"[ProgressManager] Started {self.operation_type} tracking: {total_size:,} bytes"
+            )
 
         elif self.operation_type == "metadata":
             # Count-based operations with optional size tracking
@@ -126,15 +125,19 @@ class ProgressManager:
                 self.progress_widget.set_count(0, total_files)
             if total_size > 0:
                 self.progress_widget.start_progress_tracking(total_size)
-            logger.debug(f"[ProgressManager] Started metadata tracking: {total_files} files, {total_size:,} bytes")
+            logger.debug(
+                f"[ProgressManager] Started metadata tracking: {total_files} files, {total_size:,} bytes"
+            )
 
-    def update_progress(self,
-                       file_count: int = 0,
-                       total_files: int = 0,
-                       processed_bytes: int = 0,
-                       total_bytes: int = 0,
-                       filename: str = "",
-                       status: str = ""):
+    def update_progress(
+        self,
+        file_count: int = 0,
+        total_files: int = 0,
+        processed_bytes: int = 0,
+        total_bytes: int = 0,
+        filename: str = "",
+        status: str = "",
+    ):
         """
         Update progress with unified API.
 
@@ -166,15 +169,11 @@ class ProgressManager:
             # Size-based operations
             if processed_bytes > 0:
                 self.progress_widget.update_progress(
-                    processed_bytes=processed_bytes,
-                    total_bytes=total_bytes
+                    processed_bytes=processed_bytes, total_bytes=total_bytes
                 )
             elif file_count > 0 and total_files > 0:
                 # Fallback to count-based if no size data
-                self.progress_widget.update_progress(
-                    file_count=file_count,
-                    total_files=total_files
-                )
+                self.progress_widget.update_progress(file_count=file_count, total_files=total_files)
 
         elif self.operation_type == "metadata":
             # Count-based operations with optional size tracking
@@ -182,7 +181,7 @@ class ProgressManager:
                 file_count=file_count,
                 total_files=total_files,
                 processed_bytes=processed_bytes,
-                total_bytes=total_bytes
+                total_bytes=total_bytes,
             )
 
     def set_indeterminate_mode(self):
@@ -214,9 +213,11 @@ def create_hash_progress_manager(parent: Optional[QWidget] = None) -> ProgressMa
     """Create a progress manager for hash operations."""
     return ProgressManager("hash", parent)
 
+
 def create_metadata_progress_manager(parent: Optional[QWidget] = None) -> ProgressManager:
     """Create a progress manager for metadata operations."""
     return ProgressManager("metadata", parent)
+
 
 def create_copy_progress_manager(parent: Optional[QWidget] = None) -> ProgressManager:
     """Create a progress manager for copy operations (future)."""

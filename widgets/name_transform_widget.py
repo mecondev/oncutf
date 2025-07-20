@@ -62,6 +62,7 @@ class NameTransformWidget(BaseRenameModule):
         self.case_combo = QComboBox()
         self.case_combo.addItems(["original", "lower", "UPPER", "Capitalize"])
         self.case_combo.setFixedWidth(200)  # Make combobox larger (~2.5 characters more)
+        self.case_combo.setFixedHeight(24)  # Match metadata_widget height
         self.case_combo.currentIndexChanged.connect(self._on_value_change)
 
         case_layout.addWidget(case_label)
@@ -79,10 +80,11 @@ class NameTransformWidget(BaseRenameModule):
 
         sep_label = QLabel("Separator:")
         sep_label.setFixedWidth(self.LABEL_WIDTH)
-        sep_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter) # type: ignore
+        sep_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
         self.sep_combo = QComboBox()
         self.sep_combo.addItems(["as-is", "snake_case", "kebab-case", "space"])
         self.sep_combo.setFixedWidth(200)  # Make combobox larger (~2.5 characters more)
+        self.sep_combo.setFixedHeight(24)  # Match metadata_widget height
         self.sep_combo.currentIndexChanged.connect(self._on_value_change)
 
         sep_layout.addWidget(sep_label)

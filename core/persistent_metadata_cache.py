@@ -25,7 +25,13 @@ class MetadataEntry:
     Maintains compatibility with existing MetadataEntry interface.
     """
 
-    def __init__(self, data: dict, is_extended: bool = False, timestamp: Optional[float] = None, modified: bool = False):
+    def __init__(
+        self,
+        data: dict,
+        is_extended: bool = False,
+        timestamp: Optional[float] = None,
+        modified: bool = False,
+    ):
         self.data = data
         self.is_extended = is_extended
         self.timestamp = timestamp or time.time()
@@ -62,13 +68,16 @@ class PersistentMetadataCache:
     def _normalize_path(self, file_path: str) -> str:
         """Normalize file path for consistent storage."""
         import os
+
         try:
             abs_path = os.path.abspath(file_path)
             return os.path.normpath(abs_path)
         except Exception:
             return os.path.normpath(file_path)
 
-    def set(self, file_path: str, metadata: dict, is_extended: bool = False, modified: bool = False) -> None:
+    def set(
+        self, file_path: str, metadata: dict, is_extended: bool = False, modified: bool = False
+    ) -> None:
         """Store metadata for a file with database persistence."""
         norm_path = self._normalize_path(file_path)
 
@@ -82,20 +91,22 @@ class PersistentMetadataCache:
         try:
             # Clean metadata for database storage (remove internal flags)
             clean_metadata = metadata.copy()
-            clean_metadata.pop('__extended__', None)
-            clean_metadata.pop('__modified__', None)
+            clean_metadata.pop("__extended__", None)
+            clean_metadata.pop("__modified__", None)
 
             self._db_manager.store_metadata(
                 file_path=norm_path,
                 metadata=clean_metadata,
                 is_extended=is_extended,
-                is_modified=modified
+                is_modified=modified,
             )
 
             logger.debug(f"[PersistentMetadataCache] Stored metadata for: {file_path}")
 
         except Exception as e:
-            logger.error(f"[PersistentMetadataCache] Error persisting metadata for {file_path}: {e}")
+            logger.error(
+                f"[PersistentMetadataCache] Error persisting metadata for {file_path}: {e}"
+            )
 
     def get(self, file_path: str) -> dict:
         """Retrieve metadata for a file, checking memory cache first."""
@@ -112,8 +123,8 @@ class PersistentMetadataCache:
             metadata = self._db_manager.get_metadata(norm_path)
             if metadata:
                 # Create entry and cache it
-                is_extended = metadata.pop('__extended__', False)
-                is_modified = metadata.pop('__modified__', False)
+                is_extended = metadata.pop("__extended__", False)
+                is_modified = metadata.pop("__modified__", False)
 
                 entry = MetadataEntry(metadata, is_extended=is_extended, modified=is_modified)
                 self._memory_cache[norm_path] = entry
@@ -140,8 +151,8 @@ class PersistentMetadataCache:
             metadata = self._db_manager.get_metadata(norm_path)
             if metadata:
                 # Create entry and cache it
-                is_extended = metadata.pop('__extended__', False)
-                is_modified = metadata.pop('__modified__', False)
+                is_extended = metadata.pop("__extended__", False)
+                is_modified = metadata.pop("__modified__", False)
 
                 entry = MetadataEntry(metadata, is_extended=is_extended, modified=is_modified)
                 self._memory_cache[norm_path] = entry
@@ -149,7 +160,9 @@ class PersistentMetadataCache:
                 return entry
 
         except Exception as e:
-            logger.error(f"[PersistentMetadataCache] Error loading metadata entry for {file_path}: {e}")
+            logger.error(
+                f"[PersistentMetadataCache] Error loading metadata entry for {file_path}: {e}"
+            )
 
         return None
 
@@ -220,10 +233,10 @@ class PersistentMetadataCache:
         hit_rate = (self._cache_hits / total_requests * 100) if total_requests > 0 else 0
 
         return {
-            'memory_entries': len(self._memory_cache),
-            'cache_hits': self._cache_hits,
-            'cache_misses': self._cache_misses,
-            'hit_rate_percent': round(hit_rate, 2)
+            "memory_entries": len(self._memory_cache),
+            "cache_hits": self._cache_hits,
+            "cache_misses": self._cache_misses,
+            "hit_rate_percent": round(hit_rate, 2),
         }
 
     def cleanup_orphaned_records(self) -> int:
@@ -253,6 +266,7 @@ class PersistentMetadataCache:
 # =====================================
 
 _persistent_metadata_cache_instance = None
+
 
 def get_persistent_metadata_cache() -> PersistentMetadataCache:
     """Get global persistent metadata cache instance."""

@@ -15,25 +15,26 @@ from core.pyqt_imports import QFont, QFontDatabase, QResource
 
 logger = logging.getLogger(__name__)
 
+
 class InterFonts:
     """Manager for Inter font family with predefined use cases"""
 
     # Font file mappings
     FONT_FILES = {
-        'regular': 'Inter-Regular.ttf',
-        'medium': 'Inter-Medium.ttf',
-        'semibold': 'InterDisplay-SemiBold.ttf',
-        'italic': 'Inter-Italic.ttf',
-        'display_semibold': 'InterDisplay-SemiBold.ttf'
+        "regular": "Inter-Regular.ttf",
+        "medium": "Inter-Medium.ttf",
+        "semibold": "InterDisplay-SemiBold.ttf",
+        "italic": "Inter-Italic.ttf",
+        "display_semibold": "InterDisplay-SemiBold.ttf",
     }
 
     # CSS weight mappings for styling
     CSS_WEIGHTS = {
-        'regular': 400,
-        'medium': 500,
-        'semibold': 600,
-        'italic': 400,
-        'display_semibold': 600
+        "regular": 400,
+        "medium": 500,
+        "semibold": 600,
+        "italic": 400,
+        "display_semibold": 600,
     }
 
     def __init__(self):
@@ -67,7 +68,10 @@ class InterFonts:
                             if families:
                                 self.loaded_fonts[font_key] = font_id
                                 self.font_families[font_key] = families[0]
-                                logger.debug(f"Loaded {font_key}: {families[0]} from {font_path}", extra={"dev_only": True})
+                                logger.debug(
+                                    f"Loaded {font_key}: {families[0]} from {font_path}",
+                                    extra={"dev_only": True},
+                                )
                             else:
                                 logger.warning(f"No families found for {font_key}")
                         else:
@@ -93,7 +97,10 @@ class InterFonts:
                         if font_data:
                             # Use temporary file approach for problematic systems
                             import tempfile
-                            with tempfile.NamedTemporaryFile(suffix='.ttf', delete=False) as tmp_file:
+
+                            with tempfile.NamedTemporaryFile(
+                                suffix=".ttf", delete=False
+                            ) as tmp_file:
                                 tmp_file.write(font_data)
                                 tmp_path = tmp_file.name
 
@@ -105,7 +112,10 @@ class InterFonts:
                                 if families:
                                     self.loaded_fonts[font_key] = font_id
                                     self.font_families[font_key] = families[0]
-                                    logger.debug(f"Loaded {font_key}: {families[0]} from resources", extra={"dev_only": True})
+                                    logger.debug(
+                                        f"Loaded {font_key}: {families[0]} from resources",
+                                        extra={"dev_only": True},
+                                    )
 
             except ImportError as e:
                 logger.error(f"Could not import fonts_rc: {e}")
@@ -128,7 +138,7 @@ class InterFonts:
                 font_data = QResource(resource_path).data()
                 if font_data:
                     # Use temporary file approach for problematic systems
-                    with tempfile.NamedTemporaryFile(suffix='.ttf', delete=False) as tmp_file:
+                    with tempfile.NamedTemporaryFile(suffix=".ttf", delete=False) as tmp_file:
                         tmp_file.write(font_data)
                         tmp_path = tmp_file.name
 
@@ -140,7 +150,10 @@ class InterFonts:
                         if families:
                             self.loaded_fonts[font_key] = font_id
                             self.font_families[font_key] = families[0]
-                            logger.debug(f"Loaded {font_key}: {families[0]} from embedded resources", extra={"dev_only": True})
+                            logger.debug(
+                                f"Loaded {font_key}: {families[0]} from embedded resources",
+                                extra={"dev_only": True},
+                            )
                         else:
                             logger.warning(f"No families found for embedded {font_key}")
                     else:
@@ -164,20 +177,21 @@ class InterFonts:
             QFont object configured for the use case
         """
         font_mapping = {
-            'base': 'regular',
-            'buttons': 'medium',
-            'interface': 'medium',
-            'medium': 'medium',
-            'headers': 'semibold',
-            'emphasis': 'italic',
-            'titles': 'display_semibold'
+            "base": "regular",
+            "buttons": "medium",
+            "interface": "medium",
+            "medium": "medium",
+            "headers": "semibold",
+            "emphasis": "italic",
+            "titles": "display_semibold",
         }
 
-        font_key = font_mapping.get(use_case, 'regular')
+        font_key = font_mapping.get(use_case, "regular")
 
         # Apply DPI scaling to font size
         try:
             from utils.dpi_helper import scale_font_size
+
             scaled_size = scale_font_size(size)
         except ImportError:
             # Fallback if DPI helper not available
@@ -188,56 +202,56 @@ class InterFonts:
             font = QFont(family, scaled_size)
 
             # Set italic style if needed
-            if font_key == 'italic':
+            if font_key == "italic":
                 font.setItalic(True)
 
             return font
         else:
             logger.warning(f"Font key '{font_key}' not loaded, using system default")
-            return QFont('Arial', scaled_size)
+            return QFont("Arial", scaled_size)
 
     def get_css_weight(self, use_case: str) -> int:
         """Get CSS font-weight value for use case"""
         font_mapping = {
-            'base': 'regular',
-            'buttons': 'medium',
-            'interface': 'medium',
-            'medium': 'medium',
-            'headers': 'semibold',
-            'emphasis': 'italic',
-            'titles': 'display_semibold'
+            "base": "regular",
+            "buttons": "medium",
+            "interface": "medium",
+            "medium": "medium",
+            "headers": "semibold",
+            "emphasis": "italic",
+            "titles": "display_semibold",
         }
 
-        font_key = font_mapping.get(use_case, 'regular')
+        font_key = font_mapping.get(use_case, "regular")
         return self.CSS_WEIGHTS.get(font_key, 400)
 
     def get_font_family(self, use_case: str) -> str:
         """Get font family name for use case"""
         font_mapping = {
-            'base': 'regular',
-            'buttons': 'medium',
-            'interface': 'medium',
-            'medium': 'medium',
-            'headers': 'semibold',
-            'emphasis': 'italic',
-            'titles': 'display_semibold'
+            "base": "regular",
+            "buttons": "medium",
+            "interface": "medium",
+            "medium": "medium",
+            "headers": "semibold",
+            "emphasis": "italic",
+            "titles": "display_semibold",
         }
 
-        font_key = font_mapping.get(use_case, 'regular')
+        font_key = font_mapping.get(use_case, "regular")
 
         if font_key in self.font_families:
             return self.font_families[font_key]
         else:
-            return 'Arial'  # Fallback
+            return "Arial"  # Fallback
 
     def create_stylesheet_fonts(self) -> str:
         """Create CSS stylesheet with font definitions"""
         styles = []
 
-        for use_case in ['base', 'buttons', 'medium', 'headers', 'emphasis', 'titles']:
+        for use_case in ["base", "buttons", "medium", "headers", "emphasis", "titles"]:
             family = self.get_font_family(use_case)
             weight = self.get_css_weight(use_case)
-            style = "italic" if use_case == 'emphasis' else "normal"
+            style = "italic" if use_case == "emphasis" else "normal"
 
             css_class = f".font-{use_case.replace('_', '-')}"
             style_def = f"""
@@ -250,8 +264,10 @@ class InterFonts:
 
         return "\n".join(styles)
 
+
 # Global instance (lazy loaded)
 inter_fonts = None
+
 
 def _get_inter_fonts():
     """Get or create the global Inter fonts instance"""
@@ -260,14 +276,17 @@ def _get_inter_fonts():
         inter_fonts = InterFonts()
     return inter_fonts
 
+
 # Convenience functions
 def get_inter_font(use_case: str, size: int = 10) -> QFont:
     """Get Inter font for specific use case"""
     return _get_inter_fonts().get_font(use_case, size)
 
+
 def get_inter_css_weight(use_case: str) -> int:
     """Get CSS weight for Inter font use case"""
     return _get_inter_fonts().get_css_weight(use_case)
+
 
 def get_inter_family(use_case: str) -> str:
     """Get Inter font family name for use case"""

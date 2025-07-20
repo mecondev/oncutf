@@ -33,7 +33,7 @@ class InitializationManager:
     - Status and display management
     """
 
-    def __init__(self, main_window: 'MainWindow'):
+    def __init__(self, main_window: "MainWindow"):
         """
         Initialize the InitializationManager.
 
@@ -50,8 +50,7 @@ class InitializationManager:
         """
         num_files = len(self.main_window.file_model.files)
         self.main_window.status_manager.show_metadata_status(
-            num_files,
-            self.main_window.force_extended_metadata
+            num_files, self.main_window.force_extended_metadata
         )
 
     def enable_selection_store_mode(self):
@@ -61,16 +60,28 @@ class InitializationManager:
 
             # Connect SelectionStore signals to MainWindow handlers
             from core.application_context import get_app_context
+
             context = get_app_context()
             if context and context.selection_store:
                 # Connect selection changed signal to existing preview update
-                context.selection_store.selection_changed.connect(self.main_window.update_preview_from_selection)
-                print(f"[DEBUG] Connected SelectionStore selection_changed signal to update_preview_from_selection")
-                logger.debug("[MainWindow] Connected SelectionStore signals", extra={"dev_only": True})
+                context.selection_store.selection_changed.connect(
+                    self.main_window.update_preview_from_selection
+                )
+                print(
+                    "[DEBUG] Connected SelectionStore selection_changed signal to update_preview_from_selection"
+                )
+                logger.debug(
+                    "[MainWindow] Connected SelectionStore signals", extra={"dev_only": True}
+                )
             else:
-                print(f"[DEBUG] Failed to connect SelectionStore signals - context: {context}, selection_store: {context.selection_store if context else None}")
+                print(
+                    f"[DEBUG] Failed to connect SelectionStore signals - context: {context}, selection_store: {context.selection_store if context else None}"
+                )
 
-            logger.debug("[MainWindow] Enabling SelectionStore mode in FileTableView", extra={"dev_only": True})
+            logger.debug(
+                "[MainWindow] Enabling SelectionStore mode in FileTableView",
+                extra={"dev_only": True},
+            )
         except Exception as e:
             logger.warning(f"[MainWindow] Failed to enable SelectionStore mode: {e}")
 
@@ -86,13 +97,18 @@ class InitializationManager:
         Setup and initialize application components.
         This can be extended with other initialization logic.
         """
-        logger.debug("[InitializationManager] Setting up application components", extra={"dev_only": True})
+        logger.debug(
+            "[InitializationManager] Setting up application components", extra={"dev_only": True}
+        )
 
         # Enable SelectionStore mode
         self.enable_selection_store_mode()
 
         # Additional setup can be added here
-        logger.debug("[InitializationManager] Application components setup completed", extra={"dev_only": True})
+        logger.debug(
+            "[InitializationManager] Application components setup completed",
+            extra={"dev_only": True},
+        )
 
     def get_initialization_status(self) -> dict:
         """
@@ -106,7 +122,7 @@ class InitializationManager:
             "current_folder": self.main_window.current_folder_path,
             "force_extended_metadata": self.main_window.force_extended_metadata,
             "has_status_manager": self.main_window.status_manager is not None,
-            "has_file_table_view": hasattr(self.main_window, 'file_table_view')
+            "has_file_table_view": hasattr(self.main_window, "file_table_view"),
         }
 
     def validate_initialization(self) -> bool:
@@ -116,17 +132,18 @@ class InitializationManager:
         Returns:
             True if initialization is valid, False otherwise
         """
-        required_components = [
-            'status_manager',
-            'file_model',
-            'file_table_view',
-            'preview_manager'
-        ]
+        required_components = ["status_manager", "file_model", "file_table_view", "preview_manager"]
 
         for component in required_components:
-            if not hasattr(self.main_window, component) or getattr(self.main_window, component) is None:
+            if (
+                not hasattr(self.main_window, component)
+                or getattr(self.main_window, component) is None
+            ):
                 logger.warning(f"[InitializationManager] Missing required component: {component}")
                 return False
 
-        logger.debug("[InitializationManager] All required components are initialized", extra={"dev_only": True})
+        logger.debug(
+            "[InitializationManager] All required components are initialized",
+            extra={"dev_only": True},
+        )
         return True

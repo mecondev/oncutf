@@ -37,9 +37,10 @@ class SpecifiedTextModule(BaseRenameModule):
     """
     A module for inserting user-defined text in filenames.
     """
+
     updated = pyqtSignal(object)
 
-    def __init__(self, parent: Optional[QWidget]=None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
 
         # Store reference to current file for "Original Name" feature
@@ -93,7 +94,8 @@ class SpecifiedTextModule(BaseRenameModule):
         menu = QMenu(self.text_input)
 
         # Apply consistent styling with Inter fonts
-        menu.setStyleSheet("""
+        menu.setStyleSheet(
+            """
             QMenu {
                 background-color: #232323;
                 color: #f0ebd8;
@@ -127,7 +129,8 @@ class SpecifiedTextModule(BaseRenameModule):
                 height: 1px;
                 margin: 4px 8px;
             }
-        """)
+        """
+        )
 
         # Original Name action (always visible, enabled only if we have a current file)
         original_name_action = QAction("Original Name", menu)
@@ -247,7 +250,10 @@ class SpecifiedTextModule(BaseRenameModule):
             style.polish(self.text_input)
 
         # Always emit the signal (like CounterModule does)
-        logger.debug(f"[SpecifiedText] Text changed to: '{text}' (len={len(text)}), emitting signal", extra={"dev_only": True})
+        logger.debug(
+            f"[SpecifiedText] Text changed to: '{text}' (len={len(text)}), emitting signal",
+            extra={"dev_only": True},
+        )
         self.updated.emit(self)
 
     def _on_validation_changed(self, is_valid: bool) -> None:
@@ -258,7 +264,9 @@ class SpecifiedTextModule(BaseRenameModule):
             is_valid: True if input is valid, False otherwise
         """
         self._is_input_valid = is_valid
-        logger.debug(f"[SpecifiedText] Validation state changed: {is_valid}", extra={"dev_only": True})
+        logger.debug(
+            f"[SpecifiedText] Validation state changed: {is_valid}", extra={"dev_only": True}
+        )
 
         # Emit update signal so preview can refresh
         self.updated.emit(self)
@@ -270,14 +278,11 @@ class SpecifiedTextModule(BaseRenameModule):
         :return: A dictionary containing the type and the user-specified text.
         """
 
-        return {
-            "type": "specified_text",
-            "text": self.text_input.text()
-        }
+        return {"type": "specified_text", "text": self.text_input.text()}
 
     def reset(self) -> None:
         self._has_had_content = False  # Reset tracking
-        self._is_input_valid = True   # Reset validation state
+        self._is_input_valid = True  # Reset validation state
         self.text_input.clear()
         self.text_input.reset_validation_state()  # Reset ValidatedLineEdit state
 
@@ -285,12 +290,20 @@ class SpecifiedTextModule(BaseRenameModule):
         return self.apply_from_data(self.get_data(), file_item, index, metadata_cache)
 
     @staticmethod
-    def apply_from_data(data: dict, file_item, index: int = 0, metadata_cache: Optional[dict] = None) -> str:
-        logger.debug(f"[SpecifiedTextModule] Called with data={data}, index={index}", extra={"dev_only": True})
+    def apply_from_data(
+        data: dict, file_item, index: int = 0, metadata_cache: Optional[dict] = None
+    ) -> str:
+        logger.debug(
+            f"[SpecifiedTextModule] Called with data={data}, index={index}",
+            extra={"dev_only": True},
+        )
         text = data.get("text", "")
 
         if not text:
-            logger.debug("[SpecifiedTextModule] Empty text input, returning empty string.", extra={"dev_only": True})
+            logger.debug(
+                "[SpecifiedTextModule] Empty text input, returning empty string.",
+                extra={"dev_only": True},
+            )
             return ""
 
         # Validate using new system
@@ -298,6 +311,7 @@ class SpecifiedTextModule(BaseRenameModule):
         if not is_valid:
             logger.warning(f"[SpecifiedTextModule] Invalid filename text: '{text}'")
             from config import INVALID_FILENAME_MARKER
+
             return INVALID_FILENAME_MARKER
 
         # Return the text exactly as entered by the user
@@ -305,8 +319,4 @@ class SpecifiedTextModule(BaseRenameModule):
 
     @staticmethod
     def is_effective(data: dict) -> bool:
-        return bool(data.get('text', ''))
-
-
-
-
+        return bool(data.get("text", ""))

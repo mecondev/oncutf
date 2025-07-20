@@ -7,11 +7,12 @@ Date: 2025-05-31
 test_timer_manager.py
 Basic tests for the centralized timer management system.
 """
+
 import warnings
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 import sys
 
@@ -24,6 +25,7 @@ from utils.timer_manager import cleanup_all_timers, get_timer_manager, schedule_
 # Ensure QApplication exists for timer tests
 if not QApplication.instance():
     app = QApplication(sys.argv)
+
 
 class TestTimerBasics:
     def setup_method(self):
@@ -63,5 +65,5 @@ class TestTimerBasics:
         assert executed_count > 0  # At least some should execute
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pytest.main([__file__])

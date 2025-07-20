@@ -16,17 +16,18 @@ import pytest
 
 from utils.rename_logic import build_rename_plan, execute_rename_plan
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
-
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 
 class MockFile:
     def __init__(self, filename):
         self.filename = filename
 
+
 # ---------- Fixtures ----------
+
 
 @pytest.fixture
 def temp_dir():
@@ -34,7 +35,9 @@ def temp_dir():
     yield path
     shutil.rmtree(path)
 
+
 # ---------- Tests ----------
+
 
 def test_build_plan_no_conflicts(temp_dir):
     # Setup: files to rename to unique names

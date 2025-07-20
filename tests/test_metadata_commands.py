@@ -11,24 +11,23 @@ This module tests the undo/redo functionality for metadata operations,
 including individual commands, batch operations, and command manager behavior.
 """
 
-import pytest
-import tempfile
-import os
-from unittest.mock import Mock, MagicMock, patch
-from datetime import datetime
-from pathlib import Path
 
 # Add project root to path
 import sys
+from pathlib import Path
+from unittest.mock import Mock
+
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from core.metadata_command_manager import MetadataCommandManager
 from core.metadata_commands import (
+    BatchMetadataCommand,
     EditMetadataFieldCommand,
     ResetMetadataFieldCommand,
     SaveMetadataCommand,
-    BatchMetadataCommand
 )
-from core.metadata_command_manager import MetadataCommandManager
 
 
 class TestEditMetadataFieldCommand:
@@ -53,7 +52,7 @@ class TestEditMetadataFieldCommand:
             field_path=self.field_path,
             new_value=self.new_value,
             old_value=self.old_value,
-            metadata_tree_view=self.mock_tree_view
+            metadata_tree_view=self.mock_tree_view,
         )
 
     def test_command_initialization(self):
@@ -137,7 +136,7 @@ class TestEditMetadataFieldCommand:
             field_path=self.field_path,
             new_value=self.new_value,
             old_value=self.old_value,
-            metadata_tree_view=None
+            metadata_tree_view=None,
         )
 
         result = command.execute()
@@ -192,7 +191,7 @@ class TestResetMetadataFieldCommand:
             field_path=self.field_path,
             current_value=self.current_value,
             original_value=self.original_value,
-            metadata_tree_view=self.mock_tree_view
+            metadata_tree_view=self.mock_tree_view,
         )
 
     def test_reset_command_execution(self):
@@ -237,12 +236,11 @@ class TestSaveMetadataCommand:
         self.file_paths = ["/test/file1.mp4", "/test/file2.mp4"]
         self.saved_metadata = {
             "/test/file1.mp4": {"EXIF/Rotation": "90"},
-            "/test/file2.mp4": {"EXIF/Rotation": "180"}
+            "/test/file2.mp4": {"EXIF/Rotation": "180"},
         }
 
         self.command = SaveMetadataCommand(
-            file_paths=self.file_paths,
-            saved_metadata=self.saved_metadata
+            file_paths=self.file_paths, saved_metadata=self.saved_metadata
         )
 
     def test_save_command_initialization(self):
@@ -268,7 +266,7 @@ class TestSaveMetadataCommand:
         """Test save command with single file."""
         command = SaveMetadataCommand(
             file_paths=["/test/file.mp4"],
-            saved_metadata={"/test/file.mp4": {"EXIF/Rotation": "90"}}
+            saved_metadata={"/test/file.mp4": {"EXIF/Rotation": "90"}},
         )
 
         expected = "Save metadata: file.mp4"  # Only basename is shown
@@ -288,7 +286,7 @@ class TestBatchMetadataCommand:
             field_path="EXIF/Rotation",
             new_value="90",
             old_value="0",
-            metadata_tree_view=self.mock_tree_view
+            metadata_tree_view=self.mock_tree_view,
         )
 
         self.cmd2 = EditMetadataFieldCommand(
@@ -296,12 +294,11 @@ class TestBatchMetadataCommand:
             field_path="EXIF/Rotation",
             new_value="180",
             old_value="0",
-            metadata_tree_view=self.mock_tree_view
+            metadata_tree_view=self.mock_tree_view,
         )
 
         self.batch_command = BatchMetadataCommand(
-            commands=[self.cmd1, self.cmd2],
-            description="Batch rotation edit"
+            commands=[self.cmd1, self.cmd2], description="Batch rotation edit"
         )
 
     def test_batch_command_execution(self):
@@ -365,7 +362,7 @@ class TestMetadataCommandManager:
             field_path="EXIF/Rotation",
             new_value="90",
             old_value="0",
-            metadata_tree_view=self.mock_tree_view
+            metadata_tree_view=self.mock_tree_view,
         )
 
         self.cmd2 = EditMetadataFieldCommand(
@@ -373,7 +370,7 @@ class TestMetadataCommandManager:
             field_path="EXIF/Rotation",
             new_value="180",
             old_value="90",
-            metadata_tree_view=self.mock_tree_view
+            metadata_tree_view=self.mock_tree_view,
         )
 
     def test_manager_initialization(self):
@@ -455,7 +452,7 @@ class TestMetadataCommandManager:
                 field_path="EXIF/Rotation",
                 new_value=str(i * 90),
                 old_value="0",
-                metadata_tree_view=self.mock_tree_view
+                metadata_tree_view=self.mock_tree_view,
             )
             self.manager.execute_command(cmd)
 
@@ -486,9 +483,9 @@ class TestMetadataCommandManager:
         history = self.manager.get_command_history()
 
         assert len(history) == 2
-        assert all('timestamp' in item for item in history)
-        assert all('description' in item for item in history)
-        assert all('command_type' in item for item in history)
+        assert all("timestamp" in item for item in history)
+        assert all("description" in item for item in history)
+        assert all("command_type" in item for item in history)
 
     def test_undo_redo_without_commands(self):
         """Test undo/redo when no commands available."""
@@ -531,7 +528,7 @@ class TestIntegration:
             field_path="EXIF/Rotation",
             new_value="90",
             old_value="0",
-            metadata_tree_view=self.mock_tree_view
+            metadata_tree_view=self.mock_tree_view,
         )
 
         # Execute command
@@ -561,7 +558,7 @@ class TestIntegration:
             field_path="EXIF/Rotation",
             new_value="90",
             old_value="0",
-            metadata_tree_view=self.mock_tree_view
+            metadata_tree_view=self.mock_tree_view,
         )
 
         # Reset rotation
@@ -570,7 +567,7 @@ class TestIntegration:
             field_path="EXIF/Rotation",
             current_value="90",
             original_value="0",
-            metadata_tree_view=self.mock_tree_view
+            metadata_tree_view=self.mock_tree_view,
         )
 
         # Execute both commands
@@ -598,7 +595,7 @@ class TestIntegration:
                 field_path="EXIF/Rotation",
                 new_value="90",
                 old_value="0",
-                metadata_tree_view=self.mock_tree_view
+                metadata_tree_view=self.mock_tree_view,
             )
             commands.append(cmd)
 
@@ -615,7 +612,7 @@ class TestIntegration:
             assert cmd.executed is True
 
         # Test undo functionality regardless of grouping
-        initial_stack_size = len(self.manager._undo_stack)
+        # initial_stack_size = len(self.manager._undo_stack)
 
         # Undo all commands
         undo_count = 0

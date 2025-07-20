@@ -69,15 +69,18 @@ class UnifiedMetadataManager(QObject):
 
         # Initialize ExifTool wrapper for single file operations
         from utils.exiftool_wrapper import ExifToolWrapper
+
         self._exiftool_wrapper = ExifToolWrapper()
 
         logger.info("[UnifiedMetadataManager] Initialized - unified metadata management")
 
     def initialize_cache_helper(self) -> None:
         """Initialize the cache helper if parent window is available."""
-        if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
+        if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
             self._cache_helper = MetadataCacheHelper(self.parent_window.metadata_cache)
-            logger.debug("[UnifiedMetadataManager] Cache helper initialized", extra={"dev_only": True})
+            logger.debug(
+                "[UnifiedMetadataManager] Cache helper initialized", extra={"dev_only": True}
+            )
 
     # =====================================
     # Cache Checking Methods
@@ -96,6 +99,7 @@ class UnifiedMetadataManager(QObject):
         try:
             # Direct cache check using persistent cache
             from core.persistent_metadata_cache import get_persistent_metadata_cache
+
             cache = get_persistent_metadata_cache()
 
             # First check if metadata exists using has() method
@@ -104,19 +108,30 @@ class UnifiedMetadataManager(QObject):
                 metadata = cache.get(file_item.full_path)
                 if metadata:
                     # Filter out internal markers to check if there's real metadata
-                    real_metadata = {k: v for k, v in metadata.items() if not k.startswith('__')}
+                    real_metadata = {k: v for k, v in metadata.items() if not k.startswith("__")}
                     if real_metadata:
-                        logger.debug(f"[UnifiedMetadataManager] Cache hit for {file_item.filename}", extra={"dev_only": True})
+                        logger.debug(
+                            f"[UnifiedMetadataManager] Cache hit for {file_item.filename}",
+                            extra={"dev_only": True},
+                        )
                         return metadata
                     else:
-                        logger.debug(f"[UnifiedMetadataManager] Empty metadata for {file_item.filename}", extra={"dev_only": True})
+                        logger.debug(
+                            f"[UnifiedMetadataManager] Empty metadata for {file_item.filename}",
+                            extra={"dev_only": True},
+                        )
                         return None
 
-            logger.debug(f"[UnifiedMetadataManager] No cached metadata for {file_item.filename}", extra={"dev_only": True})
+            logger.debug(
+                f"[UnifiedMetadataManager] No cached metadata for {file_item.filename}",
+                extra={"dev_only": True},
+            )
             return None
 
         except Exception as e:
-            logger.warning(f"[UnifiedMetadataManager] Error checking cache for {file_item.filename}: {e}")
+            logger.warning(
+                f"[UnifiedMetadataManager] Error checking cache for {file_item.filename}: {e}"
+            )
             return None
 
     def check_cached_hash(self, file_item: FileItem) -> Optional[str]:
@@ -132,19 +147,28 @@ class UnifiedMetadataManager(QObject):
         try:
             # Direct cache check using persistent hash cache
             from core.persistent_hash_cache import get_persistent_hash_cache
+
             cache = get_persistent_hash_cache()
 
             # Get hash directly from persistent cache using get() method
             hash_value = cache.get(file_item.full_path)
             if hash_value:
-                logger.debug(f"[UnifiedMetadataManager] Hash cache hit for {file_item.filename}", extra={"dev_only": True})
+                logger.debug(
+                    f"[UnifiedMetadataManager] Hash cache hit for {file_item.filename}",
+                    extra={"dev_only": True},
+                )
                 return hash_value
 
-            logger.debug(f"[UnifiedMetadataManager] No cached hash for {file_item.filename}", extra={"dev_only": True})
+            logger.debug(
+                f"[UnifiedMetadataManager] No cached hash for {file_item.filename}",
+                extra={"dev_only": True},
+            )
             return None
 
         except Exception as e:
-            logger.warning(f"[UnifiedMetadataManager] Error checking hash cache for {file_item.filename}: {e}")
+            logger.warning(
+                f"[UnifiedMetadataManager] Error checking hash cache for {file_item.filename}: {e}"
+            )
             return None
 
     def has_cached_metadata(self, file_item: FileItem) -> bool:
@@ -160,13 +184,16 @@ class UnifiedMetadataManager(QObject):
         try:
             # Direct cache check using persistent cache
             from core.persistent_metadata_cache import get_persistent_metadata_cache
+
             cache = get_persistent_metadata_cache()
 
             # Use has() method to check existence
             return cache.has(file_item.full_path)
 
         except Exception as e:
-            logger.warning(f"[UnifiedMetadataManager] Error checking metadata existence for {file_item.filename}: {e}")
+            logger.warning(
+                f"[UnifiedMetadataManager] Error checking metadata existence for {file_item.filename}: {e}"
+            )
             return False
 
     def has_cached_hash(self, file_item: FileItem) -> bool:
@@ -182,13 +209,16 @@ class UnifiedMetadataManager(QObject):
         try:
             # Direct cache check using persistent hash cache
             from core.persistent_hash_cache import get_persistent_hash_cache
+
             cache = get_persistent_hash_cache()
 
             # Use has_hash() method to check existence
             return cache.has_hash(file_item.full_path)
 
         except Exception as e:
-            logger.warning(f"[UnifiedMetadataManager] Error checking hash existence for {file_item.filename}: {e}")
+            logger.warning(
+                f"[UnifiedMetadataManager] Error checking hash existence for {file_item.filename}: {e}"
+            )
             return False
 
     # =====================================
@@ -249,16 +279,16 @@ class UnifiedMetadataManager(QObject):
         """
         modifiers = modifier_state
         if modifiers is None:
-            if self.parent_window and hasattr(self.parent_window, 'modifier_state'):
+            if self.parent_window and hasattr(self.parent_window, "modifier_state"):
                 modifiers = self.parent_window.modifier_state
             else:
                 modifiers = QApplication.keyboardModifiers()
 
-        if modifiers == Qt.NoModifier: # type: ignore
+        if modifiers == Qt.NoModifier:  # type: ignore
             modifiers = QApplication.keyboardModifiers()  # fallback to current
 
-        ctrl = bool(modifiers & Qt.ControlModifier) # type: ignore
-        shift = bool(modifiers & Qt.ShiftModifier) # type: ignore
+        ctrl = bool(modifiers & Qt.ControlModifier)  # type: ignore
+        shift = bool(modifiers & Qt.ShiftModifier)  # type: ignore
 
         # - No modifiers: skip metadata
         # - With Ctrl: load basic metadata
@@ -285,13 +315,13 @@ class UnifiedMetadataManager(QObject):
         """
         modifiers = modifier_state
         if modifiers is None:
-            if self.parent_window and hasattr(self.parent_window, 'modifier_state'):
+            if self.parent_window and hasattr(self.parent_window, "modifier_state"):
                 modifiers = self.parent_window.modifier_state
             else:
                 modifiers = QApplication.keyboardModifiers()
 
-        ctrl = bool(modifiers & Qt.ControlModifier) # type: ignore
-        shift = bool(modifiers & Qt.ShiftModifier) # type: ignore
+        ctrl = bool(modifiers & Qt.ControlModifier)  # type: ignore
+        shift = bool(modifiers & Qt.ShiftModifier)  # type: ignore
         return ctrl and shift
 
     # =====================================
@@ -306,7 +336,9 @@ class UnifiedMetadataManager(QObject):
             return
 
         # Use unified selection method
-        selected_files = self.parent_window.get_selected_files_ordered() if self.parent_window else []
+        selected_files = (
+            self.parent_window.get_selected_files_ordered() if self.parent_window else []
+        )
 
         if not selected_files:
             logger.info("[Shortcut] No files selected for metadata loading")
@@ -328,7 +360,9 @@ class UnifiedMetadataManager(QObject):
             return
 
         # Use unified selection method
-        selected_files = self.parent_window.get_selected_files_ordered() if self.parent_window else []
+        selected_files = (
+            self.parent_window.get_selected_files_ordered() if self.parent_window else []
+        )
 
         if not selected_files:
             logger.info("[Shortcut] No files selected for extended metadata loading")
@@ -342,7 +376,9 @@ class UnifiedMetadataManager(QObject):
     # Main Loading Methods
     # =====================================
 
-    def load_metadata_for_items(self, items: List[FileItem], use_extended: bool = False, source: str = "unknown") -> None:
+    def load_metadata_for_items(
+        self, items: List[FileItem], use_extended: bool = False, source: str = "unknown"
+    ) -> None:
         """
         Load metadata for the given FileItem objects using simple and fast approach.
 
@@ -366,9 +402,13 @@ class UnifiedMetadataManager(QObject):
 
         for item in items:
             # Check cache for existing metadata
-            cache_entry = self.parent_window.metadata_cache.get_entry(item.full_path) if self.parent_window else None
+            cache_entry = (
+                self.parent_window.metadata_cache.get_entry(item.full_path)
+                if self.parent_window
+                else None
+            )
 
-            if cache_entry and hasattr(cache_entry, 'is_extended'):
+            if cache_entry and hasattr(cache_entry, "is_extended"):
                 # If we have cache and it matches the requested type, skip loading
                 if cache_entry.is_extended == use_extended:
                     continue
@@ -376,16 +416,18 @@ class UnifiedMetadataManager(QObject):
             needs_loading.append(item)
 
         # Get metadata tree view reference
-        metadata_tree_view = (self.parent_window.metadata_tree_view
-                            if self.parent_window and hasattr(self.parent_window, 'metadata_tree_view')
-                            else None)
+        metadata_tree_view = (
+            self.parent_window.metadata_tree_view
+            if self.parent_window and hasattr(self.parent_window, "metadata_tree_view")
+            else None
+        )
 
         # If nothing needs loading, just handle display logic
         if not needs_loading:
             logger.info(f"[{source}] All {len(items)} files already cached")
 
             # Ενημέρωση εικονιδίων file table για να εμφανιστούν τα metadata icons
-            if self.parent_window and hasattr(self.parent_window, 'file_model'):
+            if self.parent_window and hasattr(self.parent_window, "file_model"):
                 self.parent_window.file_model.refresh_icons()
 
             # Always display metadata for cached items too
@@ -401,44 +443,57 @@ class UnifiedMetadataManager(QObject):
 
         # Handle different loading modes using old system's simple approach
         if loading_mode == "single_file_wait_cursor":
-            logger.info(f"[{source}] Loading metadata for single file with wait_cursor (extended={use_extended})")
+            logger.info(
+                f"[{source}] Loading metadata for single file with wait_cursor (extended={use_extended})"
+            )
 
             from utils.cursor_helper import wait_cursor
+
             with wait_cursor():
                 # Load metadata for the single file using ExifTool wrapper directly
                 file_item = needs_loading[0]
-                metadata = self._exiftool_wrapper.get_metadata(file_item.full_path, use_extended=use_extended)
+                metadata = self._exiftool_wrapper.get_metadata(
+                    file_item.full_path, use_extended=use_extended
+                )
 
                 if metadata:
                     # Mark metadata with loading mode for UI indicators
-                    if use_extended and '__extended__' not in metadata:
-                        metadata['__extended__'] = True
-                    elif not use_extended and '__extended__' in metadata:
-                        del metadata['__extended__']
+                    if use_extended and "__extended__" not in metadata:
+                        metadata["__extended__"] = True
+                    elif not use_extended and "__extended__" in metadata:
+                        del metadata["__extended__"]
 
                     # Cache the result in both local and parent window caches
                     cache_key = (file_item.full_path, use_extended)
                     self._metadata_cache[cache_key] = metadata
 
                     # Also save to parent window's metadata_cache for UI display
-                    if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
-                        self.parent_window.metadata_cache.set(file_item.full_path, metadata, is_extended=use_extended)
+                    if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
+                        self.parent_window.metadata_cache.set(
+                            file_item.full_path, metadata, is_extended=use_extended
+                        )
 
                     # Update the file item
                     file_item.metadata = metadata
 
                     # Emit dataChanged signal to update UI icons immediately
-                    if self.parent_window and hasattr(self.parent_window, 'file_model'):
+                    if self.parent_window and hasattr(self.parent_window, "file_model"):
                         try:
                             # Find the row index and emit dataChanged for the entire row
                             for i, file in enumerate(self.parent_window.file_model.files):
                                 if paths_equal(file.full_path, file_item.full_path):
                                     top_left = self.parent_window.file_model.index(i, 0)
-                                    bottom_right = self.parent_window.file_model.index(i, self.parent_window.file_model.columnCount() - 1)
-                                    self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole])
+                                    bottom_right = self.parent_window.file_model.index(
+                                        i, self.parent_window.file_model.columnCount() - 1
+                                    )
+                                    self.parent_window.file_model.dataChanged.emit(
+                                        top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]
+                                    )
                                     break
                         except Exception as e:
-                            logger.warning(f"[UnifiedMetadataManager] Failed to emit dataChanged for {file_item.filename}: {e}")
+                            logger.warning(
+                                f"[UnifiedMetadataManager] Failed to emit dataChanged for {file_item.filename}: {e}"
+                            )
 
                     # Display metadata in tree view if available
                     if metadata_tree_view:
@@ -447,10 +502,13 @@ class UnifiedMetadataManager(QObject):
                     logger.info(f"[{source}] Successfully loaded metadata for {file_item.filename}")
 
         elif loading_mode == "multiple_files_dialog":
-            logger.info(f"[{source}] Loading metadata for {len(needs_loading)} files with dialog (extended={use_extended})")
+            logger.info(
+                f"[{source}] Loading metadata for {len(needs_loading)} files with dialog (extended={use_extended})"
+            )
 
             # Calculate total size for enhanced progress tracking
             from utils.file_size_calculator import calculate_files_total_size
+
             total_size = calculate_files_total_size(needs_loading)
 
             # Use progress dialog for large batches
@@ -467,9 +525,11 @@ class UnifiedMetadataManager(QObject):
             _loading_dialog = ProgressDialog.create_metadata_dialog(
                 self.parent_window,
                 is_extended=use_extended,
-                cancel_callback=cancel_metadata_loading
+                cancel_callback=cancel_metadata_loading,
             )
-            _loading_dialog.set_status("Loading metadata..." if not use_extended else "Loading extended metadata...")
+            _loading_dialog.set_status(
+                "Loading metadata..." if not use_extended else "Loading extended metadata..."
+            )
 
             # Start enhanced tracking with total size
             _loading_dialog.start_progress_tracking(total_size)
@@ -482,18 +542,20 @@ class UnifiedMetadataManager(QObject):
             for i, file_item in enumerate(needs_loading):
                 # Check for cancellation before processing each file
                 if self._metadata_cancelled:
-                    logger.info(f"[UnifiedMetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}")
+                    logger.info(
+                        f"[UnifiedMetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}"
+                    )
                     _loading_dialog.close()
                     return
 
                 # Add current file size to processed total
                 try:
-                    if hasattr(file_item, 'file_size') and file_item.file_size is not None:
+                    if hasattr(file_item, "file_size") and file_item.file_size is not None:
                         current_file_size = file_item.file_size
-                    elif hasattr(file_item, 'full_path') and os.path.exists(file_item.full_path):
+                    elif hasattr(file_item, "full_path") and os.path.exists(file_item.full_path):
                         current_file_size = os.path.getsize(file_item.full_path)
                         # Cache it for future use
-                        if hasattr(file_item, 'file_size'):
+                        if hasattr(file_item, "file_size"):
                             file_item.file_size = current_file_size
                     else:
                         current_file_size = 0
@@ -507,7 +569,7 @@ class UnifiedMetadataManager(QObject):
                     file_count=i + 1,
                     total_files=len(needs_loading),
                     processed_bytes=processed_size,
-                    total_bytes=total_size
+                    total_bytes=total_size,
                 )
                 _loading_dialog.set_filename(file_item.filename)
                 _loading_dialog.set_count(i + 1, len(needs_loading))
@@ -515,47 +577,60 @@ class UnifiedMetadataManager(QObject):
                 # Process events to update the dialog and handle cancellation
                 if (i + 1) % 10 == 0 or current_file_size > 10 * 1024 * 1024:
                     from PyQt5.QtWidgets import QApplication
+
                     QApplication.processEvents()
 
                 # Check again after processing events
                 if self._metadata_cancelled:
-                    logger.info(f"[UnifiedMetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}")
+                    logger.info(
+                        f"[UnifiedMetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}"
+                    )
                     _loading_dialog.close()
                     return
 
                 # Load metadata using ExifTool wrapper directly
-                metadata = self._exiftool_wrapper.get_metadata(file_item.full_path, use_extended=use_extended)
+                metadata = self._exiftool_wrapper.get_metadata(
+                    file_item.full_path, use_extended=use_extended
+                )
 
                 if metadata:
                     # Mark metadata with loading mode for UI indicators
-                    if use_extended and '__extended__' not in metadata:
-                        metadata['__extended__'] = True
-                    elif not use_extended and '__extended__' in metadata:
-                        del metadata['__extended__']
+                    if use_extended and "__extended__" not in metadata:
+                        metadata["__extended__"] = True
+                    elif not use_extended and "__extended__" in metadata:
+                        del metadata["__extended__"]
 
                     # Cache the result in both local and parent window caches
                     cache_key = (file_item.full_path, use_extended)
                     self._metadata_cache[cache_key] = metadata
 
                     # Also save to parent window's metadata_cache for UI display
-                    if self.parent_window and hasattr(self.parent_window, 'metadata_cache'):
-                        self.parent_window.metadata_cache.set(file_item.full_path, metadata, is_extended=use_extended)
+                    if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
+                        self.parent_window.metadata_cache.set(
+                            file_item.full_path, metadata, is_extended=use_extended
+                        )
 
                     # Update the file item
                     file_item.metadata = metadata
 
                     # Emit dataChanged signal to update UI icons
-                    if self.parent_window and hasattr(self.parent_window, 'file_model'):
+                    if self.parent_window and hasattr(self.parent_window, "file_model"):
                         try:
                             # Find the row index and emit dataChanged for the entire row
                             for j, file in enumerate(self.parent_window.file_model.files):
                                 if paths_equal(file.full_path, file_item.full_path):
                                     top_left = self.parent_window.file_model.index(j, 0)
-                                    bottom_right = self.parent_window.file_model.index(j, self.parent_window.file_model.columnCount() - 1)
-                                    self.parent_window.file_model.dataChanged.emit(top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole])
+                                    bottom_right = self.parent_window.file_model.index(
+                                        j, self.parent_window.file_model.columnCount() - 1
+                                    )
+                                    self.parent_window.file_model.dataChanged.emit(
+                                        top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]
+                                    )
                                     break
                         except Exception as e:
-                            logger.warning(f"[UnifiedMetadataManager] Failed to emit dataChanged for {file_item.filename}: {e}")
+                            logger.warning(
+                                f"[UnifiedMetadataManager] Failed to emit dataChanged for {file_item.filename}: {e}"
+                            )
 
             # Close the progress dialog
             _loading_dialog.close()
@@ -570,11 +645,7 @@ class UnifiedMetadataManager(QObject):
         # Always emit signal to indicate loading is finished
         self.loading_finished.emit()
 
-    def load_hashes_for_files(
-        self,
-        files: List[FileItem],
-        source: str = "user_request"
-    ) -> None:
+    def load_hashes_for_files(self, files: List[FileItem], source: str = "user_request") -> None:
         """
         Load hashes for files that don't have them cached.
 
@@ -595,10 +666,14 @@ class UnifiedMetadataManager(QObject):
                     self._currently_loading.add(file_item.full_path)
 
         if not files_to_load:
-            logger.info(f"[UnifiedMetadataManager] All {len(files)} files already have cached hashes")
+            logger.info(
+                f"[UnifiedMetadataManager] All {len(files)} files already have cached hashes"
+            )
             return
 
-        logger.info(f"[UnifiedMetadataManager] Loading hashes for {len(files_to_load)} files ({source})")
+        logger.info(
+            f"[UnifiedMetadataManager] Loading hashes for {len(files_to_load)} files ({source})"
+        )
 
         # Show progress dialog for multiple files
         if len(files_to_load) > 1:
@@ -612,22 +687,21 @@ class UnifiedMetadataManager(QObject):
     # =====================================
 
     def _show_metadata_progress_dialog(
-        self,
-        files: List[FileItem],
-        use_extended: bool,
-        source: str
+        self, files: List[FileItem], use_extended: bool, source: str
     ) -> None:
         """Show progress dialog for metadata loading."""
         try:
+
             def cancel_metadata_loading():
                 self._cancel_current_loading()
 
             # Create progress dialog
             from utils.progress_dialog import ProgressDialog
+
             _loading_dialog = ProgressDialog.create_metadata_dialog(
                 self.parent_window,
                 is_extended=use_extended,
-                cancel_callback=cancel_metadata_loading
+                cancel_callback=cancel_metadata_loading,
             )
 
             # Start loading with progress tracking
@@ -638,21 +712,18 @@ class UnifiedMetadataManager(QObject):
             # Fallback to direct loading
             self._start_metadata_loading(files, use_extended, source)
 
-    def _show_hash_progress_dialog(
-        self,
-        files: List[FileItem],
-        source: str
-    ) -> None:
+    def _show_hash_progress_dialog(self, files: List[FileItem], source: str) -> None:
         """Show progress dialog for hash loading."""
         try:
+
             def cancel_hash_loading():
                 self._cancel_current_loading()
 
             # Create progress dialog
             from utils.progress_dialog import ProgressDialog
+
             _loading_dialog = ProgressDialog.create_hash_dialog(
-                self.parent_window,
-                cancel_callback=cancel_hash_loading
+                self.parent_window, cancel_callback=cancel_hash_loading
             )
 
             # Start loading with progress tracking
@@ -668,31 +739,21 @@ class UnifiedMetadataManager(QObject):
     # =====================================
 
     def _start_metadata_loading_with_progress(
-        self,
-        files: List[FileItem],
-        use_extended: bool,
-        source: str
+        self, files: List[FileItem], use_extended: bool, source: str
     ) -> None:
         """Start metadata loading with progress tracking."""
         # This will be implemented to use the existing metadata worker
         # For now, fallback to direct loading
         self._start_metadata_loading(files, use_extended, source)
 
-    def _start_hash_loading_with_progress(
-        self,
-        files: List[FileItem],
-        source: str
-    ) -> None:
+    def _start_hash_loading_with_progress(self, files: List[FileItem], source: str) -> None:
         """Start hash loading with progress tracking."""
         # This will be implemented to use the existing hash worker
         # For now, fallback to direct loading
         self._start_hash_loading(files, source)
 
     def _start_metadata_loading(
-        self,
-        files: List[FileItem],
-        use_extended: bool,
-        source: str
+        self, files: List[FileItem], use_extended: bool, source: str
     ) -> None:
         """Start metadata loading using existing metadata worker."""
         if not files:
@@ -711,7 +772,7 @@ class UnifiedMetadataManager(QObject):
             self._metadata_worker = MetadataWorker(
                 reader=metadata_loader,
                 metadata_cache=self.parent_window.metadata_cache if self.parent_window else None,
-                parent=None  # No parent to avoid moveToThread issues
+                parent=None,  # No parent to avoid moveToThread issues
             )
 
             # Set additional properties after creation
@@ -781,33 +842,29 @@ class UnifiedMetadataManager(QObject):
     def _on_metadata_progress(self, current: int, total: int) -> None:
         """Handle metadata loading progress updates."""
         # This will be connected to progress dialog updates
-        pass
 
     def _on_metadata_size_progress(self, processed: int, total: int) -> None:
         """Handle metadata size progress updates."""
         # This will be connected to progress dialog updates
-        pass
 
     def _on_hash_progress(self, current: int, total: int) -> None:
         """Handle hash loading progress updates."""
         # This will be connected to progress dialog updates
-        pass
 
     def _on_hash_size_progress(self, processed: int, total: int) -> None:
         """Handle hash size progress updates."""
         # This will be connected to progress dialog updates
-        pass
 
     def _cancel_current_loading(self) -> None:
         """Cancel current loading operation."""
         self._metadata_cancelled = True
 
         # Cancel metadata worker if running
-        if hasattr(self, '_metadata_worker') and self._metadata_worker:
+        if hasattr(self, "_metadata_worker") and self._metadata_worker:
             self._metadata_worker.cancel()
 
         # Cancel hash worker if running
-        if hasattr(self, '_hash_worker') and self._hash_worker:
+        if hasattr(self, "_hash_worker") and self._hash_worker:
             self._hash_worker.cancel()
 
         logger.info("[UnifiedMetadataManager] Loading operation cancelled")
@@ -827,14 +884,16 @@ class UnifiedMetadataManager(QObject):
         # Update UI if needed - use efficient single file icon refresh
         if self.parent_window:
             # Update file table model icons for this specific file
-            if hasattr(self.parent_window, 'file_model'):
-                if hasattr(self.parent_window.file_model, 'refresh_icon_for_file'):
+            if hasattr(self.parent_window, "file_model"):
+                if hasattr(self.parent_window.file_model, "refresh_icon_for_file"):
                     self.parent_window.file_model.refresh_icon_for_file(file_path)
                 else:
                     # Fallback to full refresh if method not available
                     self.parent_window.file_model.refresh_icons()
 
-        logger.debug(f"[UnifiedMetadataManager] Metadata loaded for {file_path}", extra={"dev_only": True})
+        logger.debug(
+            f"[UnifiedMetadataManager] Metadata loaded for {file_path}", extra={"dev_only": True}
+        )
 
     def _on_file_hash_calculated(self, file_path: str) -> None:
         """Handle individual file hash calculated."""
@@ -844,14 +903,16 @@ class UnifiedMetadataManager(QObject):
         # Update UI if needed - use efficient single file icon refresh
         if self.parent_window:
             # Update file table model icons for this specific file
-            if hasattr(self.parent_window, 'file_model'):
-                if hasattr(self.parent_window.file_model, 'refresh_icon_for_file'):
+            if hasattr(self.parent_window, "file_model"):
+                if hasattr(self.parent_window.file_model, "refresh_icon_for_file"):
                     self.parent_window.file_model.refresh_icon_for_file(file_path)
                 else:
                     # Fallback to full refresh if method not available
                     self.parent_window.file_model.refresh_icons()
 
-        logger.debug(f"[UnifiedMetadataManager] Hash calculated for {file_path}", extra={"dev_only": True})
+        logger.debug(
+            f"[UnifiedMetadataManager] Hash calculated for {file_path}", extra={"dev_only": True}
+        )
 
     def _on_metadata_finished(self) -> None:
         """Handle metadata loading completion."""
@@ -864,12 +925,14 @@ class UnifiedMetadataManager(QObject):
         # Update UI
         if self.parent_window:
             # Update file table model
-            if hasattr(self.parent_window, 'file_model'):
+            if hasattr(self.parent_window, "file_model"):
                 self.parent_window.file_model.refresh_icons()
 
             # Update metadata tree view
-            if hasattr(self.parent_window, 'metadata_tree_view'):
-                self.parent_window.metadata_tree_view.handle_metadata_load_completion(None, "metadata_loading")
+            if hasattr(self.parent_window, "metadata_tree_view"):
+                self.parent_window.metadata_tree_view.handle_metadata_load_completion(
+                    None, "metadata_loading"
+                )
 
         logger.info("[UnifiedMetadataManager] Metadata loading completed")
 
@@ -884,18 +947,25 @@ class UnifiedMetadataManager(QObject):
         # Update UI
         if self.parent_window:
             # Update file table model
-            if hasattr(self.parent_window, 'file_model'):
+            if hasattr(self.parent_window, "file_model"):
                 self.parent_window.file_model.refresh_icons()
+
+            # Notify preview manager about hash calculation completion
+            if (
+                hasattr(self.parent_window, "preview_manager")
+                and self.parent_window.preview_manager
+            ):
+                self.parent_window.preview_manager.on_hash_calculation_completed()
 
         logger.info("[UnifiedMetadataManager] Hash loading completed")
 
     def _cleanup_metadata_worker_and_thread(self) -> None:
         """Clean up metadata worker and thread."""
-        if hasattr(self, '_metadata_worker') and self._metadata_worker:
+        if hasattr(self, "_metadata_worker") and self._metadata_worker:
             self._metadata_worker.deleteLater()
             self._metadata_worker = None
 
-        if hasattr(self, '_metadata_thread') and self._metadata_thread:
+        if hasattr(self, "_metadata_thread") and self._metadata_thread:
             self._metadata_thread.quit()
             self._metadata_thread.wait()
             self._metadata_thread.deleteLater()
@@ -903,11 +973,11 @@ class UnifiedMetadataManager(QObject):
 
     def _cleanup_hash_worker_and_thread(self) -> None:
         """Clean up hash worker and thread."""
-        if hasattr(self, '_hash_worker') and self._hash_worker:
+        if hasattr(self, "_hash_worker") and self._hash_worker:
             self._hash_worker.deleteLater()
             self._hash_worker = None
 
-        if hasattr(self, '_hash_thread') and self._hash_thread:
+        if hasattr(self, "_hash_thread") and self._hash_thread:
             self._hash_thread.quit()
             self._hash_thread.wait()
             self._hash_thread.deleteLater()
@@ -923,14 +993,16 @@ class UnifiedMetadataManager(QObject):
             return
 
         # Get selected files
-        selected_files = self.parent_window.get_selected_files_ordered() if self.parent_window else []
+        selected_files = (
+            self.parent_window.get_selected_files_ordered() if self.parent_window else []
+        )
 
         if not selected_files:
             logger.info("[UnifiedMetadataManager] No files selected for metadata saving")
             return
 
         # Get metadata tree view
-        metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
+        metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
         if not metadata_tree_view:
             logger.warning("[UnifiedMetadataManager] No metadata tree view available")
             return
@@ -952,7 +1024,9 @@ class UnifiedMetadataManager(QObject):
             logger.info("[UnifiedMetadataManager] No selected files have modified metadata")
             return
 
-        logger.info(f"[UnifiedMetadataManager] Saving metadata for {len(files_to_save)} selected files")
+        logger.info(
+            f"[UnifiedMetadataManager] Saving metadata for {len(files_to_save)} selected files"
+        )
         self._save_metadata_files(files_to_save, all_modified_metadata)
 
     def save_all_modified_metadata(self) -> None:
@@ -961,7 +1035,7 @@ class UnifiedMetadataManager(QObject):
             return
 
         # Get metadata tree view
-        metadata_tree_view = getattr(self.parent_window, 'metadata_tree_view', None)
+        metadata_tree_view = getattr(self.parent_window, "metadata_tree_view", None)
         if not metadata_tree_view:
             logger.warning("[UnifiedMetadataManager] No metadata tree view available")
             return
@@ -975,8 +1049,8 @@ class UnifiedMetadataManager(QObject):
 
         # Get all files that have modifications
         files_to_save = []
-        file_model = getattr(self.parent_window, 'file_model', None)
-        if file_model and hasattr(file_model, 'files'):
+        file_model = getattr(self.parent_window, "file_model", None)
+        if file_model and hasattr(file_model, "files"):
             for file_item in file_model.files:
                 if file_item.full_path in all_modified_metadata:
                     files_to_save.append(file_item)
@@ -985,7 +1059,9 @@ class UnifiedMetadataManager(QObject):
             logger.info("[UnifiedMetadataManager] No files with modified metadata found")
             return
 
-        logger.info(f"[UnifiedMetadataManager] Saving metadata for {len(files_to_save)} files with modifications")
+        logger.info(
+            f"[UnifiedMetadataManager] Saving metadata for {len(files_to_save)} files with modifications"
+        )
         self._save_metadata_files(files_to_save, all_modified_metadata)
 
     def _save_metadata_files(self, files_to_save: list, all_modified_metadata: dict) -> None:
@@ -1002,7 +1078,9 @@ class UnifiedMetadataManager(QObject):
                 file_path = file_item.full_path
 
                 # Get modifications for this file
-                modifications = self._get_modified_metadata_for_file(file_path, all_modified_metadata)
+                modifications = self._get_modified_metadata_for_file(
+                    file_path, all_modified_metadata
+                )
 
                 if not modifications:
                     continue
@@ -1014,14 +1092,21 @@ class UnifiedMetadataManager(QObject):
                     if success:
                         success_count += 1
                         self._update_file_after_save(file_item, modifications)
-                        logger.debug(f"[UnifiedMetadataManager] Successfully saved metadata for {file_item.filename}", extra={"dev_only": True})
+                        logger.debug(
+                            f"[UnifiedMetadataManager] Successfully saved metadata for {file_item.filename}",
+                            extra={"dev_only": True},
+                        )
                     else:
                         failed_files.append(file_item.filename)
-                        logger.warning(f"[UnifiedMetadataManager] Failed to save metadata for {file_item.filename}")
+                        logger.warning(
+                            f"[UnifiedMetadataManager] Failed to save metadata for {file_item.filename}"
+                        )
 
                 except Exception as e:
                     failed_files.append(file_item.filename)
-                    logger.error(f"[UnifiedMetadataManager] Error saving metadata for {file_item.filename}: {e}")
+                    logger.error(
+                        f"[UnifiedMetadataManager] Error saving metadata for {file_item.filename}: {e}"
+                    )
 
         except Exception as e:
             logger.error(f"[UnifiedMetadataManager] Error in metadata saving process: {e}")
@@ -1044,19 +1129,23 @@ class UnifiedMetadataManager(QObject):
                     for file_item in files_to_save:
                         if file_item.filename not in failed_files:
                             successful_files.append(file_item.full_path)
-                            modifications = self._get_modified_metadata_for_file(file_item.full_path, all_modified_metadata)
+                            modifications = self._get_modified_metadata_for_file(
+                                file_item.full_path, all_modified_metadata
+                            )
                             if modifications:
                                 successful_metadata[file_item.full_path] = modifications
 
                     if successful_files:
                         save_command = SaveMetadataCommand(
-                            file_paths=successful_files,
-                            saved_metadata=successful_metadata
+                            file_paths=successful_files, saved_metadata=successful_metadata
                         )
 
                         # Execute command (this just records the save operation)
                         command_manager.execute_command(save_command)
-                        logger.debug(f"[UnifiedMetadataManager] Recorded save command for {len(successful_files)} files", extra={"dev_only": True})
+                        logger.debug(
+                            f"[UnifiedMetadataManager] Recorded save command for {len(successful_files)} files",
+                            extra={"dev_only": True},
+                        )
 
             except Exception as e:
                 logger.warning(f"[UnifiedMetadataManager] Error recording save command: {e}")
@@ -1076,24 +1165,30 @@ class UnifiedMetadataManager(QObject):
         # CRITICAL: Update both UI cache and persistent cache with saved values
         if saved_metadata:
             # Step 1: Update UI cache (metadata_cache)
-            if hasattr(self.parent_window, 'metadata_cache'):
+            if hasattr(self.parent_window, "metadata_cache"):
                 cache = self.parent_window.metadata_cache
                 metadata_entry = cache.get_entry(file_item.full_path)
 
-                if metadata_entry and hasattr(metadata_entry, 'data'):
-                    logger.debug(f"[UnifiedMetadataManager] Updating UI cache with saved metadata for: {file_item.filename}", extra={"dev_only": True})
+                if metadata_entry and hasattr(metadata_entry, "data"):
+                    logger.debug(
+                        f"[UnifiedMetadataManager] Updating UI cache with saved metadata for: {file_item.filename}",
+                        extra={"dev_only": True},
+                    )
 
                     # Update the cache data with the values that were actually saved
                     for key_path, new_value in saved_metadata.items():
-                        logger.debug(f"[UnifiedMetadataManager] Updating UI cache: {key_path} = {new_value}", extra={"dev_only": True})
+                        logger.debug(
+                            f"[UnifiedMetadataManager] Updating UI cache: {key_path} = {new_value}",
+                            extra={"dev_only": True},
+                        )
 
                         # Handle nested keys (e.g., "EXIF:Rotation")
-                        if '/' in key_path or ':' in key_path:
+                        if "/" in key_path or ":" in key_path:
                             # Split by either / or : to handle both formats
-                            if '/' in key_path:
-                                parts = key_path.split('/', 1)
+                            if "/" in key_path:
+                                parts = key_path.split("/", 1)
                             else:
-                                parts = key_path.split(':', 1)
+                                parts = key_path.split(":", 1)
 
                             if len(parts) == 2:
                                 group, key = parts
@@ -1117,6 +1212,7 @@ class UnifiedMetadataManager(QObject):
             # Step 2: Update persistent cache (CRITICAL for cross-session persistence)
             try:
                 from core.persistent_metadata_cache import get_persistent_metadata_cache
+
                 persistent_cache = get_persistent_metadata_cache()
 
                 if persistent_cache:
@@ -1128,15 +1224,18 @@ class UnifiedMetadataManager(QObject):
                         updated_metadata = dict(current_metadata)
 
                         for key_path, new_value in saved_metadata.items():
-                            logger.debug(f"[UnifiedMetadataManager] Updating persistent cache: {key_path} = {new_value}", extra={"dev_only": True})
+                            logger.debug(
+                                f"[UnifiedMetadataManager] Updating persistent cache: {key_path} = {new_value}",
+                                extra={"dev_only": True},
+                            )
 
                             # Handle nested keys (e.g., "EXIF:Rotation")
-                            if '/' in key_path or ':' in key_path:
+                            if "/" in key_path or ":" in key_path:
                                 # For persistent cache, convert colon-separated keys to forward slash
-                                key_path_normalized = key_path.replace(':', '/')
+                                key_path_normalized = key_path.replace(":", "/")
 
-                                if '/' in key_path_normalized:
-                                    parts = key_path_normalized.split('/', 1)
+                                if "/" in key_path_normalized:
+                                    parts = key_path_normalized.split("/", 1)
                                     if len(parts) == 2:
                                         group, key = parts
                                         if group not in updated_metadata:
@@ -1157,63 +1256,83 @@ class UnifiedMetadataManager(QObject):
                                 updated_metadata[key_path] = new_value
 
                         # Save updated metadata back to persistent cache
-                        persistent_cache.set(file_item.full_path, updated_metadata, is_extended=False)
-                        logger.debug(f"[UnifiedMetadataManager] Updated persistent cache for: {file_item.filename}", extra={"dev_only": True})
+                        persistent_cache.set(
+                            file_item.full_path, updated_metadata, is_extended=False
+                        )
+                        logger.debug(
+                            f"[UnifiedMetadataManager] Updated persistent cache for: {file_item.filename}",
+                            extra={"dev_only": True},
+                        )
                     else:
-                        logger.warning(f"[UnifiedMetadataManager] No existing metadata in persistent cache for: {file_item.filename}")
+                        logger.warning(
+                            f"[UnifiedMetadataManager] No existing metadata in persistent cache for: {file_item.filename}"
+                        )
 
             except Exception as e:
                 logger.warning(f"[UnifiedMetadataManager] Failed to update persistent cache: {e}")
 
         # Clear modifications in tree view
-        if hasattr(self.parent_window, 'metadata_tree_view'):
+        if hasattr(self.parent_window, "metadata_tree_view"):
             self.parent_window.metadata_tree_view.clear_modifications_for_file(file_item.full_path)
 
         # Update file modification time
         try:
             file_item.date_modified = datetime.fromtimestamp(os.path.getmtime(file_item.full_path))
         except Exception as e:
-            logger.warning(f"[UnifiedMetadataManager] Could not update modification time for {file_item.filename}: {e}")
+            logger.warning(
+                f"[UnifiedMetadataManager] Could not update modification time for {file_item.filename}: {e}"
+            )
 
         # Force refresh metadata view if this file is currently displayed
-        if (hasattr(self.parent_window, 'metadata_tree_view') and
-            hasattr(self.parent_window.metadata_tree_view, '_current_file_path') and
-            self.parent_window.metadata_tree_view._current_file_path == file_item.full_path):
+        if (
+            hasattr(self.parent_window, "metadata_tree_view")
+            and hasattr(self.parent_window.metadata_tree_view, "_current_file_path")
+            and self.parent_window.metadata_tree_view._current_file_path == file_item.full_path
+        ):
 
-            logger.debug(f"[UnifiedMetadataManager] Refreshing metadata view for updated file: {file_item.filename}", extra={"dev_only": True})
+            logger.debug(
+                f"[UnifiedMetadataManager] Refreshing metadata view for updated file: {file_item.filename}",
+                extra={"dev_only": True},
+            )
 
             # Get updated cache data to refresh the display
-            if hasattr(self.parent_window, 'metadata_cache'):
+            if hasattr(self.parent_window, "metadata_cache"):
                 metadata_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
-                if metadata_entry and hasattr(metadata_entry, 'data'):
+                if metadata_entry and hasattr(metadata_entry, "data"):
                     display_data = dict(metadata_entry.data)
                     display_data["FileName"] = file_item.filename
-                    self.parent_window.metadata_tree_view.display_metadata(display_data, context="after_save")
+                    self.parent_window.metadata_tree_view.display_metadata(
+                        display_data, context="after_save"
+                    )
 
     def _show_save_results(self, success_count, failed_files, files_to_save):
         """Show results of metadata save operation."""
         if success_count > 0:
-            logger.info(f"[UnifiedMetadataManager] Successfully saved metadata for {success_count} files")
+            logger.info(
+                f"[UnifiedMetadataManager] Successfully saved metadata for {success_count} files"
+            )
 
             # Update status bar
-            if self.parent_window and hasattr(self.parent_window, 'status_bar'):
+            if self.parent_window and hasattr(self.parent_window, "status_bar"):
                 self.parent_window.status_bar.showMessage(
-                    f"Metadata saved for {success_count} files",
-                    3000
+                    f"Metadata saved for {success_count} files", 3000
                 )
 
         if failed_files:
-            logger.warning(f"[UnifiedMetadataManager] Failed to save metadata for {len(failed_files)} files: {failed_files}")
+            logger.warning(
+                f"[UnifiedMetadataManager] Failed to save metadata for {len(failed_files)} files: {failed_files}"
+            )
 
             # Show error message
             if self.parent_window:
                 from widgets.custom_message_dialog import CustomMsgDialog
+
                 CustomMsgDialog.show_error(
                     self.parent_window,
                     "Metadata Save Error",
                     f"Failed to save metadata for {len(failed_files)} files.\n\n"
                     f"Files: {', '.join(failed_files[:5])}"
-                    f"{'...' if len(failed_files) > 5 else ''}"
+                    f"{'...' if len(failed_files) > 5 else ''}",
                 )
 
     # =====================================
@@ -1230,7 +1349,7 @@ class UnifiedMetadataManager(QObject):
         self._cleanup_hash_worker_and_thread()
 
         # Clean up ExifTool wrapper
-        if hasattr(self, '_exiftool_wrapper') and self._exiftool_wrapper:
+        if hasattr(self, "_exiftool_wrapper") and self._exiftool_wrapper:
             self._exiftool_wrapper.close()
 
         # Clear loading state
@@ -1245,12 +1364,14 @@ class UnifiedMetadataManager(QObject):
 
 _unified_metadata_manager = None
 
+
 def get_unified_metadata_manager(parent_window=None) -> UnifiedMetadataManager:
     """Get or create the unified metadata manager instance."""
     global _unified_metadata_manager
     if _unified_metadata_manager is None:
         _unified_metadata_manager = UnifiedMetadataManager(parent_window)
     return _unified_metadata_manager
+
 
 def cleanup_unified_metadata_manager() -> None:
     """Clean up the unified metadata manager instance."""

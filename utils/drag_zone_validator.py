@@ -28,14 +28,8 @@ class DragZoneValidator:
 
     # Define valid/invalid drop zones for each source type
     ZONE_RULES: Dict[str, Dict[str, List[str]]] = {
-        "file_tree": {
-            "valid": ["FileTableView"],
-            "invalid": ["FileTreeView", "MetadataTreeView"]
-        },
-        "file_table": {
-            "valid": ["MetadataTreeView"],
-            "invalid": ["FileTreeView", "FileTableView"]
-        }
+        "file_tree": {"valid": ["FileTableView"], "invalid": ["FileTreeView", "MetadataTreeView"]},
+        "file_table": {"valid": ["MetadataTreeView"], "invalid": ["FileTreeView", "FileTableView"]},
     }
 
     # Track initial drag positions and "left and returned" state
@@ -47,7 +41,10 @@ class DragZoneValidator:
         """Set the initial widget where drag started and reset left state."""
         cls._initial_drag_widgets[drag_source] = widget_class_name
         cls._has_left_initial[drag_source] = False  # Reset the "has left" flag
-        logger.debug(f"[DragZoneValidator] Initial drag widget set: {widget_class_name} (source: {drag_source})", extra={"dev_only": True})
+        logger.debug(
+            f"[DragZoneValidator] Initial drag widget set: {widget_class_name} (source: {drag_source})",
+            extra={"dev_only": True},
+        )
 
     @classmethod
     def clear_initial_drag_widget(cls, drag_source: str) -> None:
@@ -70,17 +67,25 @@ class DragZoneValidator:
             return
 
         widget_class_name = widget_under_cursor.__class__.__name__
-        logger.debug(f"{log_prefix} Widget under cursor: {widget_class_name}", extra={"dev_only": True})
-        logger.debug(f"{log_prefix} Initial widget: {cls._initial_drag_widgets.get(drag_source)}, Has left: {cls._has_left_initial.get(drag_source)}", extra={"dev_only": True})
+        logger.debug(
+            f"{log_prefix} Widget under cursor: {widget_class_name}", extra={"dev_only": True}
+        )
+        logger.debug(
+            f"{log_prefix} Initial widget: {cls._initial_drag_widgets.get(drag_source)}, Has left: {cls._has_left_initial.get(drag_source)}",
+            extra={"dev_only": True},
+        )
 
         # Check if this is the initial drag widget
         initial_widget = cls._initial_drag_widgets.get(drag_source)
-        is_initial_widget = (initial_widget == widget_class_name)
+        is_initial_widget = initial_widget == widget_class_name
 
         # Update "has left initial" state
         if not is_initial_widget and not cls._has_left_initial.get(drag_source, False):
             cls._has_left_initial[drag_source] = True
-            logger.debug(f"{log_prefix} Left initial widget ({initial_widget}) - enabling invalid state on return", extra={"dev_only": True})
+            logger.debug(
+                f"{log_prefix} Left initial widget ({initial_widget}) - enabling invalid state on return",
+                extra={"dev_only": True},
+            )
 
         # Special handling for initial drag widget with "left and returned" logic
         if is_initial_widget:
@@ -89,12 +94,18 @@ class DragZoneValidator:
             if not has_left:
                 # Still in initial widget and haven't left yet - show as VALID (with action icons)
                 cls._set_cursor_state(DropZoneState.VALID)
-                logger.debug(f"{log_prefix} VALID zone (initial drag widget, haven't left): {widget_class_name}", extra={"dev_only": True})
+                logger.debug(
+                    f"{log_prefix} VALID zone (initial drag widget, haven't left): {widget_class_name}",
+                    extra={"dev_only": True},
+                )
                 return
             else:
                 # Returned to initial widget after leaving - now show as INVALID
                 cls._set_cursor_state(DropZoneState.INVALID)
-                logger.debug(f"{log_prefix} INVALID zone (returned to initial after leaving): {widget_class_name}", extra={"dev_only": True})
+                logger.debug(
+                    f"{log_prefix} INVALID zone (returned to initial after leaving): {widget_class_name}",
+                    extra={"dev_only": True},
+                )
                 return
 
         # Normal validation logic for non-initial widgets
@@ -104,14 +115,23 @@ class DragZoneValidator:
 
         if widget_class_name in valid_zones:
             cls._set_cursor_state(DropZoneState.VALID)
-            logger.debug(f"{log_prefix} VALID drop zone detected: {widget_class_name}", extra={"dev_only": True})
+            logger.debug(
+                f"{log_prefix} VALID drop zone detected: {widget_class_name}",
+                extra={"dev_only": True},
+            )
         elif widget_class_name in invalid_zones:
             cls._set_cursor_state(DropZoneState.INVALID)
-            logger.debug(f"{log_prefix} INVALID drop zone detected: {widget_class_name}", extra={"dev_only": True})
+            logger.debug(
+                f"{log_prefix} INVALID drop zone detected: {widget_class_name}",
+                extra={"dev_only": True},
+            )
         else:
             # Unknown widget - treat as neutral
             cls._set_cursor_state(DropZoneState.NEUTRAL)
-            logger.debug(f"{log_prefix} NEUTRAL zone (unknown widget): {widget_class_name}", extra={"dev_only": True})
+            logger.debug(
+                f"{log_prefix} NEUTRAL zone (unknown widget): {widget_class_name}",
+                extra={"dev_only": True},
+            )
 
     @classmethod
     def get_valid_zones(cls, drag_source: str) -> List[str]:

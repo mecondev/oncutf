@@ -34,7 +34,9 @@ class MetadataCacheHelper:
         """
         self.metadata_cache = metadata_cache
 
-    def get_metadata_for_file(self, file_item, fallback_to_file_item: bool = True) -> Dict[str, Any]:
+    def get_metadata_for_file(
+        self, file_item, fallback_to_file_item: bool = True
+    ) -> Dict[str, Any]:
         """
         Unified metadata retrieval for a file with path normalization.
 
@@ -45,7 +47,7 @@ class MetadataCacheHelper:
         Returns:
             dict: Metadata dictionary (empty dict if no metadata found)
         """
-        if not file_item or not hasattr(file_item, 'full_path'):
+        if not file_item or not hasattr(file_item, "full_path"):
             return {}
 
         try:
@@ -55,25 +57,27 @@ class MetadataCacheHelper:
             # Try cache first
             if self.metadata_cache:
                 # Try get_entry() method first (preferred)
-                if hasattr(self.metadata_cache, 'get_entry'):
+                if hasattr(self.metadata_cache, "get_entry"):
                     cache_entry = self.metadata_cache.get_entry(normalized_path)
-                    if cache_entry and hasattr(cache_entry, 'data') and cache_entry.data:
+                    if cache_entry and hasattr(cache_entry, "data") and cache_entry.data:
                         return cache_entry.data
 
                 # Fallback to get() method
-                if hasattr(self.metadata_cache, 'get'):
+                if hasattr(self.metadata_cache, "get"):
                     metadata = self.metadata_cache.get(normalized_path)
                     if metadata:
                         return metadata
 
             # Fallback to file item metadata
-            if fallback_to_file_item and hasattr(file_item, 'metadata') and file_item.metadata:
+            if fallback_to_file_item and hasattr(file_item, "metadata") and file_item.metadata:
                 return file_item.metadata
 
             return {}
 
         except Exception as e:
-            logger.debug(f"[MetadataCacheHelper] Error getting metadata for {getattr(file_item, 'filename', 'unknown')}: {e}")
+            logger.debug(
+                f"[MetadataCacheHelper] Error getting metadata for {getattr(file_item, 'filename', 'unknown')}: {e}"
+            )
             return {}
 
     def get_cache_entry_for_file(self, file_item):
@@ -86,22 +90,26 @@ class MetadataCacheHelper:
         Returns:
             Cache entry object or None
         """
-        if not file_item or not hasattr(file_item, 'full_path'):
+        if not file_item or not hasattr(file_item, "full_path"):
             return None
 
         try:
             # Normalize path for consistent cache access
             normalized_path = normalize_path(file_item.full_path)
 
-            if self.metadata_cache and hasattr(self.metadata_cache, 'get_entry'):
+            if self.metadata_cache and hasattr(self.metadata_cache, "get_entry"):
                 return self.metadata_cache.get_entry(normalized_path)
             return None
 
         except Exception as e:
-            logger.debug(f"[MetadataCacheHelper] Error getting cache entry for {getattr(file_item, 'filename', 'unknown')}: {e}")
+            logger.debug(
+                f"[MetadataCacheHelper] Error getting cache entry for {getattr(file_item, 'filename', 'unknown')}: {e}"
+            )
             return None
 
-    def set_metadata_for_file(self, file_item, metadata: Dict[str, Any], is_extended: bool = False, modified: bool = False):
+    def set_metadata_for_file(
+        self, file_item, metadata: Dict[str, Any], is_extended: bool = False, modified: bool = False
+    ):
         """
         Unified metadata storage for a file with path normalization.
 
@@ -111,7 +119,7 @@ class MetadataCacheHelper:
             is_extended: Whether this is extended metadata
             modified: Whether the metadata has been modified
         """
-        if not file_item or not hasattr(file_item, 'full_path'):
+        if not file_item or not hasattr(file_item, "full_path"):
             return
 
         try:
@@ -119,19 +127,18 @@ class MetadataCacheHelper:
             normalized_path = normalize_path(file_item.full_path)
 
             # Update cache if available
-            if self.metadata_cache and hasattr(self.metadata_cache, 'set_entry'):
+            if self.metadata_cache and hasattr(self.metadata_cache, "set_entry"):
                 self.metadata_cache.set_entry(
-                    normalized_path,
-                    metadata,
-                    is_extended=is_extended,
-                    modified=modified
+                    normalized_path, metadata, is_extended=is_extended, modified=modified
                 )
 
             # Also update file item
             file_item.metadata = metadata
 
         except Exception as e:
-            logger.error(f"[MetadataCacheHelper] Error setting metadata for {getattr(file_item, 'filename', 'unknown')}: {e}")
+            logger.error(
+                f"[MetadataCacheHelper] Error setting metadata for {getattr(file_item, 'filename', 'unknown')}: {e}"
+            )
 
     def has_metadata(self, file_item, extended: bool = None) -> bool:
         """
@@ -147,34 +154,38 @@ class MetadataCacheHelper:
         try:
             cache_entry = self.get_cache_entry_for_file(file_item)
 
-            if cache_entry and hasattr(cache_entry, 'data') and cache_entry.data:
+            if cache_entry and hasattr(cache_entry, "data") and cache_entry.data:
                 # Filter out internal markers
-                real_metadata = {k: v for k, v in cache_entry.data.items() if not k.startswith('__')}
+                real_metadata = {
+                    k: v for k, v in cache_entry.data.items() if not k.startswith("__")
+                }
 
                 if not real_metadata:
                     return False
 
                 # Check specific type if requested
                 if extended is not None:
-                    if hasattr(cache_entry, 'is_extended'):
+                    if hasattr(cache_entry, "is_extended"):
                         return cache_entry.is_extended == extended
                     else:
                         # Fallback to marker checking
-                        has_extended_marker = '__extended__' in cache_entry.data
+                        has_extended_marker = "__extended__" in cache_entry.data
                         return has_extended_marker == extended
 
                 return True  # Has some metadata
 
             # Fallback to file item metadata
-            if hasattr(file_item, 'metadata') and file_item.metadata:
-                real_metadata = {k: v for k, v in file_item.metadata.items() if not k.startswith('__')}
+            if hasattr(file_item, "metadata") and file_item.metadata:
+                real_metadata = {
+                    k: v for k, v in file_item.metadata.items() if not k.startswith("__")
+                }
 
                 if not real_metadata:
                     return False
 
                 # Check specific type if requested
                 if extended is not None:
-                    has_extended_marker = '__extended__' in file_item.metadata
+                    has_extended_marker = "__extended__" in file_item.metadata
                     return has_extended_marker == extended
 
                 return True  # Has some metadata
@@ -182,7 +193,9 @@ class MetadataCacheHelper:
             return False
 
         except Exception as e:
-            logger.debug(f"[MetadataCacheHelper] Error checking metadata for {getattr(file_item, 'filename', 'unknown')}: {e}")
+            logger.debug(
+                f"[MetadataCacheHelper] Error checking metadata for {getattr(file_item, 'filename', 'unknown')}: {e}"
+            )
             return False
 
     def get_metadata_value(self, file_item, key_path: str, default: Any = None) -> Any:
@@ -203,8 +216,8 @@ class MetadataCacheHelper:
             return default
 
         # Handle nested keys (e.g., "EXIF/ImageWidth")
-        if '/' in key_path:
-            parts = key_path.split('/')
+        if "/" in key_path:
+            parts = key_path.split("/")
             value = metadata
             for part in parts:
                 if isinstance(value, dict) and part in value:
@@ -235,8 +248,8 @@ class MetadataCacheHelper:
                 metadata = {}
 
             # Handle nested keys (e.g., "EXIF/ImageWidth")
-            if '/' in key_path:
-                parts = key_path.split('/')
+            if "/" in key_path:
+                parts = key_path.split("/")
                 current = metadata
 
                 # Navigate to parent container
@@ -257,7 +270,9 @@ class MetadataCacheHelper:
             return True
 
         except Exception as e:
-            logger.error(f"[MetadataCacheHelper] Error setting metadata value for {getattr(file_item, 'filename', 'unknown')}: {e}")
+            logger.error(
+                f"[MetadataCacheHelper] Error setting metadata value for {getattr(file_item, 'filename', 'unknown')}: {e}"
+            )
             return False
 
     def is_metadata_modified(self, file_item) -> bool:
@@ -273,13 +288,15 @@ class MetadataCacheHelper:
         try:
             cache_entry = self.get_cache_entry_for_file(file_item)
 
-            if cache_entry and hasattr(cache_entry, 'modified'):
+            if cache_entry and hasattr(cache_entry, "modified"):
                 return cache_entry.modified
 
             return False
 
         except Exception as e:
-            logger.debug(f"[MetadataCacheHelper] Error checking modification status for {getattr(file_item, 'filename', 'unknown')}: {e}")
+            logger.debug(
+                f"[MetadataCacheHelper] Error checking modification status for {getattr(file_item, 'filename', 'unknown')}: {e}"
+            )
             return False
 
 
@@ -296,7 +313,7 @@ def get_metadata_cache_helper(parent_window=None, metadata_cache=None) -> Metada
     """
     if metadata_cache:
         cache = metadata_cache
-    elif parent_window and hasattr(parent_window, 'metadata_cache'):
+    elif parent_window and hasattr(parent_window, "metadata_cache"):
         cache = parent_window.metadata_cache
     else:
         cache = None

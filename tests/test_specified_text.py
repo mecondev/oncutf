@@ -11,10 +11,9 @@ import warnings
 
 from modules.specified_text_module import SpecifiedTextModule
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
-
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 
 def test_specified_text_simple():
@@ -22,8 +21,10 @@ def test_specified_text_simple():
     result = SpecifiedTextModule.apply_from_data(data, file_item=None)
     assert result == "hello"
 
+
 def test_specified_text_invalid():
     data = {"type": "specified_text", "text": "file/name"}
     result = SpecifiedTextModule.apply_from_data(data, file_item=None)
     from config import INVALID_FILENAME_MARKER
+
     assert result == INVALID_FILENAME_MARKER

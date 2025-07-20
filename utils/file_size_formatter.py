@@ -16,7 +16,6 @@ Features:
 
 import locale
 import platform
-from typing import Union
 
 from config import USE_BINARY_UNITS, USE_LOCALE_DECIMAL_SEPARATOR
 from utils.logger_factory import get_cached_logger
@@ -27,6 +26,7 @@ logger = get_cached_logger(__name__)
 # Global locale setup flag to avoid repeated initialization
 _locale_initialized = False
 _locale_setup_attempted = False
+
 
 def _ensure_locale_setup():
     """Ensure locale is set up only once globally."""
@@ -41,17 +41,17 @@ def _ensure_locale_setup():
         # Try to use system locale
         if platform.system() == "Windows":
             # Windows locale setup
-            locale.setlocale(locale.LC_ALL, '')
+            locale.setlocale(locale.LC_ALL, "")
         else:
             # Unix/Linux locale setup
-            locale.setlocale(locale.LC_ALL, '')
+            locale.setlocale(locale.LC_ALL, "")
         logger.debug(f"[FileSizeFormatter] Locale set to: {locale.getlocale()}")
         _locale_initialized = True
     except locale.Error as e:
         logger.warning(f"[FileSizeFormatter] Failed to set locale: {e}, using default")
         # Fallback to C locale
         try:
-            locale.setlocale(locale.LC_ALL, 'C')
+            locale.setlocale(locale.LC_ALL, "C")
             _locale_initialized = True
         except locale.Error:
             _locale_initialized = False  # Use whatever is available
@@ -71,7 +71,9 @@ class FileSizeFormatter:
     # Legacy units (for compatibility with existing systems)
     LEGACY_BINARY_UNITS = ["B", "KB", "MB", "GB", "TB", "PB"]  # Using KB instead of KiB
 
-    def __init__(self, use_binary: bool = None, use_locale: bool = None, use_legacy_labels: bool = True):
+    def __init__(
+        self, use_binary: bool = None, use_locale: bool = None, use_legacy_labels: bool = True
+    ):
         """
         Initialize the formatter.
 
@@ -88,7 +90,7 @@ class FileSizeFormatter:
         if self.use_locale:
             _ensure_locale_setup()
 
-    def format_size(self, size_bytes: Union[int, float]) -> str:
+    def format_size(self, size_bytes: float) -> str:
         """
         Format file size to human-readable string.
 
@@ -131,7 +133,7 @@ class FileSizeFormatter:
             formatted_number = f"{size:.1f}"
 
         # Remove unnecessary .0 for whole numbers
-        if formatted_number.endswith('.0') or formatted_number.endswith(',0'):
+        if formatted_number.endswith(".0") or formatted_number.endswith(",0"):
             formatted_number = formatted_number[:-2]
 
         return f"{formatted_number} {units[unit_index]}"
@@ -144,12 +146,12 @@ class FileSizeFormatter:
         try:
             # Get decimal point from locale
             conv = locale.localeconv()
-            return conv.get('decimal_point', '.')
+            return conv.get("decimal_point", ".")
         except (locale.Error, AttributeError):
             return "."
 
     @classmethod
-    def get_system_compatible_formatter(cls) -> 'FileSizeFormatter':
+    def get_system_compatible_formatter(cls) -> "FileSizeFormatter":
         """
         Get a formatter that matches the system's file manager behavior.
 
@@ -169,7 +171,7 @@ class FileSizeFormatter:
             return cls(use_binary=False, use_locale=True, use_legacy_labels=True)
 
     @classmethod
-    def get_traditional_formatter(cls) -> 'FileSizeFormatter':
+    def get_traditional_formatter(cls) -> "FileSizeFormatter":
         """
         Get a formatter that uses traditional binary units (1024-based).
 
@@ -182,6 +184,7 @@ class FileSizeFormatter:
 # Global formatter instance (configured from config)
 _default_formatter = None
 
+
 def get_default_formatter() -> FileSizeFormatter:
     """Get the default file size formatter instance."""
     global _default_formatter
@@ -189,7 +192,8 @@ def get_default_formatter() -> FileSizeFormatter:
         _default_formatter = FileSizeFormatter()
     return _default_formatter
 
-def format_file_size(size_bytes: Union[int, float]) -> str:
+
+def format_file_size(size_bytes: float) -> str:
     """
     Format file size using the default formatter.
 
@@ -201,7 +205,8 @@ def format_file_size(size_bytes: Union[int, float]) -> str:
     """
     return get_default_formatter().format_size(size_bytes)
 
-def format_file_size_system_compatible(size_bytes: Union[int, float]) -> str:
+
+def format_file_size_system_compatible(size_bytes: float) -> str:
     """
     Format file size to match system file manager behavior.
 

@@ -36,7 +36,9 @@ class NameTransformModule:
         sep = data.get("separator", "as-is")
         greeklish = data.get("greeklish", False)
 
-        logger.debug(f"[NameTransformModule] Input: {base_name} | case: {case} | sep: {sep} | greeklish: {greeklish}")
+        logger.debug(
+            f"[NameTransformModule] Input: {base_name} | case: {case} | sep: {sep} | greeklish: {greeklish}"
+        )
 
         # Apply Greeklish first (if enabled)
         if greeklish:
@@ -63,7 +65,7 @@ class NameTransformModule:
         Returns True if any transformation is active.
         """
         return (
-            data.get("case", "original") != "original" or
-            data.get("separator", "as-is") != "as-is" or
-            data.get("greeklish", False)
+            data.get("case", "original") != "original"
+            or data.get("separator", "as-is") != "as-is"
+            or data.get("greeklish", False)
         )

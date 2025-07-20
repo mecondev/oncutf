@@ -18,9 +18,9 @@ during asynchronous operations like metadata scanning.
 
 import warnings
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 #!/usr/bin/python3
 # coding: utf-8
@@ -53,8 +53,10 @@ class FakeWorker(QObject):
     """
     A fake worker with progressed and finished signals to simulate metadata loading.
     """
+
     progressed = pyqtSignal(int, int)  # emit(value, total)
     finished = pyqtSignal()
+
 
 @pytest.fixture
 def parent_widget(qtbot):
@@ -66,6 +68,7 @@ def parent_widget(qtbot):
     widget.show()
     return widget
 
+
 @pytest.fixture
 def dialog(qtbot, parent_widget):
     """
@@ -76,6 +79,7 @@ def dialog(qtbot, parent_widget):
     assert dlg.progress_bar is not None, "Progress bar should be initialized"
     assert dlg.isVisible(), "Dialog should be visible after show_waiting"
     return dlg
+
 
 def test_progress_and_range(dialog, qtbot):
     # Initially, range is indeterminate (0,0) if not set
@@ -100,6 +104,7 @@ def test_progress_and_range(dialog, qtbot):
     dialog.accept()
     qtbot.wait(10)
     assert not dialog.isVisible(), "Dialog should be hidden after accept()"
+
 
 def test_signal_integration(dialog, qtbot):
     # Test integrating with a fake worker via signals

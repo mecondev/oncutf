@@ -32,6 +32,7 @@ logger = get_cached_logger(__name__)
 @dataclass
 class BatchOperation:
     """Represents a single operation to be batched."""
+
     operation_type: str  # 'metadata_set', 'hash_store', 'db_query', etc.
     key: str  # Primary key for the operation
     data: Any  # Operation data
@@ -43,6 +44,7 @@ class BatchOperation:
 @dataclass
 class BatchStats:
     """Statistics for batch operations monitoring."""
+
     total_operations: int = 0
     batched_operations: int = 0
     individual_operations: int = 0
@@ -80,60 +82,84 @@ class BatchOperationsManager:
 
         # Operation handlers
         self._operation_handlers = {
-            'metadata_set': self._handle_metadata_batch,
-            'hash_store': self._handle_hash_batch,
-            'db_query': self._handle_db_batch,
-            'file_io': self._handle_file_io_batch,
-            'cache_update': self._handle_cache_batch,
+            "metadata_set": self._handle_metadata_batch,
+            "hash_store": self._handle_hash_batch,
+            "db_query": self._handle_db_batch,
+            "file_io": self._handle_file_io_batch,
+            "cache_update": self._handle_cache_batch,
         }
 
         logger.info("[BatchOperationsManager] Initialized with intelligent batching")
 
-    def queue_metadata_set(self, file_path: str, metadata: dict, is_extended: bool = False,
-                          callback: Optional[Callable] = None, priority: int = 50) -> None:
+    def queue_metadata_set(
+        self,
+        file_path: str,
+        metadata: dict,
+        is_extended: bool = False,
+        callback: Optional[Callable] = None,
+        priority: int = 50,
+    ) -> None:
         """Queue a metadata cache set operation for batching."""
         operation = BatchOperation(
-            operation_type='metadata_set',
+            operation_type="metadata_set",
             key=file_path,
-            data={'metadata': metadata, 'is_extended': is_extended},
+            data={"metadata": metadata, "is_extended": is_extended},
             callback=callback,
-            priority=priority
+            priority=priority,
         )
         self._queue_operation(operation)
 
-    def queue_hash_store(self, file_path: str, hash_value: str, algorithm: str = 'md5',
-                        callback: Optional[Callable] = None, priority: int = 50) -> None:
+    def queue_hash_store(
+        self,
+        file_path: str,
+        hash_value: str,
+        algorithm: str = "crc32",
+        callback: Optional[Callable] = None,
+        priority: int = 50,
+    ) -> None:
         """Queue a hash cache store operation for batching."""
         operation = BatchOperation(
-            operation_type='hash_store',
+            operation_type="hash_store",
             key=file_path,
-            data={'hash_value': hash_value, 'algorithm': algorithm},
+            data={"hash_value": hash_value, "algorithm": algorithm},
             callback=callback,
-            priority=priority
+            priority=priority,
         )
         self._queue_operation(operation)
 
-    def queue_db_query(self, query_type: str, query: str, params: tuple = (),
-                      callback: Optional[Callable] = None, priority: int = 50) -> None:
+    def queue_db_query(
+        self,
+        query_type: str,
+        query: str,
+        params: tuple = (),
+        callback: Optional[Callable] = None,
+        priority: int = 50,
+    ) -> None:
         """Queue a database query for batching."""
         operation = BatchOperation(
-            operation_type='db_query',
+            operation_type="db_query",
             key=f"{query_type}_{hash(query)}",
-            data={'query_type': query_type, 'query': query, 'params': params},
+            data={"query_type": query_type, "query": query, "params": params},
             callback=callback,
-            priority=priority
+            priority=priority,
         )
         self._queue_operation(operation)
 
-    def queue_file_operation(self, operation_type: str, file_path: str, data: Any = None,
-                           callback: Optional[Callable] = None, priority: int = 50) -> None:
+    def queue_file_operation(
+        self,
+        operation_type: str,
+        file_path: str,
+        data: Any = None,
+        callback: Optional[Callable] = None,
+        priority: int = 50,
+    ) -> None:
         """Queue a file I/O operation for batching."""
         operation = BatchOperation(
-            operation_type='file_io',
+            operation_type="file_io",
             key=f"{operation_type}_{file_path}",
-            data={'operation_type': operation_type, 'file_path': file_path, 'data': data},
+            data={"operation_type": operation_type, "file_path": file_path, "data": data},
             callback=callback,
-            priority=priority
+            priority=priority,
         )
         self._queue_operation(operation)
 
@@ -156,7 +182,9 @@ class BatchOperationsManager:
             self._batches[batch_type].append(operation)
             self._stats.total_operations += 1
 
-            logger.debug(f"[BatchOps] Queued {batch_type}: {operation.key} (batch size: {len(existing_ops) + 1})")
+            logger.debug(
+                f"[BatchOps] Queued {batch_type}: {operation.key} (batch size: {len(existing_ops) + 1})"
+            )
 
             # Check if we should auto-flush
             if self._auto_flush_enabled:
@@ -169,7 +197,9 @@ class BatchOperationsManager:
 
         # Flush if batch is full
         if len(batch) >= self._max_batch_size:
-            logger.debug(f"[BatchOps] Auto-flush triggered by size: {batch_type} ({len(batch)} ops)")
+            logger.debug(
+                f"[BatchOps] Auto-flush triggered by size: {batch_type} ({len(batch)} ops)"
+            )
             self._flush_batch_type(batch_type)
             return
 
@@ -238,8 +268,8 @@ class BatchOperationsManager:
             # Update average batch size
             total_batches = self._stats.batch_flushes
             self._stats.average_batch_size = (
-                (self._stats.average_batch_size * (total_batches - 1) + operations_count) / total_batches
-            )
+                self._stats.average_batch_size * (total_batches - 1) + operations_count
+            ) / total_batches
 
             # Estimate time saved (rough heuristic)
             batch_time = time.time() - start_time
@@ -247,8 +277,10 @@ class BatchOperationsManager:
             time_saved = max(0, estimated_individual_time - batch_time)
             self._stats.total_time_saved += time_saved
 
-            logger.info(f"[BatchOps] Flushed {batch_type}: {operations_count} ops in {batch_time:.3f}s "
-                       f"(saved ~{time_saved:.3f}s)")
+            logger.info(
+                f"[BatchOps] Flushed {batch_type}: {operations_count} ops in {batch_time:.3f}s "
+                f"(saved ~{time_saved:.3f}s)"
+            )
 
         except Exception as e:
             logger.error(f"[BatchOps] Error flushing {batch_type}: {e}")
@@ -268,7 +300,7 @@ class BatchOperationsManager:
 
     def _handle_metadata_batch(self, operations: List[BatchOperation]) -> None:
         """Handle a batch of metadata cache set operations."""
-        if not self.parent_window or not hasattr(self.parent_window, 'metadata_cache'):
+        if not self.parent_window or not hasattr(self.parent_window, "metadata_cache"):
             logger.warning("[BatchOps] No metadata cache available")
             return
 
@@ -280,7 +312,7 @@ class BatchOperationsManager:
         regular_ops = []
 
         for op in operations:
-            if op.data.get('is_extended', False):
+            if op.data.get("is_extended", False):
                 extended_ops.append(op)
             else:
                 regular_ops.append(op)
@@ -292,15 +324,15 @@ class BatchOperationsManager:
 
             try:
                 # Use batch transaction if available
-                if hasattr(cache, 'begin_batch'):
+                if hasattr(cache, "begin_batch"):
                     cache.begin_batch()
 
                 for operation in ops_group:
                     try:
                         cache.set(
                             operation.key,
-                            operation.data['metadata'],
-                            is_extended=operation.data['is_extended']
+                            operation.data["metadata"],
+                            is_extended=operation.data["is_extended"],
                         )
                         success_count += 1
 
@@ -314,19 +346,19 @@ class BatchOperationsManager:
                             operation.callback(success=False, error=e)
 
                 # Commit batch if available
-                if hasattr(cache, 'commit_batch'):
+                if hasattr(cache, "commit_batch"):
                     cache.commit_batch()
 
             except Exception as e:
                 logger.error(f"[BatchOps] Metadata batch failed: {e}")
-                if hasattr(cache, 'rollback_batch'):
+                if hasattr(cache, "rollback_batch"):
                     cache.rollback_batch()
 
         logger.debug(f"[BatchOps] Metadata batch: {success_count}/{len(operations)} successful")
 
     def _handle_hash_batch(self, operations: List[BatchOperation]) -> None:
         """Handle a batch of hash cache store operations."""
-        if not self.parent_window or not hasattr(self.parent_window, 'hash_cache'):
+        if not self.parent_window or not hasattr(self.parent_window, "hash_cache"):
             logger.warning("[BatchOps] No hash cache available")
             return
 
@@ -335,24 +367,24 @@ class BatchOperationsManager:
 
         try:
             # Use batch transaction if available
-            if hasattr(cache, 'begin_batch'):
+            if hasattr(cache, "begin_batch"):
                 cache.begin_batch()
 
             for operation in operations:
                 try:
                     # Use the cache's store_hash method
-                    if hasattr(cache, 'store_hash'):
+                    if hasattr(cache, "store_hash"):
                         cache.store_hash(
                             operation.key,
-                            operation.data['hash_value'],
-                            operation.data.get('algorithm', 'md5')
+                            operation.data["hash_value"],
+                            operation.data.get("algorithm", "crc32"),
                         )
                     else:
                         # Fallback to direct database access
                         cache._db_manager.store_hash(
                             operation.key,
-                            operation.data['hash_value'],
-                            operation.data.get('algorithm', 'md5')
+                            operation.data["hash_value"],
+                            operation.data.get("algorithm", "crc32"),
                         )
 
                     success_count += 1
@@ -367,19 +399,19 @@ class BatchOperationsManager:
                         operation.callback(success=False, error=e)
 
             # Commit batch if available
-            if hasattr(cache, 'commit_batch'):
+            if hasattr(cache, "commit_batch"):
                 cache.commit_batch()
 
         except Exception as e:
             logger.error(f"[BatchOps] Hash batch failed: {e}")
-            if hasattr(cache, 'rollback_batch'):
+            if hasattr(cache, "rollback_batch"):
                 cache.rollback_batch()
 
         logger.debug(f"[BatchOps] Hash batch: {success_count}/{len(operations)} successful")
 
     def _handle_db_batch(self, operations: List[BatchOperation]) -> None:
         """Handle a batch of database query operations."""
-        if not self.parent_window or not hasattr(self.parent_window, 'db_manager'):
+        if not self.parent_window or not hasattr(self.parent_window, "db_manager"):
             logger.warning("[BatchOps] No database manager available")
             return
 
@@ -389,7 +421,7 @@ class BatchOperationsManager:
         # Group operations by query type for better batching
         query_groups = defaultdict(list)
         for op in operations:
-            query_type = op.data['query_type']
+            query_type = op.data["query_type"]
             query_groups[query_type].append(op)
 
         for query_type, ops in query_groups.items():
@@ -398,10 +430,10 @@ class BatchOperationsManager:
                 with db_manager.transaction():
                     for operation in ops:
                         try:
-                            query = operation.data['query']
-                            params = operation.data['params']
+                            query = operation.data["query"]
+                            params = operation.data["params"]
 
-                            if query_type == 'SELECT':
+                            if query_type == "SELECT":
                                 result = db_manager.execute_query(query, params)
                             else:
                                 result = db_manager.execute_update(query, params)
@@ -429,10 +461,10 @@ class BatchOperationsManager:
         write_ops = []
 
         for op in operations:
-            op_type = op.data['operation_type']
-            if op_type in ['read', 'stat', 'exists']:
+            op_type = op.data["operation_type"]
+            if op_type in ["read", "stat", "exists"]:
                 read_ops.append(op)
-            elif op_type in ['write', 'copy', 'move']:
+            elif op_type in ["write", "copy", "move"]:
                 write_ops.append(op)
 
         # Process read operations (can be parallelized)
@@ -449,17 +481,19 @@ class BatchOperationsManager:
 
         for operation in operations:
             try:
-                file_path = operation.data['file_path']
-                op_type = operation.data['operation_type']
+                file_path = operation.data["file_path"]
+                op_type = operation.data["operation_type"]
 
-                if op_type == 'read':
-                    with open(file_path, 'rb') as f:
+                if op_type == "read":
+                    with open(file_path, "rb") as f:
                         result = f.read()
-                elif op_type == 'stat':
+                elif op_type == "stat":
                     import os
+
                     result = os.stat(file_path)
-                elif op_type == 'exists':
+                elif op_type == "exists":
                     import os
+
                     result = os.path.exists(file_path)
                 else:
                     result = None
@@ -482,18 +516,20 @@ class BatchOperationsManager:
 
         for operation in operations:
             try:
-                file_path = operation.data['file_path']
-                op_type = operation.data['operation_type']
-                data = operation.data.get('data')
+                file_path = operation.data["file_path"]
+                op_type = operation.data["operation_type"]
+                data = operation.data.get("data")
 
-                if op_type == 'write' and data:
-                    with open(file_path, 'wb') as f:
+                if op_type == "write" and data:
+                    with open(file_path, "wb") as f:
                         f.write(data)
-                elif op_type == 'copy':
+                elif op_type == "copy":
                     import shutil
+
                     shutil.copy2(file_path, data)  # data = destination
-                elif op_type == 'move':
+                elif op_type == "move":
                     import shutil
+
                     shutil.move(file_path, data)  # data = destination
 
                 success_count += 1
@@ -537,8 +573,9 @@ class BatchOperationsManager:
         with self._batch_lock:
             return {batch_type: len(ops) for batch_type, ops in self._batches.items() if ops}
 
-    def set_config(self, max_batch_size: int = None, max_batch_age: float = None,
-                   auto_flush: bool = None) -> None:
+    def set_config(
+        self, max_batch_size: int = None, max_batch_age: float = None, auto_flush: bool = None
+    ) -> None:
         """Configure batch operation parameters."""
         if max_batch_size is not None:
             self._max_batch_size = max_batch_size
@@ -547,8 +584,10 @@ class BatchOperationsManager:
         if auto_flush is not None:
             self._auto_flush_enabled = auto_flush
 
-        logger.info(f"[BatchOps] Config updated: batch_size={self._max_batch_size}, "
-                   f"batch_age={self._max_batch_age}s, auto_flush={self._auto_flush_enabled}")
+        logger.info(
+            f"[BatchOps] Config updated: batch_size={self._max_batch_size}, "
+            f"batch_age={self._max_batch_age}s, auto_flush={self._auto_flush_enabled}"
+        )
 
     def cleanup(self) -> None:
         """Clean up resources and flush all pending operations."""

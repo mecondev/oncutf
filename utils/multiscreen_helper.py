@@ -10,7 +10,7 @@ Ensures dialogs and progress bars appear on the correct monitor relative to thei
 
 from typing import Optional
 
-from core.pyqt_imports import QApplication, QWidget, QScreen, QFileDialog
+from core.pyqt_imports import QApplication, QFileDialog, QScreen, QWidget
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -163,7 +163,9 @@ def position_dialog_relative_to_parent(dialog: QWidget, parent: Optional[QWidget
     # Move dialog to calculated position
     dialog.move(x, y)
 
-    logger.debug(f"Positioned dialog relative to parent on screen '{parent_screen.name()}' at ({x}, {y})")
+    logger.debug(
+        f"Positioned dialog relative to parent on screen '{parent_screen.name()}' at ({x}, {y})"
+    )
 
 
 def ensure_dialog_on_parent_screen(dialog: QWidget, parent: Optional[QWidget] = None) -> None:
@@ -188,10 +190,12 @@ def ensure_dialog_on_parent_screen(dialog: QWidget, parent: Optional[QWidget] = 
             dialog.move(100, 100)
 
 
-def get_existing_directory_on_parent_screen(parent: Optional[QWidget] = None,
-                                          caption: str = "Select Directory",
-                                          directory: str = "",
-                                          options: QFileDialog.Options = QFileDialog.ShowDirsOnly) -> str:
+def get_existing_directory_on_parent_screen(
+    parent: Optional[QWidget] = None,
+    caption: str = "Select Directory",
+    directory: str = "",
+    options: QFileDialog.Options = QFileDialog.ShowDirsOnly,
+) -> str:
     """
     Show a directory selection dialog positioned on the same screen as the parent.
 
@@ -222,11 +226,13 @@ def get_existing_directory_on_parent_screen(parent: Optional[QWidget] = None,
     return ""
 
 
-def get_open_file_name_on_parent_screen(parent: Optional[QWidget] = None,
-                                       caption: str = "Open File",
-                                       directory: str = "",
-                                       filter: str = "",
-                                       options: QFileDialog.Options = QFileDialog.Options()) -> tuple[str, str]:
+def get_open_file_name_on_parent_screen(
+    parent: Optional[QWidget] = None,
+    caption: str = "Open File",
+    directory: str = "",
+    filter: str = "",
+    options: QFileDialog.Options = QFileDialog.Options(),
+) -> tuple[str, str]:
     """
     Show a file selection dialog positioned on the same screen as the parent.
 
@@ -257,11 +263,13 @@ def get_open_file_name_on_parent_screen(parent: Optional[QWidget] = None,
     return ("", "")
 
 
-def get_save_file_name_on_parent_screen(parent: Optional[QWidget] = None,
-                                       caption: str = "Save File",
-                                       directory: str = "",
-                                       filter: str = "",
-                                       options: QFileDialog.Options = QFileDialog.Options()) -> tuple[str, str]:
+def get_save_file_name_on_parent_screen(
+    parent: Optional[QWidget] = None,
+    caption: str = "Save File",
+    directory: str = "",
+    filter: str = "",
+    options: QFileDialog.Options = QFileDialog.Options(),
+) -> tuple[str, str]:
     """
     Show a save file dialog positioned on the same screen as the parent.
 

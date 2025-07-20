@@ -38,10 +38,17 @@ class ApplicationService:
 
         # Verify all required managers exist
         required_managers = [
-            'event_handler_manager', 'file_load_manager', 'table_manager',
-            'metadata_manager', 'selection_manager', 'utility_manager',
-            'rename_manager', 'preview_manager', 'shortcut_manager',
-            'drag_cleanup_manager', 'splitter_manager'
+            "event_handler_manager",
+            "file_load_manager",
+            "table_manager",
+            "metadata_manager",
+            "selection_manager",
+            "utility_manager",
+            "rename_manager",
+            "preview_manager",
+            "shortcut_manager",
+            "drag_cleanup_manager",
+            "splitter_manager",
         ]
 
         missing_managers = []
@@ -63,15 +70,21 @@ class ApplicationService:
     def load_files_from_folder(self, folder_path: str, force: bool = False):
         """Load files from folder via FileLoadManager."""
         # Use the remembered recursive state for consistent behavior
-        recursive = getattr(self.main_window, 'current_folder_is_recursive', False)
-        logger.info(f"[ApplicationService] load_files_from_folder: {folder_path} (recursive={recursive}, remembered from previous load)")
-        self.main_window.file_load_manager.load_folder(folder_path, merge_mode=False, recursive=recursive)
+        recursive = getattr(self.main_window, "current_folder_is_recursive", False)
+        logger.info(
+            f"[ApplicationService] load_files_from_folder: {folder_path} (recursive={recursive}, remembered from previous load)"
+        )
+        self.main_window.file_load_manager.load_folder(
+            folder_path, merge_mode=False, recursive=recursive
+        )
 
     def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> None:
         """Load files from paths via FileLoadManager."""
         self.main_window.file_load_manager.load_files_from_paths(file_paths, clear=clear)
 
-    def load_files_from_dropped_items(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
+    def load_files_from_dropped_items(
+        self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier
+    ) -> None:
         """Load files from dropped items via FileLoadManager."""
         self.main_window.file_load_manager.load_files_from_dropped_items(paths, modifiers)
 
@@ -79,7 +92,9 @@ class ApplicationService:
         """Prepare folder load via FileLoadManager."""
         return self.main_window.file_load_manager.prepare_folder_load(folder_path, clear=clear)
 
-    def load_single_item_from_drop(self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
+    def load_single_item_from_drop(
+        self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier
+    ) -> None:
         """Load single item from drop via FileLoadManager."""
         self.main_window.file_load_manager.load_single_item_from_drop(path, modifiers)
 
@@ -92,10 +107,7 @@ class ApplicationService:
         self.main_window.file_load_manager._handle_file_drop(file_path, merge_mode)
 
     def load_metadata_for_items(
-        self,
-        items: list[FileItem],
-        use_extended: bool = False,
-        source: str = "unknown"
+        self, items: list[FileItem], use_extended: bool = False, source: str = "unknown"
     ) -> None:
         """Load metadata for items via MetadataManager."""
         self.main_window.metadata_manager.load_metadata_for_items(items, use_extended, source)
@@ -158,14 +170,15 @@ class ApplicationService:
         # Check which files need hash calculation
         hash_analysis = self.main_window.event_handler_manager._analyze_hash_state(selected_files)
 
-        if not hash_analysis['enable_selected']:
+        if not hash_analysis["enable_selected"]:
             # All files already have hashes
             from utils.dialog_utils import show_info_message
+
             show_info_message(
                 self.main_window,
                 "Hash Calculation",
                 f"All {len(selected_files)} selected file(s) already have checksums calculated.",
-                details=hash_analysis['selected_tooltip']
+                details=hash_analysis["selected_tooltip"],
             )
             return
 
@@ -173,7 +186,9 @@ class ApplicationService:
 
     def calculate_hash_all(self):
         """Calculate hash for all files that don't already have hashes."""
-        all_files = self.main_window.file_model.files if hasattr(self.main_window, 'file_model') else []
+        all_files = (
+            self.main_window.file_model.files if hasattr(self.main_window, "file_model") else []
+        )
         if not all_files:
             logger.info("[ApplicationService] No files available for hash calculation")
             return
@@ -181,14 +196,15 @@ class ApplicationService:
         # Check which files need hash calculation
         hash_analysis = self.main_window.event_handler_manager._analyze_hash_state(all_files)
 
-        if not hash_analysis['enable_selected']:
+        if not hash_analysis["enable_selected"]:
             # All files already have hashes
             from utils.dialog_utils import show_info_message
+
             show_info_message(
                 self.main_window,
                 "Hash Calculation",
                 f"All {len(all_files)} file(s) already have checksums calculated.",
-                details=hash_analysis['selected_tooltip']
+                details=hash_analysis["selected_tooltip"],
             )
             return
 
@@ -204,17 +220,23 @@ class ApplicationService:
 
     def determine_metadata_mode(self) -> tuple[bool, bool]:
         """Determine metadata mode via MetadataManager."""
-        return self.main_window.metadata_manager.determine_metadata_mode(self.main_window.modifier_state)
+        return self.main_window.metadata_manager.determine_metadata_mode(
+            self.main_window.modifier_state
+        )
 
     def should_use_extended_metadata(self) -> bool:
         """Determine if extended metadata should be used via MetadataManager."""
-        return self.main_window.metadata_manager.should_use_extended_metadata(self.main_window.modifier_state)
+        return self.main_window.metadata_manager.should_use_extended_metadata(
+            self.main_window.modifier_state
+        )
 
     # =====================================
     # Table Operations
     # =====================================
 
-    def sort_by_column(self, column: int, order: Qt.SortOrder = None, force_order: Qt.SortOrder = None) -> None:
+    def sort_by_column(
+        self, column: int, order: Qt.SortOrder = None, force_order: Qt.SortOrder = None
+    ) -> None:
         """Sort by column via TableManager."""
         self.main_window.table_manager.sort_by_column(column, order, force_order)
 
@@ -247,8 +269,143 @@ class ApplicationService:
     # =====================================
 
     def rename_files(self):
-        """Execute batch rename."""
-        return self.main_window.rename_manager.rename_files()
+        """Execute batch rename using UnifiedRenameEngine with Phase 4 optimizations."""
+        try:
+            # Get selected files and rename data
+            selected_files = self.get_selected_files()
+            rename_data = self.main_window.rename_modules_area.get_all_data()
+            post_transform_data = self.main_window.final_transform_container.get_data()
+            rename_data["post_transform"] = post_transform_data
+
+            if not selected_files:
+                self.main_window.status_manager.set_selection_status(
+                    "No files selected for renaming",
+                    selected_count=0,
+                    total_count=0,
+                    auto_reset=True,
+                )
+                return
+
+            # Use Phase 4 batch processing for large file sets
+            if len(selected_files) > 100:
+                logger.info(
+                    f"[ApplicationService] Using Phase 4 batch processing for {len(selected_files)} files"
+                )
+
+                # Process files in batches using Phase 4 batch processor
+                def process_batch(batch_files):
+                    return self.main_window.unified_rename_engine.generate_preview(
+                        files=batch_files,
+                        modules_data=rename_data.get("modules", []),
+                        post_transform=post_transform_data,
+                        metadata_cache=self.main_window.metadata_cache,
+                    )
+
+                # Use batch processor for preview generation
+                batch_results = self.main_window.unified_rename_engine.batch_process_files(
+                    selected_files, process_batch
+                )
+
+                # Combine batch results
+                all_name_pairs = []
+                for result in batch_results:
+                    if result and hasattr(result, "name_pairs"):
+                        all_name_pairs.extend(result.name_pairs)
+
+                preview_result = type(
+                    "PreviewResult",
+                    (),
+                    {"name_pairs": all_name_pairs, "has_changes": len(all_name_pairs) > 0},
+                )()
+            else:
+                # Use standard preview generation for smaller file sets
+                preview_result = self.main_window.unified_rename_engine.generate_preview(
+                    files=selected_files,
+                    modules_data=rename_data.get("modules", []),
+                    post_transform=post_transform_data,
+                    metadata_cache=self.main_window.metadata_cache,
+                )
+
+            if not preview_result.has_changes:
+                self.main_window.status_manager.set_validation_status(
+                    "No changes detected", validation_type="warning", auto_reset=True
+                )
+                return
+
+            # Validate preview
+            name_pairs = preview_result.name_pairs
+            validation_result = self.main_window.unified_rename_engine.validate_preview(name_pairs)
+
+            if validation_result.has_errors:
+                self.main_window.status_manager.set_validation_status(
+                    f"Validation errors found: {validation_result.has_errors}",
+                    validation_type="error",
+                    auto_reset=True,
+                )
+                return
+
+            # Execute rename using Phase 4 conflict resolution
+            new_names = [new_name for _, new_name in name_pairs]
+
+            # Prepare operations for batch conflict resolution
+            operations = []
+            for file, new_name in zip(selected_files, new_names):
+                old_path = file.full_path
+                new_path = os.path.join(os.path.dirname(old_path), new_name)
+                operations.append((old_path, new_path))
+
+            # Use Phase 4 batch conflict resolution
+            conflict_results = self.main_window.unified_rename_engine.resolve_conflicts_batch(
+                operations, strategy="timestamp"
+            )
+
+            # Count successful operations
+            successful_count = sum(1 for result in conflict_results if result.success)
+            error_count = len(conflict_results) - successful_count
+
+            # Handle results
+            if successful_count > 0:
+                self.main_window.status_manager.set_validation_status(
+                    f"Successfully renamed {successful_count} files using Phase 4 optimizations",
+                    validation_type="success",
+                    auto_reset=True,
+                )
+
+                # Log Phase 4 statistics
+                self._log_phase4_stats()
+
+                # Reload folder to reflect changes
+                self.reload_current_folder()
+            else:
+                self.main_window.status_manager.set_validation_status(
+                    f"Rename failed: {error_count} errors", validation_type="error", auto_reset=True
+                )
+
+        except Exception as e:
+            logger.error(f"[ApplicationService] Error in Phase 4 unified rename: {e}")
+            self.main_window.status_manager.set_validation_status(
+                f"Rename error: {str(e)}", validation_type="error", auto_reset=True
+            )
+
+    def _log_phase4_stats(self):
+        """Log Phase 4 performance statistics."""
+        try:
+            engine = self.main_window.unified_rename_engine
+
+            # Get all Phase 4 statistics
+            cache_stats = engine.get_advanced_cache_stats()
+            batch_stats = engine.get_batch_processor_stats()
+            conflict_stats = engine.get_conflict_resolver_stats()
+            perf_stats = engine.get_performance_stats()
+
+            logger.info("[ApplicationService] Phase 4 Statistics:")
+            logger.info(f"  Cache: {cache_stats['overall_hit_rate']:.1f}% hit rate")
+            logger.info(f"  Batch: {batch_stats.get('items_per_second', 0):.0f} items/sec")
+            logger.info(f"  Conflicts: {conflict_stats['success_rate']:.1f}% success rate")
+            logger.info(f"  Performance: {perf_stats['total_operations']} operations")
+
+        except Exception as e:
+            logger.warning(f"[ApplicationService] Error logging Phase 4 stats: {e}")
 
     def update_module_dividers(self):
         """Update module dividers."""
@@ -268,7 +425,9 @@ class ApplicationService:
 
     def get_identity_name_pairs(self) -> list[tuple[str, str]]:
         """Get identity name pairs via PreviewManager."""
-        return self.main_window.preview_manager.get_identity_name_pairs(self.main_window.file_model.files)
+        return self.main_window.preview_manager.get_identity_name_pairs(
+            self.main_window.file_model.files
+        )
 
     def update_preview_tables_from_pairs(self, name_pairs: list[tuple[str, str]]) -> None:
         """Update preview tables from pairs via PreviewManager."""
@@ -294,7 +453,9 @@ class ApplicationService:
         """Handle table context menu via EventHandlerManager."""
         self.main_window.event_handler_manager.handle_table_context_menu(position)
 
-    def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:
+    def handle_file_double_click(
+        self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier
+    ) -> None:
         """Handle file double click via EventHandlerManager."""
         self.main_window.event_handler_manager.handle_file_double_click(index, modifiers)
 
@@ -379,9 +540,11 @@ class ApplicationService:
             file_list, OperationType.FILE_LOADING
         )
 
-        if validation_result['should_warn']:
+        if validation_result["should_warn"]:
             # Show warning with smart information
-            return self.main_window.dialog_manager.confirm_large_folder(folder_path, validation_result['file_count'])
+            return self.main_window.dialog_manager.confirm_large_folder(
+                folder_path, validation_result["file_count"]
+            )
 
         return True  # No warning needed
 
@@ -390,16 +553,18 @@ class ApplicationService:
         from core.file_validation_manager import OperationType
 
         # Convert FileItems to paths for validation
-        file_paths = [f.full_path for f in files if hasattr(f, 'full_path')]
+        file_paths = [f.full_path for f in files if hasattr(f, "full_path")]
 
         validation_result = self.main_window.file_validation_manager.validate_operation_batch(
             file_paths, OperationType.METADATA_EXTENDED
         )
 
         # Return files that exceed size thresholds
-        if validation_result['should_warn']:
+        if validation_result["should_warn"]:
             # Use DialogManager for detailed large file detection
-            has_large, large_file_paths = self.main_window.dialog_manager.check_large_files(file_paths)
+            has_large, large_file_paths = self.main_window.dialog_manager.check_large_files(
+                file_paths
+            )
             if has_large:
                 return [f for f in files if f.full_path in large_file_paths]
 
@@ -413,12 +578,12 @@ class ApplicationService:
             return True
 
         # Get validation summary from FileValidationManager
-        file_paths = [f.full_path for f in files if hasattr(f, 'full_path')]
+        file_paths = [f.full_path for f in files if hasattr(f, "full_path")]
         validation_result = self.main_window.file_validation_manager.validate_operation_batch(
             file_paths, OperationType.METADATA_EXTENDED
         )
 
-        if validation_result['should_warn']:
+        if validation_result["should_warn"]:
             # Show detailed confirmation dialog
             return self.main_window.dialog_manager.confirm_large_files(files)
 
@@ -427,6 +592,7 @@ class ApplicationService:
     def prompt_file_conflict(self, target_path: str) -> str:
         """Prompt file conflict via DialogManager."""
         import os
+
         old_name = os.path.basename(target_path)
         new_name = os.path.basename(target_path)
         result = self.main_window.dialog_manager.prompt_file_conflict(old_name, new_name)
@@ -438,11 +604,11 @@ class ApplicationService:
 
         # Map string operation types to enum
         operation_map = {
-            'metadata_fast': OperationType.METADATA_FAST,
-            'metadata_extended': OperationType.METADATA_EXTENDED,
-            'hash_calculation': OperationType.HASH_CALCULATION,
-            'rename': OperationType.RENAME_OPERATION,
-            'file_loading': OperationType.FILE_LOADING
+            "metadata_fast": OperationType.METADATA_FAST,
+            "metadata_extended": OperationType.METADATA_EXTENDED,
+            "hash_calculation": OperationType.HASH_CALCULATION,
+            "rename": OperationType.RENAME_OPERATION,
+            "file_loading": OperationType.FILE_LOADING,
         }
 
         operation = operation_map.get(operation_type, OperationType.FILE_LOADING)
@@ -453,18 +619,24 @@ class ApplicationService:
         moved_files = {}
 
         for file_path in file_paths:
-            file_record, was_moved = self.main_window.file_validation_manager.identify_file_with_content_fallback(file_path)
+            file_record, was_moved = (
+                self.main_window.file_validation_manager.identify_file_with_content_fallback(
+                    file_path
+                )
+            )
 
             if was_moved and file_record:
                 moved_files[file_path] = {
-                    'original_path': file_record.get('file_path'),
-                    'preserved_metadata': file_record.get('metadata_json') is not None,
-                    'preserved_hash': file_record.get('hash_value') is not None,
-                    'file_record': file_record
+                    "original_path": file_record.get("file_path"),
+                    "preserved_metadata": file_record.get("metadata_json") is not None,
+                    "preserved_hash": file_record.get("hash_value") is not None,
+                    "file_record": file_record,
                 }
 
                 # Log successful identification
-                logger.info(f"[ApplicationService] Identified moved file: {file_path} (was: {file_record.get('file_path')})")
+                logger.info(
+                    f"[ApplicationService] Identified moved file: {file_path} (was: {file_record.get('file_path')})"
+                )
 
         return moved_files
 
@@ -478,7 +650,9 @@ class ApplicationService:
 
     def find_fileitem_by_path(self, path: str) -> Optional[FileItem]:
         """Find FileItem by path via FileOperationsManager."""
-        return self.main_window.file_operations_manager.find_fileitem_by_path(self.main_window.file_model.files, path)
+        return self.main_window.file_operations_manager.find_fileitem_by_path(
+            self.main_window.file_model.files, path
+        )
 
     def should_skip_folder_reload(self, folder_path: str, force: bool = False) -> bool:
         """Check if folder reload should be skipped."""
@@ -510,7 +684,9 @@ class ApplicationService:
         """Check if service is initialized."""
         return self._initialized
 
-    def set_status(self, text: str, color: str = "", auto_reset: bool = False, reset_delay: int = 3000) -> None:
+    def set_status(
+        self, text: str, color: str = "", auto_reset: bool = False, reset_delay: int = 3000
+    ) -> None:
         """Set status text and color via StatusManager."""
         self.main_window.status_manager.set_status(text, color, auto_reset, reset_delay)
 

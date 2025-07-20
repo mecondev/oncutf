@@ -41,14 +41,16 @@ def wait_cursor(restore_after: bool = True):
     caller_line = next((f for f in reversed(trimmed_stack) if "oncutf/" in f.filename), None)
 
     if caller_line:
-        short_path = caller_line.filename[caller_line.filename.find("oncutf/"):]
+        short_path = caller_line.filename[caller_line.filename.find("oncutf/") :]
         logger.debug(
             f"[Cursor] Wait cursor activated. Called from: {short_path}, "
             f"line {caller_line.lineno}, in {caller_line.name}()",
-            extra={"dev_only": True}
+            extra={"dev_only": True},
         )
     else:
-        logger.debug("[Cursor] Wait cursor activated. Caller path not in oncutf/", extra={"dev_only": True})
+        logger.debug(
+            "[Cursor] Wait cursor activated. Caller path not in oncutf/", extra={"dev_only": True}
+        )
 
     try:
         yield
@@ -57,7 +59,9 @@ def wait_cursor(restore_after: bool = True):
             QApplication.restoreOverrideCursor()
             logger.debug("[Cursor] Wait cursor restored.", extra={"dev_only": True})
         else:
-            logger.debug("[Cursor] Wait cursor NOT restored (as requested).", extra={"dev_only": True})
+            logger.debug(
+                "[Cursor] Wait cursor NOT restored (as requested).", extra={"dev_only": True}
+            )
 
 
 def emergency_cursor_cleanup() -> int:
@@ -73,7 +77,10 @@ def emergency_cursor_cleanup() -> int:
         cursor_count += 1
 
     if cursor_count > 0:
-        logger.debug(f"[Cursor] Emergency cleanup: Removed {cursor_count} stuck cursors", extra={"dev_only": True})
+        logger.debug(
+            f"[Cursor] Emergency cleanup: Removed {cursor_count} stuck cursors",
+            extra={"dev_only": True},
+        )
 
     return cursor_count
 
@@ -88,7 +95,9 @@ def force_restore_cursor() -> None:
         QApplication.restoreOverrideCursor()
         count += 1
         if count > 20:  # Safety break
-            logger.warning(f"[Cursor] Force restore: Stopped after {count} cursors (possible infinite loop)")
+            logger.warning(
+                f"[Cursor] Force restore: Stopped after {count} cursors (possible infinite loop)"
+            )
             break
 
     if count > 0:

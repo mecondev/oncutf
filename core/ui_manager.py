@@ -13,7 +13,6 @@ from typing import TYPE_CHECKING
 
 from core.config_imports import *
 from core.pyqt_imports import *
-from models.file_table_model import FileTableModel
 from utils.icons_loader import get_app_icon, get_menu_icon
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_selection_update, schedule_ui_update
@@ -35,7 +34,7 @@ logger = get_cached_logger(__name__)
 class UIManager:
     """Manages UI setup and layout configuration for the main window."""
 
-    def __init__(self, parent_window: 'MainWindow'):
+    def __init__(self, parent_window: "MainWindow"):
         """Initialize UIManager with parent window reference."""
         self.parent_window = parent_window
         logger.debug("UIManager initialized", extra={"dev_only": True})
@@ -83,7 +82,10 @@ class UIManager:
         screen_height = screen.height()
         screen_aspect = screen_width / screen_height
 
-        logger.debug(f"Screen resolution: {screen_width}x{screen_height}, aspect: {screen_aspect:.2f}", extra={"dev_only": True})
+        logger.debug(
+            f"Screen resolution: {screen_width}x{screen_height}, aspect: {screen_aspect:.2f}",
+            extra={"dev_only": True},
+        )
 
         # Define target percentages of screen size
         width_percentage = 0.75  # Use 75% of screen width
@@ -115,7 +117,10 @@ class UIManager:
 
         optimal_size = QSize(target_width, target_height)
 
-        logger.debug(f"Calculated optimal window size: {target_width}x{target_height}", extra={"dev_only": True})
+        logger.debug(
+            f"Calculated optimal window size: {target_width}x{target_height}",
+            extra={"dev_only": True},
+        )
         return optimal_size
 
     def setup_main_layout(self) -> None:
@@ -127,8 +132,10 @@ class UIManager:
     def _calculate_optimal_splitter_sizes(self, window_width: int):
         """Calculate optimal splitter sizes based on window width with smart adaptation for wide screens."""
         # Delegate to SplitterManager if available
-        if hasattr(self.parent_window, 'splitter_manager'):
-            return self.parent_window.splitter_manager.calculate_optimal_splitter_sizes(window_width)
+        if hasattr(self.parent_window, "splitter_manager"):
+            return self.parent_window.splitter_manager.calculate_optimal_splitter_sizes(
+                window_width
+            )
 
         # Fallback to legacy calculation if SplitterManager is not available
         return self._legacy_calculate_optimal_splitter_sizes(window_width)
@@ -182,7 +189,10 @@ class UIManager:
 
         optimal_sizes = [left_width, center_width, right_width]
 
-        logger.debug(f"Legacy calculated splitter sizes for {window_width}px: {optimal_sizes}", extra={"dev_only": True})
+        logger.debug(
+            f"Legacy calculated splitter sizes for {window_width}px: {optimal_sizes}",
+            extra={"dev_only": True},
+        )
         return optimal_sizes
 
     def setup_splitters(self) -> None:
@@ -195,7 +205,9 @@ class UIManager:
         self.parent_window.vertical_splitter.setSizes(TOP_BOTTOM_SPLIT_RATIO)
 
         # Set minimum sizes for all panels to 80px
-        self.parent_window.horizontal_splitter.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.parent_window.horizontal_splitter.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Expanding
+        )
 
     def setup_left_panel(self) -> None:
         """Setup left panel (folder tree)."""
@@ -206,7 +218,9 @@ class UIManager:
         self.parent_window.folder_tree = FileTreeView()
         self.parent_window.folder_tree.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.parent_window.folder_tree.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.parent_window.folder_tree.setAlternatingRowColors(True)  # Enable alternating row colors
+        self.parent_window.folder_tree.setAlternatingRowColors(
+            True
+        )  # Enable alternating row colors
         left_layout.addWidget(self.parent_window.folder_tree)
 
         # Use default Qt behavior (double-click to expand/collapse)
@@ -219,7 +233,9 @@ class UIManager:
         self.parent_window.browse_folder_button = QPushButton("  Browse")
         self.parent_window.browse_folder_button.setIcon(get_menu_icon("folder-plus"))
         self.parent_window.browse_folder_button.setFixedWidth(100)
-        setup_tooltip(self.parent_window.browse_folder_button, "Browse folder (Ctrl+O)", TooltipType.INFO)
+        setup_tooltip(
+            self.parent_window.browse_folder_button, "Browse folder (Ctrl+O)", TooltipType.INFO
+        )
 
         # Add buttons with fixed positioning - no stretching
         btn_layout.addWidget(self.parent_window.select_folder_button)
@@ -229,7 +245,7 @@ class UIManager:
         left_layout.addLayout(btn_layout)
 
         self.parent_window.dir_model = CustomFileSystemModel()
-        self.parent_window.dir_model.setRootPath('')
+        self.parent_window.dir_model.setRootPath("")
         self.parent_window.dir_model.setFilter(QDir.NoDotAndDotDot | QDir.AllDirs | QDir.Files)
 
         # Adding filter for allowed file extensions
@@ -237,7 +253,9 @@ class UIManager:
         for ext in ALLOWED_EXTENSIONS:
             name_filters.append(f"*.{ext}")
         self.parent_window.dir_model.setNameFilters(name_filters)
-        self.parent_window.dir_model.setNameFilterDisables(False)  # This hides files that don't match instead of disabling them
+        self.parent_window.dir_model.setNameFilterDisables(
+            False
+        )  # This hides files that don't match instead of disabling them
 
         self.parent_window.folder_tree.setModel(self.parent_window.dir_model)
 
@@ -270,10 +288,12 @@ class UIManager:
         self.parent_window.file_table_view.setModel(self.parent_window.file_model)
 
         # Header setup
-        self.parent_window.header = InteractiveHeader(Qt.Horizontal, self.parent_window.file_table_view, parent_window=self.parent_window)
+        self.parent_window.header = InteractiveHeader(
+            Qt.Horizontal, self.parent_window.file_table_view, parent_window=self.parent_window
+        )
         self.parent_window.file_table_view.setHorizontalHeader(self.parent_window.header)
         # Align all headers to the left (if supported)
-        if hasattr(self.parent_window.header, 'setDefaultAlignment'):
+        if hasattr(self.parent_window.header, "setDefaultAlignment"):
             self.parent_window.header.setDefaultAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.parent_window.header.setSortIndicatorShown(False)
         self.parent_window.header.setSectionsClickable(False)
@@ -288,7 +308,9 @@ class UIManager:
 
         # Initialize header and set default row height
         self.parent_window.file_table_view.horizontalHeader()
-        self.parent_window.file_table_view.verticalHeader().setDefaultSectionSize(22)  # Compact row height
+        self.parent_window.file_table_view.verticalHeader().setDefaultSectionSize(
+            22
+        )  # Compact row height
 
         # Column configuration is now handled by FileTableView._configure_columns()
         # when setModel() is called
@@ -315,28 +337,43 @@ class UIManager:
         search_layout.setContentsMargins(0, 0, 0, 2)  # Add small bottom margin to align with table
         self.parent_window.metadata_search_field = QLineEdit()
         self.parent_window.metadata_search_field.setPlaceholderText("Search metadata...")
-        self.parent_window.metadata_search_field.setFixedHeight(18)  # Smaller height for better alignment
-        self.parent_window.metadata_search_field.setObjectName("metadataSearchField")  # For QSS styling
+        self.parent_window.metadata_search_field.setFixedHeight(
+            18
+        )  # Smaller height for better alignment
+        self.parent_window.metadata_search_field.setObjectName(
+            "metadataSearchField"
+        )  # For QSS styling
         self.parent_window.metadata_search_field.setEnabled(False)  # Initially disabled
 
         # Add search icon as QAction (always last)
         from utils.path_utils import get_icons_dir
+
         search_icon_path = get_icons_dir() / "feather_icons" / "search_dark.svg"
-        self.parent_window.search_action = QAction(QIcon(str(search_icon_path)), "Search", self.parent_window.metadata_search_field)
-        self.parent_window.metadata_search_field.addAction(self.parent_window.search_action, QLineEdit.TrailingPosition)
+        self.parent_window.search_action = QAction(
+            QIcon(str(search_icon_path)), "Search", self.parent_window.metadata_search_field
+        )
+        self.parent_window.metadata_search_field.addAction(
+            self.parent_window.search_action, QLineEdit.TrailingPosition
+        )
 
         # Add clear icon (X) as QAction - Trailing, before the search icon
         clear_icon_path = get_icons_dir() / "feather_icons" / "x_dark.svg"
-        self.parent_window.clear_search_action = QAction(QIcon(str(clear_icon_path)), "Clear", self.parent_window.metadata_search_field)
+        self.parent_window.clear_search_action = QAction(
+            QIcon(str(clear_icon_path)), "Clear", self.parent_window.metadata_search_field
+        )
         self.parent_window.clear_search_action.triggered.connect(self._clear_metadata_search)
         # Add the X before the search icon (Trailing, but added first)
-        self.parent_window.metadata_search_field.addAction(self.parent_window.clear_search_action, QLineEdit.TrailingPosition)
+        self.parent_window.metadata_search_field.addAction(
+            self.parent_window.clear_search_action, QLineEdit.TrailingPosition
+        )
         self.parent_window.clear_search_action.setVisible(False)  # Initially hidden
 
         # Set up custom context menu for search field
         self.parent_window.metadata_search_field.setContextMenuPolicy(Qt.CustomContextMenu)
         self.parent_window.metadata_search_field.customContextMenuRequested.connect(
-            lambda pos: self._show_search_context_menu(pos, self.parent_window.metadata_search_field)
+            lambda pos: self._show_search_context_menu(
+                pos, self.parent_window.metadata_search_field
+            )
         )
 
         # Setup QCompleter for smart metadata suggestions
@@ -347,19 +384,26 @@ class UIManager:
 
         # Create initial empty model
         self.parent_window.metadata_suggestions_model = QStringListModel()
-        self.parent_window.metadata_search_completer.setModel(self.parent_window.metadata_suggestions_model)
+        self.parent_window.metadata_search_completer.setModel(
+            self.parent_window.metadata_suggestions_model
+        )
 
         # Connect completer to search field
-        self.parent_window.metadata_search_field.setCompleter(self.parent_window.metadata_search_completer)
+        self.parent_window.metadata_search_field.setCompleter(
+            self.parent_window.metadata_search_completer
+        )
 
         # QSortFilterProxyModel for the metadata tree
         from widgets.metadata_tree_view import MetadataProxyModel
+
         self.parent_window.metadata_proxy_model = MetadataProxyModel()
         self.parent_window.metadata_proxy_model.setFilterCaseSensitivity(Qt.CaseInsensitive)
         self.parent_window.metadata_proxy_model.setFilterKeyColumn(-1)  # All columns
 
         # Connect the QLineEdit to the proxy model
-        self.parent_window.metadata_search_field.textChanged.connect(self._on_metadata_search_text_changed)
+        self.parent_window.metadata_search_field.textChanged.connect(
+            self._on_metadata_search_text_changed
+        )
 
         search_layout.addWidget(self.parent_window.metadata_search_field)
         right_layout.addLayout(search_layout)
@@ -394,7 +438,9 @@ class UIManager:
         self.parent_window.metadata_tree_view.initialize_with_parent()
 
         # Initialize search state
-        self.parent_window._metadata_search_text = ""  # Store current search text for session persistence
+        self.parent_window._metadata_search_text = (
+            ""  # Store current search text for session persistence
+        )
 
     def setup_bottom_layout(self) -> None:
         """Setup bottom layout for rename modules and preview."""
@@ -414,7 +460,9 @@ class UIManager:
         left_layout.setSpacing(4)  # Back to original spacing
 
         # Top container: Rename modules area (takes most space)
-        self.parent_window.rename_modules_area = RenameModulesArea(parent=left_container, parent_window=self.parent_window)
+        self.parent_window.rename_modules_area = RenameModulesArea(
+            parent=left_container, parent_window=self.parent_window
+        )
         left_layout.addWidget(self.parent_window.rename_modules_area, stretch=1)
 
         # Add spacer to push final transform container down
@@ -422,14 +470,19 @@ class UIManager:
 
         # Bottom container: Final transform container
         from widgets.final_transform_container import FinalTransformContainer
-        self.parent_window.final_transform_container = FinalTransformContainer(parent=left_container)
+
+        self.parent_window.final_transform_container = FinalTransformContainer(
+            parent=left_container
+        )
         left_layout.addWidget(self.parent_window.final_transform_container)
 
         # === Right: Preview tables view ===
         self.parent_window.preview_tables_view = PreviewTablesView(parent=self.parent_window)
 
         # Connect status updates from preview view
-        self.parent_window.preview_tables_view.status_updated.connect(self.parent_window._update_status_from_preview)
+        self.parent_window.preview_tables_view.status_updated.connect(
+            self.parent_window._update_status_from_preview
+        )
 
         # Setup bottom controls
         controls_layout = QHBoxLayout()
@@ -438,7 +491,10 @@ class UIManager:
 
         # Initialize StatusManager now that status_label exists
         from core.status_manager import StatusManager
-        self.parent_window.status_manager = StatusManager(status_label=self.parent_window.status_label)
+
+        self.parent_window.status_manager = StatusManager(
+            status_label=self.parent_window.status_label
+        )
 
         self.parent_window.rename_button = QPushButton("Rename Files")
         self.parent_window.rename_button.setEnabled(False)
@@ -501,52 +557,96 @@ class UIManager:
 
         self.parent_window.header.sectionClicked.connect(self.parent_window.sort_by_column)
 
-        self.parent_window.select_folder_button.clicked.connect(self.parent_window.handle_folder_import)
+        self.parent_window.select_folder_button.clicked.connect(
+            self.parent_window.handle_folder_import
+        )
         self.parent_window.browse_folder_button.clicked.connect(self.parent_window.handle_browse)
 
         # Connect folder_tree for drag & drop operations
-        self.parent_window.folder_tree.item_dropped.connect(self.parent_window.load_single_item_from_drop)
-        self.parent_window.folder_tree.folder_selected.connect(self.parent_window.handle_folder_import)
+        self.parent_window.folder_tree.item_dropped.connect(
+            self.parent_window.load_single_item_from_drop
+        )
+        self.parent_window.folder_tree.folder_selected.connect(
+            self.parent_window.handle_folder_import
+        )
 
         # Connect splitter resize to adjust tree view column width
-        self.parent_window.horizontal_splitter.splitterMoved.connect(self.parent_window.on_horizontal_splitter_moved)
+        self.parent_window.horizontal_splitter.splitterMoved.connect(
+            self.parent_window.on_horizontal_splitter_moved
+        )
         # Connect vertical splitter resize for debugging
-        self.parent_window.vertical_splitter.splitterMoved.connect(self.parent_window.on_vertical_splitter_moved)
+        self.parent_window.vertical_splitter.splitterMoved.connect(
+            self.parent_window.on_vertical_splitter_moved
+        )
         # Connect callbacks for both tree view and file table view
-        self.parent_window.horizontal_splitter.splitterMoved.connect(self.parent_window.folder_tree.on_horizontal_splitter_moved)
-        self.parent_window.vertical_splitter.splitterMoved.connect(self.parent_window.folder_tree.on_vertical_splitter_moved)
-        self.parent_window.horizontal_splitter.splitterMoved.connect(self.parent_window.file_table_view.on_horizontal_splitter_moved)
-        self.parent_window.vertical_splitter.splitterMoved.connect(self.parent_window.file_table_view.on_vertical_splitter_moved)
+        self.parent_window.horizontal_splitter.splitterMoved.connect(
+            self.parent_window.folder_tree.on_horizontal_splitter_moved
+        )
+        self.parent_window.vertical_splitter.splitterMoved.connect(
+            self.parent_window.folder_tree.on_vertical_splitter_moved
+        )
+        self.parent_window.horizontal_splitter.splitterMoved.connect(
+            self.parent_window.file_table_view.on_horizontal_splitter_moved
+        )
+        self.parent_window.vertical_splitter.splitterMoved.connect(
+            self.parent_window.file_table_view.on_vertical_splitter_moved
+        )
 
         # Connect splitter movements to preview tables view
-        self.parent_window.vertical_splitter.splitterMoved.connect(self.parent_window.preview_tables_view.handle_splitter_moved)
+        self.parent_window.vertical_splitter.splitterMoved.connect(
+            self.parent_window.preview_tables_view.handle_splitter_moved
+        )
 
         self.parent_window.file_table_view.clicked.connect(self.parent_window.on_table_row_clicked)
         # NOTE: selection_changed connection is now handled in initialization_manager.py via SelectionStore
         # to avoid duplicate signal connections that can cause race conditions
-        self.parent_window.file_table_view.files_dropped.connect(self.parent_window.load_files_from_dropped_items)
-        self.parent_window.file_model.sort_changed.connect(self.parent_window.request_preview_update)
+        self.parent_window.file_table_view.files_dropped.connect(
+            self.parent_window.load_files_from_dropped_items
+        )
+        self.parent_window.file_model.sort_changed.connect(
+            self.parent_window.request_preview_update
+        )
         self.parent_window.file_table_view.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.parent_window.file_table_view.customContextMenuRequested.connect(self.parent_window.handle_table_context_menu)
+        self.parent_window.file_table_view.customContextMenuRequested.connect(
+            self.parent_window.handle_table_context_menu
+        )
 
         # Connect metadata tree view signals for editing operations
-        self.parent_window.metadata_tree_view.value_edited.connect(self.parent_window.on_metadata_value_edited)
-        self.parent_window.metadata_tree_view.value_reset.connect(self.parent_window.on_metadata_value_reset)
-        self.parent_window.metadata_tree_view.value_copied.connect(self.parent_window.on_metadata_value_copied)
+        self.parent_window.metadata_tree_view.value_edited.connect(
+            self.parent_window.on_metadata_value_edited
+        )
+        self.parent_window.metadata_tree_view.value_reset.connect(
+            self.parent_window.on_metadata_value_reset
+        )
+        self.parent_window.metadata_tree_view.value_copied.connect(
+            self.parent_window.on_metadata_value_copied
+        )
 
         self.parent_window.rename_button.clicked.connect(self.parent_window.rename_files)
 
         # --- Connect the updated signal of RenameModulesArea to generate_preview_names ---
-        self.parent_window.rename_modules_area.updated.connect(self.parent_window.request_preview_update)
+        self.parent_window.rename_modules_area.updated.connect(
+            self.parent_window.request_preview_update
+        )
         # Clear preview cache when rename modules change to force regeneration
-        self.parent_window.rename_modules_area.updated.connect(self.parent_window.utility_manager.clear_preview_cache)
+        self.parent_window.rename_modules_area.updated.connect(
+            self.parent_window.utility_manager.clear_preview_cache
+        )
 
         # --- Connect the FinalTransformContainer signals ---
-        self.parent_window.final_transform_container.updated.connect(self.parent_window.request_preview_update)
+        self.parent_window.final_transform_container.updated.connect(
+            self.parent_window.request_preview_update
+        )
         # Clear preview cache when final transform changes to force regeneration
-        self.parent_window.final_transform_container.updated.connect(self.parent_window.utility_manager.clear_preview_cache)
-        self.parent_window.final_transform_container.add_module_requested.connect(self.parent_window.rename_modules_area.add_module)
-        self.parent_window.final_transform_container.remove_module_requested.connect(self.parent_window.rename_modules_area.remove_last_module)
+        self.parent_window.final_transform_container.updated.connect(
+            self.parent_window.utility_manager.clear_preview_cache
+        )
+        self.parent_window.final_transform_container.add_module_requested.connect(
+            self.parent_window.rename_modules_area.add_module
+        )
+        self.parent_window.final_transform_container.remove_module_requested.connect(
+            self.parent_window.rename_modules_area.remove_last_module
+        )
 
         # Update remove button state when modules change - keep at least one module
         self.parent_window.rename_modules_area.updated.connect(
@@ -587,8 +687,14 @@ class UIManager:
         global_shortcuts = [
             ("Escape", self.parent_window.force_drag_cleanup),  # Global escape key
             ("Shift+Escape", self.parent_window.clear_file_table_shortcut),  # Clear file table
-            ("Ctrl+Z", self.parent_window.shortcut_manager.undo_metadata_operation),  # Undo metadata operation
-            ("Ctrl+Shift+Z", self.parent_window.shortcut_manager.redo_metadata_operation),  # Redo metadata operation
+            (
+                "Ctrl+Z",
+                self.parent_window.shortcut_manager.undo_metadata_operation,
+            ),  # Undo metadata operation
+            (
+                "Ctrl+Shift+Z",
+                self.parent_window.shortcut_manager.redo_metadata_operation,
+            ),  # Redo metadata operation
         ]
         for key, handler in global_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self.parent_window)  # Attached to main window
@@ -597,8 +703,14 @@ class UIManager:
 
         # History shortcuts (separate from hash shortcuts)
         history_shortcuts = [
-            ("Alt+H", self.parent_window.shortcut_manager.show_history_dialog),  # Show command history dialog
-            ("Ctrl+Alt+H", self.parent_window.shortcut_manager.show_rename_history_dialog),  # Show rename history dialog
+            (
+                "Alt+H",
+                self.parent_window.shortcut_manager.show_history_dialog,
+            ),  # Show command history dialog
+            (
+                "Ctrl+Alt+H",
+                self.parent_window.shortcut_manager.show_rename_history_dialog,
+            ),  # Show rename history dialog
         ]
         for key, handler in history_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self.parent_window)  # Attached to main window
@@ -612,7 +724,8 @@ class UIManager:
         menu = QMenu(line_edit)
 
         # Apply consistent styling with Inter fonts
-        menu.setStyleSheet("""
+        menu.setStyleSheet(
+            """
             QMenu {
                 background-color: #232323;
                 color: #f0ebd8;
@@ -646,7 +759,8 @@ class UIManager:
                 height: 1px;
                 margin: 4px 8px;
             }
-        """)
+        """
+        )
 
         # Standard editing actions
         undo_action = QAction("Undo", menu)
@@ -716,6 +830,13 @@ class UIManager:
 
     def restore_metadata_search_text(self):
         """Restore the metadata search text from session storage."""
-        if hasattr(self.parent_window, '_metadata_search_text') and self.parent_window._metadata_search_text:
-            self.parent_window.metadata_search_field.setText(self.parent_window._metadata_search_text)
-            self.parent_window.metadata_proxy_model.setFilterRegExp(self.parent_window._metadata_search_text)
+        if (
+            hasattr(self.parent_window, "_metadata_search_text")
+            and self.parent_window._metadata_search_text
+        ):
+            self.parent_window.metadata_search_field.setText(
+                self.parent_window._metadata_search_text
+            )
+            self.parent_window.metadata_proxy_model.setFilterRegExp(
+                self.parent_window._metadata_search_text
+            )

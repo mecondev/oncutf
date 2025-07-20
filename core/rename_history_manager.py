@@ -45,10 +45,14 @@ class RenameBatch:
     Represents a batch of rename operations that can be undone as a unit.
     """
 
-    def __init__(self, operation_id: str, operations: List[RenameOperation],
-                 modules_data: Optional[List[Dict]] = None,
-                 post_transform_data: Optional[Dict] = None,
-                 timestamp: Optional[str] = None):
+    def __init__(
+        self,
+        operation_id: str,
+        operations: List[RenameOperation],
+        modules_data: Optional[List[Dict]] = None,
+        post_transform_data: Optional[Dict] = None,
+        timestamp: Optional[str] = None,
+    ):
         self.operation_id = operation_id
         self.operations = operations
         self.modules_data = modules_data
@@ -75,9 +79,12 @@ class RenameHistoryManager:
         self._db_manager = get_database_manager()
         logger.info("[RenameHistoryManager] Initialized with database backend")
 
-    def record_rename_batch(self, renames: List[Tuple[str, str]],
-                           modules_data: Optional[List[Dict]] = None,
-                           post_transform_data: Optional[Dict] = None) -> str:
+    def record_rename_batch(
+        self,
+        renames: List[Tuple[str, str]],
+        modules_data: Optional[List[Dict]] = None,
+        post_transform_data: Optional[Dict] = None,
+    ) -> str:
         """
         Record a batch rename operation for future undo.
 
@@ -97,11 +104,13 @@ class RenameHistoryManager:
                 operation_id=operation_id,
                 renames=renames,
                 modules_data=modules_data,
-                post_transform_data=post_transform_data
+                post_transform_data=post_transform_data,
             )
 
             if success:
-                logger.info(f"[RenameHistoryManager] Recorded rename batch {operation_id[:8]}... with {len(renames)} files")
+                logger.info(
+                    f"[RenameHistoryManager] Recorded rename batch {operation_id[:8]}... with {len(renames)} files"
+                )
                 return operation_id
             else:
                 logger.error("[RenameHistoryManager] Failed to record rename batch")
@@ -127,13 +136,15 @@ class RenameHistoryManager:
             # Format for UI display
             formatted_operations = []
             for op in operations:
-                formatted_operations.append({
-                    'operation_id': op['operation_id'],
-                    'timestamp': op['operation_time'],
-                    'file_count': op['file_count'],
-                    'operation_type': op['operation_type'],
-                    'display_text': f"Renamed {op['file_count']} file(s) - {op['operation_time'][:19].replace('T', ' ')}"
-                })
+                formatted_operations.append(
+                    {
+                        "operation_id": op["operation_id"],
+                        "timestamp": op["operation_time"],
+                        "file_count": op["file_count"],
+                        "operation_type": op["operation_type"],
+                        "display_text": f"Renamed {op['file_count']} file(s) - {op['operation_time'][:19].replace('T', ' ')}",
+                    }
+                )
 
             return formatted_operations
 
@@ -163,25 +174,27 @@ class RenameHistoryManager:
             timestamp = None
 
             for detail in details:
-                operations.append(RenameOperation(
-                    old_path=detail['old_path'],
-                    new_path=detail['new_path'],
-                    old_filename=detail['old_filename'],
-                    new_filename=detail['new_filename']
-                ))
+                operations.append(
+                    RenameOperation(
+                        old_path=detail["old_path"],
+                        new_path=detail["new_path"],
+                        old_filename=detail["old_filename"],
+                        new_filename=detail["new_filename"],
+                    )
+                )
 
                 # Get metadata from first record (same for all in batch)
                 if modules_data is None:
-                    modules_data = detail['modules_data']
-                    post_transform_data = detail['post_transform_data']
-                    timestamp = detail['created_at']
+                    modules_data = detail["modules_data"]
+                    post_transform_data = detail["post_transform_data"]
+                    timestamp = detail["created_at"]
 
             return RenameBatch(
                 operation_id=operation_id,
                 operations=operations,
                 modules_data=modules_data,
                 post_transform_data=post_transform_data,
-                timestamp=timestamp
+                timestamp=timestamp,
             )
 
         except Exception as e:
@@ -215,13 +228,21 @@ class RenameHistoryManager:
                 else:
                     current_filename = os.path.basename(current_path)
                     if current_filename != operation.new_filename:
-                        wrong_names.append(f"{current_filename} (expected {operation.new_filename})")
+                        wrong_names.append(
+                            f"{current_filename} (expected {operation.new_filename})"
+                        )
 
             if missing_files:
-                return False, f"Missing files: {', '.join(missing_files[:3])}{'...' if len(missing_files) > 3 else ''}"
+                return (
+                    False,
+                    f"Missing files: {', '.join(missing_files[:3])}{'...' if len(missing_files) > 3 else ''}",
+                )
 
             if wrong_names:
-                return False, f"Files have been renamed again: {', '.join(wrong_names[:2])}{'...' if len(wrong_names) > 2 else ''}"
+                return (
+                    False,
+                    f"Files have been renamed again: {', '.join(wrong_names[:2])}{'...' if len(wrong_names) > 2 else ''}",
+                )
 
             return True, ""
 
@@ -260,23 +281,29 @@ class RenameHistoryManager:
 
                     # Perform the rename (revert)
                     # Use safe case rename for case-only changes
-                    from utils.rename_logic import safe_case_rename, is_case_only_change
+                    from utils.rename_logic import is_case_only_change, safe_case_rename
 
                     current_name = os.path.basename(current_path)
                     target_name = os.path.basename(target_path)
 
                     if is_case_only_change(current_name, target_name):
                         if not safe_case_rename(current_path, target_path):
-                            raise Exception(f"Case-only rename failed: {current_name} -> {target_name}")
+                            raise Exception(
+                                f"Case-only rename failed: {current_name} -> {target_name}"
+                            )
                     else:
                         os.rename(current_path, target_path)
                     successful_reverts.append(operation)
 
-                    logger.debug(f"[RenameHistoryManager] Reverted: {operation.new_filename} -> {operation.old_filename}")
+                    logger.debug(
+                        f"[RenameHistoryManager] Reverted: {operation.new_filename} -> {operation.old_filename}"
+                    )
 
                 except OSError as e:
                     failed_reverts.append((operation, str(e)))
-                    logger.error(f"[RenameHistoryManager] Failed to revert {operation.new_filename}: {e}")
+                    logger.error(
+                        f"[RenameHistoryManager] Failed to revert {operation.new_filename}: {e}"
+                    )
 
             # Record the undo operation
             if successful_reverts:
@@ -287,7 +314,7 @@ class RenameHistoryManager:
                     operation_id=undo_operation_id,
                     renames=undo_renames,
                     modules_data=None,  # Undo operations don't have module data
-                    post_transform_data=None
+                    post_transform_data=None,
                 )
 
             # Prepare result message
@@ -337,9 +364,9 @@ class RenameHistoryManager:
             recent_operations = self.get_recent_operations(100)  # Get more for stats
 
             return {
-                'total_operations': db_stats.get('rename_history', 0),
-                'recent_operations': len(recent_operations),
-                'database_stats': db_stats
+                "total_operations": db_stats.get("rename_history", 0),
+                "recent_operations": len(recent_operations),
+                "database_stats": db_stats,
             }
 
         except Exception as e:

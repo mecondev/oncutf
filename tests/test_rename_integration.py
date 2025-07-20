@@ -8,23 +8,19 @@ Integration tests for the enhanced rename workflow with validation
 """
 
 import warnings
-import pytest
-import tempfile
-import os
-from pathlib import Path
-from unittest.mock import MagicMock, patch, call
 from datetime import datetime
+from unittest.mock import MagicMock, patch
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 from config import INVALID_FILENAME_MARKER
+from core.rename_manager import RenameManager
+from models.file_item import FileItem
 from modules.specified_text_module import SpecifiedTextModule
 from tests.mocks import MockFileItem
 from utils.filename_validator import is_validation_error_marker
-from models.file_item import FileItem
-from core.rename_manager import RenameManager
 
 
 class TestRenameIntegration:
@@ -48,7 +44,7 @@ class TestRenameIntegration:
 
     def test_reserved_filename_workflow(self):
         """Test workflow with Windows reserved names"""
-        reserved_names = ['CON', 'PRN', 'AUX', 'NUL']
+        reserved_names = ["CON", "PRN", "AUX", "NUL"]
         for reserved_name in reserved_names:
             data = {"type": "specified_text", "text": reserved_name}
             file_item = MockFileItem(filename="test.txt")
@@ -70,8 +66,8 @@ class TestRenameIntegration:
         # Test data
         checked_paths = {"/test/folder/file1.txt", "/test/folder/file2.txt"}
 
-                # Mock the timer manager
-        with patch('utils.timer_manager.get_timer_manager') as mock_timer_manager:
+        # Mock the timer manager
+        with patch("utils.timer_manager.get_timer_manager") as mock_timer_manager:
             mock_timer = MagicMock()
             mock_timer_manager.return_value = mock_timer
 
@@ -81,8 +77,8 @@ class TestRenameIntegration:
             # Verify timer was scheduled for state restoration
             assert mock_timer.schedule.called
             schedule_call = mock_timer.schedule.call_args
-            assert schedule_call[1]['delay'] == 50
-            assert schedule_call[1]['timer_id'] == "post_rename_state_restore"
+            assert schedule_call[1]["delay"] == 50
+            assert schedule_call[1]["timer_id"] == "post_rename_state_restore"
 
             # Verify main window methods were called
             assert mock_main_window.last_action == "rename"
@@ -132,7 +128,7 @@ class TestRenameIntegration:
         mock_file_model.rowCount.return_value = 2
         mock_file_model.files = [
             FileItem("/test/folder/file1.txt", "txt", datetime.now()),
-            FileItem("/test/folder/file2.txt", "txt", datetime.now())
+            FileItem("/test/folder/file2.txt", "txt", datetime.now()),
         ]
         mock_file_model.index.return_value = MagicMock()
 
@@ -184,8 +180,8 @@ class TestRenameIntegration:
         # Create RenameManager instance
         rename_manager = RenameManager(mock_main_window)
 
-                # Mock the timer manager
-        with patch('utils.timer_manager.get_timer_manager') as mock_timer_manager:
+        # Mock the timer manager
+        with patch("utils.timer_manager.get_timer_manager") as mock_timer_manager:
             mock_timer = MagicMock()
             mock_timer_manager.return_value = mock_timer
 
@@ -195,5 +191,5 @@ class TestRenameIntegration:
             # Verify timer was scheduled for post-rename workflow
             assert mock_timer.schedule.called
             schedule_call = mock_timer.schedule.call_args
-            assert schedule_call[1]['delay'] == 100
-            assert schedule_call[1]['timer_id'] == "post_rename_workflow"
+            assert schedule_call[1]["delay"] == 100
+            assert schedule_call[1]["timer_id"] == "post_rename_workflow"

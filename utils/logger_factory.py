@@ -42,8 +42,9 @@ class LoggerFactory:
         # Use calling module name if not provided
         if name is None:
             import inspect
+
             frame = inspect.currentframe().f_back
-            name = frame.f_globals.get('__name__', 'unknown')
+            name = frame.f_globals.get("__name__", "unknown")
 
         # Thread-safe cache lookup
         with cls._lock:

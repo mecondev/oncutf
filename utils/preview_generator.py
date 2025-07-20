@@ -24,7 +24,7 @@ logger = get_cached_logger(__name__)
 def generate_preview_names(
     files: List[FileItem],
     modules_data: List[Dict[str, Any]],
-    metadata_cache: Optional[Dict[str, Dict[str, Any]]] = None
+    metadata_cache: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> Tuple[List[Tuple[str, str]], bool, str]:
     """
     Generate new filenames based on rename modules for a list of files.
@@ -52,10 +52,15 @@ def generate_preview_names(
 
     for index, file in enumerate(files):
         name_parts = []
-        logger.debug(f"[PreviewGen] Start: file='{file.filename}', extension='{file.extension}'", extra={"dev_only": True})
+        logger.debug(
+            f"[PreviewGen] Start: file='{file.filename}', extension='{file.extension}'",
+            extra={"dev_only": True},
+        )
         for module in modules_data:
             module_type = module.get("type")
-            logger.debug(f"[PreviewGen] Module: {module_type} | data={module}", extra={"dev_only": True})
+            logger.debug(
+                f"[PreviewGen] Module: {module_type} | data={module}", extra={"dev_only": True}
+            )
 
             if module_type == "specified_text":
                 text = module.get("text", "")
@@ -67,49 +72,73 @@ def generate_preview_names(
                 padding = module.get("padding", 4)
                 step = module.get("step", 1)
                 value = start + (index * step)
-                logger.debug(f"[PreviewGen] Counter: value={value}, padding={padding}", extra={"dev_only": True})
+                logger.debug(
+                    f"[PreviewGen] Counter: value={value}, padding={padding}",
+                    extra={"dev_only": True},
+                )
                 name_parts.append(str(value).zfill(padding))
 
             elif module_type == "original_name":
                 try:
                     result = OriginalNameModule.apply_from_data(module, file, index)
-                    logger.debug(f"[PreviewGen] OriginalName result: '{result}'", extra={"dev_only": True})
+                    logger.debug(
+                        f"[PreviewGen] OriginalName result: '{result}'", extra={"dev_only": True}
+                    )
                     name_parts.append(result)
                 except Exception as e:
-                    logger.warning(f"[PreviewGen] Exception in OriginalNameModule for {file.filename}: {e}")
+                    logger.warning(
+                        f"[PreviewGen] Exception in OriginalNameModule for {file.filename}: {e}"
+                    )
                     name_parts.append("invalid")
 
             elif module_type == "metadata":
                 # Use MetadataModule for consistency with preview engine
                 try:
                     result = MetadataModule.apply_from_data(module, file, index, metadata_cache)
-                    logger.debug(f"[PreviewGen] Metadata result: '{result}'", extra={"dev_only": True})
+                    logger.debug(
+                        f"[PreviewGen] Metadata result: '{result}'", extra={"dev_only": True}
+                    )
                     name_parts.append(result)
                 except Exception as e:
-                    logger.warning(f"[PreviewGen] Exception in MetadataModule for {file.filename}: {e}")
+                    logger.warning(
+                        f"[PreviewGen] Exception in MetadataModule for {file.filename}: {e}"
+                    )
                     name_parts.append("unknown")
 
             elif module_type == "remove_text_from_original_name":
                 # Use TextRemovalModule for text removal
                 try:
                     from modules.text_removal_module import TextRemovalModule
-                    result_filename = TextRemovalModule.apply_from_data(module, file, index, metadata_cache)
+
+                    result_filename = TextRemovalModule.apply_from_data(
+                        module, file, index, metadata_cache
+                    )
                     # Extract just the base name without extension
                     import os
+
                     result_basename, _ = os.path.splitext(result_filename)
-                    logger.debug(f"[PreviewGen] TextRemoval result: '{result_basename}'", extra={"dev_only": True})
+                    logger.debug(
+                        f"[PreviewGen] TextRemoval result: '{result_basename}'",
+                        extra={"dev_only": True},
+                    )
                     name_parts.append(result_basename)
                 except Exception as e:
-                    logger.warning(f"[PreviewGen] Exception in TextRemovalModule for {file.filename}: {e}")
+                    logger.warning(
+                        f"[PreviewGen] Exception in TextRemovalModule for {file.filename}: {e}"
+                    )
                     name_parts.append("error")
 
             else:
-                logger.debug(f"[PreviewGen] Invalid module type: {module_type}", extra={"dev_only": True})
+                logger.debug(
+                    f"[PreviewGen] Invalid module type: {module_type}", extra={"dev_only": True}
+                )
                 name_parts.append("invalid")
 
         logger.debug(f"[PreviewGen] All parts before join: {name_parts}", extra={"dev_only": True})
         new_basename = "".join(name_parts)
-        logger.debug(f"[PreviewGen] Basename before extension: '{new_basename}'", extra={"dev_only": True})
+        logger.debug(
+            f"[PreviewGen] Basename before extension: '{new_basename}'", extra={"dev_only": True}
+        )
         extension = file.extension or ""
         if extension and not extension.startswith("."):
             extension = "." + extension

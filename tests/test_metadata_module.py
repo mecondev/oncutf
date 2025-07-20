@@ -17,6 +17,11 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 
+# Clear metadata cache before each test to avoid interference
+def setup_function(function):
+    MetadataModule.clear_cache()
+
+
 def test_metadata_module_basic():
     data = {"type": "metadata", "field": "date", "category": "metadata_keys"}
     file_item = MockFileItem()

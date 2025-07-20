@@ -14,27 +14,78 @@ import unicodedata
 
 # Base Greeklish mapping (letters only)
 GREEKLISH_MAP = {
-    'α': 'a', 'β': 'v', 'γ': 'g', 'δ': 'd', 'ε': 'e', 'ζ': 'z',
-    'η': 'i', 'θ': 'th', 'ι': 'i', 'κ': 'k', 'λ': 'l', 'μ': 'm',
-    'ν': 'n', 'ξ': 'x', 'ο': 'o', 'π': 'p', 'ρ': 'r', 'σ': 's',
-    'ς': 's', 'τ': 't', 'υ': 'y', 'φ': 'f', 'χ': 'ch', 'ψ': 'ps', 'ω': 'w',
-    'Α': 'A', 'Β': 'V', 'Γ': 'G', 'Δ': 'D', 'Ε': 'E', 'Ζ': 'Z',
-    'Η': 'I', 'Θ': 'TH', 'Ι': 'I', 'Κ': 'K', 'Λ': 'L', 'Μ': 'M',
-    'Ν': 'N', 'Ξ': 'X', 'Ο': 'O', 'Π': 'P', 'Ρ': 'R', 'Σ': 'S',
-    'Τ': 'T', 'Υ': 'Y', 'Φ': 'F', 'Χ': 'CH', 'Ψ': 'PS', 'Ω': 'W'
+    "α": "a",
+    "β": "v",
+    "γ": "g",
+    "δ": "d",
+    "ε": "e",
+    "ζ": "z",
+    "η": "i",
+    "θ": "th",
+    "ι": "i",
+    "κ": "k",
+    "λ": "l",
+    "μ": "m",
+    "ν": "n",
+    "ξ": "x",
+    "ο": "o",
+    "π": "p",
+    "ρ": "r",
+    "σ": "s",
+    "ς": "s",
+    "τ": "t",
+    "υ": "y",
+    "φ": "f",
+    "χ": "ch",
+    "ψ": "ps",
+    "ω": "w",
+    "Α": "A",
+    "Β": "V",
+    "Γ": "G",
+    "Δ": "D",
+    "Ε": "E",
+    "Ζ": "Z",
+    "Η": "I",
+    "Θ": "TH",
+    "Ι": "I",
+    "Κ": "K",
+    "Λ": "L",
+    "Μ": "M",
+    "Ν": "N",
+    "Ξ": "X",
+    "Ο": "O",
+    "Π": "P",
+    "Ρ": "R",
+    "Σ": "S",
+    "Τ": "T",
+    "Υ": "Y",
+    "Φ": "F",
+    "Χ": "CH",
+    "Ψ": "PS",
+    "Ω": "W",
 }
 
 # Diphthongs mapping (used before letter-level map)
 DIPHTHONGS = {
-    'μπ': 'b', 'Μπ': 'B', 'ΜΠ': 'B',
-    'ντ': 'd', 'Ντ': 'D', 'ΝΤ': 'D',
-    'γκ': 'g', 'Γκ': 'G', 'ΓΚ': 'G',
-    'γγ': 'g', 'Γγ': 'G', 'ΓΓ': 'G'
+    "μπ": "b",
+    "Μπ": "B",
+    "ΜΠ": "B",
+    "ντ": "d",
+    "Ντ": "D",
+    "ΝΤ": "D",
+    "γκ": "g",
+    "Γκ": "G",
+    "ΓΚ": "G",
+    "γγ": "g",
+    "Γγ": "G",
+    "ΓΓ": "G",
 }
+
 
 def strip_accents(text: str) -> str:
     """Remove accents from Greek characters using Unicode normalization."""
-    return ''.join(c for c in unicodedata.normalize('NFD', text) if unicodedata.category(c) != 'Mn')
+    return "".join(c for c in unicodedata.normalize("NFD", text) if unicodedata.category(c) != "Mn")
+
 
 def safe_upper(text: str) -> str:
     """
@@ -46,8 +97,20 @@ def safe_upper(text: str) -> str:
         return text
 
     initial_tonos_map = {
-        'ά': 'Ά', 'έ': 'Έ', 'ή': 'Ή', 'ί': 'Ί', 'ό': 'Ό', 'ύ': 'Ύ', 'ώ': 'Ώ',
-        'Ά': 'Ά', 'Έ': 'Έ', 'Ή': 'Ή', 'Ί': 'Ί', 'Ό': 'Ό', 'Ύ': 'Ύ', 'Ώ': 'Ώ',
+        "ά": "Ά",
+        "έ": "Έ",
+        "ή": "Ή",
+        "ί": "Ί",
+        "ό": "Ό",
+        "ύ": "Ύ",
+        "ώ": "Ώ",
+        "Ά": "Ά",
+        "Έ": "Έ",
+        "Ή": "Ή",
+        "Ί": "Ί",
+        "Ό": "Ό",
+        "Ύ": "Ύ",
+        "Ώ": "Ώ",
     }
 
     first = text[0]
@@ -60,12 +123,14 @@ def safe_upper(text: str) -> str:
 
     return first + strip_accents(rest).upper()
 
+
 def to_greeklish(text: str) -> str:
     """Convert Greek text to Greeklish (Latinized)."""
     text = strip_accents(text)
     for gr, gl in DIPHTHONGS.items():
         text = text.replace(gr, gl)
-    return ''.join(GREEKLISH_MAP.get(c, c) for c in text)
+    return "".join(GREEKLISH_MAP.get(c, c) for c in text)
+
 
 def apply_transform(name: str, transform: str) -> str:
     """
@@ -81,7 +146,7 @@ def apply_transform(name: str, transform: str) -> str:
         str: Transformed name
     """
     if not name.strip():
-        return ''
+        return ""
 
     if transform == "original":
         # Remove leading/trailing spaces, preserve everything else
@@ -94,21 +159,21 @@ def apply_transform(name: str, transform: str) -> str:
         return safe_upper(name)
 
     if transform == "Capitalize":
-        return ' '.join(w.capitalize() for w in name.split())
+        return " ".join(w.capitalize() for w in name.split())
 
     if transform == "camelCase":
         words = name.split()
         if not words:
-            return ''
+            return ""
         # First word lowercase, rest capitalized
-        return words[0].lower() + ''.join(w.capitalize() for w in words[1:])
+        return words[0].lower() + "".join(w.capitalize() for w in words[1:])
 
     if transform == "PascalCase":
         words = name.split()
         if not words:
-            return ''
+            return ""
         # All words capitalized, no spaces
-        return ''.join(w.capitalize() for w in words)
+        return "".join(w.capitalize() for w in words)
 
     if transform == "Title Case":
         # Similar to Capitalize but handles articles/prepositions better
@@ -138,23 +203,23 @@ def apply_transform(name: str, transform: str) -> str:
 
     if transform == "space":
         # Find first and last non-space character
-        m_first = re.search(r'[^\s]', name)
+        m_first = re.search(r"[^\s]", name)
         if not m_first:
-            return ''  # All spaces, return empty
+            return ""  # All spaces, return empty
         first = m_first.start()
-        m_last = re.search(r'[^\s](?!.*[^\s])', name)
+        m_last = re.search(r"[^\s](?!.*[^\s])", name)
         if not m_last:
-            return ''  # No valid content found
+            return ""  # No valid content found
         last = m_last.start()
 
         # Extract leading/trailing separators and body content
         leading_part = name[:first]  # Only separators before first non-space
-        trailing_part = name[last+1:]  # Only separators after last non-space
-        body = name[first:last+1]  # Content without leading/trailing spaces
+        trailing_part = name[last + 1 :]  # Only separators after last non-space
+        body = name[first : last + 1]  # Content without leading/trailing spaces
 
         # In leading/trailing: keep separators, remove spaces
-        leading_result = re.sub(r'[_\-]+', ' ', leading_part).strip()
-        trailing_result = re.sub(r'[_\-]+', ' ', trailing_part).strip()
+        leading_result = re.sub(r"[_\-]+", " ", leading_part).strip()
+        trailing_result = re.sub(r"[_\-]+", " ", trailing_part).strip()
 
         # In body: convert separators to spaces
         body_result = re.sub(r"[_\-]+", " ", body)

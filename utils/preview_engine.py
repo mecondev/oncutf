@@ -17,6 +17,7 @@ to generate preview names and resolve rename plans for batch processing.
 """
 
 import os
+import time
 
 from modules.counter_module import CounterModule
 from modules.metadata_module import MetadataModule
@@ -37,17 +38,30 @@ MODULE_TYPE_MAP = {
     "remove_text_from_original_name": TextRemovalModule,
 }
 
+# Performance optimization: Module result cache
+_module_cache: dict = {}
+_cache_timestamp = 0
+_cache_validity_duration = 0.05  # 50ms cache validity
+
+
 def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
     """
     Applies the rename modules to the basename only. The extension (with the dot) is always appended at the end, unchanged.
     """
+    global _cache_timestamp
+
     original_base_name, ext = os.path.splitext(file_item.filename)
-    logger.debug(f"[apply_rename_modules] Start: original filename='{file_item.filename}', base='{original_base_name}', ext='{ext}'", extra={"dev_only": True})
+
+    # Performance optimization: Check cache first
+    cache_key = _generate_module_cache_key(modules_data, index, file_item.filename)
+    current_time = time.time()
+
+    if cache_key in _module_cache and current_time - _cache_timestamp < _cache_validity_duration:
+        return _module_cache[cache_key]
 
     new_name_parts = []
     for i, data in enumerate(modules_data):
         module_type = data.get("type")
-        logger.debug(f"[apply_rename_modules] Module {i}: {module_type} | data={data}", extra={"dev_only": True})
 
         part = ""
 
@@ -60,44 +74,49 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
 
         elif module_type == "specified_text":
             part = SpecifiedTextModule.apply_from_data(data, file_item, index, metadata_cache)
-            logger.debug(f"[apply_rename_modules] SpecifiedText part: '{part}'", extra={"dev_only": True})
 
         elif module_type == "original_name":
             part = original_base_name
             if not part:
-                logger.debug(f"[apply_rename_modules] OriginalName fallback, using original base: {original_base_name}", extra={"dev_only": True})
                 part = "originalname"
 
         elif module_type == "remove_text_from_original_name":
             # Apply text removal to original filename and return the result
-            result_filename = TextRemovalModule.apply_from_data(data, file_item, index, metadata_cache)
+            result_filename = TextRemovalModule.apply_from_data(
+                data, file_item, index, metadata_cache
+            )
             # Extract just the base name without extension
             part, _ = os.path.splitext(result_filename)
-            logger.debug(f"[apply_rename_modules] TextRemoval result: '{part}'", extra={"dev_only": True})
 
         elif module_type == "metadata":
-            # Apply metadata module
             part = MetadataModule.apply_from_data(data, file_item, index, metadata_cache)
-            logger.debug(f"[apply_rename_modules] Metadata result: '{part}'", extra={"dev_only": True})
 
-        else:
-            logger.warning(f"[apply_rename_modules] Unknown module type: '{module_type}'")
+        new_name_parts.append(part)
 
-        if part:
-            logger.debug(f"[apply_rename_modules] Module {module_type} part: '{part}'", extra={"dev_only": True})
-            new_name_parts.append(part)
+    # Join all parts
+    new_fullname = "".join(new_name_parts)
 
-    logger.debug(f"[apply_rename_modules] All parts before join: {new_name_parts}", extra={"dev_only": True})
+    # Cache the result
+    _module_cache[cache_key] = new_fullname
+    _cache_timestamp = current_time
 
-    # If no effective modules produced content, fallback to original name
-    if not new_name_parts or all(not part.strip() for part in new_name_parts):
-        logger.debug(f"[apply_rename_modules] No effective modules, using original base: {original_base_name}", extra={"dev_only": True})
-        final_basename = original_base_name
-    else:
-        final_basename = "".join(new_name_parts)
+    return new_fullname
 
-    logger.debug(f"[apply_rename_modules] Final basename before extension: '{final_basename}'", extra={"dev_only": True})
-    final_name = f"{final_basename}{ext}"
-    logger.debug(f"[apply_rename_modules] Final name with extension: '{final_name}'", extra={"dev_only": True})
-    logger.debug(f"[apply_rename_modules] Final name: {file_item.filename} → {final_name}", extra={"dev_only": True})
-    return final_name
+
+def _generate_module_cache_key(modules_data, index, filename):
+    """Generate cache key for module results."""
+    import json
+
+    try:
+        modules_hash = hash(json.dumps(modules_data, sort_keys=True, default=str))
+    except (TypeError, ValueError):
+        modules_hash = hash(str(modules_data))
+
+    return f"{modules_hash}_{index}_{filename}"
+
+
+def clear_module_cache():
+    """Clear the module cache."""
+    global _module_cache, _cache_timestamp
+    _module_cache.clear()
+    _cache_timestamp = 0

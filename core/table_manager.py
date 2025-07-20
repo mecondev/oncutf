@@ -41,7 +41,9 @@ class TableManager:
         self.parent_window = parent_window
         logger.debug("[TableManager] Initialized", extra={"dev_only": True})
 
-    def sort_by_column(self, column: int, order: Qt.SortOrder = None, force_order: Qt.SortOrder = None) -> None:
+    def sort_by_column(
+        self, column: int, order: Qt.SortOrder = None, force_order: Qt.SortOrder = None
+    ) -> None:
         """
         Sorts the file table based on clicked header column or context menu.
         Toggle logic unless a force_order is explicitly provided.
@@ -56,7 +58,9 @@ class TableManager:
         if force_order is not None:
             new_order = force_order
         elif column == current_column:
-            new_order = Qt.DescendingOrder if current_order == Qt.AscendingOrder else Qt.AscendingOrder
+            new_order = (
+                Qt.DescendingOrder if current_order == Qt.AscendingOrder else Qt.AscendingOrder
+            )
         else:
             new_order = Qt.AscendingOrder
 
@@ -70,23 +74,33 @@ class TableManager:
         # Only clear metadata modifications if we're actually changing folders
         # This preserves modifications when reloading the same folder
         should_clear_modifications = (
-            message != "No folder selected" or  # User explicitly clearing
-            not hasattr(self.parent_window, 'current_folder_path') or  # No current folder
-            self.parent_window.current_folder_path is None  # Folder path is None
+            message != "No folder selected"  # User explicitly clearing
+            or not hasattr(self.parent_window, "current_folder_path")  # No current folder
+            or self.parent_window.current_folder_path is None  # Folder path is None
         )
 
         if should_clear_modifications:
-            logger.debug(f"[TableManager] Clearing metadata modifications: {message}", extra={"dev_only": True})
+            logger.debug(
+                f"[TableManager] Clearing metadata modifications: {message}",
+                extra={"dev_only": True},
+            )
             self.parent_window.metadata_tree_view.clear_for_folder_change()
         else:
-            logger.debug(f"[TableManager] Preserving metadata modifications: {message}", extra={"dev_only": True})
+            logger.debug(
+                f"[TableManager] Preserving metadata modifications: {message}",
+                extra={"dev_only": True},
+            )
             # Just clear the view without losing modifications
             self.parent_window.metadata_tree_view.clear_view()
 
         self.parent_window.file_model.set_files([])  # reset model with empty list
-        self.parent_window.file_table_view.set_placeholder_visible(True)  # Show placeholder when empty
-        self.parent_window.header.setEnabled(False) # disable header
-        self.parent_window.status_manager.clear_file_table_status(self.parent_window.files_label, message)
+        self.parent_window.file_table_view.set_placeholder_visible(
+            True
+        )  # Show placeholder when empty
+        self.parent_window.header.setEnabled(False)  # disable header
+        self.parent_window.status_manager.clear_file_table_status(
+            self.parent_window.files_label, message
+        )
         self.parent_window.update_files_label()
 
         # Update scrollbar visibility after clearing table
@@ -98,7 +112,7 @@ class TableManager:
         self.parent_window.update_preview_tables_from_pairs([])
 
         # Also clear the preview tables directly to ensure they show placeholders
-        if hasattr(self.parent_window, 'preview_tables_view'):
+        if hasattr(self.parent_window, "preview_tables_view"):
             self.parent_window.preview_tables_view.clear_tables()
 
     def prepare_file_table(self, file_items: List[FileItem]) -> None:
@@ -137,7 +151,9 @@ class TableManager:
 
         # If we're coming from a rename operation and have active modules, regenerate preview
         if self.parent_window.last_action == "rename":
-            logger.debug("[PrepareTable] Post-rename detected, preview will be updated after checked state restore")
+            logger.debug(
+                "[PrepareTable] Post-rename detected, preview will be updated after checked state restore"
+            )
 
     def get_selected_files(self) -> List[FileItem]:
         """
@@ -151,7 +167,7 @@ class TableManager:
             return []
 
         # Get currently selected rows from the file table view
-        if not hasattr(self.parent_window, 'file_table_view'):
+        if not hasattr(self.parent_window, "file_table_view"):
             return []
 
         selection_model = self.parent_window.file_table_view.selectionModel()

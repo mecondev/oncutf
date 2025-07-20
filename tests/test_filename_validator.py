@@ -6,11 +6,12 @@ Date: 2025-05-31
 
 Tests for filename validation utilities
 """
+
 import warnings
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 from config import INVALID_FILENAME_CHARS, INVALID_FILENAME_MARKER
 from utils.filename_validator import (
@@ -32,12 +33,12 @@ class TestFilenameValidator:
     def test_is_valid_filename_char(self):
         """Test character validation"""
         # Valid characters
-        assert is_valid_filename_char('a') is True
-        assert is_valid_filename_char('Z') is True
-        assert is_valid_filename_char('1') is True
-        assert is_valid_filename_char('_') is True
-        assert is_valid_filename_char('-') is True
-        assert is_valid_filename_char(' ') is True
+        assert is_valid_filename_char("a") is True
+        assert is_valid_filename_char("Z") is True
+        assert is_valid_filename_char("1") is True
+        assert is_valid_filename_char("_") is True
+        assert is_valid_filename_char("-") is True
+        assert is_valid_filename_char(" ") is True
 
         # Invalid characters
         for char in INVALID_FILENAME_CHARS:
@@ -96,7 +97,7 @@ class TestFilenameValidator:
         assert result == "filename"
 
         # Windows reserved names
-        for reserved in ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'LPT1']:
+        for reserved in ["CON", "PRN", "AUX", "NUL", "COM1", "LPT1"]:
             is_valid, result = validate_filename_part(reserved)
             assert is_valid is False
             assert result == INVALID_FILENAME_MARKER
@@ -109,9 +110,9 @@ class TestFilenameValidator:
     def test_should_allow_character_input(self):
         """Test input character filtering"""
         # Should allow valid characters
-        assert should_allow_character_input('a') is True
-        assert should_allow_character_input('1') is True
-        assert should_allow_character_input('_') is True
+        assert should_allow_character_input("a") is True
+        assert should_allow_character_input("1") is True
+        assert should_allow_character_input("_") is True
 
         # Should block invalid characters
         for char in INVALID_FILENAME_CHARS:
@@ -120,7 +121,9 @@ class TestFilenameValidator:
     def test_get_validation_error_message(self):
         """Test error message generation"""
         # Valid filename
-        assert get_validation_error_message("valid_file") == "Invalid filename"  # Default message for valid
+        assert (
+            get_validation_error_message("valid_file") == "Invalid filename"
+        )  # Default message for valid
 
         # Empty filename
         assert "empty" in get_validation_error_message("").lower()

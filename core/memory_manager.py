@@ -34,6 +34,7 @@ logger = get_cached_logger(__name__)
 @dataclass
 class CacheEntry:
     """Represents a cache entry with usage statistics."""
+
     key: str
     data: Any
     access_count: int = 0
@@ -50,6 +51,7 @@ class CacheEntry:
 @dataclass
 class MemoryStats:
     """Memory usage statistics."""
+
     total_memory_mb: float
     used_memory_mb: float
     available_memory_mb: float
@@ -167,14 +169,14 @@ class LRUCache:
             hit_rate = self._hits / total_requests if total_requests > 0 else 0.0
 
             return {
-                'entries': len(self._cache),
-                'hits': self._hits,
-                'misses': self._misses,
-                'evictions': self._evictions,
-                'hit_rate': hit_rate,
-                'miss_rate': 1.0 - hit_rate,
-                'memory_mb': self.get_memory_usage_mb(),
-                'max_memory_mb': self.max_memory_mb
+                "entries": len(self._cache),
+                "hits": self._hits,
+                "misses": self._misses,
+                "evictions": self._evictions,
+                "hit_rate": hit_rate,
+                "miss_rate": 1.0 - hit_rate,
+                "memory_mb": self.get_memory_usage_mb(),
+                "max_memory_mb": self.max_memory_mb,
             }
 
 
@@ -192,7 +194,7 @@ class MemoryManager(QObject):
 
     # Signals
     memory_warning = pyqtSignal(float)  # memory_usage_percent
-    cache_cleaned = pyqtSignal(int)     # cleaned_entries_count
+    cache_cleaned = pyqtSignal(int)  # cleaned_entries_count
 
     def __init__(self, parent=None):
         """Initialize memory manager."""
@@ -200,9 +202,9 @@ class MemoryManager(QObject):
 
         # Configuration
         self.memory_threshold_percent = 85.0  # Trigger cleanup at 85% memory usage
-        self.cleanup_interval_seconds = 300   # Check every 5 minutes
-        self.cache_max_age_seconds = 3600     # Remove entries older than 1 hour
-        self.min_access_count = 2             # Keep entries accessed at least twice
+        self.cleanup_interval_seconds = 300  # Check every 5 minutes
+        self.cache_max_age_seconds = 3600  # Remove entries older than 1 hour
+        self.min_access_count = 2  # Keep entries accessed at least twice
 
         # Cache registry
         self._registered_caches: Dict[str, Any] = {}
@@ -252,9 +254,9 @@ class MemoryManager(QObject):
             cache_entries = 0
 
             for cache_name, cache_obj in self._registered_caches.items():
-                if hasattr(cache_obj, 'get_memory_usage_mb'):
+                if hasattr(cache_obj, "get_memory_usage_mb"):
                     cache_memory_mb += cache_obj.get_memory_usage_mb()
-                if hasattr(cache_obj, '__len__'):
+                if hasattr(cache_obj, "__len__"):
                     cache_entries += len(cache_obj)
 
             return MemoryStats(
@@ -265,7 +267,7 @@ class MemoryManager(QObject):
                 cache_entries=cache_entries,
                 evicted_entries=self._cleanup_count,
                 hit_rate=0.0,  # Will be calculated from individual caches
-                miss_rate=0.0
+                miss_rate=0.0,
             )
         except Exception as e:
             logger.error(f"[MemoryManager] Error getting memory stats: {e}")
@@ -279,7 +281,9 @@ class MemoryManager(QObject):
 
             # Check if cleanup is needed
             if memory_usage_percent > self.memory_threshold_percent:
-                logger.info(f"[MemoryManager] Memory usage {memory_usage_percent:.1f}% exceeds threshold {self.memory_threshold_percent}%")
+                logger.info(
+                    f"[MemoryManager] Memory usage {memory_usage_percent:.1f}% exceeds threshold {self.memory_threshold_percent}%"
+                )
 
                 cleaned_entries = self._cleanup_caches()
 
@@ -326,7 +330,7 @@ class MemoryManager(QObject):
         cleaned = 0
 
         # Try different cleanup strategies based on cache type
-        if hasattr(cache_obj, '_cache') and isinstance(cache_obj._cache, dict):
+        if hasattr(cache_obj, "_cache") and isinstance(cache_obj._cache, dict):
             # Dictionary-based cache
             keys_to_remove = []
 
@@ -334,13 +338,13 @@ class MemoryManager(QObject):
                 should_remove = False
 
                 # Check age
-                if hasattr(entry, 'last_access'):
+                if hasattr(entry, "last_access"):
                     age = current_time - entry.last_access
                     if age > self.cache_max_age_seconds:
                         should_remove = True
 
                 # Check access count
-                if hasattr(entry, 'access_count'):
+                if hasattr(entry, "access_count"):
                     if entry.access_count < self.min_access_count:
                         should_remove = True
 
@@ -349,13 +353,13 @@ class MemoryManager(QObject):
 
             # Remove identified entries
             for key in keys_to_remove:
-                if hasattr(cache_obj, 'remove'):
+                if hasattr(cache_obj, "remove"):
                     cache_obj.remove(key)
                 else:
                     del cache_obj._cache[key]
                 cleaned += 1
 
-        elif hasattr(cache_obj, 'clear') and len(cache_obj) > 1000:
+        elif hasattr(cache_obj, "clear") and len(cache_obj) > 1000:
             # Large cache - clear if too big
             cache_obj.clear()
             cleaned = 1000  # Estimate
@@ -372,12 +376,12 @@ class MemoryManager(QObject):
     def get_cleanup_stats(self) -> Dict[str, Any]:
         """Get cleanup statistics."""
         return {
-            'total_cleanups': self._cleanup_count,
-            'last_cleanup': self._last_cleanup,
-            'registered_caches': len(self._registered_caches),
-            'cleanup_callbacks': len(self._cleanup_callbacks),
-            'memory_threshold': self.memory_threshold_percent,
-            'cleanup_interval': self.cleanup_interval_seconds
+            "total_cleanups": self._cleanup_count,
+            "last_cleanup": self._last_cleanup,
+            "registered_caches": len(self._registered_caches),
+            "cleanup_callbacks": len(self._cleanup_callbacks),
+            "memory_threshold": self.memory_threshold_percent,
+            "cleanup_interval": self.cleanup_interval_seconds,
         }
 
     def configure(self, **kwargs) -> None:

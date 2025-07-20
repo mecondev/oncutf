@@ -15,8 +15,6 @@ Contains:
 - Paths to resources and stylesheets
 """
 
-from core.pyqt_imports import Qt
-
 # =====================================
 # DEBUG SETTINGS
 # =====================================
@@ -71,7 +69,6 @@ DIALOG_PATHS = {"last_used": ""}
 # Main window geometry and state (will be loaded from config.json)
 MAIN_WINDOW_GEOMETRY = None
 MAIN_WINDOW_STATE = None
-
 
 
 # =====================================
@@ -201,6 +198,22 @@ CONTENT_MARGINS = {
 }
 
 # =====================================
+# ICON SIZE SETTINGS
+# =====================================
+
+# Icon Size Settings
+ICON_SIZES = {
+    "SMALL": 16,  # Small icons (menu items, tree view)
+    "MEDIUM": 24,  # Medium icons (toolbars, buttons)
+    "LARGE": 32,  # Large icons (dialogs, headers)
+    "EXTRA_LARGE": 48,  # Extra large icons (splash, about)
+    "PREVIEW": 48,  # Preview table icons (configurable)
+}
+
+# Default preview icon size (can be adjusted by user)
+DEFAULT_PREVIEW_ICON_SIZE = 48
+
+# =====================================
 # METADATA DISPLAY LEVEL SETTINGS
 # =====================================
 
@@ -275,7 +288,7 @@ PREVIEW_COLORS = {
 }
 
 PREVIEW_INDICATOR_SHAPE = "circle"
-PREVIEW_INDICATOR_SIZE = (10, 10)
+PREVIEW_INDICATOR_SIZE = (14, 14)
 PREVIEW_INDICATOR_BORDER = {"color": "#222222", "thickness": 1}
 
 # =====================================

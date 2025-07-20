@@ -56,10 +56,15 @@ class MetadataFieldValidator:
             return False, "Title cannot be empty"
 
         if len(stripped_value) > MetadataFieldValidator.MAX_TITLE_LENGTH:
-            return False, f"Title is too long (maximum {MetadataFieldValidator.MAX_TITLE_LENGTH} characters)"
+            return (
+                False,
+                f"Title is too long (maximum {MetadataFieldValidator.MAX_TITLE_LENGTH} characters)",
+            )
 
         # Check for invalid filename characters
-        invalid_chars_found = [char for char in MetadataFieldValidator.INVALID_FILENAME_CHARS if char in stripped_value]
+        invalid_chars_found = [
+            char for char in MetadataFieldValidator.INVALID_FILENAME_CHARS if char in stripped_value
+        ]
         if invalid_chars_found:
             return False, f"Title contains invalid characters: {''.join(invalid_chars_found)}"
 
@@ -91,7 +96,10 @@ class MetadataFieldValidator:
             return True, ""
 
         if len(stripped_value) > MetadataFieldValidator.MAX_ARTIST_LENGTH:
-            return False, f"Artist name is too long (maximum {MetadataFieldValidator.MAX_ARTIST_LENGTH} characters)"
+            return (
+                False,
+                f"Artist name is too long (maximum {MetadataFieldValidator.MAX_ARTIST_LENGTH} characters)",
+            )
 
         return True, ""
 
@@ -121,7 +129,10 @@ class MetadataFieldValidator:
             return True, ""
 
         if len(stripped_value) > MetadataFieldValidator.MAX_COPYRIGHT_LENGTH:
-            return False, f"Copyright is too long (maximum {MetadataFieldValidator.MAX_COPYRIGHT_LENGTH} characters)"
+            return (
+                False,
+                f"Copyright is too long (maximum {MetadataFieldValidator.MAX_COPYRIGHT_LENGTH} characters)",
+            )
 
         return True, ""
 
@@ -151,7 +162,10 @@ class MetadataFieldValidator:
             return True, ""
 
         if len(stripped_value) > MetadataFieldValidator.MAX_DESCRIPTION_LENGTH:
-            return False, f"Description is too long (maximum {MetadataFieldValidator.MAX_DESCRIPTION_LENGTH} characters)"
+            return (
+                False,
+                f"Description is too long (maximum {MetadataFieldValidator.MAX_DESCRIPTION_LENGTH} characters)",
+            )
 
         return True, ""
 
@@ -183,7 +197,7 @@ class MetadataFieldValidator:
             return True, ""
 
         # Split by comma and clean up
-        keywords = [keyword.strip() for keyword in stripped_value.split(',')]
+        keywords = [keyword.strip() for keyword in stripped_value.split(",")]
 
         # Remove empty keywords
         keywords = [keyword for keyword in keywords if keyword]
@@ -194,7 +208,10 @@ class MetadataFieldValidator:
         # Check individual keyword length
         for keyword in keywords:
             if len(keyword) > MetadataFieldValidator.MAX_KEYWORD_LENGTH:
-                return False, f"Keyword '{keyword}' is too long (maximum {MetadataFieldValidator.MAX_KEYWORD_LENGTH} characters)"
+                return (
+                    False,
+                    f"Keyword '{keyword}' is too long (maximum {MetadataFieldValidator.MAX_KEYWORD_LENGTH} characters)",
+                )
 
         return True, ""
 
@@ -242,7 +259,10 @@ class MetadataFieldValidator:
             # Check if it's close to a standard rotation (within 1 degree)
             for valid_rot in valid_rotations:
                 if abs(normalized - float(valid_rot)) < 1:
-                    return False, f"Rotation must be exactly {valid_rot}°. Use one of: 0°, 90°, 180°, 270°"
+                    return (
+                        False,
+                        f"Rotation must be exactly {valid_rot}°. Use one of: 0°, 90°, 180°, 270°",
+                    )
 
             return False, "Rotation must be one of: 0°, 90°, 180°, 270°"
 
@@ -268,7 +288,7 @@ class MetadataFieldValidator:
             return []
 
         # Split by comma, strip whitespace, and remove empty items
-        keywords = [keyword.strip() for keyword in stripped_value.split(',')]
+        keywords = [keyword.strip() for keyword in stripped_value.split(",")]
         return [keyword for keyword in keywords if keyword]
 
     @staticmethod

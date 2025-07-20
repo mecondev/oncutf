@@ -8,9 +8,6 @@ Unified placeholder management system for all widgets.
 Provides consistent placeholder behavior across FileTableView, MetadataTreeView, and PreviewTablesView.
 """
 
-from typing import Optional, Union
-from pathlib import Path
-
 from core.pyqt_imports import QLabel, QPixmap, Qt, QWidget
 from utils.logger_factory import get_cached_logger
 from utils.path_utils import get_images_dir
@@ -30,8 +27,13 @@ class PlaceholderHelper:
     - Simple show/hide interface
     """
 
-    def __init__(self, parent_widget: QWidget, icon_name: str,
-                 placeholder_text: str = "", icon_size: int = 160):
+    def __init__(
+        self,
+        parent_widget: QWidget,
+        icon_name: str,
+        placeholder_text: str = "",
+        icon_size: int = 160,
+    ):
         """
         Initialize placeholder helper.
 
@@ -51,7 +53,10 @@ class PlaceholderHelper:
         self.placeholder_label.setAlignment(Qt.AlignCenter)
         self.placeholder_label.setVisible(False)
 
-        logger.debug(f"[PlaceholderHelper] Created placeholder label for {icon_name}", extra={"dev_only": True})
+        logger.debug(
+            f"[PlaceholderHelper] Created placeholder label for {icon_name}",
+            extra={"dev_only": True},
+        )
 
         # Load and setup icon
         self._setup_icon()
@@ -69,13 +74,13 @@ class PlaceholderHelper:
 
             if not self.placeholder_icon.isNull():
                 scaled = self.placeholder_icon.scaled(
-                    self.icon_size,
-                    self.icon_size,
-                    Qt.KeepAspectRatio,
-                    Qt.SmoothTransformation
+                    self.icon_size, self.icon_size, Qt.KeepAspectRatio, Qt.SmoothTransformation
                 )
                 self.placeholder_label.setPixmap(scaled)
-                logger.debug(f"[PlaceholderHelper] Icon loaded and set: {icon_path} (size: {scaled.size()})", extra={"dev_only": True})
+                logger.debug(
+                    f"[PlaceholderHelper] Icon loaded and set: {icon_path} (size: {scaled.size()})",
+                    extra={"dev_only": True},
+                )
             else:
                 logger.warning(f"[PlaceholderHelper] Could not load icon: {icon_path}")
 
@@ -102,7 +107,9 @@ class PlaceholderHelper:
                 style = f"background-color: {bg_color};"
 
             self.placeholder_label.setStyleSheet(style)
-            logger.debug(f"[PlaceholderHelper] Applied styling: {bg_color}", extra={"dev_only": True})
+            logger.debug(
+                f"[PlaceholderHelper] Applied styling: {bg_color}", extra={"dev_only": True}
+            )
 
         except Exception as e:
             logger.error(f"[PlaceholderHelper] Error applying styling: {e}")
@@ -114,7 +121,9 @@ class PlaceholderHelper:
         if self.placeholder_label:
             self.placeholder_label.raise_()
             self.placeholder_label.show()
-            logger.debug(f"[PlaceholderHelper] Placeholder shown: {self.icon_name}", extra={"dev_only": True})
+            logger.debug(
+                f"[PlaceholderHelper] Placeholder shown: {self.icon_name}", extra={"dev_only": True}
+            )
         else:
             logger.warning(f"[PlaceholderHelper] No placeholder label to show: {self.icon_name}")
 
@@ -122,7 +131,10 @@ class PlaceholderHelper:
         """Hide the placeholder."""
         if self.placeholder_label:
             self.placeholder_label.hide()
-            logger.debug(f"[PlaceholderHelper] Placeholder hidden: {self.icon_name}", extra={"dev_only": True})
+            logger.debug(
+                f"[PlaceholderHelper] Placeholder hidden: {self.icon_name}",
+                extra={"dev_only": True},
+            )
         else:
             logger.warning(f"[PlaceholderHelper] No placeholder label to hide: {self.icon_name}")
 
@@ -146,12 +158,18 @@ class PlaceholderHelper:
                 # Resize label to icon size and position it
                 self.placeholder_label.resize(icon_size)
                 self.placeholder_label.move(x, y)
-                logger.debug(f"[PlaceholderHelper] Positioned at ({x}, {y}) with size {icon_size}", extra={"dev_only": True})
+                logger.debug(
+                    f"[PlaceholderHelper] Positioned at ({x}, {y}) with size {icon_size}",
+                    extra={"dev_only": True},
+                )
             else:
                 # Fallback: center the label itself
                 self.placeholder_label.resize(viewport_size)
                 self.placeholder_label.move(0, 0)
-                logger.debug(f"[PlaceholderHelper] Fallback positioning with viewport size {viewport_size}", extra={"dev_only": True})
+                logger.debug(
+                    f"[PlaceholderHelper] Fallback positioning with viewport size {viewport_size}",
+                    extra={"dev_only": True},
+                )
 
     def set_text(self, text: str) -> None:
         """Set placeholder text (if supported)."""
@@ -165,8 +183,9 @@ class PlaceholderHelper:
             self.placeholder_label = None
 
 
-def create_placeholder_helper(widget: QWidget, placeholder_type: str,
-                            text: str = "", icon_size: int = 160) -> PlaceholderHelper:
+def create_placeholder_helper(
+    widget: QWidget, placeholder_type: str, text: str = "", icon_size: int = 160
+) -> PlaceholderHelper:
     """
     Factory function to create placeholder helpers for different widget types.
 
@@ -180,12 +199,12 @@ def create_placeholder_helper(widget: QWidget, placeholder_type: str,
         PlaceholderHelper instance
     """
     icon_mapping = {
-        'file_table': 'File_table_placeholder_fixed',
-        'metadata_tree': 'metadata_tree_placeholder_fixed',
-        'preview_old': 'old_names-preview_placeholder',
-        'preview_new': 'new_names-preview_placeholder'
+        "file_table": "File_table_placeholder_fixed",
+        "metadata_tree": "metadata_tree_placeholder_fixed",
+        "preview_old": "old_names-preview_placeholder",
+        "preview_new": "new_names-preview_placeholder",
     }
 
-    icon_name = icon_mapping.get(placeholder_type, 'File_table_placeholder_fixed')
+    icon_name = icon_mapping.get(placeholder_type, "File_table_placeholder_fixed")
 
     return PlaceholderHelper(widget, icon_name, text, icon_size)

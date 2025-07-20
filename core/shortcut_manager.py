@@ -34,7 +34,7 @@ class ShortcutManager:
     - Future keyboard shortcuts can be added here
     """
 
-    def __init__(self, main_window: 'MainWindow'):
+    def __init__(self, main_window: "MainWindow"):
         """
         Initialize the ShortcutManager.
 
@@ -52,12 +52,9 @@ class ShortcutManager:
 
         if not self.main_window.file_model.files:
             logger.info("[MainWindow] CLEAR TABLE: No files to clear")
-            if hasattr(self.main_window, 'status_manager'):
+            if hasattr(self.main_window, "status_manager"):
                 self.main_window.status_manager.set_selection_status(
-                    "No files to clear",
-                    selected_count=0,
-                    total_count=0,
-                    auto_reset=True
+                    "No files to clear", selected_count=0, total_count=0, auto_reset=True
                 )
             return
 
@@ -68,11 +65,9 @@ class ShortcutManager:
         self.main_window.current_sort_column = 1  # Reset to filename column
         self.main_window.current_sort_order = Qt.AscendingOrder  # Reset to ascending
 
-        if hasattr(self.main_window, 'status_manager'):
+        if hasattr(self.main_window, "status_manager"):
             self.main_window.status_manager.set_file_operation_status(
-                "File table cleared",
-                success=True,
-                auto_reset=True
+                "File table cleared", success=True, auto_reset=True
             )
             # Override the reset delay for quick feedback
             if self.main_window.status_manager._status_timer:
@@ -90,46 +85,39 @@ class ShortcutManager:
         try:
             # Get the metadata command manager
             from core.metadata_command_manager import get_metadata_command_manager
+
             command_manager = get_metadata_command_manager()
 
             if command_manager.undo():
                 logger.info("[MainWindow] UNDO: Operation undone successfully")
 
                 # Show status message
-                if hasattr(self.main_window, 'status_manager'):
+                if hasattr(self.main_window, "status_manager"):
                     description = command_manager.get_undo_description()
                     if description:
                         self.main_window.status_manager.set_file_operation_status(
-                            f"Undone: {description}",
-                            success=True,
-                            auto_reset=True
+                            f"Undone: {description}", success=True, auto_reset=True
                         )
                     else:
                         self.main_window.status_manager.set_file_operation_status(
-                            "Operation undone",
-                            success=True,
-                            auto_reset=True
+                            "Operation undone", success=True, auto_reset=True
                         )
             else:
                 logger.info("[MainWindow] UNDO: No operations to undo")
 
                 # Show status message
-                if hasattr(self.main_window, 'status_manager'):
+                if hasattr(self.main_window, "status_manager"):
                     self.main_window.status_manager.set_file_operation_status(
-                        "No operations to undo",
-                        success=False,
-                        auto_reset=True
+                        "No operations to undo", success=False, auto_reset=True
                     )
 
         except Exception as e:
             logger.error(f"[MainWindow] UNDO: Error during undo operation: {e}")
 
             # Show error message
-            if hasattr(self.main_window, 'status_manager'):
+            if hasattr(self.main_window, "status_manager"):
                 self.main_window.status_manager.set_file_operation_status(
-                    "Undo operation failed",
-                    success=False,
-                    auto_reset=True
+                    "Undo operation failed", success=False, auto_reset=True
                 )
 
     def redo_metadata_operation(self) -> None:
@@ -141,46 +129,39 @@ class ShortcutManager:
         try:
             # Get the metadata command manager
             from core.metadata_command_manager import get_metadata_command_manager
+
             command_manager = get_metadata_command_manager()
 
             if command_manager.redo():
                 logger.info("[MainWindow] REDO: Operation redone successfully")
 
                 # Show status message
-                if hasattr(self.main_window, 'status_manager'):
+                if hasattr(self.main_window, "status_manager"):
                     description = command_manager.get_redo_description()
                     if description:
                         self.main_window.status_manager.set_file_operation_status(
-                            f"Redone: {description}",
-                            success=True,
-                            auto_reset=True
+                            f"Redone: {description}", success=True, auto_reset=True
                         )
                     else:
                         self.main_window.status_manager.set_file_operation_status(
-                            "Operation redone",
-                            success=True,
-                            auto_reset=True
+                            "Operation redone", success=True, auto_reset=True
                         )
             else:
                 logger.info("[MainWindow] REDO: No operations to redo")
 
                 # Show status message
-                if hasattr(self.main_window, 'status_manager'):
+                if hasattr(self.main_window, "status_manager"):
                     self.main_window.status_manager.set_file_operation_status(
-                        "No operations to redo",
-                        success=False,
-                        auto_reset=True
+                        "No operations to redo", success=False, auto_reset=True
                     )
 
         except Exception as e:
             logger.error(f"[MainWindow] REDO: Error during redo operation: {e}")
 
             # Show error message
-            if hasattr(self.main_window, 'status_manager'):
+            if hasattr(self.main_window, "status_manager"):
                 self.main_window.status_manager.set_file_operation_status(
-                    "Redo operation failed",
-                    success=False,
-                    auto_reset=True
+                    "Redo operation failed", success=False, auto_reset=True
                 )
 
     def show_history_dialog(self) -> None:
@@ -192,6 +173,7 @@ class ShortcutManager:
         try:
             # Show the metadata history dialog
             from widgets.metadata_history_dialog import show_metadata_history_dialog
+
             show_metadata_history_dialog(self.main_window)
 
             logger.info("[MainWindow] HISTORY: History dialog shown successfully")
@@ -200,11 +182,9 @@ class ShortcutManager:
             logger.error(f"[MainWindow] HISTORY: Error showing history dialog: {e}")
 
             # Show error message
-            if hasattr(self.main_window, 'status_manager'):
+            if hasattr(self.main_window, "status_manager"):
                 self.main_window.status_manager.set_file_operation_status(
-                    "Failed to show history dialog",
-                    success=False,
-                    auto_reset=True
+                    "Failed to show history dialog", success=False, auto_reset=True
                 )
 
     def show_rename_history_dialog(self) -> None:
@@ -216,6 +196,7 @@ class ShortcutManager:
         try:
             # Show the rename history dialog
             from widgets.rename_history_dialog import show_rename_history_dialog
+
             show_rename_history_dialog(self.main_window)
 
             logger.info("[MainWindow] RENAME_HISTORY: Rename history dialog shown successfully")
@@ -224,11 +205,9 @@ class ShortcutManager:
             logger.error(f"[MainWindow] RENAME_HISTORY: Error showing rename history dialog: {e}")
 
             # Show error message
-            if hasattr(self.main_window, 'status_manager'):
+            if hasattr(self.main_window, "status_manager"):
                 self.main_window.status_manager.set_file_operation_status(
-                    "Failed to show rename history dialog",
-                    success=False,
-                    auto_reset=True
+                    "Failed to show rename history dialog", success=False, auto_reset=True
                 )
 
     def get_shortcut_status(self) -> dict:
@@ -242,12 +221,13 @@ class ShortcutManager:
         command_status = {}
         try:
             from core.metadata_command_manager import get_metadata_command_manager
+
             command_manager = get_metadata_command_manager()
             command_status = {
                 "can_undo": command_manager.can_undo(),
                 "can_redo": command_manager.can_redo(),
                 "undo_description": command_manager.get_undo_description(),
-                "redo_description": command_manager.get_redo_description()
+                "redo_description": command_manager.get_redo_description(),
             }
         except Exception as e:
             logger.warning(f"[ShortcutManager] Error getting command status: {e}")
@@ -255,12 +235,12 @@ class ShortcutManager:
                 "can_undo": False,
                 "can_redo": False,
                 "undo_description": None,
-                "redo_description": None
+                "redo_description": None,
             }
 
         return {
             "has_files": len(self.main_window.file_model.files) > 0,
             "current_folder": self.main_window.current_folder_path,
             "force_extended_metadata": self.main_window.force_extended_metadata,
-            **command_status
+            **command_status,
         }

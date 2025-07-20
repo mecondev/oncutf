@@ -33,12 +33,13 @@ logger = get_cached_logger(__name__)
 @dataclass
 class QueryStats:
     """Statistics for database queries."""
+
     query_hash: str
     query_text: str
     execution_count: int = 0
     total_time: float = 0.0
     avg_time: float = 0.0
-    min_time: float = float('inf')
+    min_time: float = float("inf")
     max_time: float = 0.0
     last_execution: float = field(default_factory=time.time)
 
@@ -109,7 +110,7 @@ class ConnectionPool:
             self.db_path,
             check_same_thread=False,
             timeout=30.0,
-            isolation_level=None  # Autocommit mode
+            isolation_level=None,  # Autocommit mode
         )
         conn.row_factory = sqlite3.Row
 
@@ -185,11 +186,11 @@ class PreparedStatementCache:
             hit_rate = self._hits / total_requests if total_requests > 0 else 0.0
 
             return {
-                'statements': len(self._statements),
-                'hits': self._hits,
-                'misses': self._misses,
-                'hit_rate': hit_rate,
-                'max_statements': self.max_statements
+                "statements": len(self._statements),
+                "hits": self._hits,
+                "misses": self._misses,
+                "hit_rate": hit_rate,
+                "max_statements": self.max_statements,
             }
 
 
@@ -243,32 +244,32 @@ class OptimizedDatabaseManager(QObject):
 
         # Common prepared statements
         self._common_queries = {
-            'get_path_id': "SELECT id FROM file_paths WHERE normalized_path = ?",
-            'create_path': "INSERT INTO file_paths (file_path, normalized_path) VALUES (?, ?)",
-            'store_metadata': """
+            "get_path_id": "SELECT id FROM file_paths WHERE normalized_path = ?",
+            "create_path": "INSERT INTO file_paths (file_path, normalized_path) VALUES (?, ?)",
+            "store_metadata": """
                 INSERT OR REPLACE INTO file_metadata
                 (path_id, metadata_type, metadata_json, is_modified)
                 VALUES (?, ?, ?, ?)
             """,
-            'get_metadata': """
+            "get_metadata": """
                 SELECT metadata_json, metadata_type, is_modified
                 FROM file_metadata
                 WHERE path_id = ?
                 ORDER BY updated_at DESC
                 LIMIT 1
             """,
-            'store_hash': """
+            "store_hash": """
                 INSERT OR REPLACE INTO file_hashes
                 (path_id, algorithm, hash_value, file_size_at_hash)
                 VALUES (?, ?, ?, ?)
             """,
-            'get_hash': """
+            "get_hash": """
                 SELECT hash_value
                 FROM file_hashes
                 WHERE path_id = ? AND algorithm = ?
                 ORDER BY created_at DESC
                 LIMIT 1
-            """
+            """,
         }
 
         # Initialize database
@@ -279,6 +280,7 @@ class OptimizedDatabaseManager(QObject):
     def _get_user_data_directory(self) -> Path:
         """Get user data directory for storing database."""
         from utils.path_utils import get_user_data_dir
+
         return get_user_data_dir()
 
     @contextmanager
@@ -290,8 +292,9 @@ class OptimizedDatabaseManager(QObject):
         finally:
             self.connection_pool.return_connection(conn)
 
-    def execute_query(self, query: str, params: Tuple = (),
-                     fetch_all: bool = True, use_prepared: bool = True) -> Optional[List[sqlite3.Row]]:
+    def execute_query(
+        self, query: str, params: Tuple = (), fetch_all: bool = True, use_prepared: bool = True
+    ) -> Optional[List[sqlite3.Row]]:
         """
         Execute a SELECT query with optimization.
 
@@ -336,8 +339,7 @@ class OptimizedDatabaseManager(QObject):
             logger.error(f"[OptimizedDatabaseManager] Params: {params}")
             return None
 
-    def execute_update(self, query: str, params: Tuple = (),
-                      use_prepared: bool = True) -> bool:
+    def execute_update(self, query: str, params: Tuple = (), use_prepared: bool = True) -> bool:
         """
         Execute an INSERT/UPDATE/DELETE query.
 
@@ -376,8 +378,9 @@ class OptimizedDatabaseManager(QObject):
             logger.error(f"[OptimizedDatabaseManager] Params: {params}")
             return False
 
-    def execute_batch(self, query: str, params_list: List[Tuple],
-                     use_transaction: bool = True) -> bool:
+    def execute_batch(
+        self, query: str, params_list: List[Tuple], use_transaction: bool = True
+    ) -> bool:
         """
         Execute batch operations for better performance.
 
@@ -413,7 +416,9 @@ class OptimizedDatabaseManager(QObject):
 
                     # Record statistics
                     execution_time = time.time() - start_time
-                    self._record_query_stats(query_hash, f"{query} (batch: {len(params_list)})", execution_time)
+                    self._record_query_stats(
+                        query_hash, f"{query} (batch: {len(params_list)})", execution_time
+                    )
 
                     return True
 
@@ -441,46 +446,53 @@ class OptimizedDatabaseManager(QObject):
 
             if execution_time > self.slow_query_threshold:
                 self.slow_query_detected.emit(query_text, execution_time)
-                logger.warning(f"[OptimizedDatabaseManager] Slow query detected: {execution_time:.3f}s")
+                logger.warning(
+                    f"[OptimizedDatabaseManager] Slow query detected: {execution_time:.3f}s"
+                )
 
     def get_query_stats(self) -> Dict[str, Any]:
         """Get query execution statistics."""
         with self._stats_lock:
             stats = {
-                'total_queries': len(self._query_stats),
-                'total_executions': sum(s.execution_count for s in self._query_stats.values()),
-                'total_time': sum(s.total_time for s in self._query_stats.values()),
-                'avg_time': 0.0,
-                'slow_queries': 0,
-                'prepared_statements': self.prepared_statements.get_stats()
+                "total_queries": len(self._query_stats),
+                "total_executions": sum(s.execution_count for s in self._query_stats.values()),
+                "total_time": sum(s.total_time for s in self._query_stats.values()),
+                "avg_time": 0.0,
+                "slow_queries": 0,
+                "prepared_statements": self.prepared_statements.get_stats(),
             }
 
-            if stats['total_executions'] > 0:
-                stats['avg_time'] = stats['total_time'] / stats['total_executions']
+            if stats["total_executions"] > 0:
+                stats["avg_time"] = stats["total_time"] / stats["total_executions"]
 
-            stats['slow_queries'] = sum(
-                1 for s in self._query_stats.values()
-                if s.avg_time > self.slow_query_threshold
+            stats["slow_queries"] = sum(
+                1 for s in self._query_stats.values() if s.avg_time > self.slow_query_threshold
             )
 
             return stats
 
-    def get_top_queries(self, limit: int = 10, sort_by: str = 'total_time') -> List[Dict[str, Any]]:
+    def get_top_queries(self, limit: int = 10, sort_by: str = "total_time") -> List[Dict[str, Any]]:
         """Get top queries by specified metric."""
         with self._stats_lock:
             queries = []
             for stats in self._query_stats.values():
-                queries.append({
-                    'query': stats.query_text[:100] + '...' if len(stats.query_text) > 100 else stats.query_text,
-                    'executions': stats.execution_count,
-                    'total_time': stats.total_time,
-                    'avg_time': stats.avg_time,
-                    'min_time': stats.min_time,
-                    'max_time': stats.max_time
-                })
+                queries.append(
+                    {
+                        "query": (
+                            stats.query_text[:100] + "..."
+                            if len(stats.query_text) > 100
+                            else stats.query_text
+                        ),
+                        "executions": stats.execution_count,
+                        "total_time": stats.total_time,
+                        "avg_time": stats.avg_time,
+                        "min_time": stats.min_time,
+                        "max_time": stats.max_time,
+                    }
+                )
 
             # Sort by specified metric
-            if sort_by in ['total_time', 'avg_time', 'executions', 'max_time']:
+            if sort_by in ["total_time", "avg_time", "executions", "max_time"]:
                 queries.sort(key=lambda x: x[sort_by], reverse=True)
 
             return queries[:limit]
@@ -514,27 +526,33 @@ class OptimizedDatabaseManager(QObject):
                 cursor = conn.cursor()
 
                 # Create schema version table
-                cursor.execute("""
+                cursor.execute(
+                    """
                     CREATE TABLE IF NOT EXISTS schema_version (
                         version INTEGER PRIMARY KEY,
                         applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
-                """)
+                """
+                )
 
                 # Check current schema version
                 cursor.execute("SELECT version FROM schema_version ORDER BY version DESC LIMIT 1")
                 row = cursor.fetchone()
-                current_version = row['version'] if row else 0
+                current_version = row["version"] if row else 0
 
                 if current_version < self.SCHEMA_VERSION:
                     self._create_optimized_schema(cursor)
                     self._create_optimized_indexes(cursor)
 
                     # Update schema version
-                    cursor.execute("INSERT INTO schema_version (version) VALUES (?)", (self.SCHEMA_VERSION,))
+                    cursor.execute(
+                        "INSERT INTO schema_version (version) VALUES (?)", (self.SCHEMA_VERSION,)
+                    )
                     conn.commit()
 
-                logger.info(f"[OptimizedDatabaseManager] Database initialized (version {self.SCHEMA_VERSION})")
+                logger.info(
+                    f"[OptimizedDatabaseManager] Database initialized (version {self.SCHEMA_VERSION})"
+                )
 
         except Exception as e:
             logger.error(f"[OptimizedDatabaseManager] Database initialization failed: {e}")
@@ -542,7 +560,8 @@ class OptimizedDatabaseManager(QObject):
     def _create_optimized_schema(self, cursor: sqlite3.Cursor):
         """Create optimized database schema."""
         # File paths table with better indexing
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS file_paths (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 file_path TEXT NOT NULL,
@@ -550,10 +569,12 @@ class OptimizedDatabaseManager(QObject):
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        """)
+        """
+        )
 
         # Metadata table with optimized structure
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS file_metadata (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 path_id INTEGER NOT NULL,
@@ -564,10 +585,12 @@ class OptimizedDatabaseManager(QObject):
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (path_id) REFERENCES file_paths(id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
         # Hash table with optimized structure
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS file_hashes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 path_id INTEGER NOT NULL,
@@ -577,10 +600,12 @@ class OptimizedDatabaseManager(QObject):
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (path_id) REFERENCES file_paths(id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
         # Query cache table for caching expensive queries
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS query_cache (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 query_hash TEXT NOT NULL UNIQUE,
@@ -588,28 +613,43 @@ class OptimizedDatabaseManager(QObject):
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 expires_at TIMESTAMP NOT NULL
             )
-        """)
+        """
+        )
 
     def _create_optimized_indexes(self, cursor: sqlite3.Cursor):
         """Create optimized database indexes."""
         # File paths indexes
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_file_paths_normalized ON file_paths(normalized_path)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_file_paths_created ON file_paths(created_at)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_file_paths_normalized ON file_paths(normalized_path)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_file_paths_created ON file_paths(created_at)"
+        )
 
         # Metadata indexes
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_metadata_path_id ON file_metadata(path_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_metadata_type ON file_metadata(metadata_type)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_metadata_updated ON file_metadata(updated_at)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_metadata_path_type ON file_metadata(path_id, metadata_type)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_metadata_type ON file_metadata(metadata_type)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_metadata_updated ON file_metadata(updated_at)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_metadata_path_type ON file_metadata(path_id, metadata_type)"
+        )
 
         # Hash indexes
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_hashes_path_id ON file_hashes(path_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_hashes_algorithm ON file_hashes(algorithm)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_hashes_path_algo ON file_hashes(path_id, algorithm)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_hashes_path_algo ON file_hashes(path_id, algorithm)"
+        )
 
         # Query cache indexes
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_query_cache_hash ON query_cache(query_hash)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_query_cache_expires ON query_cache(expires_at)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_query_cache_expires ON query_cache(expires_at)"
+        )
 
     def close(self):
         """Close database manager."""
@@ -629,8 +669,9 @@ def get_optimized_database_manager() -> OptimizedDatabaseManager:
     return _optimized_db_manager_instance
 
 
-def initialize_optimized_database(db_path: Optional[str] = None,
-                                max_connections: int = 10) -> OptimizedDatabaseManager:
+def initialize_optimized_database(
+    db_path: Optional[str] = None, max_connections: int = 10
+) -> OptimizedDatabaseManager:
     """Initialize optimized database manager."""
     global _optimized_db_manager_instance
     _optimized_db_manager_instance = OptimizedDatabaseManager(db_path, max_connections)

@@ -15,9 +15,9 @@ Comprehensive pytest tests for the metadata validation system including:
 
 import warnings
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 from unittest.mock import Mock, patch
 
@@ -61,7 +61,9 @@ class TestMetadataFieldValidator:
         for title, expected_error_keyword in invalid_cases:
             is_valid, error = MetadataFieldValidator.validate_title(title)
             assert is_valid is False, f"Title '{title}' should be invalid"
-            assert expected_error_keyword.lower() in error.lower(), f"Error should contain '{expected_error_keyword}': {error}"
+            assert (
+                expected_error_keyword.lower() in error.lower()
+            ), f"Error should contain '{expected_error_keyword}': {error}"
 
     def test_artist_validation_valid_cases(self):
         """Test Artist field validation with valid inputs."""
@@ -87,7 +89,9 @@ class TestMetadataFieldValidator:
         for artist, expected_error_keyword in invalid_cases:
             is_valid, error = MetadataFieldValidator.validate_artist(artist)
             assert is_valid is False, f"Artist '{artist}' should be invalid"
-            assert expected_error_keyword.lower() in error.lower(), f"Error should contain '{expected_error_keyword}': {error}"
+            assert (
+                expected_error_keyword.lower() in error.lower()
+            ), f"Error should contain '{expected_error_keyword}': {error}"
 
     def test_keywords_validation_valid_cases(self):
         """Test Keywords field validation with valid inputs."""
@@ -115,7 +119,9 @@ class TestMetadataFieldValidator:
         for keywords, expected_error_keyword in invalid_cases:
             is_valid, error = MetadataFieldValidator.validate_keywords(keywords)
             assert is_valid is False, f"Keywords '{keywords}' should be invalid"
-            assert expected_error_keyword.lower() in error.lower(), f"Error should contain '{expected_error_keyword}': {error}"
+            assert (
+                expected_error_keyword.lower() in error.lower()
+            ), f"Error should contain '{expected_error_keyword}': {error}"
 
     def test_description_validation_valid_cases(self):
         """Test Description field validation with valid inputs."""
@@ -141,7 +147,9 @@ class TestMetadataFieldValidator:
         for description, expected_error_keyword in invalid_cases:
             is_valid, error = MetadataFieldValidator.validate_description(description)
             assert is_valid is False, "Description should be invalid"
-            assert expected_error_keyword.lower() in error.lower(), f"Error should contain '{expected_error_keyword}': {error}"
+            assert (
+                expected_error_keyword.lower() in error.lower()
+            ), f"Error should contain '{expected_error_keyword}': {error}"
 
     def test_copyright_validation(self):
         """Test Copyright field validation."""
@@ -174,11 +182,15 @@ class TestMetadataFieldValidator:
 
             if should_be_valid:
                 if field_name != "UnknownField":
-                    assert is_valid is True, f"Field '{field_name}' with value '{value}' should be valid: {error}"
+                    assert (
+                        is_valid is True
+                    ), f"Field '{field_name}' with value '{value}' should be valid: {error}"
             else:
                 assert is_valid is False, f"Field '{field_name}' should be invalid"
                 if field_name == "UnknownField":
-                    assert "validator" in error.lower(), f"Unknown field error should mention validator: {error}"
+                    assert (
+                        "validator" in error.lower()
+                    ), f"Unknown field error should mention validator: {error}"
 
     def test_keywords_parsing_and_formatting(self):
         """Test keywords parsing and formatting utilities."""
@@ -194,7 +206,9 @@ class TestMetadataFieldValidator:
 
         for input_text, expected_output in test_cases:
             result = MetadataFieldValidator.parse_keywords(input_text)
-            assert result == expected_output, f"Parsing '{input_text}' should give {expected_output}, got {result}"
+            assert (
+                result == expected_output
+            ), f"Parsing '{input_text}' should give {expected_output}, got {result}"
 
         # Test formatting
         format_cases = [
@@ -206,7 +220,9 @@ class TestMetadataFieldValidator:
 
         for input_list, expected_output in format_cases:
             result = MetadataFieldValidator.format_keywords(input_list)
-            assert result == expected_output, f"Formatting {input_list} should give '{expected_output}', got '{result}'"
+            assert (
+                result == expected_output
+            ), f"Formatting {input_list} should give '{expected_output}', got '{result}'"
 
     def test_character_blocking_constants(self):
         """Test that character blocking constants are properly defined."""
@@ -216,7 +232,7 @@ class TestMetadataFieldValidator:
         assert len(invalid_chars) > 0, "INVALID_FILENAME_CHARS should not be empty"
 
         # Test that it contains expected problematic characters
-        expected_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*']
+        expected_chars = ["<", ">", ":", '"', "/", "\\", "|", "?", "*"]
         for char in expected_chars:
             assert char in invalid_chars, f"Character '{char}' should be in INVALID_FILENAME_CHARS"
 
@@ -233,7 +249,9 @@ class TestMetadataFieldValidator:
 
         for const_name, expected_value in length_constants:
             actual_value = getattr(MetadataFieldValidator, const_name)
-            assert actual_value == expected_value, f"{const_name} should be {expected_value}, got {actual_value}"
+            assert (
+                actual_value == expected_value
+            ), f"{const_name} should be {expected_value}, got {actual_value}"
             assert isinstance(actual_value, int), f"{const_name} should be an integer"
 
 
@@ -338,7 +356,7 @@ class TestMetadataValidatedWidgets:
             assert char not in cleaned_text, f"Character '{char}' should be removed from paste"
 
         # Should keep valid characters
-        assert "ValidTextWithInvalidChars" == cleaned_text
+        assert cleaned_text == "ValidTextWithInvalidChars"
 
     def test_validation_state_tracking(self, title_widget):
         """Test validation state tracking and signals."""
@@ -389,7 +407,7 @@ class TestMetadataValidatedWidgets:
         # Should preserve multiline text
         assert description_widget.text() == multiline_text
 
-    @patch('widgets.base_validated_input.show_error_tooltip')
+    @patch("widgets.base_validated_input.show_error_tooltip")
     def test_character_blocking_tooltip(self, mock_tooltip, title_widget):
         """Test that blocked characters show error tooltip."""
         # Create a mock key event
@@ -425,7 +443,9 @@ class TestValidationIntegration:
             # Test that validator works
             is_valid, error = validator("Test value")
             assert isinstance(is_valid, bool), f"Validator for '{field_type}' should return bool"
-            assert isinstance(error, str), f"Validator for '{field_type}' should return string error"
+            assert isinstance(
+                error, str
+            ), f"Validator for '{field_type}' should return string error"
 
     def test_validation_error_messages(self):
         """Test that validation error messages are helpful and consistent."""
@@ -439,9 +459,13 @@ class TestValidationIntegration:
         for field_name, test_value, expected_keyword in error_test_cases:
             is_valid, error = MetadataFieldValidator.validate_field(field_name, test_value)
             assert is_valid is False, f"Test case should be invalid: {field_name} = '{test_value}'"
-            assert expected_keyword.lower() in error.lower(), f"Error message should contain '{expected_keyword}': {error}"
+            assert (
+                expected_keyword.lower() in error.lower()
+            ), f"Error message should contain '{expected_keyword}': {error}"
             assert len(error) > 0, "Error message should not be empty"
-            assert error[0].isupper() or error[0].isdigit(), "Error message should start with capital letter or digit"
+            assert (
+                error[0].isupper() or error[0].isdigit()
+            ), "Error message should start with capital letter or digit"
 
 
 if __name__ == "__main__":

@@ -11,9 +11,9 @@ Tests the actual fix for cumulative progress tracking.
 
 import warnings
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 import os
 import tempfile
@@ -31,8 +31,8 @@ def test_hash_manager_basic_functionality():
 
         for i, size in enumerate([5000, 10000, 15000]):
             file_path = os.path.join(temp_dir, f"test_file_{i}.txt")
-            with open(file_path, 'wb') as f:
-                f.write(b'X' * size)
+            with open(file_path, "wb") as f:
+                f.write(b"X" * size)
             files.append(file_path)
             expected_sizes.append(size)
 
@@ -64,8 +64,8 @@ def test_hash_manager_with_progress_callback():
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create a larger file to test progress tracking
         large_file = os.path.join(temp_dir, "large_test.txt")
-        with open(large_file, 'wb') as f:
-            f.write(b'Y' * 50000)  # 50KB file
+        with open(large_file, "wb") as f:
+            f.write(b"Y" * 50000)  # 50KB file
 
         # Track progress updates
         progress_updates = []
@@ -88,7 +88,9 @@ def test_hash_manager_with_progress_callback():
             # Progress should be monotonic
             last_progress = 0
             for progress in progress_updates:
-                assert progress >= last_progress, f"Progress went backwards: {progress} < {last_progress}"
+                assert (
+                    progress >= last_progress
+                ), f"Progress went backwards: {progress} < {last_progress}"
                 last_progress = progress
         else:
             print("No progress updates (file too small or processed too quickly)")
@@ -104,8 +106,8 @@ def test_cumulative_size_calculation():
 
         for i, size in enumerate(sizes):
             file_path = os.path.join(temp_dir, f"size_test_{i}.txt")
-            with open(file_path, 'wb') as f:
-                f.write(b'Z' * size)
+            with open(file_path, "wb") as f:
+                f.write(b"Z" * size)
             files.append(file_path)
 
         # Calculate total size manually
@@ -117,7 +119,9 @@ def test_cumulative_size_calculation():
             file_size = os.path.getsize(file_path)
             calculated_total += file_size
 
-        assert calculated_total == manual_total, f"Size calculation mismatch: {calculated_total} != {manual_total}"
+        assert (
+            calculated_total == manual_total
+        ), f"Size calculation mismatch: {calculated_total} != {manual_total}"
         print(f"Total size verified: {calculated_total} bytes")
 
         # Test that each file can be hashed
@@ -133,10 +137,14 @@ def test_cumulative_size_calculation():
             # Simulate the cumulative tracking logic from the fix
             cumulative_processed += file_size
 
-            print(f"File: {os.path.basename(file_path)}, Size: {file_size}, Cumulative: {cumulative_processed}")
+            print(
+                f"File: {os.path.basename(file_path)}, Size: {file_size}, Cumulative: {cumulative_processed}"
+            )
 
         # Final cumulative should equal total
-        assert cumulative_processed == manual_total, f"Cumulative tracking failed: {cumulative_processed} != {manual_total}"
+        assert (
+            cumulative_processed == manual_total
+        ), f"Cumulative tracking failed: {cumulative_processed} != {manual_total}"
         print("Cumulative progress tracking test passed!")
 
 

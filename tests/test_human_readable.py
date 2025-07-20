@@ -11,9 +11,9 @@ between our application and system commands like ls -lh.
 """
 import warnings
 
-warnings.filterwarnings('ignore', category=RuntimeWarning, message='.*coroutine.*never awaited')
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore', category=PendingDeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 import os
 import subprocess
@@ -33,34 +33,35 @@ def get_system_human_sizes(filepath):
 
     try:
         # Using ls -lh (human readable)
-        ls_output = subprocess.check_output(['ls', '-lh', filepath], text=True)
+        ls_output = subprocess.check_output(["ls", "-lh", filepath], text=True)
         ls_size = ls_output.split()[4]
-        results['ls_h'] = ls_size
+        results["ls_h"] = ls_size
     except (subprocess.CalledProcessError, IndexError):
-        results['ls_h'] = "Error"
+        results["ls_h"] = "Error"
 
     try:
         # Using du -h (human readable disk usage)
-        du_output = subprocess.check_output(['du', '-h', filepath], text=True)
+        du_output = subprocess.check_output(["du", "-h", filepath], text=True)
         du_size = du_output.split()[0]
-        results['du_h'] = du_size
+        results["du_h"] = du_size
     except (subprocess.CalledProcessError, IndexError):
-        results['du_h'] = "Error"
+        results["du_h"] = "Error"
 
     return results
+
 
 def test_different_size_ranges():
     """Test our size formatting with different byte ranges."""
 
     test_sizes = [
-        512,                # 512 B
-        1023,               # 1023 B
-        1024,               # 1.0 KB
-        1536,               # 1.5 KB
-        1048576,            # 1.0 MB
-        1572864,            # 1.5 MB
-        1073741824,         # 1.0 GB
-        1610612736,         # 1.5 GB
+        512,  # 512 B
+        1023,  # 1023 B
+        1024,  # 1.0 KB
+        1536,  # 1.5 KB
+        1048576,  # 1.0 MB
+        1572864,  # 1.5 MB
+        1073741824,  # 1.0 GB
+        1610612736,  # 1.5 GB
     ]
 
     print("Size Formatting Test")
@@ -72,6 +73,7 @@ def test_different_size_ranges():
         formatted = format_size_our_way(size)
         print(f"{size:<12} {formatted:<12}")
 
+
 def format_size_our_way(size):
     """Our application's size formatting logic."""
     units = ["B", "KB", "MB", "GB", "TB"]
@@ -81,16 +83,12 @@ def format_size_our_way(size):
         index += 1
     return f"{size:.1f} {units[index]}"
 
+
 def test_actual_files():
     """Test with actual files comparing our format vs system."""
 
     # Test with some larger files if available
-    test_paths = [
-        'config.py',
-        'main.py',
-        'main_window.py',  # Larger file
-        'requirements.txt'
-    ]
+    test_paths = ["config.py", "main.py", "main_window.py", "requirements.txt"]  # Larger file
 
     print("\nActual Files Comparison")
     print("=" * 70)
@@ -107,7 +105,10 @@ def test_actual_files():
             # System formats
             sys_formats = get_system_human_sizes(filepath)
 
-            print(f"{filepath:<20} {our_size:<8} {our_format:<12} {sys_formats.get('ls_h', 'N/A'):<12} {sys_formats.get('du_h', 'N/A'):<12}")
+            print(
+                f"{filepath:<20} {our_size:<8} {our_format:<12} {sys_formats.get('ls_h', 'N/A'):<12} {sys_formats.get('du_h', 'N/A'):<12}"
+            )
+
 
 def test_edge_cases():
     """Test edge cases that might cause discrepancies."""
@@ -131,6 +132,7 @@ def test_edge_cases():
 
         print(f"{size:<8} {our_format:<12} {decimal_format:<12}")
 
+
 def format_size_decimal(size):
     """Size formatting using 1000 as base (decimal) instead of 1024 (binary)."""
     units = ["B", "KB", "MB", "GB", "TB"]
@@ -139,6 +141,7 @@ def format_size_decimal(size):
         size /= 1000.0
         index += 1
     return f"{size:.1f} {units[index]}"
+
 
 if __name__ == "__main__":
     test_different_size_ranges()

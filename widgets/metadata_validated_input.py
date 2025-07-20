@@ -283,7 +283,12 @@ class MetadataRotationComboBox(QComboBox):
 
         # Setup rotation values
         self.rotation_values = ["0", "90", "180", "270"]
-        self.rotation_labels = ["0° (No rotation)", "90° (Clockwise)", "180° (Upside down)", "270° (Counter-clockwise)"]
+        self.rotation_labels = [
+            "0° (No rotation)",
+            "90° (Clockwise)",
+            "180° (Upside down)",
+            "270° (Counter-clockwise)",
+        ]
 
         # Populate combo box
         for i, (value, label) in enumerate(zip(self.rotation_values, self.rotation_labels)):
@@ -296,7 +301,7 @@ class MetadataRotationComboBox(QComboBox):
         self.currentTextChanged.connect(self._on_selection_changed)
 
         # Set fixed height to match other input widgets
-        self.setFixedHeight(20)
+        self.setFixedHeight(24)  # Match metadata_widget height
 
     def _on_selection_changed(self, text: str) -> None:
         """Handle selection changes - always emit valid state."""
@@ -322,8 +327,9 @@ class MetadataRotationComboBox(QComboBox):
                 rotation_num = float(clean_text) % 360  # Normalize to 0-359
 
                 # Find closest standard rotation
-                closest_value = min(self.rotation_values,
-                                  key=lambda x: abs(float(x) - rotation_num))
+                closest_value = min(
+                    self.rotation_values, key=lambda x: abs(float(x) - rotation_num)
+                )
                 index = self.rotation_values.index(closest_value)
                 self.setCurrentIndex(index)
 
@@ -341,14 +347,16 @@ class MetadataRotationComboBox(QComboBox):
 
     def setPlaceholderText(self, text: str) -> None:
         """Placeholder text not applicable for combo box."""
-        pass  # No-op for combo box
+        # No-op for combo box
 
     def selectAll(self) -> None:
         """Select all not applicable for combo box."""
-        pass  # No-op for combo box
+        # No-op for combo box
 
 
-def create_metadata_input_widget(field_name: str, is_multiline: bool = False, parent: Optional[QWidget] = None):
+def create_metadata_input_widget(
+    field_name: str, is_multiline: bool = False, parent: Optional[QWidget] = None
+):
     """
     Factory function to create appropriate metadata input widget.
 

@@ -7,6 +7,7 @@ Date: 2025-06-01
 widgets package initialization
 This package contains all custom widgets used in the OnCutF application.
 """
+
 from .base_validated_input import BaseValidatedInput
 from .bulk_rotation_dialog import BulkRotationDialog
 from .custom_file_system_model import CustomFileSystemModel
@@ -33,28 +34,28 @@ from .rename_modules_area import RenameModulesArea
 from .validated_line_edit import ValidatedLineEdit
 
 __all__ = [
-    'CustomMessageDialog',
-    'ProgressManager',
-    'ProgressWidget',
-    'ValidatedLineEdit',
-    'BaseValidatedInput',
-    'CustomSplashScreen',
-    'FileTableView',
-    'FileTreeView',
-    'MetadataTreeView',
-    'PreviewTablesView',
-    'RenameModuleWidget',
-    'RenameModulesArea',
-    'MetadataWidget',
-    'MetadataEditDialog',
-    'BulkRotationDialog',
-    'RenameHistoryDialog',
-    'MetadataWaitingDialog',
-    'CustomFileSystemModel',
-    'FinalTransformContainer',
-    'NameTransformWidget',
-    'OriginalNameWidget',
-    'InteractiveHeader',
-    'HoverItemDelegate',
-    'MetadataWorker',
+    "CustomMessageDialog",
+    "ProgressManager",
+    "ProgressWidget",
+    "ValidatedLineEdit",
+    "BaseValidatedInput",
+    "CustomSplashScreen",
+    "FileTableView",
+    "FileTreeView",
+    "MetadataTreeView",
+    "PreviewTablesView",
+    "RenameModuleWidget",
+    "RenameModulesArea",
+    "MetadataWidget",
+    "MetadataEditDialog",
+    "BulkRotationDialog",
+    "RenameHistoryDialog",
+    "MetadataWaitingDialog",
+    "CustomFileSystemModel",
+    "FinalTransformContainer",
+    "NameTransformWidget",
+    "OriginalNameWidget",
+    "InteractiveHeader",
+    "HoverItemDelegate",
+    "MetadataWorker",
 ]
