@@ -19,6 +19,7 @@ from models.file_item import FileItem
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
+from utils.file_status_helpers import get_metadata_for_file, get_hash_for_file
 
 logger = get_cached_logger(__name__)
 
@@ -263,27 +264,15 @@ class MetadataModule:
             str: Hash value or original name if not available
         """
         try:
-            # Try to get hash from cache only
-            from core.persistent_hash_cache import get_persistent_hash_cache
-
-            hash_cache = get_persistent_hash_cache()
-
-            # Check if hash exists in cache
-            if hash_cache.has_hash(file_path, hash_type):
-                hash_value = hash_cache.get_hash(file_path, hash_type)
-                if hash_value:
-                    return hash_value
-
-            # Hash not found in cache - return original name
+            hash_value = get_hash_for_file(file_path, hash_type)
+            if hash_value:
+                return hash_value
             import os
-
             base_name = os.path.splitext(os.path.basename(file_path))[0]
             return base_name
-
         except Exception as e:
             logger.warning(f"[MetadataModule] Error getting hash for {file_path}: {e}")
             import os
-
             base_name = os.path.splitext(os.path.basename(file_path))[0]
             return base_name
 

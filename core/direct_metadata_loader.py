@@ -22,6 +22,7 @@ from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
 from utils.metadata_cache_helper import MetadataCacheHelper
+from utils.file_status_helpers import get_metadata_for_file, get_hash_for_file, has_metadata, has_hash
 
 logger = get_cached_logger(__name__)
 
@@ -64,29 +65,7 @@ class DirectMetadataLoader(QObject):
             Metadata dict if cached, None if not available
         """
         try:
-            # Direct cache check using persistent cache (same as has_cached_metadata)
-            from core.persistent_metadata_cache import get_persistent_metadata_cache
-
-            cache = get_persistent_metadata_cache()
-
-            # First check if metadata exists using has() method
-            if cache.has(file_item.full_path):
-                # Get metadata directly from persistent cache using get() method
-                metadata = cache.get(file_item.full_path)
-                if metadata:
-                    # Filter out internal markers to check if there's real metadata
-                    real_metadata = {k: v for k, v in metadata.items() if not k.startswith("__")}
-                    if real_metadata:
-                        logger.debug(f"[DirectMetadataLoader] Cache hit for {file_item.filename}")
-                        return metadata
-                    else:
-                        logger.debug(
-                            f"[DirectMetadataLoader] Empty metadata for {file_item.filename}"
-                        )
-                        return None
-
-            logger.debug(f"[DirectMetadataLoader] No cached metadata for {file_item.filename}")
-            return None
+            return get_metadata_for_file(file_item.full_path)
 
         except Exception as e:
             logger.warning(
@@ -105,19 +84,7 @@ class DirectMetadataLoader(QObject):
             Hash string if cached, None if not available
         """
         try:
-            # Direct cache check using persistent hash cache
-            from core.persistent_hash_cache import get_persistent_hash_cache
-
-            cache = get_persistent_hash_cache()
-
-            # Get hash directly from persistent cache using get() method
-            hash_value = cache.get(file_item.full_path)
-            if hash_value:
-                logger.debug(f"[DirectMetadataLoader] Hash cache hit for {file_item.filename}")
-                return hash_value
-
-            logger.debug(f"[DirectMetadataLoader] No cached hash for {file_item.filename}")
-            return None
+            return get_hash_for_file(file_item.full_path)
 
         except Exception as e:
             logger.warning(
@@ -136,13 +103,7 @@ class DirectMetadataLoader(QObject):
             True if metadata exists in cache, False otherwise
         """
         try:
-            # Direct cache check using persistent cache
-            from core.persistent_metadata_cache import get_persistent_metadata_cache
-
-            cache = get_persistent_metadata_cache()
-
-            # Use has() method to check existence
-            return cache.has(file_item.full_path)
+            return has_metadata(file_item.full_path)
 
         except Exception as e:
             logger.warning(
@@ -161,13 +122,7 @@ class DirectMetadataLoader(QObject):
             True if hash exists in cache, False otherwise
         """
         try:
-            # Direct cache check using persistent hash cache
-            from core.persistent_hash_cache import get_persistent_hash_cache
-
-            cache = get_persistent_hash_cache()
-
-            # Use has_hash() method to check existence
-            return cache.has_hash(file_item.full_path)
+            return has_hash(file_item.full_path)
 
         except Exception as e:
             logger.warning(

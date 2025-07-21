@@ -18,6 +18,7 @@ from core.pyqt_imports import QAction, QApplication, QMenu, QModelIndex, Qt
 from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
 from utils.path_utils import paths_equal
+from utils.file_status_helpers import has_metadata, has_hash, batch_metadata_status, batch_hash_status
 
 logger = get_cached_logger(__name__)
 
@@ -1479,11 +1480,7 @@ class EventHandlerManager:
         return status["count"] > 0  # Any files have metadata
 
     def _file_has_metadata(self, file_item) -> bool:
-        """Check if a specific file has metadata."""
-        from utils.metadata_cache_helper import get_metadata_cache_helper
-
-        cache_helper = get_metadata_cache_helper(parent_window=self.parent_window)
-        return cache_helper.has_metadata(file_item)
+        return has_metadata(file_item.full_path)
 
     def _handle_export_metadata(self, file_items: list, scope: str) -> None:
         """Handle metadata export dialog and process."""
@@ -2212,25 +2209,7 @@ class EventHandlerManager:
         }
 
     def _file_has_hash(self, file_item) -> bool:
-        """Check if a file has a hash value calculated."""
-        try:
-            # Check if file has hash attribute
-            if hasattr(file_item, "hash_value") and file_item.hash_value:
-                return True
-
-            # Check hash cache if available
-            if hasattr(self.parent_window, "hash_cache"):
-                hash_entry = self.parent_window.hash_cache.get(file_item.full_path)
-                if hash_entry:
-                    return True
-
-            return False
-
-        except Exception as e:
-            logger.debug(
-                f"[EventHandler] Error checking hash for {getattr(file_item, 'filename', 'unknown')}: {e}"
-            )
-            return False
+        return has_hash(file_item.full_path)
 
     def _analyze_metadata_state(self, files: list) -> dict:
         """

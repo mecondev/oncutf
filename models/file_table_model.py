@@ -31,6 +31,7 @@ from core.pyqt_imports import (
 )
 from models.file_item import FileItem
 from utils.icons_loader import load_metadata_icons
+from utils.file_status_helpers import get_hash_for_file, has_hash
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
@@ -326,16 +327,7 @@ class FileTableModel(QAbstractTableModel):
         Returns:
             bool: True if file has a cached hash, False otherwise
         """
-        try:
-            from core.persistent_hash_cache import get_persistent_hash_cache
-
-            cache = get_persistent_hash_cache()
-            return cache.has_hash(file_path)
-        except (ImportError, Exception) as e:
-            logger.debug(
-                f"[FileTableModel] Could not check hash cache: {e}", extra={"dev_only": True}
-            )
-            return False
+        return has_hash(file_path)
 
     def _get_hash_value(self, file_path: str) -> str:
         """
@@ -347,17 +339,8 @@ class FileTableModel(QAbstractTableModel):
         Returns:
             str: Hash value if found, empty string otherwise
         """
-        try:
-            from core.persistent_hash_cache import get_persistent_hash_cache
-
-            cache = get_persistent_hash_cache()
-            hash_value = cache.get_hash(file_path)
-            return hash_value if hash_value else ""
-        except (ImportError, Exception) as e:
-            logger.debug(
-                f"[FileTableModel] Could not get hash value: {e}", extra={"dev_only": True}
-            )
-            return ""
+        hash_value = get_hash_for_file(file_path)
+        return hash_value if hash_value else ""
 
     def _get_unified_tooltip(self, file) -> str:
         """Get unified tooltip for all columns showing metadata and hash status."""

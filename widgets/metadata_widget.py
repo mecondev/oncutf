@@ -18,6 +18,9 @@ from core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, QStyle, QVBoxLayou
 from utils.logger_factory import get_cached_logger
 from utils.theme_engine import ThemeEngine
 from utils.timer_manager import schedule_ui_update
+from utils.file_status_helpers import (
+    get_metadata_for_file, has_metadata, get_hash_for_file, has_hash, batch_metadata_status, batch_hash_status
+)
 
 # ApplicationContext integration
 try:
@@ -192,6 +195,8 @@ class MetadataWidget(QWidget):
         logger.debug(f"[DEBUG] [MetadataWidget] Selected files: {[getattr(f, 'filename', None) for f in self._get_selected_files()]}")
         logger.debug(f"[DEBUG] [MetadataWidget] Selected files ids: {[id(f) for f in self._get_selected_files()]}")
         logger.debug(f"[DEBUG] [MetadataWidget] Selected files metadata: {[getattr(f, 'metadata', None) for f in self._get_selected_files()]}")
+        file_paths = [f.full_path for f in self._get_selected_files()]
+        logger.debug(f"[DEBUG] [MetadataWidget] update_options batch_metadata_status: {batch_metadata_status(file_paths)}")
 
         if category == "file_dates":
             self.options_label.setText("Type")
@@ -773,11 +778,7 @@ class MetadataWidget(QWidget):
         """Check if any of the selected files have hash data."""
         try:
             file_paths = [file_item.full_path for file_item in selected_files]
-            from core.persistent_hash_cache import get_persistent_hash_cache
-
-            hash_cache = get_persistent_hash_cache()
-            files_with_hash = hash_cache.get_files_with_hash_batch(file_paths, "CRC32")
-            return len(files_with_hash) > 0
+            return any(batch_hash_status(file_paths).values())
         except Exception as e:
             logger.error(f"[MetadataWidget] Error checking hash availability: {e}")
             return False
@@ -785,11 +786,8 @@ class MetadataWidget(QWidget):
     def _check_files_have_metadata(self, selected_files) -> bool:
         """Check if any of the selected files have metadata."""
         try:
-            from core.unified_rename_engine import UnifiedRenameEngine
-
-            engine = UnifiedRenameEngine()
-            metadata_availability = engine.get_metadata_availability(selected_files)
-            return any(metadata_availability.values())
+            file_paths = [file_item.full_path for file_item in selected_files]
+            return any(batch_metadata_status(file_paths).values())
         except Exception as e:
             logger.error(f"[MetadataWidget] Error checking metadata availability: {e}")
             return False
@@ -941,34 +939,23 @@ class MetadataWidget(QWidget):
 
     def _check_metadata_calculation_requirements(self, selected_files):
         logger.debug(f"[DEBUG] [MetadataWidget] _check_metadata_calculation_requirements CALLED for {len(selected_files)} files")
-        from core.unified_rename_engine import UnifiedRenameEngine
-        engine = UnifiedRenameEngine()
-        metadata_availability = engine.get_metadata_availability(selected_files)
-        logger.debug(f"[DEBUG] [MetadataWidget] metadata_availability: {metadata_availability}")
-
-        # Count files with metadata
-        files_with_metadata = sum(1 for has_meta in metadata_availability.values() if has_meta)
+        file_paths = [file_item.full_path for file_item in selected_files]
+        batch_status = batch_metadata_status(file_paths)
+        logger.debug(f"[DEBUG] [MetadataWidget] batch_metadata_status: {batch_status}")
+        files_with_metadata = [p for p, has in batch_status.items() if has]
         total_files = len(selected_files)
-
-        if files_with_metadata < total_files:
-            files_needing_metadata = [
-                file_item.full_path
-                for file_item in selected_files
-                if not metadata_availability.get(file_item.full_path, False)
-            ]
-            logger.debug(
-                f"[MetadataWidget] {len(files_needing_metadata)} files need metadata - showing dialog"
-            )
+        logger.debug(f"[DEBUG] [MetadataWidget] files_with_metadata: {files_with_metadata}")
+        if len(files_with_metadata) < total_files:
+            files_needing_metadata = [file_item.full_path for file_item in selected_files if not batch_status.get(file_item.full_path, False)]
+            logger.debug(f"[MetadataWidget] {len(files_needing_metadata)} files need metadata - showing dialog")
             self._hash_dialog_active = True
             self._show_calculation_dialog(files_needing_metadata, "metadata")
         else:
             logger.debug("[MetadataWidget] All files have metadata - no dialog needed")
 
     def _show_calculation_dialog(self, files_needing_calculation, calculation_type: str):
-        """Show dialog to calculate hash or metadata for files that need them."""
-        logger.debug(
-            f"[DEBUG] [MetadataWidget] _show_calculation_dialog CALLED for {len(files_needing_calculation)} files, type: {calculation_type}"
-        )
+        logger.debug(f"[DEBUG] [MetadataWidget] _show_calculation_dialog CALLED for {len(files_needing_calculation)} files, type: {calculation_type}")
+        logger.debug(f"[DEBUG] [MetadataWidget] files_needing_calculation: {files_needing_calculation}")
         try:
             from widgets.custom_message_dialog import CustomMessageDialog
 
