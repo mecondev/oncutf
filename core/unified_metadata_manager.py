@@ -474,7 +474,9 @@ class UnifiedMetadataManager(QObject):
                         )
 
                     # Update the file item
+                    logger.debug(f"[DEBUG] (before) file_item.metadata for {file_item.filename} (id={id(file_item)}): {getattr(file_item, 'metadata', None)}")
                     file_item.metadata = metadata
+                    logger.debug(f"[DEBUG] (after) file_item.metadata for {file_item.filename} (id={id(file_item)}): {file_item.metadata}")
 
                     # Emit dataChanged signal to update UI icons immediately
                     if self.parent_window and hasattr(self.parent_window, "file_model"):
@@ -611,7 +613,9 @@ class UnifiedMetadataManager(QObject):
                         )
 
                     # Update the file item
+                    logger.debug(f"[DEBUG] (before) file_item.metadata for {file_item.filename} (id={id(file_item)}): {getattr(file_item, 'metadata', None)}")
                     file_item.metadata = metadata
+                    logger.debug(f"[DEBUG] (after) file_item.metadata for {file_item.filename} (id={id(file_item)}): {file_item.metadata}")
 
                     # Emit dataChanged signal to update UI icons
                     if self.parent_window and hasattr(self.parent_window, "file_model"):

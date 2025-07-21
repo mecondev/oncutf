@@ -184,14 +184,14 @@ class MetadataWidget(QWidget):
                 logger.debug("[MetadataWidget] Hash category disabled - applied disabled styling")
 
     def update_options(self) -> None:
-        """Updates fields according to the selected category."""
-        logger.debug(
-            f"[DEBUG] [MetadataWidget] update_options CALLED for category: {self.category_combo.currentData()}"
-        )
+        logger.debug(f"[DEBUG] [MetadataWidget] update_options CALLED for category: {self.category_combo.currentData()}")
         category = self.category_combo.currentData()
         logger.debug(f"[MetadataWidget] Updating options for category: {category}")
 
         self.options_combo.clear()
+        logger.debug(f"[DEBUG] [MetadataWidget] Selected files: {[getattr(f, 'filename', None) for f in self._get_selected_files()]}")
+        logger.debug(f"[DEBUG] [MetadataWidget] Selected files ids: {[id(f) for f in self._get_selected_files()]}")
+        logger.debug(f"[DEBUG] [MetadataWidget] Selected files metadata: {[getattr(f, 'metadata', None) for f in self._get_selected_files()]}")
 
         if category == "file_dates":
             self.options_label.setText("Type")
@@ -604,7 +604,11 @@ class MetadataWidget(QWidget):
         }
 
     def emit_if_changed(self) -> None:
-        logger.debug("[DEBUG] [MetadataWidget] emit_if_changed CALLED")
+        logger.debug(f"[DEBUG] [MetadataWidget] emit_if_changed CALLED")
+        logger.debug(f"[DEBUG] [MetadataWidget] Current options: {[self.options_combo.itemText(i) for i in range(self.options_combo.count())]}")
+        logger.debug(f"[DEBUG] [MetadataWidget] Current selected files: {[getattr(f, 'filename', None) for f in self._get_selected_files()]}")
+        logger.debug(f"[DEBUG] [MetadataWidget] Current selected files ids: {[id(f) for f in self._get_selected_files()]}")
+        logger.debug(f"[DEBUG] [MetadataWidget] Current selected files metadata: {[getattr(f, 'metadata', None) for f in self._get_selected_files()]}")
         new_data = self.get_data()
         if new_data != self._last_data:
             self._last_data = new_data
@@ -936,12 +940,11 @@ class MetadataWidget(QWidget):
             logger.debug("[MetadataWidget] All files have hashes - no dialog needed")
 
     def _check_metadata_calculation_requirements(self, selected_files):
-        """Check if metadata calculation dialog is needed."""
-        # Use batch query for metadata availability
+        logger.debug(f"[DEBUG] [MetadataWidget] _check_metadata_calculation_requirements CALLED for {len(selected_files)} files")
         from core.unified_rename_engine import UnifiedRenameEngine
-
         engine = UnifiedRenameEngine()
         metadata_availability = engine.get_metadata_availability(selected_files)
+        logger.debug(f"[DEBUG] [MetadataWidget] metadata_availability: {metadata_availability}")
 
         # Count files with metadata
         files_with_metadata = sum(1 for has_meta in metadata_availability.values() if has_meta)

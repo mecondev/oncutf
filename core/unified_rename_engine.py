@@ -171,8 +171,10 @@ class BatchQueryManager:
                 if file.full_path:
                     # Check if file has metadata
                     has_metadata = self._file_has_metadata(file.full_path, metadata_cache)
+                    logger.debug(f"[DEBUG] [UnifiedRenameEngine] get_metadata_availability: {file.full_path} has_metadata={has_metadata}")
                     result[file.full_path] = has_metadata
 
+            logger.debug(f"[DEBUG] [UnifiedRenameEngine] get_metadata_availability result: {result}")
             return result
 
         except Exception as e:
