@@ -405,13 +405,12 @@ class MetadataWidget(QWidget):
                 return
 
             # Use batch query for metadata availability
-            from core.unified_rename_engine import UnifiedRenameEngine
-
-            engine = UnifiedRenameEngine()
-            metadata_availability = engine.get_metadata_availability(selected_files)
+            file_paths = [f.full_path for f in selected_files]
+            batch_status = batch_metadata_status(file_paths)
+            logger.debug(f"[DEBUG] [MetadataWidget] populate_metadata_keys batch_metadata_status: {batch_status}")
 
             # Count files with metadata
-            files_with_metadata = sum(1 for has_meta in metadata_availability.values() if has_meta)
+            files_with_metadata = sum(1 for has_meta in batch_status.values() if has_meta)
             total_files = len(selected_files)
 
             logger.debug(
@@ -507,64 +506,23 @@ class MetadataWidget(QWidget):
         return None
 
     def get_available_metadata_keys(self) -> Set[str]:
-        # Return cached keys if available
-        if self._cached_metadata_keys is not None:
-            return self._cached_metadata_keys
-
+        logger.debug(f"[DEBUG] [MetadataWidget] get_available_metadata_keys CALLED")
+        selected_files = self._get_selected_files()
+        logger.debug(f"[DEBUG] [MetadataWidget] get_available_metadata_keys selected_files: {[getattr(f, 'filename', None) for f in selected_files]}")
         metadata_cache = self._get_metadata_cache_via_context()
         if not metadata_cache:
-            self._cached_metadata_keys = set()
-            return self._cached_metadata_keys
-
-        all_keys = set()
-        try:
-            # For PersistentMetadataCache, we need to access the memory cache
-            if hasattr(metadata_cache, "_memory_cache"):
-                for entry in metadata_cache._memory_cache.values():
-                    if isinstance(entry, MetadataEntry) and entry.data:
-                        filtered = {
-                            k
-                            for k in entry.data
-                            if not k.startswith("_") and k not in {"path", "filename"}
-                        }
-                        all_keys.update(filtered)
-            # Fallback for other cache types
-            elif hasattr(metadata_cache, "_cache"):
-                for entry in metadata_cache._cache.values():
-                    if isinstance(entry, MetadataEntry) and entry.data:
-                        filtered = {
-                            k
-                            for k in entry.data
-                            if not k.startswith("_") and k not in {"path", "filename"}
-                        }
-                        all_keys.update(filtered)
-            # Additional fallback for different cache structures
-            elif hasattr(metadata_cache, "get_all_entries"):
-                entries = metadata_cache.get_all_entries()
-                for entry in entries:
-                    if hasattr(entry, "data") and entry.data:
-                        filtered = {
-                            k
-                            for k in entry.data
-                            if not k.startswith("_") and k not in {"path", "filename"}
-                        }
-                        all_keys.update(filtered)
-            # Direct dictionary access fallback
-            elif isinstance(metadata_cache, dict):
-                for entry in metadata_cache.values():
-                    if isinstance(entry, dict):
-                        filtered = {
-                            k
-                            for k in entry
-                            if not k.startswith("_") and k not in {"path", "filename"}
-                        }
-                        all_keys.update(filtered)
-        except Exception as e:
-            logger.warning(f"[MetadataWidget] Error accessing metadata cache: {e}")
-
-        # Cache the result
-        self._cached_metadata_keys = all_keys
-        return all_keys
+            logger.debug(f"[DEBUG] [MetadataWidget] No metadata cache found")
+            return set()
+        keys = set()
+        for file_item in selected_files:
+            meta = metadata_cache.get(file_item.full_path) if hasattr(metadata_cache, 'get') else None
+            logger.debug(f"[DEBUG] [MetadataWidget] metadata for {getattr(file_item, 'filename', None)}: {meta}")
+            if meta:
+                for k in meta.keys():
+                    if not k.startswith('__') and k not in {'path', 'filename'}:
+                        keys.add(k)
+        logger.debug(f"[DEBUG] [MetadataWidget] get_available_metadata_keys returning keys: {keys}")
+        return keys
 
     def format_metadata_key_name(self, key: str) -> str:
         formatted = key.replace("_", " ").title()
@@ -1351,3 +1309,8 @@ class MetadataWidget(QWidget):
 
         except Exception as e:
             logger.warning(f"[MetadataWidget] Error applying normal category styling: {e}")
+
+    def _on_selection_changed(self):
+        logger.debug("[DEBUG] [MetadataWidget] _on_selection_changed CALLED - forcing update_options και force_preview_update")
+        self.update_options()
+        self.force_preview_update()
