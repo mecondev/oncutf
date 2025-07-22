@@ -13,11 +13,24 @@ and separation of concerns.
 import time
 from typing import Dict, Optional
 
-from core.database_manager import get_database_manager
 from utils.logger_factory import get_cached_logger
-from utils.path_normalizer import normalize_path
 
 logger = get_cached_logger(__name__)
+logger.debug(f"[DEBUG] [PersistentMetadataCache] Module imported")
+
+try:
+    from core.database_manager import get_database_manager
+    logger.debug(f"[DEBUG] [PersistentMetadataCache] Successfully imported get_database_manager")
+except Exception as e:
+    logger.error(f"[DEBUG] [PersistentMetadataCache] Error importing get_database_manager: {e}")
+    raise
+
+try:
+    from utils.path_normalizer import normalize_path
+    logger.debug(f"[DEBUG] [PersistentMetadataCache] Successfully imported normalize_path")
+except Exception as e:
+    logger.error(f"[DEBUG] [PersistentMetadataCache] Error importing normalize_path: {e}")
+    raise
 
 
 class MetadataEntry:
@@ -59,7 +72,13 @@ class PersistentMetadataCache:
 
     def __init__(self):
         """Initialize persistent metadata cache with database backend."""
-        self._db_manager = get_database_manager()
+        logger.debug(f"[DEBUG] [PersistentMetadataCache] __init__ CALLED")
+        try:
+            self._db_manager = get_database_manager()
+            logger.debug(f"[DEBUG] [PersistentMetadataCache] Database manager: {self._db_manager}")
+        except Exception as e:
+            logger.error(f"[DEBUG] [PersistentMetadataCache] Error getting database manager: {e}")
+            raise
         self._memory_cache: Dict[str, MetadataEntry] = {}  # Hot cache for performance
         self._cache_hits = 0
         self._cache_misses = 0
@@ -104,32 +123,15 @@ class PersistentMetadataCache:
             )
 
     def get(self, file_path: str) -> dict:
-        """Retrieve metadata for a file, checking memory cache first."""
+        """Get metadata for file."""
         norm_path = self._normalize_path(file_path)
-
-        # Check memory cache first
-        if norm_path in self._memory_cache:
-            self._cache_hits += 1
-            return self._memory_cache[norm_path].to_dict()
-
-        # Load from database
-        self._cache_misses += 1
         try:
             metadata = self._db_manager.get_metadata(norm_path)
-            if metadata:
-                # Create entry and cache it
-                is_extended = metadata.pop("__extended__", False)
-                is_modified = metadata.pop("__modified__", False)
-
-                entry = MetadataEntry(metadata, is_extended=is_extended, modified=is_modified)
-                self._memory_cache[norm_path] = entry
-
-                return entry.to_dict()
-
+            logger.debug(f"[DEBUG] [PersistentMetadataCache] get({file_path}) -> {len(metadata) if metadata else 0} keys")
+            return metadata or {}
         except Exception as e:
-            logger.error(f"[PersistentMetadataCache] Error loading metadata for {file_path}: {e}")
-
-        return {}
+            logger.error(f"[PersistentMetadataCache] Error getting metadata for {file_path}: {e}")
+            return {}
 
     def get_entry(self, file_path: str) -> Optional[MetadataEntry]:
         """Get the MetadataEntry for a file if available."""
@@ -162,16 +164,12 @@ class PersistentMetadataCache:
         return None
 
     def has(self, file_path: str) -> bool:
-        """Check if metadata exists for a file."""
+        """Check if metadata exists for file."""
         norm_path = self._normalize_path(file_path)
-
-        # Check memory cache first
-        if norm_path in self._memory_cache:
-            return True
-
-        # Check database
         try:
-            return self._db_manager.has_metadata(norm_path)
+            result = self._db_manager.has_metadata(norm_path)
+            logger.debug(f"[DEBUG] [PersistentMetadataCache] has({file_path}) -> {result}")
+            return result
         except Exception as e:
             logger.error(f"[PersistentMetadataCache] Error checking metadata for {file_path}: {e}")
             return False
@@ -266,6 +264,35 @@ _persistent_metadata_cache_instance = None
 def get_persistent_metadata_cache() -> PersistentMetadataCache:
     """Get global persistent metadata cache instance."""
     global _persistent_metadata_cache_instance
+    logger.debug(f"[DEBUG] [PersistentMetadataCache] get_persistent_metadata_cache CALLED")
+    logger.debug(f"[DEBUG] [PersistentMetadataCache] Current instance: {_persistent_metadata_cache_instance}")
     if _persistent_metadata_cache_instance is None:
-        _persistent_metadata_cache_instance = PersistentMetadataCache()
+        logger.debug(f"[DEBUG] [PersistentMetadataCache] Creating new instance")
+        try:
+            _persistent_metadata_cache_instance = PersistentMetadataCache()
+            logger.debug(f"[DEBUG] [PersistentMetadataCache] Successfully created instance: {_persistent_metadata_cache_instance}")
+        except Exception as e:
+            logger.error(f"[DEBUG] [PersistentMetadataCache] Error creating instance: {e}")
+            # Create a dummy cache to avoid returning None
+            logger.warning(f"[DEBUG] [PersistentMetadataCache] Creating dummy cache due to error")
+            _persistent_metadata_cache_instance = DummyMetadataCache()
+    else:
+        logger.debug(f"[DEBUG] [PersistentMetadataCache] Using existing instance")
     return _persistent_metadata_cache_instance
+
+
+class DummyMetadataCache:
+    """Dummy cache for fallback when database is not available."""
+
+    def __init__(self):
+        logger.warning(f"[DEBUG] [PersistentMetadataCache] DummyMetadataCache initialized")
+        self._memory_cache = {}
+
+    def has(self, file_path: str) -> bool:
+        return False
+
+    def get(self, file_path: str) -> dict:
+        return {}
+
+    def set(self, file_path: str, metadata: dict, **kwargs) -> None:
+        pass

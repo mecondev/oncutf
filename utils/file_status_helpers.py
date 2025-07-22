@@ -7,8 +7,25 @@ All lookups use path normalization for cross-platform compatibility.
 from pathlib import Path
 from typing import Optional, Dict
 
-from core.persistent_metadata_cache import get_persistent_metadata_cache
-from core.persistent_hash_cache import get_persistent_hash_cache
+from utils.logger_factory import get_cached_logger
+
+logger = get_cached_logger(__name__)
+logger.debug(f"[DEBUG] [FileStatusHelpers] Module imported")
+
+try:
+    from core.persistent_metadata_cache import get_persistent_metadata_cache
+    logger.debug(f"[DEBUG] [FileStatusHelpers] Successfully imported get_persistent_metadata_cache")
+except Exception as e:
+    logger.error(f"[DEBUG] [FileStatusHelpers] Error importing get_persistent_metadata_cache: {e}")
+    raise
+
+try:
+    from core.persistent_hash_cache import get_persistent_hash_cache
+    logger.debug(f"[DEBUG] [FileStatusHelpers] Successfully imported get_persistent_hash_cache")
+except Exception as e:
+    logger.error(f"[DEBUG] [FileStatusHelpers] Error importing get_persistent_hash_cache: {e}")
+    raise
+
 from utils.path_normalizer import normalize_path
 
 # --- Metadata helpers ---
@@ -27,7 +44,10 @@ def get_metadata_for_file(file_path: str | Path) -> Optional[dict]:
 
 def has_metadata(file_path: str | Path) -> bool:
     """Return True if file has metadata (excluding only internal markers)."""
-    return get_metadata_for_file(file_path) is not None
+    metadata = get_metadata_for_file(file_path)
+    has_meta = metadata is not None
+    logger.debug(f"[DEBUG] [FileStatusHelpers] has_metadata for {file_path}: {has_meta}")
+    return has_meta
 
 # --- Hash helpers ---
 def get_hash_for_file(file_path: str | Path, hash_type: str = "CRC32") -> Optional[str]:
@@ -43,7 +63,13 @@ def has_hash(file_path: str | Path, hash_type: str = "CRC32") -> bool:
 # --- Batch helpers ---
 def batch_metadata_status(file_paths: list[str | Path]) -> Dict[str, bool]:
     """Return dict: normalized path -> has_metadata (bool)"""
-    return {normalize_path(p): has_metadata(p) for p in file_paths}
+    result = {}
+    for p in file_paths:
+        norm_path = normalize_path(p)
+        has_meta = has_metadata(p)
+        result[norm_path] = has_meta
+    logger.debug(f"[DEBUG] [FileStatusHelpers] batch_metadata_status: {result}")
+    return result
 
 def batch_hash_status(file_paths: list[str | Path], hash_type: str = "CRC32") -> Dict[str, bool]:
     """Return dict: normalized path -> has_hash (bool)"""

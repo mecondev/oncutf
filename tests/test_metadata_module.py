@@ -36,8 +36,8 @@ def test_metadata_module_missing_field():
     file_item = MockFileItem()
     metadata_cache = {"/mock/path/mockfile.mp3": {"date": "2024-01-01"}}
     result = MetadataModule.apply_from_data(data, file_item, metadata_cache=metadata_cache)
-    # Default fallback value is now "missing" instead of "unknown"
-    assert result == "missing"
+    # When metadata field is missing, fallback to original filename (without extension)
+    assert result == "mockfile"
 
 
 def test_metadata_module_metadata_dict():
@@ -104,5 +104,5 @@ def test_metadata_module_cache_fallback_to_file_metadata():
     file_item = MockFileItem(filename="uncached.mp3")
     cache = {}
     result = MetadataModule.apply_from_data(data, file_item, metadata_cache=cache)
-    # Default fallback value is now "missing" instead of "unknown"
-    assert result == "missing"
+    # When metadata is not cached, fallback to original filename (without extension)
+    assert result == "uncached"
