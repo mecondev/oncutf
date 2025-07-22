@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from utils.logger_factory import get_cached_logger
+from utils.path_normalizer import normalize_path
 
 logger = get_cached_logger(__name__)
 
@@ -433,12 +434,8 @@ class DatabaseManager:
             return path_id
 
     def _normalize_path(self, file_path: str) -> str:
-        """Normalize file path for consistent storage."""
-        try:
-            abs_path = os.path.abspath(file_path)
-            return os.path.normpath(abs_path)
-        except Exception:
-            return os.path.normpath(file_path)
+        """Use the central normalize_path function."""
+        return normalize_path(file_path)
 
     def get_path_id(self, file_path: str) -> Optional[int]:
         """Get path_id for a file without creating it."""

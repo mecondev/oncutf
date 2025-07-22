@@ -15,6 +15,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
+from utils.path_normalizer import normalize_path
 
 logger = get_cached_logger(__name__)
 
@@ -56,7 +57,8 @@ class HashManager:
         if isinstance(file_path, str):
             file_path = Path(file_path)
 
-        cache_key = str(file_path.resolve())
+        # Use central path normalization
+        cache_key = normalize_path(file_path)
 
         if self._use_persistent_cache:
             return self._persistent_cache.has_hash(cache_key)
@@ -76,7 +78,8 @@ class HashManager:
         if isinstance(file_path, str):
             file_path = Path(file_path)
 
-        cache_key = str(file_path.resolve())
+        # Use central path normalization
+        cache_key = normalize_path(file_path)
 
         if self._use_persistent_cache:
             return self._persistent_cache.get_hash(cache_key)
@@ -99,7 +102,7 @@ class HashManager:
             file_path = Path(file_path)
 
         # Check cache first (persistent or memory)
-        cache_key = str(file_path.resolve())
+        cache_key = normalize_path(file_path)
         if self._use_persistent_cache:
             cached_hash = self._persistent_cache.get_hash(cache_key)
             if cached_hash:

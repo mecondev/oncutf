@@ -9,11 +9,7 @@ from typing import Optional, Dict
 
 from core.persistent_metadata_cache import get_persistent_metadata_cache
 from core.persistent_hash_cache import get_persistent_hash_cache
-
-# --- Path normalization helper ---
-def normalize_path(file_path: str | Path) -> str:
-    """Return normalized absolute path as string (cross-platform safe)."""
-    return str(Path(file_path).resolve())
+from utils.path_normalizer import normalize_path
 
 # --- Metadata helpers ---
 def get_metadata_for_file(file_path: str | Path) -> Optional[dict]:

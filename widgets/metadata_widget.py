@@ -189,7 +189,6 @@ class MetadataWidget(QWidget):
     def update_options(self) -> None:
         category = self.category_combo.currentData()
         self.options_combo.clear()
-        logger.debug(f"[DEBUG] [MetadataWidget] update_options CALLED for category: {category}")
         file_paths = [f.full_path for f in self._get_selected_files()]
         logger.debug(f"[DEBUG] [MetadataWidget] update_options batch_metadata_status: {batch_metadata_status(file_paths)}")
 
@@ -409,56 +408,45 @@ class MetadataWidget(QWidget):
             return None
 
     def _get_metadata_cache_via_context(self):
-        """Get metadata cache via ApplicationContext with fallback to parent traversal."""
-        # Try ApplicationContext first
-        context = self._get_app_context()
-        if context and hasattr(context, "_metadata_cache"):
-            logger.debug("[MetadataWidget] Found metadata cache via ApplicationContext")
-            return context._metadata_cache
-
-        # Fallback to legacy parent_window approach
-        if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
-            logger.debug("[MetadataWidget] Found metadata cache via parent_window")
-            return self.parent_window.metadata_cache
-
-        # Try to find metadata cache in main window
-        if (
-            self.parent_window
-            and hasattr(self.parent_window, "main_window")
-            and self.parent_window.main_window
-        ):
-            main_window = self.parent_window.main_window
-            if hasattr(main_window, "metadata_cache"):
-                logger.debug("[MetadataWidget] Found metadata cache via main_window")
-                return main_window.metadata_cache
-
-        # Try to find metadata cache in rename modules area
-        if self.parent_window and hasattr(self.parent_window, "rename_modules_area"):
-            rename_area = self.parent_window.rename_modules_area
-            if hasattr(rename_area, "parent") and rename_area.parent():
-                parent = rename_area.parent()
-                if hasattr(parent, "metadata_cache"):
-                    logger.debug("[MetadataWidget] Found metadata cache via rename area parent")
-                    return parent.metadata_cache
-
-        logger.warning("[MetadataWidget] No metadata cache found")
-        return None
+        logger.debug(f"[DEBUG] [MetadataWidget] _get_metadata_cache_via_context CALLED")
+        try:
+            from core.application_context import get_app_context
+            context = get_app_context()
+            logger.debug(f"[DEBUG] [MetadataWidget] ApplicationContext: {context}")
+            if context and hasattr(context, '_metadata_cache'):
+                cache = context._metadata_cache
+                logger.debug(f"[DEBUG] [MetadataWidget] Found metadata cache: {cache}")
+                return cache
+            else:
+                logger.debug(f"[DEBUG] [MetadataWidget] No metadata cache in context")
+                return None
+        except Exception as e:
+            logger.debug(f"[DEBUG] [MetadataWidget] Error getting metadata cache: {e}")
+            return None
 
     def get_available_metadata_keys(self) -> Set[str]:
         logger.debug(f"[DEBUG] [MetadataWidget] get_available_metadata_keys CALLED")
         selected_files = self._get_selected_files()
-        logger.debug(f"[DEBUG] [MetadataWidget] get_available_metadata_keys selected_files: {[getattr(f, 'filename', None) for f in selected_files]}")
-        metadata_cache = self._get_metadata_cache_via_context()
+
+        # Use the same persistent cache as batch_metadata_status
+        from core.persistent_metadata_cache import get_persistent_metadata_cache
+        metadata_cache = get_persistent_metadata_cache()
+
         if not metadata_cache:
-            logger.debug(f"[DEBUG] [MetadataWidget] No metadata cache found")
+            logger.debug(f"[DEBUG] [MetadataWidget] No persistent metadata cache found")
             return set()
+
         keys = set()
         for file_item in selected_files:
-            meta = metadata_cache.get(file_item.full_path) if hasattr(metadata_cache, 'get') else None
+            # Use the same path normalization as batch_metadata_status
+            from utils.path_normalizer import normalize_path
+            normalized_path = normalize_path(file_item.full_path)
+            meta = metadata_cache.get(normalized_path)
             logger.debug(f"[DEBUG] [MetadataWidget] Metadata for {file_item.filename}: {meta}")
             if meta and isinstance(meta, dict):
                 logger.debug(f"[DEBUG] [MetadataWidget] Adding keys from {file_item.filename}: {list(meta.keys())}")
                 keys.update(meta.keys())
+
         logger.debug(f"[DEBUG] [MetadataWidget] get_available_metadata_keys returning keys: {keys}")
         return keys
 

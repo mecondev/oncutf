@@ -14,6 +14,7 @@ from typing import Dict, List, Optional
 
 from core.database_manager import get_database_manager
 from utils.logger_factory import get_cached_logger
+from utils.path_normalizer import normalize_path
 
 logger = get_cached_logger(__name__)
 
@@ -39,12 +40,8 @@ class PersistentHashCache:
         logger.info("[PersistentHashCache] Initialized with database backend")
 
     def _normalize_path(self, file_path: str) -> str:
-        """Normalize file path for consistent storage."""
-        try:
-            abs_path = os.path.abspath(file_path)
-            return os.path.normpath(abs_path)
-        except Exception:
-            return os.path.normpath(file_path)
+        """Use the central normalize_path function."""
+        return normalize_path(file_path)
 
     def store_hash(self, file_path: str, hash_value: str, algorithm: str = "CRC32") -> bool:
         """Store hash for a file with database persistence."""
