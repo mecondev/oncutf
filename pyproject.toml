@@ -6,18 +6,15 @@ authors = [
     {name = "Michael Economou", email = "info@oncut.gr"}
 ]
 readme = "README.md"
-requires-python = ">=3.9"
-license = {text = "MIT"}
+requires-python = ">=3.12"
+license = "MIT"
 keywords = ["file-renamer", "batch-rename", "exif", "metadata", "photography", "pyqt5"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: End Users/Desktop",
-    "License :: OSI Approved :: MIT License",
+
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Multimedia :: Graphics :: Graphics Conversion",
     "Topic :: System :: Filesystems",
@@ -54,6 +51,10 @@ test = [
 requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+include = ["core*", "models*", "modules*", "utils*", "widgets*"]
+exclude = ["tests*", "docs*", "examples*", "scripts*", "temp*", "backups*", "reports*", "logs*", "assets*", "resources*"]
+
 [project.urls]
 Homepage = "https://github.com/mecondev/oncutf"
 Repository = "https://github.com/mecondev/oncutf"
@@ -64,7 +65,7 @@ Issues = "https://github.com/mecondev/oncutf/issues"
 # mypy configuration
 # --------------------------
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.12"
 strict = true
 ignore_missing_imports = true
 warn_unused_configs = true
@@ -81,7 +82,7 @@ ignore_errors = true
 # Ruff configuration
 # --------------------------
 [tool.ruff]
-target-version = "py39"
+target-version = "py312"
 line-length = 100
 fix = true
 exclude = ["backups", ".cache", "temp", "reports", "venv", "__pycache__", "*.pyc"]
@@ -187,7 +188,7 @@ exclude_lines = [
 # ----------------------------------------
 [tool.black]
 line-length = 100
-target-version = ['py39']
+target-version = ['py312']
 include = '\.pyi?$'
 extend-exclude = '/(\.eggs|\.git|\.hg|\.mypy_cache|\.tox|\.venv|build|dist|backups|temp|reports)/'
 
