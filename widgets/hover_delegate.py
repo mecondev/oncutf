@@ -187,7 +187,8 @@ class HoverItemDelegate(QStyledItemDelegate):
             # Ensure alignment is an integer (convert from QVariant if needed)
             if hasattr(alignment, "value"):  # QVariant case
                 alignment = alignment.value()
-            if not isinstance(alignment, int):
+            # Handle Qt.Alignment objects (they're not int but can be used directly)
+            if not isinstance(alignment, (int, Qt.Alignment)):  # type: ignore
                 alignment = Qt.AlignLeft | Qt.AlignVCenter  # type: ignore
 
             fm = painter.fontMetrics()
