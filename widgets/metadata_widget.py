@@ -187,14 +187,9 @@ class MetadataWidget(QWidget):
                 logger.debug("[MetadataWidget] Hash category disabled - applied disabled styling")
 
     def update_options(self) -> None:
-        logger.debug(f"[DEBUG] [MetadataWidget] update_options CALLED for category: {self.category_combo.currentData()}")
         category = self.category_combo.currentData()
-        logger.debug(f"[MetadataWidget] Updating options for category: {category}")
-
         self.options_combo.clear()
-        logger.debug(f"[DEBUG] [MetadataWidget] Selected files: {[getattr(f, 'filename', None) for f in self._get_selected_files()]}")
-        logger.debug(f"[DEBUG] [MetadataWidget] Selected files ids: {[id(f) for f in self._get_selected_files()]}")
-        logger.debug(f"[DEBUG] [MetadataWidget] Selected files metadata: {[getattr(f, 'metadata', None) for f in self._get_selected_files()]}")
+        logger.debug(f"[DEBUG] [MetadataWidget] update_options CALLED for category: {category}")
         file_paths = [f.full_path for f in self._get_selected_files()]
         logger.debug(f"[DEBUG] [MetadataWidget] update_options batch_metadata_status: {batch_metadata_status(file_paths)}")
 
@@ -391,73 +386,17 @@ class MetadataWidget(QWidget):
             self._hash_dialog_active = False  # <-- Ensure flag reset on error
 
     def populate_metadata_keys(self) -> None:
-        """Populate metadata keys με smart availability checking."""
-        try:
-            # Get selected files
-            selected_files = self._get_selected_files()
-            if not selected_files:
-                # No files selected - disable metadata option
-                self.options_combo.addItem("(No files selected)", userData=None)
-                self.options_combo.setEnabled(False)
-                # Apply disabled styling
-                self._apply_disabled_combo_styling()
-                logger.debug("[MetadataWidget] No files selected - disabled metadata combo")
-                return
-
-            # Use batch query for metadata availability
-            file_paths = [f.full_path for f in selected_files]
-            batch_status = batch_metadata_status(file_paths)
-            logger.debug(f"[DEBUG] [MetadataWidget] populate_metadata_keys batch_metadata_status: {batch_status}")
-
-            # Count files with metadata
-            files_with_metadata = sum(1 for has_meta in batch_status.values() if has_meta)
-            total_files = len(selected_files)
-
-            logger.debug(
-                f"[MetadataWidget] {files_with_metadata}/{total_files} files have metadata"
-            )
-
-            if files_with_metadata == 0:
-                # No files have metadata - disable combo
-                self.options_combo.addItem("(No metadata found in files)", userData=None)
-                self.options_combo.setEnabled(False)
-                # Apply disabled styling
-                self._apply_disabled_combo_styling()
-                logger.debug("[MetadataWidget] No metadata found - disabled metadata combo")
-                return
-
-            # Get available metadata keys
-            keys = self.get_available_metadata_keys()
-            if not keys:
-                # No metadata keys available - disable combo
-                self.options_combo.addItem("(No metadata fields available)", userData=None)
-                self.options_combo.setEnabled(False)
-                # Apply disabled styling
-                self._apply_disabled_combo_styling()
-                logger.debug(
-                    "[MetadataWidget] No metadata keys available - disabled metadata combo"
-                )
-                return
-
-            # Some files have metadata - enable combo
-            self.options_combo.setEnabled(True)
-            # Apply normal styling
-            self._apply_normal_combo_styling()
-            logger.debug(f"[MetadataWidget] {len(keys)} metadata keys available - enabled combo")
-
-            # Add metadata keys
-            for key in sorted(keys):
-                display = self.format_metadata_key_name(key)
-                self.options_combo.addItem(display, userData=key)
-
-        except Exception as e:
-            logger.error(f"[MetadataWidget] Error in populate_metadata_keys: {e}")
-            # On error, disable metadata option
-            self.options_combo.addItem("(Error loading metadata)", userData=None)
-            self.options_combo.setEnabled(False)
-            # Apply disabled styling
-            self._apply_disabled_combo_styling()
-            logger.debug("[MetadataWidget] Error occurred - disabled metadata combo")
+        logger.debug(f"[DEBUG] [MetadataWidget] populate_metadata_keys CALLED")
+        keys = self.get_available_metadata_keys()
+        logger.debug(f"[DEBUG] [MetadataWidget] populate_metadata_keys - keys to add: {keys}")
+        self.options_combo.clear()
+        if not keys:
+            self.options_combo.addItem("(No metadata fields available)")
+            logger.debug(f"[DEBUG] [MetadataWidget] No metadata fields available for selection")
+            return
+        for key in sorted(keys):
+            logger.debug(f"[DEBUG] [MetadataWidget] Adding metadata field to combo: {key}")
+            self.options_combo.addItem(key)
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
@@ -516,11 +455,10 @@ class MetadataWidget(QWidget):
         keys = set()
         for file_item in selected_files:
             meta = metadata_cache.get(file_item.full_path) if hasattr(metadata_cache, 'get') else None
-            logger.debug(f"[DEBUG] [MetadataWidget] metadata for {getattr(file_item, 'filename', None)}: {meta}")
-            if meta:
-                for k in meta.keys():
-                    if not k.startswith('__') and k not in {'path', 'filename'}:
-                        keys.add(k)
+            logger.debug(f"[DEBUG] [MetadataWidget] Metadata for {file_item.filename}: {meta}")
+            if meta and isinstance(meta, dict):
+                logger.debug(f"[DEBUG] [MetadataWidget] Adding keys from {file_item.filename}: {list(meta.keys())}")
+                keys.update(meta.keys())
         logger.debug(f"[DEBUG] [MetadataWidget] get_available_metadata_keys returning keys: {keys}")
         return keys
 
@@ -1311,6 +1249,8 @@ class MetadataWidget(QWidget):
             logger.warning(f"[MetadataWidget] Error applying normal category styling: {e}")
 
     def _on_selection_changed(self):
-        logger.debug("[DEBUG] [MetadataWidget] _on_selection_changed CALLED - forcing update_options και force_preview_update")
         self.update_options()
         self.force_preview_update()
+
+    def _on_metadata_loaded(self):
+        self.update_options()
