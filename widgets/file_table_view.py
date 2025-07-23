@@ -13,7 +13,6 @@ Custom QTableView with Windows Explorer-like behavior:
 - Automatic vertical scrollbar detection and filename column adjustment
 """
 
-from typing import Optional
 
 from config import FILE_TABLE_COLUMN_CONFIG
 from core.application_context import get_app_context
@@ -86,8 +85,8 @@ class FileTableView(QTableView):
     def __init__(self, parent=None):
         """Initialize the file table view with all configurations."""
         super().__init__(parent)
-        self._manual_anchor_index: Optional[QModelIndex] = None
-        self._drag_start_pos: Optional[QPoint] = None  # Initialize as None instead of empty QPoint
+        self._manual_anchor_index: QModelIndex | None = None
+        self._drag_start_pos: QPoint | None = None  # Initialize as None instead of empty QPoint
         self._active_drag = None  # Store active QDrag object for cleanup
         self._programmatic_resize: bool = False  # Flag to indicate programmatic resize in progress
 
@@ -154,8 +153,8 @@ class FileTableView(QTableView):
 
         # Selection and interaction state
         self.selected_rows: set[int] = set()
-        self.anchor_row: Optional[int] = None
-        self.context_focused_row: Optional[int] = None
+        self.anchor_row: int | None = None
+        self.context_focused_row: int | None = None
 
         # Enable hover visuals
         from widgets.hover_delegate import HoverItemDelegate
@@ -291,7 +290,7 @@ class FileTableView(QTableView):
         else:
             return set()
 
-    def _set_anchor_row(self, row: Optional[int], emit_signal: bool = True) -> None:
+    def _set_anchor_row(self, row: int | None, emit_signal: bool = True) -> None:
         """Set anchor row in SelectionStore or fallback to legacy."""
         selection_store = self._get_selection_store()
         if selection_store and not self._legacy_selection_mode:
@@ -300,7 +299,7 @@ class FileTableView(QTableView):
         # Always update legacy state for compatibility
         self.anchor_row = row
 
-    def _get_anchor_row(self) -> Optional[int]:
+    def _get_anchor_row(self) -> int | None:
         """Get anchor row from SelectionStore or fallback to legacy."""
         selection_store = self._get_selection_store()
         if selection_store and not self._legacy_selection_mode:
@@ -333,6 +332,9 @@ class FileTableView(QTableView):
             for row in range(self.model().rowCount()):
                 self.setRowHeight(row, 22)
 
+        # Special handling for target_umid column - ensure it has enough width to prevent excessive elision
+        self._ensure_target_umid_column_elision()
+
         # Force complete model refresh to update text display
         if self.model():
             self.model().layoutChanged.emit()
@@ -342,6 +344,38 @@ class FileTableView(QTableView):
 
         # Schedule delayed update to ensure proper text rendering
         schedule_ui_update(lambda: self._refresh_text_display(), delay=50)
+
+    def _ensure_target_umid_column_elision(self) -> None:
+        """Ensure target_umid column has proper width to minimize text elision."""
+        try:
+            if not self.model():
+                return
+
+            # Find the target_umid column index
+            visible_columns = self.model().get_visible_columns() if hasattr(self.model(), "get_visible_columns") else []
+            if "target_umid" not in visible_columns:
+                return
+
+            column_index = visible_columns.index("target_umid") + 1  # +1 for status column
+
+            if column_index >= self.model().columnCount():
+                return
+
+            # Get current width
+            current_width = self.columnWidth(column_index)
+
+            # Check if width is too small (likely causing excessive elision)
+            from config import FILE_TABLE_COLUMN_CONFIG
+            target_umid_config = FILE_TABLE_COLUMN_CONFIG.get("target_umid", {})
+            min_width = target_umid_config.get("min_width", 200)
+
+            if current_width < min_width:
+                logger.debug(f"[TargetUMID] Column width {current_width}px is too small, adjusting to minimum {min_width}px to reduce elision")
+                self.setColumnWidth(column_index, min_width)
+                self._schedule_column_save("target_umid", min_width)
+
+        except Exception as e:
+            logger.warning(f"Error ensuring target_umid column elision: {e}")
 
     def _refresh_text_display(self) -> None:
         """Refresh text display in all visible cells."""
@@ -495,6 +529,11 @@ class FileTableView(QTableView):
                 actual_column_index = column_index + 1  # +1 because column 0 is status
                 if actual_column_index < self.model().columnCount():
                     width = self._load_column_width(column_key)
+
+                    # Special handling for target_umid column
+                    if column_key == "target_umid":
+                        width = self._ensure_target_umid_column_width(width)
+
                     header.setSectionResizeMode(actual_column_index, header.Interactive)
                     self.setColumnWidth(actual_column_index, width)
 
@@ -522,6 +561,23 @@ class FileTableView(QTableView):
             logger.error(f"[ColumnConfig] Error during delayed column configuration: {e}")
         finally:
             self._configuring_columns = False
+
+    def _ensure_target_umid_column_width(self, current_width: int) -> int:
+        """Ensure target_umid column has proper width to prevent text elision."""
+        from config import FILE_TABLE_COLUMN_CONFIG
+
+        # Get the configured width for target_umid
+        target_umid_config = FILE_TABLE_COLUMN_CONFIG.get("target_umid", {})
+        default_width = target_umid_config.get("width", 400)
+        min_width = target_umid_config.get("min_width", 200)
+
+        # If current width is too small (likely 100px from suspicious saved value), use default
+        if current_width < min_width:
+            logger.debug(f"[TargetUMID] Current width {current_width}px is below minimum {min_width}px, using default {default_width}px")
+            return default_width
+
+        # If current width is reasonable, use it but ensure it's not below minimum
+        return max(current_width, min_width)
 
     def _update_header_visibility(self) -> None:
         """Update header visibility based on whether there are files in the model."""
@@ -1715,7 +1771,7 @@ class FileTableView(QTableView):
             selected_rows = set(range(min_row, max_row + 1))
             self._update_selection_store(selected_rows, emit_signal=True)
 
-    def select_dropped_files(self, file_paths: Optional[list[str]] = None) -> None:
+    def select_dropped_files(self, file_paths: list[str] | None = None) -> None:
         """Select specific files that were just dropped/loaded in the table."""
 
         model = self.model()
@@ -2214,11 +2270,45 @@ class FileTableView(QTableView):
             from utils.timer_manager import schedule_ui_update
             schedule_ui_update(self._configure_columns_delayed, delay=50, timer_id=f"configure_new_column_{column_key}")
 
+            # Special handling for target_umid column - ensure proper width after configuration
+            if column_key == "target_umid":
+                schedule_ui_update(self._ensure_target_umid_column_proper_width, delay=100, timer_id="ensure_target_umid_width")
+
             # Debug
             visible_cols = [key for key, visible in self._visible_columns.items() if visible]
             logger.debug(f"[AddColumn] Currently visible columns: {visible_cols}")
         else:
             logger.debug(f"Column '{column_key}' is already visible")
+
+    def _ensure_target_umid_column_proper_width(self) -> None:
+        """Ensure target_umid column has proper width after being added."""
+        try:
+            if not self.model():
+                return
+
+            # Find the target_umid column index
+            visible_columns = self.model().get_visible_columns() if hasattr(self.model(), "get_visible_columns") else []
+            if "target_umid" not in visible_columns:
+                return
+
+            column_index = visible_columns.index("target_umid") + 1  # +1 for status column
+
+            if column_index >= self.model().columnCount():
+                return
+
+            # Get current width
+            current_width = self.columnWidth(column_index)
+
+            # Ensure proper width
+            proper_width = self._ensure_target_umid_column_width(current_width)
+
+            if proper_width != current_width:
+                logger.debug(f"[TargetUMID] Adjusting column width from {current_width}px to {proper_width}px")
+                self.setColumnWidth(column_index, proper_width)
+                self._schedule_column_save("target_umid", proper_width)
+
+        except Exception as e:
+            logger.warning(f"Error ensuring target_umid column width: {e}")
 
     def remove_column(self, column_key: str) -> None:
         """Remove a column from the table (make it invisible)."""
@@ -2382,6 +2472,10 @@ class FileTableView(QTableView):
                 column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
                 default_width = column_config.get("width", 100)
 
+                # Special handling for target_umid column
+                if column_key == "target_umid":
+                    default_width = self._ensure_target_umid_column_width(default_width)
+
                 self.setColumnWidth(column_index, default_width)
                 self._schedule_column_save(column_key, default_width)
 
@@ -2421,6 +2515,10 @@ class FileTableView(QTableView):
                 )
                 current_width = self.columnWidth(column_index)
                 final_width = max(current_width, min_width)
+
+                # Special handling for target_umid column
+                if column_key == "target_umid":
+                    final_width = self._ensure_target_umid_column_width(final_width)
 
                 if final_width != current_width:
                     self.setColumnWidth(column_index, final_width)
