@@ -332,8 +332,8 @@ class FileTableView(QTableView):
             for row in range(self.model().rowCount()):
                 self.setRowHeight(row, 22)
 
-        # Special handling for target_umid column - ensure it has enough width to prevent excessive elision
-        self._ensure_target_umid_column_elision()
+        # Ensure all columns have proper width to minimize text elision
+        self._ensure_all_columns_proper_width()
 
         # Force complete model refresh to update text display
         if self.model():
@@ -345,37 +345,35 @@ class FileTableView(QTableView):
         # Schedule delayed update to ensure proper text rendering
         schedule_ui_update(lambda: self._refresh_text_display(), delay=50)
 
-    def _ensure_target_umid_column_elision(self) -> None:
-        """Ensure target_umid column has proper width to minimize text elision."""
+    def _ensure_all_columns_proper_width(self) -> None:
+        """Ensure all visible columns have proper width to minimize text elision."""
         try:
             if not self.model():
                 return
 
-            # Find the target_umid column index
+            # Get visible columns from model
             visible_columns = self.model().get_visible_columns() if hasattr(self.model(), "get_visible_columns") else []
-            if "target_umid" not in visible_columns:
-                return
 
-            column_index = visible_columns.index("target_umid") + 1  # +1 for status column
+            for column_key in visible_columns:
+                column_index = visible_columns.index(column_key) + 1  # +1 for status column
 
-            if column_index >= self.model().columnCount():
-                return
+                if column_index >= self.model().columnCount():
+                    continue
 
-            # Get current width
-            current_width = self.columnWidth(column_index)
+                # Get current width
+                current_width = self.columnWidth(column_index)
 
-            # Check if width is too small (likely causing excessive elision)
-            from config import FILE_TABLE_COLUMN_CONFIG
-            target_umid_config = FILE_TABLE_COLUMN_CONFIG.get("target_umid", {})
-            min_width = target_umid_config.get("min_width", 200)
+                # Get recommended width
+                recommended_width = self._ensure_column_proper_width(column_key, current_width)
 
-            if current_width < min_width:
-                logger.debug(f"[TargetUMID] Column width {current_width}px is too small, adjusting to minimum {min_width}px to reduce elision")
-                self.setColumnWidth(column_index, min_width)
-                self._schedule_column_save("target_umid", min_width)
+                # Apply if different
+                if recommended_width != current_width:
+                    logger.debug(f"[ColumnWidth] Adjusting column '{column_key}' width from {current_width}px to {recommended_width}px to reduce elision")
+                    self.setColumnWidth(column_index, recommended_width)
+                    self._schedule_column_save(column_key, recommended_width)
 
         except Exception as e:
-            logger.warning(f"Error ensuring target_umid column elision: {e}")
+            logger.warning(f"Error ensuring all columns proper width: {e}")
 
     def _refresh_text_display(self) -> None:
         """Refresh text display in all visible cells."""
@@ -530,9 +528,8 @@ class FileTableView(QTableView):
                 if actual_column_index < self.model().columnCount():
                     width = self._load_column_width(column_key)
 
-                    # Special handling for target_umid column
-                    if column_key == "target_umid":
-                        width = self._ensure_target_umid_column_width(width)
+                    # Apply intelligent width validation for all columns
+                    width = self._ensure_column_proper_width(column_key, width)
 
                     header.setSectionResizeMode(actual_column_index, header.Interactive)
                     self.setColumnWidth(actual_column_index, width)
@@ -562,22 +559,79 @@ class FileTableView(QTableView):
         finally:
             self._configuring_columns = False
 
-    def _ensure_target_umid_column_width(self, current_width: int) -> int:
-        """Ensure target_umid column has proper width to prevent text elision."""
+    def _ensure_column_proper_width(self, column_key: str, current_width: int) -> int:
+        """Ensure column has proper width based on its content type and configuration."""
         from config import FILE_TABLE_COLUMN_CONFIG
 
-        # Get the configured width for target_umid
-        target_umid_config = FILE_TABLE_COLUMN_CONFIG.get("target_umid", {})
-        default_width = target_umid_config.get("width", 400)
-        min_width = target_umid_config.get("min_width", 200)
+        column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
+        default_width = column_config.get("width", 100)
+        min_width = column_config.get("min_width", 50)
 
-        # If current width is too small (likely 100px from suspicious saved value), use default
+        # Analyze column content type to determine appropriate width
+        content_type = self._analyze_column_content_type(column_key)
+        recommended_width = self._get_recommended_width_for_content_type(content_type, default_width, min_width)
+
+        # If current width is suspiciously small (likely from saved config), use recommended width
         if current_width < min_width:
-            logger.debug(f"[TargetUMID] Current width {current_width}px is below minimum {min_width}px, using default {default_width}px")
-            return default_width
+            logger.debug(f"[ColumnWidth] Column '{column_key}' width {current_width}px is below minimum {min_width}px, using recommended {recommended_width}px")
+            return recommended_width
 
         # If current width is reasonable, use it but ensure it's not below minimum
         return max(current_width, min_width)
+
+    def _analyze_column_content_type(self, column_key: str) -> str:
+        """Analyze the content type of a column to determine appropriate width."""
+        # Define content types based on column keys
+        content_types = {
+            # Short content (names, types, codes)
+            "type": "short",
+            "iso": "short",
+            "rotation": "short",
+            "duration": "short",
+            "video_fps": "short",
+            "audio_channels": "short",
+
+            # Medium content (formats, models, sizes)
+            "audio_format": "medium",
+            "video_codec": "medium",
+            "video_format": "medium",
+            "white_balance": "medium",
+            "compression": "medium",
+            "device_model": "medium",
+            "device_manufacturer": "medium",
+            "image_size": "medium",
+            "video_avg_bitrate": "medium",
+            "aperture": "medium",
+            "shutter_speed": "medium",
+
+            # Long content (filenames, hashes, UMIDs)
+            "filename": "long",
+            "file_hash": "long",
+            "target_umid": "long",
+            "device_serial_no": "long",
+
+            # Very long content (dates, file paths)
+            "modified": "very_long",
+            "file_size": "very_long",
+        }
+
+        return content_types.get(column_key, "medium")
+
+    def _get_recommended_width_for_content_type(self, content_type: str, default_width: int, min_width: int) -> int:
+        """Get recommended width based on content type."""
+        # Define width recommendations for different content types
+        width_recommendations = {
+            "short": max(80, min_width),      # Short codes, numbers
+            "medium": max(120, min_width),    # Formats, models, sizes
+            "long": max(200, min_width),      # Filenames, hashes, UMIDs
+            "very_long": max(300, min_width), # Dates, file paths
+        }
+
+        # Use the larger of default_width, min_width, or content_type recommendation
+        recommended = width_recommendations.get(content_type, default_width)
+        return max(recommended, default_width, min_width)
+
+
 
     def _update_header_visibility(self) -> None:
         """Update header visibility based on whether there are files in the model."""
@@ -2270,9 +2324,8 @@ class FileTableView(QTableView):
             from utils.timer_manager import schedule_ui_update
             schedule_ui_update(self._configure_columns_delayed, delay=50, timer_id=f"configure_new_column_{column_key}")
 
-            # Special handling for target_umid column - ensure proper width after configuration
-            if column_key == "target_umid":
-                schedule_ui_update(self._ensure_target_umid_column_proper_width, delay=100, timer_id="ensure_target_umid_width")
+            # Ensure proper width for the newly added column
+            schedule_ui_update(self._ensure_new_column_proper_width, delay=100, timer_id=f"ensure_column_width_{column_key}")
 
             # Debug
             visible_cols = [key for key, visible in self._visible_columns.items() if visible]
@@ -2280,35 +2333,36 @@ class FileTableView(QTableView):
         else:
             logger.debug(f"Column '{column_key}' is already visible")
 
-    def _ensure_target_umid_column_proper_width(self) -> None:
-        """Ensure target_umid column has proper width after being added."""
+    def _ensure_new_column_proper_width(self) -> None:
+        """Ensure newly added column has proper width."""
         try:
             if not self.model():
                 return
 
-            # Find the target_umid column index
+            # Get visible columns from model
             visible_columns = self.model().get_visible_columns() if hasattr(self.model(), "get_visible_columns") else []
-            if "target_umid" not in visible_columns:
-                return
 
-            column_index = visible_columns.index("target_umid") + 1  # +1 for status column
+            # Check all visible columns for proper width
+            for column_key in visible_columns:
+                column_index = visible_columns.index(column_key) + 1  # +1 for status column
 
-            if column_index >= self.model().columnCount():
-                return
+                if column_index >= self.model().columnCount():
+                    continue
 
-            # Get current width
-            current_width = self.columnWidth(column_index)
+                # Get current width
+                current_width = self.columnWidth(column_index)
 
-            # Ensure proper width
-            proper_width = self._ensure_target_umid_column_width(current_width)
+                # Get recommended width
+                recommended_width = self._ensure_column_proper_width(column_key, current_width)
 
-            if proper_width != current_width:
-                logger.debug(f"[TargetUMID] Adjusting column width from {current_width}px to {proper_width}px")
-                self.setColumnWidth(column_index, proper_width)
-                self._schedule_column_save("target_umid", proper_width)
+                # Apply if different
+                if recommended_width != current_width:
+                    logger.debug(f"[ColumnWidth] Adjusting column '{column_key}' width from {current_width}px to {recommended_width}px")
+                    self.setColumnWidth(column_index, recommended_width)
+                    self._schedule_column_save(column_key, recommended_width)
 
         except Exception as e:
-            logger.warning(f"Error ensuring target_umid column width: {e}")
+            logger.warning(f"Error ensuring new column proper width: {e}")
 
     def remove_column(self, column_key: str) -> None:
         """Remove a column from the table (make it invisible)."""
@@ -2472,12 +2526,11 @@ class FileTableView(QTableView):
                 column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
                 default_width = column_config.get("width", 100)
 
-                # Special handling for target_umid column
-                if column_key == "target_umid":
-                    default_width = self._ensure_target_umid_column_width(default_width)
+                # Apply intelligent width validation for all columns
+                final_width = self._ensure_column_proper_width(column_key, default_width)
 
-                self.setColumnWidth(column_index, default_width)
-                self._schedule_column_save(column_key, default_width)
+                self.setColumnWidth(column_index, final_width)
+                self._schedule_column_save(column_key, final_width)
 
             self._update_header_visibility()
 
@@ -2516,9 +2569,8 @@ class FileTableView(QTableView):
                 current_width = self.columnWidth(column_index)
                 final_width = max(current_width, min_width)
 
-                # Special handling for target_umid column
-                if column_key == "target_umid":
-                    final_width = self._ensure_target_umid_column_width(final_width)
+                # Apply intelligent width validation for all columns
+                final_width = self._ensure_column_proper_width(column_key, final_width)
 
                 if final_width != current_width:
                     self.setColumnWidth(column_index, final_width)
