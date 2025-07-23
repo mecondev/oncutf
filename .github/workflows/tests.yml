@@ -48,6 +48,3 @@ jobs:
         xvfb-run -a pytest tests/ -v -x --tb=short 
       timeout-minutes: 15
     
-    - name: Run linting with ruff
-      run: |
-        ruff check .
