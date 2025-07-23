@@ -2210,6 +2210,10 @@ class FileTableView(QTableView):
             self._sync_view_model_columns()
             self._update_table_columns()
 
+            # Force configure columns after model update to ensure new column gets proper width
+            from utils.timer_manager import schedule_ui_update
+            schedule_ui_update(self._configure_columns_delayed, delay=50, timer_id=f"configure_new_column_{column_key}")
+
             # Debug
             visible_cols = [key for key, visible in self._visible_columns.items() if visible]
             logger.debug(f"[AddColumn] Currently visible columns: {visible_cols}")
