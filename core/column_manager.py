@@ -247,7 +247,7 @@ class ColumnManager:
             )
             table_view.setColumnWidth(column_index, width)
 
-        # Μετά το configuration, log τα actual πλάτη
+        # After configuration, log the actual widths
         for i in range(table_view.model().columnCount()):
             logger.debug(
                 f"[ColumnManager] Actual width for column {i}: {table_view.columnWidth(i)}px",

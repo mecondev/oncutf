@@ -410,14 +410,14 @@ class FileTableView(QTableView):
         if model:
             # Store reference to table view in model for callbacks
             model._table_view_ref = self
-            # Συνδέουμε τα σήματα αλλαγής στηλών για δυναμικό table
+            # Connect column change signals for dynamic table
             if hasattr(model, "columnsInserted"):
                 model.columnsInserted.connect(self._configure_columns)
             if hasattr(model, "columnsRemoved"):
                 model.columnsRemoved.connect(self._configure_columns)
             if hasattr(model, "modelReset"):
                 model.modelReset.connect(self._configure_columns)
-            # Αν το μοντέλο έχει columns, κάνουμε setup αμέσως, αλλιώς με μικρή καθυστέρηση
+            # If model has columns, setup immediately, otherwise with small delay
             if model.columnCount() > 0:
                 # Check and fix column widths if needed (only when model is set)
                 # Delay this check to ensure model is fully initialized
@@ -430,7 +430,7 @@ class FileTableView(QTableView):
 
                 schedule_ui_update(self._configure_columns, delay=50)
         self.update_placeholder_visibility()
-        # Δεν καλούμε _update_header_visibility() εδώ γιατί θα κληθεί από _configure_columns_delayed()
+                    # Don't call _update_header_visibility() here as it will be called from _configure_columns_delayed()
 
     # =====================================
     # Table Preparation & Management

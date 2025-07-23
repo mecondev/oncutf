@@ -20,7 +20,7 @@ logger = get_cached_logger(__name__)
 
 
 class LRUCache:
-    """Simple LRU cache για speed optimization."""
+    """Simple LRU cache for speed optimization."""
 
     def __init__(self, maxsize: int = 1000):
         self.maxsize = maxsize
@@ -29,7 +29,7 @@ class LRUCache:
         self.misses = 0
 
     def get(self, key: str) -> Optional[Any]:
-        """Get value με LRU update."""
+        """Get value with LRU update."""
         if key in self.cache:
             # Move to end (most recently used)
             value = self.cache.pop(key)
@@ -41,7 +41,7 @@ class LRUCache:
         return None
 
     def set(self, key: str, value: Any) -> None:
-        """Set value με LRU eviction."""
+        """Set value with LRU eviction."""
         if key in self.cache:
             # Update existing
             self.cache.pop(key)
@@ -73,7 +73,7 @@ class LRUCache:
 
 
 class DiskCache:
-    """Simple disk cache για large datasets."""
+    """Simple disk cache for large datasets."""
 
     def __init__(self, cache_dir: str = None):
         if cache_dir is None:
@@ -87,7 +87,7 @@ class DiskCache:
 
     def _get_cache_path(self, key: str) -> str:
         """Get cache file path."""
-        # Use hash για safe filename
+        # Use hash for safe filename
         key_hash = hashlib.md5(key.encode()).hexdigest()
         return os.path.join(self.cache_dir, f"{key_hash}.cache")
 
@@ -161,7 +161,7 @@ class DiskCache:
 
 
 class AdvancedCacheManager:
-    """Advanced cache manager με memory και disk caching."""
+    """Advanced cache manager with memory and disk caching."""
 
     def __init__(self, memory_cache_size: int = 1000):
         self.memory_cache = LRUCache(memory_cache_size)
@@ -169,7 +169,7 @@ class AdvancedCacheManager:
         self.compression_threshold = 1024 * 1024  # 1MB
 
     def get(self, key: str) -> Optional[Any]:
-        """Get value με memory-first strategy."""
+        """Get value with memory-first strategy."""
         # Try memory cache first
         value = self.memory_cache.get(key)
         if value is not None:
@@ -178,14 +178,14 @@ class AdvancedCacheManager:
         # Try disk cache
         value = self.disk_cache.get(key)
         if value is not None:
-            # Cache in memory για next access
+            # Cache in memory for next access
             self.memory_cache.set(key, value)
             return value
 
         return None
 
     def set(self, key: str, value: Any) -> None:
-        """Set value με smart caching strategy."""
+        """Set value with smart caching strategy."""
         # Always cache in memory
         self.memory_cache.set(key, value)
 
@@ -218,11 +218,11 @@ class AdvancedCacheManager:
         }
 
     def smart_invalidation(self, changed_files: list) -> None:
-        """Smart cache invalidation για changed files."""
+        """Smart cache invalidation for changed files."""
         if not changed_files:
             return
 
-        # Create pattern για invalidation
+        # Create pattern for invalidation
         patterns = set()
         for file_path in changed_files:
             # Add file-specific patterns

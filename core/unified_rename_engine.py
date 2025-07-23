@@ -4,8 +4,8 @@ Module: unified_rename_engine.py
 Author: Michael Economou
 Date: 2025-01-27
 
-UnifiedRenameEngine - Κεντρικός engine για όλες τις rename λειτουργίες.
-Ενσωματώνει preview, validation, duplicate detection, και execution.
+UnifiedRenameEngine - Central engine for all rename operations.
+Integrates preview, validation, duplicate detection, and execution.
 """
 
 import os
@@ -26,7 +26,7 @@ logger = get_cached_logger(__name__)
 
 @dataclass
 class PreviewResult:
-    """Αποτέλεσμα preview generation."""
+    """Preview generation result."""
 
     name_pairs: List[Tuple[str, str]]
     has_changes: bool
@@ -39,7 +39,7 @@ class PreviewResult:
 
 @dataclass
 class ValidationItem:
-    """Validation result για ένα αρχείο."""
+    """Validation result for a file."""
 
     old_name: str
     new_name: str
@@ -649,7 +649,7 @@ class UnifiedRenameEngine(QObject):
     Ενσωματώνει preview, validation, duplicate detection, και execution.
     """
 
-    # Κεντρικό signal system
+            # Central signal system
     preview_updated = pyqtSignal()
     validation_updated = pyqtSignal()
     execution_completed = pyqtSignal()

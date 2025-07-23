@@ -126,7 +126,7 @@ class RenameModulesArea(QWidget):
         Add a new RenameModuleWidget to the area.
         Now uses ApplicationContext-optimized approach when available.
         """
-        # Πάντα περνάμε το parent_window για σταθερότητα
+        # Always pass parent_window for stability
         module = RenameModuleWidget(parent=self, parent_window=self.parent_window)
 
         module.remove_requested.connect(lambda m=module: self.remove_module(m))

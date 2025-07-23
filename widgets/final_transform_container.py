@@ -76,7 +76,7 @@ class FinalTransformContainer(QWidget):
         # Greeklish row (alone, touching left)
         greeklish_layout = QHBoxLayout()
         greeklish_layout.setContentsMargins(0, 0, 0, 0)
-        greeklish_layout.setSpacing(0)  # Ελάχιστο spacing
+        greeklish_layout.setSpacing(0)  # Minimum spacing
 
         # Label for the checkbox (first)
         greeklish_text_label = QLabel("Convert Greek to Greeklish")
@@ -262,7 +262,7 @@ class FinalTransformContainer(QWidget):
             self.remove_button.setIcon(disabled_icon)
 
 
-# Απλό toggle με QLabel (χωρίς hover)
+        # Simple toggle with QLabel (no hover)
 class GreeklishToggle(QLabel):
     toggled = pyqtSignal(bool)
 
@@ -272,7 +272,7 @@ class GreeklishToggle(QLabel):
         self._icon_left = get_menu_icon("toggle-left")
         self._icon_right = get_menu_icon("toggle-right")
         self.setCursor(Qt.PointingHandCursor)
-        self.setFixedSize(28, 28)  # Λίγο μεγαλύτερο για padding
+        self.setFixedSize(28, 28)  # Slightly larger for padding
         self.setAlignment(Qt.AlignCenter)
         self._update_icon()
 
@@ -289,14 +289,14 @@ class GreeklishToggle(QLabel):
         return self._checked
 
     def _update_icon(self):
-        # Παίρνουμε QPixmap ~19x19 από το QIcon, 20% μεγαλύτερο από 16x16
+        # Get QPixmap ~19x19 from QIcon, 20% larger than 16x16
         icon = self._icon_right if self._checked else self._icon_left
         pixmap = icon.pixmap(19, 19)
-        # Δημιουργούμε ένα νέο pixmap με padding (28x28)
+        # Create a new pixmap with padding (28x28)
         padded = QPixmap(28, 28)
         padded.fill(Qt.transparent)
         painter = QPainter(padded)
-        # Κεντράρουμε το 19x19 εικονίδιο
+        # Center the 19x19 icon
         x = (28 - 19) // 2
         y = (28 - 19) // 2
         painter.drawPixmap(x, y, pixmap)

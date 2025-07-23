@@ -17,7 +17,7 @@ logger = get_cached_logger(__name__)
 
 
 class BatchProcessor:
-    """Simple batch processor για speed optimization."""
+    """Simple batch processor for speed optimization."""
 
     def __init__(self, batch_size: int = 100, max_workers: int = 4):
         self.batch_size = batch_size
@@ -32,13 +32,13 @@ class BatchProcessor:
         }
 
     def process_batches(self, items: List[Any], processor_func: Callable) -> List[Any]:
-        """Process items σε batches με parallel execution."""
+        """Process items in batches with parallel execution."""
         if not items:
             return []
 
         start_time = time.time()
 
-        # Split items σε batches
+        # Split items into batches
         batches = self._split_into_batches(items)
         self.stats["total_batches"] = len(batches)
         self.stats["total_items"] = len(items)
@@ -83,7 +83,7 @@ class BatchProcessor:
         return results
 
     def _split_into_batches(self, items: List[Any]) -> List[List[Any]]:
-        """Split items σε optimal batches."""
+        """Split items into optimal batches."""
         batches = []
         for i in range(0, len(items), self.batch_size):
             batch = items[i : i + self.batch_size]
@@ -130,7 +130,7 @@ class BatchProcessor:
 
 
 class SmartBatchProcessor(BatchProcessor):
-    """Smart batch processor με dynamic optimization."""
+    """Smart batch processor with dynamic optimization."""
 
     def __init__(self, initial_batch_size: int = 100, max_workers: int = 4, **kwargs):
         super().__init__(initial_batch_size, max_workers)
@@ -139,7 +139,7 @@ class SmartBatchProcessor(BatchProcessor):
         self.optimization_threshold = 0.5  # 500ms
 
     def process_batches_optimized(self, items: List[Any], processor_func: Callable) -> List[Any]:
-        """Process items με dynamic batch size optimization."""
+        """Process items with dynamic batch size optimization."""
         if not items:
             return []
 
@@ -179,7 +179,7 @@ class SmartBatchProcessor(BatchProcessor):
         return sample_results
 
     def optimize_batch_size(self, target_time: float = 0.1) -> None:
-        """Optimize batch size για target processing time."""
+        """Optimize batch size for target processing time."""
         if not self.performance_history:
             return
 
@@ -197,7 +197,7 @@ class SmartBatchProcessor(BatchProcessor):
 
 
 class BatchProcessorFactory:
-    """Factory για creating batch processors."""
+    """Factory for creating batch processors."""
 
     @staticmethod
     def create_processor(processor_type: str = "simple", **kwargs) -> BatchProcessor:
@@ -209,7 +209,7 @@ class BatchProcessorFactory:
 
     @staticmethod
     def get_optimal_config(item_count: int, item_type: str = "file") -> Dict[str, any]:
-        """Get optimal configuration για item count and type."""
+        """Get optimal configuration for item count and type."""
         if item_count < 100:
             return {"batch_size": 50, "max_workers": 2}
         elif item_count < 1000:

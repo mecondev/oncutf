@@ -147,7 +147,7 @@ class FileTableModel(QAbstractTableModel):
             logger.debug("[FileTableModel] STATE AFTER UPDATE:", extra={"dev_only": True})
             self.debug_column_state()
 
-            # Ενημέρωση του view για αλλαγή στηλών
+            # Update view for column changes
             if hasattr(self, "_table_view_ref") and self._table_view_ref:
                 logger.debug(
                     "[FileTableModel] Calling table view refresh methods", extra={"dev_only": True}
@@ -314,7 +314,7 @@ class FileTableModel(QAbstractTableModel):
         )
 
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
-        count = len(self._visible_columns) + 1  # +1 για τη status column
+        count = len(self._visible_columns) + 1  # +1 for status column
         return count
 
     def _has_hash_cached(self, file_path: str) -> bool:
@@ -579,7 +579,7 @@ class FileTableModel(QAbstractTableModel):
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole):  # type: ignore
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             if section == 0:
-                return ""  # Δεν εμφανίζουμε τίτλο στη status column
+                return ""  # Don't display title in status column
 
             col_key = self._column_mapping.get(section)
             if col_key:
@@ -753,7 +753,7 @@ class FileTableModel(QAbstractTableModel):
         logger.debug(f"set_files called with {len(files)} files", extra={"dev_only": True})
         self.beginResetModel()
         self.files = files
-        # self._update_column_mapping()  # Αφαιρείται γιατί δεν χρειάζεται και προκαλεί σφάλμα
+        # self._update_column_mapping()  # Removed because it's not needed and causes error
         self._update_icons_immediately()
         self.endResetModel()
         logger.debug(

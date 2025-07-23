@@ -117,7 +117,7 @@ class PreviewTablesView(QWidget):
         self._placeholders_ready = True
         self._set_placeholders_visible(True)
 
-        # Κεντράρισμα placeholders μετά το layout με μικρό delay
+        # Center placeholders after layout with small delay
         schedule_ui_update(self._handle_table_resize, 50)
 
         logger.debug(
@@ -436,8 +436,8 @@ class PreviewTablesView(QWidget):
     ):
         """Process a batch of name pairs.
 
-        Το icon_path είναι το path (διαδρομή) προς το αρχείο εικόνας (icon) που εμφανίζεται δίπλα στο νέο όνομα αρχείου στο preview table.
-        Κάθε κατάσταση (valid, invalid, unchanged, duplicate) έχει το δικό της εικονίδιο, π.χ. assets/valid.png, assets/invalid.png κλπ.
+        The icon_path is the path to the image file (icon) that appears next to the new filename in the preview table.
+        Each status (valid, invalid, unchanged, duplicate) has its own icon, e.g. assets/valid.png, assets/invalid.png etc.
         """
         import os
 

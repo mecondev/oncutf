@@ -2,23 +2,23 @@
 
 ## Problem Description
 
-Η στήλη `target_umid` (και άλλες στήλες) όταν προστίθενται στον πίνακα αρχείων δεν είχαν το σωστό μήκος που ορίζεται στο `config.py` και εμφάνιζαν 3 τελείες (text elision) χωρίς wordwrap.
+The `target_umid` column (and other columns) when added to the file table did not have the correct width defined in `config.py` and displayed 3 dots (text elision) without wordwrap.
 
 ## Root Cause Analysis
 
-1. **Incorrect Width Application**: Οι στήλες έχουν ρυθμιστεί στο `config.py` με συγκεκριμένα πλάτη, αλλά όταν προστίθενται δυναμικά, μπορεί να μην εφαρμόζεται σωστά το πλάτος.
+1. **Incorrect Width Application**: Columns are configured in `config.py` with specific widths, but when added dynamically, the width may not be applied correctly.
 
-2. **Suspicious Saved Widths**: Το σύστημα αποθήκευσης πλάτους στηλών μπορεί να έχει αποθηκεύσει εσφαλμένες τιμές (π.χ. 100px) που προκαλούν υπερβολικό text elision.
+2. **Suspicious Saved Widths**: The column width storage system may have saved incorrect values (e.g., 100px) that cause excessive text elision.
 
-3. **Word Wrap Issues**: Αν και το word wrap είναι απενεργοποιημένο, οι στήλες δεν είχαν αρκετό πλάτος για να εμφανίσουν το περιεχόμενο χωρίς elision.
+3. **Word Wrap Issues**: Although word wrap is disabled, columns did not have enough width to display content without elision.
 
-4. **Lack of Content-Aware Width Management**: Δεν υπήρχε σύστημα που να αναλύει τον τύπο περιεχομένου κάθε στήλης για να προσαρμόσει το πλάτος ανάλογα.
+4. **Lack of Content-Aware Width Management**: There was no system to analyze the content type of each column to adjust width accordingly.
 
 ## Solution Implementation
 
 ### 1. Content-Aware Width Analysis
 
-Προστέθηκε η μέθοδος `_analyze_column_content_type()` που κατηγοριοποιεί τις στήλες βάσει του περιεχομένου τους:
+Added the `_analyze_column_content_type()` method that categorizes columns based on their content:
 
 ```python
 def _analyze_column_content_type(self, column_key: str) -> str:
@@ -62,7 +62,7 @@ def _analyze_column_content_type(self, column_key: str) -> str:
 
 ### 2. Intelligent Width Recommendations
 
-Προστέθηκε η μέθοδος `_get_recommended_width_for_content_type()` που προτείνει πλάτη βάσει του τύπου περιεχομένου:
+Added the `_get_recommended_width_for_content_type()` method that suggests widths based on content type:
 
 ```python
 def _get_recommended_width_for_content_type(self, content_type: str, default_width: int, min_width: int) -> int:
@@ -82,7 +82,7 @@ def _get_recommended_width_for_content_type(self, content_type: str, default_wid
 
 ### 3. Universal Width Validation
 
-Προστέθηκε η γενική μέθοδος `_ensure_column_proper_width()` που εφαρμόζεται σε όλες τις στήλες:
+Added the general `_ensure_column_proper_width()` method that applies to all columns:
 
 ```python
 def _ensure_column_proper_width(self, column_key: str, current_width: int) -> int:
@@ -108,7 +108,7 @@ def _ensure_column_proper_width(self, column_key: str, current_width: int) -> in
 
 ### 4. Integration Points
 
-Η γενική διαχείριση πλάτους ενσωματώθηκε σε όλα τα σημεία διαχείρισης στηλών:
+The general width management was integrated into all column management points:
 
 #### Column Configuration (`_configure_columns_delayed`)
 ```python
@@ -143,14 +143,14 @@ final_width = self._ensure_column_proper_width(column_key, final_width)
 ### 5. Additional Helper Methods
 
 #### `_ensure_all_columns_proper_width()`
-Ελέγχει και διορθώνει το πλάτος όλων των ορατών στηλών για να ελαχιστοποιήσει το text elision.
+Checks and corrects the width of all visible columns to minimize text elision.
 
 #### `_ensure_new_column_proper_width()`
-Εξασφαλίζει ότι οι νέες στήλες έχουν το σωστό πλάτος μετά την προσθήκη.
+Ensures that new columns have the correct width after being added.
 
 ## Configuration
 
-Η στήλη `target_umid` έχει τις εξής ρυθμίσεις στο `config.py`:
+The `target_umid` column has the following settings in `config.py`:
 
 ```python
 "target_umid": {
@@ -166,38 +166,38 @@ final_width = self._ensure_column_proper_width(column_key, final_width)
 
 ## Content Type Analysis
 
-Το σύστημα αναλύει τις στήλες σε 4 κατηγορίες:
+The system analyzes columns into 4 categories:
 
-1. **Short** (80px+): Κωδικοί, αριθμοί, σύντομα ονόματα
+1. **Short** (80px+): Codes, numbers, short names
    - `type`, `iso`, `rotation`, `duration`, `video_fps`, `audio_channels`
 
-2. **Medium** (120px+): Μορφές, μοντέλα, μεγέθη
+2. **Medium** (120px+): Formats, models, sizes
    - `audio_format`, `video_codec`, `video_format`, `white_balance`, `compression`, `device_model`, `device_manufacturer`, `image_size`, `video_avg_bitrate`, `aperture`, `shutter_speed`
 
-3. **Long** (200px+): Ονόματα αρχείων, hashes, UMIDs
+3. **Long** (200px+): Filenames, hashes, UMIDs
    - `filename`, `file_hash`, `target_umid`, `device_serial_no`
 
-4. **Very Long** (300px+): Ημερομηνίες, διαδρομές αρχείων
+4. **Very Long** (300px+): Dates, file paths
    - `modified`, `file_size`
 
 ## Benefits
 
-1. **Content-Aware Width**: Κάθε στήλη παίρνει πλάτος ανάλογα με τον τύπο περιεχομένου της
-2. **Consistent Behavior**: Όλες οι στήλες συμπεριφέρονται με συνέπεια
-3. **Reduced Elision**: Ελαχιστοποιείται το text elision με τις 3 τελείες
-4. **Proper Word Wrap**: Το word wrap παραμένει απενεργοποιημένο αλλά με αρκετό πλάτος
-5. **Backward Compatibility**: Δεν επηρεάζει υπάρχουσα λειτουργικότητα
-6. **Robust Error Handling**: Χειρίζεται σωστά σφάλματα και edge cases
-7. **Extensible**: Εύκολα μπορεί να προστεθούν νέοι τύποι περιεχομένου
+1. **Content-Aware Width**: Each column gets width appropriate to its content type
+2. **Consistent Behavior**: All columns behave consistently
+3. **Reduced Elision**: Minimizes text elision with 3 dots
+4. **Proper Word Wrap**: Word wrap remains disabled but with sufficient width
+5. **Backward Compatibility**: Does not affect existing functionality
+6. **Robust Error Handling**: Handles errors and edge cases properly
+7. **Extensible**: Easy to add new content types
 
 ## Files Modified
 
-- `widgets/file_table_view.py`: Προσθήκη γενικής διαχείρισης πλάτους στηλών
-- `docs/target_umid_column_fix.md`: Αυτό το documentation file
+- `widgets/file_table_view.py`: Added general column width management
+- `docs/target_umid_column_fix.md`: This documentation file
 
 ## Future Considerations
 
-1. **Dynamic Content Analysis**: Μπορεί να προστεθεί ανάλυση του πραγματικού περιεχομένου για ακόμα καλύτερη προσαρμογή
-2. **User Preferences**: Μπορεί να προστεθεί επιλογή για χρήστες να προσαρμόσουν τα προτεινόμενα πλάτη
-3. **Performance Optimization**: Μπορεί να προστεθεί caching για την ανάλυση περιεχομένου
-4. **Internationalization**: Μπορεί να προστεθεί υποστήριξη για διαφορετικά γράμματα και γλώσσες
+1. **Dynamic Content Analysis**: Could add analysis of actual content for even better adaptation
+2. **User Preferences**: Could add option for users to customize recommended widths
+3. **Performance Optimization**: Could add caching for content analysis
+4. **Internationalization**: Could add support for different characters and languages

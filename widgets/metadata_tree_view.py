@@ -468,6 +468,9 @@ class MetadataTreeView(QTreeView):
                         lambda: self._apply_scroll_position_immediately(saved_position), 0
                     )
 
+            # Update header visibility after mode configuration
+            self._update_header_visibility()
+
     def _apply_scroll_position_immediately(self, position: int) -> None:
         """Apply scroll position immediately without waiting for expandAll()."""
         if self._current_file_path and not self._is_placeholder_mode:
@@ -538,10 +541,11 @@ class MetadataTreeView(QTreeView):
             header.resizeSection(0, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_KEY_WIDTH"])
             header.resizeSection(1, METADATA_TREE_COLUMN_WIDTHS["PLACEHOLDER_VALUE_WIDTH"])
 
-            # Disable header interactions
+            # Disable header interactions and hide header in placeholder mode
             header.setEnabled(False)
             header.setSectionsClickable(False)
             header.setSortIndicatorShown(False)
+            header.hide()
 
             # Disable tree interactions but keep drag & drop working
             self.setSelectionMode(QAbstractItemView.NoSelection)
@@ -582,6 +586,9 @@ class MetadataTreeView(QTreeView):
             header.setSectionsClickable(True)
             header.setSortIndicatorShown(False)  # Keep sorting disabled
 
+            # Show header when there's content
+            header.show()
+
             # Key column: min 80px, initial 180px, max 800px
             header.setSectionResizeMode(0, QHeaderView.Interactive)
             header.setMinimumSectionSize(METADATA_TREE_COLUMN_WIDTHS["KEY_MIN_WIDTH"])
@@ -617,6 +624,27 @@ class MetadataTreeView(QTreeView):
             self.setUpdatesEnabled(True)
             if hasattr(self, "viewport") and callable(getattr(self.viewport(), "update", None)):
                 self.viewport().update()
+
+    def _update_header_visibility(self) -> None:
+        """Update header visibility based on whether there is content in the model."""
+        if not self.model():
+            logger.debug("[MetadataTree] No model - header hidden", extra={"dev_only": True})
+            return
+
+        header = self.header()
+        if not header:
+            logger.debug(
+                "[MetadataTree] No header - cannot update visibility", extra={"dev_only": True}
+            )
+            return
+
+        # Hide header when in placeholder mode, show when there's content
+        header.setVisible(not self._is_placeholder_mode)
+
+        logger.debug(
+            f"[MetadataTree] Header visibility: {'hidden' if self._is_placeholder_mode else 'visible'} (placeholder_mode: {self._is_placeholder_mode})",
+            extra={"dev_only": True},
+        )
 
     def _connect_column_resize_signals(self) -> None:
         """Connect column resize signals to update display immediately."""
@@ -1749,8 +1777,8 @@ class MetadataTreeView(QTreeView):
         else:
             self.setModel(model)
 
-        # Hide header in placeholder mode
-        self.header().hide()
+        # Update header visibility for placeholder mode
+        self._update_header_visibility()
 
         # Disable search field when showing empty state
         self._update_search_field_state(False)
@@ -1760,12 +1788,17 @@ class MetadataTreeView(QTreeView):
         if parent_window and hasattr(parent_window, "information_label"):
             parent_window.information_label.setText("Information")
 
+        # Update header visibility for empty state
+        self._update_header_visibility()
+
     def clear_view(self) -> None:
         """
         Clears the metadata tree view and shows a placeholder message.
         Does not clear scroll position memory when just showing placeholder.
         """
         self.show_empty_state("No file selected")
+        # Update header visibility for placeholder mode
+        self._update_header_visibility()
         # Disable search field when clearing view
         self._update_search_field_state(False)
 
@@ -1793,6 +1826,9 @@ class MetadataTreeView(QTreeView):
         except Exception as e:
             logger.error(f"[MetadataTree] Error displaying metadata: {e}")
             self.show_empty_state("Error loading metadata")
+
+        # Update header visibility after metadata display
+        self._update_header_visibility()
 
     def _update_search_field_state(self, enabled: bool):
         """Update the metadata search field enabled state and tooltip."""
@@ -2101,11 +2137,20 @@ class MetadataTreeView(QTreeView):
             # Always expand all - no collapse functionality
             self.expandAll()
 
+            # Update header visibility for content mode
+            self._update_header_visibility()
+
             # Update information label with metadata count
             self._update_information_label(display_data)
 
+            # Update header visibility for content mode
+            self._update_header_visibility()
+
             # Trigger scroll position restore AFTER expandAll
             self.restore_scroll_after_expand()
+
+            # Update header visibility for content mode
+            self._update_header_visibility()
 
         except Exception as e:
             logger.exception(f"[render_metadata_view] Unexpected error while rendering: {e}")
@@ -2335,6 +2380,8 @@ class MetadataTreeView(QTreeView):
         self.modified_items_per_file.clear()
         self.modified_items.clear()
         self.clear_view()
+        # Update header visibility for placeholder mode
+        self._update_header_visibility()
         # Disable search field when changing folders
         self._update_search_field_state(False)
 
@@ -2365,6 +2412,9 @@ class MetadataTreeView(QTreeView):
         else:
             self.clear_view()
 
+        # Update header visibility after file metadata display
+        self._update_header_visibility()
+
     def handle_selection_change(self) -> None:
         """
         Handle selection changes from the parent file table.
@@ -2384,6 +2434,9 @@ class MetadataTreeView(QTreeView):
         else:
             self.clear_view()
 
+        # Update header visibility after selection inversion
+        self._update_header_visibility()
+
     def handle_metadata_load_completion(
         self, metadata: Optional[Dict[str, Any]], source: str
     ) -> None:
@@ -2398,6 +2451,9 @@ class MetadataTreeView(QTreeView):
             self.display_metadata(metadata, context=f"load_completion_from_{source}")
         else:
             self.clear_view()
+
+        # Update header visibility after metadata loading
+        self._update_header_visibility()
 
         # Update file icon status after metadata loading to refresh both metadata and hash icons
         self._update_file_icon_status()
@@ -2469,6 +2525,9 @@ class MetadataTreeView(QTreeView):
             logger.error(f"[MetadataTree] Error in smart display: {e}")
             print(f"[ERROR] MetadataTree error in smart display: {e}")
             self.show_empty_state("Error loading metadata")
+
+        # Update header visibility after smart display
+        self._update_header_visibility()
 
     def get_modified_metadata(self) -> Dict[str, str]:
         """
@@ -3049,11 +3108,15 @@ class MetadataTreeView(QTreeView):
                 self.placeholder_helper.show()
             else:
                 self.placeholder_helper.hide()
+        # Update header visibility when placeholder state changes
+        self._update_header_visibility()
 
     def update_placeholder_visibility(self):
         """Update placeholder visibility based on tree content."""
         is_empty = self._is_placeholder_mode if hasattr(self, "_is_placeholder_mode") else False
         self.set_placeholder_visible(is_empty)
+        # Update header visibility when placeholder visibility changes
+        self._update_header_visibility()
 
     def _handle_metadata_field_click(self, field: str, value: str) -> None:
         """Handle click on metadata field that might be a file path."""
