@@ -140,6 +140,7 @@ class MetadataWidget(QWidget):
 
         # Connections
         self.category_combo.currentIndexChanged.connect(self._on_category_changed)
+        # Connect options combo signal after initialization to avoid premature calls
         self.options_combo.currentIndexChanged.connect(self.emit_if_changed)
 
         # Initialize category availability
@@ -158,20 +159,24 @@ class MetadataWidget(QWidget):
         """Handle category combo box changes with safe timer scheduling."""
         # Check if disabled item was selected (None data)
         current_data = self.category_combo.currentData()
+        logger.debug(f"[DEBUG] [MetadataWidget] _on_category_changed called with current_data: {current_data}")
         if current_data is None:
             # Return to File Dates if disabled item was selected
             self.category_combo.setCurrentIndex(0)
-            logger.debug("[MetadataWidget] Disabled item selected, returning to File Dates")
+            logger.debug("[DEBUG] [MetadataWidget] Disabled item selected, returning to File Dates")
             return
 
         try:
+            logger.debug(f"[DEBUG] [MetadataWidget] Scheduling update_options with timer")
             schedule_ui_update(self.update_options)
         except Exception:
             # Fallback for testing or when timer manager is not available
+            logger.debug(f"[DEBUG] [MetadataWidget] Timer not available, calling update_options directly")
             self.update_options()
 
         # Check if we need to show dialog for hash/metadata calculation
-        category = self.category_combo.currentData()
+        # Use the category from the beginning of the method to avoid timing issues
+        category = current_data  # Use the category we got at the start
         if category in ["hash", "metadata_keys"]:
             self._check_calculation_requirements(category)
 
@@ -184,10 +189,11 @@ class MetadataWidget(QWidget):
                 self.options_combo.addItem("CRC32", userData="hash_crc32")
                 self.options_combo.setEnabled(False)
                 self._apply_disabled_combo_styling()
-                logger.debug("[MetadataWidget] Hash category disabled - applied disabled styling")
+                logger.debug("[DEBUG] [MetadataWidget] Hash category disabled - applied disabled styling")
 
     def update_options(self) -> None:
         category = self.category_combo.currentData()
+        logger.debug(f"[DEBUG] [MetadataWidget] update_options called with category: {category}")
         self.options_combo.clear()
         file_paths = [f.full_path for f in self._get_selected_files()]
         logger.debug(f"[DEBUG] [MetadataWidget] update_options batch_metadata_status: {batch_metadata_status(file_paths)}")
@@ -216,8 +222,15 @@ class MetadataWidget(QWidget):
         # Set to first option by default (if exists)
         if self.options_combo.count() > 0:
             self.options_combo.setCurrentIndex(0)
+            logger.debug(f"[DEBUG] [MetadataWidget] Set current index to 0, current data: {self.options_combo.currentData()}")
 
-        self.emit_if_changed()
+        # Use timer to ensure currentData is updated before emitting
+        try:
+            from utils.timer_manager import schedule_ui_update
+            schedule_ui_update(self.emit_if_changed, 10)
+        except Exception:
+            # Fallback for testing or when timer manager is not available
+            self.emit_if_changed()
 
     def populate_file_dates(self) -> None:
         file_date_options = [
@@ -238,7 +251,7 @@ class MetadataWidget(QWidget):
         try:
             # Get selected files
             selected_files = self._get_selected_files()
-            logger.debug(f"[HASH_DEBUG] Found {len(selected_files)} selected files.")
+            logger.debug(f"[DEBUG] [MetadataWidget] Found {len(selected_files)} selected files.")
 
             if not selected_files:
                 # No files selected - disable hash option
@@ -261,7 +274,7 @@ class MetadataWidget(QWidget):
             files_with_hash = hash_cache.get_files_with_hash_batch(file_paths, "CRC32")
             files_needing_hash = [path for path in file_paths if path not in files_with_hash]
 
-            logger.debug(f"[HASH_DEBUG] {len(files_with_hash)}/{len(file_paths)} files have hashes")
+            logger.debug(f"[DEBUG] [MetadataWidget] {len(files_with_hash)}/{len(file_paths)} files have hashes")
 
             # Always add CRC32 option (only hash type supported) - but always disabled
             self.options_combo.addItem("CRC32", userData="hash_crc32")
@@ -273,12 +286,12 @@ class MetadataWidget(QWidget):
 
             if files_needing_hash:
                 # Some files need hash calculation
-                logger.debug(f"[HASH_DEBUG] {len(files_needing_hash)} files need hash calculation")
+                logger.debug(f"[DEBUG] [MetadataWidget] {len(files_needing_hash)} files need hash calculation")
                 return True
             else:
                 # All files have hashes - but combo still disabled
                 logger.debug(
-                    "[HASH_DEBUG] All files have hashes, but combo disabled (only CRC32 available)"
+                    "[DEBUG] [MetadataWidget] All files have hashes, but combo disabled (only CRC32 available)"
                 )
                 return True
 
@@ -295,45 +308,45 @@ class MetadataWidget(QWidget):
     def _get_selected_files(self):
         """Get selected files from the main window."""
         logger.debug(
-            f"[HASH_DEBUG] _get_selected_files called. parent_window: {self.parent_window}"
+            f"[DEBUG] [MetadataWidget] _get_selected_files called. parent_window: {self.parent_window}"
         )
 
         try:
             # Try to get selected files from parent window
             if self.parent_window and hasattr(self.parent_window, "get_selected_files_ordered"):
-                logger.debug("[HASH_DEBUG] Getting files from parent_window")
+                logger.debug("[DEBUG] [MetadataWidget] Getting files from parent_window")
                 files = self.parent_window.get_selected_files_ordered()
-                logger.debug(f"[HASH_DEBUG] Got {len(files)} files from parent_window")
+                logger.debug(f"[DEBUG] [MetadataWidget] Got {len(files)} files from parent_window")
                 return files
 
             # Try to get from ApplicationContext
             context = self._get_app_context()
-            logger.debug(f"[HASH_DEBUG] ApplicationContext: {context}")
+            logger.debug(f"[DEBUG] [MetadataWidget] ApplicationContext: {context}")
 
             # Try to get from FileStore
             if context and hasattr(context, "_file_store") and context._file_store:
-                logger.debug("[HASH_DEBUG] Trying to get files from FileStore")
+                logger.debug("[DEBUG] [MetadataWidget] Trying to get files from FileStore")
                 selected_files = context._file_store.get_selected_files()
                 if selected_files:
-                    logger.debug(f"[HASH_DEBUG] Got {len(selected_files)} files from FileStore")
+                    logger.debug(f"[DEBUG] [MetadataWidget] Got {len(selected_files)} files from FileStore")
                     return selected_files
 
             # Try to get from SelectionStore
             if context and hasattr(context, "_selection_store") and context._selection_store:
-                logger.debug("[HASH_DEBUG] Trying to get files from SelectionStore")
+                logger.debug("[DEBUG] [MetadataWidget] Trying to get files from SelectionStore")
                 selected_files = context._selection_store.get_selected_files()
                 if selected_files:
                     logger.debug(
-                        f"[HASH_DEBUG] Got {len(selected_files)} files from SelectionStore"
+                        f"[DEBUG] [MetadataWidget] Got {len(selected_files)} files from SelectionStore"
                     )
                     return selected_files
 
-            logger.debug("[HASH_DEBUG] No files found in ApplicationContext stores")
+            logger.debug("[DEBUG] [MetadataWidget] No files found in ApplicationContext stores")
 
         except Exception as e:
             logger.warning(f"[MetadataWidget] Error getting selected files: {e}")
 
-        logger.debug("[HASH_DEBUG] Returning empty list - no source found")
+        logger.debug("[DEBUG] [MetadataWidget] Returning empty list - no source found")
         return []
 
     def _calculate_hashes_for_files(self, files_needing_hash):
@@ -350,7 +363,7 @@ class MetadataWidget(QWidget):
                         break
 
             if not file_items_needing_hash:
-                logger.warning("[MetadataWidget] No file items found for hash calculation")
+                logger.warning("[DEBUG] [MetadataWidget] No file items found for hash calculation")
                 return
 
             # Get main window for hash calculation
@@ -374,14 +387,14 @@ class MetadataWidget(QWidget):
                 )  # Small delay to ensure hash calculation completes
                 self._hash_dialog_active = False  # <-- Ensure flag reset after calculation
                 logger.debug(
-                    "[MetadataWidget] Hash calculation completed, preview update scheduled"
+                    "[DEBUG] [MetadataWidget] Hash calculation completed, preview update scheduled"
                 )
             else:
-                logger.error("[MetadataWidget] Could not find main window for hash calculation")
+                logger.error("[DEBUG] [MetadataWidget] Could not find main window for hash calculation")
                 self._hash_dialog_active = False
 
         except Exception as e:
-            logger.error(f"[MetadataWidget] Error calculating hashes: {e}")
+            logger.error(f"[DEBUG] [MetadataWidget] Error calculating hashes: {e}")
             self._hash_dialog_active = False  # <-- Ensure flag reset on error
 
     def populate_metadata_keys(self) -> None:
@@ -393,9 +406,101 @@ class MetadataWidget(QWidget):
             self.options_combo.addItem("(No metadata fields available)")
             logger.debug(f"[DEBUG] [MetadataWidget] No metadata fields available for selection")
             return
-        for key in sorted(keys):
-            logger.debug(f"[DEBUG] [MetadataWidget] Adding metadata field to combo: {key}")
-            self.options_combo.addItem(key)
+
+        # Group keys by category for better organization
+        grouped_keys = self._group_metadata_keys(keys)
+
+        # Add grouped keys to combo box
+        for category, category_keys in grouped_keys.items():
+            if category != "Other":  # Add category separator for non-Other categories
+                self.options_combo.addItem(f"--- {category} ---")
+                # Disable the separator item
+                last_index = self.options_combo.count() - 1
+                self.options_combo.setItemData(last_index, None, Qt.UserRole)
+                self.options_combo.model().item(last_index).setEnabled(False)
+
+            for key in sorted(category_keys):
+                logger.debug(f"[DEBUG] [MetadataWidget] Adding metadata field to combo: {key}")
+                # Format the key for display while keeping the original key as userData
+                display_text = self.format_metadata_key_name(key)
+                self.options_combo.addItem(display_text, userData=key)
+                logger.debug(f"[DEBUG] [MetadataWidget] Added item with text: '{display_text}', userData: {key}")
+
+    def _group_metadata_keys(self, keys: set[str]) -> dict[str, list[str]]:
+        """Group metadata keys by category for better organization."""
+        grouped = {}
+
+        for key in keys:
+            category = self._classify_metadata_key(key)
+            if category not in grouped:
+                grouped[category] = []
+            grouped[category].append(key)
+
+        # Sort categories for consistent display order
+        category_order = [
+            "File Info",
+            "Camera Settings",
+            "Image Info",
+            "Video Info",
+            "Audio Info",
+            "GPS & Location",
+            "Technical Info",
+            "Other"
+        ]
+
+        # Return ordered dictionary
+        ordered_grouped = {}
+        for category in category_order:
+            if category in grouped:
+                ordered_grouped[category] = grouped[category]
+
+        return ordered_grouped
+
+    def _classify_metadata_key(self, key: str) -> str:
+        """Classify a metadata key into a category."""
+        key_lower = key.lower()
+
+        # File-related metadata
+        if key_lower.startswith("file") or key_lower in {"rotation", "directory", "sourcefile"}:
+            return "File Info"
+
+        # Camera Settings - Critical for photography/videography
+        if any(term in key_lower for term in [
+            "iso", "aperture", "fnumber", "shutter", "exposure", "focal",
+            "flash", "metering", "whitebalance", "gain", "lightvalue"
+        ]):
+            return "Camera Settings"
+
+        # GPS and Location
+        if any(term in key_lower for term in ["gps", "location", "latitude", "longitude", "altitude"]):
+            return "GPS & Location"
+
+        # Audio-related metadata
+        if key_lower.startswith("audio") or key_lower in {
+            "samplerate", "channelmode", "bitrate", "title", "album",
+            "artist", "composer", "genre", "duration"
+        }:
+            return "Audio Info"
+
+        # Image-specific metadata
+        if (key_lower.startswith("image") or "sensor" in key_lower or
+            any(term in key_lower for term in ["width", "height", "resolution", "dpi", "colorspace"])):
+            return "Image Info"
+
+        # Video-specific metadata
+        if any(term in key_lower for term in [
+            "video", "frame", "codec", "bitrate", "fps", "duration",
+            "format", "avgbitrate", "maxbitrate", "videocodec"
+        ]):
+            return "Video Info"
+
+        # Technical/System
+        if any(term in key_lower for term in [
+            "version", "software", "firmware", "make", "model", "serial", "uuid", "id"
+        ]):
+            return "Technical Info"
+
+        return "Other"
 
     def _get_app_context(self):
         """Get ApplicationContext with fallback to None."""
@@ -427,6 +532,7 @@ class MetadataWidget(QWidget):
     def get_available_metadata_keys(self) -> Set[str]:
         logger.debug(f"[DEBUG] [MetadataWidget] get_available_metadata_keys CALLED")
         selected_files = self._get_selected_files()
+        logger.debug(f"[DEBUG] [MetadataWidget] Selected files count: {len(selected_files)}")
 
         # Use the same persistent cache as batch_metadata_status
         from core.persistent_metadata_cache import get_persistent_metadata_cache
@@ -436,13 +542,15 @@ class MetadataWidget(QWidget):
             logger.debug(f"[DEBUG] [MetadataWidget] No persistent metadata cache found")
             return set()
 
+        logger.debug(f"[DEBUG] [MetadataWidget] Metadata cache found: {metadata_cache}")
+
         keys = set()
         for file_item in selected_files:
             # Use the same path normalization as batch_metadata_status
             from utils.path_normalizer import normalize_path
             normalized_path = normalize_path(file_item.full_path)
             meta = metadata_cache.get(normalized_path)
-            logger.debug(f"[DEBUG] [MetadataWidget] Metadata for {file_item.filename}: {meta}")
+            logger.debug(f"[DEBUG] [MetadataWidget] Metadata for {file_item.filename} (normalized: {normalized_path}): {meta}")
             if meta and isinstance(meta, dict):
                 logger.debug(f"[DEBUG] [MetadataWidget] Adding keys from {file_item.filename}: {list(meta.keys())}")
                 keys.update(meta.keys())
@@ -451,11 +559,79 @@ class MetadataWidget(QWidget):
         return keys
 
     def format_metadata_key_name(self, key: str) -> str:
-        formatted = key.replace("_", " ").title()
-        replacements = {"Exif": "EXIF", "Gps": "GPS", "Iso": "ISO", "Rgb": "RGB", "Dpi": "DPI"}
+        """Format metadata key names for better readability."""
+        # Handle common metadata prefixes and formats
+        if ":" in key:
+            # Split by colon (e.g., "EXIF:DeviceName" -> "EXIF: Device Name")
+            parts = key.split(":", 1)
+            if len(parts) == 2:
+                prefix, field = parts
+                # Format the field part
+                formatted_field = self._format_field_name(field)
+                return f"{prefix}: {formatted_field}"
+
+        # Handle underscore-separated keys
+        if "_" in key:
+            return self._format_field_name(key)
+
+        # Handle camelCase keys
+        if key != key.lower() and key != key.upper():
+            return self._format_camel_case(key)
+
+        return key
+
+    def _format_field_name(self, field: str) -> str:
+        """Format field names by replacing underscores and camelCase."""
+        # Replace underscores with spaces and title case
+        formatted = field.replace("_", " ").title()
+
+        # Common replacements for better readability
+        replacements = {
+            "Exif": "EXIF", "Gps": "GPS", "Iso": "ISO", "Rgb": "RGB", "Dpi": "DPI",
+            "Device": "Device", "Model": "Model", "Make": "Make", "Serial": "Serial",
+            "Number": "Number", "Date": "Date", "Time": "Time", "Width": "Width",
+            "Height": "Height", "Size": "Size", "Format": "Format", "Codec": "Codec",
+            "Frame": "Frame", "Rate": "Rate", "Bit": "Bit", "Audio": "Audio",
+            "Video": "Video", "Image": "Image", "Camera": "Camera", "Lens": "Lens",
+            "Focal": "Focal", "Length": "Length", "Aperture": "Aperture", "Shutter": "Shutter",
+            "Speed": "Speed", "Exposure": "Exposure", "White": "White", "Balance": "Balance",
+            "Flash": "Flash", "Metering": "Metering", "Mode": "Mode", "Program": "Program",
+            "Sensitivity": "Sensitivity", "Compression": "Compression", "Quality": "Quality",
+            "Resolution": "Resolution", "Pixel": "Pixel", "Dimension": "Dimension",
+            "Orientation": "Orientation", "Rotation": "Rotation", "Duration": "Duration",
+            "Track": "Track", "Channel": "Channel", "Sample": "Sample", "Frequency": "Frequency",
+            "Bitrate": "Bitrate", "Codec": "Codec", "Brand": "Brand", "Type": "Type",
+            "Version": "Version", "Software": "Software", "Hardware": "Hardware",
+            "Manufacturer": "Manufacturer", "Creator": "Creator", "Artist": "Artist",
+            "Author": "Author", "Copyright": "Copyright", "Rights": "Rights",
+            "Description": "Description", "Comment": "Comment", "Keyword": "Keyword",
+            "Tag": "Tag", "Label": "Label", "Category": "Category", "Genre": "Genre",
+            "Subject": "Subject", "Title": "Title", "Headline": "Headline",
+            "Caption": "Caption", "Abstract": "Abstract", "Location": "Location",
+            "Place": "Place", "Country": "Country", "City": "City", "State": "State",
+            "Province": "Province", "Address": "Address", "Street": "Street",
+            "Coordinate": "Coordinate", "Latitude": "Latitude", "Longitude": "Longitude",
+            "Altitude": "Altitude", "Direction": "Direction", "Bearing": "Bearing",
+            "Speed": "Speed", "Distance": "Distance", "Area": "Area", "Volume": "Volume",
+            "Weight": "Weight", "Mass": "Mass", "Temperature": "Temperature",
+            "Pressure": "Pressure", "Humidity": "Humidity", "Weather": "Weather",
+            "Light": "Light", "Color": "Color", "Tone": "Tone", "Saturation": "Saturation",
+            "Brightness": "Brightness", "Contrast": "Contrast", "Sharpness": "Sharpness",
+            "Noise": "Noise", "Grain": "Grain", "Filter": "Filter", "Effect": "Effect",
+            "Style": "Style", "Theme": "Theme", "Mood": "Mood", "Atmosphere": "Atmosphere"
+        }
+
         for old, new in replacements.items():
             formatted = formatted.replace(old, new)
+
         return formatted
+
+    def _format_camel_case(self, text: str) -> str:
+        """Format camelCase text by adding spaces before capitals."""
+        import re
+        # Add space before capital letters, but not at the beginning
+        formatted = re.sub(r'(?<!^)(?=[A-Z])', ' ', text)
+        return formatted.title()
 
     def get_data(self) -> dict:
         """Returns the state for use in the rename system."""
@@ -471,7 +647,7 @@ class MetadataWidget(QWidget):
             elif category == "metadata_keys":
                 field = "last_modified_yymmdd"  # Fallback
 
-                # For hash category, ensure we only return CRC32
+        # For hash category, ensure we only return CRC32
         if category == "hash" and field:
             # Only CRC32 is supported, so ensure we return it
             if field != "hash_crc32":
@@ -482,9 +658,16 @@ class MetadataWidget(QWidget):
 
         # For metadata_keys category, ensure we don't return None field
         if category == "metadata_keys" and not field:
-            # If user somehow selected a disabled metadata item, fallback to file dates
-            category = "file_dates"
-            field = "last_modified_yymmdd"
+            # If no field is selected, try to get the first available metadata key
+            available_keys = self.get_available_metadata_keys()
+            if available_keys:
+                field = sorted(available_keys)[0]
+                logger.debug(f"[MetadataWidget] No field selected, using first available key: {field}")
+            else:
+                # If no metadata keys available, fallback to file dates
+                category = "file_dates"
+                field = "last_modified_yymmdd"
+                logger.debug("[MetadataWidget] No metadata keys available, falling back to file dates")
 
         return {
             "type": "metadata",
@@ -498,9 +681,20 @@ class MetadataWidget(QWidget):
         logger.debug(f"[DEBUG] [MetadataWidget] Current selected files: {[getattr(f, 'filename', None) for f in self._get_selected_files()]}")
         logger.debug(f"[DEBUG] [MetadataWidget] Current selected files ids: {[id(f) for f in self._get_selected_files()]}")
         logger.debug(f"[DEBUG] [MetadataWidget] Current selected files metadata: {[getattr(f, 'metadata', None) for f in self._get_selected_files()]}")
+
+        # Log current combo box state
+        current_index = self.options_combo.currentIndex()
+        current_text = self.options_combo.currentText()
+        current_data = self.options_combo.currentData()
+        logger.debug(f"[DEBUG] [MetadataWidget] Current combo state - index: {current_index}, text: '{current_text}', data: {current_data}")
+
         new_data = self.get_data()
+        logger.debug(f"[DEBUG] [MetadataWidget] New data: {new_data}")
+        logger.debug(f"[DEBUG] [MetadataWidget] Last data: {self._last_data}")
+
         if new_data != self._last_data:
             self._last_data = new_data
+            logger.debug(f"[DEBUG] [MetadataWidget] Data changed, emitting signal")
             self.updated.emit(self)
         else:
             # If data is the same but category changed, still emit for preview update
@@ -508,10 +702,8 @@ class MetadataWidget(QWidget):
             current_category = self.category_combo.currentData()
             if hasattr(self, "_last_category") and self._last_category != current_category:
                 self._last_category = current_category
+                logger.debug(f"[DEBUG] [MetadataWidget] Category changed to {current_category}, forcing preview update")
                 self.updated.emit(self)
-                logger.debug(
-                    f"[MetadataWidget] Category changed to {current_category}, forcing preview update"
-                )
             elif not hasattr(self, "_last_category"):
                 self._last_category = current_category
 
