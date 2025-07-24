@@ -7,20 +7,20 @@ Date: 2025-05-31
 Widget for metadata selection (file dates or EXIF), with optimized signal emission system.
 """
 
-from typing import Optional, Set
+from typing import Any
 
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QColor, QStandardItem, QStandardItemModel, QBrush, QPalette
-from PyQt5.QtWidgets import QComboBox, QHBoxLayout, QLabel, QStyle, QVBoxLayout, QWidget, QStyledItemDelegate
+from PyQt5.QtGui import QBrush, QColor, QPalette, QStandardItem, QStandardItemModel
+from PyQt5.QtWidgets import QStyledItemDelegate
 
-from core.persistent_metadata_cache import MetadataEntry
 from core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, QStyle, QVBoxLayout, QWidget
+from utils.file_status_helpers import (
+    batch_hash_status,
+    batch_metadata_status,
+)
 from utils.logger_factory import get_cached_logger
 from utils.theme_engine import ThemeEngine
 from utils.timer_manager import schedule_ui_update
-from utils.file_status_helpers import (
-    get_metadata_for_file, has_metadata, get_hash_for_file, has_hash, batch_metadata_status, batch_hash_status
-)
 from widgets.hierarchical_combo_box import HierarchicalComboBox
 
 # ApplicationContext integration
@@ -78,7 +78,7 @@ class MetadataWidget(QWidget):
     updated = pyqtSignal(object)
 
     def __init__(
-        self, parent: Optional[QWidget] = None, parent_window: Optional[QWidget] = None
+        self, parent: QWidget | None = None, parent_window: QWidget | None = None
     ) -> None:
         super().__init__(parent)
         self.parent_window = parent_window
@@ -165,19 +165,15 @@ class MetadataWidget(QWidget):
         """Handle category combo box changes with safe timer scheduling."""
         # Check if disabled item was selected (None data)
         current_data = self.category_combo.currentData()
-        logger.debug(f"[DEBUG] [MetadataWidget] _on_category_changed called with current_data: {current_data}")
         if current_data is None:
             # Return to File Dates if disabled item was selected
             self.category_combo.setCurrentIndex(0)
-            logger.debug("[DEBUG] [MetadataWidget] Disabled item selected, returning to File Dates")
             return
 
         try:
-            logger.debug(f"[DEBUG] [MetadataWidget] Scheduling update_options with timer")
             schedule_ui_update(self.update_options)
         except Exception:
             # Fallback for testing or when timer manager is not available
-            logger.debug(f"[DEBUG] [MetadataWidget] Timer not available, calling update_options directly")
             self.update_options()
 
         # Check if we need to show dialog for hash/metadata calculation
@@ -198,14 +194,10 @@ class MetadataWidget(QWidget):
                     self.options_combo.addItem("CRC32", userData="hash_crc32")
                 self.options_combo.setEnabled(False)
                 self._apply_disabled_combo_styling()
-                logger.debug("[DEBUG] [MetadataWidget] Hash category disabled - applied disabled styling")
 
     def update_options(self) -> None:
         category = self.category_combo.currentData()
-        logger.debug(f"[DEBUG] [MetadataWidget] update_options called with category: {category}")
         self.options_combo.clear()
-        file_paths = [f.full_path for f in self._get_selected_files()]
-        logger.debug(f"[DEBUG] [MetadataWidget] update_options batch_metadata_status: {batch_metadata_status(file_paths)}")
 
         if category == "file_dates":
             self.options_label.setText("Type")
@@ -217,7 +209,6 @@ class MetadataWidget(QWidget):
         elif category == "hash":
             self.options_label.setText("Type")
             # ALWAYS call populate_hash_options for hash checking (even when file selection changes)
-            logger.debug("[MetadataWidget] Hash category selected - checking for hash requirements")
             self.populate_hash_options()
             # Hash combo is managed by populate_hash_options
         elif category == "metadata_keys":
@@ -235,7 +226,6 @@ class MetadataWidget(QWidget):
             pass
         elif self.options_combo.count() > 0:
             self.options_combo.setCurrentIndex(0)
-            logger.debug(f"[DEBUG] [MetadataWidget] Set current index to 0, current data: {self.options_combo.currentData()}")
 
         # Use timer to ensure currentData is updated before emitting
         try:
@@ -267,7 +257,6 @@ class MetadataWidget(QWidget):
         try:
             # Get selected files
             selected_files = self._get_selected_files()
-            logger.debug(f"[DEBUG] [MetadataWidget] Found {len(selected_files)} selected files.")
 
             if not selected_files:
                 # No files selected - disable hash option
@@ -293,8 +282,6 @@ class MetadataWidget(QWidget):
             files_with_hash = hash_cache.get_files_with_hash_batch(file_paths, "CRC32")
             files_needing_hash = [path for path in file_paths if path not in files_with_hash]
 
-            logger.debug(f"[DEBUG] [MetadataWidget] {len(files_with_hash)}/{len(file_paths)} files have hashes")
-
             # Always add CRC32 option (only hash type supported) - but always disabled
             if hasattr(self.options_combo, 'add_item'):
                 self.options_combo.add_item("CRC32", "hash_crc32")
@@ -308,13 +295,9 @@ class MetadataWidget(QWidget):
 
             if files_needing_hash:
                 # Some files need hash calculation
-                logger.debug(f"[DEBUG] [MetadataWidget] {len(files_needing_hash)} files need hash calculation")
                 return True
             else:
                 # All files have hashes - but combo still disabled
-                logger.debug(
-                    "[DEBUG] [MetadataWidget] All files have hashes, but combo disabled (only CRC32 available)"
-                )
                 return True
 
         except Exception as e:
@@ -332,46 +315,30 @@ class MetadataWidget(QWidget):
 
     def _get_selected_files(self):
         """Get selected files from the main window."""
-        logger.debug(
-            f"[DEBUG] [MetadataWidget] _get_selected_files called. parent_window: {self.parent_window}"
-        )
-
         try:
             # Try to get selected files from parent window
             if self.parent_window and hasattr(self.parent_window, "get_selected_files_ordered"):
-                logger.debug("[DEBUG] [MetadataWidget] Getting files from parent_window")
                 files = self.parent_window.get_selected_files_ordered()
-                logger.debug(f"[DEBUG] [MetadataWidget] Got {len(files)} files from parent_window")
                 return files
 
             # Try to get from ApplicationContext
             context = self._get_app_context()
-            logger.debug(f"[DEBUG] [MetadataWidget] ApplicationContext: {context}")
 
             # Try to get from FileStore
             if context and hasattr(context, "_file_store") and context._file_store:
-                logger.debug("[DEBUG] [MetadataWidget] Trying to get files from FileStore")
                 selected_files = context._file_store.get_selected_files()
                 if selected_files:
-                    logger.debug(f"[DEBUG] [MetadataWidget] Got {len(selected_files)} files from FileStore")
                     return selected_files
 
             # Try to get from SelectionStore
             if context and hasattr(context, "_selection_store") and context._selection_store:
-                logger.debug("[DEBUG] [MetadataWidget] Trying to get files from SelectionStore")
                 selected_files = context._selection_store.get_selected_files()
                 if selected_files:
-                    logger.debug(
-                        f"[DEBUG] [MetadataWidget] Got {len(selected_files)} files from SelectionStore"
-                    )
                     return selected_files
-
-            logger.debug("[DEBUG] [MetadataWidget] No files found in ApplicationContext stores")
 
         except Exception as e:
             logger.warning(f"[MetadataWidget] Error getting selected files: {e}")
 
-        logger.debug("[DEBUG] [MetadataWidget] Returning empty list - no source found")
         return []
 
     def _calculate_hashes_for_files(self, files_needing_hash):
@@ -388,7 +355,7 @@ class MetadataWidget(QWidget):
                         break
 
             if not file_items_needing_hash:
-                logger.warning("[DEBUG] [MetadataWidget] No file items found for hash calculation")
+                logger.warning("[MetadataWidget] No file items found for hash calculation")
                 return
 
             # Get main window for hash calculation
@@ -411,28 +378,23 @@ class MetadataWidget(QWidget):
                     self.force_preview_update, 100
                 )  # Small delay to ensure hash calculation completes
                 self._hash_dialog_active = False  # <-- Ensure flag reset after calculation
-                logger.debug(
-                    "[DEBUG] [MetadataWidget] Hash calculation completed, preview update scheduled"
-                )
             else:
-                logger.error("[DEBUG] [MetadataWidget] Could not find main window for hash calculation")
+                logger.error("[MetadataWidget] Could not find main window for hash calculation")
                 self._hash_dialog_active = False
 
         except Exception as e:
-            logger.error(f"[DEBUG] [MetadataWidget] Error calculating hashes: {e}")
+            logger.error(f"[MetadataWidget] Error calculating hashes: {e}")
             self._hash_dialog_active = False  # <-- Ensure flag reset on error
 
     def populate_metadata_keys(self) -> None:
-        logger.debug(f"[DEBUG] [MetadataWidget] populate_metadata_keys CALLED")
         keys = self.get_available_metadata_keys()
-        logger.debug(f"[DEBUG] [MetadataWidget] populate_metadata_keys - keys to add: {keys}")
         self.options_combo.clear()
         if not keys:
             if hasattr(self.options_combo, 'add_item'):
                 self.options_combo.add_item("(No metadata fields available)")
             else:
                 self.options_combo.addItem("(No metadata fields available)")
-            logger.debug(f"[DEBUG] [MetadataWidget] No metadata fields available for selection")
+            logger.debug("[MetadataWidget] No metadata fields available for selection", extra={"dev_only": True})
             return
 
         # Group keys by category for better organization
@@ -444,11 +406,9 @@ class MetadataWidget(QWidget):
             if category_keys:  # Only add categories that have items
                 hierarchical_data[category] = []
                 for key in sorted(category_keys):
-                    logger.debug(f"[DEBUG] [MetadataWidget] Adding metadata field to combo: {key}")
                     # Format the key for display while keeping the original key as userData
                     display_text = self.format_metadata_key_name(key)
                     hierarchical_data[category].append((display_text, key))
-                    logger.debug(f"[DEBUG] [MetadataWidget] Added item with text: '{display_text}', userData: {key}")
 
         # Populate the hierarchical combo box
         self.options_combo.populate_from_metadata_groups(hierarchical_data)
@@ -540,36 +500,27 @@ class MetadataWidget(QWidget):
             return None
 
     def _get_metadata_cache_via_context(self):
-        logger.debug(f"[DEBUG] [MetadataWidget] _get_metadata_cache_via_context CALLED")
         try:
             from core.application_context import get_app_context
             context = get_app_context()
-            logger.debug(f"[DEBUG] [MetadataWidget] ApplicationContext: {context}")
             if context and hasattr(context, '_metadata_cache'):
                 cache = context._metadata_cache
-                logger.debug(f"[DEBUG] [MetadataWidget] Found metadata cache: {cache}")
                 return cache
             else:
-                logger.debug(f"[DEBUG] [MetadataWidget] No metadata cache in context")
                 return None
         except Exception as e:
-            logger.debug(f"[DEBUG] [MetadataWidget] Error getting metadata cache: {e}")
+            logger.debug(f"[MetadataWidget] Error getting metadata cache: {e}", extra={"dev_only": True})
             return None
 
-    def get_available_metadata_keys(self) -> Set[str]:
-        logger.debug(f"[DEBUG] [MetadataWidget] get_available_metadata_keys CALLED")
+    def get_available_metadata_keys(self) -> set[str]:
         selected_files = self._get_selected_files()
-        logger.debug(f"[DEBUG] [MetadataWidget] Selected files count: {len(selected_files)}")
 
         # Use the same persistent cache as batch_metadata_status
         from core.persistent_metadata_cache import get_persistent_metadata_cache
         metadata_cache = get_persistent_metadata_cache()
 
         if not metadata_cache:
-            logger.debug(f"[DEBUG] [MetadataWidget] No persistent metadata cache found")
             return set()
-
-        logger.debug(f"[DEBUG] [MetadataWidget] Metadata cache found: {metadata_cache}")
 
         keys = set()
         for file_item in selected_files:
@@ -577,12 +528,9 @@ class MetadataWidget(QWidget):
             from utils.path_normalizer import normalize_path
             normalized_path = normalize_path(file_item.full_path)
             meta = metadata_cache.get(normalized_path)
-            logger.debug(f"[DEBUG] [MetadataWidget] Metadata for {file_item.filename} (normalized: {normalized_path}): {meta}")
             if meta and isinstance(meta, dict):
-                logger.debug(f"[DEBUG] [MetadataWidget] Adding keys from {file_item.filename}: {list(meta.keys())}")
                 keys.update(meta.keys())
 
-        logger.debug(f"[DEBUG] [MetadataWidget] get_available_metadata_keys returning keys: {keys}")
         return keys
 
     def format_metadata_key_name(self, key: str) -> str:
@@ -621,13 +569,13 @@ class MetadataWidget(QWidget):
             "Frame": "Frame", "Rate": "Rate", "Bit": "Bit", "Audio": "Audio",
             "Video": "Video", "Image": "Image", "Camera": "Camera", "Lens": "Lens",
             "Focal": "Focal", "Length": "Length", "Aperture": "Aperture", "Shutter": "Shutter",
-            "Speed": "Speed", "Exposure": "Exposure", "White": "White", "Balance": "Balance",
+            "Exposure": "Exposure", "White": "White", "Balance": "Balance",
             "Flash": "Flash", "Metering": "Metering", "Mode": "Mode", "Program": "Program",
             "Sensitivity": "Sensitivity", "Compression": "Compression", "Quality": "Quality",
             "Resolution": "Resolution", "Pixel": "Pixel", "Dimension": "Dimension",
             "Orientation": "Orientation", "Rotation": "Rotation", "Duration": "Duration",
             "Track": "Track", "Channel": "Channel", "Sample": "Sample", "Frequency": "Frequency",
-            "Bitrate": "Bitrate", "Codec": "Codec", "Brand": "Brand", "Type": "Type",
+            "Bitrate": "Bitrate", "Brand": "Brand", "Type": "Type",
             "Version": "Version", "Software": "Software", "Hardware": "Hardware",
             "Manufacturer": "Manufacturer", "Creator": "Creator", "Artist": "Artist",
             "Author": "Author", "Copyright": "Copyright", "Rights": "Rights",
@@ -639,7 +587,7 @@ class MetadataWidget(QWidget):
             "Province": "Province", "Address": "Address", "Street": "Street",
             "Coordinate": "Coordinate", "Latitude": "Latitude", "Longitude": "Longitude",
             "Altitude": "Altitude", "Direction": "Direction", "Bearing": "Bearing",
-            "Speed": "Speed", "Distance": "Distance", "Area": "Area", "Volume": "Volume",
+            "Distance": "Distance", "Area": "Area", "Volume": "Volume",
             "Weight": "Weight", "Mass": "Mass", "Temperature": "Temperature",
             "Pressure": "Pressure", "Humidity": "Humidity", "Weather": "Weather",
             "Light": "Light", "Color": "Color", "Tone": "Tone", "Saturation": "Saturation",
@@ -695,12 +643,12 @@ class MetadataWidget(QWidget):
             available_keys = self.get_available_metadata_keys()
             if available_keys:
                 field = sorted(available_keys)[0]
-                logger.debug(f"[MetadataWidget] No field selected, using first available key: {field}")
+                logger.debug(f"[MetadataWidget] No field selected, using first available key: {field}", extra={"dev_only": True})
             else:
                 # If no metadata keys available, fallback to file dates
                 category = "file_dates"
                 field = "last_modified_yymmdd"
-                logger.debug("[MetadataWidget] No metadata keys available, falling back to file dates")
+                logger.debug("[MetadataWidget] No metadata keys available, falling back to file dates", extra={"dev_only": True})
 
         return {
             "type": "metadata",
@@ -709,12 +657,6 @@ class MetadataWidget(QWidget):
         }
 
     def emit_if_changed(self) -> None:
-        logger.debug(f"[DEBUG] [MetadataWidget] emit_if_changed CALLED")
-        logger.debug(f"[DEBUG] [MetadataWidget] Current options: {[self.options_combo.itemText(i) for i in range(self.options_combo.count())]}")
-        logger.debug(f"[DEBUG] [MetadataWidget] Current selected files: {[getattr(f, 'filename', None) for f in self._get_selected_files()]}")
-        logger.debug(f"[DEBUG] [MetadataWidget] Current selected files ids: {[id(f) for f in self._get_selected_files()]}")
-        logger.debug(f"[DEBUG] [MetadataWidget] Current selected files metadata: {[getattr(f, 'metadata', None) for f in self._get_selected_files()]}")
-
         # Log current combo box state
         if hasattr(self.options_combo, 'get_current_data'):
             current_text = self.options_combo.get_current_text()
@@ -724,15 +666,13 @@ class MetadataWidget(QWidget):
             current_index = self.options_combo.currentIndex()
             current_text = self.options_combo.currentText()
             current_data = self.options_combo.currentData()
-        logger.debug(f"[DEBUG] [MetadataWidget] Current combo state - index: {current_index}, text: '{current_text}', data: {current_data}")
+        logger.debug(f"[MetadataWidget] Current combo state - index: {current_index}, text: '{current_text}', data: {current_data}", extra={"dev_only": True})
 
         new_data = self.get_data()
-        logger.debug(f"[DEBUG] [MetadataWidget] New data: {new_data}")
-        logger.debug(f"[DEBUG] [MetadataWidget] Last data: {self._last_data}")
 
         if new_data != self._last_data:
             self._last_data = new_data
-            logger.debug(f"[DEBUG] [MetadataWidget] Data changed, emitting signal")
+            logger.debug("[MetadataWidget] Data changed, emitting signal", extra={"dev_only": True})
             self.updated.emit(self)
         else:
             # If data is the same but category changed, still emit for preview update
@@ -740,19 +680,18 @@ class MetadataWidget(QWidget):
             current_category = self.category_combo.currentData()
             if hasattr(self, "_last_category") and self._last_category != current_category:
                 self._last_category = current_category
-                logger.debug(f"[DEBUG] [MetadataWidget] Category changed to {current_category}, forcing preview update")
+                logger.debug(f"[MetadataWidget] Category changed to {current_category}, forcing preview update", extra={"dev_only": True})
                 self.updated.emit(self)
             elif not hasattr(self, "_last_category"):
                 self._last_category = current_category
 
     def force_preview_update(self) -> None:
         """Force preview update even if data hasn't changed (for hash calculation)."""
-        logger.debug("[DEBUG] [MetadataWidget] force_preview_update CALLED")
         self.update_options()
         self.emit_if_changed()
         self.updated.emit(self)
         logger.debug(
-            "[MetadataWidget] Forced preview update with options refresh and emit_if_changed"
+            "[MetadataWidget] Forced preview update with options refresh and emit_if_changed", extra={"dev_only": True}
         )
 
     def clear_cache(self) -> None:
@@ -761,22 +700,15 @@ class MetadataWidget(QWidget):
 
     def refresh_metadata_keys(self) -> None:
         """Refresh metadata keys and update the combo box if currently showing metadata."""
-        logger.debug("[MetadataWidget] Refreshing metadata keys")
         self.clear_cache()
         category = self.category_combo.currentData()
         if category == "metadata_keys":
-            logger.debug("[MetadataWidget] Currently showing metadata keys, updating combo box")
             self.populate_metadata_keys()
             self.emit_if_changed()
         elif category == "hash":
-            logger.debug("[MetadataWidget] Currently showing hash options, updating combo box")
             self.populate_hash_options()
             # The hash combo will remain disabled from populate_hash_options
             self.emit_if_changed()
-        else:
-            logger.debug(
-                f"[MetadataWidget] Not currently showing metadata keys or hash, cache cleared for next time (category: {category})"
-            )
 
     @staticmethod
     def is_effective(data: dict) -> bool:
@@ -853,7 +785,7 @@ class MetadataWidget(QWidget):
                 self.options_combo.setEnabled(False)
                 self._apply_disabled_combo_styling()
 
-            logger.debug("[MetadataWidget] No files selected - disabled Hash and EXIF options")
+            logger.debug("[MetadataWidget] No files selected - disabled Hash and EXIF options", extra={"dev_only": True})
         else:
             # Check if files have hash data
             has_hash_data = self._check_files_have_hash(selected_files)
@@ -919,88 +851,15 @@ class MetadataWidget(QWidget):
         the global application stylesheet correctly.
         """
         try:
-            # Get theme colors
-            from utils.theme_engine import ThemeEngine
-
-            theme = ThemeEngine()
-
             # Apply minimal styles to combo boxes
-            combo_styles = f"""
-                QComboBox {{
-                    background-color: {theme.get_color('combo_background')};
-                    color: {theme.get_color('combo_text')};
-                    border: 1px solid {theme.get_color('combo_border')};
-                    border-radius: 4px;
-                    padding: 2px 8px;
-                    font-family: "{theme.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
-                    font-size: {theme.fonts['base_size']};
-                }}
-
-                QComboBox:hover {{
-                    background-color: {theme.get_color('combo_background_hover')};
-                    border-color: {theme.get_color('input_border_hover')};
-                }}
-
-                QComboBox::drop-down {{
-                    border: none;
-                    background-color: transparent;
-                    width: 18px;
-                    subcontrol-origin: padding;
-                    subcontrol-position: center right;
-                }}
-
-                QComboBox::down-arrow {{
-                    image: url(resources/icons/feather_icons/chevrons-down.svg);
-                    width: 12px;
-                    height: 12px;
-                }}
-
-                /* Custom styling for disabled items in custom model */
-                QComboBox QAbstractItemView::item {{
-                    background-color: transparent;
-                    color: {theme.get_color('combo_text')};
-                    padding: 6px 8px;
-                    border: none;
-                    min-height: 18px;
-                    border-radius: 3px;
-                    margin: 1px;
-                }}
-
-                QComboBox QAbstractItemView::item:hover {{
-                    background-color: {theme.get_color('combo_item_background_hover')};
-                    color: {theme.get_color('combo_text')};
-                }}
-
-                QComboBox QAbstractItemView::item:selected {{
-                    background-color: {theme.get_color('combo_item_background_selected')};
-                    color: {theme.get_color('input_selection_text')};
-                }}
-
-                /* Force grayout for items without ItemIsEnabled flag */
-                QComboBox QAbstractItemView::item:!enabled {{
-                    background-color: transparent !important;
-                    color: {theme.get_color('disabled_text')} !important;
-                    opacity: 0.6 !important;
-                }}
-
-                QComboBox QAbstractItemView::item:!enabled:hover {{
-                    background-color: transparent !important;
-                    color: {theme.get_color('disabled_text')} !important;
-                }}
-            """
-
-            # Apply styles to combo boxes
-            # self.category_combo.setStyleSheet(combo_styles)
-            # self.options_combo.setStyleSheet(combo_styles)
-
-            logger.debug("[MetadataWidget] Theme inheritance ensured for combo boxes")
+            # Note: Detailed styling is handled by ComboBoxItemDelegate
+            pass
 
         except Exception as e:
             logger.warning(f"[MetadataWidget] Failed to ensure theme inheritance: {e}")
 
     def trigger_update_options(self):
         """Trigger update_options and hash check immediately (no debounce)."""
-        logger.debug("[DEBUG] [MetadataWidget] trigger_update_options CALLED (no debounce)")
         # Update category availability first
         self.update_category_availability()
         # Then update options
@@ -1008,7 +867,6 @@ class MetadataWidget(QWidget):
 
     def _debounced_update_options(self):
         """Immediate update_options and hash check (no debounce, for compatibility)."""
-        logger.debug("[DEBUG] [MetadataWidget] _debounced_update_options CALLED (no debounce)")
         # Update category availability first
         self.update_category_availability()
         # Then update options
@@ -1016,18 +874,14 @@ class MetadataWidget(QWidget):
 
     def _check_calculation_requirements(self, category: str):
         """Check if calculation dialog is needed for the selected category."""
-        logger.debug(
-            f"[DEBUG] [MetadataWidget] _check_calculation_requirements CALLED for category: {category}"
-        )
-
         if self._hash_dialog_active:
-            logger.debug("[MetadataWidget] Dialog already active, skipping check")
+            logger.debug("[MetadataWidget] Dialog already active, skipping check", extra={"dev_only": True})
             return
 
         try:
             selected_files = self._get_selected_files()
             if not selected_files:
-                logger.debug("[MetadataWidget] No files selected, no dialog needed")
+                logger.debug("[MetadataWidget] No files selected, no dialog needed", extra={"dev_only": True})
                 return
 
             if category == "hash":
@@ -1050,32 +904,27 @@ class MetadataWidget(QWidget):
 
         if files_needing_hash:
             logger.debug(
-                f"[MetadataWidget] {len(files_needing_hash)} files need hash calculation - showing dialog"
+                f"[MetadataWidget] {len(files_needing_hash)} files need hash calculation - showing dialog", extra={"dev_only": True}
             )
             self._hash_dialog_active = True
             self._show_calculation_dialog(files_needing_hash, "hash")
         else:
-            logger.debug("[MetadataWidget] All files have hashes - no dialog needed")
+            logger.debug("[MetadataWidget] All files have hashes - no dialog needed", extra={"dev_only": True})
 
     def _check_metadata_calculation_requirements(self, selected_files):
-        logger.debug(f"[DEBUG] [MetadataWidget] _check_metadata_calculation_requirements CALLED for {len(selected_files)} files")
         file_paths = [file_item.full_path for file_item in selected_files]
         batch_status = batch_metadata_status(file_paths)
-        logger.debug(f"[DEBUG] [MetadataWidget] batch_metadata_status: {batch_status}")
         files_with_metadata = [p for p, has in batch_status.items() if has]
         total_files = len(selected_files)
-        logger.debug(f"[DEBUG] [MetadataWidget] files_with_metadata: {files_with_metadata}")
         if len(files_with_metadata) < total_files:
             files_needing_metadata = [file_item.full_path for file_item in selected_files if not batch_status.get(file_item.full_path, False)]
-            logger.debug(f"[MetadataWidget] {len(files_needing_metadata)} files need metadata - showing dialog")
+            logger.debug(f"[MetadataWidget] {len(files_needing_metadata)} files need metadata - showing dialog", extra={"dev_only": True})
             self._hash_dialog_active = True
             self._show_calculation_dialog(files_needing_metadata, "metadata")
         else:
-            logger.debug("[MetadataWidget] All files have metadata - no dialog needed")
+            logger.debug("[MetadataWidget] All files have metadata - no dialog needed", extra={"dev_only": True})
 
     def _show_calculation_dialog(self, files_needing_calculation, calculation_type: str):
-        logger.debug(f"[DEBUG] [MetadataWidget] _show_calculation_dialog CALLED for {len(files_needing_calculation)} files, type: {calculation_type}")
-        logger.debug(f"[DEBUG] [MetadataWidget] files_needing_calculation: {files_needing_calculation}")
         try:
             from widgets.custom_message_dialog import CustomMessageDialog
 
@@ -1092,7 +941,7 @@ class MetadataWidget(QWidget):
                 yes_text = "Load Metadata"
 
             logger.debug(
-                f"[DEBUG] [MetadataWidget] Showing {calculation_type} calculation dialog with message: {message}"
+                f"[MetadataWidget] Showing {calculation_type} calculation dialog", extra={"dev_only": True}
             )
 
             # Show dialog
@@ -1100,18 +949,16 @@ class MetadataWidget(QWidget):
                 self.parent_window, title, message, yes_text=yes_text, no_text="Cancel"
             )
 
-            logger.debug(f"[DEBUG] [MetadataWidget] Dialog result: {result}")
-
             if result:
                 # User chose to calculate
-                logger.debug(f"[DEBUG] [MetadataWidget] User chose to calculate {calculation_type}")
+                logger.debug(f"[MetadataWidget] User chose to calculate {calculation_type}", extra={"dev_only": True})
                 if calculation_type == "hash":
                     self._calculate_hashes_for_files(files_needing_calculation)
                 else:
                     self._load_metadata_for_files(files_needing_calculation)
             else:
                 # User cancelled - combo remains enabled but shows original names
-                logger.debug(f"[MetadataWidget] User cancelled {calculation_type} calculation")
+                logger.debug(f"[MetadataWidget] User cancelled {calculation_type} calculation", extra={"dev_only": True})
                 # Don't disable combo - let it show original names for files without hash/metadata
 
         except Exception as e:
@@ -1160,7 +1007,7 @@ class MetadataWidget(QWidget):
                 )  # Small delay to ensure metadata loading completes
                 self._hash_dialog_active = False
                 logger.debug(
-                    "[MetadataWidget] Metadata loading completed, preview update scheduled"
+                    "[MetadataWidget] Metadata loading completed, preview update scheduled", extra={"dev_only": True}
                 )
             else:
                 logger.error("[MetadataWidget] Could not find main window for metadata loading")
@@ -1211,7 +1058,7 @@ class MetadataWidget(QWidget):
 
             self.options_combo.setStyleSheet(disabled_css)
             self.options_combo.view().setStyleSheet(disabled_css)
-            logger.debug("[MetadataWidget] Applied disabled styling to hash combo")
+            logger.debug("[MetadataWidget] Applied disabled styling to hash combo", extra={"dev_only": True})
 
         except Exception as e:
             logger.warning(f"[MetadataWidget] Error applying disabled combo styling: {e}")
@@ -1276,7 +1123,7 @@ class MetadataWidget(QWidget):
 
             self.options_combo.setStyleSheet(normal_css)
             self.options_combo.view().setStyleSheet(normal_css)
-            logger.debug("[MetadataWidget] Applied normal styling to options combo")
+            logger.debug("[MetadataWidget] Applied normal styling to options combo", extra={"dev_only": True})
 
         except Exception as e:
             logger.warning(f"[MetadataWidget] Error applying normal combo styling: {e}")
@@ -1285,7 +1132,7 @@ class MetadataWidget(QWidget):
         """Apply theme styling to combo boxes and ensure inheritance"""
         try:
             theme = ThemeEngine()
-            logger.debug("[MetadataWidget] Theme inheritance ensured for combo boxes")
+            logger.debug("[MetadataWidget] Theme inheritance ensured for combo boxes", extra={"dev_only": True})
 
             css = f"""
                 QComboBox {{
@@ -1356,7 +1203,7 @@ class MetadataWidget(QWidget):
             self.category_combo.setStyleSheet(css)
 
             # Apply style recursively to ensure inheritance
-            apply_style_recursively(self.category_combo, self.category_combo.style())
+            # apply_style_recursively(self.category_combo, self.category_combo.style()) # This line was removed
 
         except Exception as e:
             logger.error(f"[MetadataWidget] Error applying combo theme styling: {e}")
@@ -1402,7 +1249,7 @@ class MetadataWidget(QWidget):
 
             self.category_combo.setStyleSheet(disabled_css)
             self.category_combo.view().setStyleSheet(disabled_css)
-            logger.debug("[MetadataWidget] Applied disabled styling to category combo")
+            logger.debug("[MetadataWidget] Applied disabled styling to category combo", extra={"dev_only": True})
 
         except Exception as e:
             logger.warning(f"[MetadataWidget] Error applying disabled category styling: {e}")
@@ -1467,10 +1314,14 @@ class MetadataWidget(QWidget):
 
             self.category_combo.setStyleSheet(normal_css)
             self.category_combo.view().setStyleSheet(normal_css)
-            logger.debug("[MetadataWidget] Applied normal styling to category combo")
 
         except Exception as e:
             logger.warning(f"[MetadataWidget] Error applying normal category styling: {e}")
+
+    def _on_hierarchical_item_selected(self, _text: str, _data: Any):
+        """Handle item selection from hierarchical combo box."""
+        # text and data are provided by the signal but not used here
+        self.emit_if_changed()
 
     def _on_selection_changed(self):
         self.update_options()

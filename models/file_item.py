@@ -78,9 +78,9 @@ class FileItem:
 
     @property
     def has_metadata(self) -> bool:
-        logger.debug(f"[DEBUG] Checking has_metadata for {self.filename} | metadata: {self.metadata}")
+        logger.debug(f"[DEBUG] Checking has_metadata for {self.filename} | metadata: {self.metadata}", extra={"dev_only": True})
         result = isinstance(self.metadata, dict) and bool(self.metadata)
-        logger.debug(f"[DEBUG] has_metadata result for {self.filename}: {result}")
+        logger.debug(f"[DEBUG] has_metadata result for {self.filename}: {result}", extra={"dev_only": True})
         return result
 
     @property

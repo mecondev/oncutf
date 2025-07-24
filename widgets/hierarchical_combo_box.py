@@ -10,15 +10,14 @@ It's designed to replace the flat list approach for large datasets
 like metadata fields in the rename metadata module.
 """
 
-import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from core.pyqt_imports import (
     QComboBox,
     QStandardItem,
     QStandardItemModel,
-    QTreeView,
     Qt,
+    QTreeView,
     QWidget,
     pyqtSignal,
 )
@@ -41,7 +40,7 @@ class HierarchicalComboBox(QComboBox):
     # Signal emitted when an item is selected (not categories)
     item_selected = pyqtSignal(str, object)  # text, user_data
 
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
 
         # Create tree view for hierarchical display
@@ -63,7 +62,7 @@ class HierarchicalComboBox(QComboBox):
         self.tree_view.doubleClicked.connect(self._on_item_double_clicked)
 
         # Track categories for easy access
-        self._categories: Dict[str, QStandardItem] = {}
+        self._categories: dict[str, QStandardItem] = {}
 
         # Apply styling
         self._apply_styling()
@@ -308,7 +307,7 @@ class HierarchicalComboBox(QComboBox):
             else:
                 self.tree_view.expand(index)
 
-    def populate_from_metadata_groups(self, grouped_data: Dict[str, List[Tuple[str, Any]]]):
+    def populate_from_metadata_groups(self, grouped_data: dict[str, list[tuple[str, Any]]]):
         """
         Populate the combo box from grouped metadata data.
 
@@ -319,7 +318,7 @@ class HierarchicalComboBox(QComboBox):
 
         for category_name, items in grouped_data.items():
             if items:  # Only add categories that have items
-                category_item = self.add_category(category_name)
+                self.add_category(category_name)
 
                 for item_text, item_data in sorted(items):
                     self.add_item_to_category(category_name, item_text, item_data)

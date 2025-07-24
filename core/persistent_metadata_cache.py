@@ -16,18 +16,18 @@ from typing import Dict, Optional
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
-logger.debug(f"[DEBUG] [PersistentMetadataCache] Module imported")
+logger.debug(f"[DEBUG] [PersistentMetadataCache] Module imported", extra={"dev_only": True})
 
 try:
     from core.database_manager import get_database_manager
-    logger.debug(f"[DEBUG] [PersistentMetadataCache] Successfully imported get_database_manager")
+    logger.debug(f"[DEBUG] [PersistentMetadataCache] Successfully imported get_database_manager", extra={"dev_only": True})
 except Exception as e:
     logger.error(f"[DEBUG] [PersistentMetadataCache] Error importing get_database_manager: {e}")
     raise
 
 try:
     from utils.path_normalizer import normalize_path
-    logger.debug(f"[DEBUG] [PersistentMetadataCache] Successfully imported normalize_path")
+    logger.debug(f"[DEBUG] [PersistentMetadataCache] Successfully imported normalize_path", extra={"dev_only": True})
 except Exception as e:
     logger.error(f"[DEBUG] [PersistentMetadataCache] Error importing normalize_path: {e}")
     raise
@@ -72,10 +72,10 @@ class PersistentMetadataCache:
 
     def __init__(self):
         """Initialize persistent metadata cache with database backend."""
-        logger.debug(f"[DEBUG] [PersistentMetadataCache] __init__ CALLED")
+        logger.debug(f"[DEBUG] [PersistentMetadataCache] __init__ CALLED", extra={"dev_only": True})
         try:
             self._db_manager = get_database_manager()
-            logger.debug(f"[DEBUG] [PersistentMetadataCache] Database manager: {self._db_manager}")
+            logger.debug(f"[DEBUG] [PersistentMetadataCache] Database manager: {self._db_manager}", extra={"dev_only": True})
         except Exception as e:
             logger.error(f"[DEBUG] [PersistentMetadataCache] Error getting database manager: {e}")
             raise
@@ -127,7 +127,7 @@ class PersistentMetadataCache:
         norm_path = self._normalize_path(file_path)
         try:
             metadata = self._db_manager.get_metadata(norm_path)
-            logger.debug(f"[DEBUG] [PersistentMetadataCache] get({file_path}) -> {len(metadata) if metadata else 0} keys")
+            logger.debug(f"[DEBUG] [PersistentMetadataCache] get({file_path}) -> {len(metadata) if metadata else 0} keys", extra={"dev_only": True})
             return metadata or {}
         except Exception as e:
             logger.error(f"[PersistentMetadataCache] Error getting metadata for {file_path}: {e}")
@@ -168,7 +168,7 @@ class PersistentMetadataCache:
         norm_path = self._normalize_path(file_path)
         try:
             result = self._db_manager.has_metadata(norm_path)
-            logger.debug(f"[DEBUG] [PersistentMetadataCache] has({file_path}) -> {result}")
+            logger.debug(f"[DEBUG] [PersistentMetadataCache] has({file_path}) -> {result}", extra={"dev_only": True})
             return result
         except Exception as e:
             logger.error(f"[PersistentMetadataCache] Error checking metadata for {file_path}: {e}")
@@ -264,20 +264,20 @@ _persistent_metadata_cache_instance = None
 def get_persistent_metadata_cache() -> PersistentMetadataCache:
     """Get global persistent metadata cache instance."""
     global _persistent_metadata_cache_instance
-    logger.debug(f"[DEBUG] [PersistentMetadataCache] get_persistent_metadata_cache CALLED")
-    logger.debug(f"[DEBUG] [PersistentMetadataCache] Current instance: {_persistent_metadata_cache_instance}")
+    logger.debug(f"[DEBUG] [PersistentMetadataCache] get_persistent_metadata_cache CALLED", extra={"dev_only": True})
+    logger.debug(f"[DEBUG] [PersistentMetadataCache] Current instance: {_persistent_metadata_cache_instance}", extra={"dev_only": True})
     if _persistent_metadata_cache_instance is None:
-        logger.debug(f"[DEBUG] [PersistentMetadataCache] Creating new instance")
+        logger.debug(f"[DEBUG] [PersistentMetadataCache] Creating new instance", extra={"dev_only": True})
         try:
             _persistent_metadata_cache_instance = PersistentMetadataCache()
-            logger.debug(f"[DEBUG] [PersistentMetadataCache] Successfully created instance: {_persistent_metadata_cache_instance}")
+            logger.debug(f"[DEBUG] [PersistentMetadataCache] Successfully created instance: {_persistent_metadata_cache_instance}", extra={"dev_only": True})
         except Exception as e:
             logger.error(f"[DEBUG] [PersistentMetadataCache] Error creating instance: {e}")
             # Create a dummy cache to avoid returning None
             logger.warning(f"[DEBUG] [PersistentMetadataCache] Creating dummy cache due to error")
             _persistent_metadata_cache_instance = DummyMetadataCache()
     else:
-        logger.debug(f"[DEBUG] [PersistentMetadataCache] Using existing instance")
+        logger.debug(f"[DEBUG] [PersistentMetadataCache] Using existing instance", extra={"dev_only": True})
     return _persistent_metadata_cache_instance
 
 

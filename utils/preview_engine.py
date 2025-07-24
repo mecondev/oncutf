@@ -48,10 +48,10 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
     """
     Applies the rename modules to the basename only. The extension (with the dot) is always appended at the end, unchanged.
     """
-    logger.debug(f"[DEBUG] [PreviewEngine] apply_rename_modules CALLED for {file_item.filename}")
-    logger.debug(f"[DEBUG] [PreviewEngine] modules_data: {modules_data}")
-    logger.debug(f"[DEBUG] [PreviewEngine] index: {index}")
-    logger.debug(f"[DEBUG] [PreviewEngine] metadata_cache provided: {metadata_cache is not None}")
+    logger.debug(f"[DEBUG] [PreviewEngine] apply_rename_modules CALLED for {file_item.filename}", extra={"dev_only": True})
+    logger.debug(f"[DEBUG] [PreviewEngine] modules_data: {modules_data}", extra={"dev_only": True})
+    logger.debug(f"[DEBUG] [PreviewEngine] index: {index}", extra={"dev_only": True})
+    logger.debug(f"[DEBUG] [PreviewEngine] metadata_cache provided: {metadata_cache is not None}", extra={"dev_only": True})
 
     global _cache_timestamp
 
@@ -62,13 +62,13 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
     current_time = time.time()
 
     if cache_key in _module_cache and current_time - _cache_timestamp < _cache_validity_duration:
-        logger.debug(f"[DEBUG] [PreviewEngine] Using cached result for {file_item.filename}")
+        logger.debug(f"[DEBUG] [PreviewEngine] Using cached result for {file_item.filename}", extra={"dev_only": True})
         return _module_cache[cache_key]
 
     new_name_parts = []
     for i, data in enumerate(modules_data):
         module_type = data.get("type")
-        logger.debug(f"[DEBUG] [PreviewEngine] Processing module {i}: type={module_type}, data={data}")
+        logger.debug(f"[DEBUG] [PreviewEngine] Processing module {i}: type={module_type}, data={data}", extra={"dev_only": True})
 
         part = ""
 
@@ -78,17 +78,17 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
             padding = data.get("padding", 1)
             value = start + (index * step)
             part = str(value).zfill(padding)
-            logger.debug(f"[DEBUG] [PreviewEngine] Counter result: {part}")
+            logger.debug(f"[DEBUG] [PreviewEngine] Counter result: {part}", extra={"dev_only": True})
 
         elif module_type == "specified_text":
             part = SpecifiedTextModule.apply_from_data(data, file_item, index, metadata_cache)
-            logger.debug(f"[DEBUG] [PreviewEngine] SpecifiedText result: {part}")
+            logger.debug(f"[DEBUG] [PreviewEngine] SpecifiedText result: {part}", extra={"dev_only": True})
 
         elif module_type == "original_name":
             part = original_base_name
             if not part:
                 part = "originalname"
-            logger.debug(f"[DEBUG] [PreviewEngine] OriginalName result: {part}")
+            logger.debug(f"[DEBUG] [PreviewEngine] OriginalName result: {part}", extra={"dev_only": True})
 
         elif module_type == "remove_text_from_original_name":
             # Apply text removal to original filename and return the result
@@ -97,18 +97,18 @@ def apply_rename_modules(modules_data, index, file_item, metadata_cache=None):
             )
             # Extract just the base name without extension
             part, _ = os.path.splitext(result_filename)
-            logger.debug(f"[DEBUG] [PreviewEngine] TextRemoval result: {part}")
+            logger.debug(f"[DEBUG] [PreviewEngine] TextRemoval result: {part}", extra={"dev_only": True})
 
         elif module_type == "metadata":
-            logger.debug(f"[DEBUG] [PreviewEngine] Calling MetadataModule.apply_from_data for {file_item.filename}")
+            logger.debug(f"[DEBUG] [PreviewEngine] Calling MetadataModule.apply_from_data for {file_item.filename}", extra={"dev_only": True})
             part = MetadataModule.apply_from_data(data, file_item, index, metadata_cache)
-            logger.debug(f"[DEBUG] [PreviewEngine] MetadataModule result: {part}")
+            logger.debug(f"[DEBUG] [PreviewEngine] MetadataModule result: {part}", extra={"dev_only": True})
 
         new_name_parts.append(part)
 
     # Join all parts
     new_fullname = "".join(new_name_parts)
-    logger.debug(f"[DEBUG] [PreviewEngine] Final result for {file_item.filename}: {new_fullname}")
+    logger.debug(f"[DEBUG] [PreviewEngine] Final result for {file_item.filename}: {new_fullname}", extra={"dev_only": True})
 
     # Cache the result
     _module_cache[cache_key] = new_fullname
