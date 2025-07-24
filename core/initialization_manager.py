@@ -67,16 +67,11 @@ class InitializationManager:
                 context.selection_store.selection_changed.connect(
                     self.main_window.update_preview_from_selection
                 )
-                print(
-                    "[DEBUG] Connected SelectionStore selection_changed signal to update_preview_from_selection"
-                )
                 logger.debug(
                     "[MainWindow] Connected SelectionStore signals", extra={"dev_only": True}
                 )
             else:
-                print(
-                    f"[DEBUG] Failed to connect SelectionStore signals - context: {context}, selection_store: {context.selection_store if context else None}"
-                )
+                pass
 
             logger.debug(
                 "[MainWindow] Enabling SelectionStore mode in FileTableView",

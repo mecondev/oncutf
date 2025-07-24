@@ -9,7 +9,6 @@ Dialog for bulk rotation operations.
 """
 
 from pathlib import Path
-from typing import List, Optional
 
 from config import QLABEL_MUTED_TEXT
 from core.pyqt_imports import (
@@ -281,7 +280,7 @@ class BulkRotationDialog(QDialog):
             # Update dialog title to show how many files will be changed
             self.setWindowTitle(f"Bulk Rotation - {total_needing_rotation} Files")
 
-    def _get_current_rotation(self, file_item) -> Optional[str]:
+    def _get_current_rotation(self, file_item) -> str | None:
         """Get current rotation value for a file, checking cache first then file metadata."""
         if not self.metadata_cache:
             return None
@@ -305,9 +304,9 @@ class BulkRotationDialog(QDialog):
     def _create_group_widget(
         self,
         file_type: str,
-        files_needing_change: List,
+        files_needing_change: list,
         total_files_in_group: int,
-        extensions: List[str],
+        extensions: list[str],
     ):
         frame = QFrame()
         frame.setFrameStyle(QFrame.StyledPanel)
@@ -349,7 +348,7 @@ class BulkRotationDialog(QDialog):
         # Store only the files that actually need changes
         self.file_groups[file_type] = files_needing_change
 
-    def get_selected_files(self) -> List:
+    def get_selected_files(self) -> list:
         selected = []
         for file_type, checkbox in self.checkboxes.items():
             if checkbox.isChecked():

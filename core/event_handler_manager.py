@@ -10,15 +10,17 @@ Handles browse, folder import, table interactions, context menus, and user actio
 
 import os
 import time
-from typing import List, Optional
 
 from config import STATUS_COLORS
 from core.modifier_handler import decode_modifiers_to_flags
 from core.pyqt_imports import QAction, QApplication, QMenu, QModelIndex, Qt
 from utils.cursor_helper import wait_cursor
+from utils.file_status_helpers import (
+    has_hash,
+    has_metadata,
+)
 from utils.logger_factory import get_cached_logger
 from utils.path_utils import paths_equal
-from utils.file_status_helpers import has_metadata, has_hash, batch_metadata_status, batch_hash_status
 
 logger = get_cached_logger(__name__)
 
@@ -616,7 +618,7 @@ class EventHandlerManager:
             if hasattr(self.parent_window, "preview_tables_view"):
                 self.parent_window.preview_tables_view.handle_splitter_moved(pos, index)
 
-    def _handle_bulk_rotation(self, selected_files: List) -> None:
+    def _handle_bulk_rotation(self, selected_files: list) -> None:
         """
         Handle bulk rotation setting to 0° for selected files.
 
@@ -670,7 +672,7 @@ class EventHandlerManager:
                 self.parent_window, "Error", f"An error occurred during bulk rotation: {str(e)}"
             )
 
-    def _apply_bulk_rotation(self, files_to_process: List) -> None:
+    def _apply_bulk_rotation(self, files_to_process: list) -> None:
         """
         Apply 0° rotation to the specified files, but only to files that actually need the change.
 
@@ -836,7 +838,7 @@ class EventHandlerManager:
 
     # === Hash & Comparison Methods ===
 
-    def _handle_find_duplicates(self, file_items: List, scope: str) -> None:
+    def _handle_find_duplicates(self, file_items: list, scope: str) -> None:
         """
         Handle finding duplicates in the given file list.
 
@@ -879,9 +881,9 @@ class EventHandlerManager:
     def _start_hash_operation(
         self,
         operation_type: str,
-        file_paths: List[str],
-        scope: Optional[str] = None,
-        external_folder: Optional[str] = None,
+        file_paths: list[str],
+        scope: str | None = None,
+        external_folder: str | None = None,
     ) -> None:
         """Start hash operation with progress dialog."""
         # Reset operation cancelled flag for new operation
@@ -1164,7 +1166,7 @@ class EventHandlerManager:
             self.hash_worker.wait()
             self.hash_worker = None
 
-    def _handle_compare_external(self, selected_files: List) -> None:
+    def _handle_compare_external(self, selected_files: list) -> None:
         """
         Handle comparison of selected files with an external folder.
 
@@ -1215,7 +1217,7 @@ class EventHandlerManager:
                 self.parent_window, "Error", f"Failed to start external comparison: {str(e)}"
             )
 
-    def _handle_calculate_hashes(self, selected_files: List) -> None:
+    def _handle_calculate_hashes(self, selected_files: list) -> None:
         """
         Handle calculating and displaying checksums for selected files.
 
@@ -1836,7 +1838,7 @@ class EventHandlerManager:
 
         return False
 
-    def _get_preferred_field_standard(self, file_item, field_name: str) -> Optional[str]:
+    def _get_preferred_field_standard(self, file_item, field_name: str) -> str | None:
         """
         Get the preferred metadata standard for a field based on file type and existing metadata.
         Uses exiftool's field hierarchy and existing field availability.

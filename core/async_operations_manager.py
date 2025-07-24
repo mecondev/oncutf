@@ -22,11 +22,11 @@ import asyncio
 import os
 import threading
 import time
-from collections.abc import Coroutine
+from collections.abc import Callable, Coroutine
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from queue import Queue
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 import aiofiles
 
@@ -45,10 +45,10 @@ class AsyncTask:
     coroutine: Coroutine
     priority: int = 5
     created_at: float = field(default_factory=time.time)
-    started_at: Optional[float] = None
-    completed_at: Optional[float] = None
+    started_at: float | None = None
+    completed_at: float | None = None
     result: Any = None
-    error: Optional[Exception] = None
+    error: Exception | None = None
     progress: float = 0.0
     cancellable: bool = True
 
@@ -79,7 +79,7 @@ class AsyncFileOperations:
     """
 
     @staticmethod
-    async def read_file_async(file_path: str) -> Optional[bytes]:
+    async def read_file_async(file_path: str) -> bytes | None:
         """Read file asynchronously."""
         try:
             async with aiofiles.open(file_path, "rb") as file:
@@ -102,7 +102,7 @@ class AsyncFileOperations:
 
     @staticmethod
     async def copy_file_async(
-        source: str, destination: str, progress_callback: Optional[Callable] = None
+        source: str, destination: str, progress_callback: Callable | None = None
     ) -> bool:
         """Copy file asynchronously with progress tracking."""
         try:
@@ -131,8 +131,8 @@ class AsyncFileOperations:
 
     @staticmethod
     async def calculate_hash_async(
-        file_path: str, algorithm: str = "CRC32", progress_callback: Optional[Callable] = None
-    ) -> Optional[str]:
+        file_path: str, algorithm: str = "CRC32", progress_callback: Callable | None = None
+    ) -> str | None:
         """Calculate file hash asynchronously."""
         try:
             if algorithm == "CRC32":
@@ -178,7 +178,7 @@ class AsyncFileOperations:
             return None
 
     @staticmethod
-    async def get_file_metadata_async(file_path: str) -> Optional[Dict[str, Any]]:
+    async def get_file_metadata_async(file_path: str) -> dict[str, Any] | None:
         """Get file metadata asynchronously."""
         try:
             # Use thread pool for CPU-intensive metadata extraction
@@ -227,12 +227,12 @@ class AsyncTaskManager(QObject):
         super().__init__(parent)
 
         self.max_workers = max_workers
-        self._tasks: Dict[str, AsyncTask] = {}
+        self._tasks: dict[str, AsyncTask] = {}
         self._task_queue: Queue = Queue()
-        self._running_tasks: Dict[str, asyncio.Task] = {}
+        self._running_tasks: dict[str, asyncio.Task] = {}
         self._executor = ThreadPoolExecutor(max_workers=max_workers)
-        self._event_loop: Optional[asyncio.AbstractEventLoop] = None
-        self._loop_thread: Optional[threading.Thread] = None
+        self._event_loop: asyncio.AbstractEventLoop | None = None
+        self._loop_thread: threading.Thread | None = None
         self._shutdown_event = threading.Event()
 
         # Statistics
@@ -379,7 +379,7 @@ class AsyncTaskManager(QObject):
             logger.error(f"[AsyncTaskManager] Error cancelling task {task_id}: {e}")
             return False
 
-    def get_task_status(self, task_id: str) -> Optional[Dict[str, Any]]:
+    def get_task_status(self, task_id: str) -> dict[str, Any] | None:
         """Get task status information."""
         with QMutexLocker(self._mutex):
             if task_id not in self._tasks:
@@ -397,7 +397,7 @@ class AsyncTaskManager(QObject):
                 "error": str(task.error) if task.error else None,
             }
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get task manager statistics."""
         with QMutexLocker(self._mutex):
             return {
@@ -488,7 +488,7 @@ class AsyncOperationsManager(QObject):
         self.operation_progress.emit(task_id, progress)
 
     def calculate_file_hash_async(
-        self, file_path: str, algorithm: str = "CRC32", operation_id: Optional[str] = None
+        self, file_path: str, algorithm: str = "CRC32", operation_id: str | None = None
     ) -> str:
         """
         Calculate file hash asynchronously.
@@ -512,7 +512,7 @@ class AsyncOperationsManager(QObject):
 
         return operation_id
 
-    def extract_metadata_async(self, file_path: str, operation_id: Optional[str] = None) -> str:
+    def extract_metadata_async(self, file_path: str, operation_id: str | None = None) -> str:
         """
         Extract file metadata asynchronously.
 
@@ -533,9 +533,9 @@ class AsyncOperationsManager(QObject):
 
     def process_files_batch_async(
         self,
-        file_paths: List[str],
+        file_paths: list[str],
         operation_type: str = "hash",
-        operation_id: Optional[str] = None,
+        operation_id: str | None = None,
     ) -> str:
         """
         Process multiple files asynchronously.
@@ -579,7 +579,7 @@ class AsyncOperationsManager(QObject):
         self.task_manager.submit_task(operation_id, batch_processor(), f"batch_{operation_type}")
         return operation_id
 
-    def get_operation_status(self, operation_id: str) -> Optional[Dict[str, Any]]:
+    def get_operation_status(self, operation_id: str) -> dict[str, Any] | None:
         """Get operation status."""
         return self.task_manager.get_task_status(operation_id)
 
@@ -587,7 +587,7 @@ class AsyncOperationsManager(QObject):
         """Cancel an operation."""
         return self.task_manager.cancel_task(operation_id)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get operations statistics."""
         return self.task_manager.get_stats()
 
@@ -597,7 +597,7 @@ class AsyncOperationsManager(QObject):
 
 
 # Global async operations manager instance
-_async_ops_manager_instance: Optional[AsyncOperationsManager] = None
+_async_ops_manager_instance: AsyncOperationsManager | None = None
 
 
 def get_async_operations_manager() -> AsyncOperationsManager:

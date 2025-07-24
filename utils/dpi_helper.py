@@ -9,13 +9,13 @@ DPI adaptation utilities for cross-platform font and UI scaling.
 Handles differences between Windows and Linux DPI scaling behavior.
 """
 
-import logging
 import platform
-from typing import Dict
+from typing import Any
 
 from core.pyqt_imports import QApplication
+from utils.logger_factory import get_cached_logger
 
-logger = logging.getLogger(__name__)
+logger = get_cached_logger(__name__)
 
 
 class DPIHelper:
@@ -136,7 +136,7 @@ class DPIHelper:
         """
         return int(base_size * self.dpi_scale)
 
-    def get_font_sizes(self) -> Dict[str, int]:
+    def get_font_sizes(self) -> dict[str, int]:
         """
         Get recommended font sizes for different UI elements.
 
@@ -166,7 +166,7 @@ class DPIHelper:
         logger.debug(f"[DPI] Font sizes: {scaled_sizes}", extra={"dev_only": True})
         return scaled_sizes
 
-    def get_system_info(self) -> Dict[str, any]:
+    def get_system_info(self) -> dict[str, Any]:
         """Get system DPI information for debugging."""
         try:
             app = QApplication.instance()
@@ -213,7 +213,7 @@ def scale_ui_size(base_size: int) -> int:
     return get_dpi_helper().scale_ui_size(base_size)
 
 
-def get_font_sizes() -> Dict[str, int]:
+def get_font_sizes() -> dict[str, int]:
     """Convenience function to get font sizes."""
     return get_dpi_helper().get_font_sizes()
 

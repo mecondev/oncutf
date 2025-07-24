@@ -95,12 +95,6 @@ class TestFileSizeComparison(unittest.TestCase):
 
     def test_file_size_comparison(self):
         """Print detailed comparison for manual verification."""
-        print("\nFile Size Comparison Test")
-        print("=" * 60)
-        print(
-            f"{'File':<20} {'App Size':<12} {'App Readable':<12} {'ls':<12} {'stat':<12} {'du':<12} {'wc':<12}"
-        )
-        print("-" * 60)
 
         for test_file in self.test_files:
             file_path = project_root / test_file
@@ -108,29 +102,20 @@ class TestFileSizeComparison(unittest.TestCase):
                 # Our application's method
                 file_item = FileItem.from_path(str(file_path))
                 app_size = file_item.size
-                app_readable = file_item.get_human_readable_size()
+                file_item.get_human_readable_size()
 
                 # System commands
                 sys_sizes = self.get_system_file_sizes(str(file_path))
 
-                print(
-                    f"{test_file:<20} {app_size:<12} {app_readable:<12} {sys_sizes.get('ls', 'N/A'):<12} {sys_sizes.get('stat', 'N/A'):<12} {sys_sizes.get('du', 'N/A'):<12} {sys_sizes.get('wc', 'N/A'):<12}"
-                )
 
                 # Check for discrepancies
                 if isinstance(sys_sizes.get("stat"), int) and app_size != sys_sizes["stat"]:
-                    print(f"  ⚠️  DISCREPANCY: App={app_size}, stat={sys_sizes['stat']}")
+                    pass
 
 
 def run_manual_test():
     """Run the test as a standalone script for manual verification."""
 
-    print("File Size Comparison Test")
-    print("=" * 60)
-    print(
-        f"{'File':<20} {'App Size':<12} {'App Readable':<12} {'ls':<12} {'stat':<12} {'du':<12} {'wc':<12}"
-    )
-    print("-" * 60)
 
     test_files = ["config.py", "main.py", "requirements.txt"]
 
@@ -140,27 +125,17 @@ def run_manual_test():
             # Our application's method
             file_item = FileItem.from_path(str(file_path))
             app_size = file_item.size
-            app_readable = file_item.get_human_readable_size()
+            file_item.get_human_readable_size()
 
             # System commands
             tester = TestFileSizeComparison()
             sys_sizes = tester.get_system_file_sizes(str(file_path))
 
-            print(
-                f"{test_file:<20} {app_size:<12} {app_readable:<12} {sys_sizes.get('ls', 'N/A'):<12} {sys_sizes.get('stat', 'N/A'):<12} {sys_sizes.get('du', 'N/A'):<12} {sys_sizes.get('wc', 'N/A'):<12}"
-            )
 
             # Check for discrepancies
             if isinstance(sys_sizes.get("stat"), int) and app_size != sys_sizes["stat"]:
-                print(f"  ⚠️  DISCREPANCY: App={app_size}, stat={sys_sizes['stat']}")
+                pass
 
-    print()
-    print("Legend:")
-    print("App Size: Our application's os.path.getsize() result")
-    print("ls: ls -l (apparent size)")
-    print("stat: stat -c %s (apparent size)")
-    print("du: du -b (disk usage)")
-    print("wc: wc -c (content size for text files)")
 
 
 if __name__ == "__main__":

@@ -34,7 +34,6 @@ Usage Examples:
     manager.update_progress(processed_bytes=250000000)
 """
 
-from typing import Optional
 
 from core.pyqt_imports import QWidget
 from utils.logger_factory import get_cached_logger
@@ -55,7 +54,7 @@ class ProgressManager:
 
     SUPPORTED_OPERATIONS = ["hash", "metadata", "copy"]
 
-    def __init__(self, operation_type: str, parent: Optional[QWidget] = None):
+    def __init__(self, operation_type: str, parent: QWidget | None = None):
         """
         Initialize ProgressManager for specific operation type.
 
@@ -209,16 +208,16 @@ class ProgressManager:
 
 
 # Factory functions for backward compatibility and convenience
-def create_hash_progress_manager(parent: Optional[QWidget] = None) -> ProgressManager:
+def create_hash_progress_manager(parent: QWidget | None = None) -> ProgressManager:
     """Create a progress manager for hash operations."""
     return ProgressManager("hash", parent)
 
 
-def create_metadata_progress_manager(parent: Optional[QWidget] = None) -> ProgressManager:
+def create_metadata_progress_manager(parent: QWidget | None = None) -> ProgressManager:
     """Create a progress manager for metadata operations."""
     return ProgressManager("metadata", parent)
 
 
-def create_copy_progress_manager(parent: Optional[QWidget] = None) -> ProgressManager:
+def create_copy_progress_manager(parent: QWidget | None = None) -> ProgressManager:
     """Create a progress manager for copy operations (future)."""
     return ProgressManager("copy", parent)

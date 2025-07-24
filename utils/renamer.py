@@ -16,7 +16,7 @@ validator (object): Object to validate filename text.
 """
 
 import os
-from typing import Callable, List, Optional
+from collections.abc import Callable
 
 from core.pyqt_imports import QWidget
 from models.file_item import FileItem
@@ -35,8 +35,8 @@ class RenameResult:
         old_path: str,
         new_path: str,
         success: bool,
-        skip_reason: Optional[str] = None,
-        error: Optional[str] = None,
+        skip_reason: str | None = None,
+        error: str | None = None,
     ):
         self.old_path = old_path
         self.new_path = new_path
@@ -48,13 +48,13 @@ class RenameResult:
 class Renamer:
     def __init__(
         self,
-        files: List[FileItem],
-        modules_data: List[dict],
+        files: list[FileItem],
+        modules_data: list[dict],
         metadata_cache: dict,
-        post_transform: Optional[dict] = None,
-        parent: Optional[QWidget] = None,
-        conflict_callback: Optional[Callable[[QWidget, str], str]] = None,
-        validator: Optional[object] = None,
+        post_transform: dict | None = None,
+        parent: QWidget | None = None,
+        conflict_callback: Callable[[QWidget, str], str] | None = None,
+        validator: object | None = None,
     ) -> None:
         """
         Initializes the Renamer with required inputs for batch renaming.
@@ -79,7 +79,7 @@ class Renamer:
         if self.validator is None:
             raise ValueError("Filename validator is required for renaming.")
 
-    def rename(self) -> List[RenameResult]:
+    def rename(self) -> list[RenameResult]:
         """
         Executes the renaming process for the selected files.
 
@@ -101,7 +101,7 @@ class Renamer:
 
         # Step 2: Map old path to new name
         old_to_new = {}
-        for f, (_, new_name) in zip(self.files, preview_pairs):
+        for f, (_, new_name) in zip(self.files, preview_pairs, strict=False):
             # Remove extension if already present (work with basename only)
             basename, extension = os.path.splitext(f.filename)
             if extension and new_name.lower().endswith(extension.lower()):
@@ -224,4 +224,4 @@ def filter_metadata_safe(metadata: dict) -> dict:
     Returns:
         dict: Filtered dictionary with only str, int, float, bool, or None values.
     """
-    return {k: v for k, v in metadata.items() if isinstance(v, (str, int, float, bool, type(None)))}
+    return {k: v for k, v in metadata.items() if isinstance(v, str | int | float | bool | type(None))}

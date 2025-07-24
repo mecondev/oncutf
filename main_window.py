@@ -527,7 +527,6 @@ class MainWindow(QMainWindow):
 
     def _enable_selection_store_mode(self):
         """Enable SelectionStore mode in FileTableView."""
-        print("[DEBUG] _enable_selection_store_mode called")
         if hasattr(self, "initialization_manager"):
             self.initialization_manager.enable_selection_store_mode()
         if hasattr(self, "file_table_view"):
@@ -1429,8 +1428,8 @@ class MainWindow(QMainWindow):
                         widget.emit_if_changed()
             # Force preview update after metadata widget changes using UnifiedRenameEngine
             self._trigger_unified_preview_update()
-        except Exception as e:
-            print(f"[MainWindow] Error refreshing metadata widgets: {e}")
+        except Exception:
+            pass
 
     def _trigger_unified_preview_update(self):
         """Trigger preview update using UnifiedRenameEngine ONLY."""
@@ -1455,8 +1454,8 @@ class MainWindow(QMainWindow):
                     if isinstance(widget, MetadataWidget):
                         widget.trigger_update_options()
                         widget.emit_if_changed()
-        except Exception as e:
-            print(f"[MainWindow] Error updating metadata widget options: {e}")
+        except Exception:
+            pass
 
     def connect_hash_worker_signals(self):
         """Connect hash_worker signals when it becomes available."""

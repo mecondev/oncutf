@@ -10,7 +10,7 @@ Maps column keys to metadata keys and formats values for compact display.
 Based on comprehensive analysis of fast vs extended metadata across multiple file types.
 """
 
-from typing import Any, Dict, List
+from typing import Any
 
 from utils.logger_factory import get_cached_logger
 
@@ -77,7 +77,7 @@ class MetadataFieldMapper:
     }
 
     @classmethod
-    def get_metadata_value(cls, metadata_dict: Dict[str, Any], field_key: str) -> str:
+    def get_metadata_value(cls, metadata_dict: dict[str, Any], field_key: str) -> str:
         """
         Get metadata value for a field key with fallback support and formatting.
 
@@ -129,7 +129,7 @@ class MetadataFieldMapper:
         return formatted_value
 
     @classmethod
-    def _get_image_size_value(cls, metadata_dict: Dict[str, Any]) -> str:
+    def _get_image_size_value(cls, metadata_dict: dict[str, Any]) -> str:
         """
         Special handling for image size (combines width x height).
 
@@ -409,7 +409,7 @@ class MetadataFieldMapper:
         return cleaned
 
     @classmethod
-    def get_available_field_keys(cls) -> List[str]:
+    def get_available_field_keys(cls) -> list[str]:
         """
         Get list of all available field keys that can be mapped.
 
@@ -419,7 +419,7 @@ class MetadataFieldMapper:
         return list(cls.FIELD_KEY_MAPPING.keys())
 
     @classmethod
-    def get_metadata_keys_for_field(cls, field_key: str) -> List[str]:
+    def get_metadata_keys_for_field(cls, field_key: str) -> list[str]:
         """
         Get list of metadata keys that are checked for a given field key.
 

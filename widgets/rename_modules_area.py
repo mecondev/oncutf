@@ -12,7 +12,6 @@ Designed to scale and support future drag & drop reordering.
 Now supports ApplicationContext for optimized access patterns.
 """
 
-from typing import Optional
 
 import config
 from core.pyqt_imports import (
@@ -51,7 +50,7 @@ class RenameModulesArea(QWidget):
     updated = pyqtSignal()
 
     def __init__(
-        self, parent: Optional[QWidget] = None, parent_window: Optional[QWidget] = None
+        self, parent: QWidget | None = None, parent_window: QWidget | None = None
     ) -> None:
         super().__init__(parent)
         self.parent_window = parent_window  # Keep for backward compatibility

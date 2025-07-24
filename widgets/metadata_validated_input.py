@@ -13,7 +13,6 @@ Contains:
 """
 
 import logging
-from typing import Optional, Set, Tuple
 
 from core.pyqt_imports import QComboBox, QKeyEvent, QLineEdit, QTextEdit, QWidget, pyqtSignal
 from utils.metadata_field_validators import MetadataFieldValidator
@@ -36,7 +35,7 @@ class MetadataValidatedLineEdit(QLineEdit, BaseValidatedInput):
     # Signal emitted when validation state changes
     validation_changed = pyqtSignal(bool)  # True if valid, False if invalid
 
-    def __init__(self, field_name: str = "", parent: Optional[QWidget] = None):
+    def __init__(self, field_name: str = "", parent: QWidget | None = None):
         QLineEdit.__init__(self, parent)
         BaseValidatedInput.__init__(self)
 
@@ -69,7 +68,7 @@ class MetadataValidatedLineEdit(QLineEdit, BaseValidatedInput):
         }
         return field_limits.get(self._field_name, 0)
 
-    def get_blocked_characters(self) -> Set[str]:
+    def get_blocked_characters(self) -> set[str]:
         """
         Get set of characters that should be blocked for this field.
 
@@ -83,7 +82,7 @@ class MetadataValidatedLineEdit(QLineEdit, BaseValidatedInput):
         # Other fields allow all characters
         return set()
 
-    def validate_text_content(self, text: str) -> Tuple[bool, str]:
+    def validate_text_content(self, text: str) -> tuple[bool, str]:
         """
         Validate text content using metadata field validators.
 
@@ -152,7 +151,7 @@ class MetadataValidatedTextEdit(QTextEdit, BaseValidatedInput):
     # Signal emitted when validation state changes
     validation_changed = pyqtSignal(bool)  # True if valid, False if invalid
 
-    def __init__(self, field_name: str = "", parent: Optional[QWidget] = None):
+    def __init__(self, field_name: str = "", parent: QWidget | None = None):
         QTextEdit.__init__(self, parent)
         BaseValidatedInput.__init__(self)
 
@@ -194,7 +193,7 @@ class MetadataValidatedTextEdit(QTextEdit, BaseValidatedInput):
         """Get maximum length."""
         return self._max_length_override
 
-    def get_blocked_characters(self) -> Set[str]:
+    def get_blocked_characters(self) -> set[str]:
         """
         Get set of characters that should be blocked for this field.
 
@@ -204,7 +203,7 @@ class MetadataValidatedTextEdit(QTextEdit, BaseValidatedInput):
         # Text fields generally don't block characters
         return set()
 
-    def validate_text_content(self, text: str) -> Tuple[bool, str]:
+    def validate_text_content(self, text: str) -> tuple[bool, str]:
         """
         Validate text content using metadata field validators.
 
@@ -278,7 +277,7 @@ class MetadataRotationComboBox(QComboBox):
     # Signal emitted when validation state changes (always True for combo box)
     validation_changed = pyqtSignal(bool)
 
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
 
         # Setup rotation values
@@ -291,7 +290,7 @@ class MetadataRotationComboBox(QComboBox):
         ]
 
         # Populate combo box
-        for i, (value, label) in enumerate(zip(self.rotation_values, self.rotation_labels)):
+        for _i, (value, label) in enumerate(zip(self.rotation_values, self.rotation_labels, strict=False)):
             self.addItem(label, value)
 
         # Set default to 0°
@@ -355,7 +354,7 @@ class MetadataRotationComboBox(QComboBox):
 
 
 def create_metadata_input_widget(
-    field_name: str, is_multiline: bool = False, parent: Optional[QWidget] = None
+    field_name: str, is_multiline: bool = False, parent: QWidget | None = None
 ):
     """
     Factory function to create appropriate metadata input widget.

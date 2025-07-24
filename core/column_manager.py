@@ -23,9 +23,10 @@ ColumnConfig: Configuration class for column settings
 ColumnState: State tracking for column management
 """
 
+import contextlib
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 from core.config_imports import FILE_TABLE_COLUMN_CONFIG, METADATA_TREE_COLUMN_WIDTHS
 from core.pyqt_imports import QFontMetrics, QHeaderView, QTableView, QTreeView, QWidget
@@ -50,7 +51,7 @@ class ColumnConfig:
     column_index: int
     column_type: ColumnType
     min_width: int
-    max_width: Optional[int] = None
+    max_width: int | None = None
     default_width: int = 0
     resize_mode: QHeaderView.ResizeMode = QHeaderView.Fixed
     priority: int = 0  # Higher priority columns get space first
@@ -71,11 +72,11 @@ class ColumnConfig:
 class ColumnState:
     """State tracking for column management."""
 
-    user_preferred_widths: Dict[int, int] = field(default_factory=dict)
-    manual_resize_flags: Dict[int, bool] = field(default_factory=dict)
-    last_calculated_widths: Dict[int, int] = field(default_factory=dict)
+    user_preferred_widths: dict[int, int] = field(default_factory=dict)
+    manual_resize_flags: dict[int, bool] = field(default_factory=dict)
+    last_calculated_widths: dict[int, int] = field(default_factory=dict)
     programmatic_resize_active: bool = False
-    font_metrics: Optional[QFontMetrics] = None
+    font_metrics: QFontMetrics | None = None
 
     def set_user_preference(self, column_index: int, width: int) -> None:
         """Set user preference for a column width."""
@@ -109,7 +110,7 @@ class ColumnManager:
         """
         self.main_window = main_window
         self.state = ColumnState()
-        self.table_configs: Dict[str, Dict[int, ColumnConfig]] = {}
+        self.table_configs: dict[str, dict[int, ColumnConfig]] = {}
 
         # Initialize default configurations
         self._initialize_default_configs()
@@ -170,7 +171,7 @@ class ColumnManager:
         # Preview tables auto-regulate and don't need column management
 
     def configure_table_columns(
-        self, table_view: Union[QTableView, QTreeView], table_type: str
+        self, table_view: QTableView | QTreeView, table_type: str
     ) -> None:
         """
         Configure columns for a specific table view.
@@ -288,7 +289,7 @@ class ColumnManager:
             logger.warning(f"[ColumnManager] Error updating font metrics: {e}")
 
     def _calculate_column_width(
-        self, table_view: Union[QTableView, QTreeView], table_type: str, column_config: ColumnConfig
+        self, table_view: QTableView | QTreeView, table_type: str, column_config: ColumnConfig
     ) -> int:
         logger.debug(
             f"[ColumnManager] Calculating width for column {column_config.column_index} (type: {column_config.column_type})",
@@ -351,7 +352,7 @@ class ColumnManager:
         )
         return column_config.default_width
 
-    def _load_saved_column_width(self, column_index: int) -> Optional[int]:
+    def _load_saved_column_width(self, column_index: int) -> int | None:
         """Load saved column width from config system."""
         try:
             logger.debug(
@@ -418,7 +419,7 @@ class ColumnManager:
         return None
 
     def _calculate_stretch_column_width(
-        self, table_view: Union[QTableView, QTreeView], table_type: str, column_config: ColumnConfig
+        self, table_view: QTableView | QTreeView, table_type: str, column_config: ColumnConfig
     ) -> int:
         """
         Calculate width for stretch columns that fill remaining space.
@@ -463,7 +464,7 @@ class ColumnManager:
             logger.warning(f"[ColumnManager] Error calculating stretch column width: {e}")
             return column_config.default_width
 
-    def _needs_vertical_scrollbar(self, table_view: Union[QTableView, QTreeView]) -> bool:
+    def _needs_vertical_scrollbar(self, table_view: QTableView | QTreeView) -> bool:
         """Check if vertical scrollbar is needed."""
         try:
             model = table_view.model()
@@ -481,10 +482,8 @@ class ColumnManager:
             # Estimate row height (this is approximate)
             row_height = 20  # Default estimate
             if hasattr(table_view, "rowHeight"):
-                try:
+                with contextlib.suppress(AttributeError, RuntimeError):
                     row_height = table_view.rowHeight(0) if row_count > 0 else 20
-                except (AttributeError, RuntimeError):
-                    pass
 
             total_content_height = row_count * row_height
 
@@ -505,7 +504,7 @@ class ColumnManager:
             logger.warning(f"[ColumnManager] Error checking scrollbar need: {e}")
             return False
 
-    def _get_scrollbar_width(self, table_view: Union[QTableView, QTreeView]) -> int:
+    def _get_scrollbar_width(self, table_view: QTableView | QTreeView) -> int:
         """Get the width of the vertical scrollbar."""
         try:
             if hasattr(table_view, "verticalScrollBar"):
@@ -573,7 +572,7 @@ class ColumnManager:
             logger.warning(f"[ColumnManager] Error updating horizontal scrollbar state: {e}")
 
     def _connect_resize_signals(
-        self, table_view: Union[QTableView, QTreeView], table_type: str
+        self, table_view: QTableView | QTreeView, table_type: str
     ) -> None:
         """Connect resize signals for user preference tracking."""
         try:
@@ -639,7 +638,7 @@ class ColumnManager:
                 # For now, we'll rely on the table view's own resize handlers to call this method
 
     def adjust_columns_for_splitter_change(
-        self, table_view: Union[QTableView, QTreeView], table_type: str
+        self, table_view: QTableView | QTreeView, table_type: str
     ) -> None:
         """
         Adjust columns when splitter position changes.
@@ -674,7 +673,7 @@ class ColumnManager:
         if isinstance(table_view, QTableView):
             self.ensure_horizontal_scrollbar_state(table_view)
 
-    def reset_user_preferences(self, table_type: str, column_index: Optional[int] = None) -> None:
+    def reset_user_preferences(self, table_type: str, column_index: int | None = None) -> None:
         """
         Reset user preferences for columns to allow auto-sizing.
 
@@ -691,14 +690,14 @@ class ColumnManager:
         else:
             # Reset all preferences for this table type
             if table_type in self.table_configs:
-                for column_index in self.table_configs[table_type].keys():
+                for column_index in self.table_configs[table_type]:
                     self.state.clear_user_preference(column_index)
                 logger.debug(
                     f"[ColumnManager] Reset all user preferences for {table_type}",
                     extra={"dev_only": True},
                 )
 
-    def save_column_state(self, table_type: str) -> Dict[str, Any]:
+    def save_column_state(self, table_type: str) -> dict[str, Any]:
         """
         Save current column state for persistence.
 
@@ -711,7 +710,7 @@ class ColumnManager:
         state_data = {"user_preferences": {}, "manual_flags": {}}
 
         if table_type in self.table_configs:
-            for column_index in self.table_configs[table_type].keys():
+            for column_index in self.table_configs[table_type]:
                 # Skip column 0 (status) - it's hardcoded and shouldn't be saved
                 if column_index == 0:
                     continue
@@ -727,7 +726,7 @@ class ColumnManager:
 
         return state_data
 
-    def load_column_state(self, table_type: str, state_data: Dict[str, Any]) -> None:
+    def load_column_state(self, table_type: str, state_data: dict[str, Any]) -> None:
         """
         Load column state from persistence.
 
@@ -751,7 +750,7 @@ class ColumnManager:
         except Exception as e:
             logger.warning(f"[ColumnManager] Error loading column state: {e}")
 
-    def get_column_config(self, table_type: str, column_index: int) -> Optional[ColumnConfig]:
+    def get_column_config(self, table_type: str, column_index: int) -> ColumnConfig | None:
         """
         Get column configuration for a specific column.
 

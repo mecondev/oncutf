@@ -15,7 +15,6 @@ Features:
 - Keyboard shortcuts
 """
 
-from typing import Optional
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QKeySequence
@@ -53,7 +52,7 @@ class MetadataHistoryDialog(QDialog):
     rename operations, and performing undo/redo operations.
     """
 
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: QWidget | None = None):
         """
         Initialize metadata history dialog.
 
@@ -468,7 +467,7 @@ class MetadataHistoryDialog(QDialog):
         return os.path.basename(file_path) if file_path else ""
 
 
-def show_metadata_history_dialog(parent: Optional[QWidget] = None) -> None:
+def show_metadata_history_dialog(parent: QWidget | None = None) -> None:
     """
     Show the metadata history dialog.
 

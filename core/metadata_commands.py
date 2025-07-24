@@ -16,7 +16,7 @@ Features:
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from config import COMMAND_TYPES
 from utils.logger_factory import get_cached_logger
@@ -32,7 +32,7 @@ class MetadataCommand(ABC):
     providing execute, undo, and redo functionality.
     """
 
-    def __init__(self, file_path: str, timestamp: Optional[datetime] = None):
+    def __init__(self, file_path: str, timestamp: datetime | None = None):
         """
         Initialize metadata command.
 
@@ -353,7 +353,7 @@ class SaveMetadataCommand(MetadataCommand):
     Command for saving metadata changes to files.
     """
 
-    def __init__(self, file_paths: List[str], saved_metadata: Dict[str, Dict[str, Any]]):
+    def __init__(self, file_paths: list[str], saved_metadata: dict[str, dict[str, Any]]):
         """
         Initialize save metadata command.
 
@@ -421,7 +421,7 @@ class BatchMetadataCommand(MetadataCommand):
     Command for grouping multiple metadata commands together.
     """
 
-    def __init__(self, commands: List[MetadataCommand], description: str = ""):
+    def __init__(self, commands: list[MetadataCommand], description: str = ""):
         """
         Initialize batch metadata command.
 

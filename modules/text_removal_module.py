@@ -11,7 +11,6 @@ with case-sensitive or case-insensitive matching.
 
 import logging
 import re
-from typing import Optional
 
 from core.pyqt_imports import (
     QCheckBox,
@@ -41,7 +40,7 @@ class TextRemovalModule(BaseRenameModule):
     It supports both case-sensitive and case-insensitive matching.
     """
 
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: QWidget | None = None):
         """Initialize the text removal module."""
         super().__init__(parent)
         self.setup_ui()

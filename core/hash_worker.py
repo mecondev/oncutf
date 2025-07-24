@@ -24,7 +24,6 @@ worker.start()
 
 import os
 from pathlib import Path
-from typing import List
 
 from core.pyqt_imports import QMutex, QMutexLocker, QThread, pyqtSignal
 from utils.logger_factory import get_cached_logger
@@ -101,7 +100,7 @@ class HashWorker(QThread):
         self._enable_batching = enabled
         logger.debug(f"[HashWorker] Batch operations {'enabled' if enabled else 'disabled'}")
 
-    def setup_duplicate_scan(self, file_paths: List[str]) -> None:
+    def setup_duplicate_scan(self, file_paths: list[str]) -> None:
         """Configure worker for duplicate detection."""
         with QMutexLocker(self._mutex):
             self._operation_type = "duplicates"
@@ -115,7 +114,7 @@ class HashWorker(QThread):
             self._cache_misses = 0
             self._batch_operations = []
 
-    def setup_external_comparison(self, file_paths: List[str], external_folder: str) -> None:
+    def setup_external_comparison(self, file_paths: list[str], external_folder: str) -> None:
         """Configure worker for external folder comparison."""
         with QMutexLocker(self._mutex):
             self._operation_type = "compare"
@@ -129,7 +128,7 @@ class HashWorker(QThread):
             self._cache_misses = 0
             self._batch_operations = []
 
-    def setup_checksum_calculation(self, file_paths: List[str]) -> None:
+    def setup_checksum_calculation(self, file_paths: list[str]) -> None:
         """Configure worker for checksum calculation."""
         with QMutexLocker(self._mutex):
             self._operation_type = "checksums"
@@ -168,7 +167,7 @@ class HashWorker(QThread):
             return self.is_cancelled()
         return False
 
-    def _calculate_total_size(self, file_paths: List[str]) -> int:
+    def _calculate_total_size(self, file_paths: list[str]) -> int:
         """Calculate total size of all files for accurate progress tracking."""
         total_size = 0
         files_counted = 0
@@ -404,7 +403,7 @@ class HashWorker(QThread):
 
         return file_hash, file_size
 
-    def _calculate_checksums(self, file_paths: List[str]) -> None:
+    def _calculate_checksums(self, file_paths: list[str]) -> None:
         """Calculate checksums with file-by-file progress tracking and smart cache usage."""
         hash_results = {}
         total_files = len(file_paths)
@@ -454,7 +453,7 @@ class HashWorker(QThread):
         self.checksums_calculated.emit(hash_results)
         self.finished_processing.emit(True)
 
-    def _find_duplicates(self, file_paths: List[str]) -> None:
+    def _find_duplicates(self, file_paths: list[str]) -> None:
         """Find duplicates with file-by-file progress tracking and smart cache usage."""
         hash_to_files = {}  # Use more descriptive name
         total_files = len(file_paths)
@@ -521,7 +520,7 @@ class HashWorker(QThread):
         self.duplicates_found.emit(duplicates)
         self.finished_processing.emit(True)
 
-    def _compare_external(self, file_paths: List[str], external_folder: str) -> None:
+    def _compare_external(self, file_paths: list[str], external_folder: str) -> None:
         """Compare files with external folder using file-by-file progress tracking."""
         comparison_results = {}
         total_files = len(file_paths)

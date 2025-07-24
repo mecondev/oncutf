@@ -16,7 +16,6 @@ Features:
 """
 
 from datetime import datetime, timedelta
-from typing import List, Optional
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
@@ -43,7 +42,7 @@ class MetadataCommandManager(QObject):
     command_redone = pyqtSignal(str)  # description
     history_changed = pyqtSignal()  # general history change
 
-    def __init__(self, max_history: Optional[int] = None):
+    def __init__(self, max_history: int | None = None):
         """
         Initialize metadata command manager.
 
@@ -55,12 +54,12 @@ class MetadataCommandManager(QObject):
         self.grouping_timeout = UNDO_REDO_SETTINGS["COMMAND_GROUPING_TIMEOUT"]
 
         # Command stacks
-        self._undo_stack: List[MetadataCommand] = []
-        self._redo_stack: List[MetadataCommand] = []
+        self._undo_stack: list[MetadataCommand] = []
+        self._redo_stack: list[MetadataCommand] = []
 
         # Command grouping
-        self._pending_commands: List[MetadataCommand] = []
-        self._last_command_time: Optional[datetime] = None
+        self._pending_commands: list[MetadataCommand] = []
+        self._last_command_time: datetime | None = None
 
         logger.info(f"[MetadataCommandManager] Initialized with max_history={self.max_history}")
 
@@ -191,20 +190,20 @@ class MetadataCommandManager(QObject):
         """Check if redo is available."""
         return len(self._redo_stack) > 0
 
-    def get_undo_description(self) -> Optional[str]:
+    def get_undo_description(self) -> str | None:
         """Get description of the command that would be undone."""
         self._finalize_pending_group()
         if self._undo_stack:
             return f"Undo: {self._undo_stack[-1].get_description()}"
         return None
 
-    def get_redo_description(self) -> Optional[str]:
+    def get_redo_description(self) -> str | None:
         """Get description of the command that would be redone."""
         if self._redo_stack:
             return f"Redo: {self._redo_stack[-1].get_description()}"
         return None
 
-    def get_command_history(self, limit: Optional[int] = None) -> List[dict]:
+    def get_command_history(self, limit: int | None = None) -> list[dict]:
         """
         Get command history for UI display.
 
@@ -347,7 +346,7 @@ class MetadataCommandManager(QObject):
 
 
 # Global instance
-_metadata_command_manager: Optional[MetadataCommandManager] = None
+_metadata_command_manager: MetadataCommandManager | None = None
 
 
 def get_metadata_command_manager() -> MetadataCommandManager:

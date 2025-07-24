@@ -116,10 +116,7 @@ def safe_upper(text: str) -> str:
     first = text[0]
     rest = text[1:]
 
-    if first in initial_tonos_map:
-        first = initial_tonos_map[first]
-    else:
-        first = strip_accents(first).upper()
+    first = initial_tonos_map[first] if first in initial_tonos_map else strip_accents(first).upper()
 
     return first + strip_accents(rest).upper()
 

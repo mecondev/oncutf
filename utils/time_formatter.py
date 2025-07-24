@@ -15,7 +15,6 @@ Features:
 """
 
 import time
-from typing import Optional, Tuple
 
 from utils.logger_factory import get_cached_logger
 
@@ -64,7 +63,7 @@ class TimeTracker:
             return 0.0
         return time.time() - self.start_time
 
-    def get_estimated_total_time(self) -> Optional[float]:
+    def get_estimated_total_time(self) -> float | None:
         """Get estimated total time in seconds based on current progress rate."""
         if len(self.progress_history) < 2:
             return None
@@ -95,7 +94,7 @@ class TimeTracker:
 
         return None
 
-    def get_estimated_remaining_time(self) -> Optional[float]:
+    def get_estimated_remaining_time(self) -> float | None:
         """Get estimated remaining time in seconds."""
         total_estimate = self.get_estimated_total_time()
         if total_estimate is None:
@@ -133,7 +132,7 @@ def format_duration(seconds: float) -> str:
         return f"{secs}''"
 
 
-def format_time_range(elapsed: float, estimated_total: Optional[float] = None) -> str:
+def format_time_range(elapsed: float, estimated_total: float | None = None) -> str:
     """
     Format time range showing elapsed/estimated.
 
@@ -182,7 +181,7 @@ class ProgressEstimator:
         self.time_tracker.update_progress(current_item, total_items)
         self.processed_size = current_size
 
-    def get_size_info(self) -> Tuple[str, str]:
+    def get_size_info(self) -> tuple[str, str]:
         """
         Get size information as formatted strings.
 
@@ -210,7 +209,7 @@ class ProgressEstimator:
         else:
             return processed_str
 
-    def get_time_info(self) -> Tuple[float, Optional[float]]:
+    def get_time_info(self) -> tuple[float, float | None]:
         """
         Get time information.
 

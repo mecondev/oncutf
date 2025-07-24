@@ -11,23 +11,22 @@ and separation of concerns.
 """
 
 import time
-from typing import Dict, Optional
 
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
-logger.debug(f"[DEBUG] [PersistentMetadataCache] Module imported", extra={"dev_only": True})
+logger.debug("[DEBUG] [PersistentMetadataCache] Module imported", extra={"dev_only": True})
 
 try:
     from core.database_manager import get_database_manager
-    logger.debug(f"[DEBUG] [PersistentMetadataCache] Successfully imported get_database_manager", extra={"dev_only": True})
+    logger.debug("[DEBUG] [PersistentMetadataCache] Successfully imported get_database_manager", extra={"dev_only": True})
 except Exception as e:
     logger.error(f"[DEBUG] [PersistentMetadataCache] Error importing get_database_manager: {e}")
     raise
 
 try:
     from utils.path_normalizer import normalize_path
-    logger.debug(f"[DEBUG] [PersistentMetadataCache] Successfully imported normalize_path", extra={"dev_only": True})
+    logger.debug("[DEBUG] [PersistentMetadataCache] Successfully imported normalize_path", extra={"dev_only": True})
 except Exception as e:
     logger.error(f"[DEBUG] [PersistentMetadataCache] Error importing normalize_path: {e}")
     raise
@@ -43,7 +42,7 @@ class MetadataEntry:
         self,
         data: dict,
         is_extended: bool = False,
-        timestamp: Optional[float] = None,
+        timestamp: float | None = None,
         modified: bool = False,
     ):
         self.data = data
@@ -72,14 +71,14 @@ class PersistentMetadataCache:
 
     def __init__(self):
         """Initialize persistent metadata cache with database backend."""
-        logger.debug(f"[DEBUG] [PersistentMetadataCache] __init__ CALLED", extra={"dev_only": True})
+        logger.debug("[DEBUG] [PersistentMetadataCache] __init__ CALLED", extra={"dev_only": True})
         try:
             self._db_manager = get_database_manager()
             logger.debug(f"[DEBUG] [PersistentMetadataCache] Database manager: {self._db_manager}", extra={"dev_only": True})
         except Exception as e:
             logger.error(f"[DEBUG] [PersistentMetadataCache] Error getting database manager: {e}")
             raise
-        self._memory_cache: Dict[str, MetadataEntry] = {}  # Hot cache for performance
+        self._memory_cache: dict[str, MetadataEntry] = {}  # Hot cache for performance
         self._cache_hits = 0
         self._cache_misses = 0
 
@@ -133,7 +132,7 @@ class PersistentMetadataCache:
             logger.error(f"[PersistentMetadataCache] Error getting metadata for {file_path}: {e}")
             return {}
 
-    def get_entry(self, file_path: str) -> Optional[MetadataEntry]:
+    def get_entry(self, file_path: str) -> MetadataEntry | None:
         """Get the MetadataEntry for a file if available."""
         norm_path = self._normalize_path(file_path)
 
@@ -264,20 +263,20 @@ _persistent_metadata_cache_instance = None
 def get_persistent_metadata_cache() -> PersistentMetadataCache:
     """Get global persistent metadata cache instance."""
     global _persistent_metadata_cache_instance
-    logger.debug(f"[DEBUG] [PersistentMetadataCache] get_persistent_metadata_cache CALLED", extra={"dev_only": True})
+    logger.debug("[DEBUG] [PersistentMetadataCache] get_persistent_metadata_cache CALLED", extra={"dev_only": True})
     logger.debug(f"[DEBUG] [PersistentMetadataCache] Current instance: {_persistent_metadata_cache_instance}", extra={"dev_only": True})
     if _persistent_metadata_cache_instance is None:
-        logger.debug(f"[DEBUG] [PersistentMetadataCache] Creating new instance", extra={"dev_only": True})
+        logger.debug("[DEBUG] [PersistentMetadataCache] Creating new instance", extra={"dev_only": True})
         try:
             _persistent_metadata_cache_instance = PersistentMetadataCache()
             logger.debug(f"[DEBUG] [PersistentMetadataCache] Successfully created instance: {_persistent_metadata_cache_instance}", extra={"dev_only": True})
         except Exception as e:
             logger.error(f"[DEBUG] [PersistentMetadataCache] Error creating instance: {e}")
             # Create a dummy cache to avoid returning None
-            logger.warning(f"[DEBUG] [PersistentMetadataCache] Creating dummy cache due to error")
+            logger.warning("[DEBUG] [PersistentMetadataCache] Creating dummy cache due to error")
             _persistent_metadata_cache_instance = DummyMetadataCache()
     else:
-        logger.debug(f"[DEBUG] [PersistentMetadataCache] Using existing instance", extra={"dev_only": True})
+        logger.debug("[DEBUG] [PersistentMetadataCache] Using existing instance", extra={"dev_only": True})
     return _persistent_metadata_cache_instance
 
 
@@ -285,14 +284,14 @@ class DummyMetadataCache:
     """Dummy cache for fallback when database is not available."""
 
     def __init__(self):
-        logger.warning(f"[DEBUG] [PersistentMetadataCache] DummyMetadataCache initialized")
+        logger.warning("[DEBUG] [PersistentMetadataCache] DummyMetadataCache initialized")
         self._memory_cache = {}
 
-    def has(self, file_path: str) -> bool:
+    def has(self, _file_path: str) -> bool:
         return False
 
-    def get(self, file_path: str) -> dict:
+    def get(self, _file_path: str) -> dict:
         return {}
 
-    def set(self, file_path: str, metadata: dict, **kwargs) -> None:
+    def set(self, _file_path: str, _metadata: dict, **kwargs) -> None:
         pass

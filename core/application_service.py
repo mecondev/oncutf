@@ -9,7 +9,6 @@ Application Service Layer that provides a unified interface to all application o
 This reduces the need for delegate methods in MainWindow and creates better separation of concerns.
 """
 
-from typing import List, Optional
 
 from core.pyqt_imports import QModelIndex, Qt
 from models.file_item import FileItem
@@ -349,7 +348,7 @@ class ApplicationService:
 
             # Prepare operations for batch conflict resolution
             operations = []
-            for file, new_name in zip(selected_files, new_names):
+            for file, new_name in zip(selected_files, new_names, strict=False):
                 old_path = file.full_path
                 new_path = os.path.join(os.path.dirname(old_path), new_name)
                 operations.append((old_path, new_path))
@@ -644,11 +643,11 @@ class ApplicationService:
     # Utility Operations
     # =====================================
 
-    def find_consecutive_ranges(self, indices: List[int]):
+    def find_consecutive_ranges(self, indices: list[int]):
         """Find consecutive ranges."""
         return self.main_window.utility_manager.find_consecutive_ranges(indices)
 
-    def find_fileitem_by_path(self, path: str) -> Optional[FileItem]:
+    def find_fileitem_by_path(self, path: str) -> FileItem | None:
         """Find FileItem by path via FileOperationsManager."""
         return self.main_window.file_operations_manager.find_fileitem_by_path(
             self.main_window.file_model.files, path
@@ -699,10 +698,10 @@ class ApplicationService:
 # Global Instance Management
 # =====================================
 
-_application_service_instance: Optional[ApplicationService] = None
+_application_service_instance: ApplicationService | None = None
 
 
-def get_application_service(main_window=None) -> Optional[ApplicationService]:
+def get_application_service(main_window=None) -> ApplicationService | None:
     """
     Get the global application service instance.
 

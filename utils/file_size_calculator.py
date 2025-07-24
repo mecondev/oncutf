@@ -11,14 +11,13 @@ Used by progress dialogs to show size information during operations.
 
 import os
 from pathlib import Path
-from typing import List, Union
 
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
 
-def calculate_files_total_size(file_items: List) -> int:
+def calculate_files_total_size(file_items: list) -> int:
     """
     Calculate total size of a list of file items with optimized caching.
 
@@ -41,10 +40,7 @@ def calculate_files_total_size(file_items: List) -> int:
                 continue
 
             # Handle full_path attribute
-            if hasattr(item, "full_path"):
-                file_path = item.full_path
-            else:
-                file_path = str(item)
+            file_path = item.full_path if hasattr(item, "full_path") else str(item)
 
             # Get file size from filesystem (slower path)
             if os.path.exists(file_path) and os.path.isfile(file_path):
@@ -67,7 +63,7 @@ def calculate_files_total_size(file_items: List) -> int:
     return total_size
 
 
-def calculate_processed_size(file_items: List, current_index: int) -> int:
+def calculate_processed_size(file_items: list, current_index: int) -> int:
     """
     Calculate size of files processed so far.
 
@@ -108,7 +104,7 @@ def calculate_processed_size(file_items: List, current_index: int) -> int:
     return processed_size
 
 
-def calculate_folder_size(folder_path: Union[str, Path], recursive: bool = True) -> int:
+def calculate_folder_size(folder_path: str | Path, recursive: bool = True) -> int:
     """
     Calculate total size of a folder.
 

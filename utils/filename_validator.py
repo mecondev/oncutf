@@ -13,7 +13,6 @@ Contains:
 """
 
 import logging
-from typing import Tuple
 
 from config import INVALID_FILENAME_CHARS, INVALID_FILENAME_MARKER, INVALID_TRAILING_CHARS
 
@@ -69,7 +68,7 @@ def clean_trailing_chars(filename_part: str) -> str:
     return cleaned
 
 
-def validate_filename_part(filename_part: str) -> Tuple[bool, str]:
+def validate_filename_part(filename_part: str) -> tuple[bool, str]:
     """
     Validate a filename part and return validation status and clean version
 
@@ -218,7 +217,7 @@ def is_validation_error_marker(text: str) -> bool:
 
 
 # Convenience functions for common operations
-def clean_and_validate(text: str) -> Tuple[bool, str, str]:
+def clean_and_validate(text: str) -> tuple[bool, str, str]:
     """
     Clean and validate text in one operation
 

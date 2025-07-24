@@ -13,13 +13,12 @@ metadata during batch renaming.
 import os
 import time
 from datetime import datetime
-from typing import Optional
 
 from models.file_item import FileItem
+from utils.file_status_helpers import get_hash_for_file
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
-from utils.file_status_helpers import get_metadata_for_file, get_hash_for_file
 
 logger = get_cached_logger(__name__)
 
@@ -58,11 +57,11 @@ class MetadataModule:
 
     @staticmethod
     def apply_from_data(
-        data: dict, file_item: FileItem, index: int = 0, metadata_cache: Optional[dict] = None
+        data: dict, file_item: FileItem, index: int = 0, metadata_cache: dict | None = None
     ) -> str:
-            logger.debug(f"[DEBUG] [MetadataModule] apply_from_data CALLED for {file_item.filename}", extra={"dev_only": True})
-    logger.debug(f"[DEBUG] [MetadataModule] data: {data}", extra={"dev_only": True})
-    logger.debug(f"[DEBUG] [MetadataModule] metadata_cache provided: {metadata_cache is not None}", extra={"dev_only": True})
+        logger.debug(f"[DEBUG] [MetadataModule] apply_from_data CALLED for {file_item.filename}", extra={"dev_only": True})
+        logger.debug(f"[DEBUG] [MetadataModule] data: {data}", extra={"dev_only": True})
+        logger.debug(f"[DEBUG] [MetadataModule] metadata_cache provided: {metadata_cache is not None}", extra={"dev_only": True})
 
         global _metadata_cache, _global_cache_timestamp
 
@@ -80,12 +79,12 @@ class MetadataModule:
         field = data.get("field")
         logger.debug(f"[DEBUG] [MetadataModule] Field: {field}", extra={"dev_only": True})
         if not field:
-            logger.debug(f"[DEBUG] [MetadataModule] No field specified - returning 'invalid'", extra={"dev_only": True})
+            logger.debug("[DEBUG] [MetadataModule] No field specified - returning 'invalid'", extra={"dev_only": True})
             return "invalid"
 
         path = file_item.full_path
         if not path:
-            logger.debug(f"[DEBUG] [MetadataModule] No path - returning 'invalid'", extra={"dev_only": True})
+            logger.debug("[DEBUG] [MetadataModule] No path - returning 'invalid'", extra={"dev_only": True})
             return "invalid"
 
         # Use the same persistent cache as the UI if no cache provided
@@ -102,7 +101,7 @@ class MetadataModule:
 
         if not isinstance(metadata, dict):
             metadata = {}  # fallback to empty
-            logger.debug(f"[DEBUG] [MetadataModule] Metadata is not dict, using empty dict", extra={"dev_only": True})
+            logger.debug("[DEBUG] [MetadataModule] Metadata is not dict, using empty dict", extra={"dev_only": True})
 
         # Handle filesystem-based date formats
         if field and field.startswith("last_modified_"):
@@ -139,7 +138,7 @@ class MetadataModule:
 
         # Legacy support for old "last_modified" field name
         if field == "last_modified":
-            logger.debug(f"[DEBUG] [MetadataModule] Handling legacy last_modified field", extra={"dev_only": True})
+            logger.debug("[DEBUG] [MetadataModule] Handling legacy last_modified field", extra={"dev_only": True})
             try:
                 ts = os.path.getmtime(path)
                 result = datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
@@ -156,7 +155,7 @@ class MetadataModule:
         logger.debug(f"[DEBUG] [MetadataModule] Category: {category}", extra={"dev_only": True})
 
         if category == "hash" and field:
-            logger.debug(f"[DEBUG] [MetadataModule] Handling hash category", extra={"dev_only": True})
+            logger.debug("[DEBUG] [MetadataModule] Handling hash category", extra={"dev_only": True})
             # Handle hash fields for the hash category
             if field.startswith("hash_"):
                 try:
@@ -254,15 +253,12 @@ class MetadataModule:
         # Final fallback: try direct metadata access
         value = metadata.get(field)
         if value is not None:
-            try:
-                cleaned_value = MetadataModule.clean_metadata_value(str(value).strip())
-                _metadata_cache[cache_key] = cleaned_value
-                _global_cache_timestamp = current_time
-                return cleaned_value
-            except Exception:
-                return "invalid"
+            cleaned_value = MetadataModule.clean_metadata_value(str(value).strip())
+            _metadata_cache[cache_key] = cleaned_value
+            _global_cache_timestamp = current_time
+            return cleaned_value
 
-        # Fallback: return original name
+        # If we get here, the field was not found
         from modules.original_name_module import OriginalNameModule
 
         return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)
@@ -300,10 +296,10 @@ class MetadataModule:
             return base_name
 
     @staticmethod
-    def _ask_user_for_hash_calculation(file_path: str, hash_type: str) -> bool:
+    def _ask_user_for_hash_calculation(_file_path: str, _hash_type: str) -> bool:
         """
         This method is no longer used - hash calculation is handled manually by the user.
-        Returns False to avoid showing dialogs during preview generation.
+        Kept for backward compatibility.
         """
         return False
 

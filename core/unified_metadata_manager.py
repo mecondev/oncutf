@@ -18,16 +18,20 @@ Features:
 
 import os
 from datetime import datetime
-from typing import List, Optional, Set
 
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from core.pyqt_imports import QApplication, Qt
 from models.file_item import FileItem
+from utils.file_status_helpers import (
+    get_hash_for_file,
+    get_metadata_for_file,
+    has_hash,
+    has_metadata,
+)
 from utils.logger_factory import get_cached_logger
 from utils.metadata_cache_helper import MetadataCacheHelper
 from utils.path_utils import paths_equal
-from utils.file_status_helpers import get_metadata_for_file, get_hash_for_file, has_metadata, has_hash
 
 logger = get_cached_logger(__name__)
 
@@ -58,8 +62,8 @@ class UnifiedMetadataManager(QObject):
         """Initialize UnifiedMetadataManager with parent window reference."""
         super().__init__(parent_window)
         self.parent_window = parent_window
-        self._cache_helper: Optional[MetadataCacheHelper] = None
-        self._currently_loading: Set[str] = set()
+        self._cache_helper: MetadataCacheHelper | None = None
+        self._currently_loading: set[str] = set()
 
         # State tracking
         self.force_extended_metadata = False
@@ -87,7 +91,7 @@ class UnifiedMetadataManager(QObject):
     # Cache Checking Methods
     # =====================================
 
-    def check_cached_metadata(self, file_item: FileItem) -> Optional[dict]:
+    def check_cached_metadata(self, file_item: FileItem) -> dict | None:
         """
         Check if metadata exists in cache without loading.
 
@@ -106,7 +110,7 @@ class UnifiedMetadataManager(QObject):
             )
             return None
 
-    def check_cached_hash(self, file_item: FileItem) -> Optional[str]:
+    def check_cached_hash(self, file_item: FileItem) -> str | None:
         """
         Check if hash exists in cache without loading.
 
@@ -188,22 +192,23 @@ class UnifiedMetadataManager(QObject):
     # Mode Determination Methods
     # =====================================
 
-    def determine_loading_mode(self, file_count: int, use_extended: bool = False) -> str:
+    def determine_loading_mode(self, file_count: int, _use_extended: bool = False) -> str:
         """
         Determine the appropriate loading mode based on file count.
 
         Args:
-            file_count: Number of files to load metadata for
-            use_extended: Whether extended metadata is requested
+            file_count: Number of files to process
+            _use_extended: Whether to use extended metadata (unused parameter kept for compatibility)
 
         Returns:
-            str: Loading mode ("single_file_wait_cursor", "multiple_files_dialog", etc.)
+            str: Loading mode ("single_file", "multiple_files_dialog", or "batch")
         """
         if file_count == 1:
-            return "single_file_wait_cursor"
-        else:
-            # For any multiple files, use dialog
+            return "single_file"
+        elif file_count <= 10:
             return "multiple_files_dialog"
+        else:
+            return "batch"
 
     def determine_metadata_mode(self, modifier_state=None) -> tuple[bool, bool]:
         """
@@ -319,7 +324,7 @@ class UnifiedMetadataManager(QObject):
     # =====================================
 
     def load_metadata_for_items(
-        self, items: List[FileItem], use_extended: bool = False, source: str = "unknown"
+        self, items: list[FileItem], use_extended: bool = False, source: str = "unknown"
     ) -> None:
         """
         Load metadata for the given FileItem objects using simple and fast approach.
@@ -591,7 +596,7 @@ class UnifiedMetadataManager(QObject):
         # Always emit signal to indicate loading is finished
         self.loading_finished.emit()
 
-    def load_hashes_for_files(self, files: List[FileItem], source: str = "user_request") -> None:
+    def load_hashes_for_files(self, files: list[FileItem], source: str = "user_request") -> None:
         """
         Load hashes for files that don't have them cached.
 
@@ -633,7 +638,7 @@ class UnifiedMetadataManager(QObject):
     # =====================================
 
     def _show_metadata_progress_dialog(
-        self, files: List[FileItem], use_extended: bool, source: str
+        self, files: list[FileItem], use_extended: bool, source: str
     ) -> None:
         """Show progress dialog for metadata loading."""
         try:
@@ -658,7 +663,7 @@ class UnifiedMetadataManager(QObject):
             # Fallback to direct loading
             self._start_metadata_loading(files, use_extended, source)
 
-    def _show_hash_progress_dialog(self, files: List[FileItem], source: str) -> None:
+    def _show_hash_progress_dialog(self, files: list[FileItem], source: str) -> None:
         """Show progress dialog for hash loading."""
         try:
 
@@ -685,101 +690,70 @@ class UnifiedMetadataManager(QObject):
     # =====================================
 
     def _start_metadata_loading_with_progress(
-        self, files: List[FileItem], use_extended: bool, source: str
+        self, files: list[FileItem], use_extended: bool, source: str
     ) -> None:
         """Start metadata loading with progress tracking."""
         # This will be implemented to use the existing metadata worker
         # For now, fallback to direct loading
         self._start_metadata_loading(files, use_extended, source)
 
-    def _start_hash_loading_with_progress(self, files: List[FileItem], source: str) -> None:
+    def _start_hash_loading_with_progress(self, files: list[FileItem], source: str) -> None:
         """Start hash loading with progress tracking."""
         # This will be implemented to use the existing hash worker
         # For now, fallback to direct loading
         self._start_hash_loading(files, source)
 
     def _start_metadata_loading(
-        self, files: List[FileItem], use_extended: bool, source: str
+        self, files: list[FileItem], use_extended: bool, _source: str
     ) -> None:
         """Start metadata loading using existing metadata worker."""
         if not files:
             return
 
-        try:
-            # Use existing metadata worker
-            from core.pyqt_imports import QThread
-            from utils.metadata_loader import MetadataLoader
-            from widgets.metadata_worker import MetadataWorker
+        # Create metadata worker
+        from core.pyqt_imports import QThread
+        from widgets.metadata_worker import MetadataWorker
 
-            # Create metadata loader
-            metadata_loader = MetadataLoader()
+        self._metadata_worker = MetadataWorker()
+        self._metadata_thread = QThread()
+        self._metadata_worker.moveToThread(self._metadata_thread)
 
-            # Create worker with named arguments as expected by constructor
-            self._metadata_worker = MetadataWorker(
-                reader=metadata_loader,
-                metadata_cache=self.parent_window.metadata_cache if self.parent_window else None,
-                parent=None,  # No parent to avoid moveToThread issues
-            )
+        # Connect signals
+        self._metadata_worker.metadata_loaded.connect(self._on_file_metadata_loaded)
+        self._metadata_worker.finished.connect(self._on_metadata_finished)
+        self._metadata_worker.progress.connect(self._on_metadata_progress)
+        self._metadata_worker.size_progress.connect(self._on_metadata_size_progress)
 
-            # Set additional properties after creation
-            self._metadata_worker.file_path = [item.full_path for item in files]
-            self._metadata_worker.use_extended = use_extended
-            self._metadata_worker.main_window = self.parent_window
+        # Start loading
+        self._metadata_thread.started.connect(
+            lambda: self._metadata_worker.load_metadata_for_files(files, use_extended)
+        )
+        self._metadata_thread.start()
 
-            # Create thread
-            self._metadata_thread = QThread()
-
-            # Move worker to thread
-            self._metadata_worker.moveToThread(self._metadata_thread)
-
-            # Connect signals
-            self._metadata_thread.started.connect(self._metadata_worker.run_batch)
-            self._metadata_worker.finished.connect(self._on_metadata_finished)
-            self._metadata_worker.file_metadata_loaded.connect(self._on_file_metadata_loaded)
-
-            # Start thread
-            self._metadata_thread.start()
-
-            logger.info(f"[UnifiedMetadataManager] Started metadata loading for {len(files)} files")
-
-        except Exception as e:
-            logger.error(f"[UnifiedMetadataManager] Error starting metadata loading: {e}")
-            # Clean up loading state
-            for file_item in files:
-                self._currently_loading.discard(file_item.full_path)
-
-    def _start_hash_loading(self, files: List[FileItem], source: str) -> None:
+    def _start_hash_loading(self, files: list[FileItem], _source: str) -> None:
         """Start hash loading using existing hash worker."""
         if not files:
             return
 
-        try:
-            # Use existing hash worker
-            from core.hash_worker import HashWorker
-            from core.pyqt_imports import QThread
+        # Create hash worker
+        from core.pyqt_imports import QThread
+        from widgets.metadata_worker import HashWorker
 
-            # Create worker and thread
-            self._hash_worker = HashWorker(files)
-            self._hash_thread = QThread()
+        self._hash_worker = HashWorker()
+        self._hash_thread = QThread()
+        self._hash_worker.moveToThread(self._hash_thread)
 
-            # Move worker to thread
-            self._hash_worker.moveToThread(self._hash_thread)
+        # Connect signals
+        self._hash_worker.hash_calculated.connect(self._on_file_hash_calculated)
+        self._hash_worker.finished.connect(self._on_hash_finished)
+        self._hash_worker.progress.connect(self._on_hash_progress)
+        self._hash_worker.size_progress.connect(self._on_hash_size_progress)
 
-            # Connect signals
-            self._hash_thread.started.connect(self._hash_worker.run)
-            self._hash_worker.finished.connect(self._on_hash_finished)
-            self._hash_worker.file_processed.connect(self._on_file_hash_calculated)
-
-            # Start thread
-            self._hash_thread.start()
-
-            logger.info(f"[UnifiedMetadataManager] Started hash loading for {len(files)} files")
-
-        except Exception as e:
-            logger.error(f"[UnifiedMetadataManager] Error starting hash loading: {e}")
-            # Clean up loading state
-            for file_item in files:
-                self._currently_loading.discard(file_item.full_path)
+        # Start loading
+        self._hash_thread.started.connect(
+            lambda: self._hash_worker.calculate_hashes_for_files(files)
+        )
+        self._hash_thread.start()
 
     # =====================================
     # Progress Tracking Methods
@@ -1251,12 +1225,10 @@ class UnifiedMetadataManager(QObject):
                         display_data, context="after_save"
                     )
 
-    def _show_save_results(self, success_count, failed_files, files_to_save):
+    def _show_save_results(self, success_count, failed_files, _files_to_save):
         """Show results of metadata save operation."""
         if success_count > 0:
-            logger.info(
-                f"[UnifiedMetadataManager] Successfully saved metadata for {success_count} files"
-            )
+            logger.info(f"[UnifiedMetadataManager] Successfully saved metadata for {success_count} files")
 
             # Update status bar
             if self.parent_window and hasattr(self.parent_window, "status_bar"):
@@ -1265,9 +1237,9 @@ class UnifiedMetadataManager(QObject):
                 )
 
         if failed_files:
-            logger.warning(
-                f"[UnifiedMetadataManager] Failed to save metadata for {len(failed_files)} files: {failed_files}"
-            )
+            logger.warning(f"[UnifiedMetadataManager] Failed to save metadata for {len(failed_files)} files")
+            for file_path in failed_files:
+                logger.warning(f"[UnifiedMetadataManager] Failed to save metadata for: {file_path}")
 
             # Show error message
             if self.parent_window:

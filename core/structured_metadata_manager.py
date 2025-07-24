@@ -6,7 +6,7 @@ that can be stored in the database with proper categorization and field definiti
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from core.database_manager import get_database_manager
 from utils.logger_factory import get_cached_logger
@@ -53,7 +53,7 @@ class StructuredMetadataManager:
         """Refresh the internal caches."""
         self._load_caches()
 
-    def process_and_store_metadata(self, file_path: str, raw_metadata: Dict[str, Any]) -> bool:
+    def process_and_store_metadata(self, file_path: str, raw_metadata: dict[str, Any]) -> bool:
         """
         Process raw metadata and store it in structured format.
 
@@ -120,7 +120,7 @@ class StructuredMetadataManager:
 
             # Handle different data types
             if data_type == "number":
-                if isinstance(field_value, (int, float)):
+                if isinstance(field_value, int | float):
                     return str(field_value)
                 else:
                     # Try to extract number from string
@@ -133,7 +133,7 @@ class StructuredMetadataManager:
 
             elif data_type == "size":
                 # Handle file size formatting
-                if isinstance(field_value, (int, float)):
+                if isinstance(field_value, int | float):
                     return str(int(field_value))
                 return str(field_value)
 
@@ -147,7 +147,7 @@ class StructuredMetadataManager:
 
             elif data_type == "coordinate":
                 # Handle GPS coordinate formatting
-                if isinstance(field_value, (int, float)):
+                if isinstance(field_value, int | float):
                     return f"{field_value:.6f}"
                 return str(field_value)
 
@@ -159,7 +159,7 @@ class StructuredMetadataManager:
             logger.error(f"[StructuredMetadataManager] Error formatting field '{field_key}': {e}")
             return str(field_value)
 
-    def get_structured_metadata(self, file_path: str) -> Dict[str, Dict[str, Any]]:
+    def get_structured_metadata(self, file_path: str) -> dict[str, dict[str, Any]]:
         """
         Get structured metadata for a file, organized by categories.
 
@@ -200,7 +200,7 @@ class StructuredMetadataManager:
             )
             return {}
 
-    def get_field_value(self, file_path: str, field_key: str) -> Optional[str]:
+    def get_field_value(self, file_path: str, field_key: str) -> str | None:
         """
         Get a specific field value for a file.
 
@@ -222,7 +222,7 @@ class StructuredMetadataManager:
             )
             return None
 
-    def get_available_fields(self, category_name: str = None) -> List[Dict[str, Any]]:
+    def get_available_fields(self, category_name: str = None) -> list[dict[str, Any]]:
         """
         Get available metadata fields, optionally filtered by category.
 
@@ -247,7 +247,7 @@ class StructuredMetadataManager:
             logger.error(f"[StructuredMetadataManager] Error getting available fields: {e}")
             return []
 
-    def get_available_categories(self) -> List[Dict[str, Any]]:
+    def get_available_categories(self) -> list[dict[str, Any]]:
         """
         Get all available metadata categories.
 
@@ -361,7 +361,7 @@ class StructuredMetadataManager:
 
     def search_files_by_metadata(
         self, field_key: str, search_value: str, search_type: str = "contains"
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Search files by metadata field value.
 

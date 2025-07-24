@@ -11,7 +11,6 @@ Provides safe cursor operations with emergency cleanup capabilities.
 
 import contextlib
 import traceback
-from typing import Optional
 
 from core.pyqt_imports import QApplication, Qt
 from utils.logger_factory import get_cached_logger
@@ -104,7 +103,7 @@ def force_restore_cursor() -> None:
         logger.debug(f"[Cursor] Force restore: Removed {count} cursors", extra={"dev_only": True})
 
 
-def get_current_cursor_info() -> Optional[str]:
+def get_current_cursor_info() -> str | None:
     """
     Get information about the current override cursor.
 

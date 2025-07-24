@@ -11,11 +11,11 @@ it falls back to a one-shot subprocess call with '-ee'.
 Requires: exiftool installed and in PATH
 """
 
+import contextlib
 import json
 import os
 import subprocess
 import threading
-from typing import Optional
 
 # Initialize Logger
 from utils.logger_factory import get_cached_logger
@@ -73,7 +73,7 @@ class ExifToolWrapper:
         # Convert None to empty dict for consistency
         return result if result is not None else {}
 
-    def _get_metadata_fast(self, file_path: str) -> Optional[dict]:
+    def _get_metadata_fast(self, file_path: str) -> dict | None:
         """
         Execute ExifTool with standard options for fast metadata extraction.
         """
@@ -103,7 +103,7 @@ class ExifToolWrapper:
             logger.error(f"[ExifToolWrapper] Error executing exiftool for {file_path}: {e}")
             return None
 
-    def _parse_json_output(self, output: str) -> Optional[dict]:
+    def _parse_json_output(self, output: str) -> dict | None:
         """Parse exiftool JSON output and return metadata dictionary."""
         try:
             if not output.strip():
@@ -127,7 +127,7 @@ class ExifToolWrapper:
             logger.error(f"[ExifToolWrapper] Error parsing output: {e}")
             return None
 
-    def _get_metadata_extended(self, file_path: str) -> Optional[dict]:
+    def _get_metadata_extended(self, file_path: str) -> dict | None:
         """
         Uses a one-shot subprocess call with -ee for extended metadata.
         Parses and merges embedded entries, marks result as extended.
@@ -139,8 +139,7 @@ class ExifToolWrapper:
         try:
             result = subprocess.run(
                 ["exiftool", "-j", "-ee", file_path],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                capture_output=True,
                 text=True,
                 timeout=15,
             )
@@ -265,7 +264,7 @@ class ExifToolWrapper:
 
             # Execute the command
             result = subprocess.run(
-                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=10
+                cmd, capture_output=True, text=True, timeout=10
             )
 
             if result.returncode == 0:
@@ -389,10 +388,8 @@ class ExifToolWrapper:
 
             # Try to terminate gracefully first
             for proc in exiftool_processes:
-                try:
+                with contextlib.suppress(psutil.NoSuchProcess):
                     proc.terminate()
-                except psutil.NoSuchProcess:
-                    pass
 
             # Wait a bit for graceful termination
             time.sleep(0.5)
@@ -412,10 +409,8 @@ class ExifToolWrapper:
                     extra={"dev_only": True},
                 )
                 for proc in remaining_processes:
-                    try:
+                    with contextlib.suppress(psutil.NoSuchProcess):
                         proc.kill()
-                    except psutil.NoSuchProcess:
-                        pass
             else:
                 logger.debug(
                     "[ExifToolWrapper] No ExifTool processes to clean up", extra={"dev_only": True}

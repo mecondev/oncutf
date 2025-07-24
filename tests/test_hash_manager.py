@@ -432,9 +432,6 @@ class TestPerformance:
             # Performance should be reasonable (at least 50 MB/s for pure CRC32 calculation)
             assert throughput > 50, f"Performance too slow: {throughput:.1f} MB/s"
 
-            print(
-                f"\nPerformance test: {file_size_mb:.1f} MB processed in {calculation_time:.4f}s ({throughput:.1f} MB/s)"
-            )
 
         finally:
             Path(temp_path).unlink()
@@ -479,9 +476,6 @@ class TestPerformance:
                     progress_calls[i] >= progress_calls[i - 1]
                 ), "Progress should be monotonically increasing"
 
-            print(
-                f"\nProgress test: {len(progress_calls)} callbacks, final: {progress_calls[-1]:,} bytes"
-            )
 
         finally:
             Path(temp_path).unlink()

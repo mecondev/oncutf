@@ -14,9 +14,9 @@ Classes:
 """
 
 import logging
+from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
-from typing import Callable, Dict, Optional
 
 from core.pyqt_imports import QObject, pyqtSignal
 
@@ -43,7 +43,7 @@ class RenameConflictResolver(QObject):
     # Signals
     conflict_resolved = pyqtSignal(str, str, str)  # original_path, target_path, resolution
 
-    def __init__(self, parent: Optional[QObject] = None):
+    def __init__(self, parent: QObject | None = None):
         """
         Initialize the conflict resolver.
 
@@ -52,7 +52,7 @@ class RenameConflictResolver(QObject):
         """
         super().__init__(parent)
         self.default_strategy = ConflictResolutionStrategy.SKIP
-        self.resolution_callbacks: Dict[str, Callable] = {}
+        self.resolution_callbacks: dict[str, Callable] = {}
 
     def set_default_strategy(self, strategy: ConflictResolutionStrategy) -> None:
         """
@@ -68,7 +68,7 @@ class RenameConflictResolver(QObject):
         self,
         original_path: str,
         target_path: str,
-        strategy: Optional[ConflictResolutionStrategy] = None,
+        strategy: ConflictResolutionStrategy | None = None,
     ) -> str:
         """
         Resolve a file rename conflict using the specified strategy.

@@ -15,7 +15,6 @@ Features:
 - Custom table widgets with resize signal handling
 """
 
-from typing import Tuple
 
 from core.pyqt_imports import (
     QAbstractItemView,
@@ -355,7 +354,7 @@ class PreviewTablesView(QWidget):
             self._adjust_table_widths()
 
     def update_from_pairs(
-        self, name_pairs: list[Tuple[str, str]], preview_icons: dict, icon_paths: dict
+        self, name_pairs: list[tuple[str, str]], preview_icons: dict, icon_paths: dict
     ):
         """Update preview tables with name pairs and status validation with performance optimizations."""
         # Performance optimization: Disable all updates at once
@@ -399,7 +398,7 @@ class PreviewTablesView(QWidget):
 
     def _process_name_pairs_batch(
         self,
-        name_pairs: list[Tuple[str, str]],
+        name_pairs: list[tuple[str, str]],
         duplicates: set,
         stats: dict,
         preview_icons: dict,
@@ -427,7 +426,7 @@ class PreviewTablesView(QWidget):
 
     def _process_name_pairs_batch_range(
         self,
-        name_pairs_batch: list[Tuple[str, str]],
+        name_pairs_batch: list[tuple[str, str]],
         duplicates: set,
         stats: dict,
         preview_icons: dict,

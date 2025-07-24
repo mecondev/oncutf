@@ -14,7 +14,6 @@ add_file_handler: Attaches a rotating file handler with custom level and optiona
 import logging
 import os
 from logging.handlers import RotatingFileHandler
-from typing import Optional
 
 
 def add_file_handler(
@@ -23,7 +22,7 @@ def add_file_handler(
     level: int = logging.INFO,
     max_bytes: int = 1_000_000,
     backup_count: int = 3,
-    filter_by_name: Optional[str] = None,
+    filter_by_name: str | None = None,
 ) -> None:
     """
     Attaches a rotating file handler to a logger.

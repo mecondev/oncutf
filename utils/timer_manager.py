@@ -11,8 +11,8 @@ Provides optimized timer operations with automatic cleanup and debugging capabil
 
 import threading
 import weakref
+from collections.abc import Callable
 from enum import Enum
-from typing import Callable, Dict, Optional, Set
 
 from core.pyqt_imports import QObject, QTimer, pyqtSignal
 from utils.logger_factory import get_cached_logger
@@ -62,23 +62,23 @@ class TimerManager(QObject):
     timer_started = pyqtSignal(str, int)  # timer_id, delay
     timer_finished = pyqtSignal(str)  # timer_id
 
-    def __init__(self, parent: Optional[QObject] = None):
+    def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
 
         # Thread safety
         self._lock = threading.RLock()
 
         # Active timers tracking
-        self._active_timers: Dict[str, QTimer] = {}
-        self._timer_callbacks: Dict[str, Callable] = {}
-        self._timer_types: Dict[str, TimerType] = {}
+        self._active_timers: dict[str, QTimer] = {}
+        self._timer_callbacks: dict[str, Callable] = {}
+        self._timer_types: dict[str, TimerType] = {}
 
         # Performance tracking
         self._timer_count = 0
         self._completed_timers = 0
 
         # Cleanup tracking
-        self._cleanup_refs: Set[weakref.ref] = set()
+        self._cleanup_refs: set[weakref.ref] = set()
 
         logger.debug(
             "[TimerManager] Initialized with centralized timer control", extra={"dev_only": True}
@@ -87,10 +87,10 @@ class TimerManager(QObject):
     def schedule(
         self,
         callback: Callable,
-        delay: Optional[int] = None,
+        delay: int | None = None,
         priority: TimerPriority = TimerPriority.NORMAL,
         timer_type: TimerType = TimerType.GENERIC,
-        timer_id: Optional[str] = None,
+        timer_id: str | None = None,
         consolidate: bool = True,
     ) -> str:
         """
@@ -205,7 +205,7 @@ class TimerManager(QObject):
 
         return cancelled_count
 
-    def _find_consolidatable_timer(self, timer_type: TimerType, delay: int) -> Optional[str]:
+    def _find_consolidatable_timer(self, timer_type: TimerType, delay: int) -> str | None:
         """Find existing timer that can be consolidated with new request."""
         # Create a copy of the items to avoid dictionary changed size during iteration
         timer_items = list(self._timer_types.items())
@@ -272,7 +272,7 @@ class TimerManager(QObject):
         """Get number of active timers."""
         return len(self._active_timers)
 
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> dict[str, int]:
         """Get timer statistics."""
         return {
             "active_timers": len(self._active_timers),
@@ -303,7 +303,7 @@ class TimerManager(QObject):
 
 
 # Global timer manager instance
-_timer_manager: Optional[TimerManager] = None
+_timer_manager: TimerManager | None = None
 
 
 def get_timer_manager() -> TimerManager:
@@ -315,7 +315,7 @@ def get_timer_manager() -> TimerManager:
 
 
 # Convenience functions for common operations
-def schedule_ui_update(callback: Callable, delay: int = 15, timer_id: Optional[str] = None) -> str:
+def schedule_ui_update(callback: Callable, delay: int = 15, timer_id: str | None = None) -> str:
     """Schedule a UI update operation."""
     return get_timer_manager().schedule(
         callback, delay, TimerPriority.NORMAL, TimerType.UI_UPDATE, timer_id
@@ -323,7 +323,7 @@ def schedule_ui_update(callback: Callable, delay: int = 15, timer_id: Optional[s
 
 
 def schedule_drag_cleanup(
-    callback: Callable, delay: int = 50, timer_id: Optional[str] = None
+    callback: Callable, delay: int = 50, timer_id: str | None = None
 ) -> str:
     """Schedule a drag cleanup operation."""
     return get_timer_manager().schedule(
@@ -332,7 +332,7 @@ def schedule_drag_cleanup(
 
 
 def schedule_selection_update(
-    callback: Callable, delay: int = 15, timer_id: Optional[str] = None
+    callback: Callable, delay: int = 15, timer_id: str | None = None
 ) -> str:
     """Schedule a selection update operation."""
     return get_timer_manager().schedule(
@@ -341,7 +341,7 @@ def schedule_selection_update(
 
 
 def schedule_metadata_load(
-    callback: Callable, delay: int = 100, timer_id: Optional[str] = None
+    callback: Callable, delay: int = 100, timer_id: str | None = None
 ) -> str:
     """Schedule a metadata loading operation."""
     return get_timer_manager().schedule(
@@ -350,7 +350,7 @@ def schedule_metadata_load(
 
 
 def schedule_scroll_adjust(
-    callback: Callable, delay: int = 10, timer_id: Optional[str] = None
+    callback: Callable, delay: int = 10, timer_id: str | None = None
 ) -> str:
     """Schedule a scroll adjustment operation."""
     return get_timer_manager().schedule(
@@ -359,7 +359,7 @@ def schedule_scroll_adjust(
 
 
 def schedule_resize_adjust(
-    callback: Callable, delay: int = 10, timer_id: Optional[str] = None
+    callback: Callable, delay: int = 10, timer_id: str | None = None
 ) -> str:
     """Schedule a resize adjustment operation."""
     return get_timer_manager().schedule(
@@ -368,7 +368,7 @@ def schedule_resize_adjust(
 
 
 def schedule_dialog_close(
-    callback: Callable, delay: int = 500, timer_id: Optional[str] = None
+    callback: Callable, delay: int = 500, timer_id: str | None = None
 ) -> str:
     """Schedule a dialog close operation with delay."""
     return get_timer_manager().schedule(

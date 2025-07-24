@@ -10,7 +10,6 @@ Provides consistent logic across all file loading contexts (import, browse, drag
 """
 
 from enum import Enum
-from typing import Tuple
 
 from core.pyqt_imports import Qt
 
@@ -24,7 +23,7 @@ class ModifierAction(Enum):
     MERGE_RECURSIVE = "merge_recursive"
 
 
-def decode_modifiers(modifiers: Qt.KeyboardModifiers) -> Tuple[ModifierAction, str]:
+def decode_modifiers(modifiers: Qt.KeyboardModifiers) -> tuple[ModifierAction, str]:
     """
     Decode keyboard modifiers into a ModifierAction and description.
 
@@ -53,7 +52,7 @@ def decode_modifiers(modifiers: Qt.KeyboardModifiers) -> Tuple[ModifierAction, s
         return ModifierAction.REPLACE_SHALLOW, "Replace + Shallow"
 
 
-def get_action_flags(action: ModifierAction) -> Tuple[bool, bool]:
+def get_action_flags(action: ModifierAction) -> tuple[bool, bool]:
     """
     Get merge_mode and recursive flags from a ModifierAction.
 
@@ -73,7 +72,7 @@ def get_action_flags(action: ModifierAction) -> Tuple[bool, bool]:
         return False, False  # merge=False, recursive=False
 
 
-def decode_modifiers_to_flags(modifiers: Qt.KeyboardModifiers) -> Tuple[bool, bool, str]:
+def decode_modifiers_to_flags(modifiers: Qt.KeyboardModifiers) -> tuple[bool, bool, str]:
     """
     Convenience function to decode modifiers directly to flags and description.
 

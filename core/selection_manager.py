@@ -10,7 +10,6 @@ Handles file table selection operations, preview updates, and metadata synchroni
 """
 
 import time
-from typing import List
 
 from utils.cursor_helper import wait_cursor
 from utils.logger_factory import get_cached_logger
@@ -193,7 +192,7 @@ class SelectionManager:
                 selection_model = file_table_view.selectionModel()
                 current_selected = set()
                 if selection_model:
-                    current_selected = set(idx.row() for idx in selection_model.selectedRows())
+                    current_selected = {idx.row() for idx in selection_model.selectedRows()}
 
                 # Uncheck all selected, check all unselected
                 for row, file in enumerate(file_model.files):
@@ -276,7 +275,7 @@ class SelectionManager:
                 if file_table_view:
                     file_table_view.blockSignals(False)
 
-    def update_preview_from_selection(self, selected_rows: List[int]) -> None:
+    def update_preview_from_selection(self, selected_rows: list[int]) -> None:
         """
         Synchronizes the checked state of files and updates preview + metadata panel.
         Optimized for performance with minimal logging and simplified logic.
@@ -325,7 +324,7 @@ class SelectionManager:
             if file_table_view:
                 file_table_view.blockSignals(False)
 
-    def _update_metadata_display(self, selected_rows: List[int]) -> None:
+    def _update_metadata_display(self, selected_rows: list[int]) -> None:
         """Simplified metadata display logic."""
         if not selected_rows:
             self._clear_metadata_display()

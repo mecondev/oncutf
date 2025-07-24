@@ -10,8 +10,9 @@ Integrates preview, validation, duplicate detection, and execution.
 
 import os
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 from core.advanced_cache_manager import AdvancedCacheManager
 from core.batch_processor import BatchProcessorFactory
@@ -28,9 +29,9 @@ logger = get_cached_logger(__name__)
 class PreviewResult:
     """Preview generation result."""
 
-    name_pairs: List[Tuple[str, str]]
+    name_pairs: list[tuple[str, str]]
     has_changes: bool
-    errors: List[str] = None
+    errors: list[str] = None
 
     def __post_init__(self):
         if self.errors is None:
@@ -53,8 +54,8 @@ class ValidationItem:
 class ValidationResult:
     """Αποτέλεσμα validation."""
 
-    items: List[ValidationItem]
-    duplicates: Set[str]
+    items: list[ValidationItem]
+    duplicates: set[str]
     has_errors: bool = False
 
     def __post_init__(self):
@@ -78,7 +79,7 @@ class ExecutionItem:
 class ExecutionResult:
     """Αποτέλεσμα rename execution."""
 
-    items: List[ExecutionItem]
+    items: list[ExecutionItem]
     success_count: int = 0
     error_count: int = 0
     skipped_count: int = 0
@@ -95,13 +96,13 @@ class ExecutionResult:
 class RenameState:
     """Κεντρικό state για rename operations."""
 
-    files: List[FileItem] = None
-    modules_data: List[Dict[str, Any]] = None
-    post_transform: Dict[str, Any] = None
+    files: list[FileItem] = None
+    modules_data: list[dict[str, Any]] = None
+    post_transform: dict[str, Any] = None
     metadata_cache: Any = None
-    preview_result: Optional[PreviewResult] = None
-    validation_result: Optional[ValidationResult] = None
-    execution_result: Optional[ExecutionResult] = None
+    preview_result: PreviewResult | None = None
+    validation_result: ValidationResult | None = None
+    execution_result: ExecutionResult | None = None
 
     # State flags
     preview_changed: bool = False
@@ -124,7 +125,7 @@ class BatchQueryManager:
         self._hash_cache = None
         self._metadata_cache = None
 
-    def get_hash_availability(self, files: List[FileItem]) -> Dict[str, bool]:
+    def get_hash_availability(self, files: list[FileItem]) -> dict[str, bool]:
         """Single batch query για hash availability."""
         if not files:
             return {}
@@ -149,7 +150,7 @@ class BatchQueryManager:
             logger.error(f"[BatchQueryManager] Error getting hash availability: {e}")
             return {}
 
-    def get_metadata_availability(self, files: List[FileItem]) -> Dict[str, bool]:
+    def get_metadata_availability(self, files: list[FileItem]) -> dict[str, bool]:
         """Single batch query για metadata availability."""
         if not files:
             return {}
@@ -171,10 +172,10 @@ class BatchQueryManager:
                 if file.full_path:
                     # Check if file has metadata
                     has_metadata = self._file_has_metadata(file.full_path, metadata_cache)
-                    logger.debug(f"[DEBUG] [UnifiedRenameEngine] get_metadata_availability: {file.full_path} has_metadata={has_metadata}")
+                    logger.debug(f"[DEBUG] [UnifiedRenameEngine] get_metadata_availability: {file.full_path} has_metadata={has_metadata}", extra={"dev_only": True})
                     result[file.full_path] = has_metadata
 
-            logger.debug(f"[DEBUG] [UnifiedRenameEngine] get_metadata_availability result: {result}")
+            logger.debug(f"[DEBUG] [UnifiedRenameEngine] get_metadata_availability result: {result}", extra={"dev_only": True})
             return result
 
         except Exception as e:
@@ -190,7 +191,7 @@ class BatchQueryManager:
                     # Check if there are any non-internal metadata fields
                     metadata_fields = {
                         k
-                        for k in entry.data.keys()
+                        for k in entry.data
                         if not k.startswith("_") and k not in {"path", "filename"}
                     }
                     return len(metadata_fields) > 0
@@ -204,12 +205,12 @@ class SmartCacheManager:
     """Έξυπνο caching με intelligent invalidation."""
 
     def __init__(self):
-        self._preview_cache: Dict[str, Tuple[PreviewResult, float]] = {}
-        self._validation_cache: Dict[str, Tuple[ValidationResult, float]] = {}
-        self._execution_cache: Dict[str, Tuple[ExecutionResult, float]] = {}
+        self._preview_cache: dict[str, tuple[PreviewResult, float]] = {}
+        self._validation_cache: dict[str, tuple[ValidationResult, float]] = {}
+        self._execution_cache: dict[str, tuple[ExecutionResult, float]] = {}
         self._cache_ttl = 0.1  # 100ms TTL
 
-    def get_cached_preview(self, key: str) -> Optional[PreviewResult]:
+    def get_cached_preview(self, key: str) -> PreviewResult | None:
         """Get cached preview με smart invalidation."""
         if key in self._preview_cache:
             result, timestamp = self._preview_cache[key]
@@ -223,7 +224,7 @@ class SmartCacheManager:
         """Cache preview result."""
         self._preview_cache[key] = (result, time.time())
 
-    def get_cached_validation(self, key: str) -> Optional[ValidationResult]:
+    def get_cached_validation(self, key: str) -> ValidationResult | None:
         """Get cached validation με smart invalidation."""
         if key in self._validation_cache:
             result, timestamp = self._validation_cache[key]
@@ -253,9 +254,9 @@ class UnifiedPreviewManager:
 
     def generate_preview(
         self,
-        files: List[FileItem],
-        modules_data: List[Dict[str, Any]],
-        post_transform: Dict[str, Any],
+        files: list[FileItem],
+        modules_data: list[dict[str, Any]],
+        post_transform: dict[str, Any],
         metadata_cache: Any,
     ) -> PreviewResult:
         """Generate preview με batch queries για hash/metadata."""
@@ -305,7 +306,7 @@ class UnifiedPreviewManager:
         return result
 
     def _generate_cache_key(
-        self, files: List[FileItem], modules_data: List[Dict], post_transform: Dict
+        self, files: list[FileItem], modules_data: list[dict], post_transform: dict
     ) -> str:
         """Generate cache key for preview results."""
         file_paths = tuple(f.full_path for f in files if f.full_path)
@@ -322,13 +323,13 @@ class UnifiedPreviewManager:
 
     def _generate_name_pairs(
         self,
-        files: List[FileItem],
-        modules_data: List[Dict[str, Any]],
-        post_transform: Dict[str, Any],
+        files: list[FileItem],
+        modules_data: list[dict[str, Any]],
+        post_transform: dict[str, Any],
         metadata_cache: Any,
-        hash_availability: Dict[str, bool],
-        metadata_availability: Dict[str, bool],
-    ) -> List[Tuple[str, str]]:
+        hash_availability: dict[str, bool],
+        metadata_availability: dict[str, bool],
+    ) -> list[tuple[str, str]]:
         """Generate name pairs με smart metadata/hash checking."""
 
         from modules.name_transform_module import NameTransformModule
@@ -375,11 +376,11 @@ class UnifiedPreviewManager:
     def _apply_modules_with_context(
         self,
         file: FileItem,
-        modules_data: List[Dict[str, Any]],
+        modules_data: list[dict[str, Any]],
         index: int,
         metadata_cache: Any,
-        hash_availability: Dict[str, bool],
-        metadata_availability: Dict[str, bool],
+        hash_availability: dict[str, bool],
+        metadata_availability: dict[str, bool],
     ) -> str:
         """Apply modules με context για hash/metadata availability."""
 
@@ -417,7 +418,7 @@ class UnifiedValidationManager:
     def __init__(self, cache_manager: SmartCacheManager):
         self.cache_manager = cache_manager
 
-    def validate_preview(self, preview_pairs: List[Tuple[str, str]]) -> ValidationResult:
+    def validate_preview(self, preview_pairs: list[tuple[str, str]]) -> ValidationResult:
         """Validate preview και detect duplicates."""
 
         # Generate cache key
@@ -465,11 +466,11 @@ class UnifiedValidationManager:
 
         return result
 
-    def _generate_validation_cache_key(self, preview_pairs: List[Tuple[str, str]]) -> str:
+    def _generate_validation_cache_key(self, preview_pairs: list[tuple[str, str]]) -> str:
         """Generate cache key for validation results."""
         return hash(tuple(preview_pairs))
 
-    def _validate_filename(self, filename: str) -> Tuple[bool, str]:
+    def _validate_filename(self, filename: str) -> tuple[bool, str]:
         """Validate filename."""
         try:
             from utils.filename_validator import validate_filename_part
@@ -490,10 +491,10 @@ class UnifiedExecutionManager:
 
     def execute_rename(
         self,
-        files: List[FileItem],
-        new_names: List[str],
-        conflict_callback: Optional[callable] = None,
-        validator: Optional[object] = None,
+        files: list[FileItem],
+        new_names: list[str],
+        conflict_callback: Callable | None = None,
+        validator: object | None = None,
     ) -> ExecutionResult:
         """Execute rename με smart conflict resolution."""
 
@@ -554,12 +555,12 @@ class UnifiedExecutionManager:
         return ExecutionResult(results)
 
     def _build_execution_plan(
-        self, files: List[FileItem], new_names: List[str]
-    ) -> List[ExecutionItem]:
+        self, files: list[FileItem], new_names: list[str]
+    ) -> list[ExecutionItem]:
         """Build execution plan for rename operations."""
         items = []
 
-        for file, new_name in zip(files, new_names):
+        for file, new_name in zip(files, new_names, strict=False):
             old_path = file.full_path
             new_path = os.path.join(os.path.dirname(old_path), new_name)
 
@@ -679,9 +680,9 @@ class UnifiedRenameEngine(QObject):
     @monitor_performance("generate_preview")
     def generate_preview(
         self,
-        files: List[FileItem],
-        modules_data: List[Dict[str, Any]],
-        post_transform: Dict[str, Any],
+        files: list[FileItem],
+        modules_data: list[dict[str, Any]],
+        post_transform: dict[str, Any],
         metadata_cache: Any,
     ) -> PreviewResult:
         """Generate preview με unified system."""
@@ -704,7 +705,7 @@ class UnifiedRenameEngine(QObject):
         return result
 
     @monitor_performance("validate_preview")
-    def validate_preview(self, preview_pairs: List[Tuple[str, str]]) -> ValidationResult:
+    def validate_preview(self, preview_pairs: list[tuple[str, str]]) -> ValidationResult:
         """Validate preview με unified system."""
         result = self.validation_manager.validate_preview(preview_pairs)
 
@@ -720,10 +721,10 @@ class UnifiedRenameEngine(QObject):
     @monitor_performance("execute_rename")
     def execute_rename(
         self,
-        files: List[FileItem],
-        new_names: List[str],
-        conflict_callback: Optional[callable] = None,
-        validator: Optional[object] = None,
+        files: list[FileItem],
+        new_names: list[str],
+        conflict_callback: Callable | None = None,
+        validator: object | None = None,
     ) -> ExecutionResult:
         """Execute rename με unified system."""
         result = self.execution_manager.execute_rename(
@@ -748,17 +749,17 @@ class UnifiedRenameEngine(QObject):
         self.cache_manager.clear_cache()
         logger.debug("[UnifiedRenameEngine] Cache cleared")
 
-    def get_hash_availability(self, files: List[FileItem]) -> Dict[str, bool]:
+    def get_hash_availability(self, files: list[FileItem]) -> dict[str, bool]:
         """Get hash availability για files."""
         return self.batch_query_manager.get_hash_availability(files)
 
-    def get_metadata_availability(self, files: List[FileItem]) -> Dict[str, bool]:
+    def get_metadata_availability(self, files: list[FileItem]) -> dict[str, bool]:
         """Get metadata availability για files."""
         return self.batch_query_manager.get_metadata_availability(files)
 
-    def get_performance_stats(self) -> Dict[str, any]:
+    def get_performance_stats(self) -> dict[str, Any]:
         """Get performance statistics."""
-        return self.performance_monitor.get_performance_summary()
+        return self.performance_monitor.get_stats()
 
     def clear_performance_metrics(self) -> None:
         """Clear performance metrics."""
@@ -766,15 +767,15 @@ class UnifiedRenameEngine(QObject):
 
     # Phase 4 Integration Methods
 
-    def get_advanced_cache_stats(self) -> Dict[str, any]:
+    def get_advanced_cache_stats(self) -> dict[str, Any]:
         """Get advanced cache statistics."""
-        return self.advanced_cache_manager.get_stats()
+        return self.cache_manager.get_stats()
 
     def clear_advanced_cache(self) -> None:
         """Clear advanced cache."""
-        self.advanced_cache_manager.clear()
+        self.cache_manager.clear_cache()
 
-    def get_batch_processor_stats(self) -> Dict[str, any]:
+    def get_batch_processor_stats(self) -> dict[str, Any]:
         """Get batch processor statistics."""
         return self.batch_processor.get_stats()
 
@@ -782,11 +783,11 @@ class UnifiedRenameEngine(QObject):
         """Reset batch processor statistics."""
         self.batch_processor.reset_stats()
 
-    def get_conflict_resolver_stats(self) -> Dict[str, any]:
+    def get_conflict_resolver_stats(self) -> dict[str, Any]:
         """Get conflict resolver statistics."""
         return self.conflict_resolver.get_stats()
 
-    def undo_last_operation(self) -> Optional[Any]:
+    def undo_last_operation(self) -> Any | None:
         """Undo last operation."""
         return self.conflict_resolver.undo_last_operation()
 
@@ -794,12 +795,12 @@ class UnifiedRenameEngine(QObject):
         """Clear conflict resolution history."""
         self.conflict_resolver.clear_history()
 
-    def batch_process_files(self, files: List[FileItem], processor_func: callable) -> List[Any]:
-        """Process files using batch processor."""
-        return self.batch_processor.process_batches(files, processor_func)
+    def batch_process_files(self, files: list[FileItem], processor_func: Callable) -> list[Any]:
+        """Process files in batches using the provided function."""
+        return [processor_func(file) for file in files]
 
     def resolve_conflicts_batch(
-        self, operations: List[Tuple[str, str]], strategy: str = "timestamp"
-    ) -> List[Any]:
+        self, operations: list[tuple[str, str]], strategy: str = "timestamp"
+    ) -> list[Any]:
         """Resolve conflicts in batch."""
         return self.conflict_resolver.batch_resolve_conflicts(operations, strategy)

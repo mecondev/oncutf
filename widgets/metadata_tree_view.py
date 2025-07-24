@@ -22,8 +22,9 @@ Expected usage:
 Designed for integration with MainWindow and MetadataReader.
 """
 
+import contextlib
 import os
-from typing import Any, Dict, Optional, Set, Union
+from typing import Any
 
 from config import METADATA_TREE_COLUMN_WIDTHS
 from core.pyqt_imports import (
@@ -145,7 +146,7 @@ class MetadataTreeView(QTreeView):
     value_edited = pyqtSignal(str, str, str)
     value_reset = pyqtSignal(str)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True)
@@ -157,8 +158,8 @@ class MetadataTreeView(QTreeView):
         self.placeholder_helper = create_placeholder_helper(self, "metadata_tree", icon_size=120)
 
         # Modified metadata items per file
-        self.modified_items_per_file: Dict[str, Set[str]] = {}
-        self.modified_items: Set[str] = set()
+        self.modified_items_per_file: dict[str, set[str]] = {}
+        self.modified_items: set[str] = set()
 
         # Context menu setup
         self.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -172,12 +173,12 @@ class MetadataTreeView(QTreeView):
         # Note: This must be set before any metadata loading
 
         # Scroll position memory: {file_path: scroll_position}
-        self._scroll_positions: Dict[str, int] = {}
-        self._current_file_path: Optional[str] = None
-        self._pending_restore_timer_id: Optional[str] = None
+        self._scroll_positions: dict[str, int] = {}
+        self._current_file_path: str | None = None
+        self._pending_restore_timer_id: str | None = None
 
         # Expanded items per file: {file_path: [expanded_item_paths]}
-        self._expanded_items_per_file: Dict[str, list] = {}
+        self._expanded_items_per_file: dict[str, list] = {}
 
         # Unified placeholder helper (replaces old QLabel/QPixmap approach)
         self.placeholder_helper = create_placeholder_helper(self, "metadata_tree", icon_size=120)
@@ -211,7 +212,7 @@ class MetadataTreeView(QTreeView):
             logger.error(f"[MetadataTreeView] Failed to initialize MetadataCacheHelper: {e}")
             self._metadata_cache_helper = None
 
-    def _get_cache_helper(self) -> Optional[MetadataCacheHelper]:
+    def _get_cache_helper(self) -> MetadataCacheHelper | None:
         """Get the MetadataCacheHelper instance, initializing if needed."""
         if self._cache_helper is None:
             self._initialize_cache_helper()
@@ -261,7 +262,7 @@ class MetadataTreeView(QTreeView):
     # Path-Safe Dictionary Operations
     # =====================================
 
-    def _path_in_dict(self, path: str, path_dict: Dict[str, Any]) -> bool:
+    def _path_in_dict(self, path: str, path_dict: dict[str, Any]) -> bool:
         """
         Check if a path exists in dictionary using path-aware comparison.
 
@@ -280,13 +281,9 @@ class MetadataTreeView(QTreeView):
             return True
 
         # If not found, try normalized path comparison
-        for existing_path in path_dict:
-            if paths_equal(path, existing_path):
-                return True
+        return any(paths_equal(path, existing_path) for existing_path in path_dict)
 
-        return False
-
-    def _get_from_path_dict(self, path: str, path_dict: Dict[str, Any]) -> Any:
+    def _get_from_path_dict(self, path: str, path_dict: dict[str, Any]) -> Any:
         """
         Get value from dictionary using path-aware comparison.
 
@@ -311,7 +308,7 @@ class MetadataTreeView(QTreeView):
 
         return None
 
-    def _set_in_path_dict(self, path: str, value: Any, path_dict: Dict[str, Any]) -> None:
+    def _set_in_path_dict(self, path: str, value: Any, path_dict: dict[str, Any]) -> None:
         """
         Set value in dictionary using path-aware key management.
 
@@ -335,7 +332,7 @@ class MetadataTreeView(QTreeView):
         # Set with the new path
         path_dict[path] = value
 
-    def _remove_from_path_dict(self, path: str, path_dict: Dict[str, Any]) -> bool:
+    def _remove_from_path_dict(self, path: str, path_dict: dict[str, Any]) -> bool:
         """
         Remove path from dictionary using path-aware comparison.
 
@@ -651,10 +648,8 @@ class MetadataTreeView(QTreeView):
         header = self.header()
         if header:
             # Disconnect any existing connections
-            try:
+            with contextlib.suppress(AttributeError, RuntimeError, TypeError):
                 header.sectionResized.disconnect()
-            except (AttributeError, RuntimeError, TypeError):
-                pass
 
             # Connect to immediate update
             header.sectionResized.connect(self._on_column_resized)
@@ -1235,7 +1230,7 @@ class MetadataTreeView(QTreeView):
         # Force viewport update to refresh visual state
         self.viewport().update()
 
-    def _get_original_value_from_cache(self, key_path: str) -> Optional[Any]:
+    def _get_original_value_from_cache(self, key_path: str) -> Any | None:
         """
         Get the original value of a metadata field from the cache.
         This should be called before resetting to get the original value.
@@ -1253,8 +1248,8 @@ class MetadataTreeView(QTreeView):
         return cache_helper.get_metadata_value(file_item, key_path)
 
     def _get_value_from_metadata_dict(
-        self, metadata: Dict[str, Any], key_path: str
-    ) -> Optional[Any]:
+        self, metadata: dict[str, Any], key_path: str
+    ) -> Any | None:
         """
         Extract a value from metadata dictionary using key path.
         """
@@ -1473,7 +1468,7 @@ class MetadataTreeView(QTreeView):
     # Helper Methods
     # =====================================
 
-    def _get_parent_with_file_table(self) -> Optional[QWidget]:
+    def _get_parent_with_file_table(self) -> QWidget | None:
         """Find the parent window that has file_table_view attribute."""
         return find_parent_with_attribute(self, "file_table_view")
 
@@ -1662,7 +1657,7 @@ class MetadataTreeView(QTreeView):
         # Trigger UI update
         self._update_file_icon_status()
 
-    def _remove_metadata_from_cache(self, metadata: Dict[str, Any], key_path: str) -> None:
+    def _remove_metadata_from_cache(self, metadata: dict[str, Any], key_path: str) -> None:
         """Remove metadata entry from cache dictionary."""
         parts = key_path.split("/")
 
@@ -1681,7 +1676,7 @@ class MetadataTreeView(QTreeView):
             self._remove_metadata_from_cache(file_item.metadata, key_path)
 
     def _set_metadata_in_cache(
-        self, metadata: Dict[str, Any], key_path: str, new_value: str
+        self, metadata: dict[str, Any], key_path: str, new_value: str
     ) -> None:
         """Set metadata entry in cache dictionary."""
         parts = key_path.split("/")
@@ -1709,7 +1704,7 @@ class MetadataTreeView(QTreeView):
                     del file_item.metadata["rotation"]
 
                 # Remove from any groups too
-                for existing_group, existing_data in list(file_item.metadata.items()):
+                for _existing_group, existing_data in list(file_item.metadata.items()):
                     if isinstance(existing_data, dict):
                         if "Rotation" in existing_data:
                             del existing_data["Rotation"]
@@ -1727,7 +1722,7 @@ class MetadataTreeView(QTreeView):
     # =====================================
 
     def scrollTo(
-        self, index: QModelIndex, hint: Union[QAbstractItemView.ScrollHint, None] = None
+        self, index: QModelIndex, hint: QAbstractItemView.ScrollHint | None = None
     ) -> None:
         """
         Override scrollTo to prevent automatic scrolling when selections change.
@@ -1802,7 +1797,7 @@ class MetadataTreeView(QTreeView):
         # Disable search field when clearing view
         self._update_search_field_state(False)
 
-    def display_metadata(self, metadata: Optional[Dict[str, Any]], context: str = "") -> None:
+    def display_metadata(self, metadata: dict[str, Any] | None, context: str = "") -> None:
         """Display metadata in the tree view."""
         if not metadata:
             self.show_empty_state("No metadata available")
@@ -2051,7 +2046,7 @@ class MetadataTreeView(QTreeView):
                 suggestions.add(f"{key}={value}")
 
             # Add numeric values as strings
-            elif isinstance(value, (int, float)) and abs(value) < 1000000:
+            elif isinstance(value, int | float) and abs(value) < 1000000:
                 suggestions.add(f"{key}={value}")
 
     def _get_all_loaded_files(self):
@@ -2065,7 +2060,7 @@ class MetadataTreeView(QTreeView):
 
         return []
 
-    def _render_metadata_view(self, metadata: Dict[str, Any]) -> None:
+    def _render_metadata_view(self, metadata: dict[str, Any]) -> None:
         """
         Actually builds the metadata tree and displays it.
         Assumes metadata is a non-empty dict.
@@ -2156,7 +2151,7 @@ class MetadataTreeView(QTreeView):
             logger.exception(f"[render_metadata_view] Unexpected error while rendering: {e}")
             self.clear_view()
 
-    def _update_information_label(self, display_data: Dict[str, Any]) -> None:
+    def _update_information_label(self, display_data: dict[str, Any]) -> None:
         """Update the information label with metadata statistics."""
         try:
             total_fields = 0
@@ -2185,7 +2180,7 @@ class MetadataTreeView(QTreeView):
         except Exception as e:
             logger.debug(f"Error updating information label: {e}", extra={"dev_only": True})
 
-    def _apply_modified_values_to_display_data(self, display_data: Dict[str, Any]) -> None:
+    def _apply_modified_values_to_display_data(self, display_data: dict[str, Any]) -> None:
         """
         Apply any modified values from the UI to the display data.
         SIMPLIFIED: Rotation is always top-level, no complex group logic.
@@ -2243,7 +2238,7 @@ class MetadataTreeView(QTreeView):
         # Clean up any empty groups
         self._cleanup_empty_groups(display_data)
 
-    def _cleanup_empty_groups(self, display_data: Dict[str, Any]) -> None:
+    def _cleanup_empty_groups(self, display_data: dict[str, Any]) -> None:
         """
         Remove any empty groups from display_data.
         This prevents showing empty group headers in the tree.
@@ -2266,7 +2261,7 @@ class MetadataTreeView(QTreeView):
         for group_name in empty_groups:
             display_data.pop(group_name, None)
 
-    def _set_current_file_from_metadata(self, metadata: Dict[str, Any]) -> None:
+    def _set_current_file_from_metadata(self, metadata: dict[str, Any]) -> None:
         """Set current file from metadata if available."""
         try:
             # Try to get file path from metadata
@@ -2422,7 +2417,7 @@ class MetadataTreeView(QTreeView):
         """
         self.refresh_metadata_from_selection()
 
-    def handle_invert_selection(self, metadata: Optional[Dict[str, Any]]) -> None:
+    def handle_invert_selection(self, metadata: dict[str, Any] | None) -> None:
         """
         Handle metadata display after selection inversion.
 
@@ -2438,7 +2433,7 @@ class MetadataTreeView(QTreeView):
         self._update_header_visibility()
 
     def handle_metadata_load_completion(
-        self, metadata: Optional[Dict[str, Any]], source: str
+        self, metadata: dict[str, Any] | None, source: str
     ) -> None:
         """
         Handle metadata display after a metadata loading operation completes.
@@ -2482,7 +2477,7 @@ class MetadataTreeView(QTreeView):
         return selected_files_count == 1
 
     def smart_display_metadata_or_empty_state(
-        self, metadata: Optional[Dict[str, Any]], selected_count: int, context: str = ""
+        self, metadata: dict[str, Any] | None, selected_count: int, context: str = ""
     ) -> None:
         """Smart display logic for metadata or empty state."""
         try:
@@ -2490,17 +2485,11 @@ class MetadataTreeView(QTreeView):
                 f"[MetadataTree] smart_display_metadata_or_empty_state called: metadata={bool(metadata)}, selected_count={selected_count}, context={context}",
                 extra={"dev_only": True},
             )
-            print(
-                f"[DEBUG] MetadataTree smart_display called: metadata={bool(metadata)}, selected_count={selected_count}, context={context}"
-            )
 
             if metadata and self.should_display_metadata_for_selection(selected_count):
                 logger.debug(
                     f"[MetadataTree] Displaying metadata for {selected_count} selected file(s)",
                     extra={"dev_only": True},
-                )
-                print(
-                    f"[DEBUG] MetadataTree displaying metadata for {selected_count} selected file(s)"
                 )
                 self.display_metadata(metadata, context)
                 logger.debug(
@@ -2519,17 +2508,15 @@ class MetadataTreeView(QTreeView):
                     f"[MetadataTree] Smart display: showing empty state (selected: {selected_count})",
                     extra={"dev_only": True},
                 )
-                print(f"[DEBUG] MetadataTree showing empty state (selected: {selected_count})")
 
         except Exception as e:
             logger.error(f"[MetadataTree] Error in smart display: {e}")
-            print(f"[ERROR] MetadataTree error in smart display: {e}")
             self.show_empty_state("Error loading metadata")
 
         # Update header visibility after smart display
         self._update_header_visibility()
 
-    def get_modified_metadata(self) -> Dict[str, str]:
+    def get_modified_metadata(self) -> dict[str, str]:
         """
         Collect all modified metadata items for the current file.
 
@@ -2585,7 +2572,7 @@ class MetadataTreeView(QTreeView):
 
         return modified_metadata
 
-    def get_all_modified_metadata_for_files(self) -> Dict[str, Dict[str, str]]:
+    def get_all_modified_metadata_for_files(self) -> dict[str, dict[str, str]]:
         """
         Collect all modified metadata for all files that have modifications.
 
@@ -2601,7 +2588,7 @@ class MetadataTreeView(QTreeView):
             )
 
         # Clean up any None keys that might exist in the dictionary
-        none_keys = [k for k in self.modified_items_per_file.keys() if k is None]
+        none_keys = [k for k in self.modified_items_per_file if k is None]
         for none_key in none_keys:
             del self.modified_items_per_file[none_key]
 
@@ -2774,7 +2761,7 @@ class MetadataTreeView(QTreeView):
 
         # Check stored modifications for all files
         total_modifications = 0
-        for file_path, modifications in self.modified_items_per_file.items():
+        for _file_path, modifications in self.modified_items_per_file.items():
             if modifications:  # Non-empty set
                 total_modifications += len(modifications)
 
@@ -2790,7 +2777,7 @@ class MetadataTreeView(QTreeView):
 
     def _try_lazy_metadata_loading(
         self, file_item: Any, context: str = ""
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Try to load metadata using simple fallback loading (lazy manager removed).
 
@@ -2804,7 +2791,7 @@ class MetadataTreeView(QTreeView):
         # Since LazyMetadataManager was removed, use direct fallback loading
         return self._fallback_metadata_loading(file_item)
 
-    def _fallback_metadata_loading(self, file_item: Any) -> Optional[Dict[str, Any]]:
+    def _fallback_metadata_loading(self, file_item: Any) -> dict[str, Any] | None:
         """Fallback metadata loading method."""
         try:
             if self._metadata_cache_helper:
@@ -3014,7 +3001,7 @@ class MetadataTreeView(QTreeView):
 
         return None
 
-    def _map_metadata_key_to_column_key(self, metadata_key: str) -> Optional[str]:
+    def _map_metadata_key_to_column_key(self, metadata_key: str) -> str | None:
         """Map a metadata key path to a file table column key."""
         try:
             # Create mapping from metadata keys to column keys

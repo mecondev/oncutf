@@ -106,10 +106,7 @@ class FileSizeFormatter:
         # Choose base and units
         if self.use_binary:
             base = 1024
-            if self.use_legacy_labels:
-                units = self.LEGACY_BINARY_UNITS
-            else:
-                units = self.BINARY_UNITS
+            units = self.LEGACY_BINARY_UNITS if self.use_legacy_labels else self.BINARY_UNITS
         else:
             base = 1000
             units = self.DECIMAL_UNITS
@@ -133,7 +130,7 @@ class FileSizeFormatter:
             formatted_number = f"{size:.1f}"
 
         # Remove unnecessary .0 for whole numbers
-        if formatted_number.endswith(".0") or formatted_number.endswith(",0"):
+        if formatted_number.endswith((".0", ",0")):
             formatted_number = formatted_number[:-2]
 
         return f"{formatted_number} {units[unit_index]}"

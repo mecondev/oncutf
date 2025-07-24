@@ -16,7 +16,7 @@ import shutil
 import threading
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Generic, Optional, TypeVar
+from typing import Any, TypeVar
 
 from config import APP_VERSION
 from utils.logger_factory import get_cached_logger
@@ -26,10 +26,10 @@ logger = get_cached_logger(__name__)
 T = TypeVar("T")
 
 
-class ConfigCategory(Generic[T]):
+class ConfigCategory[T]:
     """Base class for configuration categories with type safety and defaults."""
 
-    def __init__(self, name: str, defaults: Dict[str, Any]):
+    def __init__(self, name: str, defaults: dict[str, Any]):
         self.name = name
         self.defaults = defaults
         self._data = defaults.copy()
@@ -42,7 +42,7 @@ class ConfigCategory(Generic[T]):
         """Set configuration value."""
         self._data[key] = value
 
-    def update(self, data: Dict[str, Any]) -> None:
+    def update(self, data: dict[str, Any]) -> None:
         """Update multiple configuration values at once."""
         self._data.update(data)
 
@@ -50,11 +50,11 @@ class ConfigCategory(Generic[T]):
         """Reset all values to defaults."""
         self._data = self.defaults.copy()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
         return self._data.copy()
 
-    def from_dict(self, data: Dict[str, Any]) -> None:
+    def from_dict(self, data: dict[str, Any]) -> None:
         """Load from dictionary, applying defaults for missing keys."""
         self._data = self.defaults.copy()
         self._data.update(data)
@@ -104,7 +104,7 @@ class FileHashConfig(ConfigCategory):
         }
         self.set("hashes", hashes)
 
-    def get_file_hash(self, filepath: str) -> Optional[Dict[str, Any]]:
+    def get_file_hash(self, filepath: str) -> dict[str, Any] | None:
         """Get file hash entry if exists."""
         hashes = self.get("hashes", {})
         return hashes.get(filepath)
@@ -140,14 +140,14 @@ class AppConfig(ConfigCategory):
 class JSONConfigManager:
     """Comprehensive JSON-based configuration manager."""
 
-    def __init__(self, app_name: str = "app", config_dir: Optional[str] = None):
+    def __init__(self, app_name: str = "app", config_dir: str | None = None):
         self.app_name = app_name
         self.config_dir = Path(config_dir or self._get_default_config_dir())
         self.config_file = self.config_dir / "config.json"
         self.backup_file = self.config_dir / "config.json.bak"
 
         self._lock = threading.RLock()
-        self._categories: Dict[str, ConfigCategory] = {}
+        self._categories: dict[str, ConfigCategory] = {}
 
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
@@ -172,7 +172,7 @@ class JSONConfigManager:
 
     def get_category(
         self, category_name: str, create_if_not_exists: bool = False
-    ) -> Optional[ConfigCategory]:
+    ) -> ConfigCategory | None:
         """Get configuration category by name."""
         category = self._categories.get(category_name)
         if not category and create_if_not_exists:
@@ -259,7 +259,7 @@ class JSONConfigManager:
                 logger.error(f"[JSONConfigManager] Failed to save configuration: {e}")
                 return False
 
-    def get_config_info(self) -> Dict[str, Any]:
+    def get_config_info(self) -> dict[str, Any]:
         """Get information about configuration file and categories."""
         info = {
             "config_file": str(self.config_file),
@@ -291,7 +291,7 @@ def create_app_config_manager(app_name: str = "oncutf") -> JSONConfigManager:
     return manager
 
 
-_global_manager: Optional[JSONConfigManager] = None
+_global_manager: JSONConfigManager | None = None
 
 
 def get_app_config_manager() -> JSONConfigManager:

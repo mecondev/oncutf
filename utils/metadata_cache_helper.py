@@ -9,7 +9,7 @@ Unified metadata cache access helper to eliminate duplicate patterns.
 Provides consistent interface for metadata cache operations across the application.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from utils.logger_factory import get_cached_logger
 from utils.path_utils import normalize_path
@@ -36,7 +36,7 @@ class MetadataCacheHelper:
 
     def get_metadata_for_file(
         self, file_item, fallback_to_file_item: bool = True
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Unified metadata retrieval for a file with path normalization.
 
@@ -108,7 +108,7 @@ class MetadataCacheHelper:
             return None
 
     def set_metadata_for_file(
-        self, file_item, metadata: Dict[str, Any], is_extended: bool = False, modified: bool = False
+        self, file_item, metadata: dict[str, Any], is_extended: bool = False, modified: bool = False
     ):
         """
         Unified metadata storage for a file with path normalization.

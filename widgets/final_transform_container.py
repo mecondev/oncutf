@@ -9,7 +9,6 @@ Container widget for the final transformation controls.
 Uses a clean 3-column layout: Labels | Controls | Buttons
 """
 
-from typing import Optional
 
 from config import ICON_SIZES
 from core.pyqt_imports import (
@@ -45,7 +44,7 @@ class FinalTransformContainer(QWidget):
     add_module_requested = pyqtSignal()
     remove_module_requested = pyqtSignal()
 
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self.setObjectName("FinalTransformContainer")
 

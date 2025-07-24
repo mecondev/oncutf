@@ -13,7 +13,6 @@ regardless of current working directory.
 
 import os
 from pathlib import Path
-from typing import Optional
 
 
 def get_project_root() -> Path:
@@ -208,7 +207,7 @@ def paths_equal(path1: str, path2: str) -> bool:
 
 def find_file_by_path(
     files: list, target_path: str, path_attr: str = "full_path"
-) -> Optional[object]:
+) -> object | None:
     """
     Find a file object in a list by comparing paths with normalization.
 

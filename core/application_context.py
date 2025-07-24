@@ -11,7 +11,7 @@ Current implementation is a skeleton that will gradually replace
 distributed state management across widgets.
 """
 
-from typing import TYPE_CHECKING, Any, Dict, Optional, Set
+from typing import TYPE_CHECKING, Any, Optional
 
 from core.pyqt_imports import QObject, pyqtSignal
 from utils.logger_factory import get_cached_logger
@@ -44,7 +44,7 @@ class ApplicationContext(QObject):
 
     _instance: Optional["ApplicationContext"] = None
 
-    def __init__(self, parent: Optional[QObject] = None):
+    def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
 
         # Ensure singleton
@@ -53,17 +53,17 @@ class ApplicationContext(QObject):
         ApplicationContext._instance = self
 
         # Core stores (will be initialized gradually)
-        self._file_store: Optional[FileStore] = None
-        self._selection_store: Optional[SelectionStore] = None
+        self._file_store: FileStore | None = None
+        self._selection_store: SelectionStore | None = None
 
         # Legacy state containers (will be removed gradually)
         self._files: list = []
-        self._selected_rows: Set[int] = set()
-        self._metadata_cache: Dict[str, Any] = {}
-        self._current_folder: Optional[str] = None
+        self._selected_rows: set[int] = set()
+        self._metadata_cache: dict[str, Any] = {}
+        self._current_folder: str | None = None
 
         # Performance tracking
-        self._performance_metrics: Dict[str, float] = {}
+        self._performance_metrics: dict[str, float] = {}
 
         # Ready flag (will be used to ensure proper initialization)
         self._is_ready = False
@@ -156,7 +156,7 @@ class ApplicationContext(QObject):
         return cls._instance
 
     @classmethod
-    def create_instance(cls, parent: Optional[QObject] = None) -> "ApplicationContext":
+    def create_instance(cls, parent: QObject | None = None) -> "ApplicationContext":
         """
         Create the singleton instance of ApplicationContext.
 
@@ -200,7 +200,7 @@ class ApplicationContext(QObject):
         self.files_changed.emit(self._files)
         logger.debug(f"Files updated (legacy): {len(files)} items")
 
-    def get_current_folder(self) -> Optional[str]:
+    def get_current_folder(self) -> str | None:
         """Get current folder path."""
         return self._current_folder
 
@@ -218,19 +218,19 @@ class ApplicationContext(QObject):
     # Selection Management (Delegated to SelectionStore)
     # =====================================
 
-    def get_selected_rows(self) -> Set[int]:
+    def get_selected_rows(self) -> set[int]:
         """Get currently selected row indices."""
         return self.selection_store.get_selected_rows()
 
-    def set_selected_rows(self, rows: Set[int]) -> None:
+    def set_selected_rows(self, rows: set[int]) -> None:
         """Set selected row indices."""
         self.selection_store.set_selected_rows(rows)
 
-    def get_checked_rows(self) -> Set[int]:
+    def get_checked_rows(self) -> set[int]:
         """Get currently checked row indices."""
         return self.selection_store.get_checked_rows()
 
-    def set_checked_rows(self, rows: Set[int]) -> None:
+    def set_checked_rows(self, rows: set[int]) -> None:
         """Set checked row indices."""
         self.selection_store.set_checked_rows(rows)
 
@@ -238,11 +238,11 @@ class ApplicationContext(QObject):
     # Metadata Management (Skeleton)
     # =====================================
 
-    def get_metadata(self, file_path: str) -> Optional[Dict[str, Any]]:
+    def get_metadata(self, file_path: str) -> dict[str, Any] | None:
         """Get metadata for a file (placeholder implementation)."""
         return self._metadata_cache.get(file_path)
 
-    def set_metadata(self, file_path: str, metadata: Dict[str, Any]) -> None:
+    def set_metadata(self, file_path: str, metadata: dict[str, Any]) -> None:
         """Set metadata for a file (placeholder implementation)."""
         self._metadata_cache[file_path] = metadata
         self.metadata_changed.emit(file_path, metadata)
@@ -257,7 +257,7 @@ class ApplicationContext(QObject):
         self._performance_metrics[operation] = duration_ms
         logger.debug(f"Performance: {operation} took {duration_ms:.1f}ms")
 
-    def get_performance_report(self) -> Dict[str, float]:
+    def get_performance_report(self) -> dict[str, float]:
         """Get performance metrics report."""
         base_metrics = self._performance_metrics.copy()
 

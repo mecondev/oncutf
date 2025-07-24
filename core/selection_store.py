@@ -15,7 +15,7 @@ Features:
 """
 
 import time
-from typing import Any, Dict, Optional, Set
+from typing import Any
 
 from core.pyqt_imports import QObject, QTimer, pyqtSignal
 from utils.logger_factory import get_cached_logger
@@ -47,19 +47,19 @@ class SelectionStore(QObject):
     selection_sync_requested = pyqtSignal()  # Request sync from selection to checked
     checked_sync_requested = pyqtSignal()  # Request sync from checked to selection
 
-    def __init__(self, parent: Optional[QObject] = None):
+    def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
 
         # Core selection state
-        self._selected_rows: Set[int] = set()
-        self._checked_rows: Set[int] = set()
-        self._anchor_row: Optional[int] = None
+        self._selected_rows: set[int] = set()
+        self._checked_rows: set[int] = set()
+        self._anchor_row: int | None = None
         self._total_files: int = 0
-        self._file_model: Optional[Any] = None  # FileTableModel reference
+        self._file_model: Any | None = None  # FileTableModel reference
 
         # Performance tracking
         self._last_operation_time = time.time()
-        self._batch_operations: Dict[str, int] = {}
+        self._batch_operations: dict[str, int] = {}
 
         # Protection against infinite loops
         self._syncing_selection: bool = False
@@ -83,7 +83,7 @@ class SelectionStore(QObject):
     # Selection State Management
     # =====================================
 
-    def get_selected_rows(self) -> Set[int]:
+    def get_selected_rows(self) -> set[int]:
         """
         Get currently selected row indices.
 
@@ -93,7 +93,7 @@ class SelectionStore(QObject):
         return self._selected_rows.copy()
 
     def set_selected_rows(
-        self, rows: Set[int], *, emit_signal: bool = True, force_emit: bool = False
+        self, rows: set[int], *, emit_signal: bool = True, force_emit: bool = False
     ) -> None:
         """
         Set selected row indices with optimized debouncing.
@@ -120,7 +120,7 @@ class SelectionStore(QObject):
         if emit_signal:
             self._schedule_selection_signal()
 
-    def add_selected_rows(self, rows: Set[int], *, emit_signal: bool = True) -> None:
+    def add_selected_rows(self, rows: set[int], *, emit_signal: bool = True) -> None:
         """
         Add rows to current selection.
 
@@ -140,7 +140,7 @@ class SelectionStore(QObject):
             if emit_signal:
                 self._schedule_selection_signal()
 
-    def remove_selected_rows(self, rows: Set[int], *, emit_signal: bool = True) -> None:
+    def remove_selected_rows(self, rows: set[int], *, emit_signal: bool = True) -> None:
         """
         Remove rows from current selection.
 
@@ -178,7 +178,7 @@ class SelectionStore(QObject):
     # Checked State Management
     # =====================================
 
-    def get_checked_rows(self) -> Set[int]:
+    def get_checked_rows(self) -> set[int]:
         """
         Get currently checked row indices.
 
@@ -187,7 +187,7 @@ class SelectionStore(QObject):
         """
         return self._checked_rows.copy()
 
-    def set_checked_rows(self, rows: Set[int], *, emit_signal: bool = True) -> None:
+    def set_checked_rows(self, rows: set[int], *, emit_signal: bool = True) -> None:
         """
         Set checked row indices.
 
@@ -209,7 +209,7 @@ class SelectionStore(QObject):
             )
             self._schedule_checked_signal()
 
-    def add_checked_rows(self, rows: Set[int], *, emit_signal: bool = True) -> None:
+    def add_checked_rows(self, rows: set[int], *, emit_signal: bool = True) -> None:
         """
         Add rows to checked state.
 
@@ -232,7 +232,7 @@ class SelectionStore(QObject):
             if emit_signal:
                 self._schedule_checked_signal()
 
-    def remove_checked_rows(self, rows: Set[int], *, emit_signal: bool = True) -> None:
+    def remove_checked_rows(self, rows: set[int], *, emit_signal: bool = True) -> None:
         """
         Remove rows from checked state.
 
@@ -273,11 +273,11 @@ class SelectionStore(QObject):
     # Anchor Management
     # =====================================
 
-    def get_anchor_row(self) -> Optional[int]:
+    def get_anchor_row(self) -> int | None:
         """Get current anchor row for range selection."""
         return self._anchor_row
 
-    def set_anchor_row(self, row: Optional[int], *, emit_signal: bool = True) -> None:
+    def set_anchor_row(self, row: int | None, *, emit_signal: bool = True) -> None:
         """
         Set anchor row for range selection.
 
@@ -410,7 +410,7 @@ class SelectionStore(QObject):
 
         logger.debug(f"Total files updated: {old_total} -> {total}")
 
-    def get_performance_stats(self) -> Dict[str, Any]:
+    def get_performance_stats(self) -> dict[str, Any]:
         """Get performance statistics."""
         return {
             "selected_count": len(self._selected_rows),

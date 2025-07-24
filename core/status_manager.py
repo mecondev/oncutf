@@ -21,7 +21,7 @@ import threading
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from config import STATUS_COLORS
 from core.pyqt_imports import QTimer
@@ -65,7 +65,7 @@ class StatusEntry:
     timestamp: datetime = field(default_factory=datetime.now)
     auto_reset: bool = False
     reset_delay: int = 3000
-    operation_id: Optional[str] = None  # For tracking related operations
+    operation_id: str | None = None  # For tracking related operations
 
 
 class StatusManager:
@@ -74,11 +74,11 @@ class StatusManager:
     def __init__(self, status_label=None) -> None:
         """Initialize StatusManager with status label reference."""
         self.status_label = status_label
-        self._status_timer: Optional[QTimer] = None
-        self._status_history: List[StatusEntry] = []
+        self._status_timer: QTimer | None = None
+        self._status_history: list[StatusEntry] = []
         self._max_history_size: int = 100
-        self._current_operation: Optional[str] = None
-        self._operation_contexts: Dict[str, Dict[str, Any]] = {}
+        self._current_operation: str | None = None
+        self._operation_contexts: dict[str, dict[str, Any]] = {}
         self._lock = threading.Lock()
 
         logger.info("[StatusManager] Enhanced status manager initialized")
@@ -95,7 +95,7 @@ class StatusManager:
         reset_delay: int = 3000,
         category: StatusCategory = StatusCategory.GENERAL,
         priority: StatusPriority = StatusPriority.NORMAL,
-        operation_id: Optional[str] = None,
+        operation_id: str | None = None,
     ) -> None:
         """
         Enhanced status setting with categorization and priority.
@@ -167,7 +167,7 @@ class StatusManager:
         message: str,
         success: bool = True,
         auto_reset: bool = True,
-        operation_id: Optional[str] = None,
+        operation_id: str | None = None,
     ) -> None:
         """Set status for file operations (load, save, rename, etc.)."""
         color = STATUS_COLORS["operation_success"] if success else STATUS_COLORS["error"]
@@ -258,10 +258,7 @@ class StatusManager:
         """Set status for rename operations with count information."""
         if success:
             color = STATUS_COLORS["rename_success"]
-            if renamed_count > 0:
-                formatted_message = f"Renamed {renamed_count} file(s)"
-            else:
-                formatted_message = message
+            formatted_message = f"Renamed {renamed_count} file(s)" if renamed_count > 0 else message
         else:
             color = STATUS_COLORS["error"]
             formatted_message = f"Rename failed: {message}"
@@ -323,7 +320,7 @@ class StatusManager:
         )
 
     def set_progress_status(
-        self, message: str, progress_percent: int = 0, operation_id: Optional[str] = None
+        self, message: str, progress_percent: int = 0, operation_id: str | None = None
     ) -> None:
         """Set status for progress operations with percentage."""
         if 0 < progress_percent < 100:
@@ -435,7 +432,7 @@ class StatusManager:
         processed: int,
         total: int,
         current_item: str = "",
-        operation_id: Optional[str] = None,
+        operation_id: str | None = None,
     ) -> None:
         """Set status for bulk operations with progress tracking."""
         progress_percent = int((processed / total) * 100) if total > 0 else 0
@@ -630,8 +627,8 @@ class StatusManager:
                 self._status_history = self._status_history[-self._max_history_size :]
 
     def get_status_history(
-        self, category: Optional[StatusCategory] = None, limit: int = 20
-    ) -> List[StatusEntry]:
+        self, category: StatusCategory | None = None, limit: int = 20
+    ) -> list[StatusEntry]:
         """Get recent status history, optionally filtered by category."""
         with self._lock:
             history = self._status_history.copy()
@@ -641,7 +638,7 @@ class StatusManager:
 
         return history[-limit:]
 
-    def get_operation_summary(self, operation_id: str) -> Optional[Dict[str, Any]]:
+    def get_operation_summary(self, operation_id: str) -> dict[str, Any] | None:
         """Get summary of a specific operation."""
         with self._lock:
             if operation_id in self._operation_contexts:

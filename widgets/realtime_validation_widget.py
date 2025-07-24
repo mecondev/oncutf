@@ -7,7 +7,6 @@ Date: 2025-01-27
 Real-time Validation Widget for immediate validation feedback.
 """
 
-from typing import List, Optional
 
 from core.pyqt_imports import (
     QFrame,
@@ -26,7 +25,7 @@ logger = get_cached_logger(__name__)
 class RealTimeValidationWidget(QWidget):
     """Widget for real-time validation feedback."""
 
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self.setObjectName("RealTimeValidationWidget")
         self.setProperty("class", "RealTimeValidationWidget")
@@ -173,7 +172,7 @@ class RealTimeValidationWidget(QWidget):
         except Exception as e:
             logger.error(f"[RealTimeValidationWidget] Error updating validation: {e}")
 
-    def _show_error_details(self, items: List):
+    def _show_error_details(self, items: list):
         """Show error details."""
         error_messages = []
         for item in items:

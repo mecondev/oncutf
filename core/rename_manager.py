@@ -12,7 +12,7 @@ This manager centralizes rename operations including:
 - Module dividers management
 """
 
-from typing import TYPE_CHECKING, List, Set
+from typing import TYPE_CHECKING
 
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
@@ -158,7 +158,7 @@ class RenameManager:
             else:
                 logger.info("[RenameManager] No files renamed, skipping post-rename workflow")
 
-    def _execute_post_rename_workflow_safe(self, checked_paths: Set[str]) -> None:
+    def _execute_post_rename_workflow_safe(self, checked_paths: set[str]) -> None:
         """
         Execute the post-rename workflow with enhanced safety checks.
 
@@ -271,7 +271,7 @@ class RenameManager:
                 f"[RenameManager] Critical error in post-rename workflow: {e}", exc_info=True
             )
 
-    def _execute_post_rename_workflow(self, checked_paths: Set[str]) -> None:
+    def _execute_post_rename_workflow(self, checked_paths: set[str]) -> None:
         """
         Execute the post-rename workflow including folder reload and state restoration.
 
@@ -302,7 +302,7 @@ class RenameManager:
             f"[Rename] Restored {restored_count} checked out of {len(self.main_window.file_model.files)} files"
         )
 
-    def _restore_checked_state_safe(self, checked_paths: Set[str]) -> int:
+    def _restore_checked_state_safe(self, checked_paths: set[str]) -> int:
         """
         Safely restore checked state for files after rename.
 
@@ -332,7 +332,7 @@ class RenameManager:
 
         return restored_count
 
-    def _restore_checked_state(self, checked_paths: Set[str]) -> int:
+    def _restore_checked_state(self, checked_paths: set[str]) -> int:
         """
         Restore checked state for files after rename.
 
@@ -424,7 +424,7 @@ class RenameManager:
             return rename_data
         return {"modules": [], "post_transform": {}}
 
-    def get_selected_files_for_rename(self) -> List[FileItem]:
+    def get_selected_files_for_rename(self) -> list[FileItem]:
         """
         Get files selected for rename operation.
 

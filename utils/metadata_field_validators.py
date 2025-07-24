@@ -9,7 +9,6 @@ Validation system for metadata field editing.
 Provides validation rules and error messages for different metadata field types.
 """
 
-from typing import List, Tuple
 
 
 class MetadataFieldValidator:
@@ -32,7 +31,7 @@ class MetadataFieldValidator:
     MAX_KEYWORDS_COUNT = 50
 
     @staticmethod
-    def validate_title(value: str) -> Tuple[bool, str]:
+    def validate_title(value: str) -> tuple[bool, str]:
         """
         Validate title field.
 
@@ -71,7 +70,7 @@ class MetadataFieldValidator:
         return True, ""
 
     @staticmethod
-    def validate_artist(value: str) -> Tuple[bool, str]:
+    def validate_artist(value: str) -> tuple[bool, str]:
         """
         Validate artist/author field.
 
@@ -104,7 +103,7 @@ class MetadataFieldValidator:
         return True, ""
 
     @staticmethod
-    def validate_copyright(value: str) -> Tuple[bool, str]:
+    def validate_copyright(value: str) -> tuple[bool, str]:
         """
         Validate copyright field.
 
@@ -137,7 +136,7 @@ class MetadataFieldValidator:
         return True, ""
 
     @staticmethod
-    def validate_description(value: str) -> Tuple[bool, str]:
+    def validate_description(value: str) -> tuple[bool, str]:
         """
         Validate description field.
 
@@ -170,7 +169,7 @@ class MetadataFieldValidator:
         return True, ""
 
     @staticmethod
-    def validate_keywords(value: str) -> Tuple[bool, str]:
+    def validate_keywords(value: str) -> tuple[bool, str]:
         """
         Validate keywords field (comma-separated).
 
@@ -216,7 +215,7 @@ class MetadataFieldValidator:
         return True, ""
 
     @staticmethod
-    def validate_rotation(value: str) -> Tuple[bool, str]:
+    def validate_rotation(value: str) -> tuple[bool, str]:
         """
         Validate rotation field.
 
@@ -270,7 +269,7 @@ class MetadataFieldValidator:
             return False, "Rotation must be a valid number (0, 90, 180, or 270)"
 
     @staticmethod
-    def parse_keywords(value: str) -> List[str]:
+    def parse_keywords(value: str) -> list[str]:
         """
         Parse and clean keywords string into a list.
 
@@ -292,7 +291,7 @@ class MetadataFieldValidator:
         return [keyword for keyword in keywords if keyword]
 
     @staticmethod
-    def format_keywords(keywords: List[str]) -> str:
+    def format_keywords(keywords: list[str]) -> str:
         """
         Format a list of keywords into a comma-separated string.
 
@@ -333,7 +332,7 @@ class MetadataFieldValidator:
         return validators.get(field_name)
 
     @staticmethod
-    def validate_field(field_name: str, value: str) -> Tuple[bool, str]:
+    def validate_field(field_name: str, value: str) -> tuple[bool, str]:
         """
         Validate a field using the appropriate validator.
 

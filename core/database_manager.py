@@ -21,7 +21,7 @@ import sqlite3
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from utils.logger_factory import get_cached_logger
 from utils.path_normalizer import normalize_path
@@ -49,7 +49,7 @@ class DatabaseManager:
     # Database schema version for migrations
     SCHEMA_VERSION = 3
 
-    def __init__(self, db_path: Optional[str] = None):
+    def __init__(self, db_path: str | None = None):
         """
         Initialize database manager.
 
@@ -437,7 +437,7 @@ class DatabaseManager:
         """Use the central normalize_path function."""
         return normalize_path(file_path)
 
-    def get_path_id(self, file_path: str) -> Optional[int]:
+    def get_path_id(self, file_path: str) -> int | None:
         """Get path_id for a file without creating it."""
         norm_path = self._normalize_path(file_path)
 
@@ -454,7 +454,7 @@ class DatabaseManager:
     def store_metadata(
         self,
         file_path: str,
-        metadata: Dict[str, Any],
+        metadata: dict[str, Any],
         is_extended: bool = False,
         is_modified: bool = False,
     ) -> bool:
@@ -493,7 +493,7 @@ class DatabaseManager:
             logger.error(f"[DatabaseManager] Error storing metadata for {file_path}: {e}")
             return False
 
-    def get_metadata(self, file_path: str) -> Optional[Dict[str, Any]]:
+    def get_metadata(self, file_path: str) -> dict[str, Any] | None:
         """Retrieve metadata for a file."""
         try:
             path_id = self.get_path_id(file_path)
@@ -531,7 +531,7 @@ class DatabaseManager:
             logger.error(f"[DatabaseManager] Error retrieving metadata for {file_path}: {e}")
             return None
 
-    def has_metadata(self, file_path: str, metadata_type: Optional[str] = None) -> bool:
+    def has_metadata(self, file_path: str, metadata_type: str | None = None) -> bool:
         """Check if file has metadata stored."""
         try:
             path_id = self.get_path_id(file_path)
@@ -617,7 +617,7 @@ class DatabaseManager:
             logger.error(f"[DatabaseManager] Error storing hash for {file_path}: {e}")
             return False
 
-    def get_hash(self, file_path: str, algorithm: str = "CRC32") -> Optional[str]:
+    def get_hash(self, file_path: str, algorithm: str = "CRC32") -> str | None:
         """Retrieve file hash."""
         try:
             path_id = self.get_path_id(file_path)
@@ -663,8 +663,8 @@ class DatabaseManager:
             return cursor.fetchone() is not None
 
     def get_files_with_hash_batch(
-        self, file_paths: List[str], algorithm: str = "CRC32"
-    ) -> List[str]:
+        self, file_paths: list[str], algorithm: str = "CRC32"
+    ) -> list[str]:
         """Get all files from the list that have a hash stored using batch database query."""
         if not file_paths:
             return []
@@ -702,7 +702,7 @@ class DatabaseManager:
 
     def create_metadata_category(
         self, category_name: str, display_name: str, description: str = None, sort_order: int = 0
-    ) -> Optional[int]:
+    ) -> int | None:
         """Create a new metadata category."""
         try:
             with self._get_connection() as conn:
@@ -723,7 +723,7 @@ class DatabaseManager:
             )
             return None
 
-    def get_metadata_categories(self) -> List[Dict[str, Any]]:
+    def get_metadata_categories(self) -> list[dict[str, Any]]:
         """Get all metadata categories ordered by sort_order."""
         try:
             with self._get_connection() as conn:
@@ -750,7 +750,7 @@ class DatabaseManager:
         is_searchable: bool = True,
         display_format: str = None,
         sort_order: int = 0,
-    ) -> Optional[int]:
+    ) -> int | None:
         """Create a new metadata field."""
         try:
             with self._get_connection() as conn:
@@ -779,7 +779,7 @@ class DatabaseManager:
             logger.error(f"[DatabaseManager] Error creating metadata field '{field_key}': {e}")
             return None
 
-    def get_metadata_fields(self, category_id: int = None) -> List[Dict[str, Any]]:
+    def get_metadata_fields(self, category_id: int = None) -> list[dict[str, Any]]:
         """Get metadata fields, optionally filtered by category."""
         try:
             with self._get_connection() as conn:
@@ -815,7 +815,7 @@ class DatabaseManager:
             logger.error(f"[DatabaseManager] Error getting metadata fields: {e}")
             return []
 
-    def get_metadata_field_by_key(self, field_key: str) -> Optional[Dict[str, Any]]:
+    def get_metadata_field_by_key(self, field_key: str) -> dict[str, Any] | None:
         """Get a metadata field by its key."""
         try:
             with self._get_connection() as conn:
@@ -871,7 +871,7 @@ class DatabaseManager:
             )
             return False
 
-    def get_structured_metadata(self, file_path: str) -> Dict[str, Any]:
+    def get_structured_metadata(self, file_path: str) -> dict[str, Any]:
         """Get structured metadata for a file."""
         try:
             path_id = self.get_path_id(file_path)
@@ -1166,7 +1166,7 @@ class DatabaseManager:
     # Utility Methods
     # =====================================
 
-    def get_database_stats(self) -> Dict[str, int]:
+    def get_database_stats(self) -> dict[str, int]:
         """Get database statistics."""
         try:
             with self._get_connection() as conn:
@@ -1216,7 +1216,7 @@ def get_database_manager() -> DatabaseManager:
     return _db_manager_v2_instance
 
 
-def initialize_database(db_path: Optional[str] = None) -> DatabaseManager:
+def initialize_database(db_path: str | None = None) -> DatabaseManager:
     """Initialize database manager with custom path."""
     global _db_manager_v2_instance
     _db_manager_v2_instance = DatabaseManager(db_path)

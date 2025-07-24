@@ -19,7 +19,7 @@ Features:
 
 import os
 from enum import Enum
-from typing import Dict, Optional
+from typing import Optional
 
 from config import ICON_SIZES
 from core.pyqt_imports import QApplication, QColor, QCursor, QIcon, QPainter, QPixmap, Qt, QWidget
@@ -73,15 +73,15 @@ class DragVisualManager:
         DragVisualManager._instance = self
 
         # Current drag state
-        self._drag_type: Optional[DragType] = None
+        self._drag_type: DragType | None = None
         self._drop_zone_state: DropZoneState = DropZoneState.NEUTRAL
         self._modifier_state: ModifierState = ModifierState.NORMAL
-        self._original_cursor: Optional[QCursor] = None
-        self._drag_source: Optional[str] = None
+        self._original_cursor: QCursor | None = None
+        self._drag_source: str | None = None
 
         # Icon cache for different states
-        self._icon_cache: Dict[str, QIcon] = {}
-        self._cursor_cache: Dict[str, QCursor] = {}
+        self._icon_cache: dict[str, QIcon] = {}
+        self._cursor_cache: dict[str, QCursor] = {}
 
         # Clear cache on initialization
         self._clear_cache()

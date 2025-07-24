@@ -21,7 +21,7 @@ import time
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from config import EXTENDED_METADATA_SIZE_LIMIT_MB, LARGE_FOLDER_WARNING_THRESHOLD
 from core.database_manager import get_database_manager
@@ -82,7 +82,7 @@ class ValidationResult:
     file_exists: bool
     content_changed: bool
     path_changed: bool
-    original_path: Optional[str] = None
+    original_path: str | None = None
     confidence: float = 0.0  # 0.0 to 1.0
 
 
@@ -220,7 +220,7 @@ class FileValidationManager:
 
         return base_ttl
 
-    def validate_file_medium_accuracy(self, file_path: str, cached_data: Dict) -> ValidationResult:
+    def validate_file_medium_accuracy(self, file_path: str, cached_data: dict) -> ValidationResult:
         """
         Validate file using medium accuracy (mtime + size).
         Balanced approach for archival applications.
@@ -268,7 +268,7 @@ class FileValidationManager:
                 confidence=0.1,
             )
 
-    def find_moved_file_by_content(self, target_signature: FileSignature) -> Optional[Dict]:
+    def find_moved_file_by_content(self, target_signature: FileSignature) -> dict | None:
         """
         Find moved file using content-based identification.
         Critical for archival applications where files are moved at OS level.
@@ -333,7 +333,7 @@ class FileValidationManager:
 
         return None
 
-    def identify_file_with_content_fallback(self, file_path: str) -> Tuple[Optional[Dict], bool]:
+    def identify_file_with_content_fallback(self, file_path: str) -> tuple[dict | None, bool]:
         """
         Identify file using hybrid approach: path-based first, then content-based.
         Returns (file_record, was_moved).
@@ -424,8 +424,8 @@ class FileValidationManager:
         )
 
     def validate_operation_batch(
-        self, files: List[str], operation: OperationType
-    ) -> Dict[str, Any]:
+        self, files: list[str], operation: OperationType
+    ) -> dict[str, Any]:
         """
         Validate a batch of files for specific operation.
         Returns validation summary and recommendations.
@@ -511,7 +511,7 @@ class FileValidationManager:
         except Exception as e:
             logger.error(f"Error cleaning up stale cache entries: {e}")
 
-    def get_validation_stats(self) -> Dict[str, Any]:
+    def get_validation_stats(self) -> dict[str, Any]:
         """Get validation manager statistics."""
         try:
             stats = self.db_manager.get_database_stats()

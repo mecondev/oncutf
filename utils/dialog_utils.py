@@ -9,12 +9,11 @@ Utility functions for dialog and widget positioning and management.
 Provides centralized logic for common dialog operations like centering.
 """
 
-from typing import Optional
 
 from core.pyqt_imports import QWidget
 
 
-def center_widget_on_parent(widget: QWidget, parent: Optional[QWidget] = None) -> None:
+def center_widget_on_parent(widget: QWidget, parent: QWidget | None = None) -> None:
     """
     Center a widget on its parent window using multiscreen-aware positioning.
 
@@ -61,7 +60,7 @@ def show_dialog_smooth(dialog: QWidget) -> None:
     schedule_ui_update(dialog.show, delay=1)  # 1ms delay allows layout to complete
 
 
-def show_info_message(parent: Optional[QWidget], title: str, message: str) -> None:
+def show_info_message(parent: QWidget | None, title: str, message: str) -> None:
     """
     Show an information message dialog.
 
@@ -75,7 +74,7 @@ def show_info_message(parent: Optional[QWidget], title: str, message: str) -> No
     CustomMessageDialog.information(parent, title, message)
 
 
-def show_error_message(parent: Optional[QWidget], title: str, message: str) -> None:
+def show_error_message(parent: QWidget | None, title: str, message: str) -> None:
     """
     Show an error message dialog.
 

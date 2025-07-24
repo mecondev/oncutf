@@ -107,11 +107,14 @@ class HierarchicalComboBox(QComboBox):
                 border: 1px solid #ccc;
                 border-radius: 4px;
                 outline: none;
+                min-width: 200px;
+                max-height: 300px;
             }
 
             QTreeView::item {
                 padding: 4px 8px;
                 border: none;
+                min-height: 20px;
             }
 
             QTreeView::item:hover {
@@ -228,21 +231,43 @@ class HierarchicalComboBox(QComboBox):
 
     def get_current_data(self) -> Any:
         """Get the data of the currently selected item."""
+        # First try to get from the tree view current index
         current_index = self.tree_view.currentIndex()
         if current_index.isValid():
             item = self.model.itemFromIndex(current_index)
             if item and item.flags() & Qt.ItemIsSelectable:
                 return item.data(Qt.UserRole)
+
+        # If no valid selection in tree view, try to find by current text
+        current_text = self.currentText()
+        if current_text:
+            for row in range(self.model.rowCount()):
+                item = self.model.item(row)
+                if item:
+                    # Check if this is a category
+                    if item.flags() & Qt.ItemIsSelectable:
+                        if item.text() == current_text:
+                            return item.data(Qt.UserRole)
+                    else:
+                        # Check children of category
+                        for child_row in range(item.rowCount()):
+                            child_item = item.child(child_row)
+                            if child_item and child_item.text() == current_text:
+                                return child_item.data(Qt.UserRole)
+
         return None
 
     def get_current_text(self) -> str:
         """Get the text of the currently selected item."""
+        # First try to get from the tree view current index
         current_index = self.tree_view.currentIndex()
         if current_index.isValid():
             item = self.model.itemFromIndex(current_index)
             if item and item.flags() & Qt.ItemIsSelectable:
                 return item.text()
-        return ""
+
+        # Fallback to the combo box current text
+        return self.currentText()
 
     def set_current_data(self, data: Any):
         """Set the current selection by data value."""
@@ -253,6 +278,7 @@ class HierarchicalComboBox(QComboBox):
                 if item.flags() & Qt.ItemIsSelectable:
                     if item.data(Qt.UserRole) == data:
                         self.tree_view.setCurrentIndex(self.model.indexFromItem(item))
+                        self.setCurrentText(item.text())
                         return
                 else:
                     # Check children of category
@@ -260,6 +286,7 @@ class HierarchicalComboBox(QComboBox):
                         child_item = item.child(child_row)
                         if child_item and child_item.data(Qt.UserRole) == data:
                             self.tree_view.setCurrentIndex(self.model.indexFromItem(child_item))
+                            self.setCurrentText(child_item.text())
                             return
 
     def expand_all(self):
@@ -285,8 +312,8 @@ class HierarchicalComboBox(QComboBox):
             text = item.text()
             data = item.data(Qt.UserRole)
 
-            # Update the combo box display
-            self.setEditText(text)
+            # Update the combo box display text
+            self.setCurrentText(text)
 
             # Emit signal
             self.item_selected.emit(text, data)
@@ -307,6 +334,15 @@ class HierarchicalComboBox(QComboBox):
             else:
                 self.tree_view.expand(index)
 
+    def setCurrentText(self, text: str):
+        """Set the current text display of the combo box."""
+        # Override to work with our custom view
+        super().setCurrentText(text)
+
+    def currentText(self) -> str:
+        """Get the current text display of the combo box."""
+        return super().currentText()
+
     def populate_from_metadata_groups(self, grouped_data: dict[str, list[tuple[str, Any]]]):
         """
         Populate the combo box from grouped metadata data.
@@ -316,6 +352,9 @@ class HierarchicalComboBox(QComboBox):
         """
         self.clear()
 
+        first_item_text = None
+        first_item_data = None
+
         for category_name, items in grouped_data.items():
             if items:  # Only add categories that have items
                 self.add_category(category_name)
@@ -323,5 +362,15 @@ class HierarchicalComboBox(QComboBox):
                 for item_text, item_data in sorted(items):
                     self.add_item_to_category(category_name, item_text, item_data)
 
+                    # Remember the first item for selection
+                    if first_item_text is None:
+                        first_item_text = item_text
+                        first_item_data = item_data
+
         # Expand all categories by default
         self.expand_all()
+
+        # Set the first item as selected if available
+        if first_item_text and first_item_data:
+            self.set_current_data(first_item_data)
+            self.setCurrentText(first_item_text)

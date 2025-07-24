@@ -12,7 +12,6 @@ Contains:
 """
 
 import logging
-from typing import Set, Tuple
 
 from config import (
     QLABEL_DARK_BG,
@@ -73,7 +72,7 @@ class BaseValidatedInput:
         """Emit validation changed signal. Must be implemented by subclasses."""
         raise NotImplementedError("Subclasses must implement emit_validation_changed")
 
-    def get_blocked_characters(self) -> Set[str]:
+    def get_blocked_characters(self) -> set[str]:
         """
         Get set of characters that should be blocked from input.
         Override in subclasses for field-specific blocking.
@@ -96,7 +95,7 @@ class BaseValidatedInput:
         blocked_chars = self.get_blocked_characters()
         return char in blocked_chars
 
-    def clean_text_for_paste(self, text: str) -> Tuple[str, Set[str]]:
+    def clean_text_for_paste(self, text: str) -> tuple[str, set[str]]:
         """
         Clean text for paste operations by removing blocked characters.
 
@@ -115,7 +114,7 @@ class BaseValidatedInput:
 
         return cleaned_text, removed_chars
 
-    def validate_text_content(self, text: str) -> Tuple[bool, str]:
+    def validate_text_content(self, text: str) -> tuple[bool, str]:
         """
         Validate text content according to field-specific rules.
         Override in subclasses for custom validation logic.

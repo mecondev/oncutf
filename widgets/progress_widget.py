@@ -36,7 +36,6 @@ Usage Examples:
 """
 
 import time
-from typing import Optional
 
 from config import (
     QLABEL_BORDER_GRAY,
@@ -72,7 +71,7 @@ class ProgressWidget(QWidget):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         bar_color: str = "#64b5f6",
         bar_bg_color: str = "#0a1a2a",
         show_size_info: bool = False,

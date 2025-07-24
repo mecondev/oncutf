@@ -9,7 +9,6 @@ Generates CSS font styles with DPI-aware sizing for cross-platform consistency.
 """
 
 import logging
-from typing import Dict
 
 logger = logging.getLogger(__name__)
 
@@ -191,7 +190,7 @@ def get_table_font_size() -> int:
         return 9
 
 
-def get_ui_font_sizes() -> Dict[str, int]:
+def get_ui_font_sizes() -> dict[str, int]:
     """Get all UI font sizes for programmatic use."""
     try:
         from utils.dpi_helper import get_font_sizes

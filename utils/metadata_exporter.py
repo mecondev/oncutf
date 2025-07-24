@@ -13,7 +13,7 @@ import json
 import os
 from collections import defaultdict
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from config import APP_NAME, APP_VERSION, EXPORT_DATE_FORMAT
 from utils.build_metadata_tree_model import classify_key
@@ -83,7 +83,7 @@ class MetadataExporter:
 
         return self._export_files(all_files, output_dir, format_type, "all")
 
-    def export_files(self, files: List[Any], output_dir: str, format_type: str = "json") -> bool:
+    def export_files(self, files: list[Any], output_dir: str, format_type: str = "json") -> bool:
         """
         Export metadata for a specific list of files.
 
@@ -101,7 +101,7 @@ class MetadataExporter:
 
         return self._export_files(files, output_dir, format_type, "custom")
 
-    def _get_selected_files(self) -> List[Any]:
+    def _get_selected_files(self) -> list[Any]:
         """Get currently selected files from file table."""
         if not self.parent_window:
             return []
@@ -109,7 +109,7 @@ class MetadataExporter:
         # Use unified selection method
         return self.parent_window.get_selected_files_ordered()
 
-    def _get_all_files(self) -> List[Any]:
+    def _get_all_files(self) -> list[Any]:
         """Get all files from file model."""
         if not (hasattr(self.parent_window, "file_model") and self.parent_window.file_model.files):
             return []
@@ -117,7 +117,7 @@ class MetadataExporter:
         return self.parent_window.file_model.files
 
     def _export_files(
-        self, files: List[Any], output_dir: str, format_type: str, scope: str
+        self, files: list[Any], output_dir: str, format_type: str, scope: str
     ) -> bool:
         """
         Export metadata for a list of files.
@@ -140,7 +140,7 @@ class MetadataExporter:
             logger.exception(f"[MetadataExporter] Export failed: {e}")
             return False
 
-    def _export_json(self, files: List[Any], output_dir: str, scope: str) -> bool:
+    def _export_json(self, files: list[Any], output_dir: str, scope: str) -> bool:
         """Export metadata in JSON format - one file per source file."""
         try:
             exported_count = 0
@@ -183,7 +183,7 @@ class MetadataExporter:
             logger.error(f"[MetadataExporter] JSON export failed: {e}")
             return False
 
-    def _export_markdown(self, files: List[Any], output_dir: str, scope: str) -> bool:
+    def _export_markdown(self, files: list[Any], output_dir: str, scope: str) -> bool:
         """Export metadata in Markdown format - one file per source file."""
         try:
             exported_count = 0
@@ -257,7 +257,7 @@ class MetadataExporter:
             logger.error(f"[MetadataExporter] Markdown export failed: {e}")
             return False
 
-    def _prepare_file_data(self, file_item: Any) -> Optional[Dict[str, Any]]:
+    def _prepare_file_data(self, file_item: Any) -> dict[str, Any] | None:
         """
         Prepare file data for export including metadata grouping and hash info.
 
@@ -301,7 +301,7 @@ class MetadataExporter:
             logger.error(f"[MetadataExporter] Error preparing file data: {e}")
             return None
 
-    def _get_hash_info(self, file_item: Any) -> Optional[Dict[str, str]]:
+    def _get_hash_info(self, file_item: Any) -> dict[str, str] | None:
         """Get hash information for a file if available."""
         try:
             # Check if file has hash information
@@ -329,7 +329,7 @@ class MetadataExporter:
             logger.debug(f"[MetadataExporter] Could not get hash info: {e}")
             return None
 
-    def _get_metadata_for_file(self, file_item: Any) -> Optional[Dict[str, Any]]:
+    def _get_metadata_for_file(self, file_item: Any) -> dict[str, Any] | None:
         """Get metadata for a file from cache or file item using unified cache helper."""
         try:
             # Use MetadataCacheHelper for unified access
@@ -349,7 +349,7 @@ class MetadataExporter:
             logger.debug(f"[MetadataExporter] Could not get metadata: {e}")
             return None
 
-    def _group_metadata(self, metadata: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    def _group_metadata(self, metadata: dict[str, Any]) -> dict[str, dict[str, Any]]:
         """Group metadata by categories with extended key detection."""
         grouped = defaultdict(
             lambda: {"items": {}, "extended_keys": set(), "total_count": 0, "extended_count": 0}

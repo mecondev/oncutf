@@ -14,7 +14,7 @@ Features:
 - Support for all operation types (metadata, file loading, hash calculation)
 """
 
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from config import (
     EXTENDED_METADATA_BG_COLOR,
@@ -66,9 +66,9 @@ class ProgressDialog(QDialog):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         operation_type: str = "metadata_basic",
-        cancel_callback: Optional[Callable] = None,
+        cancel_callback: Callable | None = None,
         show_enhanced_info: bool = True,
     ) -> None:
         """
@@ -242,7 +242,7 @@ class ProgressDialog(QDialog):
         if hasattr(self.waiting_widget, "set_size_info"):
             self.waiting_widget.set_size_info(processed_size, total_size)
 
-    def set_time_info(self, elapsed: float, estimated_total: Optional[float] = None) -> None:
+    def set_time_info(self, elapsed: float, estimated_total: float | None = None) -> None:
         """Set time information manually."""
         if hasattr(self.waiting_widget, "set_time_info"):
             self.waiting_widget.set_time_info(elapsed, estimated_total)  # type: ignore
@@ -284,9 +284,9 @@ class ProgressDialog(QDialog):
     @classmethod
     def create_metadata_dialog(
         cls,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         is_extended: bool = False,
-        cancel_callback: Optional[Callable] = None,
+        cancel_callback: Callable | None = None,
         show_enhanced_info: bool = True,
         use_size_based_progress: bool = True,
     ) -> "ProgressDialog":
@@ -323,8 +323,8 @@ class ProgressDialog(QDialog):
     @classmethod
     def create_file_loading_dialog(
         cls,
-        parent: Optional[QWidget] = None,
-        cancel_callback: Optional[Callable] = None,
+        parent: QWidget | None = None,
+        cancel_callback: Callable | None = None,
         show_enhanced_info: bool = True,
     ) -> "ProgressDialog":
         """
@@ -348,8 +348,8 @@ class ProgressDialog(QDialog):
     @classmethod
     def create_hash_dialog(
         cls,
-        parent: Optional[QWidget] = None,
-        cancel_callback: Optional[Callable] = None,
+        parent: QWidget | None = None,
+        cancel_callback: Callable | None = None,
         show_enhanced_info: bool = True,
         use_size_based_progress: bool = True,
     ) -> "ProgressDialog":

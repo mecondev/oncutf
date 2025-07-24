@@ -14,7 +14,6 @@ Features:
 - Operation status and file counts
 """
 
-from typing import Optional
 
 from core.pyqt_imports import (
     QAbstractItemView,
@@ -48,7 +47,7 @@ class RenameHistoryDialog(QDialog):
     undoing them if possible.
     """
 
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self.parent_window = parent
         self.history_manager = get_rename_history_manager()
@@ -173,10 +172,7 @@ class RenameHistoryDialog(QDialog):
             for row, operation in enumerate(operations):
                 # Date/Time
                 timestamp = operation.get("timestamp", "")
-                if "T" in timestamp:
-                    display_time = timestamp[:19].replace("T", " ")
-                else:
-                    display_time = timestamp
+                display_time = timestamp[:19].replace("T", " ") if "T" in timestamp else timestamp
 
                 time_item = QTableWidgetItem(display_time)
                 time_item.setData(Qt.UserRole, operation["operation_id"])
@@ -358,7 +354,7 @@ class RenameHistoryDialog(QDialog):
             CustomMessageDialog.critical(self, "Error", f"Failed to cleanup history: {str(e)}")
 
 
-def show_rename_history_dialog(parent: Optional[QWidget] = None) -> None:
+def show_rename_history_dialog(parent: QWidget | None = None) -> None:
     """
     Show the rename history dialog.
 

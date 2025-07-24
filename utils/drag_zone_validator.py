@@ -9,7 +9,6 @@ This module provides shared logic for validating drop zones during drag operatio
 eliminating code duplication between FileTreeView and FileTableView.
 """
 
-from typing import Dict, List, Optional
 
 from core.drag_visual_manager import DropZoneState, update_drop_zone_state
 from core.pyqt_imports import QApplication, QCursor
@@ -27,14 +26,14 @@ class DragZoneValidator:
     """
 
     # Define valid/invalid drop zones for each source type
-    ZONE_RULES: Dict[str, Dict[str, List[str]]] = {
+    ZONE_RULES: dict[str, dict[str, list[str]]] = {
         "file_tree": {"valid": ["FileTableView"], "invalid": ["FileTreeView", "MetadataTreeView"]},
         "file_table": {"valid": ["MetadataTreeView"], "invalid": ["FileTreeView", "FileTableView"]},
     }
 
     # Track initial drag positions and "left and returned" state
-    _initial_drag_widgets: Dict[str, str] = {}
-    _has_left_initial: Dict[str, bool] = {}  # Track if drag has left initial widget
+    _initial_drag_widgets: dict[str, str] = {}
+    _has_left_initial: dict[str, bool] = {}  # Track if drag has left initial widget
 
     @classmethod
     def set_initial_drag_widget(cls, drag_source: str, widget_class_name: str) -> None:
@@ -134,17 +133,17 @@ class DragZoneValidator:
             )
 
     @classmethod
-    def get_valid_zones(cls, drag_source: str) -> List[str]:
+    def get_valid_zones(cls, drag_source: str) -> list[str]:
         """Get list of valid drop zone widget names for a drag source."""
         return cls.ZONE_RULES.get(drag_source, {}).get("valid", [])
 
     @classmethod
-    def get_invalid_zones(cls, drag_source: str) -> List[str]:
+    def get_invalid_zones(cls, drag_source: str) -> list[str]:
         """Get list of invalid drop zone widget names for a drag source."""
         return cls.ZONE_RULES.get(drag_source, {}).get("invalid", [])
 
     @classmethod
-    def is_valid_zone(cls, drag_source: str, widget_class_name: str) -> Optional[bool]:
+    def is_valid_zone(cls, drag_source: str, widget_class_name: str) -> bool | None:
         """
         Check if a widget class is valid/invalid for a drag source.
 

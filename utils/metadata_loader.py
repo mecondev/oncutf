@@ -18,7 +18,6 @@ Features:
 
 import subprocess
 import threading
-from typing import Dict, Optional
 
 from core.pyqt_imports import Qt
 from models.file_item import FileItem
@@ -36,7 +35,7 @@ class MetadataLoader:
 
     def __init__(self, exiftool_path: str = "exiftool") -> None:
         self.exiftool_path = exiftool_path
-        self._active_proc: Optional[subprocess.Popen] = None
+        self._active_proc: subprocess.Popen | None = None
         self._cancel_requested = threading.Event()
         self._lock = threading.Lock()
         self.exiftool = ExifToolWrapper()
@@ -121,7 +120,7 @@ class MetadataLoader:
 
     def read_metadata(
         self, filepath: str, timeout: int = 10, use_extended: bool = False
-    ) -> Optional[Dict[str, str]]:
+    ) -> dict[str, str] | None:
         """
         Reads metadata using ExifToolWrapper. Falls back to subprocess if needed.
 
@@ -168,7 +167,7 @@ class MetadataLoader:
         )
         return {}
 
-    def read(self, filepath: str, use_extended: bool = False) -> Dict[str, str]:
+    def read(self, filepath: str, use_extended: bool = False) -> dict[str, str]:
         return self.read_metadata(filepath, use_extended=use_extended) or {}
 
     def has_extended(self, file_path: str, cache) -> bool:

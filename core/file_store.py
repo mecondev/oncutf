@@ -16,7 +16,7 @@ Manages:
 
 import glob
 import os
-from typing import Any, Dict, List, Optional, Set
+from typing import Any
 
 from config import ALLOWED_EXTENSIONS
 from core.pyqt_imports import QElapsedTimer, QObject, pyqtSignal
@@ -39,13 +39,13 @@ class FileStore(QObject):
     folder_changed = pyqtSignal(str)  # Emitted when current folder changes
     files_filtered = pyqtSignal(list)  # Emitted when files are filtered
 
-    def __init__(self, parent: Optional[QObject] = None):
+    def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
 
         # Current state
-        self._current_folder: Optional[str] = None
-        self._loaded_files: List[FileItem] = []
-        self._file_cache: Dict[str, List[FileItem]] = {}
+        self._current_folder: str | None = None
+        self._loaded_files: list[FileItem] = []
+        self._file_cache: dict[str, list[FileItem]] = {}
 
         # Performance tracking
         self._load_timer = QElapsedTimer()
@@ -58,7 +58,7 @@ class FileStore(QObject):
 
     def get_file_items_from_folder(
         self, folder_path: str, *, use_cache: bool = True
-    ) -> List[FileItem]:
+    ) -> list[FileItem]:
         """
         Scans a folder and returns FileItem objects for supported files.
 
@@ -108,7 +108,7 @@ class FileStore(QObject):
 
         return file_items
 
-    def load_files_from_paths(self, file_paths: List[str], *, clear: bool = True) -> List[FileItem]:
+    def load_files_from_paths(self, file_paths: list[str], *, clear: bool = True) -> list[FileItem]:
         """
         Loads a mix of files and folders into FileItem objects.
 
@@ -176,11 +176,11 @@ class FileStore(QObject):
     # State Management
     # =====================================
 
-    def get_loaded_files(self) -> List[FileItem]:
+    def get_loaded_files(self) -> list[FileItem]:
         """Get currently loaded files."""
         return self._loaded_files.copy()
 
-    def get_current_folder(self) -> Optional[str]:
+    def get_current_folder(self) -> str | None:
         """Get current folder path."""
         return self._current_folder
 
@@ -211,7 +211,7 @@ class FileStore(QObject):
         ext = os.path.splitext(file_path)[1][1:].lower()
         return ext in ALLOWED_EXTENSIONS
 
-    def filter_files_by_extension(self, extensions: Set[str]) -> List[FileItem]:
+    def filter_files_by_extension(self, extensions: set[str]) -> list[FileItem]:
         """Filter loaded files by extension."""
         filtered = [f for f in self._loaded_files if f.extension.lower() in extensions]
         self.files_filtered.emit(filtered)
@@ -227,7 +227,7 @@ class FileStore(QObject):
         self._file_cache.clear()
         logger.debug("[FileStore] File cache cleared")
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         return {
             "cached_folders": len(self._file_cache),
@@ -239,7 +239,7 @@ class FileStore(QObject):
     # Performance & Utilities
     # =====================================
 
-    def get_performance_stats(self) -> Dict[str, Any]:
+    def get_performance_stats(self) -> dict[str, Any]:
         """Get performance statistics."""
         cache_stats = self.get_cache_stats()
         return {

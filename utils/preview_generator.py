@@ -10,7 +10,7 @@ based on user-defined modules. It supports modular rename logic and allows
 integration with metadata.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from models.file_item import FileItem
 from modules.metadata_module import MetadataModule
@@ -22,10 +22,10 @@ logger = get_cached_logger(__name__)
 
 
 def generate_preview_names(
-    files: List[FileItem],
-    modules_data: List[Dict[str, Any]],
-    metadata_cache: Optional[Dict[str, Dict[str, Any]]] = None,
-) -> Tuple[List[Tuple[str, str]], bool, str]:
+    files: list[FileItem],
+    modules_data: list[dict[str, Any]],
+    metadata_cache: dict[str, dict[str, Any]] | None = None,
+) -> tuple[list[tuple[str, str]], bool, str]:
     """
     Generate new filenames based on rename modules for a list of files.
 

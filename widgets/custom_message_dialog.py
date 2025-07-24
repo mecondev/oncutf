@@ -17,7 +17,6 @@ and is used instead of standard QMessageBox to allow greater control over layout
 behavior, and styling.
 """
 
-from typing import Optional
 
 from core.pyqt_imports import (
     QApplication,
@@ -48,8 +47,8 @@ class CustomMessageDialog(QDialog):
         self,
         title: str,
         message: str,
-        buttons: Optional[list[str]] = None,
-        parent: Optional[QWidget] = None,
+        buttons: list[str] | None = None,
+        parent: QWidget | None = None,
         show_progress: bool = False,
         show_checkbox: bool = False,
     ):

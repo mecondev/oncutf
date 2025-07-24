@@ -11,7 +11,6 @@ Used in the oncutf application as one of the modular renaming components.
 """
 
 import os
-from typing import Optional
 
 from core.pyqt_imports import (
     QAction,
@@ -40,7 +39,7 @@ class SpecifiedTextModule(BaseRenameModule):
 
     updated = pyqtSignal(object)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
         # Store reference to current file for "Original Name" feature
@@ -291,7 +290,7 @@ class SpecifiedTextModule(BaseRenameModule):
 
     @staticmethod
     def apply_from_data(
-        data: dict, file_item, index: int = 0, metadata_cache: Optional[dict] = None
+        data: dict, file_item, index: int = 0, metadata_cache: dict | None = None
     ) -> str:
         logger.debug(
             f"[SpecifiedTextModule] Called with data={data}, index={index}",

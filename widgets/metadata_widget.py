@@ -236,18 +236,24 @@ class MetadataWidget(QWidget):
             self.emit_if_changed()
 
     def populate_file_dates(self) -> None:
-        file_date_options = [
-            ("Last Modified (YYMMDD)", "last_modified_yymmdd"),
-            ("Last Modified (YYYY-MM-DD)", "last_modified_iso"),
-            ("Last Modified (DD-MM-YYYY)", "last_modified_eu"),
-            ("Last Modified (MM-DD-YYYY)", "last_modified_us"),
-            ("Last Modified (YYYY)", "last_modified_year"),
-            ("Last Modified (YYYY-MM)", "last_modified_month"),
-        ]
-        for label, val in file_date_options:
-            if hasattr(self.options_combo, 'add_item'):
-                self.options_combo.add_item(label, val)
-            else:
+        # Prepare hierarchical data for file dates
+        hierarchical_data = {
+            "File Dates": [
+                ("Last Modified (YYMMDD)", "last_modified_yymmdd"),
+                ("Last Modified (YYYY-MM-DD)", "last_modified_iso"),
+                ("Last Modified (DD-MM-YYYY)", "last_modified_eu"),
+                ("Last Modified (MM-DD-YYYY)", "last_modified_us"),
+                ("Last Modified (YYYY)", "last_modified_year"),
+                ("Last Modified (YYYY-MM)", "last_modified_month"),
+            ]
+        }
+
+        # Populate the hierarchical combo box
+        if hasattr(self.options_combo, 'populate_from_metadata_groups'):
+            self.options_combo.populate_from_metadata_groups(hierarchical_data)
+        else:
+            # Fallback for regular combo box
+            for label, val in hierarchical_data["File Dates"]:
                 self.options_combo.addItem(label, userData=val)
 
     def populate_hash_options(self) -> bool:
@@ -260,10 +266,17 @@ class MetadataWidget(QWidget):
 
             if not selected_files:
                 # No files selected - disable hash option
-                if hasattr(self.options_combo, 'add_item'):
-                    self.options_combo.add_item("CRC32", "hash_crc32")
+                hierarchical_data = {
+                    "Hash Types": [
+                        ("CRC32", "hash_crc32"),
+                    ]
+                }
+
+                if hasattr(self.options_combo, 'populate_from_metadata_groups'):
+                    self.options_combo.populate_from_metadata_groups(hierarchical_data)
                 else:
                     self.options_combo.addItem("CRC32", userData="hash_crc32")
+
                 # Disable the combo box
                 self.options_combo.setEnabled(False)
                 # Apply disabled styling to show text in gray
@@ -283,8 +296,14 @@ class MetadataWidget(QWidget):
             files_needing_hash = [path for path in file_paths if path not in files_with_hash]
 
             # Always add CRC32 option (only hash type supported) - but always disabled
-            if hasattr(self.options_combo, 'add_item'):
-                self.options_combo.add_item("CRC32", "hash_crc32")
+            hierarchical_data = {
+                "Hash Types": [
+                    ("CRC32", "hash_crc32"),
+                ]
+            }
+
+            if hasattr(self.options_combo, 'populate_from_metadata_groups'):
+                self.options_combo.populate_from_metadata_groups(hierarchical_data)
             else:
                 self.options_combo.addItem("CRC32", userData="hash_crc32")
 
@@ -303,10 +322,17 @@ class MetadataWidget(QWidget):
         except Exception as e:
             logger.error(f"[MetadataWidget] Error in populate_hash_options: {e}")
             # On error, disable hash option
-            if hasattr(self.options_combo, 'add_item'):
-                self.options_combo.add_item("CRC32", "hash_crc32")
+            hierarchical_data = {
+                "Hash Types": [
+                    ("CRC32", "hash_crc32"),
+                ]
+            }
+
+            if hasattr(self.options_combo, 'populate_from_metadata_groups'):
+                self.options_combo.populate_from_metadata_groups(hierarchical_data)
             else:
                 self.options_combo.addItem("CRC32", userData="hash_crc32")
+
             # Disable the combo box in case of error
             self.options_combo.setEnabled(False)
             # Apply disabled styling to show text in gray
@@ -390,8 +416,15 @@ class MetadataWidget(QWidget):
         keys = self.get_available_metadata_keys()
         self.options_combo.clear()
         if not keys:
-            if hasattr(self.options_combo, 'add_item'):
-                self.options_combo.add_item("(No metadata fields available)")
+            # Use hierarchical structure even for empty state
+            hierarchical_data = {
+                "No Metadata": [
+                    ("(No metadata fields available)", None),
+                ]
+            }
+
+            if hasattr(self.options_combo, 'populate_from_metadata_groups'):
+                self.options_combo.populate_from_metadata_groups(hierarchical_data)
             else:
                 self.options_combo.addItem("(No metadata fields available)")
             logger.debug("[MetadataWidget] No metadata fields available for selection", extra={"dev_only": True})
@@ -411,7 +444,13 @@ class MetadataWidget(QWidget):
                     hierarchical_data[category].append((display_text, key))
 
         # Populate the hierarchical combo box
-        self.options_combo.populate_from_metadata_groups(hierarchical_data)
+        if hasattr(self.options_combo, 'populate_from_metadata_groups'):
+            self.options_combo.populate_from_metadata_groups(hierarchical_data)
+        else:
+            # Fallback for regular combo box
+            for category, items in hierarchical_data.items():
+                for display_text, key in items:
+                    self.options_combo.addItem(display_text, userData=key)
 
     def _group_metadata_keys(self, keys: set[str]) -> dict[str, list[str]]:
         """Group metadata keys by category for better organization."""
@@ -778,10 +817,17 @@ class MetadataWidget(QWidget):
             # If current category is hash and is disabled, apply disabled styling
             if self.category_combo.currentData() == "hash":
                 self.options_combo.clear()
-                if hasattr(self.options_combo, 'add_item'):
-                    self.options_combo.add_item("CRC32", "hash_crc32")
+                hierarchical_data = {
+                    "Hash Types": [
+                        ("CRC32", "hash_crc32"),
+                    ]
+                }
+
+                if hasattr(self.options_combo, 'populate_from_metadata_groups'):
+                    self.options_combo.populate_from_metadata_groups(hierarchical_data)
                 else:
                     self.options_combo.addItem("CRC32", userData="hash_crc32")
+
                 self.options_combo.setEnabled(False)
                 self._apply_disabled_combo_styling()
 
@@ -801,10 +847,17 @@ class MetadataWidget(QWidget):
                 # If current category is hash and is disabled, apply disabled styling
                 if self.category_combo.currentData() == "hash":
                     self.options_combo.clear()
-                    if hasattr(self.options_combo, 'add_item'):
-                        self.options_combo.add_item("CRC32", "hash_crc32")
+                    hierarchical_data = {
+                        "Hash Types": [
+                            ("CRC32", "hash_crc32"),
+                        ]
+                    }
+
+                    if hasattr(self.options_combo, 'populate_from_metadata_groups'):
+                        self.options_combo.populate_from_metadata_groups(hierarchical_data)
                     else:
                         self.options_combo.addItem("CRC32", userData="hash_crc32")
+
                     self.options_combo.setEnabled(False)
                     self._apply_disabled_combo_styling()
 

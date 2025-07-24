@@ -275,7 +275,7 @@ class FileTableView(QTableView):
             # Fallback: get from Qt selection model (more reliable than legacy)
             selection_model = self.selectionModel()
             if selection_model:
-                qt_selection = set(index.row() for index in selection_model.selectedRows())
+                qt_selection = {index.row() for index in selection_model.selectedRows()}
                 # Update legacy state to match Qt
                 self.selected_rows = qt_selection
                 return qt_selection
@@ -286,7 +286,7 @@ class FileTableView(QTableView):
         """Get current selection safely - SIMPLIFIED VERSION."""
         selection_model = self.selectionModel()
         if selection_model:
-            return set(index.row() for index in selection_model.selectedRows())
+            return {index.row() for index in selection_model.selectedRows()}
         else:
             return set()
 
@@ -1156,7 +1156,7 @@ class FileTableView(QTableView):
 
             if modifiers & Qt.ShiftModifier:
                 # Check if we're clicking on an already selected item
-                current_selection = set(idx.row() for idx in sm.selectedRows())
+                current_selection = {idx.row() for idx in sm.selectedRows()}
                 clicked_row = index.row()
 
                 # If clicking on an already selected item, don't change selection
@@ -1189,7 +1189,7 @@ class FileTableView(QTableView):
                 # Update SelectionStore to match Qt selection model
                 selection_store = self._get_selection_store()
                 if selection_store and not self._legacy_selection_mode:
-                    current_qt_selection = set(idx.row() for idx in sm.selectedRows())
+                    current_qt_selection = {idx.row() for idx in sm.selectedRows()}
                     selection_store.set_selected_rows(
                         current_qt_selection, emit_signal=False
                     )  # Don't emit signal to prevent loops
@@ -1222,7 +1222,7 @@ class FileTableView(QTableView):
                 # Update SelectionStore to match Qt selection model
                 selection_store = self._get_selection_store()
                 if selection_store and not self._legacy_selection_mode:
-                    current_qt_selection = set(idx.row() for idx in sm.selectedRows())
+                    current_qt_selection = {idx.row() for idx in sm.selectedRows()}
                     selection_store.set_selected_rows(
                         current_qt_selection, emit_signal=False
                     )  # Don't emit signal to prevent loops
@@ -1241,7 +1241,7 @@ class FileTableView(QTableView):
                 # Update SelectionStore to match Qt selection model
                 selection_store = self._get_selection_store()
                 if selection_store and not self._legacy_selection_mode:
-                    current_qt_selection = set(idx.row() for idx in sm.selectedRows())
+                    current_qt_selection = {idx.row() for idx in sm.selectedRows()}
                     selection_store.set_selected_rows(
                         current_qt_selection, emit_signal=False
                     )  # Don't emit signal to prevent loops
@@ -1453,7 +1453,7 @@ class FileTableView(QTableView):
         # First, try to sync with SelectionStore if available
         selection_store = self._get_selection_store()
         if selection_store and not self._legacy_selection_mode:
-            current_qt_selection = set(idx.row() for idx in self.selectionModel().selectedRows())
+            current_qt_selection = {idx.row() for idx in self.selectionModel().selectedRows()}
             selection_store.set_selected_rows(current_qt_selection, emit_signal=True)
             return
 
@@ -1775,7 +1775,7 @@ class FileTableView(QTableView):
 
             selection_model = self.selectionModel()
             if selection_model is not None:
-                selected_rows = set(index.row() for index in selection_model.selectedRows())
+                selected_rows = {index.row() for index in selection_model.selectedRows()}
 
                 # OPTIMIZED: Only check for critical cases that need special handling
                 if not selected_rows and hasattr(self, "_is_dragging") and self._is_dragging:
@@ -1933,7 +1933,7 @@ class FileTableView(QTableView):
         # Simple sync: update SelectionStore with current Qt selection
         selection_model = self.selectionModel()
         if selection_model is not None:
-            selected_rows = set(index.row() for index in selection_model.selectedRows())
+            selected_rows = {index.row() for index in selection_model.selectedRows()}
             self._update_selection_store(
                 selected_rows, emit_signal=False
             )  # Don't emit signal on focus
@@ -2064,7 +2064,7 @@ class FileTableView(QTableView):
         if selection_store:
             self._legacy_selection_mode = False
             # Sync current selection to SelectionStore
-            current_selection = set(index.row() for index in self.selectionModel().selectedRows())  # type: ignore
+            current_selection = {index.row() for index in self.selectionModel().selectedRows()}  # type: ignore
             selection_store.set_selected_rows(current_selection, emit_signal=False)
             if hasattr(self, "anchor_row") and self.anchor_row is not None:
                 selection_store.set_anchor_row(self.anchor_row, emit_signal=False)

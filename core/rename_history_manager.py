@@ -17,7 +17,6 @@ Features:
 import os
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
 
 from core.database_manager import get_database_manager
 from utils.logger_factory import get_cached_logger
@@ -48,10 +47,10 @@ class RenameBatch:
     def __init__(
         self,
         operation_id: str,
-        operations: List[RenameOperation],
-        modules_data: Optional[List[Dict]] = None,
-        post_transform_data: Optional[Dict] = None,
-        timestamp: Optional[str] = None,
+        operations: list[RenameOperation],
+        modules_data: list[dict] | None = None,
+        post_transform_data: dict | None = None,
+        timestamp: str | None = None,
     ):
         self.operation_id = operation_id
         self.operations = operations
@@ -81,9 +80,9 @@ class RenameHistoryManager:
 
     def record_rename_batch(
         self,
-        renames: List[Tuple[str, str]],
-        modules_data: Optional[List[Dict]] = None,
-        post_transform_data: Optional[Dict] = None,
+        renames: list[tuple[str, str]],
+        modules_data: list[dict] | None = None,
+        post_transform_data: dict | None = None,
     ) -> str:
         """
         Record a batch rename operation for future undo.
@@ -120,7 +119,7 @@ class RenameHistoryManager:
             logger.error(f"[RenameHistoryManager] Error recording rename batch: {e}")
             return ""
 
-    def get_recent_operations(self, limit: int = 20) -> List[Dict]:
+    def get_recent_operations(self, limit: int = 20) -> list[dict]:
         """
         Get recent rename operations for undo menu.
 
@@ -152,7 +151,7 @@ class RenameHistoryManager:
             logger.error(f"[RenameHistoryManager] Error retrieving recent operations: {e}")
             return []
 
-    def get_operation_details(self, operation_id: str) -> Optional[RenameBatch]:
+    def get_operation_details(self, operation_id: str) -> RenameBatch | None:
         """
         Get detailed information about a specific operation.
 
@@ -201,7 +200,7 @@ class RenameHistoryManager:
             logger.error(f"[RenameHistoryManager] Error retrieving operation details: {e}")
             return None
 
-    def can_undo_operation(self, operation_id: str) -> Tuple[bool, str]:
+    def can_undo_operation(self, operation_id: str) -> tuple[bool, str]:
         """
         Check if an operation can be undone.
 
@@ -250,7 +249,7 @@ class RenameHistoryManager:
             logger.error(f"[RenameHistoryManager] Error checking undo capability: {e}")
             return False, f"Error checking operation: {str(e)}"
 
-    def undo_operation(self, operation_id: str) -> Tuple[bool, str, int]:
+    def undo_operation(self, operation_id: str) -> tuple[bool, str, int]:
         """
         Undo a rename operation by reverting all files to their original names.
 
@@ -352,7 +351,7 @@ class RenameHistoryManager:
             logger.error(f"[RenameHistoryManager] Error during history cleanup: {e}")
             return 0
 
-    def get_history_stats(self) -> Dict:
+    def get_history_stats(self) -> dict:
         """
         Get statistics about rename history.
 
@@ -375,7 +374,7 @@ class RenameHistoryManager:
 
 
 # Global instance for easy access
-_rename_history_manager: Optional[RenameHistoryManager] = None
+_rename_history_manager: RenameHistoryManager | None = None
 
 
 def get_rename_history_manager() -> RenameHistoryManager:

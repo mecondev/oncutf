@@ -31,7 +31,7 @@ class DragManager(QObject):
 
     _instance: Optional["DragManager"] = None
 
-    def __init__(self, parent: Optional[QObject] = None):
+    def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
 
         # Ensure singleton
@@ -122,7 +122,7 @@ class DragManager(QObject):
         """Check if a drag operation is currently active."""
         return self._drag_active
 
-    def get_drag_source(self) -> Optional[str]:
+    def get_drag_source(self) -> str | None:
         """Get the current drag source identifier."""
         return self._drag_source
 

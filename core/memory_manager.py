@@ -20,8 +20,9 @@ import gc
 import threading
 import time
 from collections import OrderedDict
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 import psutil
 
@@ -89,7 +90,7 @@ class LRUCache:
         self._misses = 0
         self._evictions = 0
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """Get item from cache."""
         with self._lock:
             if key in self._cache:
@@ -162,7 +163,7 @@ class LRUCache:
             total_bytes = sum(entry.size_bytes for entry in self._cache.values())
             return total_bytes / (1024 * 1024)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         with self._lock:
             total_requests = self._hits + self._misses
@@ -207,8 +208,8 @@ class MemoryManager(QObject):
         self.min_access_count = 2  # Keep entries accessed at least twice
 
         # Cache registry
-        self._registered_caches: Dict[str, Any] = {}
-        self._cleanup_callbacks: List[Callable] = []
+        self._registered_caches: dict[str, Any] = {}
+        self._cleanup_callbacks: list[Callable] = []
 
         # Statistics
         self._cleanup_count = 0
@@ -253,7 +254,7 @@ class MemoryManager(QObject):
             cache_memory_mb = 0.0
             cache_entries = 0
 
-            for cache_name, cache_obj in self._registered_caches.items():
+            for _cache_name, cache_obj in self._registered_caches.items():
                 if hasattr(cache_obj, "get_memory_usage_mb"):
                     cache_memory_mb += cache_obj.get_memory_usage_mb()
                 if hasattr(cache_obj, "__len__"):
@@ -373,7 +374,7 @@ class MemoryManager(QObject):
         gc.collect()
         return cleaned
 
-    def get_cleanup_stats(self) -> Dict[str, Any]:
+    def get_cleanup_stats(self) -> dict[str, Any]:
         """Get cleanup statistics."""
         return {
             "total_cleanups": self._cleanup_count,
@@ -403,7 +404,7 @@ class MemoryManager(QObject):
 
 
 # Global memory manager instance
-_memory_manager_instance: Optional[MemoryManager] = None
+_memory_manager_instance: MemoryManager | None = None
 
 
 def get_memory_manager() -> MemoryManager:

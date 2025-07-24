@@ -5,31 +5,31 @@ Central helpers for file metadata and hash status.
 All lookups use path normalization for cross-platform compatibility.
 """
 from pathlib import Path
-from typing import Optional, Dict
 
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
-logger.debug(f"[DEBUG] [FileStatusHelpers] Module imported", extra={"dev_only": True})
+logger.debug("[DEBUG] [FileStatusHelpers] Module imported", extra={"dev_only": True})
 
 try:
     from core.persistent_metadata_cache import get_persistent_metadata_cache
-    logger.debug(f"[DEBUG] [FileStatusHelpers] Successfully imported get_persistent_metadata_cache", extra={"dev_only": True})
+    logger.debug("[DEBUG] [FileStatusHelpers] Successfully imported get_persistent_metadata_cache", extra={"dev_only": True})
 except Exception as e:
     logger.error(f"[DEBUG] [FileStatusHelpers] Error importing get_persistent_metadata_cache: {e}")
     raise
 
 try:
     from core.persistent_hash_cache import get_persistent_hash_cache
-    logger.debug(f"[DEBUG] [FileStatusHelpers] Successfully imported get_persistent_hash_cache", extra={"dev_only": True})
+    logger.debug("[DEBUG] [FileStatusHelpers] Successfully imported get_persistent_hash_cache", extra={"dev_only": True})
 except Exception as e:
     logger.error(f"[DEBUG] [FileStatusHelpers] Error importing get_persistent_hash_cache: {e}")
     raise
 
 from utils.path_normalizer import normalize_path
 
+
 # --- Metadata helpers ---
-def get_metadata_for_file(file_path: str | Path) -> Optional[dict]:
+def get_metadata_for_file(file_path: str | Path) -> dict | None:
     """Return metadata dict for file, or None if not found."""
     cache = get_persistent_metadata_cache()
     norm_path = normalize_path(file_path)
@@ -50,7 +50,7 @@ def has_metadata(file_path: str | Path) -> bool:
     return has_meta
 
 # --- Hash helpers ---
-def get_hash_for_file(file_path: str | Path, hash_type: str = "CRC32") -> Optional[str]:
+def get_hash_for_file(file_path: str | Path, hash_type: str = "CRC32") -> str | None:
     """Return hash string for file, or None if not found."""
     cache = get_persistent_hash_cache()
     norm_path = normalize_path(file_path)
@@ -61,7 +61,7 @@ def has_hash(file_path: str | Path, hash_type: str = "CRC32") -> bool:
     return get_hash_for_file(file_path, hash_type) is not None
 
 # --- Batch helpers ---
-def batch_metadata_status(file_paths: list[str | Path]) -> Dict[str, bool]:
+def batch_metadata_status(file_paths: list[str | Path]) -> dict[str, bool]:
     """Return dict: normalized path -> has_metadata (bool)"""
     result = {}
     for p in file_paths:
@@ -71,6 +71,6 @@ def batch_metadata_status(file_paths: list[str | Path]) -> Dict[str, bool]:
     logger.debug(f"[DEBUG] [FileStatusHelpers] batch_metadata_status: {result}", extra={"dev_only": True})
     return result
 
-def batch_hash_status(file_paths: list[str | Path], hash_type: str = "CRC32") -> Dict[str, bool]:
+def batch_hash_status(file_paths: list[str | Path], hash_type: str = "CRC32") -> dict[str, bool]:
     """Return dict: normalized path -> has_hash (bool)"""
     return {normalize_path(p): has_hash(p, hash_type) for p in file_paths}

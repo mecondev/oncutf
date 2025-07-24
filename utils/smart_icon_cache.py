@@ -22,7 +22,7 @@ import threading
 import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any
 
 from config import ICON_SIZES
 from core.pyqt_imports import QIcon, QObject, QPixmap, QSize, QTimer, pyqtSignal
@@ -214,7 +214,7 @@ class SmartIconCache(QObject):
             logger.error(f"[SmartIconCache] Error loading icon {name}: {e}")
             return QIcon()
 
-    def _find_icon_path(self, name: str, theme: str) -> Optional[str]:
+    def _find_icon_path(self, name: str, theme: str) -> str | None:
         """Find icon file path."""
         from utils.path_utils import get_icons_dir
 
@@ -332,7 +332,7 @@ class SmartIconCache(QObject):
             total_bytes = sum(entry.memory_size_bytes for entry in self._cache.values())
             return total_bytes / (1024 * 1024)
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         with self._lock:
             total_requests = self._hits + self._misses
@@ -411,7 +411,7 @@ class SmartIconCache(QObject):
 
 
 # Global smart icon cache instance
-_smart_icon_cache_instance: Optional[SmartIconCache] = None
+_smart_icon_cache_instance: SmartIconCache | None = None
 
 
 def get_smart_icon_cache() -> SmartIconCache:

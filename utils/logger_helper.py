@@ -17,6 +17,7 @@ A logging filter that hides dev-only debug messages from the console,
 while still allowing them to be stored in file logs.
 """
 
+import contextlib
 import logging
 import re
 import sys
@@ -94,10 +95,8 @@ def get_logger(name: str = None) -> logging.Logger:
         formatter = logging.Formatter("[%(levelname)s] %(message)s")
         handler.setFormatter(formatter)
 
-        try:
+        with contextlib.suppress(Exception):
             handler.stream.reconfigure(encoding="utf-8")
-        except Exception:
-            pass
 
         logger.addHandler(handler)
 

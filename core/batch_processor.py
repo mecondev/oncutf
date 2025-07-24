@@ -9,7 +9,7 @@ Batch Processor - Simple but effective batch processing for speed and reliabilit
 
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Callable, Dict, List
+from typing import Any
 
 from utils.logger_factory import get_cached_logger
 
@@ -31,7 +31,7 @@ class BatchProcessor:
             "failed_batches": 0,
         }
 
-    def process_batches(self, items: List[Any], processor_func: Callable) -> List[Any]:
+    def process_batches(self, items: list[Any], processor_func: Any) -> list[Any]:
         """Process items in batches with parallel execution."""
         if not items:
             return []
@@ -82,7 +82,7 @@ class BatchProcessor:
         logger.debug(f"[BatchProcessor] Completed in {self.stats['total_time']:.3f}s")
         return results
 
-    def _split_into_batches(self, items: List[Any]) -> List[List[Any]]:
+    def _split_into_batches(self, items: list[Any]) -> list[list[Any]]:
         """Split items into optimal batches."""
         batches = []
         for i in range(0, len(items), self.batch_size):
@@ -90,7 +90,7 @@ class BatchProcessor:
             batches.append(batch)
         return batches
 
-    def get_stats(self) -> Dict[str, any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get processing statistics."""
         if self.stats["total_batches"] > 0:
             avg_batch_time = self.stats["total_time"] / self.stats["total_batches"]
@@ -138,7 +138,7 @@ class SmartBatchProcessor(BatchProcessor):
         self.performance_history = []
         self.optimization_threshold = 0.5  # 500ms
 
-    def process_batches_optimized(self, items: List[Any], processor_func: Callable) -> List[Any]:
+    def process_batches_optimized(self, items: list[Any], processor_func: Any) -> list[Any]:
         """Process items with dynamic batch size optimization."""
         if not items:
             return []
@@ -208,7 +208,7 @@ class BatchProcessorFactory:
             return BatchProcessor(**kwargs)
 
     @staticmethod
-    def get_optimal_config(item_count: int, item_type: str = "file") -> Dict[str, any]:
+    def get_optimal_config(item_count: int, item_type: str = "file") -> dict[str, Any]:
         """Get optimal configuration for item count and type."""
         if item_count < 100:
             return {"batch_size": 50, "max_workers": 2}

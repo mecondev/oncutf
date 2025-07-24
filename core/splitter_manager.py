@@ -199,7 +199,7 @@ class SplitterManager:
         if len(current_sizes) != len(optimal_sizes):
             return True
 
-        for current, optimal in zip(current_sizes, optimal_sizes):
+        for current, optimal in zip(current_sizes, optimal_sizes, strict=False):
             if abs(current - optimal) > threshold:
                 return True
 

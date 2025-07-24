@@ -11,7 +11,7 @@ Extracted from MainWindow to separate business logic from UI.
 
 import os
 import time
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from models.file_item import FileItem
 from modules.name_transform_module import NameTransformModule
@@ -27,10 +27,10 @@ class PreviewManager:
     def __init__(self, parent_window=None):
         """Initialize PreviewManager with reference to parent window."""
         self.parent_window = parent_window
-        self.preview_map: Dict[str, FileItem] = {}
+        self.preview_map: dict[str, FileItem] = {}
 
         # Performance optimization: Cache for preview results
-        self._preview_cache: Dict[str, Tuple[List[Tuple[str, str]], bool]] = {}
+        self._preview_cache: dict[str, tuple[list[tuple[str, str]], bool]] = {}
         self._cache_timestamp = 0
         self._cache_validity_duration = 0.1  # 100ms cache validity
 
@@ -38,11 +38,11 @@ class PreviewManager:
 
     def generate_preview_names(
         self,
-        selected_files: List[FileItem],
-        rename_data: Dict[str, Any],
+        selected_files: list[FileItem],
+        rename_data: dict[str, Any],
         metadata_cache: Any,
-        all_modules: List[Any],
-    ) -> Tuple[List[Tuple[str, str]], bool]:
+        all_modules: list[Any],
+    ) -> tuple[list[tuple[str, str]], bool]:
         """Generate preview names for selected files with caching."""
         if not selected_files:
             return [], False
@@ -77,7 +77,7 @@ class PreviewManager:
         return result
 
     def _generate_cache_key(
-        self, selected_files: List[FileItem], rename_data: Dict[str, Any]
+        self, selected_files: list[FileItem], rename_data: dict[str, Any]
     ) -> str:
         """Generate cache key for preview results."""
         # Create a hash based on file paths and rename data
@@ -93,11 +93,11 @@ class PreviewManager:
 
     def _generate_preview_names_internal(
         self,
-        selected_files: List[FileItem],
-        rename_data: Dict[str, Any],
+        selected_files: list[FileItem],
+        rename_data: dict[str, Any],
         metadata_cache: Any,
-        all_modules: List[Any],
-    ) -> Tuple[List[Tuple[str, str]], bool]:
+        all_modules: list[Any],
+    ) -> tuple[list[tuple[str, str]], bool]:
         """Internal preview generation method."""
         modules_data = rename_data.get("modules", [])
         post_transform = rename_data.get("post_transform", {})
@@ -128,7 +128,7 @@ class PreviewManager:
         has_changes = any(old_name != new_name for old_name, new_name in name_pairs)
         return name_pairs, has_changes
 
-    def _check_if_noop(self, all_modules: List[Any], post_transform: Dict[str, Any]) -> bool:
+    def _check_if_noop(self, all_modules: list[Any], post_transform: dict[str, Any]) -> bool:
         """Check if all modules are no-op."""
         is_noop = True
         for module_widget in all_modules:
@@ -141,11 +141,11 @@ class PreviewManager:
 
     def _generate_name_pairs(
         self,
-        selected_files: List[FileItem],
-        modules_data: List[Dict[str, Any]],
-        post_transform: Dict[str, Any],
+        selected_files: list[FileItem],
+        modules_data: list[dict[str, Any]],
+        post_transform: dict[str, Any],
         metadata_cache: Any,
-    ) -> List[Tuple[str, str]]:
+    ) -> list[tuple[str, str]]:
         """Generate name pairs by applying modules with performance optimizations."""
         name_pairs = []
 
@@ -178,7 +178,7 @@ class PreviewManager:
 
         return name_pairs
 
-    def _update_preview_map_with_new_names(self, name_pairs: List[Tuple[str, str]]) -> None:
+    def _update_preview_map_with_new_names(self, name_pairs: list[tuple[str, str]]) -> None:
         """Update preview map with new names."""
         for old_name, new_name in name_pairs:
             if old_name != new_name:
@@ -195,7 +195,7 @@ class PreviewManager:
         except ImportError:
             return True
 
-    def get_preview_map(self) -> Dict[str, FileItem]:
+    def get_preview_map(self) -> dict[str, FileItem]:
         """Get the current preview map."""
         return self.preview_map.copy()
 
@@ -225,7 +225,7 @@ class PreviewManager:
 
         logger.debug("[PreviewManager] All caches cleared", extra={"dev_only": True})
 
-    def compute_max_filename_width(self, file_list: List[FileItem]) -> int:
+    def compute_max_filename_width(self, file_list: list[FileItem]) -> int:
         """
         Calculate the ideal column width in pixels based on the longest filename.
 
@@ -256,11 +256,11 @@ class PreviewManager:
         if self.parent_window and hasattr(self.parent_window, "status_manager"):
             self.parent_window.status_manager.update_status_from_preview(status_html)
 
-    def get_identity_name_pairs(self, file_list: List[FileItem]) -> List[Tuple[str, str]]:
+    def get_identity_name_pairs(self, file_list: list[FileItem]) -> list[tuple[str, str]]:
         """Generate identity name pairs (filename -> filename) for given files."""
         return [(file.filename, file.filename) for file in file_list]
 
-    def update_preview_tables_from_pairs(self, name_pairs: List[Tuple[str, str]]) -> None:
+    def update_preview_tables_from_pairs(self, name_pairs: list[tuple[str, str]]) -> None:
         """
         Updates all three preview tables using the PreviewTablesView.
 

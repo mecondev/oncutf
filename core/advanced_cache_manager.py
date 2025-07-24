@@ -12,7 +12,7 @@ import os
 import pickle
 import time
 from collections import OrderedDict
-from typing import Any, Dict, Optional
+from typing import Any
 
 from utils.logger_factory import get_cached_logger
 
@@ -28,7 +28,7 @@ class LRUCache:
         self.hits = 0
         self.misses = 0
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """Get value with LRU update."""
         if key in self.cache:
             # Move to end (most recently used)
@@ -57,7 +57,7 @@ class LRUCache:
         self.hits = 0
         self.misses = 0
 
-    def get_stats(self) -> Dict[str, any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         total = self.hits + self.misses
         hit_rate = (self.hits / total * 100) if total > 0 else 0
@@ -91,7 +91,7 @@ class DiskCache:
         key_hash = hashlib.md5(key.encode()).hexdigest()
         return os.path.join(self.cache_dir, f"{key_hash}.cache")
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """Get value from disk cache."""
         cache_path = self._get_cache_path(key)
 
@@ -133,7 +133,7 @@ class DiskCache:
         except Exception as e:
             logger.error(f"[DiskCache] Error clearing cache: {e}")
 
-    def get_stats(self) -> Dict[str, any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get disk cache statistics."""
         total = self.hits + self.misses
         hit_rate = (self.hits / total * 100) if total > 0 else 0
@@ -168,7 +168,7 @@ class AdvancedCacheManager:
         self.disk_cache = DiskCache()
         self.compression_threshold = 1024 * 1024  # 1MB
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """Get value with memory-first strategy."""
         # Try memory cache first
         value = self.memory_cache.get(key)
@@ -206,7 +206,7 @@ class AdvancedCacheManager:
         self.disk_cache.clear()
         logger.debug("[AdvancedCacheManager] All caches cleared")
 
-    def get_stats(self) -> Dict[str, any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get comprehensive cache statistics."""
         memory_stats = self.memory_cache.get_stats()
         disk_stats = self.disk_cache.get_stats()

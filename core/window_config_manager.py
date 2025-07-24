@@ -10,7 +10,6 @@ Separates window management logic from MainWindow for better code organization.
 """
 
 import os
-from typing import Tuple
 
 from core.pyqt_imports import QApplication, QMainWindow
 from utils.json_config_manager import get_app_config_manager
@@ -83,10 +82,7 @@ class WindowConfigManager:
             # Save geometry (use normal geometry if maximized)
             if self.main_window.isMaximized():
                 # Use stored restore geometry if available, otherwise use initial
-                if self._restore_geometry:
-                    geo = self._restore_geometry
-                else:
-                    geo = self._initial_geometry
+                geo = self._restore_geometry or self._initial_geometry
             else:
                 geo = self.main_window.geometry()
 
@@ -349,7 +345,7 @@ class WindowConfigManager:
         """Get the recursive mode from configuration."""
         return getattr(self.main_window, "_recursive_mode_from_config", False)
 
-    def get_sort_settings_from_config(self) -> Tuple[int, int]:
+    def get_sort_settings_from_config(self) -> tuple[int, int]:
         """Get sort column and order from configuration."""
         column = getattr(self.main_window, "_sort_column_from_config", 1)
         order = getattr(self.main_window, "_sort_order_from_config", 0)

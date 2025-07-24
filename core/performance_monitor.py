@@ -11,7 +11,7 @@ Provides metrics and monitoring for rename operations.
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Any
 
 from utils.logger_factory import get_cached_logger
 
@@ -70,9 +70,9 @@ class PerformanceMonitor:
     """Performance monitor for UnifiedRenameEngine."""
 
     def __init__(self):
-        self.metrics: List[PerformanceMetric] = []
-        self.stats_by_operation: Dict[str, PerformanceStats] = defaultdict(PerformanceStats)
-        self.operation_timers: Dict[str, float] = {}
+        self.metrics: list[PerformanceMetric] = []
+        self.stats_by_operation: dict[str, PerformanceStats] = defaultdict(PerformanceStats)
+        self.operation_timers: dict[str, float] = {}
 
         # Performance thresholds
         self.slow_operation_threshold = 0.1  # 100ms
@@ -125,7 +125,7 @@ class PerformanceMonitor:
                 f"for {metric.file_count} files"
             )
 
-    def get_stats(self, operation: Optional[str] = None) -> PerformanceStats:
+    def get_stats(self, operation: str | None = None) -> PerformanceStats:
         """Get performance stats for operation or overall."""
         if operation:
             return self.stats_by_operation[operation]
@@ -151,7 +151,7 @@ class PerformanceMonitor:
 
         return overall_stats
 
-    def get_recent_performance(self, operation: str, count: int = 5) -> List[PerformanceMetric]:
+    def get_recent_performance(self, operation: str, count: int = 5) -> list[PerformanceMetric]:
         """Get recent performance metrics for operation."""
         recent_metrics = [m for m in self.metrics if m.operation == operation]
         return recent_metrics[-count:]
@@ -163,29 +163,15 @@ class PerformanceMonitor:
         self.operation_timers.clear()
         logger.debug("[PerformanceMonitor] Metrics cleared")
 
-    def get_performance_summary(self) -> Dict[str, any]:
-        """Get performance summary for UI display."""
-        overall_stats = self.get_stats()
-
+    def get_performance_summary(self) -> dict[str, Any]:
+        """Get comprehensive performance summary."""
         return {
-            "total_operations": overall_stats.total_operations,
-            "average_duration": overall_stats.average_duration,
-            "average_files_per_operation": overall_stats.average_files_per_operation,
-            "success_rate": overall_stats.success_rate,
-            "error_count": overall_stats.error_count,
-            "operations": {
-                op: {
-                    "total": stats.total_operations,
-                    "average_duration": stats.average_duration,
-                    "success_rate": stats.success_rate,
-                    "recent_avg": (
-                        sum(stats.recent_durations) / len(stats.recent_durations)
-                        if stats.recent_durations
-                        else 0
-                    ),
-                }
-                for op, stats in self.stats_by_operation.items()
-            },
+            "total_operations": self.total_operations,
+            "average_time": self.get_average_time(),
+            "peak_time": self.peak_time,
+            "total_time": self.total_time,
+            "operation_counts": dict(self.operation_counts),
+            "recent_operations": self.recent_operations[-10:],  # Last 10 operations
         }
 
 

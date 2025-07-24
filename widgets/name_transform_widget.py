@@ -10,7 +10,6 @@ Provides options for Greek to Greeklish conversion, case and separator transform
 Uses BaseRenameModule to prevent duplicate emits.
 """
 
-from typing import Optional
 
 from core.pyqt_imports import QCheckBox, QComboBox, QHBoxLayout, QLabel, Qt, QVBoxLayout, QWidget
 from modules.base_module import BaseRenameModule  # Debounced signal base
@@ -24,7 +23,7 @@ class NameTransformWidget(BaseRenameModule):
 
     LABEL_WIDTH = 70  # Reduce label width to bring controls more to the left
 
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self.setObjectName("NameTransformWidget")
 

@@ -9,7 +9,6 @@ Centralized metadata management operations extracted from MainWindow.
 Handles metadata loading, progress tracking, thread management, and UI coordination.
 """
 
-from typing import List, Optional
 
 from config import STATUS_COLORS
 from core.pyqt_imports import QApplication, Qt
@@ -221,7 +220,7 @@ class MetadataManager:
         self.load_metadata_for_items(all_files, use_extended=True, source="shortcut_all")
 
     def load_metadata_for_items(
-        self, items: List[FileItem], use_extended: bool = False, source: str = "unknown"
+        self, items: list[FileItem], use_extended: bool = False, source: str = "unknown"
     ) -> None:
         """
         Load metadata for the given FileItem objects.
@@ -296,7 +295,7 @@ class MetadataManager:
             metadata_tree_view.display_file_metadata(file_item)
 
     def _load_files_with_worker(
-        self, files_to_load: List[FileItem], use_extended: bool, metadata_tree_view
+        self, files_to_load: list[FileItem], use_extended: bool, metadata_tree_view
     ) -> None:
         """Load metadata for multiple files or extended metadata using MetadataWorker."""
 
@@ -480,7 +479,7 @@ class MetadataManager:
             logger.warning(f"[MetadataManager] Error in file metadata loaded handler: {e}")
 
     def _on_metadata_finished(
-        self, loading_dialog, files_to_load: List[FileItem], metadata_tree_view
+        self, loading_dialog, files_to_load: list[FileItem], metadata_tree_view
     ) -> None:
         """Handle metadata worker completion."""
         # Close dialog
@@ -879,7 +878,7 @@ class MetadataManager:
                 "Failed to save metadata changes to:\n" + "\n".join(failed_files),
             )
 
-    def _get_files_from_source(self, source: str) -> Optional[List[FileItem]]:
+    def _get_files_from_source(self, source: str) -> list[FileItem] | None:
         """
         Get files based on source type.
 

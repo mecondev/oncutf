@@ -10,7 +10,7 @@ Provides a clean, minimal UI for displaying operation progress.
 Note: This is the legacy dialog - new code should use utils.progress_dialog.ProgressDialog
 """
 
-from typing import Callable, Optional
+from collections.abc import Callable
 
 from config import (
     EXTENDED_METADATA_BG_COLOR,
@@ -41,9 +41,9 @@ class OperationDialog(QDialog):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
         is_extended: bool = False,
-        cancel_callback: Optional[Callable] = None,
+        cancel_callback: Callable | None = None,
     ) -> None:
         super().__init__(parent)
         self.cancel_callback = cancel_callback

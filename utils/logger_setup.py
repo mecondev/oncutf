@@ -11,6 +11,7 @@ destinations, and formatting. The logger is configured to log INFO and higher le
 the console, ERROR and higher to app.log, and DEBUG+ to app_debug.log (optional).
 """
 
+import contextlib
 import logging
 import os
 import re
@@ -95,10 +96,8 @@ class ConfigureLogger:
         """Sets up console handler with UTF-8-safe formatting."""
         console_handler = logging.StreamHandler(sys.stdout)
 
-        try:
+        with contextlib.suppress(Exception):
             console_handler.stream.reconfigure(encoding="utf-8")
-        except Exception:
-            pass
 
         console_handler.setLevel(level)
         formatter = logging.Formatter("[%(levelname)s] %(message)s")

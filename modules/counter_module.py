@@ -9,7 +9,6 @@ into filenames. It is used within the oncutf application to generate
 sequential file names based on configurable start value, step, and padding.
 """
 
-from typing import Optional
 
 from config import ICON_SIZES
 from core.pyqt_imports import (
@@ -44,7 +43,7 @@ class CounterModule(BaseRenameModule):
 
     LABEL_WIDTH = 110  # pixels - increased by 10px for better text fit
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setProperty("module", True)
 
@@ -171,7 +170,7 @@ class CounterModule(BaseRenameModule):
 
     @staticmethod
     def apply_from_data(
-        data: dict, file_item, index: int = 0, metadata_cache: Optional[dict] = None
+        data: dict, file_item, index: int = 0, metadata_cache: dict | None = None
     ) -> str:
         """
         Applies a counter-based transformation using the given config and index.

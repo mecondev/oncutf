@@ -192,24 +192,19 @@ class TestIntegrationWithFileItem(unittest.TestCase):
 
 def run_comparison_test():
     """Run a comparison test to show the differences."""
-    print("\nFile Size Formatter Comparison Test")
-    print("=" * 60)
 
     test_sizes = [512, 1000, 1024, 1500, 1536, 1000000, 1048576, 1000000000, 1073741824]
 
-    print(f"{'Bytes':<12} {'Binary(1024)':<12} {'Decimal(1000)':<12} {'System':<12}")
-    print("-" * 60)
 
     for size in test_sizes:
         binary_fmt = FileSizeFormatter(use_binary=True, use_locale=False)
         decimal_fmt = FileSizeFormatter(use_binary=False, use_locale=False)
         system_fmt = FileSizeFormatter.get_system_compatible_formatter()
 
-        binary_result = binary_fmt.format_size(size)
-        decimal_result = decimal_fmt.format_size(size)
-        system_result = system_fmt.format_size(size)
+        binary_fmt.format_size(size)
+        decimal_fmt.format_size(size)
+        system_fmt.format_size(size)
 
-        print(f"{size:<12} {binary_result:<12} {decimal_result:<12} {system_result:<12}")
 
 
 if __name__ == "__main__":

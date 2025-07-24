@@ -7,7 +7,6 @@ Date: 2025-01-27
 Performance Widget for displaying UnifiedRenameEngine performance metrics.
 """
 
-from typing import Optional
 
 from core.pyqt_imports import (
     QFrame,
@@ -27,7 +26,7 @@ logger = get_cached_logger(__name__)
 class PerformanceWidget(QWidget):
     """Widget for displaying performance metrics."""
 
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self.setObjectName("PerformanceWidget")
         self.setProperty("class", "PerformanceWidget")

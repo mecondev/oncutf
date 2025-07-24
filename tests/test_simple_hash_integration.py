@@ -45,14 +45,12 @@ def test_hash_manager_basic_functionality():
             file_hash = hash_manager.calculate_hash(file_path)
             assert file_hash is not None, f"Failed to calculate hash for {file_path}"
             hash_results[file_path] = file_hash
-            print(f"Hash for {os.path.basename(file_path)}: {file_hash}")
 
         # Verify we got hashes for all files
         assert len(hash_results) == len(files)
 
         # Test duplicate detection
         duplicates = hash_manager.find_duplicates_in_paths(files)
-        print(f"Duplicates found: {len(duplicates)} groups")
 
         # These unique files shouldn't have duplicates
         assert len(duplicates) == 0, "Unexpected duplicates found in unique files"
@@ -72,18 +70,15 @@ def test_hash_manager_with_progress_callback():
 
         def progress_callback(bytes_processed):
             progress_updates.append(bytes_processed)
-            print(f"Progress: {bytes_processed} bytes processed")
 
         # Calculate hash with progress tracking
         hash_manager = HashManager()
         file_hash = hash_manager.calculate_hash(large_file, progress_callback)
 
         assert file_hash is not None, "Failed to calculate hash"
-        print(f"Final hash: {file_hash}")
 
         # Verify we got progress updates
         if progress_updates:
-            print(f"Received {len(progress_updates)} progress updates")
 
             # Progress should be monotonic
             last_progress = 0
@@ -93,7 +88,7 @@ def test_hash_manager_with_progress_callback():
                 ), f"Progress went backwards: {progress} < {last_progress}"
                 last_progress = progress
         else:
-            print("No progress updates (file too small or processed too quickly)")
+            pass
 
 
 def test_cumulative_size_calculation():
@@ -122,7 +117,6 @@ def test_cumulative_size_calculation():
         assert (
             calculated_total == manual_total
         ), f"Size calculation mismatch: {calculated_total} != {manual_total}"
-        print(f"Total size verified: {calculated_total} bytes")
 
         # Test that each file can be hashed
         hash_manager = HashManager()
@@ -137,19 +131,14 @@ def test_cumulative_size_calculation():
             # Simulate the cumulative tracking logic from the fix
             cumulative_processed += file_size
 
-            print(
-                f"File: {os.path.basename(file_path)}, Size: {file_size}, Cumulative: {cumulative_processed}"
-            )
 
         # Final cumulative should equal total
         assert (
             cumulative_processed == manual_total
         ), f"Cumulative tracking failed: {cumulative_processed} != {manual_total}"
-        print("Cumulative progress tracking test passed!")
 
 
 if __name__ == "__main__":
     test_hash_manager_basic_functionality()
     test_hash_manager_with_progress_callback()
     test_cumulative_size_calculation()
-    print("All integration tests passed!")

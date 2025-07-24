@@ -17,7 +17,6 @@ Features:
 - Responsive layout with visual separation between module logic and final formatting
 """
 
-from typing import Optional
 
 from config import ICON_SIZES
 from core.pyqt_imports import (
@@ -65,7 +64,7 @@ class RenameModuleWidget(QWidget):
     LABEL_WIDTH = 80  # Consistent label width for alignment
 
     def __init__(
-        self, parent: Optional[QWidget] = None, parent_window: Optional[QWidget] = None
+        self, parent: QWidget | None = None, parent_window: QWidget | None = None
     ) -> None:
         super().__init__(parent)
 

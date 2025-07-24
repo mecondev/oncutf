@@ -10,7 +10,6 @@ Centralizes dialog creation, validation logic, and user confirmations.
 """
 
 import os
-from typing import List, Tuple
 
 from core.pyqt_imports import QApplication, QFileDialog, QWidget
 from utils.logger_factory import get_cached_logger
@@ -33,7 +32,7 @@ class DialogManager:
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(DialogManager, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
             cls._instance._initialized = False
         return cls._instance
 
@@ -56,7 +55,7 @@ class DialogManager:
             no_text="Cancel",
         )
 
-    def check_large_files(self, files: List[str], max_size_mb: int = 100) -> Tuple[bool, List[str]]:
+    def check_large_files(self, files: list[str], max_size_mb: int = 100) -> tuple[bool, list[str]]:
         """Check for large files and return list of oversized files"""
         oversized = []
         for file in files:

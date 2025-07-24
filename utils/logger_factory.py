@@ -11,7 +11,6 @@ Provides centralized logger management with thread-safe operations.
 
 import logging
 import threading
-from typing import Dict, Optional
 
 from utils.logger_helper import get_cached_logger as original_get_logger
 
@@ -24,9 +23,9 @@ class LoggerFactory:
     and improving performance compared to creating new loggers repeatedly.
     """
 
-    _loggers: Dict[str, logging.Logger] = {}
+    _loggers: dict[str, logging.Logger] = {}
     _lock = threading.Lock()
-    _global_level: Optional[int] = None
+    _global_level: int | None = None
 
     @classmethod
     def get_logger(cls, name: str = None) -> logging.Logger:

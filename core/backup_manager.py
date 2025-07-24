@@ -18,7 +18,6 @@ Features:
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
 
 from config import (
     BACKUP_FILENAME_FORMAT,
@@ -84,7 +83,7 @@ class BackupManager(QObject):
             f"Backup count: {self.backup_count}, Interval: {self.backup_interval}s, Periodic: {self.periodic_enabled}"
         )
 
-    def create_backup(self, reason: str = "manual") -> Optional[str]:
+    def create_backup(self, reason: str = "manual") -> str | None:
         """
         Create a backup of the database file.
 
@@ -165,7 +164,7 @@ class BackupManager(QObject):
         """Perform a periodic backup (called by timer)."""
         self.create_backup("periodic")
 
-    def backup_on_shutdown(self) -> Optional[str]:
+    def backup_on_shutdown(self) -> str | None:
         """
         Create a backup when the application is shutting down.
 
@@ -231,7 +230,7 @@ class BackupManager(QObject):
             self.stop_periodic_backups()
             logger.info("Periodic backups disabled")
 
-    def get_backup_files(self) -> List[Path]:
+    def get_backup_files(self) -> list[Path]:
         """
         Get a list of all backup files for this database.
 
@@ -274,7 +273,7 @@ class BackupManager(QObject):
 
 
 # Global backup manager instance
-_backup_manager: Optional[BackupManager] = None
+_backup_manager: BackupManager | None = None
 
 
 def get_backup_manager(database_path: str, **kwargs) -> BackupManager:

@@ -12,7 +12,6 @@ Unified file loading manager with fully optimized policy:
 """
 
 import os
-from typing import List, Set
 
 from config import ALLOWED_EXTENSIONS
 from core.drag_manager import force_cleanup_drag, is_dragging
@@ -103,7 +102,7 @@ class FileLoadManager:
         """Legacy method - redirects to unified load_folder."""
         self.load_folder(folder_path, merge_mode, recursive)
 
-    def load_files_from_paths(self, paths: List[str], clear: bool = True) -> None:
+    def load_files_from_paths(self, paths: list[str], clear: bool = True) -> None:
         """
         Load files from multiple paths (used by import button).
         Now uses same fast approach as drag operations for consistency.
@@ -229,7 +228,7 @@ class FileLoadManager:
             file_paths = self._get_files_from_folder(folder_path, recursive)
             self._update_ui_with_files(file_paths, clear=not merge_mode)
 
-    def _get_files_from_folder(self, folder_path: str, recursive: bool = False) -> List[str]:
+    def _get_files_from_folder(self, folder_path: str, recursive: bool = False) -> list[str]:
         """
         Get all valid files from folder.
         Returns list of file paths.
@@ -258,7 +257,7 @@ class FileLoadManager:
             ext = ext[1:]
         return ext in self.allowed_extensions
 
-    def _update_ui_with_files(self, file_paths: List[str], clear: bool = True) -> None:
+    def _update_ui_with_files(self, file_paths: list[str], clear: bool = True) -> None:
         """
         Update UI with loaded files.
         Converts file paths to FileItem objects and updates the model.
@@ -288,7 +287,7 @@ class FileLoadManager:
         # Update the model
         self._update_ui_after_load(file_items, clear=clear)
 
-    def _update_ui_after_load(self, items: List[FileItem], clear: bool = True) -> None:
+    def _update_ui_after_load(self, items: list[FileItem], clear: bool = True) -> None:
         """
         Update UI after loading files.
         Handles model updates and UI refresh with duplicate detection in merge mode.
@@ -493,7 +492,7 @@ class FileLoadManager:
         logger.info("[FileLoadManager] reload_current_folder called")
         # Implementation depends on how current folder is tracked
 
-    def set_allowed_extensions(self, extensions: Set[str]) -> None:
+    def set_allowed_extensions(self, extensions: set[str]) -> None:
         """Update the set of allowed file extensions."""
         self.allowed_extensions = extensions
         logger.info(f"[FileLoadManager] Updated allowed extensions: {extensions}")

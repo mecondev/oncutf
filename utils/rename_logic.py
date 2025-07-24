@@ -17,7 +17,7 @@ Functions:
 
 import os
 import platform
-from typing import Callable, Dict, List, Tuple
+from collections.abc import Callable
 
 from utils.logger_factory import get_cached_logger
 
@@ -106,8 +106,8 @@ def safe_case_rename(src_path: str, dst_path: str) -> bool:
 
 
 def build_rename_plan(
-    file_items: List[object], preview_pairs: List[Tuple[str, str]], folder_path: str
-) -> List[Dict]:
+    file_items: list[object], preview_pairs: list[tuple[str, str]], folder_path: str
+) -> list[dict]:
     """
     Builds a plan of rename operations with conflict detection.
 
@@ -152,8 +152,8 @@ def build_rename_plan(
 
 
 def resolve_rename_conflicts(
-    plan: List[Dict], ask_user_callback: Callable[[str, str], Tuple[str, bool]]
-) -> List[Dict]:
+    plan: list[dict], ask_user_callback: Callable[[str, str], tuple[str, bool]]
+) -> list[dict]:
     """
     Resolves rename conflicts by prompting the user.
 
@@ -191,7 +191,7 @@ def resolve_rename_conflicts(
     return resolved_plan
 
 
-def execute_rename_plan(plan: List[Dict]) -> int:
+def execute_rename_plan(plan: list[dict]) -> int:
     """
     Executes the rename plan based on resolved actions.
 
@@ -226,8 +226,8 @@ def execute_rename_plan(plan: List[Dict]) -> int:
 
 
 def get_preview_pairs(
-    file_items: List[object], rename_function: Callable[[object], str]
-) -> List[Tuple[str, str]]:
+    file_items: list[object], rename_function: Callable[[object], str]
+) -> list[tuple[str, str]]:
     """
     Generates preview name pairs (old, new) for the selected files using rename logic.
 

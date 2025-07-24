@@ -14,7 +14,6 @@ from utils.svg_icon_generator import generate_metadata_icons
 icon_map = generate_metadata_icons()
 """
 
-from typing import Dict, Optional
 
 from config import METADATA_ICON_COLORS
 from core.pyqt_imports import QByteArray, QColor, QPainter, QPixmap, QSvgRenderer
@@ -54,7 +53,7 @@ class SVGIconGenerator:
         self.icons_dir = get_icons_dir()
         self.feather_dir = self.icons_dir / "feather_icons"
 
-    def _load_svg_content(self, icon_name: str) -> Optional[str]:
+    def _load_svg_content(self, icon_name: str) -> str | None:
         """
         Load SVG content from feather icons directory.
 
@@ -107,7 +106,7 @@ class SVGIconGenerator:
 
         return svg_content
 
-    def generate_icon(self, status: str, size: Optional[int] = None) -> QPixmap:
+    def generate_icon(self, status: str, size: int | None = None) -> QPixmap:
         """
         Generate a colored icon for the given status.
 
@@ -189,7 +188,7 @@ class SVGIconGenerator:
         pixmap.fill(QColor(0, 0, 0, 0))  # Transparent
         return pixmap
 
-    def generate_all_icons(self, size: Optional[int] = None) -> Dict[str, QPixmap]:
+    def generate_all_icons(self, size: int | None = None) -> dict[str, QPixmap]:
         """
         Generate all metadata status icons.
 
@@ -208,7 +207,7 @@ class SVGIconGenerator:
         )
 
         icons = {}
-        for status in METADATA_ICON_COLORS.keys():
+        for status in METADATA_ICON_COLORS:
             # Generate all icons including hash since we use it in file table model
             icons[status] = self.generate_icon(status, size)
 
@@ -217,7 +216,7 @@ class SVGIconGenerator:
         )
         return icons
 
-    def generate_inverted_icon(self, icon_name: str, size: Optional[int] = None) -> QPixmap:
+    def generate_inverted_icon(self, icon_name: str, size: int | None = None) -> QPixmap:
         """
         Generate an inverted (dark) version of an icon for selection states.
         REMOVED: This functionality was too complex and not needed.
@@ -225,7 +224,7 @@ class SVGIconGenerator:
         return QPixmap()
 
     def generate_icon_pair(
-        self, icon_name: str, size: Optional[int] = None
+        self, icon_name: str, size: int | None = None
     ) -> tuple[QPixmap, QPixmap]:
         """
         Generate both normal and inverted versions of an icon.
@@ -236,7 +235,7 @@ class SVGIconGenerator:
 
 
 # Convenience functions for backward compatibility
-def generate_metadata_icons(size: int = 16) -> Dict[str, QPixmap]:
+def generate_metadata_icons(size: int = 16) -> dict[str, QPixmap]:
     """
     Generate all metadata status icons.
 

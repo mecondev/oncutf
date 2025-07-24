@@ -21,9 +21,10 @@ Features:
 import threading
 import time
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 import psutil
 
@@ -53,11 +54,11 @@ class WorkerTask:
     kwargs: dict
     priority: TaskPriority = TaskPriority.NORMAL
     created_at: float = field(default_factory=time.time)
-    started_at: Optional[float] = None
-    completed_at: Optional[float] = None
+    started_at: float | None = None
+    completed_at: float | None = None
     result: Any = None
-    error: Optional[Exception] = None
-    callback: Optional[Callable] = None
+    error: Exception | None = None
+    callback: Callable | None = None
 
     @property
     def is_completed(self) -> bool:
@@ -102,7 +103,7 @@ class PriorityQueue:
 
     def __init__(self):
         """Initialize priority queue."""
-        self._queues: Dict[TaskPriority, deque] = {priority: deque() for priority in TaskPriority}
+        self._queues: dict[TaskPriority, deque] = {priority: deque() for priority in TaskPriority}
         self._lock = threading.RLock()
         self._size = 0
 
@@ -112,7 +113,7 @@ class PriorityQueue:
             self._queues[task.priority].append(task)
             self._size += 1
 
-    def get(self) -> Optional[WorkerTask]:
+    def get(self) -> WorkerTask | None:
         """Get highest priority task."""
         with self._lock:
             for priority in TaskPriority:
@@ -168,7 +169,7 @@ class SmartWorkerThread(QThread):
         self.worker_id = worker_id
         self.task_queue = task_queue
         self._shutdown_requested = False
-        self._current_task: Optional[WorkerTask] = None
+        self._current_task: WorkerTask | None = None
         self._tasks_processed = 0
         self._total_execution_time = 0.0
 
@@ -239,7 +240,7 @@ class SmartWorkerThread(QThread):
         self._shutdown_requested = True
         logger.debug(f"[SmartWorkerThread] Shutdown requested for worker: {self.worker_id}")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get worker statistics."""
         return {
             "worker_id": self.worker_id,
@@ -290,9 +291,9 @@ class ThreadPoolManager(QObject):
         self.target_queue_size = 10  # Resize pool when queue exceeds this
 
         # Thread pool
-        self._workers: Dict[str, SmartWorkerThread] = {}
+        self._workers: dict[str, SmartWorkerThread] = {}
         self._task_queue = PriorityQueue()
-        self._tasks: Dict[str, WorkerTask] = {}
+        self._tasks: dict[str, WorkerTask] = {}
 
         # Statistics
         self._total_tasks = 0
@@ -322,7 +323,7 @@ class ThreadPoolManager(QObject):
         args: tuple = (),
         kwargs: dict = None,
         priority: TaskPriority = TaskPriority.NORMAL,
-        callback: Optional[Callable] = None,
+        callback: Callable | None = None,
     ) -> bool:
         """
         Submit a task for execution.
@@ -400,7 +401,7 @@ class ThreadPoolManager(QObject):
 
         if new_size > current_size:
             # Add workers
-            for i in range(new_size - current_size):
+            for _i in range(new_size - current_size):
                 worker_id = f"worker_{len(self._workers) + 1}"
                 self._add_worker(worker_id)
 
@@ -501,7 +502,7 @@ class ThreadPoolManager(QObject):
                 memory_usage_mb=memory_info.used / (1024 * 1024),
             )
 
-    def get_worker_stats(self) -> List[Dict[str, Any]]:
+    def get_worker_stats(self) -> list[dict[str, Any]]:
         """Get individual worker statistics."""
         with QMutexLocker(self._mutex):
             return [worker.get_stats() for worker in self._workers.values()]
@@ -537,7 +538,7 @@ class ThreadPoolManager(QObject):
 
 
 # Global thread pool manager instance
-_thread_pool_manager_instance: Optional[ThreadPoolManager] = None
+_thread_pool_manager_instance: ThreadPoolManager | None = None
 
 
 def get_thread_pool_manager() -> ThreadPoolManager:
@@ -562,7 +563,7 @@ def submit_task(
     args: tuple = (),
     kwargs: dict = None,
     priority: TaskPriority = TaskPriority.NORMAL,
-    callback: Optional[Callable] = None,
+    callback: Callable | None = None,
 ) -> bool:
     """Submit task using global thread pool."""
     return get_thread_pool_manager().submit_task(

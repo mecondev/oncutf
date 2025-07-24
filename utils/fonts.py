@@ -9,7 +9,6 @@ Manages loading and providing access to the Inter font family
 """
 
 import logging
-from typing import Dict
 
 from core.pyqt_imports import QFont, QFontDatabase, QResource
 
@@ -38,8 +37,8 @@ class InterFonts:
     }
 
     def __init__(self):
-        self.loaded_fonts: Dict[str, int] = {}
-        self.font_families: Dict[str, str] = {}
+        self.loaded_fonts: dict[str, int] = {}
+        self.font_families: dict[str, str] = {}
         self._load_fonts_from_resources()
 
     def _load_fonts_from_resources(self) -> None:

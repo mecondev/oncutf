@@ -22,7 +22,7 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from core.pyqt_imports import QObject, pyqtSignal
 from utils.logger_factory import get_cached_logger
@@ -74,8 +74,8 @@ class ConnectionPool:
         """
         self.db_path = db_path
         self.max_connections = max_connections
-        self._connections: List[sqlite3.Connection] = []
-        self._available_connections: List[sqlite3.Connection] = []
+        self._connections: list[sqlite3.Connection] = []
+        self._available_connections: list[sqlite3.Connection] = []
         self._lock = threading.RLock()
         self._connection_count = 0
 
@@ -179,7 +179,7 @@ class PreparedStatementCache:
 
             return query_text
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get cache statistics."""
         with self._lock:
             total_requests = self._hits + self._misses
@@ -214,7 +214,7 @@ class OptimizedDatabaseManager(QObject):
     # Schema version for migrations
     SCHEMA_VERSION = 3
 
-    def __init__(self, db_path: Optional[str] = None, max_connections: int = 10, parent=None):
+    def __init__(self, db_path: str | None = None, max_connections: int = 10, parent=None):
         """
         Initialize optimized database manager.
 
@@ -239,7 +239,7 @@ class OptimizedDatabaseManager(QObject):
         self.prepared_statements = PreparedStatementCache()
 
         # Query statistics
-        self._query_stats: Dict[str, QueryStats] = {}
+        self._query_stats: dict[str, QueryStats] = {}
         self._stats_lock = threading.RLock()
 
         # Common prepared statements
@@ -293,8 +293,8 @@ class OptimizedDatabaseManager(QObject):
             self.connection_pool.return_connection(conn)
 
     def execute_query(
-        self, query: str, params: Tuple = (), fetch_all: bool = True, use_prepared: bool = True
-    ) -> Optional[List[sqlite3.Row]]:
+        self, query: str, params: tuple = (), fetch_all: bool = True, use_prepared: bool = True
+    ) -> list[sqlite3.Row] | None:
         """
         Execute a SELECT query with optimization.
 
@@ -322,10 +322,7 @@ class OptimizedDatabaseManager(QObject):
                 cursor.execute(query, params)
 
                 # Fetch results
-                if fetch_all:
-                    results = cursor.fetchall()
-                else:
-                    results = cursor.fetchone()
+                results = cursor.fetchall() if fetch_all else cursor.fetchone()
 
                 # Record statistics
                 execution_time = time.time() - start_time
@@ -339,7 +336,7 @@ class OptimizedDatabaseManager(QObject):
             logger.error(f"[OptimizedDatabaseManager] Params: {params}")
             return None
 
-    def execute_update(self, query: str, params: Tuple = (), use_prepared: bool = True) -> bool:
+    def execute_update(self, query: str, params: tuple = (), use_prepared: bool = True) -> bool:
         """
         Execute an INSERT/UPDATE/DELETE query.
 
@@ -379,7 +376,7 @@ class OptimizedDatabaseManager(QObject):
             return False
 
     def execute_batch(
-        self, query: str, params_list: List[Tuple], use_transaction: bool = True
+        self, query: str, params_list: list[tuple], use_transaction: bool = True
     ) -> bool:
         """
         Execute batch operations for better performance.
@@ -450,7 +447,7 @@ class OptimizedDatabaseManager(QObject):
                     f"[OptimizedDatabaseManager] Slow query detected: {execution_time:.3f}s"
                 )
 
-    def get_query_stats(self) -> Dict[str, Any]:
+    def get_query_stats(self) -> dict[str, Any]:
         """Get query execution statistics."""
         with self._stats_lock:
             stats = {
@@ -471,7 +468,7 @@ class OptimizedDatabaseManager(QObject):
 
             return stats
 
-    def get_top_queries(self, limit: int = 10, sort_by: str = "total_time") -> List[Dict[str, Any]]:
+    def get_top_queries(self, limit: int = 10, sort_by: str = "total_time") -> list[dict[str, Any]]:
         """Get top queries by specified metric."""
         with self._stats_lock:
             queries = []
@@ -658,7 +655,7 @@ class OptimizedDatabaseManager(QObject):
 
 
 # Global optimized database manager instance
-_optimized_db_manager_instance: Optional[OptimizedDatabaseManager] = None
+_optimized_db_manager_instance: OptimizedDatabaseManager | None = None
 
 
 def get_optimized_database_manager() -> OptimizedDatabaseManager:
@@ -670,7 +667,7 @@ def get_optimized_database_manager() -> OptimizedDatabaseManager:
 
 
 def initialize_optimized_database(
-    db_path: Optional[str] = None, max_connections: int = 10
+    db_path: str | None = None, max_connections: int = 10
 ) -> OptimizedDatabaseManager:
     """Initialize optimized database manager."""
     global _optimized_db_manager_instance

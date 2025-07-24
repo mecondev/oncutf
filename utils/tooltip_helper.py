@@ -16,7 +16,6 @@ Classes:
 - Convenience functions for easy tooltip display
 """
 
-from typing import Optional
 
 from PyQt5.QtCore import QEvent, QPoint, Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QLabel, QWidget
@@ -84,7 +83,7 @@ class CustomTooltip(QLabel):
         # Make sure tooltip adjusts to content
         self.adjustSize()
 
-    def show_tooltip(self, position: QPoint, duration: Optional[int] = None):
+    def show_tooltip(self, position: QPoint, duration: int | None = None):
         """Show tooltip at specific position for specified duration"""
         if not self.persistent and duration is not None and duration > 0:
             self._timer.start(duration)
@@ -112,7 +111,7 @@ class TooltipHelper:
         widget: QWidget,
         message: str,
         tooltip_type: str = TooltipType.DEFAULT,
-        duration: Optional[int] = None,
+        duration: int | None = None,
         persistent: bool = False,
     ) -> None:
         """
@@ -136,7 +135,7 @@ class TooltipHelper:
 
     @classmethod
     def _show_temporary_tooltip(
-        cls, widget: QWidget, message: str, tooltip_type: str, duration: Optional[int]
+        cls, widget: QWidget, message: str, tooltip_type: str, duration: int | None
     ) -> None:
         """Show a temporary tooltip that auto-hides"""
         # Clear any existing tooltip for this widget
@@ -302,25 +301,25 @@ class TooltipHelper:
 
     @classmethod
     def show_error_tooltip(
-        cls, widget: QWidget, message: str, duration: Optional[int] = None
+        cls, widget: QWidget, message: str, duration: int | None = None
     ) -> None:
         cls.show_tooltip(widget, message, TooltipType.ERROR, duration)
 
     @classmethod
     def show_warning_tooltip(
-        cls, widget: QWidget, message: str, duration: Optional[int] = None
+        cls, widget: QWidget, message: str, duration: int | None = None
     ) -> None:
         cls.show_tooltip(widget, message, TooltipType.WARNING, duration)
 
     @classmethod
     def show_info_tooltip(
-        cls, widget: QWidget, message: str, duration: Optional[int] = None
+        cls, widget: QWidget, message: str, duration: int | None = None
     ) -> None:
         cls.show_tooltip(widget, message, TooltipType.INFO, duration)
 
     @classmethod
     def show_success_tooltip(
-        cls, widget: QWidget, message: str, duration: Optional[int] = None
+        cls, widget: QWidget, message: str, duration: int | None = None
     ) -> None:
         cls.show_tooltip(widget, message, TooltipType.SUCCESS, duration)
 
@@ -352,7 +351,7 @@ class TooltipHelper:
         """Clear all active tooltips"""
         # Clear temporary tooltips
         try:
-            for widget, tooltip in cls._active_tooltips:
+            for _widget, tooltip in cls._active_tooltips:
                 tooltip.hide_tooltip()
         except RuntimeError:
             # Qt objects may have been deleted already
@@ -425,28 +424,28 @@ def show_tooltip(
     widget: QWidget,
     message: str,
     tooltip_type: str = TooltipType.DEFAULT,
-    duration: Optional[int] = None,
+    duration: int | None = None,
 ) -> None:
     """Global convenience function to show tooltip"""
     TooltipHelper.show_tooltip(widget, message, tooltip_type, duration)
 
 
-def show_error_tooltip(widget: QWidget, message: str, duration: Optional[int] = None) -> None:
+def show_error_tooltip(widget: QWidget, message: str, duration: int | None = None) -> None:
     """Global convenience function to show error tooltip"""
     TooltipHelper.show_error_tooltip(widget, message, duration)
 
 
-def show_warning_tooltip(widget: QWidget, message: str, duration: Optional[int] = None) -> None:
+def show_warning_tooltip(widget: QWidget, message: str, duration: int | None = None) -> None:
     """Global convenience function to show warning tooltip"""
     TooltipHelper.show_warning_tooltip(widget, message, duration)
 
 
-def show_info_tooltip(widget: QWidget, message: str, duration: Optional[int] = None) -> None:
+def show_info_tooltip(widget: QWidget, message: str, duration: int | None = None) -> None:
     """Global convenience function to show info tooltip"""
     TooltipHelper.show_info_tooltip(widget, message, duration)
 
 
-def show_success_tooltip(widget: QWidget, message: str, duration: Optional[int] = None) -> None:
+def show_success_tooltip(widget: QWidget, message: str, duration: int | None = None) -> None:
     """Global convenience function to show success tooltip"""
     TooltipHelper.show_success_tooltip(widget, message, duration)
 

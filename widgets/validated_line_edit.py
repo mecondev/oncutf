@@ -12,7 +12,6 @@ Contains:
 """
 
 import logging
-from typing import Optional, Set, Tuple
 
 from config import INVALID_FILENAME_CHARS
 from core.pyqt_imports import QKeyEvent, QLineEdit, QWidget, pyqtSignal
@@ -40,7 +39,7 @@ class ValidatedLineEdit(QLineEdit, BaseValidatedInput):
     # Signal emitted when validation state changes
     validation_changed = pyqtSignal(bool)  # True if valid, False if invalid
 
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, parent: QWidget | None = None):
         QLineEdit.__init__(self, parent)
         BaseValidatedInput.__init__(self)
 
@@ -52,7 +51,7 @@ class ValidatedLineEdit(QLineEdit, BaseValidatedInput):
         """Emit validation changed signal."""
         self.validation_changed.emit(is_valid)
 
-    def get_blocked_characters(self) -> Set[str]:
+    def get_blocked_characters(self) -> set[str]:
         """
         Get set of characters that should be blocked for filename input.
 
@@ -61,7 +60,7 @@ class ValidatedLineEdit(QLineEdit, BaseValidatedInput):
         """
         return set(INVALID_FILENAME_CHARS)
 
-    def validate_text_content(self, text: str) -> Tuple[bool, str]:
+    def validate_text_content(self, text: str) -> tuple[bool, str]:
         """
         Validate text content using filename validation.
 

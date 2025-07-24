@@ -8,7 +8,6 @@ Utility functions for handling window positioning in multiscreen desktop environ
 Ensures dialogs and progress bars appear on the correct monitor relative to their parent window.
 """
 
-from typing import Optional
 
 from core.pyqt_imports import QApplication, QFileDialog, QScreen, QWidget
 from utils.logger_factory import get_cached_logger
@@ -16,7 +15,7 @@ from utils.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 
-def get_screen_for_widget(widget: QWidget) -> Optional[QScreen]:
+def get_screen_for_widget(widget: QWidget) -> QScreen | None:
     """
     Get the screen that contains the given widget.
 
@@ -53,7 +52,7 @@ def get_screen_for_widget(widget: QWidget) -> Optional[QScreen]:
     return primary_screen
 
 
-def center_dialog_on_parent_screen(dialog: QWidget, parent: Optional[QWidget] = None) -> None:
+def center_dialog_on_parent_screen(dialog: QWidget, parent: QWidget | None = None) -> None:
     """
     Center a dialog on the same screen as its parent widget.
 
@@ -79,7 +78,7 @@ def center_dialog_on_parent_screen(dialog: QWidget, parent: Optional[QWidget] = 
     center_dialog_on_screen(dialog, parent_screen)
 
 
-def center_dialog_on_screen(dialog: QWidget, screen: Optional[QScreen] = None) -> None:
+def center_dialog_on_screen(dialog: QWidget, screen: QScreen | None = None) -> None:
     """
     Center a dialog on the specified screen.
 
@@ -116,7 +115,7 @@ def center_dialog_on_screen(dialog: QWidget, screen: Optional[QScreen] = None) -
     logger.debug(f"Centered dialog on screen '{screen.name()}' at ({x}, {y})")
 
 
-def position_dialog_relative_to_parent(dialog: QWidget, parent: Optional[QWidget] = None) -> None:
+def position_dialog_relative_to_parent(dialog: QWidget, parent: QWidget | None = None) -> None:
     """
     Position a dialog relative to its parent widget, ensuring it stays on the same screen.
 
@@ -168,7 +167,7 @@ def position_dialog_relative_to_parent(dialog: QWidget, parent: Optional[QWidget
     )
 
 
-def ensure_dialog_on_parent_screen(dialog: QWidget, parent: Optional[QWidget] = None) -> None:
+def ensure_dialog_on_parent_screen(dialog: QWidget, parent: QWidget | None = None) -> None:
     """
     Ensure a dialog is positioned on the same screen as its parent.
     This is the main function to use for dialog positioning.
@@ -191,7 +190,7 @@ def ensure_dialog_on_parent_screen(dialog: QWidget, parent: Optional[QWidget] = 
 
 
 def get_existing_directory_on_parent_screen(
-    parent: Optional[QWidget] = None,
+    parent: QWidget | None = None,
     caption: str = "Select Directory",
     directory: str = "",
     options: QFileDialog.Options = QFileDialog.ShowDirsOnly,
@@ -227,7 +226,7 @@ def get_existing_directory_on_parent_screen(
 
 
 def get_open_file_name_on_parent_screen(
-    parent: Optional[QWidget] = None,
+    parent: QWidget | None = None,
     caption: str = "Open File",
     directory: str = "",
     filter: str = "",
@@ -264,7 +263,7 @@ def get_open_file_name_on_parent_screen(
 
 
 def get_save_file_name_on_parent_screen(
-    parent: Optional[QWidget] = None,
+    parent: QWidget | None = None,
     caption: str = "Save File",
     directory: str = "",
     filter: str = "",

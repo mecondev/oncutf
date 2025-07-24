@@ -10,7 +10,6 @@ Consolidates all table-related logic including sorting, clearing,
 preparation, and selection management.
 """
 
-from typing import List
 
 from core.pyqt_imports import Qt
 from models.file_item import FileItem
@@ -115,7 +114,7 @@ class TableManager:
         if hasattr(self.parent_window, "preview_tables_view"):
             self.parent_window.preview_tables_view.clear_tables()
 
-    def prepare_file_table(self, file_items: List[FileItem]) -> None:
+    def prepare_file_table(self, file_items: list[FileItem]) -> None:
         """
         Prepare the file table view with the given file items.
 
@@ -155,7 +154,7 @@ class TableManager:
                 "[PrepareTable] Post-rename detected, preview will be updated after checked state restore"
             )
 
-    def get_selected_files(self) -> List[FileItem]:
+    def get_selected_files(self) -> list[FileItem]:
         """
         Returns a list of currently selected files (blue highlighted) in table display order.
 
@@ -197,7 +196,7 @@ class TableManager:
         self.parent_window.update_files_label()
         self.parent_window.request_preview_update()
 
-    def get_common_metadata_fields(self) -> List[str]:
+    def get_common_metadata_fields(self) -> list[str]:
         """
         Returns the intersection of metadata keys from all selected files.
         """
@@ -221,7 +220,7 @@ class TableManager:
 
         return sorted(common_keys) if common_keys else []
 
-    def set_fields_from_list(self, field_names: List[str]) -> None:
+    def set_fields_from_list(self, field_names: list[str]) -> None:
         """
         Replaces the combo box entries with the given field names.
         """

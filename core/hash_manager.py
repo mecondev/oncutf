@@ -11,7 +11,6 @@ Provides CRC32 hash calculations optimized for speed and efficiency.
 
 import zlib
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
 
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger
@@ -41,10 +40,10 @@ class HashManager:
             self._use_persistent_cache = True
         except ImportError:
             # Fallback to memory-only cache if persistent cache not available
-            self._hash_cache: Dict[str, str] = {}
+            self._hash_cache: dict[str, str] = {}
             self._use_persistent_cache = False
 
-    def has_cached_hash(self, file_path: Union[str, Path]) -> bool:
+    def has_cached_hash(self, file_path: str | Path) -> bool:
         """
         Check if a hash exists in cache without calculating it.
 
@@ -65,7 +64,7 @@ class HashManager:
         else:
             return cache_key in self._hash_cache
 
-    def get_cached_hash(self, file_path: Union[str, Path]) -> Optional[str]:
+    def get_cached_hash(self, file_path: str | Path) -> str | None:
         """
         Get hash from cache without calculating it.
 
@@ -86,7 +85,7 @@ class HashManager:
         else:
             return self._hash_cache.get(cache_key)
 
-    def calculate_hash(self, file_path: Union[str, Path], progress_callback=None) -> Optional[str]:
+    def calculate_hash(self, file_path: str | Path, progress_callback=None) -> str | None:
         """
         Calculate the CRC32 hash of a file with error handling and progress tracking.
         Checks cache first before calculating.
@@ -175,8 +174,8 @@ class HashManager:
             return None
 
     def compare_folders(
-        self, folder1: Union[str, Path], folder2: Union[str, Path]
-    ) -> Dict[str, Tuple[bool, str, str]]:
+        self, folder1: str | Path, folder2: str | Path
+    ) -> dict[str, tuple[bool, str, str]]:
         """
         Compare two folders and return file comparison results.
 
@@ -232,7 +231,7 @@ class HashManager:
             logger.error(f"[HashManager] Error comparing folders: {e}")
             return {}
 
-    def find_duplicates_in_list(self, file_items: List[FileItem]) -> Dict[str, List[FileItem]]:
+    def find_duplicates_in_list(self, file_items: list[FileItem]) -> dict[str, list[FileItem]]:
         """
         Find duplicate files in a list of FileItem objects based on CRC32 hash.
 
@@ -245,7 +244,7 @@ class HashManager:
         if not file_items:
             return {}
 
-        hash_to_files: Dict[str, List[FileItem]] = {}
+        hash_to_files: dict[str, list[FileItem]] = {}
         processed_count = 0
 
         logger.info(f"[HashManager] Scanning {len(file_items)} files for duplicates...")
@@ -275,7 +274,7 @@ class HashManager:
 
         return duplicates
 
-    def find_duplicates_in_paths(self, file_paths: List[str]) -> Dict[str, List[str]]:
+    def find_duplicates_in_paths(self, file_paths: list[str]) -> dict[str, list[str]]:
         """
         Find duplicate files in a list of file paths based on CRC32 hash.
 
@@ -288,7 +287,7 @@ class HashManager:
         if not file_paths:
             return {}
 
-        hash_to_paths: Dict[str, List[str]] = {}
+        hash_to_paths: dict[str, list[str]] = {}
         processed_count = 0
 
         logger.info(f"[HashManager] Scanning {len(file_paths)} files for duplicates...")
@@ -318,7 +317,7 @@ class HashManager:
 
         return duplicates
 
-    def verify_file_integrity(self, file_path: Union[str, Path], expected_hash: str) -> bool:
+    def verify_file_integrity(self, file_path: str | Path, expected_hash: str) -> bool:
         """
         Verify file integrity by comparing its hash with an expected hash.
 
@@ -340,7 +339,7 @@ class HashManager:
 
         return matches
 
-    def get_cache_info(self) -> Dict[str, Union[str, int, float]]:
+    def get_cache_info(self) -> dict[str, str | int | float]:
         """
         Get cache performance and size information.
 
@@ -380,7 +379,7 @@ class HashManager:
 
 
 # Convenience functions for simple usage
-def calculate_crc32(file_path: Union[str, Path]) -> Optional[str]:
+def calculate_crc32(file_path: str | Path) -> str | None:
     """
     Calculate the CRC32 hash of a file (convenience function).
 
@@ -395,8 +394,8 @@ def calculate_crc32(file_path: Union[str, Path]) -> Optional[str]:
 
 
 def compare_folders(
-    folder1: Union[str, Path], folder2: Union[str, Path]
-) -> Dict[str, Tuple[bool, str, str]]:
+    folder1: str | Path, folder2: str | Path
+) -> dict[str, tuple[bool, str, str]]:
     """
     Compare two folders and return file comparison results (convenience function).
 

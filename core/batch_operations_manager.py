@@ -20,9 +20,10 @@ Features:
 import threading
 import time
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 from utils.logger_factory import get_cached_logger
 
@@ -36,7 +37,7 @@ class BatchOperation:
     operation_type: str  # 'metadata_set', 'hash_store', 'db_query', etc.
     key: str  # Primary key for the operation
     data: Any  # Operation data
-    callback: Optional[Callable] = None  # Optional callback after operation
+    callback: Callable | None = None  # Optional callback after operation
     timestamp: datetime = field(default_factory=datetime.now)
     priority: int = 50  # Lower number = higher priority
 
@@ -65,7 +66,7 @@ class BatchOperationsManager:
         self.parent_window = parent_window
 
         # Batch storage by operation type
-        self._batches: Dict[str, List[BatchOperation]] = defaultdict(list)
+        self._batches: dict[str, list[BatchOperation]] = defaultdict(list)
         self._batch_lock = threading.RLock()
 
         # Configuration
@@ -96,7 +97,7 @@ class BatchOperationsManager:
         file_path: str,
         metadata: dict,
         is_extended: bool = False,
-        callback: Optional[Callable] = None,
+        callback: Callable | None = None,
         priority: int = 50,
     ) -> None:
         """Queue a metadata cache set operation for batching."""
@@ -114,7 +115,7 @@ class BatchOperationsManager:
         file_path: str,
         hash_value: str,
         algorithm: str = "crc32",
-        callback: Optional[Callable] = None,
+        callback: Callable | None = None,
         priority: int = 50,
     ) -> None:
         """Queue a hash cache store operation for batching."""
@@ -132,7 +133,7 @@ class BatchOperationsManager:
         query_type: str,
         query: str,
         params: tuple = (),
-        callback: Optional[Callable] = None,
+        callback: Callable | None = None,
         priority: int = 50,
     ) -> None:
         """Queue a database query for batching."""
@@ -150,7 +151,7 @@ class BatchOperationsManager:
         operation_type: str,
         file_path: str,
         data: Any = None,
-        callback: Optional[Callable] = None,
+        callback: Callable | None = None,
         priority: int = 50,
     ) -> None:
         """Queue a file I/O operation for batching."""
@@ -209,7 +210,7 @@ class BatchOperationsManager:
             self._flush_batch_type(batch_type)
             return
 
-    def flush_all(self) -> Dict[str, int]:
+    def flush_all(self) -> dict[str, int]:
         """
         Flush all pending batches immediately.
 
@@ -298,7 +299,7 @@ class BatchOperationsManager:
 
         return operations_count
 
-    def _handle_metadata_batch(self, operations: List[BatchOperation]) -> None:
+    def _handle_metadata_batch(self, operations: list[BatchOperation]) -> None:
         """Handle a batch of metadata cache set operations."""
         if not self.parent_window or not hasattr(self.parent_window, "metadata_cache"):
             logger.warning("[BatchOps] No metadata cache available")
@@ -318,7 +319,7 @@ class BatchOperationsManager:
                 regular_ops.append(op)
 
         # Process each group
-        for ops_group, is_extended in [(regular_ops, False), (extended_ops, True)]:
+        for ops_group, _is_extended in [(regular_ops, False), (extended_ops, True)]:
             if not ops_group:
                 continue
 
@@ -356,7 +357,7 @@ class BatchOperationsManager:
 
         logger.debug(f"[BatchOps] Metadata batch: {success_count}/{len(operations)} successful")
 
-    def _handle_hash_batch(self, operations: List[BatchOperation]) -> None:
+    def _handle_hash_batch(self, operations: list[BatchOperation]) -> None:
         """Handle a batch of hash cache store operations."""
         if not self.parent_window or not hasattr(self.parent_window, "hash_cache"):
             logger.warning("[BatchOps] No hash cache available")
@@ -409,7 +410,7 @@ class BatchOperationsManager:
 
         logger.debug(f"[BatchOps] Hash batch: {success_count}/{len(operations)} successful")
 
-    def _handle_db_batch(self, operations: List[BatchOperation]) -> None:
+    def _handle_db_batch(self, operations: list[BatchOperation]) -> None:
         """Handle a batch of database query operations."""
         if not self.parent_window or not hasattr(self.parent_window, "db_manager"):
             logger.warning("[BatchOps] No database manager available")
@@ -454,7 +455,7 @@ class BatchOperationsManager:
 
         logger.debug(f"[BatchOps] DB batch: {success_count}/{len(operations)} successful")
 
-    def _handle_file_io_batch(self, operations: List[BatchOperation]) -> None:
+    def _handle_file_io_batch(self, operations: list[BatchOperation]) -> None:
         """Handle a batch of file I/O operations."""
         # Group by operation type
         read_ops = []
@@ -475,7 +476,7 @@ class BatchOperationsManager:
         if write_ops:
             self._handle_file_write_batch(write_ops)
 
-    def _handle_file_read_batch(self, operations: List[BatchOperation]) -> None:
+    def _handle_file_read_batch(self, operations: list[BatchOperation]) -> None:
         """Handle batch file read operations."""
         success_count = 0
 
@@ -510,7 +511,7 @@ class BatchOperationsManager:
 
         logger.debug(f"[BatchOps] File read batch: {success_count}/{len(operations)} successful")
 
-    def _handle_file_write_batch(self, operations: List[BatchOperation]) -> None:
+    def _handle_file_write_batch(self, operations: list[BatchOperation]) -> None:
         """Handle batch file write operations."""
         success_count = 0
 
@@ -544,7 +545,7 @@ class BatchOperationsManager:
 
         logger.debug(f"[BatchOps] File write batch: {success_count}/{len(operations)} successful")
 
-    def _handle_cache_batch(self, operations: List[BatchOperation]) -> None:
+    def _handle_cache_batch(self, operations: list[BatchOperation]) -> None:
         """Handle batch cache update operations."""
         # This is a generic handler for other cache operations
         success_count = 0
@@ -568,7 +569,7 @@ class BatchOperationsManager:
         """Get current batch operation statistics."""
         return self._stats
 
-    def get_pending_operations(self) -> Dict[str, int]:
+    def get_pending_operations(self) -> dict[str, int]:
         """Get count of pending operations by type."""
         with self._batch_lock:
             return {batch_type: len(ops) for batch_type, ops in self._batches.items() if ops}
@@ -609,7 +610,7 @@ class BatchOperationsManager:
 
 
 # Global instance
-_global_batch_manager: Optional[BatchOperationsManager] = None
+_global_batch_manager: BatchOperationsManager | None = None
 
 
 def get_batch_manager(parent_window=None) -> BatchOperationsManager:

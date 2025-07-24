@@ -12,7 +12,7 @@ import shutil
 import time
 from collections import deque
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Any
 
 from utils.logger_factory import get_cached_logger
 
@@ -57,7 +57,7 @@ class UndoStack:
         # Clear redo stack when new operation is pushed
         self.redo_stack.clear()
 
-    def pop(self) -> Optional[ConflictOperation]:
+    def pop(self) -> ConflictOperation | None:
         """Pop operation from undo stack."""
         if self.stack:
             operation = self.stack.pop()
@@ -223,7 +223,7 @@ class ConflictResolver:
                 error_message=error_msg,
             )
 
-    def undo_last_operation(self) -> Optional[ConflictResolution]:
+    def undo_last_operation(self) -> ConflictResolution | None:
         """Undo last operation."""
         if not self.undo_stack.can_undo():
             return None
@@ -259,8 +259,8 @@ class ConflictResolver:
             )
 
     def batch_resolve_conflicts(
-        self, operations: List[Tuple[str, str]], strategy: str = "timestamp"
-    ) -> List[ConflictResolution]:
+        self, operations: list[tuple[str, str]], strategy: str = "timestamp"
+    ) -> list[ConflictResolution]:
         """Resolve multiple conflicts σε batch."""
         results = []
 
@@ -276,7 +276,7 @@ class ConflictResolver:
 
         return results
 
-    def get_stats(self) -> Dict[str, any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get conflict resolution statistics."""
         total_operations = len(self.undo_stack.stack) + len(self.undo_stack.redo_stack)
         successful_operations = sum(1 for op in self.undo_stack.stack if op.success)

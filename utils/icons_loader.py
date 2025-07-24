@@ -19,7 +19,6 @@ Usage:
 """
 
 import os
-from typing import Dict, Optional
 
 from core.pyqt_imports import QIcon, QPixmap
 from utils.logger_factory import get_cached_logger
@@ -27,10 +26,10 @@ from utils.logger_factory import get_cached_logger
 logger = get_cached_logger(__name__)
 
 # Cache for metadata icons to avoid regeneration
-_metadata_icons_cache: Optional[dict[str, QPixmap]] = None
+_metadata_icons_cache: dict[str, QPixmap] | None = None
 
 
-def load_metadata_icons(base_dir: Optional[str] = None) -> dict[str, QPixmap]:
+def load_metadata_icons(base_dir: str | None = None) -> dict[str, QPixmap]:
     """
     Loads metadata status icons for the file table's first column.
 
@@ -91,7 +90,7 @@ class ThemeIconLoader:
             theme: The current theme ("dark" or "light")
         """
         self.theme = theme
-        self.icon_cache: Dict[str, Dict[str, QIcon]] = {"dark": {}, "light": {}}
+        self.icon_cache: dict[str, dict[str, QIcon]] = {"dark": {}, "light": {}}
         self.base_dir = self._get_base_dir()
 
     def _get_base_dir(self) -> str:
@@ -100,7 +99,7 @@ class ThemeIconLoader:
 
         return str(get_icons_dir())
 
-    def get_icon_path(self, name: str, theme: Optional[str] = None) -> str:
+    def get_icon_path(self, name: str, theme: str | None = None) -> str:
         """
         Get the full path to an icon file.
 
@@ -126,7 +125,7 @@ class ThemeIconLoader:
         logger.warning(f"Icon '{name}' not found in any icon directories")
         return ""
 
-    def load_icon(self, name: str, theme: Optional[str] = None) -> QIcon:
+    def load_icon(self, name: str, theme: str | None = None) -> QIcon:
         """
         Load an icon with caching.
 

@@ -11,7 +11,7 @@ triggers custom dialogs (recursive, rejected files), and returns results for the
 """
 
 import os
-from typing import Dict, List, Literal, Tuple
+from typing import Literal
 
 from config import ALLOWED_EXTENSIONS
 from core.pyqt_imports import QMimeData
@@ -23,7 +23,7 @@ from core.pyqt_imports import QMimeData
 DropType = Literal["single_folder", "multiple_folders", "files", "mixed", "unknown"]
 
 
-def analyze_drop(paths: List[str]) -> Dict:
+def analyze_drop(paths: list[str]) -> dict:
     """
     Analyze the given paths from drag & drop and return information about the drop type.
     Returns a dict with keys: type, folders, files, rejected.
@@ -46,7 +46,7 @@ def analyze_drop(paths: List[str]) -> Dict:
     return {"type": drop_type, "folders": folders, "files": files, "rejected": rejected}
 
 
-def filter_allowed_files(files: List[str]) -> Tuple[List[str], List[str]]:
+def filter_allowed_files(files: list[str]) -> tuple[list[str], list[str]]:
     """
     Returns two lists: allowed files (by ALLOWED_EXTENSIONS) and rejected files.
     """
@@ -113,7 +113,7 @@ def show_rejected_dialog(rejected: list[str], imported_count: int = 0, parent=No
         dialog.exec_()
 
 
-def extract_file_paths(mime_data: QMimeData) -> List[str]:
+def extract_file_paths(mime_data: QMimeData) -> list[str]:
     """
     Extracts local file paths from a QMimeData object.
     Only includes local files, ignores other types like text.

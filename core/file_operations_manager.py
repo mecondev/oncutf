@@ -9,7 +9,6 @@ Manages file operations like rename, validation, and conflict resolution.
 """
 
 import os
-from typing import List, Optional
 
 from core.pyqt_imports import QDesktopServices, QUrl
 from models.file_item import FileItem
@@ -31,8 +30,8 @@ class FileOperationsManager:
 
     def rename_files(
         self,
-        selected_files: List[FileItem],
-        modules_data: List[dict],
+        selected_files: list[FileItem],
+        modules_data: list[dict],
         post_transform: dict,
         metadata_cache,
         current_folder_path: str,
@@ -159,10 +158,10 @@ class FileOperationsManager:
 
         return renamed_count
 
-    def find_fileitem_by_path(self, files: List[FileItem], path: str) -> Optional[FileItem]:
+    def find_fileitem_by_path(self, files: list[FileItem], path: str) -> FileItem | None:
         """Find FileItem by path using normalized comparison."""
         return find_file_by_path(files, path, "full_path")
 
-    def get_identity_name_pairs(self, files: List[FileItem]) -> List[tuple]:
+    def get_identity_name_pairs(self, files: list[FileItem]) -> list[tuple]:
         """Return identity name pairs for checked files."""
         return [(file.filename, file.filename) for file in files if file.checked]
