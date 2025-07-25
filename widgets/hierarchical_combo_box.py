@@ -344,33 +344,28 @@ class HierarchicalComboBox(QComboBox):
         return super().currentText()
 
     def populate_from_metadata_groups(self, grouped_data: dict[str, list[tuple[str, Any]]]):
-        """
-        Populate the combo box from grouped metadata data.
-
-        Args:
-            grouped_data: Dictionary with category names as keys and lists of (text, data) tuples as values
-        """
+        """Populate the combo box from grouped metadata data."""
         self.clear()
+        logger.debug(f"Populating combo box with groups: {list(grouped_data.keys())}")
 
-        first_item_text = None
-        first_item_data = None
+        first_item = None
 
         for category_name, items in grouped_data.items():
             if items:  # Only add categories that have items
-                self.add_category(category_name)
+                category_item = self.add_category(category_name)
 
                 for item_text, item_data in sorted(items):
-                    self.add_item_to_category(category_name, item_text, item_data)
+                    item = self.add_item_to_category(category_name, item_text, item_data)
+                    if first_item is None:
+                        first_item = item
 
-                    # Remember the first item for selection
-                    if first_item_text is None:
-                        first_item_text = item_text
-                        first_item_data = item_data
-
-        # Expand all categories by default
+        # Expand all categories
         self.expand_all()
 
-        # Set the first item as selected if available
-        if first_item_text and first_item_data:
-            self.set_current_data(first_item_data)
-            self.setCurrentText(first_item_text)
+        # Select first item if available
+        if first_item:
+            index = self.model.indexFromItem(first_item)
+            self.setCurrentText(first_item.text())
+            self.tree_view.setCurrentIndex(index)
+            # Emit signal for first item
+            self.item_selected.emit(first_item.text(), first_item.data(Qt.UserRole))

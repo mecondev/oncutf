@@ -413,44 +413,44 @@ class MetadataWidget(QWidget):
             self._hash_dialog_active = False  # <-- Ensure flag reset on error
 
     def populate_metadata_keys(self) -> None:
+        """Populate metadata keys in hierarchical structure."""
         keys = self.get_available_metadata_keys()
         self.options_combo.clear()
+
+        # Debug για να δούμε τι κλειδιά έχουμε
+        logger.debug(f"Available metadata keys: {keys}")
+
         if not keys:
-            # Use hierarchical structure even for empty state
             hierarchical_data = {
                 "No Metadata": [
                     ("(No metadata fields available)", None),
                 ]
             }
-
-            if hasattr(self.options_combo, 'populate_from_metadata_groups'):
-                self.options_combo.populate_from_metadata_groups(hierarchical_data)
-            else:
-                self.options_combo.addItem("(No metadata fields available)")
-            logger.debug("[MetadataWidget] No metadata fields available for selection", extra={"dev_only": True})
+            self.options_combo.populate_from_metadata_groups(hierarchical_data)
             return
 
-        # Group keys by category for better organization
+        # Group keys by category
         grouped_keys = self._group_metadata_keys(keys)
+        logger.debug(f"Grouped keys: {grouped_keys}")  # Debug log
 
-        # Prepare data for hierarchical combo box
         hierarchical_data = {}
         for category, category_keys in grouped_keys.items():
             if category_keys:  # Only add categories that have items
                 hierarchical_data[category] = []
                 for key in sorted(category_keys):
-                    # Format the key for display while keeping the original key as userData
                     display_text = self.format_metadata_key_name(key)
                     hierarchical_data[category].append((display_text, key))
+                    logger.debug(f"Added {display_text} -> {key} to {category}")  # Debug log
 
         # Populate the hierarchical combo box
-        if hasattr(self.options_combo, 'populate_from_metadata_groups'):
-            self.options_combo.populate_from_metadata_groups(hierarchical_data)
-        else:
-            # Fallback for regular combo box
-            for category, items in hierarchical_data.items():
-                for display_text, key in items:
-                    self.options_combo.addItem(display_text, userData=key)
+        self.options_combo.populate_from_metadata_groups(hierarchical_data)
+
+        # Expand all categories by default
+        if hasattr(self.options_combo, 'expand_all'):
+            self.options_combo.expand_all()
+
+        # Force an update after population
+        self.emit_if_changed()
 
     def _group_metadata_keys(self, keys: set[str]) -> dict[str, list[str]]:
         """Group metadata keys by category for better organization."""
