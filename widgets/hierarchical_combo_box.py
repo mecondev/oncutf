@@ -290,6 +290,12 @@ class HierarchicalComboBox(QComboBox):
                         self.tree_view.setCurrentIndex(self.model.indexFromItem(item))
                         self.setCurrentText(item.text())
                         self.setEditText(item.text())  # Ensure edit text is updated
+                        # Force the combo box to display the text
+                        self.setCurrentText(item.text())
+                        # Force update the display
+                        self.force_update_display(item.text())
+                        # Set the display text using the new method
+                        self.set_display_text(item.text())
                         logger.debug(f"Set current data to root item: {item.text()}")
                         return
                 else:
@@ -300,6 +306,12 @@ class HierarchicalComboBox(QComboBox):
                             self.tree_view.setCurrentIndex(self.model.indexFromItem(child_item))
                             self.setCurrentText(child_item.text())
                             self.setEditText(child_item.text())  # Ensure edit text is updated
+                            # Force the combo box to display the text
+                            self.setCurrentText(child_item.text())
+                            # Force update the display
+                            self.force_update_display(child_item.text())
+                            # Set the display text using the new method
+                            self.set_display_text(child_item.text())
                             logger.debug(f"Set current data to child item: {child_item.text()}")
                             return
 
@@ -332,6 +344,15 @@ class HierarchicalComboBox(QComboBox):
             self.setCurrentText(text)
             self.setEditText(text)  # Ensure the edit text is also updated
 
+            # Force the combo box to display the text
+            self.setCurrentText(text)
+
+            # Force update the display
+            self.force_update_display(text)
+
+            # Set the display text using the new method
+            self.set_display_text(text)
+
             # Emit signal
             self.item_selected.emit(text, data)
 
@@ -361,6 +382,42 @@ class HierarchicalComboBox(QComboBox):
     def currentText(self) -> str:
         """Get the current text display of the combo box."""
         return super().currentText()
+
+    def force_update_display(self, text: str):
+        """Force the combo box to update its display with the given text."""
+        # Set the text in multiple ways to ensure it's displayed
+        self.setCurrentText(text)
+        self.setEditText(text)
+
+        # Force a repaint
+        self.update()
+
+        logger.debug(f"Force updated display with text: {text}")
+
+    def set_display_text(self, text: str):
+        """Set the display text of the combo box and ensure it's visible."""
+        # Set the text in the combo box
+        self.setCurrentText(text)
+        self.setEditText(text)
+
+        # Force the combo box to show the text
+        self.setCurrentText(text)
+
+        # Force a repaint
+        self.update()
+
+        logger.debug(f"Set display text to: {text}")
+
+    def schedule_display_update(self, text: str, delay_ms: int = 50):
+        """Schedule a delayed display update."""
+        try:
+            from utils.timer_manager import schedule_ui_update
+            schedule_ui_update(lambda: self.set_display_text(text), delay_ms)
+            logger.debug(f"Scheduled display update for text: {text} in {delay_ms}ms")
+        except Exception as e:
+            logger.warning(f"Could not schedule display update: {e}")
+            # Fallback to immediate update
+            self.set_display_text(text)
 
     def populate_from_metadata_groups(self, grouped_data: dict[str, list[tuple[str, Any]]]):
         """Populate the combo box from grouped metadata data."""
@@ -392,6 +449,18 @@ class HierarchicalComboBox(QComboBox):
 
             # Ensure the combo box shows the selected text
             self.setEditText(first_item.text())
+
+            # Force the combo box to display the text
+            self.setCurrentText(first_item.text())
+
+            # Force update the display
+            self.force_update_display(first_item.text())
+
+            # Set the display text using the new method
+            self.set_display_text(first_item.text())
+
+            # Schedule a delayed display update
+            self.schedule_display_update(first_item.text(), 100)
 
             # Emit signal for first item
             self.item_selected.emit(first_item.text(), first_item.data(Qt.UserRole))

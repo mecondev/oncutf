@@ -125,6 +125,8 @@ class MetadataWidget(QWidget):
         self.options_label = QLabel("Field")  # Will be updated based on category
         self.options_label.setFixedWidth(70)  # Increased width by 10px
         self.options_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # type: ignore
+
+        # Use HierarchicalComboBox for better organization
         self.options_combo = HierarchicalComboBox()
         self.options_combo.setFixedWidth(200)  # Increased width for metadata field names
         self.options_combo.setFixedHeight(24)  # Increased to match theme engine better
@@ -136,20 +138,14 @@ class MetadataWidget(QWidget):
 
         # Apply custom delegates for better dropdown styling
         theme = ThemeEngine()
-        self.options_combo.setItemDelegate(ComboBoxItemDelegate(self.options_combo, theme))
         self.category_combo.setItemDelegate(ComboBoxItemDelegate(self.category_combo, theme))
+        self.options_combo.setItemDelegate(ComboBoxItemDelegate(self.options_combo, theme))
 
         # Connections
         self.category_combo.currentIndexChanged.connect(self._on_category_changed)
-        # Connect options combo signal after initialization to avoid premature calls
-        if hasattr(self.options_combo, 'item_selected'):
-            # Connect to hierarchical combo box signal
-            self.options_combo.item_selected.connect(self._on_hierarchical_item_selected)
-            logger.debug("Connected to hierarchical combo item_selected signal")
-        else:
-            # Connect to regular QComboBox signal
-            self.options_combo.currentIndexChanged.connect(self.emit_if_changed)
-            logger.debug("Connected to regular combo currentIndexChanged signal")
+        # Connect to hierarchical combo box signal
+        self.options_combo.item_selected.connect(self._on_hierarchical_item_selected)
+        logger.debug("Connected to hierarchical combo item_selected signal")
 
         # Initialize category availability
         self.update_category_availability()
@@ -192,10 +188,32 @@ class MetadataWidget(QWidget):
 
             # Force UI update
             self.options_combo.repaint()
+
+            # Schedule a delayed update to ensure the combo box displays correctly
+            try:
+                from utils.timer_manager import schedule_ui_update
+                schedule_ui_update(self._force_combo_update, 100)
+            except Exception:
+                # Fallback for testing or when timer manager is not available
+                self._force_combo_update()
+
             logger.debug(f"Category change completed for: {current_data}")
 
         except Exception as e:
             logger.error(f"Error in _on_category_changed: {e}")
+
+    def _force_combo_update(self):
+        """Force update the combo box display."""
+        try:
+            if hasattr(self.options_combo, 'get_current_text'):
+                current_text = self.options_combo.get_current_text()
+                if current_text:
+                    # Force the combo box to display the current text
+                    self.options_combo.setCurrentText(current_text)
+                    self.options_combo.repaint()
+                    logger.debug(f"Force updated combo box with text: {current_text}")
+        except Exception as e:
+            logger.warning(f"Error in _force_combo_update: {e}")
 
     def update_options(self) -> None:
         category = self.category_combo.currentData()
@@ -257,14 +275,15 @@ class MetadataWidget(QWidget):
         logger.debug(f"Populating file dates with data: {hierarchical_data}")
 
         # Populate the hierarchical combo box
-        if hasattr(self.options_combo, 'populate_from_metadata_groups'):
-            self.options_combo.populate_from_metadata_groups(hierarchical_data)
-            logger.debug("Used hierarchical combo populate_from_metadata_groups")
-        else:
-            # Fallback for regular combo box
-            for label, val in hierarchical_data["File Dates"]:
-                self.options_combo.addItem(label, userData=val)
-            logger.debug("Used regular combo addItem fallback")
+        self.options_combo.populate_from_metadata_groups(hierarchical_data)
+        logger.debug("Used hierarchical combo populate_from_metadata_groups for file dates")
+
+        # Force update the display after populate
+        try:
+            from utils.timer_manager import schedule_ui_update
+            schedule_ui_update(self._force_combo_update, 50)
+        except Exception:
+            self._force_combo_update()
 
     def populate_hash_options(self) -> bool:
         """Populate hash options with efficient batch hash checking."""
@@ -284,10 +303,7 @@ class MetadataWidget(QWidget):
 
                 logger.debug("No files selected, populating disabled hash options")
 
-                if hasattr(self.options_combo, 'populate_from_metadata_groups'):
-                    self.options_combo.populate_from_metadata_groups(hierarchical_data)
-                else:
-                    self.options_combo.addItem("CRC32", userData="hash_crc32")
+                self.options_combo.populate_from_metadata_groups(hierarchical_data)
 
                 # Disable the combo box
                 self.options_combo.setEnabled(False)
@@ -316,15 +332,19 @@ class MetadataWidget(QWidget):
 
             logger.debug(f"Populating hash options: {len(files_with_hash)}/{len(file_paths)} files have hash")
 
-            if hasattr(self.options_combo, 'populate_from_metadata_groups'):
-                self.options_combo.populate_from_metadata_groups(hierarchical_data)
-            else:
-                self.options_combo.addItem("CRC32", userData="hash_crc32")
+            self.options_combo.populate_from_metadata_groups(hierarchical_data)
 
             # Always disabled combo box for hash (only CRC32 available)
             self.options_combo.setEnabled(False)
             # Apply disabled styling to show text in gray
             self._apply_disabled_combo_styling()
+
+            # Force update the display after populate
+            try:
+                from utils.timer_manager import schedule_ui_update
+                schedule_ui_update(self._force_combo_update, 50)
+            except Exception:
+                self._force_combo_update()
 
             if files_needing_hash:
                 # Some files need hash calculation
@@ -342,10 +362,7 @@ class MetadataWidget(QWidget):
                 ]
             }
 
-            if hasattr(self.options_combo, 'populate_from_metadata_groups'):
-                self.options_combo.populate_from_metadata_groups(hierarchical_data)
-            else:
-                self.options_combo.addItem("CRC32", userData="hash_crc32")
+            self.options_combo.populate_from_metadata_groups(hierarchical_data)
 
             # Disable the combo box in case of error
             self.options_combo.setEnabled(False)
@@ -464,14 +481,6 @@ class MetadataWidget(QWidget):
         # Populate combo box with grouped data
         self.options_combo.populate_from_metadata_groups(hierarchical_data)
 
-        # Ensure all categories are expanded
-        if hasattr(self.options_combo, 'expand_all'):
-            self.options_combo.expand_all()
-
-        # Select first item by default
-        if hasattr(self.options_combo, 'setCurrentIndex') and self.options_combo.count() > 0:
-            self.options_combo.setCurrentIndex(0)
-
         # Force update to ensure UI reflects changes
         self.emit_if_changed()
 
@@ -480,6 +489,13 @@ class MetadataWidget(QWidget):
 
         # Apply normal styling
         self._apply_normal_combo_styling()
+
+        # Force update the display after populate
+        try:
+            from utils.timer_manager import schedule_ui_update
+            schedule_ui_update(self._force_combo_update, 50)
+        except Exception:
+            self._force_combo_update()
 
         logger.debug(f"Populated metadata keys with {len(hierarchical_data)} categories")
 
@@ -859,10 +875,7 @@ class MetadataWidget(QWidget):
                     ]
                 }
 
-                if hasattr(self.options_combo, 'populate_from_metadata_groups'):
-                    self.options_combo.populate_from_metadata_groups(hierarchical_data)
-                else:
-                    self.options_combo.addItem("CRC32", userData="hash_crc32")
+                self.options_combo.populate_from_metadata_groups(hierarchical_data)
 
                 self.options_combo.setEnabled(False)
                 self._apply_disabled_combo_styling()
@@ -889,10 +902,7 @@ class MetadataWidget(QWidget):
                         ]
                     }
 
-                    if hasattr(self.options_combo, 'populate_from_metadata_groups'):
-                        self.options_combo.populate_from_metadata_groups(hierarchical_data)
-                    else:
-                        self.options_combo.addItem("CRC32", userData="hash_crc32")
+                    self.options_combo.populate_from_metadata_groups(hierarchical_data)
 
                     self.options_combo.setEnabled(False)
                     self._apply_disabled_combo_styling()
