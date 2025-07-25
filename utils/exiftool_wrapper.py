@@ -263,9 +263,7 @@ class ExifToolWrapper:
             )
 
             # Execute the command
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=10
-            )
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
 
             if result.returncode == 0:
                 logger.info(f"[ExifToolWrapper] Successfully wrote metadata to: {file_path}")

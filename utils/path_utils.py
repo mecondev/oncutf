@@ -205,9 +205,7 @@ def paths_equal(path1: str, path2: str) -> bool:
         return norm1 == norm2
 
 
-def find_file_by_path(
-    files: list, target_path: str, path_attr: str = "full_path"
-) -> object | None:
+def find_file_by_path(files: list, target_path: str, path_attr: str = "full_path") -> object | None:
     """
     Find a file object in a list by comparing paths with normalization.
 

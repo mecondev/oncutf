@@ -79,13 +79,12 @@ def test_hash_manager_with_progress_callback():
 
         # Verify we got progress updates
         if progress_updates:
-
             # Progress should be monotonic
             last_progress = 0
             for progress in progress_updates:
-                assert (
-                    progress >= last_progress
-                ), f"Progress went backwards: {progress} < {last_progress}"
+                assert progress >= last_progress, (
+                    f"Progress went backwards: {progress} < {last_progress}"
+                )
                 last_progress = progress
         else:
             pass
@@ -114,9 +113,9 @@ def test_cumulative_size_calculation():
             file_size = os.path.getsize(file_path)
             calculated_total += file_size
 
-        assert (
-            calculated_total == manual_total
-        ), f"Size calculation mismatch: {calculated_total} != {manual_total}"
+        assert calculated_total == manual_total, (
+            f"Size calculation mismatch: {calculated_total} != {manual_total}"
+        )
 
         # Test that each file can be hashed
         hash_manager = HashManager()
@@ -131,11 +130,10 @@ def test_cumulative_size_calculation():
             # Simulate the cumulative tracking logic from the fix
             cumulative_processed += file_size
 
-
         # Final cumulative should equal total
-        assert (
-            cumulative_processed == manual_total
-        ), f"Cumulative tracking failed: {cumulative_processed} != {manual_total}"
+        assert cumulative_processed == manual_total, (
+            f"Cumulative tracking failed: {cumulative_processed} != {manual_total}"
+        )
 
 
 if __name__ == "__main__":

@@ -180,7 +180,9 @@ class HoverItemDelegate(QStyledItemDelegate):
 
             text_rect = option.rect.adjusted(4, 0, -4, 0)  # Small horizontal padding
 
-            alignment = model.data(index, Qt.TextAlignmentRole) if model else Qt.AlignLeft | Qt.AlignVCenter  # type: ignore
+            alignment = (
+                model.data(index, Qt.TextAlignmentRole) if model else Qt.AlignLeft | Qt.AlignVCenter
+            )  # type: ignore
             if not alignment:
                 alignment = Qt.AlignLeft | Qt.AlignVCenter  # type: ignore
 

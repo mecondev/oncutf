@@ -305,7 +305,9 @@ class MainWindow(QMainWindow):
         """Load files from paths via Application Service."""
         self.app_service.load_files_from_paths(file_paths, clear=clear)
 
-    def load_files_from_dropped_items(self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:  # type: ignore
+    def load_files_from_dropped_items(
+        self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier
+    ) -> None:  # type: ignore
         """Load files from dropped items via Application Service."""
         self.app_service.load_files_from_dropped_items(paths, modifiers)
 
@@ -313,7 +315,9 @@ class MainWindow(QMainWindow):
         """Prepare folder load via Application Service."""
         return self.app_service.prepare_folder_load(folder_path, clear=clear)
 
-    def load_single_item_from_drop(self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:  # type: ignore
+    def load_single_item_from_drop(
+        self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier
+    ) -> None:  # type: ignore
         """Load single item from drop via Application Service."""
         self.app_service.load_single_item_from_drop(path, modifiers)
 
@@ -380,7 +384,9 @@ class MainWindow(QMainWindow):
         """Handle table context menu via Application Service."""
         self.app_service.handle_table_context_menu(position)
 
-    def handle_file_double_click(self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier) -> None:  # type: ignore
+    def handle_file_double_click(
+        self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier
+    ) -> None:  # type: ignore
         """Handle file double click via Application Service."""
         self.app_service.handle_file_double_click(index, modifiers)
 
@@ -727,7 +733,6 @@ class MainWindow(QMainWindow):
             and self.isVisible()
             and not self.isMinimized()
         ):
-
             # Get new window width
             new_width = self.width()
 
@@ -1491,7 +1496,9 @@ class MainWindow(QMainWindow):
             and self.event_handler_manager.hash_worker is not None
         ):
             try:
-                self.event_handler_manager.hash_worker.file_hash_calculated.connect(self.refresh_metadata_widgets)  # type: ignore
+                self.event_handler_manager.hash_worker.file_hash_calculated.connect(
+                    self.refresh_metadata_widgets
+                )  # type: ignore
                 logger.debug(
                     "[MainWindow] Successfully connected hash_worker.file_hash_calculated signal"
                 )

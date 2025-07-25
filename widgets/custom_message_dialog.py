@@ -17,7 +17,6 @@ and is used instead of standard QMessageBox to allow greater control over layout
 behavior, and styling.
 """
 
-
 from core.pyqt_imports import (
     QApplication,
     QCheckBox,

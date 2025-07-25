@@ -9,7 +9,6 @@ Utility functions for dialog and widget positioning and management.
 Provides centralized logic for common dialog operations like centering.
 """
 
-
 from core.pyqt_imports import QWidget
 
 

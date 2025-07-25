@@ -14,7 +14,6 @@ Features:
 - Operation status and file counts
 """
 
-
 from core.pyqt_imports import (
     QAbstractItemView,
     QDialog,

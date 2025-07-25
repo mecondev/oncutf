@@ -389,7 +389,7 @@ class FileValidationManager:
             return False
 
         # Check if user has remembered preference for this scenario
-        pref_key = f"{operation.value}_{file_count//100*100}_{int(total_size_mb//100*100)}"
+        pref_key = f"{operation.value}_{file_count // 100 * 100}_{int(total_size_mb // 100 * 100)}"
         if pref_key in self.user_preferences:
             pref = self.user_preferences[pref_key]
             if time.time() - pref["timestamp"] < pref.get("ttl", 3600):  # 1 hour default
@@ -410,7 +410,7 @@ class FileValidationManager:
         remember_duration: int = 3600,
     ):
         """Remember user's validation choice for similar scenarios."""
-        pref_key = f"{operation.value}_{file_count//100*100}_{int(total_size_mb//100*100)}"
+        pref_key = f"{operation.value}_{file_count // 100 * 100}_{int(total_size_mb // 100 * 100)}"
 
         self.user_preferences[pref_key] = {
             "should_warn": choice == "cancel",

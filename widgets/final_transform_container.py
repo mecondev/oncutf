@@ -9,7 +9,6 @@ Container widget for the final transformation controls.
 Uses a clean 3-column layout: Labels | Controls | Buttons
 """
 
-
 from config import ICON_SIZES
 from core.pyqt_imports import (
     QComboBox,
@@ -260,8 +259,9 @@ class FinalTransformContainer(QWidget):
             disabled_icon = QIcon(disabled_pixmap)
             self.remove_button.setIcon(disabled_icon)
 
-
         # Simple toggle with QLabel (no hover)
+
+
 class GreeklishToggle(QLabel):
     toggled = pyqtSignal(bool)
 

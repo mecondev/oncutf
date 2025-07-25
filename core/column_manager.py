@@ -170,9 +170,7 @@ class ColumnManager:
 
         # Preview tables auto-regulate and don't need column management
 
-    def configure_table_columns(
-        self, table_view: QTableView | QTreeView, table_type: str
-    ) -> None:
+    def configure_table_columns(self, table_view: QTableView | QTreeView, table_type: str) -> None:
         """
         Configure columns for a specific table view.
 
@@ -571,9 +569,7 @@ class ColumnManager:
         except Exception as e:
             logger.warning(f"[ColumnManager] Error updating horizontal scrollbar state: {e}")
 
-    def _connect_resize_signals(
-        self, table_view: QTableView | QTreeView, table_type: str
-    ) -> None:
+    def _connect_resize_signals(self, table_view: QTableView | QTreeView, table_type: str) -> None:
         """Connect resize signals for user preference tracking."""
         try:
             # Get header - QTableView has horizontalHeader(), QTreeView has header()

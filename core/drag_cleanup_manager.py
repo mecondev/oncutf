@@ -127,7 +127,12 @@ class DragCleanupManager:
         if current_cursor:
             cursor_shape = current_cursor.shape()
             # Common drag cursor shapes that might be stuck
-            drag_cursors = [Qt.DragMoveCursor, Qt.DragCopyCursor, Qt.DragLinkCursor, Qt.ClosedHandCursor]  # type: ignore
+            drag_cursors = [
+                Qt.DragMoveCursor,
+                Qt.DragCopyCursor,
+                Qt.DragLinkCursor,
+                Qt.ClosedHandCursor,
+            ]  # type: ignore
 
             if cursor_shape in drag_cursors:
                 self._handle_stuck_cursor()

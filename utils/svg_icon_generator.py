@@ -14,7 +14,6 @@ from utils.svg_icon_generator import generate_metadata_icons
 icon_map = generate_metadata_icons()
 """
 
-
 from config import METADATA_ICON_COLORS
 from core.pyqt_imports import QByteArray, QColor, QPainter, QPixmap, QSvgRenderer
 from utils.logger_factory import get_cached_logger

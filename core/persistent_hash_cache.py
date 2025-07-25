@@ -108,9 +108,7 @@ class PersistentHashCache:
         norm_path = self._normalize_path(file_path)
 
         # Remove from memory cache (all algorithms)
-        keys_to_remove = [
-            key for key in self._memory_cache if key.startswith(f"{norm_path}:")
-        ]
+        keys_to_remove = [key for key in self._memory_cache if key.startswith(f"{norm_path}:")]
         for key in keys_to_remove:
             self._memory_cache.pop(key, None)
 

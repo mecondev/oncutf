@@ -59,9 +59,15 @@ class MetadataModule:
     def apply_from_data(
         data: dict, file_item: FileItem, index: int = 0, metadata_cache: dict | None = None
     ) -> str:
-        logger.debug(f"[DEBUG] [MetadataModule] apply_from_data CALLED for {file_item.filename}", extra={"dev_only": True})
+        logger.debug(
+            f"[DEBUG] [MetadataModule] apply_from_data CALLED for {file_item.filename}",
+            extra={"dev_only": True},
+        )
         logger.debug(f"[DEBUG] [MetadataModule] data: {data}", extra={"dev_only": True})
-        logger.debug(f"[DEBUG] [MetadataModule] metadata_cache provided: {metadata_cache is not None}", extra={"dev_only": True})
+        logger.debug(
+            f"[DEBUG] [MetadataModule] metadata_cache provided: {metadata_cache is not None}",
+            extra={"dev_only": True},
+        )
 
         global _metadata_cache, _global_cache_timestamp
 
@@ -73,39 +79,60 @@ class MetadataModule:
             cache_key in _metadata_cache
             and current_time - _global_cache_timestamp < _cache_validity_duration
         ):
-            logger.debug(f"[DEBUG] [MetadataModule] Returning cached result for {file_item.filename}", extra={"dev_only": True})
+            logger.debug(
+                f"[DEBUG] [MetadataModule] Returning cached result for {file_item.filename}",
+                extra={"dev_only": True},
+            )
             return _metadata_cache[cache_key]
 
         field = data.get("field")
         logger.debug(f"[DEBUG] [MetadataModule] Field: {field}", extra={"dev_only": True})
         if not field:
-            logger.debug("[DEBUG] [MetadataModule] No field specified - returning 'invalid'", extra={"dev_only": True})
+            logger.debug(
+                "[DEBUG] [MetadataModule] No field specified - returning 'invalid'",
+                extra={"dev_only": True},
+            )
             return "invalid"
 
         path = file_item.full_path
         if not path:
-            logger.debug("[DEBUG] [MetadataModule] No path - returning 'invalid'", extra={"dev_only": True})
+            logger.debug(
+                "[DEBUG] [MetadataModule] No path - returning 'invalid'", extra={"dev_only": True}
+            )
             return "invalid"
 
         # Use the same persistent cache as the UI if no cache provided
         if not metadata_cache:
             from core.persistent_metadata_cache import get_persistent_metadata_cache
             from utils.path_normalizer import normalize_path
+
             persistent_cache = get_persistent_metadata_cache()
             normalized_path = normalize_path(path)
             metadata = persistent_cache.get(normalized_path) if persistent_cache else {}
-            logger.debug(f"[DEBUG] [MetadataModule] Using persistent cache for {file_item.filename}, normalized_path: {normalized_path}, metadata: {metadata}", extra={"dev_only": True})
+            logger.debug(
+                f"[DEBUG] [MetadataModule] Using persistent cache for {file_item.filename}, normalized_path: {normalized_path}, metadata: {metadata}",
+                extra={"dev_only": True},
+            )
         else:
             metadata = metadata_cache.get(path) if metadata_cache else {}
-            logger.debug(f"[DEBUG] [MetadataModule] Using provided cache for {file_item.filename}, path: {path}, metadata: {metadata}", extra={"dev_only": True})
+            logger.debug(
+                f"[DEBUG] [MetadataModule] Using provided cache for {file_item.filename}, path: {path}, metadata: {metadata}",
+                extra={"dev_only": True},
+            )
 
         if not isinstance(metadata, dict):
             metadata = {}  # fallback to empty
-            logger.debug("[DEBUG] [MetadataModule] Metadata is not dict, using empty dict", extra={"dev_only": True})
+            logger.debug(
+                "[DEBUG] [MetadataModule] Metadata is not dict, using empty dict",
+                extra={"dev_only": True},
+            )
 
         # Handle filesystem-based date formats
         if field and field.startswith("last_modified_"):
-            logger.debug(f"[DEBUG] [MetadataModule] Handling filesystem date format: {field}", extra={"dev_only": True})
+            logger.debug(
+                f"[DEBUG] [MetadataModule] Handling filesystem date format: {field}",
+                extra={"dev_only": True},
+            )
             try:
                 ts = os.path.getmtime(path)
                 dt = datetime.fromtimestamp(ts)
@@ -129,25 +156,40 @@ class MetadataModule:
                 # Cache the result
                 _metadata_cache[cache_key] = result
                 _global_cache_timestamp = current_time
-                logger.debug(f"[DEBUG] [MetadataModule] Filesystem date result: {result}", extra={"dev_only": True})
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Filesystem date result: {result}",
+                    extra={"dev_only": True},
+                )
                 return result
 
             except Exception as e:
-                logger.debug(f"[DEBUG] [MetadataModule] Error getting filesystem date: {e}", extra={"dev_only": True})
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Error getting filesystem date: {e}",
+                    extra={"dev_only": True},
+                )
                 return "invalid"
 
         # Legacy support for old "last_modified" field name
         if field == "last_modified":
-            logger.debug("[DEBUG] [MetadataModule] Handling legacy last_modified field", extra={"dev_only": True})
+            logger.debug(
+                "[DEBUG] [MetadataModule] Handling legacy last_modified field",
+                extra={"dev_only": True},
+            )
             try:
                 ts = os.path.getmtime(path)
                 result = datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
                 _metadata_cache[cache_key] = result
                 _global_cache_timestamp = current_time
-                logger.debug(f"[DEBUG] [MetadataModule] Legacy last_modified result: {result}", extra={"dev_only": True})
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Legacy last_modified result: {result}",
+                    extra={"dev_only": True},
+                )
                 return result
             except Exception as e:
-                logger.debug(f"[DEBUG] [MetadataModule] Error getting legacy last_modified: {e}", extra={"dev_only": True})
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Error getting legacy last_modified: {e}",
+                    extra={"dev_only": True},
+                )
                 return "invalid"
 
         # Handle category-based metadata access
@@ -155,7 +197,9 @@ class MetadataModule:
         logger.debug(f"[DEBUG] [MetadataModule] Category: {category}", extra={"dev_only": True})
 
         if category == "hash" and field:
-            logger.debug("[DEBUG] [MetadataModule] Handling hash category", extra={"dev_only": True})
+            logger.debug(
+                "[DEBUG] [MetadataModule] Handling hash category", extra={"dev_only": True}
+            )
             # Handle hash fields for the hash category
             if field.startswith("hash_"):
                 try:
@@ -163,22 +207,39 @@ class MetadataModule:
                     result = MetadataModule._get_file_hash(path, hash_type)
                     _metadata_cache[cache_key] = result
                     _global_cache_timestamp = current_time
-                    logger.debug(f"[DEBUG] [MetadataModule] Hash result: {result}", extra={"dev_only": True})
+                    logger.debug(
+                        f"[DEBUG] [MetadataModule] Hash result: {result}", extra={"dev_only": True}
+                    )
                     return result
                 except Exception as e:
-                    logger.debug(f"[DEBUG] [MetadataModule] Error getting hash: {e}", extra={"dev_only": True})
+                    logger.debug(
+                        f"[DEBUG] [MetadataModule] Error getting hash: {e}",
+                        extra={"dev_only": True},
+                    )
                     return "invalid"
             else:
-                logger.debug(f"[DEBUG] [MetadataModule] Invalid hash field: {field}", extra={"dev_only": True})
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Invalid hash field: {field}",
+                    extra={"dev_only": True},
+                )
                 return "invalid"
 
         if category == "metadata_keys" and field:
-            logger.debug(f"[DEBUG] [MetadataModule] Handling metadata_keys category for field: {field}", extra={"dev_only": True})
+            logger.debug(
+                f"[DEBUG] [MetadataModule] Handling metadata_keys category for field: {field}",
+                extra={"dev_only": True},
+            )
             # Access custom metadata key from file metadata
             value = metadata.get(field)
-            logger.debug(f"[DEBUG] [MetadataModule] Metadata value for field '{field}': {value}", extra={"dev_only": True})
+            logger.debug(
+                f"[DEBUG] [MetadataModule] Metadata value for field '{field}': {value}",
+                extra={"dev_only": True},
+            )
             if value is None:
-                logger.debug(f"[DEBUG] [MetadataModule] Field '{field}' not found in metadata, falling back to original name", extra={"dev_only": True})
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Field '{field}' not found in metadata, falling back to original name",
+                    extra={"dev_only": True},
+                )
                 # Fallback: return original name
                 from modules.original_name_module import OriginalNameModule
 
@@ -189,10 +250,16 @@ class MetadataModule:
                 cleaned_value = MetadataModule.clean_metadata_value(str(value).strip())
                 _metadata_cache[cache_key] = cleaned_value
                 _global_cache_timestamp = current_time
-                logger.debug(f"[DEBUG] [MetadataModule] Metadata result: {cleaned_value}", extra={"dev_only": True})
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Metadata result: {cleaned_value}",
+                    extra={"dev_only": True},
+                )
                 return cleaned_value
             except Exception as e:
-                logger.debug(f"[DEBUG] [MetadataModule] Error cleaning metadata value: {e}", extra={"dev_only": True})
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Error cleaning metadata value: {e}",
+                    extra={"dev_only": True},
+                )
                 return "invalid"
 
         # Handle legacy metadata-based fields for backwards compatibility
@@ -287,11 +354,13 @@ class MetadataModule:
             if hash_value:
                 return hash_value
             import os
+
             base_name = os.path.splitext(os.path.basename(file_path))[0]
             return base_name
         except Exception as e:
             logger.warning(f"[MetadataModule] Error getting hash for {file_path}: {e}")
             import os
+
             base_name = os.path.splitext(os.path.basename(file_path))[0]
             return base_name
 

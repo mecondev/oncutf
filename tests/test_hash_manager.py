@@ -8,6 +8,7 @@ Date: 2025-05-31
 test_hash_manager.py
 Test module for hash calculation functionality.
 """
+
 import warnings
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
@@ -417,7 +418,7 @@ class TestPerformance:
                     if not chunk:
                         break
                     crc32_hash = zlib.crc32(chunk, crc32_hash)
-                result = f"{crc32_hash & 0xffffffff:08x}"
+                result = f"{crc32_hash & 0xFFFFFFFF:08x}"
 
             end_time = time.perf_counter()
 
@@ -431,7 +432,6 @@ class TestPerformance:
 
             # Performance should be reasonable (at least 50 MB/s for pure CRC32 calculation)
             assert throughput > 50, f"Performance too slow: {throughput:.1f} MB/s"
-
 
         finally:
             Path(temp_path).unlink()
@@ -466,16 +466,15 @@ class TestPerformance:
 
             # Verify progress values make sense
             assert progress_calls[0] > 0, "First progress call should be > 0"
-            assert progress_calls[-1] == len(
-                test_data
-            ), f"Final progress should equal file size: {progress_calls[-1]} vs {len(test_data)}"
+            assert progress_calls[-1] == len(test_data), (
+                f"Final progress should equal file size: {progress_calls[-1]} vs {len(test_data)}"
+            )
 
             # Verify progress is monotonically increasing
             for i in range(1, len(progress_calls)):
-                assert (
-                    progress_calls[i] >= progress_calls[i - 1]
-                ), "Progress should be monotonically increasing"
-
+                assert progress_calls[i] >= progress_calls[i - 1], (
+                    "Progress should be monotonically increasing"
+                )
 
         finally:
             Path(temp_path).unlink()

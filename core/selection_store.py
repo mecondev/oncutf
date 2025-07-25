@@ -300,7 +300,7 @@ class SelectionStore(QObject):
     # Synchronization Operations
     # =====================================
 
-            # (The sync_selection_to_checked and sync_checked_to_selection methods were removed as legacy)
+    # (The sync_selection_to_checked and sync_checked_to_selection methods were removed as legacy)
 
     # =====================================
     # Batch Operations

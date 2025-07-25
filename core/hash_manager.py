@@ -153,7 +153,7 @@ class HashManager:
                         progress_callback(bytes_processed)
 
             # Convert to unsigned 32-bit and format as hex
-            hash_result = f"{crc & 0xffffffff:08x}"
+            hash_result = f"{crc & 0xFFFFFFFF:08x}"
 
             # Cache the result (persistent or memory)
             if self._use_persistent_cache:
@@ -393,9 +393,7 @@ def calculate_crc32(file_path: str | Path) -> str | None:
     return manager.calculate_hash(file_path)
 
 
-def compare_folders(
-    folder1: str | Path, folder2: str | Path
-) -> dict[str, tuple[bool, str, str]]:
+def compare_folders(folder1: str | Path, folder2: str | Path) -> dict[str, tuple[bool, str, str]]:
     """
     Compare two folders and return file comparison results (convenience function).
 

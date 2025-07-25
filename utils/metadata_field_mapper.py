@@ -378,9 +378,9 @@ class MetadataFieldMapper:
             try:
                 bitrate = int(float(value))
                 if bitrate >= 1000000:
-                    return f"{bitrate//1000000} Mbps"
+                    return f"{bitrate // 1000000} Mbps"
                 elif bitrate >= 1000:
-                    return f"{bitrate//1000} kbps"
+                    return f"{bitrate // 1000} kbps"
                 else:
                     return f"{bitrate} bps"
             except ValueError:

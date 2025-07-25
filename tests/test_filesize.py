@@ -107,7 +107,6 @@ class TestFileSizeComparison(unittest.TestCase):
                 # System commands
                 sys_sizes = self.get_system_file_sizes(str(file_path))
 
-
                 # Check for discrepancies
                 if isinstance(sys_sizes.get("stat"), int) and app_size != sys_sizes["stat"]:
                     pass
@@ -115,7 +114,6 @@ class TestFileSizeComparison(unittest.TestCase):
 
 def run_manual_test():
     """Run the test as a standalone script for manual verification."""
-
 
     test_files = ["config.py", "main.py", "requirements.txt"]
 
@@ -131,11 +129,9 @@ def run_manual_test():
             tester = TestFileSizeComparison()
             sys_sizes = tester.get_system_file_sizes(str(file_path))
 
-
             # Check for discrepancies
             if isinstance(sys_sizes.get("stat"), int) and app_size != sys_sizes["stat"]:
                 pass
-
 
 
 if __name__ == "__main__":

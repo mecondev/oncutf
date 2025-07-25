@@ -7,7 +7,6 @@ Date: 2025-01-27
 Performance Widget for displaying UnifiedRenameEngine performance metrics.
 """
 
-
 from core.pyqt_imports import (
     QFrame,
     QHBoxLayout,
@@ -136,8 +135,10 @@ class PerformanceWidget(QWidget):
 
             # Update overall stats
             self.total_ops_label.setText(f"Total Operations: {stats['total_operations']}")
-            self.avg_duration_label.setText(f"Avg Duration: {stats['average_duration']*1000:.1f}ms")
-            self.success_rate_label.setText(f"Success Rate: {stats['success_rate']*100:.1f}%")
+            self.avg_duration_label.setText(
+                f"Avg Duration: {stats['average_duration'] * 1000:.1f}ms"
+            )
+            self.success_rate_label.setText(f"Success Rate: {stats['success_rate'] * 100:.1f}%")
             self.avg_files_label.setText(
                 f"Avg Files/Op: {stats['average_files_per_operation']:.1f}"
             )

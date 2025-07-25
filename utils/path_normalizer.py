@@ -44,7 +44,10 @@ def normalize_path(file_path: str | Path) -> str:
 
         # For debugging: log the normalization
         if file_path != normalized:
-            logger.debug(f"[DEBUG] Path normalized: '{file_path}' -> '{normalized}'", extra={"dev_only": True})
+            logger.debug(
+                f"[DEBUG] Path normalized: '{file_path}' -> '{normalized}'",
+                extra={"dev_only": True},
+            )
 
         return normalized
     except Exception as e:
@@ -53,4 +56,5 @@ def normalize_path(file_path: str | Path) -> str:
 
         # Simple normalization as fallback
         import os
+
         return os.path.normpath(str(file_path))

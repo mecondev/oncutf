@@ -43,28 +43,42 @@ class ComboBoxItemDelegate(QStyledItemDelegate):
         super().initStyleOption(option, index)
 
         # Use font from theme for absolute consistency
-        option.font.setFamily(self.theme.fonts['base_family'])
-        option.font.setPointSize(int(self.theme.fonts['interface_size'].replace('pt', '')))
+        option.font.setFamily(self.theme.fonts["base_family"])
+        option.font.setPointSize(int(self.theme.fonts["interface_size"].replace("pt", "")))
         # Height same as QComboBox fixedHeight (24px to match new height)
         option.rect.setHeight(24)
 
         # Handle disabled item (grayout)
         if not (index.flags() & Qt.ItemIsEnabled):
-            option.palette.setBrush(QPalette.Text, QBrush(QColor(self.theme.get_color("disabled_text"))))
+            option.palette.setBrush(
+                QPalette.Text, QBrush(QColor(self.theme.get_color("disabled_text")))
+            )
             option.font.setItalic(True)
             # Disabled items should not have hover/selected background
             option.palette.setBrush(QPalette.Highlight, QBrush(QColor("transparent")))
         else:
             # Handle selected/hover colors for enabled items
             if option.state & QStyle.State_Selected:
-                option.palette.setBrush(QPalette.Text, QBrush(QColor(self.theme.get_color("input_selection_text"))))
-                option.palette.setBrush(QPalette.Highlight, QBrush(QColor(self.theme.get_color("combo_item_background_selected"))))
+                option.palette.setBrush(
+                    QPalette.Text, QBrush(QColor(self.theme.get_color("input_selection_text")))
+                )
+                option.palette.setBrush(
+                    QPalette.Highlight,
+                    QBrush(QColor(self.theme.get_color("combo_item_background_selected"))),
+                )
             elif option.state & QStyle.State_MouseOver:
-                option.palette.setBrush(QPalette.Text, QBrush(QColor(self.theme.get_color("combo_text"))))
-                option.palette.setBrush(QPalette.Highlight, QBrush(QColor(self.theme.get_color("combo_item_background_hover"))))
+                option.palette.setBrush(
+                    QPalette.Text, QBrush(QColor(self.theme.get_color("combo_text")))
+                )
+                option.palette.setBrush(
+                    QPalette.Highlight,
+                    QBrush(QColor(self.theme.get_color("combo_item_background_hover"))),
+                )
             else:
                 # Normal state
-                option.palette.setBrush(QPalette.Text, QBrush(QColor(self.theme.get_color("combo_text"))))
+                option.palette.setBrush(
+                    QPalette.Text, QBrush(QColor(self.theme.get_color("combo_text")))
+                )
                 option.palette.setBrush(QPalette.Highlight, QBrush(QColor("transparent")))
 
 
@@ -77,9 +91,7 @@ class MetadataWidget(QWidget):
 
     updated = pyqtSignal(object)
 
-    def __init__(
-        self, parent: QWidget | None = None, parent_window: QWidget | None = None
-    ) -> None:
+    def __init__(self, parent: QWidget | None = None, parent_window: QWidget | None = None) -> None:
         super().__init__(parent)
         self.parent_window = parent_window
         self._last_data = None
@@ -189,31 +201,10 @@ class MetadataWidget(QWidget):
             # Force UI update
             self.options_combo.repaint()
 
-            # Schedule a delayed update to ensure the combo box displays correctly
-            try:
-                from utils.timer_manager import schedule_ui_update
-                schedule_ui_update(self._force_combo_update, 100)
-            except Exception:
-                # Fallback for testing or when timer manager is not available
-                self._force_combo_update()
-
             logger.debug(f"Category change completed for: {current_data}")
 
         except Exception as e:
             logger.error(f"Error in _on_category_changed: {e}")
-
-    def _force_combo_update(self):
-        """Force update the combo box display."""
-        try:
-            if hasattr(self.options_combo, 'get_current_text'):
-                current_text = self.options_combo.get_current_text()
-                if current_text:
-                    # Force the combo box to display the current text
-                    self.options_combo.setCurrentText(current_text)
-                    self.options_combo.repaint()
-                    logger.debug(f"Force updated combo box with text: {current_text}")
-        except Exception as e:
-            logger.warning(f"Error in _force_combo_update: {e}")
 
     def update_options(self) -> None:
         category = self.category_combo.currentData()
@@ -242,18 +233,19 @@ class MetadataWidget(QWidget):
                 self._apply_normal_combo_styling()
 
         # Set to first option by default (if exists)
-        if hasattr(self.options_combo, 'get_current_data'):
+        if hasattr(self.options_combo, "get_current_data"):
             # For hierarchical combo box, we don't need to set index
             # The first item will be automatically selected
             current_data = self.options_combo.get_current_data()
             logger.debug(f"Hierarchical combo current data: {current_data}")
         elif self.options_combo.count() > 0:
             self.options_combo.setCurrentIndex(0)
-            logger.debug(f"Regular combo set to index 0")
+            logger.debug("Regular combo set to index 0")
 
         # Use timer to ensure currentData is updated before emitting
         try:
             from utils.timer_manager import schedule_ui_update
+
             schedule_ui_update(self.emit_if_changed, 10)
         except Exception:
             # Fallback for testing or when timer manager is not available
@@ -277,13 +269,6 @@ class MetadataWidget(QWidget):
         # Populate the hierarchical combo box
         self.options_combo.populate_from_metadata_groups(hierarchical_data)
         logger.debug("Used hierarchical combo populate_from_metadata_groups for file dates")
-
-        # Force update the display after populate
-        try:
-            from utils.timer_manager import schedule_ui_update
-            schedule_ui_update(self._force_combo_update, 50)
-        except Exception:
-            self._force_combo_update()
 
     def populate_hash_options(self) -> bool:
         """Populate hash options with efficient batch hash checking."""
@@ -330,7 +315,9 @@ class MetadataWidget(QWidget):
                 ]
             }
 
-            logger.debug(f"Populating hash options: {len(files_with_hash)}/{len(file_paths)} files have hash")
+            logger.debug(
+                f"Populating hash options: {len(files_with_hash)}/{len(file_paths)} files have hash"
+            )
 
             self.options_combo.populate_from_metadata_groups(hierarchical_data)
 
@@ -338,13 +325,6 @@ class MetadataWidget(QWidget):
             self.options_combo.setEnabled(False)
             # Apply disabled styling to show text in gray
             self._apply_disabled_combo_styling()
-
-            # Force update the display after populate
-            try:
-                from utils.timer_manager import schedule_ui_update
-                schedule_ui_update(self._force_combo_update, 50)
-            except Exception:
-                self._force_combo_update()
 
             if files_needing_hash:
                 # Some files need hash calculation
@@ -490,13 +470,6 @@ class MetadataWidget(QWidget):
         # Apply normal styling
         self._apply_normal_combo_styling()
 
-        # Force update the display after populate
-        try:
-            from utils.timer_manager import schedule_ui_update
-            schedule_ui_update(self._force_combo_update, 50)
-        except Exception:
-            self._force_combo_update()
-
         logger.debug(f"Populated metadata keys with {len(hierarchical_data)} categories")
 
     def _group_metadata_keys(self, keys: set[str]) -> dict[str, list[str]]:
@@ -518,7 +491,7 @@ class MetadataWidget(QWidget):
             "Audio Info",
             "GPS & Location",
             "Technical Info",
-            "Other"
+            "Other",
         ]
 
         # Return ordered dictionary
@@ -538,39 +511,77 @@ class MetadataWidget(QWidget):
             return "File Info"
 
         # Camera Settings - Critical for photography/videography
-        if any(term in key_lower for term in [
-            "iso", "aperture", "fnumber", "shutter", "exposure", "focal",
-            "flash", "metering", "whitebalance", "gain", "lightvalue"
-        ]):
+        if any(
+            term in key_lower
+            for term in [
+                "iso",
+                "aperture",
+                "fnumber",
+                "shutter",
+                "exposure",
+                "focal",
+                "flash",
+                "metering",
+                "whitebalance",
+                "gain",
+                "lightvalue",
+            ]
+        ):
             return "Camera Settings"
 
         # GPS and Location
-        if any(term in key_lower for term in ["gps", "location", "latitude", "longitude", "altitude"]):
+        if any(
+            term in key_lower for term in ["gps", "location", "latitude", "longitude", "altitude"]
+        ):
             return "GPS & Location"
 
         # Audio-related metadata
         if key_lower.startswith("audio") or key_lower in {
-            "samplerate", "channelmode", "bitrate", "title", "album",
-            "artist", "composer", "genre", "duration"
+            "samplerate",
+            "channelmode",
+            "bitrate",
+            "title",
+            "album",
+            "artist",
+            "composer",
+            "genre",
+            "duration",
         }:
             return "Audio Info"
 
         # Image-specific metadata
-        if (key_lower.startswith("image") or "sensor" in key_lower or
-            any(term in key_lower for term in ["width", "height", "resolution", "dpi", "colorspace"])):
+        if (
+            key_lower.startswith("image")
+            or "sensor" in key_lower
+            or any(
+                term in key_lower for term in ["width", "height", "resolution", "dpi", "colorspace"]
+            )
+        ):
             return "Image Info"
 
         # Video-specific metadata
-        if any(term in key_lower for term in [
-            "video", "frame", "codec", "bitrate", "fps", "duration",
-            "format", "avgbitrate", "maxbitrate", "videocodec"
-        ]):
+        if any(
+            term in key_lower
+            for term in [
+                "video",
+                "frame",
+                "codec",
+                "bitrate",
+                "fps",
+                "duration",
+                "format",
+                "avgbitrate",
+                "maxbitrate",
+                "videocodec",
+            ]
+        ):
             return "Video Info"
 
         # Technical/System
-        if any(term in key_lower for term in [
-            "version", "software", "firmware", "make", "model", "serial", "uuid", "id"
-        ]):
+        if any(
+            term in key_lower
+            for term in ["version", "software", "firmware", "make", "model", "serial", "uuid", "id"]
+        ):
             return "Technical Info"
 
         return "Other"
@@ -588,14 +599,17 @@ class MetadataWidget(QWidget):
     def _get_metadata_cache_via_context(self):
         try:
             from core.application_context import get_app_context
+
             context = get_app_context()
-            if context and hasattr(context, '_metadata_cache'):
+            if context and hasattr(context, "_metadata_cache"):
                 cache = context._metadata_cache
                 return cache
             else:
                 return None
         except Exception as e:
-            logger.debug(f"[MetadataWidget] Error getting metadata cache: {e}", extra={"dev_only": True})
+            logger.debug(
+                f"[MetadataWidget] Error getting metadata cache: {e}", extra={"dev_only": True}
+            )
             return None
 
     def get_available_metadata_keys(self) -> set[str]:
@@ -603,6 +617,7 @@ class MetadataWidget(QWidget):
 
         # Use the same persistent cache as batch_metadata_status
         from core.persistent_metadata_cache import get_persistent_metadata_cache
+
         metadata_cache = get_persistent_metadata_cache()
 
         if not metadata_cache:
@@ -612,6 +627,7 @@ class MetadataWidget(QWidget):
         for file_item in selected_files:
             # Use the same path normalization as batch_metadata_status
             from utils.path_normalizer import normalize_path
+
             normalized_path = normalize_path(file_item.full_path)
             meta = metadata_cache.get(normalized_path)
             if meta and isinstance(meta, dict):
@@ -648,38 +664,117 @@ class MetadataWidget(QWidget):
 
         # Common replacements for better readability
         replacements = {
-            "Exif": "EXIF", "Gps": "GPS", "Iso": "ISO", "Rgb": "RGB", "Dpi": "DPI",
-            "Device": "Device", "Model": "Model", "Make": "Make", "Serial": "Serial",
-            "Number": "Number", "Date": "Date", "Time": "Time", "Width": "Width",
-            "Height": "Height", "Size": "Size", "Format": "Format", "Codec": "Codec",
-            "Frame": "Frame", "Rate": "Rate", "Bit": "Bit", "Audio": "Audio",
-            "Video": "Video", "Image": "Image", "Camera": "Camera", "Lens": "Lens",
-            "Focal": "Focal", "Length": "Length", "Aperture": "Aperture", "Shutter": "Shutter",
-            "Exposure": "Exposure", "White": "White", "Balance": "Balance",
-            "Flash": "Flash", "Metering": "Metering", "Mode": "Mode", "Program": "Program",
-            "Sensitivity": "Sensitivity", "Compression": "Compression", "Quality": "Quality",
-            "Resolution": "Resolution", "Pixel": "Pixel", "Dimension": "Dimension",
-            "Orientation": "Orientation", "Rotation": "Rotation", "Duration": "Duration",
-            "Track": "Track", "Channel": "Channel", "Sample": "Sample", "Frequency": "Frequency",
-            "Bitrate": "Bitrate", "Brand": "Brand", "Type": "Type",
-            "Version": "Version", "Software": "Software", "Hardware": "Hardware",
-            "Manufacturer": "Manufacturer", "Creator": "Creator", "Artist": "Artist",
-            "Author": "Author", "Copyright": "Copyright", "Rights": "Rights",
-            "Description": "Description", "Comment": "Comment", "Keyword": "Keyword",
-            "Tag": "Tag", "Label": "Label", "Category": "Category", "Genre": "Genre",
-            "Subject": "Subject", "Title": "Title", "Headline": "Headline",
-            "Caption": "Caption", "Abstract": "Abstract", "Location": "Location",
-            "Place": "Place", "Country": "Country", "City": "City", "State": "State",
-            "Province": "Province", "Address": "Address", "Street": "Street",
-            "Coordinate": "Coordinate", "Latitude": "Latitude", "Longitude": "Longitude",
-            "Altitude": "Altitude", "Direction": "Direction", "Bearing": "Bearing",
-            "Distance": "Distance", "Area": "Area", "Volume": "Volume",
-            "Weight": "Weight", "Mass": "Mass", "Temperature": "Temperature",
-            "Pressure": "Pressure", "Humidity": "Humidity", "Weather": "Weather",
-            "Light": "Light", "Color": "Color", "Tone": "Tone", "Saturation": "Saturation",
-            "Brightness": "Brightness", "Contrast": "Contrast", "Sharpness": "Sharpness",
-            "Noise": "Noise", "Grain": "Grain", "Filter": "Filter", "Effect": "Effect",
-            "Style": "Style", "Theme": "Theme", "Mood": "Mood", "Atmosphere": "Atmosphere"
+            "Exif": "EXIF",
+            "Gps": "GPS",
+            "Iso": "ISO",
+            "Rgb": "RGB",
+            "Dpi": "DPI",
+            "Device": "Device",
+            "Model": "Model",
+            "Make": "Make",
+            "Serial": "Serial",
+            "Number": "Number",
+            "Date": "Date",
+            "Time": "Time",
+            "Width": "Width",
+            "Height": "Height",
+            "Size": "Size",
+            "Format": "Format",
+            "Codec": "Codec",
+            "Frame": "Frame",
+            "Rate": "Rate",
+            "Bit": "Bit",
+            "Audio": "Audio",
+            "Video": "Video",
+            "Image": "Image",
+            "Camera": "Camera",
+            "Lens": "Lens",
+            "Focal": "Focal",
+            "Length": "Length",
+            "Aperture": "Aperture",
+            "Shutter": "Shutter",
+            "Exposure": "Exposure",
+            "White": "White",
+            "Balance": "Balance",
+            "Flash": "Flash",
+            "Metering": "Metering",
+            "Mode": "Mode",
+            "Program": "Program",
+            "Sensitivity": "Sensitivity",
+            "Compression": "Compression",
+            "Quality": "Quality",
+            "Resolution": "Resolution",
+            "Pixel": "Pixel",
+            "Dimension": "Dimension",
+            "Orientation": "Orientation",
+            "Rotation": "Rotation",
+            "Duration": "Duration",
+            "Track": "Track",
+            "Channel": "Channel",
+            "Sample": "Sample",
+            "Frequency": "Frequency",
+            "Bitrate": "Bitrate",
+            "Brand": "Brand",
+            "Type": "Type",
+            "Version": "Version",
+            "Software": "Software",
+            "Hardware": "Hardware",
+            "Manufacturer": "Manufacturer",
+            "Creator": "Creator",
+            "Artist": "Artist",
+            "Author": "Author",
+            "Copyright": "Copyright",
+            "Rights": "Rights",
+            "Description": "Description",
+            "Comment": "Comment",
+            "Keyword": "Keyword",
+            "Tag": "Tag",
+            "Label": "Label",
+            "Category": "Category",
+            "Genre": "Genre",
+            "Subject": "Subject",
+            "Title": "Title",
+            "Headline": "Headline",
+            "Caption": "Caption",
+            "Abstract": "Abstract",
+            "Location": "Location",
+            "Place": "Place",
+            "Country": "Country",
+            "City": "City",
+            "State": "State",
+            "Province": "Province",
+            "Address": "Address",
+            "Street": "Street",
+            "Coordinate": "Coordinate",
+            "Latitude": "Latitude",
+            "Longitude": "Longitude",
+            "Altitude": "Altitude",
+            "Direction": "Direction",
+            "Bearing": "Bearing",
+            "Distance": "Distance",
+            "Area": "Area",
+            "Volume": "Volume",
+            "Weight": "Weight",
+            "Mass": "Mass",
+            "Temperature": "Temperature",
+            "Pressure": "Pressure",
+            "Humidity": "Humidity",
+            "Weather": "Weather",
+            "Light": "Light",
+            "Color": "Color",
+            "Tone": "Tone",
+            "Saturation": "Saturation",
+            "Brightness": "Brightness",
+            "Contrast": "Contrast",
+            "Sharpness": "Sharpness",
+            "Noise": "Noise",
+            "Grain": "Grain",
+            "Filter": "Filter",
+            "Effect": "Effect",
+            "Style": "Style",
+            "Theme": "Theme",
+            "Mood": "Mood",
+            "Atmosphere": "Atmosphere",
         }
 
         for old, new in replacements.items():
@@ -690,8 +785,9 @@ class MetadataWidget(QWidget):
     def _format_camel_case(self, text: str) -> str:
         """Format camelCase text by adding spaces before capitals."""
         import re
+
         # Add space before capital letters, but not at the beginning
-        formatted = re.sub(r'(?<!^)(?=[A-Z])', ' ', text)
+        formatted = re.sub(r"(?<!^)(?=[A-Z])", " ", text)
         return formatted.title()
 
     def get_data(self) -> dict:
@@ -699,7 +795,7 @@ class MetadataWidget(QWidget):
         category = self.category_combo.currentData() or "file_dates"
 
         # Use the hierarchical combo box API
-        if hasattr(self.options_combo, 'get_current_data'):
+        if hasattr(self.options_combo, "get_current_data"):
             field = self.options_combo.get_current_data()
             logger.debug(f"get_data: Using hierarchical combo, field: {field}")
         else:
@@ -731,12 +827,18 @@ class MetadataWidget(QWidget):
             available_keys = self.get_available_metadata_keys()
             if available_keys:
                 field = sorted(available_keys)[0]
-                logger.debug(f"[MetadataWidget] No field selected, using first available key: {field}", extra={"dev_only": True})
+                logger.debug(
+                    f"[MetadataWidget] No field selected, using first available key: {field}",
+                    extra={"dev_only": True},
+                )
             else:
                 # If no metadata keys available, fallback to file dates
                 category = "file_dates"
                 field = "last_modified_yymmdd"
-                logger.debug("[MetadataWidget] No metadata keys available, falling back to file dates", extra={"dev_only": True})
+                logger.debug(
+                    "[MetadataWidget] No metadata keys available, falling back to file dates",
+                    extra={"dev_only": True},
+                )
 
         result = {
             "type": "metadata",
@@ -749,7 +851,7 @@ class MetadataWidget(QWidget):
 
     def emit_if_changed(self) -> None:
         # Log current combo box state
-        if hasattr(self.options_combo, 'get_current_data'):
+        if hasattr(self.options_combo, "get_current_data"):
             current_text = self.options_combo.get_current_text()
             current_data = self.options_combo.get_current_data()
             current_index = -1  # Not applicable for hierarchical combo
@@ -757,7 +859,10 @@ class MetadataWidget(QWidget):
             current_index = self.options_combo.currentIndex()
             current_text = self.options_combo.currentText()
             current_data = self.options_combo.currentData()
-        logger.debug(f"[MetadataWidget] Current combo state - index: {current_index}, text: '{current_text}', data: {current_data}", extra={"dev_only": True})
+        logger.debug(
+            f"[MetadataWidget] Current combo state - index: {current_index}, text: '{current_text}', data: {current_data}",
+            extra={"dev_only": True},
+        )
 
         new_data = self.get_data()
 
@@ -771,7 +876,10 @@ class MetadataWidget(QWidget):
             current_category = self.category_combo.currentData()
             if hasattr(self, "_last_category") and self._last_category != current_category:
                 self._last_category = current_category
-                logger.debug(f"[MetadataWidget] Category changed to {current_category}, forcing preview update", extra={"dev_only": True})
+                logger.debug(
+                    f"[MetadataWidget] Category changed to {current_category}, forcing preview update",
+                    extra={"dev_only": True},
+                )
                 self.updated.emit(self)
             elif not hasattr(self, "_last_category"):
                 self._last_category = current_category
@@ -782,7 +890,8 @@ class MetadataWidget(QWidget):
         self.emit_if_changed()
         self.updated.emit(self)
         logger.debug(
-            "[MetadataWidget] Forced preview update with options refresh and emit_if_changed", extra={"dev_only": True}
+            "[MetadataWidget] Forced preview update with options refresh and emit_if_changed",
+            extra={"dev_only": True},
         )
 
     def clear_cache(self) -> None:
@@ -880,7 +989,10 @@ class MetadataWidget(QWidget):
                 self.options_combo.setEnabled(False)
                 self._apply_disabled_combo_styling()
 
-            logger.debug("[MetadataWidget] No files selected - disabled Hash and EXIF options", extra={"dev_only": True})
+            logger.debug(
+                "[MetadataWidget] No files selected - disabled Hash and EXIF options",
+                extra={"dev_only": True},
+            )
         else:
             # Check if files have hash data
             has_hash_data = self._check_files_have_hash(selected_files)
@@ -974,13 +1086,17 @@ class MetadataWidget(QWidget):
     def _check_calculation_requirements(self, category: str):
         """Check if calculation dialog is needed for the selected category."""
         if self._hash_dialog_active:
-            logger.debug("[MetadataWidget] Dialog already active, skipping check", extra={"dev_only": True})
+            logger.debug(
+                "[MetadataWidget] Dialog already active, skipping check", extra={"dev_only": True}
+            )
             return
 
         try:
             selected_files = self._get_selected_files()
             if not selected_files:
-                logger.debug("[MetadataWidget] No files selected, no dialog needed", extra={"dev_only": True})
+                logger.debug(
+                    "[MetadataWidget] No files selected, no dialog needed", extra={"dev_only": True}
+                )
                 return
 
             if category == "hash":
@@ -1003,12 +1119,16 @@ class MetadataWidget(QWidget):
 
         if files_needing_hash:
             logger.debug(
-                f"[MetadataWidget] {len(files_needing_hash)} files need hash calculation - showing dialog", extra={"dev_only": True}
+                f"[MetadataWidget] {len(files_needing_hash)} files need hash calculation - showing dialog",
+                extra={"dev_only": True},
             )
             self._hash_dialog_active = True
             self._show_calculation_dialog(files_needing_hash, "hash")
         else:
-            logger.debug("[MetadataWidget] All files have hashes - no dialog needed", extra={"dev_only": True})
+            logger.debug(
+                "[MetadataWidget] All files have hashes - no dialog needed",
+                extra={"dev_only": True},
+            )
 
     def _check_metadata_calculation_requirements(self, selected_files):
         file_paths = [file_item.full_path for file_item in selected_files]
@@ -1016,12 +1136,22 @@ class MetadataWidget(QWidget):
         files_with_metadata = [p for p, has in batch_status.items() if has]
         total_files = len(selected_files)
         if len(files_with_metadata) < total_files:
-            files_needing_metadata = [file_item.full_path for file_item in selected_files if not batch_status.get(file_item.full_path, False)]
-            logger.debug(f"[MetadataWidget] {len(files_needing_metadata)} files need metadata - showing dialog", extra={"dev_only": True})
+            files_needing_metadata = [
+                file_item.full_path
+                for file_item in selected_files
+                if not batch_status.get(file_item.full_path, False)
+            ]
+            logger.debug(
+                f"[MetadataWidget] {len(files_needing_metadata)} files need metadata - showing dialog",
+                extra={"dev_only": True},
+            )
             self._hash_dialog_active = True
             self._show_calculation_dialog(files_needing_metadata, "metadata")
         else:
-            logger.debug("[MetadataWidget] All files have metadata - no dialog needed", extra={"dev_only": True})
+            logger.debug(
+                "[MetadataWidget] All files have metadata - no dialog needed",
+                extra={"dev_only": True},
+            )
 
     def _show_calculation_dialog(self, files_needing_calculation, calculation_type: str):
         try:
@@ -1040,7 +1170,8 @@ class MetadataWidget(QWidget):
                 yes_text = "Load Metadata"
 
             logger.debug(
-                f"[MetadataWidget] Showing {calculation_type} calculation dialog", extra={"dev_only": True}
+                f"[MetadataWidget] Showing {calculation_type} calculation dialog",
+                extra={"dev_only": True},
             )
 
             # Show dialog
@@ -1050,14 +1181,20 @@ class MetadataWidget(QWidget):
 
             if result:
                 # User chose to calculate
-                logger.debug(f"[MetadataWidget] User chose to calculate {calculation_type}", extra={"dev_only": True})
+                logger.debug(
+                    f"[MetadataWidget] User chose to calculate {calculation_type}",
+                    extra={"dev_only": True},
+                )
                 if calculation_type == "hash":
                     self._calculate_hashes_for_files(files_needing_calculation)
                 else:
                     self._load_metadata_for_files(files_needing_calculation)
             else:
                 # User cancelled - combo remains enabled but shows original names
-                logger.debug(f"[MetadataWidget] User cancelled {calculation_type} calculation", extra={"dev_only": True})
+                logger.debug(
+                    f"[MetadataWidget] User cancelled {calculation_type} calculation",
+                    extra={"dev_only": True},
+                )
                 # Don't disable combo - let it show original names for files without hash/metadata
 
         except Exception as e:
@@ -1106,7 +1243,8 @@ class MetadataWidget(QWidget):
                 )  # Small delay to ensure metadata loading completes
                 self._hash_dialog_active = False
                 logger.debug(
-                    "[MetadataWidget] Metadata loading completed, preview update scheduled", extra={"dev_only": True}
+                    "[MetadataWidget] Metadata loading completed, preview update scheduled",
+                    extra={"dev_only": True},
                 )
             else:
                 logger.error("[MetadataWidget] Could not find main window for metadata loading")
@@ -1126,20 +1264,20 @@ class MetadataWidget(QWidget):
             # Apply simplified styling - dropdown styling handled by delegate
             disabled_css = f"""
                 QComboBox {{
-                    color: {theme.get_color('disabled_text')} !important;
-                    background-color: {theme.get_color('combo_background')};
-                    border: 1px solid {theme.get_color('combo_border')};
+                    color: {theme.get_color("disabled_text")} !important;
+                    background-color: {theme.get_color("combo_background")};
+                    border: 1px solid {theme.get_color("combo_border")};
                     border-radius: 4px;
                     padding: 2px 6px;
-                    font-family: "{theme.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
-                    font-size: {theme.fonts['interface_size']};
+                    font-family: "{theme.fonts["base_family"]}", "Segoe UI", Arial, sans-serif;
+                    font-size: {theme.fonts["interface_size"]};
                     min-height: 18px;
                 }}
 
                 QComboBox:disabled {{
-                    color: {theme.get_color('disabled_text')} !important;
-                    background-color: {theme.get_color('combo_background')};
-                    border: 1px solid {theme.get_color('combo_border')};
+                    color: {theme.get_color("disabled_text")} !important;
+                    background-color: {theme.get_color("combo_background")};
+                    border: 1px solid {theme.get_color("combo_border")};
                 }}
 
                 QComboBox::drop-down {{
@@ -1157,7 +1295,9 @@ class MetadataWidget(QWidget):
 
             self.options_combo.setStyleSheet(disabled_css)
             self.options_combo.view().setStyleSheet(disabled_css)
-            logger.debug("[MetadataWidget] Applied disabled styling to hash combo", extra={"dev_only": True})
+            logger.debug(
+                "[MetadataWidget] Applied disabled styling to hash combo", extra={"dev_only": True}
+            )
 
         except Exception as e:
             logger.warning(f"[MetadataWidget] Error applying disabled combo styling: {e}")
@@ -1172,39 +1312,39 @@ class MetadataWidget(QWidget):
             # Apply simplified styling - dropdown styling handled by delegate
             normal_css = f"""
                 QComboBox {{
-                    background-color: {theme.get_color('combo_background')};
-                    border: 1px solid {theme.get_color('combo_border')};
+                    background-color: {theme.get_color("combo_background")};
+                    border: 1px solid {theme.get_color("combo_border")};
                     border-radius: 4px;
                     padding: 2px 6px;
-                    color: {theme.get_color('combo_text')};
-                    font-family: "{theme.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
-                    font-size: {theme.fonts['interface_size']};
+                    color: {theme.get_color("combo_text")};
+                    font-family: "{theme.fonts["base_family"]}", "Segoe UI", Arial, sans-serif;
+                    font-size: {theme.fonts["interface_size"]};
                     min-height: 18px;
-                    selection-background-color: {theme.get_color('combo_item_background_selected')};
-                    selection-color: {theme.get_color('input_selection_text')};
+                    selection-background-color: {theme.get_color("combo_item_background_selected")};
+                    selection-color: {theme.get_color("input_selection_text")};
                 }}
 
                 QComboBox:hover {{
-                    background-color: {theme.get_color('combo_background_hover')};
-                    border-color: {theme.get_color('input_border_hover')};
-                    color: {theme.get_color('combo_text')};
+                    background-color: {theme.get_color("combo_background_hover")};
+                    border-color: {theme.get_color("input_border_hover")};
+                    color: {theme.get_color("combo_text")};
                 }}
 
                 QComboBox:focus {{
-                    border-color: {theme.get_color('input_border_focus')};
-                    background-color: {theme.get_color('combo_background_hover')};
-                    color: {theme.get_color('combo_text')};
+                    border-color: {theme.get_color("input_border_focus")};
+                    background-color: {theme.get_color("combo_background_hover")};
+                    color: {theme.get_color("combo_text")};
                 }}
 
                 QComboBox:focus:hover {{
-                    background-color: {theme.get_color('combo_background_pressed')};
-                    color: {theme.get_color('combo_text_pressed')};
+                    background-color: {theme.get_color("combo_background_pressed")};
+                    color: {theme.get_color("combo_text_pressed")};
                 }}
 
                 QComboBox:on {{
-                    background-color: {theme.get_color('combo_background_pressed')};
-                    color: {theme.get_color('combo_text_pressed')};
-                    border-color: {theme.get_color('input_border_focus')};
+                    background-color: {theme.get_color("combo_background_pressed")};
+                    color: {theme.get_color("combo_text_pressed")};
+                    border-color: {theme.get_color("input_border_focus")};
                 }}
 
                 QComboBox::drop-down {{
@@ -1222,7 +1362,9 @@ class MetadataWidget(QWidget):
 
             self.options_combo.setStyleSheet(normal_css)
             self.options_combo.view().setStyleSheet(normal_css)
-            logger.debug("[MetadataWidget] Applied normal styling to options combo", extra={"dev_only": True})
+            logger.debug(
+                "[MetadataWidget] Applied normal styling to options combo", extra={"dev_only": True}
+            )
 
         except Exception as e:
             logger.warning(f"[MetadataWidget] Error applying normal combo styling: {e}")
@@ -1231,27 +1373,30 @@ class MetadataWidget(QWidget):
         """Apply theme styling to combo boxes and ensure inheritance"""
         try:
             theme = ThemeEngine()
-            logger.debug("[MetadataWidget] Theme inheritance ensured for combo boxes", extra={"dev_only": True})
+            logger.debug(
+                "[MetadataWidget] Theme inheritance ensured for combo boxes",
+                extra={"dev_only": True},
+            )
 
             css = f"""
                 QComboBox {{
-                    background-color: {theme.get_color('input_background')};
-                    border: 1px solid {theme.get_color('input_border')};
+                    background-color: {theme.get_color("input_background")};
+                    border: 1px solid {theme.get_color("input_border")};
                     border-radius: 4px;
                     padding: 6px 8px;
-                    color: {theme.get_color('input_text')};
+                    color: {theme.get_color("input_text")};
                     font-size: 12px;
                     min-height: 20px;
-                    selection-background-color: {theme.get_color('input_selection_background')};
-                    selection-color: {theme.get_color('input_selection_text')};
+                    selection-background-color: {theme.get_color("input_selection_background")};
+                    selection-color: {theme.get_color("input_selection_text")};
                 }}
 
                 QComboBox:hover {{
-                    border-color: {theme.get_color('input_border_hover')};
+                    border-color: {theme.get_color("input_border_hover")};
                 }}
 
                 QComboBox:focus {{
-                    border-color: {theme.get_color('input_border_focus')};
+                    border-color: {theme.get_color("input_border_focus")};
                 }}
 
                 QComboBox::drop-down {{
@@ -1268,7 +1413,7 @@ class MetadataWidget(QWidget):
                 /* Custom styling for disabled items in custom model */
                 QComboBox QAbstractItemView::item {{
                     background-color: transparent;
-                    color: {theme.get_color('combo_text')};
+                    color: {theme.get_color("combo_text")};
                     padding: 6px 8px;
                     border: none;
                     min-height: 18px;
@@ -1277,25 +1422,25 @@ class MetadataWidget(QWidget):
                 }}
 
                 QComboBox QAbstractItemView::item:hover {{
-                    background-color: {theme.get_color('combo_item_background_hover')};
-                    color: {theme.get_color('combo_text')};
+                    background-color: {theme.get_color("combo_item_background_hover")};
+                    color: {theme.get_color("combo_text")};
                 }}
 
                 QComboBox QAbstractItemView::item:selected {{
-                    background-color: {theme.get_color('combo_item_background_selected')};
-                    color: {theme.get_color('input_selection_text')};
+                    background-color: {theme.get_color("combo_item_background_selected")};
+                    color: {theme.get_color("input_selection_text")};
                 }}
 
                 /* Force grayout for items without ItemIsEnabled flag */
                 QComboBox QAbstractItemView::item:!enabled {{
                     background-color: transparent !important;
-                    color: {theme.get_color('disabled_text')} !important;
+                    color: {theme.get_color("disabled_text")} !important;
                     opacity: 0.6 !important;
                 }}
 
                 QComboBox QAbstractItemView::item:!enabled:hover {{
                     background-color: transparent !important;
-                    color: {theme.get_color('disabled_text')} !important;
+                    color: {theme.get_color("disabled_text")} !important;
                 }}
             """
 
@@ -1317,20 +1462,20 @@ class MetadataWidget(QWidget):
             # Apply simplified styling - dropdown styling handled by delegate
             disabled_css = f"""
                 QComboBox {{
-                    color: {theme.get_color('disabled_text')} !important;
-                    background-color: {theme.get_color('combo_background')};
-                    border: 1px solid {theme.get_color('combo_border')};
+                    color: {theme.get_color("disabled_text")} !important;
+                    background-color: {theme.get_color("combo_background")};
+                    border: 1px solid {theme.get_color("combo_border")};
                     border-radius: 4px;
                     padding: 2px 6px;
-                    font-family: "{theme.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
-                    font-size: {theme.fonts['interface_size']};
+                    font-family: "{theme.fonts["base_family"]}", "Segoe UI", Arial, sans-serif;
+                    font-size: {theme.fonts["interface_size"]};
                     min-height: 18px;
                 }}
 
                 QComboBox:disabled {{
-                    color: {theme.get_color('disabled_text')} !important;
-                    background-color: {theme.get_color('combo_background')};
-                    border: 1px solid {theme.get_color('combo_border')};
+                    color: {theme.get_color("disabled_text")} !important;
+                    background-color: {theme.get_color("combo_background")};
+                    border: 1px solid {theme.get_color("combo_border")};
                 }}
 
                 QComboBox::drop-down {{
@@ -1348,7 +1493,10 @@ class MetadataWidget(QWidget):
 
             self.category_combo.setStyleSheet(disabled_css)
             self.category_combo.view().setStyleSheet(disabled_css)
-            logger.debug("[MetadataWidget] Applied disabled styling to category combo", extra={"dev_only": True})
+            logger.debug(
+                "[MetadataWidget] Applied disabled styling to category combo",
+                extra={"dev_only": True},
+            )
 
         except Exception as e:
             logger.warning(f"[MetadataWidget] Error applying disabled category styling: {e}")
@@ -1363,39 +1511,39 @@ class MetadataWidget(QWidget):
             # Apply simplified styling - dropdown styling handled by delegate
             normal_css = f"""
                 QComboBox {{
-                    background-color: {theme.get_color('combo_background')};
-                    border: 1px solid {theme.get_color('combo_border')};
+                    background-color: {theme.get_color("combo_background")};
+                    border: 1px solid {theme.get_color("combo_border")};
                     border-radius: 4px;
                     padding: 2px 6px;
-                    color: {theme.get_color('combo_text')};
-                    font-family: "{theme.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
-                    font-size: {theme.fonts['interface_size']};
+                    color: {theme.get_color("combo_text")};
+                    font-family: "{theme.fonts["base_family"]}", "Segoe UI", Arial, sans-serif;
+                    font-size: {theme.fonts["interface_size"]};
                     min-height: 18px;
-                    selection-background-color: {theme.get_color('combo_item_background_selected')};
-                    selection-color: {theme.get_color('input_selection_text')};
+                    selection-background-color: {theme.get_color("combo_item_background_selected")};
+                    selection-color: {theme.get_color("input_selection_text")};
                 }}
 
                 QComboBox:hover {{
-                    background-color: {theme.get_color('combo_background_hover')};
-                    border-color: {theme.get_color('input_border_hover')};
-                    color: {theme.get_color('combo_text')};
+                    background-color: {theme.get_color("combo_background_hover")};
+                    border-color: {theme.get_color("input_border_hover")};
+                    color: {theme.get_color("combo_text")};
                 }}
 
                 QComboBox:focus {{
-                    border-color: {theme.get_color('input_border_focus')};
-                    background-color: {theme.get_color('combo_background_hover')};
-                    color: {theme.get_color('combo_text')};
+                    border-color: {theme.get_color("input_border_focus")};
+                    background-color: {theme.get_color("combo_background_hover")};
+                    color: {theme.get_color("combo_text")};
                 }}
 
                 QComboBox:focus:hover {{
-                    background-color: {theme.get_color('combo_background_pressed')};
-                    color: {theme.get_color('combo_text_pressed')};
+                    background-color: {theme.get_color("combo_background_pressed")};
+                    color: {theme.get_color("combo_text_pressed")};
                 }}
 
                 QComboBox:on {{
-                    background-color: {theme.get_color('combo_background_pressed')};
-                    color: {theme.get_color('combo_text_pressed')};
-                    border-color: {theme.get_color('input_border_focus')};
+                    background-color: {theme.get_color("combo_background_pressed")};
+                    color: {theme.get_color("combo_text_pressed")};
+                    border-color: {theme.get_color("input_border_focus")};
                 }}
 
                 QComboBox::drop-down {{

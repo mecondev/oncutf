@@ -1247,9 +1247,7 @@ class MetadataTreeView(QTreeView):
         # Use cache helper for unified access
         return cache_helper.get_metadata_value(file_item, key_path)
 
-    def _get_value_from_metadata_dict(
-        self, metadata: dict[str, Any], key_path: str
-    ) -> Any | None:
+    def _get_value_from_metadata_dict(self, metadata: dict[str, Any], key_path: str) -> Any | None:
         """
         Extract a value from metadata dictionary using key path.
         """
@@ -2432,9 +2430,7 @@ class MetadataTreeView(QTreeView):
         # Update header visibility after selection inversion
         self._update_header_visibility()
 
-    def handle_metadata_load_completion(
-        self, metadata: dict[str, Any] | None, source: str
-    ) -> None:
+    def handle_metadata_load_completion(self, metadata: dict[str, Any] | None, source: str) -> None:
         """
         Handle metadata display after a metadata loading operation completes.
 

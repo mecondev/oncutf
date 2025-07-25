@@ -9,7 +9,6 @@ Application Service Layer that provides a unified interface to all application o
 This reduces the need for delegate methods in MainWindow and creates better separation of concerns.
 """
 
-
 from core.pyqt_imports import QModelIndex, Qt
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger

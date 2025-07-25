@@ -10,7 +10,6 @@ Consolidates all table-related logic including sorting, clearing,
 preparation, and selection management.
 """
 
-
 from core.pyqt_imports import Qt
 from models.file_item import FileItem
 from utils.logger_factory import get_cached_logger

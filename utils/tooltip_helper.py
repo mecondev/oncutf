@@ -16,7 +16,6 @@ Classes:
 - Convenience functions for easy tooltip display
 """
 
-
 from PyQt5.QtCore import QEvent, QPoint, Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QLabel, QWidget
 
@@ -300,9 +299,7 @@ class TooltipHelper:
         cls._setup_persistent_tooltip(widget, message, tooltip_type)
 
     @classmethod
-    def show_error_tooltip(
-        cls, widget: QWidget, message: str, duration: int | None = None
-    ) -> None:
+    def show_error_tooltip(cls, widget: QWidget, message: str, duration: int | None = None) -> None:
         cls.show_tooltip(widget, message, TooltipType.ERROR, duration)
 
     @classmethod
@@ -312,9 +309,7 @@ class TooltipHelper:
         cls.show_tooltip(widget, message, TooltipType.WARNING, duration)
 
     @classmethod
-    def show_info_tooltip(
-        cls, widget: QWidget, message: str, duration: int | None = None
-    ) -> None:
+    def show_info_tooltip(cls, widget: QWidget, message: str, duration: int | None = None) -> None:
         cls.show_tooltip(widget, message, TooltipType.INFO, duration)
 
     @classmethod

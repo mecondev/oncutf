@@ -9,7 +9,6 @@ Centralized metadata management operations extracted from MainWindow.
 Handles metadata loading, progress tracking, thread management, and UI coordination.
 """
 
-
 from config import STATUS_COLORS
 from core.pyqt_imports import QApplication, Qt
 from models.file_item import FileItem

@@ -172,10 +172,16 @@ class BatchQueryManager:
                 if file.full_path:
                     # Check if file has metadata
                     has_metadata = self._file_has_metadata(file.full_path, metadata_cache)
-                    logger.debug(f"[DEBUG] [UnifiedRenameEngine] get_metadata_availability: {file.full_path} has_metadata={has_metadata}", extra={"dev_only": True})
+                    logger.debug(
+                        f"[DEBUG] [UnifiedRenameEngine] get_metadata_availability: {file.full_path} has_metadata={has_metadata}",
+                        extra={"dev_only": True},
+                    )
                     result[file.full_path] = has_metadata
 
-            logger.debug(f"[DEBUG] [UnifiedRenameEngine] get_metadata_availability result: {result}", extra={"dev_only": True})
+            logger.debug(
+                f"[DEBUG] [UnifiedRenameEngine] get_metadata_availability result: {result}",
+                extra={"dev_only": True},
+            )
             return result
 
         except Exception as e:
@@ -650,7 +656,7 @@ class UnifiedRenameEngine(QObject):
     Ενσωματώνει preview, validation, duplicate detection, και execution.
     """
 
-            # Central signal system
+    # Central signal system
     preview_updated = pyqtSignal()
     validation_updated = pyqtSignal()
     execution_completed = pyqtSignal()

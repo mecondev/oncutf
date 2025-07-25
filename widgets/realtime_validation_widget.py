@@ -7,7 +7,6 @@ Date: 2025-01-27
 Real-time Validation Widget for immediate validation feedback.
 """
 
-
 from core.pyqt_imports import (
     QFrame,
     QLabel,

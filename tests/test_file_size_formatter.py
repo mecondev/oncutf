@@ -9,6 +9,7 @@ test_file_size_formatter.py
 Test cases for the FileSizeFormatter utility.
 Tests cross-platform file size formatting with various units and locales.
 """
+
 import warnings
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
@@ -195,7 +196,6 @@ def run_comparison_test():
 
     test_sizes = [512, 1000, 1024, 1500, 1536, 1000000, 1048576, 1000000000, 1073741824]
 
-
     for size in test_sizes:
         binary_fmt = FileSizeFormatter(use_binary=True, use_locale=False)
         decimal_fmt = FileSizeFormatter(use_binary=False, use_locale=False)
@@ -204,7 +204,6 @@ def run_comparison_test():
         binary_fmt.format_size(size)
         decimal_fmt.format_size(size)
         system_fmt.format_size(size)
-
 
 
 if __name__ == "__main__":

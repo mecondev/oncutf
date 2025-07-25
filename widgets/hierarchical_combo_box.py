@@ -141,64 +141,6 @@ class HierarchicalComboBox(QComboBox):
             }
         """)
 
-    def add_category(self, category_name: str, category_data: Any = None) -> QStandardItem:
-        """
-        Add a new category to the hierarchical combo box.
-
-        Args:
-            category_name: Display name for the category
-            category_data: Optional data associated with the category
-
-        Returns:
-            The created category item
-        """
-        category_item = QStandardItem(category_name)
-        if category_data:
-            category_item.setData(category_data, Qt.UserRole)
-
-        # Make category non-selectable
-        category_item.setFlags(category_item.flags() & ~Qt.ItemIsSelectable)
-
-        # Style category differently
-        category_item.setBackground(Qt.lightGray)
-        category_item.setForeground(Qt.darkGray)
-
-        # Add to model and track
-        self.model.appendRow(category_item)
-        self._categories[category_name] = category_item
-
-        return category_item
-
-    def add_item_to_category(self, category_name: str, item_text: str, item_data: Any = None) -> QStandardItem:
-        """
-        Add an item to a specific category.
-
-        Args:
-            category_name: Name of the category to add the item to
-            item_text: Display text for the item
-            item_data: Optional data associated with the item
-
-        Returns:
-            The created item
-        """
-        if category_name not in self._categories:
-            logger.warning(f"Category '{category_name}' not found, creating it")
-            self.add_category(category_name)
-
-        category_item = self._categories[category_name]
-        item = QStandardItem(item_text)
-
-        if item_data:
-            item.setData(item_data, Qt.UserRole)
-
-        # Make item selectable
-        item.setFlags(item.flags() | Qt.ItemIsSelectable)
-
-        # Add to category
-        category_item.appendRow(item)
-
-        return item
-
     def add_item(self, item_text: str, item_data: Any = None) -> QStandardItem:
         """
         Add an item to the root level (no category).
@@ -231,7 +173,7 @@ class HierarchicalComboBox(QComboBox):
 
     def get_current_data(self) -> Any:
         """Get the data of the currently selected item."""
-        # First try to get from the tree view current index
+        # Get from the tree view current index
         current_index = self.tree_view.currentIndex()
         if current_index.isValid():
             item = self.model.itemFromIndex(current_index)
@@ -240,27 +182,19 @@ class HierarchicalComboBox(QComboBox):
                 logger.debug(f"get_current_data from tree view: {data}")
                 return data
 
-        # If no valid selection in tree view, try to find by current text
+        # Fallback: try to find by current text
         current_text = self.currentText()
         if current_text:
             logger.debug(f"Searching for item with text: {current_text}")
             for row in range(self.model.rowCount()):
                 item = self.model.item(row)
                 if item:
-                    # Check if this is a category
-                    if item.flags() & Qt.ItemIsSelectable:
-                        if item.text() == current_text:
-                            data = item.data(Qt.UserRole)
-                            logger.debug(f"Found root item with data: {data}")
+                    for child_row in range(item.rowCount()):
+                        child_item = item.child(child_row)
+                        if child_item and child_item.text() == current_text:
+                            data = child_item.data(Qt.UserRole)
+                            logger.debug(f"Found item with data: {data}")
                             return data
-                    else:
-                        # Check children of category
-                        for child_row in range(item.rowCount()):
-                            child_item = item.child(child_row)
-                            if child_item and child_item.text() == current_text:
-                                data = child_item.data(Qt.UserRole)
-                                logger.debug(f"Found child item with data: {data}")
-                                return data
 
         logger.warning(f"get_current_data: No item found for text '{current_text}'")
         return None
@@ -280,42 +214,7 @@ class HierarchicalComboBox(QComboBox):
     def set_current_data(self, data: Any):
         """Set the current selection by data value."""
         logger.debug(f"set_current_data called with data: {data}")
-
-        for row in range(self.model.rowCount()):
-            item = self.model.item(row)
-            if item:
-                # Check if this is a category
-                if item.flags() & Qt.ItemIsSelectable:
-                    if item.data(Qt.UserRole) == data:
-                        self.tree_view.setCurrentIndex(self.model.indexFromItem(item))
-                        self.setCurrentText(item.text())
-                        self.setEditText(item.text())  # Ensure edit text is updated
-                        # Force the combo box to display the text
-                        self.setCurrentText(item.text())
-                        # Force update the display
-                        self.force_update_display(item.text())
-                        # Set the display text using the new method
-                        self.set_display_text(item.text())
-                        logger.debug(f"Set current data to root item: {item.text()}")
-                        return
-                else:
-                    # Check children of category
-                    for child_row in range(item.rowCount()):
-                        child_item = item.child(child_row)
-                        if child_item and child_item.data(Qt.UserRole) == data:
-                            self.tree_view.setCurrentIndex(self.model.indexFromItem(child_item))
-                            self.setCurrentText(child_item.text())
-                            self.setEditText(child_item.text())  # Ensure edit text is updated
-                            # Force the combo box to display the text
-                            self.setCurrentText(child_item.text())
-                            # Force update the display
-                            self.force_update_display(child_item.text())
-                            # Set the display text using the new method
-                            self.set_display_text(child_item.text())
-                            logger.debug(f"Set current data to child item: {child_item.text()}")
-                            return
-
-        logger.warning(f"set_current_data: No item found with data: {data}")
+        self.select_item_by_data(data)
 
     def expand_all(self):
         """Expand all categories."""
@@ -342,16 +241,6 @@ class HierarchicalComboBox(QComboBox):
 
             # Update the combo box display text
             self.setCurrentText(text)
-            self.setEditText(text)  # Ensure the edit text is also updated
-
-            # Force the combo box to display the text
-            self.setCurrentText(text)
-
-            # Force update the display
-            self.force_update_display(text)
-
-            # Set the display text using the new method
-            self.set_display_text(text)
 
             # Emit signal
             self.item_selected.emit(text, data)
@@ -383,88 +272,76 @@ class HierarchicalComboBox(QComboBox):
         """Get the current text display of the combo box."""
         return super().currentText()
 
-    def force_update_display(self, text: str):
-        """Force the combo box to update its display with the given text."""
-        # Set the text in multiple ways to ensure it's displayed
-        self.setCurrentText(text)
-        self.setEditText(text)
-
-        # Force a repaint
-        self.update()
-
-        logger.debug(f"Force updated display with text: {text}")
-
-    def set_display_text(self, text: str):
-        """Set the display text of the combo box and ensure it's visible."""
-        # Set the text in the combo box
-        self.setCurrentText(text)
-        self.setEditText(text)
-
-        # Force the combo box to show the text
-        self.setCurrentText(text)
-
-        # Force a repaint
-        self.update()
-
-        logger.debug(f"Set display text to: {text}")
-
-    def schedule_display_update(self, text: str, delay_ms: int = 50):
-        """Schedule a delayed display update."""
-        try:
-            from utils.timer_manager import schedule_ui_update
-            schedule_ui_update(lambda: self.set_display_text(text), delay_ms)
-            logger.debug(f"Scheduled display update for text: {text} in {delay_ms}ms")
-        except Exception as e:
-            logger.warning(f"Could not schedule display update: {e}")
-            # Fallback to immediate update
-            self.set_display_text(text)
-
-    def populate_from_metadata_groups(self, grouped_data: dict[str, list[tuple[str, Any]]]):
+    def populate_from_metadata_groups(self, groups: dict, default_key: str = None):
         """Populate the combo box from grouped metadata data."""
-        self.clear()
-        logger.debug(f"Populating combo box with groups: {list(grouped_data.keys())}")
+        self.model.clear()
+        logger.debug(f"Populating combo box with groups: {list(groups.keys())}")
 
         first_item = None
 
-        for category_name, items in grouped_data.items():
-            if items:  # Only add categories that have items
-                category_item = self.add_category(category_name)
+        for group_name, items in groups.items():
+            if items:  # Only add groups that have items
+                group_item = QStandardItem(group_name)
+                group_item.setFlags(Qt.ItemIsEnabled)
 
-                for item_text, item_data in sorted(items):
-                    item = self.add_item_to_category(category_name, item_text, item_data)
+                for item_name, item_data in items:
+                    child_item = QStandardItem(item_name)
+                    child_item.setData(item_data, Qt.UserRole)
+                    child_item.setFlags(child_item.flags() | Qt.ItemIsSelectable)
+                    group_item.appendRow(child_item)
+
                     if first_item is None:
-                        first_item = item
+                        first_item = child_item
 
-        # Expand all categories
-        self.expand_all()
+                self.model.appendRow(group_item)
+
+        # Set the model
+        self.setModel(self.model)
+
+        # Force UI update
+        self.model.layoutChanged.emit()
 
         # Select first item if available
         if first_item:
-            # Set the current text in the combo box
-            self.setCurrentText(first_item.text())
+            combo_index = self.model.indexFromItem(first_item).row()
+            self.setCurrentIndex(combo_index)
 
-            # Set the current index in the tree view
             index = self.model.indexFromItem(first_item)
             self.tree_view.setCurrentIndex(index)
+            self.tree_view.scrollTo(index)
 
-            # Ensure the combo box shows the selected text
-            self.setEditText(first_item.text())
-
-            # Force the combo box to display the text
             self.setCurrentText(first_item.text())
 
-            # Force update the display
-            self.force_update_display(first_item.text())
-
-            # Set the display text using the new method
-            self.set_display_text(first_item.text())
-
-            # Schedule a delayed display update
-            self.schedule_display_update(first_item.text(), 100)
-
-            # Emit signal for first item
             self.item_selected.emit(first_item.text(), first_item.data(Qt.UserRole))
 
-            logger.debug(f"Selected first item: {first_item.text()} with data: {first_item.data(Qt.UserRole)}")
+            logger.debug(
+                f"Selected first item: {first_item.text()} with data: {first_item.data(Qt.UserRole)}"
+            )
         else:
             logger.warning("No items to populate in hierarchical combo box")
+
+    def select_item_by_data(self, data: Any):
+        """Select an item by its data value."""
+        for row in range(self.model.rowCount()):
+            item = self.model.item(row)
+            if item:
+                # Check children of group
+                for child_row in range(item.rowCount()):
+                    child_item = item.child(child_row)
+                    if child_item and child_item.data(Qt.UserRole) == data:
+                        combo_index = self.model.indexFromItem(child_item).row()
+                        self.setCurrentIndex(combo_index)
+
+                        index = self.model.indexFromItem(child_item)
+                        self.tree_view.setCurrentIndex(index)
+                        self.tree_view.scrollTo(index)
+
+                        self.setCurrentText(child_item.text())
+
+                        self.item_selected.emit(child_item.text(), child_item.data(Qt.UserRole))
+                        logger.debug(
+                            f"Selected item by data: {child_item.text()} with data: {data}"
+                        )
+                        return
+
+        logger.warning(f"select_item_by_data: No item found with data: {data}")

@@ -421,9 +421,15 @@ class UnifiedMetadataManager(QObject):
                         )
 
                     # Update the file item
-                    logger.debug(f"[DEBUG] (before) file_item.metadata for {file_item.filename} (id={id(file_item)}): {getattr(file_item, 'metadata', None)}", extra={"dev_only": True})
+                    logger.debug(
+                        f"[DEBUG] (before) file_item.metadata for {file_item.filename} (id={id(file_item)}): {getattr(file_item, 'metadata', None)}",
+                        extra={"dev_only": True},
+                    )
                     file_item.metadata = metadata
-                    logger.debug(f"[DEBUG] (after) file_item.metadata for {file_item.filename} (id={id(file_item)}): {file_item.metadata}", extra={"dev_only": True})
+                    logger.debug(
+                        f"[DEBUG] (after) file_item.metadata for {file_item.filename} (id={id(file_item)}): {file_item.metadata}",
+                        extra={"dev_only": True},
+                    )
 
                     # Emit dataChanged signal to update UI icons immediately
                     if self.parent_window and hasattr(self.parent_window, "file_model"):
@@ -492,7 +498,7 @@ class UnifiedMetadataManager(QObject):
                 # Check for cancellation before processing each file
                 if self._metadata_cancelled:
                     logger.info(
-                        f"[UnifiedMetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}"
+                        f"[UnifiedMetadataManager] Metadata loading cancelled at file {i + 1}/{len(needs_loading)}"
                     )
                     _loading_dialog.close()
                     return
@@ -532,7 +538,7 @@ class UnifiedMetadataManager(QObject):
                 # Check again after processing events
                 if self._metadata_cancelled:
                     logger.info(
-                        f"[UnifiedMetadataManager] Metadata loading cancelled at file {i+1}/{len(needs_loading)}"
+                        f"[UnifiedMetadataManager] Metadata loading cancelled at file {i + 1}/{len(needs_loading)}"
                     )
                     _loading_dialog.close()
                     return
@@ -560,9 +566,15 @@ class UnifiedMetadataManager(QObject):
                         )
 
                     # Update the file item
-                    logger.debug(f"[DEBUG] (before) file_item.metadata for {file_item.filename} (id={id(file_item)}): {getattr(file_item, 'metadata', None)}", extra={"dev_only": True})
+                    logger.debug(
+                        f"[DEBUG] (before) file_item.metadata for {file_item.filename} (id={id(file_item)}): {getattr(file_item, 'metadata', None)}",
+                        extra={"dev_only": True},
+                    )
                     file_item.metadata = metadata
-                    logger.debug(f"[DEBUG] (after) file_item.metadata for {file_item.filename} (id={id(file_item)}): {file_item.metadata}", extra={"dev_only": True})
+                    logger.debug(
+                        f"[DEBUG] (after) file_item.metadata for {file_item.filename} (id={id(file_item)}): {file_item.metadata}",
+                        extra={"dev_only": True},
+                    )
 
                     # Emit dataChanged signal to update UI icons
                     if self.parent_window and hasattr(self.parent_window, "file_model"):
@@ -1209,7 +1221,6 @@ class UnifiedMetadataManager(QObject):
             and hasattr(self.parent_window.metadata_tree_view, "_current_file_path")
             and self.parent_window.metadata_tree_view._current_file_path == file_item.full_path
         ):
-
             logger.debug(
                 f"[UnifiedMetadataManager] Refreshing metadata view for updated file: {file_item.filename}",
                 extra={"dev_only": True},
@@ -1228,7 +1239,9 @@ class UnifiedMetadataManager(QObject):
     def _show_save_results(self, success_count, failed_files, _files_to_save):
         """Show results of metadata save operation."""
         if success_count > 0:
-            logger.info(f"[UnifiedMetadataManager] Successfully saved metadata for {success_count} files")
+            logger.info(
+                f"[UnifiedMetadataManager] Successfully saved metadata for {success_count} files"
+            )
 
             # Update status bar
             if self.parent_window and hasattr(self.parent_window, "status_bar"):
@@ -1237,7 +1250,9 @@ class UnifiedMetadataManager(QObject):
                 )
 
         if failed_files:
-            logger.warning(f"[UnifiedMetadataManager] Failed to save metadata for {len(failed_files)} files")
+            logger.warning(
+                f"[UnifiedMetadataManager] Failed to save metadata for {len(failed_files)} files"
+            )
             for file_path in failed_files:
                 logger.warning(f"[UnifiedMetadataManager] Failed to save metadata for: {file_path}")
 

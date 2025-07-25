@@ -11,7 +11,6 @@ This module tests the undo/redo functionality for metadata operations,
 including individual commands, batch operations, and command manager behavior.
 """
 
-
 # Add project root to path
 import sys
 from pathlib import Path

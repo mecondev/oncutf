@@ -1077,7 +1077,9 @@ class EventHandlerManager:
                     if file_item.full_path == file_path:
                         # Emit dataChanged signal for the first column (icon column) only
                         index = self.parent_window.file_model.index(i, 0)
-                        self.parent_window.file_model.dataChanged.emit(index, index, [Qt.DecorationRole, Qt.ToolTipRole])  # type: ignore
+                        self.parent_window.file_model.dataChanged.emit(
+                            index, index, [Qt.DecorationRole, Qt.ToolTipRole]
+                        )  # type: ignore
                         logger.debug(
                             f"[HashWorker] Updated icon for: {os.path.basename(file_path)}",
                             extra={"dev_only": True},
@@ -1788,9 +1790,7 @@ class EventHandlerManager:
     def _is_video_file(self, file_item, metadata: dict) -> bool:
         """Check if file is a video based on metadata and extension."""
         # Check metadata for video indicators
-        if any(
-            key.startswith(("QuickTime:", "Matroska:", "RIFF:", "MPEG:")) for key in metadata
-        ):
+        if any(key.startswith(("QuickTime:", "Matroska:", "RIFF:", "MPEG:")) for key in metadata):
             return True
 
         # Check file extension as fallback

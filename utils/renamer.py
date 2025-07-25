@@ -224,4 +224,6 @@ def filter_metadata_safe(metadata: dict) -> dict:
     Returns:
         dict: Filtered dictionary with only str, int, float, bool, or None values.
     """
-    return {k: v for k, v in metadata.items() if isinstance(v, str | int | float | bool | type(None))}
+    return {
+        k: v for k, v in metadata.items() if isinstance(v, str | int | float | bool | type(None))
+    }

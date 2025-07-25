@@ -40,128 +40,128 @@ def generate_dpi_aware_css() -> str:
 
 /* Tree Views (file tree, metadata tree) */
 QTreeView {{
-    font-size: {font_sizes['tree']}pt;
+    font-size: {font_sizes["tree"]}pt;
 }}
 
 QTreeView::item {{
-    font-size: {font_sizes['tree']}pt;
-    min-height: {max(18, font_sizes['tree'] + 8)}px;
+    font-size: {font_sizes["tree"]}pt;
+    min-height: {max(18, font_sizes["tree"] + 8)}px;
 }}
 
 /* Table Views */
 QTableView {{
-    font-size: {font_sizes['table']}pt;
+    font-size: {font_sizes["table"]}pt;
 }}
 
 QTableView::item {{
-    font-size: {font_sizes['table']}pt;
-    min-height: {max(20, font_sizes['table'] + 10)}px;
+    font-size: {font_sizes["table"]}pt;
+    min-height: {max(20, font_sizes["table"] + 10)}px;
 }}
 
 /* Headers */
 QHeaderView::section {{
-    font-size: {font_sizes['normal']}pt;
+    font-size: {font_sizes["normal"]}pt;
     font-weight: 500;
-    min-height: {max(22, font_sizes['normal'] + 12)}px;
+    min-height: {max(22, font_sizes["normal"] + 12)}px;
 }}
 
 /* Labels */
 QLabel {{
-    font-size: {font_sizes['normal']}pt;
+    font-size: {font_sizes["normal"]}pt;
 }}
 
 /* Small labels (status, info) */
 QLabel[class="small"] {{
-    font-size: {font_sizes['small']}pt;
+    font-size: {font_sizes["small"]}pt;
 }}
 
 /* Large labels (titles, headers) */
 QLabel[class="large"] {{
-    font-size: {font_sizes['large']}pt;
+    font-size: {font_sizes["large"]}pt;
     font-weight: 600;
 }}
 
 /* Buttons */
 QPushButton {{
-    font-size: {font_sizes['medium']}pt;
+    font-size: {font_sizes["medium"]}pt;
     font-weight: 500;
-    min-height: {max(24, font_sizes['medium'] + 14)}px;
+    min-height: {max(24, font_sizes["medium"] + 14)}px;
 }}
 
 /* ComboBoxes */
 QComboBox {{
-    font-size: {font_sizes['normal']}pt;
-    min-height: {max(20, font_sizes['normal'] + 10)}px;
+    font-size: {font_sizes["normal"]}pt;
+    min-height: {max(20, font_sizes["normal"] + 10)}px;
 }}
 
 QComboBox QAbstractItemView {{
-    font-size: {font_sizes['normal']}pt;
+    font-size: {font_sizes["normal"]}pt;
 }}
 
 QComboBox QAbstractItemView::item {{
-    font-size: {font_sizes['normal']}pt;
-    min-height: {max(18, font_sizes['normal'] + 8)}px;
+    font-size: {font_sizes["normal"]}pt;
+    min-height: {max(18, font_sizes["normal"] + 8)}px;
 }}
 
 /* Line Edits */
 QLineEdit {{
-    font-size: {font_sizes['normal']}pt;
-    min-height: {max(20, font_sizes['normal'] + 10)}px;
+    font-size: {font_sizes["normal"]}pt;
+    min-height: {max(20, font_sizes["normal"] + 10)}px;
 }}
 
 /* Text Edits */
 QTextEdit {{
-    font-size: {font_sizes['normal']}pt;
+    font-size: {font_sizes["normal"]}pt;
 }}
 
 /* Group Boxes */
 QGroupBox {{
-    font-size: {font_sizes['medium']}pt;
+    font-size: {font_sizes["medium"]}pt;
     font-weight: 500;
 }}
 
 /* Tooltips */
 QToolTip {{
-    font-size: {font_sizes['small']}pt;
+    font-size: {font_sizes["small"]}pt;
 }}
 
 /* Menu Items */
 QMenu {{
-    font-size: {font_sizes['normal']}pt;
+    font-size: {font_sizes["normal"]}pt;
 }}
 
 QMenu::item {{
-    font-size: {font_sizes['normal']}pt;
-    min-height: {max(18, font_sizes['normal'] + 8)}px;
+    font-size: {font_sizes["normal"]}pt;
+    min-height: {max(18, font_sizes["normal"] + 8)}px;
 }}
 
 /* Status Bar */
 QStatusBar {{
-    font-size: {font_sizes['small']}pt;
+    font-size: {font_sizes["small"]}pt;
 }}
 
 /* Tab Widget */
 QTabWidget::tab-bar {{
-    font-size: {font_sizes['normal']}pt;
+    font-size: {font_sizes["normal"]}pt;
 }}
 
 QTabBar::tab {{
-    font-size: {font_sizes['normal']}pt;
-    min-height: {max(22, font_sizes['normal'] + 12)}px;
+    font-size: {font_sizes["normal"]}pt;
+    min-height: {max(22, font_sizes["normal"] + 12)}px;
 }}
 
 /* Scroll Bars - adjust size based on DPI */
 QScrollBar:vertical {{
-    width: {max(12, font_sizes['normal'] + 2)}px;
+    width: {max(12, font_sizes["normal"] + 2)}px;
 }}
 
 QScrollBar:horizontal {{
-    height: {max(12, font_sizes['normal'] + 2)}px;
+    height: {max(12, font_sizes["normal"] + 2)}px;
 }}
 
 /* Progress Bars */
 QProgressBar {{
-    font-size: {font_sizes['small']}pt;
+    font-size: {font_sizes["small"]}pt;
     /* min-height removed - let widgets control their own height */
 }}
 """

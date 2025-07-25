@@ -15,7 +15,6 @@ Features:
 - Keyboard shortcuts
 """
 
-
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QKeySequence
 from PyQt5.QtWidgets import (
@@ -265,7 +264,9 @@ class MetadataHistoryDialog(QDialog):
                         "status": (
                             "Can Undo"
                             if cmd["can_undo"]
-                            else "Can Redo" if cmd["can_redo"] else "Done"
+                            else "Can Redo"
+                            if cmd["can_redo"]
+                            else "Done"
                         ),
                         "type": "metadata",
                         "data": cmd,
@@ -386,7 +387,7 @@ class MetadataHistoryDialog(QDialog):
                     details.append("\nRENAME DETAILS:")
                     for i, rename_op in enumerate(rename_details.operations[:10]):  # Show first 10
                         details.append(
-                            f"  {i+1}. {rename_op.old_filename} → {rename_op.new_filename}"
+                            f"  {i + 1}. {rename_op.old_filename} → {rename_op.new_filename}"
                         )
 
                     if len(rename_details.operations) > 10:

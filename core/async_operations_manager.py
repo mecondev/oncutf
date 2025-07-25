@@ -169,7 +169,7 @@ class AsyncFileOperations:
 
             # Return hash value
             if algorithm == "CRC32":
-                return f"{hash_value & 0xffffffff:08X}"
+                return f"{hash_value & 0xFFFFFFFF:08X}"
             else:
                 return hash_obj.hexdigest().upper()
 

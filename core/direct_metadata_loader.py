@@ -15,7 +15,6 @@ Features:
 - Simple, clean architecture
 """
 
-
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
 from models.file_item import FileItem

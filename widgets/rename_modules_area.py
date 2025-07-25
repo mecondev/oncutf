@@ -12,7 +12,6 @@ Designed to scale and support future drag & drop reordering.
 Now supports ApplicationContext for optimized access patterns.
 """
 
-
 import config
 from core.pyqt_imports import (
     QCursor,
@@ -49,9 +48,7 @@ class RenameModulesArea(QWidget):
 
     updated = pyqtSignal()
 
-    def __init__(
-        self, parent: QWidget | None = None, parent_window: QWidget | None = None
-    ) -> None:
+    def __init__(self, parent: QWidget | None = None, parent_window: QWidget | None = None) -> None:
         super().__init__(parent)
         self.parent_window = parent_window  # Keep for backward compatibility
         self.module_widgets: list[RenameModuleWidget] = []

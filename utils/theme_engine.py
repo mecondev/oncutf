@@ -166,16 +166,16 @@ class ThemeEngine:
         return f"""
             /* BASE APPLICATION STYLING */
             QMainWindow, QWidget {{
-                background-color: {self.colors['app_background']};
-                color: {self.colors['app_text']};
-                font-family: "{self.fonts['base_family']}", "Segoe UI", Arial, sans-serif;
-                font-size: {self.fonts['base_size']};
-                font-weight: {self.fonts['base_weight']};
+                background-color: {self.colors["app_background"]};
+                color: {self.colors["app_text"]};
+                font-family: "{self.fonts["base_family"]}", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts["base_size"]};
+                font-weight: {self.fonts["base_weight"]};
             }}
 
             QLabel {{
                 background-color: transparent;
-                color: {self.colors['app_text']};
+                color: {self.colors["app_text"]};
                 border: none;
                 padding: 2px;
                 margin: 0px;
@@ -183,59 +183,59 @@ class ThemeEngine:
 
             QFrame {{
                 border: none;
-                background-color: {self.colors['app_background']};
+                background-color: {self.colors["app_background"]};
             }}
 
             /* INPUT FIELDS */
             QLineEdit {{
-                background-color: {self.colors['input_background']};
-                border: 1px solid {self.colors['input_border']};
+                background-color: {self.colors["input_background"]};
+                border: 1px solid {self.colors["input_border"]};
                 border-radius: 4px;
-                color: {self.colors['input_text']};
+                color: {self.colors["input_text"]};
                 padding: 2px 6px;
-                selection-background-color: {self.colors['input_selection_bg']};
-                selection-color: {self.colors['input_selection_text']};
+                selection-background-color: {self.colors["input_selection_bg"]};
+                selection-color: {self.colors["input_selection_text"]};
                 min-height: 18px;
-                font-size: {self.fonts['interface_size']};
+                font-size: {self.fonts["interface_size"]};
             }}
 
             QLineEdit:hover {{
-                background-color: {self.colors['input_background_hover']};
-                border-color: {self.colors['input_border_hover']};
+                background-color: {self.colors["input_background_hover"]};
+                border-color: {self.colors["input_border_hover"]};
             }}
 
             QLineEdit:focus {{
-                border-color: {self.colors['input_border_focus']};
-                background-color: {self.colors['input_background_focus']};
+                border-color: {self.colors["input_border_focus"]};
+                background-color: {self.colors["input_background_focus"]};
             }}
 
             QLineEdit:disabled {{
-                background-color: {self.colors['disabled_background']};
-                color: {self.colors['disabled_text']};
-                border-color: {self.colors['input_border']};
+                background-color: {self.colors["disabled_background"]};
+                color: {self.colors["disabled_text"]};
+                border-color: {self.colors["input_border"]};
             }}
 
             /* ValidatedLineEdit with consistent border width to prevent shifting */
             ValidatedLineEdit {{
-                background-color: {self.colors['input_background']};
-                border: 1px solid {self.colors['input_border']};
+                background-color: {self.colors["input_background"]};
+                border: 1px solid {self.colors["input_border"]};
                 border-radius: 4px;
-                color: {self.colors['input_text']};
+                color: {self.colors["input_text"]};
                 padding: 2px 6px;
-                selection-background-color: {self.colors['input_selection_bg']};
-                selection-color: {self.colors['input_selection_text']};
+                selection-background-color: {self.colors["input_selection_bg"]};
+                selection-color: {self.colors["input_selection_text"]};
                 min-height: 18px;
-                font-size: {self.fonts['interface_size']};
+                font-size: {self.fonts["interface_size"]};
             }}
 
             ValidatedLineEdit:hover {{
-                background-color: {self.colors['input_background_hover']};
-                border-color: {self.colors['input_border_hover']};
+                background-color: {self.colors["input_background_hover"]};
+                border-color: {self.colors["input_border_hover"]};
             }}
 
             ValidatedLineEdit:focus {{
-                border-color: {self.colors['input_border_focus']};
-                background-color: {self.colors['input_background_focus']};
+                border-color: {self.colors["input_border_focus"]};
+                background-color: {self.colors["input_background_focus"]};
             }}
 
             ValidatedLineEdit[error="true"] {{
@@ -273,41 +273,41 @@ class ThemeEngine:
 
             /* BUTTONS */
             QPushButton {{
-                background-color: {self.colors['button_background']};
+                background-color: {self.colors["button_background"]};
                 border: none;
                 border-radius: 8px;
-                color: {self.colors['button_text']};
+                color: {self.colors["button_text"]};
                 padding: 4px 12px 4px 8px;
-                font-size: {self.fonts['interface_size']};
-                font-weight: {self.fonts['medium_weight']};
+                font-size: {self.fonts["interface_size"]};
+                font-weight: {self.fonts["medium_weight"]};
             }}
 
             QPushButton:hover {{
-                background-color: {self.colors['button_background_hover']};
+                background-color: {self.colors["button_background_hover"]};
             }}
 
             QPushButton:pressed {{
-                background-color: {self.colors['button_background_pressed']};
-                color: {self.colors['button_text_pressed']};
+                background-color: {self.colors["button_background_pressed"]};
+                color: {self.colors["button_text_pressed"]};
             }}
 
             QPushButton:disabled {{
-                background-color: {self.colors['button_background_disabled']} !important;
-                color: {self.colors['button_text_disabled']} !important;
+                background-color: {self.colors["button_background_disabled"]} !important;
+                color: {self.colors["button_text_disabled"]} !important;
                 opacity: 0.6 !important;
             }}
 
             QPushButton:disabled:hover {{
-                background-color: {self.colors['button_background_disabled']} !important;
-                color: {self.colors['button_text_disabled']} !important;
+                background-color: {self.colors["button_background_disabled"]} !important;
+                color: {self.colors["button_text_disabled"]} !important;
             }}
 
             /* FINAL TRANSFORM CONTAINER BUTTONS */
             FinalTransformContainer QPushButton {{
-                background-color: {self.colors['button_background']};
+                background-color: {self.colors["button_background"]};
                 border: none;
                 border-radius: 6px;
-                color: {self.colors['button_text']};
+                color: {self.colors["button_text"]};
                 padding: 2px;
                 margin: 0px;
                 min-width: 30px;
@@ -317,17 +317,17 @@ class ThemeEngine:
             }}
 
             FinalTransformContainer QPushButton:hover {{
-                background-color: {self.colors['button_background_hover']};
+                background-color: {self.colors["button_background_hover"]};
             }}
 
             FinalTransformContainer QPushButton:pressed {{
-                background-color: {self.colors['button_background_pressed']};
-                color: {self.colors['button_text_pressed']};
+                background-color: {self.colors["button_background_pressed"]};
+                color: {self.colors["button_text_pressed"]};
             }}
 
             FinalTransformContainer QPushButton:disabled {{
-                background-color: {self.colors['button_background_disabled']} !important;
-                color: {self.colors['button_text_disabled']} !important;
+                background-color: {self.colors["button_background_disabled"]} !important;
+                color: {self.colors["button_text_disabled"]} !important;
                 border: none !important;
                 opacity: 0.4 !important;
             }}
@@ -337,8 +337,8 @@ class ThemeEngine:
             }}
 
             FinalTransformContainer QPushButton:disabled:hover {{
-                background-color: {self.colors['button_background_disabled']} !important;
-                color: {self.colors['button_text_disabled']} !important;
+                background-color: {self.colors["button_background_disabled"]} !important;
+                color: {self.colors["button_text_disabled"]} !important;
             }}
 
             /* COUNTER MODULE SPECIFIC */
@@ -349,10 +349,10 @@ class ThemeEngine:
 
             /* COUNTER MODULE BUTTONS - Improved icon positioning */
             CounterModule QPushButton {{
-                background-color: {self.colors['button_background']};
+                background-color: {self.colors["button_background"]};
                 border: none;
                 border-radius: 4px;
-                color: {self.colors['button_text']};
+                color: {self.colors["button_text"]};
                 padding: 0px;
                 margin: 0px;
                 text-align: center;
@@ -361,71 +361,71 @@ class ThemeEngine:
             }}
 
             CounterModule QPushButton:hover {{
-                background-color: {self.colors['button_background_hover']};
+                background-color: {self.colors["button_background_hover"]};
             }}
 
             CounterModule QPushButton:pressed {{
-                background-color: {self.colors['button_background_pressed']};
-                color: {self.colors['button_text_pressed']};
+                background-color: {self.colors["button_background_pressed"]};
+                color: {self.colors["button_text_pressed"]};
             }}
 
             CounterModule QPushButton:disabled {{
-                background-color: {self.colors['button_background_disabled']};
-                color: {self.colors['button_text_disabled']};
+                background-color: {self.colors["button_background_disabled"]};
+                color: {self.colors["button_text_disabled"]};
             }}
 
             /* COMBOBOX */
             QComboBox {{
-                background-color: {self.colors['combo_background']};
-                border: 1px solid {self.colors['combo_border']};
+                background-color: {self.colors["combo_background"]};
+                border: 1px solid {self.colors["combo_border"]};
                 border-radius: 4px;
-                color: {self.colors['combo_text']};
+                color: {self.colors["combo_text"]};
                 padding: 2px 6px;
                 min-height: 18px;
                 margin: 0px;
-                font-size: {self.fonts['interface_size']};
-                selection-background-color: {self.colors['input_selection_bg']};
-                selection-color: {self.colors['input_selection_text']};
+                font-size: {self.fonts["interface_size"]};
+                selection-background-color: {self.colors["input_selection_bg"]};
+                selection-color: {self.colors["input_selection_text"]};
             }}
 
             QComboBox:hover {{
-                background-color: {self.colors['combo_background_hover']};
-                border-color: {self.colors['input_border_hover']};
-                color: {self.colors['combo_text']};
+                background-color: {self.colors["combo_background_hover"]};
+                border-color: {self.colors["input_border_hover"]};
+                color: {self.colors["combo_text"]};
             }}
 
             QComboBox:focus {{
-                border-color: {self.colors['input_border_focus']};
-                background-color: {self.colors['combo_background_hover']};
-                color: {self.colors['combo_text']};
+                border-color: {self.colors["input_border_focus"]};
+                background-color: {self.colors["combo_background_hover"]};
+                color: {self.colors["combo_text"]};
                 outline: none;
             }}
 
             QComboBox:focus:hover {{
-                background-color: {self.colors['combo_background_pressed']};
-                color: {self.colors['combo_text_pressed']};
+                background-color: {self.colors["combo_background_pressed"]};
+                color: {self.colors["combo_text_pressed"]};
             }}
 
             QComboBox:on {{
-                background-color: {self.colors['combo_background_pressed']};
-                color: {self.colors['combo_text_pressed']};
-                border-color: {self.colors['input_border_focus']};
+                background-color: {self.colors["combo_background_pressed"]};
+                color: {self.colors["combo_text_pressed"]};
+                border-color: {self.colors["input_border_focus"]};
             }}
 
             QComboBox:pressed {{
-                background-color: {self.colors['highlight_light_blue']};
-                color: {self.colors['combo_text_pressed']};
+                background-color: {self.colors["highlight_light_blue"]};
+                color: {self.colors["combo_text_pressed"]};
             }}
 
             QComboBox:disabled {{
-                background-color: {self.colors['disabled_background']};
-                color: {self.colors['disabled_text']};
-                border-color: {self.colors['input_border']};
+                background-color: {self.colors["disabled_background"]};
+                color: {self.colors["disabled_text"]};
+                border-color: {self.colors["input_border"]};
             }}
 
             QComboBox:!focus:!hover {{
-                background-color: {self.colors['combo_background']};
-                color: {self.colors['combo_text']};
+                background-color: {self.colors["combo_background"]};
+                color: {self.colors["combo_text"]};
             }}
 
             QComboBox::drop-down {{
@@ -460,21 +460,21 @@ class ThemeEngine:
 
             /* COMBOBOX DROPDOWN */
             QComboBox QAbstractItemView {{
-                background-color: {self.colors['combo_dropdown_background']};
-                color: {self.colors['combo_text']};
-                border: 1px solid {self.colors['input_border']};
+                background-color: {self.colors["combo_dropdown_background"]};
+                color: {self.colors["combo_text"]};
+                border: 1px solid {self.colors["input_border"]};
                 border-radius: 6px;
                 outline: none;
-                selection-background-color: {self.colors['combo_item_background_selected']};
-                selection-color: {self.colors['input_selection_text']};
-                font-size: {self.fonts['interface_size']};
+                selection-background-color: {self.colors["combo_item_background_selected"]};
+                selection-color: {self.colors["input_selection_text"]};
+                font-size: {self.fonts["interface_size"]};
                 margin: 0px;
                 padding: 0px;
             }}
 
             QComboBox QAbstractItemView::item {{
                 background-color: transparent;
-                color: {self.colors['combo_text']};
+                color: {self.colors["combo_text"]};
                 padding: 6px 8px;
                 border: none;
                 min-height: 18px;
@@ -483,51 +483,51 @@ class ThemeEngine:
             }}
 
             QComboBox QAbstractItemView::item:hover {{
-                background-color: {self.colors['combo_item_background_hover']};
-                color: {self.colors['combo_text']};
+                background-color: {self.colors["combo_item_background_hover"]};
+                color: {self.colors["combo_text"]};
             }}
 
             QComboBox QAbstractItemView::item:selected {{
-                background-color: {self.colors['combo_item_background_selected']};
-                color: {self.colors['input_selection_text']};
+                background-color: {self.colors["combo_item_background_selected"]};
+                color: {self.colors["input_selection_text"]};
             }}
 
             QComboBox QAbstractItemView::item:selected:hover {{
-                background-color: {self.colors['highlight_light_blue']};
-                color: {self.colors['input_selection_text']};
+                background-color: {self.colors["highlight_light_blue"]};
+                color: {self.colors["input_selection_text"]};
             }}
 
             QComboBox QAbstractItemView::item:disabled {{
                 background-color: transparent;
-                color: {self.colors['disabled_text']};
+                color: {self.colors["disabled_text"]};
                 opacity: 0.6;
             }}
 
             QComboBox QAbstractItemView::item:disabled:hover {{
                 background-color: transparent;
-                color: {self.colors['disabled_text']};
+                color: {self.colors["disabled_text"]};
             }}
 
             /* SCROLLBARS */
             QScrollBar:vertical {{
-                background: {self.colors['scroll_track_background']};
+                background: {self.colors["scroll_track_background"]};
                 width: 12px;
                 border-radius: 6px;
                 margin: 0px;
             }}
 
             QScrollBar::handle:vertical {{
-                background: {self.colors['scroll_handle_background']};
+                background: {self.colors["scroll_handle_background"]};
                 min-height: 20px;
                 border-radius: 6px;
             }}
 
             QScrollBar::handle:vertical:hover {{
-                background: {self.colors['scroll_handle_hover']};
+                background: {self.colors["scroll_handle_hover"]};
             }}
 
             QScrollBar::handle:vertical:pressed {{
-                background: {self.colors['scroll_handle_pressed']};
+                background: {self.colors["scroll_handle_pressed"]};
             }}
 
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
@@ -537,24 +537,24 @@ class ThemeEngine:
             }}
 
             QScrollBar:horizontal {{
-                background: {self.colors['scroll_track_background']};
+                background: {self.colors["scroll_track_background"]};
                 height: 12px;
                 border-radius: 6px;
                 margin: 0px;
             }}
 
             QScrollBar::handle:horizontal {{
-                background: {self.colors['scroll_handle_background']};
+                background: {self.colors["scroll_handle_background"]};
                 min-width: 20px;
                 border-radius: 6px;
             }}
 
             QScrollBar::handle:horizontal:hover {{
-                background: {self.colors['scroll_handle_hover']};
+                background: {self.colors["scroll_handle_hover"]};
             }}
 
             QScrollBar::handle:horizontal:pressed {{
-                background: {self.colors['scroll_handle_pressed']};
+                background: {self.colors["scroll_handle_pressed"]};
             }}
 
             QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
@@ -570,117 +570,117 @@ class ThemeEngine:
 
             /* SCROLL AREAS */
             QScrollArea {{
-                border: 1px solid {self.colors['border_color']};
+                border: 1px solid {self.colors["border_color"]};
                 border-radius: 4px;
-                background-color: {self.colors['scroll_area_background']};
+                background-color: {self.colors["scroll_area_background"]};
             }}
 
             QScrollArea > QWidget {{
-                background-color: {self.colors['scroll_area_background']};
+                background-color: {self.colors["scroll_area_background"]};
             }}
 
             /* TABLE VIEWS */
             QTableView, QTableWidget {{
-                background-color: {self.colors['table_background']};
-                color: {self.colors['table_text']};
-                alternate-background-color: {self.colors['table_alternate_background']};
+                background-color: {self.colors["table_background"]};
+                color: {self.colors["table_text"]};
+                alternate-background-color: {self.colors["table_alternate_background"]};
                 gridline-color: transparent;
                 border: none;
                 border-radius: 8px;
-                selection-background-color: {self.colors['table_selection_background']};
-                selection-color: {self.colors['table_selection_text']};
+                selection-background-color: {self.colors["table_selection_background"]};
+                selection-color: {self.colors["table_selection_text"]};
                 outline: none;
             }}
 
             QTableView::item, QTableWidget::item {{
                 border: none;
                 background-color: transparent;
-                color: {self.colors['table_text']};
+                color: {self.colors["table_text"]};
                 padding: 2px 4px;
                 min-height: 16px;
             }}
 
             QTableWidget::item:hover {{
-                background-color: {self.colors['table_hover_background']};
+                background-color: {self.colors["table_hover_background"]};
             }}
 
             QTableWidget::item:selected {{
-                background-color: {self.colors['table_selection_background']};
-                color: {self.colors['table_selection_text']};
+                background-color: {self.colors["table_selection_background"]};
+                color: {self.colors["table_selection_text"]};
             }}
 
             /* TREE VIEWS */
             QTreeView {{
-                background-color: {self.colors['table_background']};
-                color: {self.colors['table_text']};
-                alternate-background-color: {self.colors['table_alternate_background']};
-                font-size: {self.fonts['tree_size']};
+                background-color: {self.colors["table_background"]};
+                color: {self.colors["table_text"]};
+                alternate-background-color: {self.colors["table_alternate_background"]};
+                font-size: {self.fonts["tree_size"]};
                 border: none;
                 outline: none;
-                selection-background-color: {self.colors['table_selection_background']};
-                selection-color: {self.colors['table_selection_text']};
+                selection-background-color: {self.colors["table_selection_background"]};
+                selection-color: {self.colors["table_selection_text"]};
                 show-decoration-selected: 1;
             }}
 
             QTreeView::item {{
                 border: none;
                 background-color: transparent;
-                color: {self.colors['table_text']};
+                color: {self.colors["table_text"]};
                 padding: 2px 4px;
                 min-height: 18px;
             }}
 
             QTreeView::item:alternate {{
-                background-color: {self.colors['table_alternate_background']};
+                background-color: {self.colors["table_alternate_background"]};
             }}
 
             QTreeView::item:hover {{
-                background-color: {self.colors['table_hover_background']};
-                color: {self.colors['table_text']};
+                background-color: {self.colors["table_hover_background"]};
+                color: {self.colors["table_text"]};
                 border: none;
             }}
 
             QTreeView::item:selected {{
-                background-color: {self.colors['table_selection_background']};
-                color: {self.colors['table_selection_text']};
+                background-color: {self.colors["table_selection_background"]};
+                color: {self.colors["table_selection_text"]};
                 border: none;
             }}
 
             QTreeView::item:selected:hover {{
-                background-color: {self.colors['highlight_light_blue']};
-                color: {self.colors['table_selection_text']};
+                background-color: {self.colors["highlight_light_blue"]};
+                color: {self.colors["table_selection_text"]};
                 border: none;
             }}
 
             QTreeView::item:selected:focus {{
-                background-color: {self.colors['table_selection_background']};
-                color: {self.colors['table_selection_text']};
+                background-color: {self.colors["table_selection_background"]};
+                color: {self.colors["table_selection_text"]};
                 border: none;
                 outline: none;
             }}
 
             /* Tree view branch styling - ensure selection spans entire row */
             QTreeView::branch {{
-                background-color: {self.colors['table_background']};
+                background-color: {self.colors["table_background"]};
                 color: transparent;
                 border: none;
                 outline: 0;
             }}
 
             QTreeView::branch:selected {{
-                background-color: {self.colors['table_selection_background']};
+                background-color: {self.colors["table_selection_background"]};
                 color: transparent;
                 border: none;
             }}
 
             QTreeView::branch:hover {{
-                background-color: {self.colors['table_hover_background']};
+                background-color: {self.colors["table_hover_background"]};
                 color: transparent;
                 border: none;
             }}
 
             QTreeView::branch:selected:hover {{
-                background-color: {self.colors['highlight_light_blue']};
+                background-color: {self.colors["highlight_light_blue"]};
                 color: transparent;
                 border: none;
             }}
@@ -714,34 +714,34 @@ class ThemeEngine:
 
             /* HEADER VIEWS */
             QHeaderView {{
-                background-color: {self.colors['table_header_background']};
-                color: {self.colors['table_text']};
+                background-color: {self.colors["table_header_background"]};
+                color: {self.colors["table_text"]};
                 border: none;
-                border-bottom: 1px solid {self.colors['border_color']};
-                font-size: {self.fonts['interface_size']};
-                font-weight: {self.fonts['medium_weight']};
+                border-bottom: 1px solid {self.colors["border_color"]};
+                font-size: {self.fonts["interface_size"]};
+                font-weight: {self.fonts["medium_weight"]};
                 padding: 0px;
             }}
 
             QHeaderView::section {{
-                background-color: {self.colors['table_header_background']};
-                color: {self.colors['table_text']};
+                background-color: {self.colors["table_header_background"]};
+                color: {self.colors["table_text"]};
                 border: none;
-                border-right: 1px solid {self.colors['border_color']};
+                border-right: 1px solid {self.colors["border_color"]};
                 padding: 4px 8px;
-                font-size: {self.fonts['interface_size']};
-                font-weight: {self.fonts['medium_weight']};
+                font-size: {self.fonts["interface_size"]};
+                font-weight: {self.fonts["medium_weight"]};
                 text-align: left;
             }}
 
             QHeaderView::section:hover {{
-                background-color: {self.colors['table_hover_background']};
-                color: {self.colors['table_text']};
+                background-color: {self.colors["table_hover_background"]};
+                color: {self.colors["table_text"]};
             }}
 
             QHeaderView::section:pressed {{
-                background-color: {self.colors['table_selection_background']};
-                color: {self.colors['table_selection_text']};
+                background-color: {self.colors["table_selection_background"]};
+                color: {self.colors["table_selection_text"]};
             }}
 
             QHeaderView::section:first {{
@@ -768,72 +768,72 @@ class ThemeEngine:
 
             /* FileTreeView specific styling */
             FileTreeView::item:hover {{
-                background-color: {self.colors['table_hover_background']};
-                color: {self.colors['table_text']};
+                background-color: {self.colors["table_hover_background"]};
+                color: {self.colors["table_text"]};
                 border: none;
             }}
 
             FileTreeView::item:selected {{
-                background-color: {self.colors['table_selection_background']};
-                color: {self.colors['table_selection_text']};
+                background-color: {self.colors["table_selection_background"]};
+                color: {self.colors["table_selection_text"]};
                 border: none;
             }}
 
             FileTreeView::item:selected:hover {{
-                background-color: {self.colors['highlight_light_blue']};
-                color: {self.colors['table_selection_text']};
+                background-color: {self.colors["highlight_light_blue"]};
+                color: {self.colors["table_selection_text"]};
                 border: none;
             }}
 
             FileTreeView::branch:hover {{
-                background-color: {self.colors['table_hover_background']} !important;
+                background-color: {self.colors["table_hover_background"]} !important;
                 color: transparent !important;
                 border: none !important;
             }}
 
             FileTreeView::branch:selected {{
-                background-color: {self.colors['table_selection_background']} !important;
+                background-color: {self.colors["table_selection_background"]} !important;
                 color: transparent !important;
                 border: none !important;
             }}
 
             FileTreeView::branch:selected:hover {{
-                background-color: {self.colors['highlight_light_blue']} !important;
+                background-color: {self.colors["highlight_light_blue"]} !important;
                 color: transparent !important;
                 border: none !important;
             }}
 
             /* MetadataTreeView specific styling */
             MetadataTreeView {{
-                color: {self.colors['table_text']};
-                background-color: {self.colors['table_background']};
+                color: {self.colors["table_text"]};
+                background-color: {self.colors["table_background"]};
             }}
 
             MetadataTreeView[placeholder="false"] {{
-                color: {self.colors['table_text']} !important;
-                background-color: {self.colors['table_background']} !important;
+                color: {self.colors["table_text"]} !important;
+                background-color: {self.colors["table_background"]} !important;
             }}
 
             MetadataTreeView[placeholder="false"]::item {{
-                color: {self.colors['table_text']} !important;
+                color: {self.colors["table_text"]} !important;
                 background-color: transparent;
             }}
 
             MetadataTreeView[placeholder="false"]::item:hover {{
-                background-color: {self.colors['table_hover_background']} !important;
-                color: {self.colors['table_text']} !important;
+                background-color: {self.colors["table_hover_background"]} !important;
+                color: {self.colors["table_text"]} !important;
                 border: none;
             }}
 
             MetadataTreeView[placeholder="false"]::item:selected {{
-                background-color: {self.colors['table_selection_background']} !important;
-                color: {self.colors['table_selection_text']} !important;
+                background-color: {self.colors["table_selection_background"]} !important;
+                color: {self.colors["table_selection_text"]} !important;
                 border: none;
             }}
 
             MetadataTreeView[placeholder="false"]::item:selected:hover {{
-                background-color: {self.colors['highlight_light_blue']} !important;
-                color: {self.colors['table_selection_text']} !important;
+                background-color: {self.colors["highlight_light_blue"]} !important;
+                color: {self.colors["table_selection_text"]} !important;
                 border: none;
             }}
 
@@ -857,82 +857,82 @@ class ThemeEngine:
 
             /* CHECKBOXES */
             QCheckBox {{
-                color: {self.colors['app_text']};
+                color: {self.colors["app_text"]};
                 spacing: 8px;
-                font-size: {self.fonts['interface_size']};
+                font-size: {self.fonts["interface_size"]};
             }}
 
             QCheckBox::indicator {{
                 width: 16px;
                 height: 16px;
-                border: 1px solid {self.colors['input_border']};
+                border: 1px solid {self.colors["input_border"]};
                 border-radius: 3px;
-                background-color: {self.colors['input_background']};
+                background-color: {self.colors["input_background"]};
             }}
 
             QCheckBox::indicator:unchecked {{
                 image: url(resources/icons/feather_icons/square.svg);
-                background-color: {self.colors['input_background']};
-                border-color: {self.colors['input_border']};
+                background-color: {self.colors["input_background"]};
+                border-color: {self.colors["input_border"]};
             }}
 
             QCheckBox::indicator:checked {{
                 image: url(resources/icons/feather_icons/check-square.svg);
-                background-color: {self.colors['input_background']};
-                border-color: {self.colors['input_border']};
+                background-color: {self.colors["input_background"]};
+                border-color: {self.colors["input_border"]};
             }}
 
             QCheckBox::indicator:hover {{
-                border-color: {self.colors['input_border_hover']};
-                background-color: {self.colors['input_background_hover']};
+                border-color: {self.colors["input_border_hover"]};
+                background-color: {self.colors["input_background_hover"]};
             }}
 
             QCheckBox::indicator:focus {{
-                border-color: {self.colors['input_border_focus']};
-                background-color: {self.colors['input_background_focus']};
+                border-color: {self.colors["input_border_focus"]};
+                background-color: {self.colors["input_background_focus"]};
             }}
 
             /* FINAL TRANSFORM CONTAINER COMBOBOX STYLING */
             FinalTransformContainer QComboBox {{
-                background-color: {self.colors['combo_background']};
-                border: 1px solid {self.colors['combo_border']};
+                background-color: {self.colors["combo_background"]};
+                border: 1px solid {self.colors["combo_border"]};
                 border-radius: 4px;
-                color: {self.colors['combo_text']};
+                color: {self.colors["combo_text"]};
                 padding: 2px 6px;
                 min-height: 18px;
                 margin: 0px;
-                font-size: {self.fonts['interface_size']};
-                selection-background-color: {self.colors['input_selection_bg']};
-                selection-color: {self.colors['input_selection_text']};
+                font-size: {self.fonts["interface_size"]};
+                selection-background-color: {self.colors["input_selection_bg"]};
+                selection-color: {self.colors["input_selection_text"]};
             }}
 
             FinalTransformContainer QComboBox:hover {{
-                background-color: {self.colors['combo_background_hover']};
-                border-color: {self.colors['input_border_hover']};
+                background-color: {self.colors["combo_background_hover"]};
+                border-color: {self.colors["input_border_hover"]};
             }}
 
             FinalTransformContainer QComboBox:focus {{
-                border-color: {self.colors['input_border_focus']};
-                background-color: {self.colors['combo_background_hover']};
+                border-color: {self.colors["input_border_focus"]};
+                background-color: {self.colors["combo_background_hover"]};
                 outline: none;
             }}
 
             FinalTransformContainer QComboBox QAbstractItemView {{
-                background-color: {self.colors['combo_dropdown_background']};
-                color: {self.colors['combo_text']};
-                border: 1px solid {self.colors['input_border']};
+                background-color: {self.colors["combo_dropdown_background"]};
+                color: {self.colors["combo_text"]};
+                border: 1px solid {self.colors["input_border"]};
                 border-radius: 6px;
                 outline: none;
-                selection-background-color: {self.colors['combo_item_background_selected']};
-                selection-color: {self.colors['input_selection_text']};
-                font-size: {self.fonts['interface_size']};
+                selection-background-color: {self.colors["combo_item_background_selected"]};
+                selection-color: {self.colors["input_selection_text"]};
+                font-size: {self.fonts["interface_size"]};
                 margin: 0px;
                 padding: 0px;
             }}
 
             FinalTransformContainer QComboBox QAbstractItemView::item {{
                 background-color: transparent;
-                color: {self.colors['combo_text']};
+                color: {self.colors["combo_text"]};
                 padding: 6px 8px;
                 border: none;
                 min-height: 18px;
@@ -941,80 +941,80 @@ class ThemeEngine:
             }}
 
             FinalTransformContainer QComboBox QAbstractItemView::item:hover {{
-                background-color: {self.colors['combo_item_background_hover']};
-                color: {self.colors['combo_text']};
+                background-color: {self.colors["combo_item_background_hover"]};
+                color: {self.colors["combo_text"]};
                 border-radius: 3px;
             }}
 
             FinalTransformContainer QComboBox QAbstractItemView::item:selected {{
-                background-color: {self.colors['combo_item_background_selected']};
-                color: {self.colors['input_selection_text']};
+                background-color: {self.colors["combo_item_background_selected"]};
+                color: {self.colors["input_selection_text"]};
                 border-radius: 3px;
             }}
 
             /* FinalTransformContainer specific checkbox styling */
             FinalTransformContainer QCheckBox {{
-                color: {self.colors['app_text']};
-                font-size: {self.fonts['interface_size']};
+                color: {self.colors["app_text"]};
+                font-size: {self.fonts["interface_size"]};
                 spacing: 8px;
             }}
 
             FinalTransformContainer QCheckBox::indicator {{
                 width: 16px;
                 height: 16px;
-                border: 1px solid {self.colors['input_border']};
+                border: 1px solid {self.colors["input_border"]};
                 border-radius: 3px;
-                background-color: {self.colors['input_background']};
+                background-color: {self.colors["input_background"]};
             }}
 
             FinalTransformContainer QCheckBox::indicator:unchecked {{
                 image: url(resources/icons/feather_icons/square.svg);
-                background-color: {self.colors['input_background']};
-                border-color: {self.colors['input_border']};
+                background-color: {self.colors["input_background"]};
+                border-color: {self.colors["input_border"]};
             }}
 
             FinalTransformContainer QCheckBox::indicator:checked {{
                 image: url(resources/icons/feather_icons/check-square.svg);
-                background-color: {self.colors['input_background']};
-                border-color: {self.colors['input_border']};
+                background-color: {self.colors["input_background"]};
+                border-color: {self.colors["input_border"]};
             }}
 
             FinalTransformContainer QCheckBox::indicator:hover {{
-                border-color: {self.colors['input_border_hover']};
-                background-color: {self.colors['input_background_hover']};
+                border-color: {self.colors["input_border_hover"]};
+                background-color: {self.colors["input_background_hover"]};
             }}
 
             /* Greeklish checkbox */
             FinalTransformContainer QCheckBox[objectName="greeklish_checkbox"]::indicator:focus {{
-                border-color: {self.colors['input_border']};
-                background-color: {self.colors['input_background']};
+                border-color: {self.colors["input_border"]};
+                background-color: {self.colors["input_background"]};
             }}
 
             /* SPECIFIED TEXT AND COUNTER MODULE STYLING */
             QWidget[objectName*="SpecifiedText"] QLineEdit,
             QWidget[objectName*="Counter"] QLineEdit {{
-                background-color: {self.colors['input_background']};
-                border: 2px solid {self.colors['input_border']};
+                background-color: {self.colors["input_background"]};
+                border: 2px solid {self.colors["input_border"]};
                 border-radius: 4px;
-                color: {self.colors['input_text']};
+                color: {self.colors["input_text"]};
                 padding: 3px 8px;
-                selection-background-color: {self.colors['input_selection_bg']};
-                selection-color: {self.colors['input_selection_text']};
+                selection-background-color: {self.colors["input_selection_bg"]};
+                selection-color: {self.colors["input_selection_text"]};
                 min-height: 18px;
-                font-size: {self.fonts['interface_size']};
+                font-size: {self.fonts["interface_size"]};
                 margin: 1px;
             }}
 
             QWidget[objectName*="SpecifiedText"] QLineEdit:hover,
             QWidget[objectName*="Counter"] QLineEdit:hover {{
-                background-color: {self.colors['input_background_hover']};
-                border-color: {self.colors['input_border_hover']};
+                background-color: {self.colors["input_background_hover"]};
+                border-color: {self.colors["input_border_hover"]};
             }}
 
             QWidget[objectName*="SpecifiedText"] QLineEdit:focus,
             QWidget[objectName*="Counter"] QLineEdit:focus {{
-                border-color: {self.colors['input_border_focus']};
-                background-color: {self.colors['input_background_focus']};
+                border-color: {self.colors["input_border_focus"]};
+                background-color: {self.colors["input_background_focus"]};
             }}
 
             QWidget[objectName*="SpecifiedText"] QLineEdit[error="true"],
@@ -1034,35 +1034,35 @@ class ThemeEngine:
 
             QWidget[objectName*="Counter"] QLabel {{
                 background-color: transparent;
-                color: {self.colors['app_text']};
+                color: {self.colors["app_text"]};
                 border: none;
                 padding: 2px 4px;
                 margin: 1px;
-                font-size: {self.fonts['interface_size']};
+                font-size: {self.fonts["interface_size"]};
             }}
 
             /* COUNTER MODULE INPUT FIELDS */
             CounterModule QLineEdit {{
-                background-color: {self.colors['input_background']};
-                border: 1px solid {self.colors['input_border']};
+                background-color: {self.colors["input_background"]};
+                border: 1px solid {self.colors["input_border"]};
                 border-radius: 4px;
-                color: {self.colors['input_text']};
+                color: {self.colors["input_text"]};
                 padding: 2px 6px;
-                selection-background-color: {self.colors['input_selection_bg']};
-                selection-color: {self.colors['input_selection_text']};
+                selection-background-color: {self.colors["input_selection_bg"]};
+                selection-color: {self.colors["input_selection_text"]};
                 min-height: 18px;
-                font-size: {self.fonts['interface_size']};
+                font-size: {self.fonts["interface_size"]};
                 text-align: right;
                 qproperty-alignment: AlignRight;
             }}
 
             /* SPLITTERS */
             QSplitter {{
-                background-color: {self.colors['app_background']};
+                background-color: {self.colors["app_background"]};
             }}
 
             QSplitter::handle {{
-                background-color: {self.colors['separator_background']};
+                background-color: {self.colors["separator_background"]};
             }}
 
             QSplitter::handle:horizontal {{
@@ -1076,18 +1076,18 @@ class ThemeEngine:
             }}
 
             QSplitter::handle:hover {{
-                background-color: {self.colors['separator_light']};
+                background-color: {self.colors["separator_light"]};
             }}
 
             /* RENAME MODULES AREA */
             QScrollArea[objectName="rename_modules_scroll"] {{
                 border: 4px solid #444444 !important;
                 border-radius: 8px;
-                background-color: {self.colors['scroll_area_background']} !important;
+                background-color: {self.colors["scroll_area_background"]} !important;
             }}
 
             QScrollArea[objectName="rename_modules_scroll"] QAbstractScrollArea::viewport {{
-                background-color: {self.colors['scroll_area_background']} !important;
+                background-color: {self.colors["scroll_area_background"]} !important;
             }}
 
             QWidget[objectName="scroll_content_widget"] {{
@@ -1096,7 +1096,7 @@ class ThemeEngine:
 
             /* FOOTER SEPARATOR */
             QFrame[objectName="footerSeparator"] {{
-                background-color: {self.colors['separator_background']};
+                background-color: {self.colors["separator_background"]};
                 border: none;
                 max-height: 4px;
                 min-height: 4px;
@@ -1104,92 +1104,92 @@ class ThemeEngine:
 
             /* TOOLTIPS */
             QToolTip {{
-                background-color: {self.colors['tooltip_background']};
-                color: {self.colors['tooltip_text']};
-                border: 1px solid {self.colors['tooltip_border']};
+                background-color: {self.colors["tooltip_background"]};
+                color: {self.colors["tooltip_text"]};
+                border: 1px solid {self.colors["tooltip_border"]};
                 border-radius: 6px;
                 padding: 2px 4px;
-                font-size: {self.fonts['interface_size']};
+                font-size: {self.fonts["interface_size"]};
             }}
 
             /* Custom Error Tooltip */
             .ErrorTooltip {{
-                background-color: {self.colors['tooltip_error_background']};
-                color: {self.colors['tooltip_error_text']};
-                border: 1px solid {self.colors['tooltip_error_border']};
+                background-color: {self.colors["tooltip_error_background"]};
+                color: {self.colors["tooltip_error_text"]};
+                border: 1px solid {self.colors["tooltip_error_border"]};
                 border-radius: 6px;
                 padding: 2px 4px;
-                font-size: {self.fonts['interface_size']};
+                font-size: {self.fonts["interface_size"]};
                 font-weight: normal;
             }}
 
             /* Custom Warning Tooltip */
             .WarningTooltip {{
-                background-color: {self.colors['tooltip_warning_background']};
-                color: {self.colors['tooltip_warning_text']};
-                border: 1px solid {self.colors['tooltip_warning_border']};
+                background-color: {self.colors["tooltip_warning_background"]};
+                color: {self.colors["tooltip_warning_text"]};
+                border: 1px solid {self.colors["tooltip_warning_border"]};
                 border-radius: 6px;
                 padding: 2px 4px;
-                font-size: {self.fonts['interface_size']};
+                font-size: {self.fonts["interface_size"]};
                 font-weight: normal;
             }}
 
             /* Custom Info Tooltip */
             .InfoTooltip {{
-                background-color: {self.colors['tooltip_info_background']};
-                color: {self.colors['tooltip_info_text']};
-                border: 1px solid {self.colors['tooltip_info_border']};
+                background-color: {self.colors["tooltip_info_background"]};
+                color: {self.colors["tooltip_info_text"]};
+                border: 1px solid {self.colors["tooltip_info_border"]};
                 border-radius: 6px;
                 padding: 2px 4px;
-                font-size: {self.fonts['interface_size']};
+                font-size: {self.fonts["interface_size"]};
                 font-weight: normal;
             }}
 
             /* Custom Success Tooltip */
             .SuccessTooltip {{
-                background-color: {self.colors['tooltip_success_background']};
-                color: {self.colors['tooltip_success_text']};
-                border: 1px solid {self.colors['tooltip_success_border']};
+                background-color: {self.colors["tooltip_success_background"]};
+                color: {self.colors["tooltip_success_text"]};
+                border: 1px solid {self.colors["tooltip_success_border"]};
                 border-radius: 6px;
                 padding: 2px 4px;
-                font-size: {self.fonts['interface_size']};
+                font-size: {self.fonts["interface_size"]};
                 font-weight: normal;
             }}
 
             /* CONTEXT MENUS */
             QMenu {{
                 background-color: #232323;
-                color: {self.colors['dialog_text']};
+                color: {self.colors["dialog_text"]};
                 border: none;
                 border-radius: 8px;
                 padding: 4px;
-                font-size: {self.fonts['interface_size']};
+                font-size: {self.fonts["interface_size"]};
             }}
 
             QMenu::item {{
                 background-color: transparent;
-                color: {self.colors['dialog_text']};
+                color: {self.colors["dialog_text"]};
                 padding: 6px 16px;
                 border-radius: 6px;
                 margin: 1px;
-                font-size: {self.fonts['interface_size']};
+                font-size: {self.fonts["interface_size"]};
             }}
 
             QMenu::item:hover {{
-                background-color: {self.colors['table_hover_background']};
-                color: {self.colors['dialog_text']};
+                background-color: {self.colors["table_hover_background"]};
+                color: {self.colors["dialog_text"]};
                 border-radius: 6px;
             }}
 
             QMenu::item:selected {{
-                background-color: {self.colors['table_selection_background']};
-                color: {self.colors['input_selection_text']};
+                background-color: {self.colors["table_selection_background"]};
+                color: {self.colors["input_selection_text"]};
                 border-radius: 6px;
             }}
 
             QMenu::item:pressed {{
-                background-color: {self.colors['table_selection_background']};
-                color: {self.colors['input_selection_text']};
+                background-color: {self.colors["table_selection_background"]};
+                color: {self.colors["input_selection_text"]};
                 border-radius: 6px;
             }}
 
@@ -1207,49 +1207,49 @@ class ThemeEngine:
             /* DIALOGS */
             QDialog {{
                 background-color: #232323;
-                color: {self.colors['dialog_text']};
+                color: {self.colors["dialog_text"]};
             }}
 
             /* TABS */
             QTabWidget::pane {{
-                border: 1px solid {self.colors['border_color']};
-                background-color: {self.colors['app_background']};
+                border: 1px solid {self.colors["border_color"]};
+                background-color: {self.colors["app_background"]};
             }}
 
             QTabBar::tab {{
-                background-color: {self.colors['button_background']};
-                color: {self.colors['button_text']};
-                border: 1px solid {self.colors['border_color']};
+                background-color: {self.colors["button_background"]};
+                color: {self.colors["button_text"]};
+                border: 1px solid {self.colors["border_color"]};
                 padding: 6px 12px;
                 margin-right: 2px;
-                font-size: {self.fonts['interface_size']};
+                font-size: {self.fonts["interface_size"]};
             }}
 
             QTabBar::tab:selected {{
-                background-color: {self.colors['accent_color']};
-                color: {self.colors['input_selection_text']};
-                border-bottom: 2px solid {self.colors['accent_color']};
+                background-color: {self.colors["accent_color"]};
+                color: {self.colors["input_selection_text"]};
+                border-bottom: 2px solid {self.colors["accent_color"]};
             }}
 
             QTabBar::tab:hover:!selected {{
-                background-color: {self.colors['button_background_hover']};
+                background-color: {self.colors["button_background_hover"]};
             }}
 
             /* Force background for any potential container */
             QComboBox QAbstractItemView * {{
-                background-color: {self.colors['combo_dropdown_background']} !important;
+                background-color: {self.colors["combo_dropdown_background"]} !important;
             }}
 
             /* Target any potential frame or container inside dropdown */
             QComboBox QFrame {{
-                background-color: {self.colors['combo_dropdown_background']} !important;
+                background-color: {self.colors["combo_dropdown_background"]} !important;
                 border: none !important;
                 margin: 0px !important;
                 padding: 0px !important;
             }}
 
             QComboBox QWidget {{
-                background-color: {self.colors['combo_dropdown_background']} !important;
+                background-color: {self.colors["combo_dropdown_background"]} !important;
             }}
 
             /* Force remove any potential white space at top/bottom */
@@ -1296,41 +1296,41 @@ class ThemeEngine:
                 widget.setStyleSheet(
                     f"""
                     QComboBox {{
-                        background-color: {self.colors['combo_background']};
-                        border: 1px solid {self.colors['combo_border']};
+                        background-color: {self.colors["combo_background"]};
+                        border: 1px solid {self.colors["combo_border"]};
                         border-radius: 4px;
-                        color: {self.colors['combo_text']};
+                        color: {self.colors["combo_text"]};
                         padding: 2px 6px;
                         min-height: 18px;
-                        font-size: {self.fonts['interface_size']};
+                        font-size: {self.fonts["interface_size"]};
                     }}
 
                     QComboBox:hover {{
-                        background-color: {self.colors['combo_background_hover']};
-                        border-color: {self.colors['input_border_hover']};
+                        background-color: {self.colors["combo_background_hover"]};
+                        border-color: {self.colors["input_border_hover"]};
                     }}
 
                     QComboBox:focus {{
-                        border-color: {self.colors['input_border_focus']};
-                        background-color: {self.colors['combo_background_hover']};
+                        border-color: {self.colors["input_border_focus"]};
+                        background-color: {self.colors["combo_background_hover"]};
                     }}
 
                     QComboBox QAbstractItemView {{
-                        background-color: {self.colors['combo_dropdown_background']} !important;
-                        color: {self.colors['combo_text']} !important;
-                        border: 1px solid {self.colors['input_border']} !important;
+                        background-color: {self.colors["combo_dropdown_background"]} !important;
+                        color: {self.colors["combo_text"]} !important;
+                        border: 1px solid {self.colors["input_border"]} !important;
                         border-radius: 6px !important;
                         outline: none !important;
-                        selection-background-color: {self.colors['combo_item_background_selected']} !important;
-                        selection-color: {self.colors['input_selection_text']} !important;
-                        font-size: {self.fonts['interface_size']} !important;
+                        selection-background-color: {self.colors["combo_item_background_selected"]} !important;
+                        selection-color: {self.colors["input_selection_text"]} !important;
+                        font-size: {self.fonts["interface_size"]} !important;
                         margin: 0px !important;
                         padding: 0px !important;
                     }}
 
                     QComboBox QAbstractItemView::item {{
                         background-color: transparent !important;
-                        color: {self.colors['combo_text']} !important;
+                        color: {self.colors["combo_text"]} !important;
                         padding: 6px 8px !important;
                         border: none !important;
                         min-height: 18px !important;
@@ -1339,13 +1339,13 @@ class ThemeEngine:
                     }}
 
                     QComboBox QAbstractItemView::item:hover {{
-                        background-color: {self.colors['combo_item_background_hover']} !important;
-                        color: {self.colors['combo_text']} !important;
+                        background-color: {self.colors["combo_item_background_hover"]} !important;
+                        color: {self.colors["combo_text"]} !important;
                     }}
 
                     QComboBox QAbstractItemView::item:selected {{
-                        background-color: {self.colors['combo_item_background_selected']} !important;
-                        color: {self.colors['input_selection_text']} !important;
+                        background-color: {self.colors["combo_item_background_selected"]} !important;
+                        color: {self.colors["input_selection_text"]} !important;
                     }}
                 """
                 )

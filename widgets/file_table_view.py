@@ -13,7 +13,6 @@ Custom QTableView with Windows Explorer-like behavior:
 - Automatic vertical scrollbar detection and filename column adjustment
 """
 
-
 from config import FILE_TABLE_COLUMN_CONFIG
 from core.application_context import get_app_context
 from core.drag_manager import DragManager
@@ -352,7 +351,11 @@ class FileTableView(QTableView):
                 return
 
             # Get visible columns from model
-            visible_columns = self.model().get_visible_columns() if hasattr(self.model(), "get_visible_columns") else []
+            visible_columns = (
+                self.model().get_visible_columns()
+                if hasattr(self.model(), "get_visible_columns")
+                else []
+            )
 
             for column_key in visible_columns:
                 column_index = visible_columns.index(column_key) + 1  # +1 for status column
@@ -368,7 +371,9 @@ class FileTableView(QTableView):
 
                 # Apply if different
                 if recommended_width != current_width:
-                    logger.debug(f"[ColumnWidth] Adjusting column '{column_key}' width from {current_width}px to {recommended_width}px to reduce elision")
+                    logger.debug(
+                        f"[ColumnWidth] Adjusting column '{column_key}' width from {current_width}px to {recommended_width}px to reduce elision"
+                    )
                     self.setColumnWidth(column_index, recommended_width)
                     self._schedule_column_save(column_key, recommended_width)
 
@@ -430,7 +435,7 @@ class FileTableView(QTableView):
 
                 schedule_ui_update(self._configure_columns, delay=50)
         self.update_placeholder_visibility()
-                    # Don't call _update_header_visibility() here as it will be called from _configure_columns_delayed()
+        # Don't call _update_header_visibility() here as it will be called from _configure_columns_delayed()
 
     # =====================================
     # Table Preparation & Management
@@ -569,11 +574,15 @@ class FileTableView(QTableView):
 
         # Analyze column content type to determine appropriate width
         content_type = self._analyze_column_content_type(column_key)
-        recommended_width = self._get_recommended_width_for_content_type(content_type, default_width, min_width)
+        recommended_width = self._get_recommended_width_for_content_type(
+            content_type, default_width, min_width
+        )
 
         # If current width is suspiciously small (likely from saved config), use recommended width
         if current_width < min_width:
-            logger.debug(f"[ColumnWidth] Column '{column_key}' width {current_width}px is below minimum {min_width}px, using recommended {recommended_width}px")
+            logger.debug(
+                f"[ColumnWidth] Column '{column_key}' width {current_width}px is below minimum {min_width}px, using recommended {recommended_width}px"
+            )
             return recommended_width
 
         # If current width is reasonable, use it but ensure it's not below minimum
@@ -590,7 +599,6 @@ class FileTableView(QTableView):
             "duration": "short",
             "video_fps": "short",
             "audio_channels": "short",
-
             # Medium content (formats, models, sizes)
             "audio_format": "medium",
             "video_codec": "medium",
@@ -603,13 +611,11 @@ class FileTableView(QTableView):
             "video_avg_bitrate": "medium",
             "aperture": "medium",
             "shutter_speed": "medium",
-
             # Long content (filenames, hashes, UMIDs)
             "filename": "long",
             "file_hash": "long",
             "target_umid": "long",
             "device_serial_no": "long",
-
             # Very long content (dates, file paths)
             "modified": "very_long",
             "file_size": "very_long",
@@ -617,21 +623,21 @@ class FileTableView(QTableView):
 
         return content_types.get(column_key, "medium")
 
-    def _get_recommended_width_for_content_type(self, content_type: str, default_width: int, min_width: int) -> int:
+    def _get_recommended_width_for_content_type(
+        self, content_type: str, default_width: int, min_width: int
+    ) -> int:
         """Get recommended width based on content type."""
         # Define width recommendations for different content types
         width_recommendations = {
-            "short": max(80, min_width),      # Short codes, numbers
-            "medium": max(120, min_width),    # Formats, models, sizes
-            "long": max(200, min_width),      # Filenames, hashes, UMIDs
-            "very_long": max(300, min_width), # Dates, file paths
+            "short": max(80, min_width),  # Short codes, numbers
+            "medium": max(120, min_width),  # Formats, models, sizes
+            "long": max(200, min_width),  # Filenames, hashes, UMIDs
+            "very_long": max(300, min_width),  # Dates, file paths
         }
 
         # Use the larger of default_width, min_width, or content_type recommendation
         recommended = width_recommendations.get(content_type, default_width)
         return max(recommended, default_width, min_width)
-
-
 
     def _update_header_visibility(self) -> None:
         """Update header visibility based on whether there are files in the model."""
@@ -774,7 +780,6 @@ class FileTableView(QTableView):
     def _reset_column_widths_to_defaults(self) -> None:
         """Reset all column widths to their default values from config.py."""
         try:
-
             logger.info("Resetting column widths to defaults from config.py")
 
             # Clear saved column widths
@@ -2322,10 +2327,19 @@ class FileTableView(QTableView):
 
             # Force configure columns after model update to ensure new column gets proper width
             from utils.timer_manager import schedule_ui_update
-            schedule_ui_update(self._configure_columns_delayed, delay=50, timer_id=f"configure_new_column_{column_key}")
+
+            schedule_ui_update(
+                self._configure_columns_delayed,
+                delay=50,
+                timer_id=f"configure_new_column_{column_key}",
+            )
 
             # Ensure proper width for the newly added column
-            schedule_ui_update(self._ensure_new_column_proper_width, delay=100, timer_id=f"ensure_column_width_{column_key}")
+            schedule_ui_update(
+                self._ensure_new_column_proper_width,
+                delay=100,
+                timer_id=f"ensure_column_width_{column_key}",
+            )
 
             # Debug
             visible_cols = [key for key, visible in self._visible_columns.items() if visible]
@@ -2340,7 +2354,11 @@ class FileTableView(QTableView):
                 return
 
             # Get visible columns from model
-            visible_columns = self.model().get_visible_columns() if hasattr(self.model(), "get_visible_columns") else []
+            visible_columns = (
+                self.model().get_visible_columns()
+                if hasattr(self.model(), "get_visible_columns")
+                else []
+            )
 
             # Check all visible columns for proper width
             for column_key in visible_columns:
@@ -2357,7 +2375,9 @@ class FileTableView(QTableView):
 
                 # Apply if different
                 if recommended_width != current_width:
-                    logger.debug(f"[ColumnWidth] Adjusting column '{column_key}' width from {current_width}px to {recommended_width}px")
+                    logger.debug(
+                        f"[ColumnWidth] Adjusting column '{column_key}' width from {current_width}px to {recommended_width}px"
+                    )
                     self.setColumnWidth(column_index, recommended_width)
                     self._schedule_column_save(column_key, recommended_width)
 
@@ -2583,7 +2603,6 @@ class FileTableView(QTableView):
             logger.error(f"Error auto-fitting columns to content: {e}")
 
     def refresh_columns_after_model_change(self) -> None:
-
         self._configure_columns()
         self.update_placeholder_visibility()
         self._update_header_visibility()

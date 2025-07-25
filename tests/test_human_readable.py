@@ -9,6 +9,7 @@ test_human_readable.py
 Test script to compare human-readable file size formatting
 between our application and system commands like ls -lh.
 """
+
 import warnings
 
 warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.*never awaited")
@@ -64,7 +65,6 @@ def test_different_size_ranges():
         1610612736,  # 1.5 GB
     ]
 
-
     for size in test_sizes:
         format_size_our_way(size)
 
@@ -85,7 +85,6 @@ def test_actual_files():
     # Test with some larger files if available
     test_paths = ["config.py", "main.py", "main_window.py", "requirements.txt"]  # Larger file
 
-
     for filepath in test_paths:
         if os.path.exists(filepath):
             # Our application's method
@@ -96,22 +95,18 @@ def test_actual_files():
             get_system_human_sizes(filepath)
 
 
-
 def test_edge_cases():
     """Test edge cases that might cause discrepancies."""
-
 
     # Test 1000 vs 1024 boundaries
     sizes_1000 = [999, 1000, 1001]
     sizes_1024 = [1023, 1024, 1025]
-
 
     for size in sizes_1000 + sizes_1024:
         format_size_our_way(size)
 
         # Format using 1000 as base (like some systems do)
         format_size_decimal(size)
-
 
 
 def format_size_decimal(size):

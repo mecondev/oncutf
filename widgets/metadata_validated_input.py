@@ -290,7 +290,9 @@ class MetadataRotationComboBox(QComboBox):
         ]
 
         # Populate combo box
-        for _i, (value, label) in enumerate(zip(self.rotation_values, self.rotation_labels, strict=False)):
+        for _i, (value, label) in enumerate(
+            zip(self.rotation_values, self.rotation_labels, strict=False)
+        ):
             self.addItem(label, value)
 
         # Set default to 0°

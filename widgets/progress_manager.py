@@ -34,7 +34,6 @@ Usage Examples:
     manager.update_progress(processed_bytes=250000000)
 """
 
-
 from core.pyqt_imports import QWidget
 from utils.logger_factory import get_cached_logger
 from widgets.progress_widget import ProgressWidget, create_size_based_progress_widget

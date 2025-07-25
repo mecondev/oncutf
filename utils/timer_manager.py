@@ -322,9 +322,7 @@ def schedule_ui_update(callback: Callable, delay: int = 15, timer_id: str | None
     )
 
 
-def schedule_drag_cleanup(
-    callback: Callable, delay: int = 50, timer_id: str | None = None
-) -> str:
+def schedule_drag_cleanup(callback: Callable, delay: int = 50, timer_id: str | None = None) -> str:
     """Schedule a drag cleanup operation."""
     return get_timer_manager().schedule(
         callback, delay, TimerPriority.LOW, TimerType.DRAG_CLEANUP, timer_id
@@ -349,27 +347,21 @@ def schedule_metadata_load(
     )
 
 
-def schedule_scroll_adjust(
-    callback: Callable, delay: int = 10, timer_id: str | None = None
-) -> str:
+def schedule_scroll_adjust(callback: Callable, delay: int = 10, timer_id: str | None = None) -> str:
     """Schedule a scroll adjustment operation."""
     return get_timer_manager().schedule(
         callback, delay, TimerPriority.HIGH, TimerType.SCROLL_ADJUST, timer_id
     )
 
 
-def schedule_resize_adjust(
-    callback: Callable, delay: int = 10, timer_id: str | None = None
-) -> str:
+def schedule_resize_adjust(callback: Callable, delay: int = 10, timer_id: str | None = None) -> str:
     """Schedule a resize adjustment operation."""
     return get_timer_manager().schedule(
         callback, delay, TimerPriority.HIGH, TimerType.RESIZE_ADJUST, timer_id
     )
 
 
-def schedule_dialog_close(
-    callback: Callable, delay: int = 500, timer_id: str | None = None
-) -> str:
+def schedule_dialog_close(callback: Callable, delay: int = 500, timer_id: str | None = None) -> str:
     """Schedule a dialog close operation with delay."""
     return get_timer_manager().schedule(
         callback, delay, TimerPriority.DELAYED, TimerType.GENERIC, timer_id
