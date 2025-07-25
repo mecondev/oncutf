@@ -11,16 +11,16 @@ from typing import Any
 
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QPalette, QStandardItem, QStandardItemModel
-from PyQt5.QtWidgets import QStyledItemDelegate
-
 from core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, QStyle, QVBoxLayout, QWidget
 from utils.file_status_helpers import (
     batch_hash_status,
     batch_metadata_status,
 )
 from utils.logger_factory import get_cached_logger
+from utils.metadata_field_validators import MetadataFieldValidator
 from utils.theme_engine import ThemeEngine
 from utils.timer_manager import schedule_ui_update
+from widgets.file_table_hover_delegate import ComboBoxItemDelegate
 from widgets.hierarchical_combo_box import HierarchicalComboBox
 
 # ApplicationContext integration
@@ -839,6 +839,22 @@ class MetadataWidget(QWidget):
                     "[MetadataWidget] No metadata keys available, falling back to file dates",
                     extra={"dev_only": True},
                 )
+
+        # Validate the field using MetadataFieldValidator if applicable
+        if category == "metadata_keys" and field:
+            # For metadata keys, we can't use the standard validators since these are field names
+            # But we can check if the field exists in available keys
+            available_keys = self.get_available_metadata_keys()
+            if field not in available_keys:
+                logger.warning(
+                    f"[MetadataWidget] Selected metadata field '{field}' not available, using first available key"
+                )
+                if available_keys:
+                    field = sorted(available_keys)[0]
+                else:
+                    # Fallback to file dates if no metadata keys available
+                    category = "file_dates"
+                    field = "last_modified_yymmdd"
 
         result = {
             "type": "metadata",

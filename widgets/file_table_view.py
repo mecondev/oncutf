@@ -156,9 +156,9 @@ class FileTableView(QTableView):
         self.context_focused_row: int | None = None
 
         # Enable hover visuals
-        from widgets.hover_delegate import HoverItemDelegate
+        from widgets.file_table_hover_delegate import FileTableHoverDelegate
 
-        self.hover_delegate = HoverItemDelegate(self)
+        self.hover_delegate = FileTableHoverDelegate(self)
         self.setItemDelegate(self.hover_delegate)
 
         # Setup viewport events to hide tooltips when mouse leaves viewport

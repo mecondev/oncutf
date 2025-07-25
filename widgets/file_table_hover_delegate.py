@@ -1,13 +1,13 @@
 """
-Module: hover_delegate.py
+Module: file_table_hover_delegate.py
 
 Author: Michael Economou
 Date: 2025-05-31
 
-hover_delegate.py
-Custom QStyledItemDelegate that enables full-row hover highlight.
-The hover background color is provided via constructor and is applied
-only when the row is not selected.
+file_table_hover_delegate.py
+Custom QStyledItemDelegate classes for enhanced UI components:
+- FileTableHoverDelegate: Full-row hover highlight for file tables
+- ComboBoxItemDelegate: Themed styling for combobox dropdown items
 """
 
 from core.pyqt_imports import (
@@ -23,7 +23,57 @@ from core.pyqt_imports import (
 from utils.theme import get_qcolor, get_theme_color
 
 
-class HoverItemDelegate(QStyledItemDelegate):
+class ComboBoxItemDelegate(QStyledItemDelegate):
+    """Custom delegate to render QComboBox dropdown items with theme and proper states."""
+
+    def __init__(self, parent=None, theme=None):
+        super().__init__(parent)
+        self.theme = theme  # Pass your ThemeEngine or color dict
+
+    def initStyleOption(self, option, index):
+        super().initStyleOption(option, index)
+
+        # Use font from theme for absolute consistency
+        option.font.setFamily(self.theme.fonts["base_family"])
+        option.font.setPointSize(int(self.theme.fonts["interface_size"].replace("pt", "")))
+        # Height same as QComboBox fixedHeight (24px to match new height)
+        option.rect.setHeight(24)
+
+        # Handle disabled item (grayout)
+        if not (index.flags() & Qt.ItemIsEnabled):
+            option.palette.setBrush(
+                QPalette.Text, QBrush(QColor(self.theme.get_color("disabled_text")))
+            )
+            option.font.setItalic(True)
+            # Disabled items should not have hover/selected background
+            option.palette.setBrush(QPalette.Highlight, QBrush(QColor("transparent")))
+        else:
+            # Handle selected/hover colors for enabled items
+            if option.state & QStyle.State_Selected:
+                option.palette.setBrush(
+                    QPalette.Text, QBrush(QColor(self.theme.get_color("input_selection_text")))
+                )
+                option.palette.setBrush(
+                    QPalette.Highlight,
+                    QBrush(QColor(self.theme.get_color("combo_item_background_selected"))),
+                )
+            elif option.state & QStyle.State_MouseOver:
+                option.palette.setBrush(
+                    QPalette.Text, QBrush(QColor(self.theme.get_color("combo_text")))
+                )
+                option.palette.setBrush(
+                    QPalette.Highlight,
+                    QBrush(QColor(self.theme.get_color("combo_item_background_hover"))),
+                )
+            else:
+                # Normal state
+                option.palette.setBrush(
+                    QPalette.Text, QBrush(QColor(self.theme.get_color("combo_text")))
+                )
+                option.palette.setBrush(QPalette.Highlight, QBrush(QColor("transparent")))
+
+
+class FileTableHoverDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         """
         Initializes the hover delegate.
