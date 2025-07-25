@@ -145,9 +145,11 @@ class MetadataWidget(QWidget):
         if hasattr(self.options_combo, 'item_selected'):
             # Connect to hierarchical combo box signal
             self.options_combo.item_selected.connect(self._on_hierarchical_item_selected)
+            logger.debug("Connected to hierarchical combo item_selected signal")
         else:
             # Connect to regular QComboBox signal
             self.options_combo.currentIndexChanged.connect(self.emit_if_changed)
+            logger.debug("Connected to regular combo currentIndexChanged signal")
 
         # Initialize category availability
         self.update_category_availability()
@@ -160,44 +162,46 @@ class MetadataWidget(QWidget):
             self.update_options()
 
         self.setLayout(layout)
+        logger.debug("MetadataWidget UI setup completed")
 
     def _on_category_changed(self) -> None:
-        """Handle category combo box changes with safe timer scheduling."""
-        # Check if disabled item was selected (None data)
+        """
+        Handle category combo box changes.
+        Updates available options based on selected category.
+        """
         current_data = self.category_combo.currentData()
+        logger.debug(f"Category changed to: {current_data}")
+
         if current_data is None:
-            # Return to File Dates if disabled item was selected
             self.category_combo.setCurrentIndex(0)
             return
 
         try:
-            schedule_ui_update(self.update_options)
-        except Exception:
-            # Fallback for testing or when timer manager is not available
+            # Clear and update options
+            self.options_combo.clear()
             self.update_options()
 
-        # Check if we need to show dialog for hash/metadata calculation
-        # Use the category from the beginning of the method to avoid timing issues
-        category = current_data  # Use the category we got at the start
-        if category in ["hash", "metadata_keys"]:
-            self._check_calculation_requirements(category)
+            # Enable combo box for metadata keys
+            if current_data == "metadata_keys":
+                self.options_combo.setEnabled(True)
+                self._apply_normal_combo_styling()
 
-        # If Hash category is disabled, apply disabled styling
-        if category == "hash":
-            hash_item = self.category_model.item(1)
-            if not (hash_item.flags() & Qt.ItemIsEnabled):
-                # Hash category is disabled, apply disabled styling
-                self.options_combo.clear()
-                if hasattr(self.options_combo, 'add_item'):
-                    self.options_combo.add_item("CRC32", "hash_crc32")
-                else:
-                    self.options_combo.addItem("CRC32", userData="hash_crc32")
-                self.options_combo.setEnabled(False)
-                self._apply_disabled_combo_styling()
+            # Check calculation requirements
+            if current_data in ["hash", "metadata_keys"]:
+                self._check_calculation_requirements(current_data)
+
+            # Force UI update
+            self.options_combo.repaint()
+            logger.debug(f"Category change completed for: {current_data}")
+
+        except Exception as e:
+            logger.error(f"Error in _on_category_changed: {e}")
 
     def update_options(self) -> None:
         category = self.category_combo.currentData()
         self.options_combo.clear()
+
+        logger.debug(f"update_options called with category: {category}")
 
         if category == "file_dates":
             self.options_label.setText("Type")
@@ -223,9 +227,11 @@ class MetadataWidget(QWidget):
         if hasattr(self.options_combo, 'get_current_data'):
             # For hierarchical combo box, we don't need to set index
             # The first item will be automatically selected
-            pass
+            current_data = self.options_combo.get_current_data()
+            logger.debug(f"Hierarchical combo current data: {current_data}")
         elif self.options_combo.count() > 0:
             self.options_combo.setCurrentIndex(0)
+            logger.debug(f"Regular combo set to index 0")
 
         # Use timer to ensure currentData is updated before emitting
         try:
@@ -248,13 +254,17 @@ class MetadataWidget(QWidget):
             ]
         }
 
+        logger.debug(f"Populating file dates with data: {hierarchical_data}")
+
         # Populate the hierarchical combo box
         if hasattr(self.options_combo, 'populate_from_metadata_groups'):
             self.options_combo.populate_from_metadata_groups(hierarchical_data)
+            logger.debug("Used hierarchical combo populate_from_metadata_groups")
         else:
             # Fallback for regular combo box
             for label, val in hierarchical_data["File Dates"]:
                 self.options_combo.addItem(label, userData=val)
+            logger.debug("Used regular combo addItem fallback")
 
     def populate_hash_options(self) -> bool:
         """Populate hash options with efficient batch hash checking."""
@@ -271,6 +281,8 @@ class MetadataWidget(QWidget):
                         ("CRC32", "hash_crc32"),
                     ]
                 }
+
+                logger.debug("No files selected, populating disabled hash options")
 
                 if hasattr(self.options_combo, 'populate_from_metadata_groups'):
                     self.options_combo.populate_from_metadata_groups(hierarchical_data)
@@ -301,6 +313,8 @@ class MetadataWidget(QWidget):
                     ("CRC32", "hash_crc32"),
                 ]
             }
+
+            logger.debug(f"Populating hash options: {len(files_with_hash)}/{len(file_paths)} files have hash")
 
             if hasattr(self.options_combo, 'populate_from_metadata_groups'):
                 self.options_combo.populate_from_metadata_groups(hierarchical_data)
@@ -413,11 +427,14 @@ class MetadataWidget(QWidget):
             self._hash_dialog_active = False  # <-- Ensure flag reset on error
 
     def populate_metadata_keys(self) -> None:
-        """Populate metadata keys in hierarchical structure."""
+        """
+        Populate the hierarchical combo box with available metadata keys.
+        Keys are grouped by category for better organization.
+        """
         keys = self.get_available_metadata_keys()
         self.options_combo.clear()
 
-        # Debug για να δούμε τι κλειδιά έχουμε
+        # Log available keys for debugging
         logger.debug(f"Available metadata keys: {keys}")
 
         if not keys:
@@ -427,12 +444,14 @@ class MetadataWidget(QWidget):
                 ]
             }
             self.options_combo.populate_from_metadata_groups(hierarchical_data)
+            logger.debug("No metadata keys available, showing placeholder")
             return
 
         # Group keys by category
         grouped_keys = self._group_metadata_keys(keys)
-        logger.debug(f"Grouped keys: {grouped_keys}")  # Debug log
+        logger.debug(f"Grouped keys: {grouped_keys}")
 
+        # Build hierarchical data structure
         hierarchical_data = {}
         for category, category_keys in grouped_keys.items():
             if category_keys:  # Only add categories that have items
@@ -440,17 +459,29 @@ class MetadataWidget(QWidget):
                 for key in sorted(category_keys):
                     display_text = self.format_metadata_key_name(key)
                     hierarchical_data[category].append((display_text, key))
-                    logger.debug(f"Added {display_text} -> {key} to {category}")  # Debug log
+                    logger.debug(f"Added {display_text} -> {key} to {category}")
 
-        # Populate the hierarchical combo box
+        # Populate combo box with grouped data
         self.options_combo.populate_from_metadata_groups(hierarchical_data)
 
-        # Expand all categories by default
+        # Ensure all categories are expanded
         if hasattr(self.options_combo, 'expand_all'):
             self.options_combo.expand_all()
 
-        # Force an update after population
+        # Select first item by default
+        if hasattr(self.options_combo, 'setCurrentIndex') and self.options_combo.count() > 0:
+            self.options_combo.setCurrentIndex(0)
+
+        # Force update to ensure UI reflects changes
         self.emit_if_changed()
+
+        # Enable the combo box
+        self.options_combo.setEnabled(True)
+
+        # Apply normal styling
+        self._apply_normal_combo_styling()
+
+        logger.debug(f"Populated metadata keys with {len(hierarchical_data)} categories")
 
     def _group_metadata_keys(self, keys: set[str]) -> dict[str, list[str]]:
         """Group metadata keys by category for better organization."""
@@ -654,9 +685,11 @@ class MetadataWidget(QWidget):
         # Use the hierarchical combo box API
         if hasattr(self.options_combo, 'get_current_data'):
             field = self.options_combo.get_current_data()
+            logger.debug(f"get_data: Using hierarchical combo, field: {field}")
         else:
             # Fallback to regular QComboBox API
             field = self.options_combo.currentData()
+            logger.debug(f"get_data: Using regular combo, field: {field}")
 
         # Set default field based on category
         if not field:
@@ -689,11 +722,14 @@ class MetadataWidget(QWidget):
                 field = "last_modified_yymmdd"
                 logger.debug("[MetadataWidget] No metadata keys available, falling back to file dates", extra={"dev_only": True})
 
-        return {
+        result = {
             "type": "metadata",
             "category": category,
             "field": field,
         }
+
+        logger.debug(f"get_data returning: {result}")
+        return result
 
     def emit_if_changed(self) -> None:
         # Log current combo box state
@@ -1374,6 +1410,7 @@ class MetadataWidget(QWidget):
     def _on_hierarchical_item_selected(self, _text: str, _data: Any):
         """Handle item selection from hierarchical combo box."""
         # text and data are provided by the signal but not used here
+        logger.debug(f"Hierarchical item selected: {_text} with data: {_data}")
         self.emit_if_changed()
 
     def _on_selection_changed(self):

@@ -236,25 +236,33 @@ class HierarchicalComboBox(QComboBox):
         if current_index.isValid():
             item = self.model.itemFromIndex(current_index)
             if item and item.flags() & Qt.ItemIsSelectable:
-                return item.data(Qt.UserRole)
+                data = item.data(Qt.UserRole)
+                logger.debug(f"get_current_data from tree view: {data}")
+                return data
 
         # If no valid selection in tree view, try to find by current text
         current_text = self.currentText()
         if current_text:
+            logger.debug(f"Searching for item with text: {current_text}")
             for row in range(self.model.rowCount()):
                 item = self.model.item(row)
                 if item:
                     # Check if this is a category
                     if item.flags() & Qt.ItemIsSelectable:
                         if item.text() == current_text:
-                            return item.data(Qt.UserRole)
+                            data = item.data(Qt.UserRole)
+                            logger.debug(f"Found root item with data: {data}")
+                            return data
                     else:
                         # Check children of category
                         for child_row in range(item.rowCount()):
                             child_item = item.child(child_row)
                             if child_item and child_item.text() == current_text:
-                                return child_item.data(Qt.UserRole)
+                                data = child_item.data(Qt.UserRole)
+                                logger.debug(f"Found child item with data: {data}")
+                                return data
 
+        logger.warning(f"get_current_data: No item found for text '{current_text}'")
         return None
 
     def get_current_text(self) -> str:
@@ -271,6 +279,8 @@ class HierarchicalComboBox(QComboBox):
 
     def set_current_data(self, data: Any):
         """Set the current selection by data value."""
+        logger.debug(f"set_current_data called with data: {data}")
+
         for row in range(self.model.rowCount()):
             item = self.model.item(row)
             if item:
@@ -279,6 +289,8 @@ class HierarchicalComboBox(QComboBox):
                     if item.data(Qt.UserRole) == data:
                         self.tree_view.setCurrentIndex(self.model.indexFromItem(item))
                         self.setCurrentText(item.text())
+                        self.setEditText(item.text())  # Ensure edit text is updated
+                        logger.debug(f"Set current data to root item: {item.text()}")
                         return
                 else:
                     # Check children of category
@@ -287,7 +299,11 @@ class HierarchicalComboBox(QComboBox):
                         if child_item and child_item.data(Qt.UserRole) == data:
                             self.tree_view.setCurrentIndex(self.model.indexFromItem(child_item))
                             self.setCurrentText(child_item.text())
+                            self.setEditText(child_item.text())  # Ensure edit text is updated
+                            logger.debug(f"Set current data to child item: {child_item.text()}")
                             return
+
+        logger.warning(f"set_current_data: No item found with data: {data}")
 
     def expand_all(self):
         """Expand all categories."""
@@ -314,9 +330,12 @@ class HierarchicalComboBox(QComboBox):
 
             # Update the combo box display text
             self.setCurrentText(text)
+            self.setEditText(text)  # Ensure the edit text is also updated
 
             # Emit signal
             self.item_selected.emit(text, data)
+
+            logger.debug(f"Item clicked: {text} with data: {data}")
 
             # Close the popup
             self.hidePopup()
@@ -364,8 +383,19 @@ class HierarchicalComboBox(QComboBox):
 
         # Select first item if available
         if first_item:
-            index = self.model.indexFromItem(first_item)
+            # Set the current text in the combo box
             self.setCurrentText(first_item.text())
+
+            # Set the current index in the tree view
+            index = self.model.indexFromItem(first_item)
             self.tree_view.setCurrentIndex(index)
+
+            # Ensure the combo box shows the selected text
+            self.setEditText(first_item.text())
+
             # Emit signal for first item
             self.item_selected.emit(first_item.text(), first_item.data(Qt.UserRole))
+
+            logger.debug(f"Selected first item: {first_item.text()} with data: {first_item.data(Qt.UserRole)}")
+        else:
+            logger.warning("No items to populate in hierarchical combo box")
