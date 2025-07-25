@@ -156,7 +156,7 @@ class FileTableView(QTableView):
         self.context_focused_row: int | None = None
 
         # Enable hover visuals
-        from widgets.file_table_hover_delegate import FileTableHoverDelegate
+        from widgets.ui_delegates import FileTableHoverDelegate
 
         self.hover_delegate = FileTableHoverDelegate(self)
         self.setItemDelegate(self.hover_delegate)

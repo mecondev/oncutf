@@ -1,20 +1,22 @@
 """
-Module: file_table_hover_delegate.py
+Module: ui_delegates.py
 
 Author: Michael Economou
 Date: 2025-05-31
 
-file_table_hover_delegate.py
+ui_delegates.py
 Custom QStyledItemDelegate classes for enhanced UI components:
 - FileTableHoverDelegate: Full-row hover highlight for file tables
 - ComboBoxItemDelegate: Themed styling for combobox dropdown items
 """
 
 from core.pyqt_imports import (
+    QBrush,
     QColor,
     QCursor,
     QIcon,
     QPen,
+    QPalette,
     QStyle,
     QStyledItemDelegate,
     Qt,

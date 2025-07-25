@@ -20,7 +20,7 @@ from utils.logger_factory import get_cached_logger
 from utils.metadata_field_validators import MetadataFieldValidator
 from utils.theme_engine import ThemeEngine
 from utils.timer_manager import schedule_ui_update
-from widgets.file_table_hover_delegate import ComboBoxItemDelegate
+from widgets.ui_delegates import ComboBoxItemDelegate
 from widgets.hierarchical_combo_box import HierarchicalComboBox
 
 # ApplicationContext integration
@@ -31,55 +31,6 @@ except ImportError:
 
 logger = get_cached_logger(__name__)
 
-
-class ComboBoxItemDelegate(QStyledItemDelegate):
-    """Custom delegate to render QComboBox dropdown items with theme and proper states."""
-
-    def __init__(self, parent=None, theme=None):
-        super().__init__(parent)
-        self.theme = theme  # Pass your ThemeEngine or color dict
-
-    def initStyleOption(self, option, index):
-        super().initStyleOption(option, index)
-
-        # Use font from theme for absolute consistency
-        option.font.setFamily(self.theme.fonts["base_family"])
-        option.font.setPointSize(int(self.theme.fonts["interface_size"].replace("pt", "")))
-        # Height same as QComboBox fixedHeight (24px to match new height)
-        option.rect.setHeight(24)
-
-        # Handle disabled item (grayout)
-        if not (index.flags() & Qt.ItemIsEnabled):
-            option.palette.setBrush(
-                QPalette.Text, QBrush(QColor(self.theme.get_color("disabled_text")))
-            )
-            option.font.setItalic(True)
-            # Disabled items should not have hover/selected background
-            option.palette.setBrush(QPalette.Highlight, QBrush(QColor("transparent")))
-        else:
-            # Handle selected/hover colors for enabled items
-            if option.state & QStyle.State_Selected:
-                option.palette.setBrush(
-                    QPalette.Text, QBrush(QColor(self.theme.get_color("input_selection_text")))
-                )
-                option.palette.setBrush(
-                    QPalette.Highlight,
-                    QBrush(QColor(self.theme.get_color("combo_item_background_selected"))),
-                )
-            elif option.state & QStyle.State_MouseOver:
-                option.palette.setBrush(
-                    QPalette.Text, QBrush(QColor(self.theme.get_color("combo_text")))
-                )
-                option.palette.setBrush(
-                    QPalette.Highlight,
-                    QBrush(QColor(self.theme.get_color("combo_item_background_hover"))),
-                )
-            else:
-                # Normal state
-                option.palette.setBrush(
-                    QPalette.Text, QBrush(QColor(self.theme.get_color("combo_text")))
-                )
-                option.palette.setBrush(QPalette.Highlight, QBrush(QColor("transparent")))
 
 
 class MetadataWidget(QWidget):
