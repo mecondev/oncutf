@@ -8,20 +8,14 @@ Widget for metadata selection (file dates or EXIF), with optimized signal emissi
 """
 
 import time
-from typing import Any
 
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QBrush, QColor, QPalette, QStandardItem, QStandardItemModel
-from core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, QStyle, QVBoxLayout, QWidget
-from utils.file_status_helpers import (
-    batch_hash_status,
-    batch_metadata_status,
-)
+
+from core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from utils.logger_factory import get_cached_logger
-from utils.metadata_field_validators import MetadataFieldValidator
 from utils.theme_engine import ThemeEngine
-from widgets.ui_delegates import ComboBoxItemDelegate
 from widgets.hierarchical_combo_box import HierarchicalComboBox
+from widgets.ui_delegates import ComboBoxItemDelegate
 
 # ApplicationContext integration
 try:
@@ -125,7 +119,7 @@ class MetadataWidget(QWidget):
 
         # Schedule options update (only if timer manager is available)
         try:
-            from utils.timer_manager import get_timer_manager, TimerType
+            from utils.timer_manager import TimerType, get_timer_manager
             timer_manager = get_timer_manager()
             timer_manager.schedule(
                 self.update_options,
@@ -168,6 +162,15 @@ class MetadataWidget(QWidget):
         # Force UI update
         self.options_combo.repaint()
 
+    def _on_hierarchical_item_selected(self, text: str, user_data: object) -> None:
+        """
+        Handle hierarchical combo box item selection.
+        Called when an item is selected from the hierarchical dropdown.
+        """
+        logger.debug(f"Hierarchical item selected: text='{text}', data={user_data}")
+
+        # Emit change signal to update preview
+        self.emit_if_changed()
 
     def populate_metadata_keys(self) -> None:
         """
@@ -553,5 +556,118 @@ class MetadataWidget(QWidget):
             self.populate_hash_options()
             # The hash combo will remain disabled from populate_hash_options
             self.emit_if_changed()
+
+    def update_category_availability(self) -> None:
+        """Update the available categories in the category combo box."""
+        logger.debug("Updating category availability")
+
+        # Clear existing items
+        self.category_combo.clear()
+
+        # Add available categories
+        self.category_combo.addItem("File Dates", "file_dates")
+        self.category_combo.addItem("Hash (CRC32)", "hash")
+        self.category_combo.addItem("Metadata Fields", "metadata_keys")
+
+        # Set default to file dates
+        self.category_combo.setCurrentIndex(0)
+
+        logger.debug("Category availability updated")
+
+    def update_options(self) -> None:
+        """Update the options combo box based on the selected category."""
+        category = self.category_combo.currentData()
+        logger.debug(f"Updating options for category: {category}")
+
+        if category == "file_dates":
+            self._populate_file_date_options()
+        elif category == "hash":
+            self.populate_hash_options()
+        elif category == "metadata_keys":
+            self.populate_metadata_keys()
+        else:
+            # Default to file dates
+            self._populate_file_date_options()
+
+        logger.debug("Options updated")
+
+    def _populate_file_date_options(self) -> None:
+        """Populate options for file date category."""
+        self.options_combo.clear()
+
+        # Add file date options
+        date_options = [
+            ("Modified (YYMMDD)", "last_modified_yymmdd"),
+            ("Modified (YYYYMMDD)", "last_modified_yyyymmdd"),
+            ("Created (YYMMDD)", "created_yymmdd"),
+            ("Created (YYYYMMDD)", "created_yyyymmdd"),
+        ]
+
+        for display_text, data in date_options:
+            self.options_combo.addItem(display_text, data)
+
+        # Enable the combo box
+        self.options_combo.setEnabled(True)
+        self._apply_normal_combo_styling()
+
+    def populate_hash_options(self) -> None:
+        """Populate options for hash category."""
+        self.options_combo.clear()
+
+        # Add only CRC32 hash option (as mentioned in get_data method)
+        self.options_combo.addItem("CRC32", "hash_crc32")
+
+        # Disable the combo box since there's only one option
+        self.options_combo.setEnabled(False)
+
+        logger.debug("Hash options populated (CRC32 only)")
+
+    def get_available_metadata_keys(self) -> set[str]:
+        """Get available metadata keys from the application context."""
+        if self._cached_metadata_keys is not None:
+            return self._cached_metadata_keys
+
+        app_context = self._get_app_context()
+        if app_context is None:
+            logger.debug("ApplicationContext not available, returning empty metadata keys")
+            self._cached_metadata_keys = set()
+            return self._cached_metadata_keys
+
+        try:
+            # Get metadata keys from the application context
+            metadata_keys = app_context.get_available_metadata_keys()
+            self._cached_metadata_keys = set(metadata_keys) if metadata_keys else set()
+            logger.debug(f"Retrieved {len(self._cached_metadata_keys)} metadata keys from ApplicationContext")
+        except Exception as e:
+            logger.warning(f"Error getting metadata keys: {e}")
+            self._cached_metadata_keys = set()
+
+        return self._cached_metadata_keys
+
+    def _check_calculation_requirements(self, category: str) -> None:
+        """Check if calculation is required for the selected category."""
+        if category in ["hash", "metadata_keys"]:
+            logger.debug(f"Category '{category}' requires calculation")
+            # Could trigger calculation here if needed
+            # For now, just log the requirement
+        else:
+            logger.debug(f"Category '{category}' does not require calculation")
+
+    def _apply_normal_combo_styling(self) -> None:
+        """Apply normal styling to the options combo box."""
+        # Reset any disabled styling
+        if hasattr(self.options_combo, 'setStyleSheet'):
+            self.options_combo.setStyleSheet("")
+        logger.debug("Applied normal combo styling")
+
+    def _ensure_theme_inheritance(self) -> None:
+        """Ensure child widgets inherit theme settings."""
+        try:
+            from utils.theme_engine import ThemeEngine
+            theme = ThemeEngine()
+            theme.apply_widget_theme(self)
+            logger.debug("Theme inheritance ensured for MetadataWidget")
+        except Exception as e:
+            logger.debug(f"Could not apply theme inheritance: {e}")
 
 

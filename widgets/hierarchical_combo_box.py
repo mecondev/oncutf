@@ -262,7 +262,7 @@ class HierarchicalComboBox(QComboBox):
 
             # Use global timer manager to close popup with delay to avoid flickering
             try:
-                from utils.timer_manager import get_timer_manager, TimerType
+                from utils.timer_manager import TimerType, get_timer_manager
                 timer_manager = get_timer_manager()
                 timer_manager.schedule(
                     self.hidePopup,

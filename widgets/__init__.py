@@ -16,7 +16,6 @@ from .custom_splash_screen import CustomSplashScreen
 from .file_table_view import FileTableView
 from .file_tree_view import FileTreeView
 from .final_transform_container import FinalTransformContainer
-from .ui_delegates import ComboBoxItemDelegate, FileTableHoverDelegate
 from .interactive_header import InteractiveHeader
 from .metadata_edit_dialog import MetadataEditDialog
 from .metadata_tree_view import MetadataTreeView
@@ -31,6 +30,7 @@ from .progress_widget import ProgressWidget
 from .rename_history_dialog import RenameHistoryDialog
 from .rename_module_widget import RenameModuleWidget
 from .rename_modules_area import RenameModulesArea
+from .ui_delegates import ComboBoxItemDelegate, FileTableHoverDelegate
 from .validated_line_edit import ValidatedLineEdit
 
 __all__ = [
