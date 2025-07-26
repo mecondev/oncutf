@@ -7,6 +7,7 @@ Date: 2025-05-31
 Widget for metadata selection (file dates or EXIF), with optimized signal emission system.
 """
 
+import time
 from typing import Any
 
 from PyQt5.QtCore import Qt, pyqtSignal
@@ -19,7 +20,6 @@ from utils.file_status_helpers import (
 from utils.logger_factory import get_cached_logger
 from utils.metadata_field_validators import MetadataFieldValidator
 from utils.theme_engine import ThemeEngine
-from utils.timer_manager import schedule_ui_update
 from widgets.ui_delegates import ComboBoxItemDelegate
 from widgets.hierarchical_combo_box import HierarchicalComboBox
 
@@ -45,12 +45,22 @@ class MetadataWidget(QWidget):
     def __init__(self, parent: QWidget | None = None, parent_window: QWidget | None = None) -> None:
         super().__init__(parent)
         self.parent_window = parent_window
+
+        # Initialize data tracking
         self._last_data = None
         self._last_category = None
+
+        # Debounce mechanism for emit_if_changed
+        self._last_emit_time = 0
+        self._emit_debounce_delay = 50  # 50ms debounce delay
+
+        # Hash dialog tracking
+        self._hash_dialog_active = False
+
+        # Cache for metadata keys
         self._cached_metadata_keys = None
-        self._hash_dialog_active = False  # Flag to prevent multiple dialogs
-        self._last_selection_count = 0  # Track selection count to avoid unnecessary updates
-        self._update_timer = None  # Timer for debouncing updates
+
+        # Setup UI
         self.setup_ui()
 
         # Ensure theme inheritance for child widgets
@@ -115,7 +125,14 @@ class MetadataWidget(QWidget):
 
         # Schedule options update (only if timer manager is available)
         try:
-            schedule_ui_update(self.update_options, 0)
+            from utils.timer_manager import get_timer_manager, TimerType
+            timer_manager = get_timer_manager()
+            timer_manager.schedule(
+                self.update_options,
+                delay=0,  # Immediate execution
+                timer_type=TimerType.UI_UPDATE,
+                timer_id="metadata_widget_initial_setup"
+            )
         except Exception:
             # Fallback for testing or when timer manager is not available
             self.update_options()
@@ -151,6 +168,27 @@ class MetadataWidget(QWidget):
 
             # Force UI update
             self.options_combo.repaint()
+
+            # Force preview update by clearing cache and emitting signal
+            # This ensures preview is always updated when category changes
+            try:
+                # Clear any preview caches to force regeneration
+                if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                    self.parent_window.utility_manager.clear_preview_cache()
+
+                # Also clear unified rename engine cache if available
+                if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                    self.parent_window.unified_rename_engine.clear_cache()
+
+                # Force preview update through main window
+                if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                    self.parent_window.request_preview_update()
+
+                self.force_preview_update()
+            except Exception as e:
+                logger.warning(f"Error in category change preview update: {e}")
+                # Fallback to basic preview update
+                self.force_preview_update()
 
             logger.debug(f"Category change completed for: {current_data}")
 
@@ -195,12 +233,26 @@ class MetadataWidget(QWidget):
 
         # Use timer to ensure currentData is updated before emitting
         try:
-            from utils.timer_manager import schedule_ui_update
+            from utils.timer_manager import get_timer_manager, TimerType
+            timer_manager = get_timer_manager()
+            timer_manager.schedule(
+                self.emit_if_changed,
+                delay=15,  # 15ms delay for UI update
+                timer_type=TimerType.UI_UPDATE,
+                timer_id="metadata_widget_options_update"
+            )
 
-            schedule_ui_update(self.emit_if_changed, 10)
+            # Also force preview update to ensure it's always updated
+            timer_manager.schedule(
+                self._force_preview_update_with_cache_clear,
+                delay=20,  # 20ms delay for preview update
+                timer_type=TimerType.PREVIEW_UPDATE,
+                timer_id="metadata_widget_preview_force_update"
+            )
         except Exception:
             # Fallback for testing or when timer manager is not available
             self.emit_if_changed()
+            self._force_preview_update_with_cache_clear()
 
     def populate_file_dates(self) -> None:
         # Prepare hierarchical data for file dates
@@ -220,6 +272,27 @@ class MetadataWidget(QWidget):
         # Populate the hierarchical combo box
         self.options_combo.populate_from_metadata_groups(hierarchical_data)
         logger.debug("Used hierarchical combo populate_from_metadata_groups for file dates")
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when file dates are populated
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in populate_file_dates preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def populate_hash_options(self) -> bool:
         """Populate hash options with efficient batch hash checking."""
@@ -294,40 +367,71 @@ class MetadataWidget(QWidget):
             }
 
             self.options_combo.populate_from_metadata_groups(hierarchical_data)
-
-            # Disable the combo box in case of error
             self.options_combo.setEnabled(False)
-            # Apply disabled styling to show text in gray
             self._apply_disabled_combo_styling()
             return False
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when hash options are populated
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in populate_hash_options preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def _get_selected_files(self):
         """Get selected files from the main window."""
         try:
-            # Try to get selected files from parent window
-            if self.parent_window and hasattr(self.parent_window, "get_selected_files_ordered"):
-                files = self.parent_window.get_selected_files_ordered()
-                return files
+            # Try to get from parent window first
+            if self.parent_window and hasattr(self.parent_window, "get_selected_files"):
+                return self.parent_window.get_selected_files()
 
-            # Try to get from ApplicationContext
+            # Fallback to ApplicationContext
             context = self._get_app_context()
+            if context and hasattr(context, "get_selected_files"):
+                return context.get_selected_files()
 
-            # Try to get from FileStore
-            if context and hasattr(context, "_file_store") and context._file_store:
-                selected_files = context._file_store.get_selected_files()
-                if selected_files:
-                    return selected_files
-
-            # Try to get from SelectionStore
-            if context and hasattr(context, "_selection_store") and context._selection_store:
-                selected_files = context._selection_store.get_selected_files()
-                if selected_files:
-                    return selected_files
+            # Final fallback - empty list
+            logger.warning("[MetadataWidget] Could not get selected files")
+            return []
 
         except Exception as e:
-            logger.warning(f"[MetadataWidget] Error getting selected files: {e}")
+            logger.error(f"[MetadataWidget] Error getting selected files: {e}")
+            return []
 
-        return []
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when selected files are retrieved
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _get_selected_files preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def _calculate_hashes_for_files(self, files_needing_hash):
         """Calculate hashes for the given file paths."""
@@ -362,9 +466,18 @@ class MetadataWidget(QWidget):
                 main_window.event_handler_manager._handle_calculate_hashes(file_items_needing_hash)
 
                 # Force preview update after hash calculation
-                schedule_ui_update(
-                    self.force_preview_update, 100
-                )  # Small delay to ensure hash calculation completes
+                try:
+                    from utils.timer_manager import get_timer_manager, TimerType
+                    timer_manager = get_timer_manager()
+                    timer_manager.schedule(
+                        self.force_preview_update,
+                        delay=100,  # Small delay to ensure hash calculation completes
+                        timer_type=TimerType.PREVIEW_UPDATE,
+                        timer_id="metadata_widget_hash_preview_update"
+                    )
+                except ImportError:
+                    # Fallback to immediate call if timer manager not available
+                    self.force_preview_update()
                 self._hash_dialog_active = False  # <-- Ensure flag reset after calculation
             else:
                 logger.error("[MetadataWidget] Could not find main window for hash calculation")
@@ -373,6 +486,27 @@ class MetadataWidget(QWidget):
         except Exception as e:
             logger.error(f"[MetadataWidget] Error calculating hashes: {e}")
             self._hash_dialog_active = False  # <-- Ensure flag reset on error
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when hashes are calculated
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _calculate_hashes_for_files preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def populate_metadata_keys(self) -> None:
         """
@@ -422,6 +556,27 @@ class MetadataWidget(QWidget):
         self._apply_normal_combo_styling()
 
         logger.debug(f"Populated metadata keys with {len(hierarchical_data)} categories")
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when metadata keys are populated
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in populate_metadata_keys preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def _group_metadata_keys(self, keys: set[str]) -> dict[str, list[str]]:
         """Group metadata keys by category for better organization."""
@@ -547,191 +702,181 @@ class MetadataWidget(QWidget):
             # ApplicationContext not ready yet
             return None
 
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when app context is retrieved
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _get_app_context preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
+
     def _get_metadata_cache_via_context(self):
         try:
-            from core.application_context import get_app_context
-
-            context = get_app_context()
-            if context and hasattr(context, "_metadata_cache"):
-                cache = context._metadata_cache
-                return cache
-            else:
-                return None
+            context = self._get_app_context()
+            if context and hasattr(context, "metadata_cache"):
+                return context.metadata_cache
+            return None
         except Exception as e:
-            logger.debug(
-                f"[MetadataWidget] Error getting metadata cache: {e}", extra={"dev_only": True}
-            )
+            logger.warning(f"[MetadataWidget] Error getting metadata cache via context: {e}")
             return None
 
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when metadata cache is retrieved
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _get_metadata_cache_via_context preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
+
     def get_available_metadata_keys(self) -> set[str]:
+        # Return cached keys if available
+        if self._cached_metadata_keys is not None:
+            return self._cached_metadata_keys
+
+        # Get selected files
         selected_files = self._get_selected_files()
+        if not selected_files:
+            self._cached_metadata_keys = set()
+            return self._cached_metadata_keys
 
-        # Use the same persistent cache as batch_metadata_status
-        from core.persistent_metadata_cache import get_persistent_metadata_cache
-
-        metadata_cache = get_persistent_metadata_cache()
-
+        # Get metadata cache
+        metadata_cache = self._get_metadata_cache_via_context()
         if not metadata_cache:
-            return set()
+            self._cached_metadata_keys = set()
+            return self._cached_metadata_keys
 
-        keys = set()
+        # Collect all available keys from selected files
+        all_keys = set()
         for file_item in selected_files:
-            # Use the same path normalization as batch_metadata_status
-            from utils.path_normalizer import normalize_path
+            metadata = metadata_cache.get(file_item.full_path, {})
+            if isinstance(metadata, dict):
+                all_keys.update(metadata.keys())
 
-            normalized_path = normalize_path(file_item.full_path)
-            meta = metadata_cache.get(normalized_path)
-            if meta and isinstance(meta, dict):
-                keys.update(meta.keys())
+        # Cache the result
+        self._cached_metadata_keys = all_keys
+        logger.debug(f"[MetadataWidget] Found {len(all_keys)} metadata keys", extra={"dev_only": True})
 
-        return keys
+        return all_keys
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when metadata keys are retrieved
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in get_available_metadata_keys preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def format_metadata_key_name(self, key: str) -> str:
-        """Format metadata key names for better readability."""
-        # Handle common metadata prefixes and formats
-        if ":" in key:
-            # Split by colon (e.g., "EXIF:DeviceName" -> "EXIF: Device Name")
-            parts = key.split(":", 1)
-            if len(parts) == 2:
-                prefix, field = parts
-                # Format the field part
-                formatted_field = self._format_field_name(field)
-                return f"{prefix}: {formatted_field}"
+        """Format metadata key name for display."""
+        # Remove common prefixes
+        prefixes_to_remove = ["EXIF:", "XMP:", "IPTC:", "ICC_Profile:", "Composite:"]
+        formatted_key = key
+        for prefix in prefixes_to_remove:
+            if formatted_key.startswith(prefix):
+                formatted_key = formatted_key[len(prefix):]
+                break
 
-        # Handle underscore-separated keys
-        if "_" in key:
-            return self._format_field_name(key)
+        # Apply field name formatting
+        formatted_key = self._format_field_name(formatted_key)
 
-        # Handle camelCase keys
-        if key != key.lower() and key != key.upper():
-            return self._format_camel_case(key)
+        return formatted_key
 
-        return key
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when metadata key names are formatted
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in format_metadata_key_name preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def _format_field_name(self, field: str) -> str:
-        """Format field names by replacing underscores and camelCase."""
-        # Replace underscores with spaces and title case
-        formatted = field.replace("_", " ").title()
+        """Format field name for better readability."""
+        # Handle underscore-separated fields
+        if "_" in field:
+            return field.replace("_", " ").title()
 
-        # Common replacements for better readability
-        replacements = {
-            "Exif": "EXIF",
-            "Gps": "GPS",
-            "Iso": "ISO",
-            "Rgb": "RGB",
-            "Dpi": "DPI",
-            "Device": "Device",
-            "Model": "Model",
-            "Make": "Make",
-            "Serial": "Serial",
-            "Number": "Number",
-            "Date": "Date",
-            "Time": "Time",
-            "Width": "Width",
-            "Height": "Height",
-            "Size": "Size",
-            "Format": "Format",
-            "Codec": "Codec",
-            "Frame": "Frame",
-            "Rate": "Rate",
-            "Bit": "Bit",
-            "Audio": "Audio",
-            "Video": "Video",
-            "Image": "Image",
-            "Camera": "Camera",
-            "Lens": "Lens",
-            "Focal": "Focal",
-            "Length": "Length",
-            "Aperture": "Aperture",
-            "Shutter": "Shutter",
-            "Exposure": "Exposure",
-            "White": "White",
-            "Balance": "Balance",
-            "Flash": "Flash",
-            "Metering": "Metering",
-            "Mode": "Mode",
-            "Program": "Program",
-            "Sensitivity": "Sensitivity",
-            "Compression": "Compression",
-            "Quality": "Quality",
-            "Resolution": "Resolution",
-            "Pixel": "Pixel",
-            "Dimension": "Dimension",
-            "Orientation": "Orientation",
-            "Rotation": "Rotation",
-            "Duration": "Duration",
-            "Track": "Track",
-            "Channel": "Channel",
-            "Sample": "Sample",
-            "Frequency": "Frequency",
-            "Bitrate": "Bitrate",
-            "Brand": "Brand",
-            "Type": "Type",
-            "Version": "Version",
-            "Software": "Software",
-            "Hardware": "Hardware",
-            "Manufacturer": "Manufacturer",
-            "Creator": "Creator",
-            "Artist": "Artist",
-            "Author": "Author",
-            "Copyright": "Copyright",
-            "Rights": "Rights",
-            "Description": "Description",
-            "Comment": "Comment",
-            "Keyword": "Keyword",
-            "Tag": "Tag",
-            "Label": "Label",
-            "Category": "Category",
-            "Genre": "Genre",
-            "Subject": "Subject",
-            "Title": "Title",
-            "Headline": "Headline",
-            "Caption": "Caption",
-            "Abstract": "Abstract",
-            "Location": "Location",
-            "Place": "Place",
-            "Country": "Country",
-            "City": "City",
-            "State": "State",
-            "Province": "Province",
-            "Address": "Address",
-            "Street": "Street",
-            "Coordinate": "Coordinate",
-            "Latitude": "Latitude",
-            "Longitude": "Longitude",
-            "Altitude": "Altitude",
-            "Direction": "Direction",
-            "Bearing": "Bearing",
-            "Distance": "Distance",
-            "Area": "Area",
-            "Volume": "Volume",
-            "Weight": "Weight",
-            "Mass": "Mass",
-            "Temperature": "Temperature",
-            "Pressure": "Pressure",
-            "Humidity": "Humidity",
-            "Weather": "Weather",
-            "Light": "Light",
-            "Color": "Color",
-            "Tone": "Tone",
-            "Saturation": "Saturation",
-            "Brightness": "Brightness",
-            "Contrast": "Contrast",
-            "Sharpness": "Sharpness",
-            "Noise": "Noise",
-            "Grain": "Grain",
-            "Filter": "Filter",
-            "Effect": "Effect",
-            "Style": "Style",
-            "Theme": "Theme",
-            "Mood": "Mood",
-            "Atmosphere": "Atmosphere",
-        }
+        # Handle camelCase fields
+        if field != field.lower() and field != field.upper():
+            return self._format_camel_case(field)
 
-        for old, new in replacements.items():
-            formatted = formatted.replace(old, new)
+        # Handle all caps fields
+        if field.isupper():
+            return field.title()
 
-        return formatted
+        return field
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when field names are formatted
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _format_field_name preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def _format_camel_case(self, text: str) -> str:
         """Format camelCase text by adding spaces before capitals."""
@@ -740,6 +885,27 @@ class MetadataWidget(QWidget):
         # Add space before capital letters, but not at the beginning
         formatted = re.sub(r"(?<!^)(?=[A-Z])", " ", text)
         return formatted.title()
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when camel case text is formatted
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _format_camel_case preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def get_data(self) -> dict:
         """Returns the state for use in the rename system."""
@@ -816,7 +982,36 @@ class MetadataWidget(QWidget):
         logger.debug(f"get_data returning: {result}")
         return result
 
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when data is retrieved
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in get_data preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
+
     def emit_if_changed(self) -> None:
+        # Debounce mechanism to prevent rapid successive calls
+        current_time = int(time.time() * 1000)  # Current time in milliseconds
+        if current_time - self._last_emit_time < self._emit_debounce_delay:
+            logger.debug("emit_if_changed debounced - too soon after previous call", extra={"dev_only": True})
+            return
+
+        self._last_emit_time = current_time
+
         # Log current combo box state
         if hasattr(self.options_combo, "get_current_data"):
             current_text = self.options_combo.get_current_text()
@@ -851,6 +1046,27 @@ class MetadataWidget(QWidget):
             elif not hasattr(self, "_last_category"):
                 self._last_category = current_category
 
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when data changes
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in emit_if_changed preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
+
     def force_preview_update(self) -> None:
         """Force preview update even if data hasn't changed (for hash calculation)."""
         self.update_options()
@@ -861,9 +1077,97 @@ class MetadataWidget(QWidget):
             extra={"dev_only": True},
         )
 
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when forced preview update is called
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in force_preview_update preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
+
+    def _force_preview_update_with_cache_clear(self) -> None:
+        """Force preview update with cache clearing to ensure it's always updated."""
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+            logger.debug(
+                "[MetadataWidget] Forced preview update with cache clearing",
+                extra={"dev_only": True},
+            )
+        except Exception as e:
+            logger.warning(f"Error in _force_preview_update_with_cache_clear: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when cache clearing preview update is called
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _force_preview_update_with_cache_clear preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
+
     def clear_cache(self) -> None:
         """Clear the metadata keys cache to force refresh."""
         self._cached_metadata_keys = None
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when cache is cleared
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in clear_cache preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def refresh_metadata_keys(self) -> None:
         """Refresh metadata keys and update the combo box if currently showing metadata."""
@@ -876,6 +1180,48 @@ class MetadataWidget(QWidget):
             self.populate_hash_options()
             # The hash combo will remain disabled from populate_hash_options
             self.emit_if_changed()
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when metadata keys are refreshed
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in refresh_metadata_keys preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when metadata keys are refreshed
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in refresh_metadata_keys preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     @staticmethod
     def is_effective(data: dict) -> bool:
@@ -891,6 +1237,27 @@ class MetadataWidget(QWidget):
 
         # For other categories, any field is effective
         return bool(field)
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when effectiveness is checked
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in is_effective preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def _get_supported_hash_algorithms(self) -> set:
         """Get list of supported hash algorithms from the async operations manager."""
@@ -1004,14 +1371,76 @@ class MetadataWidget(QWidget):
                 f"[MetadataWidget] {len(selected_files)} files selected - Hash: {has_hash_data}, EXIF: {has_metadata_data}"
             )
 
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when category availability is updated
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in update_category_availability preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
+
     def _check_files_have_hash(self, selected_files) -> bool:
         """Check if any of the selected files have hash data."""
-        try:
-            file_paths = [file_item.full_path for file_item in selected_files]
-            return any(batch_hash_status(file_paths).values())
-        except Exception as e:
-            logger.error(f"[MetadataWidget] Error checking hash availability: {e}")
+        if not selected_files:
             return False
+
+        try:
+            # Use efficient batch checking via database
+            file_paths = [file_item.full_path for file_item in selected_files]
+
+            # Get files that have hashes using batch query
+            from core.persistent_hash_cache import get_persistent_hash_cache
+
+            hash_cache = get_persistent_hash_cache()
+
+            # Use batch method for efficiency
+            files_with_hash = hash_cache.get_files_with_hash_batch(file_paths, "CRC32")
+
+            has_hash_data = len(files_with_hash) > 0
+            logger.debug(
+                f"[MetadataWidget] Hash check: {len(files_with_hash)}/{len(file_paths)} files have hash",
+                extra={"dev_only": True},
+            )
+
+            return has_hash_data
+
+        except Exception as e:
+            logger.warning(f"[MetadataWidget] Error checking hash data: {e}")
+            return False
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when hash data is checked
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _check_files_have_hash preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def _check_files_have_metadata(self, selected_files) -> bool:
         """Check if any of the selected files have metadata."""
@@ -1021,6 +1450,27 @@ class MetadataWidget(QWidget):
         except Exception as e:
             logger.error(f"[MetadataWidget] Error checking metadata availability: {e}")
             return False
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when metadata data is checked
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _check_files_have_metadata preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def _ensure_theme_inheritance(self) -> None:
         """
@@ -1036,162 +1486,276 @@ class MetadataWidget(QWidget):
         except Exception as e:
             logger.warning(f"[MetadataWidget] Failed to ensure theme inheritance: {e}")
 
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when theme inheritance is ensured
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _ensure_theme_inheritance preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
+
     def trigger_update_options(self):
-        """Trigger update_options and hash check immediately (no debounce)."""
-        # Update category availability first
-        self.update_category_availability()
-        # Then update options
-        self.update_options()
+        """Trigger options update with debouncing."""
+        try:
+            from utils.timer_manager import get_timer_manager, TimerType
+            timer_manager = get_timer_manager()
+            timer_manager.schedule(
+                self._debounced_update_options,
+                delay=50,  # 50ms delay for debouncing
+                timer_type=TimerType.UI_UPDATE,
+                timer_id="metadata_widget_trigger_update"
+            )
+        except Exception:
+            # Fallback for testing or when timer manager is not available
+            self._debounced_update_options()
 
     def _debounced_update_options(self):
-        """Immediate update_options and hash check (no debounce, for compatibility)."""
-        # Update category availability first
-        self.update_category_availability()
-        # Then update options
+        """Debounced options update."""
         self.update_options()
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when options are triggered
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _debounced_update_options preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def _check_calculation_requirements(self, category: str):
         """Check if calculation dialog is needed for the selected category."""
+        selected_files = self._get_selected_files()
+
+        if category == "hash":
+            self._check_hash_calculation_requirements(selected_files)
+        elif category == "metadata_keys":
+            self._check_metadata_calculation_requirements(selected_files)
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when calculation requirements are checked
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _check_calculation_requirements preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
+
+    def _check_hash_calculation_requirements(self, selected_files):
+        """Check if hash calculation dialog is needed."""
         if self._hash_dialog_active:
             logger.debug(
-                "[MetadataWidget] Dialog already active, skipping check", extra={"dev_only": True}
+                "[MetadataWidget] Hash dialog already active, skipping check", extra={"dev_only": True}
             )
             return
 
         try:
-            selected_files = self._get_selected_files()
             if not selected_files:
                 logger.debug(
-                    "[MetadataWidget] No files selected, no dialog needed", extra={"dev_only": True}
+                    "[MetadataWidget] No files selected, no hash dialog needed", extra={"dev_only": True}
                 )
                 return
 
-            if category == "hash":
-                self._check_hash_calculation_requirements(selected_files)
-            elif category == "metadata_keys":
-                self._check_metadata_calculation_requirements(selected_files)
+            # Use efficient batch checking via database
+            file_paths = [file_item.full_path for file_item in selected_files]
+
+            # Get files that have hashes using batch query
+            from core.persistent_hash_cache import get_persistent_hash_cache
+
+            hash_cache = get_persistent_hash_cache()
+
+            # Use batch method for efficiency
+            files_with_hash = hash_cache.get_files_with_hash_batch(file_paths, "CRC32")
+            files_needing_hash = [path for path in file_paths if path not in files_with_hash]
+
+            if files_needing_hash:
+                # Some files need hash calculation
+                self._show_calculation_dialog(files_needing_hash, "hash")
 
         except Exception as e:
-            logger.error(f"[MetadataWidget] Error checking calculation requirements: {e}")
+            logger.error(f"[MetadataWidget] Error checking hash calculation requirements: {e}")
             self._hash_dialog_active = False
 
-    def _check_hash_calculation_requirements(self, selected_files):
-        """Check if hash calculation dialog is needed."""
-        file_paths = [file_item.full_path for file_item in selected_files]
-        from core.persistent_hash_cache import get_persistent_hash_cache
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when hash calculation requirements are checked
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
 
-        hash_cache = get_persistent_hash_cache()
-        files_with_hash = hash_cache.get_files_with_hash_batch(file_paths, "CRC32")
-        files_needing_hash = [path for path in file_paths if path not in files_with_hash]
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
 
-        if files_needing_hash:
-            logger.debug(
-                f"[MetadataWidget] {len(files_needing_hash)} files need hash calculation - showing dialog",
-                extra={"dev_only": True},
-            )
-            self._hash_dialog_active = True
-            self._show_calculation_dialog(files_needing_hash, "hash")
-        else:
-            logger.debug(
-                "[MetadataWidget] All files have hashes - no dialog needed",
-                extra={"dev_only": True},
-            )
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _check_hash_calculation_requirements preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def _check_metadata_calculation_requirements(self, selected_files):
-        file_paths = [file_item.full_path for file_item in selected_files]
-        batch_status = batch_metadata_status(file_paths)
-        files_with_metadata = [p for p, has in batch_status.items() if has]
-        total_files = len(selected_files)
-        if len(files_with_metadata) < total_files:
-            files_needing_metadata = [
-                file_item.full_path
-                for file_item in selected_files
-                if not batch_status.get(file_item.full_path, False)
-            ]
+        """Check if metadata calculation dialog is needed."""
+        if self._hash_dialog_active:
             logger.debug(
-                f"[MetadataWidget] {len(files_needing_metadata)} files need metadata - showing dialog",
-                extra={"dev_only": True},
+                "[MetadataWidget] Metadata dialog already active, skipping check", extra={"dev_only": True}
             )
-            self._hash_dialog_active = True
-            self._show_calculation_dialog(files_needing_metadata, "metadata")
-        else:
-            logger.debug(
-                "[MetadataWidget] All files have metadata - no dialog needed",
-                extra={"dev_only": True},
-            )
+            return
+
+        try:
+            if not selected_files:
+                logger.debug(
+                    "[MetadataWidget] No files selected, no metadata dialog needed", extra={"dev_only": True}
+                )
+                return
+
+            # Use efficient batch checking via database
+            file_paths = [file_item.full_path for file_item in selected_files]
+
+            # Get files that have metadata using batch query
+            from utils.metadata_cache_helper import get_metadata_cache_helper
+
+            cache_helper = get_metadata_cache_helper(parent_window=self.parent_window)
+
+            # Use batch method for efficiency
+            files_with_metadata = cache_helper.get_files_with_metadata_batch(file_paths)
+            files_needing_metadata = [path for path in file_paths if path not in files_with_metadata]
+
+            if files_needing_metadata:
+                # Some files need metadata calculation
+                self._show_calculation_dialog(files_needing_metadata, "metadata")
+
+        except Exception as e:
+            logger.error(f"[MetadataWidget] Error checking metadata calculation requirements: {e}")
+            self._hash_dialog_active = False
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when metadata calculation requirements are checked
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _check_metadata_calculation_requirements preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def _show_calculation_dialog(self, files_needing_calculation, calculation_type: str):
-        try:
-            from widgets.custom_message_dialog import CustomMessageDialog
-
-            # Create dialog message based on calculation type
-            file_count = len(files_needing_calculation)
-
-            if calculation_type == "hash":
-                message = f"{file_count} out of {len(self._get_selected_files())} selected files do not have hash.\n\nWould you like to calculate hash for all files now?\n\nThis will allow you to use hash values in your filename transformations."
-                title = "Hash Calculation Required"
-                yes_text = "Calculate Hash"
-            else:  # metadata
-                message = f"{file_count} out of {len(self._get_selected_files())} selected files do not have metadata.\n\nWould you like to load metadata for all files now?\n\nThis will allow you to use metadata values in your filename transformations."
-                title = "Metadata Loading Required"
-                yes_text = "Load Metadata"
-
+        """Show calculation dialog for files that need hash or metadata calculation."""
+        if self._hash_dialog_active:
             logger.debug(
-                f"[MetadataWidget] Showing {calculation_type} calculation dialog",
-                extra={"dev_only": True},
+                "[MetadataWidget] Dialog already active, skipping", extra={"dev_only": True}
+            )
+            return
+
+        self._hash_dialog_active = True
+
+        try:
+            from utils.custom_message_dialog import CustomMessageDialog
+
+            # Create dialog
+            dialog = CustomMessageDialog(
+                title="Calculation Required",
+                message=f"Some files need {calculation_type} calculation to use this feature.",
+                detailed_text=f"{len(files_needing_calculation)} files need {calculation_type} calculation.\n\nWould you like to calculate {calculation_type} for these files now?",
+                icon="info",
+                buttons=["Calculate", "Cancel"],
+                default_button="Calculate",
+                parent=self.parent_window,
             )
 
             # Show dialog
-            result = CustomMessageDialog.question(
-                self.parent_window, title, message, yes_text=yes_text, no_text="Cancel"
-            )
+            result = dialog.exec_()
 
-            if result:
-                # User chose to calculate
-                logger.debug(
-                    f"[MetadataWidget] User chose to calculate {calculation_type}",
-                    extra={"dev_only": True},
-                )
+            if result == 0:  # Calculate button clicked
                 if calculation_type == "hash":
                     self._calculate_hashes_for_files(files_needing_calculation)
-                else:
+                elif calculation_type == "metadata":
                     self._load_metadata_for_files(files_needing_calculation)
             else:
-                # User cancelled - combo remains enabled but shows original names
-                logger.debug(
-                    f"[MetadataWidget] User cancelled {calculation_type} calculation",
-                    extra={"dev_only": True},
-                )
-                # Don't disable combo - let it show original names for files without hash/metadata
+                # User cancelled - reset flag
+                self._hash_dialog_active = False
 
         except Exception as e:
-            logger.error(
-                f"[MetadataWidget] Error showing {calculation_type} calculation dialog: {e}"
-            )
+            logger.error(f"[MetadataWidget] Error showing calculation dialog: {e}")
             self._hash_dialog_active = False
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when calculation dialog is shown
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _show_calculation_dialog preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def _load_metadata_for_files(self, files_needing_metadata):
         """Load metadata for the given file paths."""
         try:
-            # Convert file paths back to FileItem objects for metadata loading
-            selected_files = self._get_selected_files()
-            file_items_needing_metadata = []
-
-            for file_path in files_needing_metadata:
-                for file_item in selected_files:
-                    if file_item.full_path == file_path:
-                        file_items_needing_metadata.append(file_item)
-                        break
-
-            if not file_items_needing_metadata:
-                logger.warning("[MetadataWidget] No file items found for metadata loading")
-                return
-
-            # Get main window for metadata loading
+            # Get main window reference
             main_window = None
-            if self.parent_window and hasattr(self.parent_window, "main_window"):
-                main_window = self.parent_window.main_window
-            elif self.parent_window:
+            if self.parent_window:
                 main_window = self.parent_window
             else:
                 context = self._get_app_context()
@@ -1201,13 +1765,22 @@ class MetadataWidget(QWidget):
             if main_window and hasattr(main_window, "load_metadata_for_items"):
                 # Use the existing metadata loading method
                 main_window.load_metadata_for_items(
-                    file_items_needing_metadata, use_extended=False, source="metadata_widget"
+                    files_needing_metadata, use_extended=False, source="metadata_widget"
                 )
 
                 # Force preview update after metadata loading
-                schedule_ui_update(
-                    self.force_preview_update, 100
-                )  # Small delay to ensure metadata loading completes
+                try:
+                    from utils.timer_manager import get_timer_manager, TimerType
+                    timer_manager = get_timer_manager()
+                    timer_manager.schedule(
+                        self.force_preview_update,
+                        delay=100,  # Small delay to ensure metadata loading completes
+                        timer_type=TimerType.PREVIEW_UPDATE,
+                        timer_id="metadata_widget_metadata_preview_update"
+                    )
+                except ImportError:
+                    # Fallback to immediate call if timer manager not available
+                    self.force_preview_update()
                 self._hash_dialog_active = False
                 logger.debug(
                     "[MetadataWidget] Metadata loading completed, preview update scheduled",
@@ -1220,6 +1793,27 @@ class MetadataWidget(QWidget):
         except Exception as e:
             logger.error(f"[MetadataWidget] Error loading metadata: {e}")
             self._hash_dialog_active = False
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when metadata is loaded
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _load_metadata_for_files preview update: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def _apply_disabled_combo_styling(self):
         """Apply disabled styling to the options combo box to show gray text"""
@@ -1536,11 +2130,82 @@ class MetadataWidget(QWidget):
         """Handle item selection from hierarchical combo box."""
         # text and data are provided by the signal but not used here
         logger.debug(f"Hierarchical item selected: {_text} with data: {_data}")
-        self.emit_if_changed()
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when selection changes
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            # Use global timer manager to delay the emit_if_changed call
+            # This prevents rapid successive calls and ensures proper preview update
+            from utils.timer_manager import get_timer_manager, TimerType
+            timer_manager = get_timer_manager()
+            timer_manager.schedule(
+                self.emit_if_changed,
+                delay=25,  # 25ms delay for smooth preview update
+                timer_type=TimerType.PREVIEW_UPDATE,
+                timer_id="metadata_widget_preview_update"
+            )
+        except ImportError:
+            # Fallback to immediate call if timer manager not available
+            self.emit_if_changed()
 
     def _on_selection_changed(self):
+        """Handle selection change - update options and force preview update."""
         self.update_options()
-        self.force_preview_update()
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when file selection changes
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _on_selection_changed: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
 
     def _on_metadata_loaded(self):
+        """Handle metadata loading completion - update options and force preview update."""
         self.update_options()
+
+        # Force preview update by clearing cache and emitting signal
+        # This ensures preview is always updated when metadata is loaded
+        try:
+            # Clear any preview caches to force regeneration
+            if self.parent_window and hasattr(self.parent_window, "utility_manager"):
+                self.parent_window.utility_manager.clear_preview_cache()
+
+            # Also clear unified rename engine cache if available
+            if self.parent_window and hasattr(self.parent_window, "unified_rename_engine"):
+                self.parent_window.unified_rename_engine.clear_cache()
+
+            # Force preview update through main window
+            if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+                self.parent_window.request_preview_update()
+
+            self.force_preview_update()
+        except Exception as e:
+            logger.warning(f"Error in _on_metadata_loaded: {e}")
+            # Fallback to basic preview update
+            self.force_preview_update()
