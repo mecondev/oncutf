@@ -172,6 +172,30 @@ class MetadataWidget(QWidget):
         # Emit change signal to update preview
         self.emit_if_changed()
 
+    def _on_file_date_changed(self) -> None:
+        """
+        Handle file date combo box changes.
+        Called when a file date option is selected.
+        """
+        current_text = self.options_combo.currentText()
+        current_data = self.options_combo.currentData()
+        logger.debug(f"File date changed: text='{current_text}', data={current_data}")
+
+        # Emit change signal to update preview
+        self.emit_if_changed()
+
+    def _on_hash_changed(self) -> None:
+        """
+        Handle hash combo box changes.
+        Called when a hash option is selected.
+        """
+        current_text = self.options_combo.currentText()
+        current_data = self.options_combo.currentData()
+        logger.debug(f"Hash changed: text='{current_text}', data={current_data}")
+
+        # Emit change signal to update preview
+        self.emit_if_changed()
+
     def populate_metadata_keys(self) -> None:
         """
         Populate the hierarchical combo box with available metadata keys.
@@ -210,14 +234,21 @@ class MetadataWidget(QWidget):
         # Populate combo box with grouped data
         self.options_combo.populate_from_metadata_groups(hierarchical_data)
 
-        # Force update to ensure UI reflects changes
-        self.emit_if_changed()
+        # Connect to hierarchical combo box signal for metadata
+        try:
+            self.options_combo.currentIndexChanged.disconnect()
+        except TypeError:
+            pass  # No connections to disconnect
 
-        # Enable the combo box
+        # The hierarchical signal is already connected in setup_ui
+        # Just ensure the combo box is enabled
         self.options_combo.setEnabled(True)
 
         # Apply normal styling
         self._apply_normal_combo_styling()
+
+        # Force update to ensure UI reflects changes
+        self.emit_if_changed()
 
         logger.debug(f"Populated metadata keys with {len(hierarchical_data)} categories")
 
@@ -393,14 +424,26 @@ class MetadataWidget(QWidget):
         """Returns the state for use in the rename system."""
         category = self.category_combo.currentData() or "file_dates"
 
-        # Use the hierarchical combo box API
-        if hasattr(self.options_combo, "get_current_data"):
-            field = self.options_combo.get_current_data()
-            logger.debug(f"get_data: Using hierarchical combo, field: {field}")
-        else:
-            # Fallback to regular QComboBox API
+        # Get field based on category
+        if category == "file_dates":
+            # For file dates, use regular QComboBox API
             field = self.options_combo.currentData()
-            logger.debug(f"get_data: Using regular combo, field: {field}")
+            logger.debug(f"get_data: File dates category, field: {field}")
+        elif category == "hash":
+            # For hash, use regular QComboBox API
+            field = self.options_combo.currentData()
+            logger.debug(f"get_data: Hash category, field: {field}")
+        elif category == "metadata_keys":
+            # For metadata keys, use hierarchical combo box API
+            if hasattr(self.options_combo, "get_current_data"):
+                field = self.options_combo.get_current_data()
+                logger.debug(f"get_data: Using hierarchical combo, field: {field}")
+            else:
+                # Fallback to regular QComboBox API
+                field = self.options_combo.currentData()
+                logger.debug(f"get_data: Using regular combo, field: {field}")
+        else:
+            field = None
 
         # Set default field based on category
         if not field:
@@ -595,7 +638,8 @@ class MetadataWidget(QWidget):
         """Populate options for file date category."""
         self.options_combo.clear()
 
-        # Add file date options
+        # For file dates, we need to use regular QComboBox methods
+        # since HierarchicalComboBox is designed for metadata groups
         date_options = [
             ("Modified (YYMMDD)", "last_modified_yymmdd"),
             ("Modified (YYYYMMDD)", "last_modified_yyyymmdd"),
@@ -606,9 +650,22 @@ class MetadataWidget(QWidget):
         for display_text, data in date_options:
             self.options_combo.addItem(display_text, data)
 
+        # Set default selection
+        self.options_combo.setCurrentIndex(0)
+
         # Enable the combo box
         self.options_combo.setEnabled(True)
         self._apply_normal_combo_styling()
+
+        # Connect to regular QComboBox signal for file dates
+        try:
+            self.options_combo.currentIndexChanged.disconnect()
+        except TypeError:
+            pass  # No connections to disconnect
+
+        self.options_combo.currentIndexChanged.connect(self._on_file_date_changed)
+
+        logger.debug("File date options populated")
 
     def populate_hash_options(self) -> None:
         """Populate options for hash category."""
@@ -617,8 +674,19 @@ class MetadataWidget(QWidget):
         # Add only CRC32 hash option (as mentioned in get_data method)
         self.options_combo.addItem("CRC32", "hash_crc32")
 
+        # Set default selection
+        self.options_combo.setCurrentIndex(0)
+
         # Disable the combo box since there's only one option
         self.options_combo.setEnabled(False)
+
+        # Connect to regular QComboBox signal for hash
+        try:
+            self.options_combo.currentIndexChanged.disconnect()
+        except TypeError:
+            pass  # No connections to disconnect
+
+        self.options_combo.currentIndexChanged.connect(self._on_hash_changed)
 
         logger.debug("Hash options populated (CRC32 only)")
 
@@ -627,21 +695,29 @@ class MetadataWidget(QWidget):
         if self._cached_metadata_keys is not None:
             return self._cached_metadata_keys
 
-        app_context = self._get_app_context()
-        if app_context is None:
-            logger.debug("ApplicationContext not available, returning empty metadata keys")
-            self._cached_metadata_keys = set()
-            return self._cached_metadata_keys
+        # Try to get metadata keys from parent window's table manager
+        if self.parent_window and hasattr(self.parent_window, 'table_manager'):
+            try:
+                metadata_keys = self.parent_window.table_manager.get_common_metadata_fields()
+                self._cached_metadata_keys = set(metadata_keys) if metadata_keys else set()
+                logger.debug(f"Retrieved {len(self._cached_metadata_keys)} metadata keys from TableManager")
+                return self._cached_metadata_keys
+            except Exception as e:
+                logger.warning(f"Error getting metadata keys from TableManager: {e}")
 
-        try:
-            # Get metadata keys from the application context
-            metadata_keys = app_context.get_available_metadata_keys()
-            self._cached_metadata_keys = set(metadata_keys) if metadata_keys else set()
-            logger.debug(f"Retrieved {len(self._cached_metadata_keys)} metadata keys from ApplicationContext")
-        except Exception as e:
-            logger.warning(f"Error getting metadata keys: {e}")
-            self._cached_metadata_keys = set()
+        # Fallback: try to get from application service
+        if self.parent_window and hasattr(self.parent_window, 'app_service'):
+            try:
+                metadata_keys = self.parent_window.app_service.get_common_metadata_fields()
+                self._cached_metadata_keys = set(metadata_keys) if metadata_keys else set()
+                logger.debug(f"Retrieved {len(self._cached_metadata_keys)} metadata keys from ApplicationService")
+                return self._cached_metadata_keys
+            except Exception as e:
+                logger.warning(f"Error getting metadata keys from ApplicationService: {e}")
 
+        # If all else fails, return empty set
+        logger.debug("No metadata keys available, returning empty set")
+        self._cached_metadata_keys = set()
         return self._cached_metadata_keys
 
     def _check_calculation_requirements(self, category: str) -> None:
