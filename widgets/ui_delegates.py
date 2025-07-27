@@ -259,6 +259,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         self.theme = theme
 
     def paint(self, painter, option, index):
+        """Custom paint method that correctly handles indented items."""
         # Save original rect
         original_rect = option.rect
 
@@ -271,27 +272,40 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             level += 1
             parent = parent.parent()
 
-        # Adjust rect to not paint the indented area
-        option.rect.setLeft(original_rect.left() + (level * indent))
+        # Calculate the actual content area (excluding indent)
+        content_left = original_rect.left() + (level * indent)
+        content_rect = original_rect.adjusted(0, 0, 0, 0)
+        content_rect.setLeft(content_left)
 
-        # Handle background colors
+        # Only paint background in the content area (not the indent area)
         if option.state & QStyle.State_Selected:
             painter.fillRect(
-                option.rect,
+                content_rect,  # Only the content area, not the indent
                 QColor(self.theme.get_color("combo_item_background_selected")),
             )
         elif option.state & QStyle.State_MouseOver:
             painter.fillRect(
-                option.rect,
+                content_rect,  # Only the content area, not the indent
                 QColor(self.theme.get_color("combo_item_background_hover")),
             )
 
-        # Draw the text
+        # Set text color based on state
+        if option.state & QStyle.State_Selected:
+            text_color = QColor(self.theme.get_color("input_selection_text"))
+        else:
+            text_color = QColor(self.theme.get_color("combo_text"))
+
+        # Draw the text in the content area with proper color
         text = index.data(Qt.DisplayRole)
         if text:
-            text_rect = option.rect.adjusted(4, 0, -4, 0)
+            painter.save()
+            painter.setPen(text_color)
+
+            # Text rect with padding inside content area
+            text_rect = content_rect.adjusted(4, 0, -4, 0)
             painter.drawText(
                 text_rect,
                 Qt.AlignLeft | Qt.AlignVCenter,
                 str(text),
             )
+            painter.restore()
