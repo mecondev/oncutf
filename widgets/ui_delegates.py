@@ -15,8 +15,8 @@ from core.pyqt_imports import (
     QColor,
     QCursor,
     QIcon,
-    QPen,
     QPalette,
+    QPen,
     QStyle,
     QStyledItemDelegate,
     Qt,
@@ -30,7 +30,7 @@ class ComboBoxItemDelegate(QStyledItemDelegate):
 
     def __init__(self, parent=None, theme=None):
         super().__init__(parent)
-        self.theme = theme  # Pass your ThemeEngine or color dict
+        self.theme = theme
 
     def initStyleOption(self, option, index):
         super().initStyleOption(option, index)
@@ -258,73 +258,98 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         super().__init__(parent)
         self.theme = theme
 
-    def paint(self, painter, option, index):
-        """Custom paint method that correctly handles indented items."""
-        # Save original rect
-        original_rect = option.rect
+    # def paint(self, painter, option, index):
+    #     """Custom paint method that correctly handles indented items."""
+    #     # Save original rect
+    #     original_rect = option.rect
 
-        # Get the item's indent level
-        tree_view = self.parent()
-        indent = tree_view.indentation() if tree_view else 20
-        level = 0
-        parent = index.parent()
-        while parent.isValid():
-            level += 1
-            parent = parent.parent()
+    #     # Get the item's indent level
+    #     tree_view = self.parent()
+    #     indent = tree_view.indentation() if tree_view else 20
+    #     level = 0
+    #     parent = index.parent()
+    #     while parent.isValid():
+    #         level += 1
+    #         parent = parent.parent()
 
-        # Calculate the text position (excluding indent)
-        content_left = original_rect.left() + (level * indent)
+    #     # Calculate the text position (excluding indent)
+    #     content_left = original_rect.left() + (level * indent)
 
-                # Get the text to measure its width
-        text = index.data(Qt.DisplayRole)
-        if text:
-            # Check if item is selectable (not a category)
-            item_flags = index.flags()
-            is_selectable = bool(item_flags & Qt.ItemIsSelectable)
+    #             # Get the text to measure its width
+    #     text = index.data(Qt.DisplayRole)
+    #     if text:
+    #         # Check if item is selectable (not a category)
+    #         item_flags = index.flags()
+    #         is_selectable = bool(item_flags & Qt.ItemIsSelectable)
 
-            if is_selectable:
-                # Calculate text width using font metrics
-                fm = painter.fontMetrics()
-                text_width = fm.horizontalAdvance(str(text))
+    #         if is_selectable:
+    #             # Calculate text width using font metrics
+    #             fm = painter.fontMetrics()
+    #             text_width = fm.horizontalAdvance(str(text))
 
-                # Create a tight rect around the text with small padding
-                padding = 4
-                text_rect = original_rect.adjusted(0, 0, 0, 0)
-                text_rect.setLeft(content_left)
-                text_rect.setWidth(text_width + (padding * 2))
+    #             # Create a tight rect around the text with small padding
+    #             padding = 4
+    #             text_rect = original_rect.adjusted(0, 0, 0, 0)
+    #             text_rect.setLeft(content_left)
+    #             text_rect.setWidth(text_width + (padding * 2))
 
-                # Only paint background around the text for selectable items
-                if option.state & QStyle.State_Selected:
-                    painter.fillRect(
-                        text_rect,  # Only around the text
-                        QColor(self.theme.get_color("combo_item_background_selected")),
-                    )
-                elif option.state & QStyle.State_MouseOver:
-                    painter.fillRect(
-                        text_rect,  # Only around the text
-                        QColor(self.theme.get_color("combo_item_background_hover")),
-                    )
+    #             # Only paint background around the text for selectable items
+    #             if option.state & QStyle.State_Selected:
+    #                 painter.fillRect(
+    #                     text_rect,  # Only around the text
+    #                     QColor(get_color("combo_item_background_selected")),
+    #                 )
+    #             elif option.state & QStyle.State_MouseOver:
+    #                 painter.fillRect(
+    #                     text_rect,  # Only around the text
+    #                     QColor(get_color("combo_item_background_hover")),
+    #                 )
 
-        # Set text color based on state
-        if option.state & QStyle.State_Selected:
-            text_color = QColor(self.theme.get_color("input_selection_text"))
-        else:
-            text_color = QColor(self.theme.get_color("combo_text"))
+    #     # Set text color based on state
+    #     if option.state & QStyle.State_Selected:
+    #         text_color = QColor(get_color("input_selection_text"))
+    #     else:
+    #         text_color = QColor(get_color("combo_text"))
 
-        # Draw the text with proper color
-        text = index.data(Qt.DisplayRole)
-        if text:
-            painter.save()
-            painter.setPen(text_color)
+    #     # Draw the text with proper color
+    #     text = index.data(Qt.DisplayRole)
+    #     if text:
+    #         painter.save()
+    #         painter.setPen(text_color)
 
-            # Text rect starting from content position with padding
-            text_draw_rect = original_rect.adjusted(0, 0, 0, 0)
-            text_draw_rect.setLeft(content_left + 4)  # 4px padding from left
-            text_draw_rect.setRight(original_rect.right() - 4)  # 4px padding from right
+    #         # Text rect starting from content position with padding
+    #         text_draw_rect = original_rect.adjusted(0, 0, 0, 0)
+    #         text_draw_rect.setLeft(content_left + 4)  # 4px padding from left
+    #         text_draw_rect.setRight(original_rect.right() - 4)  # 4px padding from right
 
-            painter.drawText(
-                text_draw_rect,
-                Qt.AlignLeft | Qt.AlignVCenter,
-                str(text),
-            )
-            painter.restore()
+    #         painter.drawText(
+    #             text_draw_rect,
+    #             Qt.AlignLeft | Qt.AlignVCenter,
+    #             str(text),
+    #         )
+    #         painter.restore()
+
+
+
+    def paint(self, painter: QPainter, option: QStyle.OptionViewItem, index):
+        option_copy = QStyle.OptionViewItem(option)
+        self.initStyleOption(option_copy, index)
+
+        style = option.widget.style() if option.widget else None
+        if not style:
+            super().paint(painter, option, index)
+            return
+
+        # Calculate the rectangle that covers only the text (not the left indent/branch)
+        text_rect = style.subElementRect(QStyle.SE_ItemViewItemText, option_copy, option_copy.widget)
+
+        # Determine background color based on state
+        if option_copy.state & QStyle.State_Selected:
+            bg_color = get_qcolor("combo_item_background_selected")
+            painter.fillRect(text_rect, bg_color)
+        elif option_copy.state & QStyle.State_MouseOver:
+            bg_color = get_qcolor("combo_item_background_hover")
+            painter.fillRect(text_rect, bg_color)
+
+        # Draw the item using the style system
+        style.drawControl(QStyle.CE_ItemViewItem, option_copy, painter)

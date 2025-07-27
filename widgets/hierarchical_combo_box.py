@@ -23,8 +23,6 @@ from core.pyqt_imports import (
 )
 from utils.logger_factory import get_cached_logger
 from widgets.ui_delegates import TreeViewItemDelegate
-from utils.theme import get_qcolor
-
 
 logger = get_cached_logger(__name__)
 
@@ -45,7 +43,6 @@ class HierarchicalComboBox(QComboBox):
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
-        self.theme = get_theme()
 
         # Create tree view for hierarchical display
         self.tree_view = QTreeView()
@@ -63,7 +60,7 @@ class HierarchicalComboBox(QComboBox):
         self.tree_view.setModel(self.model)
 
         # Set the delegate
-        self.tree_view.setItemDelegate(TreeViewItemDelegate(self.tree_view, theme=self.theme))
+        self.tree_view.setItemDelegate(TreeViewItemDelegate(self.tree_view))
 
         # Connect signals
         self.tree_view.clicked.connect(self._on_item_clicked)
@@ -71,88 +68,6 @@ class HierarchicalComboBox(QComboBox):
 
         # Track categories for easy access
         self._categories: dict[str, QStandardItem] = {}
-
-        # Apply styling
-        self._apply_styling()
-
-    def _apply_styling(self):
-        """Apply custom styling for the hierarchical combo box."""
-        # Basic styling for the combo box
-        self.setStyleSheet("""
-            QComboBox {
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                padding: 4px 8px;
-                background: white;
-                min-height: 20px;
-            }
-
-            QComboBox::down-arrow {
-                image: url(../resources/icons/feather_icons/chevrons-down.svg);
-                width: 12px;
-                height: 12px;
-            }
-
-            QTreeView {
-                background: white;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-                outline: none;
-                min-width: 200px;
-                max-height: 300px;
-            }
-
-            QTreeView::item {
-                padding: 4px 8px;
-                border: none;
-                min-height: 20px;
-                background: transparent;
-            }
-
-            /* Categories (headers) - bold and no hover effect */
-            QTreeView::item:!has-children {
-                margin-left: 30px;
-                margin-right: 10px;
-                border-radius: 12px;
-            }
-
-            /* Child items - normal styling with hover */
-            QTreeView::item:!has-children:hover {
-                background: #f0f0f0;
-            }
-
-            /* Child items - selected styling */
-            QTreeView::item:!has-children:selected {
-                background: #0078d4;
-                color: white;
-            }
-
-            /* Category headers - bold text, subtle hover */
-            QTreeView::item:has-children {
-                font-weight: bold;
-                padding: 6px 8px;
-            }
-
-            QTreeView::item:has-children:hover {
-                background: #f8f9fa;
-            }
-
-
-
-            QTreeView::branch {
-                background: transparent;
-            }
-
-            QTreeView::branch:has-children:!has-siblings:closed,
-            QTreeView::branch:closed:has-children:has-siblings {
-                image: url(../resources/icons/feather_icons/chevron-right.svg);
-            }
-
-            QTreeView::branch:open:has-children:!has-siblings,
-            QTreeView::branch:open:has-children:has-siblings {
-                image: url(../resources/icons/feather_icons/chevron-down.svg);
-            }
-        """)
 
     def add_item(self, item_text: str, item_data: Any = None) -> QStandardItem:
         """

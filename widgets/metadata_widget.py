@@ -10,18 +10,18 @@ Widget for metadata selection (file dates or EXIF), with optimized signal emissi
 from typing import Any
 
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QBrush, QColor, QPalette, QStandardItem, QStandardItemModel
-from core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, QStyle, QVBoxLayout, QWidget
+from PyQt5.QtGui import QColor, QStandardItem, QStandardItemModel
+
+from core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from utils.file_status_helpers import (
     batch_hash_status,
     batch_metadata_status,
 )
 from utils.logger_factory import get_cached_logger
-from utils.metadata_field_validators import MetadataFieldValidator
 from utils.theme_engine import ThemeEngine
 from utils.timer_manager import schedule_ui_update
-from widgets.ui_delegates import ComboBoxItemDelegate
 from widgets.hierarchical_combo_box import HierarchicalComboBox
+from widgets.ui_delegates import ComboBoxItemDelegate
 
 # ApplicationContext integration
 try:
