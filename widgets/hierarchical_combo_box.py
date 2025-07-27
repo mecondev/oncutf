@@ -10,7 +10,6 @@ It's designed to replace the flat list approach for large datasets
 like metadata fields in the rename metadata module.
 """
 
-import time
 from typing import Any
 
 from core.pyqt_imports import (
@@ -64,10 +63,6 @@ class HierarchicalComboBox(QComboBox):
 
         # Track categories for easy access
         self._categories: dict[str, QStandardItem] = {}
-
-        # Debounce mechanism to prevent rapid successive clicks
-        self._last_click_time = 0
-        self._click_debounce_delay = 100  # 100ms debounce delay
 
         # Apply styling
         self._apply_styling()
@@ -238,14 +233,6 @@ class HierarchicalComboBox(QComboBox):
 
     def _on_item_clicked(self, index):
         """Handle item click in the tree view."""
-        # Debounce mechanism to prevent rapid successive clicks
-        current_time = int(time.time() * 1000)  # Current time in milliseconds
-        if current_time - self._last_click_time < self._click_debounce_delay:
-            logger.debug("Click debounced - too soon after previous click")
-            return
-
-        self._last_click_time = current_time
-
         item = self.model.itemFromIndex(index)
         if item and item.flags() & Qt.ItemIsSelectable:
             # This is a selectable item, not a category
@@ -260,19 +247,8 @@ class HierarchicalComboBox(QComboBox):
 
             logger.debug(f"Item clicked: {text} with data: {data}")
 
-            # Use global timer manager to close popup with delay to avoid flickering
-            try:
-                from utils.timer_manager import TimerType, get_timer_manager
-                timer_manager = get_timer_manager()
-                timer_manager.schedule(
-                    self.hidePopup,
-                    delay=50,  # 50ms delay to avoid immediate close
-                    timer_type=TimerType.UI_UPDATE,
-                    timer_id="hierarchical_combo_popup_close"
-                )
-            except ImportError:
-                # Fallback to immediate close if timer manager not available
-                self.hidePopup()
+            # Close the popup
+            self.hidePopup()
 
     def _on_item_double_clicked(self, index):
         """Handle item double click in the tree view."""
