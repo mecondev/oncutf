@@ -22,7 +22,9 @@ from core.pyqt_imports import (
     pyqtSignal,
 )
 from utils.logger_factory import get_cached_logger
-from widgets.ui_delegates import TreeViewItemDelegate  # Add this import
+from widgets.ui_delegates import TreeViewItemDelegate
+from utils.theme import get_qcolor
+
 
 logger = get_cached_logger(__name__)
 
@@ -43,6 +45,7 @@ class HierarchicalComboBox(QComboBox):
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
+        self.theme = get_theme()
 
         # Create tree view for hierarchical display
         self.tree_view = QTreeView()
@@ -50,7 +53,7 @@ class HierarchicalComboBox(QComboBox):
         self.tree_view.setRootIsDecorated(True)
         self.tree_view.setItemsExpandable(True)
 
-        # Use CSS-only approach for simplicity
+        # Use CSS-only approach for simplicity (no delegate needed)
 
         # Set the tree view as the popup
         self.setView(self.tree_view)
@@ -58,6 +61,9 @@ class HierarchicalComboBox(QComboBox):
         # Create model
         self.model = QStandardItemModel()
         self.tree_view.setModel(self.model)
+
+        # Set the delegate
+        self.tree_view.setItemDelegate(TreeViewItemDelegate(self.tree_view, theme=self.theme))
 
         # Connect signals
         self.tree_view.clicked.connect(self._on_item_clicked)
