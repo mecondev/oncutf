@@ -260,7 +260,6 @@ class TreeViewItemDelegate(QStyledItemDelegate):
 
     def paint(self, painter, option, index):
         """Custom paint method that correctly handles indented items."""
-        print(f"TreeViewItemDelegate.paint called for: {index.data(Qt.DisplayRole)}")
         # Save original rect
         original_rect = option.rect
 
@@ -276,30 +275,35 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         # Calculate the text position (excluding indent)
         content_left = original_rect.left() + (level * indent)
 
-        # Get the text to measure its width
+                # Get the text to measure its width
         text = index.data(Qt.DisplayRole)
         if text:
-            # Calculate text width using font metrics
-            fm = painter.fontMetrics()
-            text_width = fm.horizontalAdvance(str(text))
+            # Check if item is selectable (not a category)
+            item_flags = index.flags()
+            is_selectable = bool(item_flags & Qt.ItemIsSelectable)
 
-            # Create a tight rect around the text with small padding
-            padding = 4
-            text_rect = original_rect.adjusted(0, 0, 0, 0)
-            text_rect.setLeft(content_left)
-            text_rect.setWidth(text_width + (padding * 2))
+            if is_selectable:
+                # Calculate text width using font metrics
+                fm = painter.fontMetrics()
+                text_width = fm.horizontalAdvance(str(text))
 
-            # Only paint background around the text
-            if option.state & QStyle.State_Selected:
-                painter.fillRect(
-                    text_rect,  # Only around the text
-                    QColor(self.theme.get_color("combo_item_background_selected")),
-                )
-            elif option.state & QStyle.State_MouseOver:
-                painter.fillRect(
-                    text_rect,  # Only around the text
-                    QColor(self.theme.get_color("combo_item_background_hover")),
-                )
+                # Create a tight rect around the text with small padding
+                padding = 4
+                text_rect = original_rect.adjusted(0, 0, 0, 0)
+                text_rect.setLeft(content_left)
+                text_rect.setWidth(text_width + (padding * 2))
+
+                # Only paint background around the text for selectable items
+                if option.state & QStyle.State_Selected:
+                    painter.fillRect(
+                        text_rect,  # Only around the text
+                        QColor(self.theme.get_color("combo_item_background_selected")),
+                    )
+                elif option.state & QStyle.State_MouseOver:
+                    painter.fillRect(
+                        text_rect,  # Only around the text
+                        QColor(self.theme.get_color("combo_item_background_hover")),
+                    )
 
         # Set text color based on state
         if option.state & QStyle.State_Selected:

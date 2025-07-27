@@ -50,10 +50,7 @@ class HierarchicalComboBox(QComboBox):
         self.tree_view.setRootIsDecorated(True)
         self.tree_view.setItemsExpandable(True)
 
-        # Set custom delegate
-        from utils.theme_engine import ThemeEngine
-        theme = ThemeEngine()
-        self.tree_view.setItemDelegate(TreeViewItemDelegate(self.tree_view, theme))
+        # Use CSS-only approach for simplicity
 
         # Set the tree view as the popup
         self.setView(self.tree_view)
@@ -103,7 +100,38 @@ class HierarchicalComboBox(QComboBox):
                 padding: 4px 8px;
                 border: none;
                 min-height: 20px;
+                background: transparent;
             }
+
+            /* Categories (headers) - bold and no hover effect */
+            QTreeView::item:!has-children {
+                margin-left: 30px;
+                margin-right: 10px;
+                border-radius: 12px;
+            }
+
+            /* Child items - normal styling with hover */
+            QTreeView::item:!has-children:hover {
+                background: #f0f0f0;
+            }
+
+            /* Child items - selected styling */
+            QTreeView::item:!has-children:selected {
+                background: #0078d4;
+                color: white;
+            }
+
+            /* Category headers - bold text, subtle hover */
+            QTreeView::item:has-children {
+                font-weight: bold;
+                padding: 6px 8px;
+            }
+
+            QTreeView::item:has-children:hover {
+                background: #f8f9fa;
+            }
+
+
 
             QTreeView::branch {
                 background: transparent;
@@ -228,6 +256,12 @@ class HierarchicalComboBox(QComboBox):
 
             # Close the popup
             self.hidePopup()
+        else:
+            # For categories, toggle expansion on single click too
+            if self.tree_view.isExpanded(index):
+                self.tree_view.collapse(index)
+            else:
+                self.tree_view.expand(index)
 
     def _on_item_double_clicked(self, index):
         """Handle item double click in the tree view."""
@@ -272,13 +306,26 @@ class HierarchicalComboBox(QComboBox):
                     if first_item is None:
                         first_item = child_item
 
-                self.model.appendRow(group_item)
+            self.model.appendRow(group_item)
 
         # Set the model
         self.setModel(self.model)
 
         # Force UI update
         self.model.layoutChanged.emit()
+
+        # Now set the expansion state properly (after model is set)
+        group_names = list(groups.keys())
+        for i, group_name in enumerate(group_names):
+            if groups[group_name]:  # Only if group has items
+                # Find the group item and set expansion
+                for row in range(self.model.rowCount()):
+                    item = self.model.item(row)
+                    if item and item.text() == group_name:
+                        category_index = self.model.indexFromItem(item)
+                        # Expand only the first category, collapse others
+                        self.tree_view.setExpanded(category_index, i == 0)
+                        break
 
         # Select first item if available
         if first_item:
