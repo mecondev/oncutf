@@ -22,9 +22,10 @@ from core.pyqt_imports import (
     pyqtSignal,
 )
 from utils.logger_factory import get_cached_logger
-from widgets.ui_delegates import TreeViewItemDelegate
 
 logger = get_cached_logger(__name__)
+
+from widgets.ui_delegates import TreeViewItemDelegate
 
 
 class HierarchicalComboBox(QComboBox):

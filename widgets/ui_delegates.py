@@ -10,20 +10,25 @@ Custom QStyledItemDelegate classes for enhanced UI components:
 - ComboBoxItemDelegate: Themed styling for combobox dropdown items
 """
 
+
 from core.pyqt_imports import (
     QBrush,
     QColor,
     QCursor,
     QIcon,
+    QPainter,
     QPalette,
     QPen,
     QStyle,
     QStyledItemDelegate,
+    QStyleOptionViewItem,
     Qt,
     QTableView,
 )
+from utils.logger_factory import get_cached_logger
 from utils.theme import get_qcolor, get_theme_color
 
+logger = get_cached_logger(__name__)
 
 class ComboBoxItemDelegate(QStyledItemDelegate):
     """Custom delegate to render QComboBox dropdown items with theme and proper states."""
@@ -257,6 +262,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
     def __init__(self, parent=None, theme=None):
         super().__init__(parent)
         self.theme = theme
+        logger.debug("[TreeViewItemDelegate] Initialized")
 
     # def paint(self, painter, option, index):
     #     """Custom paint method that correctly handles indented items."""
@@ -331,8 +337,8 @@ class TreeViewItemDelegate(QStyledItemDelegate):
 
 
 
-    def paint(self, painter: QPainter, option: QStyle.OptionViewItem, index):
-        option_copy = QStyle.OptionViewItem(option)
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index):
+        option_copy = QStyleOptionViewItem(option)
         self.initStyleOption(option_copy, index)
 
         style = option.widget.style() if option.widget else None
@@ -345,11 +351,21 @@ class TreeViewItemDelegate(QStyledItemDelegate):
 
         # Determine background color based on state
         if option_copy.state & QStyle.State_Selected:
+            print("[TreeViewItemDelegate] combo_item_background_selected")
             bg_color = get_qcolor("combo_item_background_selected")
+
+            text_rect = style.subElementRect(QStyle.SE_ItemViewItemText, option_copy, option_copy.widget)
+            text_rect = text_rect.adjusted(-4, 0, 4, 0)
             painter.fillRect(text_rect, bg_color)
+
         elif option_copy.state & QStyle.State_MouseOver:
+            print("[TreeViewItemDelegate] combo_item_background_hover")
             bg_color = get_qcolor("combo_item_background_hover")
+
+            text_rect = style.subElementRect(QStyle.SE_ItemViewItemText, option_copy, option_copy.widget)
+            text_rect = text_rect.adjusted(-4, 0, 4, 0)
             painter.fillRect(text_rect, bg_color)
+
 
         # Draw the item using the style system
         style.drawControl(QStyle.CE_ItemViewItem, option_copy, painter)
