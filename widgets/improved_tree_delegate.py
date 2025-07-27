@@ -63,7 +63,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         if text:
             painter.save()
             painter.setPen(text_color)
-            
+
             # Text rect with padding inside content area
             text_rect = content_rect.adjusted(4, 0, -4, 0)
             painter.drawText(
@@ -77,10 +77,10 @@ class TreeViewItemDelegate(QStyledItemDelegate):
 def get_cross_platform_icon_path(icon_name):
     """
     Επιστρέφει cross-platform path για εικόνες.
-    
+
     Args:
         icon_name: Το όνομα της εικόνας (π.χ. "chevron-right.svg")
-    
+
     Returns:
         str: Cross-platform path για χρήση σε QSS
     """
@@ -88,28 +88,28 @@ def get_cross_platform_icon_path(icon_name):
     # Υποθέτουμε ότι καλείται από modules που είναι στο project root
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     icon_path = os.path.join(base_dir, "resources", "icons", "feather_icons", icon_name)
-    
+
     # Normalize path για Windows/Unix compatibility
     normalized_path = os.path.normpath(icon_path)
-    
+
     # Convert backslashes to forward slashes for QSS (Qt expects forward slashes)
     qss_path = normalized_path.replace("\\", "/")
-    
+
     return qss_path
 
 
 class HierarchicalComboBoxHelper:
     """Helper class για cross-platform styling του HierarchicalComboBox"""
-    
+
     @staticmethod
     def get_cross_platform_stylesheet():
         """Επιστρέφει cross-platform stylesheet για το HierarchicalComboBox"""
-        
+
         # Get cross-platform paths
         chevron_down_path = get_cross_platform_icon_path("chevron-down.svg")
         chevron_right_path = get_cross_platform_icon_path("chevron-right.svg")
         chevrons_down_path = get_cross_platform_icon_path("chevrons-down.svg")
-        
+
         return f"""
             QComboBox {{
                 border: 1px solid #ccc;
@@ -168,20 +168,20 @@ class HierarchicalComboBoxHelper:
 # Παράδειγμα χρήσης στο HierarchicalComboBox
 class ImprovedHierarchicalComboBox:
     """Βελτιωμένη έκδοση με cross-platform support"""
-    
+
     def _apply_styling(self):
         """Apply cross-platform styling for the hierarchical combo box."""
         # Χρησιμοποιούμε τον helper για cross-platform stylesheet
         stylesheet = HierarchicalComboBoxHelper.get_cross_platform_stylesheet()
         self.setStyleSheet(stylesheet)
-    
+
     def __init__(self, parent=None):
         # ... existing init code ...
-        
+
         # Set custom delegate with cross-platform support
         from utils.theme_engine import ThemeEngine
         theme = ThemeEngine()
         self.tree_view.setItemDelegate(TreeViewItemDelegate(self.tree_view, theme))
-        
+
         # Apply cross-platform styling
         self._apply_styling()

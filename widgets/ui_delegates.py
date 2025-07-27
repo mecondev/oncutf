@@ -272,22 +272,34 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             level += 1
             parent = parent.parent()
 
-        # Calculate the actual content area (excluding indent)
+        # Calculate the text position (excluding indent)
         content_left = original_rect.left() + (level * indent)
-        content_rect = original_rect.adjusted(0, 0, 0, 0)
-        content_rect.setLeft(content_left)
 
-        # Only paint background in the content area (not the indent area)
-        if option.state & QStyle.State_Selected:
-            painter.fillRect(
-                content_rect,  # Only the content area, not the indent
-                QColor(self.theme.get_color("combo_item_background_selected")),
-            )
-        elif option.state & QStyle.State_MouseOver:
-            painter.fillRect(
-                content_rect,  # Only the content area, not the indent
-                QColor(self.theme.get_color("combo_item_background_hover")),
-            )
+        # Get the text to measure its width
+        text = index.data(Qt.DisplayRole)
+        if text:
+            # Calculate text width using font metrics
+            fm = painter.fontMetrics()
+            text_width = fm.horizontalAdvance(str(text))
+            print(f"TreeViewItemDelegate: text='{text}', width={text_width}, level={level}")
+
+            # Create a tight rect around the text with small padding
+            padding = 4
+            text_rect = original_rect.adjusted(0, 0, 0, 0)
+            text_rect.setLeft(content_left)
+            text_rect.setWidth(text_width + (padding * 2))
+
+            # Only paint background around the text
+            if option.state & QStyle.State_Selected:
+                painter.fillRect(
+                    text_rect,  # Only around the text
+                    QColor(self.theme.get_color("combo_item_background_selected")),
+                )
+            elif option.state & QStyle.State_MouseOver:
+                painter.fillRect(
+                    text_rect,  # Only around the text
+                    QColor(self.theme.get_color("combo_item_background_hover")),
+                )
 
         # Set text color based on state
         if option.state & QStyle.State_Selected:
@@ -295,16 +307,19 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         else:
             text_color = QColor(self.theme.get_color("combo_text"))
 
-        # Draw the text in the content area with proper color
+        # Draw the text with proper color
         text = index.data(Qt.DisplayRole)
         if text:
             painter.save()
             painter.setPen(text_color)
 
-            # Text rect with padding inside content area
-            text_rect = content_rect.adjusted(4, 0, -4, 0)
+            # Text rect starting from content position with padding
+            text_draw_rect = original_rect.adjusted(0, 0, 0, 0)
+            text_draw_rect.setLeft(content_left + 4)  # 4px padding from left
+            text_draw_rect.setRight(original_rect.right() - 4)  # 4px padding from right
+
             painter.drawText(
-                text_rect,
+                text_draw_rect,
                 Qt.AlignLeft | Qt.AlignVCenter,
                 str(text),
             )
