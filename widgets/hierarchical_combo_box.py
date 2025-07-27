@@ -22,6 +22,7 @@ from core.pyqt_imports import (
     pyqtSignal,
 )
 from utils.logger_factory import get_cached_logger
+from widgets.ui_delegates import TreeViewItemDelegate  # Add this import
 
 logger = get_cached_logger(__name__)
 
@@ -48,7 +49,11 @@ class HierarchicalComboBox(QComboBox):
         self.tree_view.setHeaderHidden(True)
         self.tree_view.setRootIsDecorated(True)
         self.tree_view.setItemsExpandable(True)
-        self.tree_view.setExpandsOnDoubleClick(True)
+
+        # Set custom delegate
+        from utils.theme_engine import ThemeEngine
+        theme = ThemeEngine()
+        self.tree_view.setItemDelegate(TreeViewItemDelegate(self.tree_view, theme))
 
         # Set the tree view as the popup
         self.setView(self.tree_view)
@@ -79,29 +84,12 @@ class HierarchicalComboBox(QComboBox):
                 min-height: 20px;
             }
 
-            QComboBox:hover {
-                border-color: #999;
-            }
-
-            QComboBox:focus {
-                border-color: #0078d4;
-            }
-
-            QComboBox::drop-down {
-                border: none;
-                background: transparent;
-                width: 18px;
-            }
-
             QComboBox::down-arrow {
-                image: url(resources/icons/feather_icons/chevrons-down.svg);
+                image: url(../resources/icons/feather_icons/chevrons-down.svg);
                 width: 12px;
                 height: 12px;
             }
-        """)
 
-        # Styling for the tree view popup
-        self.tree_view.setStyleSheet("""
             QTreeView {
                 background: white;
                 border: 1px solid #ccc;
@@ -132,12 +120,12 @@ class HierarchicalComboBox(QComboBox):
 
             QTreeView::branch:has-children:!has-siblings:closed,
             QTreeView::branch:closed:has-children:has-siblings {
-                image: url(resources/icons/feather_icons/chevron-right.svg);
+                image: url(../resources/icons/feather_icons/chevron-right.svg);
             }
 
             QTreeView::branch:open:has-children:!has-siblings,
             QTreeView::branch:open:has-children:has-siblings {
-                image: url(resources/icons/feather_icons/chevron-down.svg);
+                image: url(../resources/icons/feather_icons/chevron-down.svg);
             }
         """)
 

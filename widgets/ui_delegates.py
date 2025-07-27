@@ -249,3 +249,49 @@ class FileTableHoverDelegate(QStyledItemDelegate):
             elided = fm.elidedText(str(display_text), Qt.ElideRight, text_rect.width())  # type: ignore
             painter.drawText(text_rect, alignment, elided)
             painter.restore()
+
+
+class TreeViewItemDelegate(QStyledItemDelegate):
+    """Custom delegate for TreeView items that properly handles background painting."""
+
+    def __init__(self, parent=None, theme=None):
+        super().__init__(parent)
+        self.theme = theme
+
+    def paint(self, painter, option, index):
+        # Save original rect
+        original_rect = option.rect
+
+        # Get the item's indent level
+        tree_view = self.parent()
+        indent = tree_view.indentation() if tree_view else 20
+        level = 0
+        parent = index.parent()
+        while parent.isValid():
+            level += 1
+            parent = parent.parent()
+
+        # Adjust rect to not paint the indented area
+        option.rect.setLeft(original_rect.left() + (level * indent))
+
+        # Handle background colors
+        if option.state & QStyle.State_Selected:
+            painter.fillRect(
+                option.rect,
+                QColor(self.theme.get_color("combo_item_background_selected")),
+            )
+        elif option.state & QStyle.State_MouseOver:
+            painter.fillRect(
+                option.rect,
+                QColor(self.theme.get_color("combo_item_background_hover")),
+            )
+
+        # Draw the text
+        text = index.data(Qt.DisplayRole)
+        if text:
+            text_rect = option.rect.adjusted(4, 0, -4, 0)
+            painter.drawText(
+                text_rect,
+                Qt.AlignLeft | Qt.AlignVCenter,
+                str(text),
+            )
