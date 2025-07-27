@@ -260,6 +260,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
 
     def paint(self, painter, option, index):
         """Custom paint method that correctly handles indented items."""
+        print(f"TreeViewItemDelegate.paint called for: {index.data(Qt.DisplayRole)}")
         # Save original rect
         original_rect = option.rect
 
@@ -281,7 +282,6 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             # Calculate text width using font metrics
             fm = painter.fontMetrics()
             text_width = fm.horizontalAdvance(str(text))
-            print(f"TreeViewItemDelegate: text='{text}', width={text_width}, level={level}")
 
             # Create a tight rect around the text with small padding
             padding = 4

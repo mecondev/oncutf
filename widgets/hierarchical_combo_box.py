@@ -105,15 +105,6 @@ class HierarchicalComboBox(QComboBox):
                 min-height: 20px;
             }
 
-            QTreeView::item:hover {
-                background-color: #f0f0f0;
-            }
-
-            QTreeView::item:selected {
-                background-color: #0078d4;
-                color: white;
-            }
-
             QTreeView::branch {
                 background: transparent;
             }
