@@ -176,6 +176,61 @@ class PersistentMetadataCache:
 
         return None
 
+    def get_entries_batch(self, file_paths: list[str]) -> dict[str, MetadataEntry | None]:
+        """
+        Get metadata entries for multiple files in a single batch operation.
+
+        Args:
+            file_paths: List of file paths to get entries for
+
+        Returns:
+            dict: Mapping of normalized path -> MetadataEntry (or None if not found)
+        """
+        if not file_paths:
+            return {}
+
+        # Normalize all paths
+        norm_paths = [self._normalize_path(path) for path in file_paths]
+        result = {}
+        paths_to_query = []
+
+        # Check memory cache first
+        for norm_path in norm_paths:
+            if norm_path in self._memory_cache:
+                self._cache_hits += 1
+                result[norm_path] = self._memory_cache[norm_path]
+            else:
+                paths_to_query.append(norm_path)
+
+        # Batch query database for remaining paths
+        if paths_to_query:
+            self._cache_misses += len(paths_to_query)
+            try:
+                # Use batch query method from database manager
+                batch_metadata = self._db_manager.get_metadata_batch(paths_to_query)
+
+                for path in paths_to_query:
+                    metadata = batch_metadata.get(path)
+                    if metadata:
+                        # Create entry and cache it
+                        is_extended = metadata.pop("__extended__", False)
+                        is_modified = metadata.pop("__modified__", False)
+
+                        entry = MetadataEntry(metadata, is_extended=is_extended, modified=is_modified)
+                        self._memory_cache[path] = entry
+                        result[path] = entry
+                    else:
+                        result[path] = None
+
+            except Exception as e:
+                logger.error(f"[PersistentMetadataCache] Error in batch metadata query: {e}")
+                # Fallback: set all remaining paths to None
+                for path in paths_to_query:
+                    if path not in result:
+                        result[path] = None
+
+        return result
+
     def has(self, file_path: str) -> bool:
         """Check if metadata exists for file."""
         norm_path = self._normalize_path(file_path)

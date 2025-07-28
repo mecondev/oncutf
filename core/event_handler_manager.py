@@ -2500,8 +2500,26 @@ class EventHandlerManager:
             # Get metadata cache if available
             metadata_cache = getattr(self.parent_window, "metadata_cache", None)
 
-            for file_item in files:
-                if metadata_cache:
+            if metadata_cache and hasattr(metadata_cache, "get_entries_batch"):
+                # Use batch lookup for better performance
+                file_paths = [file_item.full_path for file_item in files]
+                batch_entries = metadata_cache.get_entries_batch(file_paths)
+
+                for file_item in files:
+                    cache_entry = batch_entries.get(file_item.full_path)
+
+                    if cache_entry and hasattr(cache_entry, "data") and cache_entry.data:
+                        # File has metadata
+                        if hasattr(cache_entry, "is_extended") and cache_entry.is_extended:
+                            files_extended_metadata.append(file_item)
+                        else:
+                            files_fast_metadata.append(file_item)
+                    else:
+                        # File has no metadata
+                        files_no_metadata.append(file_item)
+            elif metadata_cache:
+                # Fallback to individual lookups
+                for file_item in files:
                     cache_entry = metadata_cache.get_entry(file_item.full_path)
 
                     if cache_entry and hasattr(cache_entry, "data") and cache_entry.data:
@@ -2513,9 +2531,9 @@ class EventHandlerManager:
                     else:
                         # File has no metadata
                         files_no_metadata.append(file_item)
-                else:
-                    # No cache available, assume no metadata
-                    files_no_metadata.append(file_item)
+            else:
+                # No cache available, assume no metadata
+                files_no_metadata.extend(files)
 
             elapsed_time = time.time() - start_time
             logger.debug(

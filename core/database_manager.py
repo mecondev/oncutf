@@ -531,6 +531,75 @@ class DatabaseManager:
             logger.error(f"[DatabaseManager] Error retrieving metadata for {file_path}: {e}")
             return None
 
+    def get_metadata_batch(self, file_paths: list[str]) -> dict[str, dict[str, Any] | None]:
+        """
+        Retrieve metadata for multiple files in a single batch operation.
+
+        Args:
+            file_paths: List of file paths to get metadata for
+
+        Returns:
+            dict: Mapping of file_path -> metadata dict (or None if not found)
+        """
+        if not file_paths:
+            return {}
+
+        try:
+            # Get path IDs for all files
+            path_ids = {}
+            for file_path in file_paths:
+                path_id = self.get_path_id(file_path)
+                if path_id:
+                    path_ids[path_id] = file_path
+
+            if not path_ids:
+                return {path: None for path in file_paths}
+
+            # Batch query metadata
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+
+                # Create placeholders for IN clause
+                placeholders = ','.join('?' * len(path_ids))
+
+                cursor.execute(
+                    f"""
+                    SELECT path_id, metadata_json, metadata_type, is_modified
+                    FROM file_metadata
+                    WHERE path_id IN ({placeholders})
+                    AND (path_id, updated_at) IN (
+                        SELECT path_id, MAX(updated_at)
+                        FROM file_metadata
+                        WHERE path_id IN ({placeholders})
+                        GROUP BY path_id
+                    )
+                    """,
+                    list(path_ids.keys()) * 2  # placeholders appear twice in query
+                )
+
+                # Process results
+                results = {}
+                for file_path in file_paths:
+                    results[file_path] = None
+
+                for row in cursor.fetchall():
+                    file_path = path_ids[row["path_id"]]
+                    metadata = json.loads(row["metadata_json"])
+
+                    # Add metadata flags
+                    if row["metadata_type"] == "extended":
+                        metadata["__extended__"] = True
+                    if row["is_modified"]:
+                        metadata["__modified__"] = True
+
+                    results[file_path] = metadata
+
+                return results
+
+        except Exception as e:
+            logger.error(f"[DatabaseManager] Error in batch metadata retrieval: {e}")
+            return {path: None for path in file_paths}
+
     def has_metadata(self, file_path: str, metadata_type: str | None = None) -> bool:
         """Check if file has metadata stored."""
         try:
