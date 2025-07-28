@@ -102,7 +102,8 @@ class MetadataWidget(QWidget):
         # Apply custom delegates for better dropdown styling
         theme = ThemeEngine()
         self.category_combo.setItemDelegate(ComboBoxItemDelegate(self.category_combo, theme))
-        self.options_combo.setItemDelegate(ComboBoxItemDelegate(self.options_combo, theme))
+        # Don't override HierarchicalComboBox's TreeViewItemDelegate
+        # self.options_combo.setItemDelegate(ComboBoxItemDelegate(self.options_combo, theme))
 
         # Connections
         self.category_combo.currentIndexChanged.connect(self._on_category_changed)
