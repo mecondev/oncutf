@@ -201,10 +201,10 @@ class UnifiedMetadataManager(QObject):
             _use_extended: Whether to use extended metadata (unused parameter kept for compatibility)
 
         Returns:
-            str: Loading mode ("single_file", "multiple_files_dialog", or "batch")
+            str: Loading mode ("single_file_wait_cursor", "multiple_files_dialog", or "batch")
         """
         if file_count == 1:
-            return "single_file"
+            return "single_file_wait_cursor"
         elif file_count <= 10:
             return "multiple_files_dialog"
         else:
@@ -291,6 +291,24 @@ class UnifiedMetadataManager(QObject):
             logger.info("[Shortcut] No files selected for metadata loading")
             return
 
+        # Analyze metadata state
+        metadata_analysis = self.parent_window.event_handler_manager._analyze_metadata_state(selected_files)
+
+        if not metadata_analysis["enable_fast_selected"]:
+            # All files already have fast metadata or better
+            from utils.dialog_utils import show_info_message
+
+            message = f"All {len(selected_files)} selected file(s) already have fast metadata or better."
+            if metadata_analysis.get("fast_tooltip"):
+                message += f"\n\n{metadata_analysis['fast_tooltip']}"
+
+            show_info_message(
+                self.parent_window,
+                "Fast Metadata Loading",
+                message,
+            )
+            return
+
         logger.info(f"[Shortcut] Loading basic metadata for {len(selected_files)} files")
         # Use intelligent loading with cache checking and smart UX
         self.load_metadata_for_items(selected_files, use_extended=False, source="shortcut")
@@ -314,6 +332,44 @@ class UnifiedMetadataManager(QObject):
         if not selected_files:
             logger.info("[Shortcut] No files selected for extended metadata loading")
             return
+
+        # Analyze metadata state
+        metadata_analysis = self.parent_window.event_handler_manager._analyze_metadata_state(selected_files)
+
+        if not metadata_analysis["enable_extended_selected"]:
+            # All files already have extended metadata
+            from utils.dialog_utils import show_info_message
+
+            message = f"All {len(selected_files)} selected file(s) already have extended metadata."
+            if metadata_analysis.get("extended_tooltip"):
+                message += f"\n\n{metadata_analysis['extended_tooltip']}"
+
+            show_info_message(
+                self.parent_window,
+                "Extended Metadata Loading",
+                message,
+            )
+            return
+
+        # Check if we have files with fast metadata that can be upgraded
+        stats = metadata_analysis.get("stats", {})
+        fast_count = stats.get("fast_metadata", 0)
+
+        if fast_count > 0:
+            from utils.dialog_utils import show_question_message
+
+            message = f"Found {fast_count} file(s) with fast metadata.\n\nDo you want to upgrade them to extended metadata?"
+            if metadata_analysis.get("extended_tooltip"):
+                message += f"\n\nDetails: {metadata_analysis['extended_tooltip']}"
+
+            result = show_question_message(
+                self.parent_window,
+                "Upgrade to Extended Metadata",
+                message,
+            )
+
+            if not result:
+                return
 
         logger.info(f"[Shortcut] Loading extended metadata for {len(selected_files)} files")
         # Use intelligent loading with cache checking and smart UX

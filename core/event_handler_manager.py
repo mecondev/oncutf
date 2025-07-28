@@ -2435,6 +2435,114 @@ class EventHandlerManager:
             },
         }
 
+    def _analyze_metadata_state(self, files: list) -> dict:
+        """
+        Analyze the metadata state of files to determine smart metadata menu options.
+
+        Args:
+            files: List of FileItem objects to analyze
+
+        Returns:
+            dict: Analysis results with enable/disable logic for metadata menu items
+        """
+        if not files:
+            return {
+                "enable_fast_selected": False,
+                "enable_extended_selected": False,
+                "fast_tooltip": "No files selected",
+                "extended_tooltip": "No files selected",
+            }
+
+        start_time = time.time()
+
+        # Check metadata state for each file
+        files_no_metadata = []
+        files_fast_metadata = []
+        files_extended_metadata = []
+
+        try:
+            # Get metadata cache if available
+            metadata_cache = getattr(self.parent_window, "metadata_cache", None)
+
+            for file_item in files:
+                if metadata_cache:
+                    cache_entry = metadata_cache.get_entry(file_item.full_path)
+
+                    if cache_entry and hasattr(cache_entry, "data") and cache_entry.data:
+                        # File has metadata
+                        if hasattr(cache_entry, "is_extended") and cache_entry.is_extended:
+                            files_extended_metadata.append(file_item)
+                        else:
+                            files_fast_metadata.append(file_item)
+                    else:
+                        # File has no metadata
+                        files_no_metadata.append(file_item)
+                else:
+                    # No cache available, assume no metadata
+                    files_no_metadata.append(file_item)
+
+            elapsed_time = time.time() - start_time
+            logger.debug(
+                f"[EventHandler] Batch metadata check completed in {elapsed_time:.3f}s: "
+                f"{len(files_no_metadata)} no metadata, {len(files_fast_metadata)} fast, "
+                f"{len(files_extended_metadata)} extended"
+            )
+
+        except Exception as e:
+            logger.warning(f"[EventHandler] Metadata state analysis failed: {e}")
+            # Fallback: assume all files need metadata
+            files_no_metadata = files
+            files_fast_metadata = []
+            files_extended_metadata = []
+
+        total = len(files)
+        no_metadata_count = len(files_no_metadata)
+        fast_metadata_count = len(files_fast_metadata)
+        extended_metadata_count = len(files_extended_metadata)
+
+        # Determine enable states and tooltips
+        enable_fast_selected = no_metadata_count > 0 or fast_metadata_count > 0
+        enable_extended_selected = no_metadata_count > 0 or fast_metadata_count > 0 or extended_metadata_count > 0
+
+        # Fast metadata tooltip
+        if no_metadata_count == total:
+            fast_tooltip = f"Load fast metadata for {total} file(s)"
+        elif no_metadata_count == 0 and fast_metadata_count == total:
+            fast_tooltip = f"All {total} file(s) already have fast metadata"
+            enable_fast_selected = False
+        elif no_metadata_count == 0 and extended_metadata_count == total:
+            fast_tooltip = f"All {total} file(s) already have extended metadata (better than fast)"
+            enable_fast_selected = False
+        else:
+            need_fast = no_metadata_count
+            fast_tooltip = f"Load fast metadata for {need_fast} of {total} file(s) that need it"
+
+        # Extended metadata tooltip
+        if extended_metadata_count == total:
+            extended_tooltip = f"All {total} file(s) already have extended metadata"
+            enable_extended_selected = False
+        elif extended_metadata_count == 0:
+            if fast_metadata_count > 0:
+                extended_tooltip = f"Upgrade {fast_metadata_count} file(s) to extended metadata and load for {no_metadata_count} file(s)"
+            else:
+                extended_tooltip = f"Load extended metadata for {total} file(s)"
+        else:
+            need_extended = total - extended_metadata_count
+            extended_tooltip = f"Load/upgrade extended metadata for {need_extended} of {total} file(s)"
+
+        return {
+            "enable_fast_selected": enable_fast_selected,
+            "enable_extended_selected": enable_extended_selected,
+            "fast_tooltip": fast_tooltip,
+            "extended_tooltip": extended_tooltip,
+            "stats": {
+                "total": total,
+                "no_metadata": no_metadata_count,
+                "fast_metadata": fast_metadata_count,
+                "extended_metadata": extended_metadata_count,
+            },
+        }
+
     def _get_simple_metadata_analysis(self) -> dict:
         """Get simple metadata analysis for all files without detailed scanning."""
         return {

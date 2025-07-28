@@ -172,11 +172,15 @@ class ApplicationService:
             # All files already have hashes
             from utils.dialog_utils import show_info_message
 
+            # Combine message with details
+            message = f"All {len(selected_files)} selected file(s) already have checksums calculated."
+            if hash_analysis.get("selected_tooltip"):
+                message += f"\n\n{hash_analysis['selected_tooltip']}"
+
             show_info_message(
                 self.main_window,
                 "Hash Calculation",
-                f"All {len(selected_files)} selected file(s) already have checksums calculated.",
-                details=hash_analysis["selected_tooltip"],
+                message,
             )
             return
 

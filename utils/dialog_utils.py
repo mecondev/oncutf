@@ -85,3 +85,20 @@ def show_error_message(parent: QWidget | None, title: str, message: str) -> None
     from widgets.custom_message_dialog import CustomMessageDialog
 
     CustomMessageDialog.information(parent, title, message)
+
+
+def show_question_message(parent: QWidget | None, title: str, message: str) -> bool:
+    """
+    Show a question dialog with Yes/No buttons.
+
+    Args:
+        parent: Parent widget for the dialog
+        title: Dialog title
+        message: Message to display
+
+    Returns:
+        bool: True if Yes was clicked, False if No was clicked
+    """
+    from widgets.custom_message_dialog import CustomMessageDialog
+
+    return CustomMessageDialog.question(parent, title, message)
