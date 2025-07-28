@@ -355,10 +355,17 @@ class UnifiedMetadataManager(QObject):
                 else None
             )
 
-            if cache_entry and hasattr(cache_entry, "is_extended"):
-                # If we have cache and it matches the requested type, skip loading
-                if cache_entry.is_extended == use_extended:
-                    continue
+            # Check if we have valid metadata in cache
+            has_valid_cache = (
+                cache_entry
+                and hasattr(cache_entry, "is_extended")
+                and hasattr(cache_entry, "data")
+                and cache_entry.data  # Ensure we actually have metadata data
+                and cache_entry.is_extended == use_extended
+            )
+
+            if has_valid_cache:
+                continue
 
             needs_loading.append(item)
 
