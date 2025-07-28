@@ -417,11 +417,16 @@ class UnifiedMetadataManager(QObject):
                 and hasattr(cache_entry, "is_extended")
                 and hasattr(cache_entry, "data")
                 and cache_entry.data  # Ensure we actually have metadata data
-                and cache_entry.is_extended == use_extended
             )
 
             if has_valid_cache:
-                continue
+                # If we already have extended metadata, don't downgrade to fast metadata
+                if cache_entry.is_extended and not use_extended:
+                    logger.debug(f"[UnifiedMetadataManager] Skipping {item.filename} - already has extended metadata, not downgrading to fast")
+                    continue
+                # If we have the exact type requested, skip loading
+                elif cache_entry.is_extended == use_extended:
+                    continue
 
             needs_loading.append(item)
 

@@ -503,19 +503,55 @@ class EventHandlerManager:
             file = self.parent_window.file_model.files[row]
             logger.info(f"[DoubleClick] Requested metadata reload for: {file.filename}")
 
+            # Check for Ctrl modifier for extended metadata
+            ctrl_pressed = bool(modifiers & Qt.ControlModifier)
+            use_extended = ctrl_pressed
+
             # Get selected files for context
             selected_files = [f for f in self.parent_window.file_model.files if f.checked]
+            target_files = selected_files if len(selected_files) > 1 else [file]
 
-            if len(selected_files) <= 1:
-                # Single file or no selection - intelligent loading (will use wait cursor for single file)
-                self.parent_window.load_metadata_for_items(
-                    [file], use_extended=False, source="double_click"
+            # Analyze metadata state to show appropriate dialog
+            metadata_analysis = self._analyze_metadata_state(target_files)
+
+            # Check if we should show a dialog instead of loading
+            if use_extended and not metadata_analysis["enable_extended_selected"]:
+                # Extended metadata requested but all files already have it
+                from utils.dialog_utils import show_info_message
+
+                message = f"All {len(target_files)} file(s) already have extended metadata."
+                if metadata_analysis.get("extended_tooltip"):
+                    message += f"\n\n{metadata_analysis['extended_tooltip']}"
+
+                show_info_message(
+                    self.parent_window,
+                    "Extended Metadata",
+                    message,
                 )
-            else:
-                # Multiple files selected - intelligent loading (will use dialog for multiple)
-                self.parent_window.load_metadata_for_items(
-                    selected_files, use_extended=False, source="double_click_multi"
+                return
+            elif not use_extended and not metadata_analysis["enable_fast_selected"]:
+                # Fast metadata requested but files have extended metadata or already have fast
+                from utils.dialog_utils import show_info_message
+
+                message = f"Cannot load fast metadata for {len(target_files)} file(s)."
+                if metadata_analysis.get("fast_tooltip"):
+                    message += f"\n\n{metadata_analysis['fast_tooltip']}"
+
+                show_info_message(
+                    self.parent_window,
+                    "Fast Metadata",
+                    message,
                 )
+                return
+
+            # Proceed with loading
+            source = "double_click_extended" if use_extended else "double_click"
+            if len(selected_files) > 1:
+                source += "_multi"
+
+            self.parent_window.load_metadata_for_items(
+                target_files, use_extended=use_extended, source=source
+            )
 
     def handle_header_toggle(self, _) -> None:
         """
@@ -2501,17 +2537,21 @@ class EventHandlerManager:
         extended_metadata_count = len(files_extended_metadata)
 
         # Determine enable states and tooltips
-        enable_fast_selected = no_metadata_count > 0 or fast_metadata_count > 0
+        # Fast metadata is only enabled if we have files that need fast metadata AND no files have extended metadata
+        # (we don't want to mix fast and extended metadata in the same operation)
+        enable_fast_selected = (no_metadata_count > 0 or fast_metadata_count > 0) and extended_metadata_count == 0
+
+        # Extended metadata is enabled if we have any files that need it or can be upgraded
         enable_extended_selected = no_metadata_count > 0 or fast_metadata_count > 0 or extended_metadata_count > 0
 
         # Fast metadata tooltip
-        if no_metadata_count == total:
+        if extended_metadata_count > 0:
+            fast_tooltip = f"Cannot load fast metadata: {extended_metadata_count} file(s) already have extended metadata"
+            enable_fast_selected = False
+        elif no_metadata_count == total:
             fast_tooltip = f"Load fast metadata for {total} file(s)"
         elif no_metadata_count == 0 and fast_metadata_count == total:
             fast_tooltip = f"All {total} file(s) already have fast metadata"
-            enable_fast_selected = False
-        elif no_metadata_count == 0 and extended_metadata_count == total:
-            fast_tooltip = f"All {total} file(s) already have extended metadata (better than fast)"
             enable_fast_selected = False
         else:
             need_fast = no_metadata_count
@@ -2533,6 +2573,8 @@ class EventHandlerManager:
         return {
             "enable_fast_selected": enable_fast_selected,
             "enable_extended_selected": enable_extended_selected,
+            "fast_label": "Load Fast Metadata",
+            "extended_label": "Load Extended Metadata",
             "fast_tooltip": fast_tooltip,
             "extended_tooltip": extended_tooltip,
             "stats": {
