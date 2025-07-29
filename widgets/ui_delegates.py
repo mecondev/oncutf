@@ -278,6 +278,11 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             level += 1
             parent = parent.parent()
 
+        branch_indicator_width = 16  # Usually 16px for the expand/collapse arrow
+
+        # The left edge of the content (after indent and branch indicator)
+        content_left = original_rect.left() + (level * indent) + branch_indicator_width
+
         # Get the text
         text = index.data(Qt.DisplayRole)
         if not text:
@@ -288,22 +293,12 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         item_flags = index.flags()
         is_selectable = bool(item_flags & Qt.ItemIsSelectable)
 
-        # Calculate the text position (excluding indent and branch indicators)
-        content_left = original_rect.left() + (level * indent)
-        if level > 0:  # Add extra space for branch indicators in child items
-            content_left += 16  # Space for expansion indicator
-
         # Paint background only for selectable items (subcategories)
         if is_selectable:
-            # Calculate text width using font metrics
-            fm = painter.fontMetrics()
-            text_width = fm.horizontalAdvance(str(text))
-
-            # Create a compact rect around the text with padding
-            padding = 6
-            bg_rect = original_rect.adjusted(0, 1, 0, -1)  # Slightly smaller height
-            bg_rect.setLeft(content_left - padding)
-            bg_rect.setWidth(text_width + (padding * 2))
+            # Background rect: from content_left to the end of the row
+            bg_rect = original_rect.adjusted(0, 1, 0, -1)
+            bg_rect.setLeft(content_left)
+            bg_rect.setRight(original_rect.right())
 
             # Paint background based on state
             if option.state & QStyle.State_Selected:
@@ -325,10 +320,10 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         painter.save()
         painter.setPen(text_color)
 
-        # Text rect with proper positioning and padding
+        # Text rect: from content_left + padding to the end of the row (with right padding)
         text_rect = original_rect.adjusted(0, 0, 0, 0)
-        text_rect.setLeft(content_left)
-        text_rect.setRight(original_rect.right() - 4)  # Right padding
+        text_rect.setLeft(content_left + 4)
+        text_rect.setRight(original_rect.right() - 4)
 
         painter.drawText(
             text_rect,
