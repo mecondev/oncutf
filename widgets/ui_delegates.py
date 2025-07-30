@@ -265,11 +265,11 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         logger.debug("[TreeViewItemDelegate] Initialized")
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index):
-        """Custom paint method that properly handles hierarchical items with precise background painting."""
+        """Custom paint method that properly handles hierarchical items with uniform full-row background painting."""
         # Save original rect
         original_rect = option.rect
 
-        # Get the item's indent level
+        # Get the item's indent level for text positioning
         tree_view = self.parent()
         indent = tree_view.indentation() if tree_view else 20
         level = 0
@@ -293,20 +293,17 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         item_flags = index.flags()
         is_selectable = bool(item_flags & Qt.ItemIsSelectable)
 
-        # Paint background only for selectable items (subcategories)
-        if is_selectable:
-            # Background rect: from content_left to the end of the row
-            bg_rect = original_rect.adjusted(0, 1, 0, -1)
-            bg_rect.setLeft(content_left)
-            bg_rect.setRight(original_rect.right())
+        # Paint full-row background for ALL items (categories and subcategories)
+        # This ensures consistent styling like file/metadata trees
+        bg_rect = original_rect.adjusted(0, 1, 0, -1)  # Full row with slight vertical padding
 
-            # Paint background based on state
-            if option.state & QStyle.State_Selected:
-                bg_color = get_qcolor("combo_item_background_selected")
-                painter.fillRect(bg_rect, bg_color)
-            elif option.state & QStyle.State_MouseOver:
-                bg_color = get_qcolor("combo_item_background_hover")
-                painter.fillRect(bg_rect, bg_color)
+        # Paint background based on state (hover vs selection)
+        if option.state & QStyle.State_Selected:
+            bg_color = get_qcolor("combo_item_background_selected")
+            painter.fillRect(bg_rect, bg_color)
+        elif option.state & QStyle.State_MouseOver:
+            bg_color = get_qcolor("combo_item_background_hover")
+            painter.fillRect(bg_rect, bg_color)
 
         # Set text color based on state and item type
         if option.state & QStyle.State_Selected:
