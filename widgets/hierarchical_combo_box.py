@@ -48,8 +48,9 @@ class HierarchicalComboBox(QComboBox):
         # Create tree view for hierarchical display
         self.tree_view = QTreeView()
         self.tree_view.setHeaderHidden(True)
-        self.tree_view.setRootIsDecorated(True)
+        self.tree_view.setRootIsDecorated(True)  # Show branch indicators for all items
         self.tree_view.setItemsExpandable(True)
+        self.tree_view.setIndentation(16)  # Set smaller indent (default is 20px)
 
         # Use CSS-only approach for simplicity (no delegate needed)
 

@@ -269,19 +269,9 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         # Save original rect
         original_rect = option.rect
 
-        # Get the item's indent level for text positioning
-        tree_view = self.parent()
-        indent = tree_view.indentation() if tree_view else 20
-        level = 0
-        parent = index.parent()
-        while parent.isValid():
-            level += 1
-            parent = parent.parent()
-
-        branch_indicator_width = 16  # Usually 16px for the expand/collapse arrow
-
-        # The left edge of the content (after indent and branch indicator)
-        content_left = original_rect.left() + (level * indent) + branch_indicator_width
+        # The left edge of the content
+        # Qt already handles all indentation and branch indicators in option.rect
+        content_left = original_rect.left()
 
         # Get the text
         text = index.data(Qt.DisplayRole)
@@ -319,7 +309,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
 
         # Text rect: from content_left + padding to the end of the row (with right padding)
         text_rect = original_rect.adjusted(0, 0, 0, 0)
-        text_rect.setLeft(content_left + 4)
+        text_rect.setLeft(content_left + 2)  # Reduced padding from 4px to 2px
         text_rect.setRight(original_rect.right() - 4)
 
         painter.drawText(
