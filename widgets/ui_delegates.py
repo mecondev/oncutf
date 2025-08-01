@@ -274,6 +274,10 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         # Save original rect
         original_rect = option.rect
 
+        # Remove QStyle.State_MouseOver to avoid double hover painting
+        if option.state & QStyle.State_MouseOver:
+            option.state &= ~QStyle.State_MouseOver
+
         # The left edge of the content
         # Qt already handles all indentation and branch indicators in option.rect
         content_left = original_rect.left()
@@ -306,7 +310,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         # Paint background based on state (hover vs selection)
         row = index.row()
         is_hovered = row == self.hovered_row
-        
+
         if option.state & QStyle.State_Selected:
             bg_color = get_qcolor("combo_item_background_selected")
             painter.fillRect(bg_rect, bg_color)
