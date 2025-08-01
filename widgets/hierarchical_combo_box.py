@@ -51,6 +51,9 @@ class HierarchicalComboBox(QComboBox):
         self.tree_view.setRootIsDecorated(True)  # Show branch indicators for all items
         self.tree_view.setItemsExpandable(True)
         self.tree_view.setIndentation(16)  # Set smaller indent (default is 20px)
+        
+        # Enable mouse tracking for hover effects
+        self.tree_view.setMouseTracking(True)
 
         # Use CSS-only approach for simplicity (no delegate needed)
 
@@ -67,9 +70,40 @@ class HierarchicalComboBox(QComboBox):
         # Connect signals
         self.tree_view.clicked.connect(self._on_item_clicked)
         self.tree_view.doubleClicked.connect(self._on_item_double_clicked)
+        
+        # Connect mouse events for hover tracking
+        self.tree_view.viewport().installEventFilter(self)
 
         # Track categories for easy access
         self._categories: dict[str, QStandardItem] = {}
+
+    def eventFilter(self, obj, event):
+        """Handle mouse events for hover tracking."""
+        if obj == self.tree_view.viewport():
+            if event.type() == event.MouseMove:
+                # Get the item under the mouse
+                pos = event.pos()
+                index = self.tree_view.indexAt(pos)
+                if index.isValid():
+                    # Update hover row in delegate
+                    delegate = self.tree_view.itemDelegate()
+                    if hasattr(delegate, 'update_hover_row'):
+                        delegate.update_hover_row(index.row())
+                        self.tree_view.viewport().update()
+                else:
+                    # Clear hover when mouse is not over any item
+                    delegate = self.tree_view.itemDelegate()
+                    if hasattr(delegate, 'update_hover_row'):
+                        delegate.update_hover_row(-1)
+                        self.tree_view.viewport().update()
+            elif event.type() == event.Leave:
+                # Clear hover when mouse leaves the viewport
+                delegate = self.tree_view.itemDelegate()
+                if hasattr(delegate, 'update_hover_row'):
+                    delegate.update_hover_row(-1)
+                    self.tree_view.viewport().update()
+        
+        return super().eventFilter(obj, event)
 
     def add_item(self, item_text: str, item_data: Any = None) -> QStandardItem:
         """

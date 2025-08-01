@@ -262,7 +262,12 @@ class TreeViewItemDelegate(QStyledItemDelegate):
     def __init__(self, parent=None, theme=None):
         super().__init__(parent)
         self.theme = theme
+        self.hovered_row: int = -1
         logger.debug("[TreeViewItemDelegate] Initialized")
+
+    def update_hover_row(self, row: int) -> None:
+        """Updates the row that should be highlighted on hover."""
+        self.hovered_row = row
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index):
         """Custom paint method that properly handles hierarchical items with uniform full-row background painting."""
@@ -293,16 +298,19 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             bg_rect = viewport_rect
             bg_rect.setTop(original_rect.top())
             bg_rect.setBottom(original_rect.bottom())
-            bg_rect = bg_rect.adjusted(0, 1, 0, -1)  # Slight vertical padding
+            # No vertical padding to match the content area height
         else:
             # Fallback to original rect if no tree view
-            bg_rect = original_rect.adjusted(0, 1, 0, -1)
+            bg_rect = original_rect
 
         # Paint background based on state (hover vs selection)
+        row = index.row()
+        is_hovered = row == self.hovered_row
+        
         if option.state & QStyle.State_Selected:
             bg_color = get_qcolor("combo_item_background_selected")
             painter.fillRect(bg_rect, bg_color)
-        elif option.state & QStyle.State_MouseOver:
+        elif is_hovered:
             bg_color = get_qcolor("combo_item_background_hover")
             painter.fillRect(bg_rect, bg_color)
 
