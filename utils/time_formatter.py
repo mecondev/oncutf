@@ -125,9 +125,9 @@ def format_duration(seconds: float) -> str:
     secs = total_seconds % 60
 
     if hours > 0:
-        return f"{hours}:{minutes:02d}':'{secs:02d}''"
+        return f"{hours}:{minutes:02d}':{secs:02d}''"
     elif minutes > 0:
-        return f"{minutes}':'{secs:02d}''"
+        return f"{minutes}':{secs:02d}''"
     else:
         return f"{secs}''"
 

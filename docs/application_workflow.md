@@ -1,8 +1,8 @@
-# OnCutF Application Workflow Documentation
+# oncutf Application Workflow Documentation
 
 ## Description
 
-This document describes the complete flow of the OnCutF application from initialization to rename operation execution, including metadata processing, database operations, and rename modules functionality.
+This document describes the complete flow of the oncutf application from initialization to rename operation execution, including metadata processing, database operations, and rename modules functionality.
 
 ## 1. Application Startup
 
@@ -480,7 +480,7 @@ SHOW_DEV_ONLY_IN_CONSOLE = True  # Show debug logs
 
 ## Conclusion
 
-The OnCutF application uses a sophisticated architecture with:
+The oncutf application uses a sophisticated architecture with:
 
 1. **Modular Design**: Separate managers for each functionality
 2. **Database-Driven**: Persistent storage for metadata, hashes, history

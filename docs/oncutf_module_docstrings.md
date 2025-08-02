@@ -71,7 +71,7 @@ names, and other constraints to ensure safe and portable file naming.
 
 Used by oncutf to prevent errors during batch renaming.
 
-## `workers/metadata_worker.py`
+## `widgets/metadata_worker.py`
 Module: metadata_worker.py
 
 Author: Michael Economou

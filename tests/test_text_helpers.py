@@ -14,7 +14,28 @@ warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*coroutine.
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
-from utils.text_helpers import format_file_size_stable, truncate_filename_middle
+from utils.text_helpers import elide_text, format_file_size_stable, truncate_filename_middle
+
+
+class TestElideText:
+    """Tests for the elide_text function."""
+
+    def test_returns_empty_when_max_len_non_positive(self):
+        """Should return empty string when max_len is zero or negative."""
+        assert elide_text("sample", 0) == ""
+        assert elide_text("sample", -5) == ""
+
+    def test_returns_ellipsis_when_max_len_is_one(self):
+        """Should return just an ellipsis when max_len is one."""
+        assert elide_text("sample", 1) == "…"
+
+    def test_truncates_with_ellipsis_when_over_limit(self):
+        """Should truncate text and append ellipsis when exceeding limit."""
+        assert elide_text("example", 5) == "exam…"
+
+    def test_no_truncation_when_within_limit(self):
+        """Should return original text if it fits within max_len."""
+        assert elide_text("abc", 5) == "abc"
 
 
 class TestTruncateFilenameMiddle:

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The new ProgressManager system provides a unified API for progress tracking across all file operations in the ONCUTF application.
+The new ProgressManager system provides a unified API for progress tracking across all file operations in the oncutf application.
 
 ## Architecture
 

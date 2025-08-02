@@ -78,3 +78,13 @@ def test_counter_module_invalid_input():
     file_item = MockFileItem(filename="i.txt")
     result = CounterModule.apply_from_data(data, file_item, index=0)
     assert result == "####"
+
+
+def test_counter_module_negative_step():
+    """Test counter with negative step (counting backwards)."""
+    data = {"type": "counter", "start": 10, "step": -2, "padding": 3}
+    file_item = MockFileItem(filename="neg.txt")
+    # index=0: 10, index=1: 8, index=2: 6
+    assert CounterModule.apply_from_data(data, file_item, index=0) == "010"
+    assert CounterModule.apply_from_data(data, file_item, index=1) == "008"
+    assert CounterModule.apply_from_data(data, file_item, index=2) == "006"

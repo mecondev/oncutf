@@ -27,7 +27,7 @@ from core.pyqt_imports import (
 )
 from utils.logger_factory import get_cached_logger
 from utils.theme import get_qcolor, get_theme_color
-from PyQt5.QtCore import QEvent
+from PyQt5.QtCore import QEvent, QModelIndex
 
 logger = get_cached_logger(__name__)
 
@@ -263,7 +263,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
     def __init__(self, parent=None, theme=None):
         super().__init__(parent)
         self.theme = theme
-        self.hovered_row: int = -1
+        self.hovered_index: QModelIndex | None = None
         logger.debug("[TreeViewItemDelegate] Initialized")
 
     def install_event_filter(self, tree_view):
@@ -272,18 +272,18 @@ class TreeViewItemDelegate(QStyledItemDelegate):
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.Leave:
-            self.hovered_row = -1
+            self.hovered_index = None
             obj.update()
         elif event.type() == QEvent.MouseMove:
             pos = event.pos()
             index = self._tree_view.indexAt(pos)
-            self.hovered_row = index.row() if index.isValid() else -1
+            self.hovered_index = index if index.isValid() else None
             obj.update()
         return False
 
     def update_hover_row(self, row: int) -> None:
-        """Updates the row that should be highlighted on hover."""
-        self.hovered_row = row
+        # Deprecated, kept for compatibility
+        pass
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index):
         """Custom paint method that properly handles hierarchical items with uniform full-row background painting."""
@@ -324,8 +324,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             bg_rect = original_rect
 
         # Paint background based on state (hover vs selection)
-        row = index.row()
-        is_hovered = row == self.hovered_row
+        is_hovered = self.hovered_index is not None and index == self.hovered_index
 
         if option.state & QStyle.State_Selected:
             bg_color = get_qcolor("combo_item_background_selected")

@@ -1,0 +1,65 @@
+diff --git a/utils/text_helpers.py b/utils/text_helpers.py
+index 1c10354dd706132e261e479f3ca37def295d8f86..9c22d8918985a78919f3ba944e6226b4c31723d1 100644
+--- a/utils/text_helpers.py
++++ b/utils/text_helpers.py
+@@ -5,52 +5,60 @@ Author: Michael Economou
+ Date: 2025-05-31
+
+ text_helpers.py
+ Utility functions for text manipulation and formatting.
+ Provides helper functions for truncating, formatting, and processing text strings.
+ """
+
+ import os
+
+
+ def elide_text(text: str, max_len: int) -> str:
+     """
+     Truncates text to a maximum number of characters with ellipsis if needed.
+
+     Example:
+         elide_text("example_filename_that_is_too_long.txt", 25)
+         → "example_filename_that_i…"
+
+     Parameters:
+         text (str): The original text to truncate.
+         max_len (int): Maximum allowed length, including ellipsis.
+
+     Returns:
+         str: Elided version of the text.
+     """
++    if max_len <= 0:
++        # No space to display anything
++        return ""
++
+     if len(text) <= max_len:
+         return text
++
++    if max_len == 1:
++        return "…"
++
+     return text[: max_len - 1] + "…"
+
+
+ def truncate_filename_middle(filename: str, max_length: int = 60) -> str:
+     """
+     Truncate filename with "..." in the middle, preserving file extension.
+
+     This function intelligently truncates long filenames by placing "..." in the middle
+     while preserving the file extension. This provides better UX than truncating at the end.
+
+     Args:
+         filename: The filename to truncate
+         max_length: Maximum length of the truncated filename (default: 60)
+
+     Returns:
+         Truncated filename with "..." in the middle
+
+     Examples:
+         >>> truncate_filename_middle("very_long_filename_that_needs_truncation.jpg")
+         "very_long...truncation.jpg"
+
+         >>> truncate_filename_middle("short.txt")
+         "short.txt"
+
+         >>> truncate_filename_middle("no_extension_file")

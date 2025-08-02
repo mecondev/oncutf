@@ -27,8 +27,16 @@ def elide_text(text: str, max_len: int) -> str:
     Returns:
         str: Elided version of the text.
     """
+    if max_len <= 0:
+        # No space to display anything
+        return ""
+
     if len(text) <= max_len:
         return text
+
+    if max_len == 1:
+        return "…"
+
     return text[: max_len - 1] + "…"
 
 
