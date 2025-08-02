@@ -27,6 +27,7 @@ from core.pyqt_imports import (
 )
 from utils.logger_factory import get_cached_logger
 from utils.theme import get_qcolor, get_theme_color
+from PyQt5.QtCore import QEvent
 
 logger = get_cached_logger(__name__)
 
@@ -264,6 +265,21 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         self.theme = theme
         self.hovered_row: int = -1
         logger.debug("[TreeViewItemDelegate] Initialized")
+
+    def install_event_filter(self, tree_view):
+        self._tree_view = tree_view
+        tree_view.viewport().installEventFilter(self)
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Leave:
+            self.hovered_row = -1
+            obj.update()
+        elif event.type() == QEvent.MouseMove:
+            pos = event.pos()
+            index = self._tree_view.indexAt(pos)
+            self.hovered_row = index.row() if index.isValid() else -1
+            obj.update()
+        return False
 
     def update_hover_row(self, row: int) -> None:
         """Updates the row that should be highlighted on hover."""

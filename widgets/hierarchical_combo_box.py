@@ -51,7 +51,7 @@ class HierarchicalComboBox(QComboBox):
         self.tree_view.setRootIsDecorated(True)  # Show branch indicators for all items
         self.tree_view.setItemsExpandable(True)
         self.tree_view.setIndentation(16)  # Set smaller indent (default is 20px)
-        
+
         # Enable mouse tracking for hover effects
         self.tree_view.setMouseTracking(True)
 
@@ -65,14 +65,16 @@ class HierarchicalComboBox(QComboBox):
         self.tree_view.setModel(self.model)
 
         # Set the delegate
-        self.tree_view.setItemDelegate(TreeViewItemDelegate(self.tree_view))
+        self.delegate = TreeViewItemDelegate(self.tree_view)
+        self.tree_view.setItemDelegate(self.delegate)
+        self.delegate.install_event_filter(self.tree_view)
 
         # Connect signals
         self.tree_view.clicked.connect(self._on_item_clicked)
         self.tree_view.doubleClicked.connect(self._on_item_double_clicked)
-        
+
         # Connect mouse events for hover tracking
-        self.tree_view.viewport().installEventFilter(self)
+        # self.tree_view.viewport().installEventFilter(self) # This line is removed as per the new_code
 
         # Track categories for easy access
         self._categories: dict[str, QStandardItem] = {}
@@ -102,7 +104,7 @@ class HierarchicalComboBox(QComboBox):
                 if hasattr(delegate, 'update_hover_row'):
                     delegate.update_hover_row(-1)
                     self.tree_view.viewport().update()
-        
+
         return super().eventFilter(obj, event)
 
     def add_item(self, item_text: str, item_data: Any = None) -> QStandardItem:
