@@ -161,12 +161,24 @@ def classify_key(key: str) -> str:
     return "Other"
 
 
-def create_item(text: str, alignment=None) -> QStandardItem:
-    """Create a QStandardItem with given text and alignment."""
+def create_item(text: str, alignment=None, icon_name: str | None = None) -> QStandardItem:
+    """Create a QStandardItem with given text, alignment, and optional icon."""
     item = QStandardItem(text)
     if alignment is None:
         alignment = Qt.AlignLeft
     item.setTextAlignment(Qt.Alignment(alignment))
+
+    # Set icon if provided
+    if icon_name:
+        try:
+            from utils.icons_loader import get_menu_icon
+            icon = get_menu_icon(icon_name)
+            if icon:
+                item.setIcon(icon)
+        except Exception as e:
+            # Silently fail if icon loading fails
+            pass
+
     return item
 
 
