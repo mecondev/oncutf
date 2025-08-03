@@ -110,8 +110,10 @@ class AsyncFileOperations:
             chunk_size = 64 * 1024  # 64KB chunks
             bytes_copied = 0
 
-            async with aiofiles.open(source, "rb") as src:
-                async with aiofiles.open(destination, "wb") as dst:
+            async with (
+                aiofiles.open(source, "rb") as src,
+                aiofiles.open(destination, "wb") as dst,
+            ):
                     while True:
                         chunk = await src.read(chunk_size)
                         if not chunk:

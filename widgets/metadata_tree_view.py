@@ -1,25 +1,26 @@
-"""
-Module: metadata_tree_view.py
+"""Custom QTreeView widget with drag-and-drop metadata loading support.
 
-Author: Michael Economou
-Date: 2025-05-31
-
-metadata_tree_view.py
 This module defines a custom QTreeView widget that supports drag-and-drop functionality
 for triggering metadata loading in the Batch File Renamer GUI.
 The view accepts file drops ONLY from the internal file table of the application,
-and emits a signal (`files_dropped`) containing the dropped file paths.
+and emits signals for metadata operations.
+
 Features:
 - Drag & drop support from internal file table only
 - Intelligent scroll position memory per file with smooth animation
 - Context menu for metadata editing (copy, edit, reset)
 - Placeholder mode for empty content
 - Modified item tracking with visual indicators
+
 Expected usage:
-- Drag files from the file table (but not from external sources).
-- Drop onto the metadata tree.
-- The main window connects to `files_dropped` and triggers selective metadata loading.
+- Drag files from the file table (but not from external sources)
+- Drop onto the metadata tree
+- The main window connects to signals and triggers selective metadata loading
+
 Designed for integration with MainWindow and MetadataReader.
+
+Author: Michael Economou
+Date: 2025-05-31
 """
 
 import contextlib
@@ -79,14 +80,15 @@ logger = get_cached_logger(__name__)
 class MetadataProxyModel(QSortFilterProxyModel):
     """Custom proxy model for metadata tree filtering."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setFilterCaseSensitivity(Qt.CaseInsensitive)
+        self.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.setRecursiveFilteringEnabled(True)
 
-    def filterAcceptsRow(self, source_row, source_parent):
+    def filterAcceptsRow(self, source_row: int, source_parent: QModelIndex) -> bool:
         """
         Custom filter logic for metadata tree.
+
         Shows a row if:
         1. The row itself matches the filter
         2. Any of its children match the filter
@@ -108,8 +110,8 @@ class MetadataProxyModel(QSortFilterProxyModel):
         key_index = source_model.index(source_row, 0, source_parent)
         value_index = source_model.index(source_row, 1, source_parent)
 
-        key_text = source_model.data(key_index, Qt.DisplayRole) or ""
-        value_text = source_model.data(value_index, Qt.DisplayRole) or ""
+        key_text = source_model.data(key_index, Qt.ItemDataRole.DisplayRole) or ""
+        value_text = source_model.data(value_index, Qt.ItemDataRole.DisplayRole) or ""
 
         pattern = self.filterRegExp().pattern()
 
@@ -150,9 +152,9 @@ class MetadataTreeView(QTreeView):
         super().__init__(parent)
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True)
-        self.setDragDropMode(QAbstractItemView.DropOnly)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setTextElideMode(Qt.ElideRight)
+        self.setDragDropMode(QAbstractItemView.DragDropMode.DropOnly)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setTextElideMode(Qt.TextElideMode.ElideRight)
 
         # Unified placeholder helper
         self.placeholder_helper = create_placeholder_helper(self, "metadata_tree", icon_size=120)
@@ -162,7 +164,7 @@ class MetadataTreeView(QTreeView):
         self.modified_items: set[str] = set()
 
         # Context menu setup
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
         self._current_menu = None
 
@@ -2517,7 +2519,7 @@ class MetadataTreeView(QTreeView):
         Collect all modified metadata items for the current file.
 
         Returns:
-            Dict[str, str]: Dictionary of modified metadata in format {"EXIF/Rotation": "90"}
+            Dictionary of modified metadata in format {"EXIF/Rotation": "90"}
         """
         if not self.modified_items:
             return {}
@@ -2573,7 +2575,7 @@ class MetadataTreeView(QTreeView):
         Collect all modified metadata for all files that have modifications.
 
         Returns:
-            Dict[str, Dict[str, str]]: Dictionary mapping file paths to their modified metadata
+            Dictionary mapping file paths to their modified metadata
         """
         all_modifications = {}
 

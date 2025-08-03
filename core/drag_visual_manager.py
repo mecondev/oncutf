@@ -1,25 +1,23 @@
-"""
-Module: drag_visual_manager.py
+"""Drag Visual Manager - Visual feedback for drag & drop operations.
 
-Author: Michael Economou
-Date: 2025-05-31
-
-Drag Visual Manager - Visual feedback for drag & drop operations
 This module provides visual feedback for drag & drop operations including:
 - Legal/illegal drop zone indicators
 - File/folder type cursors
 - Modifier state indicators (normal/extended metadata)
 - Dynamic cursor and overlay management
+
 Features:
 - Icon-based cursors with state awareness
 - Real-time drop zone validation
 - Keyboard modifier detection
 - Theme-aware icons from feather set
+
+Author: Michael Economou
+Date: 2025-05-31
 """
 
 import os
 from enum import Enum
-from typing import Optional
 
 from config import ICON_SIZES
 from core.pyqt_imports import QApplication, QColor, QCursor, QIcon, QPainter, QPixmap, Qt, QWidget
@@ -64,7 +62,7 @@ class DragVisualManager:
     - Keyboard modifier states (normal/extended metadata)
     """
 
-    _instance: Optional["DragVisualManager"] = None
+    _instance: "DragVisualManager | None" = None
 
     def __init__(self):
         # Ensure singleton

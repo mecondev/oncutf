@@ -1,13 +1,11 @@
-"""
-Module: preview_generator.py
+"""Preview name generation functions for file renaming.
 
-Author: Michael Economou
-Date: 2025-06-01
-
-preview_generator.py
 This module provides functions to generate preview names for file renaming
 based on user-defined modules. It supports modular rename logic and allows
 integration with metadata.
+
+Author: Michael Economou
+Date: 2025-06-01
 """
 
 from typing import Any
@@ -29,18 +27,12 @@ def generate_preview_names(
     """
     Generate new filenames based on rename modules for a list of files.
 
-    Parameters
-    ----------
-    files : List[FileItem]
-        The list of files to rename.
-    modules_data : List[Dict[str, Any]]
-        The list of rename modules in serialized form.
-    metadata : Optional[Dict[str, Dict[str, Any]]]
-        Cached metadata for the files (optional).
+    Args:
+        files: The list of files to rename.
+        modules_data: The list of rename modules in serialized form.
+        metadata_cache: Cached metadata for the files (optional).
 
-    Returns
-    -------
-    Tuple[List[Tuple[str, str]], bool, str]
+    Returns:
         A tuple containing:
         - List of (old_name, new_name) preview pairs
         - Bool indicating if any error occurred

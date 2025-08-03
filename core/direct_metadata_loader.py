@@ -216,7 +216,7 @@ class DirectMetadataLoader(QObject):
             self._start_metadata_loading(files, use_extended, source)
 
     def _start_metadata_loading_with_progress(
-        self, files: list[FileItem], use_extended: bool, source: str
+        self, files: list[FileItem], use_extended: bool, source: str  # noqa: ARG002
     ) -> None:
         """Start metadata loading with progress tracking."""
         from utils.metadata_loader import MetadataLoader
@@ -353,7 +353,7 @@ class DirectMetadataLoader(QObject):
             # Fallback to loading without progress dialog
             self._start_hash_loading(files, source)
 
-    def _start_hash_loading_with_progress(self, files: list[FileItem], source: str) -> None:
+    def _start_hash_loading_with_progress(self, files: list[FileItem], source: str) -> None:  # noqa: ARG002
         """Start hash loading with progress tracking."""
         from core.hash_worker import HashWorker
 

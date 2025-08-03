@@ -1,13 +1,14 @@
-"""
-Module: application_service.py
+"""Application Service Layer with unified interface to all operations.
+
+This module provides a unified interface to all application operations,
+reducing the need for delegate methods in MainWindow and creating better
+separation of concerns.
 
 Author: Michael Economou
 Date: 2025-06-15
-
-core/application_service.py
-Application Service Layer that provides a unified interface to all application operations.
-This reduces the need for delegate methods in MainWindow and creates better separation of concerns.
 """
+
+import os
 
 from core.pyqt_imports import QModelIndex, Qt
 from models.file_item import FileItem
@@ -65,7 +66,7 @@ class ApplicationService:
     # File Operations
     # =====================================
 
-    def load_files_from_folder(self, folder_path: str, force: bool = False):
+    def load_files_from_folder(self, folder_path: str, force: bool = False):  # noqa: ARG002
         """Load files from folder via FileLoadManager."""
         # Use the remembered recursive state for consistent behavior
         recursive = getattr(self.main_window, "current_folder_is_recursive", False)

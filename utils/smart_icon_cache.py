@@ -1,12 +1,8 @@
-"""
-Module: smart_icon_cache.py
+"""Smart Icon Cache Module.
 
-Author: Michael Economou
-Date: 2025-06-20
-
-Smart Icon Cache Module
 This module provides an advanced icon caching system with LRU eviction,
 memory optimization, and intelligent loading patterns.
+
 Features:
 - LRU (Least Recently Used) eviction policy
 - Memory-aware caching with size limits
@@ -15,6 +11,9 @@ Features:
 - Preloading of commonly used icons
 - Icon size optimization and scaling
 - Integration with existing icon systems
+
+Author: Michael Economou
+Date: 2025-06-20
 """
 
 import os
@@ -44,7 +43,7 @@ class IconCacheEntry:
     creation_time: float = field(default_factory=time.time)
     memory_size_bytes: int = 0
 
-    def touch(self):
+    def touch(self) -> None:
         """Update access statistics."""
         self.access_count += 1
         self.last_access = time.time()

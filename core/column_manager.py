@@ -581,12 +581,9 @@ class ColumnManager:
 
             if header:
                 # Disconnect any existing connections to avoid duplicates
-                try:
+                with contextlib.suppress(AttributeError, RuntimeError, TypeError):
                     # Use a more specific disconnect approach
                     header.sectionResized.disconnect()
-                except (AttributeError, RuntimeError, TypeError):
-                    # If disconnect fails, it's okay - we'll just connect again
-                    pass
 
                 # Connect new handler with proper lambda capture
                 def resize_handler(logical_index, old_size, new_size):
@@ -598,7 +595,7 @@ class ColumnManager:
             logger.warning(f"[ColumnManager] Error connecting resize signals: {e}")
 
     def _on_column_resized(
-        self, table_type: str, logical_index: int, old_size: int, new_size: int
+        self, table_type: str, logical_index: int, old_size: int, new_size: int  # noqa: ARG002
     ) -> None:
         """Handle column resize events to track user preferences."""
         if self.state.programmatic_resize_active:

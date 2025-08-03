@@ -1,15 +1,16 @@
-"""
-Module: ui_delegates.py
+"""Custom QStyledItemDelegate classes for enhanced UI components.
+
+This module provides custom delegates for enhanced UI components:
+- FileTableHoverDelegate: Full-row hover highlight for file tables
+- ComboBoxItemDelegate: Themed styling for combobox dropdown items
+- TreeViewItemDelegate: Hierarchical item painting with proper hover tracking
 
 Author: Michael Economou
 Date: 2025-05-31
-
-ui_delegates.py
-Custom QStyledItemDelegate classes for enhanced UI components:
-- FileTableHoverDelegate: Full-row hover highlight for file tables
-- ComboBoxItemDelegate: Themed styling for combobox dropdown items
 """
 
+
+from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import QEvent, QModelIndex
 
@@ -26,21 +27,29 @@ from core.pyqt_imports import (
     QStyleOptionViewItem,
     Qt,
     QTableView,
+    QTreeView,
+    QWidget,
 )
 from utils.logger_factory import get_cached_logger
 from utils.theme import get_qcolor, get_theme_color
+
+if TYPE_CHECKING:
+    from utils.theme_engine import ThemeEngine
 
 logger = get_cached_logger(__name__)
 
 class ComboBoxItemDelegate(QStyledItemDelegate):
     """Custom delegate to render QComboBox dropdown items with theme and proper states."""
 
-    def __init__(self, parent=None, theme=None):
+    def __init__(self, parent: QWidget | None = None, theme: 'ThemeEngine | None' = None) -> None:
         super().__init__(parent)
         self.theme = theme
 
-    def initStyleOption(self, option, index):
+    def initStyleOption(self, option: QStyleOptionViewItem, index: QModelIndex) -> None:
         super().initStyleOption(option, index)
+
+        if not self.theme:
+            return
 
         # Use font from theme for absolute consistency
         option.font.setFamily(self.theme.fonts["base_family"])
@@ -49,47 +58,48 @@ class ComboBoxItemDelegate(QStyledItemDelegate):
         option.rect.setHeight(24)
 
         # Handle disabled item (grayout)
-        if not (index.flags() & Qt.ItemIsEnabled):
+        if not (index.flags() & Qt.ItemFlag.ItemIsEnabled):
             option.palette.setBrush(
-                QPalette.Text, QBrush(QColor(self.theme.get_color("disabled_text")))
+                QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("disabled_text")))
             )
             option.font.setItalic(True)
             # Disabled items should not have hover/selected background
-            option.palette.setBrush(QPalette.Highlight, QBrush(QColor("transparent")))
+            option.palette.setBrush(QPalette.ColorRole.Highlight, QBrush(QColor("transparent")))
         else:
             # Handle selected/hover colors for enabled items
-            if option.state & QStyle.State_Selected:
+            if option.state & QStyle.StateFlag.State_Selected:
                 option.palette.setBrush(
-                    QPalette.Text, QBrush(QColor(self.theme.get_color("input_selection_text")))
+                    QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("input_selection_text")))
                 )
                 option.palette.setBrush(
-                    QPalette.Highlight,
+                    QPalette.ColorRole.Highlight,
                     QBrush(QColor(self.theme.get_color("combo_item_background_selected"))),
                 )
-            elif option.state & QStyle.State_MouseOver:
+            elif option.state & QStyle.StateFlag.State_MouseOver:
                 option.palette.setBrush(
-                    QPalette.Text, QBrush(QColor(self.theme.get_color("combo_text")))
+                    QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("combo_text")))
                 )
                 option.palette.setBrush(
-                    QPalette.Highlight,
+                    QPalette.ColorRole.Highlight,
                     QBrush(QColor(self.theme.get_color("table_hover_background"))),  # Use same hover color as file table
                 )
             else:
                 # Normal state
                 option.palette.setBrush(
-                    QPalette.Text, QBrush(QColor(self.theme.get_color("combo_text")))
+                    QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("combo_text")))
                 )
-                option.palette.setBrush(QPalette.Highlight, QBrush(QColor("transparent")))
+                option.palette.setBrush(QPalette.ColorRole.Highlight, QBrush(QColor("transparent")))
 
 
 class FileTableHoverDelegate(QStyledItemDelegate):
-    def __init__(self, parent=None):
+    """Custom delegate for file table items with full-row hover highlighting."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
         """
-        Initializes the hover delegate.
+        Initialize the hover delegate.
 
         Args:
             parent: The parent widget.
-            hover_color: The background color to use for hovered rows (if None, uses theme)
         """
         super().__init__(parent)
         self.hovered_row: int = -1
@@ -98,45 +108,50 @@ class FileTableHoverDelegate(QStyledItemDelegate):
         self.hover_color: QColor = get_qcolor("table_hover_background")
 
     def update_hover_row(self, row: int) -> None:
-        """
-        Updates the row that should be highlighted on hover.
-        """
+        """Update the row that should be highlighted on hover."""
         self.hovered_row = row
 
-    def leaveEvent(self, event) -> None:
+    def leaveEvent(self, event) -> None:  # noqa: ARG002
         """Handle mouse leave events to hide tooltips."""
         # Hide any active tooltips when mouse leaves the delegate
         from utils.tooltip_helper import TooltipHelper
 
-        TooltipHelper.clear_tooltips_for_widget(self.parent())
+        parent_widget = self.parent()
+        if isinstance(parent_widget, QWidget):
+            TooltipHelper.clear_tooltips_for_widget(parent_widget)
 
-        super().leaveEvent(event)
+        # Note: QStyledItemDelegate doesn't have leaveEvent, this is for compatibility
 
-    def enterEvent(self, event) -> None:
+    def enterEvent(self, event) -> None:  # noqa: ARG002
         """Handle mouse enter events to restore hover state."""
         # Update hover state when mouse enters the delegate
         table = self.parent()
         if isinstance(table, QTableView):
-            pos = table.viewport().mapFromGlobal(QCursor.pos())
-            index = table.indexAt(pos)
-            hovered_row = index.row() if index.isValid() else -1
-            self.update_hover_row(hovered_row)
+            viewport = table.viewport()
+            if viewport:
+                pos = viewport.mapFromGlobal(QCursor.pos())
+                index = table.indexAt(pos)
+                hovered_row = index.row() if index.isValid() else -1
+                self.update_hover_row(hovered_row)
 
-        super().enterEvent(event)
+        # Note: QStyledItemDelegate doesn't have enterEvent, this is for compatibility
 
-    def focusOutEvent(self, event) -> None:
+    def focusOutEvent(self, event) -> None:  # noqa: ARG002
         """Handle focus loss events to hide tooltips."""
         # Hide any active tooltips when focus is lost
         from utils.tooltip_helper import TooltipHelper
 
-        TooltipHelper.clear_tooltips_for_widget(self.parent())
+        parent_widget = self.parent()
+        if isinstance(parent_widget, QWidget):
+            TooltipHelper.clear_tooltips_for_widget(parent_widget)
 
-        super().focusOutEvent(event)
+        # Note: QStyledItemDelegate doesn't have focusOutEvent, this is for compatibility
 
-    def paint(self, painter, option, index):
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
         """
         Custom painting for full-row hover and selection with proper icon handling.
 
+        Features:
         - Always paints background for hover/selection to override alternate colors
         - Icons in column 0 paint over the background
         - Adds borders for selected rows
@@ -153,8 +168,8 @@ class FileTableHoverDelegate(QStyledItemDelegate):
         column = index.column()
 
         # Remove ugly focus border (dotted)
-        if option.state & QStyle.State_HasFocus:
-            option.state &= ~QStyle.State_HasFocus
+        if option.state & QStyle.StateFlag.State_HasFocus:
+            option.state &= ~QStyle.StateFlag.State_HasFocus
 
         selection_model = table.selectionModel() if table else None
         is_selected = selection_model is not None and selection_model.isSelected(index)
@@ -206,7 +221,7 @@ class FileTableHoverDelegate(QStyledItemDelegate):
         # For column 0 (icons), use custom painting to ensure icons appear over background
         if column == 0:
             # Get the icon from the model's DecorationRole
-            icon_data = model.data(index, Qt.DecorationRole)
+            icon_data = model.data(index, Qt.ItemDataRole.DecorationRole)
             if icon_data and isinstance(icon_data, QIcon):
                 # Check if this is a combined icon (wider than tall) or single icon
                 icon_size = icon_data.actualSize(option.rect.size())
@@ -218,13 +233,13 @@ class FileTableHoverDelegate(QStyledItemDelegate):
                     # Single icon - use square rect with normal padding
                     icon_rect = option.rect.adjusted(2, 2, -2, -2)
 
-                icon_data.paint(painter, icon_rect, Qt.AlignCenter)
+                icon_data.paint(painter, icon_rect, Qt.AlignmentFlag.AlignCenter)
 
             # Don't call super().paint() for column 0 since we handled the icon ourselves
             return
 
             # For all other columns, paint everything manually - no super().paint()
-        display_text = model.data(index, Qt.DisplayRole) if model else ""
+        display_text = model.data(index, Qt.ItemDataRole.DisplayRole) if model else ""
         if display_text:
             # Determine text color based on selection and hover state
             if is_selected and is_hovered:
@@ -240,20 +255,20 @@ class FileTableHoverDelegate(QStyledItemDelegate):
             text_rect = option.rect.adjusted(4, 0, -4, 0)  # Small horizontal padding
 
             alignment = (
-                model.data(index, Qt.TextAlignmentRole) if model else Qt.AlignLeft | Qt.AlignVCenter
-            )  # type: ignore
+                model.data(index, Qt.ItemDataRole.TextAlignmentRole) if model else Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+            )
             if not alignment:
-                alignment = Qt.AlignLeft | Qt.AlignVCenter  # type: ignore
+                alignment = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
 
             # Ensure alignment is an integer (convert from QVariant if needed)
             if hasattr(alignment, "value"):  # QVariant case
                 alignment = alignment.value()
             # Handle Qt.Alignment objects (they're not int but can be used directly)
-            if not isinstance(alignment, int | Qt.Alignment):  # type: ignore
-                alignment = Qt.AlignLeft | Qt.AlignVCenter  # type: ignore
+            if not isinstance(alignment, int | Qt.AlignmentFlag):
+                alignment = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
 
             fm = painter.fontMetrics()
-            elided = fm.elidedText(str(display_text), Qt.ElideRight, text_rect.width())  # type: ignore
+            elided = fm.elidedText(str(display_text), Qt.TextElideMode.ElideRight, text_rect.width())
             painter.drawText(text_rect, alignment, elided)
             painter.restore()
 
@@ -261,21 +276,26 @@ class FileTableHoverDelegate(QStyledItemDelegate):
 class TreeViewItemDelegate(QStyledItemDelegate):
     """Custom delegate for TreeView items that properly handles background painting."""
 
-    def __init__(self, parent=None, theme=None):
+    def __init__(self, parent: QWidget | None = None, theme: 'ThemeEngine | None' = None) -> None:
         super().__init__(parent)
         self.theme = theme
         self.hovered_index: QModelIndex | None = None
+        self._tree_view: QTreeView | None = None
         logger.debug("[TreeViewItemDelegate] Initialized")
 
-    def install_event_filter(self, tree_view):
+    def install_event_filter(self, tree_view: QTreeView) -> None:
+        """Install event filter for hover tracking."""
         self._tree_view = tree_view
-        tree_view.viewport().installEventFilter(self)
+        viewport = tree_view.viewport()
+        if viewport:
+            viewport.installEventFilter(self)
 
-    def eventFilter(self, obj, event):
-        if event.type() == QEvent.Leave:
+    def eventFilter(self, obj: QWidget, event: QEvent) -> bool:
+        """Handle mouse events for hover tracking."""
+        if event.type() == QEvent.Type.Leave:
             self.hovered_index = None
             obj.update()
-        elif event.type() == QEvent.MouseMove:
+        elif event.type() == QEvent.Type.MouseMove and self._tree_view:
             pos = event.pos()
             index = self._tree_view.indexAt(pos)
             self.hovered_index = index if index.isValid() else None
@@ -283,43 +303,46 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         return False
 
     def update_hover_row(self, row: int) -> None:
-        # Deprecated, kept for compatibility
-        pass
+        """Deprecated method, kept for compatibility."""
 
-    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index):
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
         """Custom paint method that properly handles hierarchical items with uniform full-row background painting."""
         # Save original rect
         original_rect = option.rect
 
         # Remove QStyle.State_MouseOver to avoid double hover painting
-        if option.state & QStyle.State_MouseOver:
-            option.state &= ~QStyle.State_MouseOver
+        if option.state & QStyle.StateFlag.State_MouseOver:
+            option.state &= ~QStyle.StateFlag.State_MouseOver
 
         # The left edge of the content
         # Qt already handles all indentation and branch indicators in option.rect
         content_left = original_rect.left()
 
         # Get the text
-        text = index.data(Qt.DisplayRole)
+        text = index.data(Qt.ItemDataRole.DisplayRole)
         if not text:
             super().paint(painter, option, index)
             return
 
         # Check if item is selectable (not a category)
         item_flags = index.flags()
-        is_selectable = bool(item_flags & Qt.ItemIsSelectable)
+        is_selectable = bool(item_flags & Qt.ItemFlag.ItemIsSelectable)
 
         # Paint full-row background for ALL items (categories and subcategories)
         # This ensures consistent styling like file/metadata trees
         # Use the full row width including indent area
         tree_view = self.parent()
-        if tree_view:
+        if isinstance(tree_view, QTreeView):
             # Get the full row rect from the tree view
-            viewport_rect = tree_view.viewport().rect()
-            bg_rect = viewport_rect
-            bg_rect.setTop(original_rect.top())
-            bg_rect.setBottom(original_rect.bottom())
-            # No vertical padding to match the content area height
+            viewport = tree_view.viewport()
+            if viewport:
+                viewport_rect = viewport.rect()
+                bg_rect = viewport_rect
+                bg_rect.setTop(original_rect.top())
+                bg_rect.setBottom(original_rect.bottom())
+                # No vertical padding to match the content area height
+            else:
+                bg_rect = original_rect
         else:
             # Fallback to original rect if no tree view
             bg_rect = original_rect
@@ -327,7 +350,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         # Paint background based on state (hover vs selection)
         is_hovered = self.hovered_index is not None and index == self.hovered_index
 
-        if option.state & QStyle.State_Selected:
+        if option.state & QStyle.StateFlag.State_Selected:
             bg_color = get_qcolor("combo_item_background_selected")
             painter.fillRect(bg_rect, bg_color)
         elif is_hovered:
@@ -335,7 +358,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             painter.fillRect(bg_rect, bg_color)
 
         # Set text color based on state and item type
-        if option.state & QStyle.State_Selected:
+        if option.state & QStyle.StateFlag.State_Selected:
             text_color = get_qcolor("input_selection_text")
         elif not is_selectable:  # Categories
             text_color = get_qcolor("text_secondary")  # Dimmer color for categories
@@ -353,12 +376,12 @@ class TreeViewItemDelegate(QStyledItemDelegate):
 
         painter.drawText(
             text_rect,
-            Qt.AlignLeft | Qt.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
             str(text),
         )
         painter.restore()
 
-    def sizeHint(self, option: QStyleOptionViewItem, index):
+    def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex):
         """Return size hint for items - make them same height as context menu items."""
         # Get the default size hint
         size = super().sizeHint(option, index)

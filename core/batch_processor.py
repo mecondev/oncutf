@@ -132,7 +132,7 @@ class BatchProcessor:
 class SmartBatchProcessor(BatchProcessor):
     """Smart batch processor with dynamic optimization."""
 
-    def __init__(self, initial_batch_size: int = 100, max_workers: int = 4, **kwargs):
+    def __init__(self, initial_batch_size: int = 100, max_workers: int = 4, **kwargs) -> None:  # noqa: ARG002
         super().__init__(initial_batch_size, max_workers)
         self.initial_batch_size = initial_batch_size
         self.performance_history = []
@@ -208,7 +208,7 @@ class BatchProcessorFactory:
             return BatchProcessor(**kwargs)
 
     @staticmethod
-    def get_optimal_config(item_count: int, item_type: str = "file") -> dict[str, Any]:
+    def get_optimal_config(item_count: int, item_type: str = "file") -> dict[str, Any]:  # noqa: ARG004
         """Get optimal configuration for item count and type."""
         if item_count < 100:
             return {"batch_size": 50, "max_workers": 2}

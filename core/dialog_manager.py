@@ -117,7 +117,7 @@ class DialogManager:
             None, "Large Files Detected", message, yes_text="Continue", no_text="Cancel"
         )
 
-    def prompt_file_conflict(self, old_name: str, new_name: str) -> bool:
+    def prompt_file_conflict(self, old_name: str, new_name: str) -> bool:  # noqa: ARG002
         """Show confirmation dialog for file rename conflicts"""
         from widgets.custom_message_dialog import CustomMessageDialog
 

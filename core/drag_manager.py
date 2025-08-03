@@ -1,18 +1,12 @@
-"""
-Module: drag_manager.py
+"""Centralized drag & drop state manager.
+
+Solves the sticky cursor issue by providing unified cleanup
+and state tracking across all widgets.
 
 Author: Michael Economou
 Date: 2025-05-31
-
-from typing import Optional
-from core.pyqt_imports import QEvent, QObject, Qt, QTimer, QApplication
-from utils.logger_factory import get_cached_logger
-from utils.timer_manager import schedule_drag_cleanup
-logger = get_cached_logger(__name__)
-class DragManager(QObject):
 """
 
-from typing import Optional
 
 from core.pyqt_imports import QApplication, QEvent, QObject, Qt, QTimer
 from utils.logger_factory import get_cached_logger
@@ -29,7 +23,7 @@ class DragManager(QObject):
     and state tracking across all widgets.
     """
 
-    _instance: Optional["DragManager"] = None
+    _instance: "DragManager | None" = None
 
     def __init__(self, parent: QObject | None = None):
         super().__init__(parent)

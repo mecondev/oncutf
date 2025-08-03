@@ -1,17 +1,15 @@
-"""
-Module: application_context.py
+"""Application Context - Centralized state management.
 
-Author: Michael Economou
-Date: 2025-05-31
-
-Application Context - Centralized state management
 This module provides centralized access to application state, eliminating
 the need for complex parent-child traversal patterns throughout the codebase.
 Current implementation is a skeleton that will gradually replace
 distributed state management across widgets.
+
+Author: Michael Economou
+Date: 2025-05-31
 """
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from core.pyqt_imports import QObject, pyqtSignal
 from utils.logger_factory import get_cached_logger
@@ -42,7 +40,7 @@ class ApplicationContext(QObject):
     selection_changed = pyqtSignal(list)  # Emitted when selection changes
     metadata_changed = pyqtSignal(str, dict)  # Emitted when metadata updates (path, metadata)
 
-    _instance: Optional["ApplicationContext"] = None
+    _instance: "ApplicationContext | None" = None
 
     def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
