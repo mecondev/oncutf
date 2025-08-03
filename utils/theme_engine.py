@@ -712,6 +712,17 @@ class ThemeEngine:
                 padding: 2px;
             }}
 
+            /* Fallback for older Qt versions - simpler selectors */
+            QTreeView::branch:closed {{
+                image: url(resources/icons/feather_icons/chevron-right.svg);
+                padding: 2px;
+            }}
+
+            QTreeView::branch:open {{
+                image: url(resources/icons/feather_icons/chevron-down.svg);
+                padding: 2px;
+            }}
+
             /* HEADER VIEWS */
             QHeaderView {{
                 background-color: {self.colors["table_header_background"]};
