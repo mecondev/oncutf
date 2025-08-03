@@ -71,7 +71,7 @@ class ComboBoxItemDelegate(QStyledItemDelegate):
                 )
                 option.palette.setBrush(
                     QPalette.Highlight,
-                    QBrush(QColor(self.theme.get_color("combo_item_background_hover"))),
+                    QBrush(QColor(self.theme.get_color("table_hover_background"))),  # Use same hover color as file table
                 )
             else:
                 # Normal state
@@ -330,7 +330,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             bg_color = get_qcolor("combo_item_background_selected")
             painter.fillRect(bg_rect, bg_color)
         elif is_hovered:
-            bg_color = get_qcolor("combo_item_background_hover")
+            bg_color = get_qcolor("table_hover_background")  # Use same hover color as file table
             painter.fillRect(bg_rect, bg_color)
 
         # Set text color based on state and item type
