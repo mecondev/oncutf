@@ -250,7 +250,8 @@ class MetadataTreeView(QTreeView):
         self.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.setUniformRowHeights(True)
         self.expandToDepth(1)
-        self.setRootIsDecorated(False)
+        self.setRootIsDecorated(True)  # Show expand/collapse arrows for consistency
+        self.setItemsExpandable(True)  # Ensure items can be expanded/collapsed
         self.setAcceptDrops(True)
         self.viewport().setAcceptDrops(True)
         self.setDragDropMode(QAbstractItemView.DropOnly)
