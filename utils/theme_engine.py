@@ -685,6 +685,7 @@ class ThemeEngine:
                 border: none;
             }}
 
+            /* Remove all custom branch images to use Qt defaults */
             QTreeView::branch:has-siblings:!adjoins-item {{
                 border-image: none;
                 image: none;
@@ -702,24 +703,24 @@ class ThemeEngine:
 
             QTreeView::branch:has-children:!has-siblings:closed,
             QTreeView::branch:closed:has-children:has-siblings {{
-                image: url(resources/icons/feather_icons/chevron-right.svg);
+                image: none;
                 padding: 2px;
             }}
 
             QTreeView::branch:open:has-children:!has-siblings,
             QTreeView::branch:open:has-children:has-siblings {{
-                image: url(resources/icons/feather_icons/chevron-down.svg);
+                image: none;
                 padding: 2px;
             }}
 
             /* Fallback for older Qt versions - simpler selectors */
             QTreeView::branch:closed {{
-                image: url(resources/icons/feather_icons/chevron-right.svg);
+                image: none;
                 padding: 2px;
             }}
 
             QTreeView::branch:open {{
-                image: url(resources/icons/feather_icons/chevron-down.svg);
+                image: none;
                 padding: 2px;
             }}
 
