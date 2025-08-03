@@ -732,6 +732,38 @@ class ThemeEngine:
                 padding: 2px;
             }}
 
+            /* Hover states for branch indicators */
+            QTreeView::branch:hover:has-children:!has-siblings:closed,
+            QTreeView::branch:hover:closed:has-children:has-siblings {{
+                image: url(resources/icons/feather_icons/chevron-right.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+            }}
+
+            QTreeView::branch:hover:open:has-children:!has-siblings,
+            QTreeView::branch:hover:open:has-children:has-siblings {{
+                image: url(resources/icons/feather_icons/chevron-down.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+            }}
+
+            /* Fallback hover states for older Qt versions */
+            QTreeView::branch:hover:closed {{
+                image: url(resources/icons/feather_icons/chevron-right.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+            }}
+
+            QTreeView::branch:hover:open {{
+                image: url(resources/icons/feather_icons/chevron-down.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+            }}
+
             /* HEADER VIEWS */
             QHeaderView {{
                 background-color: {self.colors["table_header_background"]};
