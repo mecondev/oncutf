@@ -896,12 +896,8 @@ class MainWindow(QMainWindow):
             # Show dialog but don't force focus
             self.shutdown_dialog.show()
 
-            # Move dialog to center of screen
-            screen = QApplication.desktop().screenGeometry()  # type: ignore
-            dialog_geometry = self.shutdown_dialog.geometry()
-            x = (screen.width() - dialog_geometry.width()) // 2
-            y = (screen.height() - dialog_geometry.height()) // 2
-            self.shutdown_dialog.move(x, y)
+            # Position dialog on the same screen as the main window (like splash screen)
+            self._center_shutdown_dialog_on_current_screen()
 
             QApplication.processEvents()
 
@@ -1044,12 +1040,8 @@ class MainWindow(QMainWindow):
             # Show dialog but don't force focus
             self.shutdown_dialog.show()
 
-            # Move dialog to center of screen
-            screen = QApplication.desktop().screenGeometry()  # type: ignore
-            dialog_geometry = self.shutdown_dialog.geometry()
-            x = (screen.width() - dialog_geometry.width()) // 2
-            y = (screen.height() - dialog_geometry.height()) // 2
-            self.shutdown_dialog.move(x, y)
+            # Position dialog on the same screen as the main window (like splash screen)
+            self._center_shutdown_dialog_on_current_screen()
 
             QApplication.processEvents()
             logger.info("[CloseEvent] Shutdown dialog recreated (ESC disabled, no focus stealing)")
@@ -1533,3 +1525,66 @@ class MainWindow(QMainWindow):
                 )
         except Exception:
             pass
+
+    def _center_shutdown_dialog_on_current_screen(self) -> None:
+        """Center the shutdown dialog on the same screen as the main window (similar to splash screen logic)."""
+        try:
+            # Get the center point of the main window
+            main_window_center = self.geometry().center()
+            main_window_center_x = main_window_center.x()
+            main_window_center_y = main_window_center.y()
+
+            # Find which screen contains the main window center point
+            app = QApplication.instance()
+            target_screen = None
+
+            if app:
+                for screen in app.screens():
+                    screen_geometry = screen.geometry()
+                    if (
+                        screen_geometry.x() <= main_window_center_x <= screen_geometry.x() + screen_geometry.width()
+                        and screen_geometry.y() <= main_window_center_y <= screen_geometry.y() + screen_geometry.height()
+                    ):
+                        target_screen = screen
+                        logger.debug(f"[Shutdown] Found target screen for main window: {screen.name()}")
+                        break
+
+                # If no screen found, try primary screen
+                if not target_screen:
+                    target_screen = app.primaryScreen()
+                    logger.debug(f"[Shutdown] Using primary screen: {target_screen.name() if target_screen else 'None'}")
+
+                if target_screen:
+                    # Get dialog size
+                    dialog_geometry = self.shutdown_dialog.geometry()
+                    dialog_width = dialog_geometry.width()
+                    dialog_height = dialog_geometry.height()
+
+                    # Calculate center position on the target screen
+                    screen_geometry = target_screen.availableGeometry()
+                    x = screen_geometry.x() + (screen_geometry.width() - dialog_width) // 2
+                    y = screen_geometry.y() + (screen_geometry.height() - dialog_height) // 2
+
+                    # Move dialog to calculated position
+                    self.shutdown_dialog.move(x, y)
+                    logger.debug(f"[Shutdown] Positioned dialog on screen {target_screen.name()}: {x}, {y}")
+                    return
+
+        except Exception as e:
+            logger.debug(f"[Shutdown] Error with smart screen positioning: {e}")
+
+        # Fallback: use simple center on primary screen
+        try:
+            app = QApplication.instance()
+            if app:
+                screen = app.primaryScreen()
+                if screen:
+                    screen_geometry = screen.availableGeometry()
+                    dialog_geometry = self.shutdown_dialog.geometry()
+                    x = screen_geometry.x() + (screen_geometry.width() - dialog_geometry.width()) // 2
+                    y = screen_geometry.y() + (screen_geometry.height() - dialog_geometry.height()) // 2
+                    self.shutdown_dialog.move(x, y)
+                    logger.debug(f"[Shutdown] Fallback positioning on primary screen: {x}, {y}")
+
+        except Exception as e:
+            logger.debug(f"[Shutdown] Error with fallback positioning: {e}")
