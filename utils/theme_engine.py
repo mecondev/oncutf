@@ -703,24 +703,32 @@ class ThemeEngine:
 
             QTreeView::branch:has-children:!has-siblings:closed,
             QTreeView::branch:closed:has-children:has-siblings {{
-                image: none;
+                image: url(resources/icons/feather_icons/chevron-right.svg);
+                width: 12px;
+                height: 12px;
                 padding: 2px;
             }}
 
             QTreeView::branch:open:has-children:!has-siblings,
             QTreeView::branch:open:has-children:has-siblings {{
-                image: none;
+                image: url(resources/icons/feather_icons/chevron-down.svg);
+                width: 12px;
+                height: 12px;
                 padding: 2px;
             }}
 
             /* Fallback for older Qt versions - simpler selectors */
             QTreeView::branch:closed {{
-                image: none;
+                image: url(resources/icons/feather_icons/chevron-right.svg);
+                width: 12px;
+                height: 12px;
                 padding: 2px;
             }}
 
             QTreeView::branch:open {{
-                image: none;
+                image: url(resources/icons/feather_icons/chevron-down.svg);
+                width: 12px;
+                height: 12px;
                 padding: 2px;
             }}
 

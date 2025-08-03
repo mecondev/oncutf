@@ -608,7 +608,7 @@ class MetadataTreeView(QTreeView):
             # Re-enable tree interactions
             self.setSelectionMode(QAbstractItemView.SingleSelection)
             self.setItemsExpandable(True)
-            self.setRootIsDecorated(False)
+            self.setRootIsDecorated(True)  # Show expand/collapse arrows for categories
             self.setContextMenuPolicy(Qt.CustomContextMenu)
             self.setMouseTracking(True)
 
