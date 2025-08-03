@@ -52,7 +52,7 @@
 
 ## Requirements
 
-- **Python 3.9+**
+- **Python 3.12+**
 - **[ExifTool](https://exiftool.org/)** - Must be installed and available in system PATH
 - **PyQt5** - GUI framework
 
@@ -107,7 +107,7 @@ python main.py
 pip install -e .
 
 # Run with specific Python version
-python3.9 main.py
+python3.12 main.py
 ```
 
 ### Basic Workflow

@@ -18,7 +18,7 @@ __pycache__/
 *.so
 
 # =======================================
-# 📦 Virtual Environments & Dependencies
+#  Virtual Environments & Dependencies
 # =======================================
 
 # Local virtualenv folders
@@ -56,7 +56,7 @@ backups/
 *.bak.tar.gz
 
 # =======================================
-# 🧪 Test-related folders and outputs
+#  Test-related folders and outputs
 # =======================================
 
 test/__pycache__/
@@ -106,7 +106,7 @@ scripts/
 *.swo
 
 # =======================================
-# 🪵 Logs
+#  Logs
 # =======================================
 # Keep only the logs/ folder structure
 logs/*.log*
@@ -128,7 +128,7 @@ resources_rc.py
 __pycache__/resources_rc.py
 
 # =======================================
-# 📂 User project-specific
+#  User project-specific
 # =======================================
 
 # Output folders

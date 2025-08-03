@@ -77,9 +77,10 @@ Module: metadata_worker.py
 Author: Michael Economou
 Date: 2025-05-01
 
-This module defines a worker thread or task responsible for retrieving
-metadata from files asynchronously. It decouples metadata extraction
-from the UI thread to keep the application responsive.
+This module defines a background worker located in the `widgets` package
+responsible for retrieving metadata from files asynchronously. Running
+in its own thread decouples metadata extraction from the UI thread and
+keeps the application responsive.
 
 Typically used in the oncutf application to run exiftool or similar
 metadata extractors in the background and emit signals when data is ready.
@@ -193,4 +194,3 @@ for consistent path handling across Windows and Unix-like systems.
 - **Case-Sensitive Renaming**: [Case-Sensitive Rename Guide](case_sensitive_rename_guide.md)
 - **Progress Tracking**: [Progress Manager System](progress_manager_system.md)
 - **Configuration**: [JSON Config System](json_config_system.md)
-

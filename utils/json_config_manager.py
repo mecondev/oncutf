@@ -16,7 +16,7 @@ import shutil
 import threading
 from datetime import datetime
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, Generic, TypeVar
 
 from config import APP_VERSION
 from utils.logger_factory import get_cached_logger
@@ -26,7 +26,7 @@ logger = get_cached_logger(__name__)
 T = TypeVar("T")
 
 
-class ConfigCategory[T]:
+class ConfigCategory(Generic[T]):
     """Base class for configuration categories with type safety and defaults."""
 
     def __init__(self, name: str, defaults: dict[str, Any]):
@@ -36,7 +36,7 @@ class ConfigCategory[T]:
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get configuration value with fallback to default."""
-        return self._data.get(key, default or self.defaults.get(key))
+        return self._data.get(key, default if default is not None else self.defaults.get(key))
 
     def set(self, key: str, value: Any) -> None:
         """Set configuration value."""
