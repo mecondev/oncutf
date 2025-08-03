@@ -553,7 +553,7 @@ class DatabaseManager:
                     path_ids[path_id] = file_path
 
             if not path_ids:
-                return {path: None for path in file_paths}
+                return dict.fromkeys(file_paths)
 
             # Batch query metadata
             with self._get_connection() as conn:
@@ -598,7 +598,7 @@ class DatabaseManager:
 
         except Exception as e:
             logger.error(f"[DatabaseManager] Error in batch metadata retrieval: {e}")
-            return {path: None for path in file_paths}
+            return dict.fromkeys(file_paths)
 
     def has_metadata(self, file_path: str, metadata_type: str | None = None) -> bool:
         """Check if file has metadata stored."""

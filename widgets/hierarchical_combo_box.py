@@ -10,8 +10,6 @@ It's designed to replace the flat list approach for large datasets
 like metadata fields in the rename metadata module.
 """
 
-from typing import Any
-
 from core.pyqt_imports import (
     QComboBox,
     QStandardItem,
@@ -22,6 +20,7 @@ from core.pyqt_imports import (
     pyqtSignal,
 )
 from utils.logger_factory import get_cached_logger
+from typing import Any
 
 logger = get_cached_logger(__name__)
 
@@ -244,7 +243,7 @@ class HierarchicalComboBox(QComboBox):
         """Get the current text display of the combo box."""
         return super().currentText()
 
-    def populate_from_metadata_groups(self, groups: dict, default_key: str = None):
+    def populate_from_metadata_groups(self, groups: dict, default_key: str | None = None):
         """Populate the combo box from grouped metadata data."""
         self.model.clear()
         logger.debug(f"Populating combo box with groups: {list(groups.keys())}")

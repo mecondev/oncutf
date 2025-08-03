@@ -11,6 +11,8 @@ Custom QStyledItemDelegate classes for enhanced UI components:
 """
 
 
+from PyQt5.QtCore import QEvent, QModelIndex
+
 from core.pyqt_imports import (
     QBrush,
     QColor,
@@ -27,7 +29,6 @@ from core.pyqt_imports import (
 )
 from utils.logger_factory import get_cached_logger
 from utils.theme import get_qcolor, get_theme_color
-from PyQt5.QtCore import QEvent, QModelIndex
 
 logger = get_cached_logger(__name__)
 

@@ -144,6 +144,13 @@ notes/
 .cache/
 reports/
 .continue
+*.swp
+*.swo
+*~
+.DS_Store
+*.bak
+*.tmp
+*.patch
 
 # Benchmark and performance files
 benchmark_report_*.json
@@ -151,7 +158,7 @@ performance_report_*.json
 performance_report_*.html
 comprehensive_test_report_*.json
 unit_tests*.xml
-test_results/
+test_results/*
 *_profiling.py
 *_benchmarks.py
 *_performance.py
@@ -160,7 +167,6 @@ test_results/
 # System Files (Windows/macOS)
 # =======================================
 
-.DS_Store
 Thumbs.db
 desktop.ini
 ehthumbs.db
