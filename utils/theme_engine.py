@@ -720,6 +720,7 @@ class ThemeEngine:
                 width: 12px;
                 height: 12px;
                 padding: 2px;
+                color: {self.colors["table_text"]};
             }}
 
             QTreeView::branch:open:has-children:!has-siblings,
@@ -728,6 +729,7 @@ class ThemeEngine:
                 width: 12px;
                 height: 12px;
                 padding: 2px;
+                color: {self.colors["table_text"]};
             }}
 
             /* Fallback for older Qt versions - simpler selectors */
@@ -736,6 +738,7 @@ class ThemeEngine:
                 width: 12px;
                 height: 12px;
                 padding: 2px;
+                color: {self.colors["table_text"]};
             }}
 
             QTreeView::branch:open {{
@@ -743,6 +746,78 @@ class ThemeEngine:
                 width: 12px;
                 height: 12px;
                 padding: 2px;
+                color: {self.colors["table_text"]};
+            }}
+
+            /* Selected states for branch indicators */
+            QTreeView::branch:selected:has-children:!has-siblings:closed,
+            QTreeView::branch:selected:closed:has-children:has-siblings {{
+                image: url(resources/icons/feather_icons/chevron-right.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+                color: {self.colors["table_selection_text"]};
+            }}
+
+            QTreeView::branch:selected:open:has-children:!has-siblings,
+            QTreeView::branch:selected:open:has-children:has-siblings {{
+                image: url(resources/icons/feather_icons/chevron-down.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+                color: {self.colors["table_selection_text"]};
+            }}
+
+            /* Selected + Hover states for branch indicators */
+            QTreeView::branch:selected:hover:has-children:!has-siblings:closed,
+            QTreeView::branch:selected:hover:closed:has-children:has-siblings {{
+                image: url(resources/icons/feather_icons/chevron-right.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+                color: {self.colors["table_selection_text"]};
+            }}
+
+            QTreeView::branch:selected:hover:open:has-children:!has-siblings,
+            QTreeView::branch:selected:hover:open:has-children:has-siblings {{
+                image: url(resources/icons/feather_icons/chevron-down.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+                color: {self.colors["table_selection_text"]};
+            }}
+
+            /* Fallback selected states for older Qt versions */
+            QTreeView::branch:selected:closed {{
+                image: url(resources/icons/feather_icons/chevron-right.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+                color: {self.colors["table_selection_text"]};
+            }}
+
+            QTreeView::branch:selected:open {{
+                image: url(resources/icons/feather_icons/chevron-down.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+                color: {self.colors["table_selection_text"]};
+            }}
+
+            QTreeView::branch:selected:hover:closed {{
+                image: url(resources/icons/feather_icons/chevron-right.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+                color: {self.colors["table_selection_text"]};
+            }}
+
+            QTreeView::branch:selected:hover:open {{
+                image: url(resources/icons/feather_icons/chevron-down.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+                color: {self.colors["table_selection_text"]};
             }}
 
             /* Hover states for branch indicators - only for root level items */
@@ -751,6 +826,7 @@ class ThemeEngine:
                 width: 12px;
                 height: 12px;
                 padding: 2px;
+                color: {self.colors["table_text"]};
             }}
 
             QTreeView::branch:hover:open:has-children:!has-siblings {{
@@ -758,6 +834,7 @@ class ThemeEngine:
                 width: 12px;
                 height: 12px;
                 padding: 2px;
+                color: {self.colors["table_text"]};
             }}
 
             /* Remove hover icons from intermediate branches */
@@ -773,6 +850,7 @@ class ThemeEngine:
                 width: 12px;
                 height: 12px;
                 padding: 2px;
+                color: {self.colors["table_text"]};
             }}
 
             QTreeView::branch:hover:open:!has-siblings {{
@@ -780,6 +858,7 @@ class ThemeEngine:
                 width: 12px;
                 height: 12px;
                 padding: 2px;
+                color: {self.colors["table_text"]};
             }}
 
             /* HEADER VIEWS */
