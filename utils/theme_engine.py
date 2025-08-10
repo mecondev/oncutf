@@ -668,26 +668,26 @@ class ThemeEngine:
 
             /* Tree view branch styling - ensure selection spans entire row */
             QTreeView::branch {{
-                background-color: {self.colors["table_background"]};
+                background-color: transparent; /* avoid masking row hover */
                 color: transparent;
                 border: none;
                 outline: 0;
             }}
 
             QTreeView::branch:selected {{
-                background-color: {self.colors["table_selection_background"]};
+                background-color: transparent; /* selection handled by item/delegate */
                 color: transparent;
                 border: none;
             }}
 
             QTreeView::branch:hover {{
-                background-color: {self.colors["table_hover_background"]};
+                background-color: transparent; /* hover handled by item/delegate */
                 color: transparent;
                 border: none;
             }}
 
             QTreeView::branch:selected:hover {{
-                background-color: {self.colors["highlight_light_blue"]};
+                background-color: transparent; /* avoid overlay */
                 color: transparent;
                 border: none;
             }}

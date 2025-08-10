@@ -191,7 +191,11 @@ class MetadataTreeView(QTreeView):
 
         # Enforce table-like colors for text/background via delegate
         try:
-            self.setItemDelegate(MetadataTreeItemDelegate(self))
+            self._metadata_delegate = MetadataTreeItemDelegate(self)
+            self.setItemDelegate(self._metadata_delegate)
+            # Enable precise hover tracking across the full row
+            if hasattr(self._metadata_delegate, "install_event_filter"):
+                self._metadata_delegate.install_event_filter(self)
         except Exception:
             pass
 

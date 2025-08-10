@@ -284,10 +284,15 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         logger.debug("[TreeViewItemDelegate] Initialized")
 
     def install_event_filter(self, tree_view: QTreeView) -> None:
-        """Install event filter for hover tracking."""
+        """Install event filter for hover tracking (full-row).
+
+        We listen on the viewport for mouse move/leave, and we force a repaint
+        of the whole row by keeping track of the hovered index.
+        """
         self._tree_view = tree_view
         viewport = tree_view.viewport()
         if viewport:
+            viewport.setMouseTracking(True)
             viewport.installEventFilter(self)
 
     def eventFilter(self, obj: QWidget, event: QEvent) -> bool:
@@ -419,52 +424,19 @@ class MetadataTreeItemDelegate(TreeViewItemDelegate):
     """
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
-        # Save original rect
-        original_rect = option.rect
+        # Use base painting for layout, icons and branches; only adjust text color per state
+        opt = QStyleOptionViewItem(option)
 
-        # Remove Qt's hover state to avoid double painting
-        if option.state & QStyle.StateFlag.State_MouseOver:
-            option.state &= ~QStyle.StateFlag.State_MouseOver
-
-        # Compute full-row background rect
-        tree_view = self.parent()
-        if isinstance(tree_view, QTreeView) and tree_view.viewport():
-            viewport = tree_view.viewport()
-            bg_rect = viewport.rect()
-            bg_rect.setTop(original_rect.top())
-            bg_rect.setBottom(original_rect.bottom())
-        else:
-            bg_rect = original_rect
-
-        # Hover detection from our event-filter tracking
+        # Determine hover state from our tracking
         is_hovered = getattr(self, "hovered_index", None) is not None and index == self.hovered_index
 
-        # Backgrounds per state
-        if (option.state & QStyle.StateFlag.State_Selected) and is_hovered:
-            painter.fillRect(bg_rect, get_qcolor("highlight_light_blue"))
-        elif option.state & QStyle.StateFlag.State_Selected:
-            painter.fillRect(bg_rect, get_qcolor("table_selection_background"))
-        elif is_hovered:
-            painter.fillRect(bg_rect, get_qcolor("table_hover_background"))
-
-        # Text selection rules
-        if (option.state & QStyle.StateFlag.State_Selected) and is_hovered:
-            text_color = get_qcolor("table_selection_text")
-        elif option.state & QStyle.StateFlag.State_Selected:
-            text_color = get_qcolor("table_text")
+        # Enforce text color policy matching table rules
+        if (opt.state & QStyle.StateFlag.State_Selected) and is_hovered:
+            opt.palette.setColor(QPalette.ColorRole.Text, get_qcolor("table_selection_text"))
+        elif opt.state & QStyle.StateFlag.State_Selected:
+            opt.palette.setColor(QPalette.ColorRole.Text, get_qcolor("table_text"))
         else:
-            text_color = get_qcolor("table_text")
+            opt.palette.setColor(QPalette.ColorRole.Text, get_qcolor("table_text"))
 
-        # Draw text (ignore model ForegroundRole to enforce theme consistency)
-        painter.save()
-        painter.setPen(text_color)
-
-        content_left = original_rect.left()
-        text = index.data(Qt.ItemDataRole.DisplayRole)
-        if text is not None:
-            text_rect = original_rect.adjusted(0, 0, 0, 0)
-            text_rect.setLeft(content_left + 2)
-            text_rect.setRight(original_rect.right() - 4)
-            painter.drawText(text_rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, str(text))
-
-        painter.restore()
+        # Let Qt handle backgrounds via QSS and selection; we only enforce text color
+        super().paint(painter, opt, index)
