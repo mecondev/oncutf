@@ -618,7 +618,8 @@ class ThemeEngine:
                 border: none;
                 outline: none;
                 selection-background-color: {self.colors["table_selection_background"]};
-                selection-color: {self.colors["table_selection_text"]};
+                /* Keep selected text light in unhovered state (match file table) */
+                selection-color: {self.colors["table_text"]};
                 show-decoration-selected: 1;
             }}
 
@@ -703,6 +704,11 @@ class ThemeEngine:
                 image: none;
             }}
 
+            /* Ensure no chevron on any leaf adjoining the item */
+            QTreeView::branch:!has-children:adjoins-item {{
+                image: none;
+            }}
+
             /* Closed/Open states: icons only on adjoined branch */
             QTreeView::branch:has-children:closed:adjoins-item {{
                 image: url(resources/icons/feather_icons/chevron-right.svg);
@@ -711,7 +717,7 @@ class ThemeEngine:
                 padding: 2px;
             }}
 
-            QTreeView::branch:open:adjoins-item {{
+            QTreeView::branch:has-children:open:adjoins-item {{
                 image: url(resources/icons/feather_icons/chevron-down.svg);
                 width: 12px;
                 height: 12px;
@@ -737,7 +743,7 @@ class ThemeEngine:
                 padding: 2px;
             }}
 
-            QTreeView::branch:hover:open:adjoins-item {{
+            QTreeView::branch:hover:has-children:open:adjoins-item {{
                 image: url(resources/icons/feather_icons/chevron-down.svg);
                 width: 12px;
                 height: 12px;

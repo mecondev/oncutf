@@ -52,6 +52,7 @@ from utils.path_utils import find_parent_with_attribute, paths_equal
 from utils.placeholder_helper import create_placeholder_helper
 from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust, schedule_ui_update
 from widgets.metadata_edit_dialog import MetadataEditDialog
+from widgets.ui_delegates import MetadataTreeItemDelegate
 
 # ApplicationContext integration
 try:
@@ -187,6 +188,12 @@ class MetadataTreeView(QTreeView):
 
         # Setup standard view properties
         self._setup_tree_view_properties()
+
+        # Enforce table-like colors for text/background via delegate
+        try:
+            self.setItemDelegate(MetadataTreeItemDelegate(self))
+        except Exception:
+            pass
 
         # Setup icon delegate for selected state icon changes
 

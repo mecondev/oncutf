@@ -347,19 +347,26 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             # Fallback to original rect if no tree view
             bg_rect = original_rect
 
-        # Paint background based on state (hover vs selection)
+        # Paint background based on state (normal, hover, selected, selected+hover)
         is_hovered = self.hovered_index is not None and index == self.hovered_index
 
-        if option.state & QStyle.StateFlag.State_Selected:
-            bg_color = get_qcolor("combo_item_background_selected")
-            painter.fillRect(bg_rect, bg_color)
+        if (option.state & QStyle.StateFlag.State_Selected) and is_hovered:
+            # Selected + Hover → highlight_light_blue
+            painter.fillRect(bg_rect, get_qcolor("highlight_light_blue"))
+        elif option.state & QStyle.StateFlag.State_Selected:
+            # Selected → table_selection_background
+            painter.fillRect(bg_rect, get_qcolor("table_selection_background"))
         elif is_hovered:
-            bg_color = get_qcolor("table_hover_background")  # Use same hover color as file table
-            painter.fillRect(bg_rect, bg_color)
+            # Hover → table_hover_background
+            painter.fillRect(bg_rect, get_qcolor("table_hover_background"))
 
-        # Set text color based on state and item type
-        if option.state & QStyle.StateFlag.State_Selected:
-            text_color = get_qcolor("input_selection_text")
+        # Set text color based on state and item type (icons remain unchanged)
+        if (option.state & QStyle.StateFlag.State_Selected) and is_hovered:
+            # Selected + Hover → dark text
+            text_color = get_qcolor("table_selection_text")
+        elif option.state & QStyle.StateFlag.State_Selected:
+            # Selected → keep light text like file table
+            text_color = get_qcolor("table_text")
         elif not is_selectable:  # Categories
             text_color = get_qcolor("text_secondary")  # Dimmer color for categories
         else:
@@ -394,3 +401,70 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         size.setHeight(compact_height)
 
         return size
+
+
+class MetadataTreeItemDelegate(TreeViewItemDelegate):
+    """TreeView delegate for metadata tree that enforces table-like colors.
+
+    Ensures text color follows table rules regardless of model ForegroundRole:
+    - Normal: table_text
+    - Hover: table_text
+    - Selected (unhovered): table_text (stay light)
+    - Selected + Hover: table_selection_text (dark)
+
+    Backgrounds:
+    - Hover: table_hover_background
+    - Selected: table_selection_background
+    - Selected + Hover: highlight_light_blue
+    """
+
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
+        # Save original rect
+        original_rect = option.rect
+
+        # Remove Qt's hover state to avoid double painting
+        if option.state & QStyle.StateFlag.State_MouseOver:
+            option.state &= ~QStyle.StateFlag.State_MouseOver
+
+        # Compute full-row background rect
+        tree_view = self.parent()
+        if isinstance(tree_view, QTreeView) and tree_view.viewport():
+            viewport = tree_view.viewport()
+            bg_rect = viewport.rect()
+            bg_rect.setTop(original_rect.top())
+            bg_rect.setBottom(original_rect.bottom())
+        else:
+            bg_rect = original_rect
+
+        # Hover detection from our event-filter tracking
+        is_hovered = getattr(self, "hovered_index", None) is not None and index == self.hovered_index
+
+        # Backgrounds per state
+        if (option.state & QStyle.StateFlag.State_Selected) and is_hovered:
+            painter.fillRect(bg_rect, get_qcolor("highlight_light_blue"))
+        elif option.state & QStyle.StateFlag.State_Selected:
+            painter.fillRect(bg_rect, get_qcolor("table_selection_background"))
+        elif is_hovered:
+            painter.fillRect(bg_rect, get_qcolor("table_hover_background"))
+
+        # Text selection rules
+        if (option.state & QStyle.StateFlag.State_Selected) and is_hovered:
+            text_color = get_qcolor("table_selection_text")
+        elif option.state & QStyle.StateFlag.State_Selected:
+            text_color = get_qcolor("table_text")
+        else:
+            text_color = get_qcolor("table_text")
+
+        # Draw text (ignore model ForegroundRole to enforce theme consistency)
+        painter.save()
+        painter.setPen(text_color)
+
+        content_left = original_rect.left()
+        text = index.data(Qt.ItemDataRole.DisplayRole)
+        if text is not None:
+            text_rect = original_rect.adjusted(0, 0, 0, 0)
+            text_rect.setLeft(content_left + 2)
+            text_rect.setRight(original_rect.right() - 4)
+            painter.drawText(text_rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, str(text))
+
+        painter.restore()
