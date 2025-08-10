@@ -454,7 +454,13 @@ class ThemeEngine:
                 opacity: 0.5;
             }}
 
+            /* Ensure arrow icon remains visible on hover */
             QComboBox::down-arrow:hover {{
+                image: url(resources/icons/feather_icons/chevrons-down.svg);
+                opacity: 1.0;
+            }}
+            QComboBox::down-arrow:on:hover {{
+                image: url(resources/icons/feather_icons/chevrons-up.svg);
                 opacity: 1.0;
             }}
 
@@ -471,6 +477,26 @@ class ThemeEngine:
                 margin: 0px;
                 padding: 0px;
             }}
+            
+            /* Ensure chevrons are visible in combobox dropdowns */
+            QComboBox QTreeView::branch:has-children:closed:adjoins-item {{
+                image: url(resources/icons/feather_icons/chevron-right.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+            }}
+            QComboBox QTreeView::branch:has-children:open:adjoins-item {{
+                image: url(resources/icons/feather_icons/chevron-down.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+            }}
+            QComboBox QTreeView::branch:!has-children:adjoins-item {{
+                image: none;
+            }}
+            QComboBox QTreeView::branch:has-children:has-siblings {{
+                image: none;
+            }}
 
             QComboBox QAbstractItemView::item {{
                 background-color: transparent;
@@ -483,7 +509,7 @@ class ThemeEngine:
             }}
 
             QComboBox QAbstractItemView::item:hover {{
-                background-color: {self.colors["combo_item_background_hover"]};
+                background-color: {self.colors["table_hover_background"]};
                 color: {self.colors["combo_text"]};
             }}
 
@@ -618,8 +644,7 @@ class ThemeEngine:
                 border: none;
                 outline: none;
                 selection-background-color: {self.colors["table_selection_background"]};
-                /* Keep selected text light in unhovered state (match file table) */
-                selection-color: {self.colors["table_text"]};
+                selection-color: {self.colors["table_selection_text"]};
                 show-decoration-selected: 1;
             }}
 
@@ -643,7 +668,7 @@ class ThemeEngine:
 
             QTreeView::item:selected {{
                 background-color: {self.colors["table_selection_background"]};
-                color: {self.colors["table_text"]};
+                color: {self.colors["table_selection_text"]};
                 border: none;
             }}
 
@@ -668,26 +693,26 @@ class ThemeEngine:
 
             /* Tree view branch styling - ensure selection spans entire row */
             QTreeView::branch {{
-                background-color: transparent; /* avoid masking row hover */
+                background-color: {self.colors["table_background"]};
                 color: transparent;
                 border: none;
                 outline: 0;
             }}
 
             QTreeView::branch:selected {{
-                background-color: transparent; /* selection handled by item/delegate */
+                background-color: {self.colors["table_selection_background"]};
                 color: transparent;
                 border: none;
             }}
 
             QTreeView::branch:hover {{
-                background-color: transparent; /* hover handled by item/delegate */
+                background-color: {self.colors["table_hover_background"]};
                 color: transparent;
                 border: none;
             }}
 
             QTreeView::branch:selected:hover {{
-                background-color: transparent; /* avoid overlay */
+                background-color: {self.colors["highlight_light_blue"]};
                 color: transparent;
                 border: none;
             }}
@@ -1370,6 +1395,26 @@ class ThemeEngine:
                         margin: 0px !important;
                         padding: 0px !important;
                     }}
+                    
+                    /* Ensure chevrons are visible in combobox dropdowns */
+                    QComboBox QTreeView::branch:has-children:closed:adjoins-item {{
+                        image: url(resources/icons/feather_icons/chevron-right.svg) !important;
+                        width: 12px !important;
+                        height: 12px !important;
+                        padding: 2px !important;
+                    }}
+                    QComboBox QTreeView::branch:has-children:open:adjoins-item {{
+                        image: url(resources/icons/feather_icons/chevron-down.svg) !important;
+                        width: 12px !important;
+                        height: 12px !important;
+                        padding: 2px !important;
+                    }}
+                    QComboBox QTreeView::branch:!has-children:adjoins-item {{
+                        image: none !important;
+                    }}
+                    QComboBox QTreeView::branch:has-children:has-siblings {{
+                        image: none !important;
+                    }}
 
                     QComboBox QAbstractItemView::item {{
                         background-color: transparent !important;
@@ -1382,7 +1427,7 @@ class ThemeEngine:
                     }}
 
                     QComboBox QAbstractItemView::item:hover {{
-                        background-color: {self.colors["combo_item_background_hover"]} !important;
+                        background-color: {self.colors["table_hover_background"]} !important;
                         color: {self.colors["combo_text"]} !important;
                     }}
 
