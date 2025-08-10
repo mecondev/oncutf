@@ -424,19 +424,48 @@ class MetadataTreeItemDelegate(TreeViewItemDelegate):
     """
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
-        # Use base painting for layout, icons and branches; only adjust text color per state
+        """Paint full-row hover/selection backgrounds; leave text/icons to default.
+
+        This restores stable behavior: the entire row highlights on hover/selection
+        regardless of mouse over key/value cell, without altering text colors.
+        """
+        tree_view = self.parent()
         opt = QStyleOptionViewItem(option)
 
-        # Determine hover state from our tracking
-        is_hovered = getattr(self, "hovered_index", None) is not None and index == self.hovered_index
+        # Determine hovered row (consistent across columns)
+        hovered = getattr(self, "hovered_index", None)
+        is_row_hovered = bool(
+            hovered and hovered.isValid() and index.row() == hovered.row() and index.parent() == hovered.parent()
+        )
 
-        # Enforce text color policy matching table rules
-        if (opt.state & QStyle.StateFlag.State_Selected) and is_hovered:
-            opt.palette.setColor(QPalette.ColorRole.Text, get_qcolor("table_selection_text"))
-        elif opt.state & QStyle.StateFlag.State_Selected:
-            opt.palette.setColor(QPalette.ColorRole.Text, get_qcolor("table_text"))
-        else:
-            opt.palette.setColor(QPalette.ColorRole.Text, get_qcolor("table_text"))
+        # Compute full row rect by uniting first and last visible column rects
+        full_row_rect = opt.rect
+        if isinstance(tree_view, QTreeView) and index.model() is not None:
+            try:
+                model = index.model()
+                first = index.sibling(index.row(), 0)
+                last = index.sibling(index.row(), max(0, model.columnCount(index.parent()) - 1))
+                first_rect = tree_view.visualRect(first)
+                last_rect = tree_view.visualRect(last)
+                if first_rect.isValid() and last_rect.isValid():
+                    full_row_rect = first_rect.united(last_rect)
+            except Exception:
+                pass
 
-        # Let Qt handle backgrounds via QSS and selection; we only enforce text color
+        # Decide background color
+        is_selected = bool(option.state & QStyle.StateFlag.State_Selected)
+        if is_selected and is_row_hovered:
+            painter.fillRect(full_row_rect, get_qcolor("highlight_light_blue"))
+        elif is_selected:
+            painter.fillRect(full_row_rect, get_qcolor("table_selection_background"))
+        elif is_row_hovered:
+            painter.fillRect(full_row_rect, get_qcolor("table_hover_background"))
+
+        # Prevent default background double-painting (hover/selection)
+        if opt.state & QStyle.StateFlag.State_MouseOver:
+            opt.state &= ~QStyle.StateFlag.State_MouseOver
+        if opt.state & QStyle.StateFlag.State_Selected:
+            opt.state &= ~QStyle.StateFlag.State_Selected
+
+        # Paint content normally (icons, text)
         super().paint(painter, opt, index)
