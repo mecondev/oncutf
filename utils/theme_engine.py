@@ -642,13 +642,19 @@ class ThemeEngine:
 
             QTreeView::item:selected {{
                 background-color: {self.colors["table_selection_background"]};
-                color: {self.colors["table_selection_text"]};
+                color: {self.colors["table_text"]};
                 border: none;
             }}
 
             QTreeView::item:selected:hover {{
                 background-color: {self.colors["highlight_light_blue"]};
                 color: {self.colors["table_selection_text"]};
+                border: none;
+            }}
+
+            QTreeView::item:hover {{
+                background-color: {self.colors["table_hover_background"]};
+                color: {self.colors["table_text"]};
                 border: none;
             }}
 
@@ -685,100 +691,61 @@ class ThemeEngine:
                 border: none;
             }}
 
-            /* Remove all custom branch images to use Qt defaults */
+            /* Branch images: show chevrons ONLY on the branch adjoining the item */
             QTreeView::branch:has-siblings:!adjoins-item {{
                 border-image: none;
                 image: none;
             }}
 
-            QTreeView::branch:has-siblings:adjoins-item {{
-                border-image: none;
-                image: none;
-            }}
-
+            /* Leaf root line: no icon */
             QTreeView::branch:!has-children:!has-siblings:adjoins-item {{
                 border-image: none;
                 image: none;
             }}
 
-            /* Remove chevron icons from intermediate branches (lines only) */
-            QTreeView::branch:has-children:has-siblings:closed,
-            QTreeView::branch:has-children:has-siblings:open {{
-                image: none;
-                padding: 2px;
-            }}
-
-            QTreeView::branch:has-children:!has-siblings:closed,
-            QTreeView::branch:has-children:!has-siblings:open {{
-                image: none;
-                padding: 2px;
-            }}
-
-            QTreeView::branch:has-children:!has-siblings:closed,
-            QTreeView::branch:closed:has-children:has-siblings {{
+            /* Closed/Open states: icons only on adjoined branch */
+            QTreeView::branch:has-children:closed:adjoins-item {{
                 image: url(resources/icons/feather_icons/chevron-right.svg);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
             }}
 
-            QTreeView::branch:open:has-children:!has-siblings,
-            QTreeView::branch:open:has-children:has-siblings {{
+            QTreeView::branch:open:adjoins-item {{
                 image: url(resources/icons/feather_icons/chevron-down.svg);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
             }}
 
-            /* Fallback for older Qt versions - simpler selectors */
+            /* Remove generic fallbacks to avoid duplicate icons on deeper levels */
             QTreeView::branch:closed {{
-                image: url(resources/icons/feather_icons/chevron-right.svg);
-                width: 12px;
-                height: 12px;
+                image: none;
                 padding: 2px;
             }}
 
             QTreeView::branch:open {{
-                image: url(resources/icons/feather_icons/chevron-down.svg);
-                width: 12px;
-                height: 12px;
-                padding: 2px;
-            }}
-
-            /* Hover states for branch indicators - only for root level items */
-            QTreeView::branch:hover:has-children:!has-siblings:closed {{
-                image: url(resources/icons/feather_icons/chevron-right.svg);
-                width: 12px;
-                height: 12px;
-                padding: 2px;
-            }}
-
-            QTreeView::branch:hover:open:has-children:!has-siblings {{
-                image: url(resources/icons/feather_icons/chevron-down.svg);
-                width: 12px;
-                height: 12px;
-                padding: 2px;
-            }}
-
-            /* Remove hover icons from intermediate branches */
-            QTreeView::branch:hover:has-children:has-siblings:closed,
-            QTreeView::branch:hover:has-children:has-siblings:open {{
                 image: none;
                 padding: 2px;
             }}
 
-            /* Fallback hover states for older Qt versions - only root level */
-            QTreeView::branch:hover:closed:!has-siblings {{
+            /* Hover states for branch indicators - only on adjoined branch */
+            QTreeView::branch:hover:has-children:closed:adjoins-item {{
                 image: url(resources/icons/feather_icons/chevron-right.svg);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
             }}
 
-            QTreeView::branch:hover:open:!has-siblings {{
+            QTreeView::branch:hover:open:adjoins-item {{
                 image: url(resources/icons/feather_icons/chevron-down.svg);
                 width: 12px;
                 height: 12px;
+                padding: 2px;
+            }}
+            /* No hover icons on non-adjoined branches */
+            QTreeView::branch:hover:!adjoins-item {{
+                image: none;
                 padding: 2px;
             }}
 
