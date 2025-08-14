@@ -1147,7 +1147,7 @@ class EventHandlerManager:
         # Reset the flag after showing results
         self._operation_cancelled = False
 
-    def _on_hash_operation_finished(self, success: bool) -> None:
+    def _on_hash_operation_finished(self, _success: bool) -> None:
         """Handle hash operation completion."""
         if hasattr(self, "hash_dialog") and self.hash_dialog:
             # Keep dialog visible for a moment to show completion

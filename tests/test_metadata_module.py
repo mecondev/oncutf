@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 
 # Clear metadata cache before each test to avoid interference
-def setup_function(function):
+def setup_function(function):  # noqa: ARG001
     MetadataModule.clear_cache()
 
 

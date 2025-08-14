@@ -106,7 +106,7 @@ def safe_case_rename(src_path: str, dst_path: str) -> bool:
 
 
 def build_rename_plan(
-    file_items: list[object], preview_pairs: list[tuple[str, str]], folder_path: str
+    _file_items: list[object], preview_pairs: list[tuple[str, str]], folder_path: str
 ) -> list[dict]:
     """
     Builds a plan of rename operations with conflict detection.

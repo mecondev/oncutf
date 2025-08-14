@@ -153,7 +153,7 @@ class TextRemovalModule(BaseRenameModule):
         return len(text_to_remove) > 0
 
     @staticmethod
-    def apply_from_data(data: dict, file_item, index: int, metadata_cache=None) -> str:
+    def apply_from_data(data: dict, file_item, _index: int, _metadata_cache=None) -> str:
         """
         Apply text removal to a filename based on configuration data.
 

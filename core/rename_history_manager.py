@@ -332,7 +332,7 @@ class RenameHistoryManager:
             logger.error(f"[RenameHistoryManager] Error during undo operation: {e}")
             return False, f"Undo failed: {str(e)}", 0
 
-    def cleanup_old_history(self, days_to_keep: int = 30) -> int:
+    def cleanup_old_history(self, _days_to_keep: int = 30) -> int:
         """
         Clean up old rename history records.
 

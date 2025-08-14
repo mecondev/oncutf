@@ -445,7 +445,7 @@ class StatusManager:
         self.set_progress_status(message, progress_percent, operation_id)
 
     def set_batch_completion_status(
-        self, operation_type: str, total_processed: int, successful: int, failed: int = 0
+        self, operation_type: str, _total_processed: int, successful: int, failed: int = 0
     ) -> None:
         """Set status for completed batch operations with summary."""
         if failed == 0:

@@ -224,7 +224,7 @@ class InteractiveHeader(QHeaderView):
 
                 # Use triggered signal (menu will close, but it's simpler)
                 action.triggered.connect(
-                    lambda checked=False, key=column_key: self._toggle_column_visibility(key)
+                    lambda _checked=False, key=column_key: self._toggle_column_visibility(key)
                 )
                 columns_menu.addAction(action)
 

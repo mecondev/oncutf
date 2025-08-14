@@ -119,7 +119,7 @@ class MetadataLoader:
         )
 
     def read_metadata(
-        self, filepath: str, timeout: int = 10, use_extended: bool = False
+        self, filepath: str, _timeout: int = 10, use_extended: bool = False
     ) -> dict[str, str] | None:
         """
         Reads metadata using ExifToolWrapper. Falls back to subprocess if needed.

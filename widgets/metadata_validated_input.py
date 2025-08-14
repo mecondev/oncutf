@@ -304,7 +304,7 @@ class MetadataRotationComboBox(QComboBox):
         # Set fixed height to match other input widgets
         self.setFixedHeight(24)  # Match metadata_widget height
 
-    def _on_selection_changed(self, text: str) -> None:
+    def _on_selection_changed(self, _text: str) -> None:
         """Handle selection changes - always emit valid state."""
         self.validation_changed.emit(True)
 

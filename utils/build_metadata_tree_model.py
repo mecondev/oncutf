@@ -427,7 +427,7 @@ def get_hidden_fields_for_level(level: str = "essential") -> set:
 
 
 def build_metadata_tree_model(
-    metadata: dict, modified_keys: set = None, extended_keys: set = None, display_level: str = "all"
+    metadata: dict, modified_keys: set = None, extended_keys: set = None, _display_level: str = "all"
 ) -> QStandardItemModel:
     """
     Build a tree model for metadata display with enhanced grouping and extended metadata indicators.

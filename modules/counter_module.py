@@ -169,7 +169,7 @@ class CounterModule(BaseRenameModule):
 
     @staticmethod
     def apply_from_data(
-        data: dict, file_item, index: int = 0, metadata_cache: dict | None = None
+        data: dict, _file_item, index: int = 0, _metadata_cache: dict | None = None
     ) -> str:
         """
         Applies a counter-based transformation using the given config and index.
@@ -208,5 +208,5 @@ class CounterModule(BaseRenameModule):
             return "####"
 
     @staticmethod
-    def is_effective(data: dict) -> bool:
+    def is_effective(_data: dict) -> bool:
         return True

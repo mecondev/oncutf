@@ -418,10 +418,9 @@ class MetadataWidget(QWidget):
         self.options_combo.populate_from_metadata_groups(hierarchical_data)
 
         # Prefer selecting 'FileName' by default if available
-        try:
+        from contextlib import suppress
+        with suppress(Exception):
             self.options_combo.select_item_by_data("FileName")
-        except Exception:
-            pass
 
         # Force update to ensure UI reflects changes
         self.emit_if_changed()

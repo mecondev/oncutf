@@ -282,13 +282,13 @@ class FileTableModel(QAbstractTableModel):
             )
             raise  # Re-raise to trigger fallback
 
-    def _handle_column_addition(self, new_visible_columns: list, added_columns: set) -> None:
+    def _handle_column_addition(self, new_visible_columns: list, _added_columns: set) -> None:
         """Handle adding new columns efficiently."""
         # This method is deprecated and no longer used
         logger.warning("[FileTableModel] _handle_column_addition is deprecated")
         self._handle_reset_model(new_visible_columns)
 
-    def _handle_column_removal(self, new_visible_columns: list, removed_columns: set) -> None:
+    def _handle_column_removal(self, new_visible_columns: list, _removed_columns: set) -> None:
         """Handle removing columns efficiently."""
         # This method is deprecated and no longer used
         logger.warning("[FileTableModel] _handle_column_removal is deprecated")
@@ -313,7 +313,7 @@ class FileTableModel(QAbstractTableModel):
             "[ColumnDebug] =========================================", extra={"dev_only": True}
         )
 
-    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
+    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:  # noqa: ARG002
         count = len(self._visible_columns) + 1  # +1 for status column
         return count
 
@@ -408,7 +408,7 @@ class FileTableModel(QAbstractTableModel):
         painter.end()
         return QIcon(combined_pixmap)
 
-    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
+    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:  # noqa: ARG002
         count = len(self.files)
         return count
 

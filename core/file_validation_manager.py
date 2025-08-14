@@ -503,7 +503,7 @@ class FileValidationManager:
 
         return estimated_time
 
-    def cleanup_stale_cache_entries(self, max_age_days: int = 30):
+    def cleanup_stale_cache_entries(self, _max_age_days: int = 30):
         """Clean up stale cache entries older than specified days."""
         try:
             logger.debug("Cleaning up stale cache entries", extra={"dev_only": True})

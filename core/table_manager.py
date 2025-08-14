@@ -40,7 +40,7 @@ class TableManager:
         logger.debug("[TableManager] Initialized", extra={"dev_only": True})
 
     def sort_by_column(
-        self, column: int, order: Qt.SortOrder = None, force_order: Qt.SortOrder = None
+        self, column: int, _order: Qt.SortOrder = None, force_order: Qt.SortOrder = None
     ) -> None:
         """
         Sorts the file table based on clicked header column or context menu.

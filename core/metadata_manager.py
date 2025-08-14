@@ -61,7 +61,7 @@ class MetadataManager:
         """Reset the metadata cancellation flag."""
         self._metadata_cancelled = False
 
-    def determine_loading_mode(self, file_count: int, use_extended: bool = False) -> str:
+    def determine_loading_mode(self, file_count: int, _use_extended: bool = False) -> str:
         """
         Determine the appropriate loading mode based on file count.
 

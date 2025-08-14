@@ -255,7 +255,7 @@ class SmartIconCache(QObject):
         except Exception as e:
             logger.error(f"[SmartIconCache] Error storing icon {cache_key}: {e}")
 
-    def _estimate_icon_memory_size(self, icon: QIcon, size: QSize) -> int:
+    def _estimate_icon_memory_size(self, _icon: QIcon, size: QSize) -> int:
         """Estimate memory size of an icon."""
         # Rough estimation: 4 bytes per pixel (RGBA) + overhead
         pixels = size.width() * size.height()

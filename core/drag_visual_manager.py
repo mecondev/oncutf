@@ -101,7 +101,7 @@ class DragVisualManager:
     # =====================================
 
     def start_drag_visual(
-        self, drag_type: DragType, source_info: str, drag_source: str = None
+        self, drag_type: DragType, _source_info: str, drag_source: str = None
     ) -> None:
         """
         Start visual feedback for a drag operation.
@@ -255,40 +255,33 @@ class DragVisualManager:
                 # For files, ignore recursive modifiers (no subdirectories)
                 if self._drag_type == DragType.FILE:
                     if self._modifier_state in [ModifierState.SHIFT, ModifierState.CTRL_SHIFT]:
-                        if self._modifier_state == ModifierState.CTRL_SHIFT:
-                            action_icons = ["plus", "layers"]  # Merge + Recursive
-                        else:
-                            action_icons = ["plus"]  # Merge + Shallow
+                        action_icons = ["plus", "layers"] if self._modifier_state == ModifierState.CTRL_SHIFT else ["plus"]
                     else:
                         action_icons = ["download"]  # Replace + Shallow
                 else:
                     # For folders and multiple items
-                    if self._modifier_state == ModifierState.SHIFT:
-                        action_icons = ["plus"]  # Merge + Shallow
-                    elif self._modifier_state == ModifierState.CTRL:
-                        action_icons = ["layers"]  # Replace + Recursive
-                    elif self._modifier_state == ModifierState.CTRL_SHIFT:
-                        action_icons = ["plus", "layers"]  # Merge + Recursive
-                    else:
-                        action_icons = ["download"]  # Replace + Shallow
+                    action_icons = (
+                        ["plus"]
+                        if self._modifier_state == ModifierState.SHIFT
+                        else ["layers"]
+                        if self._modifier_state == ModifierState.CTRL
+                        else ["plus", "layers"]
+                        if self._modifier_state == ModifierState.CTRL_SHIFT
+                        else ["download"]
+                    )
             else:  # NEUTRAL - show preview
                 if self._drag_type == DragType.FILE:
-                    if self._modifier_state in [ModifierState.SHIFT, ModifierState.CTRL_SHIFT]:
-                        if self._modifier_state == ModifierState.CTRL_SHIFT:
-                            action_icons = ["plus", "layers"]
-                        else:
-                            action_icons = ["plus"]
-                    else:
-                        action_icons = ["download"]
+                    action_icons = ["plus", "layers"] if self._modifier_state == ModifierState.CTRL_SHIFT else (["plus"] if self._modifier_state == ModifierState.SHIFT else ["download"])
                 else:
-                    if self._modifier_state == ModifierState.SHIFT:
-                        action_icons = ["plus"]
-                    elif self._modifier_state == ModifierState.CTRL:
-                        action_icons = ["layers"]
-                    elif self._modifier_state == ModifierState.CTRL_SHIFT:
-                        action_icons = ["plus", "layers"]
-                    else:
-                        action_icons = ["download"]
+                    action_icons = (
+                        ["plus"]
+                        if self._modifier_state == ModifierState.SHIFT
+                        else ["layers"]
+                        if self._modifier_state == ModifierState.CTRL
+                        else ["plus", "layers"]
+                        if self._modifier_state == ModifierState.CTRL_SHIFT
+                        else ["download"]
+                    )
 
         return self._create_composite_cursor(base_icon, action_icons)
 
@@ -414,10 +407,7 @@ class DragVisualManager:
         # Special handling for metadata drops (file_table -> metadata_tree)
         if self._drag_source == "file_table":
             # For metadata drops, only Shift matters (ignore Ctrl)
-            if is_shift:
-                result = ModifierState.SHIFT  # Extended metadata
-            else:
-                result = ModifierState.NORMAL  # Fast metadata
+            result = ModifierState.SHIFT if is_shift else ModifierState.NORMAL
             return result
 
         # Normal drag operations (file/folder drops)

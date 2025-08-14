@@ -353,7 +353,7 @@ class PreviewTablesView(QWidget):
             self._adjust_table_widths()
 
     def update_from_pairs(
-        self, name_pairs: list[tuple[str, str]], preview_icons: dict, icon_paths: dict
+        self, name_pairs: list[tuple[str, str]], _preview_icons: dict, icon_paths: dict
     ):
         """Update preview tables with name pairs and status validation with performance optimizations."""
         # Performance optimization: Disable all updates at once
@@ -383,7 +383,7 @@ class PreviewTablesView(QWidget):
 
             # Performance optimization: Batch process name pairs
             stats = {"unchanged": 0, "invalid": 0, "duplicate": 0, "valid": 0}
-            self._process_name_pairs_batch(name_pairs, duplicates, stats, preview_icons, icon_paths)
+            self._process_name_pairs_batch(name_pairs, duplicates, stats, _preview_icons, icon_paths)
 
             # Update status
             self._update_status_summary(stats, icon_paths)
@@ -428,7 +428,7 @@ class PreviewTablesView(QWidget):
         name_pairs_batch: list[tuple[str, str]],
         duplicates: set,
         stats: dict,
-        preview_icons: dict,
+        _preview_icons: dict,
         start_row: int,
         icon_paths: dict,
     ):

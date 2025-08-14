@@ -401,7 +401,7 @@ class DirectMetadataLoader(QObject):
             self._progress_dialog.set_size_info(processed, total)
 
     def _start_metadata_loading(
-        self, files: list[FileItem], use_extended: bool, source: str
+        self, files: list[FileItem], use_extended: bool, _source: str
     ) -> None:
         """Start metadata loading in background thread."""
         from utils.metadata_loader import MetadataLoader
@@ -435,7 +435,7 @@ class DirectMetadataLoader(QObject):
             f"[DirectMetadataLoader] Started metadata loading thread for {len(files)} files"
         )
 
-    def _start_hash_loading(self, files: list[FileItem], source: str) -> None:
+    def _start_hash_loading(self, files: list[FileItem], _source: str) -> None:
         """Start hash loading in background thread."""
         from core.hash_worker import HashWorker
 

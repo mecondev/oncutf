@@ -360,7 +360,7 @@ class StructuredMetadataManager:
             return False
 
     def search_files_by_metadata(
-        self, field_key: str, search_value: str, search_type: str = "contains"
+        self, field_key: str, _search_value: str, _search_type: str = "contains"
     ) -> list[str]:
         """
         Search files by metadata field value.

@@ -290,7 +290,7 @@ class SpecifiedTextModule(BaseRenameModule):
 
     @staticmethod
     def apply_from_data(
-        data: dict, file_item, index: int = 0, metadata_cache: dict | None = None
+        data: dict, file_item, index: int = 0, metadata_cache: dict | None = None  # noqa: ARG004
     ) -> str:
         logger.debug(
             f"[SpecifiedTextModule] Called with data={data}, index={index}",

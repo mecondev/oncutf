@@ -267,7 +267,7 @@ class RenameModuleWidget(QWidget):
 
         return data
 
-    def to_dict(self, preview: bool = False) -> dict:
+    def to_dict(self, _preview: bool = False) -> dict:
         """
         Returns the configuration of this rename module as a dictionary.
         Delegates to the active submodule and adds type.
@@ -296,29 +296,29 @@ class RenameModuleWidget(QWidget):
         return False
 
     # Drag & Drop functionality
-    def drag_handle_enter(self, event):
+    def drag_handle_enter(self, _event):
         """Handle mouse enter on drag handle - change cursor."""
         from core.pyqt_imports import QCursor
 
-        QApplication.setOverrideCursor(QCursor(Qt.OpenHandCursor))
+        QApplication.setOverrideCursor(QCursor(Qt.OpenHandCursor))  # type: ignore
 
-    def drag_handle_leave(self, event):
+    def drag_handle_leave(self, _event):
         """Handle mouse leave on drag handle - restore cursor."""
         if not self.is_dragging:
             QApplication.restoreOverrideCursor()
 
     def drag_handle_mouse_press(self, event):
         """Handle mouse press on drag handle - prepare for dragging."""
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton:  # type: ignore
             self.drag_start_position = event.pos()
             from core.pyqt_imports import QCursor
 
-            QApplication.setOverrideCursor(QCursor(Qt.ClosedHandCursor))
+            QApplication.setOverrideCursor(QCursor(Qt.ClosedHandCursor))  # type: ignore
             event.accept()
 
     def drag_handle_mouse_move(self, event):
         """Handle mouse move on drag handle - start dragging if moved enough."""
-        if not (event.buttons() & Qt.LeftButton):
+        if not (event.buttons() & Qt.LeftButton):  # type: ignore
             return
 
         if not self.drag_start_position:

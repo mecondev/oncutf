@@ -49,12 +49,12 @@ class OriginalNameWidget(BaseRenameModule):
     def get_data(self) -> dict:
         return {"type": "original_name"}
 
-    def set_data(self, data: dict) -> None:
+    def set_data(self, _data: dict) -> None:
         # Nothing to set for original name module
         self._last_value = str(self.get_data())
 
     @staticmethod
-    def is_effective(data: dict) -> bool:
+    def is_effective(_data: dict) -> bool:
         """
         The original name module is always effective because it produces output.
         """

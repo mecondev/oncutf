@@ -29,7 +29,7 @@ logger = get_cached_logger(__name__)
 _metadata_icons_cache: dict[str, QPixmap] | None = None
 
 
-def load_metadata_icons(base_dir: str | None = None) -> dict[str, QPixmap]:
+def load_metadata_icons(_base_dir: str | None = None) -> dict[str, QPixmap]:
     """
     Loads metadata status icons for the file table's first column.
 

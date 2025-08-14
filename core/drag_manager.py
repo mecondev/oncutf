@@ -226,7 +226,7 @@ class DragManager(QObject):
     # Event Filtering
     # =====================================
 
-    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+    def eventFilter(self, _obj: QObject, event: QEvent) -> bool:
         """Global event filter to catch drag termination events."""
         if not self._drag_active:
             return False
@@ -263,12 +263,12 @@ class DragManager(QObject):
                     return True  # Event handled
 
         # Mouse release - check after a delay
-        if event_type == QEvent.MouseButtonRelease:
+        if event_type == QEvent.MouseButtonRelease:  # type: ignore
             # Give more time for normal drag completion
             schedule_drag_cleanup(self._check_and_cleanup, 200)
 
         # Window focus events - only after significant time
-        if event_type in (QEvent.WindowDeactivate, QEvent.ApplicationDeactivate):
+        if event_type in (QEvent.WindowDeactivate, QEvent.ApplicationDeactivate):  # type: ignore
             if self._drag_start_time:
                 import time
 

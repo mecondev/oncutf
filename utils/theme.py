@@ -25,7 +25,7 @@ def _get_theme_engine():
     return _theme_engine
 
 
-def get_theme_color(color_key: str, theme_name: str | None = None) -> str:
+def get_theme_color(color_key: str, _theme_name: str | None = None) -> str:
     """Get a color from the theme engine."""
     theme_engine = _get_theme_engine()
     return theme_engine.get_color(color_key)

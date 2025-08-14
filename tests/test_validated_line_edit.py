@@ -48,7 +48,7 @@ class TestValidatedLineEdit:
             # Text should remain unchanged
             assert self.widget.text() == initial_text
 
-    def test_paste_cleaning(self, qtbot):
+    def test_paste_cleaning(self, qtbot):  # noqa: ARG002
         """Test that pasted text with invalid characters is cleaned"""
         # This test would require mocking clipboard operations
         # For now, we'll test the method directly

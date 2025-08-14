@@ -89,11 +89,13 @@ class TestHashManager:
         """Test handling of permission errors."""
         manager = HashManager()
 
-        with patch("pathlib.Path.open", side_effect=PermissionError("Access denied")):
-            with patch("pathlib.Path.exists", return_value=True):
-                with patch("pathlib.Path.is_file", return_value=True):
-                    result = manager.calculate_hash("/mock/path/file.txt")
-                    assert result is None
+        with patch("pathlib.Path.open", side_effect=PermissionError("Access denied")):\
+             # noqa: SIM117
+             with patch("pathlib.Path.exists", return_value=True):\
+             # noqa: SIM117
+                 with patch("pathlib.Path.is_file", return_value=True):
+                     result = manager.calculate_hash("/mock/path/file.txt")
+                     assert result is None
 
     def test_calculate_crc32_string_path(self):
         """Test CRC32 calculation with string path."""
@@ -158,7 +160,7 @@ class TestHashManager:
         """Test successful folder comparison."""
         manager = HashManager()
 
-        with tempfile.TemporaryDirectory() as temp_dir1:
+        with tempfile.TemporaryDirectory() as temp_dir1:  # noqa: SIM117
             with tempfile.TemporaryDirectory() as temp_dir2:
                 # Create test files
                 file1_path = Path(temp_dir1) / "test.txt"
@@ -178,7 +180,7 @@ class TestHashManager:
         """Test folder comparison with different file content."""
         manager = HashManager()
 
-        with tempfile.TemporaryDirectory() as temp_dir1:
+        with tempfile.TemporaryDirectory() as temp_dir1:  # noqa: SIM117
             with tempfile.TemporaryDirectory() as temp_dir2:
                 # Create test files with different content
                 file1_path = Path(temp_dir1) / "test.txt"
@@ -198,7 +200,7 @@ class TestHashManager:
         """Test folder comparison with missing file in second folder."""
         manager = HashManager()
 
-        with tempfile.TemporaryDirectory() as temp_dir1:
+        with tempfile.TemporaryDirectory() as temp_dir1:  # noqa: SIM117
             with tempfile.TemporaryDirectory() as temp_dir2:
                 # Create file only in first folder
                 file1_path = Path(temp_dir1) / "test.txt"
@@ -315,7 +317,7 @@ class TestConvenienceFunctions:
 
     def test_compare_folders_function(self):
         """Test standalone compare_folders function."""
-        with tempfile.TemporaryDirectory() as temp_dir1:
+        with tempfile.TemporaryDirectory() as temp_dir1:  # noqa: SIM117
             with tempfile.TemporaryDirectory() as temp_dir2:
                 # Create identical test files
                 file1_path = Path(temp_dir1) / "test.txt"
@@ -366,11 +368,13 @@ class TestErrorHandling:
         """Test HashManager handles exceptions gracefully."""
         manager = HashManager()
 
-        with patch("pathlib.Path.open", side_effect=Exception("Unexpected error")):
-            with patch("pathlib.Path.exists", return_value=True):
-                with patch("pathlib.Path.is_file", return_value=True):
-                    result = manager.calculate_hash("/mock/path")
-                    assert result is None
+        with patch("pathlib.Path.open", side_effect=Exception("Unexpected error")):\
+             # noqa: SIM117
+             with patch("pathlib.Path.exists", return_value=True):\
+             # noqa: SIM117
+                 with patch("pathlib.Path.is_file", return_value=True):
+                     result = manager.calculate_hash("/mock/path")
+                     assert result is None
 
     def test_find_duplicates_with_exception(self):
         """Test duplicate detection handles file errors gracefully."""

@@ -25,7 +25,7 @@ class OriginalNameModule:
 
     @staticmethod
     def apply_from_data(
-        data: dict, file_item: FileItem, index: int = 0, metadata_cache: dict = None
+        data: dict, file_item: FileItem, _index: int = 0, _metadata_cache: dict = None
     ) -> str:
         """
         Applies original filename with optional Greeklish transformation.

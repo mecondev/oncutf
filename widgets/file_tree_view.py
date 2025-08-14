@@ -682,7 +682,7 @@ class FileTreeView(QTreeView):
     # SPLITTER INTEGRATION (unchanged)
     # =====================================
 
-    def on_horizontal_splitter_moved(self, pos: int, index: int) -> None:
+    def on_horizontal_splitter_moved(self, _pos: int, _index: int) -> None:
         """Handle horizontal splitter movement to adjust column width"""
         schedule_scroll_adjust(self._adjust_column_width, 50)
 
@@ -704,7 +704,7 @@ class FileTreeView(QTreeView):
 
         return super().event(event)
 
-    def startDrag(self, supported_actions):
+    def startDrag(self, _supported_actions):
         """Override Qt's built-in drag to prevent it from interfering with our custom drag"""
         # Do nothing - we handle all drag operations through our custom system
         # This prevents Qt from starting its own drag which could cause hover issues
@@ -714,7 +714,7 @@ class FileTreeView(QTreeView):
         )
         return
 
-    def _on_item_expanded(self, index):
+    def _on_item_expanded(self, _index):
         """Handle item expansion with wait cursor for better UX"""
         from utils.cursor_helper import wait_cursor
         from utils.timer_manager import schedule_ui_update
@@ -730,7 +730,7 @@ class FileTreeView(QTreeView):
         schedule_ui_update(show_wait_cursor, delay=1)
         logger.debug("[FileTreeView] Item expanded with wait cursor", extra={"dev_only": True})
 
-    def _on_item_collapsed(self, index):
+    def _on_item_collapsed(self, _index):
         """Handle item collapse - no wait cursor needed as it's instant"""
         logger.debug("[FileTreeView] Item collapsed", extra={"dev_only": True})
 

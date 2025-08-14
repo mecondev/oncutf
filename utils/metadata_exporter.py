@@ -140,7 +140,7 @@ class MetadataExporter:
             logger.exception(f"[MetadataExporter] Export failed: {e}")
             return False
 
-    def _export_json(self, files: list[Any], output_dir: str, scope: str) -> bool:
+    def _export_json(self, files: list[Any], output_dir: str, _scope: str) -> bool:
         """Export metadata in JSON format - one file per source file."""
         try:
             exported_count = 0
@@ -183,7 +183,7 @@ class MetadataExporter:
             logger.error(f"[MetadataExporter] JSON export failed: {e}")
             return False
 
-    def _export_markdown(self, files: list[Any], output_dir: str, scope: str) -> bool:
+    def _export_markdown(self, files: list[Any], output_dir: str, _scope: str) -> bool:
         """Export metadata in Markdown format - one file per source file."""
         try:
             exported_count = 0

@@ -215,7 +215,7 @@ class SVGIconGenerator:
         )
         return icons
 
-    def generate_inverted_icon(self, icon_name: str, size: int | None = None) -> QPixmap:
+    def generate_inverted_icon(self, _icon_name: str, _size: int | None = None) -> QPixmap:
         """
         Generate an inverted (dark) version of an icon for selection states.
         REMOVED: This functionality was too complex and not needed.

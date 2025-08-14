@@ -69,7 +69,8 @@ def test_build_plan_with_conflict(temp_dir):
 def test_execute_rename_plan(temp_dir):
     # Setup: rename a.txt -> b.txt
     src_path = os.path.join(temp_dir, "a.txt")
-    open(src_path, "w").write("hello")
+    with open(src_path, "w") as f:
+        f.write("hello")
 
     files = [MockFile("a.txt")]
     pairs = [("a.txt", "b.txt")]

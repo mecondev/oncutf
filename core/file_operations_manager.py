@@ -70,7 +70,7 @@ class FileOperationsManager:
         from utils.filename_validator import validate_filename_part
 
         # Create a safe conflict callback that doesn't block
-        def safe_conflict_callback(parent, filename):
+        def safe_conflict_callback(_parent, filename):
             """Safe conflict callback that prevents blocking."""
             try:
                 logger.info(f"[Rename] File conflict detected for: {filename}")

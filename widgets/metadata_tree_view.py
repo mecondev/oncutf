@@ -422,7 +422,7 @@ class MetadataTreeView(QTreeView):
         # Schedule drag cleanup
         schedule_drag_cleanup(self._complete_drag_cleanup, 0)
 
-    def _perform_drag_cleanup(self, drag_cancel_filter: Any) -> None:
+    def _perform_drag_cleanup(self, _drag_cancel_filter: Any) -> None:
         """Centralized drag cleanup logic."""
         # Force cleanup of any drag state
         while QApplication.overrideCursor():
@@ -508,7 +508,7 @@ class MetadataTreeView(QTreeView):
 
         return False
 
-    def _configure_placeholder_mode(self, model: Any) -> None:
+    def _configure_placeholder_mode(self, _model: Any) -> None:
         """Configure view for placeholder mode with anti-flickering."""
 
         # Protection against repeated calls to placeholder mode - but only if ALL conditions are already met
@@ -659,7 +659,7 @@ class MetadataTreeView(QTreeView):
             # Connect to immediate update
             header.sectionResized.connect(self._on_column_resized)
 
-    def _on_column_resized(self, logical_index: int, old_size: int, new_size: int) -> None:
+    def _on_column_resized(self, _logical_index: int, _old_size: int, _new_size: int) -> None:
         """Handle column resize events to update display immediately."""
         # Force immediate viewport update
         self.viewport().update()
@@ -729,7 +729,7 @@ class MetadataTreeView(QTreeView):
                     expanded_items.append(index.data())
             self._expanded_items_per_file[self._current_file_path] = expanded_items
 
-    def _load_file_state(self, file_path: str, previous_file_path: str) -> None:
+    def _load_file_state(self, file_path: str, _previous_file_path: str) -> None:
         """Load the state for a specific file with improved performance."""
         if not file_path:
             return
@@ -1207,7 +1207,7 @@ class MetadataTreeView(QTreeView):
             self.value_edited.emit(normalized_key_path, str(current_value), new_value)
 
     def _fallback_edit_value(
-        self, key_path: str, new_value: str, old_value: str, files_to_modify: list
+        self, key_path: str, new_value: str, _old_value: str, files_to_modify: list
     ) -> None:
         """Fallback method for editing metadata without command system."""
         # Mark as modified
@@ -1322,7 +1322,7 @@ class MetadataTreeView(QTreeView):
         self._fallback_set_rotation_to_zero(key_path, "0", current_value)
 
     def _fallback_set_rotation_to_zero(
-        self, key_path: str, new_value: str, current_value: Any
+        self, key_path: str, new_value: str, _current_value: Any
     ) -> None:
         """Fallback method for setting rotation to zero without command system."""
         # Mark as modified
@@ -1412,7 +1412,7 @@ class MetadataTreeView(QTreeView):
         # Force viewport update to refresh visual state
         self.viewport().update()
 
-    def _update_tree_item_value(self, key_path: str, new_value: str) -> None:
+    def _update_tree_item_value(self, _key_path: str, _new_value: str) -> None:
         """
         Update the display value of a tree item to reflect changes.
         This forces a refresh of the metadata display with modification context.
@@ -1760,7 +1760,7 @@ class MetadataTreeView(QTreeView):
     # Metadata Display Management Methods
     # =====================================
 
-    def show_empty_state(self, message: str = "No file selected") -> None:
+    def show_empty_state(self, _message: str = "No file selected") -> None:
         """
         Shows empty state using unified placeholder helper.
         No longer creates text model - uses only the placeholder helper.
@@ -2779,7 +2779,7 @@ class MetadataTreeView(QTreeView):
     # =====================================
 
     def _try_lazy_metadata_loading(
-        self, file_item: Any, context: str = ""
+        self, file_item: Any, _context: str = ""
     ) -> dict[str, Any] | None:
         """
         Try to load metadata using simple fallback loading (lazy manager removed).

@@ -479,7 +479,7 @@ class FileLoadManager:
         except Exception as e:
             logger.error(f"[FileLoadManager] Error refreshing UI: {e}")
 
-    def prepare_folder_load(self, folder_path: str, *, clear: bool = True) -> list[str]:
+    def prepare_folder_load(self, folder_path: str, *, _clear: bool = True) -> list[str]:
         """
         Prepare folder for loading by getting file list.
         Returns list of file paths without loading them into UI.
