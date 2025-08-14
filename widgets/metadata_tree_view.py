@@ -208,13 +208,13 @@ class MetadataTreeView(QTreeView):
     def _initialize_cache_helper(self) -> None:
         """Initialize the metadata cache helper."""
         try:
-            self._metadata_cache_helper = MetadataCacheHelper()
+            self._cache_helper = MetadataCacheHelper()
             logger.debug(
                 "[MetadataTreeView] MetadataCacheHelper initialized", extra={"dev_only": True}
             )
         except Exception as e:
             logger.error(f"[MetadataTreeView] Failed to initialize MetadataCacheHelper: {e}")
-            self._metadata_cache_helper = None
+            self._cache_helper = None
 
     def _get_cache_helper(self) -> MetadataCacheHelper | None:
         """Get the MetadataCacheHelper instance, initializing if needed."""
@@ -1275,7 +1275,8 @@ class MetadataTreeView(QTreeView):
             return
 
         # Get current file
-        file_item = self._get_current_file_item()
+        selected_files = self._get_current_selection()
+        file_item = selected_files[0] if selected_files else None
         if not file_item:
             logger.warning("[MetadataTree] No file selected for rotation reset")
             return
@@ -1350,7 +1351,8 @@ class MetadataTreeView(QTreeView):
             return
 
         # Get current file
-        file_item = self._get_current_file_item()
+        selected_files = self._get_current_selection()
+        file_item = selected_files[0] if selected_files else None
         if not file_item:
             logger.warning("[MetadataTree] No file selected for reset")
             return
@@ -1373,8 +1375,8 @@ class MetadataTreeView(QTreeView):
                 self._update_tree_item_value(key_path, str(original_value))
 
                 # Remove from modifications
-                if key_path in self._modified_values:
-                    del self._modified_values[key_path]
+                if key_path in self.modified_items:
+                    self.modified_items.remove(key_path)
 
                 logger.debug(
                     f"[MetadataTree] Executed reset command for {file_item.filename}",
@@ -1460,8 +1462,8 @@ class MetadataTreeView(QTreeView):
             )
         else:
             # Remove from modifications if values are the same
-            if key_path in self._modified_values:
-                del self._modified_values[key_path]
+            if key_path in self.modified_items:
+                self.modified_items.remove(key_path)
                 logger.debug(
                     f"[MetadataTree] Removed modification mark: {key_path} (value restored to original)",
                     extra={"dev_only": True},
@@ -2167,7 +2169,7 @@ class MetadataTreeView(QTreeView):
                         count_fields(value)
                     else:
                         total_fields += 1
-                        if key in self._modified_values:
+                        if key in self.modified_items:
                             modified_fields += 1
 
             count_fields(display_data)
@@ -2795,8 +2797,8 @@ class MetadataTreeView(QTreeView):
     def _fallback_metadata_loading(self, file_item: Any) -> dict[str, Any] | None:
         """Fallback metadata loading method."""
         try:
-            if self._metadata_cache_helper:
-                metadata = self._metadata_cache_helper.get_metadata_for_file(file_item)
+            if self._cache_helper:
+                metadata = self._cache_helper.get_metadata_for_file(file_item)
                 if metadata:
                     logger.debug(
                         f"[MetadataTree] Loaded metadata via cache helper for {file_item.filename}",
@@ -3150,8 +3152,9 @@ class MetadataTreeView(QTreeView):
                 return
 
         # Try to find file in metadata that might be a path
-        if self._current_file_item and self._current_file_item.metadata:
-            metadata = self._current_file_item.metadata
+        selected_files = self._get_current_selection()
+        if selected_files and hasattr(selected_files[0], "metadata") and selected_files[0].metadata:
+            metadata = selected_files[0].metadata
             if field in metadata:
                 potential_path = metadata[field]
                 if os.path.exists(potential_path):

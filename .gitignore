@@ -99,6 +99,7 @@ scripts/
 
 # cursor
 .cursorignore
+!.cursorrules
 
 # Emacs / Vim
 *~

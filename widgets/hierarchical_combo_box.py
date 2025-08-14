@@ -45,10 +45,12 @@ class HierarchicalComboBox(QComboBox):
 
         # Create tree view for hierarchical display
         self.tree_view = QTreeView()
+        self.tree_view.setObjectName("hier_combo_popup")
         self.tree_view.setHeaderHidden(True)
         self.tree_view.setRootIsDecorated(True)  # Show branch indicators for all items
         self.tree_view.setItemsExpandable(True)
         self.tree_view.setIndentation(16)  # Set smaller indent (default is 20px)
+        self.tree_view.setAlternatingRowColors(False)
 
         # Enable mouse tracking for hover effects
         self.tree_view.setMouseTracking(True)
@@ -240,25 +242,41 @@ class HierarchicalComboBox(QComboBox):
     def populate_from_metadata_groups(self, groups: dict, default_key: str | None = None) -> None:  # noqa: ARG002
         """Populate the combo box from grouped metadata data."""
         self.model.clear()
+        # Ensure categories map is reset for fresh population
+        self._categories.clear()
         logger.debug(f"Populating combo box with groups: {list(groups.keys())}")
 
         first_item = None
 
-        for group_name, items in groups.items():
-            if items:  # Only add groups that have items
-                group_item = QStandardItem(group_name)
-                group_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
+        # Detect single-group case to flatten items directly under root
+        non_empty_groups = [(g, items) for g, items in groups.items() if items]
+        if len(non_empty_groups) == 1:
+            _, items = non_empty_groups[0]
+            for item_name, item_data in items:
+                child_item = QStandardItem(item_name)
+                child_item.setData(item_data, Qt.ItemDataRole.UserRole)
+                child_item.setFlags(child_item.flags() | Qt.ItemFlag.ItemIsSelectable)
+                self.model.appendRow(child_item)
+                if first_item is None:
+                    first_item = child_item
+        else:
+            for group_name, items in groups.items():
+                if items:  # Only add groups that have items
+                    group_item = QStandardItem(group_name)
+                    group_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
+                    # Track category item for expand_category()
+                    self._categories[group_name] = group_item
 
-                for item_name, item_data in items:
-                    child_item = QStandardItem(item_name)
-                    child_item.setData(item_data, Qt.ItemDataRole.UserRole)
-                    child_item.setFlags(child_item.flags() | Qt.ItemFlag.ItemIsSelectable)
-                    group_item.appendRow(child_item)
+                    for item_name, item_data in items:
+                        child_item = QStandardItem(item_name)
+                        child_item.setData(item_data, Qt.ItemDataRole.UserRole)
+                        child_item.setFlags(child_item.flags() | Qt.ItemFlag.ItemIsSelectable)
+                        group_item.appendRow(child_item)
 
-                    if first_item is None:
-                        first_item = child_item
+                        if first_item is None:
+                            first_item = child_item
 
-            self.model.appendRow(group_item)
+                    self.model.appendRow(group_item)
 
         # Set the model
         self.setModel(self.model)

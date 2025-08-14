@@ -297,13 +297,14 @@ class TreeViewItemDelegate(QStyledItemDelegate):
 
     def eventFilter(self, obj: QWidget, event: QEvent) -> bool:
         """Handle mouse events for hover tracking."""
-        if event.type() == QEvent.Type.Leave:
+        if event.type() == QEvent.Type.Leave or event.type() == QEvent.Type.HoverLeave:
             self.hovered_index = None
             obj.update()
         elif event.type() == QEvent.Type.MouseMove and self._tree_view:
             pos = event.pos()
             index = self._tree_view.indexAt(pos)
-            self.hovered_index = index if index.isValid() else None
+            # Unify hover per row by tracking the first column sibling
+            self.hovered_index = index.sibling(index.row(), 0) if index.isValid() else None
             obj.update()
         return False
 
@@ -353,7 +354,10 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             bg_rect = original_rect
 
         # Paint background based on state (normal, hover, selected, selected+hover)
-        is_hovered = self.hovered_index is not None and index == self.hovered_index
+        hovered = self.hovered_index
+        is_hovered = bool(
+            hovered and hovered.isValid() and index.row() == hovered.row() and index.parent() == hovered.parent()
+        )
 
         if (option.state & QStyle.StateFlag.State_Selected) and is_hovered:
             # Selected + Hover → highlight_light_blue

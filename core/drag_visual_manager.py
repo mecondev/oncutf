@@ -173,7 +173,7 @@ class DragVisualManager:
             bool: True to continue drag, False to end drag
         """
         # Update modifier state first (for Ctrl/Shift changes during drag)
-        update_modifier_state()
+        self.update_modifier_state()
 
         # Get widget under cursor
         widget_under_cursor = QApplication.widgetAt(QCursor.pos())
@@ -193,16 +193,16 @@ class DragVisualManager:
 
         # If still over source widget, show NEUTRAL (can't drop on self)
         if still_over_source:
-            update_drop_zone_state(DropZoneState.NEUTRAL)
+            self.update_drop_zone_state(DropZoneState.NEUTRAL)
             return True  # Continue drag
 
         # Check if over valid drop target
         is_valid = self.is_valid_drop_target(widget_under_cursor, drag_source)
 
         if is_valid:
-            update_drop_zone_state(DropZoneState.VALID)
+            self.update_drop_zone_state(DropZoneState.VALID)
         else:
-            update_drop_zone_state(DropZoneState.INVALID)
+            self.update_drop_zone_state(DropZoneState.INVALID)
 
         return True  # Continue drag
 

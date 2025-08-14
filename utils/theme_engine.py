@@ -780,6 +780,75 @@ class ThemeEngine:
                 padding: 2px;
             }}
 
+            /* Hierarchical Combo Popup - enforce table-like styling */
+            QTreeView#hier_combo_popup {{
+                background-color: {self.colors["table_background"]};
+                color: {self.colors["table_text"]};
+                alternate-background-color: transparent; /* Explicitly disable alternation */
+                outline: none;
+                border: none;
+            }}
+
+            QTreeView#hier_combo_popup::item {{
+                border: none;
+                background-color: transparent;
+                color: {self.colors["table_text"]};
+                padding: 2px 4px;
+                min-height: 18px;
+            }}
+
+            QTreeView#hier_combo_popup::item:alternate {{
+                background-color: transparent;
+            }}
+
+            QTreeView#hier_combo_popup::item:hover {{
+                background-color: {self.colors["table_hover_background"]};
+                color: {self.colors["table_text"]};
+                border: none;
+            }}
+
+            QTreeView#hier_combo_popup::item:selected {{
+                background-color: {self.colors["table_selection_background"]};
+                color: {self.colors["table_selection_text"]};
+                border: none;
+            }}
+
+            QTreeView#hier_combo_popup::item:selected:hover {{
+                background-color: {self.colors["highlight_light_blue"]};
+                color: {self.colors["table_selection_text"]};
+                border: none;
+            }}
+
+            /* Branch background neutral, icons only on adjoining branch */
+            QTreeView#hier_combo_popup::branch {{
+                background-color: transparent;
+                color: transparent;
+                border: none;
+                outline: 0;
+            }}
+
+            QTreeView#hier_combo_popup::branch:has-children:closed:adjoins-item {{
+                image: url(resources/icons/feather_icons/chevron-right.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+            }}
+
+            QTreeView#hier_combo_popup::branch:has-children:open:adjoins-item {{
+                image: url(resources/icons/feather_icons/chevron-down.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+            }}
+
+            QTreeView#hier_combo_popup::branch:has-siblings:!adjoins-item {{
+                image: none;
+            }}
+
+            QTreeView#hier_combo_popup::branch:!has-children:adjoins-item {{
+                image: none;
+            }}
+
             /* HEADER VIEWS */
             QHeaderView {{
                 background-color: {self.colors["table_header_background"]};

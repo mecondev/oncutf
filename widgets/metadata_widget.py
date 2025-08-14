@@ -206,13 +206,17 @@ class MetadataWidget(QWidget):
     def populate_file_dates(self) -> None:
         # Prepare hierarchical data for file dates
         hierarchical_data = {
-            "File Dates": [
+            "File Date/Time": [
                 ("Last Modified (YYMMDD)", "last_modified_yymmdd"),
                 ("Last Modified (YYYY-MM-DD)", "last_modified_iso"),
                 ("Last Modified (DD-MM-YYYY)", "last_modified_eu"),
                 ("Last Modified (MM-DD-YYYY)", "last_modified_us"),
                 ("Last Modified (YYYY)", "last_modified_year"),
                 ("Last Modified (YYYY-MM)", "last_modified_month"),
+                # New variants with time included
+                ("Last Modified (YYYY-MM-DD HH-MM)", "last_modified_iso_time"),
+                ("Last Modified (DD-MM-YYYY HH-MM)", "last_modified_eu_time"),
+                ("Last Modified (YYMMDD_HHMM)", "last_modified_compact"),
             ]
         }
 
@@ -412,6 +416,12 @@ class MetadataWidget(QWidget):
 
         # Populate combo box with grouped data
         self.options_combo.populate_from_metadata_groups(hierarchical_data)
+
+        # Prefer selecting 'FileName' by default if available
+        try:
+            self.options_combo.select_item_by_data("FileName")
+        except Exception:
+            pass
 
         # Force update to ensure UI reflects changes
         self.emit_if_changed()
@@ -912,7 +922,7 @@ class MetadataWidget(QWidget):
             self.category_combo.setModel(self.category_model)
 
             # Add items to model
-            item1 = QStandardItem("File Dates")
+            item1 = QStandardItem("File Date/Time")
             item1.setData("file_dates", Qt.UserRole)
             self.category_model.appendRow(item1)
 
@@ -1535,9 +1545,20 @@ class MetadataWidget(QWidget):
 
     def _on_hierarchical_item_selected(self, _text: str, _data: Any):
         """Handle item selection from hierarchical combo box."""
-        # text and data are provided by the signal but not used here
-        logger.debug(f"Hierarchical item selected: {_text} with data: {_data}")
-        self.emit_if_changed()
+        # Debounce preview update to avoid rapid recalculations
+        try:
+            from utils.timer_manager import TimerPriority, TimerType, get_timer_manager
+
+            get_timer_manager().schedule(
+                callback=self.emit_if_changed,
+                delay=120,
+                priority=TimerPriority.HIGH,
+                timer_type=TimerType.PREVIEW_UPDATE,
+                timer_id="metadata_preview_update",
+            )
+        except Exception:
+            # Fallback: immediate update if timer manager not available
+            self.emit_if_changed()
 
     def _on_selection_changed(self):
         self.update_options()

@@ -32,6 +32,8 @@ class ExifToolWrapper:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             bufsize=1,  # line buffered
         )
         self.lock = threading.Lock()  # Ensure thread-safe access
@@ -84,7 +86,7 @@ class ExifToolWrapper:
         cmd = ["exiftool", "-json", "-charset", "filename=UTF8", file_path]
 
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=10)
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=10, encoding="utf-8", errors="replace")
 
             if result.returncode != 0:
                 logger.warning(
@@ -142,6 +144,8 @@ class ExifToolWrapper:
                 capture_output=True,
                 text=True,
                 timeout=15,
+                encoding="utf-8",
+                errors="replace",
             )
             data = json.loads(result.stdout)
 
@@ -263,7 +267,7 @@ class ExifToolWrapper:
             )
 
             # Execute the command
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace")
 
             if result.returncode == 0:
                 logger.info(f"[ExifToolWrapper] Successfully wrote metadata to: {file_path}")

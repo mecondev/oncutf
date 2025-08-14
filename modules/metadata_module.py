@@ -142,13 +142,24 @@ class MetadataModule:
                 elif field == "last_modified_iso":
                     result = dt.strftime("%Y-%m-%d")
                 elif field == "last_modified_eu":
-                    result = dt.strftime("%d/%m/%Y")
+                    # Use dash separator for EU format to be consistent with other displays
+                    result = dt.strftime("%d-%m-%Y")
                 elif field == "last_modified_us":
                     result = dt.strftime("%m-%d-%Y")
                 elif field == "last_modified_year":
                     result = dt.strftime("%Y")
                 elif field == "last_modified_month":
                     result = dt.strftime("%Y-%m")
+                # New formats with time included
+                elif field == "last_modified_iso_time":
+                    # ISO-like with time (HH:MM) and safe for filenames (no colon)
+                    result = dt.strftime("%Y-%m-%d_%H-%M")
+                elif field == "last_modified_eu_time":
+                    # EU style with time
+                    result = dt.strftime("%d-%m-%Y_%H-%M")
+                elif field == "last_modified_compact":
+                    # Compact sortable with time YYMMDD_HHMM
+                    result = dt.strftime("%y%m%d_%H%M")
                 else:
                     # Fallback to YYMMDD format for unknown last_modified variants
                     result = dt.strftime("%y%m%d")
