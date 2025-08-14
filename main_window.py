@@ -1466,12 +1466,11 @@ class MainWindow(QMainWindow):
         ):
             try:
                 # Disconnect first to avoid duplicate connections
-                try:
+                from contextlib import suppress
+                with suppress(TypeError, RuntimeError):
                     self.event_handler_manager.hash_worker.file_hash_calculated.disconnect(
                         self.refresh_metadata_widgets
                     )
-                except (TypeError, RuntimeError):
-                    pass  # Signal was not connected
                 self.event_handler_manager.hash_worker.file_hash_calculated.connect(
                     self.refresh_metadata_widgets
                 )

@@ -41,10 +41,9 @@ class ExifToolWrapper:
 
     def __del__(self) -> None:
         """Destructor to ensure ExifTool process is cleaned up."""
-        try:
+        import contextlib
+        with contextlib.suppress(Exception):
             self.close()
-        except Exception:
-            pass  # Ignore errors during cleanup
 
     def get_metadata(self, file_path: str, use_extended: bool = False) -> dict:
         """
@@ -302,11 +301,10 @@ class ExifToolWrapper:
                             extra={"dev_only": True},
                         )
                     finally:
-                        try:
-                            self.process.stdin.close()
-                        except (BrokenPipeError, OSError, ValueError):
+                        import contextlib
+                        with contextlib.suppress(BrokenPipeError, OSError, ValueError):
                             # Ignore errors when closing stdin
-                            pass
+                            self.process.stdin.close()
 
                 # Wait for process to terminate gracefully
                 try:

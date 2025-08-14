@@ -175,7 +175,7 @@ def create_item(text: str, alignment=None, icon_name: str | None = None) -> QSta
             icon = get_menu_icon(icon_name)
             if icon:
                 item.setIcon(icon)
-        except Exception as e:
+        except Exception:
             # Silently fail if icon loading fails
             pass
 

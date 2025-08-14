@@ -477,7 +477,7 @@ class ThemeEngine:
                 margin: 0px;
                 padding: 0px;
             }}
-            
+
             /* Ensure chevrons are visible in combobox dropdowns */
             QComboBox QTreeView::branch:has-children:closed:adjoins-item {{
                 image: url(resources/icons/feather_icons/chevron-right.svg);
@@ -1464,7 +1464,7 @@ class ThemeEngine:
                         margin: 0px !important;
                         padding: 0px !important;
                     }}
-                    
+
                     /* Ensure chevrons are visible in combobox dropdowns */
                     QComboBox QTreeView::branch:has-children:closed:adjoins-item {{
                         image: url(resources/icons/feather_icons/chevron-right.svg) !important;

@@ -128,12 +128,7 @@ def format_file_size_stable(size_bytes: int) -> str:
     # Format with consistent 10-character width
     unit_str = units[unit_index]
 
-    if size >= 100:
-        # Large values: no decimals (e.g., "100.0 MB")
-        content = f"{size:.1f} {unit_str}"
-    else:
-        # Small values: one decimal (e.g., "1.0 MB")
-        content = f"{size:.1f} {unit_str}"
+    content = f"{size:.1f} {unit_str}" if size >= 100 else f"{size:.1f} {unit_str}"
 
     # Ensure exactly 10 characters
     return content.rjust(10)[:10]

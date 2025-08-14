@@ -246,10 +246,7 @@ class DragVisualManager:
 
         # Choose action icons based on context
         if is_metadata_drop:
-            if self._drop_zone_state == DropZoneState.INVALID:
-                action_icons = ["x"]
-            else:  # VALID or NEUTRAL
-                action_icons = ["info"]
+            action_icons = ["x"] if self._drop_zone_state == DropZoneState.INVALID else ["info"]
         else:
             # Normal file/folder drops
             if self._drop_zone_state == DropZoneState.INVALID:
@@ -380,10 +377,7 @@ class DragVisualManager:
                         action_pixmap = colored_pixmap
 
                     # Position icons with minimal spacing
-                    if len(action_icons) > 1:
-                        x_pos = start_x + (i * (icon_size - 4))  # Overlap to reduce visual spacing
-                    else:
-                        x_pos = start_x
+                    x_pos = start_x + (i * (icon_size - 4)) if len(action_icons) > 1 else start_x
                     y_pos = 24
                     painter.drawPixmap(x_pos, y_pos, action_pixmap)
 

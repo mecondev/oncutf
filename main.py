@@ -71,7 +71,7 @@ def cleanup_on_exit():
         logger.warning(f"Error in emergency cleanup: {e}")
 
 
-def signal_handler(signum, frame):
+def signal_handler(signum, _frame):
     """Handle signals for graceful shutdown."""
     logger.info(f"Received signal {signum}, performing cleanup...")
     cleanup_on_exit()

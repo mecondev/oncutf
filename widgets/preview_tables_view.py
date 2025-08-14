@@ -490,14 +490,13 @@ class PreviewTablesView(QWidget):
 
     def _get_status_tooltip(self, status: str, new_name: str) -> str:
         """Get tooltip text for a given status."""
-        if status == "duplicate":
-            return f"Duplicate filename: {new_name}"
-        elif status == "invalid":
-            return f"Invalid filename: {new_name}"
-        elif status == "unchanged":
-            return f"No change: {new_name}"
-        else:
-            return f"Valid filename: {new_name}"
+        mapping = {
+            "duplicate": f"Duplicate filename: {new_name}",
+            "invalid": f"Invalid filename: {new_name}",
+            "unchanged": f"No change: {new_name}",
+            "valid": f"Valid filename: {new_name}",
+        }
+        return mapping.get(status, f"Valid filename: {new_name}")
 
     def _determine_rename_status(
         self, old_name: str, new_name: str, duplicates: set
@@ -560,7 +559,7 @@ class PreviewTablesView(QWidget):
             self.new_names_table.setUpdatesEnabled(True)
             self.icon_table.setUpdatesEnabled(True)
 
-    def handle_splitter_moved(self, pos=None, index=None):
+    def handle_splitter_moved(self, _pos=None, _index=None):
         """Handle parent splitter movement to adjust table widths."""
         self._handle_table_resize()
 
