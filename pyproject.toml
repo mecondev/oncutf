@@ -141,8 +141,9 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
-    "gui: marks tests that require GUI",
-    "exiftool: marks tests that require exiftool"
+    "gui: marks tests that require GUI (skipped on CI)",
+    "exiftool: marks tests that require exiftool",
+    "local_only: marks tests that only run in local environment"
 ]
 filterwarnings = [
     "ignore::DeprecationWarning",
