@@ -347,6 +347,9 @@ class TreeViewItemDelegate(QStyledItemDelegate):
                 last_rect = tree_view.visualRect(last)
                 if first_rect.isValid() and last_rect.isValid():
                     bg_rect = first_rect.united(last_rect)
+                    # Extend painting to the viewport right edge for a full-row appearance
+                    if isinstance(tree_view, QTreeView) and tree_view.viewport():
+                        bg_rect.setRight(tree_view.viewport().rect().right())
                 else:
                     bg_rect = original_rect
             except Exception:
@@ -361,10 +364,17 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             hovered and hovered.isValid() and index.row() == hovered.row() and index.parent() == hovered.parent()
         )
 
-        if (option.state & QStyle.StateFlag.State_Selected) and is_hovered:
+        # Determine selection by selectionModel to unify across columns
+        is_selected = False
+        if isinstance(tree_view, QTreeView):
+            sel = tree_view.selectionModel()
+            if sel is not None:
+                is_selected = sel.isSelected(index.sibling(index.row(), 0))
+
+        if is_selected and is_hovered:
             # Selected + Hover → highlight_light_blue
             painter.fillRect(bg_rect, get_qcolor("highlight_light_blue"))
-        elif option.state & QStyle.StateFlag.State_Selected:
+        elif is_selected:
             # Selected → table_selection_background
             painter.fillRect(bg_rect, get_qcolor("table_selection_background"))
         elif is_hovered:
@@ -372,10 +382,10 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             painter.fillRect(bg_rect, get_qcolor("table_hover_background"))
 
         # Set text color based on state and item type (icons remain unchanged)
-        if (option.state & QStyle.StateFlag.State_Selected) and is_hovered:
+        if is_selected and is_hovered:
             # Selected + Hover → dark text
             text_color = get_qcolor("table_selection_text")
-        elif option.state & QStyle.StateFlag.State_Selected:
+        elif is_selected:
             # Selected → keep light text like file table
             text_color = get_qcolor("table_text")
         elif not is_selectable:  # Categories
@@ -455,11 +465,18 @@ class MetadataTreeItemDelegate(TreeViewItemDelegate):
                 last_rect = tree_view.visualRect(last)
                 if first_rect.isValid() and last_rect.isValid():
                     full_row_rect = first_rect.united(last_rect)
+                    # Extend painting to the viewport right edge for a full-row appearance
+                    if isinstance(tree_view, QTreeView) and tree_view.viewport():
+                        full_row_rect.setRight(tree_view.viewport().rect().right())
             except Exception:
                 pass
 
-        # Decide background color
-        is_selected = bool(option.state & QStyle.StateFlag.State_Selected)
+        # Decide background color using selectionModel (row-wise), not option.state
+        is_selected = False
+        if isinstance(tree_view, QTreeView):
+            sel = tree_view.selectionModel()
+            if sel is not None:
+                is_selected = sel.isSelected(index.sibling(index.row(), 0))
         if is_selected and is_row_hovered:
             painter.fillRect(full_row_rect, get_qcolor("highlight_light_blue"))
         elif is_selected:
