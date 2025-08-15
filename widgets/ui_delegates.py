@@ -336,18 +336,20 @@ class TreeViewItemDelegate(QStyledItemDelegate):
 
         # Paint full-row background for ALL items (categories and subcategories)
         # This ensures consistent styling like file/metadata trees
-        # Use the full row width including indent area
+        # Use the united rect of first..last column to avoid painting over branch/chevrons
         tree_view = self.parent()
-        if isinstance(tree_view, QTreeView):
-            # Get the full row rect from the tree view
-            viewport = tree_view.viewport()
-            if viewport:
-                viewport_rect = viewport.rect()
-                bg_rect = viewport_rect
-                bg_rect.setTop(original_rect.top())
-                bg_rect.setBottom(original_rect.bottom())
-                # No vertical padding to match the content area height
-            else:
+        if isinstance(tree_view, QTreeView) and index.model() is not None:
+            try:
+                model = index.model()
+                first = index.sibling(index.row(), 0)
+                last = index.sibling(index.row(), max(0, model.columnCount(index.parent()) - 1))
+                first_rect = tree_view.visualRect(first)
+                last_rect = tree_view.visualRect(last)
+                if first_rect.isValid() and last_rect.isValid():
+                    bg_rect = first_rect.united(last_rect)
+                else:
+                    bg_rect = original_rect
+            except Exception:
                 bg_rect = original_rect
         else:
             # Fallback to original rect if no tree view

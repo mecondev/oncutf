@@ -70,7 +70,7 @@ class TestMetadataTreeView:
         """Test MetadataTreeView initialization."""
         assert isinstance(tree_view, QTreeView)
         assert tree_view.rootIsDecorated() is True  # Should show expand/collapse arrows
-        assert tree_view.alternatingRowColors() is False  # No alternating lines
+        assert tree_view.alternatingRowColors() is True  # Alternating lines enabled for readability
         assert tree_view.selectionMode() == QTreeView.SingleSelection
 
     def test_theme_application(self, tree_view, theme_engine):

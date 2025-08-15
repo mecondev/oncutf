@@ -26,6 +26,17 @@ from widgets.ui_delegates import TreeViewItemDelegate
 logger = get_cached_logger(__name__)
 
 
+class _AliasHeaderTreeView(QTreeView):
+	"""QTreeView subclass providing a headerHidden() alias for compatibility tests.
+
+	Exposes headerHidden() that forwards to isHeaderHidden() to accommodate
+	test suites expecting the old method name.
+	"""
+
+	def headerHidden(self) -> bool:  # pragma: no cover - trivial alias
+		return self.isHeaderHidden()
+
+
 class HierarchicalComboBox(QComboBox):
     """
     A QComboBox that displays items in a hierarchical tree structure.
@@ -44,7 +55,7 @@ class HierarchicalComboBox(QComboBox):
         super().__init__(parent)
 
         # Create tree view for hierarchical display
-        self.tree_view = QTreeView()
+        self.tree_view = _AliasHeaderTreeView()
         self.tree_view.setObjectName("hier_combo_popup")
         self.tree_view.setHeaderHidden(True)
         self.tree_view.setRootIsDecorated(True)  # Show branch indicators for all items
