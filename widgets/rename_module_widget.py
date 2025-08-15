@@ -215,6 +215,30 @@ class RenameModuleWidget(QWidget):
             # ApplicationContext not ready yet
             return None
 
+    def _compute_stable_height(self, rows: int, content_widget: QWidget | None) -> int:
+        """Compute a stable visual height for module content based on logical row count.
+
+        The goal is to keep consistent heights across modules:
+        - Use a normalized row height and spacing to align visually
+        - Respect the content's size hint to avoid clipping
+        """
+        # Normalized metrics (aligned with common 24px control height + vertical padding)
+        base_row_height = 28  # px per visual row (control height + small internal padding)
+        row_spacing = 4       # px between visual rows
+        vertical_padding = 12 # px total (matches content layout top+bottom ~ 6px each)
+
+        height = vertical_padding + rows * base_row_height + max(0, rows - 1) * row_spacing
+
+        # Ensure we never clip actual content
+        try:
+            hint = content_widget.sizeHint().height() if content_widget else 0
+            if hint and hint > height:
+                height = hint
+        except Exception:
+            pass
+
+        return height
+
     def connect_signals_for_module(self, module_widget: QWidget) -> None:
         """Connect the module's updated signal to our updated signal."""
         if hasattr(module_widget, "updated"):
@@ -246,9 +270,21 @@ class RenameModuleWidget(QWidget):
             self.module = self.current_module_widget  # Define the module
             self.content_container_layout.addWidget(self.current_module_widget)
 
-            # Force fixed height for container depending on module type
-            height = self.module_heights.get(module_name, 90)
-            self.content_container_widget.setFixedHeight(height)
+            # Compute stable height based on visual row counts per module
+            rows_map = getattr(self, "_module_rows", None)
+            if rows_map is None:
+                rows_map = {
+                    "Counter": 3,
+                    "Metadata": 2,
+                    "Original Name": 1,
+                    "Remove Text from Original Name": 2,
+                    "Specified Text": 1,
+                }
+                self._module_rows = rows_map
+
+            rows = rows_map.get(module_name, 1)
+            stable_height = self._compute_stable_height(rows, self.current_module_widget)
+            self.content_container_widget.setFixedHeight(stable_height)
 
             # Optional signal connection
             self.connect_signals_for_module(self.current_module_widget)

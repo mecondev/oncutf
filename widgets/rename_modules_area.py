@@ -96,6 +96,7 @@ class RenameModulesArea(QWidget):
 
         # Drag & Drop state
         self.dragged_module = None
+        self._drag_placeholder = None
         self.drop_indicators = []
         self.auto_scroll_timer = QTimer()
         self.auto_scroll_timer.setSingleShot(False)
@@ -268,9 +269,10 @@ class RenameModulesArea(QWidget):
         """Handle when a module starts being dragged."""
         self.dragged_module = module
         logger.debug(f"[RenameModulesArea] Module drag started: {module}", extra={"dev_only": True})
+        # Create a visual placeholder to reserve space while dragging
+        self._create_drag_placeholder(module)
+        # Optional: keep thin indicators for clarity
         self.create_drop_indicators()
-
-        # Show all drop indicators
         for indicator in self.drop_indicators:
             indicator.show()
 
@@ -288,6 +290,7 @@ class RenameModulesArea(QWidget):
             self.reorder_module(module, drop_index)
 
         self.cleanup_drop_indicators()
+        self._remove_drag_placeholder()
         self.dragged_module = None
 
     def create_drop_indicators(self):
@@ -320,6 +323,9 @@ class RenameModulesArea(QWidget):
             else:
                 # Insert at the end
                 self.scroll_layout.addWidget(indicator)
+
+        # Ensure placeholder is at current module position initially
+        self._position_drag_placeholder()
 
     def create_drop_indicator(self):
         """Create a single drop indicator widget."""
@@ -398,6 +404,9 @@ class RenameModulesArea(QWidget):
         # Emit updated signal
         self.updated.emit()
 
+        # Re-anchor placeholder below the moved module for a smooth visual
+        self._position_drag_placeholder()
+
     def handle_drag_auto_scroll(self, global_pos):
         """Handle auto-scrolling during drag operations."""
         # Convert global position to scroll area coordinates
@@ -434,7 +443,8 @@ class RenameModulesArea(QWidget):
         current_value = scroll_bar.value()
 
         # Scroll speed (pixels per timer tick)
-        scroll_speed = 10
+        # Adapt speed for smoother visual
+        scroll_speed = 8 if self.scroll_direction != 0 else 0
 
         if self.scroll_direction == -1:  # Scroll up
             new_value = max(0, current_value - scroll_speed)
@@ -446,3 +456,49 @@ class RenameModulesArea(QWidget):
         # Stop scrolling if we've reached the limits
         if new_value == scroll_bar.minimum() or new_value == scroll_bar.maximum():
             self.auto_scroll_timer.stop()
+
+    # --- Drag placeholder helpers ---
+    def _create_drag_placeholder(self, module: QWidget) -> None:
+        """Create a placeholder widget with the same height as the module to preserve layout."""
+        if self._drag_placeholder is not None:
+            self._remove_drag_placeholder()
+        placeholder = QFrame()
+        placeholder.setObjectName("drag_placeholder")
+        placeholder.setFixedHeight(module.height())
+        placeholder.setStyleSheet(
+            """
+            QFrame#drag_placeholder {
+                background-color: rgba(116, 140, 171, 0.12);
+                border: 1px dashed rgba(116, 140, 171, 0.6);
+                border-radius: 8px;
+                margin: 2px 2px;
+            }
+            """
+        )
+        self._drag_placeholder = placeholder
+        # Insert right after the dragged module to start
+        try:
+            idx = self.module_widgets.index(module)
+            self.scroll_layout.insertWidget(idx + 1, placeholder)
+        except ValueError:
+            self.scroll_layout.addWidget(placeholder)
+
+    def _remove_drag_placeholder(self) -> None:
+        if self._drag_placeholder is not None:
+            self.scroll_layout.removeWidget(self._drag_placeholder)
+            self._drag_placeholder.setParent(None)
+            self._drag_placeholder.deleteLater()
+            self._drag_placeholder = None
+
+    def _position_drag_placeholder(self) -> None:
+        """Reposition placeholder near the dragged module for clearer drop target feeling."""
+        if self._drag_placeholder is None or self.dragged_module is None:
+            return
+        # Place placeholder just after the dragged module for stability
+        try:
+            idx = self.module_widgets.index(self.dragged_module)
+            # Ensure it's right after the dragged module in layout
+            self.scroll_layout.removeWidget(self._drag_placeholder)
+            self.scroll_layout.insertWidget(idx + 1, self._drag_placeholder)
+        except ValueError:
+            pass
