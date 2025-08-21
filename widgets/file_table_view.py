@@ -950,6 +950,9 @@ class FileTableView(QTableView):
         # Schedule delayed save of column width
         self._schedule_column_save(column_key, new_size)
 
+        # Ensure word wrap is disabled when user resizes columns
+        self._ensure_no_word_wrap()
+
         # Update scrollbar visibility immediately and force viewport update
         self._force_scrollbar_update()
 
