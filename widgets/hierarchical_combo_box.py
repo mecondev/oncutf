@@ -13,6 +13,7 @@ from typing import Any
 
 from core.pyqt_imports import (
     QComboBox,
+    QSize,
     QStandardItem,
     QStandardItemModel,
     Qt,
@@ -60,8 +61,9 @@ class HierarchicalComboBox(QComboBox):
         self.tree_view.setHeaderHidden(True)
         self.tree_view.setRootIsDecorated(True)  # Show branch indicators for all items
         self.tree_view.setItemsExpandable(True)
-        self.tree_view.setIndentation(16)  # Set smaller indent (default is 20px)
+        self.tree_view.setIndentation(24)  # Increased for better chevron visibility (was 16px)
         self.tree_view.setAlternatingRowColors(False)
+        self.tree_view.setIconSize(QSize(16, 16))  # Ensure chevron icons have proper size
 
         # Enable mouse tracking for hover effects
         self.tree_view.setMouseTracking(True)

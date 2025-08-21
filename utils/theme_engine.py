@@ -478,24 +478,36 @@ class ThemeEngine:
                 padding: 0px;
             }}
 
-            /* Ensure chevrons are visible in combobox dropdowns */
+            /* Ensure chevrons are visible in combobox dropdowns with proper spacing and hover states */
             QComboBox QTreeView::branch:has-children:closed:adjoins-item {{
                 image: url(resources/icons/feather_icons/chevron-right.svg);
-                width: 12px;
-                height: 12px;
-                padding: 2px;
+                width: 16px;
+                height: 16px;
+                padding: 4px;
+                background-color: transparent;
             }}
             QComboBox QTreeView::branch:has-children:open:adjoins-item {{
                 image: url(resources/icons/feather_icons/chevron-down.svg);
-                width: 12px;
-                height: 12px;
-                padding: 2px;
+                width: 16px;
+                height: 16px;
+                padding: 4px;
+                background-color: transparent;
+            }}
+            QComboBox QTreeView::branch:has-children:closed:adjoins-item:hover {{
+                background-color: {self.colors["table_hover_background"]};
+                border-radius: 3px;
+            }}
+            QComboBox QTreeView::branch:has-children:open:adjoins-item:hover {{
+                background-color: {self.colors["table_hover_background"]};
+                border-radius: 3px;
             }}
             QComboBox QTreeView::branch:!has-children:adjoins-item {{
                 image: none;
+                background-color: transparent;
             }}
             QComboBox QTreeView::branch:has-children:has-siblings {{
                 image: none;
+                background-color: transparent;
             }}
 
             QComboBox QAbstractItemView::item {{
