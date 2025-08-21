@@ -10,13 +10,15 @@ Date: 2025-01-27
 from typing import Optional
 
 from core.pyqt_imports import (
+    QComboBox,
     QHBoxLayout,
     QLabel,
-    QPushButton,
-    QSizePolicy,
+    QStandardItem,
+    QStandardItemModel,
     QVBoxLayout,
     QWidget,
     pyqtSignal,
+    Qt,
 )
 from modules.metadata_module import MetadataModule
 from utils.logger_factory import get_cached_logger
@@ -33,198 +35,239 @@ class MetadataWidgetV2(QWidget):
     """
     
     # Signals
-    remove_requested = pyqtSignal()
-    configuration_changed = pyqtSignal()
+    updated = pyqtSignal(object)  # For compatibility with existing code
     
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None, parent_window=None) -> None:
         """Initialize the metadata widget."""
         super().__init__(parent)
+        
+        # Store parent window for compatibility (currently unused in V2)
+        self.parent_window = parent_window
         
         # Create the metadata module (composition, not inheritance)
         self.metadata_module = MetadataModule()
         
         # UI components
-        self.category_combo: Optional[HierarchicalComboBox] = None
-        self.field_combo: Optional[HierarchicalComboBox] = None
+        self.category_combo: Optional[QComboBox] = None
+        self.options_combo: Optional[HierarchicalComboBox] = None
+        self.options_label: Optional[QLabel] = None
         
         # Setup the UI
         self._setup_ui()
         self._setup_connections()
-        self._populate_category_combo()
+        
+        # Initialize with first category selected
+        if self.category_combo and self.category_combo.count() > 0:
+            self.category_combo.setCurrentIndex(0)
+            self._update_options()
         
         logger.debug("[MetadataWidgetV2] Widget initialized")
     
     def _setup_ui(self) -> None:
-        """Setup the widget UI."""
-        # Main layout
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(8, 8, 8, 8)
-        main_layout.setSpacing(6)
+        """Setup the widget UI with correct spacing like other modules."""
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)  # Match other modules spacing
         
-        # Header with title and remove button
-        header_layout = QHBoxLayout()
-        header_layout.setContentsMargins(0, 0, 0, 0)
-        header_layout.setSpacing(8)
+        # Row 1: Category
+        category_row = QHBoxLayout()
+        category_row.setContentsMargins(0, 0, 0, 0)
+        category_row.setSpacing(8)
         
-        # Title
-        title_label = QLabel("Metadata")
-        title_label.setObjectName("module_title")
-        try:
-            from utils.theme_engine import ThemeEngine
-            theme = ThemeEngine()
-            title_color = theme.get_color("text_primary")
-            title_label.setStyleSheet(f"color: {title_color}; font-weight: 600;")
-        except Exception:
-            pass
+        category_label = QLabel("Category")
+        category_label.setFixedWidth(70)
+        category_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         
-        header_layout.addWidget(title_label)
-        header_layout.addStretch()
+        self.category_combo = QComboBox()
+        self.category_combo.setFixedWidth(150)
+        self.category_combo.setFixedHeight(24)
+        logger.debug("[MetadataWidgetV2] Category combo created")
         
-        # Remove button
-        remove_btn = QPushButton("×")
-        remove_btn.setObjectName("remove_button")
-        remove_btn.setFixedSize(24, 24)
-        remove_btn.clicked.connect(self.remove_requested.emit)
-        try:
-            from utils.theme_engine import ThemeEngine
-            theme = ThemeEngine()
-            btn_bg = theme.get_color("button_background")
-            btn_hover = theme.get_color("button_hover_background")
-            btn_text = theme.get_color("button_text")
-            remove_btn.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {btn_bg};
-                    color: {btn_text};
-                    border: none;
-                    border-radius: 12px;
-                    font-weight: bold;
-                    font-size: 14px;
-                }}
-                QPushButton:hover {{
-                    background-color: {btn_hover};
-                }}
-            """)
-        except Exception:
-            pass
+        category_row.addWidget(category_label)
+        category_row.addWidget(self.category_combo)
+        category_row.addStretch()
+        layout.addLayout(category_row)
         
-        header_layout.addWidget(remove_btn)
-        main_layout.addLayout(header_layout)
+        # Row 2: Field
+        options_row = QHBoxLayout()
+        options_row.setContentsMargins(0, 0, 0, 0)
+        options_row.setSpacing(8)
         
-        # Content area
-        content_widget = QWidget()
-        content_layout = QVBoxLayout(content_widget)
-        content_layout.setContentsMargins(0, 0, 0, 0)
-        content_layout.setSpacing(6)
+        self.options_label = QLabel("Field")
+        self.options_label.setFixedWidth(70)
+        self.options_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         
-        # Category selection
-        category_label = QLabel("Category:")
-        try:
-            from utils.theme_engine import ThemeEngine
-            theme = ThemeEngine()
-            label_color = theme.get_color("text_secondary")
-            category_label.setStyleSheet(f"color: {label_color};")
-        except Exception:
-            pass
+        self.options_combo = HierarchicalComboBox()
+        self.options_combo.setFixedWidth(200)
+        self.options_combo.setFixedHeight(24)
+        self.options_combo.setEnabled(False)  # Disabled until category is selected
         
-        self.category_combo = HierarchicalComboBox()
-        self.category_combo.setObjectName("metadata_category_combo")
+        options_row.addWidget(self.options_label)
+        options_row.addWidget(self.options_combo)
+        options_row.addStretch()
+        layout.addLayout(options_row)
         
-        content_layout.addWidget(category_label)
-        content_layout.addWidget(self.category_combo)
+        self.setLayout(layout)
         
-        # Field selection
-        field_label = QLabel("Field:")
-        try:
-            from utils.theme_engine import ThemeEngine
-            theme = ThemeEngine()
-            label_color = theme.get_color("text_secondary")
-            field_label.setStyleSheet(f"color: {label_color};")
-        except Exception:
-            pass
-        
-        self.field_combo = HierarchicalComboBox()
-        self.field_combo.setObjectName("metadata_field_combo")
-        self.field_combo.setEnabled(False)  # Disabled until category is selected
-        
-        content_layout.addWidget(field_label)
-        content_layout.addWidget(self.field_combo)
-        
-        main_layout.addWidget(content_widget)
-        
-        # Set size policy
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        # Populate categories after UI is fully set up
+        self._populate_categories()
     
     def _setup_connections(self) -> None:
         """Setup signal connections."""
         if self.category_combo:
-            self.category_combo.currentTextChanged.connect(self._on_category_changed)
+            self.category_combo.currentIndexChanged.connect(self._on_category_changed)
         
-        if self.field_combo:
-            self.field_combo.currentTextChanged.connect(self._on_field_changed)
+        if self.options_combo:
+            self.options_combo.item_selected.connect(self._on_hierarchical_item_selected)
     
-    def _populate_category_combo(self) -> None:
-        """Populate the category combo box."""
+    def _populate_categories(self) -> None:
+        """Populate the category combo box with dynamic categories."""
+        logger.debug(f"[MetadataWidgetV2] _populate_categories called, combo is: {self.category_combo}")
         if not self.category_combo:
+            logger.warning("[MetadataWidgetV2] Category combo is None!")
             return
         
+        # Clear existing items first
         self.category_combo.clear()
         
-        # Add placeholder
-        self.category_combo.add_item("Select category...", None)
+        # Add categories directly to combo box (simpler approach)
+        self.category_combo.addItem("File Date/Time", "file_dates")
+        self.category_combo.addItem("Hash", "hash")
+        self.category_combo.addItem("EXIF/Metadata", "metadata_keys")
         
-        # Add categories
-        for category in self.metadata_module.metadata_categories.keys():
-            self.category_combo.add_item(category, category)
-        
-        logger.debug(f"[MetadataWidgetV2] Populated {len(self.metadata_module.metadata_categories)} categories")
+        logger.debug(f"[MetadataWidgetV2] Populated {self.category_combo.count()} categories")
     
-    def _populate_field_combo(self, category: str) -> None:
-        """Populate the field combo box for the selected category."""
-        if not self.field_combo:
-            return
-        
-        self.field_combo.clear()
-        
-        if not category:
-            self.field_combo.setEnabled(False)
-            return
-        
-        # Add placeholder
-        self.field_combo.add_item("Select field...", None)
-        
-        # Add fields for the category
-        fields = self.metadata_module.get_fields_for_category(category)
-        for field in fields:
-            self.field_combo.add_item(field, field)
-        
-        self.field_combo.setEnabled(True)
-        logger.debug(f"[MetadataWidgetV2] Populated {len(fields)} fields for category: {category}")
-    
-    def _on_category_changed(self, category: str) -> None:
+    def _on_category_changed(self) -> None:
         """Handle category selection change."""
-        # Update the module
-        self.metadata_module.selected_category = category if category != "Select category..." else ""
+        current_data = self.category_combo.currentData()
+        logger.debug(f"[MetadataWidgetV2] Category changed to: {current_data}")
         
-        # Update field combo
-        self._populate_field_combo(self.metadata_module.selected_category)
+        if current_data is None:
+            return
         
-        # Reset field selection
-        self.metadata_module.selected_field = ""
+        # Clear and update options
+        self.options_combo.clear()
+        self._update_options()
         
-        # Emit configuration change
-        self.configuration_changed.emit()
-        
-        logger.debug(f"[MetadataWidgetV2] Category changed to: {category}")
+        # Emit update signal for compatibility
+        self.updated.emit(self)
     
-    def _on_field_changed(self, field: str) -> None:
-        """Handle field selection change."""
-        # Update the module
-        self.metadata_module.selected_field = field if field != "Select field..." else ""
+    def _update_options(self) -> None:
+        """Update options based on selected category."""
+        category = self.category_combo.currentData()
+        self.options_combo.clear()
         
-        # Emit configuration change
-        self.configuration_changed.emit()
+        logger.debug(f"[MetadataWidgetV2] update_options called with category: {category}")
         
-        logger.debug(f"[MetadataWidgetV2] Field changed to: {field}")
+        if category == "file_dates":
+            self.options_label.setText("Type")
+            self._populate_file_dates()
+            self.options_combo.setEnabled(True)
+        elif category == "hash":
+            self.options_label.setText("Type")
+            self._populate_hash_options()
+            # Hash combo is always disabled for now (like original)
+            self.options_combo.setEnabled(False)
+        elif category == "metadata_keys":
+            self.options_label.setText("Field")
+            self._populate_metadata_keys()
+            self.options_combo.setEnabled(True)
+    
+    def _populate_file_dates(self) -> None:
+        """Populate file date options."""
+        hierarchical_data = {
+            "File Date/Time": [
+                ("Last Modified (YYMMDD)", "last_modified_yymmdd"),
+                ("Last Modified (YYYY-MM-DD)", "last_modified_iso"),
+                ("Last Modified (DD-MM-YYYY)", "last_modified_eu"),
+                ("Last Modified (MM-DD-YYYY)", "last_modified_us"),
+                ("Last Modified (YYYY)", "last_modified_year"),
+                ("Last Modified (YYYY-MM)", "last_modified_month"),
+                ("Last Modified (YYYY-MM-DD HH-MM)", "last_modified_iso_time"),
+                ("Last Modified (DD-MM-YYYY HH-MM)", "last_modified_eu_time"),
+                ("Last Modified (YYMMDD_HHMM)", "last_modified_compact"),
+            ]
+        }
+        
+        self.options_combo.populate_from_metadata_groups(hierarchical_data)
+        logger.debug("[MetadataWidgetV2] Populated file dates")
+    
+    def _populate_hash_options(self) -> None:
+        """Populate hash options (always disabled like original)."""
+        hierarchical_data = {
+            "Hash Types": [
+                ("CRC32", "hash_crc32"),
+            ]
+        }
+        
+        self.options_combo.populate_from_metadata_groups(hierarchical_data)
+        logger.debug("[MetadataWidgetV2] Populated hash options (disabled)")
+    
+    def _populate_metadata_keys(self) -> None:
+        """Populate EXIF/metadata options."""
+        # Use simplified EXIF categories for now
+        hierarchical_data = {
+            "Camera Settings": [
+                ("ISO Speed", "ISOSpeedRatings"),
+                ("Aperture", "FNumber"),
+                ("Shutter Speed", "ExposureTime"),
+                ("Focal Length", "FocalLength"),
+                ("Flash", "Flash"),
+                ("White Balance", "WhiteBalance"),
+            ],
+            "Image Info": [
+                ("Image Width", "ImageWidth"),
+                ("Image Height", "ImageHeight"),
+                ("Orientation", "Orientation"),
+                ("Color Space", "ColorSpace"),
+            ],
+            "Camera Info": [
+                ("Camera Make", "Make"),
+                ("Camera Model", "Model"),
+                ("Lens Model", "LensModel"),
+            ],
+            "Date/Time": [
+                ("DateTime Original", "DateTimeOriginal"),
+                ("DateTime Digitized", "DateTimeDigitized"),
+            ],
+            "GPS & Location": [
+                ("GPS Latitude", "GPSLatitude"),
+                ("GPS Longitude", "GPSLongitude"),
+                ("GPS Altitude", "GPSAltitude"),
+            ]
+        }
+        
+        self.options_combo.populate_from_metadata_groups(hierarchical_data)
+        logger.debug("[MetadataWidgetV2] Populated metadata keys")
+    
+    def _on_hierarchical_item_selected(self, item_data) -> None:
+        """Handle hierarchical combo box item selection."""
+        logger.debug(f"[MetadataWidgetV2] Hierarchical item selected: {item_data}")
+        
+        # Update the module selection
+        category = self.category_combo.currentData()
+        if category and item_data:
+            # Map the selection to our module
+            self.metadata_module.selected_category = self._map_category_to_module(category)
+            self.metadata_module.selected_field = self._map_field_to_module(item_data)
+        
+        # Emit update signal for compatibility
+        self.updated.emit(self)
+    
+    def _map_category_to_module(self, category: str) -> str:
+        """Map UI category to module category."""
+        mapping = {
+            "file_dates": "Modified Date",
+            "hash": "Hash",
+            "metadata_keys": "EXIF"
+        }
+        return mapping.get(category, "")
+    
+    def _map_field_to_module(self, field: str) -> str:
+        """Map UI field to module field."""
+        # For now, use the field as-is
+        # This could be extended with more complex mapping
+        return field
     
     def get_module_name(self) -> str:
         """Get the module name."""
@@ -250,9 +293,9 @@ class MetadataWidgetV2(QWidget):
         if self.category_combo:
             self.category_combo.setCurrentIndex(0)
         
-        if self.field_combo:
-            self.field_combo.clear()
-            self.field_combo.setEnabled(False)
+        if self.options_combo:
+            self.options_combo.clear()
+            self.options_combo.setEnabled(False)
         
         logger.debug("[MetadataWidgetV2] Configuration reset")
     

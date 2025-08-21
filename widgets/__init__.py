@@ -20,7 +20,7 @@ from .interactive_header import InteractiveHeader
 from .metadata_edit_dialog import MetadataEditDialog
 from .metadata_tree_view import MetadataTreeView
 from .metadata_waiting_dialog import MetadataWaitingDialog
-from .metadata_widget import MetadataWidget
+from .metadata_widget import MetadataWidgetV2 as MetadataWidget
 from .metadata_worker import MetadataWorker
 from .name_transform_widget import NameTransformWidget
 from .original_name_widget import OriginalNameWidget

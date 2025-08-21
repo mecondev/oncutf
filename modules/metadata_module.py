@@ -101,10 +101,10 @@ class MetadataModule:
         """Get the module description."""
         return self._module_description
     
-    @property
-    def base_module(self) -> BaseRenameModule:
-        """Get the base module instance."""
-        return self._base_module
+    # @property
+    # def base_module(self) -> BaseRenameModule:
+    #     """Get the base module instance."""
+    #     return self._base_module
     
     @property
     def metadata_categories(self) -> Dict[str, List[str]]:
@@ -259,3 +259,8 @@ class MetadataModule:
         self._selected_category = ""
         self._selected_field = ""
         logger.debug("[MetadataModule] Configuration reset")
+    
+    @classmethod
+    def clear_cache(cls) -> None:
+        """Clear metadata cache (compatibility method for existing code)."""
+        logger.debug("[MetadataModule] Cache clear requested (no-op in V2)")
