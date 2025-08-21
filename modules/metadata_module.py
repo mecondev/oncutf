@@ -1,266 +1,403 @@
-"""Metadata Module V2 - Composition-based implementation.
-
-This module provides metadata-based renaming functionality using composition
-instead of inheritance to avoid QSS and event propagation conflicts.
-
-Features:
-- Hash metadata (MD5, SHA1, SHA256, Blake2b)
-- Modified date metadata (Year, Month, Day, Hour, etc.)
-- EXIF metadata (Camera, Lens, DateTime, GPS, Technical)
-- Clean styling without inheritance pollution
-- Independent event handling
+"""
+Module: metadata_module.py
 
 Author: Michael Economou
-Date: 2025-01-27
+Date: 2025-05-31
+
+This module provides logic for extracting metadata fields (such as creation date,
+modification date, or EXIF tag) to include in renamed filenames.
+It is used in the oncutf tool to dynamically extract and apply file
+metadata during batch renaming.
 """
 
-from typing import Any, Dict, List, Optional
+import os
+import time
+from datetime import datetime
 
-# from modules.base_module import BaseRenameModule  # Will add back later when needed
+from models.file_item import FileItem
+from utils.file_status_helpers import get_hash_for_file
+
+# initialize logger
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
 
+# Performance optimization: Cache for metadata lookups
+_metadata_cache: dict = {}
+_cache_timestamp = 0
+_cache_validity_duration = 0.1  # 100ms cache validity
+
+# Global cache variables to avoid UnboundLocalError
+_global_cache_timestamp = 0
+
 
 class MetadataModule:
-    """Metadata rename module using composition pattern.
-    
-    This class contains a BaseRenameModule instance as a member (composition)
-    rather than inheriting from it, to avoid styling and event conflicts.
     """
-    
-    def __init__(self) -> None:
-        """Initialize the metadata module."""
-        # Create base module as a member, not a parent (will add back later)
-        # self._base_module = BaseRenameModule()
-        
-        # Module configuration
-        self._module_name = "Metadata"
-        self._module_description = "Use file metadata (hash, dates, EXIF) in the new filename"
-        
-        # Current selections
-        self._selected_category: str = ""
-        self._selected_field: str = ""
-        
-        # Metadata categories and fields
-        self._metadata_categories = self._build_metadata_categories()
-        
-        logger.debug(f"[MetadataModule] Initialized with {len(self._metadata_categories)} categories")
-    
-    def _build_metadata_categories(self) -> Dict[str, List[str]]:
-        """Build the complete metadata categories and fields structure."""
-        return {
-            "Hash": [
-                "MD5",
-                "SHA1", 
-                "SHA256",
-                "Blake2b"
-            ],
-            "Modified Date": [
-                "Year",
-                "Month", 
-                "Day",
-                "Hour",
-                "Minute", 
-                "Second",
-                "Date (YYYY-MM-DD)",
-                "Time (HH:MM:SS)",
-                "DateTime (YYYY-MM-DD HH:MM:SS)",
-                "Timestamp (Unix)"
-            ],
-            "EXIF": [
-                "Camera Make",
-                "Camera Model", 
-                "Lens Model",
-                "DateTime Original",
-                "DateTime Digitized",
-                "ISO Speed",
-                "Aperture",
-                "Shutter Speed",
-                "Focal Length",
-                "GPS Latitude",
-                "GPS Longitude",
-                "GPS Altitude",
-                "Orientation",
-                "Color Space",
-                "White Balance",
-                "Flash",
-                "Image Width",
-                "Image Height"
-            ]
-        }
-    
-    # Properties for compatibility with BaseRenameModule interface
-    @property
-    def module_name(self) -> str:
-        """Get the module name."""
-        return self._module_name
-    
-    @property
-    def module_description(self) -> str:
-        """Get the module description."""
-        return self._module_description
-    
-    # @property
-    # def base_module(self) -> BaseRenameModule:
-    #     """Get the base module instance."""
-    #     return self._base_module
-    
-    @property
-    def metadata_categories(self) -> Dict[str, List[str]]:
-        """Get the metadata categories."""
-        return self._metadata_categories
-    
-    @property
-    def selected_category(self) -> str:
-        """Get the currently selected category."""
-        return self._selected_category
-    
-    @selected_category.setter
-    def selected_category(self, value: str) -> None:
-        """Set the selected category."""
-        self._selected_category = value
-        logger.debug(f"[MetadataModule] Category selected: {value}")
-    
-    @property
-    def selected_field(self) -> str:
-        """Get the currently selected field."""
-        return self._selected_field
-    
-    @selected_field.setter  
-    def selected_field(self, value: str) -> None:
-        """Set the selected field."""
-        self._selected_field = value
-        logger.debug(f"[MetadataModule] Field selected: {value}")
-    
-    def get_fields_for_category(self, category: str) -> List[str]:
-        """Get the fields for a specific category."""
-        return self._metadata_categories.get(category, [])
-    
-    def process_filename(self, filename: str, metadata: Optional[Dict[str, Any]] = None) -> str:
-        """Process a filename using the selected metadata field.
-        
-        Args:
-            filename: The original filename
-            metadata: Optional metadata dictionary
-            
-        Returns:
-            The processed metadata value or empty string if not available
+    Logic component (non-UI) for extracting and formatting metadata fields.
+    Used during rename preview and execution.
+    """
+
+    @staticmethod
+    def clean_metadata_value(value: str) -> str:
         """
-        if not self._selected_category or not self._selected_field:
-            return ""
-        
-        if not metadata:
-            return ""
-        
-        try:
-            # Process based on category and field
-            if self._selected_category == "Hash":
-                return self._process_hash_metadata(metadata)
-            elif self._selected_category == "Modified Date":
-                return self._process_date_metadata(metadata)
-            elif self._selected_category == "EXIF":
-                return self._process_exif_metadata(metadata)
+        Clean metadata value for filename safety by replacing problematic characters.
+
+        Args:
+            value (str): The raw metadata value
+
+        Returns:
+            str: Cleaned value safe for use in filenames
+        """
+        if not value:
+            return value
+
+        # Replace colons and spaces with underscores for filename safety
+        cleaned = value.replace(":", "_").replace(" ", "_")
+        return cleaned
+
+    @staticmethod
+    def apply_from_data(
+        data: dict, file_item: FileItem, index: int = 0, metadata_cache: dict | None = None
+    ) -> str:
+        logger.debug(
+            f"[DEBUG] [MetadataModule] apply_from_data CALLED for {file_item.filename}",
+            extra={"dev_only": True},
+        )
+        logger.debug(f"[DEBUG] [MetadataModule] data: {data}", extra={"dev_only": True})
+        logger.debug(
+            f"[DEBUG] [MetadataModule] metadata_cache provided: {metadata_cache is not None}",
+            extra={"dev_only": True},
+        )
+
+        global _metadata_cache, _global_cache_timestamp
+
+        # Performance optimization: Check cache first
+        cache_key = f"{file_item.full_path}_{hash(str(data))}"
+        current_time = time.time()
+
+        if (
+            cache_key in _metadata_cache
+            and current_time - _global_cache_timestamp < _cache_validity_duration
+        ):
+            logger.debug(
+                f"[DEBUG] [MetadataModule] Returning cached result for {file_item.filename}",
+                extra={"dev_only": True},
+            )
+            return _metadata_cache[cache_key]
+
+        field = data.get("field")
+        logger.debug(f"[DEBUG] [MetadataModule] Field: {field}", extra={"dev_only": True})
+        if not field:
+            logger.debug(
+                "[DEBUG] [MetadataModule] No field specified - returning 'invalid'",
+                extra={"dev_only": True},
+            )
+            return "invalid"
+
+        path = file_item.full_path
+        if not path:
+            logger.debug(
+                "[DEBUG] [MetadataModule] No path - returning 'invalid'", extra={"dev_only": True}
+            )
+            return "invalid"
+
+        # Use the same persistent cache as the UI if no cache provided
+        if not metadata_cache:
+            from core.persistent_metadata_cache import get_persistent_metadata_cache
+            from utils.path_normalizer import normalize_path
+
+            persistent_cache = get_persistent_metadata_cache()
+            normalized_path = normalize_path(path)
+            metadata = persistent_cache.get(normalized_path) if persistent_cache else {}
+            logger.debug(
+                f"[DEBUG] [MetadataModule] Using persistent cache for {file_item.filename}, normalized_path: {normalized_path}, metadata: {metadata}",
+                extra={"dev_only": True},
+            )
+        else:
+            metadata = metadata_cache.get(path) if metadata_cache else {}
+            logger.debug(
+                f"[DEBUG] [MetadataModule] Using provided cache for {file_item.filename}, path: {path}, metadata: {metadata}",
+                extra={"dev_only": True},
+            )
+
+        if not isinstance(metadata, dict):
+            metadata = {}  # fallback to empty
+            logger.debug(
+                "[DEBUG] [MetadataModule] Metadata is not dict, using empty dict",
+                extra={"dev_only": True},
+            )
+
+        # Handle filesystem-based date formats
+        if field and field.startswith("last_modified_"):
+            logger.debug(
+                f"[DEBUG] [MetadataModule] Handling filesystem date format: {field}",
+                extra={"dev_only": True},
+            )
+            try:
+                ts = os.path.getmtime(path)
+                dt = datetime.fromtimestamp(ts)
+
+                if field == "last_modified_yymmdd":
+                    result = dt.strftime("%y%m%d")
+                elif field == "last_modified_iso":
+                    result = dt.strftime("%Y-%m-%d")
+                elif field == "last_modified_eu":
+                    # Use dash separator for EU format to be consistent with other displays
+                    result = dt.strftime("%d-%m-%Y")
+                elif field == "last_modified_us":
+                    result = dt.strftime("%m-%d-%Y")
+                elif field == "last_modified_year":
+                    result = dt.strftime("%Y")
+                elif field == "last_modified_month":
+                    result = dt.strftime("%Y-%m")
+                # New formats with time included
+                elif field == "last_modified_iso_time":
+                    # ISO-like with time (HH:MM) and safe for filenames (no colon)
+                    result = dt.strftime("%Y-%m-%d_%H-%M")
+                elif field == "last_modified_eu_time":
+                    # EU style with time
+                    result = dt.strftime("%d-%m-%Y_%H-%M")
+                elif field == "last_modified_compact":
+                    # Compact sortable with time YYMMDD_HHMM
+                    result = dt.strftime("%y%m%d_%H%M")
+                else:
+                    # Fallback to YYMMDD format for unknown last_modified variants
+                    result = dt.strftime("%y%m%d")
+
+                # Cache the result
+                _metadata_cache[cache_key] = result
+                _global_cache_timestamp = current_time
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Filesystem date result: {result}",
+                    extra={"dev_only": True},
+                )
+                return result
+
+            except Exception as e:
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Error getting filesystem date: {e}",
+                    extra={"dev_only": True},
+                )
+                return "invalid"
+
+        # Legacy support for old "last_modified" field name
+        if field == "last_modified":
+            logger.debug(
+                "[DEBUG] [MetadataModule] Handling legacy last_modified field",
+                extra={"dev_only": True},
+            )
+            try:
+                ts = os.path.getmtime(path)
+                result = datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
+                _metadata_cache[cache_key] = result
+                _global_cache_timestamp = current_time
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Legacy last_modified result: {result}",
+                    extra={"dev_only": True},
+                )
+                return result
+            except Exception as e:
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Error getting legacy last_modified: {e}",
+                    extra={"dev_only": True},
+                )
+                return "invalid"
+
+        # Handle category-based metadata access
+        category = data.get("category", "file_dates")
+        logger.debug(f"[DEBUG] [MetadataModule] Category: {category}", extra={"dev_only": True})
+
+        if category == "hash" and field:
+            logger.debug(
+                "[DEBUG] [MetadataModule] Handling hash category", extra={"dev_only": True}
+            )
+            # Handle hash fields for the hash category
+            if field.startswith("hash_"):
+                try:
+                    hash_type = field.replace("hash_", "").upper()
+                    result = MetadataModule._get_file_hash(path, hash_type)
+                    _metadata_cache[cache_key] = result
+                    _global_cache_timestamp = current_time
+                    logger.debug(
+                        f"[DEBUG] [MetadataModule] Hash result: {result}", extra={"dev_only": True}
+                    )
+                    return result
+                except Exception as e:
+                    logger.debug(
+                        f"[DEBUG] [MetadataModule] Error getting hash: {e}",
+                        extra={"dev_only": True},
+                    )
+                    return "invalid"
             else:
-                return ""
-                
-        except Exception as e:
-            logger.warning(f"[MetadataModule] Error processing metadata: {e}")
-            return ""
-    
-    def _process_hash_metadata(self, metadata: Dict[str, Any]) -> str:
-        """Process hash metadata."""
-        field_map = {
-            "MD5": "md5",
-            "SHA1": "sha1", 
-            "SHA256": "sha256",
-            "Blake2b": "blake2b"
-        }
-        
-        hash_key = field_map.get(self._selected_field)
-        if hash_key and hash_key in metadata:
-            return str(metadata[hash_key])
-        return ""
-    
-    def _process_date_metadata(self, metadata: Dict[str, Any]) -> str:
-        """Process modified date metadata."""
-        import datetime
-        
-        # Get modification time
-        mtime = metadata.get("mtime")
-        if not mtime:
-            return ""
-        
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Invalid hash field: {field}",
+                    extra={"dev_only": True},
+                )
+                return "invalid"
+
+        if category == "metadata_keys" and field:
+            logger.debug(
+                f"[DEBUG] [MetadataModule] Handling metadata_keys category for field: {field}",
+                extra={"dev_only": True},
+            )
+            # Access custom metadata key from file metadata
+            value = metadata.get(field)
+            logger.debug(
+                f"[DEBUG] [MetadataModule] Metadata value for field '{field}': {value}",
+                extra={"dev_only": True},
+            )
+            if value is None:
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Field '{field}' not found in metadata, falling back to original name",
+                    extra={"dev_only": True},
+                )
+                # Fallback: return original name
+                from modules.original_name_module import OriginalNameModule
+
+                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)
+
+            # Format the value appropriately and clean it for filename safety
+            try:
+                cleaned_value = MetadataModule.clean_metadata_value(str(value).strip())
+                _metadata_cache[cache_key] = cleaned_value
+                _global_cache_timestamp = current_time
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Metadata result: {cleaned_value}",
+                    extra={"dev_only": True},
+                )
+                return cleaned_value
+            except Exception as e:
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Error cleaning metadata value: {e}",
+                    extra={"dev_only": True},
+                )
+                return "invalid"
+
+        # Handle legacy metadata-based fields for backwards compatibility
+        if field == "creation_date":
+            value = metadata.get("creation_date") or metadata.get("date_created")
+            if not value:
+                from modules.original_name_module import OriginalNameModule
+
+                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)
+            result = MetadataModule.clean_metadata_value(str(value))
+            _metadata_cache[cache_key] = result
+            _global_cache_timestamp = current_time
+            return result
+
+        if field == "date":
+            value = metadata.get("date")
+            if not value:
+                from modules.original_name_module import OriginalNameModule
+
+                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)
+            result = MetadataModule.clean_metadata_value(str(value))
+            _metadata_cache[cache_key] = result
+            _global_cache_timestamp = current_time
+            return result
+
+        # === Generic metadata field fallback using centralized mapper ===
+        if field:
+            # Try using the centralized field mapper for better key mapping
+            try:
+                from utils.metadata_field_mapper import MetadataFieldMapper
+
+                # Check if this field has a mapping in our centralized mapper
+                if MetadataFieldMapper.has_field_mapping(field):
+                    value = MetadataFieldMapper.get_metadata_value(metadata, field)
+                    if value:
+                        # For rename module, we want raw values not formatted ones
+                        # So get the raw value using the mapper's key lookup
+                        possible_keys = MetadataFieldMapper.get_metadata_keys_for_field(field)
+                        for key in possible_keys:
+                            if key in metadata:
+                                raw_value = metadata[key]
+                                if raw_value is not None:
+                                    cleaned_value = MetadataModule.clean_metadata_value(
+                                        str(raw_value).strip()
+                                    )
+                                    _metadata_cache[cache_key] = cleaned_value
+                                    _global_cache_timestamp = current_time
+                                    return cleaned_value
+                        from modules.original_name_module import OriginalNameModule
+
+                        return OriginalNameModule.apply_from_data(
+                            {}, file_item, index, metadata_cache
+                        )
+            except ImportError:
+                # Fallback if mapper not available
+                pass
+
+        # Final fallback: try direct metadata access
+        value = metadata.get(field)
+        if value is not None:
+            cleaned_value = MetadataModule.clean_metadata_value(str(value).strip())
+            _metadata_cache[cache_key] = cleaned_value
+            _global_cache_timestamp = current_time
+            return cleaned_value
+
+        # If we get here, the field was not found
+        from modules.original_name_module import OriginalNameModule
+
+        return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)
+
+    @staticmethod
+    def clear_cache():
+        """Clear the metadata cache."""
+        global _metadata_cache, _global_cache_timestamp
+        _metadata_cache.clear()
+        _global_cache_timestamp = 0
+
+    @staticmethod
+    def _get_file_hash(file_path: str, hash_type: str) -> str:
+        """
+        Get file hash using the hash cache. If hash is missing, return original name without showing dialog.
+
+        Args:
+            file_path: Path to the file
+            hash_type: Type of hash (CRC32 only)
+
+        Returns:
+            str: Hash value or original name if not available
+        """
         try:
-            dt = datetime.datetime.fromtimestamp(mtime)
-            
-            field_map = {
-                "Year": dt.strftime("%Y"),
-                "Month": dt.strftime("%m"),
-                "Day": dt.strftime("%d"), 
-                "Hour": dt.strftime("%H"),
-                "Minute": dt.strftime("%M"),
-                "Second": dt.strftime("%S"),
-                "Date (YYYY-MM-DD)": dt.strftime("%Y-%m-%d"),
-                "Time (HH:MM:SS)": dt.strftime("%H:%M:%S"),
-                "DateTime (YYYY-MM-DD HH:MM:SS)": dt.strftime("%Y-%m-%d %H:%M:%S"),
-                "Timestamp (Unix)": str(int(mtime))
-            }
-            
-            return field_map.get(self._selected_field, "")
-            
-        except Exception:
-            return ""
-    
-    def _process_exif_metadata(self, metadata: Dict[str, Any]) -> str:
-        """Process EXIF metadata."""
-        exif_data = metadata.get("exif", {})
-        if not exif_data:
-            return ""
-        
-        field_map = {
-            "Camera Make": "Make",
-            "Camera Model": "Model",
-            "Lens Model": "LensModel", 
-            "DateTime Original": "DateTimeOriginal",
-            "DateTime Digitized": "DateTimeDigitized",
-            "ISO Speed": "ISOSpeedRatings",
-            "Aperture": "FNumber",
-            "Shutter Speed": "ExposureTime",
-            "Focal Length": "FocalLength",
-            "GPS Latitude": "GPSLatitude",
-            "GPS Longitude": "GPSLongitude", 
-            "GPS Altitude": "GPSAltitude",
-            "Orientation": "Orientation",
-            "Color Space": "ColorSpace",
-            "White Balance": "WhiteBalance",
-            "Flash": "Flash",
-            "Image Width": "ImageWidth",
-            "Image Height": "ImageHeight"
-        }
-        
-        exif_key = field_map.get(self._selected_field)
-        if exif_key and exif_key in exif_data:
-            return str(exif_data[exif_key])
-        return ""
-    
-    def validate_configuration(self) -> bool:
-        """Validate the current module configuration."""
-        return bool(self._selected_category and self._selected_field)
-    
-    def get_configuration_summary(self) -> str:
-        """Get a summary of the current configuration."""
-        if not self.validate_configuration():
-            return "No metadata field selected"
-        return f"{self._selected_category}: {self._selected_field}"
-    
-    def reset_configuration(self) -> None:
-        """Reset the module configuration."""
-        self._selected_category = ""
-        self._selected_field = ""
-        logger.debug("[MetadataModule] Configuration reset")
-    
-    @classmethod
-    def clear_cache(cls) -> None:
-        """Clear metadata cache (compatibility method for existing code)."""
-        logger.debug("[MetadataModule] Cache clear requested (no-op in V2)")
+            hash_value = get_hash_for_file(file_path, hash_type)
+            if hash_value:
+                return hash_value
+            import os
+
+            base_name = os.path.splitext(os.path.basename(file_path))[0]
+            return base_name
+        except Exception as e:
+            logger.warning(f"[MetadataModule] Error getting hash for {file_path}: {e}")
+            import os
+
+            base_name = os.path.splitext(os.path.basename(file_path))[0]
+            return base_name
+
+    @staticmethod
+    def _ask_user_for_hash_calculation(_file_path: str, _hash_type: str) -> bool:
+        """
+        This method is no longer used - hash calculation is handled manually by the user.
+        Kept for backward compatibility.
+        """
+        return False
+
+    @staticmethod
+    def _start_hash_calculation(file_path: str, hash_type: str) -> None:
+        """
+        This method is no longer used - hash calculation is handled manually by the user.
+        """
+
+    @staticmethod
+    def is_effective(data: dict) -> bool:
+        # All metadata fields are effective, including last_modified and hash
+        field = data.get("field")
+        category = data.get("category", "file_dates")
+
+        # For hash category, check if field is a valid hash type
+        if category == "hash":
+            return field and field.startswith("hash_")
+
+        # For other categories, any field is effective
+        return bool(field)

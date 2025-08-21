@@ -36,7 +36,7 @@ from modules.counter_module import CounterModule
 # Initialize Logger
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_ui_update
-from widgets.metadata_widget import MetadataWidgetV2 as MetadataWidget
+from widgets.metadata_widget import MetadataWidget
 from widgets.original_name_widget import OriginalNameWidget
 
 # ApplicationContext integration
