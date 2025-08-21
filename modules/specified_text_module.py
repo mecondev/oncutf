@@ -92,44 +92,49 @@ class SpecifiedTextModule(BaseRenameModule):
         """
         menu = QMenu(self.text_input)
 
-        # Apply consistent styling with Inter fonts
-        menu.setStyleSheet(
+        # Apply theme-aware consistent styling with Inter fonts
+        try:
+            from utils.theme_engine import ThemeEngine
+            theme = ThemeEngine()
+            menu_style = f"""
+                QMenu {{
+                    background-color: {theme.get_color("tooltip_background")};
+                    color: {theme.get_color("tooltip_text")};
+                    border: none;
+                    border-radius: 8px;
+                    font-family: "{theme.fonts["base_family"]}", "Segoe UI", Arial, sans-serif;
+                    font-size: {theme.fonts["interface_size"]};
+                    padding: 6px 4px;
+                }}
+                QMenu::item {{
+                    background-color: transparent;
+                    padding: 3px 16px 3px 8px;
+                    margin: 1px 2px;
+                    border-radius: 4px;
+                    min-height: 16px;
+                    icon-size: 16px;
+                }}
+                QMenu::item:selected {{
+                    background-color: {theme.get_color("accent_color")};
+                    color: {theme.get_color("input_selection_text")};
+                }}
+                QMenu::item:disabled {{
+                    color: {theme.get_color("disabled_text")};
+                }}
+                QMenu::icon {{
+                    padding-left: 6px;
+                    padding-right: 6px;
+                }}
+                QMenu::separator {{
+                    background-color: {theme.get_color("separator_background")};
+                    height: 1px;
+                    margin: 4px 8px;
+                }}
             """
-            QMenu {
-                background-color: #232323;
-                color: #f0ebd8;
-                border: none;
-                border-radius: 8px;
-                font-family: "Inter", "Segoe UI", Arial, sans-serif;
-                font-size: 9pt;
-                padding: 6px 4px;
-            }
-            QMenu::item {
-                background-color: transparent;
-                padding: 3px 16px 3px 8px;
-                margin: 1px 2px;
-                border-radius: 4px;
-                min-height: 16px;
-                icon-size: 16px;
-            }
-            QMenu::item:selected {
-                background-color: #748cab;
-                color: #0d1321;
-            }
-            QMenu::item:disabled {
-                color: #888888;
-            }
-            QMenu::icon {
-                padding-left: 6px;
-                padding-right: 6px;
-            }
-            QMenu::separator {
-                background-color: #5a5a5a;
-                height: 1px;
-                margin: 4px 8px;
-            }
-        """
-        )
+            menu.setStyleSheet(menu_style)
+        except Exception:
+            # Fallback to no custom styling (global theme will handle basic menu styling)
+            pass
 
         # Original Name action (always visible, enabled only if we have a current file)
         original_name_action = QAction("Original Name", menu)

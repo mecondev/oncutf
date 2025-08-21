@@ -37,7 +37,15 @@ class OriginalNameWidget(BaseRenameModule):
 
         # Simple label explaining what this module does
         self.label = QLabel("Uses the original filename")
-        self.label.setStyleSheet("color: #999; font-style: italic;")
+        # Apply theme-aware styling instead of hard-coded color
+        try:
+            from utils.theme_engine import ThemeEngine
+            theme = ThemeEngine()
+            secondary_color = theme.get_color("text_secondary")
+            self.label.setStyleSheet(f"color: {secondary_color}; font-style: italic;")
+        except Exception:
+            # Fallback to no styling (global theme will handle it)
+            pass
 
         row.addWidget(self.label)
         row.addStretch()

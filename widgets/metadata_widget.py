@@ -1232,119 +1232,16 @@ class MetadataWidget(QWidget):
             self._hash_dialog_active = False
 
     def _apply_disabled_combo_styling(self):
-        """Apply disabled styling to the options combo box to show gray text"""
-        try:
-            from utils.theme_engine import ThemeEngine
-
-            theme = ThemeEngine()
-
-            # Apply simplified styling - dropdown styling handled by delegate
-            disabled_css = f"""
-                QComboBox {{
-                    color: {theme.get_color("disabled_text")} !important;
-                    background-color: {theme.get_color("combo_background")};
-                    border: 1px solid {theme.get_color("combo_border")};
-                    border-radius: 4px;
-                    padding: 2px 6px;
-                    font-family: "{theme.fonts["base_family"]}", "Segoe UI", Arial, sans-serif;
-                    font-size: {theme.fonts["interface_size"]};
-                    min-height: 18px;
-                }}
-
-                QComboBox:disabled {{
-                    color: {theme.get_color("disabled_text")} !important;
-                    background-color: {theme.get_color("combo_background")};
-                    border: 1px solid {theme.get_color("combo_border")};
-                }}
-
-                QComboBox::drop-down {{
-                    border: none;
-                    background-color: transparent;
-                    width: 18px;
-                }}
-
-                QComboBox::down-arrow {{
-                    image: url(resources/icons/feather_icons/chevrons-down.svg);
-                    width: 12px;
-                    height: 12px;
-                }}
-            """
-
-            self.options_combo.setStyleSheet(disabled_css)
-            self.options_combo.view().setStyleSheet(disabled_css)
-            logger.debug(
-                "[MetadataWidget] Applied disabled styling to hash combo", extra={"dev_only": True}
-            )
-
-        except Exception as e:
-            logger.warning(f"[MetadataWidget] Error applying disabled combo styling: {e}")
+        """Apply disabled styling to hierarchical combo box to show grayed-out text"""
+        # Neutralized to avoid interference with TreeViewItemDelegate dropdown states.
+        # Disabled state handled by setEnabled(False) + global theme.
+        logger.debug("[MetadataWidget] Disabled combo styling via global theme (no per-widget QSS)", extra={"dev_only": True})
 
     def _apply_normal_combo_styling(self):
-        """Apply normal styling to the options combo box"""
-        try:
-            from utils.theme_engine import ThemeEngine
-
-            theme = ThemeEngine()
-
-            # Apply simplified styling - dropdown styling handled by delegate
-            normal_css = f"""
-                QComboBox {{
-                    background-color: {theme.get_color("combo_background")};
-                    border: 1px solid {theme.get_color("combo_border")};
-                    border-radius: 4px;
-                    padding: 2px 6px;
-                    color: {theme.get_color("combo_text")};
-                    font-family: "{theme.fonts["base_family"]}", "Segoe UI", Arial, sans-serif;
-                    font-size: {theme.fonts["interface_size"]};
-                    min-height: 18px;
-                    selection-background-color: {theme.get_color("combo_item_background_selected")};
-                    selection-color: {theme.get_color("input_selection_text")};
-                }}
-
-                QComboBox:hover {{
-                    background-color: {theme.get_color("combo_background_hover")};
-                    border-color: {theme.get_color("input_border_hover")};
-                    color: {theme.get_color("combo_text")};
-                }}
-
-                QComboBox:focus {{
-                    border-color: {theme.get_color("input_border_focus")};
-                    background-color: {theme.get_color("combo_background_hover")};
-                    color: {theme.get_color("combo_text")};
-                }}
-
-                QComboBox:focus:hover {{
-                    background-color: {theme.get_color("combo_background_pressed")};
-                    color: {theme.get_color("combo_text_pressed")};
-                }}
-
-                QComboBox:on {{
-                    background-color: {theme.get_color("combo_background_pressed")};
-                    color: {theme.get_color("combo_text_pressed")};
-                    border-color: {theme.get_color("input_border_focus")};
-                }}
-
-                QComboBox::drop-down {{
-                    border: none;
-                    background-color: transparent;
-                    width: 18px;
-                }}
-
-                QComboBox::down-arrow {{
-                    image: url(resources/icons/feather_icons/chevrons-down.svg);
-                    width: 12px;
-                    height: 12px;
-                }}
-            """
-
-            self.options_combo.setStyleSheet(normal_css)
-            self.options_combo.view().setStyleSheet(normal_css)
-            logger.debug(
-                "[MetadataWidget] Applied normal styling to options combo", extra={"dev_only": True}
-            )
-
-        except Exception as e:
-            logger.warning(f"[MetadataWidget] Error applying normal combo styling: {e}")
+        """Apply normal styling to hierarchical combo box"""
+        # Neutralized to avoid interference with TreeViewItemDelegate dropdown states.
+        # Global ThemeEngine + delegates handle combo styling consistently.
+        logger.debug("[MetadataWidget] Normal combo styling via global theme (no per-widget QSS)", extra={"dev_only": True})
 
     def _apply_combo_theme_styling(self):
         """Apply theme styling to combo boxes and ensure inheritance"""
@@ -1431,116 +1328,15 @@ class MetadataWidget(QWidget):
 
     def _apply_disabled_category_styling(self):
         """Apply disabled styling to the category combo box to show gray text"""
-        try:
-            from utils.theme_engine import ThemeEngine
-
-            theme = ThemeEngine()
-
-            # Apply simplified styling - dropdown styling handled by delegate
-            disabled_css = f"""
-                QComboBox {{
-                    color: {theme.get_color("disabled_text")} !important;
-                    background-color: {theme.get_color("combo_background")};
-                    border: 1px solid {theme.get_color("combo_border")};
-                    border-radius: 4px;
-                    padding: 2px 6px;
-                    font-family: "{theme.fonts["base_family"]}", "Segoe UI", Arial, sans-serif;
-                    font-size: {theme.fonts["interface_size"]};
-                    min-height: 18px;
-                }}
-
-                QComboBox:disabled {{
-                    color: {theme.get_color("disabled_text")} !important;
-                    background-color: {theme.get_color("combo_background")};
-                    border: 1px solid {theme.get_color("combo_border")};
-                }}
-
-                QComboBox::drop-down {{
-                    border: none;
-                    background-color: transparent;
-                    width: 18px;
-                }}
-
-                QComboBox::down-arrow {{
-                    image: url(resources/icons/feather_icons/chevrons-down.svg);
-                    width: 12px;
-                    height: 12px;
-                }}
-            """
-
-            self.category_combo.setStyleSheet(disabled_css)
-            self.category_combo.view().setStyleSheet(disabled_css)
-            logger.debug(
-                "[MetadataWidget] Applied disabled styling to category combo",
-                extra={"dev_only": True},
-            )
-
-        except Exception as e:
-            logger.warning(f"[MetadataWidget] Error applying disabled category styling: {e}")
+        # Neutralized to avoid interference with ComboBoxItemDelegate dropdown states.
+        # Disabled state handled by setEnabled(False) + global theme.
+        logger.debug("[MetadataWidget] Disabled category combo styling via global theme (no per-widget QSS)", extra={"dev_only": True})
 
     def _apply_category_styling(self):
         """Apply normal styling to the category combo box"""
-        try:
-            from utils.theme_engine import ThemeEngine
-
-            theme = ThemeEngine()
-
-            # Apply simplified styling - dropdown styling handled by delegate
-            normal_css = f"""
-                QComboBox {{
-                    background-color: {theme.get_color("combo_background")};
-                    border: 1px solid {theme.get_color("combo_border")};
-                    border-radius: 4px;
-                    padding: 2px 6px;
-                    color: {theme.get_color("combo_text")};
-                    font-family: "{theme.fonts["base_family"]}", "Segoe UI", Arial, sans-serif;
-                    font-size: {theme.fonts["interface_size"]};
-                    min-height: 18px;
-                    selection-background-color: {theme.get_color("combo_item_background_selected")};
-                    selection-color: {theme.get_color("input_selection_text")};
-                }}
-
-                QComboBox:hover {{
-                    background-color: {theme.get_color("combo_background_hover")};
-                    border-color: {theme.get_color("input_border_hover")};
-                    color: {theme.get_color("combo_text")};
-                }}
-
-                QComboBox:focus {{
-                    border-color: {theme.get_color("input_border_focus")};
-                    background-color: {theme.get_color("combo_background_hover")};
-                    color: {theme.get_color("combo_text")};
-                }}
-
-                QComboBox:focus:hover {{
-                    background-color: {theme.get_color("combo_background_pressed")};
-                    color: {theme.get_color("combo_text_pressed")};
-                }}
-
-                QComboBox:on {{
-                    background-color: {theme.get_color("combo_background_pressed")};
-                    color: {theme.get_color("combo_text_pressed")};
-                    border-color: {theme.get_color("input_border_focus")};
-                }}
-
-                QComboBox::drop-down {{
-                    border: none;
-                    background-color: transparent;
-                    width: 18px;
-                }}
-
-                QComboBox::down-arrow {{
-                    image: url(resources/icons/feather_icons/chevrons-down.svg);
-                    width: 12px;
-                    height: 12px;
-                }}
-            """
-
-            self.category_combo.setStyleSheet(normal_css)
-            self.category_combo.view().setStyleSheet(normal_css)
-
-        except Exception as e:
-            logger.warning(f"[MetadataWidget] Error applying normal category styling: {e}")
+        # Neutralized to avoid interference with ComboBoxItemDelegate dropdown states.
+        # Global ThemeEngine + delegates handle combo styling consistently.
+        logger.debug("[MetadataWidget] Normal category combo styling via global theme (no per-widget QSS)", extra={"dev_only": True})
 
     def _on_hierarchical_item_selected(self, _text: str, _data: Any):
         """Handle item selection from hierarchical combo box."""
