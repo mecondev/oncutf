@@ -531,7 +531,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": True,
         "removable": True,
         "width": 50,
-        "alignment": "right",
+        "alignment": "left",
         "min_width": 40,
     },
     "modified": {

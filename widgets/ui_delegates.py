@@ -260,11 +260,12 @@ class FileTableHoverDelegate(QStyledItemDelegate):
             if not alignment:
                 alignment = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
 
-            # Ensure alignment is an integer (convert from QVariant if needed)
+            # Ensure alignment is usable (convert from QVariant if needed)
             if hasattr(alignment, "value"):  # QVariant case
                 alignment = alignment.value()
-            # Handle Qt.Alignment objects (they're not int but can be used directly)
-            if not isinstance(alignment, int | Qt.AlignmentFlag):
+            # Qt.Alignment objects can be used directly with drawText
+            # Only fallback to default if alignment is None or invalid
+            if alignment is None:
                 alignment = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
 
             fm = painter.fontMetrics()
