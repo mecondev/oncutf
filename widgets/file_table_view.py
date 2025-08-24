@@ -947,6 +947,19 @@ class FileTableView(QTableView):
         if not column_key:
             return
 
+        # Enforce minimum width immediately to prevent visual flickering
+        from config import FILE_TABLE_COLUMN_CONFIG
+        column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
+        min_width = column_config.get("min_width", 30)
+        
+        if new_size < min_width:
+            # Set the column back to minimum width immediately
+            self._programmatic_resize = True  # Prevent recursion
+            self.setColumnWidth(logical_index, min_width)
+            self._programmatic_resize = False
+            new_size = min_width  # Update the size we're working with
+            logger.debug(f"Column '{column_key}' enforced minimum width: {min_width}px")
+
         # Schedule delayed save of column width
         self._schedule_column_save(column_key, new_size)
 

@@ -514,7 +514,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "removable": False,  # Always visible
         "width": 524,
         "alignment": "left",
-        "min_width": 150,
+        "min_width": 80,
     },
     "file_size": {
         "title": "File Size",
@@ -522,8 +522,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": True,
         "removable": True,
         "width": 75,
-        "alignment": "right",  # Numbers align right
-        "min_width": 60,
+        "alignment": "right", 
+        "min_width": 40,
     },
     "type": {
         "title": "Type",
@@ -532,7 +532,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "removable": True,
         "width": 50,
         "alignment": "left",
-        "min_width": 40,
+        "min_width": 30,
     },
     "modified": {
         "title": "Modified",
@@ -540,8 +540,8 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": True,
         "removable": True,
         "width": 134,
-        "alignment": "center",  # Dates look good centered
-        "min_width": 100,
+        "alignment": "left",
+        "min_width": 70,
     },
     "rotation": {
         "title": "Rotation",
@@ -549,7 +549,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 80,
-        "alignment": "right",  # Numbers align right
+        "alignment": "left",
         "min_width": 60,
     },
     "duration": {
@@ -558,7 +558,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 80,
-        "alignment": "right",  # Time values align right
+        "alignment": "left",
         "min_width": 60,
     },
     "audio_channels": {
@@ -567,7 +567,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 100,
-        "alignment": "right",  # Numbers align right
+        "alignment": "left",
         "min_width": 80,
     },
     "audio_format": {
@@ -585,7 +585,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 80,
-        "alignment": "right",  # Camera values align right
+        "alignment": "left",
         "min_width": 60,
     },
     "iso": {
@@ -594,7 +594,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 60,
-        "alignment": "right",  # Numbers align right
+        "alignment": "left",
         "min_width": 50,
     },
     "shutter_speed": {
@@ -603,7 +603,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 100,
-        "alignment": "right",  # Camera values align right
+        "alignment": "left",
         "min_width": 80,
     },
     "white_balance": {
@@ -621,7 +621,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 100,
-        "alignment": "right",  # Dimensions align right
+        "alignment": "left",
         "min_width": 80,
     },
     "compression": {
@@ -648,7 +648,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 120,
-        "alignment": "left",  # Serial numbers align left
+        "alignment": "left",
         "min_width": 100,
     },
     "video_fps": {
@@ -657,7 +657,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 80,
-        "alignment": "right",  # Numbers align right
+        "alignment": "left",
         "min_width": 60,
     },
     "video_avg_bitrate": {
@@ -666,7 +666,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "default_visible": False,
         "removable": True,
         "width": 120,
-        "alignment": "right",  # Numbers align right
+        "alignment": "left",
         "min_width": 100,
     },
     "video_codec": {
@@ -710,9 +710,9 @@ FILE_TABLE_COLUMN_CONFIG = {
         "key": "file_hash",
         "default_visible": False,
         "removable": True,
-        "width": 90,  # Reduced from 200 to 90 (45% of original)
-        "alignment": "left",  # Hash values align left
-        "min_width": 70,  # Reduced min_width proportionally
+        "width": 90,
+        "alignment": "left",
+        "min_width": 70,
     },
 }
 

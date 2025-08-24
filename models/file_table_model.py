@@ -64,29 +64,52 @@ class FileTableModel(QAbstractTableModel):
         self._column_mapping = self._create_column_mapping()
 
     def _load_default_visible_columns(self) -> list:
-        """Load default visible columns configuration."""
-        from config import FILE_TABLE_COLUMN_CONFIG
+        """Load default visible columns configuration using UnifiedColumnService."""
+        try:
+            from core.unified_column_service import get_column_service
+            service = get_column_service()
+            return service.get_visible_columns()
+        except ImportError:
+            # Fallback to old method for backward compatibility
+            from config import FILE_TABLE_COLUMN_CONFIG
 
-        visible_columns = []
-        for column_key, column_config in FILE_TABLE_COLUMN_CONFIG.items():
-            if column_config["default_visible"]:
-                visible_columns.append(column_key)
+            visible_columns = []
+            for column_key, column_config in FILE_TABLE_COLUMN_CONFIG.items():
+                if column_config["default_visible"]:
+                    visible_columns.append(column_key)
 
-        return visible_columns
+            return visible_columns
 
     def _create_column_mapping(self) -> dict:
-        """Create mapping from column index to column key."""
-        mapping = {}  # Column 0 is hardcoded status column, not in mapping
-        for i, column_key in enumerate(self._visible_columns):
-            mapping[i + 1] = column_key  # Dynamic columns start from index 1
-        logger.debug(f"[ColumnMapping] Created mapping: {mapping}", extra={"dev_only": True})
-        return mapping
+        """Create mapping from column index to column key using UnifiedColumnService."""
+        try:
+            from core.unified_column_service import get_column_service
+            service = get_column_service()
+            mapping = service.get_column_mapping()
+            logger.debug(f"[ColumnMapping] Created mapping from service: {mapping}", extra={"dev_only": True})
+            return mapping
+        except ImportError:
+            # Fallback to old method for backward compatibility
+            mapping = {}  # Column 0 is hardcoded status column, not in mapping
+            for i, column_key in enumerate(self._visible_columns):
+                mapping[i + 1] = column_key  # Dynamic columns start from index 1
+            logger.debug(f"[ColumnMapping] Created mapping (fallback): {mapping}", extra={"dev_only": True})
+            return mapping
 
     def update_visible_columns(self, visible_columns: list) -> None:
         logger.debug(
             f"[FileTableModel] update_visible_columns called with: {visible_columns}",
             extra={"dev_only": True},
         )
+        
+        # Invalidate UnifiedColumnService cache when columns change
+        try:
+            from core.unified_column_service import get_column_service
+            service = get_column_service()
+            service.invalidate_cache()
+            logger.debug("[FileTableModel] Invalidated UnifiedColumnService cache")
+        except ImportError:
+            pass
 
         if visible_columns != self._visible_columns:
             old_column_count = len(self._visible_columns) + 1
@@ -463,9 +486,18 @@ class FileTableModel(QAbstractTableModel):
                 return ""  # Empty string for missing metadata
 
         elif role == Qt.TextAlignmentRole:
-            # Get alignment from configuration
+            # Get alignment from UnifiedColumnService
+            try:
+                from core.unified_column_service import get_column_service
+                service = get_column_service()
+                config = service.get_column_config(column_key)
+                if config:
+                    return config.qt_alignment
+            except ImportError:
+                pass
+            
+            # Fallback to old method for backward compatibility
             from config import FILE_TABLE_COLUMN_CONFIG
-
             column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
             alignment = column_config.get("alignment", "left")
 
