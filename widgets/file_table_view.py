@@ -316,8 +316,12 @@ class FileTableView(QTableView):
 
     def _ensure_no_word_wrap(self) -> None:
         """Ensure word wrap is disabled and text is properly elided."""
-        # Force word wrap to be disabled
+        # Force word wrap to be disabled multiple times to ensure it sticks
         self.setWordWrap(False)
+
+        # Also disable word wrap on the viewport
+        if self.viewport():
+            self.viewport().setWordWrap(False)
 
         # Set fixed row height to prevent expansion
         self.verticalHeader().setDefaultSectionSize(22)
@@ -413,6 +417,8 @@ class FileTableView(QTableView):
 
         super().setModel(model)
         if model:
+            # Ensure word wrap is disabled when model is set
+            self._ensure_no_word_wrap()
             # Store reference to table view in model for callbacks
             model._table_view_ref = self
             # Connect column change signals for dynamic table
@@ -951,7 +957,7 @@ class FileTableView(QTableView):
         from config import FILE_TABLE_COLUMN_CONFIG
         column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
         min_width = column_config.get("min_width", 30)
-        
+
         if new_size < min_width:
             # Set the column back to minimum width immediately
             self._programmatic_resize = True  # Prevent recursion
@@ -2623,6 +2629,9 @@ class FileTableView(QTableView):
         self.update_placeholder_visibility()
         self._update_header_visibility()
         self.viewport().update()
+
+        # Ensure word wrap is disabled after column changes
+        self._ensure_no_word_wrap()
 
     def _check_and_fix_column_widths(self) -> None:
         """Check if column widths need to be reset due to incorrect saved values."""
