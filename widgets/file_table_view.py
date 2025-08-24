@@ -13,7 +13,7 @@ Custom QTableView with Windows Explorer-like behavior:
 - Automatic vertical scrollbar detection and filename column adjustment
 """
 
-from config import FILE_TABLE_COLUMN_CONFIG
+# from config import FILE_TABLE_COLUMN_CONFIG  # deprecated: using UnifiedColumnService
 from core.application_context import get_app_context
 from core.drag_manager import DragManager
 from core.drag_visual_manager import (
@@ -47,6 +47,7 @@ from utils.placeholder_helper import create_placeholder_helper
 from utils.timer_manager import (
     schedule_ui_update,
 )
+from core.unified_column_service import get_column_service
 
 logger = get_cached_logger(__name__)
 
@@ -113,7 +114,7 @@ class FileTableView(QTableView):
 
         # Force single-line text display
         self.setWordWrap(False)  # Ensure word wrap is disabled
-        self.setSizeAdjustPolicy(QAbstractItemView.AdjustToContents)  # Adjust to content size
+        self.setSizeAdjustPolicy(QAbstractItemView.AdjustIgnored)  # Keep control over widths
 
         # Ensure scrollbar updates properly
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
@@ -193,9 +194,6 @@ class FileTableView(QTableView):
 
         # Force complete refresh when widget becomes visible
         self._force_scrollbar_update()
-
-        # Ensure proper text display
-        self._ensure_no_word_wrap()
 
         # Update header visibility when widget becomes visible
         self._update_header_visibility()
@@ -319,9 +317,9 @@ class FileTableView(QTableView):
         # Force word wrap to be disabled multiple times to ensure it sticks
         self.setWordWrap(False)
 
-        # Also disable word wrap on the viewport
-        if self.viewport():
-            self.viewport().setWordWrap(False)
+        # Also try to disable word wrap on the horizontal header
+        if hasattr(self.horizontalHeader(), 'setWordWrap'):
+            self.horizontalHeader().setWordWrap(False)
 
         # Set fixed row height to prevent expansion
         self.verticalHeader().setDefaultSectionSize(22)
@@ -347,6 +345,9 @@ class FileTableView(QTableView):
 
         # Schedule delayed update to ensure proper text rendering
         schedule_ui_update(lambda: self._refresh_text_display(), delay=50)
+
+        # Schedule another word wrap check to ensure it stays disabled
+        schedule_ui_update(lambda: self.setWordWrap(False), delay=100)
 
     def _ensure_all_columns_proper_width(self) -> None:
         """Ensure all visible columns have proper width to minimize text elision."""
@@ -521,16 +522,12 @@ class FileTableView(QTableView):
             if hasattr(self.model(), "get_visible_columns"):
                 visible_columns = self.model().get_visible_columns()
             else:
-                # Emergency fallback - load from config
-                from config import FILE_TABLE_COLUMN_CONFIG
+                # Emergency fallback - load from service
+                from core.unified_column_service import get_column_service
 
-                visible_columns = [
-                    key
-                    for key, cfg in FILE_TABLE_COLUMN_CONFIG.items()
-                    if cfg.get("default_visible", False)
-                ]
+                visible_columns = get_column_service().get_visible_columns()
                 logger.warning(
-                    f"[ColumnConfig] Model doesn't have get_visible_columns, using fallback: {visible_columns}"
+                    f"[ColumnConfig] Model doesn't have get_visible_columns, using service: {visible_columns}"
                 )
 
             # Configure each visible column
@@ -572,11 +569,10 @@ class FileTableView(QTableView):
 
     def _ensure_column_proper_width(self, column_key: str, current_width: int) -> int:
         """Ensure column has proper width based on its content type and configuration."""
-        from config import FILE_TABLE_COLUMN_CONFIG
-
-        column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
-        default_width = column_config.get("width", 100)
-        min_width = column_config.get("min_width", 50)
+        service = get_column_service()
+        column_config = service.get_column_config(column_key)
+        default_width = column_config.width if column_config else 100
+        min_width = column_config.min_width if column_config else 50
 
         # Analyze column content type to determine appropriate width
         content_type = self._analyze_column_content_type(column_key)
@@ -696,10 +692,10 @@ class FileTableView(QTableView):
             f"[ColumnWidth] Loading width for column '{column_key}'", extra={"dev_only": True}
         )
         try:
-            # First, get the default width from config.py
-            from config import FILE_TABLE_COLUMN_CONFIG
-
-            default_width = FILE_TABLE_COLUMN_CONFIG.get(column_key, {}).get("width", 100)
+            # First, get the default width from UnifiedColumnService
+            service = get_column_service()
+            column_cfg = service.get_column_config(column_key)
+            default_width = column_cfg.width if column_cfg else 100
             logger.debug(
                 f"[ColumnWidth] Default width for '{column_key}': {default_width}px",
                 extra={"dev_only": True},
@@ -719,8 +715,6 @@ class FileTableView(QTableView):
                             f"[ColumnWidth] Found saved width for '{column_key}': {saved_width}px",
                             extra={"dev_only": True},
                         )
-                        # Only check for suspicious 100px width if the default is significantly different
-                        # This prevents false positives when the default width is actually close to 100px
                         if saved_width == 100 and default_width > 120:
                             logger.debug(
                                 f"[ColumnWidth] Column '{column_key}' has suspicious saved width (100px), using default {default_width}px"
@@ -740,7 +734,6 @@ class FileTableView(QTableView):
                     logger.warning(
                         f"[ColumnWidth] Error accessing main config for '{column_key}': {e}"
                     )
-                    # Continue to fallback method
 
             # Fallback to old method
             from utils.json_config_manager import load_config
@@ -752,7 +745,6 @@ class FileTableView(QTableView):
                 logger.debug(
                     f"[ColumnWidth] Found saved width in fallback for '{column_key}': {saved_width}px"
                 )
-                # Same check for old config format
                 if saved_width == 100 and default_width > 120:
                     logger.debug(
                         f"[ColumnWidth] Column '{column_key}' has suspicious saved width (100px), using default {default_width}px"
@@ -767,17 +759,16 @@ class FileTableView(QTableView):
                     f"[ColumnWidth] No saved width found for '{column_key}' in fallback config"
                 )
 
-            # Return default width from config.py
+            # Return default width from UnifiedColumnService
             logger.debug(f"[ColumnWidth] Using default width for '{column_key}': {default_width}px")
             return default_width
 
         except Exception as e:
             logger.warning(f"[ColumnWidth] Failed to load column width for {column_key}: {e}")
-            # Emergency fallback to config.py defaults
-            from config import FILE_TABLE_COLUMN_CONFIG
-
-            column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
-            fallback_width = column_config.get("width", 100)
+            # Emergency fallback to UnifiedColumnService defaults
+            service = get_column_service()
+            column_cfg = service.get_column_config(column_key)
+            fallback_width = column_cfg.width if column_cfg else 100
             logger.debug(
                 f"[ColumnWidth] Using emergency fallback width for '{column_key}': {fallback_width}px"
             )
@@ -954,9 +945,9 @@ class FileTableView(QTableView):
             return
 
         # Enforce minimum width immediately to prevent visual flickering
-        from config import FILE_TABLE_COLUMN_CONFIG
-        column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
-        min_width = column_config.get("min_width", 30)
+        service = get_column_service()
+        cfg = service.get_column_config(column_key)
+        min_width = cfg.min_width if cfg else 30
 
         if new_size < min_width:
             # Set the column back to minimum width immediately
@@ -2161,12 +2152,13 @@ class FileTableView(QTableView):
                 if saved_visibility:
                     logger.debug(f"[ColumnVisibility] Loaded from main config: {saved_visibility}")
                     # Ensure we have all columns from config, not just saved ones
-                    from config import FILE_TABLE_COLUMN_CONFIG
+                    from core.unified_column_service import get_column_service
+                    service = get_column_service()
 
                     complete_visibility = {}
-                    for key, cfg in FILE_TABLE_COLUMN_CONFIG.items():
+                    for key, cfg in service.get_all_columns().items():
                         # Use saved value if available, otherwise use default
-                        complete_visibility[key] = saved_visibility.get(key, cfg["default_visible"])
+                        complete_visibility[key] = saved_visibility.get(key, cfg.default_visible)
                     logger.debug(
                         f"[ColumnVisibility] Complete visibility state: {complete_visibility}"
                     )
@@ -2181,12 +2173,13 @@ class FileTableView(QTableView):
             if saved_visibility:
                 logger.debug(f"[ColumnVisibility] Loaded from fallback config: {saved_visibility}")
                 # Ensure we have all columns from config, not just saved ones
-                from config import FILE_TABLE_COLUMN_CONFIG
+                from core.unified_column_service import get_column_service
+                service = get_column_service()
 
                 complete_visibility = {}
-                for key, cfg in FILE_TABLE_COLUMN_CONFIG.items():
+                for key, cfg in service.get_all_columns().items():
                     # Use saved value if available, otherwise use default
-                    complete_visibility[key] = saved_visibility.get(key, cfg["default_visible"])
+                    complete_visibility[key] = saved_visibility.get(key, cfg.default_visible)
                 logger.debug(f"[ColumnVisibility] Complete visibility state: {complete_visibility}")
                 return complete_visibility
 
@@ -2194,10 +2187,11 @@ class FileTableView(QTableView):
             logger.warning(f"[ColumnVisibility] Error loading config: {e}")
 
         # Return default configuration
-        from config import FILE_TABLE_COLUMN_CONFIG
+        from core.unified_column_service import get_column_service
+        service = get_column_service()
 
         default_visibility = {
-            key: cfg["default_visible"] for key, cfg in FILE_TABLE_COLUMN_CONFIG.items()
+            key: cfg.default_visible for key, cfg in service.get_all_columns().items()
         }
         return default_visibility
 
@@ -2281,12 +2275,14 @@ class FileTableView(QTableView):
     def _toggle_column_visibility(self, column_key: str) -> None:
         """Toggle visibility of a specific column and refresh the table."""
 
-        if column_key not in FILE_TABLE_COLUMN_CONFIG:
+        from core.unified_column_service import get_column_service
+        all_columns = get_column_service().get_all_columns()
+        if column_key not in all_columns:
             logger.warning(f"Unknown column key: {column_key}")
             return
 
-        column_config = FILE_TABLE_COLUMN_CONFIG[column_key]
-        if not column_config.get("removable", True):
+        column_config = all_columns[column_key]
+        if not getattr(column_config, "removable", True):
             logger.warning(f"Cannot toggle non-removable column: {column_key}")
             return  # Can't toggle non-removable columns
 
@@ -2296,7 +2292,7 @@ class FileTableView(QTableView):
             self._visible_columns = self._load_column_visibility_config()
 
         # Toggle visibility
-        current_visibility = self._visible_columns.get(column_key, column_config["default_visible"])
+        current_visibility = self._visible_columns.get(column_key, column_config.default_visible)
         new_visibility = not current_visibility
         self._visible_columns[column_key] = new_visibility
 
@@ -2304,11 +2300,12 @@ class FileTableView(QTableView):
         logger.debug(f"[ColumnToggle] Current visibility state: {self._visible_columns}")
 
         # Verify we have all columns in visibility state
-        for key, cfg in FILE_TABLE_COLUMN_CONFIG.items():
+        from core.unified_column_service import get_column_service
+        for key, cfg in get_column_service().get_all_columns().items():
             if key not in self._visible_columns:
-                self._visible_columns[key] = cfg["default_visible"]
+                self._visible_columns[key] = cfg.default_visible
                 logger.debug(
-                    f"[ColumnToggle] Added missing column '{key}' with default visibility {cfg['default_visible']}"
+                    f"[ColumnToggle] Added missing column '{key}' with default visibility {cfg.default_visible}"
                 )
 
         # Save configuration immediately
@@ -2329,7 +2326,8 @@ class FileTableView(QTableView):
     def add_column(self, column_key: str) -> None:
         """Add a column to the table (make it visible)."""
 
-        if column_key not in FILE_TABLE_COLUMN_CONFIG:
+        from core.unified_column_service import get_column_service
+        if column_key not in get_column_service().get_all_columns():
             logger.warning(f"Cannot add unknown column: {column_key}")
             return
 
@@ -2409,12 +2407,14 @@ class FileTableView(QTableView):
     def remove_column(self, column_key: str) -> None:
         """Remove a column from the table (make it invisible)."""
 
-        if column_key not in FILE_TABLE_COLUMN_CONFIG:
+        from core.unified_column_service import get_column_service
+        all_columns = get_column_service().get_all_columns()
+        if column_key not in all_columns:
             logger.warning(f"Cannot remove unknown column: {column_key}")
             return
 
-        column_config = FILE_TABLE_COLUMN_CONFIG[column_key]
-        if not column_config.get("removable", True):
+        column_config = all_columns[column_key]
+        if not getattr(column_config, "removable", True):
             logger.warning(f"Cannot remove non-removable column: {column_key}")
             return
 
@@ -2555,7 +2555,7 @@ class FileTableView(QTableView):
     def _reset_columns_to_default(self) -> None:
         """Reset all column widths to their default values (Ctrl+T)."""
         try:
-            from config import FILE_TABLE_COLUMN_CONFIG
+            from core.unified_column_service import get_column_service
 
             visible_columns = []
             if hasattr(self.model(), "get_visible_columns"):
@@ -2565,8 +2565,8 @@ class FileTableView(QTableView):
 
             for i, column_key in enumerate(visible_columns):
                 column_index = i + 1  # +1 because column 0 is status column
-                column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
-                default_width = column_config.get("width", 100)
+                cfg = get_column_service().get_column_config(column_key)
+                default_width = cfg.width if cfg else 100
 
                 # Apply intelligent width validation for all columns
                 final_width = self._ensure_column_proper_width(column_key, default_width)
@@ -2582,7 +2582,7 @@ class FileTableView(QTableView):
     def _auto_fit_columns_to_content(self) -> None:
         """Auto-fit all column widths to their content (Ctrl+Shift+T)."""
         try:
-            from config import FILE_TABLE_COLUMN_CONFIG, GLOBAL_MIN_COLUMN_WIDTH
+            from config import GLOBAL_MIN_COLUMN_WIDTH
 
             if not self.model() or self.model().rowCount() == 0:
                 return
@@ -2599,15 +2599,14 @@ class FileTableView(QTableView):
 
             for i, column_key in enumerate(visible_columns):
                 column_index = i + 1  # +1 because column 0 is status column
-                column_config = FILE_TABLE_COLUMN_CONFIG.get(column_key, {})
+                from core.unified_column_service import get_column_service
+                cfg = get_column_service().get_column_config(column_key)
 
                 # Use Qt's built-in resize to contents
                 header.resizeSection(column_index, header.sectionSizeHint(column_index))
 
                 # Apply minimum width constraint
-                min_width = max(
-                    column_config.get("min_width", GLOBAL_MIN_COLUMN_WIDTH), GLOBAL_MIN_COLUMN_WIDTH
-                )
+                min_width = max((cfg.min_width if cfg else GLOBAL_MIN_COLUMN_WIDTH), GLOBAL_MIN_COLUMN_WIDTH)
                 current_width = self.columnWidth(column_index)
                 final_width = max(current_width, min_width)
 
@@ -2636,7 +2635,7 @@ class FileTableView(QTableView):
     def _check_and_fix_column_widths(self) -> None:
         """Check if column widths need to be reset due to incorrect saved values."""
         try:
-            from config import FILE_TABLE_COLUMN_CONFIG
+
 
             # Get current saved widths
             main_window = self._get_main_window()
@@ -2658,10 +2657,11 @@ class FileTableView(QTableView):
             suspicious_count = 0
             total_count = 0
 
-            for column_key, column_config in FILE_TABLE_COLUMN_CONFIG.items():
-                if column_config.get("default_visible", False):
+            from core.unified_column_service import get_column_service
+            for column_key, column_config in get_column_service().get_all_columns().items():
+                if getattr(column_config, "default_visible", False):
                     total_count += 1
-                    default_width = column_config.get("width", 100)
+                    default_width = getattr(column_config, "width", 100)
                     saved_width = saved_widths.get(column_key, default_width)
 
                     if saved_width == 100 and default_width > 120:

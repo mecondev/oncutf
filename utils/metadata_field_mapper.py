@@ -201,6 +201,10 @@ class MetadataFieldMapper:
             return cls._format_device_value(value_str)
         elif field_key in ["video_fps", "video_avg_bitrate"]:
             return cls._format_video_value(field_key, value_str)
+        elif field_key in ["target_umid", "file_hash", "device_serial_no"]:
+            # Keep full value for long identifiers; let the view elide visually
+            cleaned = " ".join(value_str.split())
+            return cleaned
         else:
             # Default formatting - limit length and clean up
             return cls._format_default_value(value_str)
