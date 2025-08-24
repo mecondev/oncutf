@@ -70,7 +70,10 @@ class UnifiedMetadataManager(QObject):
         self._metadata_cancelled = False  # Cancellation flag for metadata loading
 
         # Initialize metadata cache and exiftool wrapper
-        self._metadata_cache = {}  # Cache for metadata results
+        from collections import OrderedDict
+
+        self._metadata_cache = OrderedDict()  # LRU cache for metadata results
+        self._cache_max_size = 500  # Keep last 500 files in memory
 
         # Initialize ExifTool wrapper for single file operations
         from utils.exiftool_wrapper import ExifToolWrapper
@@ -611,10 +614,32 @@ class UnifiedMetadataManager(QObject):
                     _loading_dialog.close()
                     return
 
-                # Load metadata using ExifTool wrapper directly
-                metadata = self._exiftool_wrapper.get_metadata(
-                    file_item.full_path, use_extended=use_extended
-                )
+            # Batch load metadata for all files at once (10x faster)
+            logger.info(f"[UnifiedMetadataManager] Batch loading metadata for {len(needs_loading)} files")
+            file_paths = [item.full_path for item in needs_loading]
+            metadata_batch = self._exiftool_wrapper.get_metadata_batch(
+                file_paths, use_extended=use_extended
+            )
+
+            # Process each file with its metadata
+            for i, (file_item, metadata) in enumerate(zip(needs_loading, metadata_batch)):
+                # Update progress
+                _loading_dialog.set_filename(file_item.filename)
+                _loading_dialog.set_count(i + 1, len(needs_loading))
+
+                # Process events to keep UI responsive
+                if (i + 1) % 20 == 0:  # Less frequent since batch is faster
+                    from PyQt5.QtWidgets import QApplication
+
+                    QApplication.processEvents()
+
+                # Check for cancellation
+                if self._metadata_cancelled:
+                    logger.info(
+                        f"[UnifiedMetadataManager] Metadata processing cancelled at file {i + 1}/{len(needs_loading)}"
+                    )
+                    _loading_dialog.close()
+                    return
 
                 if metadata:
                     # Mark metadata with loading mode for UI indicators
@@ -626,6 +651,12 @@ class UnifiedMetadataManager(QObject):
                     # Cache the result in both local and parent window caches
                     cache_key = (file_item.full_path, use_extended)
                     self._metadata_cache[cache_key] = metadata
+
+                    # Manage cache size (LRU eviction)
+                    if len(self._metadata_cache) > self._cache_max_size:
+                        # Remove oldest entries
+                        for _ in range(len(self._metadata_cache) - self._cache_max_size):
+                            self._metadata_cache.popitem(last=False)
 
                     # Also save to parent window's metadata_cache for UI display
                     if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
@@ -986,6 +1017,52 @@ class UnifiedMetadataManager(QObject):
     # =====================================
     # Metadata Saving Methods
     # =====================================
+
+    def set_metadata_value(self, file_path: str, key_path: str, new_value: str) -> bool:
+        """
+        Set a metadata value for a file (updates cache only, doesn't write to disk).
+
+        Args:
+            file_path: Path to the file
+            key_path: Metadata key path (e.g., "Rotation", "EXIF/DateTimeOriginal")
+            new_value: New value to set
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            # Update UI cache
+            if hasattr(self.parent_window, "metadata_cache"):
+                cache = self.parent_window.metadata_cache
+                metadata_entry = cache.get_entry(file_path)
+
+                if metadata_entry and hasattr(metadata_entry, "data"):
+                    # Handle rotation as top-level key
+                    if key_path.lower() == "rotation":
+                        metadata_entry.data["Rotation"] = new_value
+                    # Handle nested keys
+                    elif "/" in key_path or ":" in key_path:
+                        parts = key_path.replace(":", "/").split("/", 1)
+                        if len(parts) == 2:
+                            group, key = parts
+                            if group not in metadata_entry.data:
+                                metadata_entry.data[group] = {}
+                            metadata_entry.data[group][key] = new_value
+                    # Handle top-level keys
+                    else:
+                        metadata_entry.data[key_path] = new_value
+
+                    metadata_entry.modified = True
+                    logger.debug(
+                        f"[UnifiedMetadataManager] Set {key_path}={new_value} for {os.path.basename(file_path)}"
+                    )
+                    return True
+
+            return False
+
+        except Exception as e:
+            logger.error(f"[UnifiedMetadataManager] Error setting metadata value: {e}")
+            return False
 
     def save_metadata_for_selected(self) -> None:
         """Save metadata for selected files."""

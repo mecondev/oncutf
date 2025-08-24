@@ -368,6 +368,9 @@ class DatabaseManager:
             "CREATE INDEX IF NOT EXISTS idx_file_metadata_structured_path_id ON file_metadata_structured (path_id)",
             "CREATE INDEX IF NOT EXISTS idx_file_metadata_structured_field_id ON file_metadata_structured (field_id)",
             "CREATE INDEX IF NOT EXISTS idx_file_metadata_structured_path_field ON file_metadata_structured (path_id, field_id)",
+            # Composite indexes for faster common queries
+            "CREATE INDEX IF NOT EXISTS idx_metadata_path_type ON file_metadata (path_id, metadata_type)",
+            "CREATE INDEX IF NOT EXISTS idx_hashes_path_algo ON file_hashes (path_id, algorithm)",
         ]
 
         for index_sql in indexes:
