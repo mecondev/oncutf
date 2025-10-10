@@ -2629,8 +2629,15 @@ class MetadataTreeView(QTreeView):
                 if key_path.lower() == "rotation":
                     if "Rotation" in metadata_entry.data:
                         file_modifications["Rotation"] = str(metadata_entry.data["Rotation"])
+                        logger.debug(
+                            f"[MetadataTree] Found Rotation={metadata_entry.data['Rotation']} for {file_path}",
+                            extra={"dev_only": True}
+                        )
                     else:
                         file_modifications["Rotation"] = "[MODIFIED]"
+                        logger.warning(
+                            f"[MetadataTree] Rotation not found in cache for {file_path}, available keys: {list(metadata_entry.data.keys())[:10]}"
+                        )
                     continue
 
                 # Handle other fields normally

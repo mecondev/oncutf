@@ -126,11 +126,20 @@ class MetadataCacheHelper:
             # Normalize path for consistent cache access
             normalized_path = normalize_path(file_item.full_path)
 
-            # Update cache if available
-            if self.metadata_cache and hasattr(self.metadata_cache, "set_entry"):
-                self.metadata_cache.set_entry(
-                    normalized_path, metadata, is_extended=is_extended, modified=modified
-                )
+            # Update cache if available (use 'set' method, not 'set_entry')
+            if self.metadata_cache:
+                if hasattr(self.metadata_cache, "set"):
+                    self.metadata_cache.set(
+                        normalized_path, metadata, is_extended=is_extended, modified=modified
+                    )
+                    logger.debug(
+                        f"[MetadataCacheHelper] Updated cache for {getattr(file_item, 'filename', 'unknown')}",
+                        extra={"dev_only": True}
+                    )
+                else:
+                    logger.warning(
+                        f"[MetadataCacheHelper] Cache does not have 'set' method for {getattr(file_item, 'filename', 'unknown')}"
+                    )
 
             # Also update file item
             file_item.metadata = metadata
@@ -247,8 +256,28 @@ class MetadataCacheHelper:
             if metadata is None:
                 metadata = {}
 
+            # Special handling for Rotation - always use "Rotation" (capitalized)
+            if key_path.lower() == "rotation":
+                # Clean up any existing rotation entries (case-insensitive)
+                keys_to_remove = [k for k in metadata.keys() if k.lower() == "rotation"]
+                for k in keys_to_remove:
+                    del metadata[k]
+
+                # Also remove from any groups
+                for group_key, group_data in list(metadata.items()):
+                    if isinstance(group_data, dict):
+                        rotation_keys = [k for k in group_data.keys() if k.lower() == "rotation"]
+                        for k in rotation_keys:
+                            del group_data[k]
+
+                # Set as top-level with correct capitalization
+                metadata["Rotation"] = new_value
+                logger.debug(
+                    f"[MetadataCacheHelper] Set Rotation={new_value} for {getattr(file_item, 'filename', 'unknown')}",
+                    extra={"dev_only": True}
+                )
             # Handle nested keys (e.g., "EXIF/ImageWidth")
-            if "/" in key_path:
+            elif "/" in key_path:
                 parts = key_path.split("/")
                 current = metadata
 
