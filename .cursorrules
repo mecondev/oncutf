@@ -35,9 +35,10 @@ This is a Python desktop application built with PyQt5 for batch file renaming wi
 - Follow the widgets/ directory pattern for UI components
 
 ### Git Workflow
-- Use git auto commit workflow: `git add .` followed by `git commit --amend -m <descriptive message>`
+- Do NOT execute any git commands automatically.
+- Only run `git add .` followed by `git commit --amend -m <descriptive message>` IF explicitly requested by the user.
 - Never run `git pull` automatically to avoid breaking local changes
-- Ask before performing git operations
+- Always ask for user approval before performing git operations.
 
 ### Testing and Debugging
 - Use ruff as the linter (run `ruff` command)
