@@ -208,9 +208,16 @@ class MetadataTreeView(QTreeView):
     def _initialize_cache_helper(self) -> None:
         """Initialize the metadata cache helper."""
         try:
-            self._cache_helper = MetadataCacheHelper()
+            # Use the persistent cache instance from parent window if available
+            parent_window = self._get_parent_with_file_table()
+            cache_instance = None
+            if parent_window and hasattr(parent_window, "metadata_cache"):
+                cache_instance = parent_window.metadata_cache
+
+            self._cache_helper = MetadataCacheHelper(cache_instance)
             logger.debug(
-                "[MetadataTreeView] MetadataCacheHelper initialized", extra={"dev_only": True}
+                "[MetadataTreeView] MetadataCacheHelper initialized (with persistent cache)",
+                extra={"dev_only": True},
             )
         except Exception as e:
             logger.error(f"[MetadataTreeView] Failed to initialize MetadataCacheHelper: {e}")

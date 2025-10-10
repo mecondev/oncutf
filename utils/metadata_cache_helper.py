@@ -12,7 +12,7 @@ Provides consistent interface for metadata cache operations across the applicati
 from typing import Any
 
 from utils.logger_factory import get_cached_logger
-from utils.path_utils import normalize_path
+from utils.path_normalizer import normalize_path
 
 logger = get_cached_logger(__name__)
 
