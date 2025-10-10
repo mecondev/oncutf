@@ -2606,13 +2606,11 @@ class MetadataTreeView(QTreeView):
             if not file_path or not modified_keys:
                 continue
 
-            # Create a temporary file item to use with cache helper
-            class TempFileItem:
-                def __init__(self, full_path):
-                    self.full_path = full_path
+            # Get cache entry using normalized path
+            from utils.path_normalizer import normalize_path
 
-            temp_file_item = TempFileItem(file_path)
-            metadata_entry = cache_helper.get_cache_entry_for_file(temp_file_item)
+            normalized_path = normalize_path(file_path)
+            metadata_entry = cache_helper.metadata_cache.get_entry(normalized_path) if cache_helper.metadata_cache else None
             file_modifications = {}
 
             for key_path in modified_keys:
