@@ -711,9 +711,11 @@ class MetadataTreeView(QTreeView):
         # Save current file state before switching
         self._save_current_file_state()
 
-        # Update current file
+        # Update current file (normalize for consistent cache lookups)
+        from utils.path_normalizer import normalize_path
+
         previous_file_path = self._current_file_path
-        self._current_file_path = file_path
+        self._current_file_path = normalize_path(file_path) if file_path else None
 
         # Load state for the new file
         self._load_file_state(file_path, previous_file_path)
@@ -2607,17 +2609,38 @@ class MetadataTreeView(QTreeView):
         if not cache_helper:
             return {}
 
+        # Import normalize_path for consistent path handling
+        from utils.path_normalizer import normalize_path
+
         # Collect modifications for each file
         for file_path, modified_keys in self.modified_items_per_file.items():
             # Skip None or empty file paths
             if not file_path or not modified_keys:
                 continue
 
-            # Get cache entry using normalized path
-            from utils.path_normalizer import normalize_path
-
+            # Normalize path for consistent cache lookups (critical for cross-platform)
+            # This handles cases where file_path might not be normalized yet
             normalized_path = normalize_path(file_path)
+
+            logger.debug(
+                f"[MetadataTree] Looking up cache for file_path='{file_path}' -> normalized='{normalized_path}'",
+                extra={"dev_only": True}
+            )
+
+            # Get cache entry using normalized path
             metadata_entry = cache_helper.metadata_cache.get_entry(normalized_path) if cache_helper.metadata_cache else None
+
+            if metadata_entry:
+                logger.debug(
+                    f"[MetadataTree] Found cache entry with keys: {list(metadata_entry.data.keys())[:10] if hasattr(metadata_entry, 'data') else 'NO DATA'}",
+                    extra={"dev_only": True}
+                )
+            else:
+                logger.warning(
+                    f"[MetadataTree] NO cache entry found for normalized_path='{normalized_path}'",
+                    extra={"dev_only": False}
+                )
+
             file_modifications = {}
 
             for key_path in modified_keys:
@@ -2669,8 +2692,9 @@ class MetadataTreeView(QTreeView):
                     else:
                         file_modifications[key_path] = "[MODIFIED]"
 
+            # Store modifications using normalized path for consistency
             if file_modifications:
-                all_modifications[file_path] = file_modifications
+                all_modifications[normalized_path] = file_modifications
 
         logger.info(f"[MetadataTree] Total files with modifications: {len(all_modifications)}")
         return all_modifications

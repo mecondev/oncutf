@@ -253,8 +253,14 @@ class MetadataCacheHelper:
         try:
             # Get current metadata
             metadata = self.get_metadata_for_file(file_item, fallback_to_file_item=True)
-            if metadata is None:
-                metadata = {}
+            if metadata is None or not metadata:
+                # If no metadata in cache, this is a problem - we shouldn't edit metadata that doesn't exist
+                logger.warning(
+                    f"[MetadataCacheHelper] Cannot set {key_path} - no metadata found in cache for {getattr(file_item, 'filename', 'unknown')}. "
+                    "Metadata must be loaded before editing.",
+                    extra={"dev_only": False}
+                )
+                return False
 
             # Special handling for Rotation - always use "Rotation" (capitalized)
             if key_path.lower() == "rotation":

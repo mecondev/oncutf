@@ -171,17 +171,30 @@ class Renamer:
                     logger.info("Rename cancelled by user.")
                     break
 
-            # File rename
+            # File rename - ensure paths are absolute and normalized for cross-platform support
             try:
-                # Import the safe case rename function
+                # Import utilities
                 from utils.rename_logic import is_case_only_change, safe_case_rename
+                from utils.path_normalizer import normalize_path
 
-                src_name = os.path.basename(src)
-                dst_name = os.path.basename(dst)
+                # Normalize paths to absolute for cross-platform compatibility
+                # This is critical for Windows where relative paths can cause issues
+                src_normalized = normalize_path(src)
+                dst_normalized = normalize_path(dst)
+
+                # Verify source file exists before attempting rename
+                if not os.path.exists(src_normalized):
+                    error_msg = f"Source file not found: {src_normalized}"
+                    logger.error(f"[Rename] {error_msg}")
+                    results.append(RenameResult(src, dst, success=False, error=error_msg))
+                    continue
+
+                src_name = os.path.basename(src_normalized)
+                dst_name = os.path.basename(dst_normalized)
 
                 # Use safe case rename for case-only changes
                 if is_case_only_change(src_name, dst_name):
-                    if safe_case_rename(src, dst):
+                    if safe_case_rename(src_normalized, dst_normalized):
                         results.append(RenameResult(src, dst, success=True))
                         logger.info(f"Case-only rename successful: {src_name} -> {dst_name}")
                     else:
@@ -190,12 +203,22 @@ class Renamer:
                         )
                         logger.error(f"Case-only rename failed: {src_name} -> {dst_name}")
                 else:
-                    # Regular rename
-                    os.rename(src, dst)
+                    # Regular rename with normalized paths
+                    os.rename(src_normalized, dst_normalized)
                     results.append(RenameResult(src, dst, success=True))
+                    logger.debug(f"[Rename] Success: {src_name} -> {dst_name}", extra={"dev_only": True})
+            except PermissionError as e:
+                error_msg = f"Permission denied (file may be in use): {str(e)}"
+                logger.error(f"[Rename] {error_msg} for {src}")
+                results.append(RenameResult(src, dst, success=False, error=error_msg))
+            except OSError as e:
+                error_msg = f"OS error during rename: {str(e)}"
+                logger.error(f"[Rename] {error_msg} for {src}")
+                results.append(RenameResult(src, dst, success=False, error=error_msg))
             except Exception as e:
-                logger.error(f"Rename failed for {src}: {str(e)}")
-                results.append(RenameResult(src, dst, success=False, error=str(e)))
+                error_msg = f"Unexpected error: {str(e)}"
+                logger.error(f"[Rename] {error_msg} for {src}")
+                results.append(RenameResult(src, dst, success=False, error=error_msg))
 
         # Update metadata cache for renamed files
         try:

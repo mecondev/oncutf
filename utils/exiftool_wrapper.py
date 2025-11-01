@@ -258,8 +258,13 @@ class ExifToolWrapper:
         Returns:
             bool: True if successful, False otherwise
         """
-        if not os.path.isfile(file_path):
-            logger.warning(f"[ExifToolWrapper] File not found for writing: {file_path}")
+        # Normalize path for cross-platform compatibility (critical for Windows)
+        from utils.path_normalizer import normalize_path
+
+        file_path_normalized = normalize_path(file_path)
+
+        if not os.path.isfile(file_path_normalized):
+            logger.warning(f"[ExifToolWrapper] File not found for writing: {file_path_normalized}")
             return False
 
         if not metadata_changes:
@@ -276,7 +281,7 @@ class ExifToolWrapper:
                 key_lower = key.lower()
                 if "rotation" in key_lower:
                     # Use the appropriate rotation tag based on file type
-                    file_ext = os.path.splitext(file_path)[1].lower()
+                    file_ext = os.path.splitext(file_path_normalized)[1].lower()
 
                     if file_ext in [".jpg", ".jpeg"]:
                         # For JPEG files, use EXIF:Orientation (1-8) or Rotation (0, 90, 180, 270)
@@ -284,6 +289,14 @@ class ExifToolWrapper:
                             tag_name = "Rotation"
                         else:
                             tag_name = "EXIF:Orientation"
+                    elif file_ext in [".mp4", ".mov", ".m4v", ".3gp"]:
+                        # For QuickTime-based formats (MP4, MOV), use QuickTime:Rotation
+                        # This is critical for proper rotation support in video files
+                        tag_name = "QuickTime:Rotation"
+                        logger.debug(
+                            f"[ExifToolWrapper] Using QuickTime:Rotation for {file_ext} file",
+                            extra={"dev_only": True},
+                        )
                     elif file_ext in [".png"]:
                         # PNG doesn't support EXIF rotation, try XMP or just Rotation
                         tag_name = "Rotation"
@@ -307,7 +320,7 @@ class ExifToolWrapper:
 
                 cmd.append(f"-{tag_name}={value}")
 
-            cmd.append(file_path)
+            cmd.append(file_path_normalized)
 
             logger.debug(
                 f"[ExifToolWrapper] Writing metadata with command: {' '.join(cmd)}",
@@ -322,14 +335,15 @@ class ExifToolWrapper:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace")
 
             if result.returncode == 0:
-                logger.info(f"[ExifToolWrapper] Successfully wrote metadata to: {file_path}")
+                logger.info(f"[ExifToolWrapper] Successfully wrote metadata to: {os.path.basename(file_path_normalized)}")
                 return True
             else:
                 logger.error(f"[ExifToolWrapper] Failed to write metadata: {result.stderr}")
+                logger.error(f"[ExifToolWrapper] Command was: {' '.join(cmd)}")
                 return False
 
         except subprocess.TimeoutExpired:
-            logger.error(f"[ExifToolWrapper] Timeout while writing metadata to: {file_path}")
+            logger.error(f"[ExifToolWrapper] Timeout while writing metadata to: {os.path.basename(file_path_normalized)}")
             return False
         except Exception as e:
             logger.error(f"[ExifToolWrapper] Exception while writing metadata: {e}", exc_info=True)

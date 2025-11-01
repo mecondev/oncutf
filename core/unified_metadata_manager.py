@@ -1403,9 +1403,9 @@ class UnifiedMetadataManager(QObject):
 
             # Show error message
             if self.parent_window:
-                from widgets.custom_message_dialog import CustomMsgDialog
+                from core.pyqt_imports import QMessageBox
 
-                CustomMsgDialog.show_error(
+                QMessageBox.warning(
                     self.parent_window,
                     "Metadata Save Error",
                     f"Failed to save metadata for {len(failed_files)} files.\n\n"
