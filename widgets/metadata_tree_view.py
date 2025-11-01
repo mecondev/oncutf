@@ -1224,16 +1224,42 @@ class MetadataTreeView(QTreeView):
 
         # Update metadata in cache for all files to modify
         cache_helper = self._get_cache_helper()
+        success_count = 0
+
         for file_item in files_to_modify:
             if cache_helper:
-                cache_helper.set_metadata_value(file_item, key_path, new_value)
-                # Mark the cache entry as modified
-                cache_entry = cache_helper.get_cache_entry_for_file(file_item)
-                if cache_entry:
-                    cache_entry.modified = True
+                # Try to set metadata value - will fail if metadata not in cache
+                if cache_helper.set_metadata_value(file_item, key_path, new_value):
+                    success_count += 1
+                    # Mark the cache entry as modified
+                    cache_entry = cache_helper.get_cache_entry_for_file(file_item)
+                    if cache_entry:
+                        cache_entry.modified = True
 
-            # Update the file item's metadata status
-            file_item.metadata_status = "modified"
+                    # Update the file item's metadata status
+                    file_item.metadata_status = "modified"
+                else:
+                    # Failed to set metadata - metadata not loaded
+                    logger.error(
+                        f"[MetadataTree] Cannot edit {key_path} for {file_item.filename} - metadata not loaded. "
+                        "Please load metadata first (Fast or Extended)."
+                    )
+                    from core.pyqt_imports import QMessageBox
+                    parent_window = self._get_parent_with_file_table()
+                    if parent_window:
+                        QMessageBox.warning(
+                            parent_window,
+                            "Metadata Not Loaded",
+                            f"Cannot edit metadata for {file_item.filename}.\n\n"
+                            "Please load metadata first:\n"
+                            "• Right-click → Read Fast Metadata, or\n"
+                            "• Right-click → Read Extended Metadata"
+                        )
+                    return  # Abort the edit operation
+
+        if success_count == 0:
+            logger.warning("[MetadataTree] No files were successfully updated")
+            return
 
         # Update the file icon status immediately
         self._update_file_icon_status()
@@ -1658,7 +1684,24 @@ class MetadataTreeView(QTreeView):
         file_item = selected_files[0]
         cache_helper = self._get_cache_helper()
         if cache_helper:
-            cache_helper.set_metadata_value(file_item, key_path, new_value)
+            # Try to set metadata value - will fail if metadata not in cache
+            if not cache_helper.set_metadata_value(file_item, key_path, new_value):
+                # Failed to set metadata - show error and abort
+                logger.error(
+                    f"[MetadataTree] Cannot edit {key_path} for {file_item.filename} - metadata not loaded"
+                )
+                from core.pyqt_imports import QMessageBox
+                parent_window = self._get_parent_with_file_table()
+                if parent_window:
+                    QMessageBox.warning(
+                        parent_window,
+                        "Metadata Not Loaded",
+                        f"Cannot edit metadata for {file_item.filename}.\n\n"
+                        "Please load metadata first:\n"
+                        "• Right-click → Read Fast Metadata, or\n"
+                        "• Right-click → Read Extended Metadata"
+                    )
+                return
 
             # Mark the entry as modified
             cache_entry = cache_helper.get_cache_entry_for_file(file_item)
@@ -2417,6 +2460,22 @@ class MetadataTreeView(QTreeView):
             # Set current file path for scroll position memory
             self.set_current_file_path(file_item.full_path)
 
+            # CRITICAL: Clear any stale modifications for this file when displaying fresh metadata
+            # This prevents showing [MODIFIED] for fields that were never actually saved
+            from utils.path_normalizer import normalize_path
+            normalized_path = normalize_path(file_item.full_path)
+
+            # Check if we have stale modifications
+            if self._path_in_dict(normalized_path, self.modified_items_per_file):
+                logger.debug(
+                    f"[MetadataTree] Clearing stale modifications for {file_item.filename} on metadata display",
+                    extra={"dev_only": True}
+                )
+                self._remove_from_path_dict(normalized_path, self.modified_items_per_file)
+                # Also clear current modifications if this is the current file
+                if paths_equal(normalized_path, self._current_file_path):
+                    self.modified_items.clear()
+
             self.display_metadata(display_metadata, context=context)
         else:
             self.clear_view()
@@ -2612,6 +2671,11 @@ class MetadataTreeView(QTreeView):
         # Import normalize_path for consistent path handling
         from utils.path_normalizer import normalize_path
 
+        # Debug: Show all keys in modified_items_per_file
+        logger.info(
+            f"[MetadataTree] modified_items_per_file keys: {list(self.modified_items_per_file.keys())}"
+        )
+
         # Collect modifications for each file
         for file_path, modified_keys in self.modified_items_per_file.items():
             # Skip None or empty file paths
@@ -2622,18 +2686,16 @@ class MetadataTreeView(QTreeView):
             # This handles cases where file_path might not be normalized yet
             normalized_path = normalize_path(file_path)
 
-            logger.debug(
-                f"[MetadataTree] Looking up cache for file_path='{file_path}' -> normalized='{normalized_path}'",
-                extra={"dev_only": True}
+            logger.info(
+                f"[MetadataTree] Looking up cache for file_path='{file_path}' -> normalized='{normalized_path}'"
             )
 
             # Get cache entry using normalized path
             metadata_entry = cache_helper.metadata_cache.get_entry(normalized_path) if cache_helper.metadata_cache else None
 
             if metadata_entry:
-                logger.debug(
-                    f"[MetadataTree] Found cache entry with keys: {list(metadata_entry.data.keys())[:10] if hasattr(metadata_entry, 'data') else 'NO DATA'}",
-                    extra={"dev_only": True}
+                logger.info(
+                    f"[MetadataTree] Found cache entry with keys: {list(metadata_entry.data.keys())[:10] if hasattr(metadata_entry, 'data') else 'NO DATA'}"
                 )
             else:
                 logger.warning(

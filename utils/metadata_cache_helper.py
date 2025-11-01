@@ -59,13 +59,24 @@ class MetadataCacheHelper:
                 # Try get_entry() method first (preferred)
                 if hasattr(self.metadata_cache, "get_entry"):
                     cache_entry = self.metadata_cache.get_entry(normalized_path)
-                    if cache_entry and hasattr(cache_entry, "data") and cache_entry.data:
+                    logger.debug(
+                        f"[MetadataCacheHelper] get_entry returned: {cache_entry} for {getattr(file_item, 'filename', 'unknown')}"
+                    )
+                    if cache_entry and hasattr(cache_entry, "data"):
+                        # Return data even if it's an empty dict (valid metadata state)
+                        logger.debug(
+                            f"[MetadataCacheHelper] Returning metadata with {len(cache_entry.data)} keys"
+                        )
                         return cache_entry.data
+                    else:
+                        logger.warning(
+                            f"[MetadataCacheHelper] Cache entry invalid or no data for {getattr(file_item, 'filename', 'unknown')}"
+                        )
 
                 # Fallback to get() method
                 if hasattr(self.metadata_cache, "get"):
                     metadata = self.metadata_cache.get(normalized_path)
-                    if metadata:
+                    if metadata is not None:  # Allow empty dict
                         return metadata
 
             # Fallback to file item metadata

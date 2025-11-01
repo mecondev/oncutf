@@ -69,12 +69,6 @@ class UnifiedMetadataManager(QObject):
         self.force_extended_metadata = False
         self._metadata_cancelled = False  # Cancellation flag for metadata loading
 
-        # Initialize metadata cache and exiftool wrapper
-        from collections import OrderedDict
-
-        self._metadata_cache = OrderedDict()  # LRU cache for metadata results
-        self._cache_max_size = 500  # Keep last 500 files in memory
-
         # Initialize ExifTool wrapper for single file operations
         from utils.exiftool_wrapper import ExifToolWrapper
 
@@ -481,11 +475,7 @@ class UnifiedMetadataManager(QObject):
                     elif not use_extended and "__extended__" in metadata:
                         del metadata["__extended__"]
 
-                    # Cache the result in both local and parent window caches
-                    cache_key = (file_item.full_path, use_extended)
-                    self._metadata_cache[cache_key] = metadata
-
-                    # Also save to parent window's metadata_cache for UI display
+                    # Save to parent window's metadata_cache for UI display
                     if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
                         self.parent_window.metadata_cache.set(
                             file_item.full_path, metadata, is_extended=use_extended
@@ -648,17 +638,7 @@ class UnifiedMetadataManager(QObject):
                     elif not use_extended and "__extended__" in metadata:
                         del metadata["__extended__"]
 
-                    # Cache the result in both local and parent window caches
-                    cache_key = (file_item.full_path, use_extended)
-                    self._metadata_cache[cache_key] = metadata
-
-                    # Manage cache size (LRU eviction)
-                    if len(self._metadata_cache) > self._cache_max_size:
-                        # Remove oldest entries
-                        for _ in range(len(self._metadata_cache) - self._cache_max_size):
-                            self._metadata_cache.popitem(last=False)
-
-                    # Also save to parent window's metadata_cache for UI display
+                    # Save to parent window's metadata_cache for UI display
                     if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
                         self.parent_window.metadata_cache.set(
                             file_item.full_path, metadata, is_extended=use_extended

@@ -150,9 +150,15 @@ class PersistentMetadataCache:
         """Get the MetadataEntry for a file if available."""
         norm_path = self._normalize_path(file_path)
 
+        logger.debug(
+            f"[PersistentMetadataCache] get_entry: file_path='{file_path}' -> norm_path='{norm_path}', "
+            f"in_memory={norm_path in self._memory_cache}"
+        )
+
         # Check memory cache first
         if norm_path in self._memory_cache:
             self._cache_hits += 1
+            logger.debug(f"[PersistentMetadataCache] Cache HIT for: {norm_path}")
             return self._memory_cache[norm_path]
 
         # Load from database
