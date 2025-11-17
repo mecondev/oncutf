@@ -1340,13 +1340,18 @@ class MetadataWidget(QWidget):
 
     def _on_hierarchical_item_selected(self, _text: str, _data: Any):
         """Handle item selection from hierarchical combo box."""
+        logger.debug(
+            f"[MetadataWidget] Hierarchical item selected - text: {_text}, data: {_data}",
+            extra={"dev_only": True}
+        )
+        
         # Debounce preview update to avoid rapid recalculations
         try:
             from utils.timer_manager import TimerPriority, TimerType, get_timer_manager
 
             get_timer_manager().schedule(
                 callback=self.emit_if_changed,
-                delay=120,
+                delay=50,  # Reduced delay for more responsive UI
                 priority=TimerPriority.HIGH,
                 timer_type=TimerType.PREVIEW_UPDATE,
                 timer_id="metadata_preview_update",

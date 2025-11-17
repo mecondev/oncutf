@@ -41,6 +41,8 @@ class MetadataModule:
     def clean_metadata_value(value: str) -> str:
         """
         Clean metadata value for filename safety by replacing problematic characters.
+        
+        Windows-safe filename cleaning that handles all invalid characters.
 
         Args:
             value (str): The raw metadata value
@@ -51,8 +53,25 @@ class MetadataModule:
         if not value:
             return value
 
-        # Replace colons and spaces with underscores for filename safety
-        cleaned = value.replace(":", "_").replace(" ", "_")
+        # Windows invalid filename characters: < > : " / \ | ? *
+        # Replace colons (common in date/time) with dash for better readability
+        cleaned = value.replace(":", "-")
+        
+        # Replace other invalid characters with underscore
+        invalid_chars = ['<', '>', '"', '/', '\\', '|', '?', '*']
+        for char in invalid_chars:
+            cleaned = cleaned.replace(char, "_")
+        
+        # Replace multiple spaces with single underscore
+        while "  " in cleaned:
+            cleaned = cleaned.replace("  ", " ")
+        
+        # Replace spaces with underscore for filename safety
+        cleaned = cleaned.replace(" ", "_")
+        
+        # Remove leading/trailing underscores
+        cleaned = cleaned.strip("_")
+        
         return cleaned
 
     @staticmethod
@@ -94,29 +113,39 @@ class MetadataModule:
             )
             return "invalid"
 
+        # Normalize path for Windows compatibility at the very start
+        from utils.path_normalizer import normalize_path
+        
         path = file_item.full_path
         if not path:
             logger.debug(
                 "[DEBUG] [MetadataModule] No path - returning 'invalid'", extra={"dev_only": True}
             )
             return "invalid"
+        
+        # CRITICAL: Normalize path for Windows
+        path = normalize_path(path)
+        logger.debug(
+            f"[DEBUG] [MetadataModule] Normalized path: {path}",
+            extra={"dev_only": True}
+        )
 
         # Use the same persistent cache as the UI if no cache provided
         if not metadata_cache:
             from core.persistent_metadata_cache import get_persistent_metadata_cache
-            from utils.path_normalizer import normalize_path
 
             persistent_cache = get_persistent_metadata_cache()
-            normalized_path = normalize_path(path)
-            metadata = persistent_cache.get(normalized_path) if persistent_cache else {}
+            # Use normalized path for cache lookup
+            metadata = persistent_cache.get(path) if persistent_cache else {}
             logger.debug(
-                f"[DEBUG] [MetadataModule] Using persistent cache for {file_item.filename}, normalized_path: {normalized_path}, metadata: {metadata}",
+                f"[DEBUG] [MetadataModule] Using persistent cache for {file_item.filename}, path: {path}, has_metadata: {bool(metadata)}",
                 extra={"dev_only": True},
             )
         else:
+            # Use normalized path for cache lookup
             metadata = metadata_cache.get(path) if metadata_cache else {}
             logger.debug(
-                f"[DEBUG] [MetadataModule] Using provided cache for {file_item.filename}, path: {path}, metadata: {metadata}",
+                f"[DEBUG] [MetadataModule] Using provided cache for {file_item.filename}, path: {path}, has_metadata: {bool(metadata)}",
                 extra={"dev_only": True},
             )
 
@@ -126,6 +155,21 @@ class MetadataModule:
                 "[DEBUG] [MetadataModule] Metadata is not dict, using empty dict",
                 extra={"dev_only": True},
             )
+
+        # After getting metadata, log what we found
+        if metadata:
+            logger.debug(
+                f"[DEBUG] [MetadataModule] Metadata keys available: {list(metadata.keys())[:20]}",
+                extra={"dev_only": True}
+            )
+            
+            # Log date-related fields specifically
+            date_fields = {k: v for k, v in metadata.items() if 'date' in k.lower() or 'time' in k.lower()}
+            if date_fields:
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Date/Time fields: {date_fields}",
+                    extra={"dev_only": True}
+                )
 
         # Handle filesystem-based date formats
         if field and field.startswith("last_modified_"):
@@ -359,22 +403,22 @@ class MetadataModule:
 
         Returns:
             str: Hash value or original name if not available
-        """
-        try:
-            hash_value = get_hash_for_file(file_path, hash_type)
-            if hash_value:
-                return hash_value
-            import os
 
-            base_name = os.path.splitext(os.path.basename(file_path))[0]
-            return base_name
-        except Exception as e:
-            logger.warning(f"[MetadataModule] Error getting hash for {file_path}: {e}")
-            import os
 
-            base_name = os.path.splitext(os.path.basename(file_path))[0]
-            return base_name
 
+
+
+
+
+
+
+
+
+
+
+
+
+            return base_name            base_name = os.path.splitext(os.path.basename(file_path))[0]            import os            logger.warning(f"[MetadataModule] Error getting hash for {file_path}: {e}")        except Exception as e:            return base_name            base_name = os.path.splitext(os.path.basename(file_path))[0]            import os                return hash_value            if hash_value:            hash_value = get_hash_for_file(file_path, hash_type)        try:        """
     @staticmethod
     def _ask_user_for_hash_calculation(_file_path: str, _hash_type: str) -> bool:
         """

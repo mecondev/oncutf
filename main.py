@@ -15,16 +15,20 @@ Functions:
 
 import atexit
 import logging
+import locale
 import os
 import platform
 import signal
 import sys
 import time
 
-from core.pyqt_imports import QApplication, QStyleFactory, Qt
+# Add the project root to the path FIRST - before any local imports
+# Normalize the path for Windows compatibility
+project_root = os.path.normpath(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
-# Add the project root to the path so we can import our modules
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from core.pyqt_imports import QApplication, QStyleFactory, Qt
 
 from config import SPLASH_SCREEN_DURATION
 from main_window import MainWindow
@@ -94,12 +98,31 @@ def main() -> int:
     MainWindow and shows it, and enters the application's main loop.
     """
     try:
+        # Log platform information for debugging
+        logger.info(f"Platform: {platform.system()} {platform.release()}")
+        logger.info(f"Python version: {sys.version}")
+        logger.debug(f"Project root: {project_root}", extra={"dev_only": True})
+        
+        # Log Windows-specific info
+        if platform.system() == "Windows":
+            logger.info(f"Windows version: {platform.win32_ver()}")
+            import locale
+            logger.info(f"System locale: {locale.getdefaultlocale()}")
+            logger.info(f"File system encoding: {sys.getfilesystemencoding()}")
+        
         # Enable High DPI support before creating QApplication
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)  # type: ignore[attr-defined]
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)  # type: ignore[attr-defined]
 
         # Create application
         app = QApplication(sys.argv)
+        
+        # Log locale information (important for date/time formatting)
+        try:
+            current_locale = locale.getlocale()
+            logger.debug(f"Current locale: {current_locale}", extra={"dev_only": True})
+        except Exception as e:
+            logger.warning(f"Could not get locale: {e}")
 
         # Initialize DPI helper early
         from utils.dpi_helper import get_dpi_helper, log_dpi_info

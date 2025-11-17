@@ -78,10 +78,16 @@ class ExifToolWrapper:
         """
         Execute ExifTool with standard options for fast metadata extraction.
         """
+        # Normalize path for Windows compatibility
+        from utils.path_normalizer import normalize_path
+        
+        file_path = normalize_path(file_path)
+        
         if not os.path.isfile(file_path):
             logger.warning(f"[ExifToolWrapper] File not found: {file_path}")
             return None
 
+        # Use UTF-8 charset for filename encoding (critical for Windows)
         cmd = ["exiftool", "-json", "-charset", "filename=UTF8", file_path]
 
         try:
@@ -186,6 +192,11 @@ class ExifToolWrapper:
         Uses a one-shot subprocess call with -ee for extended metadata.
         Parses and merges embedded entries, marks result as extended.
         """
+        # Normalize path for Windows compatibility
+        from utils.path_normalizer import normalize_path
+        
+        file_path = normalize_path(file_path)
+        
         if not os.path.isfile(file_path):
             logger.warning(f"[ExtendedReader] File does not exist: {file_path}")
             return None
@@ -253,7 +264,7 @@ class ExifToolWrapper:
         Args:
             file_path (str): Full path to the file
             metadata_changes (dict): Dictionary of metadata changes to write
-                                   Format: {"EXIF:Rotation": "90", "IPTC:Keywords": "test"}
+                       Format: {"EXIF:Rotation": "90", "IPTC:Keywords": "test"}
 
         Returns:
             bool: True if successful, False otherwise
@@ -427,7 +438,7 @@ class ExifToolWrapper:
         try:
             import time
 
-            import psutil
+            import psutil # type: ignore
 
             exiftool_processes = []
             for proc in psutil.process_iter(["pid", "name", "cmdline"]):

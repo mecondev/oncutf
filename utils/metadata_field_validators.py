@@ -345,6 +345,6 @@ class MetadataFieldValidator:
         validator = MetadataFieldValidator.get_field_validator(field_name)
 
         if not validator:
-            return False, f"Δεν υπάρχει validator για το πεδίο: {field_name}"
+            False, f"No validator found for field: {field_name}"
 
         return validator(value)
