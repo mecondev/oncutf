@@ -143,8 +143,8 @@ class MetadataModule:
                 extra={"dev_only": True},
             )
         else:
-            # Use normalized path for cache lookup
-            metadata = metadata_cache.get(path) if metadata_cache else {}
+            # Use normalized path exclusively for cache lookup
+            metadata = metadata_cache.get(path, {})
             logger.debug(
                 f"[DEBUG] [MetadataModule] Using provided cache for {file_item.filename}, path: {path}, has_metadata: {bool(metadata)}",
                 extra={"dev_only": True},

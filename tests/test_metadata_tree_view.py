@@ -64,7 +64,13 @@ class TestMetadataTreeView:
                 color: {theme_engine.get_color('table_text')};
             }}
         """)
-        return tree
+        yield tree
+        # Proper cleanup
+        tree.setModel(None)
+        tree.deleteLater()
+        if qapp:
+            from PyQt5.QtCore import QCoreApplication
+            QCoreApplication.processEvents()
 
     def test_widget_initialization(self, tree_view):
         """Test MetadataTreeView initialization."""
@@ -147,13 +153,19 @@ class TestMetadataTreeView:
         root.appendRow(item2)
 
         tree_view.setModel(model)
+        
+        # Allow Qt to process events
+        from PyQt5.QtCore import QCoreApplication
+        QCoreApplication.processEvents()
 
         # Test selection
         index1 = model.index(0, 0)
         tree_view.setCurrentIndex(index1)
 
         assert tree_view.currentIndex() == index1
-        assert tree_view.selectionModel().isSelected(index1) is True
+        assert tree_view.selectionModel() is not None
+        if tree_view.selectionModel():
+            assert tree_view.selectionModel().isSelected(index1) is True
 
     def test_metadata_population(self, tree_view):
         """Test metadata tree basic functionality without actual data."""

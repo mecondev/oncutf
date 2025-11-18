@@ -6,6 +6,7 @@ This module provides a single, consistent way to normalize file paths
 across all operating systems and modules.
 """
 
+import os
 from pathlib import Path
 
 from utils.logger_factory import get_cached_logger
@@ -36,25 +37,20 @@ def normalize_path(file_path: str | Path) -> str:
     if not file_path:
         return ""
 
+    # Convert to Path object for cross-platform handling
+    p = Path(file_path)
+
+    # Resolve to absolute path and normalize
     try:
-        # Convert to Path object and resolve to absolute path
-        path_obj = Path(file_path)
-        resolved_path = path_obj.resolve()
-        normalized = str(resolved_path)
+        normalized = str(p.resolve())
+    except (OSError, RuntimeError) as e:
+        # Fallback if resolve() fails
+        logger.warning(
+            f"[WARNING] Path resolve failed for '{file_path}': {e}, using fallback"
+        )
+        normalized = os.path.normpath(str(file_path))
 
-        # For debugging: log the normalization
-        if file_path != normalized:
-            logger.debug(
-                f"[DEBUG] Path normalized: '{file_path}' -> '{normalized}'",
-                extra={"dev_only": True},
-            )
+    # Ensure forward slashes for consistency in caching
+    normalized = normalized.replace("\\", "/")
 
-        return normalized
-    except Exception as e:
-        # Fallback to simple normalization if resolve fails
-        logger.warning(f"[WARNING] Path resolve failed for '{file_path}': {e}, using fallback")
-
-        # Simple normalization as fallback
-        import os
-
-        return os.path.normpath(str(file_path))
+    return normalized
