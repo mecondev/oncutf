@@ -511,14 +511,14 @@ class ThemeEngine:
                 height: 12px;
                 padding: 2px;
             }}
-            
+
             QComboBox QTreeView::branch:has-children:open:adjoins-item {{
                 image: url(resources/icons/feather_icons/chevron-down.svg);
                 width: 12px;
                 height: 12px;
                 padding: 2px;
             }}
-            
+
             QComboBox QTreeView::branch:!has-children:adjoins-item {{
                 image: none;
             }}
@@ -978,6 +978,39 @@ class ThemeEngine:
                 background-color: {self.colors["highlight_light_blue"]} !important;
                 color: transparent !important;
                 border: none !important;
+            }}
+
+            /* FileTreeView chevron icons - explicit styling for Windows compatibility */
+            FileTreeView::branch:has-children:closed:adjoins-item {{
+                image: url(resources/icons/feather_icons/chevron-right.svg) !important;
+                width: 12px !important;
+                height: 12px !important;
+                padding: 2px !important;
+            }}
+
+            FileTreeView::branch:has-children:open:adjoins-item {{
+                image: url(resources/icons/feather_icons/chevron-down.svg) !important;
+                width: 12px !important;
+                height: 12px !important;
+                padding: 2px !important;
+            }}
+
+            FileTreeView::branch:!has-children:adjoins-item {{
+                image: none !important;
+            }}
+
+            FileTreeView::branch:hover:has-children:closed:adjoins-item {{
+                image: url(resources/icons/feather_icons/chevron-right.svg) !important;
+                width: 12px !important;
+                height: 12px !important;
+                padding: 2px !important;
+            }}
+
+            FileTreeView::branch:hover:has-children:open:adjoins-item {{
+                image: url(resources/icons/feather_icons/chevron-down.svg) !important;
+                width: 12px !important;
+                height: 12px !important;
+                padding: 2px !important;
             }}
 
             /* MetadataTreeView specific styling */

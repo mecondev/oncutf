@@ -1345,10 +1345,6 @@ class MetadataWidget(QWidget):
             extra={"dev_only": True}
         )
 
-        # CRITICAL: Close the dropdown immediately
-        if hasattr(self.options_combo, "hidePopup"):
-            self.options_combo.hidePopup()
-
         # Clear preview cache to force refresh when selection changes
         if self.parent_window and hasattr(self.parent_window, "preview_manager"):
             self.parent_window.preview_manager.clear_cache()
@@ -1357,8 +1353,20 @@ class MetadataWidget(QWidget):
                 extra={"dev_only": True}
             )
 
-        # Emit changes immediately without debouncing for responsive UI
-        self.emit_if_changed()
+        # Always emit signal when selection changes to ensure preview updates
+        # Get current data to check if it changed
+        new_data = self.get_data()
+
+        # Force update _last_data to track current state
+        data_changed = new_data != self._last_data
+        self._last_data = new_data
+
+        # Always emit signal - preview manager will handle caching
+        logger.debug(
+            f"[MetadataWidget] Emitting updated signal - data_changed: {data_changed}, data: {new_data}",
+            extra={"dev_only": True}
+        )
+        self.updated.emit(self)
 
     def _on_selection_changed(self):
         self.update_options()
