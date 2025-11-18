@@ -205,6 +205,17 @@ class HierarchicalComboBox(QComboBox):
             category_index = self.model.indexFromItem(category_item)
             self.tree_view.expand(category_index)
 
+    def showPopup(self) -> None:
+        """Override showPopup to prevent unwanted re-opening."""
+        if not hasattr(self, '_preventing_popup_open'):
+            self._preventing_popup_open = False
+        
+        if self._preventing_popup_open:
+            logger.debug("[HierarchicalComboBox] Popup open prevented")
+            return
+        
+        super().showPopup()
+
     def _on_item_clicked(self, index) -> None:
         """Handle item click in the tree view."""
         item = self.model.itemFromIndex(index)
@@ -216,13 +227,18 @@ class HierarchicalComboBox(QComboBox):
             # Update the combo box display text
             self.setCurrentText(text)
 
-            # Emit signal
+            # Emit signal BEFORE hidePopup to avoid re-opening
             self.item_selected.emit(text, data)
 
             logger.debug(f"Item clicked: {text} with data: {data}")
 
-            # Close the popup
+            # CRITICAL: Prevent popup from re-opening
+            self._preventing_popup_open = True
             self.hidePopup()
+            
+            # Re-enable after a short delay
+            from PyQt5.QtCore import QTimer
+            QTimer.singleShot(150, lambda: setattr(self, '_preventing_popup_open', False))
         else:
             # For categories, toggle expansion on single click too
             if self.tree_view.isExpanded(index):
@@ -234,8 +250,8 @@ class HierarchicalComboBox(QComboBox):
         """Handle item double click in the tree view."""
         item = self.model.itemFromIndex(index)
         if item and item.flags() & Qt.ItemFlag.ItemIsSelectable:
-            # Same as single click for selectable items
-            self._on_item_clicked(index)
+            # Single click is enough - don't need double click for selection
+            pass
         else:
             # For categories, toggle expansion
             if self.tree_view.isExpanded(index):

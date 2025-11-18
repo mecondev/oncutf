@@ -194,3 +194,40 @@ class CustomFileSystemModel(QFileSystemModel):
             return super().hasChildren(parent)
 
         return False
+
+    def refresh(self, index: QModelIndex = QModelIndex()) -> None:
+        """
+        Refresh the file system model to detect new/removed drives.
+
+        This method updates the model by clearing and reloading file system data,
+        which is useful when drives are connected/disconnected.
+
+        Args:
+            index: The model index to refresh (default: root)
+        """
+        try:
+            # If no index provided, refresh the root (all drives)
+            if not index.isValid():
+                # Get the current root path
+                root_path = self.rootPath()
+
+                # Clear the model
+                self.setRootPath("")
+
+                # Reload the root path
+                self.setRootPath(root_path)
+
+                logger.info(
+                    f"[CustomFileSystemModel] Refreshed file system from: {root_path}",
+                    extra={"dev_only": True},
+                )
+            else:
+                # Refresh specific index
+                self.directoryLoaded.emit(self.filePath(index))
+                logger.debug(
+                    f"[CustomFileSystemModel] Refreshed index: {self.filePath(index)}",
+                    extra={"dev_only": True},
+                )
+
+        except Exception as e:
+            logger.error(f"[CustomFileSystemModel] Error refreshing model: {e}")

@@ -100,6 +100,106 @@ class FileTreeView(QTreeView):
         self.expanded.connect(self._on_item_expanded)
         self.collapsed.connect(self._on_item_collapsed)
 
+        # Initialize file system watcher for drive detection
+        self._setup_file_system_watcher()
+
+    def _setup_file_system_watcher(self) -> None:
+        """Setup QFileSystemWatcher to detect drive changes."""
+        try:
+            from PyQt5.QtCore import QFileSystemWatcher, QTimer
+
+            self.file_system_watcher = QFileSystemWatcher()
+
+            # Watch common drive locations
+            import platform
+
+            if platform.system() == "Windows":
+                # Watch root drives on Windows
+                import string
+
+                for drive in string.ascii_uppercase:
+                    drive_path = f"{drive}:\\"
+                    try:
+                        if os.path.exists(drive_path):
+                            self.file_system_watcher.addPath(drive_path)
+                            logger.debug(
+                                f"[FileTreeView] Watching drive: {drive_path}",
+                                extra={"dev_only": True},
+                            )
+                    except Exception:
+                        pass
+            else:
+                # Watch /media and /mnt on Linux
+                for watch_path in ["/media", "/mnt"]:
+                    if os.path.exists(watch_path):
+                        self.file_system_watcher.addPath(watch_path)
+                        logger.debug(
+                            f"[FileTreeView] Watching mount point: {watch_path}",
+                            extra={"dev_only": True},
+                        )
+
+            # Connect signals
+            self.file_system_watcher.directoryChanged.connect(self._on_drive_changed)
+
+            # Debounce timer to avoid multiple rapid updates
+            self._drive_change_timer = QTimer()
+            self._drive_change_timer.setSingleShot(True)
+            self._drive_change_timer.timeout.connect(self._refresh_tree_on_drive_change)
+            self._drive_change_timer.setInterval(500)  # Wait 500ms before refreshing
+
+            logger.debug(
+                "[FileTreeView] File system watcher initialized",
+                extra={"dev_only": True},
+            )
+
+        except Exception as e:
+            logger.warning(f"[FileTreeView] Failed to setup file system watcher: {e}")
+
+    def _on_drive_changed(self, path: str) -> None:
+        """Handle drive changes detected by QFileSystemWatcher."""
+        logger.debug(
+            f"[FileTreeView] Drive changed detected: {path}",
+            extra={"dev_only": True},
+        )
+
+        # Restart debounce timer
+        if hasattr(self, "_drive_change_timer"):
+            self._drive_change_timer.stop()
+            self._drive_change_timer.start()
+
+    def _refresh_tree_on_drive_change(self) -> None:
+        """Refresh the file tree after drive changes."""
+        try:
+            model = self.model()
+            if not model or not hasattr(model, "refresh"):
+                logger.debug(
+                    "[FileTreeView] Model doesn't support refresh",
+                    extra={"dev_only": True},
+                )
+                return
+
+            # Get current selected path before refresh
+            current_path = self.get_selected_path()
+
+            # Refresh the model
+            model.refresh()
+
+            # Restore selection if possible
+            if current_path and os.path.exists(current_path):
+                self.select_path(current_path)
+                logger.debug(
+                    f"[FileTreeView] Tree refreshed and selection restored: {current_path}",
+                    extra={"dev_only": True},
+                )
+            else:
+                logger.debug(
+                    "[FileTreeView] Tree refreshed (selection lost)",
+                    extra={"dev_only": True},
+                )
+
+        except Exception as e:
+            logger.error(f"[FileTreeView] Error refreshing tree on drive change: {e}")
+
     def _setup_branch_icons(self) -> None:
         """Setup custom branch icons for better cross-platform compatibility."""
         try:
