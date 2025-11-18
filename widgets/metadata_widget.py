@@ -264,7 +264,7 @@ class MetadataWidget(QWidget):
             files_with_hash = hash_cache.get_files_with_hash_batch(file_paths, "CRC32")
             files_needing_hash = [path for path in file_paths if path not in files_with_hash]
 
-            # Always add CRC32 option (only hash type supported) - but always disabled
+            # Always add CRC32 option (only hash type supported)
             hierarchical_data = {
                 "Hash Types": [
                     ("CRC32", "hash_crc32"),
@@ -936,18 +936,18 @@ class MetadataWidget(QWidget):
         # File Dates category is ALWAYS enabled
         file_dates_item = self.category_model.item(0)
         file_dates_item.setFlags(file_dates_item.flags() | Qt.ItemIsEnabled) # type: ignore
-        file_dates_item.setForeground(QColor())  # Reset to default color
+        file_dates_item.setForeground(QColor())  # type: ignore # Reset to default color
 
         if not selected_files:
             # Disable Hash and EXIF when no files are selected
             hash_item = self.category_model.item(1)
             metadata_item = self.category_model.item(2)
 
-            hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled)
-            hash_item.setForeground(QColor("#888888"))
+            hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled) # type: ignore
+            hash_item.setForeground(QColor("#888888")) # type: ignore
 
-            metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled)
-            metadata_item.setForeground(QColor("#888888"))
+            metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled) # type: ignore
+            metadata_item.setForeground(QColor("#888888")) # type: ignore
 
             # Apply normal styling - disabled items will be gray via QAbstractItemView styling
             self._apply_category_styling()
@@ -976,11 +976,11 @@ class MetadataWidget(QWidget):
             hash_item = self.category_model.item(1)
 
             if has_hash_data:
-                hash_item.setFlags(hash_item.flags() | Qt.ItemIsEnabled)
-                hash_item.setForeground(QColor())  # Reset to default color
+                hash_item.setFlags(hash_item.flags() | Qt.ItemIsEnabled) # type: ignore
+                hash_item.setForeground(QColor())  # type: ignore # Reset to default color
             else:
-                hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled)
-                hash_item.setForeground(QColor("#888888"))
+                hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled) # type: ignore
+                hash_item.setForeground(QColor("#888888")) # type: ignore
 
                 # If current category is hash and is disabled, apply disabled styling
                 if self.category_combo.currentData() == "hash":
@@ -1001,11 +1001,11 @@ class MetadataWidget(QWidget):
             metadata_item = self.category_model.item(2)
 
             if has_metadata_data:
-                metadata_item.setFlags(metadata_item.flags() | Qt.ItemIsEnabled)
-                metadata_item.setForeground(QColor())  # Reset to default color
+                metadata_item.setFlags(metadata_item.flags() | Qt.ItemIsEnabled) # type: ignore
+                metadata_item.setForeground(QColor())  # type: ignore # Reset to default color
             else:
-                metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled)
-                metadata_item.setForeground(QColor("#888888"))
+                metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled) # type: ignore
+                metadata_item.setForeground(QColor("#888888")) # type: ignore
 
             # Apply styling to category combo based on state
             self._apply_category_styling()
@@ -1345,7 +1345,11 @@ class MetadataWidget(QWidget):
             extra={"dev_only": True}
         )
 
-        # CRITICAL: Clear preview cache to force refresh when selection changes
+        # CRITICAL: Close the dropdown immediately
+        if hasattr(self.options_combo, "hidePopup"):
+            self.options_combo.hidePopup()
+
+        # Clear preview cache to force refresh when selection changes
         if self.parent_window and hasattr(self.parent_window, "preview_manager"):
             self.parent_window.preview_manager.clear_cache()
             logger.debug(
@@ -1354,7 +1358,6 @@ class MetadataWidget(QWidget):
             )
 
         # Emit changes immediately without debouncing for responsive UI
-        # Combobox selections are already infrequent and intentional events
         self.emit_if_changed()
 
     def _on_selection_changed(self):
