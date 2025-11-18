@@ -59,19 +59,9 @@ class MetadataCacheHelper:
                 # Try get_entry() method first (preferred)
                 if hasattr(self.metadata_cache, "get_entry"):
                     cache_entry = self.metadata_cache.get_entry(normalized_path)
-                    logger.debug(
-                        f"[MetadataCacheHelper] get_entry returned: {cache_entry} for {getattr(file_item, 'filename', 'unknown')}"
-                    )
                     if cache_entry and hasattr(cache_entry, "data"):
                         # Return data even if it's an empty dict (valid metadata state)
-                        logger.debug(
-                            f"[MetadataCacheHelper] Returning metadata with {len(cache_entry.data)} keys"
-                        )
                         return cache_entry.data
-                    else:
-                        logger.warning(
-                            f"[MetadataCacheHelper] Cache entry invalid or no data for {getattr(file_item, 'filename', 'unknown')}"
-                        )
 
                 # Fallback to get() method
                 if hasattr(self.metadata_cache, "get"):
@@ -86,7 +76,7 @@ class MetadataCacheHelper:
             return {}
 
         except Exception as e:
-            logger.debug(
+            logger.error(
                 f"[MetadataCacheHelper] Error getting metadata for {getattr(file_item, 'filename', 'unknown')}: {e}"
             )
             return {}
@@ -113,7 +103,7 @@ class MetadataCacheHelper:
             return None
 
         except Exception as e:
-            logger.debug(
+            logger.error(
                 f"[MetadataCacheHelper] Error getting cache entry for {getattr(file_item, 'filename', 'unknown')}: {e}"
             )
             return None
@@ -138,19 +128,10 @@ class MetadataCacheHelper:
             normalized_path = normalize_path(file_item.full_path)
 
             # Update cache if available (use 'set' method, not 'set_entry')
-            if self.metadata_cache:
-                if hasattr(self.metadata_cache, "set"):
-                    self.metadata_cache.set(
-                        normalized_path, metadata, is_extended=is_extended, modified=modified
-                    )
-                    logger.debug(
-                        f"[MetadataCacheHelper] Updated cache for {getattr(file_item, 'filename', 'unknown')}",
-                        extra={"dev_only": True}
-                    )
-                else:
-                    logger.warning(
-                        f"[MetadataCacheHelper] Cache does not have 'set' method for {getattr(file_item, 'filename', 'unknown')}"
-                    )
+            if self.metadata_cache and hasattr(self.metadata_cache, "set"):
+                self.metadata_cache.set(
+                    normalized_path, metadata, is_extended=is_extended, modified=modified
+                )
 
             # Also update file item
             file_item.metadata = metadata
@@ -213,7 +194,7 @@ class MetadataCacheHelper:
             return False
 
         except Exception as e:
-            logger.debug(
+            logger.error(
                 f"[MetadataCacheHelper] Error checking metadata for {getattr(file_item, 'filename', 'unknown')}: {e}"
             )
             return False
@@ -289,10 +270,6 @@ class MetadataCacheHelper:
 
                 # Set as top-level with correct capitalization
                 metadata["Rotation"] = new_value
-                logger.debug(
-                    f"[MetadataCacheHelper] Set Rotation={new_value} for {getattr(file_item, 'filename', 'unknown')}",
-                    extra={"dev_only": True}
-                )
             # Handle nested keys (e.g., "EXIF/ImageWidth")
             elif "/" in key_path:
                 parts = key_path.split("/")
@@ -340,7 +317,7 @@ class MetadataCacheHelper:
             return False
 
         except Exception as e:
-            logger.debug(
+            logger.error(
                 f"[MetadataCacheHelper] Error checking modification status for {getattr(file_item, 'filename', 'unknown')}: {e}"
             )
             return False

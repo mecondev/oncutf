@@ -319,13 +319,13 @@ class MetadataWidget(QWidget):
 
             # Try to get from FileStore
             if context and hasattr(context, "_file_store") and context._file_store:
-                selected_files = context._file_store.get_selected_files()
+                selected_files = context._file_store.get_selected_files() # type: ignore
                 if selected_files:
                     return selected_files
 
             # Try to get from SelectionStore
             if context and hasattr(context, "_selection_store") and context._selection_store:
-                selected_files = context._selection_store.get_selected_files()
+                selected_files = context._selection_store.get_selected_files() # type: ignore
                 if selected_files:
                     return selected_files
 
@@ -360,7 +360,7 @@ class MetadataWidget(QWidget):
             else:
                 context = self._get_app_context()
                 if context and hasattr(context, "main_window"):
-                    main_window = context.main_window
+                    main_window = context.main_window # type: ignore
 
             if main_window and hasattr(main_window, "event_handler_manager"):
                 # Use the existing hash calculation method
@@ -897,7 +897,7 @@ class MetadataWidget(QWidget):
 
         # For hash category, check if field is a valid hash type
         if category == "hash":
-            return field and field.startswith("hash_")
+            return field and field.startswith("hash_") # type: ignore
 
         # For other categories, any field is effective
         return bool(field)
@@ -922,20 +922,20 @@ class MetadataWidget(QWidget):
 
             # Add items to model
             item1 = QStandardItem("File Date/Time")
-            item1.setData("file_dates", Qt.UserRole)
+            item1.setData("file_dates", Qt.UserRole) # type: ignore
             self.category_model.appendRow(item1)
 
             item2 = QStandardItem("Hash")
-            item2.setData("hash", Qt.UserRole)
+            item2.setData("hash", Qt.UserRole) # type: ignore
             self.category_model.appendRow(item2)
 
             item3 = QStandardItem("EXIF/Metadata")
-            item3.setData("metadata_keys", Qt.UserRole)
+            item3.setData("metadata_keys", Qt.UserRole) # type: ignore
             self.category_model.appendRow(item3)
 
         # File Dates category is ALWAYS enabled
         file_dates_item = self.category_model.item(0)
-        file_dates_item.setFlags(file_dates_item.flags() | Qt.ItemIsEnabled)
+        file_dates_item.setFlags(file_dates_item.flags() | Qt.ItemIsEnabled) # type: ignore
         file_dates_item.setForeground(QColor())  # Reset to default color
 
         if not selected_files:
@@ -1344,21 +1344,18 @@ class MetadataWidget(QWidget):
             f"[MetadataWidget] Hierarchical item selected - text: {_text}, data: {_data}",
             extra={"dev_only": True}
         )
-        
-        # Debounce preview update to avoid rapid recalculations
-        try:
-            from utils.timer_manager import TimerPriority, TimerType, get_timer_manager
 
-            get_timer_manager().schedule(
-                callback=self.emit_if_changed,
-                delay=50,  # Reduced delay for more responsive UI
-                priority=TimerPriority.HIGH,
-                timer_type=TimerType.PREVIEW_UPDATE,
-                timer_id="metadata_preview_update",
+        # CRITICAL: Clear preview cache to force refresh when selection changes
+        if self.parent_window and hasattr(self.parent_window, "preview_manager"):
+            self.parent_window.preview_manager.clear_cache()
+            logger.debug(
+                "[MetadataWidget] Preview cache cleared on item selection",
+                extra={"dev_only": True}
             )
-        except Exception:
-            # Fallback: immediate update if timer manager not available
-            self.emit_if_changed()
+
+        # Emit changes immediately without debouncing for responsive UI
+        # Combobox selections are already infrequent and intentional events
+        self.emit_if_changed()
 
     def _on_selection_changed(self):
         self.update_options()

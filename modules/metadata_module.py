@@ -41,8 +41,9 @@ class MetadataModule:
     def clean_metadata_value(value: str) -> str:
         """
         Clean metadata value for filename safety by replacing problematic characters.
-        
+
         Windows-safe filename cleaning that handles all invalid characters.
+        Time separators and timezone offsets use underscores for consistency.
 
         Args:
             value (str): The raw metadata value
@@ -54,24 +55,24 @@ class MetadataModule:
             return value
 
         # Windows invalid filename characters: < > : " / \ | ? *
-        # Replace colons (common in date/time) with dash for better readability
-        cleaned = value.replace(":", "-")
-        
+        # Replace colons (common in date/time) with underscore for filename safety
+        cleaned = value.replace(":", "_")
+
         # Replace other invalid characters with underscore
         invalid_chars = ['<', '>', '"', '/', '\\', '|', '?', '*']
         for char in invalid_chars:
             cleaned = cleaned.replace(char, "_")
-        
+
         # Replace multiple spaces with single underscore
         while "  " in cleaned:
             cleaned = cleaned.replace("  ", " ")
-        
+
         # Replace spaces with underscore for filename safety
         cleaned = cleaned.replace(" ", "_")
-        
+
         # Remove leading/trailing underscores
         cleaned = cleaned.strip("_")
-        
+
         return cleaned
 
     @staticmethod
@@ -115,14 +116,14 @@ class MetadataModule:
 
         # Normalize path for Windows compatibility at the very start
         from utils.path_normalizer import normalize_path
-        
+
         path = file_item.full_path
         if not path:
             logger.debug(
                 "[DEBUG] [MetadataModule] No path - returning 'invalid'", extra={"dev_only": True}
             )
             return "invalid"
-        
+
         # CRITICAL: Normalize path for Windows
         path = normalize_path(path)
         logger.debug(
@@ -162,7 +163,7 @@ class MetadataModule:
                 f"[DEBUG] [MetadataModule] Metadata keys available: {list(metadata.keys())[:20]}",
                 extra={"dev_only": True}
             )
-            
+
             # Log date-related fields specifically
             date_fields = {k: v for k, v in metadata.items() if 'date' in k.lower() or 'time' in k.lower()}
             if date_fields:
@@ -298,7 +299,7 @@ class MetadataModule:
                 # Fallback: return original name
                 from modules.original_name_module import OriginalNameModule
 
-                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)
+                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache) # type: ignore
 
             # Format the value appropriately and clean it for filename safety
             try:
@@ -323,7 +324,7 @@ class MetadataModule:
             if not value:
                 from modules.original_name_module import OriginalNameModule
 
-                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)
+                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache) # type: ignore
             result = MetadataModule.clean_metadata_value(str(value))
             _metadata_cache[cache_key] = result
             _global_cache_timestamp = current_time
@@ -334,7 +335,7 @@ class MetadataModule:
             if not value:
                 from modules.original_name_module import OriginalNameModule
 
-                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)
+                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache) # type: ignore
             result = MetadataModule.clean_metadata_value(str(value))
             _metadata_cache[cache_key] = result
             _global_cache_timestamp = current_time
@@ -366,7 +367,7 @@ class MetadataModule:
                         from modules.original_name_module import OriginalNameModule
 
                         return OriginalNameModule.apply_from_data(
-                            {}, file_item, index, metadata_cache
+                            {}, file_item, index, metadata_cache # type: ignore
                         )
             except ImportError:
                 # Fallback if mapper not available
@@ -383,7 +384,7 @@ class MetadataModule:
         # If we get here, the field was not found
         from modules.original_name_module import OriginalNameModule
 
-        return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)
+        return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache) # type: ignore
 
     @staticmethod
     def clear_cache():
@@ -403,22 +404,20 @@ class MetadataModule:
 
         Returns:
             str: Hash value or original name if not available
+        """
+        try:
+            hash_value = get_hash_for_file(file_path, hash_type)
+            if hash_value:
+                return hash_value
+            # Fallback to original filename if hash is missing
+            base_name = os.path.splitext(os.path.basename(file_path))[0]
+            return base_name
+        except Exception as e:
+            logger.warning(f"[MetadataModule] Error getting hash for {file_path}: {e}")
+            # Fallback to original filename on error
+            base_name = os.path.splitext(os.path.basename(file_path))[0]
+            return base_name
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            return base_name            base_name = os.path.splitext(os.path.basename(file_path))[0]            import os            logger.warning(f"[MetadataModule] Error getting hash for {file_path}: {e}")        except Exception as e:            return base_name            base_name = os.path.splitext(os.path.basename(file_path))[0]            import os                return hash_value            if hash_value:            hash_value = get_hash_for_file(file_path, hash_type)        try:        """
     @staticmethod
     def _ask_user_for_hash_calculation(_file_path: str, _hash_type: str) -> bool:
         """
@@ -441,7 +440,7 @@ class MetadataModule:
 
         # For hash category, check if field is a valid hash type
         if category == "hash":
-            return field and field.startswith("hash_")
+            return field and field.startswith("hash_") # type: ignore
 
         # For other categories, any field is effective
         return bool(field)

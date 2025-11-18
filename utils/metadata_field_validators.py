@@ -10,6 +10,12 @@ Provides validation rules and error messages for different metadata field types.
 """
 
 
+def _default_validator(value):
+    """Default validator for unknown fields: reject them."""
+    # Return (is_valid: bool, error_message_or_None)
+    return False, "Unknown field: no validator found"
+
+
 class MetadataFieldValidator:
     """
     Validation rules for different metadata fields.
@@ -331,9 +337,10 @@ class MetadataFieldValidator:
         return validators.get(field_name)
 
     @staticmethod
-    def validate_field(field_name: str, value: str) -> tuple[bool, str]:
+    def validate_field(field_name: str, value):
         """
-        Validate a field using the appropriate validator.
+        Validate a field by name. Always returns (bool, error_message_or_None).
+        Uses _default_validator when no callable is found.
 
         Args:
             field_name: Name of the field
@@ -342,9 +349,15 @@ class MetadataFieldValidator:
         Returns:
             Tuple of (is_valid, error_message)
         """
+        # Lookup validator at runtime to avoid forward-reference issues
         validator = MetadataFieldValidator.get_field_validator(field_name)
-
-        if not validator:
-            False, f"No validator found for field: {field_name}"
-
-        return validator(value)
+        if validator is None or not callable(validator):
+            validator = _default_validator
+        # Some validators might return just bool or (bool, str). Normalize.
+        result = validator(value)
+        if isinstance(result, tuple):
+            return result
+        if isinstance(result, bool):
+            return (result, None if result else "Invalid value")
+        # Any other return type -> interpret falsy/truthy
+        return (bool(result), None if result else "Invalid value")
