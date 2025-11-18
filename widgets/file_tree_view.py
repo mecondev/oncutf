@@ -109,6 +109,7 @@ class FileTreeView(QTreeView):
             from PyQt5.QtCore import QFileSystemWatcher, QTimer
 
             self.file_system_watcher = QFileSystemWatcher()
+            self.file_system_watcher.setObjectName("FileTreeViewFSWatcher")
 
             # Watch common drive locations
             import platform
@@ -128,16 +129,30 @@ class FileTreeView(QTreeView):
                             )
                     except Exception:
                         pass
+            elif platform.system() == "Darwin":
+                # Watch /Volumes on macOS
+                for watch_path in ["/Volumes"]:
+                    try:
+                        if os.path.exists(watch_path):
+                            self.file_system_watcher.addPath(watch_path)
+                            logger.debug(
+                                f"[FileTreeView] Watching mount point: {watch_path}",
+                                extra={"dev_only": True},
+                            )
+                    except Exception as e:
+                        logger.warning(f"[FileTreeView] Failed to watch {watch_path}: {e}")
             else:
                 # Watch /media and /mnt on Linux
                 for watch_path in ["/media", "/mnt"]:
-                    if os.path.exists(watch_path):
-                        self.file_system_watcher.addPath(watch_path)
-                        logger.debug(
-                            f"[FileTreeView] Watching mount point: {watch_path}",
-                            extra={"dev_only": True},
-                        )
-
+                    try:
+                        if os.path.exists(watch_path):
+                            self.file_system_watcher.addPath(watch_path)
+                            logger.debug(
+                                f"[FileTreeView] Watching mount point: {watch_path}",
+                                extra={"dev_only": True},
+                            )
+                    except Exception as e:
+                        logger.warning(f"[FileTreeView] Failed to watch {watch_path}: {e}")
             # Connect signals
             self.file_system_watcher.directoryChanged.connect(self._on_drive_changed)
 
@@ -154,18 +169,64 @@ class FileTreeView(QTreeView):
 
         except Exception as e:
             logger.warning(f"[FileTreeView] Failed to setup file system watcher: {e}")
+            self.file_system_watcher = None  # Set to None if setup fails
+
+    def closeEvent(self, event) -> None:
+        """Clean up resources before closing."""
+        try:
+            # Stop the drive change timer
+            if hasattr(self, "_drive_change_timer") and self._drive_change_timer is not None:
+                self._drive_change_timer.stop()
+                self._drive_change_timer.blockSignals(True)
+                self._drive_change_timer.deleteLater()
+                self._drive_change_timer = None
+
+            # Properly cleanup file system watcher
+            if hasattr(self, "file_system_watcher") and self.file_system_watcher is not None:
+                # Disconnect all signals
+                try:
+                    self.file_system_watcher.directoryChanged.disconnect()
+                except (RuntimeError, TypeError):
+                    pass  # Signal not connected, ignore
+
+                # Clear all watched paths
+                watched_paths = self.file_system_watcher.directories()
+                for path in watched_paths:
+                    try:
+                        self.file_system_watcher.removePath(path)
+                    except Exception:
+                        pass
+
+                # Block signals and delete
+                self.file_system_watcher.blockSignals(True)
+                self.file_system_watcher.deleteLater()
+                self.file_system_watcher = None
+
+            logger.debug("[FileTreeView] Cleanup completed", extra={"dev_only": True})
+
+        except Exception as e:
+            logger.error(f"[FileTreeView] Error during cleanup: {e}")
+
+        # Call parent closeEvent
+        super().closeEvent(event)
 
     def _on_drive_changed(self, path: str) -> None:
         """Handle drive changes detected by QFileSystemWatcher."""
+        if not hasattr(self, "_drive_change_timer") or self._drive_change_timer is None:
+            return
+
         logger.debug(
             f"[FileTreeView] Drive changed detected: {path}",
             extra={"dev_only": True},
         )
 
         # Restart debounce timer
-        if hasattr(self, "_drive_change_timer"):
+        try:
             self._drive_change_timer.stop()
             self._drive_change_timer.start()
+        except RuntimeError:
+            # Timer was deleted
+            pass
 
     def _refresh_tree_on_drive_change(self) -> None:
         """Refresh the file tree after drive changes."""
@@ -197,6 +258,9 @@ class FileTreeView(QTreeView):
                     extra={"dev_only": True},
                 )
 
+        except RuntimeError:
+            # Widget was deleted
+            logger.debug("[FileTreeView] Widget deleted during refresh", extra={"dev_only": True})
         except Exception as e:
             logger.error(f"[FileTreeView] Error refreshing tree on drive change: {e}")
 

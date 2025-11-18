@@ -89,3 +89,66 @@ def sample_metadata():
             "Longitude": "122.4194° W"
         }
     }
+
+
+@pytest.fixture(scope="session")
+def qapp():
+    """Create QApplication for all GUI tests."""
+    try:
+        from PyQt5.QtWidgets import QApplication
+        from PyQt5.QtCore import QCoreApplication
+        
+        # Check if QApplication already exists
+        app = QApplication.instance()
+        if app is None:
+            app = QApplication([])
+        
+        yield app
+        
+        # Don't quit the app in session scope - let it live for all tests
+        # Cleanup will happen via qt_cleanup fixture between tests
+        
+    except ImportError:
+        yield None
+
+
+@pytest.fixture(autouse=True)
+def qt_cleanup(qapp):
+    """Ensure proper Qt cleanup between tests."""
+    yield
+    
+    if qapp:
+        try:
+            from PyQt5.QtCore import QCoreApplication, QTimer
+            from PyQt5.QtWidgets import QApplication, QWidget
+            
+            # Process any pending events
+            QCoreApplication.processEvents()
+            
+            # Find and delete all top-level widgets
+            for widget in QApplication.topLevelWidgets():
+                try:
+                    widget.close()
+                    widget.deleteLater()
+                except RuntimeError:
+                    pass
+            
+            # Process events again to clean up
+            QCoreApplication.processEvents()
+            
+        except (RuntimeError, AttributeError, ImportError):
+            pass
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Cleanup after all tests."""
+    try:
+        from PyQt5.QtWidgets import QApplication
+        app = QApplication.instance()
+        if app:
+            try:
+                app.quit()
+            except RuntimeError:
+                pass
+    except (ImportError, RuntimeError):
+        pass
