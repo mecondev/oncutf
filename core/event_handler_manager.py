@@ -504,7 +504,7 @@ class EventHandlerManager:
             logger.info(f"[DoubleClick] Requested metadata reload for: {file.filename}")
 
             # Check for Ctrl modifier for extended metadata
-            ctrl_pressed = bool(modifiers & Qt.ControlModifier)
+            ctrl_pressed = bool(modifiers & Qt.ControlModifier) # type: ignore
             use_extended = ctrl_pressed
 
             # Get selected files for context
@@ -565,7 +565,7 @@ class EventHandlerManager:
         all_selected = all(file.checked for file in self.parent_window.file_model.files)
         selection_model = self.parent_window.file_table_view.selectionModel()
 
-        with wait_cursor():
+        with wait_cursor(): # type: ignore
             if all_selected:
                 # Unselect all
                 selection_model.clearSelection()
@@ -1114,7 +1114,7 @@ class EventHandlerManager:
                         # Emit dataChanged signal for the first column (icon column) only
                         index = self.parent_window.file_model.index(i, 0)
                         self.parent_window.file_model.dataChanged.emit(
-                            index, index, [Qt.DecorationRole, Qt.ToolTipRole]
+                            index, index, [Qt.DecorationRole, Qt.ToolTipRole] # type: ignore
                         )  # type: ignore
                         logger.debug(
                             f"[HashWorker] Updated icon for: {os.path.basename(file_path)}",
@@ -1515,7 +1515,7 @@ class EventHandlerManager:
     def _check_any_files_have_metadata(self) -> bool:
         """Check if any file in the current folder has metadata."""
         status = self.check_files_status(
-            files=None, check_type="metadata", extended=False, scope="all"
+            files=None, check_type="metadata", extended=False, scope="all" # type: ignore
         )
         return status["count"] > 0  # Any files have metadata
 
@@ -2105,7 +2105,7 @@ class EventHandlerManager:
     def _check_all_files_have_metadata_type(self, extended: bool) -> bool:
         """Check if all files in the current folder have the specified type of metadata."""
         status = self.check_files_status(
-            files=None, check_type="metadata", extended=extended, scope="all"
+            files=None, check_type="metadata", extended=extended, scope="all" # type: ignore
         )
         return status["has_status"]  # All files have the metadata type
 
@@ -2122,7 +2122,7 @@ class EventHandlerManager:
 
     def check_files_status(
         self,
-        files: list = None,
+        files: list = None, # type: ignore
         check_type: str = "metadata",
         extended: bool = False,
         scope: str = "selected",
@@ -2202,7 +2202,7 @@ class EventHandlerManager:
     # =====================================
 
     def get_files_without_metadata(
-        self, files: list = None, extended: bool = False, scope: str = "selected"
+        self, files: list = None, extended: bool = False, scope: str = "selected" # type: ignore
     ) -> list:
         """Get list of files that don't have metadata."""
         status = self.check_files_status(
@@ -2210,12 +2210,12 @@ class EventHandlerManager:
         )
         return status["files_without_status"]
 
-    def get_files_without_hashes(self, files: list = None, scope: str = "selected") -> list:
+    def get_files_without_hashes(self, files: list = None, scope: str = "selected") -> list: # type: ignore
         """Get list of files that don't have hash values."""
         status = self.check_files_status(files=files, check_type="hash", scope=scope)
         return status["files_without_status"]
 
-    def get_metadata_status_summary(self, files: list = None, scope: str = "selected") -> dict:
+    def get_metadata_status_summary(self, files: list = None, scope: str = "selected") -> dict: # type: ignore
         """Get comprehensive metadata status summary."""
         basic_status = self.check_files_status(
             files=files, check_type="metadata", extended=False, scope=scope
@@ -2248,117 +2248,6 @@ class EventHandlerManager:
 
     def _file_has_hash(self, file_item) -> bool:
         return has_hash(file_item.full_path)
-
-    def _analyze_metadata_state(self, files: list) -> dict:
-        """
-        Analyze the metadata state of files to determine smart context menu options.
-
-        Args:
-            files: List of FileItem objects to analyze
-
-        Returns:
-            dict: Analysis results with enable/disable logic for menu items
-        """
-        if not files:
-            return {
-                "enable_fast_selected": False,
-                "enable_extended_selected": False,
-                "fast_label": "Load Fast Metadata",
-                "extended_label": "Load Extended Metadata",
-                "fast_tooltip": "No files selected",
-                "extended_tooltip": "No files selected",
-            }
-
-        # Analyze each file's metadata state
-        no_metadata = []
-        has_fast = []
-        has_extended = []
-
-        for file_item in files:
-            if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
-                entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
-                if entry and entry.data:
-                    if entry.is_extended:
-                        has_extended.append(file_item)
-                    else:
-                        has_fast.append(file_item)
-                else:
-                    no_metadata.append(file_item)
-            else:
-                no_metadata.append(file_item)
-
-        total = len(files)
-        no_count = len(no_metadata)
-        fast_count = len(has_fast)
-        extended_count = len(has_extended)
-
-        # Determine enable states and labels based on smart logic
-        enable_fast = False
-        enable_extended = False
-        fast_label = "Load Fast Metadata"
-        extended_label = "Load Extended Metadata"
-        fast_tooltip = ""
-        extended_tooltip = ""
-
-        if no_count == total:
-            # All files have no metadata
-            enable_fast = True
-            enable_extended = True
-            fast_tooltip = f"Load fast metadata for {total} file(s)"
-            extended_tooltip = f"Load extended metadata for {total} file(s)"
-
-        elif extended_count == total:
-            # All files have extended metadata - nothing to do
-            enable_fast = False
-            enable_extended = False
-            fast_tooltip = "All files already have extended metadata (higher level)"
-            extended_tooltip = "All files already have extended metadata"
-
-        elif fast_count == total:
-            # All files have fast metadata - can upgrade to extended
-            enable_fast = False
-            enable_extended = True
-            fast_tooltip = "All files already have fast metadata"
-            extended_tooltip = f"Upgrade {total} file(s) to extended metadata"
-            extended_label = "Upgrade to Extended Metadata"
-
-        elif no_count > 0:
-            # Some files have no metadata - can load both types
-            enable_fast = True
-            enable_extended = True
-
-            if fast_count > 0 or extended_count > 0:
-                # Mixed state
-                fast_tooltip = f"Load fast metadata for {no_count} file(s) without metadata"
-                extended_tooltip = f"Load extended metadata for {no_count} file(s) without metadata"
-                if fast_count > 0:
-                    extended_tooltip += f" and upgrade {fast_count} file(s) from fast"
-            else:
-                fast_tooltip = f"Load fast metadata for {no_count} file(s)"
-                extended_tooltip = f"Load extended metadata for {no_count} file(s)"
-
-        elif fast_count > 0 and extended_count > 0:
-            # Mixed fast and extended - can upgrade fast to extended
-            enable_fast = False
-            enable_extended = True
-            fast_tooltip = "Some files have fast, some have extended metadata"
-            extended_tooltip = f"Upgrade {fast_count} file(s) from fast to extended metadata"
-            extended_label = "Upgrade Fast to Extended"
-
-        return {
-            "enable_fast_selected": enable_fast,
-            "enable_extended_selected": enable_extended,
-            "fast_label": fast_label,
-            "extended_label": extended_label,
-            "fast_tooltip": fast_tooltip,
-            "extended_tooltip": extended_tooltip,
-            "stats": {
-                "total": total,
-                "no_metadata": no_count,
-                "fast": fast_count,
-                "extended": extended_count,
-            },
-        }
 
     def _analyze_hash_state(self, files: list) -> dict:
         """

@@ -98,25 +98,30 @@ def main() -> int:
     MainWindow and shows it, and enters the application's main loop.
     """
     try:
+        # CRITICAL: Set working directory to project root first
+        # This ensures all relative paths work correctly regardless of where script is run from
+        os.chdir(project_root)
+        logger.info(f"Working directory set to: {os.getcwd()}")
+
         # Log platform information for debugging
         logger.info(f"Platform: {platform.system()} {platform.release()}")
         logger.info(f"Python version: {sys.version}")
         logger.debug(f"Project root: {project_root}", extra={"dev_only": True})
-        
+
         # Log Windows-specific info
         if platform.system() == "Windows":
             logger.info(f"Windows version: {platform.win32_ver()}")
             import locale
             logger.info(f"System locale: {locale.getdefaultlocale()}")
             logger.info(f"File system encoding: {sys.getfilesystemencoding()}")
-        
+
         # Enable High DPI support before creating QApplication
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)  # type: ignore[attr-defined]
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)  # type: ignore[attr-defined]
 
         # Create application
         app = QApplication(sys.argv)
-        
+
         # Log locale information (important for date/time formatting)
         try:
             current_locale = locale.getlocale()

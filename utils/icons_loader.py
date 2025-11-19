@@ -215,17 +215,40 @@ def get_menu_icon(name: str) -> QIcon:
     return icons_loader.get_menu_icon(name)
 
 
-def get_menu_icon_path(name: str) -> str:
+def get_menu_icon_path(icon_name: str) -> str:
     """
-    Convenience function to get the file path of a menu icon for use in stylesheets.
+    Get the absolute path to a menu icon file.
 
     Args:
-        name: The icon name (without extension)
+        icon_name: Name of the icon (without .svg extension)
 
     Returns:
-        str: The full path to the icon file
+        str: Absolute path to the icon file
     """
-    return icons_loader.get_icon_path(name)
+    try:
+        from utils.path_utils import get_resource_path
+
+        # Construct the relative path to the icon
+        relative_path = f"resources/icons/feather_icons/{icon_name}.svg"
+
+        # Get absolute path using the robust path resolver
+        icon_path = get_resource_path(relative_path)
+
+        # Return as string for QIcon compatibility
+        icon_path_str = str(icon_path)
+
+        # Log success/failure for debugging
+        if icon_path.exists():
+            logger.debug(f"Icon found: {icon_name} -> {icon_path_str}", extra={"dev_only": True})
+        else:
+            logger.warning(f"Icon not found: {icon_name} at {icon_path_str}")
+
+        return icon_path_str
+
+    except Exception as e:
+        logger.error(f"Error getting icon path for '{icon_name}': {e}")
+        # Return empty string as fallback
+        return ""
 
 
 def get_app_icon() -> QIcon:

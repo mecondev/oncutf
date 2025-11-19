@@ -14,22 +14,49 @@ regardless of current working directory.
 import os
 from pathlib import Path
 
+from utils.logger_factory import get_cached_logger
+
+logger = get_cached_logger(__name__)
+
 
 def get_project_root() -> Path:
     """
-    Get the project root directory based on the location of main.py.
+    Get the project root directory (where main.py is located).
 
-    This ensures that resource paths work correctly regardless of the
-    current working directory when the application is launched.
+    This function finds the project root regardless of current working directory
+    by looking for main.py in the path hierarchy.
 
     Returns:
-        Path: The project root directory as a Path object
+        Path: Absolute path to project root directory
     """
-    # Get the directory where this file is located (utils/)
-    current_file_dir = Path(__file__).parent
-    # Go up one level to get project root
-    project_root = current_file_dir.parent
-    return project_root.resolve()
+    # Start from the directory containing this utils module
+    current_path = Path(__file__).parent.absolute()
+
+    # Go up one level to project root (utils is inside project root)
+    project_root = current_path.parent
+
+    # Verify this is actually the project root by checking for main.py
+    main_py_path = project_root / "main.py"
+    if not main_py_path.exists():
+        # Fallback: search up the directory tree for main.py
+        search_path = current_path
+        max_levels = 10  # Prevent infinite loops
+
+        for _ in range(max_levels):
+            if (search_path / "main.py").exists():
+                project_root = search_path
+                break
+            parent = search_path.parent
+            if parent == search_path:  # Reached filesystem root
+                break
+            search_path = parent
+        else:
+            # If we still haven't found main.py, use current directory as fallback
+            logger.warning("Could not locate main.py, using current directory as project root")
+            project_root = Path.cwd()
+
+    logger.debug(f"Project root determined as: {project_root}", extra={"dev_only": True})
+    return project_root
 
 
 def get_resources_dir() -> Path:
@@ -107,19 +134,44 @@ def get_theme_dir(theme_name: str) -> Path:
 
 def get_resource_path(relative_path: str) -> Path:
     """
-    Get the full path to a resource file based on relative path from project root.
+    Get the absolute path to a resource file, handling both development and packaged scenarios.
+
+    This function ensures resources are found regardless of:
+    - Current working directory
+    - Whether running from source or packaged executable
+    - Operating system differences
 
     Args:
-        relative_path: Relative path from project root (e.g., 'resources/icons/info.png')
+        relative_path: Path relative to project root (e.g., "resources/icons/chevron-down.svg")
 
     Returns:
-        Path: The full path to the resource
-
-    Example:
-        >>> get_resource_path('resources/icons/info.png')
-        Path('/full/path/to/project/resources/icons/info.png')
+        Path: Absolute path to the resource
     """
-    return get_project_root() / relative_path
+    # Get project root - always use the directory containing main.py
+    project_root = get_project_root()
+
+    # Convert relative path to Path object and resolve against project root
+    resource_path = project_root / relative_path
+
+    # Resolve to absolute path to handle any symlinks or relative components
+    absolute_path = resource_path.resolve()
+
+    # Log for debugging path issues
+    logger.debug(
+        f"Resource path resolution: '{relative_path}' -> '{absolute_path}'",
+        extra={"dev_only": True}
+    )
+
+    # Check if file exists and log warning if not found
+    if not absolute_path.exists():
+        logger.warning(f"Resource not found: {absolute_path}")
+        # Try fallback to current working directory (for backward compatibility)
+        fallback_path = Path.cwd() / relative_path
+        if fallback_path.exists():
+            logger.debug(f"Using fallback path: {fallback_path}", extra={"dev_only": True})
+            return fallback_path
+
+    return absolute_path
 
 
 def resource_exists(relative_path: str) -> bool:
