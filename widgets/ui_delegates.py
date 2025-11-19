@@ -9,7 +9,6 @@ Author: Michael Economou
 Date: 2025-05-31
 """
 
-
 from typing import TYPE_CHECKING
 
 from PyQt5.QtCore import QEvent, QModelIndex
@@ -38,10 +37,11 @@ if TYPE_CHECKING:
 
 logger = get_cached_logger(__name__)
 
+
 class ComboBoxItemDelegate(QStyledItemDelegate):
     """Custom delegate to render QComboBox dropdown items with theme and proper states."""
 
-    def __init__(self, parent: QWidget | None = None, theme: 'ThemeEngine | None' = None) -> None:
+    def __init__(self, parent: QWidget | None = None, theme: "ThemeEngine | None" = None) -> None:
         super().__init__(parent)
         self.theme = theme
 
@@ -69,7 +69,8 @@ class ComboBoxItemDelegate(QStyledItemDelegate):
             # Handle selected/hover colors for enabled items
             if option.state & QStyle.StateFlag.State_Selected:
                 option.palette.setBrush(
-                    QPalette.ColorRole.Text, QBrush(QColor(self.theme.get_color("input_selection_text")))
+                    QPalette.ColorRole.Text,
+                    QBrush(QColor(self.theme.get_color("input_selection_text"))),
                 )
                 option.palette.setBrush(
                     QPalette.ColorRole.Highlight,
@@ -81,7 +82,9 @@ class ComboBoxItemDelegate(QStyledItemDelegate):
                 )
                 option.palette.setBrush(
                     QPalette.ColorRole.Highlight,
-                    QBrush(QColor(self.theme.get_color("table_hover_background"))),  # Use same hover color as file table
+                    QBrush(
+                        QColor(self.theme.get_color("table_hover_background"))
+                    ),  # Use same hover color as file table
                 )
             else:
                 # Normal state
@@ -255,7 +258,9 @@ class FileTableHoverDelegate(QStyledItemDelegate):
             text_rect = option.rect.adjusted(4, 0, -4, 0)  # Small horizontal padding
 
             alignment = (
-                model.data(index, Qt.ItemDataRole.TextAlignmentRole) if model else Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+                model.data(index, Qt.ItemDataRole.TextAlignmentRole)
+                if model
+                else Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
             )
             if not alignment:
                 alignment = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
@@ -269,7 +274,9 @@ class FileTableHoverDelegate(QStyledItemDelegate):
                 alignment = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
 
             fm = painter.fontMetrics()
-            elided = fm.elidedText(str(display_text), Qt.TextElideMode.ElideRight, text_rect.width())
+            elided = fm.elidedText(
+                str(display_text), Qt.TextElideMode.ElideRight, text_rect.width()
+            )
             painter.drawText(text_rect, alignment, elided)
             painter.restore()
 
@@ -277,7 +284,7 @@ class FileTableHoverDelegate(QStyledItemDelegate):
 class TreeViewItemDelegate(QStyledItemDelegate):
     """Custom delegate for TreeView items that properly handles background painting."""
 
-    def __init__(self, parent: QWidget | None = None, theme: 'ThemeEngine | None' = None) -> None:
+    def __init__(self, parent: QWidget | None = None, theme: "ThemeEngine | None" = None) -> None:
         super().__init__(parent)
         self.theme = theme
         self.hovered_index: QModelIndex | None = None
@@ -362,7 +369,10 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         # Paint background based on state (normal, hover, selected, selected+hover)
         hovered = self.hovered_index
         is_hovered = bool(
-            hovered and hovered.isValid() and index.row() == hovered.row() and index.parent() == hovered.parent()
+            hovered
+            and hovered.isValid()
+            and index.row() == hovered.row()
+            and index.parent() == hovered.parent()
         )
 
         # Determine selection by selectionModel to unify across columns
@@ -452,7 +462,10 @@ class MetadataTreeItemDelegate(TreeViewItemDelegate):
         # Determine hovered row (consistent across columns)
         hovered = getattr(self, "hovered_index", None)
         is_row_hovered = bool(
-            hovered and hovered.isValid() and index.row() == hovered.row() and index.parent() == hovered.parent()
+            hovered
+            and hovered.isValid()
+            and index.row() == hovered.row()
+            and index.parent() == hovered.parent()
         )
 
         # Compute full row rect by uniting first and last visible column rects

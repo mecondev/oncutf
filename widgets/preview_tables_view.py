@@ -383,7 +383,9 @@ class PreviewTablesView(QWidget):
 
             # Performance optimization: Batch process name pairs
             stats = {"unchanged": 0, "invalid": 0, "duplicate": 0, "valid": 0}
-            self._process_name_pairs_batch(name_pairs, duplicates, stats, _preview_icons, icon_paths)
+            self._process_name_pairs_batch(
+                name_pairs, duplicates, stats, _preview_icons, icon_paths
+            )
 
             # Update status
             self._update_status_summary(stats, icon_paths)

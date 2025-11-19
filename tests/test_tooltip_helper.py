@@ -40,6 +40,7 @@ class TestTooltipHelper:
         self.test_widget.show()
         yield
         from contextlib import suppress
+
         with suppress(RuntimeError):
             TooltipHelper.clear_all_tooltips()
 
@@ -114,6 +115,7 @@ class TestTooltipHelper:
 
         # Clear all tooltips with exception handling
         from contextlib import suppress
+
         with suppress(RuntimeError):
             TooltipHelper.clear_all_tooltips()
         # Should have no active tooltips (or tolerate deletion)

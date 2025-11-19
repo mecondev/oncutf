@@ -45,9 +45,7 @@ def normalize_path(file_path: str | Path) -> str:
         normalized = str(p.resolve())
     except (OSError, RuntimeError) as e:
         # Fallback if resolve() fails
-        logger.warning(
-            f"[WARNING] Path resolve failed for '{file_path}': {e}, using fallback"
-        )
+        logger.warning(f"[WARNING] Path resolve failed for '{file_path}': {e}, using fallback")
         normalized = os.path.normpath(str(file_path))
 
     # Ensure forward slashes for consistency in caching

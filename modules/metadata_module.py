@@ -59,7 +59,7 @@ class MetadataModule:
         cleaned = value.replace(":", "_")
 
         # Replace other invalid characters with underscore
-        invalid_chars = ['<', '>', '"', '/', '\\', '|', '?', '*']
+        invalid_chars = ["<", ">", '"', "/", "\\", "|", "?", "*"]
         for char in invalid_chars:
             cleaned = cleaned.replace(char, "_")
 
@@ -126,10 +126,7 @@ class MetadataModule:
 
         # CRITICAL: Normalize path for Windows
         path = normalize_path(path)
-        logger.debug(
-            f"[DEBUG] [MetadataModule] Normalized path: {path}",
-            extra={"dev_only": True}
-        )
+        logger.debug(f"[DEBUG] [MetadataModule] Normalized path: {path}", extra={"dev_only": True})
 
         # Use the same persistent cache as the UI if no cache provided
         if not metadata_cache:
@@ -161,15 +158,17 @@ class MetadataModule:
         if metadata:
             logger.debug(
                 f"[DEBUG] [MetadataModule] Metadata keys available: {list(metadata.keys())[:20]}",
-                extra={"dev_only": True}
+                extra={"dev_only": True},
             )
 
             # Log date-related fields specifically
-            date_fields = {k: v for k, v in metadata.items() if 'date' in k.lower() or 'time' in k.lower()}
+            date_fields = {
+                k: v for k, v in metadata.items() if "date" in k.lower() or "time" in k.lower()
+            }
             if date_fields:
                 logger.debug(
                     f"[DEBUG] [MetadataModule] Date/Time fields: {date_fields}",
-                    extra={"dev_only": True}
+                    extra={"dev_only": True},
                 )
 
         # Handle filesystem-based date formats
@@ -299,7 +298,7 @@ class MetadataModule:
                 # Fallback: return original name
                 from modules.original_name_module import OriginalNameModule
 
-                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache) # type: ignore
+                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)  # type: ignore
 
             # Format the value appropriately and clean it for filename safety
             try:
@@ -324,7 +323,7 @@ class MetadataModule:
             if not value:
                 from modules.original_name_module import OriginalNameModule
 
-                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache) # type: ignore
+                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)  # type: ignore
             result = MetadataModule.clean_metadata_value(str(value))
             _metadata_cache[cache_key] = result
             _global_cache_timestamp = current_time
@@ -335,7 +334,7 @@ class MetadataModule:
             if not value:
                 from modules.original_name_module import OriginalNameModule
 
-                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache) # type: ignore
+                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)  # type: ignore
             result = MetadataModule.clean_metadata_value(str(value))
             _metadata_cache[cache_key] = result
             _global_cache_timestamp = current_time
@@ -367,7 +366,10 @@ class MetadataModule:
                         from modules.original_name_module import OriginalNameModule
 
                         return OriginalNameModule.apply_from_data(
-                            {}, file_item, index, metadata_cache # type: ignore
+                            {},
+                            file_item,
+                            index,
+                            metadata_cache,  # type: ignore
                         )
             except ImportError:
                 # Fallback if mapper not available
@@ -384,7 +386,7 @@ class MetadataModule:
         # If we get here, the field was not found
         from modules.original_name_module import OriginalNameModule
 
-        return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache) # type: ignore
+        return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)  # type: ignore
 
     @staticmethod
     def clear_cache():
@@ -440,7 +442,7 @@ class MetadataModule:
 
         # For hash category, check if field is a valid hash type
         if category == "hash":
-            return field and field.startswith("hash_") # type: ignore
+            return field and field.startswith("hash_")  # type: ignore
 
         # For other categories, any field is effective
         return bool(field)

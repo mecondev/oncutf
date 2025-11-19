@@ -42,6 +42,7 @@ class ExifToolWrapper:
     def __del__(self) -> None:
         """Destructor to ensure ExifTool process is cleaned up."""
         import contextlib
+
         with contextlib.suppress(Exception):
             self.close()
 
@@ -80,9 +81,9 @@ class ExifToolWrapper:
         """
         # Normalize path for Windows compatibility
         from utils.path_normalizer import normalize_path
-        
+
         file_path = normalize_path(file_path)
-        
+
         if not os.path.isfile(file_path):
             logger.warning(f"[ExifToolWrapper] File not found: {file_path}")
             return None
@@ -91,7 +92,15 @@ class ExifToolWrapper:
         cmd = ["exiftool", "-json", "-charset", "filename=UTF8", file_path]
 
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=10, encoding="utf-8", errors="replace")
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=10,
+                encoding="utf-8",
+                errors="replace",
+            )
 
             if result.returncode != 0:
                 logger.warning(
@@ -177,7 +186,9 @@ class ExifToolWrapper:
                 )
                 return data
             else:
-                logger.warning(f"[ExifToolWrapper] Batch metadata failed with code {result.returncode}")
+                logger.warning(
+                    f"[ExifToolWrapper] Batch metadata failed with code {result.returncode}"
+                )
                 return [{} for _ in file_paths]
 
         except json.JSONDecodeError as e:
@@ -194,9 +205,9 @@ class ExifToolWrapper:
         """
         # Normalize path for Windows compatibility
         from utils.path_normalizer import normalize_path
-        
+
         file_path = normalize_path(file_path)
-        
+
         if not os.path.isfile(file_path):
             logger.warning(f"[ExtendedReader] File does not exist: {file_path}")
             return None
@@ -343,10 +354,14 @@ class ExifToolWrapper:
             )
 
             # Execute the command
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace")
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace"
+            )
 
             if result.returncode == 0:
-                logger.info(f"[ExifToolWrapper] Successfully wrote metadata to: {os.path.basename(file_path_normalized)}")
+                logger.info(
+                    f"[ExifToolWrapper] Successfully wrote metadata to: {os.path.basename(file_path_normalized)}"
+                )
                 return True
             else:
                 logger.error(f"[ExifToolWrapper] Failed to write metadata: {result.stderr}")
@@ -354,7 +369,9 @@ class ExifToolWrapper:
                 return False
 
         except subprocess.TimeoutExpired:
-            logger.error(f"[ExifToolWrapper] Timeout while writing metadata to: {os.path.basename(file_path_normalized)}")
+            logger.error(
+                f"[ExifToolWrapper] Timeout while writing metadata to: {os.path.basename(file_path_normalized)}"
+            )
             return False
         except Exception as e:
             logger.error(f"[ExifToolWrapper] Exception while writing metadata: {e}", exc_info=True)
@@ -380,6 +397,7 @@ class ExifToolWrapper:
                         )
                     finally:
                         import contextlib
+
                         with contextlib.suppress(BrokenPipeError, OSError, ValueError):
                             # Ignore errors when closing stdin
                             self.process.stdin.close()
@@ -438,7 +456,7 @@ class ExifToolWrapper:
         try:
             import time
 
-            import psutil # type: ignore
+            import psutil  # type: ignore
 
             exiftool_processes = []
             for proc in psutil.process_iter(["pid", "name", "cmdline"]):

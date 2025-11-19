@@ -32,7 +32,6 @@ except ImportError:
 logger = get_cached_logger(__name__)
 
 
-
 class MetadataWidget(QWidget):
     """
     Widget for file metadata selection (file dates or EXIF).
@@ -319,13 +318,13 @@ class MetadataWidget(QWidget):
 
             # Try to get from FileStore
             if context and hasattr(context, "_file_store") and context._file_store:
-                selected_files = context._file_store.get_selected_files() # type: ignore
+                selected_files = context._file_store.get_selected_files()  # type: ignore
                 if selected_files:
                     return selected_files
 
             # Try to get from SelectionStore
             if context and hasattr(context, "_selection_store") and context._selection_store:
-                selected_files = context._selection_store.get_selected_files() # type: ignore
+                selected_files = context._selection_store.get_selected_files()  # type: ignore
                 if selected_files:
                     return selected_files
 
@@ -360,7 +359,7 @@ class MetadataWidget(QWidget):
             else:
                 context = self._get_app_context()
                 if context and hasattr(context, "main_window"):
-                    main_window = context.main_window # type: ignore
+                    main_window = context.main_window  # type: ignore
 
             if main_window and hasattr(main_window, "event_handler_manager"):
                 # Use the existing hash calculation method
@@ -419,6 +418,7 @@ class MetadataWidget(QWidget):
 
         # Prefer selecting 'FileName' by default if available
         from contextlib import suppress
+
         with suppress(Exception):
             self.options_combo.select_item_by_data("FileName")
 
@@ -897,7 +897,7 @@ class MetadataWidget(QWidget):
 
         # For hash category, check if field is a valid hash type
         if category == "hash":
-            return field and field.startswith("hash_") # type: ignore
+            return field and field.startswith("hash_")  # type: ignore
 
         # For other categories, any field is effective
         return bool(field)
@@ -922,20 +922,20 @@ class MetadataWidget(QWidget):
 
             # Add items to model
             item1 = QStandardItem("File Date/Time")
-            item1.setData("file_dates", Qt.UserRole) # type: ignore
+            item1.setData("file_dates", Qt.UserRole)  # type: ignore
             self.category_model.appendRow(item1)
 
             item2 = QStandardItem("Hash")
-            item2.setData("hash", Qt.UserRole) # type: ignore
+            item2.setData("hash", Qt.UserRole)  # type: ignore
             self.category_model.appendRow(item2)
 
             item3 = QStandardItem("EXIF/Metadata")
-            item3.setData("metadata_keys", Qt.UserRole) # type: ignore
+            item3.setData("metadata_keys", Qt.UserRole)  # type: ignore
             self.category_model.appendRow(item3)
 
         # File Dates category is ALWAYS enabled
         file_dates_item = self.category_model.item(0)
-        file_dates_item.setFlags(file_dates_item.flags() | Qt.ItemIsEnabled) # type: ignore
+        file_dates_item.setFlags(file_dates_item.flags() | Qt.ItemIsEnabled)  # type: ignore
         file_dates_item.setForeground(QColor())  # type: ignore # Reset to default color
 
         if not selected_files:
@@ -943,11 +943,11 @@ class MetadataWidget(QWidget):
             hash_item = self.category_model.item(1)
             metadata_item = self.category_model.item(2)
 
-            hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled) # type: ignore
-            hash_item.setForeground(QColor("#888888")) # type: ignore
+            hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
+            hash_item.setForeground(QColor("#888888"))  # type: ignore
 
-            metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled) # type: ignore
-            metadata_item.setForeground(QColor("#888888")) # type: ignore
+            metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
+            metadata_item.setForeground(QColor("#888888"))  # type: ignore
 
             # Apply normal styling - disabled items will be gray via QAbstractItemView styling
             self._apply_category_styling()
@@ -976,11 +976,11 @@ class MetadataWidget(QWidget):
             hash_item = self.category_model.item(1)
 
             if has_hash_data:
-                hash_item.setFlags(hash_item.flags() | Qt.ItemIsEnabled) # type: ignore
+                hash_item.setFlags(hash_item.flags() | Qt.ItemIsEnabled)  # type: ignore
                 hash_item.setForeground(QColor())  # type: ignore # Reset to default color
             else:
-                hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled) # type: ignore
-                hash_item.setForeground(QColor("#888888")) # type: ignore
+                hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
+                hash_item.setForeground(QColor("#888888"))  # type: ignore
 
                 # If current category is hash and is disabled, apply disabled styling
                 if self.category_combo.currentData() == "hash":
@@ -1001,11 +1001,11 @@ class MetadataWidget(QWidget):
             metadata_item = self.category_model.item(2)
 
             if has_metadata_data:
-                metadata_item.setFlags(metadata_item.flags() | Qt.ItemIsEnabled) # type: ignore
+                metadata_item.setFlags(metadata_item.flags() | Qt.ItemIsEnabled)  # type: ignore
                 metadata_item.setForeground(QColor())  # type: ignore # Reset to default color
             else:
-                metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled) # type: ignore
-                metadata_item.setForeground(QColor("#888888")) # type: ignore
+                metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
+                metadata_item.setForeground(QColor("#888888"))  # type: ignore
 
             # Apply styling to category combo based on state
             self._apply_category_styling()
@@ -1235,13 +1235,19 @@ class MetadataWidget(QWidget):
         """Apply disabled styling to hierarchical combo box to show grayed-out text"""
         # Neutralized to avoid interference with TreeViewItemDelegate dropdown states.
         # Disabled state handled by setEnabled(False) + global theme.
-        logger.debug("[MetadataWidget] Disabled combo styling via global theme (no per-widget QSS)", extra={"dev_only": True})
+        logger.debug(
+            "[MetadataWidget] Disabled combo styling via global theme (no per-widget QSS)",
+            extra={"dev_only": True},
+        )
 
     def _apply_normal_combo_styling(self):
         """Apply normal styling to hierarchical combo box"""
         # Neutralized to avoid interference with TreeViewItemDelegate dropdown states.
         # Global ThemeEngine + delegates handle combo styling consistently.
-        logger.debug("[MetadataWidget] Normal combo styling via global theme (no per-widget QSS)", extra={"dev_only": True})
+        logger.debug(
+            "[MetadataWidget] Normal combo styling via global theme (no per-widget QSS)",
+            extra={"dev_only": True},
+        )
 
     def _apply_combo_theme_styling(self):
         """Apply theme styling to combo boxes and ensure inheritance"""
@@ -1330,43 +1336,67 @@ class MetadataWidget(QWidget):
         """Apply disabled styling to the category combo box to show gray text"""
         # Neutralized to avoid interference with ComboBoxItemDelegate dropdown states.
         # Disabled state handled by setEnabled(False) + global theme.
-        logger.debug("[MetadataWidget] Disabled category combo styling via global theme (no per-widget QSS)", extra={"dev_only": True})
+        logger.debug(
+            "[MetadataWidget] Disabled category combo styling via global theme (no per-widget QSS)",
+            extra={"dev_only": True},
+        )
 
     def _apply_category_styling(self):
         """Apply normal styling to the category combo box"""
         # Neutralized to avoid interference with ComboBoxItemDelegate dropdown states.
         # Global ThemeEngine + delegates handle combo styling consistently.
-        logger.debug("[MetadataWidget] Normal category combo styling via global theme (no per-widget QSS)", extra={"dev_only": True})
+        logger.debug(
+            "[MetadataWidget] Normal category combo styling via global theme (no per-widget QSS)",
+            extra={"dev_only": True},
+        )
 
     def _on_hierarchical_item_selected(self, _text: str, _data: Any):
         """Handle item selection from hierarchical combo box."""
         logger.debug(
             f"[MetadataWidget] Hierarchical item selected - text: {_text}, data: {_data}",
-            extra={"dev_only": True}
+            extra={"dev_only": True},
         )
+
+        # CRITICAL: Close the dropdown immediately
+        if hasattr(self.options_combo, "hidePopup"):
+            self.options_combo.hidePopup()
 
         # Clear preview cache to force refresh when selection changes
+        preview_manager = None
+
+        # Try to find preview manager from parent window
         if self.parent_window and hasattr(self.parent_window, "preview_manager"):
-            self.parent_window.preview_manager.clear_cache()
+            preview_manager = self.parent_window.preview_manager
+
+        # Fallback: Try to find via application context
+        if not preview_manager:
+            try:
+                from core.application_context import get_app_context
+
+                context = get_app_context()
+                if (
+                    context
+                    and hasattr(context, "main_window")
+                    and hasattr(context.main_window, "preview_manager")
+                ):
+                    preview_manager = context.main_window.preview_manager
+            except Exception as e:
+                logger.debug(f"[MetadataWidget] Error finding preview manager via context: {e}")
+
+        if preview_manager:
+            preview_manager.clear_cache()
             logger.debug(
-                "[MetadataWidget] Preview cache cleared on item selection",
-                extra={"dev_only": True}
+                "[MetadataWidget] Preview cache cleared on item selection", extra={"dev_only": True}
             )
+        else:
+            logger.warning("[MetadataWidget] Could not find preview_manager to clear cache")
 
-        # Always emit signal when selection changes to ensure preview updates
-        # Get current data to check if it changed
-        new_data = self.get_data()
+        # Force update by resetting last data
+        # This ensures emit_if_changed() will emit even if it thinks data hasn't changed
+        self._last_data = None
 
-        # Force update _last_data to track current state
-        data_changed = new_data != self._last_data
-        self._last_data = new_data
-
-        # Always emit signal - preview manager will handle caching
-        logger.debug(
-            f"[MetadataWidget] Emitting updated signal - data_changed: {data_changed}, data: {new_data}",
-            extra={"dev_only": True}
-        )
-        self.updated.emit(self)
+        # Emit changes immediately without debouncing for responsive UI
+        self.emit_if_changed()
 
     def _on_selection_changed(self):
         self.update_options()

@@ -174,7 +174,9 @@ class ApplicationService:
             from utils.dialog_utils import show_info_message
 
             # Combine message with details
-            message = f"All {len(selected_files)} selected file(s) already have checksums calculated."
+            message = (
+                f"All {len(selected_files)} selected file(s) already have checksums calculated."
+            )
             if hash_analysis.get("selected_tooltip"):
                 message += f"\n\n{hash_analysis['selected_tooltip']}"
 

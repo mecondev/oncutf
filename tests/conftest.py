@@ -24,8 +24,13 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "local_only: mark test as local environment only")
 
 
-def pytest_collection_modifyitems(config, items):
+def pytest_collection_modifyitems(session, config, items):
     """Modify test collection to handle CI environment."""
+    # Reference session/config to avoid unused-argument lint warnings while
+    # keeping signature compatible with pytest hookspec.
+    _ = session
+    _ = config
+
     # Check if we're in CI environment
     is_ci = "CI" in os.environ or "GITHUB_ACTIONS" in os.environ
 
@@ -52,6 +57,7 @@ def pyqt5_available():
     """Fixture to check PyQt5 availability."""
     try:
         import PyQt5  # noqa: F401
+
         return True
     except ImportError:
         return False
@@ -65,7 +71,7 @@ def mock_theme_colors():
         "table_background": "#ffffff",
         "table_selection_text": "#ffffff",
         "table_selection_background": "#0078d4",
-        "table_hover_background": "#f0f0f0"
+        "table_hover_background": "#f0f0f0",
     }
 
 
@@ -73,21 +79,9 @@ def mock_theme_colors():
 def sample_metadata():
     """Fixture providing sample metadata for testing."""
     return {
-        "EXIF": {
-            "Camera Make": "Canon",
-            "Camera Model": "EOS R5",
-            "ISO": "100",
-            "F-Stop": "f/2.8"
-        },
-        "File": {
-            "File Name": "test_image.jpg",
-            "File Size": "2.5 MB",
-            "File Type": "JPEG"
-        },
-        "GPS": {
-            "Latitude": "37.7749° N",
-            "Longitude": "122.4194° W"
-        }
+        "EXIF": {"Camera Make": "Canon", "Camera Model": "EOS R5", "ISO": "100", "F-Stop": "f/2.8"},
+        "File": {"File Name": "test_image.jpg", "File Size": "2.5 MB", "File Type": "JPEG"},
+        "GPS": {"Latitude": "37.7749° N", "Longitude": "122.4194° W"},
     }
 
 

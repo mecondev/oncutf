@@ -15,7 +15,6 @@ Functions:
 
 import atexit
 import logging
-import locale
 import os
 import platform
 import signal
@@ -28,9 +27,8 @@ project_root = os.path.normpath(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from core.pyqt_imports import QApplication, QStyleFactory, Qt
-
 from config import SPLASH_SCREEN_DURATION
+from core.pyqt_imports import QApplication, QStyleFactory, Qt
 from main_window import MainWindow
 from utils.fonts import _get_inter_fonts
 from utils.logger_setup import ConfigureLogger
@@ -112,6 +110,7 @@ def main() -> int:
         if platform.system() == "Windows":
             logger.info(f"Windows version: {platform.win32_ver()}")
             import locale
+
             logger.info(f"System locale: {locale.getdefaultlocale()}")
             logger.info(f"File system encoding: {sys.getfilesystemencoding()}")
 
@@ -245,4 +244,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

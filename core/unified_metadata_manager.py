@@ -289,13 +289,17 @@ class UnifiedMetadataManager(QObject):
             return
 
         # Analyze metadata state
-        metadata_analysis = self.parent_window.event_handler_manager._analyze_metadata_state(selected_files)
+        metadata_analysis = self.parent_window.event_handler_manager._analyze_metadata_state(
+            selected_files
+        )
 
         if not metadata_analysis["enable_fast_selected"]:
             # All files already have fast metadata or better
             from utils.dialog_utils import show_info_message
 
-            message = f"All {len(selected_files)} selected file(s) already have fast metadata or better."
+            message = (
+                f"All {len(selected_files)} selected file(s) already have fast metadata or better."
+            )
             if metadata_analysis.get("fast_tooltip"):
                 message += f"\n\n{metadata_analysis['fast_tooltip']}"
 
@@ -331,7 +335,9 @@ class UnifiedMetadataManager(QObject):
             return
 
         # Analyze metadata state
-        metadata_analysis = self.parent_window.event_handler_manager._analyze_metadata_state(selected_files)
+        metadata_analysis = self.parent_window.event_handler_manager._analyze_metadata_state(
+            selected_files
+        )
 
         if not metadata_analysis["enable_extended_selected"]:
             # All files already have extended metadata
@@ -419,7 +425,9 @@ class UnifiedMetadataManager(QObject):
             if has_valid_cache:
                 # If we already have extended metadata, don't downgrade to fast metadata
                 if cache_entry.is_extended and not use_extended:
-                    logger.debug(f"[UnifiedMetadataManager] Skipping {item.filename} - already has extended metadata, not downgrading to fast")
+                    logger.debug(
+                        f"[UnifiedMetadataManager] Skipping {item.filename} - already has extended metadata, not downgrading to fast"
+                    )
                     continue
                 # If we have the exact type requested, skip loading
                 elif cache_entry.is_extended == use_extended:
@@ -605,14 +613,18 @@ class UnifiedMetadataManager(QObject):
                     return
 
             # Batch load metadata for all files at once (10x faster)
-            logger.info(f"[UnifiedMetadataManager] Batch loading metadata for {len(needs_loading)} files")
+            logger.info(
+                f"[UnifiedMetadataManager] Batch loading metadata for {len(needs_loading)} files"
+            )
             file_paths = [item.full_path for item in needs_loading]
             metadata_batch = self._exiftool_wrapper.get_metadata_batch(
                 file_paths, use_extended=use_extended
             )
 
             # Process each file with its metadata
-            for i, (file_item, metadata) in enumerate(zip(needs_loading, metadata_batch)):
+            for i, (file_item, metadata) in enumerate(
+                zip(needs_loading, metadata_batch, strict=False)
+            ):
                 # Update progress
                 _loading_dialog.set_filename(file_item.filename)
                 _loading_dialog.set_count(i + 1, len(needs_loading))

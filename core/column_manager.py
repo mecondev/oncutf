@@ -595,7 +595,11 @@ class ColumnManager:
             logger.warning(f"[ColumnManager] Error connecting resize signals: {e}")
 
     def _on_column_resized(
-        self, table_type: str, logical_index: int, old_size: int, new_size: int  # noqa: ARG002
+        self,
+        table_type: str,
+        logical_index: int,
+        _old_size: int,
+        new_size: int,
     ) -> None:
         """Handle column resize events to track user preferences."""
         if self.state.programmatic_resize_active:

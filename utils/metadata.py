@@ -13,7 +13,7 @@ Functions:
     _format_tz_offset_for_filename: Format a timezone offset timedelta as +HH_MM or -HH_MM.
 """
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 
 
 def _format_tz_offset_for_filename(offset: timedelta) -> str:

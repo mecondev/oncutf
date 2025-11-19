@@ -75,4 +75,6 @@ class BaseRenameModule(QWidget):
         # Intentionally left as a no-op to avoid per-widget stylesheet overrides
         # that may bleed into child widgets (e.g., combo trees) and break state colors.
         # Global theming via ThemeEngine handles consistent styling.
-        logger.debug(f"[{self.__class__.__name__}] Theme inheritance via global ThemeEngine (no per-widget QSS)")
+        logger.debug(
+            f"[{self.__class__.__name__}] Theme inheritance via global ThemeEngine (no per-widget QSS)"
+        )

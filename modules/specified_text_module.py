@@ -95,6 +95,7 @@ class SpecifiedTextModule(BaseRenameModule):
         # Apply theme-aware consistent styling with Inter fonts
         try:
             from utils.theme_engine import ThemeEngine
+
             theme = ThemeEngine()
             menu_style = f"""
                 QMenu {{
@@ -295,11 +296,13 @@ class SpecifiedTextModule(BaseRenameModule):
 
     @staticmethod
     def apply_from_data(
-        data: dict, file_item, index: int = 0, metadata_cache: dict | None = None  # noqa: ARG004
+        data: dict,
+        file_item,
+        _index: int = 0,
+        _metadata_cache: dict | None = None,
     ) -> str:
         logger.debug(
-            f"[SpecifiedTextModule] Called with data={data}, index={index}",
-            extra={"dev_only": True},
+            f"[SpecifiedTextModule] apply_from_data called with data: {data}", extra={"dev_only": True}
         )
         text = data.get("text", "")
 

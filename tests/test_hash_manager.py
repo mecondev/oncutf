@@ -89,13 +89,12 @@ class TestHashManager:
         """Test handling of permission errors."""
         manager = HashManager()
 
-        with patch("pathlib.Path.open", side_effect=PermissionError("Access denied")):\
-             # noqa: SIM117
-             with patch("pathlib.Path.exists", return_value=True):\
-             # noqa: SIM117
-                 with patch("pathlib.Path.is_file", return_value=True):
-                     result = manager.calculate_hash("/mock/path/file.txt")
-                     assert result is None
+        with patch("pathlib.Path.open", side_effect=PermissionError("Access denied")), \
+             patch("pathlib.Path.exists", return_value=True), \
+             patch("pathlib.Path.is_file", return_value=True):
+            # noqa: SIM117
+            result = manager.calculate_hash("/mock/path/file.txt")
+            assert result is None
 
     def test_calculate_crc32_string_path(self):
         """Test CRC32 calculation with string path."""
@@ -368,13 +367,11 @@ class TestErrorHandling:
         """Test HashManager handles exceptions gracefully."""
         manager = HashManager()
 
-        with patch("pathlib.Path.open", side_effect=Exception("Unexpected error")):\
-             # noqa: SIM117
-             with patch("pathlib.Path.exists", return_value=True):\
-             # noqa: SIM117
-                 with patch("pathlib.Path.is_file", return_value=True):
-                     result = manager.calculate_hash("/mock/path")
-                     assert result is None
+        with patch("pathlib.Path.open", side_effect=Exception("Unexpected error")), \
+             patch("pathlib.Path.exists", return_value=True), \
+             patch("pathlib.Path.is_file", return_value=True):
+            result = manager.calculate_hash("/mock/path")
+            assert result is None
 
     def test_find_duplicates_with_exception(self):
         """Test duplicate detection handles file errors gracefully."""

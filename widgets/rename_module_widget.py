@@ -224,8 +224,8 @@ class RenameModuleWidget(QWidget):
         """
         # Normalized metrics (aligned with common 24px control height + vertical padding)
         base_row_height = 28  # px per visual row (control height + small internal padding)
-        row_spacing = 4       # px between visual rows
-        vertical_padding = 12 # px total (matches content layout top+bottom ~ 6px each)
+        row_spacing = 4  # px between visual rows
+        vertical_padding = 12  # px total (matches content layout top+bottom ~ 6px each)
 
         height = vertical_padding + rows * base_row_height + max(0, rows - 1) * row_spacing
 

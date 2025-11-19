@@ -563,7 +563,7 @@ class DatabaseManager:
                 cursor = conn.cursor()
 
                 # Create placeholders for IN clause
-                placeholders = ','.join('?' * len(path_ids))
+                placeholders = ",".join("?" * len(path_ids))
 
                 cursor.execute(
                     f"""
@@ -577,7 +577,7 @@ class DatabaseManager:
                         GROUP BY path_id
                     )
                     """,
-                    list(path_ids.keys()) * 2  # placeholders appear twice in query
+                    list(path_ids.keys()) * 2,  # placeholders appear twice in query
                 )
 
                 # Process results

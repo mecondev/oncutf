@@ -504,7 +504,7 @@ class EventHandlerManager:
             logger.info(f"[DoubleClick] Requested metadata reload for: {file.filename}")
 
             # Check for Ctrl modifier for extended metadata
-            ctrl_pressed = bool(modifiers & Qt.ControlModifier) # type: ignore
+            ctrl_pressed = bool(modifiers & Qt.ControlModifier)  # type: ignore
             use_extended = ctrl_pressed
 
             # Get selected files for context
@@ -565,7 +565,7 @@ class EventHandlerManager:
         all_selected = all(file.checked for file in self.parent_window.file_model.files)
         selection_model = self.parent_window.file_table_view.selectionModel()
 
-        with wait_cursor(): # type: ignore
+        with wait_cursor():  # type: ignore
             if all_selected:
                 # Unselect all
                 selection_model.clearSelection()
@@ -1114,7 +1114,9 @@ class EventHandlerManager:
                         # Emit dataChanged signal for the first column (icon column) only
                         index = self.parent_window.file_model.index(i, 0)
                         self.parent_window.file_model.dataChanged.emit(
-                            index, index, [Qt.DecorationRole, Qt.ToolTipRole] # type: ignore
+                            index,
+                            index,
+                            [Qt.DecorationRole, Qt.ToolTipRole],  # type: ignore
                         )  # type: ignore
                         logger.debug(
                             f"[HashWorker] Updated icon for: {os.path.basename(file_path)}",
@@ -1515,7 +1517,10 @@ class EventHandlerManager:
     def _check_any_files_have_metadata(self) -> bool:
         """Check if any file in the current folder has metadata."""
         status = self.check_files_status(
-            files=None, check_type="metadata", extended=False, scope="all" # type: ignore
+            files=None,
+            check_type="metadata",
+            extended=False,
+            scope="all",  # type: ignore
         )
         return status["count"] > 0  # Any files have metadata
 
@@ -2105,7 +2110,10 @@ class EventHandlerManager:
     def _check_all_files_have_metadata_type(self, extended: bool) -> bool:
         """Check if all files in the current folder have the specified type of metadata."""
         status = self.check_files_status(
-            files=None, check_type="metadata", extended=extended, scope="all" # type: ignore
+            files=None,
+            check_type="metadata",
+            extended=extended,
+            scope="all",  # type: ignore
         )
         return status["has_status"]  # All files have the metadata type
 
@@ -2122,7 +2130,7 @@ class EventHandlerManager:
 
     def check_files_status(
         self,
-        files: list = None, # type: ignore
+        files: list = None,  # type: ignore
         check_type: str = "metadata",
         extended: bool = False,
         scope: str = "selected",
@@ -2202,7 +2210,10 @@ class EventHandlerManager:
     # =====================================
 
     def get_files_without_metadata(
-        self, files: list = None, extended: bool = False, scope: str = "selected" # type: ignore
+        self,
+        files: list = None,
+        extended: bool = False,
+        scope: str = "selected",  # type: ignore
     ) -> list:
         """Get list of files that don't have metadata."""
         status = self.check_files_status(
@@ -2210,12 +2221,12 @@ class EventHandlerManager:
         )
         return status["files_without_status"]
 
-    def get_files_without_hashes(self, files: list = None, scope: str = "selected") -> list: # type: ignore
+    def get_files_without_hashes(self, files: list = None, scope: str = "selected") -> list:  # type: ignore
         """Get list of files that don't have hash values."""
         status = self.check_files_status(files=files, check_type="hash", scope=scope)
         return status["files_without_status"]
 
-    def get_metadata_status_summary(self, files: list = None, scope: str = "selected") -> dict: # type: ignore
+    def get_metadata_status_summary(self, files: list = None, scope: str = "selected") -> dict:  # type: ignore
         """Get comprehensive metadata status summary."""
         basic_status = self.check_files_status(
             files=files, check_type="metadata", extended=False, scope=scope
@@ -2446,10 +2457,14 @@ class EventHandlerManager:
         # Determine enable states and tooltips
         # Fast metadata is only enabled if we have files that need fast metadata AND no files have extended metadata
         # (we don't want to mix fast and extended metadata in the same operation)
-        enable_fast_selected = (no_metadata_count > 0 or fast_metadata_count > 0) and extended_metadata_count == 0
+        enable_fast_selected = (
+            no_metadata_count > 0 or fast_metadata_count > 0
+        ) and extended_metadata_count == 0
 
         # Extended metadata is enabled if we have any files that need it or can be upgraded
-        enable_extended_selected = no_metadata_count > 0 or fast_metadata_count > 0 or extended_metadata_count > 0
+        enable_extended_selected = (
+            no_metadata_count > 0 or fast_metadata_count > 0 or extended_metadata_count > 0
+        )
 
         # Fast metadata tooltip
         if extended_metadata_count > 0:
@@ -2475,7 +2490,9 @@ class EventHandlerManager:
                 extended_tooltip = f"Load extended metadata for {total} file(s)"
         else:
             need_extended = total - extended_metadata_count
-            extended_tooltip = f"Load/upgrade extended metadata for {need_extended} of {total} file(s)"
+            extended_tooltip = (
+                f"Load/upgrade extended metadata for {need_extended} of {total} file(s)"
+            )
 
         return {
             "enable_fast_selected": enable_fast_selected,

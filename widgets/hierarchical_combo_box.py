@@ -44,6 +44,9 @@ class HierarchicalComboBox(QComboBox):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
 
+        # Internal state for reliable data retrieval
+        self._current_selected_data = None
+
         # Create tree view for hierarchical display
         self.tree_view = _AliasHeaderTreeView()
         self.tree_view.setObjectName("hier_combo_popup")
@@ -93,23 +96,19 @@ class HierarchicalComboBox(QComboBox):
         super().showPopup()
 
         # Ensure proper expansion after showing
-        if hasattr(self, '_categories') and self._categories:
+        if hasattr(self, "_categories") and self._categories:
             # Expand first category by default
             first_category = list(self._categories.keys())[0]
             self.expand_category(first_category)
 
         logger.debug(
-            "[HierarchicalComboBox] Popup shown with proper expansion",
-            extra={"dev_only": True}
+            "[HierarchicalComboBox] Popup shown with proper expansion", extra={"dev_only": True}
         )
 
     def hidePopup(self):
         """Hide the tree view popup."""
         super().hidePopup()
-        logger.debug(
-            "[HierarchicalComboBox] Popup hidden",
-            extra={"dev_only": True}
-        )
+        logger.debug("[HierarchicalComboBox] Popup hidden", extra={"dev_only": True})
 
     def eventFilter(self, obj, event):
         """Filter events to prevent popup from reopening during closing."""
@@ -122,7 +121,7 @@ class HierarchicalComboBox(QComboBox):
                 if not self.view().isVisible():
                     logger.debug(
                         "[HierarchicalComboBox] Blocked mouse press during popup closing",
-                        extra={"dev_only": True}
+                        extra={"dev_only": True},
                     )
                     return True  # Block the event
 
@@ -158,18 +157,20 @@ class HierarchicalComboBox(QComboBox):
             text = item.text()
             data = item.data(Qt.ItemDataRole.UserRole)
 
+            # Update internal state immediately
+            self._current_selected_data = data
+
             logger.debug(
-                f"[HierarchicalComboBox] Item clicked: {text} ({data})",
-                extra={"dev_only": True}
+                f"[HierarchicalComboBox] Item clicked: {text} ({data})", extra={"dev_only": True}
             )
 
             # Update display
             self.setCurrentText(text)
 
-            # Emit signal first
+            # Emit signal BEFORE hiding popup
             self.item_selected.emit(text, data)
 
-            # Close popup immediately without delay
+            # CRITICAL: Hide popup immediately after selection
             self.hidePopup()
         else:
             # For categories, toggle expansion
@@ -202,9 +203,15 @@ class HierarchicalComboBox(QComboBox):
         super().clear()
         self.model.clear()
         self._categories.clear()
+        self._current_selected_data = None
 
     def get_current_data(self) -> Any:
         """Get the data of the currently selected item."""
+        # Priority 1: Explicitly tracked data (most reliable after click)
+        if hasattr(self, "_current_selected_data") and self._current_selected_data is not None:
+            return self._current_selected_data
+
+        # Priority 2: Tree view current index
         current_index = self.tree_view.currentIndex()
         if current_index.isValid():
             item = self.model.itemFromIndex(current_index)
@@ -245,7 +252,7 @@ class HierarchicalComboBox(QComboBox):
         """Get the current text display of the combo box."""
         return super().currentText()
 
-    def populate_from_metadata_groups(self, groups: dict, default_key: str | None = None) -> None:
+    def populate_from_metadata_groups(self, groups: dict, _default_key: str | None = None) -> None:
         """Populate the combo box from grouped metadata data."""
         self.model.clear()
         self._categories.clear()
@@ -326,6 +333,10 @@ class HierarchicalComboBox(QComboBox):
                         index = self.model.indexFromItem(child_item)
                         self.tree_view.setCurrentIndex(index)
                         self.setCurrentText(child_item.text())
+
+                        # Update internal state
+                        self._current_selected_data = data
+
                         self.item_selected.emit(child_item.text(), data)
 
                         logger.debug(

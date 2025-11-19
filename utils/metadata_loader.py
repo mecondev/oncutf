@@ -134,9 +134,9 @@ class MetadataLoader:
         """
         # Normalize path for Windows compatibility
         from utils.path_normalizer import normalize_path
-        
+
         filepath = normalize_path(filepath)
-        
+
         logger.debug(
             f"[Loader] read_metadata() called: use_extended={use_extended}, filepath={filepath}",
             extra={"dev_only": True},
@@ -156,20 +156,16 @@ class MetadataLoader:
                 f"[Loader] Result keys for {filepath}: {list(result.keys())[:10]}",
                 extra={"dev_only": True},
             )
-            
+
             # Log date/time fields specifically for debugging
-            date_keys = [k for k in result.keys() if 'date' in k.lower() or 'time' in k.lower()]
+            date_keys = [k for k in result if "date" in k.lower() or "time" in k.lower()]
             if date_keys:
                 logger.debug(
-                    f"[Loader] Date/Time fields found: {date_keys}",
-                    extra={"dev_only": True}
+                    f"[Loader] Date/Time fields found: {date_keys}", extra={"dev_only": True}
                 )
                 for key in date_keys[:5]:  # Log first 5 date fields
-                    logger.debug(
-                        f"[Loader] {key} = {result[key]}",
-                        extra={"dev_only": True}
-                    )
-            
+                    logger.debug(f"[Loader] {key} = {result[key]}", extra={"dev_only": True})
+
             logger.debug(
                 f"[Loader] '__extended__' in result? {'__extended__' in result}",
                 extra={"dev_only": True},

@@ -9,7 +9,6 @@ Tests for MetadataTreeView widget
 
 import os
 import warnings
-from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -18,7 +17,8 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 try:
-    from PyQt5.QtCore import QModelIndex, Qt
+    from PyQt5.QtCore import QEvent, QPoint, Qt
+    from PyQt5.QtGui import QMouseEvent
     from PyQt5.QtWidgets import QApplication, QTreeView
 
     from utils.theme_engine import ThemeEngine
@@ -56,8 +56,8 @@ class TestMetadataTreeView:
         tree = MetadataTreeView()
         tree.setStyleSheet(f"""
             QTreeView {{
-                background-color: {theme_engine.get_color('table_background')};
-                color: {theme_engine.get_color('table_text')};
+                background-color: {theme_engine.get_color("table_background")};
+                color: {theme_engine.get_color("table_text")};
             }}
         """)
         yield tree
@@ -65,6 +65,7 @@ class TestMetadataTreeView:
         tree.deleteLater()
         if qapp:
             from PyQt5.QtCore import QCoreApplication
+
             QCoreApplication.processEvents()
 
     def test_widget_initialization(self, tree_view):
@@ -78,13 +79,106 @@ class TestMetadataTreeView:
         """Test that theme styles are properly applied."""
         style_sheet = f"""
             QTreeView {{
-                background-color: {theme_engine.get_color('table_background')};
-                color: {theme_engine.get_color('table_text')};
+                background-color: {theme_engine.get_color("table_background")};
+                color: {theme_engine.get_color("table_text")};
             }}
         """
         tree_view.setStyleSheet(style_sheet)
-        assert tree_view.styleSheet() != ""
-        assert "QTreeView" in tree_view.styleSheet()
+
+        # Basic checks
+        applied_style = tree_view.styleSheet()
+        assert applied_style != "", "Style sheet should not be empty"
+        assert "QTreeView" in applied_style
+
+        # Check for chevron/branch styling (best-effort)
+        has_branch_styling = any(
+            keyword in applied_style
+            for keyword in ["branch:", "::branch", "has-children", "closed"]
+        )
+        assert has_branch_styling, "Tree should have branch/chevron styling"
+
+    def test_expand_collapse_functionality(self, tree_view):
+        """Test tree expansion and collapse behavior."""
+        # Create a simple model for testing
+        from PyQt5.QtGui import QStandardItem, QStandardItemModel
+
+        model = QStandardItemModel()
+        root = model.invisibleRootItem()
+
+        # Create a parent item with children
+        parent_item = QStandardItem("EXIF")
+        child_item1 = QStandardItem("Camera Make")
+        child_item2 = QStandardItem("Camera Model")
+
+        parent_item.appendRow(child_item1)
+        parent_item.appendRow(child_item2)
+        root.appendRow(parent_item)
+
+        tree_view.setModel(model)
+
+        # Test initial state
+        parent_index = model.index(0, 0)
+        assert tree_view.isExpanded(parent_index) is False
+
+        # Test expansion
+        tree_view.expand(parent_index)
+        assert tree_view.isExpanded(parent_index) is True
+
+        # Test collapse
+        tree_view.collapse(parent_index)
+        assert tree_view.isExpanded(parent_index) is False
+
+    def test_selection_behavior(self, tree_view):
+        """Test selection state management."""
+        from PyQt5.QtGui import QStandardItem, QStandardItemModel
+
+        model = QStandardItemModel()
+        root = model.invisibleRootItem()
+
+        # Create test items
+        item1 = QStandardItem("EXIF")
+        item2 = QStandardItem("Camera Make")
+        root.appendRow(item1)
+        root.appendRow(item2)
+
+        tree_view.setModel(model)
+
+        # Allow Qt to process events
+        from PyQt5.QtCore import QCoreApplication
+
+        QCoreApplication.processEvents()
+
+        # Test selection
+        index1 = model.index(0, 0)
+        tree_view.setCurrentIndex(index1)
+
+        assert tree_view.currentIndex() == index1
+        assert tree_view.selectionModel() is not None
+        if tree_view.selectionModel():
+            assert tree_view.selectionModel().isSelected(index1) is True
+
+    def test_metadata_population(self, tree_view):
+        """Test metadata tree basic functionality without actual data."""
+        # Test that the tree view can handle basic model operations
+        from PyQt5.QtGui import QStandardItem, QStandardItemModel
+
+        model = QStandardItemModel()
+        root = model.invisibleRootItem()
+
+        # Create test metadata structure
+        exif_group = QStandardItem("EXIF")
+        camera_make = QStandardItem("Camera Make")
+        camera_make.appendRow(QStandardItem("Canon"))
+        exif_group.appendRow(camera_make)
+        root.appendRow(exif_group)
+
+        # Set model to tree view
+        tree_view.setModel(model)
+
+        # Verify model is set
+        assert tree_view.model() is not None
+        assert tree_view.model().rowCount() > 0
+>>>>>>> a69bde38 (Debug & test fixes — preview refresh, metadata parsing, SpecifiedText API, and ruff cleanups)
 
     def test_hover_state_handling(self, tree_view):
         """Test hover state behavior (basic functionality)."""
@@ -98,11 +192,7 @@ class TestMetadataTreeView:
         tree_view.event(leave_event)
 
         mouse_event = QMouseEvent(
-            QEvent.MouseMove,
-            QPoint(10, 10),
-            Qt.NoButton,
-            Qt.NoButton,
-            Qt.NoModifier
+            QEvent.MouseMove, QPoint(10, 10), Qt.NoButton, Qt.NoButton, Qt.NoModifier
         )
         tree_view.mouseMoveEvent(mouse_event)
 
@@ -110,20 +200,23 @@ class TestMetadataTreeView:
         """Test that styling remains consistent across states."""
         style_sheet = f"""
             QTreeView {{
-                background-color: {theme_engine.get_color('table_background')};
-                color: {theme_engine.get_color('table_text')};
+                background-color: {theme_engine.get_color("table_background")};
+                color: {theme_engine.get_color("table_text")};
             }}
             QTreeView::item:selected {{
-                background-color: {theme_engine.get_color('table_selection_background')};
-                color: {theme_engine.get_color('table_selection_text')};
+                background-color: {theme_engine.get_color("table_selection_background")};
+                color: {theme_engine.get_color("table_selection_text")};
             }}
         """
         tree_view.setStyleSheet(style_sheet)
         style = tree_view.styleSheet()
 
-        assert theme_engine.get_color('table_background') in style
-        assert theme_engine.get_color('table_text') in style
-        assert len(style) > 0
+        # Should have consistent theme colors
+        assert theme_engine.get_color("table_background") in style
+        assert theme_engine.get_color("table_text") in style
+
+        # Note: This test checks for actual color values
+        assert len(style) > 0, "Style sheet should not be empty"
 
 
 class TestMetadataTreeViewLogic:
@@ -132,13 +225,8 @@ class TestMetadataTreeViewLogic:
     def test_metadata_structure_validation(self):
         """Test metadata structure validation logic."""
         valid_metadata = {
-            "EXIF": {
-                "Camera Make": "Canon",
-                "Camera Model": "EOS R5"
-            },
-            "File": {
-                "File Name": "test.jpg"
-            }
+            "EXIF": {"Camera Make": "Canon", "Camera Model": "EOS R5"},
+            "File": {"File Name": "test.jpg"},
         }
 
         assert isinstance(valid_metadata, dict)
@@ -147,6 +235,7 @@ class TestMetadataTreeViewLogic:
 
     def test_tree_item_creation_logic(self):
         """Test the logic for creating tree items."""
+        # Mock the tree item creation without GUI
         def create_tree_item(key, value):
             return {"key": key, "value": str(value), "type": type(value).__name__}
 
@@ -157,6 +246,7 @@ class TestMetadataTreeViewLogic:
 
     def test_path_generation_logic(self):
         """Test metadata path generation logic."""
+
         def generate_path(parent_path, key):
             if parent_path:
                 return f"{parent_path}/{key}"

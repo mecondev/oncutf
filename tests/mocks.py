@@ -9,12 +9,11 @@ Mock objects for testing - Windows/Linux/Ελληνικά compatible
 
 import os
 import tempfile
-from pathlib import Path
 
 
 class MockFileItem:
     """Mock FileItem that works cross-platform with proper path normalization."""
-    
+
     def __init__(self, *, filename="mockfile.mp3", date=None, metadata=None):
         self.filename = filename
         # Use temp directory for cross-platform compatibility

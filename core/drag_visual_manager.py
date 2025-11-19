@@ -255,7 +255,11 @@ class DragVisualManager:
                 # For files, ignore recursive modifiers (no subdirectories)
                 if self._drag_type == DragType.FILE:
                     if self._modifier_state in [ModifierState.SHIFT, ModifierState.CTRL_SHIFT]:
-                        action_icons = ["plus", "layers"] if self._modifier_state == ModifierState.CTRL_SHIFT else ["plus"]
+                        action_icons = (
+                            ["plus", "layers"]
+                            if self._modifier_state == ModifierState.CTRL_SHIFT
+                            else ["plus"]
+                        )
                     else:
                         action_icons = ["download"]  # Replace + Shallow
                 else:
@@ -271,7 +275,15 @@ class DragVisualManager:
                     )
             else:  # NEUTRAL - show preview
                 if self._drag_type == DragType.FILE:
-                    action_icons = ["plus", "layers"] if self._modifier_state == ModifierState.CTRL_SHIFT else (["plus"] if self._modifier_state == ModifierState.SHIFT else ["download"])
+                    action_icons = (
+                        ["plus", "layers"]
+                        if self._modifier_state == ModifierState.CTRL_SHIFT
+                        else (
+                            ["plus"]
+                            if self._modifier_state == ModifierState.SHIFT
+                            else ["download"]
+                        )
+                    )
                 else:
                     action_icons = (
                         ["plus"]

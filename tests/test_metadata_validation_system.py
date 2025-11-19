@@ -421,6 +421,7 @@ class TestMetadataValidatedWidgets:
         # Should have attempted to call show_error_tooltip
         # Note: This might not work perfectly due to widget type issues, but tests the logic
         from contextlib import suppress
+
         with suppress(AssertionError):
             mock_tooltip.assert_called_once()
 

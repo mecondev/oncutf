@@ -10,7 +10,6 @@ Tests color consistency, QSS application, and visual state management.
 
 import os
 import warnings
-from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -53,18 +52,18 @@ class TestThemeIntegration:
     def test_theme_engine_initialization(self, theme_engine):
         """Test ThemeEngine initialization."""
         assert isinstance(theme_engine, ThemeEngine)
-        assert hasattr(theme_engine, 'get_color')
-        assert hasattr(theme_engine, 'colors')
+        assert hasattr(theme_engine, "get_color")
+        assert hasattr(theme_engine, "colors")
 
     def test_consistent_color_definitions(self, theme_engine):
         """Test that theme colors are consistently defined."""
         # Test key color retrieval
         table_colors = [
-            'table_text',
-            'table_background',
-            'table_selection_text',
-            'table_selection_background',
-            'table_hover_background'
+            "table_text",
+            "table_background",
+            "table_selection_text",
+            "table_selection_background",
+            "table_hover_background",
         ]
 
         for color_name in table_colors:
@@ -77,15 +76,15 @@ class TestThemeIntegration:
         # Generate a basic tree view style using theme colors
         style = f"""
             QTreeView {{
-                background-color: {theme_engine.get_color('table_background')};
-                color: {theme_engine.get_color('table_text')};
+                background-color: {theme_engine.get_color("table_background")};
+                color: {theme_engine.get_color("table_text")};
             }}
             QTreeView::item:hover {{
-                background-color: {theme_engine.get_color('table_hover_background')};
+                background-color: {theme_engine.get_color("table_hover_background")};
             }}
             QTreeView::item:selected {{
-                background-color: {theme_engine.get_color('table_selection_background')};
-                color: {theme_engine.get_color('table_selection_text')};
+                background-color: {theme_engine.get_color("table_selection_background")};
+                color: {theme_engine.get_color("table_selection_text")};
             }}
         """
 
@@ -102,17 +101,17 @@ class TestThemeIntegration:
     def test_chevron_icon_styling(self, theme_engine):
         """Test chevron/branch icon styling."""
         # Generate chevron styling using theme
-        style = f"""
+        style = """
             QTreeView::branch:has-children:!has-siblings:closed,
-            QTreeView::branch:closed:has-children:has-siblings {{
+            QTreeView::branch:closed:has-children:has-siblings {
                 border-image: none;
                 image: url(resources/icons/chevron_right.png);
-            }}
+            }
             QTreeView::branch:open:has-children:!has-siblings,
-            QTreeView::branch:open:has-children:has-siblings {{
+            QTreeView::branch:open:has-children:has-siblings {
                 border-image: none;
                 image: url(resources/icons/chevron_down.png);
-            }}
+            }
         """
 
         # Check for branch-related styling
@@ -124,17 +123,19 @@ class TestThemeIntegration:
     def test_color_consistency_across_states(self, theme_engine):
         """Test color consistency across different UI states."""
         # Get colors that should be consistent
-        normal_text = theme_engine.get_color('table_text')
-        selection_text = theme_engine.get_color('table_selection_text')
+        normal_text = theme_engine.get_color("table_text")
+        selection_text = theme_engine.get_color("table_selection_text")
 
         # Colors should be defined and different for contrast
         assert normal_text != selection_text, "Normal and selection text colors should differ"
 
         # Both should be valid color strings (basic validation)
-        assert normal_text.startswith('#') or normal_text in ['white', 'black'], \
-               f"Invalid color format: {normal_text}"
-        assert selection_text.startswith('#') or selection_text in ['white', 'black'], \
-               f"Invalid color format: {selection_text}"
+        assert normal_text.startswith("#") or normal_text in ["white", "black"], (
+            f"Invalid color format: {normal_text}"
+        )
+        assert selection_text.startswith("#") or selection_text in ["white", "black"], (
+            f"Invalid color format: {selection_text}"
+        )
 
 
 # Non-GUI tests for theme logic
@@ -144,20 +145,21 @@ class TestThemeLogic:
     def test_color_name_validation(self):
         """Test color name validation logic."""
         valid_color_names = [
-            'table_text',
-            'table_background',
-            'table_selection_text',
-            'table_selection_background',
-            'table_hover_background'
+            "table_text",
+            "table_background",
+            "table_selection_text",
+            "table_selection_background",
+            "table_hover_background",
         ]
 
         for name in valid_color_names:
             assert isinstance(name, str)
             assert len(name) > 0
-            assert '_' in name  # Following naming convention
+            assert "_" in name  # Following naming convention
 
     def test_qss_template_logic(self):
         """Test QSS template generation logic."""
+
         def generate_qss_template(color_map):
             """Mock QSS generation."""
             template = "QTreeView { "
@@ -166,11 +168,7 @@ class TestThemeLogic:
             template += "}"
             return template
 
-        colors = {
-            "color": "#000000",
-            "background-color": "#ffffff",
-            "selection-color": "#ffffff"
-        }
+        colors = {"color": "#000000", "background-color": "#ffffff", "selection-color": "#ffffff"}
 
         qss = generate_qss_template(colors)
         assert "QTreeView" in qss
@@ -179,12 +177,13 @@ class TestThemeLogic:
 
     def test_state_selector_logic(self):
         """Test CSS state selector logic."""
+
         def build_state_selector(base_selector, state):
             """Mock state selector building."""
             state_map = {
                 "hover": f"{base_selector}:hover",
                 "selected": f"{base_selector}:selected",
-                "selected_hover": f"{base_selector}:selected:hover"
+                "selected_hover": f"{base_selector}:selected:hover",
             }
             return state_map.get(state, base_selector)
 
@@ -196,12 +195,13 @@ class TestThemeLogic:
 
     def test_chevron_path_resolution(self):
         """Test chevron icon path resolution."""
+
         def resolve_icon_path(icon_name):
             """Mock icon path resolution."""
             base_path = "resources/icons/"
             icon_map = {
                 "chevron_right": f"{base_path}chevron_right.png",
-                "chevron_down": f"{base_path}chevron_down.png"
+                "chevron_down": f"{base_path}chevron_down.png",
             }
             return icon_map.get(icon_name, f"{base_path}default.png")
 
@@ -214,6 +214,7 @@ class TestThemeLogic:
 
     def test_theme_inheritance_logic(self):
         """Test theme inheritance and override logic."""
+
         def apply_theme_inheritance(base_theme, overrides):
             """Mock theme inheritance."""
             result = base_theme.copy()
@@ -223,7 +224,7 @@ class TestThemeLogic:
         base = {
             "table_text": "#000000",
             "table_background": "#ffffff",
-            "table_selection_text": "#ffffff"
+            "table_selection_text": "#ffffff",
         }
 
         overrides = {

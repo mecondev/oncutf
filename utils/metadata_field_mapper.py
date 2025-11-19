@@ -49,7 +49,12 @@ class MetadataFieldMapper:
         # Device information
         "device_model": ["Model", "CameraModel"],
         "device_manufacturer": ["Make", "Manufacturer"],
-        "device_serial_no": ["SerialNumber", "CameraSerialNumber", "DeviceSerialNo", "OtherSerialNumber"],
+        "device_serial_no": [
+            "SerialNumber",
+            "CameraSerialNumber",
+            "DeviceSerialNo",
+            "OtherSerialNumber",
+        ],
         # Video properties
         "video_fps": ["VideoFrameRate", "FrameRate"],
         "video_avg_bitrate": ["AvgBitrate", "BitRate", "VideoBitrate"],

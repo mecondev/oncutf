@@ -114,17 +114,17 @@ class AsyncFileOperations:
                 aiofiles.open(source, "rb") as src,
                 aiofiles.open(destination, "wb") as dst,
             ):
-                    while True:
-                        chunk = await src.read(chunk_size)
-                        if not chunk:
-                            break
+                while True:
+                    chunk = await src.read(chunk_size)
+                    if not chunk:
+                        break
 
-                        await dst.write(chunk)
-                        bytes_copied += len(chunk)
+                    await dst.write(chunk)
+                    bytes_copied += len(chunk)
 
-                        if progress_callback:
-                            progress = (bytes_copied / file_size) * 100
-                            progress_callback(progress)
+                    if progress_callback:
+                        progress = (bytes_copied / file_size) * 100
+                        progress_callback(progress)
 
             return True
         except Exception as e:

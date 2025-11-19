@@ -216,7 +216,10 @@ class DirectMetadataLoader(QObject):
             self._start_metadata_loading(files, use_extended, source)
 
     def _start_metadata_loading_with_progress(
-        self, files: list[FileItem], use_extended: bool, source: str  # noqa: ARG002
+        self,
+        files: list[FileItem],
+        use_extended: bool,
+        source: str,  # noqa: ARG002
     ) -> None:
         """Start metadata loading with progress tracking."""
         from utils.metadata_loader import MetadataLoader

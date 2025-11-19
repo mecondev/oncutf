@@ -1245,6 +1245,7 @@ class MetadataTreeView(QTreeView):
                         "Please load metadata first (Fast or Extended)."
                     )
                     from core.pyqt_imports import QMessageBox
+
                     parent_window = self._get_parent_with_file_table()
                     if parent_window:
                         QMessageBox.warning(
@@ -1253,7 +1254,7 @@ class MetadataTreeView(QTreeView):
                             f"Cannot edit metadata for {file_item.filename}.\n\n"
                             "Please load metadata first:\n"
                             "• Right-click → Read Fast Metadata, or\n"
-                            "• Right-click → Read Extended Metadata"
+                            "• Right-click → Read Extended Metadata",
                         )
                     return  # Abort the edit operation
 
@@ -1691,6 +1692,7 @@ class MetadataTreeView(QTreeView):
                     f"[MetadataTree] Cannot edit {key_path} for {file_item.filename} - metadata not loaded"
                 )
                 from core.pyqt_imports import QMessageBox
+
                 parent_window = self._get_parent_with_file_table()
                 if parent_window:
                     QMessageBox.warning(
@@ -1699,7 +1701,7 @@ class MetadataTreeView(QTreeView):
                         f"Cannot edit metadata for {file_item.filename}.\n\n"
                         "Please load metadata first:\n"
                         "• Right-click → Read Fast Metadata, or\n"
-                        "• Right-click → Read Extended Metadata"
+                        "• Right-click → Read Extended Metadata",
                     )
                 return
 
@@ -2463,13 +2465,14 @@ class MetadataTreeView(QTreeView):
             # CRITICAL: Clear any stale modifications for this file when displaying fresh metadata
             # This prevents showing [MODIFIED] for fields that were never actually saved
             from utils.path_normalizer import normalize_path
+
             normalized_path = normalize_path(file_item.full_path)
 
             # Check if we have stale modifications
             if self._path_in_dict(normalized_path, self.modified_items_per_file):
                 logger.debug(
                     f"[MetadataTree] Clearing stale modifications for {file_item.filename} on metadata display",
-                    extra={"dev_only": True}
+                    extra={"dev_only": True},
                 )
                 self._remove_from_path_dict(normalized_path, self.modified_items_per_file)
                 # Also clear current modifications if this is the current file
@@ -2691,7 +2694,11 @@ class MetadataTreeView(QTreeView):
             )
 
             # Get cache entry using normalized path
-            metadata_entry = cache_helper.metadata_cache.get_entry(normalized_path) if cache_helper.metadata_cache else None
+            metadata_entry = (
+                cache_helper.metadata_cache.get_entry(normalized_path)
+                if cache_helper.metadata_cache
+                else None
+            )
 
             if metadata_entry:
                 logger.info(
@@ -2700,7 +2707,7 @@ class MetadataTreeView(QTreeView):
             else:
                 logger.warning(
                     f"[MetadataTree] NO cache entry found for normalized_path='{normalized_path}'",
-                    extra={"dev_only": False}
+                    extra={"dev_only": False},
                 )
 
             file_modifications = {}
@@ -2723,7 +2730,7 @@ class MetadataTreeView(QTreeView):
                         file_modifications["Rotation"] = str(metadata_entry.data["Rotation"])
                         logger.debug(
                             f"[MetadataTree] Found Rotation={metadata_entry.data['Rotation']} for {file_path}",
-                            extra={"dev_only": True}
+                            extra={"dev_only": True},
                         )
                     else:
                         file_modifications["Rotation"] = "[MODIFIED]"

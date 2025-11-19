@@ -174,8 +174,8 @@ class Renamer:
             # File rename - ensure paths are absolute and normalized for cross-platform support
             try:
                 # Import utilities
-                from utils.rename_logic import is_case_only_change, safe_case_rename
                 from utils.path_normalizer import normalize_path
+                from utils.rename_logic import is_case_only_change, safe_case_rename
 
                 # Normalize paths to absolute for cross-platform compatibility
                 # This is critical for Windows where relative paths can cause issues
@@ -206,7 +206,9 @@ class Renamer:
                     # Regular rename with normalized paths
                     os.rename(src_normalized, dst_normalized)
                     results.append(RenameResult(src, dst, success=True))
-                    logger.debug(f"[Rename] Success: {src_name} -> {dst_name}", extra={"dev_only": True})
+                    logger.debug(
+                        f"[Rename] Success: {src_name} -> {dst_name}", extra={"dev_only": True}
+                    )
             except PermissionError as e:
                 error_msg = f"Permission denied (file may be in use): {str(e)}"
                 logger.error(f"[Rename] {error_msg} for {src}")

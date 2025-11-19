@@ -7,7 +7,6 @@ Author: Michael Economou
 Date: 2025-05-31
 """
 
-
 from core.pyqt_imports import QApplication, QEvent, QObject, Qt, QTimer
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_drag_cleanup

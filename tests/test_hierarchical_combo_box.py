@@ -11,7 +11,7 @@ These tests cover the combobox issues we've been addressing.
 
 import os
 import warnings
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -21,8 +21,6 @@ warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 # PyQt5 widget tests (only run if PyQt5 is available and not in CI)
 try:
-    from PyQt5.QtCore import QModelIndex, Qt
-    from PyQt5.QtGui import QStandardItem, QStandardItemModel
     from PyQt5.QtWidgets import QApplication, QTreeView
 
     from utils.theme_engine import ThemeEngine
@@ -58,10 +56,23 @@ class TestHierarchicalComboBox:
     def sample_metadata_groups(self):
         """Create sample metadata groups for testing."""
         return {
-            "File Info": [("File Name", "filename"), ("File Size", "filesize"), ("File Type", "filetype")],
-            "File Date/Time": [("Date Created", "date_created"), ("Date Modified", "date_modified"), ("Date Taken", "date_taken")],
-            "EXIF": [("Camera Make", "camera_make"), ("Camera Model", "camera_model"), ("ISO", "iso"), ("F-Stop", "fstop")],
-            "GPS": [("Latitude", "latitude"), ("Longitude", "longitude"), ("Altitude", "altitude")]
+            "File Info": [
+                ("File Name", "filename"),
+                ("File Size", "filesize"),
+                ("File Type", "filetype"),
+            ],
+            "File Date/Time": [
+                ("Date Created", "date_created"),
+                ("Date Modified", "date_modified"),
+                ("Date Taken", "date_taken"),
+            ],
+            "EXIF": [
+                ("Camera Make", "camera_make"),
+                ("Camera Model", "camera_model"),
+                ("ISO", "iso"),
+                ("F-Stop", "fstop"),
+            ],
+            "GPS": [("Latitude", "latitude"), ("Longitude", "longitude"), ("Altitude", "altitude")],
         }
 
     @pytest.fixture
@@ -69,24 +80,24 @@ class TestHierarchicalComboBox:
         """Create a HierarchicalComboBox for testing."""
         combo = HierarchicalComboBox()
         # Apply theme to get consistent styling
-        if hasattr(combo, 'tree_view'):
+        if hasattr(combo, "tree_view"):
             combo.tree_view.setStyleSheet(f"""
                 QTreeView {{
-                    background-color: {theme_engine.get_color('combo_dropdown_background')};
-                    color: {theme_engine.get_color('combo_text')};
+                    background-color: {theme_engine.get_color("combo_dropdown_background")};
+                    color: {theme_engine.get_color("combo_text")};
                 }}
             """)
         return combo
 
     def test_widget_initialization(self, combo_box):
         """Test HierarchicalComboBox initialization."""
-        assert hasattr(combo_box, 'tree_view')
+        assert hasattr(combo_box, "tree_view")
         assert isinstance(combo_box.tree_view, QTreeView)
 
         # Check tree view properties
         tree = combo_box.tree_view
         assert tree.rootIsDecorated() is True  # Should show chevrons
-        assert tree.headerHidden() is True     # No header
+        assert tree.headerHidden() is True  # No header
         assert tree.alternatingRowColors() is False  # No alternating rows
 
     def test_metadata_population(self, combo_box, sample_metadata_groups):
@@ -169,17 +180,17 @@ class TestHierarchicalComboBox:
     def test_theme_consistency(self, combo_box, theme_engine):
         """Test theme consistency between tree view and combobox."""
         # Apply theme styling
-        if hasattr(combo_box, 'tree_view'):
+        if hasattr(combo_box, "tree_view"):
             style_sheet = f"""
                 QTreeView {{
-                    background-color: {theme_engine.get_color('combo_dropdown_background')};
-                    color: {theme_engine.get_color('combo_text')};
+                    background-color: {theme_engine.get_color("combo_dropdown_background")};
+                    color: {theme_engine.get_color("combo_text")};
                 }}
                 QTreeView::item:hover {{
-                    background-color: {theme_engine.get_color('combo_item_background_hover')};
+                    background-color: {theme_engine.get_color("combo_item_background_hover")};
                 }}
                 QTreeView::item:selected {{
-                    background-color: {theme_engine.get_color('combo_item_background_selected')};
+                    background-color: {theme_engine.get_color("combo_item_background_selected")};
                 }}
             """
             combo_box.tree_view.setStyleSheet(style_sheet)
@@ -202,14 +213,15 @@ class TestHierarchicalComboBox:
         style = tree.styleSheet()
 
         # Check for branch/chevron styling in QSS
-        has_branch_styling = any(keyword in style for keyword in [
-            "branch:", "::branch", "has-children", "open", "closed"
-        ])
+        has_branch_styling = any(
+            keyword in style
+            for keyword in ["branch:", "::branch", "has-children", "open", "closed"]
+        )
 
         # Or check if root decoration is enabled (shows default chevrons)
         assert has_branch_styling or tree.rootIsDecorated()
 
-    @patch('widgets.hierarchical_combo_box.HierarchicalComboBox.item_selected')
+    @patch("widgets.hierarchical_combo_box.HierarchicalComboBox.item_selected")
     def test_selection_signal_emission(self, mock_signal, combo_box, sample_metadata_groups):
         """Test that selection changes emit appropriate signals."""
         combo_box.populate_from_metadata_groups(sample_metadata_groups)
@@ -234,7 +246,7 @@ class TestHierarchicalComboBox:
         combo_box.showPopup()
 
         # Should have a popup view
-        assert hasattr(combo_box, 'tree_view')
+        assert hasattr(combo_box, "tree_view")
 
         # Hide popup
         combo_box.hidePopup()
@@ -257,8 +269,8 @@ class TestHierarchicalComboBox:
         """Test handling of groups with some empty categories."""
         partial_groups = {
             "File Info": [("File Name", "filename")],  # Has items
-            "Empty Group": [],           # No items
-            "EXIF": [("Camera Make", "camera_make"), ("ISO", "iso")]  # Has items
+            "Empty Group": [],  # No items
+            "EXIF": [("Camera Make", "camera_make"), ("ISO", "iso")],  # Has items
         }
 
         # Should handle mixed data gracefully
@@ -276,7 +288,7 @@ class TestHierarchicalComboBoxLogic:
         """Test metadata groups structure validation."""
         valid_groups = {
             "File Info": ["File Name", "File Size"],
-            "EXIF": ["Camera Make", "Camera Model"]
+            "EXIF": ["Camera Make", "Camera Model"],
         }
 
         # Test structure validation
@@ -289,6 +301,7 @@ class TestHierarchicalComboBoxLogic:
 
     def test_group_item_filtering(self):
         """Test filtering logic for group items."""
+
         def filter_valid_items(items):
             """Mock filtering function."""
             return [item for item in items if item and isinstance(item, str)]
@@ -302,6 +315,7 @@ class TestHierarchicalComboBoxLogic:
 
     def test_selection_path_building(self):
         """Test building selection paths."""
+
         def build_selection_path(group, item):
             """Mock path building."""
             return f"{group}/{item}" if group and item else item or group or ""
@@ -314,6 +328,7 @@ class TestHierarchicalComboBoxLogic:
 
     def test_default_selection_logic(self):
         """Test default selection determination."""
+
         def get_default_selection(groups):
             """Mock default selection logic."""
             # Priority: File Name in File Info, then first item in first group
@@ -328,17 +343,11 @@ class TestHierarchicalComboBoxLogic:
             return ""
 
         # Test with File Name available
-        groups_with_filename = {
-            "File Info": ["File Name", "File Size"],
-            "EXIF": ["Camera Make"]
-        }
+        groups_with_filename = {"File Info": ["File Name", "File Size"], "EXIF": ["Camera Make"]}
         assert get_default_selection(groups_with_filename) == "File Info/File Name"
 
         # Test without File Name
-        groups_without_filename = {
-            "EXIF": ["Camera Make", "Camera Model"],
-            "GPS": ["Latitude"]
-        }
+        groups_without_filename = {"EXIF": ["Camera Make", "Camera Model"], "GPS": ["Latitude"]}
         assert get_default_selection(groups_without_filename) == "EXIF/Camera Make"
 
         # Test empty groups

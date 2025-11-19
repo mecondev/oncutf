@@ -40,6 +40,7 @@ class OriginalNameWidget(BaseRenameModule):
         # Apply theme-aware styling instead of hard-coded color
         try:
             from utils.theme_engine import ThemeEngine
+
             theme = ThemeEngine()
             secondary_color = theme.get_color("text_secondary")
             self.label.setStyleSheet(f"color: {secondary_color}; font-style: italic;")

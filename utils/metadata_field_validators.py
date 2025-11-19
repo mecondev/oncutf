@@ -10,10 +10,11 @@ Provides validation rules and error messages for different metadata field types.
 """
 
 
-def _default_validator(value):
+def _default_validator(_value):
     """Default validator for unknown fields: reject them."""
     # Return (is_valid: bool, error_message_or_None)
-    return False, "Unknown field: no validator found"
+    # Ensure test expectation: mention "validator" in the message
+    return (False, "No validator available for this field (validator missing)")
 
 
 class MetadataFieldValidator:

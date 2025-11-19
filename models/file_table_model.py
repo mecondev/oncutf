@@ -66,15 +66,19 @@ class FileTableModel(QAbstractTableModel):
     def _load_default_visible_columns(self) -> list:
         """Load default visible columns configuration using UnifiedColumnService."""
         from core.unified_column_service import get_column_service
+
         service = get_column_service()
         return service.get_visible_columns()
 
     def _create_column_mapping(self) -> dict:
         """Create mapping from column index to column key using UnifiedColumnService."""
         from core.unified_column_service import get_column_service
+
         service = get_column_service()
         mapping = service.get_column_mapping()
-        logger.debug(f"[ColumnMapping] Created mapping from service: {mapping}", extra={"dev_only": True})
+        logger.debug(
+            f"[ColumnMapping] Created mapping from service: {mapping}", extra={"dev_only": True}
+        )
         return mapping
 
     def update_visible_columns(self, visible_columns: list) -> None:
@@ -85,6 +89,7 @@ class FileTableModel(QAbstractTableModel):
 
         # Invalidate UnifiedColumnService cache when columns change
         from core.unified_column_service import get_column_service
+
         service = get_column_service()
         service.invalidate_cache()
         logger.debug("[FileTableModel] Invalidated UnifiedColumnService cache")
@@ -466,6 +471,7 @@ class FileTableModel(QAbstractTableModel):
         elif role == Qt.TextAlignmentRole:
             # Get alignment from UnifiedColumnService
             from core.unified_column_service import get_column_service
+
             service = get_column_service()
             config = service.get_column_config(column_key)
             if config:

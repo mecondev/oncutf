@@ -41,13 +41,13 @@ from core.pyqt_imports import (
     QTimer,
     pyqtSignal,
 )
+from core.unified_column_service import get_column_service
 from utils.file_drop_helper import extract_file_paths
 from utils.logger_factory import get_cached_logger
 from utils.placeholder_helper import create_placeholder_helper
 from utils.timer_manager import (
     schedule_ui_update,
 )
-from core.unified_column_service import get_column_service
 
 logger = get_cached_logger(__name__)
 
@@ -318,7 +318,7 @@ class FileTableView(QTableView):
         self.setWordWrap(False)
 
         # Also try to disable word wrap on the horizontal header
-        if hasattr(self.horizontalHeader(), 'setWordWrap'):
+        if hasattr(self.horizontalHeader(), "setWordWrap"):
             self.horizontalHeader().setWordWrap(False)
 
         # Set fixed row height to prevent expansion
@@ -2153,6 +2153,7 @@ class FileTableView(QTableView):
                     logger.debug(f"[ColumnVisibility] Loaded from main config: {saved_visibility}")
                     # Ensure we have all columns from config, not just saved ones
                     from core.unified_column_service import get_column_service
+
                     service = get_column_service()
 
                     complete_visibility = {}
@@ -2174,6 +2175,7 @@ class FileTableView(QTableView):
                 logger.debug(f"[ColumnVisibility] Loaded from fallback config: {saved_visibility}")
                 # Ensure we have all columns from config, not just saved ones
                 from core.unified_column_service import get_column_service
+
                 service = get_column_service()
 
                 complete_visibility = {}
@@ -2188,6 +2190,7 @@ class FileTableView(QTableView):
 
         # Return default configuration
         from core.unified_column_service import get_column_service
+
         service = get_column_service()
 
         default_visibility = {
@@ -2276,6 +2279,7 @@ class FileTableView(QTableView):
         """Toggle visibility of a specific column and refresh the table."""
 
         from core.unified_column_service import get_column_service
+
         all_columns = get_column_service().get_all_columns()
         if column_key not in all_columns:
             logger.warning(f"Unknown column key: {column_key}")
@@ -2301,6 +2305,7 @@ class FileTableView(QTableView):
 
         # Verify we have all columns in visibility state
         from core.unified_column_service import get_column_service
+
         for key, cfg in get_column_service().get_all_columns().items():
             if key not in self._visible_columns:
                 self._visible_columns[key] = cfg.default_visible
@@ -2327,6 +2332,7 @@ class FileTableView(QTableView):
         """Add a column to the table (make it visible)."""
 
         from core.unified_column_service import get_column_service
+
         if column_key not in get_column_service().get_all_columns():
             logger.warning(f"Cannot add unknown column: {column_key}")
             return
@@ -2408,6 +2414,7 @@ class FileTableView(QTableView):
         """Remove a column from the table (make it invisible)."""
 
         from core.unified_column_service import get_column_service
+
         all_columns = get_column_service().get_all_columns()
         if column_key not in all_columns:
             logger.warning(f"Cannot remove unknown column: {column_key}")
@@ -2600,13 +2607,16 @@ class FileTableView(QTableView):
             for i, column_key in enumerate(visible_columns):
                 column_index = i + 1  # +1 because column 0 is status column
                 from core.unified_column_service import get_column_service
+
                 cfg = get_column_service().get_column_config(column_key)
 
                 # Use Qt's built-in resize to contents
                 header.resizeSection(column_index, header.sectionSizeHint(column_index))
 
                 # Apply minimum width constraint
-                min_width = max((cfg.min_width if cfg else GLOBAL_MIN_COLUMN_WIDTH), GLOBAL_MIN_COLUMN_WIDTH)
+                min_width = max(
+                    (cfg.min_width if cfg else GLOBAL_MIN_COLUMN_WIDTH), GLOBAL_MIN_COLUMN_WIDTH
+                )
                 current_width = self.columnWidth(column_index)
                 final_width = max(current_width, min_width)
 
@@ -2635,8 +2645,6 @@ class FileTableView(QTableView):
     def _check_and_fix_column_widths(self) -> None:
         """Check if column widths need to be reset due to incorrect saved values."""
         try:
-
-
             # Get current saved widths
             main_window = self._get_main_window()
             saved_widths = {}
@@ -2658,6 +2666,7 @@ class FileTableView(QTableView):
             total_count = 0
 
             from core.unified_column_service import get_column_service
+
             for column_key, column_config in get_column_service().get_all_columns().items():
                 if getattr(column_config, "default_visible", False):
                     total_count += 1

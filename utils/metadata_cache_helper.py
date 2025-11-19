@@ -250,21 +250,21 @@ class MetadataCacheHelper:
                 logger.warning(
                     f"[MetadataCacheHelper] Cannot set {key_path} - no metadata found in cache for {getattr(file_item, 'filename', 'unknown')}. "
                     "Metadata must be loaded before editing.",
-                    extra={"dev_only": False}
+                    extra={"dev_only": False},
                 )
                 return False
 
             # Special handling for Rotation - always use "Rotation" (capitalized)
             if key_path.lower() == "rotation":
                 # Clean up any existing rotation entries (case-insensitive)
-                keys_to_remove = [k for k in metadata.keys() if k.lower() == "rotation"]
+                keys_to_remove = [k for k in metadata if k.lower() == "rotation"]
                 for k in keys_to_remove:
                     del metadata[k]
 
                 # Also remove from any groups
-                for group_key, group_data in list(metadata.items()):
+                for _group_key, group_data in list(metadata.items()):
                     if isinstance(group_data, dict):
-                        rotation_keys = [k for k in group_data.keys() if k.lower() == "rotation"]
+                        rotation_keys = [k for k in group_data if k.lower() == "rotation"]
                         for k in rotation_keys:
                             del group_data[k]
 

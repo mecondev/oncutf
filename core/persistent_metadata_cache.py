@@ -222,7 +222,9 @@ class PersistentMetadataCache:
                         is_extended = metadata.pop("__extended__", False)
                         is_modified = metadata.pop("__modified__", False)
 
-                        entry = MetadataEntry(metadata, is_extended=is_extended, modified=is_modified)
+                        entry = MetadataEntry(
+                            metadata, is_extended=is_extended, modified=is_modified
+                        )
                         self._memory_cache[path] = entry
                         result[path] = entry
                     else:

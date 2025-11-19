@@ -159,7 +159,7 @@ def get_resource_path(relative_path: str) -> Path:
     # Log for debugging path issues
     logger.debug(
         f"Resource path resolution: '{relative_path}' -> '{absolute_path}'",
-        extra={"dev_only": True}
+        extra={"dev_only": True},
     )
 
     # Check if file exists and log warning if not found

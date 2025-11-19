@@ -898,6 +898,7 @@ class MainWindow(QMainWindow):
 
             # Position dialog on the same screen as the main window
             from utils.multiscreen_helper import center_dialog_on_parent_screen
+
             center_dialog_on_parent_screen(self.shutdown_dialog, self)
 
             QApplication.processEvents()
@@ -1043,6 +1044,7 @@ class MainWindow(QMainWindow):
 
             # Position dialog on the same screen as the main window
             from utils.multiscreen_helper import center_dialog_on_parent_screen
+
             center_dialog_on_parent_screen(self.shutdown_dialog, self)
 
             QApplication.processEvents()
@@ -1467,6 +1469,7 @@ class MainWindow(QMainWindow):
             try:
                 # Disconnect first to avoid duplicate connections
                 from contextlib import suppress
+
                 with suppress(TypeError, RuntimeError):
                     self.event_handler_manager.hash_worker.file_hash_calculated.disconnect(
                         self.refresh_metadata_widgets
@@ -1526,5 +1529,3 @@ class MainWindow(QMainWindow):
                 )
         except Exception:
             pass
-
-

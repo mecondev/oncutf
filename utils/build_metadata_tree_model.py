@@ -172,6 +172,7 @@ def create_item(text: str, alignment=None, icon_name: str | None = None) -> QSta
     if icon_name:
         try:
             from utils.icons_loader import get_menu_icon
+
             icon = get_menu_icon(icon_name)
             if icon:
                 item.setIcon(icon)
@@ -427,7 +428,10 @@ def get_hidden_fields_for_level(level: str = "essential") -> set:
 
 
 def build_metadata_tree_model(
-    metadata: dict, modified_keys: set = None, extended_keys: set = None, _display_level: str = "all"
+    metadata: dict,
+    modified_keys: set = None,
+    extended_keys: set = None,
+    _display_level: str = "all",
 ) -> QStandardItemModel:
     """
     Build a tree model for metadata display with enhanced grouping and extended metadata indicators.
