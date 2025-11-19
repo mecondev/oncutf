@@ -127,7 +127,7 @@ class RenameModulesArea(QWidget):
         module = RenameModuleWidget(parent=self, parent_window=self.parent_window)
 
         module.remove_requested.connect(lambda m=module: self.remove_module(m))
-        module.updated.connect(lambda: self._on_module_updated())
+        module.updated.connect(lambda *_: self._on_module_updated())
         self.module_widgets.append(module)
 
         # Theme styling is now handled by the global theme engine

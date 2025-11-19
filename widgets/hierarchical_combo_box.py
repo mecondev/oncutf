@@ -81,6 +81,7 @@ class HierarchicalComboBox(QComboBox):
 
         # Track last selected item to detect changes
         self._last_selected_data = None
+        self._selected_item_data = None
         self._pressed_item_data = None
 
         # Install event filter on the combobox to block mouse events during closing
@@ -88,48 +89,27 @@ class HierarchicalComboBox(QComboBox):
 
     def showPopup(self):
         """Show the tree view popup."""
-        # Prevent popup from opening if we're in the process of closing it
-        if self._closing_popup:
-            logger.debug(
-                "[HierarchicalComboBox] Popup opening blocked (closing in progress)",
-                extra={"dev_only": True}
-            )
-            return
-
-        # Reset closing flag when opening popup (user explicitly wants to open it)
-        self._closing_popup = False
-        # Don't reset _last_selected_data here - we want to track if user selects same item
-
-        # Call parent implementation first to properly set up the view
+        # Call parent implementation to properly set up the view
         super().showPopup()
 
+        # Ensure proper expansion after showing
+        if hasattr(self, '_categories') and self._categories:
+            # Expand first category by default
+            first_category = list(self._categories.keys())[0]
+            self.expand_category(first_category)
+
         logger.debug(
-            "[HierarchicalComboBox] Popup shown",
+            "[HierarchicalComboBox] Popup shown with proper expansion",
             extra={"dev_only": True}
         )
 
     def hidePopup(self):
         """Hide the tree view popup."""
-        self._closing_popup = True
         super().hidePopup()
         logger.debug(
             "[HierarchicalComboBox] Popup hidden",
             extra={"dev_only": True}
         )
-
-        # Reset flag after a short delay using global timer
-        # Use try-except to handle shutdown case where TimerManager may be deleted
-        try:
-            from utils.timer_manager import schedule_ui_update
-            schedule_ui_update(lambda: setattr(self, '_closing_popup', False), 200)
-        except (RuntimeError, AttributeError):
-            # During shutdown, TimerManager may be deleted - use direct QTimer as fallback
-            try:
-                from PyQt5.QtCore import QTimer
-                QTimer.singleShot(200, lambda: setattr(self, '_closing_popup', False))
-            except Exception:
-                # If even QTimer fails, just reset the flag immediately
-                self._closing_popup = False
 
     def eventFilter(self, obj, event):
         """Filter events to prevent popup from reopening during closing."""
@@ -183,25 +163,14 @@ class HierarchicalComboBox(QComboBox):
                 extra={"dev_only": True}
             )
 
-            # Always process selection to ensure signal is emitted
-            # This handles cases where user clicks same item again or drags to select
-            was_different = data != self._last_selected_data
-            self._last_selected_data = data
-
-            # Update display first (before hiding popup to avoid visual glitches)
+            # Update display
             self.setCurrentText(text)
 
-            # Hide popup immediately (sets _closing_popup flag internally)
-            self.hidePopup()
-
-            # Emit signal AFTER hiding popup to avoid event conflicts
-            # Always emit, even if same data, to ensure preview updates
+            # Emit signal first
             self.item_selected.emit(text, data)
 
-            logger.debug(
-                f"[HierarchicalComboBox] Selection processed - was_different: {was_different}, data: {data}",
-                extra={"dev_only": True}
-            )
+            # Close popup immediately without delay
+            self.hidePopup()
         else:
             # For categories, toggle expansion
             if self.tree_view.isExpanded(index):
@@ -251,6 +220,10 @@ class HierarchicalComboBox(QComboBox):
                     child_item = item.child(child_row)
                     if child_item and child_item.text() == current_text:
                         return child_item.data(Qt.ItemDataRole.UserRole)
+
+        # Fallback to last selected data (handles cases where current index was reset)
+        if self._selected_item_data is not None:
+            return self._selected_item_data
 
         return None
 
@@ -332,6 +305,8 @@ class HierarchicalComboBox(QComboBox):
             index = self.model.indexFromItem(first_item)
             self.tree_view.setCurrentIndex(index)
             self.setCurrentText(first_item.text())
+            self._last_selected_data = first_item.data(Qt.ItemDataRole.UserRole)
+            self._selected_item_data = first_item.data(Qt.ItemDataRole.UserRole)
             self.item_selected.emit(first_item.text(), first_item.data(Qt.ItemDataRole.UserRole))
 
             logger.debug(
