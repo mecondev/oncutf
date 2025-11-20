@@ -98,7 +98,7 @@ class TestThemeIntegration:
         assert "hover" in style.lower()
         assert "selected" in style.lower()
 
-    def test_chevron_icon_styling(self, theme_engine):
+    def test_chevron_icon_styling(self, theme_engine):  # noqa: ARG002
         """Test chevron/branch icon styling."""
         # Generate chevron styling using theme
         style = """

@@ -232,6 +232,9 @@ class SmartWorkerThread(QThread):
             self.task_failed.emit(task.task_id, str(e))
             logger.error(f"[SmartWorkerThread] Task {task.task_id} failed: {e}")
 
+            # Track error in manager (will be set via signal connection)
+            # Note: Manager should connect to task_failed signal to update its health state
+
         finally:
             self._current_task = None
 
@@ -298,6 +301,11 @@ class ThreadPoolManager(QObject):
         # Statistics
         self._total_tasks = 0
         self._completed_tasks = 0
+
+        # Health tracking
+        self._last_error: str | None = None
+        self._failed_tasks_count: int = 0
+        self._is_healthy: bool = True
         self._failed_tasks = 0
         self._total_execution_time = 0.0
 
@@ -518,6 +526,52 @@ class ThreadPoolManager(QObject):
                 del self._tasks[task_id]
 
             logger.debug(f"[ThreadPoolManager] Cleared {len(completed_tasks)} completed tasks")
+
+    def is_healthy(self) -> bool:
+        """Check if thread pool is healthy.
+
+        Returns:
+            True if the pool is operating normally.
+        """
+        return self._is_healthy and len(self._workers) > 0
+
+    def last_error(self) -> str | None:
+        """Get the last error message.
+
+        Returns:
+            Last error message or None if no errors.
+        """
+        return self._last_error
+
+    def health_check(self) -> dict[str, any]:
+        """Perform comprehensive health check.
+
+        Returns:
+            Dictionary with health status and metrics.
+        """
+        active_workers = sum(1 for w in self._workers.values() if w.isRunning())
+
+        return {
+            "healthy": self.is_healthy(),
+            "total_workers": len(self._workers),
+            "active_workers": active_workers,
+            "queued_tasks": self._task_queue.size(),
+            "total_tasks_processed": self._completed_tasks,
+            "failed_tasks": self._failed_tasks_count,
+            "last_error": self._last_error,
+        }
+
+    def _on_task_failed(self, task_id: str, error: str):
+        """Handle task failure for health tracking."""
+        self._failed_tasks_count += 1
+        self._last_error = f"Task {task_id}: {error}"
+
+        # Mark as unhealthy if too many failures
+        if self._failed_tasks_count > 10:
+            self._is_healthy = False
+            logger.warning(
+                f"[ThreadPoolManager] Marked as unhealthy after {self._failed_tasks_count} failures"
+            )
 
     def shutdown(self):
         """Shutdown thread pool manager."""

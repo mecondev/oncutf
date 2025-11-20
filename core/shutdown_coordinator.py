@@ -1,0 +1,481 @@
+"""
+Module: shutdown_coordinator.py
+
+Author: Michael Economou
+Date: 2025-11-21
+
+Shutdown Coordinator Module
+
+Provides centralized, ordered shutdown coordination for all concurrent components
+in OnCutF. Ensures safe, graceful termination with health checks and timeout handling.
+
+Features:
+- Ordered shutdown phases (timers → async → threads → database → exiftool)
+- Health checks before shutdown
+- Timeout handling per phase
+- Progress callbacks for UI updates
+- Emergency shutdown fallback
+- Comprehensive logging
+"""
+
+import logging
+import time
+from collections.abc import Callable
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any
+
+from core.pyqt_imports import QObject, pyqtSignal
+
+logger = logging.getLogger(__name__)
+
+
+class ShutdownPhase(Enum):
+    """Shutdown phases in execution order."""
+
+    TIMERS = "timers"
+    ASYNC_OPERATIONS = "async_operations"
+    THREAD_POOL = "thread_pool"
+    DATABASE = "database"
+    EXIFTOOL = "exiftool"
+    FINALIZE = "finalize"
+
+
+@dataclass
+class ShutdownResult:
+    """Result of a shutdown phase."""
+
+    phase: ShutdownPhase
+    success: bool
+    duration: float
+    error: str | None = None
+    warning: str | None = None
+    health_before: dict[str, Any] | None = None
+
+
+class ShutdownCoordinator(QObject):
+    """
+    Coordinates graceful shutdown of all concurrent components.
+
+    Manages ordered shutdown sequence with health checks, timeouts,
+    and progress reporting.
+
+    Signals:
+        phase_started: Emitted when a shutdown phase starts
+        phase_completed: Emitted when a shutdown phase completes
+        shutdown_completed: Emitted when entire shutdown is complete
+    """
+
+    # Signals
+    phase_started = pyqtSignal(str)  # phase_name
+    phase_completed = pyqtSignal(str, bool)  # phase_name, success
+    shutdown_completed = pyqtSignal(bool)  # overall_success
+
+    # Default timeouts per phase (seconds)
+    DEFAULT_TIMEOUTS = {
+        ShutdownPhase.TIMERS: 2.0,
+        ShutdownPhase.ASYNC_OPERATIONS: 5.0,
+        ShutdownPhase.THREAD_POOL: 10.0,
+        ShutdownPhase.DATABASE: 3.0,
+        ShutdownPhase.EXIFTOOL: 5.0,
+        ShutdownPhase.FINALIZE: 2.0,
+    }
+
+    def __init__(self, parent=None):
+        """
+        Initialize shutdown coordinator.
+
+        Args:
+            parent: Optional parent QObject
+        """
+        super().__init__(parent)
+
+        # Phase timeouts (can be customized)
+        self.phase_timeouts = self.DEFAULT_TIMEOUTS.copy()
+
+        # Results tracking
+        self._results: list[ShutdownResult] = []
+        self._shutdown_in_progress = False
+        self._emergency_mode = False
+
+        # Component references (set via register methods)
+        self._timer_manager = None
+        self._async_manager = None
+        self._thread_pool_manager = None
+        self._database_manager = None
+        self._exiftool_wrapper = None
+
+        logger.info("[ShutdownCoordinator] Initialized")
+
+    def register_timer_manager(self, timer_manager):
+        """Register timer manager for shutdown."""
+        self._timer_manager = timer_manager
+        logger.debug("[ShutdownCoordinator] Timer manager registered")
+
+    def register_async_manager(self, async_manager):
+        """Register async operations manager for shutdown."""
+        self._async_manager = async_manager
+        logger.debug("[ShutdownCoordinator] Async manager registered")
+
+    def register_thread_pool_manager(self, thread_pool_manager):
+        """Register thread pool manager for shutdown."""
+        self._thread_pool_manager = thread_pool_manager
+        logger.debug("[ShutdownCoordinator] Thread pool manager registered")
+
+    def register_database_manager(self, database_manager):
+        """Register database manager for shutdown."""
+        self._database_manager = database_manager
+        logger.debug("[ShutdownCoordinator] Database manager registered")
+
+    def register_exiftool_wrapper(self, exiftool_wrapper):
+        """Register ExifTool wrapper for shutdown."""
+        self._exiftool_wrapper = exiftool_wrapper
+        logger.debug("[ShutdownCoordinator] ExifTool wrapper registered")
+
+    def set_phase_timeout(self, phase: ShutdownPhase, timeout: float):
+        """
+        Set custom timeout for a specific phase.
+
+        Args:
+            phase: Shutdown phase
+            timeout: Timeout in seconds
+        """
+        self.phase_timeouts[phase] = timeout
+        logger.debug(f"[ShutdownCoordinator] {phase.value} timeout set to {timeout}s")
+
+    def execute_shutdown(
+        self,
+        progress_callback: Callable[[str, float], None] | None = None,
+        emergency: bool = False,
+    ) -> bool:
+        """
+        Execute coordinated shutdown of all components.
+
+        Args:
+            progress_callback: Optional callback for progress updates (message, progress)
+            emergency: If True, use shorter timeouts and skip health checks
+
+        Returns:
+            True if all phases completed successfully
+        """
+        if self._shutdown_in_progress:
+            logger.warning("[ShutdownCoordinator] Shutdown already in progress")
+            return False
+
+        self._shutdown_in_progress = True
+        self._emergency_mode = emergency
+        self._results.clear()
+
+        logger.info(
+            f"[ShutdownCoordinator] Starting {'EMERGENCY' if emergency else 'GRACEFUL'} shutdown"
+        )
+
+        start_time = time.time()
+        overall_success = True
+
+        # Define shutdown phases in order
+        phases = [
+            (ShutdownPhase.TIMERS, self._shutdown_timers),
+            (ShutdownPhase.ASYNC_OPERATIONS, self._shutdown_async_operations),
+            (ShutdownPhase.THREAD_POOL, self._shutdown_thread_pool),
+            (ShutdownPhase.DATABASE, self._shutdown_database),
+            (ShutdownPhase.EXIFTOOL, self._shutdown_exiftool),
+            (ShutdownPhase.FINALIZE, self._shutdown_finalize),
+        ]
+
+        total_phases = len(phases)
+
+        for idx, (phase, shutdown_func) in enumerate(phases):
+            # Calculate progress
+            progress = idx / total_phases
+            phase_name = phase.value
+
+            # Emit phase started signal
+            self.phase_started.emit(phase_name)
+
+            # Call progress callback if provided
+            if progress_callback:
+                progress_callback(f"Shutting down {phase_name}...", progress)
+
+            # Execute phase
+            result = self._execute_phase(phase, shutdown_func)
+            self._results.append(result)
+
+            # Emit phase completed signal
+            self.phase_completed.emit(phase_name, result.success)
+
+            # Track overall success
+            if not result.success:
+                overall_success = False
+                logger.error(
+                    f"[ShutdownCoordinator] Phase {phase_name} failed: {result.error}"
+                )
+
+            # Log result
+            status = "✓" if result.success else "✗"
+            logger.info(
+                f"[ShutdownCoordinator] {status} {phase_name} "
+                f"({result.duration:.2f}s)"
+            )
+
+        # Final progress update
+        if progress_callback:
+            progress_callback("Shutdown complete", 1.0)
+
+        # Calculate total duration
+        total_duration = time.time() - start_time
+
+        # Log summary
+        logger.info(
+            f"[ShutdownCoordinator] Shutdown {'succeeded' if overall_success else 'completed with errors'} "
+            f"in {total_duration:.2f}s"
+        )
+
+        # Emit completion signal
+        self.shutdown_completed.emit(overall_success)
+
+        self._shutdown_in_progress = False
+
+        return overall_success
+
+    def _execute_phase(
+        self, phase: ShutdownPhase, shutdown_func: Callable[[], tuple[bool, str | None]]
+    ) -> ShutdownResult:
+        """
+        Execute a single shutdown phase with timeout handling.
+
+        Args:
+            phase: Shutdown phase
+            shutdown_func: Function to execute for this phase
+
+        Returns:
+            ShutdownResult with phase outcome
+        """
+        phase_start = time.time()
+        timeout = self.phase_timeouts[phase]
+
+        # In emergency mode, use half the normal timeout
+        if self._emergency_mode:
+            timeout = timeout / 2
+
+        logger.debug(
+            f"[ShutdownCoordinator] Starting phase {phase.value} "
+            f"(timeout: {timeout}s, emergency: {self._emergency_mode})"
+        )
+
+        # Get health check before shutdown (if not emergency mode)
+        health_before = None
+        if not self._emergency_mode:
+            health_before = self._get_component_health(phase)
+            if health_before and not health_before.get("healthy", True):
+                logger.warning(
+                    f"[ShutdownCoordinator] Component for {phase.value} "
+                    f"reports unhealthy: {health_before}"
+                )
+
+        try:
+            # Execute shutdown function with timeout awareness
+            success, error = shutdown_func()
+
+            duration = time.time() - phase_start
+
+            # Check if we exceeded timeout (soft warning)
+            if duration > timeout:
+                warning = f"Phase exceeded timeout ({duration:.2f}s > {timeout}s)"
+                logger.warning(f"[ShutdownCoordinator] {warning}")
+                return ShutdownResult(
+                    phase=phase,
+                    success=success,
+                    duration=duration,
+                    error=error,
+                    warning=warning,
+                    health_before=health_before,
+                )
+
+            return ShutdownResult(
+                phase=phase,
+                success=success,
+                duration=duration,
+                error=error,
+                health_before=health_before,
+            )
+
+        except Exception as e:
+            duration = time.time() - phase_start
+            error_msg = f"Exception during shutdown: {e}"
+            logger.error(f"[ShutdownCoordinator] {error_msg}", exc_info=True)
+
+            return ShutdownResult(
+                phase=phase,
+                success=False,
+                duration=duration,
+                error=error_msg,
+                health_before=health_before,
+            )
+
+    def _get_component_health(self, phase: ShutdownPhase) -> dict[str, Any] | None:
+        """
+        Get health check for component corresponding to phase.
+
+        Args:
+            phase: Shutdown phase
+
+        Returns:
+            Health check dictionary or None if not available
+        """
+        try:
+            if phase == ShutdownPhase.TIMERS and self._timer_manager:
+                if hasattr(self._timer_manager, "health_check"):
+                    return self._timer_manager.health_check()
+
+            elif phase == ShutdownPhase.ASYNC_OPERATIONS and self._async_manager:
+                if hasattr(self._async_manager, "health_check"):
+                    return self._async_manager.health_check()
+
+            elif phase == ShutdownPhase.THREAD_POOL and self._thread_pool_manager:
+                if hasattr(self._thread_pool_manager, "health_check"):
+                    return self._thread_pool_manager.health_check()
+
+            elif phase == ShutdownPhase.EXIFTOOL and self._exiftool_wrapper:
+                if hasattr(self._exiftool_wrapper, "health_check"):
+                    return self._exiftool_wrapper.health_check()
+
+        except Exception as e:
+            logger.warning(f"[ShutdownCoordinator] Error getting health for {phase.value}: {e}")
+
+        return None
+
+    def _shutdown_timers(self) -> tuple[bool, str | None]:
+        """Shutdown timer manager."""
+        if not self._timer_manager:
+            return True, None
+
+        try:
+            if hasattr(self._timer_manager, "cleanup_all"):
+                cancelled = self._timer_manager.cleanup_all()
+                logger.debug(f"[ShutdownCoordinator] Cleaned up {cancelled} timers")
+            return True, None
+        except Exception as e:
+            return False, f"Timer shutdown failed: {e}"
+
+    def _shutdown_async_operations(self) -> tuple[bool, str | None]:
+        """Shutdown async operations manager."""
+        if not self._async_manager:
+            return True, None
+
+        try:
+            if hasattr(self._async_manager, "shutdown"):
+                self._async_manager.shutdown()
+            return True, None
+        except Exception as e:
+            return False, f"Async operations shutdown failed: {e}"
+
+    def _shutdown_thread_pool(self) -> tuple[bool, str | None]:
+        """Shutdown thread pool manager."""
+        if not self._thread_pool_manager:
+            return True, None
+
+        try:
+            if hasattr(self._thread_pool_manager, "shutdown"):
+                self._thread_pool_manager.shutdown()
+            return True, None
+        except Exception as e:
+            return False, f"Thread pool shutdown failed: {e}"
+
+    def _shutdown_database(self) -> tuple[bool, str | None]:
+        """Shutdown database manager."""
+        if not self._database_manager:
+            return True, None
+
+        try:
+            if hasattr(self._database_manager, "close"):
+                self._database_manager.close()
+            return True, None
+        except Exception as e:
+            return False, f"Database shutdown failed: {e}"
+
+    def _shutdown_exiftool(self) -> tuple[bool, str | None]:
+        """Shutdown ExifTool wrapper."""
+        if not self._exiftool_wrapper:
+            return True, None
+
+        try:
+            if hasattr(self._exiftool_wrapper, "stop"):
+                self._exiftool_wrapper.stop()
+
+            # Also call force cleanup as safety measure
+            from utils.exiftool_wrapper import ExifToolWrapper
+
+            ExifToolWrapper.force_cleanup_all_exiftool_processes()
+
+            return True, None
+        except Exception as e:
+            return False, f"ExifTool shutdown failed: {e}"
+
+    def _shutdown_finalize(self) -> tuple[bool, str | None]:
+        """Finalize shutdown - cleanup any remaining resources."""
+        try:
+            # Any final cleanup operations can go here
+            logger.debug("[ShutdownCoordinator] Finalization complete")
+            return True, None
+        except Exception as e:
+            return False, f"Finalization failed: {e}"
+
+    def get_results(self) -> list[ShutdownResult]:
+        """
+        Get results from last shutdown execution.
+
+        Returns:
+            List of ShutdownResult objects
+        """
+        return self._results.copy()
+
+    def get_summary(self) -> dict[str, Any]:
+        """
+        Get summary of last shutdown execution.
+
+        Returns:
+            Dictionary with shutdown statistics
+        """
+        if not self._results:
+            return {"executed": False}
+
+        total_duration = sum(r.duration for r in self._results)
+        successful_phases = sum(1 for r in self._results if r.success)
+        failed_phases = sum(1 for r in self._results if not r.success)
+
+        return {
+            "executed": True,
+            "total_phases": len(self._results),
+            "successful_phases": successful_phases,
+            "failed_phases": failed_phases,
+            "total_duration": total_duration,
+            "emergency_mode": self._emergency_mode,
+            "phases": [
+                {
+                    "phase": r.phase.value,
+                    "success": r.success,
+                    "duration": r.duration,
+                    "error": r.error,
+                    "warning": r.warning,
+                }
+                for r in self._results
+            ],
+        }
+
+
+# Global instance
+_shutdown_coordinator_instance: ShutdownCoordinator | None = None
+
+
+def get_shutdown_coordinator() -> ShutdownCoordinator:
+    """
+    Get the global shutdown coordinator instance.
+
+    Returns:
+        ShutdownCoordinator singleton instance
+    """
+    global _shutdown_coordinator_instance
+    if _shutdown_coordinator_instance is None:
+        _shutdown_coordinator_instance = ShutdownCoordinator()
+    return _shutdown_coordinator_instance

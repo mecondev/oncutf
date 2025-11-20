@@ -17,8 +17,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=PendingDeprecationWarning)
 
 try:
-    from PyQt5.QtCore import QEvent, QPoint, Qt
-    from PyQt5.QtGui import QMouseEvent
+    from PyQt5.QtCore import Qt
     from PyQt5.QtWidgets import QApplication, QTreeView
 
     from utils.theme_engine import ThemeEngine

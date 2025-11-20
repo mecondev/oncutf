@@ -297,7 +297,7 @@ class SpecifiedTextModule(BaseRenameModule):
     @staticmethod
     def apply_from_data(
         data: dict,
-        file_item,
+        _file_item,
         _index: int = 0,
         _metadata_cache: dict | None = None,
     ) -> str:

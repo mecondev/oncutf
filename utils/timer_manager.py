@@ -80,6 +80,10 @@ class TimerManager(QObject):
         # Cleanup tracking
         self._cleanup_refs: set[weakref.ref] = set()
 
+        # Health tracking
+        self._last_error: str | None = None
+        self._failed_callbacks: int = 0
+
         logger.debug(
             "[TimerManager] Initialized with centralized timer control", extra={"dev_only": True}
         )
@@ -265,6 +269,8 @@ class TimerManager(QObject):
                 )
             except Exception as e:
                 logger.error(f"[TimerManager] Error executing timer '{timer_id}': {e}")
+                self._last_error = f"Timer {timer_id}: {e}"
+                self._failed_callbacks += 1
 
         self.timer_finished.emit(timer_id)
 
@@ -300,6 +306,39 @@ class TimerManager(QObject):
             )
 
         return cancelled_count
+
+    def is_healthy(self) -> bool:
+        """Check if timer manager is healthy.
+
+        Returns:
+            True if operating normally.
+        """
+        # Consider unhealthy if too many callbacks have failed
+        return self._failed_callbacks < 10
+
+    def last_error(self) -> str | None:
+        """Get the last error message.
+
+        Returns:
+            Last error message or None if no errors.
+        """
+        return self._last_error
+
+    def health_check(self) -> dict[str, any]:
+        """Perform comprehensive health check.
+
+        Returns:
+            Dictionary with health status and metrics.
+        """
+        with self._lock:
+            return {
+                "healthy": self.is_healthy(),
+                "active_timers": len(self._active_timers),
+                "total_scheduled": self._timer_count,
+                "completed": self._completed_timers,
+                "failed_callbacks": self._failed_callbacks,
+                "last_error": self._last_error,
+            }
 
 
 # Global timer manager instance

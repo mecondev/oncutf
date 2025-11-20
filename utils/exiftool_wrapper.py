@@ -39,6 +39,11 @@ class ExifToolWrapper:
         self.lock = threading.Lock()  # Ensure thread-safe access
         self.counter = 0  # To generate unique termination tags
 
+        # Health tracking
+        self._last_error: str | None = None
+        self._last_health_check: float | None = None
+        self._consecutive_errors: int = 0
+
     def __del__(self) -> None:
         """Destructor to ensure ExifTool process is cleaned up."""
         import contextlib
@@ -110,13 +115,19 @@ class ExifToolWrapper:
                     logger.warning(f"[ExifToolWrapper] ExifTool stderr: {result.stderr}")
                 return None
 
+            # Success - reset error counter
+            self._consecutive_errors = 0
             return self._parse_json_output(result.stdout)
 
         except subprocess.TimeoutExpired:
             logger.error(f"[ExifToolWrapper] Timeout executing exiftool for {file_path}")
+            self._last_error = f"Timeout executing exiftool for {file_path}"
+            self._consecutive_errors += 1
             return None
         except Exception as e:
             logger.error(f"[ExifToolWrapper] Error executing exiftool for {file_path}: {e}")
+            self._last_error = str(e)
+            self._consecutive_errors += 1
             return None
 
     def _parse_json_output(self, output: str) -> dict | None:
@@ -517,13 +528,75 @@ class ExifToolWrapper:
                 "[ExifToolWrapper] psutil not available, cannot clean up orphaned processes",
                 extra={"dev_only": True},
             )
-        except Exception as e:
-            if "exiftool" in str(e).lower():
-                logger.warning(
-                    f"[ExifToolWrapper] Error during ExifTool cleanup: {e}",
-                    extra={"dev_only": True},
-                )
+
+    def is_healthy(self) -> bool:
+        """Check if ExifTool wrapper is healthy.
+
+        Returns:
+            True if the process is running and no consecutive errors exceed threshold.
+        """
+        try:
+            # Check if process is alive
+            if self.process is None or self.process.poll() is not None:
+                return False
+
+            # Check error threshold (more than 5 consecutive errors = unhealthy)
+            return not self._consecutive_errors > 5
+        except Exception:
+            return False
+
+    def last_error(self) -> str | None:
+        """Get the last error message.
+
+        Returns:
+            Last error message or None if no errors.
+        """
+        return self._last_error
+
+    def health_check(self) -> dict[str, any]:
+        """Perform comprehensive health check.
+
+        Returns:
+            Dictionary with health status and metrics.
+        """
+        import time
+
+        self._last_health_check = time.time()
+
+        is_process_alive = False
+        process_status = "unknown"
+
+        try:
+            if self.process is not None:
+                poll_result = self.process.poll()
+                is_process_alive = poll_result is None
+                process_status = "running" if is_process_alive else f"terminated (code: {poll_result})"
             else:
-                logger.debug(
+                process_status = "not initialized"
+        except Exception as e:
+            process_status = f"error: {e}"
+
+            return {
+                "healthy": self.is_healthy(),
+                "process_alive": is_process_alive,
+                "process_status": process_status,
+                "last_error": self._last_error,
+                "consecutive_errors": self._consecutive_errors,
+                "last_check": self._last_health_check,
+            }
+
+        @staticmethod
+        def cleanup_orphaned_processes() -> None:
+            """Clean up orphaned ExifTool processes."""
+            try:
+                ExifToolWrapper.force_cleanup_all_exiftool_processes()
+            except Exception as e:
+                if "exiftool" in str(e).lower():
+                    logger.warning(
+                        f"[ExifToolWrapper] Error during ExifTool cleanup: {e}",
+                        extra={"dev_only": True},
+                    )
+                else:
+                    logger.debug(
                     "[ExifToolWrapper] No ExifTool processes to clean up", extra={"dev_only": True}
                 )

@@ -1,0 +1,64 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.0, pytest-8.3.5, pluggy-1.5.0
+PyQt5 5.15.11 -- Qt runtime 5.15.15 -- Qt compiled 5.15.14
+rootdir: /mnt/data_1/edu/Python/oncutf
+configfile: pyproject.toml
+plugins: mock-3.14.0, cov-6.1.1, anyio-4.9.0, qt-4.4.0
+collected 295 items
+
+tests/test_backup_simple.py ....                                         [  1%]
+tests/test_counter.py ..                                                 [  2%]
+tests/test_counter_module.py ..........                                  [  5%]
+tests/test_custom_msgdialog.py .........                                 [  8%]
+tests/test_file_size_formatter.py .........                              [ 11%]
+tests/test_filename_validator.py .........                               [ 14%]
+tests/test_filesize.py ..                                                [ 15%]
+tests/test_hash_manager.py ............................                  [ 24%]
+tests/test_hash_worker_progress.py .....                                 [ 26%]
+tests/test_hierarchical_combo_box.py ...............                     [ 31%]
+tests/test_human_readable.py ...                                         [ 32%]
+tests/test_loading_dialog.py ..                                          [ 33%]
+tests/test_metadata.py ..                                                [ 33%]
+tests/test_metadata_commands.py ...............................          [ 44%]
+tests/test_metadata_module.py .........                                  [ 47%]
+tests/test_metadata_tree_view.py ..........                              [ 50%]
+tests/test_metadata_validation_system.py .........................       [ 59%]
+tests/test_metadata_worker.py ..                                         [ 60%]
+tests/test_progress_manager.py ........                                  [ 62%]
+tests/test_rename_integration.py ........                                [ 65%]
+tests/test_rename_logic.py ....                                          [ 66%]
+tests/test_safe_rename_workflow.py ............                          [ 70%]
+tests/test_simple_hash_integration.py ...                                [ 71%]
+tests/test_specified_text.py FF                                          [ 72%]
+tests/test_specified_text_module.py ....                                 [ 73%]
+tests/test_text_helpers.py ....................                          [ 80%]
+tests/test_text_removal_module.py ..........                             [ 84%]
+tests/test_theme_integration.py ...E......                               [ 87%]
+tests/test_timer_manager.py ....                                         [ 88%]
+tests/test_tooltip_helper.py ..........                                  [ 92%]
+tests/test_transform_utils.py ...............                            [ 97%]
+tests/test_validated_line_edit.py ........                               [100%]
+
+==================================== ERRORS ====================================
+_______ ERROR at setup of TestThemeIntegration.test_chevron_icon_styling _______
+file /mnt/data_1/edu/Python/oncutf/tests/test_theme_integration.py, line 101
+      def test_chevron_icon_styling(self, _theme_engine):
+E       fixture '_theme_engine' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, ci_environment, class_mocker, cov, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, mock_theme_colors, mocker, module_mocker, monkeypatch, no_cover, package_mocker, pyqt5_available, pytestconfig, qapp, qapp_args, qapp_cls, qtbot, qtlog, qtmodeltester, record_property, record_testsuite_property, record_xml_attribute, recwarn, sample_metadata, session_mocker, theme_engine, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/mnt/data_1/edu/Python/oncutf/tests/test_theme_integration.py:101
+=================================== FAILURES ===================================
+__________________________ test_specified_text_simple __________________________
+tests/test_specified_text.py:21: in test_specified_text_simple
+    result = SpecifiedTextModule.apply_from_data(data, file_item=None)
+E   TypeError: SpecifiedTextModule.apply_from_data() got an unexpected keyword argument 'file_item'. Did you mean '_file_item'?
+_________________________ test_specified_text_invalid __________________________
+tests/test_specified_text.py:27: in test_specified_text_invalid
+    result = SpecifiedTextModule.apply_from_data(data, file_item=None)
+E   TypeError: SpecifiedTextModule.apply_from_data() got an unexpected keyword argument 'file_item'. Did you mean '_file_item'?
+=========================== short test summary info ============================
+ERROR tests/test_theme_integration.py::TestThemeIntegration::test_chevron_icon_styling
+FAILED tests/test_specified_text.py::test_specified_text_simple - TypeError: ...
+FAILED tests/test_specified_text.py::test_specified_text_invalid - TypeError:...
+=================== 2 failed, 292 passed, 1 error in 10.13s ====================
