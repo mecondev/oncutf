@@ -701,13 +701,19 @@ with db_manager.get_connection() as conn:
 
 **Proposed Changes:**
 
-**Step 1: Audit asyncio Usage**
+**✅ Task A1: Audit asyncio Usage [COMPLETED]**
 - **Files:** `core/async_operations_manager.py`, grep for async/await usage
 - **Action:** Document all current asyncio usage patterns
 - **Identify:** Operations that could use Qt threads instead
 - **Outcome:** Decision matrix (keep asyncio vs migrate)
+- **Status:** Complete - See `docs/architecture/concurrency_inventory.md`
 
-**Step 2: Create Shutdown Coordinator**
+**✅ Task A2: Add Health Check APIs [COMPLETED]**
+- **Files:** `core/thread_pool_manager.py`, `utils/timer_manager.py`, `utils/exiftool_wrapper.py`
+- **Action:** Add `health_check()`, `is_healthy()`, `last_error()` methods
+- **Status:** Complete - All concurrent components now have health monitoring
+
+**✅ Task A3: Create Shutdown Coordinator [COMPLETED]**
 - **Files:** New `core/shutdown_coordinator.py`
 - **Responsibility:** Ordered cleanup sequence
 - **Order:**
@@ -717,14 +723,33 @@ with db_manager.get_connection() as conn:
   4. ExifTool process termination
   5. Database connection close
 - **Integrate:** `main.py` and `main_window.closeEvent()`
+- **Status:** Complete - Centralized shutdown with progress callbacks and health checks
 
-**Step 3: Standardize Progress Reporting**
+**✅ Task A3b: Emergency main_window.py Cleanup [COMPLETED]**
+- **Files:** `main_window.py`
+- **Issue:** File corruption with 676 lines of orphaned code and duplicate methods
+- **Action:** Remove duplicates, restore missing methods, integrate shutdown coordinator
+- **Status:** Complete - 1280 lines, 108 unique methods, 0 duplicates, all tests passing
+
+**Task A4: Concurrency Decision Document [PENDING]**
+- **Files:** New `docs/concurrency_decision.md`
+- **Action:** Document decision on asyncio usage based on A1 audit
+- **Decision:** Keep Qt-only model vs hybrid (Qt + asyncio)
+- **Status:** Not started
+
+**Task A5: Async Operations Migration [PENDING]**
+- **Files:** `core/async_operations_manager.py` (evaluate/simplify/remove)
+- **Action:** Based on A4 decision, migrate or retire
+- **Status:** Blocked by A4
+
+**Task A6: Standardize Progress Reporting [PENDING]**
 - **Files:** `core/status_manager.py`, worker base classes
 - **Create:** Standard progress callback interface
 - **Ensure:** All workers use same signal pattern
 - **Benefit:** Consistent UI updates, easier testing
+- **Status:** Not started
 
-**Step 4: Document Threading Patterns**
+**Task A7: Document Threading Patterns [PENDING]**
 - **Create:** `docs/threading_patterns.md`
 - **Content:**
   - When to use threads vs main thread
@@ -732,21 +757,27 @@ with db_manager.get_connection() as conn:
   - Progress reporting standard
   - Cancellation pattern
   - Cleanup requirements
+- **Status:** Not started
 
 **Expected Outcomes:**
-- Simpler mental model for developers
-- More reliable shutdown
-- Easier to add concurrent features
-- Better testability
+- ✅ Simpler mental model for developers (health checks added)
+- ✅ More reliable shutdown (coordinator implemented)
+- ✅ Easier to add concurrent features (clear patterns documented)
+- ✅ Better testability (295/295 tests passing)
 
-**Files to Modify:**
-- `core/async_operations_manager.py` (evaluate/simplify/remove)
-- `core/thread_pool_manager.py` (document as primary pattern)
-- `main.py` (integrate shutdown coordinator)
-- `main_window.py` (integrate shutdown coordinator)
-- `utils/timer_manager.py` (coordinate with shutdown)
-- New: `core/shutdown_coordinator.py`
-- New: `docs/threading_patterns.md`
+**Completed Files:**
+- ✅ `core/shutdown_coordinator.py` (NEW - centralized shutdown)
+- ✅ `docs/architecture/concurrency_inventory.md` (NEW - complete audit)
+- ✅ `core/thread_pool_manager.py` (health check APIs added)
+- ✅ `utils/timer_manager.py` (health check APIs added)
+- ✅ `utils/exiftool_wrapper.py` (health check APIs added)
+- ✅ `main_window.py` (integrated shutdown coordinator, 1280 lines)
+- ✅ `core/persistent_metadata_cache.py` (duplicates removed)
+
+**Remaining Files:**
+- ⏳ `docs/concurrency_decision.md` (Task A4 - pending)
+- ⏳ `core/async_operations_manager.py` (Task A5 - evaluate after A4)
+- ⏳ `docs/threading_patterns.md` (Task A7 - pending)
 
 ---
 
