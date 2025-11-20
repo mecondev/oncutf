@@ -9,6 +9,21 @@ threaded workers, UI managers, and many custom widgets.
 
 ---
 
+## Language Separation Rule (IMPORTANT)
+
+- The agent must **always communicate with the user in Greek**.
+- The agent must **always write output artifacts in English**, including:
+  - commit messages
+  - code
+  - comments
+  - docstrings
+  - filenames
+  - logs
+  - documentation
+- Only human conversation is in Greek. Everything that belongs to the codebase or Git history must be in English.
+
+---
+
 ## 1. Communication Rules
 
 - **Reply to the user in Greek**, always friendly, clear, and chatty.

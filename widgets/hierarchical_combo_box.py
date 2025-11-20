@@ -18,10 +18,10 @@ from core.pyqt_imports import (
     QStandardItem,
     QStandardItemModel,
     Qt,
+    QTimer,  # added for delayed emission/unblock timer
     QTreeView,
     QWidget,
     pyqtSignal,
-    QTimer,  # added for delayed emission/unblock timer
 )
 from utils.logger_factory import get_cached_logger
 from widgets.ui_delegates import TreeViewItemDelegate

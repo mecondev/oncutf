@@ -98,6 +98,7 @@ scripts/
 *.sublime-project
 
 # cursor
+.cursor/
 .cursorignore
 !.cursorrules
 

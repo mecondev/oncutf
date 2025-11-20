@@ -17,6 +17,9 @@ When in doubt, prefer a **stable, extendable** solution over a “clever” one.
 
 - **Human-facing explanations:** Greek. Keep the tone friendly and clear.
 - **Code, comments, docstrings, log messages, UI text:** English.
+- Communicate with the user in Greek.
+- All code-related output (commit messages, comments, docstrings, variables, filenames, documentation) must be in English.
+
 - Always:
   - Add **module-level docstrings** when missing.
   - Add **type annotations** to new functions and methods.

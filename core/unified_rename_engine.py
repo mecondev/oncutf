@@ -41,7 +41,7 @@ class PreviewResult:
 
     name_pairs: list[tuple[str, str]]
     has_changes: bool
-    errors: list[str] = None
+    errors: list[str] = None # type: ignore
 
     def __post_init__(self):
         if self.errors is None:
@@ -124,10 +124,10 @@ class ExecutionResult:
     conflicts_count: int = 0
 
     def __post_init__(self):
-        self.success_count = sum(1 for item in self.items if item.success)
-        self.error_count = sum(1 for item in self.items if not item.success and item.error_message)
-        self.skipped_count = sum(1 for item in self.items if not item.success and item.skip_reason)
-        self.conflicts_count = sum(1 for item in self.items if item.is_conflict)
+        self.success_count = sum(1 for item in self.items if item.success) # type: ignore
+        self.error_count = sum(1 for item in self.items if not item.success and item.error_message) # type: ignore
+        self.skipped_count = sum(1 for item in self.items if not item.success and item.skip_reason) # type: ignore
+        self.conflicts_count = sum(1 for item in self.items if item.is_conflict) # type: ignore
 
 
 @dataclass
@@ -152,8 +152,8 @@ class RenameState:
             change.
     """
 
-    files: list[FileItem] = None
-    modules_data: list[dict[str, Any]] = None
+    files: list[FileItem] = None # type: ignore
+    modules_data: list[dict[str, Any]] = None # type: ignore
     post_transform: dict[str, Any] = None
     metadata_cache: Any = None
     preview_result: PreviewResult | None = None
