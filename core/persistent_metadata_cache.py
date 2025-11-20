@@ -146,12 +146,12 @@ class PersistentMetadataCache:
             logger.error(f"[PersistentMetadataCache] Error getting metadata for {file_path}: {e}")
             return {}
 
-    def get_entry(self, file_path: str) -> MetadataEntry | None:
+    def get_entry(self, path: str):
         """Get the MetadataEntry for a file if available."""
-        norm_path = self._normalize_path(file_path)
+        norm_path = self._normalize_path(path)
 
         logger.debug(
-            f"[PersistentMetadataCache] get_entry: file_path='{file_path}' -> norm_path='{norm_path}', "
+            f"[PersistentMetadataCache] get_entry: file_path='{path}' -> norm_path='{norm_path}', "
             f"in_memory={norm_path in self._memory_cache}"
         )
 
@@ -177,7 +177,7 @@ class PersistentMetadataCache:
 
         except Exception as e:
             logger.error(
-                f"[PersistentMetadataCache] Error loading metadata entry for {file_path}: {e}"
+                f"[PersistentMetadataCache] Error loading metadata entry for {path}: {e}"
             )
 
         return None
@@ -388,3 +388,27 @@ class DummyMetadataCache:
 
     def set(self, _file_path: str, _metadata: dict, **kwargs) -> None:
         pass
+
+    def get_entry(self, path: str):
+        """Get the MetadataEntry for a file if available."""
+        norm_path = self._normalize_path(path)
+
+        logger.debug(
+            f"[PersistentMetadataCache] get_entry: file_path='{path}' -> norm_path='{norm_path}', "
+            f"in_memory={norm_path in self._memory_cache}"
+        )
+
+        # Check memory cache first
+        if norm_path in self._memory_cache:
+            self._cache_hits += 1
+            logger.debug(f"[PersistentMetadataCache] Cache HIT for: {norm_path}")
+            return self._memory_cache[norm_path]
+
+        return None
+
+    def get(self, path: str, default=None):
+        """Dict-like get for tests/mocks — returns stored dict or default."""
+        try:
+            return self._store.get(path, default)
+        except Exception:
+            return default

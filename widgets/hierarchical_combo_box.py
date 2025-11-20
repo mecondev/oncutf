@@ -21,6 +21,7 @@ from core.pyqt_imports import (
     QTreeView,
     QWidget,
     pyqtSignal,
+    QTimer,  # added for delayed emission/unblock timer
 )
 from utils.logger_factory import get_cached_logger
 from widgets.ui_delegates import TreeViewItemDelegate
@@ -38,8 +39,10 @@ class _AliasHeaderTreeView(QTreeView):
 class HierarchicalComboBox(QComboBox):
     """A QComboBox that displays items in a hierarchical tree structure."""
 
-    # Signal emitted when an item is selected (not categories)
+    # Signal emitted when an item is selected (not categories) — legacy immediate
     item_selected = pyqtSignal(str, object)  # text, user_data
+    # New signal emitted after popup is closed and selection is final — avoids races
+    selection_confirmed = pyqtSignal(str, object)  # text, user_data
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -79,8 +82,9 @@ class HierarchicalComboBox(QComboBox):
         # Track categories for easy access
         self._categories: dict[str, QStandardItem] = {}
 
-        # Flag to prevent popup from reopening after selection
+        # Flag to prevent popup from reopening after selection (timed)
         self._closing_popup = False
+        self._closing_unblock_ms = 150
 
         # Track last selected item to detect changes
         self._last_selected_data = None
@@ -111,20 +115,17 @@ class HierarchicalComboBox(QComboBox):
         logger.debug("[HierarchicalComboBox] Popup hidden", extra={"dev_only": True})
 
     def eventFilter(self, obj, event):
-        """Filter events to prevent popup from reopening during closing."""
+        """Filter events to prevent popup from reopening during closing (timed)."""
         if obj == self and self._closing_popup:
-            # Only block mouse press events on the combobox button itself
-            # Don't block release events as they might be from tree view selection
             event_type = event.type()
             if event_type == QEvent.MouseButtonPress:  # type: ignore
-                # Check if click is on the combobox button area (not the popup)
+                # Block only immediate press events on combobox while timed blocker active
                 if not self.view().isVisible():
                     logger.debug(
-                        "[HierarchicalComboBox] Blocked mouse press during popup closing",
+                        "[HierarchicalComboBox] Blocked mouse press during popup timed closing",
                         extra={"dev_only": True},
                     )
                     return True  # Block the event
-
         return super().eventFilter(obj, event)
 
     def _on_item_pressed(self, index) -> None:
@@ -167,11 +168,18 @@ class HierarchicalComboBox(QComboBox):
             # Update display
             self.setCurrentText(text)
 
-            # Emit signal BEFORE hiding popup
+            # Emit legacy immediate signal (kept for backwards compatibility)
             self.item_selected.emit(text, data)
 
-            # CRITICAL: Hide popup immediately after selection
+            # Hide popup immediately after selection
             self.hidePopup()
+
+            # Start short timed blocker to avoid immediate re-open mouse press race
+            self._closing_popup = True
+            QTimer.singleShot(self._closing_unblock_ms, lambda: setattr(self, "_closing_popup", False))
+
+            # Emit confirmed selection after popup has closed (next event loop)
+            QTimer.singleShot(0, lambda: self.selection_confirmed.emit(text, data))
         else:
             # For categories, toggle expansion
             if self.tree_view.isExpanded(index):
@@ -252,8 +260,13 @@ class HierarchicalComboBox(QComboBox):
         """Get the current text display of the combo box."""
         return super().currentText()
 
-    def populate_from_metadata_groups(self, groups: dict, _default_key: str | None = None) -> None:
-        """Populate the combo box from grouped metadata data."""
+    def populate_from_metadata_groups(self, groups: dict, auto_select_first: bool = False) -> None:
+        """Populate the combo box from grouped metadata data.
+
+        Args:
+            groups: mapping category -> list of (display, data)
+            auto_select_first: when True select and emit the first item (keeps previous behaviour when desired)
+        """
         self.model.clear()
         self._categories.clear()
 
@@ -307,20 +320,21 @@ class HierarchicalComboBox(QComboBox):
                         self.tree_view.setExpanded(category_index, i == 0)
                         break
 
-        # Select first item if available
-        if first_item:
+        # Select first item if available and requested
+        if first_item and auto_select_first:
             index = self.model.indexFromItem(first_item)
             self.tree_view.setCurrentIndex(index)
             self.setCurrentText(first_item.text())
             self._last_selected_data = first_item.data(Qt.ItemDataRole.UserRole)
             self._selected_item_data = first_item.data(Qt.ItemDataRole.UserRole)
+            # Emit immediate item_selected and schedule confirmed emission after popup actions
             self.item_selected.emit(first_item.text(), first_item.data(Qt.ItemDataRole.UserRole))
-
+            QTimer.singleShot(0, lambda: self.selection_confirmed.emit(first_item.text(), first_item.data(Qt.ItemDataRole.UserRole)))
             logger.debug(
                 f"Selected first item: {first_item.text()} with data: {first_item.data(Qt.ItemDataRole.UserRole)}"
             )
         else:
-            logger.warning("No items to populate in hierarchical combo box")
+            logger.debug("No items to auto-select in hierarchical combo box")
 
     def select_item_by_data(self, data: Any) -> None:
         """Select an item by its data value."""

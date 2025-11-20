@@ -91,6 +91,71 @@ class MetadataModule:
 
         global _metadata_cache, _global_cache_timestamp
 
+        def _finalize_result(raw_value: str) -> str:
+            """Normalize, validate and cache a metadata-derived filename-safe value.
+            Returns a safe string or falls back to OriginalNameModule when not possible.
+            """
+            nonlocal cache_key, current_time
+            try:
+                candidate = MetadataModule.clean_metadata_value(str(raw_value).strip())
+
+                # Quick validity check
+                try:
+                    from utils.validate_filename_text import is_valid_filename_text
+
+                    if is_valid_filename_text(candidate):
+                        _metadata_cache[cache_key] = candidate
+                        _global_cache_timestamp = current_time
+                        return candidate
+                except Exception:
+                    # If validator not available, proceed to cleaning attempts
+                    pass
+
+                # Try more aggressive cleaning using filename_validator
+                try:
+                    from utils.filename_validator import clean_filename_text
+                    from utils.validate_filename_text import is_valid_filename_text
+
+                    cleaned = clean_filename_text(candidate)
+                    if is_valid_filename_text(cleaned):
+                        _metadata_cache[cache_key] = cleaned
+                        _global_cache_timestamp = current_time
+                        return cleaned
+                except Exception:
+                    pass
+
+                # Regex fallback: allow alnum, dash, underscore and dot
+                import re
+
+                alt = re.sub(r"[^A-Za-z0-9_.+-]+", "_", candidate).strip("_")
+                try:
+                    from utils.validate_filename_text import is_valid_filename_text
+
+                    if is_valid_filename_text(alt):
+                        _metadata_cache[cache_key] = alt
+                        _global_cache_timestamp = current_time
+                        return alt
+                except Exception:
+                    # If validator missing accept alt conservatively
+                    _metadata_cache[cache_key] = alt
+                    _global_cache_timestamp = current_time
+                    return alt
+
+            except Exception as e:
+                logger.debug(f"[MetadataModule] _finalize_result error: {e}", extra={"dev_only": True})
+
+            # Fallback to original name base
+            try:
+                from modules.original_name_module import OriginalNameModule
+
+                return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)  # type: ignore
+            except Exception:
+                # Last-resort fallback: basename without extension
+                base = os.path.splitext(os.path.basename(file_item.filename))[0]
+                return base
+
+        # end _finalize_result
+
         # Performance optimization: Check cache first
         cache_key = f"{file_item.full_path}_{hash(str(data))}"
         current_time = time.time()
@@ -133,15 +198,59 @@ class MetadataModule:
             from core.persistent_metadata_cache import get_persistent_metadata_cache
 
             persistent_cache = get_persistent_metadata_cache()
-            # Use normalized path for cache lookup
-            metadata = persistent_cache.get(path) if persistent_cache else {}
+            # Use normalized path for cache lookup.
+            # Persistent cache exposes get_entry(...) (or batch methods); handle both persistent cache objects and dict-like fallbacks.
+            if persistent_cache:
+                try:
+                    if hasattr(persistent_cache, "get_entry"):
+                        entry = persistent_cache.get_entry(path)
+                        metadata = getattr(entry, "data", {}) or {}
+                    else:
+                        # Some implementations may offer .get(path) (but may not accept a default arg)
+                        try:
+                            metadata = persistent_cache.get(path)  # type: ignore
+                            if metadata is None:
+                                metadata = {}
+                        except TypeError:
+                            metadata = {}
+                except Exception as e:
+                    logger.debug(
+                        f"[DEBUG] [MetadataModule] persistent cache lookup failed: {e}",
+                        extra={"dev_only": True},
+                    )
+                    metadata = {}
+            else:
+                metadata = {}
             logger.debug(
                 f"[DEBUG] [MetadataModule] Using persistent cache for {file_item.filename}, path: {path}, has_metadata: {bool(metadata)}",
                 extra={"dev_only": True},
             )
         else:
-            # Use normalized path exclusively for cache lookup
-            metadata = metadata_cache.get(path, {})
+            # metadata_cache might be:
+            # - a PersistentMetadataCache-like object (get_entry / get_entries_batch)
+            # - a plain dict (used in tests)
+            try:
+                if hasattr(metadata_cache, "get_entry"):
+                    entry = metadata_cache.get_entry(path)
+                    metadata = getattr(entry, "data", {}) or {}
+                elif isinstance(metadata_cache, dict):
+                    metadata = metadata_cache.get(path, {})
+                elif hasattr(metadata_cache, "get"):
+                    # fallback; some cache-like objects implement get(path)
+                    try:
+                        metadata = metadata_cache.get(path)  # type: ignore
+                        if metadata is None:
+                            metadata = {}
+                    except TypeError:
+                        metadata = {}
+                else:
+                    metadata = {}
+            except Exception as e:
+                logger.debug(
+                    f"[DEBUG] [MetadataModule] Provided cache lookup failed: {e}",
+                    extra={"dev_only": True},
+                )
+                metadata = {}
             logger.debug(
                 f"[DEBUG] [MetadataModule] Using provided cache for {file_item.filename}, path: {path}, has_metadata: {bool(metadata)}",
                 extra={"dev_only": True},
@@ -208,14 +317,11 @@ class MetadataModule:
                     # Fallback to YYMMDD format for unknown last_modified variants
                     result = dt.strftime("%y%m%d")
 
-                # Cache the result
-                _metadata_cache[cache_key] = result
-                _global_cache_timestamp = current_time
                 logger.debug(
                     f"[DEBUG] [MetadataModule] Filesystem date result: {result}",
                     extra={"dev_only": True},
                 )
-                return result
+                return _finalize_result(result)
 
             except Exception as e:
                 logger.debug(
@@ -233,13 +339,11 @@ class MetadataModule:
             try:
                 ts = os.path.getmtime(path)
                 result = datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
-                _metadata_cache[cache_key] = result
-                _global_cache_timestamp = current_time
                 logger.debug(
                     f"[DEBUG] [MetadataModule] Legacy last_modified result: {result}",
                     extra={"dev_only": True},
                 )
-                return result
+                return _finalize_result(result)
             except Exception as e:
                 logger.debug(
                     f"[DEBUG] [MetadataModule] Error getting legacy last_modified: {e}",
@@ -260,12 +364,10 @@ class MetadataModule:
                 try:
                     hash_type = field.replace("hash_", "").upper()
                     result = MetadataModule._get_file_hash(path, hash_type)
-                    _metadata_cache[cache_key] = result
-                    _global_cache_timestamp = current_time
                     logger.debug(
                         f"[DEBUG] [MetadataModule] Hash result: {result}", extra={"dev_only": True}
                     )
-                    return result
+                    return _finalize_result(result)
                 except Exception as e:
                     logger.debug(
                         f"[DEBUG] [MetadataModule] Error getting hash: {e}",
@@ -302,14 +404,7 @@ class MetadataModule:
 
             # Format the value appropriately and clean it for filename safety
             try:
-                cleaned_value = MetadataModule.clean_metadata_value(str(value).strip())
-                _metadata_cache[cache_key] = cleaned_value
-                _global_cache_timestamp = current_time
-                logger.debug(
-                    f"[DEBUG] [MetadataModule] Metadata result: {cleaned_value}",
-                    extra={"dev_only": True},
-                )
-                return cleaned_value
+                return _finalize_result(value)
             except Exception as e:
                 logger.debug(
                     f"[DEBUG] [MetadataModule] Error cleaning metadata value: {e}",
@@ -324,10 +419,7 @@ class MetadataModule:
                 from modules.original_name_module import OriginalNameModule
 
                 return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)  # type: ignore
-            result = MetadataModule.clean_metadata_value(str(value))
-            _metadata_cache[cache_key] = result
-            _global_cache_timestamp = current_time
-            return result
+            return _finalize_result(value)
 
         if field == "date":
             value = metadata.get("date")
@@ -335,10 +427,7 @@ class MetadataModule:
                 from modules.original_name_module import OriginalNameModule
 
                 return OriginalNameModule.apply_from_data({}, file_item, index, metadata_cache)  # type: ignore
-            result = MetadataModule.clean_metadata_value(str(value))
-            _metadata_cache[cache_key] = result
-            _global_cache_timestamp = current_time
-            return result
+            return _finalize_result(value)
 
         # === Generic metadata field fallback using centralized mapper ===
         if field:
@@ -357,12 +446,7 @@ class MetadataModule:
                             if key in metadata:
                                 raw_value = metadata[key]
                                 if raw_value is not None:
-                                    cleaned_value = MetadataModule.clean_metadata_value(
-                                        str(raw_value).strip()
-                                    )
-                                    _metadata_cache[cache_key] = cleaned_value
-                                    _global_cache_timestamp = current_time
-                                    return cleaned_value
+                                    return _finalize_result(raw_value)
                         from modules.original_name_module import OriginalNameModule
 
                         return OriginalNameModule.apply_from_data(
@@ -378,10 +462,7 @@ class MetadataModule:
         # Final fallback: try direct metadata access
         value = metadata.get(field)
         if value is not None:
-            cleaned_value = MetadataModule.clean_metadata_value(str(value).strip())
-            _metadata_cache[cache_key] = cleaned_value
-            _global_cache_timestamp = current_time
-            return cleaned_value
+            return _finalize_result(value)
 
         # If we get here, the field was not found
         from modules.original_name_module import OriginalNameModule

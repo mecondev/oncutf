@@ -30,8 +30,9 @@ class PreviewManager:
         self.preview_map: dict[str, FileItem] = {}
 
         # Performance optimization: Cache for preview results
-        self._preview_cache: dict[str, tuple[list[tuple[str, str]], bool]] = {}
-        self._cache_timestamp = 0
+        # cache: key -> (result_pairs, has_changes, timestamp)
+        self._preview_cache: dict[str, tuple[list[tuple[str, str]], bool, float]] = {}
+        # per-key timestamps removed global timestamp bug
         self._cache_validity_duration = 0.1  # 100ms cache validity
 
         logger.debug("[PreviewManager] Initialized", extra={"dev_only": True})
@@ -51,12 +52,12 @@ class PreviewManager:
         cache_key = self._generate_cache_key(selected_files, rename_data)
         current_time = time.time()
 
-        if (
-            cache_key in self._preview_cache
-            and current_time - self._cache_timestamp < self._cache_validity_duration
-        ):
-            logger.debug("[PreviewManager] Using cached preview result", extra={"dev_only": True})
-            return self._preview_cache[cache_key]
+        entry = self._preview_cache.get(cache_key)
+        if entry:
+            cached_result, cached_has_changes, cached_ts = entry
+            if current_time - cached_ts < self._cache_validity_duration:
+                logger.debug("[PreviewManager] Using cached preview result (per-key)", extra={"dev_only": True})
+                return cached_result, cached_has_changes
 
         # Generate new preview
         start_time = time.time()
@@ -65,8 +66,9 @@ class PreviewManager:
         )
 
         # Cache the result
-        self._preview_cache[cache_key] = result
-        self._cache_timestamp = current_time
+        # store timestamp per-key
+        pairs, has_changes = result
+        self._preview_cache[cache_key] = (pairs, has_changes, current_time)
 
         elapsed = time.time() - start_time
         if elapsed > 0.1:  # Log slow preview generation
@@ -165,7 +167,12 @@ class PreviewManager:
                 if has_name_transform:
                     new_basename = NameTransformModule.apply_from_data(post_transform, new_basename)
 
+                # Validate new basename; if invalid, log and fallback to original filename
                 if not self._is_valid_filename_text(new_basename):
+                    logger.debug(
+                        f"[PreviewManager] Invalid basename from modules for '{file.filename}': '{new_basename}' - falling back to original",
+                        extra={"dev_only": True},
+                    )
                     name_pairs.append((file.filename, file.filename))
                     continue
 
@@ -206,7 +213,6 @@ class PreviewManager:
     def clear_cache(self) -> None:
         """Clear the preview cache."""
         self._preview_cache.clear()
-        self._cache_timestamp = 0
 
     def clear_all_caches(self) -> None:
         """Clear all caches used by the preview system."""
@@ -299,3 +305,19 @@ class PreviewManager:
             self.parent_window.refresh_preview()
         elif self.parent_window and hasattr(self.parent_window, "update_preview"):
             self.parent_window.update_preview()
+
+    def generate_preview_names_forced(
+        self,
+        selected_files: list[FileItem],
+        rename_data: dict[str, Any],
+        metadata_cache: Any,
+        all_modules: list[Any],
+    ) -> tuple[list[tuple[str, str]], bool]:
+        """
+        Force generate preview names bypassing the short-lived cache.
+        This clears the internal preview cache and calls generate_preview_names.
+        """
+        # Clear short-lived cache and force regeneration
+        self.clear_cache()
+        logger.debug("[PreviewManager] Forced preview generation requested", extra={"dev_only": True})
+        return self.generate_preview_names(selected_files, rename_data, metadata_cache, all_modules)

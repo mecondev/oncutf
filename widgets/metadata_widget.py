@@ -106,9 +106,10 @@ class MetadataWidget(QWidget):
 
         # Connections
         self.category_combo.currentIndexChanged.connect(self._on_category_changed)
-        # Connect to hierarchical combo box signal
-        self.options_combo.item_selected.connect(self._on_hierarchical_item_selected)
-        logger.debug("Connected to hierarchical combo item_selected signal")
+        # Use new confirmed-selection signal to avoid preview races
+        self.options_combo.item_selected.connect(self._on_hierarchical_item_selected)  # keep legacy
+        self.options_combo.selection_confirmed.connect(self._on_hierarchical_selection_confirmed)
+        logger.debug("Connected to hierarchical combo selection_confirmed signal")
 
         # Initialize category availability
         self.update_category_availability()
@@ -222,7 +223,8 @@ class MetadataWidget(QWidget):
         logger.debug(f"Populating file dates with data: {hierarchical_data}")
 
         # Populate the hierarchical combo box
-        self.options_combo.populate_from_metadata_groups(hierarchical_data)
+        # auto-select first date format by default (behaviour preserved)
+        self.options_combo.populate_from_metadata_groups(hierarchical_data, auto_select_first=True)
         logger.debug("Used hierarchical combo populate_from_metadata_groups for file dates")
 
     def populate_hash_options(self) -> bool:
@@ -243,7 +245,8 @@ class MetadataWidget(QWidget):
 
                 logger.debug("No files selected, populating disabled hash options")
 
-                self.options_combo.populate_from_metadata_groups(hierarchical_data)
+                # For hash options we avoid auto-select to prevent unintended preview refreshes
+                self.options_combo.populate_from_metadata_groups(hierarchical_data, auto_select_first=False)
 
                 # Disable the combo box
                 self.options_combo.setEnabled(False)
@@ -414,7 +417,8 @@ class MetadataWidget(QWidget):
                     logger.debug(f"Added {display_text} -> {key} to {category}")
 
         # Populate combo box with grouped data
-        self.options_combo.populate_from_metadata_groups(hierarchical_data)
+        # When populating metadata keys we prefer the first key selected automatically
+        self.options_combo.populate_from_metadata_groups(hierarchical_data, auto_select_first=True)
 
         # Prefer selecting 'FileName' by default if available
         from contextlib import suppress
@@ -590,7 +594,29 @@ class MetadataWidget(QWidget):
             from utils.path_normalizer import normalize_path
 
             normalized_path = normalize_path(file_item.full_path)
-            meta = metadata_cache.get(normalized_path)
+            # Support multiple cache types: persistent cache (get_entry) or dict-like
+            try:
+                if hasattr(metadata_cache, "get_entry"):
+                    entry = metadata_cache.get_entry(normalized_path)
+                    meta = getattr(entry, "data", {}) or {}
+                elif isinstance(metadata_cache, dict):
+                    meta = metadata_cache.get(normalized_path, {})
+                elif hasattr(metadata_cache, "get"):
+                    try:
+                        meta = metadata_cache.get(normalized_path)  # type: ignore
+                        if meta is None:
+                            meta = {}
+                    except TypeError:
+                        meta = {}
+                else:
+                    meta = {}
+            except Exception as e:
+                logger.debug(
+                    f"[MetadataWidget] Error reading metadata cache for {normalized_path}: {e}",
+                    extra={"dev_only": True},
+                )
+                meta = {}
+
             if meta and isinstance(meta, dict):
                 keys.update(meta.keys())
 
@@ -1397,6 +1423,81 @@ class MetadataWidget(QWidget):
 
         # Emit changes immediately without debouncing for responsive UI
         self.emit_if_changed()
+
+    def _on_hierarchical_selection_confirmed(self, text: str, data: Any):
+        """Handle confirmed item selection from hierarchical combo box (finalized after popup)."""
+        logger.debug(
+            f"[MetadataWidget] Hierarchical selection confirmed - text: {text}, data: {data}",
+            extra={"dev_only": True},
+        )
+
+        # Ensure popup is closed
+        if hasattr(self.options_combo, "hidePopup"):
+            self.options_combo.hidePopup()
+
+        # Clear preview cache to force refresh when selection changes
+        preview_manager = None
+        if self.parent_window and hasattr(self.parent_window, "preview_manager"):
+            preview_manager = self.parent_window.preview_manager
+
+        # Fallback: Try to find via application context
+        if not preview_manager:
+            try:
+                from core.application_context import get_app_context
+
+                context = get_app_context()
+                if (
+                    context
+                    and hasattr(context, "main_window")
+                    and hasattr(context.main_window, "preview_manager")
+                ):
+                    preview_manager = context.main_window.preview_manager
+            except Exception:
+                preview_manager = None
+
+        if preview_manager:
+            # Clear preview cache and request immediate refresh via parent window if possible
+            preview_manager.clear_cache()
+            logger.debug(
+                "[MetadataWidget] Preview cache cleared on confirmed selection", extra={"dev_only": True}
+            )
+        else:
+            logger.debug("[MetadataWidget] No preview_manager found to clear cache", extra={"dev_only": True})
+
+        # Ask parent window to refresh preview immediately (no debounce)
+        if self.parent_window and hasattr(self.parent_window, "request_preview_update"):
+            try:
+                self.parent_window.request_preview_update()
+                logger.debug("[MetadataWidget] Requested preview update from parent_window", extra={"dev_only": True})
+            except Exception as e:
+                logger.debug(f"[MetadataWidget] request_preview_update failed: {e}", extra={"dev_only": True})
+        else:
+            # Fallback: try to build the full rename_data from parent_window if available,
+            # don't pass only the metadata widget dict (it causes stale/mismatched cache keys).
+            try:
+                selected_files = self._get_selected_files()
+                # Prefer parent_window.get_rename_data() if implemented
+                if self.parent_window and hasattr(self.parent_window, "get_rename_data"):
+                    full_rename_data = self.parent_window.get_rename_data()
+                else:
+                    # Best-effort fallback to attribute previously stored on the window
+                    full_rename_data = getattr(self.parent_window, "rename_data", {}) or {}
+
+                preview_manager.generate_preview_names_forced(
+                    selected_files,
+                    full_rename_data,
+                    getattr(self.parent_window, "metadata_cache", None),
+                    getattr(self.parent_window, "all_modules", []),
+                )
+                logger.debug("[MetadataWidget] Called preview_manager.generate_preview_names_forced (with full rename_data)", extra={"dev_only": True})
+            except Exception as e:
+                logger.debug(f"[MetadataWidget] Forced preview generation failed: {e}", extra={"dev_only": True})
+
+        # Finally emit updated signal for the metadata widget (notify preview system)
+        # We avoid relying on _last_data hack; just emit current state
+        self.emit_if_changed()
+        self.updated.emit(self)
+        logger.debug("[MetadataWidget] Emitted updated after confirmed selection", extra={"dev_only": True})
 
     def _on_selection_changed(self):
         self.update_options()
