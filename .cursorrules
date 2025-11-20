@@ -1,86 +1,166 @@
-# Cursor Rules for oncutf Project
+# Global Cursor Rules for the OnCutF Project
+# (Strict & Structured Version – Option A)
 
-## Project Overview
-This is a Python desktop application built with PyQt5 for batch file renaming with metadata support. The codebase follows specific conventions and patterns that must be maintained.
+These rules apply to **all Cursor agents** working in this repository.
 
-## Core Principles
-- Always respond in Greek language (except code, comments, and docstrings which must be in English)
-- Use friendly, chatty tone in Greek
-- Ask for user approval before making any code changes
-- Never delete loggers, docstrings, comments, or change code structure unless explicitly asked
-- Prefer stable solutions over clever ones
-- Follow step-by-step approach with user confirmation
+The goal is to ensure stable, predictable, and safe behavior in a large
+PyQt5 application that includes a rename engine, metadata managers,
+threaded workers, UI managers, and many custom widgets.
 
-## Code Standards
+---
 
-### Python Style
-- Use type annotations everywhere
-- Follow PEP8 naming conventions (constants in UPPERCASE)
-- Add module-level docstrings where missing
-- All docstrings and comments in English
-- Never address linter errors unless explicitly asked
-- Use descriptive names for files, classes, and methods
+## 1. Communication Rules
 
-### PyQt5 Specifics
-- Maintain consistent visual styling across QTreeView widgets and QComboBox dropdowns
-- Use the project-wide global timer instead of QTime.singleShot
-- Follow the established theme engine pattern for colors and styling
-- Preserve existing delegate patterns for custom painting
-- Use established QSS (Qt Style Sheets) patterns from utils/theme_engine.py
+- **Reply to the user in Greek**, always friendly, clear, and chatty.
+- **All code, docstrings, comments, log messages, and UI text must be in English.**
+- Keep explanations concise but helpful.
 
-### File Structure
-- Keep imports organized (core.pyqt_imports for Qt imports)
-- Use absolute paths over relative paths when possible
-- Maintain the utils/ directory structure for shared components
-- Follow the widgets/ directory pattern for UI components
+---
 
-### Git Workflow
-- Do NOT execute any git commands automatically.
-- Only run `git add .` followed by `git commit --amend -m <descriptive message>` IF explicitly requested by the user.
-- Never run `git pull` automatically to avoid breaking local changes
-- Always ask for user approval before performing git operations.
+## 2. Safety Rules (MANDATORY)
 
-### Testing and Debugging
-- Use ruff as the linter (run `ruff` command)
-- Read files thoroughly before making changes
-- Use parallel tool calls when gathering information
-- Compare with backups when debugging complex issues
+- **Never apply changes without explicit user approval.**
+  - When proposing code edits:
+    1. Present the proposed change clearly.
+    2. Wait for a direct confirmation like `"Ναι"` or `"Yes"`.
+    3. Only then apply the change.
+- **Never run git commands** (commit, pull, push, reset, clean) unless explicitly asked.
+- **Never delete comments, docstrings, or loggers** unless the user clearly asks.
+- **Never restructure large parts of the codebase** without pre-approval.
+- **Never create or delete files automatically** unless user confirms.
 
-## Project-Specific Rules
+---
 
-### UI Components
-- Maintain color consistency: use table colors (table_text, table_selection_text, etc.) across all tree views
-- Preserve chevron icon behavior in tree views
-- No alternating lines in combobox dropdowns or context menus
-- Keep full-row hover effects consistent across components
+## 3. Project Structure Awareness
 
-### Metadata Tree
-- setRootIsDecorated(True) for expand/collapse arrows
-- Use project theme colors for all states (normal, hover, selected, selected+hover)
-- Maintain text color changes while keeping icons stable
+When navigating or modifying code, respect these domains:
 
-### File Operations
-- Use __file__ for project root detection (already implemented correctly)
-- Follow cross-platform path handling patterns
-- Maintain user config directory standards (Windows: APPDATA, Linux: XDG_CONFIG_HOME)
+### Core application logic (business logic)
+Located in `core/`:
+- `unified_rename_engine.py`
+- `unified_metadata_manager.py`
+- `structured_metadata_manager.py`
+- `application_service.py`
+- `application_context.py`
+- `table_manager.py`
+- `ui_manager.py`
+- `status_manager.py`
+- `shortcut_manager.py`
+- `window_config_manager.py`
+- and others
 
-## Do Not
-- Create documentation files unless explicitly requested
-- Make uneducated guesses about fixes
-- Loop more than 3 times on linter error fixes
-- Change working code without explicit request
-- Create temporary files without cleaning them up
-- Run git pull automatically
+Rules:
+- Keep logic modular and predictable.
+- Do not mix UI code into core modules.
+- Follow existing patterns for managers & services.
 
-## Communication
-- Always explain changes clearly in Greek
-- Use backticks for file, class, and function names
-- Present proposed changes and wait for "Yes" confirmation
-- Use \( \) for inline math, \[ \] for block math in markdown
-- Cite code regions using: ```startLine:endLine:filepath format
+### Rename modules
+Located in `modules/`:
+- `base_module.py`
+- `specified_text_module.py`
+- `counter_module.py`
+- `metadata_module.py`
+- `name_transform_module.py`
+- `text_removal_module.py`
+- etc.
 
-## Memory Management
-- Update memories when user corrects information
-- Delete contradicted memories rather than updating them
-- Never create memories for implementation plans or completed migrations
-- Always cite memories when using them: [[memory:MEMORY_ID]]
+Rules:
+- Modules generate **name fragments only**.
+- They must be deterministic, pure, and isolated.
+- No filesystem operations.
+- No UI access.
+- Implement `is_effective()` when appropriate.
+
+### GUI / Qt widgets
+Located in `widgets/` and `main_window.py`:
+- custom table/tree views, delegates
+- module UI components
+- dialogs
+- interactive header
+- splash screen
+- rename UI containers
+
+Rules:
+- Keep UI responsive (no blocking calls).
+- Heavy operations → thread/async managers.
+- Follow existing signal/slot patterns.
+- Do not embed business logic inside widgets.
+
+### Utilities
+Located in `utils/`:
+- validators
+- path helpers
+- metadata exporters
+- icon loaders
+- drag/drop validators
+- timing helpers
+- logger helpers
+
+Rules:
+- Keep utilities pure and reusable.
+- Avoid adding side effects unless necessary.
+
+---
+
+## 4. File Change Rules
+
+When editing or creating files, always:
+
+- Add **type annotations**.
+- Add or update **module-level docstrings**.
+- Write **rich English comments** when logic is non-trivial.
+- Use **stable, maintainable patterns** (avoid clever tricks).
+- Follow existing structure and naming style.
+
+When modifying multiple files:
+- Propose a plan first.
+- Apply changes only after approval.
+
+---
+
+## 5. PyQt5 / Threading / Metadata Rules
+
+- Never block the main Qt thread.
+- Heavy tasks must use:
+  - `thread_pool_manager`
+  - worker classes
+  - async operations manager (if applicable)
+- Metadata loading must always use:
+  - `unified_metadata_manager`
+  - `structured_metadata_manager`
+- Use persistent ExifTool where available.
+- Avoid deep or recursive metadata structures.
+
+---
+
+## 6. Testing & Development
+
+- Tests run using `pytest`.
+- Some tests require `exiftool` in PATH.
+- Avoid modifying tests without user approval.
+- When adding features, encourage writing/updating tests, but do not enforce unless requested.
+
+---
+
+## 7. Integration with `.cursor/rules/*`
+
+The following rule files refine behavior:
+- `.cursor/rules/general.md`
+- `.cursor/rules/gui.md`
+- `.cursor/rules/metadata.md`
+- `.cursor/rules/rename_modules.md`
+
+Agents must combine the rules in this file with those domain-specific files.
+
+---
+
+## 8. Golden Rule
+
+If unsure about where code should go,
+**ask the user in Greek** and propose 1–2 clean options before attempting code changes.
+
+Always prefer:
+> **predictability > cleverness**
+> **maintainable structure > shortcuts**
+> **user confirmation > assumptions**
+

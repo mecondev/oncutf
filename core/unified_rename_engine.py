@@ -1,11 +1,13 @@
-"""
-Module: unified_rename_engine.py
+"""oncutf.core.unified_rename_engine
 
-Author: Michael Economou
-Date: 2025-01-27
+Central rename engine and helpers for previewing, validating and executing
+batch rename operations.
 
-UnifiedRenameEngine - Central engine for all rename operations.
-Integrates preview, validation, duplicate detection, and execution.
+This module provides lightweight data classes that hold preview, validation
+and execution results, managers for batching queries and caching, and the
+`UnifiedRenameEngine` Qt-aware facade used by the UI layer. The implementation
+keeps rename logic separate from filesystem operations where possible and
+provides hooks for conflict resolution and validation.
 """
 
 import os
@@ -27,7 +29,15 @@ logger = get_cached_logger(__name__)
 
 @dataclass
 class PreviewResult:
-    """Preview generation result."""
+    """Container for preview generation output.
+
+    Attributes:
+        name_pairs: List of tuples of (original_filename, proposed_filename).
+        has_changes: True if at least one proposed filename differs from the
+            original.
+        errors: Optional list of error messages captured during preview
+            generation.
+    """
 
     name_pairs: list[tuple[str, str]]
     has_changes: bool
@@ -40,7 +50,17 @@ class PreviewResult:
 
 @dataclass
 class ValidationItem:
-    """Validation result for a file."""
+    """Validation information for a single file preview entry.
+
+    Attributes:
+        old_name: Original filename as shown in the UI.
+        new_name: Proposed filename produced by the preview engine.
+        is_valid: True when the proposed name passes filename validation.
+        is_duplicate: True when the proposed name is a duplicate within the
+            current preview set.
+        is_unchanged: True when `old_name == new_name`.
+        error_message: Optional human-readable validation error.
+    """
 
     old_name: str
     new_name: str
@@ -52,7 +72,13 @@ class ValidationItem:
 
 @dataclass
 class ValidationResult:
-    """Αποτέλεσμα validation."""
+    """Aggregate result of validating a preview.
+
+    Attributes:
+        items: List of :class:`ValidationItem` for each previewed file.
+        duplicates: Set of filenames that were detected as duplicates.
+        has_errors: True if any item failed validation.
+    """
 
     items: list[ValidationItem]
     duplicates: set[str]
@@ -64,20 +90,32 @@ class ValidationResult:
 
 @dataclass
 class ExecutionItem:
-    """Execution result για ένα αρχείο."""
+    """Result/plan entry for executing a single file rename.
 
-    old_path: str
-    new_path: str
-    success: bool
-    error_message: str = ""
-    skip_reason: str = ""
-    is_conflict: bool = False
-    conflict_resolved: bool = False
+    Attributes:
+        old_path: Absolute path of the original file.
+        new_path: Absolute path of the target filename.
+        success: True when the rename was applied successfully.
+        error_message: Optional error text if execution failed.
+        skip_reason: Optional reason why the operation was skipped.
+        is_conflict: True when a filesystem conflict was detected for the
+            target path (existing file).
+        conflict_resolved: True when a conflict was resolved (e.g. overwrite).
+    """
 
 
 @dataclass
 class ExecutionResult:
-    """Αποτέλεσμα rename execution."""
+    """Aggregate execution summary after attempting a batch rename.
+
+    Attributes:
+        items: List of :class:`ExecutionItem` for each attempted rename.
+        success_count: Number of successful renames (computed).
+        error_count: Number of items with an error message (computed).
+        skipped_count: Number of items skipped (computed).
+        conflicts_count: Number of items that hit a filesystem conflict
+            (computed).
+    """
 
     items: list[ExecutionItem]
     success_count: int = 0
@@ -94,7 +132,25 @@ class ExecutionResult:
 
 @dataclass
 class RenameState:
-    """Κεντρικό state για rename operations."""
+    """Central container for the current rename workflow state.
+
+    This object is used to keep the preview, validation and execution results
+    together with the current file list and module configuration. UI code
+    listens to state changes to update views.
+
+    Attributes:
+        files: List of :class:`models.file_item.FileItem` currently in the
+            preview table.
+        modules_data: Module configuration used to produce the preview.
+        post_transform: Final transform settings applied after modules.
+        metadata_cache: Reference to the metadata cache used during preview.
+        preview_result: Latest :class:`PreviewResult` produced.
+        validation_result: Latest :class:`ValidationResult` produced.
+        execution_result: Latest :class:`ExecutionResult` produced.
+        preview_changed / validation_changed / execution_changed: Flags set by
+            :class:`RenameStateManager` when corresponding parts of the state
+            change.
+    """
 
     files: list[FileItem] = None
     modules_data: list[dict[str, Any]] = None
@@ -119,14 +175,24 @@ class RenameState:
 
 
 class BatchQueryManager:
-    """Κεντρικός batch query manager για αποδοτικές queries."""
+    """Batch helper to fetch availability information for sets of files.
+
+    This manager centralizes queries that benefit from batch access patterns,
+    such as checking whether CRC32 hashes or metadata exist for a list of
+    files. The implementation uses the persistent caches defined elsewhere in
+    the application to avoid expensive per-file operations.
+    """
 
     def __init__(self):
         self._hash_cache = None
         self._metadata_cache = None
 
     def get_hash_availability(self, files: list[FileItem]) -> dict[str, bool]:
-        """Single batch query για hash availability."""
+        """Return a mapping of file path -> whether a CRC32 hash exists.
+
+        The function queries the persistent hash cache in batch and returns a
+        dictionary mapping each file's absolute path to a boolean.
+        """
         if not files:
             return {}
 
@@ -151,7 +217,12 @@ class BatchQueryManager:
             return {}
 
     def get_metadata_availability(self, files: list[FileItem]) -> dict[str, bool]:
-        """Single batch query για metadata availability."""
+        """Return a mapping of file path -> whether structured metadata is
+        available for the file.
+
+        The implementation reads the global application metadata cache via the
+        application context and performs a lightweight presence check.
+        """
         if not files:
             return {}
 
@@ -189,7 +260,13 @@ class BatchQueryManager:
             return {}
 
     def _file_has_metadata(self, file_path: str, metadata_cache) -> bool:
-        """Check if a file has metadata."""
+        """Return True if the given file path has non-internal metadata.
+
+        The method expects the metadata cache to expose an internal
+        `_memory_cache` mapping where entries contain a `.data` attribute.
+        Only non-internal keys (not starting with '_' and not path/filename)
+        are considered metadata fields.
+        """
         try:
             if hasattr(metadata_cache, "_memory_cache"):
                 entry = metadata_cache._memory_cache.get(file_path)
@@ -208,7 +285,11 @@ class BatchQueryManager:
 
 
 class SmartCacheManager:
-    """Έξυπνο caching με intelligent invalidation."""
+    """Lightweight in-memory caches for preview, validation and execution.
+
+    The caches use a small time-to-live (TTL) to avoid recomputing results
+    during rapid UI interactions while keeping memory usage minimal.
+    """
 
     def __init__(self):
         self._preview_cache: dict[str, tuple[PreviewResult, float]] = {}
@@ -217,7 +298,10 @@ class SmartCacheManager:
         self._cache_ttl = 0.1  # 100ms TTL
 
     def get_cached_preview(self, key: str) -> PreviewResult | None:
-        """Get cached preview με smart invalidation."""
+        """Return a cached :class:`PreviewResult` for `key` or ``None``.
+
+        Entries older than the TTL are automatically invalidated.
+        """
         if key in self._preview_cache:
             result, timestamp = self._preview_cache[key]
             if time.time() - timestamp < self._cache_ttl:
@@ -227,11 +311,15 @@ class SmartCacheManager:
         return None
 
     def cache_preview(self, key: str, result: PreviewResult) -> None:
-        """Cache preview result."""
+        """Store a preview result in the cache under `key`.
+        """
         self._preview_cache[key] = (result, time.time())
 
     def get_cached_validation(self, key: str) -> ValidationResult | None:
-        """Get cached validation με smart invalidation."""
+        """Return a cached :class:`ValidationResult` for `key` or ``None``.
+
+        Entries older than the TTL are automatically invalidated.
+        """
         if key in self._validation_cache:
             result, timestamp = self._validation_cache[key]
             if time.time() - timestamp < self._cache_ttl:
@@ -252,7 +340,13 @@ class SmartCacheManager:
 
 
 class UnifiedPreviewManager:
-    """Κεντρικός preview manager με smart caching και batch queries."""
+    """Orchestrates preview generation using batch queries and caching.
+
+    Responsibilities:
+        - Compose rename output by applying modules to each file.
+        - Use `BatchQueryManager` to supply availability hints (hash/metadata).
+        - Cache results to reduce repeated computation during UI edits.
+    """
 
     def __init__(self, batch_query_manager: BatchQueryManager, cache_manager: SmartCacheManager):
         self.batch_query_manager = batch_query_manager
@@ -265,7 +359,19 @@ class UnifiedPreviewManager:
         post_transform: dict[str, Any],
         metadata_cache: Any,
     ) -> PreviewResult:
-        """Generate preview με batch queries για hash/metadata."""
+        """Generate filename preview for `files`.
+
+        Args:
+            files: List of FileItem objects to preview.
+            modules_data: Module configuration used to build names.
+            post_transform: Final transform settings applied after module
+                composition.
+            metadata_cache: Reference to the metadata cache used by modules.
+
+        Returns:
+            A :class:`PreviewResult` containing proposed names and a flag
+            indicating whether any change is present.
+        """
 
         if not files:
             return PreviewResult([], False)
@@ -314,7 +420,12 @@ class UnifiedPreviewManager:
     def _generate_cache_key(
         self, files: list[FileItem], modules_data: list[dict], post_transform: dict
     ) -> str:
-        """Generate cache key for preview results."""
+        """Create a stable cache key for the preview parameters.
+
+        The key incorporates file paths, module configuration and post-
+        transform data. When JSON encoding fails for complex objects a
+        fallback to `str()` is used.
+        """
         file_paths = tuple(f.full_path for f in files if f.full_path)
         import json
 
@@ -336,7 +447,12 @@ class UnifiedPreviewManager:
         hash_availability: dict[str, bool],
         metadata_availability: dict[str, bool],
     ) -> list[tuple[str, str]]:
-        """Generate name pairs με smart metadata/hash checking."""
+        """Produce (old_name, new_name) tuples for each file.
+
+        The method applies configured modules and post-transforms, uses
+        availability hints to short-circuit modules that require metadata or
+        hashes, and validates generated basenames before returning them.
+        """
 
         from modules.name_transform_module import NameTransformModule
 
@@ -388,7 +504,12 @@ class UnifiedPreviewManager:
         hash_availability: dict[str, bool],
         metadata_availability: dict[str, bool],
     ) -> str:
-        """Apply modules με context για hash/metadata availability."""
+        """Apply rename modules for a single file, checking required data.
+
+        Modules that depend on hash or metadata availability will be
+        short-circuited and a sentinel string (e.g. "missing_hash") will be
+        returned when preconditions are not met.
+        """
 
         from utils.preview_engine import apply_rename_modules
 
@@ -409,7 +530,10 @@ class UnifiedPreviewManager:
         return apply_rename_modules(modules_data, index, file, metadata_cache)
 
     def _is_valid_filename_text(self, basename: str) -> bool:
-        """Validate filename text."""
+        """Return True if `basename` is acceptable for use as a filename.
+
+        Falls back to permissive behaviour if the validator import fails.
+        """
         try:
             from utils.validate_filename_text import is_valid_filename_text
 
@@ -419,13 +543,21 @@ class UnifiedPreviewManager:
 
 
 class UnifiedValidationManager:
-    """Κεντρικός validation manager με duplicate detection."""
+    """Validate preview results and detect duplicates.
+
+    The class produces a :class:`ValidationResult` that contains per-file
+    validation results and a set of duplicated target filenames.
+    """
 
     def __init__(self, cache_manager: SmartCacheManager):
         self.cache_manager = cache_manager
 
     def validate_preview(self, preview_pairs: list[tuple[str, str]]) -> ValidationResult:
-        """Validate preview και detect duplicates."""
+        """Validate a sequence of (old_name, new_name) pairs.
+
+        Performs filename validation, duplicate detection and returns a
+        :class:`ValidationResult` containing the findings.
+        """
 
         # Generate cache key
         cache_key = self._generate_validation_cache_key(preview_pairs)
@@ -477,7 +609,10 @@ class UnifiedValidationManager:
         return hash(tuple(preview_pairs))
 
     def _validate_filename(self, filename: str) -> tuple[bool, str]:
-        """Validate filename."""
+        """Validate `filename` and return (is_valid, error_message).
+
+        The implementation delegates to :mod:`utils.filename_validator`.
+        """
         try:
             from utils.filename_validator import validate_filename_part
 
@@ -489,7 +624,12 @@ class UnifiedValidationManager:
 
 
 class UnifiedExecutionManager:
-    """Κεντρικός execution manager με smart conflict resolution."""
+    """Execute rename operations with conflict resolution support.
+
+    This manager builds an execution plan, invokes an optional validator,
+    resolves filesystem conflicts via a callback and applies renames using a
+    safe-case rename helper when necessary.
+    """
 
     def __init__(self):
         self.conflict_callback = None
@@ -502,7 +642,18 @@ class UnifiedExecutionManager:
         conflict_callback: Callable | None = None,
         validator: object | None = None,
     ) -> ExecutionResult:
-        """Execute rename με smart conflict resolution."""
+        """Attempt to rename `files` to `new_names`.
+
+        Args:
+            files: Sequence of FileItem objects in original order.
+            new_names: Corresponding list of target filenames (not paths).
+            conflict_callback: Optional callable used to resolve conflicts.
+            validator: Optional callable accepting a basename and returning
+                (is_valid, error_message).
+
+        Returns:
+            An :class:`ExecutionResult` summarizing the applied operations.
+        """
 
         self.conflict_callback = conflict_callback
         self.validator = validator
@@ -563,7 +714,11 @@ class UnifiedExecutionManager:
     def _build_execution_plan(
         self, files: list[FileItem], new_names: list[str]
     ) -> list[ExecutionItem]:
-        """Build execution plan for rename operations."""
+        """Construct ExecutionItem objects pairing source and target paths.
+
+        The function zips the provided lists and produces an ExecutionItem for
+        each pair. Non-matching lengths are tolerated by Python's zip.
+        """
         items = []
 
         for file, new_name in zip(files, new_names, strict=False):
@@ -576,7 +731,11 @@ class UnifiedExecutionManager:
         return items
 
     def _resolve_conflict(self, item: ExecutionItem) -> str:
-        """Resolve file conflict."""
+        """Invoke the conflict callback to resolve a filesystem conflict.
+
+        The callback is expected to return one of: 'skip', 'skip_all', 'overwrite'
+        or raise / return another sentinel to cancel the whole operation.
+        """
         if self.conflict_callback:
             try:
                 return self.conflict_callback(None, os.path.basename(item.new_path))
@@ -586,7 +745,12 @@ class UnifiedExecutionManager:
         return "skip"  # Default to skip
 
     def _execute_single_rename(self, item: ExecutionItem) -> bool:
-        """Execute single rename operation."""
+        """Perform a single filesystem rename, returning True on success.
+
+        Uses a safe-case rename helper for case-only changes on case-
+        insensitive filesystems, falling back to `os.rename` for regular
+        moves.
+        """
         try:
             from utils.rename_logic import is_case_only_change, safe_case_rename
 
@@ -608,14 +772,19 @@ class UnifiedExecutionManager:
 
 
 class RenameStateManager:
-    """Κεντρικός state manager για rename operations."""
+    """Manage a `RenameState` instance and detect changes between updates.
+
+    The manager stores the prior state and sets boolean flags on the new
+    state object when preview/validation/execution results change.
+    """
 
     def __init__(self):
         self.current_state = RenameState()
         self._previous_state = None
 
     def update_state(self, new_state: RenameState) -> None:
-        """Update state και detect changes."""
+        """Replace the current state with `new_state` and compute change flags.
+        """
         self._previous_state = self.current_state
         self.current_state = new_state
 
@@ -651,9 +820,14 @@ class RenameStateManager:
 
 
 class UnifiedRenameEngine(QObject):
-    """
-    Κεντρικός engine για όλες τις rename λειτουργίες.
-    Ενσωματώνει preview, validation, duplicate detection, και execution.
+    """Facade connecting UI code to the unified rename workflow.
+
+    This Qt-aware object exposes high-level methods used by the UI to:
+        - generate previews (`generate_preview`)
+        - validate previewed names (`validate_preview`)
+        - execute renames with conflict handling (`execute_rename`)
+
+    Signals are emitted after each major stage to allow the UI to update.
     """
 
     # Central signal system
