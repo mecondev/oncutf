@@ -147,57 +147,57 @@ class MainWindow(QMainWindow):
     def force_reload(self) -> None:
         """Force reload via Application Service."""
         self.app_service.force_reload()
-    
+
     # =====================================
     # Backward Compatibility Properties
     # =====================================
-    
+
     @property
     def files(self) -> list:
         """
         Backward compatibility property for accessing files.
-        
+
         Returns files from FileTableModel (which is the source of truth for UI display).
         Use context.file_store.get_loaded_files() for centralized state access.
         """
-        if hasattr(self, 'file_model') and self.file_model:
+        if hasattr(self, "file_model") and self.file_model:
             return self.file_model.files
         return []
-    
+
     @property
     def current_folder_path(self) -> str | None:
         """
         Backward compatibility property for current folder path.
-        
+
         Returns current folder from ApplicationContext.
         """
-        if hasattr(self, 'context') and self.context:
+        if hasattr(self, "context") and self.context:
             return self.context.get_current_folder()
         return None
-    
+
     @current_folder_path.setter
     def current_folder_path(self, value: str | None) -> None:
         """Set current folder path via ApplicationContext."""
-        if hasattr(self, 'context') and self.context:
+        if hasattr(self, "context") and self.context:
             # Preserve recursive mode when setting folder
             recursive = self.context.is_recursive_mode()
             self.context.set_current_folder(value, recursive)
-    
+
     @property
     def current_folder_is_recursive(self) -> bool:
         """
         Backward compatibility property for recursive mode flag.
-        
+
         Returns recursive mode from ApplicationContext.
         """
-        if hasattr(self, 'context') and self.context:
+        if hasattr(self, "context") and self.context:
             return self.context.is_recursive_mode()
         return False
-    
+
     @current_folder_is_recursive.setter
     def current_folder_is_recursive(self, value: bool) -> None:
         """Set recursive mode via ApplicationContext."""
-        if hasattr(self, 'context') and self.context:
+        if hasattr(self, "context") and self.context:
             self.context.set_recursive_mode(value)
 
     def handle_browse(self) -> None:
@@ -225,7 +225,9 @@ class MainWindow(QMainWindow):
         self.app_service.load_files_from_paths(file_paths, clear=clear)
 
     def load_files_from_dropped_items(
-        self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier # type: ignore
+        self,
+        paths: list[str],
+        modifiers: Qt.KeyboardModifiers = Qt.NoModifier,  # type: ignore
     ) -> None:  # type: ignore
         """Load files from dropped items via Application Service."""
         self.app_service.load_files_from_dropped_items(paths, modifiers)
@@ -235,7 +237,9 @@ class MainWindow(QMainWindow):
         return self.app_service.prepare_folder_load(folder_path, clear=clear)
 
     def load_single_item_from_drop(
-        self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier # type: ignore
+        self,
+        path: str,
+        modifiers: Qt.KeyboardModifiers = Qt.NoModifier,  # type: ignore
     ) -> None:  # type: ignore
         """Load single item from drop via Application Service."""
         self.app_service.load_single_item_from_drop(path, modifiers)
@@ -304,7 +308,9 @@ class MainWindow(QMainWindow):
         self.app_service.handle_table_context_menu(position)
 
     def handle_file_double_click(
-        self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier # type: ignore
+        self,
+        index: QModelIndex,
+        modifiers: Qt.KeyboardModifiers = Qt.NoModifier,  # type: ignore
     ) -> None:  # type: ignore
         """Handle file double click via Application Service."""
         self.app_service.handle_file_double_click(index, modifiers)
@@ -858,7 +864,7 @@ class MainWindow(QMainWindow):
             # Create database backup
             if hasattr(self, "backup_manager") and self.backup_manager:
                 try:
-                    self.backup_manager.create_backup(backup_type="auto") # type: ignore
+                    self.backup_manager.create_backup(backup_type="auto")  # type: ignore
                     logger.info("[CloseEvent] Database backup created")
                 except Exception as e:
                     logger.warning(f"[CloseEvent] Database backup failed: {e}")
@@ -875,7 +881,7 @@ class MainWindow(QMainWindow):
             if hasattr(self, "batch_manager") and self.batch_manager:
                 try:
                     if hasattr(self.batch_manager, "flush_operations"):
-                        self.batch_manager.flush_operations() # type: ignore
+                        self.batch_manager.flush_operations()  # type: ignore
                         logger.info("[CloseEvent] Batch operations flushed")
                 except Exception as e:
                     logger.warning(f"[CloseEvent] Batch flush failed: {e}")
@@ -883,7 +889,7 @@ class MainWindow(QMainWindow):
             # Cleanup drag operations
             if hasattr(self, "drag_manager") and self.drag_manager:
                 try:
-                    self.drag_manager.cleanup_resources() # type: ignore
+                    self.drag_manager.cleanup_resources()  # type: ignore
                     logger.info("[CloseEvent] Drag manager cleaned up")
                 except Exception as e:
                     logger.warning(f"[CloseEvent] Drag cleanup failed: {e}")
@@ -891,7 +897,7 @@ class MainWindow(QMainWindow):
             # Close dialogs
             if hasattr(self, "dialog_manager") and self.dialog_manager:
                 try:
-                    self.dialog_manager.close_all_dialogs() # type: ignore
+                    self.dialog_manager.close_all_dialogs()  # type: ignore
                     logger.info("[CloseEvent] All dialogs closed")
                 except Exception as e:
                     logger.warning(f"[CloseEvent] Dialog cleanup failed: {e}")
@@ -919,7 +925,7 @@ class MainWindow(QMainWindow):
             # Additional cleanup
             from core.application_context import ApplicationContext
 
-            ApplicationContext.destroy_instance() # type: ignore
+            ApplicationContext.destroy_instance()  # type: ignore
             logger.info("[CloseEvent] Application context destroyed")
 
         except Exception as e:
@@ -1015,10 +1021,14 @@ class MainWindow(QMainWindow):
                 logger.info(f"[CloseEvent] Terminating QThread: {thread.__class__.__name__}")
                 thread.quit()
                 if not thread.wait(1000):  # Wait max 1 second
-                    logger.warning(f"[CloseEvent] Thread {thread.__class__.__name__} did not quit gracefully, terminating...")
+                    logger.warning(
+                        f"[CloseEvent] Thread {thread.__class__.__name__} did not quit gracefully, terminating..."
+                    )
                     thread.terminate()
                     if not thread.wait(500):  # CRITICAL: Add timeout to prevent infinite hang
-                        logger.error(f"[CloseEvent] Thread {thread.__class__.__name__} did not terminate after 500ms")
+                        logger.error(
+                            f"[CloseEvent] Thread {thread.__class__.__name__} did not terminate after 500ms"
+                        )
 
     def _force_close_progress_dialogs(self) -> None:
         """Force close any active progress dialogs except the shutdown dialog."""
@@ -1097,66 +1107,66 @@ class MainWindow(QMainWindow):
     def _register_managers_in_context(self):
         """
         Register all managers in ApplicationContext for centralized access.
-        
+
         This eliminates the need for parent_window.some_manager traversal patterns.
         Components can access managers via context.get_manager('name') instead.
-        
+
         Phase 2 of Application Context Migration.
         """
         try:
             # Core managers
-            self.context.register_manager('table', self.table_manager)
-            self.context.register_manager('metadata', self.metadata_manager)
-            self.context.register_manager('selection', self.selection_manager)
-            self.context.register_manager('rename', self.rename_manager)
-            self.context.register_manager('preview', self.preview_manager)
-            
+            self.context.register_manager("table", self.table_manager)
+            self.context.register_manager("metadata", self.metadata_manager)
+            self.context.register_manager("selection", self.selection_manager)
+            self.context.register_manager("rename", self.rename_manager)
+            self.context.register_manager("preview", self.preview_manager)
+
             # UI managers
-            self.context.register_manager('ui', self.ui_manager)
-            self.context.register_manager('dialog', self.dialog_manager)
-            self.context.register_manager('status', self.status_manager)
-            self.context.register_manager('shortcut', self.shortcut_manager)
-            self.context.register_manager('splitter', self.splitter_manager)
-            self.context.register_manager('window_config', self.window_config_manager)
-            self.context.register_manager('column', self.column_manager)
-            
+            self.context.register_manager("ui", self.ui_manager)
+            self.context.register_manager("dialog", self.dialog_manager)
+            self.context.register_manager("status", self.status_manager)
+            self.context.register_manager("shortcut", self.shortcut_manager)
+            self.context.register_manager("splitter", self.splitter_manager)
+            self.context.register_manager("window_config", self.window_config_manager)
+            self.context.register_manager("column", self.column_manager)
+
             # File operations managers
-            self.context.register_manager('file_load', self.file_load_manager)
-            self.context.register_manager('file_operations', self.file_operations_manager)
-            self.context.register_manager('file_validation', self.file_validation_manager)
-            
+            self.context.register_manager("file_load", self.file_load_manager)
+            self.context.register_manager("file_operations", self.file_operations_manager)
+            self.context.register_manager("file_validation", self.file_validation_manager)
+
             # System managers
-            self.context.register_manager('db', self.db_manager)
-            self.context.register_manager('backup', self.backup_manager)
-            self.context.register_manager('rename_history', self.rename_history_manager)
-            
+            self.context.register_manager("db", self.db_manager)
+            self.context.register_manager("backup", self.backup_manager)
+            self.context.register_manager("rename_history", self.rename_history_manager)
+
             # Utility managers
-            self.context.register_manager('utility', self.utility_manager)
-            self.context.register_manager('event_handler', self.event_handler_manager)
-            self.context.register_manager('drag', self.drag_manager)
-            self.context.register_manager('drag_cleanup', self.drag_cleanup_manager)
-            self.context.register_manager('initialization', self.initialization_manager)
-            
+            self.context.register_manager("utility", self.utility_manager)
+            self.context.register_manager("event_handler", self.event_handler_manager)
+            self.context.register_manager("drag", self.drag_manager)
+            self.context.register_manager("drag_cleanup", self.drag_cleanup_manager)
+            self.context.register_manager("initialization", self.initialization_manager)
+
             # Service layer
-            self.context.register_manager('app_service', self.app_service)
-            self.context.register_manager('batch', self.batch_manager)
-            self.context.register_manager('config', self.config_manager)
-            
+            self.context.register_manager("app_service", self.app_service)
+            self.context.register_manager("batch", self.batch_manager)
+            self.context.register_manager("config", self.config_manager)
+
             # Coordinators
-            self.context.register_manager('signal_coordinator', self.signal_coordinator)
-            
+            self.context.register_manager("signal_coordinator", self.signal_coordinator)
+
             # Engines
-            self.context.register_manager('rename_engine', self.unified_rename_engine)
-            
+            self.context.register_manager("rename_engine", self.unified_rename_engine)
+
             logger.info(
                 f"[MainWindow] Registered {len(self.context.list_managers())} managers in ApplicationContext",
-                extra={"dev_only": True}
+                extra={"dev_only": True},
             )
             logger.debug(
                 f"[MainWindow] Available managers: {', '.join(self.context.list_managers())}",
-                extra={"dev_only": True}
+                extra={"dev_only": True},
             )
-            
+
         except Exception as e:
             logger.error(f"[MainWindow] Error registering managers in context: {e}")
 
@@ -1187,8 +1197,8 @@ class MainWindow(QMainWindow):
                 from utils.exiftool_wrapper import ExifToolWrapper
 
                 # Get any active instance
-                if ExifToolWrapper._instances: # type: ignore
-                    exiftool = next(iter(ExifToolWrapper._instances)) # type: ignore
+                if ExifToolWrapper._instances:  # type: ignore
+                    exiftool = next(iter(ExifToolWrapper._instances))  # type: ignore
                     self.shutdown_coordinator.register_exiftool_wrapper(exiftool)
             except Exception as e:
                 logger.debug(f"[MainWindow] ExifTool wrapper not available: {e}")

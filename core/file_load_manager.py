@@ -303,12 +303,12 @@ class FileLoadManager:
                 first_file_path = items[0].full_path
                 if first_file_path:
                     folder_path = os.path.dirname(first_file_path)
-                    
+
                     # Check if this was a recursive load by looking for files in subdirectories
                     has_subdirectory_files = any(
                         os.path.dirname(item.full_path) != folder_path for item in items
                     )
-                    
+
                     # Set folder path and recursive mode in ApplicationContext (centralized state)
                     self.parent_window.context.set_current_folder(folder_path, has_subdirectory_files)
                     logger.info(

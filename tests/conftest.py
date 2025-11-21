@@ -89,19 +89,19 @@ def sample_metadata():
 def qapp():
     """Create QApplication for all GUI tests."""
     try:
-        from PyQt5.QtWidgets import QApplication
         from PyQt5.QtCore import QCoreApplication
-        
+        from PyQt5.QtWidgets import QApplication
+
         # Check if QApplication already exists
         app = QApplication.instance()
         if app is None:
             app = QApplication([])
-        
+
         yield app
-        
+
         # Don't quit the app in session scope - let it live for all tests
         # Cleanup will happen via qt_cleanup fixture between tests
-        
+
     except ImportError:
         yield None
 
@@ -110,15 +110,15 @@ def qapp():
 def qt_cleanup(qapp):
     """Ensure proper Qt cleanup between tests."""
     yield
-    
+
     if qapp:
         try:
             from PyQt5.QtCore import QCoreApplication, QTimer
             from PyQt5.QtWidgets import QApplication, QWidget
-            
+
             # Process any pending events
             QCoreApplication.processEvents()
-            
+
             # Find and delete all top-level widgets
             for widget in QApplication.topLevelWidgets():
                 try:
@@ -126,10 +126,10 @@ def qt_cleanup(qapp):
                     widget.deleteLater()
                 except RuntimeError:
                     pass
-            
+
             # Process events again to clean up
             QCoreApplication.processEvents()
-            
+
         except (RuntimeError, AttributeError, ImportError):
             pass
 

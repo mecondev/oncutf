@@ -55,7 +55,7 @@ class SignalCoordinator:
         self.setup_timer_signals()
         logger.info(
             f"SignalCoordinator: Connected {len(self._connected_signals)} signals",
-            extra={"dev_only": True}
+            extra={"dev_only": True},
         )
 
     def setup_metadata_refresh_signals(self) -> None:
@@ -77,17 +77,19 @@ class SignalCoordinator:
                 self.parent_window.event_handler_manager.hash_worker.file_hash_calculated.connect(
                     self.parent_window.refresh_metadata_widgets
                 )  # type: ignore
-                self._connected_signals.append("hash_worker.file_hash_calculated → refresh_metadata_widgets")
+                self._connected_signals.append(
+                    "hash_worker.file_hash_calculated → refresh_metadata_widgets"
+                )
                 logger.debug(
                     "[SignalCoordinator] Connected hash_worker.file_hash_calculated signal",
-                    extra={"dev_only": True}
+                    extra={"dev_only": True},
                 )
             except Exception as e:
                 logger.warning(f"[SignalCoordinator] Failed to connect hash_worker signal: {e}")
         else:
             logger.debug(
                 "[SignalCoordinator] hash_worker not available for signal connection",
-                extra={"dev_only": True}
+                extra={"dev_only": True},
             )
 
         # Selection refresh
@@ -95,16 +97,19 @@ class SignalCoordinator:
             self.parent_window.selection_store.selection_changed.connect(
                 lambda _: self.parent_window.refresh_metadata_widgets()
             )
-            self._connected_signals.append("selection_store.selection_changed → refresh_metadata_widgets")
+            self._connected_signals.append(
+                "selection_store.selection_changed → refresh_metadata_widgets"
+            )
 
             self.parent_window.selection_store.selection_changed.connect(
                 lambda _: self.parent_window.update_active_metadata_widget_options()
             )
-            self._connected_signals.append("selection_store.selection_changed → update_active_metadata_widget_options")
+            self._connected_signals.append(
+                "selection_store.selection_changed → update_active_metadata_widget_options"
+            )
 
             logger.debug(
-                "[SignalCoordinator] Connected selection_store signals",
-                extra={"dev_only": True}
+                "[SignalCoordinator] Connected selection_store signals", extra={"dev_only": True}
             )
 
         # Metadata refresh (try ApplicationContext or UnifiedMetadataManager)
@@ -113,14 +118,20 @@ class SignalCoordinator:
 
             context = get_app_context()
             if context and hasattr(context, "metadata_changed"):
-                context.metadata_changed.connect(lambda *_: self.parent_window.refresh_metadata_widgets())
-                self._connected_signals.append("context.metadata_changed → refresh_metadata_widgets")
+                context.metadata_changed.connect(
+                    lambda *_: self.parent_window.refresh_metadata_widgets()
+                )
+                self._connected_signals.append(
+                    "context.metadata_changed → refresh_metadata_widgets"
+                )
                 logger.debug(
                     "[SignalCoordinator] Connected context.metadata_changed signal",
-                    extra={"dev_only": True}
+                    extra={"dev_only": True},
                 )
         except Exception as e:
-            logger.debug(f"[SignalCoordinator] ApplicationContext metadata_changed not available: {e}")
+            logger.debug(
+                f"[SignalCoordinator] ApplicationContext metadata_changed not available: {e}"
+            )
 
         try:
             if hasattr(self.parent_window, "unified_metadata_manager") and hasattr(
@@ -129,13 +140,17 @@ class SignalCoordinator:
                 self.parent_window.unified_metadata_manager.metadata_changed.connect(
                     lambda *_: self.parent_window.refresh_metadata_widgets()
                 )
-                self._connected_signals.append("unified_metadata_manager.metadata_changed → refresh_metadata_widgets")
+                self._connected_signals.append(
+                    "unified_metadata_manager.metadata_changed → refresh_metadata_widgets"
+                )
                 logger.debug(
                     "[SignalCoordinator] Connected unified_metadata_manager.metadata_changed signal",
-                    extra={"dev_only": True}
+                    extra={"dev_only": True},
                 )
         except Exception as e:
-            logger.debug(f"[SignalCoordinator] UnifiedMetadataManager metadata_changed not available: {e}")
+            logger.debug(
+                f"[SignalCoordinator] UnifiedMetadataManager metadata_changed not available: {e}"
+            )
 
     def setup_timer_signals(self) -> None:
         """
@@ -150,7 +165,7 @@ class SignalCoordinator:
             self._connected_signals.append("preview_update_timer.timeout → generate_preview_names")
             logger.debug(
                 "[SignalCoordinator] Connected preview_update_timer signal",
-                extra={"dev_only": True}
+                extra={"dev_only": True},
             )
 
     def get_connected_signals(self) -> list[str]:

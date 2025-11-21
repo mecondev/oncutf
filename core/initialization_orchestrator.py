@@ -237,10 +237,11 @@ class InitializationOrchestrator:
 
         # Initialize service layer and coordinators
         self.window.app_service = initialize_application_service(self.window)
-        
+
         from core.batch_operations_manager import get_batch_manager
+
         self.window.batch_manager = get_batch_manager(self.window)
-        
+
         self.window.signal_coordinator = SignalCoordinator(self.window)
         self.window.shutdown_coordinator = get_shutdown_coordinator()
 
@@ -253,7 +254,4 @@ class InitializationOrchestrator:
         # Setup all signal connections
         self.window.signal_coordinator.setup_all_signals()
 
-        logger.info(
-            "Phase 4: Configuration and finalization complete",
-            extra={"dev_only": True}
-        )
+        logger.info("Phase 4: Configuration and finalization complete", extra={"dev_only": True})
