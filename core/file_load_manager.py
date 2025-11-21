@@ -321,6 +321,8 @@ class FileLoadManager:
             if clear:
                 # Replace existing files
                 self.parent_window.file_model.set_files(items)
+                # Also update FileStore (centralized state)
+                self.parent_window.context.file_store.set_loaded_files(items)
                 logger.info(
                     f"[FileLoadManager] Replaced files with {len(items)} new items",
                     extra={"dev_only": True},
@@ -348,6 +350,8 @@ class FileLoadManager:
                 # Combine existing files with new non-duplicate items
                 combined_files = existing_files + new_items
                 self.parent_window.file_model.set_files(combined_files)
+                # Also update FileStore (centralized state)
+                self.parent_window.context.file_store.set_loaded_files(combined_files)
 
                 # Log the results
 

@@ -135,7 +135,8 @@ class TableManager:
             logger.debug("[TableManager] Shown file table placeholder - no files")
 
         # Handle application-specific setup
-        self.parent_window.files = file_items
+        # Store files in FileStore (centralized state management)
+        self.parent_window.context.file_store.set_loaded_files(file_items)
         self.parent_window.file_model.folder_path = self.parent_window.current_folder_path
         self.parent_window.preview_map = {f.filename: f for f in file_items}
 

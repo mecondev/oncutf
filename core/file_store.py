@@ -179,6 +179,17 @@ class FileStore(QObject):
     def get_loaded_files(self) -> list[FileItem]:
         """Get currently loaded files."""
         return self._loaded_files.copy()
+    
+    def set_loaded_files(self, files: list[FileItem]) -> None:
+        """
+        Set loaded files directly (used when files are loaded externally).
+        
+        Args:
+            files: List of FileItem objects to set as loaded
+        """
+        self._loaded_files = files.copy() if files else []
+        self.files_loaded.emit(self._loaded_files)
+        logger.debug(f"[FileStore] Loaded files set directly: {len(self._loaded_files)} files")
 
     def get_current_folder(self) -> str | None:
         """Get current folder path."""

@@ -136,7 +136,7 @@ class MainWindow(QMainWindow):
         self.current_folder_is_recursive = False  # Track if current folder was loaded recursively
         self.current_sort_column = 1  # Track current sort column (default: filename)
         self.current_sort_order = Qt.AscendingOrder  # type: ignore
-        self.files = []
+        # Note: self.files removed - now managed by context.file_store
         self.preview_map = {}  # preview_filename -> FileItem
         self._selection_sync_mode = "normal"  # values: "normal", "toggle"
         self.pending_completion_dialog = None  # For delayed completion dialog execution
@@ -336,6 +336,22 @@ class MainWindow(QMainWindow):
     def force_reload(self) -> None:
         """Force reload via Application Service."""
         self.app_service.force_reload()
+    
+    # =====================================
+    # Backward Compatibility Properties
+    # =====================================
+    
+    @property
+    def files(self) -> list:
+        """
+        Backward compatibility property for accessing files.
+        
+        Returns files from FileTableModel (which is the source of truth for UI display).
+        Use context.file_store.get_loaded_files() for centralized state access.
+        """
+        if hasattr(self, 'file_model') and self.file_model:
+            return self.file_model.files
+        return []
 
     def handle_browse(self) -> None:
         """Handle browse via Application Service."""
