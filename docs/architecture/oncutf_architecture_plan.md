@@ -769,15 +769,17 @@ with db_manager.get_connection() as conn:
 - **Tests:** 24/24 passing
 - **Status:** Complete - Standard progress interface implemented
 
-**Task A7: Document Threading Patterns [PENDING]**
-- **Create:** `docs/threading_patterns.md`
+**Task A7: Document Threading Patterns [COMPLETE]**
+- **Created:** `docs/architecture/threading_patterns.md` (comprehensive threading guide)
 - **Content:**
-  - When to use threads vs main thread
-  - How to create workers
-  - Progress reporting standard
-  - Cancellation pattern
-  - Cleanup requirements
-- **Status:** Not started
+  - Three main threading patterns: QThread Workers, ThreadPoolManager, ThreadPoolExecutor
+  - Decision guide with comparison matrix
+  - Implementation examples (HashWorker, MetadataLoader, BatchProcessor)
+  - Best practices (thread safety, signal usage, lifecycle management)
+  - Common pitfalls and solutions
+  - Performance optimization tips
+  - Reference implementation checklist
+- **Status:** Complete - Comprehensive threading patterns documented (28 sections, 800+ lines)
 
 **Expected Outcomes:**
 - ✅ Simpler mental model for developers (health checks added)
@@ -788,16 +790,19 @@ with db_manager.get_connection() as conn:
 **Completed Files:**
 - ✅ `core/shutdown_coordinator.py` (NEW - centralized shutdown)
 - ✅ `docs/architecture/concurrency_inventory.md` (NEW - complete audit)
+- ✅ `docs/architecture/concurrency_decision.md` (NEW - Qt-only decision, Task A4)
+- ✅ `docs/architecture/threading_patterns.md` (NEW - comprehensive patterns guide, Task A7)
+- ✅ `core/progress_protocol.py` (NEW - standard progress interface, Task A6)
+- ✅ `tests/test_progress_protocol.py` (NEW - 24 tests for progress protocol)
 - ✅ `core/thread_pool_manager.py` (health check APIs added)
 - ✅ `utils/timer_manager.py` (health check APIs added)
 - ✅ `utils/exiftool_wrapper.py` (health check APIs added)
-- ✅ `main_window.py` (integrated shutdown coordinator, 1280 lines)
+- ✅ `main_window.py` (integrated shutdown coordinator, async manager removed)
 - ✅ `core/persistent_metadata_cache.py` (duplicates removed)
+- ✅ `core/async_operations_manager.py` (REMOVED - Task A5)
 
 **Remaining Files:**
-- ⏳ `docs/concurrency_decision.md` (Task A4 - pending)
-- ⏳ `core/async_operations_manager.py` (Task A5 - evaluate after A4)
-- ⏳ `docs/threading_patterns.md` (Task A7 - pending)
+- ⏳ None - Area A (Concurrency Model) is complete!
 
 ---
 
