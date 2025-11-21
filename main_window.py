@@ -132,8 +132,7 @@ class MainWindow(QMainWindow):
 
         # Filename validation utilities available as functions in utils.filename_validator
         self.last_action = None  # Could be: 'folder_import', 'browse', 'rename', etc.
-        self.current_folder_path = None
-        self.current_folder_is_recursive = False  # Track if current folder was loaded recursively
+        # Note: current_folder_path and current_folder_is_recursive now managed by context (see @property)
         self.current_sort_column = 1  # Track current sort column (default: filename)
         self.current_sort_order = Qt.AscendingOrder  # type: ignore
         # Note: self.files removed - now managed by context.file_store
@@ -352,6 +351,42 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'file_model') and self.file_model:
             return self.file_model.files
         return []
+    
+    @property
+    def current_folder_path(self) -> str | None:
+        """
+        Backward compatibility property for current folder path.
+        
+        Returns current folder from ApplicationContext.
+        """
+        if hasattr(self, 'context') and self.context:
+            return self.context.get_current_folder()
+        return None
+    
+    @current_folder_path.setter
+    def current_folder_path(self, value: str | None) -> None:
+        """Set current folder path via ApplicationContext."""
+        if hasattr(self, 'context') and self.context:
+            # Preserve recursive mode when setting folder
+            recursive = self.context.is_recursive_mode()
+            self.context.set_current_folder(value, recursive)
+    
+    @property
+    def current_folder_is_recursive(self) -> bool:
+        """
+        Backward compatibility property for recursive mode flag.
+        
+        Returns recursive mode from ApplicationContext.
+        """
+        if hasattr(self, 'context') and self.context:
+            return self.context.is_recursive_mode()
+        return False
+    
+    @current_folder_is_recursive.setter
+    def current_folder_is_recursive(self, value: bool) -> None:
+        """Set recursive mode via ApplicationContext."""
+        if hasattr(self, 'context') and self.context:
+            self.context.set_recursive_mode(value)
 
     def handle_browse(self) -> None:
         """Handle browse via Application Service."""

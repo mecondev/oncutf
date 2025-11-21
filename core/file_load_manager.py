@@ -63,8 +63,9 @@ class FileLoadManager:
             return
 
         # Store the recursive state for future reloads (if not merging)
-        if not merge_mode and hasattr(self.parent_window, "current_folder_is_recursive"):
-            self.parent_window.current_folder_is_recursive = recursive
+        # Use ApplicationContext for centralized state management
+        if not merge_mode:
+            self.parent_window.context.set_recursive_mode(recursive)
             logger.info(
                 f"[FileLoadManager] Stored recursive state: {recursive}", extra={"dev_only": True}
             )
@@ -302,19 +303,20 @@ class FileLoadManager:
                 first_file_path = items[0].full_path
                 if first_file_path:
                     folder_path = os.path.dirname(first_file_path)
-                    self.parent_window.current_folder_path = folder_path
-                    logger.info(
-                        f"[FileLoadManager] Set current_folder_path to: {folder_path}",
-                        extra={"dev_only": True},
-                    )
-
+                    
                     # Check if this was a recursive load by looking for files in subdirectories
                     has_subdirectory_files = any(
                         os.path.dirname(item.full_path) != folder_path for item in items
                     )
-                    self.parent_window.current_folder_is_recursive = has_subdirectory_files
+                    
+                    # Set folder path and recursive mode in ApplicationContext (centralized state)
+                    self.parent_window.context.set_current_folder(folder_path, has_subdirectory_files)
                     logger.info(
-                        f"[FileLoadManager] Set recursive mode to: {has_subdirectory_files}",
+                        f"[FileLoadManager] Set current_folder_path to: {folder_path}",
+                        extra={"dev_only": True},
+                    )
+                    logger.info(
+                        f"[FileLoadManager] Recursive mode: {has_subdirectory_files}",
                         extra={"dev_only": True},
                     )
 

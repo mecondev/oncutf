@@ -59,6 +59,7 @@ class ApplicationContext(QObject):
         self._selected_rows: set[int] = set()
         self._metadata_cache: dict[str, Any] = {}
         self._current_folder: str | None = None
+        self._recursive_mode: bool = False  # Track if folder loaded recursively
 
         # Performance tracking
         self._performance_metrics: dict[str, float] = {}
@@ -202,15 +203,31 @@ class ApplicationContext(QObject):
         """Get current folder path."""
         return self._current_folder
 
-    def set_current_folder(self, folder_path: str) -> None:
-        """Set current folder path."""
+    def set_current_folder(self, folder_path: str | None, recursive: bool = False) -> None:
+        """
+        Set current folder path and recursive mode.
+        
+        Args:
+            folder_path: Path to the folder, or None to clear
+            recursive: Whether the folder was loaded recursively
+        """
         self._current_folder = folder_path
+        self._recursive_mode = recursive
 
         # Update FileStore if available
-        if self._file_store is not None:
+        if self._file_store is not None and folder_path:
             self._file_store.set_current_folder(folder_path)
 
-        logger.debug(f"Current folder: {folder_path}")
+        logger.debug(f"Current folder: {folder_path}, recursive: {recursive}")
+    
+    def is_recursive_mode(self) -> bool:
+        """Check if current folder was loaded recursively."""
+        return self._recursive_mode
+    
+    def set_recursive_mode(self, recursive: bool) -> None:
+        """Set recursive mode flag."""
+        self._recursive_mode = recursive
+        logger.debug(f"Recursive mode set to: {recursive}")
 
     # =====================================
     # Selection Management (Delegated to SelectionStore)

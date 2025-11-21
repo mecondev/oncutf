@@ -60,8 +60,8 @@ class ShortcutManager:
 
         # Clear the file table
         self.main_window.clear_file_table("Press Escape to clear, or drag folders here")
-        self.main_window.current_folder_path = None  # Reset current folder
-        self.main_window.current_folder_is_recursive = False  # Reset recursive state
+        # Clear folder state via ApplicationContext (centralized state management)
+        self.main_window.context.set_current_folder(None, False)
         self.main_window.current_sort_column = 1  # Reset to filename column
         self.main_window.current_sort_order = Qt.AscendingOrder  # Reset to ascending
 

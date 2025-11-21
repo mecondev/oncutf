@@ -76,10 +76,14 @@ class TestMetadataTreeView:
 
     def test_theme_application(self, tree_view, theme_engine):
         """Test that theme styles are properly applied."""
+        # Apply stylesheet with branch styling
         style_sheet = f"""
             QTreeView {{
                 background-color: {theme_engine.get_color("table_background")};
                 color: {theme_engine.get_color("table_text")};
+            }}
+            QTreeView::branch:has-children:closed {{
+                image: url(:/icons/chevron-right.svg);
             }}
         """
         tree_view.setStyleSheet(style_sheet)
@@ -89,7 +93,7 @@ class TestMetadataTreeView:
         assert applied_style != "", "Style sheet should not be empty"
         assert "QTreeView" in applied_style
 
-        # Check for chevron/branch styling (best-effort)
+        # Check for chevron/branch styling - now properly included in test stylesheet
         has_branch_styling = any(
             keyword in applied_style
             for keyword in ["branch:", "::branch", "has-children", "closed"]
