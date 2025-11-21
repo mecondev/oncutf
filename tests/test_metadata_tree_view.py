@@ -177,7 +177,6 @@ class TestMetadataTreeView:
         # Verify model is set
         assert tree_view.model() is not None
         assert tree_view.model().rowCount() > 0
->>>>>>> a69bde38 (Debug & test fixes — preview refresh, metadata parsing, SpecifiedText API, and ruff cleanups)
 
     def test_hover_state_handling(self, tree_view):
         """Test hover state behavior (basic functionality)."""
