@@ -69,6 +69,9 @@ class UnifiedMetadataManager(QObject):
         self.force_extended_metadata = False
         self._metadata_cancelled = False  # Cancellation flag for metadata loading
 
+        # Structured metadata system (lazy-initialized)
+        self._structured_manager = None
+
         # Initialize ExifTool wrapper for single file operations
         from utils.exiftool_wrapper import ExifToolWrapper
 
@@ -83,6 +86,24 @@ class UnifiedMetadataManager(QObject):
             logger.debug(
                 "[UnifiedMetadataManager] Cache helper initialized", extra={"dev_only": True}
             )
+
+    @property
+    def structured(self):
+        """
+        Lazy-initialized structured metadata manager.
+
+        Returns:
+            StructuredMetadataManager instance
+        """
+        if self._structured_manager is None:
+            from core.structured_metadata_manager import StructuredMetadataManager
+
+            self._structured_manager = StructuredMetadataManager()
+            logger.debug(
+                "[UnifiedMetadataManager] StructuredMetadataManager initialized",
+                extra={"dev_only": True},
+            )
+        return self._structured_manager
 
     # =====================================
     # Cache Checking Methods
@@ -377,6 +398,56 @@ class UnifiedMetadataManager(QObject):
         logger.info(f"[Shortcut] Loading extended metadata for {len(selected_files)} files")
         # Use intelligent loading with cache checking and smart UX
         self.load_metadata_for_items(selected_files, use_extended=True, source="shortcut")
+
+    def shortcut_load_metadata_all(self) -> None:
+        """
+        Load basic metadata for ALL files in current folder (keyboard shortcut).
+
+        This loads metadata for all files regardless of selection state.
+        """
+        if not self.parent_window:
+            return
+
+        if self.is_running_metadata_task():
+            logger.warning("[Shortcut] Metadata scan already running — shortcut ignored.")
+            return
+
+        from core.application_context import ApplicationContext
+
+        context = ApplicationContext()
+        all_files = list(context.file_store)
+
+        if not all_files:
+            logger.info("[Shortcut] No files available for metadata loading")
+            return
+
+        logger.info(f"[Shortcut] Loading basic metadata for all {len(all_files)} files")
+        self.load_metadata_for_items(all_files, use_extended=False, source="shortcut_all")
+
+    def shortcut_load_extended_metadata_all(self) -> None:
+        """
+        Load extended metadata for ALL files in current folder (keyboard shortcut).
+
+        This loads extended metadata for all files regardless of selection state.
+        """
+        if not self.parent_window:
+            return
+
+        if self.is_running_metadata_task():
+            logger.warning("[Shortcut] Metadata scan already running — shortcut ignored.")
+            return
+
+        from core.application_context import ApplicationContext
+
+        context = ApplicationContext()
+        all_files = list(context.file_store)
+
+        if not all_files:
+            logger.info("[Shortcut] No files available for extended metadata loading")
+            return
+
+        logger.info(f"[Shortcut] Loading extended metadata for all {len(all_files)} files")
+        self.load_metadata_for_items(all_files, use_extended=True, source="shortcut_all")
 
     # =====================================
     # Main Loading Methods
@@ -1406,6 +1477,117 @@ class UnifiedMetadataManager(QObject):
                 )
 
     # =====================================
+    # Structured Metadata Integration
+    # =====================================
+
+    def get_structured_metadata(self, file_path: str) -> dict:
+        """
+        Get structured metadata for a file with categorization.
+
+        Args:
+            file_path: Path to the file
+
+        Returns:
+            Dictionary with categorized metadata
+        """
+        return self.structured.get_structured_metadata(file_path)
+
+    def process_and_store_metadata(self, file_path: str, raw_metadata: dict) -> bool:
+        """
+        Process raw metadata and store it in structured format.
+
+        Args:
+            file_path: Path to the file
+            raw_metadata: Raw metadata dictionary from ExifTool
+
+        Returns:
+            True if successful, False otherwise
+        """
+        return self.structured.process_and_store_metadata(file_path, raw_metadata)
+
+    def get_field_value(self, file_path: str, field_key: str) -> str | None:
+        """
+        Get specific metadata field value.
+
+        Args:
+            file_path: Path to the file
+            field_key: Metadata field key
+
+        Returns:
+            Field value or None if not found
+        """
+        return self.structured.get_field_value(file_path, field_key)
+
+    def update_field_value(self, file_path: str, field_key: str, field_value: str) -> bool:
+        """
+        Update metadata field value.
+
+        Args:
+            file_path: Path to the file
+            field_key: Metadata field key
+            field_value: New field value
+
+        Returns:
+            True if successful, False otherwise
+        """
+        return self.structured.update_field_value(file_path, field_key, field_value)
+
+    def add_custom_field(
+        self, field_key: str, field_name: str, category: str, **kwargs
+    ) -> bool:
+        """
+        Add custom metadata field definition.
+
+        Args:
+            field_key: Unique field key
+            field_name: Human-readable field name
+            category: Category name
+            **kwargs: Additional field properties
+
+        Returns:
+            True if successful, False otherwise
+        """
+        return self.structured.add_custom_field(field_key, field_name, category, **kwargs)
+
+    def get_available_categories(self) -> list[dict]:
+        """
+        Get available metadata categories.
+
+        Returns:
+            List of category dictionaries
+        """
+        return self.structured.get_available_categories()
+
+    def get_available_fields(self, category: str | None = None) -> list[dict]:
+        """
+        Get available metadata fields, optionally filtered by category.
+
+        Args:
+            category: Optional category name to filter by
+
+        Returns:
+            List of field dictionaries
+        """
+        return self.structured.get_available_fields(category)
+
+    def search_files_by_metadata(self, field_key: str, field_value: str) -> list[str]:
+        """
+        Search files by metadata field value.
+
+        Args:
+            field_key: Metadata field key
+            field_value: Value to search for
+
+        Returns:
+            List of file paths matching the criteria
+        """
+        return self.structured.search_files_by_metadata(field_key, field_value)
+
+    def refresh_structured_caches(self) -> None:
+        """Refresh structured metadata caches."""
+        self.structured.refresh_caches()
+
+    # =====================================
     # Cleanup Methods
     # =====================================
 
@@ -1421,6 +1603,10 @@ class UnifiedMetadataManager(QObject):
         # Clean up ExifTool wrapper
         if hasattr(self, "_exiftool_wrapper") and self._exiftool_wrapper:
             self._exiftool_wrapper.close()
+
+        # Clean up structured manager
+        if self._structured_manager is not None:
+            self._structured_manager = None
 
         # Clear loading state
         self._currently_loading.clear()
