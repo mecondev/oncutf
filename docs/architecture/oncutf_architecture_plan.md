@@ -752,12 +752,22 @@ with db_manager.get_connection() as conn:
 - **Action:** Based on A4 decision, migrate or retire
 - **Status:** Blocked by A4
 
-**Task A6: Standardize Progress Reporting [PENDING]**
-- **Files:** `core/status_manager.py`, worker base classes
-- **Create:** Standard progress callback interface
-- **Ensure:** All workers use same signal pattern
-- **Benefit:** Consistent UI updates, easier testing
-- **Status:** Not started
+**✅ Task A6: Standardize Progress Reporting [COMPLETED]**
+- **Files:** New `core/progress_protocol.py`, `tests/test_progress_protocol.py`
+- **Created:** Standard progress callback interface with type-safe protocols
+- **Components:**
+  - `ProgressCallback` protocol for item-based progress
+  - `SizeProgressCallback` protocol for byte-level progress
+  - `ProgressInfo` and `SizeProgress` dataclasses
+  - `ProgressSignals` mixin for Qt workers
+  - Helper functions for formatting and signal bridging
+- **Benefits:**
+  - Type-safe progress callbacks (Protocol-based)
+  - Consistent progress reporting across all workers
+  - Easy testing with mock callbacks
+  - Clear documentation of progress contracts
+- **Tests:** 24/24 passing
+- **Status:** Complete - Standard progress interface implemented
 
 **Task A7: Document Threading Patterns [PENDING]**
 - **Create:** `docs/threading_patterns.md`

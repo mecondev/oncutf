@@ -388,7 +388,57 @@ def cleanup_on_exit():
 
 ---
 
-## 11. Metrics & Statistics
+## 11. Progress Reporting Standards
+
+### 11.1 Progress Protocol
+**File:** `core/progress_protocol.py`
+
+**Status:** ✅ **NEW** (Task A6 - November 21, 2025)
+
+**Purpose:** Standard progress reporting interface for all concurrent operations
+
+**Key Components:**
+- `ProgressCallback` - Protocol for item-based progress callbacks
+- `SizeProgressCallback` - Protocol for byte-level progress callbacks
+- `ProgressInfo` - Dataclass for progress state
+- `SizeProgress` - Dataclass for size-based progress
+- `ProgressSignals` - Mixin for Qt worker signals
+
+**Features:**
+- Type-safe progress callbacks using Protocol
+- Consistent progress reporting patterns
+- Helper functions for formatting
+- Qt signal bridge helpers
+- Full test coverage (24 tests)
+
+**Usage Example:**
+```python
+from core.progress_protocol import ProgressCallback, create_progress_callback
+
+# Define callback function
+def my_progress(current: int, total: int, message: str = "") -> None:
+    print(f"Progress: {current}/{total} - {message}")
+
+# Type checker verifies protocol compliance
+callback: ProgressCallback = my_progress
+
+# Or bridge from Qt signals
+progress_cb, size_cb = create_progress_callback(
+    progress_signal=worker.progress,
+    size_signal=worker.size_progress
+)
+```
+
+**Benefits:**
+- All workers report progress consistently
+- Type-safe interfaces (mypy validation)
+- Easy testing with mock callbacks
+- Clear documentation of contracts
+- Simplified UI integration
+
+---
+
+## 12. Metrics & Statistics
 
 ### Current Thread Usage Estimate:
 - Main UI thread: 1
@@ -412,20 +462,27 @@ def cleanup_on_exit():
 
 ---
 
-## Conclusion
+## 13. Conclusion
 
-The oncutf application uses a **dual concurrency model** with Qt threads as primary and asyncio as secondary (underutilized). Key findings:
+The oncutf application now uses a **Qt-only concurrency model** (as of November 2025). Key findings:
 
 **Strengths:**
-- Well-designed ThreadPoolManager
-- Proper signal/slot communication
-- Timer consolidation prevents UI flooding
-- Thread-safe database access
+- ✅ Well-designed ThreadPoolManager with health checks
+- ✅ Coordinated shutdown with progress reporting
+- ✅ Standard progress reporting protocol (type-safe)
+- ✅ Proper signal/slot communication
+- ✅ Timer consolidation prevents UI flooding
+- ✅ Thread-safe database access
 
-**Weaknesses:**
-- Dual concurrency models add complexity
-- No coordinated shutdown
-- No health monitoring
-- Multiple overlapping loader implementations
+**Improvements Made:**
+- ✅ Removed unused asyncio infrastructure (Task A5)
+- ✅ Added health check APIs to all concurrent components (Task A2)
+- ✅ Implemented shutdown coordinator with ordered phases (Task A3)
+- ✅ Standardized progress reporting with Protocol (Task A6)
+- ✅ Simplified mental model (Qt-only)
 
-**Next Steps:** Proceed to Task A2 (Health Check API)
+**Remaining Tasks:**
+- ⏳ Task A7: Document threading patterns
+
+**Overall Status:** Concurrency model is now **simple, consistent, and well-tested** (295/295 tests passing).
+
