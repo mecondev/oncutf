@@ -34,7 +34,6 @@ class ShutdownPhase(Enum):
     """Shutdown phases in execution order."""
 
     TIMERS = "timers"
-    ASYNC_OPERATIONS = "async_operations"
     THREAD_POOL = "thread_pool"
     DATABASE = "database"
     EXIFTOOL = "exiftool"
@@ -74,7 +73,6 @@ class ShutdownCoordinator(QObject):
     # Default timeouts per phase (seconds)
     DEFAULT_TIMEOUTS = {
         ShutdownPhase.TIMERS: 2.0,
-        ShutdownPhase.ASYNC_OPERATIONS: 5.0,
         ShutdownPhase.THREAD_POOL: 10.0,
         ShutdownPhase.DATABASE: 3.0,
         ShutdownPhase.EXIFTOOL: 5.0,
@@ -100,7 +98,6 @@ class ShutdownCoordinator(QObject):
 
         # Component references (set via register methods)
         self._timer_manager = None
-        self._async_manager = None
         self._thread_pool_manager = None
         self._database_manager = None
         self._exiftool_wrapper = None
@@ -111,11 +108,6 @@ class ShutdownCoordinator(QObject):
         """Register timer manager for shutdown."""
         self._timer_manager = timer_manager
         logger.debug("[ShutdownCoordinator] Timer manager registered")
-
-    def register_async_manager(self, async_manager):
-        """Register async operations manager for shutdown."""
-        self._async_manager = async_manager
-        logger.debug("[ShutdownCoordinator] Async manager registered")
 
     def register_thread_pool_manager(self, thread_pool_manager):
         """Register thread pool manager for shutdown."""
@@ -176,7 +168,6 @@ class ShutdownCoordinator(QObject):
         # Define shutdown phases in order
         phases = [
             (ShutdownPhase.TIMERS, self._shutdown_timers),
-            (ShutdownPhase.ASYNC_OPERATIONS, self._shutdown_async_operations),
             (ShutdownPhase.THREAD_POOL, self._shutdown_thread_pool),
             (ShutdownPhase.DATABASE, self._shutdown_database),
             (ShutdownPhase.EXIFTOOL, self._shutdown_exiftool),
@@ -328,10 +319,6 @@ class ShutdownCoordinator(QObject):
                 if hasattr(self._timer_manager, "health_check"):
                     return self._timer_manager.health_check()
 
-            elif phase == ShutdownPhase.ASYNC_OPERATIONS and self._async_manager:
-                if hasattr(self._async_manager, "health_check"):
-                    return self._async_manager.health_check()
-
             elif phase == ShutdownPhase.THREAD_POOL and self._thread_pool_manager:
                 if hasattr(self._thread_pool_manager, "health_check"):
                     return self._thread_pool_manager.health_check()
@@ -357,18 +344,6 @@ class ShutdownCoordinator(QObject):
             return True, None
         except Exception as e:
             return False, f"Timer shutdown failed: {e}"
-
-    def _shutdown_async_operations(self) -> tuple[bool, str | None]:
-        """Shutdown async operations manager."""
-        if not self._async_manager:
-            return True, None
-
-        try:
-            if hasattr(self._async_manager, "shutdown"):
-                self._async_manager.shutdown()
-            return True, None
-        except Exception as e:
-            return False, f"Async operations shutdown failed: {e}"
 
     def _shutdown_thread_pool(self) -> tuple[bool, str | None]:
         """Shutdown thread pool manager."""

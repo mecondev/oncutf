@@ -731,13 +731,23 @@ with db_manager.get_connection() as conn:
 - **Action:** Remove duplicates, restore missing methods, integrate shutdown coordinator
 - **Status:** Complete - 1280 lines, 108 unique methods, 0 duplicates, all tests passing
 
-**Task A4: Concurrency Decision Document [PENDING]**
-- **Files:** New `docs/concurrency_decision.md`
+**✅ Task A4: Concurrency Decision Document [COMPLETED]**
+- **Files:** New `docs/architecture/concurrency_decision.md`
 - **Action:** Document decision on asyncio usage based on A1 audit
-- **Decision:** Keep Qt-only model vs hybrid (Qt + asyncio)
-- **Status:** Not started
+- **Decision:** Qt-only model (remove asyncio infrastructure)
+- **Rationale:** Zero production usage, Qt threads handle all requirements
+- **Status:** Complete - Decision document created with full analysis
 
-**Task A5: Async Operations Migration [PENDING]**
+**✅ Task A5: AsyncOperationsManager Removal [COMPLETED]**
+- **Files:** Removed `core/async_operations_manager.py` (618 lines)
+- **Updated:** `main_window.py`, `core/shutdown_coordinator.py`
+- **Action:** Remove unused asyncio infrastructure
+- **Result:** 
+  - Removed: async_operations_manager.py (618 lines)
+  - Simplified: shutdown_coordinator.py (5 phases instead of 6)
+  - Removed: ASYNC_OPERATIONS phase from shutdown sequence
+  - Tests: 295/295 passing after removal
+- **Status:** Complete - Clean removal with zero breakage
 - **Files:** `core/async_operations_manager.py` (evaluate/simplify/remove)
 - **Action:** Based on A4 decision, migrate or retire
 - **Status:** Blocked by A4

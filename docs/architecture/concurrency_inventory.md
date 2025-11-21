@@ -100,35 +100,24 @@
 ### 2.1 Async Operations Manager
 **File:** `core/async_operations_manager.py`
 
-**Key Classes:**
-- `AsyncOperationsManager` - Main asyncio coordinator
-- Runs asyncio event loop in separate Python thread (not QThread)
+**Status:** ❌ **REMOVED** (Task A5 - November 21, 2025)
 
-**Features:**
-- Dedicated event loop in background thread
+**Reason:** Zero production usage found after comprehensive code audit. Entire asyncio infrastructure (618 lines) was unused dead code. Qt threading model handles all application requirements.
+
+**Previous Implementation:**
+- `AsyncOperationsManager` - Main asyncio coordinator
+- Ran asyncio event loop in separate Python thread
 - Task management with cancellation support
 - Integration with Qt signals for results
 - Executor for CPU/IO-bound tasks
 
-**Methods:**
-- `run_async_task(coro, callback)`
-- `run_batch_async(tasks, batch_size, callback)`
-- `cancel_all_tasks()`
-- `shutdown(timeout)`
-
-**Signals:**
-- `task_completed(task_id, result)`
-- `task_failed(task_id, error)`
-- `progress_update(current, total)`
-
-**Current Usage:** Underutilized - unclear which operations actually use it
-
-**Issues:**
+**Previous Issues:**
 - Separate from Qt thread model
 - Complex shutdown coordination required
-- Mixing Qt signals with asyncio adds complexity
+- Mixing Qt signals with asyncio added complexity
+- No actual usage in production code
 
-**Current State:** Present but not heavily used, candidate for removal/simplification
+**Decision:** Removed in favor of Qt-only concurrency model. See `docs/architecture/concurrency_decision.md` for full analysis.
 
 ---
 

@@ -1247,15 +1247,6 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 logger.debug(f"[MainWindow] Thread pool manager not available: {e}")
 
-            # Register async operations manager (if exists and active)
-            try:
-                from core.async_operations_manager import get_async_operations_manager
-
-                async_mgr = get_async_operations_manager()
-                self.shutdown_coordinator.register_async_manager(async_mgr)
-            except Exception as e:
-                logger.debug(f"[MainWindow] Async operations manager not available: {e}")
-
             # Register database manager
             if hasattr(self, "db_manager") and self.db_manager:
                 self.shutdown_coordinator.register_database_manager(self.db_manager)
