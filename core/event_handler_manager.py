@@ -447,16 +447,18 @@ class EventHandlerManager:
 
         elif action == action_save_sel:
             # Save modified metadata for selected files
-            if hasattr(self.parent_window, "metadata_manager"):
-                self.parent_window.metadata_manager.save_metadata_for_selected()
-            else:
+            try:
+                metadata_mgr = self.parent_window.context.get_manager('metadata')
+                metadata_mgr.save_metadata_for_selected()
+            except KeyError:
                 logger.warning("[EventHandler] No metadata manager available for save")
 
         elif action == action_save_all:
             # Save ALL modified metadata regardless of selection
-            if hasattr(self.parent_window, "metadata_manager"):
-                self.parent_window.metadata_manager.save_all_modified_metadata()
-            else:
+            try:
+                metadata_mgr = self.parent_window.context.get_manager('metadata')
+                metadata_mgr.save_all_modified_metadata()
+            except KeyError:
                 logger.warning("[EventHandler] No metadata manager available for save all")
 
         elif action == action_bulk_rotation:

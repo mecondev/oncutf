@@ -208,6 +208,9 @@ class MainWindow(QMainWindow):
         self._register_shutdown_components()
         logger.info("[MainWindow] Shutdown Coordinator initialized")
 
+        # --- Register all managers in ApplicationContext (Phase 2) ---
+        self._register_managers_in_context()
+
         self.setup_metadata_refresh_signals()
 
     def setup_metadata_refresh_signals(self):
@@ -1281,6 +1284,69 @@ class MainWindow(QMainWindow):
                         widget.emit_if_changed()
         except Exception as e:
             logger.warning(f"[MainWindow] Error updating metadata widget: {e}")
+
+    def _register_managers_in_context(self):
+        """
+        Register all managers in ApplicationContext for centralized access.
+        
+        This eliminates the need for parent_window.some_manager traversal patterns.
+        Components can access managers via context.get_manager('name') instead.
+        
+        Phase 2 of Application Context Migration.
+        """
+        try:
+            # Core managers
+            self.context.register_manager('table', self.table_manager)
+            self.context.register_manager('metadata', self.metadata_manager)
+            self.context.register_manager('selection', self.selection_manager)
+            self.context.register_manager('rename', self.rename_manager)
+            self.context.register_manager('preview', self.preview_manager)
+            
+            # UI managers
+            self.context.register_manager('ui', self.ui_manager)
+            self.context.register_manager('dialog', self.dialog_manager)
+            self.context.register_manager('status', self.status_manager)
+            self.context.register_manager('shortcut', self.shortcut_manager)
+            self.context.register_manager('splitter', self.splitter_manager)
+            self.context.register_manager('window_config', self.window_config_manager)
+            self.context.register_manager('column', self.column_manager)
+            
+            # File operations managers
+            self.context.register_manager('file_load', self.file_load_manager)
+            self.context.register_manager('file_operations', self.file_operations_manager)
+            self.context.register_manager('file_validation', self.file_validation_manager)
+            
+            # System managers
+            self.context.register_manager('db', self.db_manager)
+            self.context.register_manager('backup', self.backup_manager)
+            self.context.register_manager('rename_history', self.rename_history_manager)
+            
+            # Utility managers
+            self.context.register_manager('utility', self.utility_manager)
+            self.context.register_manager('event_handler', self.event_handler_manager)
+            self.context.register_manager('drag', self.drag_manager)
+            self.context.register_manager('drag_cleanup', self.drag_cleanup_manager)
+            self.context.register_manager('initialization', self.initialization_manager)
+            
+            # Service layer
+            self.context.register_manager('app_service', self.app_service)
+            self.context.register_manager('batch', self.batch_manager)
+            self.context.register_manager('config', self.config_manager)
+            
+            # Engines
+            self.context.register_manager('rename_engine', self.unified_rename_engine)
+            
+            logger.info(
+                f"[MainWindow] Registered {len(self.context.list_managers())} managers in ApplicationContext",
+                extra={"dev_only": True}
+            )
+            logger.debug(
+                f"[MainWindow] Available managers: {', '.join(self.context.list_managers())}",
+                extra={"dev_only": True}
+            )
+            
+        except Exception as e:
+            logger.error(f"[MainWindow] Error registering managers in context: {e}")
 
     def _register_shutdown_components(self):
         """Register all concurrent components with shutdown coordinator."""

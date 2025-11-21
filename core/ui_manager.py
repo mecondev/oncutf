@@ -72,7 +72,7 @@ class UIManager:
         self.parent_window.resize(optimal_size.width(), optimal_size.height())
 
         self.parent_window.setMinimumSize(WINDOW_MIN_WIDTH, WINDOW_MIN_HEIGHT)
-        self.parent_window.dialog_manager.center_window(self.parent_window)
+        self.parent_window.context.get_manager('dialog').center_window(self.parent_window)
 
     def _calculate_optimal_window_size(self):
         """Calculate optimal window size based on screen resolution and aspect ratio."""

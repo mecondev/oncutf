@@ -54,6 +54,9 @@ class ApplicationContext(QObject):
         self._file_store: FileStore | None = None
         self._selection_store: SelectionStore | None = None
 
+        # Manager registry (Phase 2: centralized manager access)
+        self._managers: dict[str, Any] = {}
+
         # Legacy state containers (will be removed gradually)
         self._files: list = []
         self._selected_rows: set[int] = set()
@@ -282,6 +285,77 @@ class ApplicationContext(QObject):
             base_metrics.update({f"filestore_{k}": v for k, v in file_store_metrics.items()})
 
         return base_metrics
+
+    # =====================================
+    # Manager Registry (Phase 2)
+    # =====================================
+
+    def register_manager(self, name: str, manager: Any) -> None:
+        """
+        Register a manager in the centralized registry.
+
+        This allows components to access managers through the context instead of
+        traversing the widget hierarchy (parent_window.some_manager).
+
+        Args:
+            name: Unique identifier for the manager (e.g., 'table', 'metadata', 'rename')
+            manager: The manager instance to register
+
+        Example:
+            context.register_manager('table', TableManager(self))
+            context.register_manager('metadata', get_unified_metadata_manager(self))
+        """
+        if name in self._managers:
+            logger.warning(
+                f"Manager '{name}' already registered, overwriting", extra={"dev_only": True}
+            )
+        self._managers[name] = manager
+        logger.debug(f"Manager '{name}' registered: {type(manager).__name__}", extra={"dev_only": True})
+
+    def get_manager(self, name: str) -> Any:
+        """
+        Get a manager from the registry by name.
+
+        Args:
+            name: Manager identifier (e.g., 'table', 'metadata', 'rename')
+
+        Returns:
+            The registered manager instance
+
+        Raises:
+            KeyError: If manager is not registered
+
+        Example:
+            table_mgr = context.get_manager('table')
+            metadata_mgr = context.get_manager('metadata')
+        """
+        if name not in self._managers:
+            available = ", ".join(sorted(self._managers.keys()))
+            raise KeyError(
+                f"Manager '{name}' not registered. Available managers: {available or 'none'}"
+            )
+        return self._managers[name]
+
+    def has_manager(self, name: str) -> bool:
+        """
+        Check if a manager is registered.
+
+        Args:
+            name: Manager identifier to check
+
+        Returns:
+            True if manager is registered, False otherwise
+        """
+        return name in self._managers
+
+    def list_managers(self) -> list[str]:
+        """
+        Get list of all registered manager names.
+
+        Returns:
+            List of manager names in alphabetical order
+        """
+        return sorted(self._managers.keys())
 
     # =====================================
     # Utility Methods
