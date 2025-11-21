@@ -362,7 +362,7 @@ class MainWindow(QMainWindow):
         self.app_service.load_files_from_paths(file_paths, clear=clear)
 
     def load_files_from_dropped_items(
-        self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier
+        self, paths: list[str], modifiers: Qt.KeyboardModifiers = Qt.NoModifier # type: ignore
     ) -> None:  # type: ignore
         """Load files from dropped items via Application Service."""
         self.app_service.load_files_from_dropped_items(paths, modifiers)
@@ -372,7 +372,7 @@ class MainWindow(QMainWindow):
         return self.app_service.prepare_folder_load(folder_path, clear=clear)
 
     def load_single_item_from_drop(
-        self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier
+        self, path: str, modifiers: Qt.KeyboardModifiers = Qt.NoModifier # type: ignore
     ) -> None:  # type: ignore
         """Load single item from drop via Application Service."""
         self.app_service.load_single_item_from_drop(path, modifiers)
@@ -441,7 +441,7 @@ class MainWindow(QMainWindow):
         self.app_service.handle_table_context_menu(position)
 
     def handle_file_double_click(
-        self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier
+        self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.NoModifier # type: ignore
     ) -> None:  # type: ignore
         """Handle file double click via Application Service."""
         self.app_service.handle_file_double_click(index, modifiers)
@@ -995,7 +995,7 @@ class MainWindow(QMainWindow):
             # Create database backup
             if hasattr(self, "backup_manager") and self.backup_manager:
                 try:
-                    self.backup_manager.create_backup(backup_type="auto")
+                    self.backup_manager.create_backup(backup_type="auto") # type: ignore
                     logger.info("[CloseEvent] Database backup created")
                 except Exception as e:
                     logger.warning(f"[CloseEvent] Database backup failed: {e}")
@@ -1012,7 +1012,7 @@ class MainWindow(QMainWindow):
             if hasattr(self, "batch_manager") and self.batch_manager:
                 try:
                     if hasattr(self.batch_manager, "flush_operations"):
-                        self.batch_manager.flush_operations()
+                        self.batch_manager.flush_operations() # type: ignore
                         logger.info("[CloseEvent] Batch operations flushed")
                 except Exception as e:
                     logger.warning(f"[CloseEvent] Batch flush failed: {e}")
@@ -1020,7 +1020,7 @@ class MainWindow(QMainWindow):
             # Cleanup drag operations
             if hasattr(self, "drag_manager") and self.drag_manager:
                 try:
-                    self.drag_manager.cleanup_resources()
+                    self.drag_manager.cleanup_resources() # type: ignore
                     logger.info("[CloseEvent] Drag manager cleaned up")
                 except Exception as e:
                     logger.warning(f"[CloseEvent] Drag cleanup failed: {e}")
@@ -1028,7 +1028,7 @@ class MainWindow(QMainWindow):
             # Close dialogs
             if hasattr(self, "dialog_manager") and self.dialog_manager:
                 try:
-                    self.dialog_manager.close_all_dialogs()
+                    self.dialog_manager.close_all_dialogs() # type: ignore
                     logger.info("[CloseEvent] All dialogs closed")
                 except Exception as e:
                     logger.warning(f"[CloseEvent] Dialog cleanup failed: {e}")
@@ -1056,7 +1056,7 @@ class MainWindow(QMainWindow):
             # Additional cleanup
             from core.application_context import ApplicationContext
 
-            ApplicationContext.destroy_instance()
+            ApplicationContext.destroy_instance() # type: ignore
             logger.info("[CloseEvent] Application context destroyed")
 
         except Exception as e:
@@ -1265,8 +1265,8 @@ class MainWindow(QMainWindow):
                 from utils.exiftool_wrapper import ExifToolWrapper
 
                 # Get any active instance
-                if ExifToolWrapper._instances:
-                    exiftool = next(iter(ExifToolWrapper._instances))
+                if ExifToolWrapper._instances: # type: ignore
+                    exiftool = next(iter(ExifToolWrapper._instances)) # type: ignore
                     self.shutdown_coordinator.register_exiftool_wrapper(exiftool)
             except Exception as e:
                 logger.debug(f"[MainWindow] ExifTool wrapper not available: {e}")
