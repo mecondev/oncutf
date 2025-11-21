@@ -13,8 +13,8 @@ Phase 4 of Application Context Migration: Complete Migration & Cleanup
 from typing import TYPE_CHECKING
 
 from core.pyqt_imports import Qt, QTimer
-from utils.icon_cache import load_preview_status_icons
-from utils.icon_utilities import create_colored_icon, prepare_status_icons
+from utils.icon_cache import load_preview_status_icons, prepare_status_icons
+from utils.icon_utilities import create_colored_icon
 from utils.icons_loader import icons_loader, load_metadata_icons
 from utils.logger_factory import get_cached_logger
 
@@ -165,7 +165,6 @@ class InitializationOrchestrator:
         - Configure window
         - Setup timers
         """
-        from core.batch_operations_manager import get_batch_manager
         from core.column_manager import ColumnManager
         from core.dialog_manager import DialogManager
         from core.drag_cleanup_manager import DragCleanupManager
@@ -175,7 +174,6 @@ class InitializationOrchestrator:
         from core.initialization_manager import InitializationManager
         from core.rename_manager import RenameManager
         from core.shortcut_manager import ShortcutManager
-        from core.signal_coordinator import SignalCoordinator
         from core.splitter_manager import SplitterManager
         from core.table_manager import TableManager
         from core.ui_manager import UIManager

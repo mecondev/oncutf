@@ -20,37 +20,15 @@ from PyQt5.QtCore import Qt
 
 # Import all config constants from centralized module
 # Core application modules
-from core.application_context import ApplicationContext
 from core.config_imports import *
-from core.dialog_manager import DialogManager
-from core.drag_cleanup_manager import DragCleanupManager
-from core.drag_manager import DragManager
-from core.event_handler_manager import EventHandlerManager
-from core.file_load_manager import FileLoadManager
-from core.file_operations_manager import FileOperationsManager
-from core.file_validation_manager import get_file_validation_manager
-from core.initialization_manager import InitializationManager
-from core.preview_manager import PreviewManager
 
 # Import all PyQt5 classes from centralized module
 from core.pyqt_imports import *
-from core.rename_manager import RenameManager
-from core.shortcut_manager import ShortcutManager
-from core.splitter_manager import SplitterManager
-from core.table_manager import TableManager
-from core.ui_manager import UIManager
-from core.utility_manager import UtilityManager
-from core.window_config_manager import WindowConfigManager
 
 # Data models and business logic modules
 from models.file_item import FileItem
-from models.file_table_model import FileTableModel
 
 # Utility functions and helpers
-from utils.icon_cache import load_preview_status_icons, prepare_status_icons
-from utils.icon_utilities import create_colored_icon
-from utils.icons_loader import icons_loader, load_metadata_icons
-from utils.json_config_manager import get_app_config_manager
 from utils.logger_factory import get_cached_logger
 
 # UI widgets and custom components
