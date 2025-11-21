@@ -187,7 +187,7 @@ class MainWindow(QMainWindow):
         self.preview_update_timer = QTimer(self)
         self.preview_update_timer.setSingleShot(True)
         self.preview_update_timer.setInterval(100)  # milliseconds
-        self.preview_update_timer.timeout.connect(self.generate_preview_names)
+        # Note: Signal connection moved to SignalCoordinator (Phase 3)
 
         # --- Initialize Application Service Layer ---
         from core.application_service import initialize_application_service
@@ -201,6 +201,10 @@ class MainWindow(QMainWindow):
         self.batch_manager = get_batch_manager(self)
         logger.info("[MainWindow] Batch Operations Manager initialized")
 
+        # --- Initialize Signal Coordinator ---
+        self.signal_coordinator = SignalCoordinator(self)
+        logger.info("[MainWindow] Signal Coordinator initialized")
+
         # --- Initialize Shutdown Coordinator ---
         from core.shutdown_coordinator import get_shutdown_coordinator
 
@@ -211,54 +215,8 @@ class MainWindow(QMainWindow):
         # --- Register all managers in ApplicationContext (Phase 2) ---
         self._register_managers_in_context()
 
-        self.setup_metadata_refresh_signals()
-
-    def setup_metadata_refresh_signals(self):
-        """Connect signals for hash, selection, and metadata changes to refresh metadata widgets."""
-        # Hash refresh - only connect if hash_worker exists and is not None
-        if (
-            hasattr(self, "event_handler_manager")
-            and hasattr(self.event_handler_manager, "hash_worker")
-            and self.event_handler_manager.hash_worker is not None
-        ):
-            try:
-                self.event_handler_manager.hash_worker.file_hash_calculated.connect(
-                    self.refresh_metadata_widgets
-                )  # type: ignore
-                logger.debug(
-                    "[MainWindow] Successfully connected hash_worker.file_hash_calculated signal"
-                )
-            except Exception as e:
-                logger.warning(f"[MainWindow] Failed to connect hash_worker signal: {e}")
-        else:
-            logger.debug("[MainWindow] hash_worker not available for signal connection")
-
-        # Selection refresh
-        if hasattr(self, "selection_store"):
-            self.selection_store.selection_changed.connect(
-                lambda _: self.refresh_metadata_widgets()
-            )
-            self.selection_store.selection_changed.connect(
-                lambda _: self.update_active_metadata_widget_options()
-            )
-        # Metadata refresh (try ApplicationContext or UnifiedMetadataManager)
-        try:
-            from core.application_context import get_app_context
-
-            context = get_app_context()
-            if context and hasattr(context, "metadata_changed"):
-                context.metadata_changed.connect(lambda *_: self.refresh_metadata_widgets())
-        except Exception:
-            pass
-        try:
-            if hasattr(self, "unified_metadata_manager") and hasattr(
-                self.unified_metadata_manager, "metadata_changed"
-            ):
-                self.unified_metadata_manager.metadata_changed.connect(
-                    lambda *_: self.refresh_metadata_widgets()
-                )
-        except Exception:
-            pass
+        # --- Setup all signal connections (Phase 3) ---
+        self.signal_coordinator.setup_all_signals()
 
     # --- Method definitions ---
 
@@ -1332,6 +1290,9 @@ class MainWindow(QMainWindow):
             self.context.register_manager('app_service', self.app_service)
             self.context.register_manager('batch', self.batch_manager)
             self.context.register_manager('config', self.config_manager)
+            
+            # Coordinators
+            self.context.register_manager('signal_coordinator', self.signal_coordinator)
             
             # Engines
             self.context.register_manager('rename_engine', self.unified_rename_engine)
