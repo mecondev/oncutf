@@ -195,13 +195,19 @@ class InitializationOrchestrator:
         self.window.initialization_manager = InitializationManager(self.window)
         self.window.column_manager = ColumnManager(self.window)
 
-        # Setup UI
-        self.window.ui_manager = UIManager(parent_window=self.window)
-        self.window.ui_manager.setup_all_ui()
-
         # Config managers
         self.window.config_manager = get_app_config_manager()
         self.window.window_config_manager = WindowConfigManager(self.window)
+
+        # Create UIManager (but don't setup UI yet)
+        self.window.ui_manager = UIManager(parent_window=self.window)
+
+        # Register managers in context BEFORE setting up UI
+        # (UI setup may use context.get_manager())
+        self.window._register_managers_in_context()
+
+        # Setup UI (now managers are available via context)
+        self.window.ui_manager.setup_all_ui()
 
         # Preview update timer
         self.window.preview_update_timer = QTimer(self.window)
@@ -245,9 +251,6 @@ class InitializationOrchestrator:
 
         # Register shutdown components
         self.window._register_shutdown_components()
-
-        # Register all managers in context
-        self.window._register_managers_in_context()
 
         # Setup all signal connections
         self.window.signal_coordinator.setup_all_signals()
