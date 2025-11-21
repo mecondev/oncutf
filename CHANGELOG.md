@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- **CRITICAL (Windows)**: Fixed application crash on exit with "Debug/Close Program" dialog
+  - Added timeout parameter to `thread.wait()` after `terminate()` to prevent infinite hang
+  - Fixed double cleanup race condition with ExifTool processes
+  - Added global `_cleanup_done` flag to prevent duplicate cleanup from `atexit`
+  - Improved thread termination logging with proper error reporting
+  - Windows-specific issue where Qt threads didn't terminate gracefully
+
 ## [1.3] - 2025-06-29
 
 ### Added

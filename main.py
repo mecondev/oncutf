@@ -61,9 +61,17 @@ logger.info(f"Application started at {now}")
 logger_effective_level = logger.getEffectiveLevel()
 logger.debug(f"Effective logging level: {logger_effective_level}", extra={"dev_only": True})
 
+# Flag to prevent double cleanup
+_cleanup_done = False
+
 
 def cleanup_on_exit():
     """Cleanup function to run on application exit or signal."""
+    global _cleanup_done
+    if _cleanup_done:
+        return
+    _cleanup_done = True
+
     try:
         from utils.exiftool_wrapper import ExifToolWrapper
 
@@ -224,10 +232,12 @@ def main() -> int:
         logger.info("Application shutting down with exit code: %d", exit_code)
 
         # Force cleanup any remaining ExifTool processes
+        global _cleanup_done
         try:
             from utils.exiftool_wrapper import ExifToolWrapper
 
             ExifToolWrapper.force_cleanup_all_exiftool_processes()
+            _cleanup_done = True  # Mark cleanup as done to prevent atexit duplicate
             logger.info("ExifTool processes cleaned up")
         except Exception as e:
             logger.warning(f"Error cleaning up ExifTool processes: {e}")

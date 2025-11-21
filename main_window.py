@@ -1203,8 +1203,10 @@ class MainWindow(QMainWindow):
                 logger.info(f"[CloseEvent] Terminating QThread: {thread.__class__.__name__}")
                 thread.quit()
                 if not thread.wait(1000):  # Wait max 1 second
+                    logger.warning(f"[CloseEvent] Thread {thread.__class__.__name__} did not quit gracefully, terminating...")
                     thread.terminate()
-                    thread.wait(500)
+                    if not thread.wait(500):  # CRITICAL: Add timeout to prevent infinite hang
+                        logger.error(f"[CloseEvent] Thread {thread.__class__.__name__} did not terminate after 500ms")
 
     def _force_close_progress_dialogs(self) -> None:
         """Force close any active progress dialogs except the shutdown dialog."""
