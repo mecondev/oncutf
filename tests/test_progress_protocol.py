@@ -4,7 +4,6 @@ Module: test_progress_protocol.py
 Tests for the standard progress reporting protocol.
 """
 
-import pytest
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from core.progress_protocol import (
@@ -184,7 +183,7 @@ class TestCreateProgressCallback:
         assert progress_cb is None
         assert size_cb is None
 
-    def test_create_with_partial_signals(self, qtbot):
+    def test_create_with_partial_signals(self):
         """Test create_progress_callback with only one signal."""
 
         class TestWorker(QObject):

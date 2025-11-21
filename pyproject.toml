@@ -85,7 +85,7 @@ ignore_errors = true
 target-version = "py312"
 line-length = 100
 fix = true
-exclude = ["backups", ".cache", "temp", "reports", "venv", "__pycache__", "*.pyc"]
+exclude = ["backups", ".cache", "temp", "reports", "docs", "venv", "__pycache__", "*.pyc", "*.md"]
 
 [tool.ruff.lint]
 select = [
