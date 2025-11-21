@@ -806,64 +806,68 @@ with db_manager.get_connection() as conn:
 
 ---
 
-### Area B: Application Context Migration 🟡 MEDIUM PRIORITY
+### Area B: Application Context Migration 🟢 IN PROGRESS
+
+**See:** [Context Migration Plan](./context_migration_plan.md) for detailed migration guide.
 
 **Current Situation:**
 - ApplicationContext exists but in "skeleton mode"
-- Most state still in MainWindow (1532 lines)
+- Most state still in MainWindow (1269 lines)
 - ApplicationService provides facade but requires MainWindow
 - Incomplete migration to centralized state
+- FileStore and SelectionStore created but not fully adopted
 
 **Goals:**
 1. Complete ApplicationContext migration
-2. Reduce MainWindow size and responsibilities
+2. Reduce MainWindow size from 1269 to ~500 lines (-60%)
 3. Enable easier testing of components
 4. Clearer dependency graph
 
-**Proposed Changes:**
+**Migration Phases:**
 
-**Step 1: Complete Store Initialization**
-- **Files:** `core/application_context.py`, `core/file_store.py`, `core/selection_store.py`
-- **Action:** Move remaining file/selection state from MainWindow
-- **Ensure:** All state access goes through context
-- **Migrate:** Current folder path, recursive flag, etc.
+**Phase 1: Core State Migration [IN PROGRESS]**
+- FileStore and SelectionStore created ✓
+- Need to remove `self.files` from MainWindow
+- Need to remove folder state from MainWindow
+- All file operations should use FileStore
 
-**Step 2: Manager Registration in Context**
-- **Files:** `core/application_context.py`
-- **Add:** Manager registry: `register_manager(name, instance)`
-- **Benefit:** Managers accessible without MainWindow traversal
-- **Pattern:**
-  ```python
-  context = get_app_context()
-  metadata_mgr = context.get_manager('metadata')
-  ```
+**Phase 2: Manager Registration System [PLANNED]**
+- Add manager registry to ApplicationContext
+- Register all 15+ managers on startup
+- Enable access via `context.get_manager('name')`
+- Remove parent_window traversals
 
-**Step 3: Break MainWindow Monolith**
-- **Extract:** Menu/toolbar setup → `core/menu_manager.py`
-- **Extract:** Widget creation → `core/widget_factory.py`
-- **Extract:** Layout setup → improved `ui_manager.py`
-- **Result:** MainWindow becomes wiring only
+**Phase 3: UI Component Separation [PLANNED]**
+- Extract MenuManager (menu & toolbar setup)
+- Extract SignalCoordinator (signal connections)
+- Streamline MainWindow.__init__() to <200 lines
 
-**Step 4: Update ApplicationService**
-- **Files:** `core/application_service.py`
-- **Change:** Get managers from context instead of main_window reference
-- **Remove:** Hard requirement for MainWindow
-- **Enable:** Testing with mock context
+**Phase 4: Complete Migration [PLANNED]**
+- MainWindow becomes thin coordinator (~500 lines)
+- All state managed by ApplicationContext
+- Clear ownership boundaries
+- Improved test coverage
 
 **Expected Outcomes:**
-- MainWindow reduced to ~500 lines
+- MainWindow reduced to ~500 lines (-60%)
 - Clear state ownership
-- Easier unit testing
+- Easier unit testing (mock context)
 - Better separation of concerns
+- Reduced circular dependencies
+
+**Files to Create:**
+- ✓ `docs/architecture/context_migration_plan.md` (comprehensive guide)
+- `core/menu_manager.py` (menu/toolbar extraction)
+- `core/signal_coordinator.py` (signal connection coordination)
 
 **Files to Modify:**
-- `core/application_context.py` (complete migration)
-- `core/file_store.py` (move remaining state)
-- `core/selection_store.py` (move remaining state)
-- `main_window.py` (reduce size)
-- `core/application_service.py` (use context)
-- New: `core/menu_manager.py`
-- New: `core/widget_factory.py`
+- `core/application_context.py` (complete migration, manager registry)
+- `core/file_store.py` (complete integration)
+- `core/selection_store.py` (complete integration)
+- `main_window.py` (reduce size, remove state)
+- `core/application_service.py` (use context instead of MainWindow)
+- `file_table_model.py` (get files from FileStore)
+- Various managers (use context.get_manager())
 
 ---
 
