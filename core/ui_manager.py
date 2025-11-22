@@ -332,7 +332,6 @@ class UIManager:
         # Lazy import: Only load when setting up right panel
         from widgets.metadata_tree_view import MetadataTreeView
         from widgets.preview_tables_view import PreviewTablesView
-        from widgets.rename_modules_area import RenameModulesArea
 
         self.parent_window.right_frame = QFrame()
         right_layout = QVBoxLayout(self.parent_window.right_frame)
@@ -453,6 +452,11 @@ class UIManager:
 
     def setup_bottom_layout(self) -> None:
         """Setup bottom layout for rename modules and preview."""
+        # Lazy import: Only load when setting up bottom layout
+        from widgets.final_transform_container import FinalTransformContainer
+        from widgets.preview_tables_view import PreviewTablesView
+        from widgets.rename_modules_area import RenameModulesArea
+
         # --- Bottom Frame: Rename Modules + Preview ---
         self.parent_window.bottom_frame = QFrame()
         self.parent_window.bottom_layout = QVBoxLayout(self.parent_window.bottom_frame)
@@ -478,8 +482,6 @@ class UIManager:
         left_layout.addSpacing(8)
 
         # Bottom container: Final transform container
-        from widgets.final_transform_container import FinalTransformContainer
-
         self.parent_window.final_transform_container = FinalTransformContainer(
             parent=left_container
         )
