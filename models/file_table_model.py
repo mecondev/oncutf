@@ -63,6 +63,9 @@ class FileTableModel(QAbstractTableModel):
         self._visible_columns = self._load_default_visible_columns()
         self._column_mapping = self._create_column_mapping()
 
+        # Tooltip cache to avoid repeated get_entry() calls on hover
+        self._tooltip_cache: dict[str, str] = {}  # full_path -> tooltip
+
     def _load_default_visible_columns(self) -> list:
         """Load default visible columns configuration using UnifiedColumnService."""
         from core.unified_column_service import get_column_service
@@ -349,7 +352,16 @@ class FileTableModel(QAbstractTableModel):
         return hash_value if hash_value else ""
 
     def _get_unified_tooltip(self, file) -> str:
-        """Get unified tooltip for all columns showing metadata and hash status."""
+        """Get unified tooltip for all columns showing metadata and hash status.
+        
+        Uses tooltip cache to avoid repeated get_entry() calls on hover events.
+        Cache is invalidated when metadata/hash changes.
+        """
+        # Check cache first
+        cached_tooltip = self._tooltip_cache.get(file.full_path)
+        if cached_tooltip is not None:
+            return cached_tooltip
+
         tooltip_parts = []
 
         # Add metadata status
@@ -376,7 +388,12 @@ class FileTableModel(QAbstractTableModel):
         else:
             tooltip_parts.append("no hash")
 
-        return "\n".join(tooltip_parts)
+        tooltip = "\n".join(tooltip_parts)
+        
+        # Cache the result
+        self._tooltip_cache[file.full_path] = tooltip
+        
+        return tooltip
 
     def _create_combined_icon(self, metadata_status: str, hash_status: str) -> QIcon:
         """
@@ -756,6 +773,10 @@ class FileTableModel(QAbstractTableModel):
         self.beginResetModel()
         self.files = files
         # self._update_column_mapping()  # Removed because it's not needed and causes error
+        
+        # Clear tooltip cache when new files are loaded
+        self._tooltip_cache.clear()
+        
         self._update_icons_immediately()
         self.endResetModel()
         logger.debug(
@@ -834,6 +855,9 @@ class FileTableModel(QAbstractTableModel):
         if not self.files:
             return
 
+        # Clear tooltip cache to force regeneration with new metadata/hash status
+        self._tooltip_cache.clear()
+
         # Emit dataChanged for the entire first column to refresh icons and tooltips
         top_left = self.index(0, 0)
         bottom_right = self.index(len(self.files) - 1, 0)
@@ -850,6 +874,9 @@ class FileTableModel(QAbstractTableModel):
         """
         if not self.files:
             return
+
+        # Invalidate tooltip cache for this specific file
+        self._tooltip_cache.pop(file_path, None)
 
         # Find the file in our list
         for i, file_item in enumerate(self.files):

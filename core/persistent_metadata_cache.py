@@ -152,13 +152,17 @@ class PersistentMetadataCache:
 
         logger.debug(
             f"[PersistentMetadataCache] get_entry: file_path='{path}' -> norm_path='{norm_path}', "
-            f"in_memory={norm_path in self._memory_cache}"
+            f"in_memory={norm_path in self._memory_cache}",
+            extra={"dev_only": True}
         )
 
         # Check memory cache first
         if norm_path in self._memory_cache:
             self._cache_hits += 1
-            logger.debug(f"[PersistentMetadataCache] Cache HIT for: {norm_path}")
+            logger.debug(
+                f"[PersistentMetadataCache] Cache HIT for: {norm_path}",
+                extra={"dev_only": True}
+            )
             return self._memory_cache[norm_path]
 
         # Load from database

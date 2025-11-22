@@ -17,13 +17,9 @@ from utils.icons_loader import get_app_icon, get_menu_icon
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_selection_update, schedule_ui_update
 from utils.tooltip_helper import TooltipType, setup_tooltip
-from widgets.custom_file_system_model import CustomFileSystemModel
-from widgets.file_table_view import FileTableView
-from widgets.file_tree_view import FileTreeView
-from widgets.interactive_header import InteractiveHeader
-from widgets.metadata_tree_view import MetadataTreeView
-from widgets.preview_tables_view import PreviewTablesView
-from widgets.rename_modules_area import RenameModulesArea
+
+# Lazy imports: Heavy widget imports moved inside methods to speed up startup
+# These are only needed during UI setup, not module initialization
 
 if TYPE_CHECKING:
     from main_window import MainWindow
@@ -211,6 +207,10 @@ class UIManager:
 
     def setup_left_panel(self) -> None:
         """Setup left panel (folder tree)."""
+        # Lazy import: Only load when setting up left panel
+        from widgets.custom_file_system_model import CustomFileSystemModel
+        from widgets.file_tree_view import FileTreeView
+
         self.parent_window.left_frame = QFrame()
         left_layout = QVBoxLayout(self.parent_window.left_frame)
         left_layout.addWidget(QLabel("Folders"))
@@ -274,6 +274,10 @@ class UIManager:
 
     def setup_center_panel(self) -> None:
         """Setup center panel (file table view)."""
+        # Lazy import: Only load when setting up center panel
+        from widgets.file_table_view import FileTableView
+        from widgets.interactive_header import InteractiveHeader
+
         self.parent_window.center_frame = QFrame()
         center_layout = QVBoxLayout(self.parent_window.center_frame)
 
@@ -325,6 +329,9 @@ class UIManager:
 
     def setup_right_panel(self) -> None:
         """Setup right panel (metadata tree view)."""
+        # Lazy import: Only load when setting up right panel
+        from widgets.metadata_tree_view import MetadataTreeView
+
         self.parent_window.right_frame = QFrame()
         right_layout = QVBoxLayout(self.parent_window.right_frame)
         # Information label with dynamic metadata count
@@ -444,6 +451,11 @@ class UIManager:
 
     def setup_bottom_layout(self) -> None:
         """Setup bottom layout for rename modules and preview."""
+        # Lazy import: Only load when setting up bottom layout
+        from widgets.final_transform_container import FinalTransformContainer
+        from widgets.preview_tables_view import PreviewTablesView
+        from widgets.rename_modules_area import RenameModulesArea
+
         # --- Bottom Frame: Rename Modules + Preview ---
         self.parent_window.bottom_frame = QFrame()
         self.parent_window.bottom_layout = QVBoxLayout(self.parent_window.bottom_frame)
@@ -469,8 +481,6 @@ class UIManager:
         left_layout.addSpacing(8)
 
         # Bottom container: Final transform container
-        from widgets.final_transform_container import FinalTransformContainer
-
         self.parent_window.final_transform_container = FinalTransformContainer(
             parent=left_container
         )
