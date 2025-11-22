@@ -38,16 +38,20 @@ class EventHandlerManager:
 
     def __init__(self, parent_window):
         self.parent_window = parent_window
-        
+
         # Delegate hash operations to specialized manager
         from core.hash_operations_manager import HashOperationsManager
         self.hash_ops = HashOperationsManager(parent_window)
-        
+
+        # Delegate metadata operations to specialized manager
+        from core.metadata_operations_manager import MetadataOperationsManager
+        self.metadata_ops = MetadataOperationsManager(parent_window)
+
         # Keep backward compatibility references (will be removed in cleanup)
         self.hash_worker = None
         self.hash_dialog = None
         self._operation_cancelled = False  # Track if operation was cancelled
-        
+
         logger.debug("EventHandlerManager initialized", extra={"dev_only": True})
 
     def handle_browse(self) -> None:
@@ -495,11 +499,12 @@ class EventHandlerManager:
 
         elif action == action_export_sel:
             # Handle metadata export for selected files
-            self._handle_export_metadata(selected_files, "selected")
+            self.metadata_ops.handle_export_metadata(selected_files, "selected")
 
         elif action == action_export_all:
             # Handle metadata export for all files
-            self._handle_export_metadata(self.parent_window.file_model.files, "all")
+            all_files = self.parent_window.file_table_model.get_all_file_items() if hasattr(self.parent_window, "file_table_model") and self.parent_window.file_table_model else []
+            self.metadata_ops.handle_export_metadata(all_files, "all")
 
     def handle_file_double_click(
         self, index: QModelIndex, modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifiers()
