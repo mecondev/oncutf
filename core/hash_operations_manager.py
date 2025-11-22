@@ -25,7 +25,7 @@ logger = get_cached_logger(__name__)
 class HashOperationsManager:
     """
     Manages all hash-related operations (duplicates, comparison, checksums).
-    
+
     This manager handles:
     - Finding duplicate files based on CRC32 hashes
     - Comparing files with external folders
@@ -37,7 +37,7 @@ class HashOperationsManager:
     def __init__(self, parent_window):
         """
         Initialize the hash operations manager.
-        
+
         Args:
             parent_window: Reference to the main window for accessing models, views, and managers
         """
@@ -52,10 +52,10 @@ class HashOperationsManager:
     def handle_find_duplicates(self, selected_files: list | None) -> None:
         """
         Handle duplicate file detection.
-        
+
         Searches for files with identical CRC32 hashes within the selected files
         or all files in the current folder.
-        
+
         Args:
             selected_files: List of FileItem objects to search, or None for all files
         """
@@ -82,10 +82,10 @@ class HashOperationsManager:
     def check_files_have_hashes(self, files: list | None = None) -> bool:
         """
         Check if specified files or all files have hash values.
-        
+
         Args:
             files: List of FileItem objects to check, or None for all files
-            
+
         Returns:
             bool: True if any files have hashes, False otherwise
         """
@@ -94,13 +94,16 @@ class HashOperationsManager:
     def get_files_without_hashes(self) -> list:
         """
         Get list of files that don't have hash values yet.
-        
+
         Returns:
             list: FileItem objects without hashes
         """
-        if not hasattr(self.parent_window, "file_table_model") or not self.parent_window.file_table_model:
+        if (
+            not hasattr(self.parent_window, "file_table_model")
+            or not self.parent_window.file_table_model
+        ):
             return []
-            
+
         all_files = self.parent_window.file_table_model.get_all_file_items()
         return [f for f in all_files if not self._file_has_hash(f)]
 
@@ -109,7 +112,7 @@ class HashOperationsManager:
     def _handle_find_duplicates(self, selected_files: list | None) -> None:
         """
         Handle duplicate file detection in selected or all files.
-        
+
         Args:
             selected_files: List of FileItem objects to search, or None for all files
         """
@@ -119,7 +122,10 @@ class HashOperationsManager:
             files_to_check = selected_files
         else:
             scope = "all"
-            if not hasattr(self.parent_window, "file_table_model") or not self.parent_window.file_table_model:
+            if (
+                not hasattr(self.parent_window, "file_table_model")
+                or not self.parent_window.file_table_model
+            ):
                 logger.warning("[HashManager] No file model available")
                 return
             files_to_check = self.parent_window.file_table_model.get_all_file_items()
@@ -128,7 +134,9 @@ class HashOperationsManager:
             logger.warning(f"[HashManager] No files to check for duplicates (scope: {scope})")
             return
 
-        logger.info(f"[HashManager] Finding duplicates in {len(files_to_check)} files (scope: {scope})")
+        logger.info(
+            f"[HashManager] Finding duplicates in {len(files_to_check)} files (scope: {scope})"
+        )
 
         # Convert FileItem objects to file paths
         file_paths = [item.full_path for item in files_to_check]
@@ -137,11 +145,15 @@ class HashOperationsManager:
         self._start_hash_operation("duplicates", file_paths, scope=scope)
 
     def _start_hash_operation(
-        self, operation: str, file_paths: list, scope: str | None = None, external_folder: str | None = None
+        self,
+        operation: str,
+        file_paths: list,
+        scope: str | None = None,
+        external_folder: str | None = None,
     ) -> None:
         """
         Start a hash operation using a worker thread with progress dialog.
-        
+
         Args:
             operation: Type of operation ("duplicates", "compare", "checksums")
             file_paths: List of file paths to process
@@ -198,12 +210,14 @@ class HashOperationsManager:
         # Start worker
         self.hash_worker.start()
 
-        logger.info(f"[HashManager] Started hash operation: {operation} for {len(file_paths)} files")
+        logger.info(
+            f"[HashManager] Started hash operation: {operation} for {len(file_paths)} files"
+        )
 
     def _create_hash_progress_dialog(self, operation: str, file_count: int) -> None:
         """
         Create and show a progress dialog for hash operations.
-        
+
         Args:
             operation: Type of operation for dialog title
             file_count: Number of files being processed
@@ -236,20 +250,18 @@ class HashOperationsManager:
     def _cancel_hash_operation(self) -> None:
         """Cancel the current hash operation."""
         logger.info("[HashManager] User cancelled hash operation")
-        
+
         # Set cancellation flag
         self._operation_cancelled = True
-        
+
         # Tell worker to stop
         if self.hash_worker:
             self.hash_worker.cancel()
-        
+
         # Update status
         if hasattr(self.parent_window, "set_status"):
             self.parent_window.set_status(
-                "Hash operation cancelled", 
-                color=STATUS_COLORS["no_action"], 
-                auto_reset=True
+                "Hash operation cancelled", color=STATUS_COLORS["no_action"], auto_reset=True
             )
 
     # ===== Progress Callbacks =====
@@ -257,7 +269,7 @@ class HashOperationsManager:
     def _on_hash_progress_updated(self, current: int, total: int, message: str) -> None:
         """
         Handle hash calculation progress updates.
-        
+
         Args:
             current: Current file number
             total: Total number of files
@@ -269,7 +281,7 @@ class HashOperationsManager:
     def _on_size_progress_updated(self, current_bytes: int, total_bytes: int) -> None:
         """
         Handle file size progress updates (for large files).
-        
+
         Args:
             current_bytes: Bytes processed so far
             total_bytes: Total file size
@@ -277,7 +289,7 @@ class HashOperationsManager:
         if hasattr(self, "hash_dialog") and self.hash_dialog:
             # Calculate percentage
             percentage = (current_bytes / total_bytes * 100) if total_bytes > 0 else 0
-            
+
             # Format bytes
             def format_bytes(b: int) -> str:
                 for unit in ["B", "KB", "MB", "GB"]:
@@ -285,7 +297,7 @@ class HashOperationsManager:
                         return f"{b:.1f} {unit}"
                     b /= 1024.0
                 return f"{b:.1f} TB"
-            
+
             message = f"Reading: {format_bytes(current_bytes)} / {format_bytes(total_bytes)} ({percentage:.0f}%)"
             self.hash_dialog.set_message(message)
 
@@ -293,24 +305,27 @@ class HashOperationsManager:
         """
         Handle notification that a file's hash was calculated.
         Updates the file table icon in real-time.
-        
+
         Args:
             file_path: Path to the file
             hash_value: Calculated hash value
         """
         try:
             # Find FileItem in model
-            if not hasattr(self.parent_window, "file_table_model") or not self.parent_window.file_table_model:
+            if (
+                not hasattr(self.parent_window, "file_table_model")
+                or not self.parent_window.file_table_model
+            ):
                 return
 
             file_item = self.parent_window.file_table_model.find_file_by_path(file_path)
             if file_item:
                 # Update hash icon immediately
                 self.parent_window.file_table_model.update_file_hash_icon(file_item)
-                
+
                 logger.debug(
                     f"[HashWorker] Updated hash icon for {file_path}: {hash_value[:16]}...",
-                    extra={"dev_only": True}
+                    extra={"dev_only": True},
                 )
         except Exception as e:
             logger.warning(f"[HashWorker] Error updating icon for {file_path}: {e}")
@@ -707,28 +722,27 @@ class HashOperationsManager:
     def _check_files_have_hashes(self, files: list | None = None) -> bool:
         """
         Check if any of the specified files have hash values.
-        
+
         Args:
             files: List of FileItem objects to check, or None for all files
-            
+
         Returns:
             bool: True if any files have hashes, False otherwise
         """
         if files is None:
             # Check all files
-            if not hasattr(self.parent_window, "file_table_model") or not self.parent_window.file_table_model:
+            if (
+                not hasattr(self.parent_window, "file_table_model")
+                or not self.parent_window.file_table_model
+            ):
                 return False
             files = self.parent_window.file_table_model.get_all_file_items()
-        
+
         if not files:
             return False
-        
+
         # Check if any file has a hash
-        for file_item in files:
-            if self._file_has_hash(file_item):
-                return True
-        
-        return False
+        return any(self._file_has_hash(file_item) for file_item in files)
 
     def _file_has_hash(self, file_item) -> bool:
         """Check if a specific file has a hash value."""
