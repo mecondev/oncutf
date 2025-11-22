@@ -797,6 +797,7 @@ class MainWindow(QMainWindow):
 
             center_dialog_on_parent_screen(self.shutdown_dialog, self)
 
+            # Single processEvents to show dialog, avoid multiple calls during shutdown
             QApplication.processEvents()
 
             logger.info("[CloseEvent] Shutdown dialog created, starting coordinated shutdown")
@@ -810,7 +811,8 @@ class MainWindow(QMainWindow):
                     percent = int(progress * 100)
                     if hasattr(self.shutdown_dialog, "set_progress_percentage"):
                         self.shutdown_dialog.set_progress_percentage(percent)
-                QApplication.processEvents()
+                # Avoid excessive processEvents during shutdown
+                # QApplication.processEvents()
 
             # Perform additional cleanup before coordinator shutdown
             self._pre_coordinator_cleanup()
@@ -842,7 +844,7 @@ class MainWindow(QMainWindow):
             # Create database backup
             if hasattr(self, "backup_manager") and self.backup_manager:
                 try:
-                    self.backup_manager.create_backup(backup_type="auto")  # type: ignore
+                    self.backup_manager.create_backup(reason="auto")  # type: ignore
                     logger.info("[CloseEvent] Database backup created")
                 except Exception as e:
                     logger.warning(f"[CloseEvent] Database backup failed: {e}")
@@ -867,7 +869,7 @@ class MainWindow(QMainWindow):
             # Cleanup drag operations
             if hasattr(self, "drag_manager") and self.drag_manager:
                 try:
-                    self.drag_manager.cleanup_resources()  # type: ignore
+                    self.drag_manager.force_cleanup()  # type: ignore
                     logger.info("[CloseEvent] Drag manager cleaned up")
                 except Exception as e:
                     logger.warning(f"[CloseEvent] Drag cleanup failed: {e}")
@@ -875,7 +877,7 @@ class MainWindow(QMainWindow):
             # Close dialogs
             if hasattr(self, "dialog_manager") and self.dialog_manager:
                 try:
-                    self.dialog_manager.close_all_dialogs()  # type: ignore
+                    self.dialog_manager.cleanup()  # type: ignore
                     logger.info("[CloseEvent] All dialogs closed")
                 except Exception as e:
                     logger.warning(f"[CloseEvent] Dialog cleanup failed: {e}")
@@ -884,7 +886,10 @@ class MainWindow(QMainWindow):
             if hasattr(self, "metadata_thread") and self.metadata_thread:
                 try:
                     self.metadata_thread.quit()
-                    self.metadata_thread.wait(2000)
+                    if not self.metadata_thread.wait(2000):  # Wait max 2 seconds
+                        logger.warning("[CloseEvent] Metadata thread did not stop, terminating...")
+                        self.metadata_thread.terminate()
+                        self.metadata_thread.wait(500)  # Wait another 500ms for termination
                     logger.info("[CloseEvent] Metadata thread stopped")
                 except Exception as e:
                     logger.warning(f"[CloseEvent] Metadata thread cleanup failed: {e}")
@@ -903,8 +908,10 @@ class MainWindow(QMainWindow):
             # Additional cleanup
             from core.application_context import ApplicationContext
 
-            ApplicationContext.destroy_instance()  # type: ignore
-            logger.info("[CloseEvent] Application context destroyed")
+            context = ApplicationContext.get_instance()
+            if context:
+                context.cleanup()  # type: ignore
+                logger.info("[CloseEvent] Application context cleaned up")
 
         except Exception as e:
             logger.error(f"[CloseEvent] Error in post-coordinator cleanup: {e}")
@@ -923,12 +930,18 @@ class MainWindow(QMainWindow):
             status = "successfully" if success else "with errors"
             logger.info(f"[CloseEvent] Shutdown completed {status}")
 
-            # Quit application
-            QApplication.quit()
+            # Quit application (with guard against multiple calls)
+            try:
+                QApplication.quit()
+            except RuntimeError as e:
+                logger.debug(f"[CloseEvent] QApplication.quit() error (expected): {e}")
 
         except Exception as e:
             logger.error(f"[CloseEvent] Error completing shutdown: {e}")
-            QApplication.quit()
+            try:
+                QApplication.quit()
+            except RuntimeError:
+                pass  # Ignore if already quitting
 
     def _check_for_unsaved_changes(self) -> bool:
         """

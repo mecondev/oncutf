@@ -1061,7 +1061,11 @@ class UnifiedMetadataManager(QObject):
 
         if hasattr(self, "_metadata_thread") and self._metadata_thread:
             self._metadata_thread.quit()
-            self._metadata_thread.wait()
+            if not self._metadata_thread.wait(3000):  # Wait max 3 seconds
+                logger.warning("[UnifiedMetadataManager] Metadata thread did not stop, terminating...")
+                self._metadata_thread.terminate()
+                if not self._metadata_thread.wait(1000):  # Wait another 1 second
+                    logger.error("[UnifiedMetadataManager] Metadata thread did not terminate")
             self._metadata_thread.deleteLater()
             self._metadata_thread = None
 
@@ -1073,7 +1077,11 @@ class UnifiedMetadataManager(QObject):
 
         if hasattr(self, "_hash_thread") and self._hash_thread:
             self._hash_thread.quit()
-            self._hash_thread.wait()
+            if not self._hash_thread.wait(3000):  # Wait max 3 seconds
+                logger.warning("[UnifiedMetadataManager] Hash thread did not stop, terminating...")
+                self._hash_thread.terminate()
+                if not self._hash_thread.wait(1000):  # Wait another 1 second
+                    logger.error("[UnifiedMetadataManager] Hash thread did not terminate")
             self._hash_thread.deleteLater()
             self._hash_thread = None
 

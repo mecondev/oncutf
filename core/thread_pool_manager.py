@@ -439,11 +439,13 @@ class ThreadPoolManager(QObject):
         if worker_id in self._workers:
             worker = self._workers[worker_id]
             worker.request_shutdown()
-            worker.wait(5000)  # Wait up to 5 seconds
-
-            if worker.isRunning():
+            
+            # Wait with timeout to prevent infinite hang
+            if not worker.wait(5000):  # Wait up to 5 seconds
+                logger.warning(f"[ThreadPoolManager] Worker {worker_id} did not stop gracefully, terminating...")
                 worker.terminate()
-                worker.wait(1000)
+                if not worker.wait(1000):  # Wait another 1 second for termination
+                    logger.error(f"[ThreadPoolManager] Worker {worker_id} did not terminate after 1s")
 
             del self._workers[worker_id]
             logger.debug(f"[ThreadPoolManager] Removed worker: {worker_id}")

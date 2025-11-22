@@ -63,6 +63,7 @@ logger.debug(f"Effective logging level: {logger_effective_level}", extra={"dev_o
 
 # Flag to prevent double cleanup
 _cleanup_done = False
+_app_quit_called = False
 
 
 def cleanup_on_exit():
@@ -232,7 +233,7 @@ def main() -> int:
         logger.info("Application shutting down with exit code: %d", exit_code)
 
         # Force cleanup any remaining ExifTool processes
-        global _cleanup_done
+        global _cleanup_done, _app_quit_called
         try:
             from utils.exiftool_wrapper import ExifToolWrapper
 
@@ -242,8 +243,13 @@ def main() -> int:
         except Exception as e:
             logger.warning(f"Error cleaning up ExifTool processes: {e}")
 
-        # Force quit any remaining processes
-        app.quit()
+        # Only call quit once to prevent runtime errors on Windows
+        if not _app_quit_called:
+            _app_quit_called = True
+            try:
+                app.quit()
+            except RuntimeError as e:
+                logger.debug(f"QApplication.quit() error (expected): {e}")
 
         return exit_code
 

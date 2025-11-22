@@ -563,14 +563,22 @@ class DirectMetadataLoader(QObject):
             if hasattr(self, "_metadata_thread") and self._metadata_thread:
                 if self._metadata_thread.isRunning():
                     self._metadata_thread.quit()
-                    self._metadata_thread.wait(3000)  # Wait max 3 seconds
+                    if not self._metadata_thread.wait(3000):  # Wait max 3 seconds
+                        logger.warning("[DirectMetadataLoader] Metadata thread did not stop, terminating...")
+                        self._metadata_thread.terminate()
+                        if not self._metadata_thread.wait(1000):  # Wait another 1 second
+                            logger.error("[DirectMetadataLoader] Metadata thread did not terminate")
                 self._metadata_thread = None
                 self._metadata_worker = None
 
             if hasattr(self, "_hash_thread") and self._hash_thread:
                 if self._hash_thread.isRunning():
                     self._hash_thread.quit()
-                    self._hash_thread.wait(3000)  # Wait max 3 seconds
+                    if not self._hash_thread.wait(3000):  # Wait max 3 seconds
+                        logger.warning("[DirectMetadataLoader] Hash thread did not stop, terminating...")
+                        self._hash_thread.terminate()
+                        if not self._hash_thread.wait(1000):  # Wait another 1 second
+                            logger.error("[DirectMetadataLoader] Hash thread did not terminate")
                 self._hash_thread = None
                 self._hash_worker = None
 
