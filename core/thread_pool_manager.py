@@ -471,18 +471,18 @@ class ThreadPoolManager(QObject):
 
             # Log performance metrics
             logger.debug(
-                f"[ThreadPoolManager] Pool stats: {stats['active_threads']} threads, "
-                f"{stats['queued_tasks']} queued, {stats['cpu_usage_percent']:.1f}% CPU"
+                f"[ThreadPoolManager] Pool stats: {stats.active_threads} threads, "
+                f"{stats.queued_tasks} queued, {stats.cpu_usage_percent:.1f}% CPU"
             )
 
             # Check for performance issues
-            if stats["cpu_usage_percent"] > 90 and stats["active_threads"] < self.max_threads:
+            if stats.cpu_usage_percent > 90 and stats.active_threads < self.max_threads:
                 # High CPU usage, consider adding threads
-                self._resize_pool(min(stats["active_threads"] + 1, self.max_threads))
+                self._resize_pool(min(stats.active_threads + 1, self.max_threads))
 
-            elif stats["cpu_usage_percent"] < 30 and stats["active_threads"] > self.min_threads:
+            elif stats.cpu_usage_percent < 30 and stats.active_threads > self.min_threads:
                 # Low CPU usage, consider removing threads
-                self._resize_pool(max(stats["active_threads"] - 1, self.min_threads))
+                self._resize_pool(max(stats.active_threads - 1, self.min_threads))
 
         except Exception as e:
             logger.error(f"[ThreadPoolManager] Monitor error: {e}")
