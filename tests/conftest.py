@@ -8,6 +8,7 @@ Global pytest configuration and fixtures for the oncutf test suite.
 Includes CI-friendly setup for PyQt5 testing and common fixtures.
 """
 
+import contextlib
 import os
 import sys
 
@@ -89,7 +90,6 @@ def sample_metadata():
 def qapp():
     """Create QApplication for all GUI tests."""
     try:
-        from PyQt5.QtCore import QCoreApplication
         from PyQt5.QtWidgets import QApplication
 
         # Check if QApplication already exists
@@ -113,8 +113,8 @@ def qt_cleanup(qapp):
 
     if qapp:
         try:
-            from PyQt5.QtCore import QCoreApplication, QTimer
-            from PyQt5.QtWidgets import QApplication, QWidget
+            from PyQt5.QtCore import QCoreApplication
+            from PyQt5.QtWidgets import QApplication
 
             # Process any pending events
             QCoreApplication.processEvents()
@@ -134,15 +134,13 @@ def qt_cleanup(qapp):
             pass
 
 
-def pytest_sessionfinish(session, exitstatus):
+def pytest_sessionfinish(session, exitstatus):  # noqa: ARG001
     """Cleanup after all tests."""
     try:
         from PyQt5.QtWidgets import QApplication
         app = QApplication.instance()
         if app:
-            try:
+            with contextlib.suppress(RuntimeError):
                 app.quit()
-            except RuntimeError:
-                pass
     except (ImportError, RuntimeError):
         pass

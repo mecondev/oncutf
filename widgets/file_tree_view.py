@@ -10,6 +10,7 @@ No reliance on Qt built-in drag system - everything is manual and controlled.
 Single item selection only - no multi-selection complexity.
 """
 
+import contextlib
 import os
 
 from config import ALLOWED_EXTENSIONS
@@ -184,18 +185,14 @@ class FileTreeView(QTreeView):
             # Properly cleanup file system watcher
             if hasattr(self, "file_system_watcher") and self.file_system_watcher is not None:
                 # Disconnect all signals
-                try:
+                with contextlib.suppress(RuntimeError, TypeError):
                     self.file_system_watcher.directoryChanged.disconnect()
-                except (RuntimeError, TypeError):
-                    pass  # Signal not connected, ignore
 
                 # Clear all watched paths
                 watched_paths = self.file_system_watcher.directories()
                 for path in watched_paths:
-                    try:
+                    with contextlib.suppress(Exception):
                         self.file_system_watcher.removePath(path)
-                    except Exception:
-                        pass
 
                 # Block signals and delete
                 self.file_system_watcher.blockSignals(True)

@@ -353,7 +353,7 @@ class FileTableModel(QAbstractTableModel):
 
     def _get_unified_tooltip(self, file) -> str:
         """Get unified tooltip for all columns showing metadata and hash status.
-        
+
         Uses tooltip cache to avoid repeated get_entry() calls on hover events.
         Cache is invalidated when metadata/hash changes.
         """
