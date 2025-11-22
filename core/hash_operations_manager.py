@@ -222,7 +222,7 @@ class HashOperationsManager:
             operation: Type of operation for dialog title
             file_count: Number of files being processed
         """
-        from widgets.progress_dialog import ProgressDialog
+        from core.pyqt_imports import QProgressDialog, Qt
 
         # Operation title mapping
         titles = {
@@ -234,15 +234,19 @@ class HashOperationsManager:
         title = titles.get(operation, "Processing Files")
 
         # Create dialog
-        self.hash_dialog = ProgressDialog(
-            parent=self.parent_window,
-            title=title,
-            message=f"Processing {file_count} files...",
-            show_progress=True,
+        self.hash_dialog = QProgressDialog(
+            f"Processing {file_count} files...",
+            "Cancel",
+            0,
+            file_count,
+            self.parent_window,
         )
+        self.hash_dialog.setWindowTitle(title)
+        self.hash_dialog.setWindowModality(Qt.WindowModal)
+        self.hash_dialog.setMinimumDuration(0)
 
         # Connect cancel button
-        self.hash_dialog.cancelled.connect(self._cancel_hash_operation)
+        self.hash_dialog.canceled.connect(self._cancel_hash_operation)
 
         # Show dialog
         self.hash_dialog.show()
@@ -264,8 +268,6 @@ class HashOperationsManager:
                 "Hash operation cancelled", color=STATUS_COLORS["no_action"], auto_reset=True
             )
 
-    # ===== Progress Callbacks =====
-
     def _on_hash_progress_updated(self, current: int, total: int, message: str) -> None:
         """
         Handle hash calculation progress updates.
@@ -276,8 +278,9 @@ class HashOperationsManager:
             message: Status message
         """
         if hasattr(self, "hash_dialog") and self.hash_dialog:
-            self.hash_dialog.update_progress(current, total, message)
-
+            self.hash_dialog.setValue(current)
+            self.hash_dialog.setMaximum(total)
+            self.hash_dialog.setLabelText(message)
     def _on_size_progress_updated(self, current_bytes: int, total_bytes: int) -> None:
         """
         Handle file size progress updates (for large files).
@@ -297,9 +300,8 @@ class HashOperationsManager:
                         return f"{b:.1f} {unit}"
                     b /= 1024.0
                 return f"{b:.1f} TB"
-
-            message = f"Reading: {format_bytes(current_bytes)} / {format_bytes(total_bytes)} ({percentage:.0f}%)"
-            self.hash_dialog.set_message(message)
+                message = f"Reading: {format_bytes(current_bytes)} / {format_bytes(total_bytes)} ({percentage:.0f}%)"
+                self.hash_dialog.setLabelText(message)
 
     def _on_file_hash_calculated(self, file_path: str, hash_value: str) -> None:
         """
