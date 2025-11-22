@@ -331,7 +331,6 @@ class UIManager:
         """Setup right panel (metadata tree view)."""
         # Lazy import: Only load when setting up right panel
         from widgets.metadata_tree_view import MetadataTreeView
-        from widgets.preview_tables_view import PreviewTablesView
 
         self.parent_window.right_frame = QFrame()
         right_layout = QVBoxLayout(self.parent_window.right_frame)
