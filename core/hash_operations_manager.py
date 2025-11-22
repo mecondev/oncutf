@@ -142,13 +142,12 @@ class HashOperationsManager:
         file_paths = [item.full_path for item in files_to_check]
 
         # Start hash operation using worker thread
-        self._start_hash_operation("duplicates", file_paths, scope=scope)
+        self._start_hash_operation("duplicates", file_paths)
 
     def _start_hash_operation(
         self,
         operation: str,
         file_paths: list,
-        scope: str | None = None,
         external_folder: str | None = None,
     ) -> None:
         """
@@ -157,7 +156,6 @@ class HashOperationsManager:
         Args:
             operation: Type of operation ("duplicates", "compare", "checksums")
             file_paths: List of file paths to process
-            scope: Scope for duplicates operation ("selected" or "all")
             external_folder: Folder path for comparison operation
         """
         from core.hash_worker import HashWorker
@@ -176,19 +174,16 @@ class HashOperationsManager:
         # Reset cancellation flag
         self._operation_cancelled = False
 
-        # Get database manager for hash storage/retrieval
-        db_manager = None
-        if hasattr(self.parent_window, "db_manager"):
-            db_manager = self.parent_window.db_manager
-
         # Create and configure worker
-        self.hash_worker = HashWorker(
-            file_paths=file_paths,
-            operation=operation,
-            scope=scope,
-            external_folder=external_folder,
-            db_manager=db_manager,
-        )
+        self.hash_worker = HashWorker(parent=self.parent_window)
+
+        # Configure based on operation type
+        if operation == "duplicates":
+            self.hash_worker.setup_duplicate_scan(file_paths)
+        elif operation == "compare":
+            self.hash_worker.setup_external_comparison(file_paths, external_folder)
+        elif operation == "checksums":
+            self.hash_worker.setup_checksum_calculation(file_paths)
 
         # Connect signals for progress updates
         self.hash_worker.progress_updated.connect(self._on_hash_progress_updated)
@@ -201,8 +196,16 @@ class HashOperationsManager:
         self.hash_worker.checksums_calculated.connect(self._on_checksums_calculated)
 
         # Connect signals for completion/error
-        self.hash_worker.finished.connect(self._on_hash_operation_finished)
-        self.hash_worker.error.connect(self._on_hash_operation_error)
+        # Use the worker's `finished_processing` (bool) signal so the handler
+        # receives the success flag. Do not connect QThread.finished here
+        # because it emits no arguments and would cause a TypeError.
+        if hasattr(self.hash_worker, "finished_processing"):
+            self.hash_worker.finished_processing.connect(self._on_hash_operation_finished)
+        else:
+            # Fallback: connect QThread.finished with a wrapper that passes True
+            self.hash_worker.finished.connect(lambda: self._on_hash_operation_finished(True))
+
+        self.hash_worker.error_occurred.connect(self._on_hash_operation_error)
 
         # Create progress dialog
         self._create_hash_progress_dialog(operation, len(file_paths))
@@ -214,7 +217,7 @@ class HashOperationsManager:
             f"[HashManager] Started hash operation: {operation} for {len(file_paths)} files"
         )
 
-    def _create_hash_progress_dialog(self, operation: str, file_count: int) -> None:
+    def _create_hash_progress_dialog(self, _operation: str, file_count: int) -> None:
         """
         Create and show a progress dialog for hash operations.
 
@@ -222,33 +225,14 @@ class HashOperationsManager:
             operation: Type of operation for dialog title
             file_count: Number of files being processed
         """
-        from core.pyqt_imports import QProgressDialog, Qt
+        from utils.progress_dialog import ProgressDialog
 
-        # Operation title mapping
-        titles = {
-            "duplicates": "Finding Duplicates",
-            "compare": "Comparing with External Folder",
-            "checksums": "Calculating Checksums",
-        }
-
-        title = titles.get(operation, "Processing Files")
-
-        # Create dialog
-        self.hash_dialog = QProgressDialog(
-            f"Processing {file_count} files...",
-            "Cancel",
-            0,
-            file_count,
-            self.parent_window,
+        # Create dialog using the unified ProgressDialog for hash operations
+        self.hash_dialog = ProgressDialog.create_hash_dialog(
+            self.parent_window, cancel_callback=self._cancel_hash_operation, use_size_based_progress=True
         )
-        self.hash_dialog.setWindowTitle(title)
-        self.hash_dialog.setWindowModality(Qt.WindowModal)
-        self.hash_dialog.setMinimumDuration(0)
-
-        # Connect cancel button
-        self.hash_dialog.canceled.connect(self._cancel_hash_operation)
-
-        # Show dialog
+        # Initialize count and show
+        self.hash_dialog.set_count(0, file_count)
         self.hash_dialog.show()
 
     def _cancel_hash_operation(self) -> None:
@@ -278,9 +262,8 @@ class HashOperationsManager:
             message: Status message
         """
         if hasattr(self, "hash_dialog") and self.hash_dialog:
-            self.hash_dialog.setValue(current)
-            self.hash_dialog.setMaximum(total)
-            self.hash_dialog.setLabelText(message)
+            self.hash_dialog.set_count(current, total)
+            self.hash_dialog.set_status(message)
     def _on_size_progress_updated(self, current_bytes: int, total_bytes: int) -> None:
         """
         Handle file size progress updates (for large files).
@@ -290,27 +273,42 @@ class HashOperationsManager:
             total_bytes: Total file size
         """
         if hasattr(self, "hash_dialog") and self.hash_dialog:
-            # Calculate percentage
-            percentage = (current_bytes / total_bytes * 100) if total_bytes > 0 else 0
+            # Ensure the dialog is configured for size-based tracking and
+            # start progress tracking when we learn the total size.
+            try:
+                # If the dialog hasn't started progress tracking yet, start it
+                if hasattr(self.hash_dialog, "start_progress_tracking"):
+                    # Check if widget start_time is unset (not started)
+                    wt = getattr(self.hash_dialog, "waiting_widget", None)
+                    started = False
+                    if wt is not None:
+                        started = getattr(wt, "start_time", None) is not None
 
-            # Format bytes
-            def format_bytes(b: int) -> str:
-                for unit in ["B", "KB", "MB", "GB"]:
-                    if b < 1024.0:
-                        return f"{b:.1f} {unit}"
-                    b /= 1024.0
-                return f"{b:.1f} TB"
-                message = f"Reading: {format_bytes(current_bytes)} / {format_bytes(total_bytes)} ({percentage:.0f}%)"
-                self.hash_dialog.setLabelText(message)
+                    if total_bytes > 0 and not started:
+                        # Initialize size-based tracking
+                        self.hash_dialog.start_progress_tracking(total_bytes)
+                        # Ensure progress widget is in size mode
+                        if hasattr(wt, "set_progress_mode"):
+                            wt.set_progress_mode("size")
 
-    def _on_file_hash_calculated(self, file_path: str, hash_value: str) -> None:
+                # Update unified progress dialog with cumulative sizes
+                self.hash_dialog.update_progress(processed_bytes=current_bytes, total_bytes=total_bytes)
+            except Exception as e:
+                # Fallback to previous behavior on any error
+                logger.debug(f"[HashManager] Error updating size progress: {e}")
+                try:
+                    self.hash_dialog.update_progress(current_bytes, total_bytes)
+                except Exception:
+                    pass
+
+    def _on_file_hash_calculated(self, file_path: str) -> None:
         """
         Handle notification that a file's hash was calculated.
         Updates the file table icon in real-time.
 
         Args:
             file_path: Path to the file
-            hash_value: Calculated hash value
+            # Note: hash_value is not passed via signal; fetch from cache if needed
         """
         try:
             # Find FileItem in model
@@ -325,10 +323,26 @@ class HashOperationsManager:
                 # Update hash icon immediately
                 self.parent_window.file_table_model.update_file_hash_icon(file_item)
 
-                logger.debug(
-                    f"[HashWorker] Updated hash icon for {file_path}: {hash_value[:16]}...",
-                    extra={"dev_only": True},
-                )
+                # Try to obtain cached hash for logging
+                try:
+                    from core.hash_manager import HashManager
+
+                    hm = HashManager()
+                    cached = hm.get_cached_hash(file_path)
+                    if cached:
+                        logger.debug(
+                            f"[HashWorker] Updated hash icon for {file_path}: {cached[:16]}...",
+                            extra={"dev_only": True},
+                        )
+                    else:
+                        logger.debug(
+                            f"[HashWorker] Updated hash icon for {file_path}",
+                            extra={"dev_only": True},
+                        )
+                except Exception:
+                    logger.debug(
+                        f"[HashWorker] Updated hash icon for {file_path}", extra={"dev_only": True}
+                    )
         except Exception as e:
             logger.warning(f"[HashWorker] Error updating icon for {file_path}: {e}")
 
@@ -572,26 +586,14 @@ class HashOperationsManager:
                 )
             return
 
-        # Build results message
-        if was_cancelled:
-            message_lines = [
-                f"CRC32 Checksums for {len(hash_results)} files (partial results - operation was cancelled):\n"
-            ]
-        else:
-            message_lines = [f"CRC32 Checksums for {len(hash_results)} files:\n"]
+        # Show results in the new table dialog
+        from widgets.results_table_dialog import ResultsTableDialog
 
-        for file_path, hash_value in hash_results.items():
-            import os
-
-            filename = os.path.basename(file_path)
-            message_lines.append(f"{filename}:")
-            message_lines.append(f"  {hash_value}\n")
-
-        # Show results dialog
-        from widgets.custom_message_dialog import CustomMessageDialog
-
-        dialog_title = "Checksum Results (Partial)" if was_cancelled else "Checksum Results"
-        CustomMessageDialog.information(self.parent_window, dialog_title, "\n".join(message_lines))
+        ResultsTableDialog.show_hash_results(
+            parent=self.parent_window,
+            hash_results=hash_results,
+            was_cancelled=was_cancelled
+        )
 
         # Update status
         if hasattr(self.parent_window, "set_status"):

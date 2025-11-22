@@ -187,7 +187,7 @@ class ApplicationService:
             )
             return
 
-        return self.main_window.event_handler_manager._handle_calculate_hashes(selected_files)
+        return self.main_window.event_handler_manager.hash_ops.handle_calculate_hashes(selected_files)
 
     def calculate_hash_all(self):
         """Calculate hash for all files that don't already have hashes."""

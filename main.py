@@ -14,7 +14,7 @@ Functions:
 """
 
 import atexit
-import locale  # Used for logging locale information in main()
+import locale  # Used for logging locale information in main()  # noqa: F401
 import logging
 import os
 import platform

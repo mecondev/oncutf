@@ -77,6 +77,9 @@ class UnifiedMetadataManager(QObject):
 
         self._exiftool_wrapper = ExifToolWrapper()
 
+        # Initialize parallel metadata loader (lazy-initialized on first use)
+        self._parallel_loader = None
+
         logger.info("[UnifiedMetadataManager] Initialized - unified metadata management")
 
     def initialize_cache_helper(self) -> None:
@@ -104,6 +107,24 @@ class UnifiedMetadataManager(QObject):
                 extra={"dev_only": True},
             )
         return self._structured_manager
+
+    @property
+    def parallel_loader(self):
+        """
+        Lazy-initialized parallel metadata loader.
+
+        Returns:
+            ParallelMetadataLoader instance
+        """
+        if self._parallel_loader is None:
+            from core.parallel_metadata_loader import ParallelMetadataLoader
+
+            self._parallel_loader = ParallelMetadataLoader()
+            logger.debug(
+                "[UnifiedMetadataManager] ParallelMetadataLoader initialized",
+                extra={"dev_only": True},
+            )
+        return self._parallel_loader
 
     # =====================================
     # Cache Checking Methods
@@ -219,14 +240,13 @@ class UnifiedMetadataManager(QObject):
             _use_extended: Whether to use extended metadata (unused parameter kept for compatibility)
 
         Returns:
-            str: Loading mode ("single_file_wait_cursor", "multiple_files_dialog", or "batch")
+            str: Loading mode ("single_file_wait_cursor" or "multiple_files_dialog")
         """
         if file_count == 1:
             return "single_file_wait_cursor"
-        elif file_count <= 10:
-            return "multiple_files_dialog"
         else:
-            return "batch"
+            # Use progress dialog for 2+ files (parallel loading with progress)
+            return "multiple_files_dialog"
 
     def determine_metadata_mode(self, modifier_state=None) -> tuple[bool, bool]:
         """
@@ -633,25 +653,19 @@ class UnifiedMetadataManager(QObject):
             # Initialize incremental size tracking for better performance
             processed_size = 0
 
-            # Process each file
-            for i, file_item in enumerate(needs_loading):
-                # Check for cancellation before processing each file
-                if self._metadata_cancelled:
-                    logger.info(
-                        f"[UnifiedMetadataManager] Metadata loading cancelled at file {i + 1}/{len(needs_loading)}"
-                    )
-                    _loading_dialog.close()
-                    return
+            # Progressive callback for UI updates
+            def on_progress(current: int, total: int, item: FileItem, metadata: dict):
+                """Called for each completed file during parallel loading."""
+                nonlocal processed_size
 
-                # Add current file size to processed total
+                # Update processed size
                 try:
-                    if hasattr(file_item, "file_size") and file_item.file_size is not None:
-                        current_file_size = file_item.file_size
-                    elif hasattr(file_item, "full_path") and os.path.exists(file_item.full_path):
-                        current_file_size = os.path.getsize(file_item.full_path)
-                        # Cache it for future use
-                        if hasattr(file_item, "file_size"):
-                            file_item.file_size = current_file_size
+                    if hasattr(item, "file_size") and item.file_size is not None:
+                        current_file_size = item.file_size
+                    elif hasattr(item, "full_path") and os.path.exists(item.full_path):
+                        current_file_size = os.path.getsize(item.full_path)
+                        if hasattr(item, "file_size"):
+                            item.file_size = current_file_size
                     else:
                         current_file_size = 0
 
@@ -659,91 +673,38 @@ class UnifiedMetadataManager(QObject):
                 except (OSError, AttributeError):
                     current_file_size = 0
 
-                # Update progress using unified method
+                # Update progress dialog
                 _loading_dialog.update_progress(
-                    file_count=i + 1,
-                    total_files=len(needs_loading),
+                    file_count=current,
+                    total_files=total,
                     processed_bytes=processed_size,
                     total_bytes=total_size,
                 )
-                _loading_dialog.set_filename(file_item.filename)
-                _loading_dialog.set_count(i + 1, len(needs_loading))
+                _loading_dialog.set_filename(item.filename)
+                _loading_dialog.set_count(current, total)
 
-                # Process events to update the dialog and handle cancellation
-                if (i + 1) % 10 == 0 or current_file_size > 10 * 1024 * 1024:
-                    from PyQt5.QtWidgets import QApplication
-
-                    QApplication.processEvents()
-
-                # Check again after processing events
-                if self._metadata_cancelled:
-                    logger.info(
-                        f"[UnifiedMetadataManager] Metadata loading cancelled at file {i + 1}/{len(needs_loading)}"
-                    )
-                    _loading_dialog.close()
-                    return
-
-            # Batch load metadata for all files at once (10x faster)
-            logger.info(
-                f"[UnifiedMetadataManager] Batch loading metadata for {len(needs_loading)} files"
-            )
-            file_paths = [item.full_path for item in needs_loading]
-            metadata_batch = self._exiftool_wrapper.get_metadata_batch(
-                file_paths, use_extended=use_extended
-            )
-
-            # Process each file with its metadata
-            for i, (file_item, metadata) in enumerate(
-                zip(needs_loading, metadata_batch, strict=False)
-            ):
-                # Update progress
-                _loading_dialog.set_filename(file_item.filename)
-                _loading_dialog.set_count(i + 1, len(needs_loading))
-
-                # Process events to keep UI responsive
-                if (i + 1) % 20 == 0:  # Less frequent since batch is faster
-                    from PyQt5.QtWidgets import QApplication
-
-                    QApplication.processEvents()
-
-                # Check for cancellation
-                if self._metadata_cancelled:
-                    logger.info(
-                        f"[UnifiedMetadataManager] Metadata processing cancelled at file {i + 1}/{len(needs_loading)}"
-                    )
-                    _loading_dialog.close()
-                    return
-
+                # Process metadata immediately (progressive update)
                 if metadata:
-                    # Mark metadata with loading mode for UI indicators
+                    # Mark metadata with loading mode
                     if use_extended and "__extended__" not in metadata:
                         metadata["__extended__"] = True
                     elif not use_extended and "__extended__" in metadata:
                         del metadata["__extended__"]
 
-                    # Save to parent window's metadata_cache for UI display
+                    # Save to cache
                     if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
                         self.parent_window.metadata_cache.set(
-                            file_item.full_path, metadata, is_extended=use_extended
+                            item.full_path, metadata, is_extended=use_extended
                         )
 
-                    # Update the file item
-                    logger.debug(
-                        f"[DEBUG] (before) file_item.metadata for {file_item.filename} (id={id(file_item)}): {getattr(file_item, 'metadata', None)}",
-                        extra={"dev_only": True},
-                    )
-                    file_item.metadata = metadata
-                    logger.debug(
-                        f"[DEBUG] (after) file_item.metadata for {file_item.filename} (id={id(file_item)}): {file_item.metadata}",
-                        extra={"dev_only": True},
-                    )
+                    # Update file item
+                    item.metadata = metadata
 
-                    # Emit dataChanged signal to update UI icons
+                    # Emit dataChanged for UI update
                     if self.parent_window and hasattr(self.parent_window, "file_model"):
                         try:
-                            # Find the row index and emit dataChanged for the entire row
                             for j, file in enumerate(self.parent_window.file_model.files):
-                                if paths_equal(file.full_path, file_item.full_path):
+                                if paths_equal(file.full_path, item.full_path):
                                     top_left = self.parent_window.file_model.index(j, 0)
                                     bottom_right = self.parent_window.file_model.index(
                                         j, self.parent_window.file_model.columnCount() - 1
@@ -754,18 +715,42 @@ class UnifiedMetadataManager(QObject):
                                     break
                         except Exception as e:
                             logger.warning(
-                                f"[UnifiedMetadataManager] Failed to emit dataChanged for {file_item.filename}: {e}"
+                                f"[UnifiedMetadataManager] Failed to emit dataChanged for {item.filename}: {e}"
                             )
 
-            # Close the progress dialog
-            _loading_dialog.close()
+            # Completion callback
+            def on_completion():
+                """Called when parallel loading completes."""
+                _loading_dialog.close()
 
-            # Display metadata for the last processed file if available
-            if metadata_tree_view and needs_loading:
-                display_file = needs_loading[-1]
-                metadata_tree_view.display_file_metadata(display_file)
+                # Display metadata ONLY if exactly 1 file was loaded
+                if metadata_tree_view and len(needs_loading) == 1:
+                    display_file = needs_loading[0]
+                    metadata_tree_view.display_file_metadata(display_file)
 
-            logger.info(f"[{source}] Successfully loaded metadata for {len(needs_loading)} files")
+                logger.info(f"[{source}] Successfully loaded metadata for {len(needs_loading)} files")
+
+            # Cancellation check
+            def check_cancellation():
+                """Check if loading should be cancelled."""
+                return self._metadata_cancelled
+
+            # Use parallel metadata loader for progressive loading
+            logger.info(
+                f"[UnifiedMetadataManager] Starting parallel metadata loading for {len(needs_loading)} files"
+            )
+
+            # Process events to show dialog before starting heavy work
+            from PyQt5.QtWidgets import QApplication
+            QApplication.processEvents()
+
+            self.parallel_loader.load_metadata_parallel(
+                items=needs_loading,
+                use_extended=use_extended,
+                progress_callback=on_progress,
+                completion_callback=on_completion,
+                cancellation_check=check_cancellation
+            )
 
         # Always emit signal to indicate loading is finished
         self.loading_finished.emit()

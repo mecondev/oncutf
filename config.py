@@ -738,6 +738,20 @@ COLUMN_RESIZE_BEHAVIOR = {
 }
 
 # =====================================
+# RESULTS TABLE DIALOG SETTINGS
+# =====================================
+
+# Results Table Dialog - Default dimensions
+RESULTS_TABLE_DEFAULT_WIDTH = 700
+RESULTS_TABLE_DEFAULT_HEIGHT = 400
+RESULTS_TABLE_MIN_HEIGHT = 200
+RESULTS_TABLE_MAX_HEIGHT = 600
+
+# Results Table Dialog - Default column widths
+RESULTS_TABLE_LEFT_COLUMN_WIDTH = 400  # Filename column (wider)
+RESULTS_TABLE_RIGHT_COLUMN_WIDTH = 100  # Hash/value column (narrower)
+
+# =====================================
 # METADATA STATUS ICON COLORS
 # =====================================
 
