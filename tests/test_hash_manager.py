@@ -346,8 +346,10 @@ class TestEventHandlerIntegration:
 
         # Verify basic initialization
         assert handler.parent_window == mock_parent
-        assert hasattr(handler, "_handle_find_duplicates")
-        assert hasattr(handler, "_handle_calculate_hashes")
+        # After refactoring, methods are delegated to hash_ops manager
+        assert hasattr(handler, "hash_ops")
+        assert hasattr(handler.hash_ops, "handle_find_duplicates")
+        assert hasattr(handler.hash_ops, "handle_calculate_hashes")
 
     def test_hash_manager_integration(self):
         """Test that HashManager can be imported and used."""
