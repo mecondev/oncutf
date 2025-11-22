@@ -15,6 +15,7 @@ Architecture:
 - Future: file_thumbnails, file_tags, etc.
 """
 
+import contextlib
 import json
 import os
 import sqlite3
@@ -110,6 +111,25 @@ class DatabaseManager:
         finally:
             if conn:
                 conn.close()
+
+    @contextlib.contextmanager
+    def transaction(self):
+        """
+        Context manager for atomic transactions.
+
+        Usage:
+            with db_manager.transaction() as conn:
+                cursor = conn.cursor()
+                cursor.execute(...)
+                # Automatically commits on success, rolls back on exception
+        """
+        with self._get_connection() as conn:
+            try:
+                yield conn
+                conn.commit()
+            except Exception:
+                conn.rollback()
+                raise
 
     def _initialize_database(self):
         """Initialize database with schema."""
@@ -495,6 +515,69 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"[DatabaseManager] Error storing metadata for {file_path}: {e}")
             return False
+
+    def batch_store_metadata(
+        self,
+        metadata_items: list[tuple[str, dict[str, Any], bool, bool]],
+    ) -> int:
+        """
+        Store metadata for multiple files in a single batch operation.
+
+        Args:
+            metadata_items: List of (file_path, metadata_dict, is_extended, is_modified) tuples
+
+        Returns:
+            Number of files successfully stored
+        """
+        if not metadata_items:
+            return 0
+
+        try:
+            success_count = 0
+
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+
+                for file_path, metadata, is_extended, is_modified in metadata_items:
+                    try:
+                        path_id = self.get_or_create_path_id(file_path)
+
+                        # Remove existing metadata
+                        cursor.execute(
+                            "DELETE FROM file_metadata WHERE path_id = ?", (path_id,)
+                        )
+
+                        # Store new metadata
+                        metadata_type = "extended" if is_extended else "fast"
+                        metadata_json = json.dumps(metadata, ensure_ascii=False, indent=None)
+
+                        cursor.execute(
+                            """
+                            INSERT INTO file_metadata
+                            (path_id, metadata_type, metadata_json, is_modified)
+                            VALUES (?, ?, ?, ?)
+                            """,
+                            (path_id, metadata_type, metadata_json, is_modified),
+                        )
+                        success_count += 1
+
+                    except Exception as e:
+                        logger.error(
+                            f"[DatabaseManager] Error in batch storing metadata for {file_path}: {e}"
+                        )
+                        continue
+
+                # Commit all inserts in one transaction
+                conn.commit()
+
+                logger.debug(
+                    f"[DatabaseManager] Batch stored metadata for {success_count}/{len(metadata_items)} files"
+                )
+                return success_count
+
+        except Exception as e:
+            logger.error(f"[DatabaseManager] Error in batch store metadata: {e}")
+            return 0
 
     def get_metadata(self, file_path: str) -> dict[str, Any] | None:
         """Retrieve metadata for a file."""
@@ -942,6 +1025,65 @@ class DatabaseManager:
                 f"[DatabaseManager] Error storing structured metadata for {file_path}: {e}"
             )
             return False
+
+    def batch_store_structured_metadata(
+        self, file_path: str, field_data: list[tuple[str, str]]
+    ) -> int:
+        """
+        Store multiple structured metadata fields for a file in a single batch operation.
+
+        Args:
+            file_path: Path to the file
+            field_data: List of (field_key, field_value) tuples
+
+        Returns:
+            Number of fields successfully stored
+        """
+        if not field_data:
+            return 0
+
+        try:
+            path_id = self.get_or_create_path_id(file_path)
+
+            # Build field_id mapping
+            field_ids = []
+            valid_data = []
+            for field_key, field_value in field_data:
+                field_info = self.get_metadata_field_by_key(field_key)
+                if field_info:
+                    field_ids.append(field_info["id"])
+                    valid_data.append((path_id, field_info["id"], field_value))
+                else:
+                    logger.debug(
+                        f"[DatabaseManager] Field '{field_key}' not found in metadata_fields - skipping"
+                    )
+
+            if not valid_data:
+                return 0
+
+            # Batch insert using executemany
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.executemany(
+                    """
+                    INSERT OR REPLACE INTO file_metadata_structured
+                    (path_id, field_id, field_value, updated_at)
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    """,
+                    valid_data,
+                )
+                conn.commit()
+
+                logger.debug(
+                    f"[DatabaseManager] Batch stored {len(valid_data)} structured metadata fields"
+                )
+                return len(valid_data)
+
+        except Exception as e:
+            logger.error(
+                f"[DatabaseManager] Error in batch store structured metadata for {file_path}: {e}"
+            )
+            return 0
 
     def get_structured_metadata(self, file_path: str) -> dict[str, Any]:
         """Get structured metadata for a file."""

@@ -389,10 +389,10 @@ class FileTableModel(QAbstractTableModel):
             tooltip_parts.append("no hash")
 
         tooltip = "\n".join(tooltip_parts)
-        
+
         # Cache the result
         self._tooltip_cache[file.full_path] = tooltip
-        
+
         return tooltip
 
     def _create_combined_icon(self, metadata_status: str, hash_status: str) -> QIcon:
@@ -773,10 +773,10 @@ class FileTableModel(QAbstractTableModel):
         self.beginResetModel()
         self.files = files
         # self._update_column_mapping()  # Removed because it's not needed and causes error
-        
+
         # Clear tooltip cache when new files are loaded
         self._tooltip_cache.clear()
-        
+
         self._update_icons_immediately()
         self.endResetModel()
         logger.debug(

@@ -65,7 +65,8 @@ class StructuredMetadataManager:
             True if successful, False otherwise
         """
         try:
-            stored_count = 0
+            # Prepare batch data: list of (field_key, field_value_str) tuples
+            batch_data = []
 
             for field_key, field_value in raw_metadata.items():
                 # Skip None values and empty strings
@@ -83,15 +84,22 @@ class StructuredMetadataManager:
 
                 # Convert value to string for storage
                 field_value_str = self._format_field_value(field_key, field_value)
+                batch_data.append((field_key, field_value_str))
 
-                # Store in structured format
-                if self.db_manager.store_structured_metadata(file_path, field_key, field_value_str):
-                    stored_count += 1
-
-            logger.debug(
-                f"[StructuredMetadataManager] Stored {stored_count} structured metadata fields for {Path(file_path).name}"
-            )
-            return True
+            # Use batch insert for all fields at once
+            if batch_data:
+                stored_count = self.db_manager.batch_store_structured_metadata(
+                    file_path, batch_data
+                )
+                logger.debug(
+                    f"[StructuredMetadataManager] Stored {stored_count} structured metadata fields for {Path(file_path).name}"
+                )
+                return stored_count > 0
+            else:
+                logger.debug(
+                    f"[StructuredMetadataManager] No valid fields to store for {Path(file_path).name}"
+                )
+                return True
 
         except Exception as e:
             logger.error(
