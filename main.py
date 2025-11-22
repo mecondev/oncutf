@@ -14,6 +14,7 @@ Functions:
 """
 
 import atexit
+import locale  # Used for logging locale information in main()
 import logging
 import os
 import platform
