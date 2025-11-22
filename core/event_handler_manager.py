@@ -38,9 +38,16 @@ class EventHandlerManager:
 
     def __init__(self, parent_window):
         self.parent_window = parent_window
+        
+        # Delegate hash operations to specialized manager
+        from core.hash_operations_manager import HashOperationsManager
+        self.hash_ops = HashOperationsManager(parent_window)
+        
+        # Keep backward compatibility references (will be removed in cleanup)
         self.hash_worker = None
         self.hash_dialog = None
         self._operation_cancelled = False  # Track if operation was cancelled
+        
         logger.debug("EventHandlerManager initialized", extra={"dev_only": True})
 
     def handle_browse(self) -> None:
@@ -467,23 +474,24 @@ class EventHandlerManager:
 
         elif action == action_find_duplicates_sel:
             # Find duplicates in selected files
-            self._handle_find_duplicates(selected_files, "selected")
+            self.hash_ops.handle_find_duplicates(selected_files)
 
         elif action == action_find_duplicates_all:
             # Find duplicates in all files
-            self._handle_find_duplicates(self.parent_window.file_model.files, "all")
+            self.hash_ops.handle_find_duplicates(None)  # None = all files
 
         elif action == action_compare_external:
             # Compare selected files with external folder
-            self._handle_compare_external(selected_files)
+            self.hash_ops.handle_compare_external(selected_files)
 
         elif action == action_calculate_hashes:
             # Calculate checksums for selected files
-            self._handle_calculate_hashes(selected_files)
+            self.hash_ops.handle_calculate_hashes(selected_files)
 
         elif action == action_calculate_hashes_all:
             # Calculate checksums for all files
-            self._handle_calculate_hashes(self.parent_window.file_model.files)
+            all_files = self.parent_window.file_table_model.get_all_file_items() if hasattr(self.parent_window, "file_table_model") and self.parent_window.file_table_model else []
+            self.hash_ops.handle_calculate_hashes(all_files)
 
         elif action == action_export_sel:
             # Handle metadata export for selected files
