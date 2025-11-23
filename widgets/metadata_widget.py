@@ -71,7 +71,10 @@ class MetadataWidget(QWidget):
 
         self.category_combo = QComboBox()
         self.category_combo.setFixedWidth(150)
-        self.category_combo.setFixedHeight(24)
+        # Use theme constant for combo height
+        from utils.theme_engine import ThemeEngine
+        theme = ThemeEngine()
+        self.category_combo.setFixedHeight(theme.get_constant("combo_height"))
 
         category_row.addWidget(category_label)
         category_row.addWidget(self.category_combo)
@@ -91,7 +94,7 @@ class MetadataWidget(QWidget):
         # Use HierarchicalComboBox for better organization
         self.options_combo = HierarchicalComboBox()
         self.options_combo.setFixedWidth(200)  # Increased width for metadata field names
-        self.options_combo.setFixedHeight(24)  # Increased to match theme engine better
+        self.options_combo.setFixedHeight(theme.get_constant("combo_height"))  # Use theme constant
 
         options_row.addWidget(self.options_label)
         options_row.addWidget(self.options_combo)

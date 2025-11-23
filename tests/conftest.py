@@ -8,14 +8,50 @@ Global pytest configuration and fixtures for the oncutf test suite.
 Includes CI-friendly setup for PyQt5 testing and common fixtures.
 """
 
+import atexit
 import contextlib
 import os
+import signal
 import sys
+from types import ModuleType
 
 # Add project root to sys.path so 'widgets', 'models', etc. can be imported
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def neutralize_import_side_effects(monkeypatch):
+    """Prevent import-time side effects that modify global state.
+
+    This fixture inserts a noop `utils.logger_setup.ConfigureLogger` module
+    into sys.modules and patches signal.signal and atexit.register to harmless
+    callables, ensuring that importing modules like `main.py` does not:
+    - create log directories/files on disk,
+    - register signal handlers globally,
+    - register atexit callbacks globally.
+
+    This fixture is autouse, so it applies to all tests automatically.
+    """
+    # Fake utils.logger_setup to prevent ConfigureLogger from creating log dirs
+    fake_logger = ModuleType("utils.logger_setup")
+    fake_logger.ConfigureLogger = lambda *a, **k: None
+    original_logger = sys.modules.get("utils.logger_setup")
+    sys.modules["utils.logger_setup"] = fake_logger
+
+    # Replace signal.signal and atexit.register with noop callables
+    # to prevent modification of global state during tests
+    monkeypatch.setattr(signal, "signal", lambda *a, **k: None)
+    monkeypatch.setattr(atexit, "register", lambda *a, **k: None)
+
+    yield
+
+    # Cleanup: restore original modules
+    if original_logger is not None:
+        sys.modules["utils.logger_setup"] = original_logger
+    else:
+        sys.modules.pop("utils.logger_setup", None)
 
 
 def pytest_configure(config):

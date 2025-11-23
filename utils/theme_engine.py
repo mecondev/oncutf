@@ -117,6 +117,17 @@ class ThemeEngine:
             "semibold_weight": "600",
         }
 
+        # Layout & Sizing constants
+        self.constants = {
+            "table_row_height": 22,  # Fixed row height for all tables (file table, preview, dialogs)
+            "button_height": 24,      # Standard button height for dialogs
+            "combo_height": 24,       # Standard combo box height (metadata widgets, transforms)
+        }
+
+    def get_constant(self, key: str) -> int:
+        """Get a layout/sizing constant."""
+        return self.constants.get(key, 0)
+
     def apply_complete_theme(self, app: QApplication, main_window: QMainWindow):
         """Apply complete theming to the entire application."""
         # Clear any existing stylesheets
@@ -1065,6 +1076,64 @@ class ThemeEngine:
                 border: none !important;
             }}
 
+            /* RESULTS TABLE DIALOG */
+            ResultsTableDialog {{
+                background-color: {self.colors["app_background"]};
+            }}
+
+            ResultsTableDialog QTableView {{
+                background-color: {self.colors["table_background"]};
+                alternate-background-color: {self.colors["table_alternate_background"]};
+                color: {self.colors["table_text"]};
+                font-size: {self.fonts["interface_size"]};
+                border: none;
+                gridline-color: transparent;
+                selection-background-color: {self.colors["table_selection_background"]};
+                selection-color: {self.colors["table_selection_text"]};
+            }}
+
+            ResultsTableDialog QTableView::item {{
+                padding: 4px 8px;
+                min-height: 22px;
+                border: none;
+                background-color: transparent;
+            }}
+
+            ResultsTableDialog QHeaderView::section {{
+                background-color: {self.colors["table_header_background"]};
+                color: {self.colors["table_text"]};
+                border: none;
+                border-right: 1px solid {self.colors["border_color"]};
+                padding: 6px 8px;
+                font-size: {self.fonts["interface_size"]};
+                font-weight: {self.fonts["medium_weight"]};
+            }}
+
+            ResultsTableDialog QPushButton {{
+                background-color: {self.colors["button_background"]};
+                border: none;
+                border-radius: 8px;
+                color: {self.colors["button_text"]};
+                padding: 4px 12px;
+                font-size: {self.fonts["interface_size"]};
+                font-weight: {self.fonts["medium_weight"]};
+            }}
+
+            ResultsTableDialog QPushButton:hover {{
+                background-color: {self.colors["button_background_hover"]};
+            }}
+
+            ResultsTableDialog QPushButton:pressed {{
+                background-color: {self.colors["button_background_pressed"]};
+                color: {self.colors["button_text_pressed"]};
+            }}
+
+            ResultsTableDialog QLabel {{
+                color: {self.colors["app_text"]};
+                font-size: {self.fonts["interface_size"]};
+                font-weight: {self.fonts["medium_weight"]};
+            }}
+
             /* CHECKBOXES */
             QCheckBox {{
                 color: {self.colors["app_text"]};
@@ -1489,6 +1558,57 @@ class ThemeEngine:
     def get_color(self, color_key: str) -> str:
         """Get a color value by key."""
         return self.colors.get(color_key, "#ffffff")
+
+    def get_context_menu_stylesheet(self) -> str:
+        """Get the stylesheet for context menus.
+        
+        Returns a complete stylesheet string that can be applied to QMenu instances
+        to ensure consistent styling across the application.
+        """
+        return f"""
+            QMenu {{
+                background-color: #232323;
+                color: {self.colors["dialog_text"]};
+                border: none;
+                border-radius: 8px;
+                font-family: "Inter", "Segoe UI", Arial, sans-serif;
+                font-size: {self.fonts["interface_size"]};
+                padding: 6px 4px;
+            }}
+            QMenu::item {{
+                background-color: transparent;
+                padding: 3px 16px 3px 8px;
+                margin: 1px 2px;
+                border-radius: 4px;
+                min-height: 16px;
+                icon-size: 16px;
+            }}
+            QMenu::item:hover {{
+                background-color: {self.colors["table_hover_background"]};
+                color: {self.colors["dialog_text"]};
+            }}
+            QMenu::item:selected {{
+                background-color: {self.colors["table_selection_background"]};
+                color: {self.colors["input_selection_text"]};
+            }}
+            QMenu::item:pressed {{
+                background-color: {self.colors["table_selection_background"]};
+                color: {self.colors["input_selection_text"]};
+            }}
+            QMenu::item:disabled {{
+                color: #888888;
+                background-color: transparent;
+            }}
+            QMenu::icon {{
+                padding-left: 6px;
+                padding-right: 6px;
+            }}
+            QMenu::separator {{
+                background-color: #5a5a5a;
+                height: 1px;
+                margin: 4px 8px;
+            }}
+        """
 
     def set_theme(self, theme_name: str):
         """Change theme (for future expansion)."""

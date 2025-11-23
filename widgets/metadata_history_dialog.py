@@ -143,6 +143,11 @@ class MetadataHistoryDialog(QDialog):
         self.operations_table.setShowGrid(False)
         self.operations_table.verticalHeader().setVisible(False)
 
+        # Set row height from theme engine
+        from utils.theme_engine import ThemeEngine
+        theme = ThemeEngine()
+        self.operations_table.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))
+
         # Connect selection change
         self.operations_table.selectionModel().selectionChanged.connect(self._on_selection_changed)
 

@@ -179,7 +179,10 @@ class RenameModuleWidget(QWidget):
         self.type_combo = QComboBox()
         self.type_combo.addItems(self.module_instances.keys())
         self.type_combo.setMaximumWidth(140)
-        self.type_combo.setFixedHeight(24)  # Match metadata_widget height
+        # Use theme constant for combo height
+        from utils.theme_engine import ThemeEngine
+        theme = ThemeEngine()
+        self.type_combo.setFixedHeight(theme.get_constant("combo_height"))
         self.type_combo.currentTextChanged.connect(self.update_module_content)
 
         type_row.addWidget(type_label, 0, Qt.AlignVCenter)  # type: ignore

@@ -110,7 +110,10 @@ class FileTableView(QTableView):
 
         # Additional settings to prevent text wrapping
         self.setTextElideMode(Qt.ElideRight)  # Elide text with ... instead of wrapping
-        self.verticalHeader().setDefaultSectionSize(22)  # Fixed row height to prevent expansion
+        # Row height from theme engine
+        from utils.theme_engine import ThemeEngine
+        theme = ThemeEngine()
+        self.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))
 
         # Force single-line text display
         self.setWordWrap(False)  # Ensure word wrap is disabled
@@ -321,8 +324,11 @@ class FileTableView(QTableView):
         if hasattr(self.horizontalHeader(), "setWordWrap"):
             self.horizontalHeader().setWordWrap(False)
 
-        # Set fixed row height to prevent expansion
-        self.verticalHeader().setDefaultSectionSize(22)
+        # Set fixed row height to prevent expansion (from theme engine)
+        from utils.theme_engine import ThemeEngine
+        theme = ThemeEngine()
+        row_height = theme.get_constant("table_row_height")
+        self.verticalHeader().setDefaultSectionSize(row_height)
         self.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
 
         # Ensure text eliding is enabled
@@ -331,7 +337,7 @@ class FileTableView(QTableView):
         # Force uniform row heights for all existing rows
         if self.model():
             for row in range(self.model().rowCount()):
-                self.setRowHeight(row, 22)
+                self.setRowHeight(row, row_height)
 
         # Ensure all columns have proper width to minimize text elision
         self._ensure_all_columns_proper_width()
@@ -1427,15 +1433,15 @@ class FileTableView(QTableView):
 
         # Handle column management shortcuts
 
-        # Ctrl+T: Reset column widths to default
+        # Ctrl+T: Auto-fit columns to content
         if event.key() == Qt.Key_T and event.modifiers() == Qt.ControlModifier:
-            self._reset_columns_to_default()
+            self._auto_fit_columns_to_content()
             event.accept()
             return
 
-        # Ctrl+Shift+T: Auto-fit columns to content
+        # Ctrl+Shift+T: Reset column widths to default
         if event.key() == Qt.Key_T and event.modifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
-            self._auto_fit_columns_to_content()
+            self._reset_columns_to_default()
             event.accept()
             return
 
@@ -2560,7 +2566,10 @@ class FileTableView(QTableView):
     # =====================================
 
     def _reset_columns_to_default(self) -> None:
-        """Reset all column widths to their default values (Ctrl+T)."""
+        """Reset all column widths to their default values (Ctrl+Shift+T).
+        
+        Restores all columns to config defaults with Interactive resize mode.
+        """
         try:
             from core.unified_column_service import get_column_service
 
@@ -2570,10 +2579,17 @@ class FileTableView(QTableView):
             else:
                 visible_columns = ["filename", "file_size", "type", "modified"]
 
+            header = self.horizontalHeader()
+            if not header:
+                return
+
             for i, column_key in enumerate(visible_columns):
                 column_index = i + 1  # +1 because column 0 is status column
                 cfg = get_column_service().get_column_config(column_key)
                 default_width = cfg.width if cfg else 100
+
+                # Reset to Interactive mode for all columns
+                header.setSectionResizeMode(column_index, QHeaderView.Interactive)
 
                 # Apply intelligent width validation for all columns
                 final_width = self._ensure_column_proper_width(column_key, default_width)
@@ -2587,7 +2603,12 @@ class FileTableView(QTableView):
             logger.error(f"Error resetting columns to default: {e}")
 
     def _auto_fit_columns_to_content(self) -> None:
-        """Auto-fit all column widths to their content (Ctrl+Shift+T)."""
+        """Auto-fit all column widths to their content (Ctrl+T).
+        
+        Special handling:
+        - Filename column: stretches to fill available space (last stretch)
+        - Other columns: resize to fit content with min/max constraints
+        """
         try:
             from config import GLOBAL_MIN_COLUMN_WIDTH
 
@@ -2610,8 +2631,13 @@ class FileTableView(QTableView):
 
                 cfg = get_column_service().get_column_config(column_key)
 
-                # Use Qt's built-in resize to contents
-                header.resizeSection(column_index, header.sectionSizeHint(column_index))
+                # Special handling for filename column: set to stretch
+                if column_key == "filename":
+                    header.setSectionResizeMode(column_index, QHeaderView.Stretch)
+                    continue
+
+                # For other columns: resize to contents with constraints
+                self.resizeColumnToContents(column_index)
 
                 # Apply minimum width constraint
                 min_width = max(

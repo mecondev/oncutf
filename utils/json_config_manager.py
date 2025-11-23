@@ -137,6 +137,14 @@ class AppConfig(ConfigCategory):
         self.set("recent_folders", recent)
 
 
+class DialogsConfig(ConfigCategory):
+    """Configuration for dialog windows (geometry, column widths, etc.)."""
+
+    def __init__(self):
+        defaults = {}
+        super().__init__("dialogs", defaults)
+
+
 class JSONConfigManager:
     """Comprehensive JSON-based configuration manager."""
 
@@ -285,6 +293,7 @@ def create_app_config_manager(app_name: str = "oncutf") -> JSONConfigManager:
     manager.register_category(WindowConfig())
     manager.register_category(FileHashConfig())
     manager.register_category(AppConfig())
+    manager.register_category(DialogsConfig())
 
     manager.load()
 

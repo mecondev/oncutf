@@ -168,8 +168,10 @@ class PreviewTablesView(QWidget):
             table.verticalHeader().setVisible(False)  # type: ignore
             table.horizontalHeader().setVisible(False)  # type: ignore
             table.setMouseTracking(False)  # Disable mouse tracking to prevent hover
-            # Set same row height as icon table
-            table.verticalHeader().setDefaultSectionSize(22)  # type: ignore
+            # Set row height from theme engine
+            from utils.theme_engine import ThemeEngine
+            theme = ThemeEngine()
+            table.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))  # type: ignore
             # Set minimum height for proper placeholder centering
             table.setMinimumHeight(200)
             # Reduce flickering during updates
@@ -194,7 +196,10 @@ class PreviewTablesView(QWidget):
         # Set background color to match main application (#232323)
         bg_color = get_theme_color("button_background_disabled")
         self.icon_table.setStyleSheet(f"background-color: {bg_color};")
-        self.icon_table.verticalHeader().setDefaultSectionSize(22)
+        # Use same row height from theme engine
+        from utils.theme_engine import ThemeEngine
+        theme = ThemeEngine()
+        self.icon_table.verticalHeader().setDefaultSectionSize(theme.get_constant("table_row_height"))
 
         tables_layout.addWidget(self.old_names_table)
         tables_layout.addWidget(self.new_names_table)

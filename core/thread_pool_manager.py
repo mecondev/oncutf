@@ -439,7 +439,7 @@ class ThreadPoolManager(QObject):
         if worker_id in self._workers:
             worker = self._workers[worker_id]
             worker.request_shutdown()
-            
+
             # Wait with timeout to prevent infinite hang
             if not worker.wait(5000):  # Wait up to 5 seconds
                 logger.warning(f"[ThreadPoolManager] Worker {worker_id} did not stop gracefully, terminating...")

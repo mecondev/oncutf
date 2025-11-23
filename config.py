@@ -390,7 +390,7 @@ STATUS_COLORS = {
     "info": "#74c0fc",  # Light blue/cyan
     "loading": "#adb5bd",  # Light gray
     # Metadata specific
-    "metadata_skipped": "#adb5bd",  # Light gray for skipped metadata
+    "metadata_skipped": "#adb5bδ",  # Light gray for skipped metadata
     "metadata_extended": "#ff8a65",  # Light orange-red for extended metadata
     "metadata_basic": "#74c0fc",  # Light blue/cyan for basic metadata
     # Action categories (pale and bright colors)
@@ -744,12 +744,67 @@ COLUMN_RESIZE_BEHAVIOR = {
 # Results Table Dialog - Default dimensions
 RESULTS_TABLE_DEFAULT_WIDTH = 700
 RESULTS_TABLE_DEFAULT_HEIGHT = 400
-RESULTS_TABLE_MIN_HEIGHT = 200
-RESULTS_TABLE_MAX_HEIGHT = 600
+# Minimum width for results dialog
+RESULTS_TABLE_MIN_WIDTH = 350
+# Minimum / Maximum height for results dialog
+RESULTS_TABLE_MIN_HEIGHT = 250
+RESULTS_TABLE_MAX_HEIGHT = 1000
 
 # Results Table Dialog - Default column widths
 RESULTS_TABLE_LEFT_COLUMN_WIDTH = 400  # Filename column (wider)
 RESULTS_TABLE_RIGHT_COLUMN_WIDTH = 100  # Hash/value column (narrower)
+
+# Default row height for hash/results lists (pixels). Matches file table row height.
+HASH_LIST_ROW_HEIGHT = 22
+
+# =====================================
+# HASH / RESULTS LIST (UI) SETTINGS
+# =====================================
+
+# Window defaults & constraints (persisted by UI into config.json)
+HASH_LIST_WINDOW_DEFAULT_WIDTH = RESULTS_TABLE_DEFAULT_WIDTH
+HASH_LIST_WINDOW_DEFAULT_HEIGHT = RESULTS_TABLE_DEFAULT_HEIGHT
+HASH_LIST_WINDOW_MIN_HEIGHT = RESULTS_TABLE_MIN_HEIGHT
+HASH_LIST_WINDOW_MAX_HEIGHT = RESULTS_TABLE_MAX_HEIGHT
+
+# Use same margins/padding as main content
+HASH_LIST_CONTENT_MARGINS = CONTENT_MARGINS
+
+# Font / row sizing: None = inherit defaults from File Table / main UI
+# If UI finds a concrete value in config.json it should prefer that.
+HASH_LIST_FONT_SIZE = None
+# Use same row height as file table (22px) for consistency
+# HASH_LIST_ROW_HEIGHT = None  # Disabled: using explicit 22px instead
+
+# Header / label styling
+HASH_LIST_HEADER_ALIGNMENT = "left"
+# Empty string means no background color (use main window styling)
+HASH_LIST_LABEL_BACKGROUND = ""
+
+# Column configuration for the hash/list view
+# 'width' = None will be treated as 'auto / stretch' by the dialog UI
+HASH_LIST_COLUMN_CONFIG = {
+    "filename": {
+        "title": "Filename",
+        "key": "filename",
+        "default_visible": True,
+        "removable": False,
+        # None -> smart-fill / stretch behavior handled by UI; use min_width as lower bound
+        "width": None,
+        "alignment": "left",
+        # reuse file table filename min width for consistency
+        "min_width": FILE_TABLE_COLUMN_CONFIG["filename"]["min_width"],
+    },
+    "hash": {
+        "title": "Hash",
+        "key": "hash",
+        "default_visible": True,
+        "removable": True,
+        "width": RESULTS_TABLE_RIGHT_COLUMN_WIDTH,
+        "alignment": "left",
+        "min_width": 70,
+    },
+}
 
 # =====================================
 # METADATA STATUS ICON COLORS

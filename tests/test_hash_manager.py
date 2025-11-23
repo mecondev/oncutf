@@ -1,3 +1,37 @@
+import zlib
+from pathlib import Path
+
+from core.hash_manager import HashManager, calculate_crc32
+
+
+def write_file(path: Path, content: bytes):
+    path.write_bytes(content)
+    return path
+
+
+def expected_crc32_bytes(content: bytes) -> str:
+    return f"{(zlib.crc32(content) & 0xFFFFFFFF):08x}"
+
+
+def test_calculate_crc32(tmp_path):
+    f1 = write_file(tmp_path / "one.bin", b"hello")
+    expected = expected_crc32_bytes(b"hello")
+    got = calculate_crc32(f1)
+    assert got == expected
+
+
+def test_find_duplicates_in_paths_and_clear_cache(tmp_path):
+    f1 = write_file(tmp_path / "a.txt", b"same")
+    f2 = write_file(tmp_path / "b.txt", b"same")
+    mgr = HashManager()
+    dups = mgr.find_duplicates_in_paths([str(f1), str(f2)])
+    # hashes should be same and group contains both
+    assert len(dups) == 1
+    for k, v in dups.items():
+        assert len(v) == 2
+
+    # clear cache should not raise
+    mgr.clear_cache()
 #!/usr/bin/env python3
 """
 Module: test_hash_manager.py

@@ -151,7 +151,7 @@ class ParallelMetadataLoader:
                         # Still call progress callback to update count
                         if progress_callback:
                             progress_callback(completed, total_files, item, {})
-                    
+
                     # Process events every file to keep UI responsive
                     # This is crucial for progress dialog updates
                     try:
