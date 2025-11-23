@@ -448,28 +448,32 @@ class ResultsTableDialog(QDialog):
     def _auto_fit_columns_to_content(self):
         """Auto-fit column widths to content (Ctrl+T).
         
-        Resizes both columns to fit their content optimally.
+        Resizes column 1 to content, and column 0 to fill remaining space
+        (or fit content if larger).
         """
         self._suspend_column_save = True
         try:
-            # Resize both columns to their content
-            self.table.resizeColumnToContents(0)
+            # 1. Resize right column (Value/Checksum) to content
             self.table.resizeColumnToContents(1)
+            col1_width = self.table.columnWidth(1)
             
-            # Enforce minimum width for filename column (column 0)
-            # If the header is "Filename", we want a larger minimum width
-            if self.left_header.lower() == "filename":
-                current_width = self.table.columnWidth(0)
-                min_filename_width = 250  # Reasonable minimum for filenames
-                if current_width < min_filename_width:
-                    self.table.setColumnWidth(0, min_filename_width)
-                    logger.debug(f"[ResultsTableDialog] Enforced min filename width: {min_filename_width}")
+            # 2. Get viewport width (available space)
+            viewport_width = self.table.viewport().width()
             
-            # Get the new widths
-            left_width = self.table.columnWidth(0)
-            right_width = self.table.columnWidth(1)
+            # 3. Calculate remaining space for column 0
+            available_for_col0 = viewport_width - col1_width
             
-            logger.info(f"[ResultsTableDialog] Auto-fit columns: [{left_width}, {right_width}]")
+            # 4. Resize column 0 to content to get its minimum needed width
+            self.table.resizeColumnToContents(0)
+            col0_content_width = self.table.columnWidth(0)
+            
+            # 5. Set column 0 width to fill space, but at least fit content
+            # This ensures we don't truncate text if possible, but fill empty space
+            final_col0_width = max(col0_content_width, available_for_col0)
+            
+            self.table.setColumnWidth(0, final_col0_width)
+            
+            logger.info(f"[ResultsTableDialog] Auto-fit columns: [{final_col0_width}, {col1_width}] (Viewport: {viewport_width})")
         finally:
             self._suspend_column_save = False
             # Mark config as dirty to save the new widths
