@@ -119,16 +119,30 @@ python3.12 main.py
 
 ### Keyboard Shortcuts & Modifiers
 
+#### Global Shortcuts
 - **Ctrl+A**: Select all files
 - **Ctrl+Shift+A**: Clear all selection
 - **Ctrl+I**: Invert selection
 - **Ctrl+O**: Browse for files
 - **F5**: Force reload current folder
+- **Ctrl+L**: Show results hash list dialog
+- **Ctrl+Shift+Z**: Show command history dialog
+- **Escape**: Cancel drag operations
+- **Shift+Escape**: Clear file table
+
+#### File Table Shortcuts (when file table has focus)
 - **Ctrl+M**: Load basic metadata for selected files
 - **Ctrl+E**: Load extended metadata for selected files
+- **Ctrl+Shift+M**: Load basic metadata for all files
+- **Ctrl+Shift+E**: Load extended metadata for all files
+- **Ctrl+H**: Calculate hash checksums for selected files
+- **Ctrl+Shift+H**: Calculate hash checksums for all files
 - **Ctrl+S**: Save selected metadata
 - **Ctrl+Shift+S**: Save all metadata
-- **Escape**: Cancel drag operations
+
+#### Metadata Tree Shortcuts (when focused)
+- **Ctrl+Z**: Undo last metadata edit
+- **Ctrl+R**: Redo last undone metadata edit
 
 **Drag & Drop Modifiers:**
 - No modifier: Skip metadata loading (folders) / Fast metadata (file-to-metadata)
@@ -199,6 +213,7 @@ oncutf/
 Comprehensive documentation is available in the `docs/` directory:
 
 - **[Complete Documentation Index](docs/README.md)** - Overview and navigation
+- **[Keyboard Shortcuts Reference](docs/keyboard_shortcuts.md)** - Complete keyboard shortcuts guide
 - **[Application Workflow](docs/application_workflow.md)** - Complete application flow from startup to rename execution
 - **[Database Quick Start](docs/database_quick_start.md)** - Get started with persistent storage
 - **[Structured Metadata System](docs/structured_metadata_system.md)** - Advanced metadata organization and processing

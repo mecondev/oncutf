@@ -74,8 +74,8 @@ def patch_logger_safe_methods(logger: logging.Logger):
 
 def get_logger(name: str = None) -> logging.Logger:
     """
-    Returns a logger with the given name, setting up a UTF-8-safe console handler
-    if no handlers exist. Also patches its logging methods to avoid UnicodeEncodeError.
+    Returns a logger with the given name, delegating to the root logger for output.
+    Patches logging methods to avoid UnicodeEncodeError.
 
     Args:
         name (str): Optional name for the logger (defaults to caller's module)
@@ -86,20 +86,15 @@ def get_logger(name: str = None) -> logging.Logger:
     logger = logging.getLogger(name or __name__)
     logger.setLevel(logging.DEBUG)
 
-    # Prevent propagation to root logger to avoid duplicate logs
-    logger.propagate = False
+    # Enable propagation to root logger for centralized file/console handling
+    logger.propagate = True
 
-    if not logger.hasHandlers():
-        handler = logging.StreamHandler(sys.stdout)
-        handler.addFilter(DevOnlyFilter())
-        formatter = logging.Formatter("[%(levelname)s] %(message)s")
-        handler.setFormatter(formatter)
+    # Remove any existing handlers to avoid duplicates
+    # The root logger will handle all output (console + files)
+    if logger.hasHandlers():
+        logger.handlers.clear()
 
-        with contextlib.suppress(Exception):
-            handler.stream.reconfigure(encoding="utf-8")
-
-        logger.addHandler(handler)
-
+    # Patch logger methods for safe Unicode handling
     if not getattr(logger, "_patched_for_safe_log", False):
         patch_logger_safe_methods(logger)
         logger._patched_for_safe_log = True

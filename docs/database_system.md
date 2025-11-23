@@ -170,6 +170,9 @@ operations = rename_history.get_recent_operations(limit=20)
 # Check if operation can be undone
 can_undo, reason = rename_history.can_undo_operation(operation_id)
 
+# View complete history: Press Ctrl+Shift+Z for command history dialog
+# View rename history: Press Ctrl+Alt+H for rename history dialog
+
 # Undo operation
 if can_undo:
     success, message, files_processed = rename_history.undo_operation(operation_id)

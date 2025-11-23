@@ -142,6 +142,7 @@ class InitializationOrchestrator:
 
         # UI state attributes
         self.window.loading_dialog = None
+        self.window.results_dialog = None
         self.window.modifier_state = Qt.NoModifier  # type: ignore
         self.window.create_colored_icon = create_colored_icon
         self.window.icon_paths = prepare_status_icons()
@@ -202,9 +203,9 @@ class InitializationOrchestrator:
         # Create UIManager (but don't setup UI yet)
         self.window.ui_manager = UIManager(parent_window=self.window)
 
-        # Register managers in context BEFORE setting up UI
-        # (UI setup may use context.get_manager())
-        self.window._register_managers_in_context()
+        # Register managers in context BEFORE setup_all_ui
+        # (They are all created by this point)
+        self._register_managers_for_ui()
 
         # Setup UI (now managers are available via context)
         self.window.ui_manager.setup_all_ui()
@@ -249,6 +250,9 @@ class InitializationOrchestrator:
         self.window.signal_coordinator = SignalCoordinator(self.window)
         self.window.shutdown_coordinator = get_shutdown_coordinator()
 
+        # Register remaining managers in context AFTER app_service creation
+        self._register_managers_remaining()
+
         # Register shutdown components
         self.window._register_shutdown_components()
 
@@ -256,3 +260,40 @@ class InitializationOrchestrator:
         self.window.signal_coordinator.setup_all_signals()
 
         logger.info("Phase 4: Configuration and finalization complete", extra={"dev_only": True})
+
+    def _register_managers_for_ui(self) -> None:
+        """
+        Register managers needed for UI setup (Phase 3).
+
+        These managers are created before UI setup and must be available
+        to the context before setup_all_ui() is called.
+        """
+        self.window.context.register_manager('dialog', self.window.dialog_manager)
+        self.window.context.register_manager('event_handler', self.window.event_handler_manager)
+        self.window.context.register_manager('file_load', self.window.file_load_manager)
+        self.window.context.register_manager('file_validation', self.window.file_validation_manager)
+        self.window.context.register_manager('table', self.window.table_manager)
+        self.window.context.register_manager('utility', self.window.utility_manager)
+        self.window.context.register_manager('rename', self.window.rename_manager)
+        self.window.context.register_manager('drag_cleanup', self.window.drag_cleanup_manager)
+        self.window.context.register_manager('shortcut', self.window.shortcut_manager)
+        self.window.context.register_manager('splitter', self.window.splitter_manager)
+        self.window.context.register_manager('initialization', self.window.initialization_manager)
+        self.window.context.register_manager('column', self.window.column_manager)
+        self.window.context.register_manager('config', self.window.config_manager)
+        self.window.context.register_manager('window_config', self.window.window_config_manager)
+
+        logger.debug("UI managers registered in context", extra={"dev_only": True})
+
+    def _register_managers_remaining(self) -> None:
+        """
+        Register remaining managers after app_service creation (Phase 4).
+
+        These managers depend on app_service and other Phase 4 components.
+        """
+        self.window.context.register_manager('app_service', self.window.app_service)
+        self.window.context.register_manager('batch', self.window.batch_manager)
+        self.window.context.register_manager('signal_coordinator', self.window.signal_coordinator)
+        self.window.context.register_manager('shutdown_coordinator', self.window.shutdown_coordinator)
+
+        logger.debug("Remaining managers registered in context", extra={"dev_only": True})

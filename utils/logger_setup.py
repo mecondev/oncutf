@@ -136,13 +136,18 @@ class ConfigureLogger:
                 )
 
     def _setup_console_handler(self, level: int):
-        """Sets up console handler with UTF-8-safe formatting."""
+        """Sets up console handler with UTF-8-safe formatting and DevOnlyFilter."""
         console_handler = logging.StreamHandler(sys.stdout)
 
         with contextlib.suppress(Exception):
             console_handler.stream.reconfigure(encoding="utf-8")
 
         console_handler.setLevel(level)
+        
+        # Add DevOnlyFilter to console handler to hide dev-only messages
+        from utils.logger_helper import DevOnlyFilter
+        console_handler.addFilter(DevOnlyFilter())
+        
         formatter = logging.Formatter("[%(levelname)s] %(message)s")
         console_handler.setFormatter(formatter)
         self.logger.addHandler(console_handler)

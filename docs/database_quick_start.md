@@ -38,9 +38,10 @@ The database system is automatically activated when the application starts. No c
 
 ### New Features
 
-#### Rename History
-- Press `Ctrl+Z` to undo the last rename operation
-- View complete history through the Tools menu
+#### Command History & Undo/Redo
+- Press `Ctrl+Shift+Z` to view complete command history dialog
+- Press `Ctrl+Z` (in metadata tree) to undo the last metadata edit
+- Press `Ctrl+R` (in metadata tree) to redo the last undone metadata edit
 - Validation for safe undo operations
 
 #### Database Statistics

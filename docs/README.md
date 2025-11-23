@@ -2,11 +2,12 @@
 
 This directory contains comprehensive documentation for the oncutf application. The documentation is organized into several categories covering different aspects of the application's functionality and architecture.
 
-## �� Quick Start
+## 🚀 Quick Start
 
 - **[Application Workflow](application_workflow.md)** - Complete application flow from startup to rename execution
 - **[Database Quick Start](database_quick_start.md)** - Get started with the persistent database system
 - **[Progress Manager System](progress_manager_system.md)** - Understanding the unified progress tracking API
+- **[Keyboard Shortcuts](keyboard_shortcuts.md)** - Complete keyboard shortcuts reference
 
 ## 🔧 Core Systems
 

@@ -14,7 +14,6 @@ Functions:
 """
 
 import atexit
-import locale  # Used for logging locale information in main()  # noqa: F401
 import logging
 import os
 import platform
@@ -142,6 +141,7 @@ def main() -> int:
 
         # Log locale information (important for date/time formatting)
         try:
+            import locale
             current_locale = locale.getlocale()
             logger.debug(f"Current locale: {current_locale}", extra={"dev_only": True})
         except Exception as e:

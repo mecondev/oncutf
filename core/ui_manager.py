@@ -697,30 +697,24 @@ class UIManager:
         global_shortcuts = [
             ("Escape", self.parent_window.force_drag_cleanup),  # Global escape key
             ("Shift+Escape", self.parent_window.clear_file_table_shortcut),  # Clear file table
-            (
-                "Ctrl+Z",
-                self.parent_window.shortcut_manager.undo_metadata_operation,
-            ),  # Undo metadata operation
-            (
-                "Ctrl+Shift+Z",
-                self.parent_window.shortcut_manager.redo_metadata_operation,
-            ),  # Redo metadata operation
         ]
         for key, handler in global_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self.parent_window)  # Attached to main window
             shortcut.activated.connect(handler)
             self.parent_window.shortcuts.append(shortcut)
 
-        # History shortcuts (separate from hash shortcuts)
+        # History and dialog shortcuts
+        from core.config_imports import UNDO_REDO_SETTINGS
+
         history_shortcuts = [
             (
-                "Alt+H",
+                UNDO_REDO_SETTINGS.get("HISTORY_SHORTCUT", "Ctrl+Shift+Z"),
                 self.parent_window.shortcut_manager.show_history_dialog,
             ),  # Show command history dialog
             (
-                "Ctrl+Alt+H",
-                self.parent_window.shortcut_manager.show_rename_history_dialog,
-            ),  # Show rename history dialog
+                UNDO_REDO_SETTINGS.get("RESULTS_HASH_LIST_SHORTCUT", "Ctrl+L"),
+                self.parent_window.shortcut_manager.show_results_hash_list,
+            ),  # Show results hash list dialog
         ]
         for key, handler in history_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self.parent_window)  # Attached to main window

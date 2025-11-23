@@ -57,7 +57,7 @@ LOG_CONSOLE_LEVEL = "INFO"  # Console log level (INFO, DEBUG, WARNING, ERROR)
 
 # File logging
 LOG_TO_FILE = True  # Enable/disable file logging
-LOG_FILE_LEVEL = "ERROR"  # Main log file level (errors only)
+LOG_FILE_LEVEL = "INFO"  # Main log file level (INFO and above)
 LOG_FILE_MAX_BYTES = 10_000_000  # 10MB per file (rotation trigger)
 LOG_FILE_BACKUP_COUNT = 5  # Keep 5 backup files (total: 60MB max)
 
@@ -502,8 +502,9 @@ UNDO_REDO_SETTINGS = {
     "MAX_UNDO_STEPS": 300,
     # Keyboard shortcuts
     "UNDO_SHORTCUT": "Ctrl+Z",
-    "REDO_SHORTCUT": "Ctrl+Shift+Z",
-    "HISTORY_SHORTCUT": "Ctrl+L",
+    "REDO_SHORTCUT": "Ctrl+R",
+    "HISTORY_SHORTCUT": "Ctrl+Shift+Z",
+    "RESULTS_HASH_LIST_SHORTCUT": "Ctrl+L",
     # Command grouping timeout (milliseconds)
     # Commands within this time window may be grouped together
     "COMMAND_GROUPING_TIMEOUT": 1000,

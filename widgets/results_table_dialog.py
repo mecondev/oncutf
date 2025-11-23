@@ -45,7 +45,9 @@ from core.pyqt_imports import (
     QVBoxLayout,
 )
 from models.results_table_model import ResultsTableModel
+from utils.icons_loader import get_menu_icon
 from utils.logger_factory import get_cached_logger
+from utils.timer_manager import get_timer_manager
 
 logger = get_cached_logger(__name__)
 
@@ -83,7 +85,7 @@ class ResultsTableDialog(QDialog):
 
         self.setWindowTitle(title)
         self.setModal(True)
-        
+
         # Ensure dialog can receive keyboard events
         self.setFocusPolicy(Qt.StrongFocus)
 
@@ -91,7 +93,7 @@ class ResultsTableDialog(QDialog):
         self._setup_ui()
         self._load_geometry()
         self._populate_data()
-        
+
         # Set focus to dialog after setup
         self.setFocus()
 
@@ -131,8 +133,7 @@ class ResultsTableDialog(QDialog):
         self.table.setEditTriggers(QTableView.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
         self.table.verticalHeader().setVisible(False)
-        
-        # Install event filter on table to forward Ctrl+T shortcuts to dialog
+                # Install event filter on table to forward Ctrl+T shortcuts to dialog
         self.table.installEventFilter(self)
 
         # Configure row height from theme engine
@@ -166,14 +167,27 @@ class ResultsTableDialog(QDialog):
 
         # Button bar
         button_layout = QHBoxLayout()
+
+        # Status label (bottom left)
+        self.status_label = QLabel("")
+        self.status_label.setObjectName("status_label")
+        # Apply styling for status (brighter than disabled text, no italic)
+        from utils.theme_engine import ThemeEngine
+        theme = ThemeEngine()
+        status_color = theme.colors["app_text"]  # Use main text color but with slight transparency
+        self.status_label.setStyleSheet(f"color: {status_color}; opacity: 0.7;")
+        button_layout.addWidget(self.status_label)
+
         button_layout.addStretch()
 
         self.close_button = QPushButton("Close")
         self.close_button.clicked.connect(self.accept)
         self.close_button.setObjectName("dialog_action_button")
-        # Use theme constant for button height
-        from utils.theme_engine import ThemeEngine
-        theme = ThemeEngine()
+        # Add icon to close button
+        try:
+            self.close_button.setIcon(get_menu_icon("x"))
+        except Exception as e:
+            logger.debug(f"Could not load close icon: {e}")
         self.close_button.setFixedHeight(theme.get_constant("button_height"))
         button_layout.addWidget(self.close_button)
 
@@ -181,10 +195,12 @@ class ResultsTableDialog(QDialog):
         try:
             self.export_button = QPushButton("Export")
             self.export_button.setObjectName("dialog_action_button")
+            # Add icon to export button
+            self.export_button.setIcon(get_menu_icon("download"))
             self.export_button.setFixedHeight(theme.get_constant("button_height"))
             button_layout.insertWidget(button_layout.count() - 1, self.export_button)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Could not create export button: {e}")
 
         layout.addLayout(button_layout)
         self.setLayout(layout)
@@ -199,7 +215,7 @@ class ResultsTableDialog(QDialog):
 
     def _update_scrollbar_visibility(self) -> None:
         """Update scrollbar visibility based on table content and column widths.
-        
+
         Matches behavior of FileTableView to prevent unnecessary scrollbars.
         """
         if not hasattr(self, "table") or not self.table.model():
@@ -233,7 +249,7 @@ class ResultsTableDialog(QDialog):
             # Simple logic: show scrollbar if content is wider than viewport
             if total_width > viewport_width:
                 self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-                
+
                 # Restore scrollbar position if it's still valid
                 if hbar and hbar.maximum() > 0:
                     if current_scroll_position <= hbar.maximum():
@@ -260,7 +276,7 @@ class ResultsTableDialog(QDialog):
 
         config_manager = get_app_config_manager()
         dialogs_config = config_manager.get_category("dialogs", create_if_not_exists=True)
-        
+
         logger.info(f"[ResultsTableDialog] Loading config for key: {self.config_key}")
         logger.info(f"[ResultsTableDialog] Dialogs config keys: {list(dialogs_config._data.keys()) if hasattr(dialogs_config, '_data') else 'N/A'}")
 
@@ -268,7 +284,7 @@ class ResultsTableDialog(QDialog):
         geometry_key = f"{self.config_key}_geometry"
         geometry = dialogs_config.get(geometry_key)
         logger.info(f"[ResultsTableDialog] Loaded geometry from '{geometry_key}': {geometry}")
-        
+
         if geometry and len(geometry) == 4:
             try:
                 x, y, width, height = geometry
@@ -301,7 +317,7 @@ class ResultsTableDialog(QDialog):
         column_widths_key = f"{self.config_key}_column_widths"
         column_widths = dialogs_config.get(column_widths_key)
         logger.info(f"[ResultsTableDialog] Loaded column widths from '{column_widths_key}': {column_widths}")
-        
+
         if column_widths and len(column_widths) == 2:
             try:
                 self.table.setColumnWidth(0, column_widths[0])
@@ -363,13 +379,25 @@ class ResultsTableDialog(QDialog):
             return
         # Just mark that columns changed - actual save happens in closeEvent
         self._columns_changed = True
-        
+
         # Update scrollbar visibility
         self._update_scrollbar_visibility()
-        
+
         # Force immediate scrollbar and viewport update
         self.table.updateGeometry()
         self.table.viewport().update()
+
+    def show_status_message(self, message: str, duration: int = 3000):
+        """Show a temporary status message in the bottom left label."""
+        if hasattr(self, "status_label"):
+            self.status_label.setText(message)
+            # Clear after duration using timer manager
+            timer_mgr = get_timer_manager()
+            timer_mgr.schedule(
+                lambda: self.status_label.setText(""),
+                delay=duration,
+                timer_id=f"status_clear_{id(self)}"
+            )
 
     def _on_table_context_menu(self, pos):
         """Show context menu for copying values."""
@@ -389,13 +417,15 @@ class ResultsTableDialog(QDialog):
         from utils.theme_engine import ThemeEngine
         theme = ThemeEngine()
         menu.setStyleSheet(theme.get_context_menu_stylesheet())
-        
-        action_copy = QAction("Copy value", self)
+
+        action_copy = QAction("Copy", menu)
+        action_copy.setIcon(get_menu_icon("copy"))
 
         def do_copy():
             value = self.model.data(self.model.index(row, col), Qt.DisplayRole)
             if value:
                 QApplication.clipboard().setText(str(value))
+                self.show_status_message("Value copied")
 
         action_copy.triggered.connect(do_copy)
         menu.addAction(action_copy)
@@ -404,7 +434,7 @@ class ResultsTableDialog(QDialog):
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts (Ctrl+T for auto-fit, Ctrl+Shift+T for reset)."""
         logger.debug(f"[ResultsTableDialog] keyPressEvent: key={event.key()}, modifiers={event.modifiers()}")
-        
+
         # Ctrl+T: Auto-fit columns to content
         if event.key() == Qt.Key_T and event.modifiers() == Qt.ControlModifier:
             logger.debug("[ResultsTableDialog] Ctrl+T pressed - auto-fitting columns")
@@ -447,7 +477,7 @@ class ResultsTableDialog(QDialog):
 
     def _auto_fit_columns_to_content(self):
         """Auto-fit column widths to content (Ctrl+T).
-        
+
         Resizes column 1 to content, and column 0 to fill remaining space
         (or fit content if larger).
         """
@@ -456,23 +486,23 @@ class ResultsTableDialog(QDialog):
             # 1. Resize right column (Value/Checksum) to content
             self.table.resizeColumnToContents(1)
             col1_width = self.table.columnWidth(1)
-            
+
             # 2. Get viewport width (available space)
             viewport_width = self.table.viewport().width()
-            
+
             # 3. Calculate remaining space for column 0
             available_for_col0 = viewport_width - col1_width
-            
+
             # 4. Resize column 0 to content to get its minimum needed width
             self.table.resizeColumnToContents(0)
             col0_content_width = self.table.columnWidth(0)
-            
+
             # 5. Set column 0 width to fill space, but at least fit content
             # This ensures we don't truncate text if possible, but fill empty space
             final_col0_width = max(col0_content_width, available_for_col0)
-            
+
             self.table.setColumnWidth(0, final_col0_width)
-            
+
             logger.info(f"[ResultsTableDialog] Auto-fit columns: [{final_col0_width}, {col1_width}] (Viewport: {viewport_width})")
         finally:
             self._suspend_column_save = False
@@ -496,27 +526,27 @@ class ResultsTableDialog(QDialog):
 
         config_manager = get_app_config_manager()
         dialogs_config = config_manager.get_category("dialogs", create_if_not_exists=True)
-        
+
         logger.info(f"[ResultsTableDialog] Saving config for key: {self.config_key}")
-        
+
         # Save geometry
         geometry_key = f"{self.config_key}_geometry"
         geo = self.geometry()
         geometry = [geo.x(), geo.y(), geo.width(), geo.height()]
         dialogs_config.set(geometry_key, geometry)
         logger.info(f"[ResultsTableDialog] Set '{geometry_key}' = {geometry}")
-        
+
         # Save column widths
         column_widths_key = f"{self.config_key}_column_widths"
         left_width = self.table.columnWidth(0)
         right_width = self.table.columnWidth(1)
         dialogs_config.set(column_widths_key, [left_width, right_width])
         logger.info(f"[ResultsTableDialog] Set '{column_widths_key}' = [{left_width}, {right_width}]")
-        
+
         # Single save for both
         config_manager.save_immediate()
-        logger.info(f"[ResultsTableDialog] ✓ Config saved to disk")
-        
+        logger.info("[ResultsTableDialog] ✓ Config saved to disk")
+
         # Verify it was saved
         verify_geo = dialogs_config.get(geometry_key)
         verify_cols = dialogs_config.get(column_widths_key)

@@ -7,9 +7,11 @@ Date: 2025-01-15
 ShortcutManager - Handles keyboard shortcuts
 This manager centralizes keyboard shortcut handling including:
 - Clear file table shortcut (Shift+Escape)
-- Undo/Redo shortcuts (Ctrl+Z, Ctrl+Shift+Z)
-- History dialog shortcut (Ctrl+H)
+- History dialog shortcut (Ctrl+Shift+Z)
+- Results hash list shortcut (Ctrl+L)
 - Future keyboard shortcuts can be added here
+
+Note: Undo/Redo shortcuts (Ctrl+Z, Ctrl+R) are local to metadata tree widget.
 """
 
 from typing import TYPE_CHECKING
@@ -166,9 +168,9 @@ class ShortcutManager:
 
     def show_history_dialog(self) -> None:
         """
-        Show the command history dialog triggered by Ctrl+H shortcut.
+        Show the command history dialog triggered by Ctrl+Shift+Z shortcut.
         """
-        logger.info("[MainWindow] HISTORY: Ctrl+H key pressed")
+        logger.info("[MainWindow] HISTORY: Ctrl+Shift+Z key pressed")
 
         try:
             # Show the metadata history dialog
@@ -208,6 +210,35 @@ class ShortcutManager:
             if hasattr(self.main_window, "status_manager"):
                 self.main_window.status_manager.set_file_operation_status(
                     "Failed to show rename history dialog", success=False, auto_reset=True
+                )
+
+    def show_results_hash_list(self) -> None:
+        """
+        Show the results hash list dialog triggered by Ctrl+L shortcut.
+        """
+        logger.info("[MainWindow] RESULTS_HASH_LIST: Ctrl+L key pressed")
+
+        try:
+            # Get or create the results table dialog
+            from widgets.results_table_dialog import ResultsTableDialog
+
+            if not hasattr(self.main_window, "results_dialog") or self.main_window.results_dialog is None:
+                self.main_window.results_dialog = ResultsTableDialog(self.main_window)
+
+            # Show the dialog
+            self.main_window.results_dialog.show()
+            self.main_window.results_dialog.raise_()
+            self.main_window.results_dialog.activateWindow()
+
+            logger.info("[MainWindow] RESULTS_HASH_LIST: Results hash list dialog shown successfully")
+
+        except Exception as e:
+            logger.error(f"[MainWindow] RESULTS_HASH_LIST: Error showing results dialog: {e}")
+
+            # Show error message
+            if hasattr(self.main_window, "status_manager"):
+                self.main_window.status_manager.set_file_operation_status(
+                    "Failed to show results dialog", success=False, auto_reset=True
                 )
 
     def get_shortcut_status(self) -> dict:
