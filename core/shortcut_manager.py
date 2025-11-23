@@ -219,6 +219,15 @@ class ShortcutManager:
         logger.info("[MainWindow] RESULTS_HASH_LIST: Ctrl+L key pressed")
 
         try:
+            # Check if there are any files loaded
+            if not self.main_window.file_model or not self.main_window.file_model.files:
+                logger.info("[MainWindow] RESULTS_HASH_LIST: No files loaded")
+                if hasattr(self.main_window, "status_manager"):
+                    self.main_window.status_manager.set_selection_status(
+                        "No Files Selected", selected_count=0, total_count=0, auto_reset=True
+                    )
+                return
+
             # Get or create the results table dialog
             from widgets.results_table_dialog import ResultsTableDialog
 
