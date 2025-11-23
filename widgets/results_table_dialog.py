@@ -421,19 +421,39 @@ class ResultsTableDialog(QDialog):
     def _auto_fit_columns_to_content(self):
         """Auto-fit column widths to content (Ctrl+T).
         
-        Resizes both columns to fit their content optimally.
+        Resizes columns to fit content, ensuring the first column
+        fills available space if possible.
         """
         self._suspend_column_save = True
         try:
-            # Resize both columns to their content
+            # First, resize both to contents to get the minimum needed widths
             self.table.resizeColumnToContents(0)
             self.table.resizeColumnToContents(1)
             
-            # Get the new widths
-            left_width = self.table.columnWidth(0)
-            right_width = self.table.columnWidth(1)
+            content_width_0 = self.table.columnWidth(0)
+            content_width_1 = self.table.columnWidth(1)
             
-            logger.info(f"[ResultsTableDialog] Auto-fit columns: [{left_width}, {right_width}]")
+            # Get viewport width
+            viewport_width = self.table.viewport().width()
+            
+            # Calculate available space for column 0
+            # We want column 0 to take at least the content width,
+            # but also expand to fill the viewport if there's extra space.
+            available_for_0 = viewport_width - content_width_1
+            
+            # Use the larger of content width or available space
+            # This ensures we don't truncate long filenames (scrollbar will appear)
+            # but we also don't leave empty space for short filenames
+            # Also enforce a reasonable minimum (e.g. 200px)
+            new_width_0 = max(content_width_0, available_for_0, 200)
+            
+            # Apply the new width
+            self.table.setColumnWidth(0, new_width_0)
+            
+            # Ensure column 1 is set to the content width
+            self.table.setColumnWidth(1, content_width_1)
+            
+            logger.info(f"[ResultsTableDialog] Auto-fit columns: [{new_width_0}, {content_width_1}] (Viewport: {viewport_width})")
         finally:
             self._suspend_column_save = False
             # Mark config as dirty to save the new widths
