@@ -28,13 +28,13 @@ class ResultsTableModel(QAbstractTableModel):
     def __init__(self, data: dict | None = None, parent=None):
         """Initialize the results table model."""
         super().__init__(parent)
-        self.data = list((data or {}).items())  # Store as list of tuples for O(1) access
+        self._model_data = list((data or {}).items())  # Store as list of tuples for O(1) access
         self.left_header = "Item"
         self.right_header = "Value"
 
     def rowCount(self, _parent=None) -> int:
         """Return number of rows."""
-        return len(self.data)
+        return len(self._model_data)
 
     def columnCount(self, _parent=None) -> int:
         """Return number of columns (always 2)."""
@@ -48,10 +48,10 @@ class ResultsTableModel(QAbstractTableModel):
         row = index.row()
         col = index.column()
 
-        if row >= len(self.data):
+        if row >= len(self._model_data):
             return None
 
-        left_val, right_val = self.data[row]
+        left_val, right_val = self._model_data[row]
 
         if role == Qt.DisplayRole:
             return str(left_val) if col == 0 else str(right_val)
@@ -63,6 +63,9 @@ class ResultsTableModel(QAbstractTableModel):
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         """Return header data."""
+        if role == Qt.TextAlignmentRole and orientation == Qt.Horizontal:
+            return Qt.AlignLeft | Qt.AlignVCenter
+
         if role != Qt.DisplayRole:
             return None
 
@@ -80,6 +83,6 @@ class ResultsTableModel(QAbstractTableModel):
     def set_data(self, data: dict):
         """Replace all data and refresh view."""
         self.beginResetModel()
-        self.data = list(data.items())
+        self._model_data = list(data.items())
         self.endResetModel()
 
