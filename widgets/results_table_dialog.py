@@ -205,21 +205,48 @@ class ResultsTableDialog(QDialog):
         if not hasattr(self, "table") or not self.table.model():
             return
 
-        # Calculate total column width
-        total_width = 0
-        header = self.table.horizontalHeader()
-        for i in range(header.count()):
-            if not header.isSectionHidden(i):
-                total_width += self.table.columnWidth(i)
+        try:
+            # Store current scrollbar position to preserve user's scroll position
+            hbar = self.table.horizontalScrollBar()
+            current_scroll_position = hbar.value() if hbar else 0
 
-        # Get viewport width
-        viewport_width = self.table.viewport().width()
+            # Force complete geometry recalculation
+            self.table.updateGeometries()
 
-        # Simple logic: show scrollbar if content is wider than viewport
-        if total_width > viewport_width:
-            self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        else:
-            self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            # Force layout recalculation to update elided text
+            if self.table.model():
+                self.table.model().layoutChanged.emit()
+
+            # Update viewport to refresh display
+            self.table.viewport().update()
+
+            # Calculate total column width
+            total_width = 0
+            header = self.table.horizontalHeader()
+            for i in range(header.count()):
+                if not header.isSectionHidden(i):
+                    total_width += self.table.columnWidth(i)
+
+            # Get viewport width
+            viewport_width = self.table.viewport().width()
+
+            # Simple logic: show scrollbar if content is wider than viewport
+            if total_width > viewport_width:
+                self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+                
+                # Restore scrollbar position if it's still valid
+                if hbar and hbar.maximum() > 0:
+                    if current_scroll_position <= hbar.maximum():
+                        hbar.setValue(current_scroll_position)
+                    else:
+                        hbar.setValue(hbar.maximum())
+            else:
+                self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+                if hbar:
+                    hbar.setValue(0)
+
+        except Exception as e:
+            logger.warning(f"[ResultsTableDialog] Error updating scrollbar visibility: {e}")
 
     def _populate_data(self):
         """Populate the table with data."""
@@ -421,39 +448,28 @@ class ResultsTableDialog(QDialog):
     def _auto_fit_columns_to_content(self):
         """Auto-fit column widths to content (Ctrl+T).
         
-        Resizes columns to fit content, ensuring the first column
-        fills available space if possible.
+        Resizes both columns to fit their content optimally.
         """
         self._suspend_column_save = True
         try:
-            # First, resize both to contents to get the minimum needed widths
+            # Resize both columns to their content
             self.table.resizeColumnToContents(0)
             self.table.resizeColumnToContents(1)
             
-            content_width_0 = self.table.columnWidth(0)
-            content_width_1 = self.table.columnWidth(1)
+            # Enforce minimum width for filename column (column 0)
+            # If the header is "Filename", we want a larger minimum width
+            if self.left_header.lower() == "filename":
+                current_width = self.table.columnWidth(0)
+                min_filename_width = 250  # Reasonable minimum for filenames
+                if current_width < min_filename_width:
+                    self.table.setColumnWidth(0, min_filename_width)
+                    logger.debug(f"[ResultsTableDialog] Enforced min filename width: {min_filename_width}")
             
-            # Get viewport width
-            viewport_width = self.table.viewport().width()
+            # Get the new widths
+            left_width = self.table.columnWidth(0)
+            right_width = self.table.columnWidth(1)
             
-            # Calculate available space for column 0
-            # We want column 0 to take at least the content width,
-            # but also expand to fill the viewport if there's extra space.
-            available_for_0 = viewport_width - content_width_1
-            
-            # Use the larger of content width or available space
-            # This ensures we don't truncate long filenames (scrollbar will appear)
-            # but we also don't leave empty space for short filenames
-            # Also enforce a reasonable minimum (e.g. 200px)
-            new_width_0 = max(content_width_0, available_for_0, 200)
-            
-            # Apply the new width
-            self.table.setColumnWidth(0, new_width_0)
-            
-            # Ensure column 1 is set to the content width
-            self.table.setColumnWidth(1, content_width_1)
-            
-            logger.info(f"[ResultsTableDialog] Auto-fit columns: [{new_width_0}, {content_width_1}] (Viewport: {viewport_width})")
+            logger.info(f"[ResultsTableDialog] Auto-fit columns: [{left_width}, {right_width}]")
         finally:
             self._suspend_column_save = False
             # Mark config as dirty to save the new widths
