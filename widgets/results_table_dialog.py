@@ -159,6 +159,7 @@ class ResultsTableDialog(QDialog):
 
         # Scrollbars
         self.table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        # Use manual control for horizontal scrollbar to match FileTableView behavior
         self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
         layout.addWidget(self.table)
@@ -187,6 +188,38 @@ class ResultsTableDialog(QDialog):
 
         layout.addLayout(button_layout)
         self.setLayout(layout)
+
+        # Initial scrollbar update
+        self._update_scrollbar_visibility()
+
+    def resizeEvent(self, event):
+        """Handle resize events to update scrollbar visibility."""
+        super().resizeEvent(event)
+        self._update_scrollbar_visibility()
+
+    def _update_scrollbar_visibility(self) -> None:
+        """Update scrollbar visibility based on table content and column widths.
+        
+        Matches behavior of FileTableView to prevent unnecessary scrollbars.
+        """
+        if not hasattr(self, "table") or not self.table.model():
+            return
+
+        # Calculate total column width
+        total_width = 0
+        header = self.table.horizontalHeader()
+        for i in range(header.count()):
+            if not header.isSectionHidden(i):
+                total_width += self.table.columnWidth(i)
+
+        # Get viewport width
+        viewport_width = self.table.viewport().width()
+
+        # Simple logic: show scrollbar if content is wider than viewport
+        if total_width > viewport_width:
+            self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        else:
+            self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
     def _populate_data(self):
         """Populate the table with data."""
@@ -304,6 +337,9 @@ class ResultsTableDialog(QDialog):
         # Just mark that columns changed - actual save happens in closeEvent
         self._columns_changed = True
         
+        # Update scrollbar visibility
+        self._update_scrollbar_visibility()
+        
         # Force immediate scrollbar and viewport update
         self.table.updateGeometry()
         self.table.viewport().update()
@@ -380,6 +416,7 @@ class ResultsTableDialog(QDialog):
             self._suspend_column_save = False
             # Mark config as dirty to save the new widths
             self._columns_changed = True
+            self._update_scrollbar_visibility()
 
     def _auto_fit_columns_to_content(self):
         """Auto-fit column widths to content (Ctrl+T).
@@ -401,6 +438,7 @@ class ResultsTableDialog(QDialog):
             self._suspend_column_save = False
             # Mark config as dirty to save the new widths
             self._columns_changed = True
+            self._update_scrollbar_visibility()
 
     def closeEvent(self, event):
         """Save geometry and column widths when dialog closes (single batch save)."""
