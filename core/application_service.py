@@ -213,7 +213,7 @@ class ApplicationService:
             )
             return
 
-        return self.main_window.event_handler_manager._handle_calculate_hashes(all_files)
+        return self.main_window.event_handler_manager.hash_ops.handle_calculate_hashes(all_files)
 
     def save_selected_metadata(self):
         """Save metadata for selected files."""
