@@ -75,6 +75,15 @@ def cleanup_on_exit():
     _cleanup_done = True
 
     try:
+        # Save configuration immediately before exit
+        from utils.json_config_manager import get_app_config_manager
+
+        get_app_config_manager().save_immediate()
+        logger.info("Configuration saved immediately before exit")
+    except Exception as e:
+        logger.warning(f"Error saving configuration during cleanup: {e}")
+
+    try:
         from utils.exiftool_wrapper import ExifToolWrapper
 
         ExifToolWrapper.force_cleanup_all_exiftool_processes()

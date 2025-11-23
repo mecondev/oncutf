@@ -74,6 +74,38 @@ class ConfigureLogger:
             max_bytes (int): Max size in bytes for rotating file.
             backup_count (int): Number of backup log files to keep.
         """
+        # Load config with fallback to defaults
+        try:
+            from config import (
+                LOG_TO_CONSOLE,
+                LOG_CONSOLE_LEVEL,
+                LOG_TO_FILE,
+                LOG_FILE_LEVEL,
+                LOG_FILE_MAX_BYTES,
+                LOG_FILE_BACKUP_COUNT,
+                LOG_DEBUG_FILE_ENABLED,
+                LOG_DEBUG_FILE_MAX_BYTES,
+                LOG_DEBUG_FILE_BACKUP_COUNT,
+            )
+            
+            # Override with config values
+            console_enabled = LOG_TO_CONSOLE
+            console_level = getattr(logging, LOG_CONSOLE_LEVEL, console_level)
+            file_enabled = LOG_TO_FILE
+            file_level = getattr(logging, LOG_FILE_LEVEL, file_level)
+            max_bytes = LOG_FILE_MAX_BYTES
+            backup_count = LOG_FILE_BACKUP_COUNT
+            debug_enabled = LOG_DEBUG_FILE_ENABLED
+            debug_max_bytes = LOG_DEBUG_FILE_MAX_BYTES
+            debug_backup_count = LOG_DEBUG_FILE_BACKUP_COUNT
+        except ImportError:
+            # Fallback to parameters if config not available
+            console_enabled = True
+            file_enabled = True
+            debug_enabled = True
+            debug_max_bytes = max_bytes * 2
+            debug_backup_count = backup_count
+
         self.logger = logging.getLogger()
         self.logger.setLevel(logging.DEBUG)  # Accept everything; handlers filter levels
 
@@ -85,12 +117,23 @@ class ConfigureLogger:
             log_file_path = os.path.join(log_dir, f"{log_name}_{timestamp}.log")
             debug_file_path = os.path.join(log_dir, f"{log_name}_debug_{timestamp}.log")
 
-            self._setup_console_handler(console_level)
-            self._setup_file_handler(log_file_path, file_level, max_bytes, backup_count)
+            # Console handler (optional)
+            if console_enabled:
+                self._setup_console_handler(console_level)
 
-            # Extra handler for DEBUG level (e.g., dev-only logs)
-            if ENABLE_DEBUG_LOG_FILE:
-                add_file_handler(logger=self.logger, log_path=debug_file_path, level=logging.DEBUG)
+            # File handler (optional)
+            if file_enabled:
+                self._setup_file_handler(log_file_path, file_level, max_bytes, backup_count)
+
+            # Extra handler for DEBUG level (optional)
+            if debug_enabled:
+                add_file_handler(
+                    logger=self.logger,
+                    log_path=debug_file_path,
+                    level=logging.DEBUG,
+                    max_bytes=debug_max_bytes,
+                    backup_count=debug_backup_count,
+                )
 
     def _setup_console_handler(self, level: int):
         """Sets up console handler with UTF-8-safe formatting."""

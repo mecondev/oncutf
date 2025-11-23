@@ -755,6 +755,14 @@ class MainWindow(QMainWindow):
         # Mark shutdown as in progress
         self._shutdown_in_progress = True
 
+        # Save configuration immediately before shutdown
+        try:
+            from utils.json_config_manager import get_app_config_manager
+            get_app_config_manager().save_immediate()
+            logger.info("[CloseEvent] Configuration saved immediately before shutdown")
+        except Exception as e:
+            logger.error(f"[CloseEvent] Failed to save configuration: {e}")
+
         # Ignore this close event - we'll handle closing ourselves
         event.ignore()
 

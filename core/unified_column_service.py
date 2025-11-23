@@ -332,8 +332,8 @@ class UnifiedColumnService:
                 for key, value in settings.items():
                     window_config.set(key, value)
 
-                config_manager.save()
-                logger.debug("[UnifiedColumnService] Saved settings via window config manager")
+                config_manager.mark_dirty()
+                logger.debug("[UnifiedColumnService] Marked settings dirty via window config manager")
             else:
                 # Fallback to direct JSON saving
                 from utils.json_config_manager import load_config, save_config

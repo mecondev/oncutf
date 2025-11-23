@@ -792,7 +792,7 @@ class FileTableView(QTableView):
                     config_manager = main_window.window_config_manager.config_manager
                     window_config = config_manager.get_category("window")
                     window_config.set("file_table_column_widths", {})
-                    config_manager.save()
+                    config_manager.mark_dirty()
                 except Exception as e:
                     logger.warning(f"[ColumnWidth] Error clearing main config: {e}")
                     # Continue to old format
@@ -828,8 +828,8 @@ class FileTableView(QTableView):
                     column_widths[column_key] = width
                     window_config.set("file_table_column_widths", column_widths)
 
-                    # Save immediately for individual changes
-                    config_manager.save()
+                    # Mark dirty for debounced save
+                    config_manager.mark_dirty()
                 except Exception as e:
                     logger.warning(f"[ColumnWidth] Error saving to main config: {e}")
                     # Continue to fallback method
@@ -867,7 +867,7 @@ class FileTableView(QTableView):
         self._config_save_timer.start(7000)  # 7 seconds delay
 
         logger.debug(
-            f"Scheduled delayed save for column '{column_key}' width {width}px (will save in 7 seconds)"
+            f"[FileTable] Scheduled delayed save for column '{column_key}' width {width}px (will save in 7 seconds)"
         )
 
     def _save_pending_column_changes(self) -> None:
@@ -889,7 +889,7 @@ class FileTableView(QTableView):
                         column_widths[column_key] = width
 
                     window_config.set("file_table_column_widths", column_widths)
-                    config_manager.save()
+                    config_manager.mark_dirty()
 
                     logger.info(
                         f"Saved {len(self._pending_column_changes)} column width changes to main config"
@@ -961,7 +961,7 @@ class FileTableView(QTableView):
             self.setColumnWidth(logical_index, min_width)
             self._programmatic_resize = False
             new_size = min_width  # Update the size we're working with
-            logger.debug(f"Column '{column_key}' enforced minimum width: {min_width}px")
+            logger.debug(f"[FileTable] Column '{column_key}' enforced minimum width: {min_width}px")
 
         # Schedule delayed save of column width
         self._schedule_column_save(column_key, new_size)
@@ -980,7 +980,7 @@ class FileTableView(QTableView):
         # Update header visibility after column resize
         self._update_header_visibility()
 
-        logger.debug(f"Column '{column_key}' resized from {old_size}px to {new_size}px")
+        logger.debug(f"[FileTable] Column '{column_key}' resized from {old_size}px to {new_size}px")
 
     def _force_scrollbar_update(self) -> None:
         """Force immediate scrollbar and viewport update."""
@@ -2217,8 +2217,8 @@ class FileTableView(QTableView):
                 window_config.set("file_table_columns", self._visible_columns)
                 logger.debug(f"[ColumnVisibility] Saved to main config: {self._visible_columns}")
 
-                # Save immediately
-                config_manager.save()
+                # Mark dirty for debounced save
+                config_manager.mark_dirty()
             else:
                 # Fallback to old method
                 from utils.json_config_manager import load_config, save_config

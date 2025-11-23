@@ -35,7 +35,6 @@ from config import (
     RESULTS_TABLE_MAX_HEIGHT,
     RESULTS_TABLE_MIN_HEIGHT,
     RESULTS_TABLE_MIN_WIDTH,
-    RESULTS_TABLE_RIGHT_COLUMN_WIDTH,
 )
 from core.pyqt_imports import (
     QAction,
@@ -368,8 +367,8 @@ class ResultsTableDialog(QDialog):
             right_width = self.table.columnWidth(1)
 
             dialogs_config.set(column_widths_key, [left_width, right_width])
-            config_manager.save()
-            logger.debug(f"[ResultsTableDialog] Saved column widths: [{left_width}, {right_width}]",
+            config_manager.mark_dirty()
+            logger.debug(f"[ResultsTableDialog] Marked column widths dirty: [{left_width}, {right_width}]",
                 extra={"dev_only": True})
 
     def _on_table_context_menu(self, pos):
@@ -408,9 +407,9 @@ class ResultsTableDialog(QDialog):
         geo = self.geometry()
         geometry = [geo.x(), geo.y(), geo.width(), geo.height()]
         dialogs_config.set(geometry_key, geometry)
-        config_manager.save()
+        config_manager.save_immediate()
 
-        logger.debug(f"[ResultsTableDialog] Saved geometry: {geometry}",
+        logger.debug(f"[ResultsTableDialog] Saved geometry immediately: {geometry}",
             extra={"dev_only": True})
 
         super().closeEvent(event)

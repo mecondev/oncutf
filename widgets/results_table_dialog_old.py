@@ -461,9 +461,9 @@ class ResultsTableDialog(QDialog):
             right_width = self.table.columnWidth(1)
 
             dialogs_config.set(column_widths_key, [left_width, right_width])
-            config_manager.save()  # Persist to disk
+            config_manager.mark_dirty()  # Mark for debounced save
             logger.debug(
-                f"[ResultsTableDialog] Saved column widths: [{left_width}, {right_width}]",
+                f"[ResultsTableDialog] Marked column widths dirty: [{left_width}, {right_width}]",
                 extra={"dev_only": True},
             )
 
@@ -529,10 +529,10 @@ class ResultsTableDialog(QDialog):
         geo = self.geometry()
         geometry = [geo.x(), geo.y(), geo.width(), geo.height()]
         dialogs_config.set(geometry_key, geometry)
-        config_manager.save()  # Persist to disk
+        config_manager.save_immediate()  # Force immediate save on close
 
         logger.debug(
-            f"[ResultsTableDialog] Saved geometry: {geometry}", extra={"dev_only": True}
+            f"[ResultsTableDialog] Saved geometry immediately: {geometry}", extra={"dev_only": True}
         )
 
         super().closeEvent(event)

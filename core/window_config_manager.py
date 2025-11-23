@@ -148,11 +148,11 @@ class WindowConfigManager:
                 }
                 window_config.set("column_states", column_states)
 
-            # Actually save the configuration to file
-            self.config_manager.save()
+            # Mark dirty for debounced save
+            self.config_manager.mark_dirty()
 
             logger.info(
-                "[Config] Window configuration saved successfully", extra={"dev_only": True}
+                "[Config] Window configuration marked for save", extra={"dev_only": True}
             )
 
         except Exception as e:

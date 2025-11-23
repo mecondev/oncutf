@@ -25,10 +25,6 @@ DEBUG_RESET_DATABASE = False
 # Config reset - if True, deletes config.json on startup
 DEBUG_RESET_CONFIG = False
 
-# Development logging settings
-SHOW_DEV_ONLY_IN_CONSOLE = False
-ENABLE_DEBUG_LOG_FILE = True
-
 # Development/Testing Settings
 DEV_SIMULATE_SCREEN = False
 
@@ -54,6 +50,40 @@ WINDOW_TITLE = "Batch File Renamer"
 # Logging settings
 LOG_LEVEL = "INFO"
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Console logging
+LOG_TO_CONSOLE = True  # Enable/disable console output
+LOG_CONSOLE_LEVEL = "INFO"  # Console log level (INFO, DEBUG, WARNING, ERROR)
+
+# File logging
+LOG_TO_FILE = True  # Enable/disable file logging
+LOG_FILE_LEVEL = "ERROR"  # Main log file level (errors only)
+LOG_FILE_MAX_BYTES = 10_000_000  # 10MB per file (rotation trigger)
+LOG_FILE_BACKUP_COUNT = 5  # Keep 5 backup files (total: 60MB max)
+
+# Debug file logging
+LOG_DEBUG_FILE_ENABLED = True  # Enable separate debug log file
+LOG_DEBUG_FILE_LEVEL = "DEBUG"  # Debug log file level
+LOG_DEBUG_FILE_MAX_BYTES = 20_000_000  # 20MB per debug file
+LOG_DEBUG_FILE_BACKUP_COUNT = 3  # Keep 3 debug backups (total: 80MB max)
+
+# Development logging settings (legacy - use LOG_* settings above)
+SHOW_DEV_ONLY_IN_CONSOLE = False
+ENABLE_DEBUG_LOG_FILE = LOG_DEBUG_FILE_ENABLED  # Use new config system
+
+# =====================================
+# CONFIG SAVE OPTIMIZATION
+# =====================================
+
+# Auto-save settings (reduces disk I/O)
+CONFIG_AUTO_SAVE_ENABLED = True  # Enable debounced auto-save
+CONFIG_AUTO_SAVE_DELAY = 600  # Seconds (10 minutes) - time to wait before saving
+CONFIG_SAVE_ON_EXIT = True  # Force immediate save on application exit
+CONFIG_SAVE_ON_DIALOG_CLOSE = True  # Force immediate save when dialogs close
+
+# Cache settings (in-memory cache for non-critical settings)
+CONFIG_CACHE_ENABLED = True  # Enable in-memory cache layer
+CONFIG_CACHE_FLUSH_ON_SAVE = True  # Flush cache to disk on save
 
 # =====================================
 # DIALOG PATHS

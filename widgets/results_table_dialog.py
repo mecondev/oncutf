@@ -303,6 +303,10 @@ class ResultsTableDialog(QDialog):
             return
         # Just mark that columns changed - actual save happens in closeEvent
         self._columns_changed = True
+        
+        # Force immediate scrollbar and viewport update
+        self.table.updateGeometry()
+        self.table.viewport().update()
 
     def _on_table_context_menu(self, pos):
         """Show context menu for copying values."""
@@ -374,6 +378,8 @@ class ResultsTableDialog(QDialog):
             logger.debug(f"[ResultsTableDialog] Reset columns to default: {left_width}")
         finally:
             self._suspend_column_save = False
+            # Mark config as dirty to save the new widths
+            self._columns_changed = True
 
     def _auto_fit_columns_to_content(self):
         """Auto-fit column widths to content (Ctrl+T).
@@ -393,6 +399,8 @@ class ResultsTableDialog(QDialog):
             logger.info(f"[ResultsTableDialog] Auto-fit columns: [{left_width}, {right_width}]")
         finally:
             self._suspend_column_save = False
+            # Mark config as dirty to save the new widths
+            self._columns_changed = True
 
     def closeEvent(self, event):
         """Save geometry and column widths when dialog closes (single batch save)."""
@@ -428,7 +436,7 @@ class ResultsTableDialog(QDialog):
         logger.info(f"[ResultsTableDialog] Set '{column_widths_key}' = [{left_width}, {right_width}]")
         
         # Single save for both
-        config_manager.save()
+        config_manager.save_immediate()
         logger.info(f"[ResultsTableDialog] ✓ Config saved to disk")
         
         # Verify it was saved

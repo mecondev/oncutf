@@ -146,7 +146,7 @@ class DialogsConfig(ConfigCategory):
 
 
 class JSONConfigManager:
-    """Comprehensive JSON-based configuration manager."""
+    """Comprehensive JSON-based configuration manager with auto-save and cache."""
 
     def __init__(self, app_name: str = "app", config_dir: str | None = None):
         self.app_name = app_name
@@ -156,6 +156,14 @@ class JSONConfigManager:
 
         self._lock = threading.RLock()
         self._categories: dict[str, ConfigCategory] = {}
+
+        # Auto-save with dirty flag (reduces disk I/O)
+        self._dirty = False
+        self._auto_save_timer_id: str | None = None
+
+        # In-memory cache for frequently accessed settings
+        self._cache: dict[str, Any] = {}
+        self._cache_enabled = False  # Will be set from config after import
 
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
@@ -244,6 +252,10 @@ class JSONConfigManager:
         """Save configuration to JSON file."""
         with self._lock:
             try:
+                # Flush cache before saving
+                if hasattr(self, "_cache_enabled") and self._cache_enabled:
+                    self._flush_cache()
+
                 if create_backup and self.config_file.exists():
                     shutil.copy2(self.config_file, self.backup_file)
 
@@ -260,12 +272,164 @@ class JSONConfigManager:
                 with open(self.config_file, "w", encoding="utf-8") as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
 
+                # Clear dirty flag after successful save
+                self._dirty = False
                 logger.debug("[JSONConfigManager] Configuration saved successfully")
                 return True
 
             except Exception as e:
                 logger.error(f"[JSONConfigManager] Failed to save configuration: {e}")
                 return False
+
+    def _schedule_auto_save(self) -> None:
+        """Schedule auto-save using timer_manager (debounced)."""
+        try:
+            from config import CONFIG_AUTO_SAVE_DELAY, CONFIG_AUTO_SAVE_ENABLED
+            from utils.timer_manager import TimerPriority, TimerType, get_timer_manager
+
+            if not CONFIG_AUTO_SAVE_ENABLED:
+                return
+
+            # Cancel previous timer if exists
+            if self._auto_save_timer_id:
+                timer_mgr = get_timer_manager()
+                timer_mgr.cancel(self._auto_save_timer_id)
+
+            # Schedule new auto-save
+            timer_mgr = get_timer_manager()
+            self._auto_save_timer_id = timer_mgr.schedule(
+                callback=self._auto_save,
+                delay=CONFIG_AUTO_SAVE_DELAY * 1000,  # Convert seconds to milliseconds
+                priority=TimerPriority.BACKGROUND,
+                timer_type=TimerType.GENERIC,
+                timer_id=f"config_auto_save_{id(self)}",
+                consolidate=True,
+            )
+            logger.debug(
+                f"[JSONConfigManager] Auto-save scheduled in {CONFIG_AUTO_SAVE_DELAY}s",
+                extra={"dev_only": True},
+            )
+        except Exception as e:
+            logger.warning(f"[JSONConfigManager] Failed to schedule auto-save: {e}")
+
+    def _auto_save(self) -> None:
+        """Auto-save if dirty (called by timer)."""
+        if self._dirty:
+            logger.info("[JSONConfigManager] Auto-save triggered (timer)")
+            self.save()
+
+    def save_immediate(self, force: bool = True) -> bool:
+        """
+        Force immediate save (used on app/dialog close).
+
+        Args:
+            force: If True, always save. If False, only save if dirty.
+
+        Returns:
+            True if save successful, False otherwise
+        """
+        with self._lock:
+            # Cancel pending auto-save timer
+            if self._auto_save_timer_id:
+                try:
+                    from utils.timer_manager import get_timer_manager
+                    timer_mgr = get_timer_manager()
+                    timer_mgr.cancel(self._auto_save_timer_id)
+                    self._auto_save_timer_id = None
+                except Exception as e:
+                    logger.warning(f"[JSONConfigManager] Failed to cancel timer: {e}")
+
+            # Save if dirty or forced
+            if force or self._dirty:
+                logger.info("[JSONConfigManager] Immediate save requested")
+                return self.save()
+
+            logger.debug("[JSONConfigManager] Immediate save skipped (not dirty)")
+            return True
+
+    def mark_dirty(self) -> None:
+        """Mark config as dirty and schedule auto-save."""
+        self._dirty = True
+        self._schedule_auto_save()
+
+    # =====================================
+    # CACHE METHODS
+    # =====================================
+
+    def get_cached(self, category_name: str, key: str, default: Any = None) -> Any:
+        """
+        Get value from cache, fallback to category.
+
+        Args:
+            category_name: Category name
+            key: Setting key
+            default: Default value if not found
+
+        Returns:
+            Cached value or category value or default
+        """
+        if not self._cache_enabled:
+            category = self.get_category(category_name)
+            return category.get(key, default) if category else default
+
+        cache_key = f"{category_name}.{key}"
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+
+        # Not in cache, get from category and cache it
+        category = self.get_category(category_name)
+        value = category.get(key, default) if category else default
+        self._cache[cache_key] = value
+        return value
+
+    def set_cached(self, category_name: str, key: str, value: Any) -> None:
+        """
+        Set value in cache and mark dirty.
+
+        Args:
+            category_name: Category name
+            key: Setting key
+            value: Value to set
+        """
+        cache_key = f"{category_name}.{key}"
+        self._cache[cache_key] = value
+        self.mark_dirty()
+
+    def _flush_cache(self) -> None:
+        """Flush cache to config categories."""
+        if not self._cache:
+            return
+
+        try:
+            from config import CONFIG_CACHE_FLUSH_ON_SAVE
+            if not CONFIG_CACHE_FLUSH_ON_SAVE:
+                return
+        except ImportError:
+            pass
+
+        for cache_key, value in self._cache.items():
+            try:
+                category_name, key = cache_key.split(".", 1)
+                category = self.get_category(category_name, create_if_not_exists=True)
+                if category:
+                    category.set(key, value)
+            except Exception as e:
+                logger.warning(f"[JSONConfigManager] Failed to flush cache key '{cache_key}': {e}")
+
+        logger.debug(f"[JSONConfigManager] Flushed {len(self._cache)} cache entries")
+        self._cache.clear()
+
+    def clear_cache(self) -> None:
+        """Clear cache without flushing to disk."""
+        self._cache.clear()
+        logger.debug("[JSONConfigManager] Cache cleared")
+
+    def enable_cache(self, enabled: bool = True) -> None:
+        """Enable or disable cache layer."""
+        self._cache_enabled = enabled
+        if not enabled:
+            self.clear_cache()
+        logger.debug(f"[JSONConfigManager] Cache {'enabled' if enabled else 'disabled'}")
 
     def get_config_info(self) -> dict[str, Any]:
         """Get information about configuration file and categories."""
@@ -296,6 +460,13 @@ def create_app_config_manager(app_name: str = "oncutf") -> JSONConfigManager:
     manager.register_category(DialogsConfig())
 
     manager.load()
+
+    # Enable cache if configured
+    try:
+        from config import CONFIG_CACHE_ENABLED
+        manager.enable_cache(CONFIG_CACHE_ENABLED)
+    except ImportError:
+        manager.enable_cache(True)  # Default to enabled
 
     return manager
 
