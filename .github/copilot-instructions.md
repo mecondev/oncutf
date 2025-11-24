@@ -24,8 +24,9 @@ When in doubt, prefer a **stable, extendable** solution over a “clever” one.
   - Add **module-level docstrings** when missing.
   - Add **type annotations** to new functions and methods.
   - Keep **existing loggers, docstrings and comments**; do not delete or drastically restructure code unless the user explicitly asks.
+  - **Use only ASCII characters** in code, comments, log messages, and docstrings. **Never use emoji or Unicode symbols** (✓, ✗, →, •, etc.) in logger output. This ensures Windows console compatibility with non-UTF8 encodings (e.g., cp1253 Greek locale).
 
-Do **not** fix linting issues (ruff/mypy) unless the user requests it. The repo is configured with strict mypy and ruff/black in `pyproject.toml`. :contentReference[oaicite:4]{index=4}
+Do **not** fix linting issues (ruff/mypy) unless the user requests it. The repo is configured with strict mypy and ruff/black in `pyproject.toml`.
 
 ---
 
