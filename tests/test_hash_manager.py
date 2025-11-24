@@ -53,7 +53,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from core.hash_manager import HashManager, calculate_crc32, compare_folders
+from core.hash_manager import compare_folders
 from tests.mocks import MockFileItem
 
 

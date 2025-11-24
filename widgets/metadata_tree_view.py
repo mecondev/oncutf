@@ -210,8 +210,9 @@ class MetadataTreeView(QTreeView):
 
     def _setup_shortcuts(self) -> None:
         """Setup local keyboard shortcuts for metadata tree."""
-        from PyQt5.QtWidgets import QShortcut
         from PyQt5.QtGui import QKeySequence
+        from PyQt5.QtWidgets import QShortcut
+
         from config import UNDO_REDO_SETTINGS
 
         # Undo shortcut (Ctrl+Z)

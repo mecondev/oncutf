@@ -19,7 +19,6 @@ import sys
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
-from config import ENABLE_DEBUG_LOG_FILE
 from utils.logger_file_helper import add_file_handler
 
 
@@ -77,17 +76,17 @@ class ConfigureLogger:
         # Load config with fallback to defaults
         try:
             from config import (
-                LOG_TO_CONSOLE,
                 LOG_CONSOLE_LEVEL,
-                LOG_TO_FILE,
-                LOG_FILE_LEVEL,
-                LOG_FILE_MAX_BYTES,
-                LOG_FILE_BACKUP_COUNT,
+                LOG_DEBUG_FILE_BACKUP_COUNT,
                 LOG_DEBUG_FILE_ENABLED,
                 LOG_DEBUG_FILE_MAX_BYTES,
-                LOG_DEBUG_FILE_BACKUP_COUNT,
+                LOG_FILE_BACKUP_COUNT,
+                LOG_FILE_LEVEL,
+                LOG_FILE_MAX_BYTES,
+                LOG_TO_CONSOLE,
+                LOG_TO_FILE,
             )
-            
+
             # Override with config values
             console_enabled = LOG_TO_CONSOLE
             console_level = getattr(logging, LOG_CONSOLE_LEVEL, console_level)
@@ -143,11 +142,11 @@ class ConfigureLogger:
             console_handler.stream.reconfigure(encoding="utf-8")
 
         console_handler.setLevel(level)
-        
+
         # Add DevOnlyFilter to console handler to hide dev-only messages
         from utils.logger_helper import DevOnlyFilter
         console_handler.addFilter(DevOnlyFilter())
-        
+
         formatter = logging.Formatter("[%(levelname)s] %(message)s")
         console_handler.setFormatter(formatter)
         self.logger.addHandler(console_handler)

@@ -17,10 +17,8 @@ A logging filter that hides dev-only debug messages from the console,
 while still allowing them to be stored in file logs.
 """
 
-import contextlib
 import logging
 import re
-import sys
 from functools import partial
 
 from config import SHOW_DEV_ONLY_IN_CONSOLE

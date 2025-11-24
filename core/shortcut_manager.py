@@ -14,6 +14,7 @@ This manager centralizes keyboard shortcut handling including:
 Note: Undo/Redo shortcuts (Ctrl+Z, Ctrl+R) are local to metadata tree widget.
 """
 
+import os
 from typing import TYPE_CHECKING
 
 from core.pyqt_imports import Qt
@@ -215,6 +216,10 @@ class ShortcutManager:
     def show_results_hash_list(self) -> None:
         """
         Show the results hash list dialog triggered by Ctrl+L shortcut.
+
+        Requirements:
+        - Files must be selected
+        - At least one selected file must have a hash
         """
         logger.info("[MainWindow] RESULTS_HASH_LIST: Ctrl+L key pressed")
 
@@ -224,22 +229,96 @@ class ShortcutManager:
                 logger.info("[MainWindow] RESULTS_HASH_LIST: No files loaded")
                 if hasattr(self.main_window, "status_manager"):
                     self.main_window.status_manager.set_selection_status(
-                        "No Files Selected", selected_count=0, total_count=0, auto_reset=True
+                        "No files loaded", selected_count=0, total_count=0, auto_reset=True
                     )
                 return
 
-            # Get or create the results table dialog
+            # Get selected files (not all files)
+            selected_files = self.main_window.get_selected_files_ordered() if hasattr(self.main_window, 'get_selected_files_ordered') else []
+
+            if not selected_files:
+                logger.info("[MainWindow] RESULTS_HASH_LIST: No files selected")
+                if hasattr(self.main_window, "status_manager"):
+                    self.main_window.status_manager.set_selection_status(
+                        "No files selected", selected_count=0, total_count=len(self.main_window.file_model.files), auto_reset=True
+                    )
+                return
+
+            hash_cache = getattr(self.main_window, "hash_cache", None)
+
+            if not hash_cache:
+                logger.warning("[MainWindow] RESULTS_HASH_LIST: No hash cache available")
+                if hasattr(self.main_window, "status_manager"):
+                    self.main_window.status_manager.set_file_operation_status(
+                        "Hash cache not available", success=False, auto_reset=True
+                    )
+                return
+
+            # Check which selected files have hashes
+            selected_file_paths = [f.full_path for f in selected_files]
+            files_with_hash_paths = hash_cache.get_files_with_hash_batch(selected_file_paths, "CRC32")
+
+            if not files_with_hash_paths:
+                logger.info(f"[MainWindow] RESULTS_HASH_LIST: No hashes found for any of {len(selected_files)} selected files")
+                if hasattr(self.main_window, "status_manager"):
+                    self.main_window.status_manager.set_file_operation_status(
+                        f"No hashes in {len(selected_files)} selected file(s)", success=False, auto_reset=True
+                    )
+                return
+
+            # Build hash results dictionary (only for selected files with hashes)
+            hash_results = {}
+            for file_path in files_with_hash_paths:
+                hash_value = hash_cache.get_hash(file_path, "CRC32")
+                if hash_value:
+                    # Get filename from path
+                    file_name = os.path.basename(file_path)
+                    hash_results[file_name] = hash_value
+
+            if not hash_results:
+                logger.info("[MainWindow] RESULTS_HASH_LIST: Hash data retrieved but empty")
+                if hasattr(self.main_window, "status_manager"):
+                    self.main_window.status_manager.set_file_operation_status(
+                        "No hash data available", success=False, auto_reset=True
+                    )
+                return
+
+            # Prepare dialog title with selection info
+            total_selected = len(selected_files)
+            files_with_hash_count = len(hash_results)
+
+            if files_with_hash_count == total_selected:
+                # All selected files have hashes
+                dialog_title = f"Hash Results - {files_with_hash_count} file(s)"
+            else:
+                # Only some selected files have hashes
+                dialog_title = f"Hash Results - {files_with_hash_count} of {total_selected} selected file(s)"
+
+            # Get or create the results table dialog with hash data
             from widgets.results_table_dialog import ResultsTableDialog
 
             if not hasattr(self.main_window, "results_dialog") or self.main_window.results_dialog is None:
-                self.main_window.results_dialog = ResultsTableDialog(self.main_window)
+                self.main_window.results_dialog = ResultsTableDialog(
+                    self.main_window,
+                    title=dialog_title,
+                    left_header="Filename",
+                    right_header="CRC32 Hash",
+                    data=hash_results,
+                    config_key="results_hash_list"
+                )
+            else:
+                # Update existing dialog with new data
+                self.main_window.results_dialog.data = hash_results
+                self.main_window.results_dialog.model.set_data(hash_results)
+                self.main_window.results_dialog.title_label.setText(f"{files_with_hash_count} items")
+                self.main_window.results_dialog.setWindowTitle(dialog_title)
 
             # Show the dialog
             self.main_window.results_dialog.show()
             self.main_window.results_dialog.raise_()
             self.main_window.results_dialog.activateWindow()
 
-            logger.info("[MainWindow] RESULTS_HASH_LIST: Results hash list dialog shown successfully")
+            logger.info(f"[MainWindow] RESULTS_HASH_LIST: Results hash list dialog shown successfully with {len(hash_results)} hashes from {len(selected_files)} selected files")
 
         except Exception as e:
             logger.error(f"[MainWindow] RESULTS_HASH_LIST: Error showing results dialog: {e}")

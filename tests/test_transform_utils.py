@@ -17,13 +17,14 @@ def test_safe_upper_basic():
     """
 
     import unicodedata
+
     import pytest
 
     from utils.transform_utils import (
-        strip_accents,
-        safe_upper,
-        to_greeklish,
         apply_transform,
+        safe_upper,
+        strip_accents,
+        to_greeklish,
     )
 
 

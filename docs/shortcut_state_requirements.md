@@ -1,6 +1,6 @@
 # Keyboard Shortcuts - Application State Requirements
 
-**Author**: AI Assistant  
+**Author**: Michael Economou
 **Date**: November 24, 2025  
 **Status**: Analysis + Implementation Plan  
 

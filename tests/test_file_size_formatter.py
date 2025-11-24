@@ -1,6 +1,9 @@
-import locale
 
-from utils.file_size_formatter import FileSizeFormatter, format_file_size, format_file_size_system_compatible
+from utils.file_size_formatter import (
+    FileSizeFormatter,
+    format_file_size,
+    format_file_size_system_compatible,
+)
 
 
 def test_file_size_formatter_basic():
@@ -57,11 +60,6 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from utils.file_size_formatter import (
-    FileSizeFormatter,
-    format_file_size,
-    format_file_size_system_compatible,
-)
 
 
 class TestFileSizeFormatter(unittest.TestCase):

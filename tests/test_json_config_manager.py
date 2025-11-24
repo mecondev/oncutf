@@ -1,7 +1,5 @@
-import json
-from pathlib import Path
 
-from utils.json_config_manager import JSONConfigManager, WindowConfig, FileHashConfig
+from utils.json_config_manager import FileHashConfig, JSONConfigManager, WindowConfig
 
 
 def test_register_save_load(tmp_path):

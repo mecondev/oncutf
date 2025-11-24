@@ -1,6 +1,6 @@
 # Keyboard Shortcuts - Validation & State Requirements Matrix
 
-**Author**: AI Assistant  
+**Author**: Michael Economou
 **Date**: November 24, 2025  
 **Purpose**: Define when each shortcut should be active/enabled based on application state
 

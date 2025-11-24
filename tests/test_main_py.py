@@ -1,10 +1,7 @@
-import importlib
+import builtins
 import os
 import sys
 from types import ModuleType
-
-import builtins
-import pytest
 
 
 def test_get_user_config_dir_unix(monkeypatch, tmp_path):
@@ -78,7 +75,6 @@ def test_cleanup_on_exit_handles_import_error(monkeypatch, caplog):
     sys.modules.pop("utils.exiftool_wrapper", None)
 
     # Monkeypatch builtins.__import__ to raise for the target module to simulate import failure
-    import builtins
 
     real_import = builtins.__import__
 
