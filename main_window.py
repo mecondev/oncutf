@@ -946,10 +946,9 @@ class MainWindow(QMainWindow):
 
         except Exception as e:
             logger.error(f"[CloseEvent] Error completing shutdown: {e}")
-            try:
+            import contextlib
+            with contextlib.suppress(RuntimeError):
                 QApplication.quit()
-            except RuntimeError:
-                pass  # Ignore if already quitting
 
     def _check_for_unsaved_changes(self) -> bool:
         """

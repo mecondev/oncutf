@@ -1561,7 +1561,7 @@ class ThemeEngine:
 
     def get_context_menu_stylesheet(self) -> str:
         """Get the stylesheet for context menus.
-        
+
         Returns a complete stylesheet string that can be applied to QMenu instances
         to ensure consistent styling across the application.
         """

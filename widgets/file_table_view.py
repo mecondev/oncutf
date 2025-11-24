@@ -2567,7 +2567,7 @@ class FileTableView(QTableView):
 
     def _reset_columns_to_default(self) -> None:
         """Reset all column widths to their default values (Ctrl+Shift+T).
-        
+
         Restores all columns to config defaults with Interactive resize mode.
         """
         try:
@@ -2604,7 +2604,7 @@ class FileTableView(QTableView):
 
     def _auto_fit_columns_to_content(self) -> None:
         """Auto-fit all column widths to their content (Ctrl+T).
-        
+
         Special handling:
         - Filename column: stretches to fill available space (last stretch)
         - Other columns: resize to fit content with min/max constraints

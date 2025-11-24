@@ -373,7 +373,7 @@ class ResultsTableDialog(QDialog):
         self.table.setColumnWidth(0, left_width)
         logger.debug(f"[ResultsTableDialog] Set default column width: {left_width}")
 
-    def _on_column_resized(self, logical_index: int, _old_size: int, new_size: int):
+    def _on_column_resized(self, _logical_index: int, _old_size: int, _new_size: int):
         """Track column resize (save batched on close, not immediate)."""
         if getattr(self, "_suspend_column_save", False):
             return

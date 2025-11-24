@@ -27,7 +27,7 @@ def test_find_duplicates_in_paths_and_clear_cache(tmp_path):
     dups = mgr.find_duplicates_in_paths([str(f1), str(f2)])
     # hashes should be same and group contains both
     assert len(dups) == 1
-    for k, v in dups.items():
+    for _k, v in dups.items():
         assert len(v) == 2
 
     # clear cache should not raise

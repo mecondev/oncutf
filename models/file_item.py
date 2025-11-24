@@ -37,6 +37,7 @@ class FileItem:
         self.name = self.filename  # Keep for compatibility
         self.size = 0  # Will be updated later if needed
         self.metadata = {}  # Will store file metadata
+        self.metadata_status = "none"  # Track metadata loading status: "none", "loaded", "extended", "modified"
         self.checked = False  # Selection state for UI
 
     def __str__(self) -> str:

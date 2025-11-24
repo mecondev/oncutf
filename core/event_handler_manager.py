@@ -293,7 +293,7 @@ class EventHandlerManager:
             get_menu_icon("list"), "Show calculated hashes", "Ctrl+L"
         )
         menu.addAction(action_show_hash_results)
-        
+
         # Enable only if there are selected files
         action_show_hash_results.setEnabled(has_selection)
         action_show_hash_results.setToolTip(
@@ -795,8 +795,24 @@ class EventHandlerManager:
 
             # Update UI to reflect changes
             if modified_count > 0:
-                # Update file table icons
-                self.parent_window.file_model.layoutChanged.emit()
+                # Update file table icons with proper refresh
+                if hasattr(self.parent_window, "file_model"):
+                    # Emit dataChanged for all modified files to update icons
+                    for file_item in files_to_process:
+                        if file_item.metadata_status == "modified":
+                            try:
+                                # Find row index
+                                for row, model_file in enumerate(self.parent_window.file_model.files):
+                                    if paths_equal(model_file.full_path, file_item.full_path):
+                                        # Emit dataChanged for the icon column (column 0)
+                                        idx = self.parent_window.file_model.index(row, 0)
+                                        self.parent_window.file_model.dataChanged.emit(idx, idx)
+                                        break
+                            except Exception as e:
+                                logger.warning(f"[BulkRotation] Error updating icon for {file_item.filename}: {e}")
+
+                    # Also emit layoutChanged as backup
+                    self.parent_window.file_model.layoutChanged.emit()
 
                 # CRITICAL: Update metadata tree view to mark items as modified
                 if hasattr(self.parent_window, "metadata_tree_view"):

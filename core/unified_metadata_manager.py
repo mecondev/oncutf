@@ -1202,8 +1202,17 @@ class UnifiedMetadataManager(QObject):
         # Filter files that have modifications
         files_to_save = []
         for file_item in selected_files:
+            # Try direct path first
             if file_item.full_path in all_modified_metadata:
                 files_to_save.append(file_item)
+            else:
+                # Try normalized path if direct lookup fails (path normalization may differ)
+                from utils.path_normalizer import normalize_path
+                normalized = normalize_path(file_item.full_path)
+                for key in all_modified_metadata:
+                    if normalize_path(key) == normalized:
+                        files_to_save.append(file_item)
+                        break
 
         if not files_to_save:
             logger.info("[UnifiedMetadataManager] No selected files have modified metadata")
@@ -1245,8 +1254,17 @@ class UnifiedMetadataManager(QObject):
         file_model = getattr(self.parent_window, "file_model", None)
         if file_model and hasattr(file_model, "files"):
             for file_item in file_model.files:
+                # Try direct path first
                 if file_item.full_path in all_modified_metadata:
                     files_to_save.append(file_item)
+                else:
+                    # Try normalized path if direct lookup fails (path normalization may differ)
+                    from utils.path_normalizer import normalize_path
+                    normalized = normalize_path(file_item.full_path)
+                    for key in all_modified_metadata:
+                        if normalize_path(key) == normalized:
+                            files_to_save.append(file_item)
+                            break
 
         if not files_to_save:
             logger.info("[UnifiedMetadataManager] No files with modified metadata found")
@@ -1274,7 +1292,7 @@ class UnifiedMetadataManager(QObject):
             for file_item in files_to_save:
                 file_path = file_item.full_path
 
-                # Get modifications for this file
+                # Get modifications for this file - use path matching with normalization
                 modifications = self._get_modified_metadata_for_file(
                     file_path, all_modified_metadata
                 )
@@ -1282,13 +1300,31 @@ class UnifiedMetadataManager(QObject):
                 if not modifications:
                     continue
 
+                # Filter out [MODIFIED] placeholders to prevent ExifTool errors
+                valid_modifications = {}
+                for key, value in modifications.items():
+                    if value == "[MODIFIED]":
+                        logger.warning(
+                            f"[UnifiedMetadataManager] Skipping save for {key} in {file_item.filename} - value missing (placeholder found)"
+                        )
+                    else:
+                        valid_modifications[key] = value
+
+                if not valid_modifications:
+                    logger.warning(
+                        f"[UnifiedMetadataManager] No valid modifications to save for {file_item.filename} (all were placeholders)"
+                    )
+                    # Treat this as a failure so the user knows something went wrong
+                    failed_files.append(f"{file_item.filename} (Missing values)")
+                    continue
+
                 try:
                     # Save using ExifTool
-                    success = self._exiftool_wrapper.write_metadata(file_path, modifications)
+                    success = self._exiftool_wrapper.write_metadata(file_path, valid_modifications)
 
                     if success:
                         success_count += 1
-                        self._update_file_after_save(file_item, modifications)
+                        self._update_file_after_save(file_item, valid_modifications)
                         logger.debug(
                             f"[UnifiedMetadataManager] Successfully saved metadata for {file_item.filename}",
                             extra={"dev_only": True},
@@ -1348,8 +1384,21 @@ class UnifiedMetadataManager(QObject):
                 logger.warning(f"[UnifiedMetadataManager] Error recording save command: {e}")
 
     def _get_modified_metadata_for_file(self, file_path: str, all_modified_metadata: dict) -> dict:
-        """Get modified metadata for a specific file."""
-        return all_modified_metadata.get(file_path, {})
+        """Get modified metadata for a specific file with path normalization."""
+        # Try direct lookup first
+        if file_path in all_modified_metadata:
+            return all_modified_metadata[file_path]
+
+        # Try normalized path lookup if direct fails (critical for cross-platform)
+        from utils.path_normalizer import normalize_path
+        normalized = normalize_path(file_path)
+
+        for key, value in all_modified_metadata.items():
+            if normalize_path(key) == normalized:
+                return value
+
+        # Not found
+        return {}
 
     def _update_file_after_save(self, file_item, saved_metadata: dict = None):
         """

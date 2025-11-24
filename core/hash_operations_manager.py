@@ -305,12 +305,11 @@ class HashOperationsManager:
                 # Update unified progress dialog with cumulative sizes
                 self.hash_dialog.update_progress(processed_bytes=current_bytes, total_bytes=total_bytes)
             except Exception as e:
-                # Fallback to previous behavior on any error
-                logger.debug(f"[HashManager] Error updating size progress: {e}")
-                try:
-                    self.hash_dialog.update_progress(current_bytes, total_bytes)
-                except Exception:
-                    pass
+                  # Fallback to previous behavior on any error
+                  logger.debug(f"[HashManager] Error updating size progress: {e}")
+                  import contextlib
+                  with contextlib.suppress(Exception):
+                      self.hash_dialog.update_progress(current_bytes, total_bytes)
 
     def _on_file_hash_calculated(self, file_path: str) -> None:
         """

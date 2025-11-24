@@ -512,7 +512,10 @@ class FileTableModel(QAbstractTableModel):
                 if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
                     entry = self.parent_window.metadata_cache.get_entry(file.full_path)
                     if entry and hasattr(entry, "data") and entry.data:
-                        if hasattr(entry, "is_extended") and entry.is_extended:
+                        # Check modified status first
+                        if hasattr(entry, "modified") and entry.modified:
+                            metadata_status = "modified"
+                        elif hasattr(entry, "is_extended") and entry.is_extended:
                             metadata_status = "extended"
                         else:
                             metadata_status = "loaded"

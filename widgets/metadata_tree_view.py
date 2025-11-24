@@ -245,7 +245,10 @@ class MetadataTreeView(QTreeView):
 
     def _get_cache_helper(self) -> MetadataCacheHelper | None:
         """Get the MetadataCacheHelper instance, initializing if needed."""
-        if self._cache_helper is None:
+        # Always check if we need to initialize or re-initialize (if cache backend is missing)
+        if self._cache_helper is None or (
+            self._cache_helper and self._cache_helper.metadata_cache is None
+        ):
             self._initialize_cache_helper()
         return self._cache_helper
 
@@ -2685,9 +2688,36 @@ class MetadataTreeView(QTreeView):
                 else None
             )
 
+            # Fallback: Try un-normalized path if normalized failed
+            if not metadata_entry and cache_helper.metadata_cache:
+                metadata_entry = cache_helper.metadata_cache.get_entry(file_path)
+                if metadata_entry:
+                    logger.debug(
+                        f"[MetadataTree] Found cache entry using un-normalized path: {file_path}",
+                        extra={"dev_only": True}
+                    )
+
+            # Always try to find the file item directly to use as fallback
+            # This is critical because sometimes cache entry might be stale but file_item.metadata is updated
+            file_item_metadata = None
+            all_files = self._get_all_loaded_files()
+            for item in all_files:
+                if paths_equal(item.full_path, file_path):
+                    if hasattr(item, "metadata") and item.metadata:
+                        file_item_metadata = item.metadata
+                        logger.debug(
+                            f"[MetadataTree] Found metadata in FileItem for {file_path}",
+                            extra={"dev_only": True},
+                        )
+                    break
+
             if metadata_entry:
                 logger.info(
                     f"[MetadataTree] Found cache entry with keys: {list(metadata_entry.data.keys())[:10] if hasattr(metadata_entry, 'data') else 'NO DATA'}"
+                )
+            elif file_item_metadata:
+                logger.info(
+                    f"[MetadataTree] Using FileItem metadata fallback for {file_path}"
                 )
             else:
                 logger.warning(
@@ -2701,50 +2731,52 @@ class MetadataTreeView(QTreeView):
                 # If no metadata entry exists, we still need to record the modification
                 # but we can't get the current value. This can happen if metadata
                 # was edited but not yet saved or if cache was cleared.
-                if not metadata_entry or not hasattr(metadata_entry, "data"):
-                    # Use a placeholder value to indicate modification exists
+
+                current_value = None
+                value_found = False
+
+                # Helper to check for value in data dict
+                def find_value_in_data(data_dict, key):
+                    # 1. Exact match
+                    if key in data_dict:
+                        return str(data_dict[key]), True
+
+                    # 2. Rotation special case (QuickTime:Rotation -> Rotation)
+                    if key.endswith("Rotation") and "Rotation" in data_dict:
+                        return str(data_dict["Rotation"]), True
+
+                    # 3. Split by / (Group/Key)
+                    parts = key.split("/")
+                    if len(parts) == 2:
+                        group, subkey = parts
+                        if group in data_dict and isinstance(data_dict[group], dict):
+                            if subkey in data_dict[group]:
+                                return str(data_dict[group][subkey]), True
+
+                    return None, False
+
+                # Strategy 1: Try cache entry
+                if metadata_entry and hasattr(metadata_entry, "data"):
+                    current_value, value_found = find_value_in_data(metadata_entry.data, key_path)
+                    if value_found:
+                        logger.debug(f"[MetadataTree] Found value for {key_path} in cache: {current_value}", extra={"dev_only": True})
+
+                # Strategy 2: Try FileItem metadata fallback
+                if not value_found and file_item_metadata:
+                    current_value, value_found = find_value_in_data(file_item_metadata, key_path)
+                    if value_found:
+                        logger.debug(f"[MetadataTree] Found value for {key_path} in FileItem: {current_value}", extra={"dev_only": True})
+
+                if value_found:
+                    file_modifications[key_path] = current_value
+                else:
+                    # Use a placeholder value to indicate modification exists but value is missing
+                    # CRITICAL: This placeholder causes ExifTool errors if passed directly
+                    # The saver must handle this case
                     file_modifications[key_path] = "[MODIFIED]"
                     logger.warning(
-                        f"[MetadataTree] No cache data for {file_path}, using placeholder for {key_path}"
+                        f"[MetadataTree] No value found for {key_path} in {file_path} (Cache: {bool(metadata_entry)}, FileItem: {bool(file_item_metadata)})"
                     )
-                    continue
-
-                # Special handling for rotation - it's always top-level
-                if key_path.lower() == "rotation":
-                    if "Rotation" in metadata_entry.data:
-                        file_modifications["Rotation"] = str(metadata_entry.data["Rotation"])
-                        logger.debug(
-                            f"[MetadataTree] Found Rotation={metadata_entry.data['Rotation']} for {file_path}",
-                            extra={"dev_only": True},
-                        )
-                    else:
-                        file_modifications["Rotation"] = "[MODIFIED]"
-                        logger.warning(
-                            f"[MetadataTree] Rotation not found in cache for {file_path}, available keys: {list(metadata_entry.data.keys())[:10]}"
-                        )
-                    continue
-
-                # Handle other fields normally
-                parts = key_path.split("/")
-
-                if len(parts) == 1:
-                    # Top-level key
-                    if parts[0] in metadata_entry.data:
-                        file_modifications[key_path] = str(metadata_entry.data[parts[0]])
-                    else:
-                        file_modifications[key_path] = "[MODIFIED]"
-                elif len(parts) == 2:
-                    # Nested key (group/key)
-                    group, key = parts
-                    if group in metadata_entry.data and isinstance(
-                        metadata_entry.data[group], dict
-                    ):
-                        if key in metadata_entry.data[group]:
-                            file_modifications[key_path] = str(metadata_entry.data[group][key])
-                        else:
-                            file_modifications[key_path] = "[MODIFIED]"
-                    else:
-                        file_modifications[key_path] = "[MODIFIED]"
 
             # Store modifications using normalized path for consistency
             if file_modifications:

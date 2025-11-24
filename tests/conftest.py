@@ -36,14 +36,14 @@ def neutralize_import_side_effects(monkeypatch):
     """
     # Fake utils.logger_setup to prevent ConfigureLogger from creating log dirs
     fake_logger = ModuleType("utils.logger_setup")
-    fake_logger.ConfigureLogger = lambda *a, **k: None
+    fake_logger.ConfigureLogger = lambda *_args, **_kwargs: None
     original_logger = sys.modules.get("utils.logger_setup")
     sys.modules["utils.logger_setup"] = fake_logger
 
     # Replace signal.signal and atexit.register with noop callables
     # to prevent modification of global state during tests
-    monkeypatch.setattr(signal, "signal", lambda *a, **k: None)
-    monkeypatch.setattr(atexit, "register", lambda *a, **k: None)
+    monkeypatch.setattr(signal, "signal", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(atexit, "register", lambda *_args, **_kwargs: None)
 
     yield
 
