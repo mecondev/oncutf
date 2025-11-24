@@ -202,8 +202,8 @@ class ShutdownCoordinator(QObject):
                     f"[ShutdownCoordinator] Phase {phase_name} failed: {result.error}"
                 )
 
-            # Log result
-            status = "✓" if result.success else "✗"
+            # Log result (use ASCII-safe characters for Windows console compatibility)
+            status = "[OK]" if result.success else "[FAIL]"
             logger.info(
                 f"[ShutdownCoordinator] {status} {phase_name} "
                 f"({result.duration:.2f}s)"

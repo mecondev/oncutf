@@ -45,7 +45,7 @@ def clean_filename_text(text: str) -> str:
     # Remove invalid characters
     cleaned = "".join(char for char in text if is_valid_filename_char(char))
 
-    logger.debug(f"[FilenameValidator] Cleaned text: '{text}' → '{cleaned}'")
+    logger.debug(f"[FilenameValidator] Cleaned text: '{text}' -> '{cleaned}'")
     return cleaned
 
 
@@ -63,7 +63,7 @@ def clean_trailing_chars(filename_part: str) -> str:
     cleaned = filename_part.rstrip(INVALID_TRAILING_CHARS)
 
     if cleaned != original:
-        logger.debug(f"[FilenameValidator] Removed trailing chars: '{original}' → '{cleaned}'")
+        logger.debug(f"[FilenameValidator] Removed trailing chars: '{original}' -> '{cleaned}'")
 
     return cleaned
 

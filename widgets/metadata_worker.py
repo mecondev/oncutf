@@ -331,7 +331,7 @@ class MetadataWorker(QObject):
                     f"estimated time saved: {estimated_time_saved:.3f}s"
                 )
 
-            logger.warning("[Worker] FINALLY → emitting finished signal")
+            logger.warning("[Worker] FINALLY -> emitting finished signal")
             self.finished.emit()
 
     def cancel(self) -> None:
