@@ -158,7 +158,7 @@ class HashOperationsManager:
             file_paths: List of file paths to process
             external_folder: Folder path for comparison operation
         """
-        from core.hash_worker import HashWorker
+        from config import PARALLEL_HASH_MAX_WORKERS, USE_PARALLEL_HASH_WORKER
         from core.pyqt_imports import QMessageBox
 
         # Check if an operation is already running
@@ -174,8 +174,19 @@ class HashOperationsManager:
         # Reset cancellation flag
         self._operation_cancelled = False
 
-        # Create and configure worker
-        self.hash_worker = HashWorker(parent=self.parent_window)
+        # Create worker based on configuration
+        if USE_PARALLEL_HASH_WORKER:
+            from core.parallel_hash_worker import ParallelHashWorker
+
+            self.hash_worker = ParallelHashWorker(
+                parent=self.parent_window, max_workers=PARALLEL_HASH_MAX_WORKERS
+            )
+            logger.info("[HashOperationsManager] Using parallel hash worker")
+        else:
+            from core.hash_worker import HashWorker
+
+            self.hash_worker = HashWorker(parent=self.parent_window)
+            logger.info("[HashOperationsManager] Using serial hash worker")
 
         # Configure based on operation type
         if operation == "duplicates":

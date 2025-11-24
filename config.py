@@ -72,6 +72,14 @@ SHOW_DEV_ONLY_IN_CONSOLE = False
 ENABLE_DEBUG_LOG_FILE = LOG_DEBUG_FILE_ENABLED  # Use new config system
 
 # =====================================
+# HASH CALCULATION PERFORMANCE
+# =====================================
+
+# Parallel hash worker settings
+USE_PARALLEL_HASH_WORKER = True  # Use parallel ThreadPoolExecutor (True) or serial QThread (False)
+PARALLEL_HASH_MAX_WORKERS = None  # None = auto-detect optimal count (2x CPU cores, max 8)
+
+# =====================================
 # CONFIG SAVE OPTIMIZATION
 # =====================================
 
