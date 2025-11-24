@@ -439,6 +439,28 @@ class UnifiedMetadataManager(QObject):
 
         if not all_files:
             logger.info("[Shortcut] No files available for metadata loading")
+            if hasattr(self.parent_window, "status_manager"):
+                self.parent_window.status_manager.set_selection_status(
+                    "No files available", selected_count=0, total_count=0, auto_reset=True
+                )
+            return
+
+        # Analyze metadata state to avoid loading if all files already have metadata
+        metadata_analysis = self.parent_window.event_handler_manager._analyze_metadata_state(all_files)
+
+        if not metadata_analysis["enable_fast_selected"]:
+            # All files already have fast metadata or better
+            from utils.dialog_utils import show_info_message
+
+            message = f"All {len(all_files)} file(s) already have fast metadata or better."
+            if metadata_analysis.get("fast_tooltip"):
+                message += f"\n\n{metadata_analysis['fast_tooltip']}"
+
+            show_info_message(
+                self.parent_window,
+                "Fast Metadata Loading",
+                message,
+            )
             return
 
         logger.info(f"[Shortcut] Loading basic metadata for all {len(all_files)} files")
@@ -464,6 +486,28 @@ class UnifiedMetadataManager(QObject):
 
         if not all_files:
             logger.info("[Shortcut] No files available for extended metadata loading")
+            if hasattr(self.parent_window, "status_manager"):
+                self.parent_window.status_manager.set_selection_status(
+                    "No files available", selected_count=0, total_count=0, auto_reset=True
+                )
+            return
+
+        # Analyze metadata state to avoid loading if all files already have extended metadata
+        metadata_analysis = self.parent_window.event_handler_manager._analyze_metadata_state(all_files)
+
+        if not metadata_analysis["enable_extended_selected"]:
+            # All files already have extended metadata
+            from utils.dialog_utils import show_info_message
+
+            message = f"All {len(all_files)} file(s) already have extended metadata."
+            if metadata_analysis.get("extended_tooltip"):
+                message += f"\n\n{metadata_analysis['extended_tooltip']}"
+
+            show_info_message(
+                self.parent_window,
+                "Extended Metadata Loading",
+                message,
+            )
             return
 
         logger.info(f"[Shortcut] Loading extended metadata for all {len(all_files)} files")
@@ -1132,6 +1176,10 @@ class UnifiedMetadataManager(QObject):
 
         if not selected_files:
             logger.info("[UnifiedMetadataManager] No files selected for metadata saving")
+            if hasattr(self.parent_window, "status_manager"):
+                self.parent_window.status_manager.set_selection_status(
+                    "No files selected", selected_count=0, total_count=0, auto_reset=True
+                )
             return
 
         # Get metadata tree view
@@ -1145,6 +1193,10 @@ class UnifiedMetadataManager(QObject):
 
         if not all_modified_metadata:
             logger.info("[UnifiedMetadataManager] No modified metadata to save")
+            if hasattr(self.parent_window, "status_manager"):
+                self.parent_window.status_manager.set_file_operation_status(
+                    "No metadata changes to save", success=False, auto_reset=True
+                )
             return
 
         # Filter files that have modifications
@@ -1155,6 +1207,10 @@ class UnifiedMetadataManager(QObject):
 
         if not files_to_save:
             logger.info("[UnifiedMetadataManager] No selected files have modified metadata")
+            if hasattr(self.parent_window, "status_manager"):
+                self.parent_window.status_manager.set_file_operation_status(
+                    "No changes in selected files", success=False, auto_reset=True
+                )
             return
 
         logger.info(
@@ -1178,6 +1234,10 @@ class UnifiedMetadataManager(QObject):
 
         if not all_modified_metadata:
             logger.info("[UnifiedMetadataManager] No modified metadata to save")
+            if hasattr(self.parent_window, "status_manager"):
+                self.parent_window.status_manager.set_file_operation_status(
+                    "No metadata changes to save", success=False, auto_reset=True
+                )
             return
 
         # Get all files that have modifications
@@ -1190,6 +1250,10 @@ class UnifiedMetadataManager(QObject):
 
         if not files_to_save:
             logger.info("[UnifiedMetadataManager] No files with modified metadata found")
+            if hasattr(self.parent_window, "status_manager"):
+                self.parent_window.status_manager.set_file_operation_status(
+                    "No metadata changes to save", success=False, auto_reset=True
+                )
             return
 
         logger.info(
