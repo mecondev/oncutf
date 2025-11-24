@@ -288,6 +288,22 @@ class EventHandlerManager:
         action_calculate_hashes.setToolTip(selected_hash_analysis["selected_tooltip"])
         action_calculate_hashes_all.setToolTip(f"Calculate checksums for {total_files} file(s)")
 
+        # Show results hash list action
+        action_show_hash_results = create_action_with_shortcut(
+            get_menu_icon("list"), "Show calculated hashes", "Ctrl+L"
+        )
+        menu.addAction(action_show_hash_results)
+        
+        # Enable only if there are selected files
+        action_show_hash_results.setEnabled(has_selection)
+        action_show_hash_results.setToolTip(
+            "Display hashes for selected files that have been calculated" if has_selection
+            else "Select files first to show their hashes"
+        )
+
+        # Connect show hash results action
+        action_show_hash_results.triggered.connect(self.parent_window.shortcut_manager.show_results_hash_list)
+
         menu.addSeparator()
 
         # Save actions
