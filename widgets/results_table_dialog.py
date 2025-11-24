@@ -289,7 +289,7 @@ class ResultsTableDialog(QDialog):
             try:
                 x, y, width, height = geometry
                 self.setGeometry(x, y, width, height)
-                logger.info(f"[ResultsTableDialog] ✓ Applied geometry: {width}x{height} at ({x}, {y})")
+                logger.info(f"[ResultsTableDialog] [OK] Applied geometry: {width}x{height} at ({x}, {y})")
 
                 # Enforce min/max
                 if getattr(self, "config_key", "").startswith("hash"):
@@ -321,7 +321,7 @@ class ResultsTableDialog(QDialog):
         if column_widths and len(column_widths) == 2:
             try:
                 self.table.setColumnWidth(0, column_widths[0])
-                logger.info(f"[ResultsTableDialog] ✓ Applied column widths: {column_widths}")
+                logger.info(f"[ResultsTableDialog] [OK] Applied column widths: {column_widths}")
             except Exception as e:
                 logger.warning(f"[ResultsTableDialog] Failed to restore column widths: {e}")
                 self._set_default_column_widths()
@@ -545,7 +545,7 @@ class ResultsTableDialog(QDialog):
 
         # Single save for both
         config_manager.save_immediate()
-        logger.info("[ResultsTableDialog] ✓ Config saved to disk")
+        logger.info("[ResultsTableDialog] [OK] Config saved to disk")
 
         # Verify it was saved
         verify_geo = dialogs_config.get(geometry_key)
