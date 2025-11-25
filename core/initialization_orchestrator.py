@@ -78,6 +78,10 @@ class InitializationOrchestrator:
         from core.database_manager import initialize_database
         from core.drag_manager import DragManager
         from core.file_operations_manager import FileOperationsManager
+        from core.metadata_staging_manager import (
+            MetadataStagingManager,
+            set_metadata_staging_manager,
+        )
         from core.persistent_hash_cache import get_persistent_hash_cache
         from core.persistent_metadata_cache import get_persistent_metadata_cache
         from core.preview_manager import PreviewManager
@@ -92,6 +96,10 @@ class InitializationOrchestrator:
         self.window.preview_manager = PreviewManager(parent_window=self.window)
         self.window.unified_rename_engine = UnifiedRenameEngine()
         self.window.file_operations_manager = FileOperationsManager(parent_window=self.window)
+        self.window.metadata_staging_manager = MetadataStagingManager(parent=self.window)
+
+        # Set as global instance
+        set_metadata_staging_manager(self.window.metadata_staging_manager)
 
         # Deferred initialization markers
         self.window.status_manager = None
@@ -272,6 +280,7 @@ class InitializationOrchestrator:
         self.window.context.register_manager('event_handler', self.window.event_handler_manager)
         self.window.context.register_manager('file_load', self.window.file_load_manager)
         self.window.context.register_manager('file_validation', self.window.file_validation_manager)
+        self.window.context.register_manager('metadata_staging', self.window.metadata_staging_manager)
         self.window.context.register_manager('table', self.window.table_manager)
         self.window.context.register_manager('utility', self.window.utility_manager)
         self.window.context.register_manager('rename', self.window.rename_manager)

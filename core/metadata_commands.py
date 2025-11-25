@@ -196,14 +196,20 @@ class EditMetadataFieldCommand(MetadataCommand):
                 )
                 return False
 
-            # Update metadata in cache
-            self.metadata_tree_view._update_metadata_in_cache(field_path, str(value))
+            # Stage the change using MetadataStagingManager
+            from core.metadata_staging_manager import get_metadata_staging_manager
+            staging_manager = get_metadata_staging_manager()
+
+            if staging_manager:
+                staging_manager.stage_change(self.file_path, field_path, str(value))
+                logger.info(f"[EditMetadataFieldCommand] Staged change via command: {field_path} = {value}")
+            else:
+                logger.warning("[EditMetadataFieldCommand] No staging manager available, using fallback")
+                # Fallback to old cache method
+                self.metadata_tree_view._update_metadata_in_cache(field_path, str(value))
 
             # Update tree view display
             self.metadata_tree_view._update_tree_item_value(field_path, str(value))
-
-            # Mark as modified
-            self.metadata_tree_view.mark_as_modified(field_path)
 
             # Update file icon status
             self.metadata_tree_view._update_file_icon_status()

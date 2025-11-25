@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Companion Files System**: Comprehensive support for camera-generated companion/sidecar files
+  - Automatic detection of Sony camera XML metadata files (e.g., C8227.MP4 + C8227M01.XML)
+  - Support for XMP sidecar files for RAW images (e.g., IMG_1234.CR2 + IMG_1234.xmp)
+  - Subtitle file support for videos (SRT, VTT, ASS formats)
+  - Configurable display options (hide, show, or group companion files)
+  - Automatic companion file renaming when main files are renamed
+  - Enhanced metadata display with companion file data integration
+  - CompanionFilesWidget for user-friendly settings management
+  - Metadata extraction from Sony XML files (duration, codec, resolution, etc.)
+  - File loading optimization to filter companion files based on preferences
+  - Professional workflow support for video production and photography
+  - **Metadata Integration**: Automatic companion metadata enhancement during metadata loading
+    - Sony XML metadata automatically merged into MP4 file metadata
+    - Device info, video specs, and audio info extracted from companion files
+    - Enhanced metadata displayed in unified metadata view
+    - Seamless integration with existing metadata loading workflows
+
 ### Fixed
 - **CRITICAL (Windows)**: Fixed application crash on exit with "Debug/Close Program" dialog
   - Added timeout parameter to `thread.wait()` after `terminate()` to prevent infinite hang
@@ -48,7 +66,7 @@ All notable changes to this project will be documented in this file.
 - All 185 tests passing successfully
 - Better Qt object lifecycle management throughout the application
 
-## [1.3.0] - 2025-01-27 (Database System Release)
+## [1.3.0] - 2025-07-27 (Database System Release)
 
 ### Added
 - **Database System**: Comprehensive SQLite-based database system for persistent storage
@@ -98,7 +116,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.2] - 2025-01-27
+## [v1.2] - 2025-05-27
 
 ### Added
 - Smart default window geometry based on screen size and aspect ratio

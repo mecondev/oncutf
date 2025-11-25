@@ -13,10 +13,15 @@ Unified file loading manager with fully optimized policy:
 
 import os
 
-from config import ALLOWED_EXTENSIONS
+from config import (
+    ALLOWED_EXTENSIONS,
+    COMPANION_FILES_ENABLED,
+    SHOW_COMPANION_FILES_IN_TABLE,
+)
 from core.drag_manager import force_cleanup_drag, is_dragging
 from core.pyqt_imports import Qt
 from models.file_item import FileItem
+from utils.companion_files_helper import CompanionFilesHelper
 from utils.cursor_helper import force_restore_cursor, wait_cursor
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import get_timer_manager
@@ -258,6 +263,44 @@ class FileLoadManager:
             ext = ext[1:]
         return ext in self.allowed_extensions
 
+    def _filter_companion_files(self, file_paths: list[str]) -> list[str]:
+        """
+        Filter companion files based on configuration.
+
+        Args:
+            file_paths: List of file paths to filter
+
+        Returns:
+            Filtered list of file paths
+        """
+        if not COMPANION_FILES_ENABLED or SHOW_COMPANION_FILES_IN_TABLE:
+            # Either companion files are disabled or we should show them
+            return file_paths
+
+        try:
+            # Group files with their companions
+            file_groups = CompanionFilesHelper.group_files_with_companions(file_paths)
+
+            filtered_files = []
+            companion_count = 0
+
+            # Extract main files only (hide companion files)
+            for main_file, group_info in file_groups.items():
+                filtered_files.append(main_file)
+                companion_count += len(group_info.get("companions", []))
+
+            if companion_count > 0:
+                logger.info(
+                    f"[FileLoadManager] Filtered out {companion_count} companion files. "
+                    f"Showing {len(filtered_files)} main files."
+                )
+
+            return filtered_files
+
+        except Exception as e:
+            logger.warning(f"[FileLoadManager] Error filtering companion files: {e}")
+            return file_paths
+
     def _update_ui_with_files(self, file_paths: list[str], clear: bool = True) -> None:
         """
         Update UI with loaded files.
@@ -267,14 +310,17 @@ class FileLoadManager:
             logger.info("[FileLoadManager] No files to update UI with")
             return
 
+        # Filter companion files if needed
+        filtered_paths = self._filter_companion_files(file_paths)
+
         logger.info(
-            f"[FileLoadManager] Updating UI with {len(file_paths)} files (clear={clear})",
+            f"[FileLoadManager] Updating UI with {len(filtered_paths)} files (clear={clear})",
             extra={"dev_only": True},
         )
 
         # Convert file paths to FileItem objects
         file_items = []
-        for path in file_paths:
+        for path in filtered_paths:
             try:
                 file_item = FileItem.from_path(path)
                 file_items.append(file_item)

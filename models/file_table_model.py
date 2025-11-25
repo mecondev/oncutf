@@ -509,11 +509,22 @@ class FileTableModel(QAbstractTableModel):
             if role == Qt.DecorationRole:
                 # Determine metadata status
                 metadata_status = "none"
+
+                # Check staging manager for modified status
+                is_modified = False
+                try:
+                    from core.metadata_staging_manager import get_metadata_staging_manager
+                    staging_manager = get_metadata_staging_manager()
+                    if staging_manager and staging_manager.has_staged_changes(file.full_path):
+                        is_modified = True
+                except Exception:
+                    pass
+
                 if self.parent_window and hasattr(self.parent_window, "metadata_cache"):
                     entry = self.parent_window.metadata_cache.get_entry(file.full_path)
                     if entry and hasattr(entry, "data") and entry.data:
                         # Check modified status first
-                        if hasattr(entry, "modified") and entry.modified:
+                        if is_modified or (hasattr(entry, "modified") and entry.modified):
                             metadata_status = "modified"
                         elif hasattr(entry, "is_extended") and entry.is_extended:
                             metadata_status = "extended"

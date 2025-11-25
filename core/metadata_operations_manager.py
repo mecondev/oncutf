@@ -401,7 +401,12 @@ class MetadataOperationsManager:
                     "EXIF:ImageDescription",
                 ],
                 "Keywords": ["XMP:Keywords", "IPTC:Keywords", "XMP:Subject"],
-                "Rotation": ["EXIF:Orientation"],
+                "Rotation": [
+                    "EXIF:Orientation",     # Images priority
+                    "QuickTime:Rotation",   # Videos priority
+                    "Rotation",             # Generic fallback
+                    "CameraOrientation",    # Alternative
+                ],
             }
 
             priorities = field_priorities.get(field_name, [])
@@ -521,7 +526,12 @@ class MetadataOperationsManager:
                     "XMP:Title",
                 ],
                 "Keywords": ["XMP:Keywords", "IPTC:Keywords", "XMP:Subject"],
-                "Rotation": ["EXIF:Orientation"],  # Images/Videos only
+                "Rotation": [
+                    "EXIF:Orientation",     # Images (JPEG, TIFF, etc)
+                    "QuickTime:Rotation",   # Videos (MP4, MOV, etc)
+                    "Rotation",             # Generic/Composite field
+                    "CameraOrientation",    # Alternative field
+                ],  # Images/Videos with comprehensive format support
             }
 
             # Get supported fields for this field name

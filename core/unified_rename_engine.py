@@ -16,12 +16,14 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
+from config import AUTO_RENAME_COMPANION_FILES, COMPANION_FILES_ENABLED
 from core.advanced_cache_manager import AdvancedCacheManager
 from core.batch_processor import BatchProcessorFactory
 from core.conflict_resolver import ConflictResolver
 from core.performance_monitor import get_performance_monitor, monitor_performance
 from core.pyqt_imports import QObject, pyqtSignal
 from models.file_item import FileItem
+from utils.companion_files_helper import CompanionFilesHelper
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -728,7 +730,66 @@ class UnifiedExecutionManager:
             item = ExecutionItem(old_path=old_path, new_path=new_path, success=False)
             items.append(item)
 
+        # Add companion file renames if enabled
+        if COMPANION_FILES_ENABLED and AUTO_RENAME_COMPANION_FILES:
+            companion_items = self._build_companion_execution_plan(files, new_names)
+            items.extend(companion_items)
+
         return items
+
+    def _build_companion_execution_plan(
+        self, files: list[FileItem], new_names: list[str]
+    ) -> list[ExecutionItem]:
+        """Build execution plan for companion files that should be renamed alongside main files."""
+        companion_items = []
+
+        if not files:
+            return companion_items
+
+        try:
+            # Get all files in the folder for companion detection
+            folder_path = os.path.dirname(files[0].full_path)
+            folder_files = []
+            try:
+                folder_files = [
+                    os.path.join(folder_path, f)
+                    for f in os.listdir(folder_path)
+                    if os.path.isfile(os.path.join(folder_path, f))
+                ]
+            except OSError:
+                return companion_items
+
+            # Process each main file for companion renames
+            for file, new_name in zip(files, new_names, strict=False):
+                companions = CompanionFilesHelper.find_companion_files(file.full_path, folder_files)
+
+                if companions:
+                    # Generate companion rename pairs
+                    new_path = os.path.join(folder_path, new_name)
+                    companion_renames = CompanionFilesHelper.get_companion_rename_pairs(
+                        file.full_path, new_path, companions
+                    )
+
+                    # Create execution items for companions
+                    for old_companion_path, new_companion_path in companion_renames:
+                        companion_item = ExecutionItem(
+                            old_path=old_companion_path,
+                            new_path=new_companion_path,
+                            success=False
+                        )
+                        companion_items.append(companion_item)
+                        logger.debug(
+                            f"[UnifiedExecutionManager] Added companion rename: "
+                            f"{os.path.basename(old_companion_path)} → {os.path.basename(new_companion_path)}"
+                        )
+
+        except Exception as e:
+            logger.warning(f"[UnifiedExecutionManager] Error building companion execution plan: {e}")
+
+        if companion_items:
+            logger.info(f"[UnifiedExecutionManager] Added {len(companion_items)} companion file renames")
+
+        return companion_items
 
     def _resolve_conflict(self, item: ExecutionItem) -> str:
         """Invoke the conflict callback to resolve a filesystem conflict.

@@ -25,14 +25,16 @@ class MetadataCacheHelper:
     for getting/setting metadata across the application.
     """
 
-    def __init__(self, metadata_cache=None):
+    def __init__(self, metadata_cache=None, parent_window=None):
         """
         Initialize with a metadata cache instance.
 
         Args:
             metadata_cache: The metadata cache instance to use
+            parent_window: Optional parent window for accessing context/managers
         """
         self.metadata_cache = metadata_cache
+        self.parent_window = parent_window
 
     def get_metadata_for_file(
         self, file_item, fallback_to_file_item: bool = True
@@ -243,6 +245,14 @@ class MetadataCacheHelper:
             bool: True if value was set successfully
         """
         try:
+            # Stage change if possible
+            if self.parent_window and hasattr(self.parent_window, 'context'):
+                try:
+                    staging_manager = self.parent_window.context.get_manager('metadata_staging')
+                    staging_manager.stage_change(file_item.full_path, key_path, str(new_value))
+                except KeyError:
+                    pass
+
             # Get current metadata
             metadata = self.get_metadata_for_file(file_item, fallback_to_file_item=True)
             if metadata is None or not metadata:
@@ -341,4 +351,4 @@ def get_metadata_cache_helper(parent_window=None, metadata_cache=None) -> Metada
     else:
         cache = None
 
-    return MetadataCacheHelper(cache)
+    return MetadataCacheHelper(cache, parent_window)

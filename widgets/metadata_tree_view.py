@@ -868,16 +868,13 @@ class MetadataTreeView(QTreeView):
         if self._current_file_path:
             # Normalize key path for standard metadata fields
             normalized_key_path = self._normalize_metadata_field_name(key_path)
-            has_modifications = normalized_key_path in self.modified_items
 
-            # Also check stored modifications for this file
-            if not has_modifications and self._path_in_dict(
-                self._current_file_path, self.modified_items_per_file
-            ):
-                stored_modifications = self._get_from_path_dict(
-                    self._current_file_path, self.modified_items_per_file
-                )
-                has_modifications = normalized_key_path in (stored_modifications or set())
+            # Check staging manager
+            from core.metadata_staging_manager import get_metadata_staging_manager
+            staging_manager = get_metadata_staging_manager()
+            if staging_manager:
+                staged_changes = staging_manager.get_staged_changes(self._current_file_path)
+                has_modifications = normalized_key_path in staged_changes
 
             # Get current field value
             selected_files = self._get_current_selection()
@@ -1207,44 +1204,26 @@ class MetadataTreeView(QTreeView):
         self, key_path: str, new_value: str, _old_value: str, files_to_modify: list
     ) -> None:
         """Fallback method for editing metadata without command system."""
-        # Mark as modified
-        self.modified_items.add(key_path)
+        # Get staging manager
+        from core.metadata_staging_manager import get_metadata_staging_manager
+        staging_manager = get_metadata_staging_manager()
 
-        # Update metadata in cache for all files to modify
-        cache_helper = self._get_cache_helper()
+        logger.info(f"[TreeView] _fallback_edit_value called: staging_manager={staging_manager}")
+
+        if not staging_manager:
+            logger.error("Staging manager not available")
+            return
+
         success_count = 0
 
         for file_item in files_to_modify:
-            if cache_helper:
-                # Try to set metadata value - will fail if metadata not in cache
-                if cache_helper.set_metadata_value(file_item, key_path, new_value):
-                    success_count += 1
-                    # Mark the cache entry as modified
-                    cache_entry = cache_helper.get_cache_entry_for_file(file_item)
-                    if cache_entry:
-                        cache_entry.modified = True
+            logger.info(f"[TreeView] About to stage change: {file_item.full_path}, {key_path}, {new_value}")
+            # Stage the change
+            staging_manager.stage_change(file_item.full_path, key_path, new_value)
+            success_count += 1
 
-                    # Update the file item's metadata status
-                    file_item.metadata_status = "modified"
-                else:
-                    # Failed to set metadata - metadata not loaded
-                    logger.error(
-                        f"[MetadataTree] Cannot edit {key_path} for {file_item.filename} - metadata not loaded. "
-                        "Please load metadata first (Fast or Extended)."
-                    )
-                    from core.pyqt_imports import QMessageBox
-
-                    parent_window = self._get_parent_with_file_table()
-                    if parent_window:
-                        QMessageBox.warning(
-                            parent_window,
-                            "Metadata Not Loaded",
-                            f"Cannot edit metadata for {file_item.filename}.\n\n"
-                            "Please load metadata first:\n"
-                            "• Right-click → Read Fast Metadata, or\n"
-                            "• Right-click → Read Extended Metadata",
-                        )
-                    return  # Abort the edit operation
+            # Update the file item's metadata status
+            file_item.metadata_status = "modified"
 
         if success_count == 0:
             logger.warning("[MetadataTree] No files were successfully updated")
@@ -1349,15 +1328,17 @@ class MetadataTreeView(QTreeView):
         self, key_path: str, new_value: str, _current_value: Any
     ) -> None:
         """Fallback method for setting rotation to zero without command system."""
-        # Mark as modified
-        self.modified_items.add(key_path)
+        # Get staging manager
+        from core.metadata_staging_manager import get_metadata_staging_manager
+        staging_manager = get_metadata_staging_manager()
 
-        # Update metadata in cache and file item status
-        self._update_metadata_in_cache(key_path, new_value)
+        if not staging_manager:
+            return
 
-        # Update the file item's metadata status
+        # Update metadata in staging
         selected_files = self._get_current_selection()
         for file_item in selected_files:
+            staging_manager.stage_change(file_item.full_path, key_path, new_value)
             file_item.metadata_status = "modified"
 
         # Update the file icon status immediately
@@ -1398,9 +1379,11 @@ class MetadataTreeView(QTreeView):
                 # Update tree display
                 self._update_tree_item_value(key_path, str(original_value))
 
-                # Remove from modifications
-                if key_path in self.modified_items:
-                    self.modified_items.remove(key_path)
+                # Remove from staging
+                from core.metadata_staging_manager import get_metadata_staging_manager
+                staging_manager = get_metadata_staging_manager()
+                if staging_manager and self._current_file_path:
+                    staging_manager.clear_staged_change(self._current_file_path, key_path)
 
                 logger.debug(
                     f"[MetadataTree] Executed reset command for {file_item.filename}",
@@ -1419,12 +1402,13 @@ class MetadataTreeView(QTreeView):
 
     def _fallback_reset_value(self, key_path: str, original_value: Any) -> None:
         """Fallback method for resetting metadata without command system."""
-        # Remove from modified items
-        if key_path in self.modified_items:
-            self.modified_items.remove(key_path)
+        # Get staging manager
+        from core.metadata_staging_manager import get_metadata_staging_manager
+        staging_manager = get_metadata_staging_manager()
 
-        # Reset metadata in cache to original value
-        self._reset_metadata_in_cache(key_path)
+        if staging_manager and self._current_file_path:
+            # Remove from staging
+            staging_manager.clear_staged_change(self._current_file_path, key_path)
 
         # Update the file icon status
         self._update_file_icon_status()
@@ -1565,6 +1549,10 @@ class MetadataTreeView(QTreeView):
         if not file_model:
             return
 
+        # Get staging manager
+        from core.metadata_staging_manager import get_metadata_staging_manager
+        staging_manager = get_metadata_staging_manager()
+
         # For each selected file, update its icon
         updated_rows = []
         for file_item in selected_files:
@@ -1574,41 +1562,16 @@ class MetadataTreeView(QTreeView):
             # Check if this file has modifications
             has_modifications = False
 
-            # Check current modified items (for currently selected file)
-            if paths_equal(file_path, self._current_file_path) and self.modified_items:
-                has_modifications = True
-
-            # Check stored modifications for this file
-            elif self._path_in_dict(file_path, self.modified_items_per_file):
-                stored_modifications = self._get_from_path_dict(
-                    file_path, self.modified_items_per_file
-                )
-                has_modifications = bool(stored_modifications)
-
-            # Also check metadata cache for modified flag
-            cache_helper = self._get_cache_helper()
-            if cache_helper:
-                cache_entry = cache_helper.get_cache_entry_for_file(file_item)
-                if cache_entry and hasattr(cache_entry, "modified") and cache_entry.modified:
-                    has_modifications = True
+            if staging_manager:
+                has_modifications = staging_manager.has_staged_changes(file_path)
 
             # Update icon based on whether we have modified items
             if has_modifications:
                 # Set modified icon
                 file_item.metadata_status = "modified"
-                # Also update cache entry modified flag
-                if cache_helper:
-                    cache_entry = cache_helper.get_cache_entry_for_file(file_item)
-                    if cache_entry:
-                        cache_entry.modified = True
             else:
                 # Set normal loaded icon
                 file_item.metadata_status = "loaded"
-                # Also update cache entry modified flag
-                if cache_helper:
-                    cache_entry = cache_helper.get_cache_entry_for_file(file_item)
-                    if cache_entry:
-                        cache_entry.modified = False
 
             # Find the row for this file item and mark for update
             for row, model_file in enumerate(file_model.files):
@@ -2161,8 +2124,16 @@ class MetadataTreeView(QTreeView):
                     ):
                         extended_keys.add(key)
 
+            # Get modified keys from staging manager
+            modified_keys = set()
+            from core.metadata_staging_manager import get_metadata_staging_manager
+            staging_manager = get_metadata_staging_manager()
+            if staging_manager and self._current_file_path:
+                staged_changes = staging_manager.get_staged_changes(self._current_file_path)
+                modified_keys = set(staged_changes.keys())
+
             tree_model = build_metadata_tree_model(
-                display_data, self.modified_items, extended_keys, "all"
+                display_data, modified_keys, extended_keys, "all"
             )
 
             # Use proxy model for filtering instead of setting model directly
@@ -2229,38 +2200,32 @@ class MetadataTreeView(QTreeView):
 
     def _apply_modified_values_to_display_data(self, display_data: dict[str, Any]) -> None:
         """
-        Apply any modified values from the UI to the display data.
-        SIMPLIFIED: Rotation is always top-level, no complex group logic.
+        Apply any modified values from the Staging Manager to the display data.
         """
-        if not self.modified_items:
-            return
-
-        # Get the current metadata cache to get the modified values
+        # Get current file
         selected_files = self._get_current_selection()
-        cache_helper = self._get_cache_helper()
-
-        if not selected_files or not cache_helper:
+        if not selected_files or len(selected_files) != 1:
             return
 
-        # For single file selection only (for now)
-        if len(selected_files) != 1:
+        file_path = selected_files[0].full_path
+
+        # Get staging manager
+        from core.metadata_staging_manager import get_metadata_staging_manager
+        staging_manager = get_metadata_staging_manager()
+
+        if not staging_manager:
             return
 
-        file_item = selected_files[0]
-        metadata_entry = cache_helper.get_cache_entry_for_file(file_item)
-
-        if not metadata_entry or not hasattr(metadata_entry, "data"):
+        # Get staged changes
+        staged_changes = staging_manager.get_staged_changes(file_path)
+        if not staged_changes:
             return
 
-        # Apply each modified value to the display_data
-        for key_path in self.modified_items:
+        # Apply changes to display_data
+        for key_path, value in staged_changes.items():
             # Special handling for rotation - it's always top-level
             if key_path.lower() == "rotation":
-                if "Rotation" in metadata_entry.data:
-                    current_rotation = metadata_entry.data["Rotation"]
-                    display_data["Rotation"] = current_rotation
-                else:
-                    logger.warning("[MetadataTree] Rotation not found in cache data!")
+                display_data["Rotation"] = value
                 continue
 
             # Handle other fields normally
@@ -2268,19 +2233,13 @@ class MetadataTreeView(QTreeView):
 
             if len(parts) == 1:
                 # Top-level key
-                key = parts[0]
-                if key in metadata_entry.data:
-                    display_data[key] = metadata_entry.data[key]
+                display_data[parts[0]] = value
             elif len(parts) == 2:
                 # Nested key (group/key)
                 group, key = parts
-                if group in metadata_entry.data and isinstance(metadata_entry.data[group], dict):
-                    if key in metadata_entry.data[group]:
-                        # Ensure the group exists in display_data
-                        if group not in display_data or not isinstance(display_data[group], dict):
-                            display_data[group] = {}
-
-                        display_data[group][key] = metadata_entry.data[group][key]
+                if group not in display_data or not isinstance(display_data[group], dict):
+                    display_data[group] = {}
+                display_data[group][key] = value
 
         # Clean up any empty groups
         self._cleanup_empty_groups(display_data)
@@ -2292,12 +2251,19 @@ class MetadataTreeView(QTreeView):
         """
         empty_groups = []
 
+        # Get staging manager
+        from core.metadata_staging_manager import get_metadata_staging_manager
+        staging_manager = get_metadata_staging_manager()
+
         # Check which groups have modified items
         groups_with_modifications = set()
-        for key_path in self.modified_items:
-            if "/" in key_path:
-                group_name = key_path.split("/")[0]
-                groups_with_modifications.add(group_name)
+
+        if staging_manager and self._current_file_path:
+            staged_changes = staging_manager.get_staged_changes(self._current_file_path)
+            for key_path in staged_changes:
+                if "/" in key_path:
+                    group_name = key_path.split("/")[0]
+                    groups_with_modifications.add(group_name)
 
         for group_name, group_data in display_data.items():
             if isinstance(group_data, dict) and len(group_data) == 0:
@@ -2418,9 +2384,13 @@ class MetadataTreeView(QTreeView):
         This is different from clear_view() which preserves scroll memory.
         """
         self.clear_scroll_memory()
-        # Clear all modified items for all files
-        self.modified_items_per_file.clear()
-        self.modified_items.clear()
+
+        # Clear all staged changes
+        from core.metadata_staging_manager import get_metadata_staging_manager
+        staging_manager = get_metadata_staging_manager()
+        if staging_manager:
+            staging_manager.clear_all()
+
         self.clear_view()
         # Update header visibility for placeholder mode
         self._update_header_visibility()
@@ -2585,54 +2555,20 @@ class MetadataTreeView(QTreeView):
         Returns:
             Dictionary of modified metadata in format {"EXIF/Rotation": "90"}
         """
-        if not self.modified_items:
+        # Get staging manager
+        from core.metadata_staging_manager import get_metadata_staging_manager
+        staging_manager = get_metadata_staging_manager()
+
+        if not staging_manager:
             return {}
 
-        modified_metadata = {}
-
-        # Get current file's metadata
+        # Get current file
         selected_files = self._get_current_selection()
-        cache_helper = self._get_cache_helper()
-
-        if not selected_files or not cache_helper:
+        if not selected_files or len(selected_files) != 1:
             return {}
 
-        # For now, only handle single file selection
-        if len(selected_files) != 1:
-            logger.warning("[MetadataTree] Multiple files selected - save not implemented yet")
-            return {}
-
-        file_item = selected_files[0]
-        metadata_entry = cache_helper.get_cache_entry_for_file(file_item)
-
-        if not metadata_entry or not hasattr(metadata_entry, "data"):
-            return {}
-
-        # Collect modified values from metadata
-        for key_path in self.modified_items:
-            # Special handling for rotation - it's always top-level
-            if key_path.lower() == "rotation":
-                if "Rotation" in metadata_entry.data:
-                    modified_metadata["Rotation"] = str(metadata_entry.data["Rotation"])
-                else:
-                    logger.warning("[MetadataTree] Rotation not found in cache for current file")
-                continue
-
-            # Handle other fields normally
-            parts = key_path.split("/")
-
-            if len(parts) == 1:
-                # Top-level key
-                if parts[0] in metadata_entry.data:
-                    modified_metadata[key_path] = str(metadata_entry.data[parts[0]])
-            elif len(parts) == 2:
-                # Nested key (group/key)
-                group, key = parts
-                if group in metadata_entry.data and isinstance(metadata_entry.data[group], dict):
-                    if key in metadata_entry.data[group]:
-                        modified_metadata[key_path] = str(metadata_entry.data[group][key])
-
-        return modified_metadata
+        file_path = selected_files[0].full_path
+        return staging_manager.get_staged_changes(file_path)
 
     def get_all_modified_metadata_for_files(self) -> dict[str, dict[str, str]]:
         """
@@ -2641,158 +2577,25 @@ class MetadataTreeView(QTreeView):
         Returns:
             Dictionary mapping file paths to their modified metadata
         """
-        all_modifications = {}
+        # Get staging manager
+        from core.metadata_staging_manager import get_metadata_staging_manager
+        staging_manager = get_metadata_staging_manager()
 
-        # Save current file's modifications first
-        if self._current_file_path and self.modified_items:
-            self._set_in_path_dict(
-                self._current_file_path, self.modified_items.copy(), self.modified_items_per_file
-            )
-
-        # Clean up any None keys that might exist in the dictionary
-        none_keys = [k for k in self.modified_items_per_file if k is None]
-        for none_key in none_keys:
-            del self.modified_items_per_file[none_key]
-
-        # Get metadata cache
-        cache_helper = self._get_cache_helper()
-        if not cache_helper:
+        if not staging_manager:
             return {}
 
-        # Import normalize_path for consistent path handling
-        from utils.path_normalizer import normalize_path
-
-        # Debug: Show all keys in modified_items_per_file
-        logger.info(
-            f"[MetadataTree] modified_items_per_file keys: {list(self.modified_items_per_file.keys())}"
-        )
-
-        # Collect modifications for each file
-        for file_path, modified_keys in self.modified_items_per_file.items():
-            # Skip None or empty file paths
-            if not file_path or not modified_keys:
-                continue
-
-            # Normalize path for consistent cache lookups (critical for cross-platform)
-            # This handles cases where file_path might not be normalized yet
-            normalized_path = normalize_path(file_path)
-
-            logger.info(
-                f"[MetadataTree] Looking up cache for file_path='{file_path}' -> normalized='{normalized_path}'"
-            )
-
-            # Get cache entry using normalized path
-            metadata_entry = (
-                cache_helper.metadata_cache.get_entry(normalized_path)
-                if cache_helper.metadata_cache
-                else None
-            )
-
-            # Fallback: Try un-normalized path if normalized failed
-            if not metadata_entry and cache_helper.metadata_cache:
-                metadata_entry = cache_helper.metadata_cache.get_entry(file_path)
-                if metadata_entry:
-                    logger.debug(
-                        f"[MetadataTree] Found cache entry using un-normalized path: {file_path}",
-                        extra={"dev_only": True}
-                    )
-
-            # Always try to find the file item directly to use as fallback
-            # This is critical because sometimes cache entry might be stale but file_item.metadata is updated
-            file_item_metadata = None
-            all_files = self._get_all_loaded_files()
-            for item in all_files:
-                if paths_equal(item.full_path, file_path):
-                    if hasattr(item, "metadata") and item.metadata:
-                        file_item_metadata = item.metadata
-                        logger.debug(
-                            f"[MetadataTree] Found metadata in FileItem for {file_path}",
-                            extra={"dev_only": True},
-                        )
-                    break
-
-            if metadata_entry:
-                logger.info(
-                    f"[MetadataTree] Found cache entry with keys: {list(metadata_entry.data.keys())[:10] if hasattr(metadata_entry, 'data') else 'NO DATA'}"
-                )
-            elif file_item_metadata:
-                logger.info(
-                    f"[MetadataTree] Using FileItem metadata fallback for {file_path}"
-                )
-            else:
-                logger.warning(
-                    f"[MetadataTree] NO cache entry found for normalized_path='{normalized_path}'",
-                    extra={"dev_only": False},
-                )
-
-            file_modifications = {}
-
-            for key_path in modified_keys:
-                # If no metadata entry exists, we still need to record the modification
-                # but we can't get the current value. This can happen if metadata
-                # was edited but not yet saved or if cache was cleared.
-
-                current_value = None
-                value_found = False
-
-                # Helper to check for value in data dict
-                def find_value_in_data(data_dict, key):
-                    # 1. Exact match
-                    if key in data_dict:
-                        return str(data_dict[key]), True
-
-                    # 2. Rotation special case (QuickTime:Rotation -> Rotation)
-                    if key.endswith("Rotation") and "Rotation" in data_dict:
-                        return str(data_dict["Rotation"]), True
-
-                    # 3. Split by / (Group/Key)
-                    parts = key.split("/")
-                    if len(parts) == 2:
-                        group, subkey = parts
-                        if group in data_dict and isinstance(data_dict[group], dict):
-                            if subkey in data_dict[group]:
-                                return str(data_dict[group][subkey]), True
-
-                    return None, False
-
-                # Strategy 1: Try cache entry
-                if metadata_entry and hasattr(metadata_entry, "data"):
-                    current_value, value_found = find_value_in_data(metadata_entry.data, key_path)
-                    if value_found:
-                        logger.debug(f"[MetadataTree] Found value for {key_path} in cache: {current_value}", extra={"dev_only": True})
-
-                # Strategy 2: Try FileItem metadata fallback
-                if not value_found and file_item_metadata:
-                    current_value, value_found = find_value_in_data(file_item_metadata, key_path)
-                    if value_found:
-                        logger.debug(f"[MetadataTree] Found value for {key_path} in FileItem: {current_value}", extra={"dev_only": True})
-
-                if value_found:
-                    file_modifications[key_path] = current_value
-                else:
-                    # Use a placeholder value to indicate modification exists but value is missing
-                    # CRITICAL: This placeholder causes ExifTool errors if passed directly
-                    # The saver must handle this case
-                    file_modifications[key_path] = "[MODIFIED]"
-                    logger.warning(
-                        f"[MetadataTree] No value found for {key_path} in {file_path} (Cache: {bool(metadata_entry)}, FileItem: {bool(file_item_metadata)})"
-                    )
-
-            # Store modifications using normalized path for consistency
-            if file_modifications:
-                all_modifications[normalized_path] = file_modifications
-
-        logger.info(f"[MetadataTree] Total files with modifications: {len(all_modifications)}")
-        return all_modifications
+        return staging_manager.get_all_staged_changes()
 
     def clear_modifications(self) -> None:
         """
         Clear all modified metadata items for the current file.
         """
-        self.modified_items.clear()
-        # Also clear from the per-file storage
-        if self._current_file_path:
-            self._remove_from_path_dict(self._current_file_path, self.modified_items_per_file)
+        from core.metadata_staging_manager import get_metadata_staging_manager
+        staging_manager = get_metadata_staging_manager()
+
+        if staging_manager and self._current_file_path:
+            staging_manager.clear_staged_changes(self._current_file_path)
+
         self._update_file_icon_status()
         self.viewport().update()
 
@@ -2803,12 +2606,14 @@ class MetadataTreeView(QTreeView):
         Args:
             file_path: Full path of the file to clear modifications for
         """
-        # Remove from per-file storage
-        self._remove_from_path_dict(file_path, self.modified_items_per_file)
+        from core.metadata_staging_manager import get_metadata_staging_manager
+        staging_manager = get_metadata_staging_manager()
+
+        if staging_manager:
+            staging_manager.clear_staged_changes(file_path)
 
         # If this is the current file, also clear current modifications and update UI
         if paths_equal(file_path, self._current_file_path):
-            self.modified_items.clear()
             # Refresh the view to remove italic style
             if hasattr(self, "display_metadata"):
                 # Get current selection to refresh
@@ -2832,11 +2637,12 @@ class MetadataTreeView(QTreeView):
         Returns:
             bool: True if any selected file has modifications
         """
-        # Save current file's modifications first
-        if self._current_file_path and self.modified_items:
-            self._set_in_path_dict(
-                self._current_file_path, self.modified_items.copy(), self.modified_items_per_file
-            )
+        # Get staging manager
+        from core.metadata_staging_manager import get_metadata_staging_manager
+        staging_manager = get_metadata_staging_manager()
+
+        if not staging_manager:
+            return False
 
         # Get selected files
         selected_files = self._get_current_selection()
@@ -2845,17 +2651,8 @@ class MetadataTreeView(QTreeView):
 
         # Check if any selected file has modifications
         for file_item in selected_files:
-            file_path = file_item.full_path
-
-            # Check both current modified items and stored ones
-            if paths_equal(file_path, self._current_file_path) and self.modified_items:
+            if staging_manager.has_staged_changes(file_item.full_path):
                 return True
-            elif self._path_in_dict(file_path, self.modified_items_per_file):
-                stored_modifications = self._get_from_path_dict(
-                    file_path, self.modified_items_per_file
-                )
-                if stored_modifications:
-                    return True
 
         return False
 
@@ -2866,35 +2663,14 @@ class MetadataTreeView(QTreeView):
         Returns:
             bool: True if any file has modifications
         """
-        # CRITICAL: Always save current file's modifications first before checking
-        if self._current_file_path and self.modified_items:
-            logger.debug(
-                f"[MetadataTree] Saving current modifications for: {self._current_file_path} (count: {len(self.modified_items)})",
-                extra={"dev_only": True},
-            )
-            self._set_in_path_dict(
-                self._current_file_path, self.modified_items.copy(), self.modified_items_per_file
-            )
+        # Get staging manager
+        from core.metadata_staging_manager import get_metadata_staging_manager
+        staging_manager = get_metadata_staging_manager()
 
-        # Check current file modifications
-        if self.modified_items:
-            logger.debug(
-                f"[MetadataTree] Found current file modifications: {len(self.modified_items)}",
-                extra={"dev_only": True},
-            )
-            return True
+        if not staging_manager:
+            return False
 
-        # Check stored modifications for all files
-        total_modifications = 0
-        for _file_path, modifications in self.modified_items_per_file.items():
-            if modifications:  # Non-empty set
-                total_modifications += len(modifications)
-
-        logger.debug(
-            f"[MetadataTree] Total stored modifications across all files: {total_modifications}",
-            extra={"dev_only": True},
-        )
-        return total_modifications > 0
+        return staging_manager.has_any_staged_changes()
 
     # =====================================
     # Lazy Loading Methods

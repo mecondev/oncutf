@@ -1212,6 +1212,7 @@ class DatabaseManager:
                 ("EXIF:ImageWidth", "Image Width", "image", "number", False, True, "pixels", 0),
                 ("EXIF:ImageHeight", "Image Height", "image", "number", False, True, "pixels", 1),
                 ("EXIF:Orientation", "Orientation", "image", "text", True, True, None, 2),
+                ("QuickTime:Rotation", "Rotation (Video)", "video", "text", True, True, "degrees", 2),
                 ("EXIF:ColorSpace", "Color Space", "image", "text", False, True, None, 3),
                 (
                     "EXIF:BitsPerSample",

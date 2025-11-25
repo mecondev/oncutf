@@ -749,6 +749,13 @@ class EventHandlerManager:
         logger.info(f"[BulkRotation] Checking rotation for {len(files_to_process)} files")
 
         try:
+            # Get staging manager
+            try:
+                staging_manager = self.parent_window.context.get_manager('metadata_staging')
+            except KeyError:
+                logger.error("[BulkRotation] MetadataStagingManager not found")
+                return
+
             # Apply rotation changes to metadata cache, but only for files that need it
             modified_count = 0
             skipped_count = 0
@@ -766,7 +773,10 @@ class EventHandlerManager:
                     skipped_count += 1
                     continue
 
-                # Get or create metadata cache entry
+                # Stage the change
+                staging_manager.stage_change(file_item.full_path, "Rotation", "0")
+
+                # Get or create metadata cache entry (for UI display)
                 cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
                 if not cache_entry:
                     # Create a new cache entry if none exists
@@ -775,7 +785,7 @@ class EventHandlerManager:
                     cache_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
 
                 if cache_entry and hasattr(cache_entry, "data"):
-                    # Set rotation to 0
+                    # Set rotation to 0 in cache for display purposes
                     cache_entry.data["Rotation"] = "0"
                     cache_entry.modified = True
 

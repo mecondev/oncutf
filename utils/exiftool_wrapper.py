@@ -308,60 +308,29 @@ class ExifToolWrapper:
             # Build exiftool command
             cmd = ["exiftool", "-overwrite_original"]
 
-            # Add each metadata change as a tag
-            for key, value in metadata_changes.items():
-                # Handle special cases for rotation metadata
-                key_lower = key.lower()
-                if "rotation" in key_lower:
-                    # Use the appropriate rotation tag based on file type
-                    file_ext = os.path.splitext(file_path_normalized)[1].lower()
+            # Use the centralized metadata field mapping helper
+            from utils.metadata_field_mapping_helper import MetadataFieldMappingHelper
 
-                    if file_ext in [".jpg", ".jpeg"]:
-                        # For JPEG files, use EXIF:Orientation (1-8) or Rotation (0, 90, 180, 270)
-                        if value in ["0", "90", "180", "270"]:
-                            tag_name = "Rotation"
-                        else:
-                            tag_name = "EXIF:Orientation"
-                    elif file_ext in [".mp4", ".mov", ".m4v", ".3gp"]:
-                        # For QuickTime-based formats (MP4, MOV), use QuickTime:Rotation
-                        # This is critical for proper rotation support in video files
-                        tag_name = "QuickTime:Rotation"
-                        logger.debug(
-                            f"[ExifToolWrapper] Using QuickTime:Rotation for {file_ext} file",
-                            extra={"dev_only": True},
-                        )
-                    elif file_ext in [".png"]:
-                        # PNG doesn't support EXIF rotation, try XMP or just Rotation
-                        tag_name = "Rotation"
-                    elif file_ext in [".tiff", ".tif"]:
-                        # TIFF supports EXIF:Orientation
-                        if value in ["0", "90", "180", "270"]:
-                            tag_name = "Rotation"
-                        else:
-                            tag_name = "EXIF:Orientation"
-                    else:
-                        # Generic rotation tag for other formats
-                        tag_name = "Rotation"
+            # Prepare metadata changes using the field mapping helper
+            prepared_changes = MetadataFieldMappingHelper.prepare_metadata_for_write(
+                metadata_changes, file_path_normalized
+            )
 
-                    logger.debug(
-                        f"[ExifToolWrapper] Rotation: {key} -> {tag_name} = {value} for {file_ext}",
-                        extra={"dev_only": True},
-                    )
-                else:
-                    # Convert our format (e.g., "EXIF/DateTimeOriginal") to exiftool format
-                    tag_name = key.replace("/", ":")
-
+            # Add each prepared metadata change as a tag
+            for tag_name, value in prepared_changes.items():
+                logger.debug(
+                    f"[ExifToolWrapper] Adding tag: {tag_name}={value}",
+                    extra={"dev_only": True},
+                )
                 cmd.append(f"-{tag_name}={value}")
 
             cmd.append(file_path_normalized)
 
-            logger.debug(
-                f"[ExifToolWrapper] Writing metadata with command: {' '.join(cmd)}",
-                extra={"dev_only": True},
+            logger.info(
+                f"[ExifToolWrapper] Writing metadata with command: {' '.join(cmd)}"
             )
-            logger.debug(
-                f"[ExifToolWrapper] Original metadata_changes: {metadata_changes}",
-                extra={"dev_only": True},
+            logger.info(
+                f"[ExifToolWrapper] Original metadata_changes: {metadata_changes}"
             )
 
             # Execute the command

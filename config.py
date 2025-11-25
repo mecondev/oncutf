@@ -167,6 +167,16 @@ ALLOWED_EXTENSIONS = {
     "pdf",
     # Thumbnail formats
     "tmp",
+    # Companion/Sidecar file formats
+    "xmp",
+    "srt",
+    "vtt",
+    "ass",
+    "ssa",
+    "sub",
+    "idx",
+    "cube",
+    "3dl",
 }
 
 # =====================================
@@ -199,6 +209,32 @@ EXPORT_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 USE_PREVIEW_BACKGROUND = False
 LARGE_FOLDER_WARNING_THRESHOLD = 150
 EXTENDED_METADATA_SIZE_LIMIT_MB = 500
+
+# =====================================
+# COMPANION FILES SETTINGS
+# =====================================
+
+# Whether to automatically detect and handle companion files
+COMPANION_FILES_ENABLED = True
+
+# Whether to show companion files in the file table or hide them
+SHOW_COMPANION_FILES_IN_TABLE = False
+
+# Whether to automatically rename companion files when main file is renamed
+AUTO_RENAME_COMPANION_FILES = True
+
+# Whether to load metadata from companion files (like Sony XML)
+LOAD_COMPANION_METADATA = True
+
+# How to handle companion files during operations
+CompanionFileMode = {
+    "HIDE": "hide",           # Hide companion files from user (default)
+    "SHOW": "show",           # Show companion files in table
+    "SHOW_GROUPED": "grouped" # Show but grouped with main file
+}
+
+# Default companion file handling mode
+DEFAULT_COMPANION_FILE_MODE = CompanionFileMode["HIDE"]
 
 # Regex pattern for Windows-safe names
 ALLOWED_FILENAME_CHARS = r"^[^\\/:*?\"<>|]+$"
