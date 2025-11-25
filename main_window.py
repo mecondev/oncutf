@@ -463,7 +463,7 @@ class MainWindow(QMainWindow):
         # Use specialized metadata status method if status manager is available
         if hasattr(self, "status_manager") and self.status_manager:
             self.status_manager.set_metadata_status(
-                f"Modified {key_path}: {old_value} → {new_value}",
+                f"Modified {key_path}: {old_value} -> {new_value}",
                 operation_type="success",
                 auto_reset=True,
             )

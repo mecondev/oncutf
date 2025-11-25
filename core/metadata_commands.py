@@ -211,6 +211,10 @@ class EditMetadataFieldCommand(MetadataCommand):
             # Update tree view display
             self.metadata_tree_view._update_tree_item_value(field_path, str(value))
 
+            # Mark as modified
+            if hasattr(self.metadata_tree_view, 'mark_as_modified'):
+                self.metadata_tree_view.mark_as_modified(field_path)
+
             # Update file icon status
             self.metadata_tree_view._update_file_icon_status()
 
@@ -222,7 +226,7 @@ class EditMetadataFieldCommand(MetadataCommand):
 
     def get_description(self) -> str:
         """Get description of the edit command."""
-        return f"Edit {self.field_path}: {self.old_value} → {self.new_value}"
+        return f"Edit {self.field_path}: {self.old_value} -> {self.new_value}"
 
     def get_command_type(self) -> str:
         """Get command type."""
@@ -347,7 +351,7 @@ class ResetMetadataFieldCommand(MetadataCommand):
 
     def get_description(self) -> str:
         """Get description of the reset command."""
-        return f"Reset {self.field_path}: {self.current_value} → {self.original_value}"
+        return f"Reset {self.field_path}: {self.current_value} -> {self.original_value}"
 
     def get_command_type(self) -> str:
         """Get command type."""

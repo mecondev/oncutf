@@ -144,7 +144,7 @@ class TestEditMetadataFieldCommand:
 
     def test_get_description(self):
         """Test command description."""
-        expected = f"Edit {self.field_path}: {self.old_value} → {self.new_value}"
+        expected = f"Edit {self.field_path}: {self.old_value} -> {self.new_value}"
         assert self.command.get_description() == expected
 
     def test_can_execute_undo_redo(self):
