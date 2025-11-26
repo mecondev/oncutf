@@ -30,40 +30,159 @@ class CompanionFilesHelper:
     """
 
     # Companion file patterns (extension -> companion patterns)
+    # Based on real-world professional workflows, not theoretical patterns
     COMPANION_PATTERNS = {
-        # Sony camera XML metadata files + subtitle files for videos
+        # ========================================
+        # VIDEO FILES - Sony metadata + subtitles
+        # ========================================
         "mp4": [
-            r"^(.+)M01\.XML$", r"^(.+)M02\.XML$",  # Sony metadata: C8227.MP4 -> C8227M01.XML
-            r"^(.+)\.srt$", r"^(.+)\.vtt$", r"^(.+)\.ass$"  # Subtitles
+            # Sony video cameras: MP4 → M01.XML, M02.XML (metadata logs)
+            r"^(.+)M01\.XML$", r"^(.+)M02\.XML$",
+            # Subtitles
+            r"^(.+)\.srt$", r"^(.+)\.vtt$", r"^(.+)\.ass$", r"^(.+)\.ssa$"
         ],
         "mov": [
-            r"^(.+)M01\.XML$", r"^(.+)M02\.XML$",  # Sony metadata for MOV
-            r"^(.+)\.srt$", r"^(.+)\.vtt$", r"^(.+)\.ass$"
+            # Sony video cameras: MOV → M01.XML, M02.XML
+            r"^(.+)M01\.XML$", r"^(.+)M02\.XML$",
+            # Subtitles
+            r"^(.+)\.srt$", r"^(.+)\.vtt$", r"^(.+)\.ass$", r"^(.+)\.ssa$"
         ],
-        "mts": [r"^(.+)M01\.XML$", r"^(.+)M02\.XML$"],  # AVCHD format
+        "mts": [r"^(.+)M01\.XML$", r"^(.+)M02\.XML$"],  # AVCHD format (Sony)
+        "m2ts": [r"^(.+)M01\.XML$", r"^(.+)M02\.XML$"],  # AVCHD HD format
 
         # Other video formats with subtitle companions
-        "mkv": [r"^(.+)\.srt$", r"^(.+)\.vtt$", r"^(.+)\.ass$"],
-        "avi": [r"^(.+)\.srt$", r"^(.+)\.vtt$", r"^(.+)\.ass$"],
+        "mkv": [r"^(.+)\.srt$", r"^(.+)\.vtt$", r"^(.+)\.ass$", r"^(.+)\.ssa$"],
+        "avi": [r"^(.+)\.srt$", r"^(.+)\.vtt$", r"^(.+)\.ass$", r"^(.+)\.ssa$"],
+        "mov": [r"^(.+)\.srt$", r"^(.+)\.vtt$", r"^(.+)\.ass$", r"^(.+)\.ssa$"],
+        "wmv": [r"^(.+)\.srt$", r"^(.+)\.vtt$", r"^(.+)\.ass$", r"^(.+)\.ssa$"],
 
-        # XMP sidecar files (for RAW images)
-        "cr2": [r"^(.+)\.xmp$", r"^(.+)\.XMP$"],        # Canon RAW
-        "nef": [r"^(.+)\.xmp$", r"^(.+)\.XMP$"],        # Nikon RAW
-        "arw": [r"^(.+)\.xmp$", r"^(.+)\.XMP$"],        # Sony RAW
-        "dng": [r"^(.+)\.xmp$", r"^(.+)\.XMP$"],        # Adobe DNG
-        "orf": [r"^(.+)\.xmp$", r"^(.+)\.XMP$"],        # Olympus RAW
-        "rw2": [r"^(.+)\.xmp$", r"^(.+)\.XMP$"],        # Panasonic RAW
+        # ========================================
+        # RAW IMAGE FILES - Metadata sidecars
+        # ========================================
+        # XMP sidecar files (universal post-processing metadata)
+        # Created by: Lightroom, darktable, RawTherapee, digiKam, Capture One
+        # Pattern: RAW file → .xmp or .XMP file
+        
+        # Canon RAW
+        "cr2": [
+            r"^(.+)\.xmp$", r"^(.+)\.XMP$",        # XMP sidecar metadata
+            r"^(.+)\.jpg$", r"^(.+)\.JPG$",        # JPEG preview (camera-generated or user-added)
+            r"^(.+)\.jpeg$", r"^(.+)\.JPEG$",
+            r"^(.+)\.vrd$"                          # VRD (Canon DPP recipe)
+        ],
+        "crw": [
+            r"^(.+)\.xmp$", r"^(.+)\.XMP$",        # Older Canon RAW
+            r"^(.+)\.jpg$", r"^(.+)\.JPG$",
+        ],
 
-        # Image XMP sidecar files
-        "jpg": [r"^(.+)\.xmp$", r"^(.+)\.XMP$"],        # JPEG XMP sidecar
-        "jpeg": [r"^(.+)\.xmp$", r"^(.+)\.XMP$"],
+        # Nikon RAW
+        "nef": [
+            r"^(.+)\.xmp$", r"^(.+)\.XMP$",        # XMP sidecar metadata
+            r"^(.+)\.jpg$", r"^(.+)\.JPG$",        # JPEG preview
+            r"^(.+)\.jpeg$", r"^(.+)\.JPEG$",
+            r"^(.+)\.nxd$"                          # NXD (NX Studio recipe)
+        ],
+        "nrw": [
+            r"^(.+)\.xmp$", r"^(.+)\.XMP$",        # Nikon mirrorless RAW
+            r"^(.+)\.jpg$", r"^(.+)\.JPG$",
+        ],
+
+        # Sony RAW
+        "arw": [
+            r"^(.+)\.xmp$", r"^(.+)\.XMP$",        # XMP sidecar metadata
+            r"^(.+)\.jpg$", r"^(.+)\.JPG$",        # JPEG preview
+            r"^(.+)\.jpeg$", r"^(.+)\.JPEG$",
+        ],
+        "srf": [
+            r"^(.+)\.xmp$", r"^(.+)\.XMP$",        # Older Sony RAW
+            r"^(.+)\.jpg$", r"^(.+)\.JPG$",
+        ],
+
+        # Adobe DNG (RAW interchange format)
+        "dng": [
+            r"^(.+)\.xmp$", r"^(.+)\.XMP$",        # XMP sidecar metadata
+            r"^(.+)\.jpg$", r"^(.+)\.JPG$",        # JPEG preview
+            r"^(.+)\.jpeg$", r"^(.+)\.JPEG$",
+        ],
+
+        # Olympus RAW
+        "orf": [
+            r"^(.+)\.xmp$", r"^(.+)\.XMP$",        # XMP sidecar metadata
+            r"^(.+)\.jpg$", r"^(.+)\.JPG$",        # JPEG preview
+            r"^(.+)\.jpeg$", r"^(.+)\.JPEG$",
+        ],
+
+        # Panasonic RAW
+        "rw2": [
+            r"^(.+)\.xmp$", r"^(.+)\.XMP$",        # XMP sidecar metadata
+            r"^(.+)\.jpg$", r"^(.+)\.JPG$",        # JPEG preview
+            r"^(.+)\.jpeg$", r"^(.+)\.JPEG$",
+        ],
+
+        # Pentax RAW
+        "pef": [
+            r"^(.+)\.xmp$", r"^(.+)\.XMP$",        # XMP sidecar metadata
+            r"^(.+)\.jpg$", r"^(.+)\.JPG$",        # JPEG preview
+            r"^(.+)\.jpeg$", r"^(.+)\.JPEG$",
+        ],
+
+        # ========================================
+        # STANDARD IMAGES - XMP metadata + RAW companions
+        # ========================================
+        "jpg": [
+            r"^(.+)\.xmp$", r"^(.+)\.XMP$",        # XMP sidecar
+            # RAW companions (reverse relationship - JPG can be preview for RAW)
+            r"^(.+)\.cr2$", r"^(.+)\.CR2$",        # Canon RAW
+            r"^(.+)\.crw$", r"^(.+)\.CRW$",        # Older Canon RAW
+            r"^(.+)\.nef$", r"^(.+)\.NEF$",        # Nikon RAW
+            r"^(.+)\.nrw$", r"^(.+)\.NRW$",        # Nikon mirrorless RAW
+            r"^(.+)\.arw$", r"^(.+)\.ARW$",        # Sony RAW
+            r"^(.+)\.srf$", r"^(.+)\.SRF$",        # Older Sony RAW
+            r"^(.+)\.dng$", r"^(.+)\.DNG$",        # Adobe DNG
+            r"^(.+)\.orf$", r"^(.+)\.ORF$",        # Olympus RAW
+            r"^(.+)\.rw2$", r"^(.+)\.RW2$",        # Panasonic RAW
+            r"^(.+)\.pef$", r"^(.+)\.PEF$",        # Pentax RAW
+        ],
+        "jpeg": [
+            r"^(.+)\.xmp$", r"^(.+)\.XMP$",        # XMP sidecar
+            # RAW companions
+            r"^(.+)\.cr2$", r"^(.+)\.CR2$",        # Canon RAW
+            r"^(.+)\.crw$", r"^(.+)\.CRW$",
+            r"^(.+)\.nef$", r"^(.+)\.NEF$",        # Nikon RAW
+            r"^(.+)\.nrw$", r"^(.+)\.NRW$",
+            r"^(.+)\.arw$", r"^(.+)\.ARW$",        # Sony RAW
+            r"^(.+)\.srf$", r"^(.+)\.SRF$",
+            r"^(.+)\.dng$", r"^(.+)\.DNG$",        # Adobe DNG
+            r"^(.+)\.orf$", r"^(.+)\.ORF$",        # Olympus RAW
+            r"^(.+)\.rw2$", r"^(.+)\.RW2$",        # Panasonic RAW
+            r"^(.+)\.pef$", r"^(.+)\.PEF$",        # Pentax RAW
+        ],
+        "png": [r"^(.+)\.xmp$", r"^(.+)\.XMP$"],
         "tiff": [r"^(.+)\.xmp$", r"^(.+)\.XMP$"],
         "tif": [r"^(.+)\.xmp$", r"^(.+)\.XMP$"],
+        "gif": [r"^(.+)\.xmp$", r"^(.+)\.XMP$"],
+        "webp": [r"^(.+)\.xmp$", r"^(.+)\.XMP$"],
+
+        # ========================================
+        # DUAL RECORDING MODE (if camera supports it)
+        # ========================================
+        # Some professional cameras can record RAW + JPEG simultaneously
+        # Both files have same base name with different extensions
+        # This is NOT automatic but a camera setting
+        # Note: These are treated as separate main files, not companions,
+        # but may share XMP sidecars
     }
 
     # File extensions that are commonly companion files
     COMPANION_EXTENSIONS = {
-        "xml", "xmp", "srt", "vtt", "ass", "ssa", "sub", "idx", "cube", "3dl"
+        # Metadata formats
+        "xmp", "xml", "vrd", "nxd",
+        # Subtitles
+        "srt", "vtt", "ass", "ssa", "sub",
+        # LUT (color grading - usually shared, not per-file)
+        "cube", "3dl", "lut",
+        # Index/misc
+        "idx"
     }
 
     @classmethod
