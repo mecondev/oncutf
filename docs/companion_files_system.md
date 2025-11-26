@@ -71,8 +71,58 @@ A dedicated settings widget (`CompanionFilesWidget`) allows users to control:
 
 - **File Loading**: Companion files are automatically detected and filtered based on settings
 - **Metadata Display**: Companion metadata is merged into the main file's metadata view
-- **Rename Operations**: Companion files follow main file renames automatically
+- **Rename Operations**: Companion files follow main file renames automatically **even when hidden from UI**
 - **File Table**: Companions can be hidden or shown based on user preference
+
+### Invisible Companion Rename Feature
+
+**Important**: Companion files are automatically renamed even when `SHOW_COMPANION_FILES_IN_TABLE = False`.
+
+This behavior mirrors professional applications like Adobe Lightroom:
+
+1. **User Experience**: 
+   - User only sees main files (e.g., `C8227.MP4`) in the table
+   - User renames main file to `Wedding_Ceremony.MP4`
+   - Companion files (`C8227M01.XML`) are **silently renamed** to `Wedding_Ceremony M01.XML`
+   - No user intervention required
+   
+2. **Benefits**:
+   - Cleaner UI without visual clutter
+   - Guarantees companions stay synchronized with main files
+   - Prevents orphaned companion files
+   - Professional workflow (similar to Lightroom XMP sidecars)
+
+3. **How It Works**:
+   ```
+   BEFORE RENAME:
+   /Videos/C8227.MP4           (visible in UI)
+   /Videos/C8227M01.XML        (hidden from UI)
+   
+   USER ACTION: Rename C8227.MP4 → Wedding_2024.MP4
+   
+   AFTER RENAME:
+   /Videos/Wedding_2024.MP4        (visible in UI)
+   /Videos/Wedding_2024M01.XML     (hidden from UI, auto-renamed)
+   ```
+
+4. **Implementation Details**:
+   - `UnifiedRenameEngine._build_execution_plan()` checks `AUTO_RENAME_COMPANION_FILES`
+   - Companion renames are added to the execution plan automatically
+   - The `_build_companion_execution_plan()` method scans folder for companions
+   - Rename pairs are generated and executed alongside main file renames
+   - No preview shown to user (mimics Lightroom behavior)
+
+5. **Configuration**:
+   ```python
+   COMPANION_FILES_ENABLED = True         # Must be True
+   AUTO_RENAME_COMPANION_FILES = True     # Must be True for invisible rename
+   SHOW_COMPANION_FILES_IN_TABLE = False  # Companions hidden from UI
+   ```
+
+6. **Edge Cases**:
+   - If main file rename fails, companion rename is also skipped
+   - Conflict resolution applies to companion files (skip/overwrite)
+   - Case-only renames are handled safely for both main and companion files
 
 ## Technical Implementation
 

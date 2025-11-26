@@ -349,29 +349,36 @@ class ApplicationService:
                 )
                 return
 
-            # Execute rename using Phase 4 conflict resolution
+            # Execute rename using UnifiedRenameEngine (includes companion file handling)
             new_names = [new_name for _, new_name in name_pairs]
 
-            # Prepare operations for batch conflict resolution
-            operations = []
-            for file, new_name in zip(selected_files, new_names, strict=False):
-                old_path = file.full_path
-                new_path = os.path.join(os.path.dirname(old_path), new_name)
-                operations.append((old_path, new_path))
-
-            # Use Phase 4 batch conflict resolution
-            conflict_results = self.main_window.unified_rename_engine.resolve_conflicts_batch(
-                operations, strategy="timestamp"
+            # Use unified rename engine which handles companion files automatically
+            execution_result = self.main_window.unified_rename_engine.execute_rename(
+                files=selected_files,
+                new_names=new_names,
+                conflict_callback=None,  # Use default conflict handling
+                validator=None,  # Already validated above
             )
 
-            # Count successful operations
-            successful_count = sum(1 for result in conflict_results if result.success)
-            error_count = len(conflict_results) - successful_count
+            # Count successful operations (includes main files + companion files)
+            successful_count = execution_result.success_count
+            error_count = execution_result.error_count
+
+            # Calculate main files vs companion files
+            main_files_count = len(selected_files)
+            total_successful = successful_count
+            companion_files_count = total_successful - main_files_count if total_successful > main_files_count else 0
 
             # Handle results
             if successful_count > 0:
+                # Build status message with companion info
+                if companion_files_count > 0:
+                    status_msg = f"Successfully renamed {main_files_count} file{'s' if main_files_count != 1 else ''} + {companion_files_count} companion file{'s' if companion_files_count != 1 else ''}"
+                else:
+                    status_msg = f"Successfully renamed {successful_count} file{'s' if successful_count != 1 else ''}"
+                
                 self.main_window.status_manager.set_validation_status(
-                    f"Successfully renamed {successful_count} files using Phase 4 optimizations",
+                    status_msg,
                     validation_type="success",
                     auto_reset=True,
                 )

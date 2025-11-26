@@ -105,6 +105,14 @@ class ExecutionItem:
         conflict_resolved: True when a conflict was resolved (e.g. overwrite).
     """
 
+    old_path: str
+    new_path: str
+    success: bool = False
+    error_message: str = ""
+    skip_reason: str = ""
+    is_conflict: bool = False
+    conflict_resolved: bool = False
+
 
 @dataclass
 class ExecutionResult:
@@ -339,6 +347,16 @@ class SmartCacheManager:
         self._preview_cache.clear()
         self._validation_cache.clear()
         self._execution_cache.clear()
+
+    def get_stats(self) -> dict[str, Any]:
+        """Get cache statistics."""
+        return {
+            "preview_cache_size": len(self._preview_cache),
+            "validation_cache_size": len(self._validation_cache),
+            "execution_cache_size": len(self._execution_cache),
+            "cache_ttl": self._cache_ttl,
+            "total_cached_items": len(self._preview_cache) + len(self._validation_cache) + len(self._execution_cache),
+        }
 
 
 class UnifiedPreviewManager:
@@ -732,8 +750,12 @@ class UnifiedExecutionManager:
 
         # Add companion file renames if enabled
         if COMPANION_FILES_ENABLED and AUTO_RENAME_COMPANION_FILES:
+            logger.info(f"[UnifiedRenameEngine] Companion files enabled: building companion execution plan for {len(files)} files")
             companion_items = self._build_companion_execution_plan(files, new_names)
             items.extend(companion_items)
+            logger.info(f"[UnifiedRenameEngine] Added {len(companion_items)} companion file renames to execution plan")
+        else:
+            logger.debug(f"[UnifiedRenameEngine] Companion rename disabled (ENABLED={COMPANION_FILES_ENABLED}, AUTO_RENAME={AUTO_RENAME_COMPANION_FILES})")
 
         return items
 
