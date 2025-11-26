@@ -548,19 +548,16 @@ def build_metadata_tree_model(
                 key_item.setForeground(extended_color)
 
             if is_modified:
-                # Modified metadata styling - italic and bold
+                # Modified metadata styling - yellow text + bold (no [Mod] prefix)
                 modified_font = QFont()
-                modified_font.setItalic(True)
                 modified_font.setBold(True)
                 key_item.setFont(modified_font)
-                value_item.setFont(modified_font)
 
-                # Add modified indicator if not already extended
-                if not is_extended:
-                    key_item.setText(f"[Mod] {format_key(key)}")
-                else:
-                    key_item.setText(f"[Ext][Mod] {format_key(key)}")
+                # Yellow color for modified keys only
+                modified_color = QColor(255, 255, 0)  # Yellow
+                key_item.setForeground(modified_color)
 
+                # Don't add prefix for modified keys, just style them
                 key_item.setToolTip(
                     "Modified value" + (" (extended metadata)" if is_extended else "")
                 )
