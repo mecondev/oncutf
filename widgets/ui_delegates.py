@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 from PyQt5.QtCore import QEvent, QModelIndex
 
 from core.pyqt_imports import (
+    QApplication,
     QBrush,
     QColor,
     QCursor,
@@ -321,17 +322,6 @@ class TreeViewItemDelegate(QStyledItemDelegate):
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
         """Custom paint method that properly handles hierarchical items with uniform full-row background painting."""
-        # Save original rect
-        original_rect = option.rect
-
-        # Remove QStyle.State_MouseOver to avoid double hover painting
-        if option.state & QStyle.StateFlag.State_MouseOver:
-            option.state &= ~QStyle.StateFlag.State_MouseOver
-
-        # The left edge of the content
-        # Qt already handles all indentation and branch indicators in option.rect
-        content_left = original_rect.left()
-
         # Get the text
         text = index.data(Qt.ItemDataRole.DisplayRole)
         if not text:
@@ -342,10 +332,23 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         item_flags = index.flags()
         is_selectable = bool(item_flags & Qt.ItemFlag.ItemIsSelectable)
 
-        # Paint full-row background for ALL items (categories and subcategories)
-        # This ensures consistent styling like file/metadata trees
-        # Use the united rect of first..last column to avoid painting over branch/chevrons
+        # Determine hover and selection state
         tree_view = self.parent()
+        hovered = self.hovered_index
+        is_hovered = bool(
+            hovered
+            and hovered.isValid()
+            and index.row() == hovered.row()
+            and index.parent() == hovered.parent()
+        )
+        
+        is_selected = False
+        if isinstance(tree_view, QTreeView):
+            sel = tree_view.selectionModel()
+            if sel is not None:
+                is_selected = sel.isSelected(index.sibling(index.row(), 0))
+
+        # Paint full-row background
         if isinstance(tree_view, QTreeView) and index.model() is not None:
             try:
                 model = index.model()
@@ -355,81 +358,73 @@ class TreeViewItemDelegate(QStyledItemDelegate):
                 last_rect = tree_view.visualRect(last)
                 if first_rect.isValid() and last_rect.isValid():
                     bg_rect = first_rect.united(last_rect)
-                    # Extend painting to the viewport right edge for a full-row appearance
                     if isinstance(tree_view, QTreeView) and tree_view.viewport():
                         bg_rect.setRight(tree_view.viewport().rect().right())
-                else:
-                    bg_rect = original_rect
+                    
+                    # Paint background
+                    if is_selected and is_hovered:
+                        painter.fillRect(bg_rect, get_qcolor("highlight_light_blue"))
+                    elif is_selected:
+                        painter.fillRect(bg_rect, get_qcolor("table_selection_background"))
+                    elif is_hovered:
+                        painter.fillRect(bg_rect, get_qcolor("table_hover_background"))
             except Exception:
-                bg_rect = original_rect
-        else:
-            # Fallback to original rect if no tree view
-            bg_rect = original_rect
+                pass
 
-        # Paint background based on state (normal, hover, selected, selected+hover)
-        hovered = self.hovered_index
-        is_hovered = bool(
-            hovered
-            and hovered.isValid()
-            and index.row() == hovered.row()
-            and index.parent() == hovered.parent()
-        )
-
-        # Determine selection by selectionModel to unify across columns
-        is_selected = False
-        if isinstance(tree_view, QTreeView):
-            sel = tree_view.selectionModel()
-            if sel is not None:
-                is_selected = sel.isSelected(index.sibling(index.row(), 0))
-
-        if is_selected and is_hovered:
-            # Selected + Hover → highlight_light_blue
-            painter.fillRect(bg_rect, get_qcolor("highlight_light_blue"))
-        elif is_selected:
-            # Selected → table_selection_background
-            painter.fillRect(bg_rect, get_qcolor("table_selection_background"))
-        elif is_hovered:
-            # Hover → table_hover_background
-            painter.fillRect(bg_rect, get_qcolor("table_hover_background"))
-
-        # Set text color based on state and item type (icons remain unchanged)
-        # First check if item has custom foreground color (e.g., modified metadata)
+        # Create option without selection/hover flags for Qt to paint branches/icons only
+        opt = QStyleOptionViewItem(option)
+        if opt.state & QStyle.StateFlag.State_Selected:
+            opt.state &= ~QStyle.StateFlag.State_Selected
+        if opt.state & QStyle.StateFlag.State_MouseOver:
+            opt.state &= ~QStyle.StateFlag.State_MouseOver
+        
+        # Save painter state
+        painter.save()
+        
+        # Let Qt paint branches and icons (but we'll paint text ourselves)
+        opt.text = ""  # Clear text so Qt doesn't paint it
+        QStyledItemDelegate.paint(self, painter, opt, index)
+        
+        # Now determine and paint text with custom color
         custom_foreground = index.data(Qt.ItemDataRole.ForegroundRole)
         
-        if custom_foreground is not None:
-            # Use custom foreground color from model (for modified keys, extended metadata, etc.)
+        if is_selected and is_hovered:
+            text_color = get_qcolor("table_selection_text")
+        elif is_selected:
+            if custom_foreground is not None:
+                if isinstance(custom_foreground, QBrush):
+                    text_color = custom_foreground.color()
+                elif isinstance(custom_foreground, QColor):
+                    text_color = custom_foreground
+                else:
+                    text_color = get_qcolor("table_text")
+            else:
+                text_color = get_qcolor("table_text")
+        elif custom_foreground is not None:
             if isinstance(custom_foreground, QBrush):
                 text_color = custom_foreground.color()
             elif isinstance(custom_foreground, QColor):
                 text_color = custom_foreground
             else:
-                # Fallback if unknown type
                 text_color = get_qcolor("combo_text")
-        elif is_selected and is_hovered:
-            # Selected + Hover → dark text
-            text_color = get_qcolor("table_selection_text")
-        elif is_selected:
-            # Selected → keep light text like file table
-            text_color = get_qcolor("table_text")
-        elif not is_selectable:  # Categories
-            text_color = get_qcolor("text_secondary")  # Dimmer color for categories
+        elif not is_selectable:
+            text_color = get_qcolor("text_secondary")
         else:
             text_color = get_qcolor("combo_text")
 
-        # Draw the text
-        painter.save()
+        # Draw the text manually
         painter.setPen(text_color)
-
-        # Text rect: from content_left + padding to the end of the row (with right padding)
-        text_rect = original_rect.adjusted(0, 0, 0, 0)
-        text_rect.setLeft(content_left + 2)  # Reduced padding from 4px to 2px
-        text_rect.setRight(original_rect.right() - 4)
-
+        
+        # Calculate text rect (account for indentation, icons, etc.)
+        style = opt.widget.style() if opt.widget else QApplication.style()
+        text_rect = style.subElementRect(QStyle.SubElement.SE_ItemViewItemText, opt, opt.widget)
+        
         painter.drawText(
             text_rect,
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
             str(text),
         )
+        
         painter.restore()
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex):
