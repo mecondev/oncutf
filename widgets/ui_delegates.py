@@ -22,6 +22,7 @@ from core.pyqt_imports import (
     QPainter,
     QPalette,
     QPen,
+    QPixmap,
     QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
@@ -321,19 +322,9 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         """Deprecated method, kept for compatibility."""
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
-        """Custom paint method that properly handles hierarchical items with uniform full-row background painting."""
-        # Get the text
-        text = index.data(Qt.ItemDataRole.DisplayRole)
-        if not text:
-            super().paint(painter, option, index)
-            return
-
-        # Check if item is selectable (not a category)
-        item_flags = index.flags()
-        is_selectable = bool(item_flags & Qt.ItemFlag.ItemIsSelectable)
-
-        # Determine hover and selection state
+        """Custom paint method with full-row background and custom text colors."""
         tree_view = self.parent()
+
         hovered = self.hovered_index
         is_hovered = bool(
             hovered
@@ -341,14 +332,14 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             and index.row() == hovered.row()
             and index.parent() == hovered.parent()
         )
-        
+
         is_selected = False
         if isinstance(tree_view, QTreeView):
             sel = tree_view.selectionModel()
             if sel is not None:
                 is_selected = sel.isSelected(index.sibling(index.row(), 0))
 
-        # Paint full-row background
+        # Paint full-row background first for consistent highlight
         if isinstance(tree_view, QTreeView) and index.model() is not None:
             try:
                 model = index.model()
@@ -358,10 +349,9 @@ class TreeViewItemDelegate(QStyledItemDelegate):
                 last_rect = tree_view.visualRect(last)
                 if first_rect.isValid() and last_rect.isValid():
                     bg_rect = first_rect.united(last_rect)
-                    if isinstance(tree_view, QTreeView) and tree_view.viewport():
+                    if tree_view.viewport():
                         bg_rect.setRight(tree_view.viewport().rect().right())
-                    
-                    # Paint background
+
                     if is_selected and is_hovered:
                         painter.fillRect(bg_rect, get_qcolor("highlight_light_blue"))
                     elif is_selected:
@@ -371,61 +361,42 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             except Exception:
                 pass
 
-        # Create option without selection/hover flags for Qt to paint branches/icons only
-        opt = QStyleOptionViewItem(option)
-        if opt.state & QStyle.StateFlag.State_Selected:
-            opt.state &= ~QStyle.StateFlag.State_Selected
-        if opt.state & QStyle.StateFlag.State_MouseOver:
-            opt.state &= ~QStyle.StateFlag.State_MouseOver
-        
-        # Save painter state
-        painter.save()
-        
-        # Let Qt paint branches and icons (but we'll paint text ourselves)
-        opt.text = ""  # Clear text so Qt doesn't paint it
-        QStyledItemDelegate.paint(self, painter, opt, index)
-        
-        # Now determine and paint text with custom color
         custom_foreground = index.data(Qt.ItemDataRole.ForegroundRole)
-        
-        if is_selected and is_hovered:
-            text_color = get_qcolor("table_selection_text")
-        elif is_selected:
-            if custom_foreground is not None:
-                if isinstance(custom_foreground, QBrush):
-                    text_color = custom_foreground.color()
-                elif isinstance(custom_foreground, QColor):
-                    text_color = custom_foreground
-                else:
-                    text_color = get_qcolor("table_text")
-            else:
-                text_color = get_qcolor("table_text")
-        elif custom_foreground is not None:
+        item_flags = index.flags()
+        is_selectable = bool(item_flags & Qt.ItemFlag.ItemIsSelectable)
+
+        if custom_foreground is not None:
             if isinstance(custom_foreground, QBrush):
                 text_color = custom_foreground.color()
             elif isinstance(custom_foreground, QColor):
                 text_color = custom_foreground
             else:
                 text_color = get_qcolor("combo_text")
+        elif is_selected and is_hovered:
+            text_color = get_qcolor("table_selection_text")
+        elif is_selected:
+            text_color = get_qcolor("table_text")
         elif not is_selectable:
             text_color = get_qcolor("text_secondary")
         else:
             text_color = get_qcolor("combo_text")
 
-        # Draw the text manually
-        painter.setPen(text_color)
-        
-        # Calculate text rect (account for indentation, icons, etc.)
-        style = opt.widget.style() if opt.widget else QApplication.style()
-        text_rect = style.subElementRect(QStyle.SubElement.SE_ItemViewItemText, opt, opt.widget)
-        
-        painter.drawText(
-            text_rect,
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-            str(text),
-        )
-        
-        painter.restore()
+        opt = QStyleOptionViewItem(option)
+        self.initStyleOption(opt, index)
+
+        # Remove default hover/selection paints (we already drew backgrounds)
+        opt.state &= ~QStyle.StateFlag.State_Selected
+        opt.state &= ~QStyle.StateFlag.State_MouseOver
+
+        # Ensure palette uses our text color in every state
+        for group in (QPalette.ColorGroup.Active, QPalette.ColorGroup.Inactive, QPalette.ColorGroup.Disabled):
+            opt.palette.setColor(group, QPalette.ColorRole.Text, text_color)
+            opt.palette.setColor(group, QPalette.ColorRole.WindowText, text_color)
+            opt.palette.setColor(group, QPalette.ColorRole.ButtonText, text_color)
+            opt.palette.setColor(group, QPalette.ColorRole.HighlightedText, text_color)
+
+        # Let Qt handle icon/text/branch painting with the modified palette
+        QStyledItemDelegate.paint(self, painter, opt, index)
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex):
         """Return size hint for items - make them same height as context menu items."""
