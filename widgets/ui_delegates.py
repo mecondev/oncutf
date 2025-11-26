@@ -14,7 +14,6 @@ from typing import TYPE_CHECKING
 from PyQt5.QtCore import QEvent, QModelIndex
 
 from core.pyqt_imports import (
-    QApplication,
     QBrush,
     QColor,
     QCursor,
@@ -22,7 +21,6 @@ from core.pyqt_imports import (
     QPainter,
     QPalette,
     QPen,
-    QPixmap,
     QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
@@ -414,39 +412,28 @@ class TreeViewItemDelegate(QStyledItemDelegate):
 
 
 class MetadataTreeItemDelegate(TreeViewItemDelegate):
-    """TreeView delegate for metadata tree that enforces table-like colors.
+    """TreeView delegate for metadata tree with custom foreground colors.
 
-    Ensures text color follows table rules regardless of model ForegroundRole:
-    - Normal: table_text
-    - Hover: table_text
-    - Selected (unhovered): table_text (stay light)
-    - Selected + Hover: table_selection_text (dark)
-
-    Backgrounds:
-    - Hover: table_hover_background
-    - Selected: table_selection_background
-    - Selected + Hover: highlight_light_blue
+    Features:
+    - Full-row hover/selection backgrounds
+    - Respects ForegroundRole for modified keys (yellow #ffe343 + bold)
+    - Text visible in all states (normal, hover, selected)
+    - Manual text painting to ensure colors are applied correctly
     """
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
-        """Paint full-row hover/selection backgrounds; leave text/icons to default.
+        """Paint with full-row background and manual text drawing.
 
-        This restores stable behavior: the entire row highlights on hover/selection
-        regardless of mouse over key/value cell, without altering text colors.
+        We paint backgrounds ourselves and draw text manually to guarantee
+        custom foreground colors are visible in all states.
         """
         tree_view = self.parent()
+
+        # Initialize style option to get text, font, icon info
         opt = QStyleOptionViewItem(option)
+        self.initStyleOption(opt, index)
 
-        # Determine hovered row (consistent across columns)
-        hovered = getattr(self, "hovered_index", None)
-        is_row_hovered = bool(
-            hovered
-            and hovered.isValid()
-            and index.row() == hovered.row()
-            and index.parent() == hovered.parent()
-        )
-
-        # Compute full row rect by uniting first and last visible column rects
+        # Compute full-row rect for background painting
         full_row_rect = opt.rect
         if isinstance(tree_view, QTreeView) and index.model() is not None:
             try:
@@ -457,18 +444,28 @@ class MetadataTreeItemDelegate(TreeViewItemDelegate):
                 last_rect = tree_view.visualRect(last)
                 if first_rect.isValid() and last_rect.isValid():
                     full_row_rect = first_rect.united(last_rect)
-                    # Extend painting to the viewport right edge for a full-row appearance
-                    if isinstance(tree_view, QTreeView) and tree_view.viewport():
+                    if tree_view.viewport():
                         full_row_rect.setRight(tree_view.viewport().rect().right())
             except Exception:
                 pass
 
-        # Decide background color using selectionModel (row-wise), not option.state
+        # Determine row-level hover state
+        hovered = getattr(self, "hovered_index", None)
+        is_row_hovered = bool(
+            hovered
+            and hovered.isValid()
+            and index.row() == hovered.row()
+            and index.parent() == hovered.parent()
+        )
+
+        # Determine row-level selection state
         is_selected = False
         if isinstance(tree_view, QTreeView):
             sel = tree_view.selectionModel()
             if sel is not None:
                 is_selected = sel.isSelected(index.sibling(index.row(), 0))
+
+        # Paint full-row background
         if is_selected and is_row_hovered:
             painter.fillRect(full_row_rect, get_qcolor("highlight_light_blue"))
         elif is_selected:
@@ -476,11 +473,51 @@ class MetadataTreeItemDelegate(TreeViewItemDelegate):
         elif is_row_hovered:
             painter.fillRect(full_row_rect, get_qcolor("table_hover_background"))
 
-        # Prevent default background double-painting (hover/selection)
-        if opt.state & QStyle.StateFlag.State_MouseOver:
-            opt.state &= ~QStyle.StateFlag.State_MouseOver
-        if opt.state & QStyle.StateFlag.State_Selected:
-            opt.state &= ~QStyle.StateFlag.State_Selected
+        # Check for custom foreground color (modified keys are yellow)
+        custom_fg = index.data(Qt.ItemDataRole.ForegroundRole)
+        if isinstance(custom_fg, QBrush):
+            text_color = custom_fg.color()
+            is_modified = True
+        elif isinstance(custom_fg, QColor):
+            text_color = custom_fg
+            is_modified = True
+        else:
+            text_color = get_qcolor("combo_text")
+            is_modified = False
 
-        # Paint content normally (icons, text)
-        super().paint(painter, opt, index)
+        # Get icon if present
+        icon = index.data(Qt.ItemDataRole.DecorationRole)
+
+        # Paint icon if present
+        icon_width = 0
+        if icon is not None and isinstance(icon, QIcon) and not icon.isNull():
+            icon_size = 16
+            icon_rect = option.rect.adjusted(2, (option.rect.height() - icon_size) // 2, 0, 0)
+            icon_rect.setWidth(icon_size)
+            icon_rect.setHeight(icon_size)
+            icon.paint(painter, icon_rect, Qt.AlignmentFlag.AlignCenter)
+            icon_width = icon_size + 4
+
+        # Get display text
+        display_text = index.data(Qt.ItemDataRole.DisplayRole)
+        if display_text:
+            painter.save()
+
+            # Set font (bold for modified keys)
+            font = opt.font
+            if is_modified:
+                font.setBold(True)
+            painter.setFont(font)
+
+            # Set text color
+            painter.setPen(text_color)
+
+            # Calculate text rect (adjust for icon)
+            text_rect = option.rect.adjusted(4 + icon_width, 0, -4, 0)
+
+            # Draw text with elision
+            fm = painter.fontMetrics()
+            elided_text = fm.elidedText(str(display_text), Qt.TextElideMode.ElideRight, text_rect.width())
+            painter.drawText(text_rect, int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter), elided_text)
+
+            painter.restore()
