@@ -891,7 +891,7 @@ METADATA_ICON_COLORS = {
     "extended": EXTENDED_METADATA_COLOR,  # Orange for extended metadata
     "invalid": "#ff6b6b",  # Red for invalid metadata
     "loaded": "#51cf66",  # Green for loaded metadata (fast/basic)
-    "modified": "#ffa726",  # Orange for modified metadata
+    "modified": "#ffe343",  # Yellow for modified metadata
     "partial": "#ffeb3b",  # Yellow for partial metadata
     "hash": "#ce93d8",  # Light purple for hash (brighter than before)
     "none": "#404040",  # Dark gray for no metadata/hash (grayout)

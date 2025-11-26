@@ -393,7 +393,19 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             painter.fillRect(bg_rect, get_qcolor("table_hover_background"))
 
         # Set text color based on state and item type (icons remain unchanged)
-        if is_selected and is_hovered:
+        # First check if item has custom foreground color (e.g., modified metadata)
+        custom_foreground = index.data(Qt.ItemDataRole.ForegroundRole)
+        
+        if custom_foreground is not None:
+            # Use custom foreground color from model (for modified keys, extended metadata, etc.)
+            if isinstance(custom_foreground, QBrush):
+                text_color = custom_foreground.color()
+            elif isinstance(custom_foreground, QColor):
+                text_color = custom_foreground
+            else:
+                # Fallback if unknown type
+                text_color = get_qcolor("combo_text")
+        elif is_selected and is_hovered:
             # Selected + Hover → dark text
             text_color = get_qcolor("table_selection_text")
         elif is_selected:

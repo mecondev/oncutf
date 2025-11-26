@@ -12,6 +12,7 @@ Enhanced with better metadata grouping and extended metadata indicators.
 
 import re
 
+from config import METADATA_ICON_COLORS
 from core.pyqt_imports import QColor, QFont, QStandardItem, QStandardItemModel, Qt
 
 # Initialize Logger
@@ -553,8 +554,8 @@ def build_metadata_tree_model(
                 modified_font.setBold(True)
                 key_item.setFont(modified_font)
 
-                # Yellow color for modified keys only
-                modified_color = QColor(255, 255, 0)  # Yellow
+                # Yellow color for modified keys from config
+                modified_color = QColor(METADATA_ICON_COLORS["modified"])
                 key_item.setForeground(modified_color)
 
                 # Don't add prefix for modified keys, just style them

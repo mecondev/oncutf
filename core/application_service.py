@@ -376,7 +376,7 @@ class ApplicationService:
                     status_msg = f"Successfully renamed {main_files_count} file{'s' if main_files_count != 1 else ''} + {companion_files_count} companion file{'s' if companion_files_count != 1 else ''}"
                 else:
                     status_msg = f"Successfully renamed {successful_count} file{'s' if successful_count != 1 else ''}"
-                
+
                 self.main_window.status_manager.set_validation_status(
                     status_msg,
                     validation_type="success",
@@ -603,7 +603,6 @@ class ApplicationService:
 
     def prompt_file_conflict(self, target_path: str) -> str:
         """Prompt file conflict via DialogManager."""
-        import os
 
         old_name = os.path.basename(target_path)
         new_name = os.path.basename(target_path)

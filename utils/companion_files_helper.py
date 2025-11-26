@@ -62,7 +62,7 @@ class CompanionFilesHelper:
         # XMP sidecar files (universal post-processing metadata)
         # Created by: Lightroom, darktable, RawTherapee, digiKam, Capture One
         # Pattern: RAW file → .xmp or .XMP file
-        
+
         # Canon RAW
         "cr2": [
             r"^(.+)\.xmp$", r"^(.+)\.XMP$",        # XMP sidecar metadata
