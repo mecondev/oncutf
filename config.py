@@ -464,7 +464,7 @@ STATUS_COLORS = {
     "info": "#74c0fc",  # Light blue/cyan
     "loading": "#adb5bd",  # Light gray
     # Metadata specific
-    "metadata_skipped": "#adb5bδ",  # Light gray for skipped metadata
+    "metadata_skipped": "#adb5bd",  # Light gray for skipped metadata
     "metadata_extended": "#ff8a65",  # Light orange-red for extended metadata
     "metadata_basic": "#74c0fc",  # Light blue/cyan for basic metadata
     # Action categories (pale and bright colors)

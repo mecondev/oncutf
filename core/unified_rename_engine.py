@@ -948,7 +948,7 @@ class UnifiedRenameEngine(QObject):
         post_transform: dict[str, Any],
         metadata_cache: Any,
     ) -> PreviewResult:
-        """Generate preview με unified system."""
+        """Generate preview with unified system."""
         result = self.preview_manager.generate_preview(
             files, modules_data, post_transform, metadata_cache
         )
@@ -969,7 +969,7 @@ class UnifiedRenameEngine(QObject):
 
     @monitor_performance("validate_preview")
     def validate_preview(self, preview_pairs: list[tuple[str, str]]) -> ValidationResult:
-        """Validate preview με unified system."""
+        """Validate preview with unified system."""
         result = self.validation_manager.validate_preview(preview_pairs)
 
         # Update state
@@ -989,7 +989,7 @@ class UnifiedRenameEngine(QObject):
         conflict_callback: Callable | None = None,
         validator: object | None = None,
     ) -> ExecutionResult:
-        """Execute rename με unified system."""
+        """Execute rename with unified system."""
         result = self.execution_manager.execute_rename(
             files, new_names, conflict_callback, validator
         )
@@ -1013,11 +1013,11 @@ class UnifiedRenameEngine(QObject):
         logger.debug("[UnifiedRenameEngine] Cache cleared")
 
     def get_hash_availability(self, files: list[FileItem]) -> dict[str, bool]:
-        """Get hash availability για files."""
+        """Get hash availability for files."""
         return self.batch_query_manager.get_hash_availability(files)
 
     def get_metadata_availability(self, files: list[FileItem]) -> dict[str, bool]:
-        """Get metadata availability για files."""
+        """Get metadata availability for files."""
         return self.batch_query_manager.get_metadata_availability(files)
 
     def get_performance_stats(self) -> dict[str, Any]:

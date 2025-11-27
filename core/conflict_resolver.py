@@ -45,7 +45,7 @@ class ConflictResolution:
 
 
 class UndoStack:
-    """Simple undo stack για operations."""
+    """Simple undo stack for operations."""
 
     def __init__(self, max_size: int = 100):
         self.stack = deque(maxlen=max_size)
@@ -101,7 +101,7 @@ class ConflictResolver:
     def resolve_conflict(
         self, old_path: str, new_path: str, strategy: str = "timestamp"
     ) -> ConflictResolution:
-        """Resolve file conflict με specified strategy."""
+        """Resolve file conflict with specified strategy."""
         if not os.path.exists(old_path):
             return ConflictResolution(
                 original_path=old_path,
@@ -128,13 +128,13 @@ class ConflictResolver:
         return self._execute_operation(old_path, resolved_path, "rename")
 
     def _resolve_with_timestamp(self, path: str) -> str:
-        """Resolve conflict με timestamp suffix."""
+        """Resolve conflict with timestamp suffix."""
         base, ext = os.path.splitext(path)
         timestamp = int(time.time())
         return f"{base}_{timestamp}{ext}"
 
     def _resolve_with_number(self, path: str) -> str:
-        """Resolve conflict με number suffix."""
+        """Resolve conflict with number suffix."""
         base, ext = os.path.splitext(path)
         counter = 1
 
@@ -144,11 +144,11 @@ class ConflictResolver:
         return f"{base}_{counter}{ext}"
 
     def _resolve_skip(self, path: str) -> str:
-        """Resolve conflict με skip (return original path)."""
+        """Resolve conflict with skip (return original path)."""
         return path  # This will cause the operation to be skipped
 
     def _resolve_overwrite(self, path: str) -> str:
-        """Resolve conflict με overwrite."""
+        """Resolve conflict with overwrite."""
         # Create backup before overwriting
         if os.path.exists(path):
             backup_path = self._create_backup(path)
@@ -261,7 +261,7 @@ class ConflictResolver:
     def batch_resolve_conflicts(
         self, operations: list[tuple[str, str]], strategy: str = "timestamp"
     ) -> list[ConflictResolution]:
-        """Resolve multiple conflicts σε batch."""
+        """Resolve multiple conflicts in batch."""
         results = []
 
         for old_path, new_path in operations:
