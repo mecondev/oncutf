@@ -21,6 +21,7 @@ from core.pyqt_imports import (
     QPainter,
     QPalette,
     QPen,
+    QRect,
     QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
@@ -335,9 +336,10 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         if isinstance(tree_view, QTreeView):
             sel = tree_view.selectionModel()
             if sel is not None:
+                # Unify selection per row: base it on column 0
                 is_selected = sel.isSelected(index.sibling(index.row(), 0))
 
-        # Determine background color
+        # Decide background color
         bg_color = None
         if is_selected and is_hovered:
             bg_color = get_qcolor("highlight_light_blue")
@@ -346,22 +348,29 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         elif is_hovered:
             bg_color = get_qcolor("table_hover_background")
 
-        # Paint full-row background first for consistent highlight
-        if isinstance(tree_view, QTreeView) and index.model() is not None:
-            try:
-                # Use the cell's rect for background painting to avoid overpainting other columns
-                bg_rect = QRect(option.rect)
+        # --- FULL ROW BACKGROUND PAINTING ---
+        if isinstance(tree_view, QTreeView) and index.model() is not None and bg_color is not None:
+            model = index.model()
 
-                # Extend the background to the right edge of the viewport only for the last column
-                model = index.model()
-                if model and index.column() == model.columnCount(index.parent()) - 1:
-                    if tree_view.viewport():
-                        bg_rect.setRight(tree_view.viewport().rect().right())
+            # Paint full row only once, on column 0
+            if index.column() == 0:
+                first_index = index.sibling(index.row(), 0)
+                last_index = index.sibling(index.row(), model.columnCount(index.parent()) - 1)
 
-                if bg_color:
-                    painter.fillRect(bg_rect, bg_color)
-            except Exception:
-                pass
+                row_rect_start = tree_view.visualRect(first_index)
+                row_rect_end = tree_view.visualRect(last_index)
+                full_row_rect = row_rect_start.united(row_rect_end)
+
+                # Extend to the right edge of the viewport for "real" full-row effect
+                if tree_view.viewport():
+                    viewport_rect = tree_view.viewport().rect()
+                    full_row_rect.setLeft(viewport_rect.left())
+                    full_row_rect.setRight(viewport_rect.right())
+
+                painter.save()
+                painter.fillRect(full_row_rect, bg_color)
+                painter.restore()
+        # ------------------------------------
 
         custom_foreground = index.data(Qt.ItemDataRole.ForegroundRole)
         item_flags = index.flags()
@@ -390,16 +399,18 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         opt.state &= ~QStyle.StateFlag.State_Selected
         opt.state &= ~QStyle.StateFlag.State_MouseOver
 
-        # Force the delegate to use our background color as the base background
-        # This ensures that if the delegate draws a background, it matches ours
-        # and doesn't overwrite our custom painting with the default background
+        # If we have bg_color, sync palette so Qt doesn't "undo" our background
         if bg_color:
             opt.palette.setColor(QPalette.ColorRole.Base, bg_color)
             opt.palette.setColor(QPalette.ColorRole.Window, bg_color)
             opt.palette.setColor(QPalette.ColorRole.Highlight, bg_color)
 
         # Ensure palette uses our text color in every state
-        for group in (QPalette.ColorGroup.Active, QPalette.ColorGroup.Inactive, QPalette.ColorGroup.Disabled):
+        for group in (
+            QPalette.ColorGroup.Active,
+            QPalette.ColorGroup.Inactive,
+            QPalette.ColorGroup.Disabled,
+        ):
             opt.palette.setColor(group, QPalette.ColorRole.Text, text_color)
             opt.palette.setColor(group, QPalette.ColorRole.WindowText, text_color)
             opt.palette.setColor(group, QPalette.ColorRole.ButtonText, text_color)
@@ -436,8 +447,6 @@ class MetadataTreeItemDelegate(TreeViewItemDelegate):
         """Initialize style option and force bold font for modified items."""
         super().initStyleOption(option, index)
 
-        # Check if this is a modified key (has custom foreground)
-        # If so, force bold font
         custom_fg = index.data(Qt.ItemDataRole.ForegroundRole)
         if custom_fg is not None:
             option.font.setBold(True)
