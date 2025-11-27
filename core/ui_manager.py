@@ -417,15 +417,15 @@ class UIManager:
 
         # Metadata Tree View
         self.parent_window.metadata_tree_view = MetadataTreeView()
-        
+
         # Install custom delegate to respect ForegroundRole for modified items
         from widgets.ui_delegates import MetadataTreeItemDelegate
         metadata_delegate = MetadataTreeItemDelegate(self.parent_window.metadata_tree_view)
         self.parent_window.metadata_tree_view.setItemDelegate(metadata_delegate)
-        
+
         # Install event filter for hover tracking
         metadata_delegate.install_event_filter(self.parent_window.metadata_tree_view)
-        
+
         # NOTE: files_dropped signal is no longer connected - FileTableView calls MetadataManager directly
         # Connect the proxy model to the tree view
         self.parent_window.metadata_tree_view.setModel(self.parent_window.metadata_proxy_model)

@@ -21,13 +21,13 @@ from core.pyqt_imports import (
     QPainter,
     QPalette,
     QPen,
+    QRect,
     QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
     Qt,
     QTableView,
     QTreeView,
-    QRect,
     QWidget,
 )
 from utils.logger_factory import get_cached_logger
@@ -324,6 +324,11 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         """Custom paint method with full-row background and custom text colors."""
         tree_view = self.parent()
 
+        # Safety check
+        if not isinstance(tree_view, QTreeView):
+            super().paint(painter, option, index)
+            return
+
         hovered = self.hovered_index
         is_hovered = bool(
             hovered
@@ -333,12 +338,14 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         )
 
         is_selected = False
-        if isinstance(tree_view, QTreeView):
-            sel = tree_view.selectionModel()
-            if sel is not None:
-                is_selected = sel.isSelected(index.sibling(index.row(), 0))
+        sel = tree_view.selectionModel()
+        if sel is not None:
+            # Unify selection per row: base it on column 0
+            # Use index.sibling to be safe, but check validity
+            sibling = index.sibling(index.row(), 0)
+            is_selected = sel.isSelected(sibling) if sibling.isValid() else sel.isSelected(index)
 
-        # Determine background color
+        # Decide background color
         bg_color = None
         if is_selected and is_hovered:
             bg_color = get_qcolor("highlight_light_blue")
@@ -346,61 +353,86 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             bg_color = get_qcolor("table_selection_background")
         elif is_hovered:
             bg_color = get_qcolor("table_hover_background")
+        elif tree_view.alternatingRowColors() and (index.row() % 2 == 1):
+            bg_color = get_qcolor("table_alternate_background")
 
-        # Paint full-row background first for consistent highlight
-        if isinstance(tree_view, QTreeView) and index.model() is not None:
-            try:
-                # Use the cell's rect for background painting to avoid overpainting other columns
-                bg_rect = QRect(option.rect)
+        # --- FULL ROW BACKGROUND PAINTING ---
+        if bg_color is not None:
+            # Paint full row only once, on column 0
+            if index.column() == 0:
+                # Start with the current item's rect
+                full_row_rect = QRect(option.rect)
 
-                # Extend the background to the right edge of the viewport only for the last column
-                model = index.model()
-                if model and index.column() == model.columnCount(index.parent()) - 1:
-                    if tree_view.viewport():
-                        bg_rect.setRight(tree_view.viewport().rect().right())
+                # Extend to cover the entire width of the viewport
+                if tree_view.viewport():
+                    viewport_rect = tree_view.viewport().rect()
+                    full_row_rect.setLeft(viewport_rect.left())
+                    full_row_rect.setRight(viewport_rect.right())
 
-                if bg_color:
-                    painter.fillRect(bg_rect, bg_color)
-            except Exception:
-                pass
+                painter.save()
+                painter.fillRect(full_row_rect, bg_color)
+                painter.restore()
+        # ------------------------------------
 
         custom_foreground = index.data(Qt.ItemDataRole.ForegroundRole)
         item_flags = index.flags()
         is_selectable = bool(item_flags & Qt.ItemFlag.ItemIsSelectable)
 
+        # Modified metadata keys: use fixed yellow color in all states.
         if custom_foreground is not None:
-            if isinstance(custom_foreground, QBrush):
-                text_color = custom_foreground.color()
-            elif isinstance(custom_foreground, QColor):
-                text_color = custom_foreground
-            else:
-                text_color = get_qcolor("combo_text")
-        elif is_selected and is_hovered:
-            text_color = get_qcolor("table_selection_text")
-        elif is_selected:
-            text_color = get_qcolor("table_text")
-        elif not is_selectable:
-            text_color = get_qcolor("text_secondary")
+            text_color = QColor("#ffe343")
         else:
-            text_color = get_qcolor("combo_text")
+            # Normal items: light text normally, dark text when hovered or selected
+            if (is_selected or is_hovered) and is_selectable:
+                # Dark text for better contrast on light hover/selection background
+                text_color = get_qcolor("table_selection_text")
+            elif not is_selectable:
+                text_color = get_qcolor("text_secondary")
+            else:
+                # Default light text on dark background
+                text_color = get_qcolor("combo_text")
 
         opt = QStyleOptionViewItem(option)
         self.initStyleOption(opt, index)
+
+        # Force vertical centering of text (some models may set AlignTop)
+        alignment = opt.displayAlignment
+        alignment &= ~(
+            Qt.AlignmentFlag.AlignTop
+            | Qt.AlignmentFlag.AlignBottom
+            | Qt.AlignmentFlag.AlignVCenter
+        )
+        alignment |= Qt.AlignmentFlag.AlignVCenter
+        opt.displayAlignment = alignment
+
+        # Small visual tweak: move contents 1px down so they look perfectly centered.
+        opt.rect = opt.rect.adjusted(0, 1, 0, 0)
 
         # Remove default hover/selection paints (we already drew backgrounds)
         opt.state &= ~QStyle.StateFlag.State_Selected
         opt.state &= ~QStyle.StateFlag.State_MouseOver
 
-        # Force the delegate to use our background color as the base background
-        # This ensures that if the delegate draws a background, it matches ours
-        # and doesn't overwrite our custom painting with the default background
+        # If we have bg_color, sync palette so Qt doesn't "undo" our background
         if bg_color:
+            # Base roles (normal background)
             opt.palette.setColor(QPalette.ColorRole.Base, bg_color)
             opt.palette.setColor(QPalette.ColorRole.Window, bg_color)
             opt.palette.setColor(QPalette.ColorRole.Highlight, bg_color)
+            # IMPORTANT: also override AlternateBase so alternate rows
+            # get the same highlight color across all columns.
+            opt.palette.setColor(QPalette.ColorRole.AlternateBase, bg_color)
 
-        # Ensure palette uses our text color in every state
-        for group in (QPalette.ColorGroup.Active, QPalette.ColorGroup.Inactive, QPalette.ColorGroup.Disabled):
+        # Ensure palette uses our background and text color in every state
+        for group in (
+            QPalette.ColorGroup.Active,
+            QPalette.ColorGroup.Inactive,
+            QPalette.ColorGroup.Disabled,
+        ):
+            if bg_color:
+                opt.palette.setColor(group, QPalette.ColorRole.Base, bg_color)
+                opt.palette.setColor(group, QPalette.ColorRole.AlternateBase, bg_color)
+                opt.palette.setColor(group, QPalette.ColorRole.Highlight, bg_color)
+
             opt.palette.setColor(group, QPalette.ColorRole.Text, text_color)
             opt.palette.setColor(group, QPalette.ColorRole.WindowText, text_color)
             opt.palette.setColor(group, QPalette.ColorRole.ButtonText, text_color)
@@ -429,19 +461,16 @@ class MetadataTreeItemDelegate(TreeViewItemDelegate):
 
     Features:
     - Full-row hover/selection backgrounds
-    - Respects ForegroundRole for modified keys (yellow #ffe343 + bold)
+    - Modified keys (ForegroundRole set) use bold font + yellow #ffe343
     - Text visible in all states (normal, hover, selected)
     """
 
     def initStyleOption(self, option: QStyleOptionViewItem, index: QModelIndex) -> None:
-        """Initialize style option and force bold font for modified items."""
+        """Initialize style option and force bold font for modified key items."""
         super().initStyleOption(option, index)
 
-        # Check if this is a modified key (has custom foreground)
-        # If so, force bold font
         custom_fg = index.data(Qt.ItemDataRole.ForegroundRole)
-        if custom_fg is not None:
+        # We consider any ForegroundRole set as "modified".
+        # Bold only the key column (0), keep value column normal weight.
+        if custom_fg is not None and index.column() == 0:
             option.font.setBold(True)
-
-        # Set vertical alignment to center for all items
-        option.displayAlignment = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
