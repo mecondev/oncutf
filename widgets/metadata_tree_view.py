@@ -1451,6 +1451,20 @@ class MetadataTreeView(QTreeView):
         # Update the file icon in the file table
         self._update_file_icon_status()
 
+        # Update the information label to reflect new modified count
+        if self.model():
+            # Get the current display data to pass to _update_information_label
+            try:
+                # Try to get metadata from cache
+                from core.metadata_staging_manager import get_metadata_staging_manager
+                staging_manager = get_metadata_staging_manager()
+                if staging_manager and self._current_file_path:
+                    # Just trigger a label update with a dummy dict
+                    # The label update will get the count from staging manager
+                    self._update_information_label({})
+            except Exception:
+                pass
+
         # Update the view
         self.viewport().update()
 
@@ -1792,6 +1806,7 @@ class MetadataTreeView(QTreeView):
         parent_window = self._get_parent_with_file_table()
         if parent_window and hasattr(parent_window, "information_label"):
             parent_window.information_label.setText("Information")
+            parent_window.information_label.setStyleSheet("")
 
         # Update header visibility for empty state
         self._update_header_visibility()
@@ -2172,28 +2187,53 @@ class MetadataTreeView(QTreeView):
     def _update_information_label(self, display_data: dict[str, Any]) -> None:
         """Update the information label with metadata statistics."""
         try:
+            from config import METADATA_ICON_COLORS
+
+            # Get parent window and information label
+            parent_window = self._get_parent_with_file_table()
+            if not parent_window or not hasattr(parent_window, "information_label"):
+                return
+
+            # Get staging manager for modified count
+            from core.metadata_staging_manager import get_metadata_staging_manager
+            staging_manager = get_metadata_staging_manager()
+
+            # Count total fields
             total_fields = 0
-            modified_fields = 0
 
             def count_fields(data):
-                nonlocal total_fields, modified_fields
+                nonlocal total_fields
                 for key, value in data.items():
                     if isinstance(value, dict):
                         count_fields(value)
                     else:
                         total_fields += 1
-                        if key in self.modified_items:
-                            modified_fields += 1
 
             count_fields(display_data)
 
-            # Update information label
-            info_text = f"Fields: {total_fields}"
-            if modified_fields > 0:
-                info_text += f" (Modified: {modified_fields})"
+            # Count modified fields from staging manager
+            modified_fields = 0
+            if staging_manager and self._current_file_path:
+                staged_changes = staging_manager.get_staged_changes(self._current_file_path)
+                modified_fields = len(staged_changes)
 
-            if hasattr(self, "_info_label") and self._info_label:
-                self._info_label.setText(info_text)
+            # Build information label text with styling
+            if total_fields == 0:
+                # Empty state
+                parent_window.information_label.setText("Information")
+                parent_window.information_label.setStyleSheet("")
+            elif modified_fields > 0:
+                # Has modifications - show count with modified color
+                info_text = f"Fields: {total_fields} | Modified: {modified_fields}"
+                parent_window.information_label.setText(info_text)
+                # Set yellow color for modified count
+                label_style = f"color: {METADATA_ICON_COLORS['modified']}; font-weight: bold;"
+                parent_window.information_label.setStyleSheet(label_style)
+            else:
+                # No modifications
+                info_text = f"Fields: {total_fields}"
+                parent_window.information_label.setText(info_text)
+                parent_window.information_label.setStyleSheet("")
 
         except Exception as e:
             logger.debug(f"Error updating information label: {e}", extra={"dev_only": True})
@@ -2595,6 +2635,9 @@ class MetadataTreeView(QTreeView):
 
         if staging_manager and self._current_file_path:
             staging_manager.clear_staged_changes(self._current_file_path)
+
+        # Update the information label
+        self._update_information_label({})
 
         self._update_file_icon_status()
         self.viewport().update()

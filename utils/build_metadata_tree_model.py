@@ -532,22 +532,6 @@ def build_metadata_tree_model(
             )
             is_extended = key in extended_keys
 
-            if is_extended:
-                # Extended metadata styling - subtle blue tint
-                extended_font = QFont()
-                extended_font.setItalic(True)
-                key_item.setFont(extended_font)
-                value_item.setFont(extended_font)
-
-                # Add extended indicator to key name
-                key_item.setText(f"[Ext] {format_key(key)}")
-                key_item.setToolTip("Available only in extended metadata mode")
-                value_item.setToolTip("Available only in extended metadata mode")
-
-                # Set text color to indicate extended metadata
-                extended_color = QColor(100, 150, 255)  # Light blue
-                key_item.setForeground(extended_color)
-
             if is_modified:
                 # Modified metadata styling - yellow text + bold (no [Mod] prefix)
                 modified_font = QFont()
@@ -565,6 +549,21 @@ def build_metadata_tree_model(
                 value_item.setToolTip(
                     "Modified value" + (" (extended metadata)" if is_extended else "")
                 )
+            elif is_extended:
+                # Extended metadata styling - subtle blue tint
+                extended_font = QFont()
+                extended_font.setItalic(True)
+                key_item.setFont(extended_font)
+                value_item.setFont(extended_font)
+
+                # Add extended indicator to key name
+                key_item.setText(f"[Ext] {format_key(key)}")
+                key_item.setToolTip("Available only in extended metadata mode")
+                value_item.setToolTip("Available only in extended metadata mode")
+
+                # Set text color to indicate extended metadata
+                extended_color = QColor(100, 150, 255)  # Light blue
+                key_item.setForeground(extended_color)
 
             group_item.appendRow([key_item, value_item])
 
