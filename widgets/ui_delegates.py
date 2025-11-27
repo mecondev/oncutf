@@ -337,24 +337,29 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             if sel is not None:
                 is_selected = sel.isSelected(index.sibling(index.row(), 0))
 
+        # Determine background color
+        bg_color = None
+        if is_selected and is_hovered:
+            bg_color = get_qcolor("highlight_light_blue")
+        elif is_selected:
+            bg_color = get_qcolor("table_selection_background")
+        elif is_hovered:
+            bg_color = get_qcolor("table_hover_background")
+
         # Paint full-row background first for consistent highlight
         if isinstance(tree_view, QTreeView) and index.model() is not None:
             try:
                 # Use the cell's rect for background painting to avoid overpainting other columns
                 bg_rect = QRect(option.rect)
-                
+
                 # Extend the background to the right edge of the viewport only for the last column
                 model = index.model()
                 if model and index.column() == model.columnCount(index.parent()) - 1:
                     if tree_view.viewport():
                         bg_rect.setRight(tree_view.viewport().rect().right())
 
-                if is_selected and is_hovered:
-                    painter.fillRect(bg_rect, get_qcolor("highlight_light_blue"))
-                elif is_selected:
-                    painter.fillRect(bg_rect, get_qcolor("table_selection_background"))
-                elif is_hovered:
-                    painter.fillRect(bg_rect, get_qcolor("table_hover_background"))
+                if bg_color:
+                    painter.fillRect(bg_rect, bg_color)
             except Exception:
                 pass
 
@@ -384,6 +389,14 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         # Remove default hover/selection paints (we already drew backgrounds)
         opt.state &= ~QStyle.StateFlag.State_Selected
         opt.state &= ~QStyle.StateFlag.State_MouseOver
+
+        # Force the delegate to use our background color as the base background
+        # This ensures that if the delegate draws a background, it matches ours
+        # and doesn't overwrite our custom painting with the default background
+        if bg_color:
+            opt.palette.setColor(QPalette.ColorRole.Base, bg_color)
+            opt.palette.setColor(QPalette.ColorRole.Window, bg_color)
+            opt.palette.setColor(QPalette.ColorRole.Highlight, bg_color)
 
         # Ensure palette uses our text color in every state
         for group in (QPalette.ColorGroup.Active, QPalette.ColorGroup.Inactive, QPalette.ColorGroup.Disabled):
