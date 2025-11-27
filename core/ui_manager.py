@@ -419,8 +419,8 @@ class UIManager:
         self.parent_window.metadata_tree_view = MetadataTreeView()
         
         # Install custom delegate to respect ForegroundRole for modified items
-        from widgets.ui_delegates import TreeViewItemDelegate
-        metadata_delegate = TreeViewItemDelegate(self.parent_window.metadata_tree_view)
+        from widgets.ui_delegates import MetadataTreeItemDelegate
+        metadata_delegate = MetadataTreeItemDelegate(self.parent_window.metadata_tree_view)
         self.parent_window.metadata_tree_view.setItemDelegate(metadata_delegate)
         
         # Install event filter for hover tracking

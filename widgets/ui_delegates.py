@@ -340,22 +340,21 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         # Paint full-row background first for consistent highlight
         if isinstance(tree_view, QTreeView) and index.model() is not None:
             try:
+                # Use the cell's rect for background painting to avoid overpainting other columns
+                bg_rect = QRect(option.rect)
+                
+                # Extend the background to the right edge of the viewport only for the last column
                 model = index.model()
-                first = index.sibling(index.row(), 0)
-                last = index.sibling(index.row(), max(0, model.columnCount(index.parent()) - 1))
-                first_rect = tree_view.visualRect(first)
-                last_rect = tree_view.visualRect(last)
-                if first_rect.isValid() and last_rect.isValid():
-                    bg_rect = first_rect.united(last_rect)
+                if model and index.column() == model.columnCount(index.parent()) - 1:
                     if tree_view.viewport():
                         bg_rect.setRight(tree_view.viewport().rect().right())
 
-                    if is_selected and is_hovered:
-                        painter.fillRect(bg_rect, get_qcolor("highlight_light_blue"))
-                    elif is_selected:
-                        painter.fillRect(bg_rect, get_qcolor("table_selection_background"))
-                    elif is_hovered:
-                        painter.fillRect(bg_rect, get_qcolor("table_hover_background"))
+                if is_selected and is_hovered:
+                    painter.fillRect(bg_rect, get_qcolor("highlight_light_blue"))
+                elif is_selected:
+                    painter.fillRect(bg_rect, get_qcolor("table_selection_background"))
+                elif is_hovered:
+                    painter.fillRect(bg_rect, get_qcolor("table_hover_background"))
             except Exception:
                 pass
 
@@ -423,7 +422,7 @@ class MetadataTreeItemDelegate(TreeViewItemDelegate):
     def initStyleOption(self, option: QStyleOptionViewItem, index: QModelIndex) -> None:
         """Initialize style option and force bold font for modified items."""
         super().initStyleOption(option, index)
-        
+
         # Check if this is a modified key (has custom foreground)
         # If so, force bold font
         custom_fg = index.data(Qt.ItemDataRole.ForegroundRole)
