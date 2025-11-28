@@ -21,13 +21,13 @@ from core.pyqt_imports import (
     QPainter,
     QPalette,
     QPen,
+    QRect,
     QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
     Qt,
     QTableView,
     QTreeView,
-    QRect,
     QWidget,
 )
 from utils.logger_factory import get_cached_logger

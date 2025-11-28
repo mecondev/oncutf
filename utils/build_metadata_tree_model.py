@@ -525,11 +525,36 @@ def build_metadata_tree_model(
             value_item = create_item(str(value))
 
             # Apply styling based on key type
-            is_modified = (
-                key_path in modified_keys or key in modified_keys
-                if (key_path := f"{group_name}/{key}")
-                else key in modified_keys
+            # We receive modified_keys from the staging manager, typically in the form
+            # "Group/Key" (for example, "EXIF/Rotation"). Our tree groups keys using
+            # classify_key(key) which may produce different group names ("File Info",
+            # "Camera Settings", etc.). To make the visual styling robust, we treat a
+            # key as modified if ANY of the following is true:
+            #   1) The exact group/key combination we use in the tree exists in modified_keys
+            #   2) The raw key name exists in modified_keys
+            #   3) Any modified key path ends with "/<key>" (e.g. "EXIF/Rotation")
+
+            key_path = f"{group_name}/{key}"
+
+            direct_match = key_path in modified_keys or key in modified_keys
+            suffix_match = any(
+                mk.endswith(f"/{key}") or mk == key for mk in modified_keys
             )
+
+            is_modified = direct_match or suffix_match
+
+            if is_modified:
+                try:
+                    debug_color = METADATA_ICON_COLORS.get("modified", "<missing>")
+                    logger.debug(
+                        "[MetadataTreeModel] Marking key as modified | key=%s | key_path=%s | color=%s",
+                        key,
+                        key_path,
+                        debug_color,
+                    )
+                except Exception:
+                    # Avoid breaking UI if logging fails for any reason
+                    pass
             is_extended = key in extended_keys
 
             if is_modified:

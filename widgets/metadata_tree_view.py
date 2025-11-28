@@ -177,6 +177,7 @@ class MetadataTreeView(QTreeView):
         # Scroll position memory: {file_path: scroll_position}
         self._scroll_positions: dict[str, int] = {}
         self._current_file_path: str | None = None
+        self._current_display_data: dict[str, Any] = {}
         self._pending_restore_timer_id: str | None = None
 
         # Expanded items per file: {file_path: [expanded_item_paths]}
@@ -1452,18 +1453,8 @@ class MetadataTreeView(QTreeView):
         self._update_file_icon_status()
 
         # Update the information label to reflect new modified count
-        if self.model():
-            # Get the current display data to pass to _update_information_label
-            try:
-                # Try to get metadata from cache
-                from core.metadata_staging_manager import get_metadata_staging_manager
-                staging_manager = get_metadata_staging_manager()
-                if staging_manager and self._current_file_path:
-                    # Just trigger a label update with a dummy dict
-                    # The label update will get the count from staging manager
-                    self._update_information_label({})
-            except Exception:
-                pass
+        if hasattr(self, "_current_display_data") and self._current_display_data:
+            self._update_information_label(self._current_display_data)
 
         # Update the view
         self.viewport().update()
@@ -2109,6 +2100,9 @@ class MetadataTreeView(QTreeView):
             if filename:
                 display_data["FileName"] = filename
 
+            # Store display_data for later use in label updates
+            self._current_display_data = display_data
+
             # Apply any modified values that the user has changed in the UI
             self._apply_modified_values_to_display_data(display_data)
 
@@ -2203,7 +2197,7 @@ class MetadataTreeView(QTreeView):
 
             def count_fields(data):
                 nonlocal total_fields
-                for key, value in data.items():
+                for _key, value in data.items():
                     if isinstance(value, dict):
                         count_fields(value)
                     else:
@@ -2227,7 +2221,7 @@ class MetadataTreeView(QTreeView):
                 info_text = f"Fields: {total_fields} | Modified: {modified_fields}"
                 parent_window.information_label.setText(info_text)
                 # Set yellow color for modified count
-                label_style = f"color: {METADATA_ICON_COLORS['modified']}; font-weight: bold;"
+                label_style = f"color: {METADATA_ICON_COLORS['modified']};"
                 parent_window.information_label.setStyleSheet(label_style)
             else:
                 # No modifications
@@ -2636,8 +2630,9 @@ class MetadataTreeView(QTreeView):
         if staging_manager and self._current_file_path:
             staging_manager.clear_staged_changes(self._current_file_path)
 
-        # Update the information label
-        self._update_information_label({})
+        # Update the information label with current display data
+        if hasattr(self, "_current_display_data") and self._current_display_data:
+            self._update_information_label(self._current_display_data)
 
         self._update_file_icon_status()
         self.viewport().update()
