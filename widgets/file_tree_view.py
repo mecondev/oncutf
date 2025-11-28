@@ -34,6 +34,7 @@ from core.pyqt_imports import (
     QTreeView,
     pyqtSignal,
 )
+from widgets.ui_delegates import TreeViewItemDelegate
 from utils.drag_zone_validator import DragZoneValidator
 from utils.logger_factory import get_cached_logger
 from utils.timer_manager import schedule_scroll_adjust
@@ -103,6 +104,11 @@ class FileTreeView(QTreeView):
 
         # Initialize file system watcher for drive detection
         self._setup_file_system_watcher()
+
+        # Install custom tree view delegate for consistent hover/selection behavior
+        self._delegate = TreeViewItemDelegate(self)
+        self.setItemDelegate(self._delegate)
+        self._delegate.install_event_filter(self)
 
     def _setup_file_system_watcher(self) -> None:
         """Setup QFileSystemWatcher to detect drive changes."""

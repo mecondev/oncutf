@@ -686,58 +686,11 @@ class ThemeEngine:
                 color: {self.colors["table_selection_text"]};
             }}
 
-            /* TREE VIEWS */
+            /* TREE VIEWS - Minimal base styling, delegates handle hover/selection/colors */
             QTreeView {{
                 background-color: {self.colors["table_background"]};
-                color: {self.colors["table_text"]};
                 alternate-background-color: {self.colors["table_alternate_background"]};
                 font-size: {self.fonts["tree_size"]};
-                border: none;
-                outline: none;
-                selection-background-color: {self.colors["table_selection_background"]};
-                selection-color: {self.colors["table_selection_text"]};
-                show-decoration-selected: 1;
-            }}
-
-            QTreeView::item {{
-                border: none;
-                background-color: transparent;
-                color: {self.colors["table_text"]};
-                padding: 2px 4px;
-                min-height: 18px;
-            }}
-
-            QTreeView::item:alternate {{
-                background-color: {self.colors["table_alternate_background"]};
-            }}
-
-            QTreeView::item:hover {{
-                background-color: {self.colors["table_hover_background"]};
-                color: {self.colors["table_text"]};
-                border: none;
-            }}
-
-            QTreeView::item:selected {{
-                background-color: {self.colors["table_selection_background"]};
-                color: {self.colors["table_selection_text"]};
-                border: none;
-            }}
-
-            QTreeView::item:selected:hover {{
-                background-color: {self.colors["highlight_light_blue"]};
-                color: {self.colors["table_selection_text"]};
-                border: none;
-            }}
-
-            QTreeView::item:hover {{
-                background-color: {self.colors["table_hover_background"]};
-                color: {self.colors["table_text"]};
-                border: none;
-            }}
-
-            QTreeView::item:selected:focus {{
-                background-color: {self.colors["table_selection_background"]};
-                color: {self.colors["table_selection_text"]};
                 border: none;
                 outline: none;
             }}
@@ -954,126 +907,14 @@ class ThemeEngine:
                 padding-right: 4px;
             }}
 
-            /* FileTreeView specific styling */
-            FileTreeView::item:hover {{
-                background-color: {self.colors["table_hover_background"]};
-                color: {self.colors["table_text"]};
-                border: none;
-            }}
-
-            FileTreeView::item:selected {{
-                background-color: {self.colors["table_selection_background"]};
-                color: {self.colors["table_selection_text"]};
-                border: none;
-            }}
-
-            FileTreeView::item:selected:hover {{
-                background-color: {self.colors["highlight_light_blue"]};
-                color: {self.colors["table_selection_text"]};
-                border: none;
-            }}
-
-            FileTreeView::branch:hover {{
-                background-color: {self.colors["table_hover_background"]} !important;
-                color: transparent !important;
-                border: none !important;
-            }}
-
-            FileTreeView::branch:selected {{
-                background-color: {self.colors["table_selection_background"]} !important;
-                color: transparent !important;
-                border: none !important;
-            }}
-
-            FileTreeView::branch:selected:hover {{
-                background-color: {self.colors["highlight_light_blue"]} !important;
-                color: transparent !important;
-                border: none !important;
-            }}
-
-            /* FileTreeView chevron icons - explicit styling for Windows compatibility */
-            FileTreeView::branch:has-children:closed:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-right.svg) !important;
-                width: 12px !important;
-                height: 12px !important;
-                padding: 2px !important;
-            }}
-
-            FileTreeView::branch:has-children:open:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-down.svg) !important;
-                width: 12px !important;
-                height: 12px !important;
-                padding: 2px !important;
-            }}
-
-            FileTreeView::branch:!has-children:adjoins-item {{
-                image: none !important;
-            }}
-
-            FileTreeView::branch:hover:has-children:closed:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-right.svg) !important;
-                width: 12px !important;
-                height: 12px !important;
-                padding: 2px !important;
-            }}
-
-            FileTreeView::branch:hover:has-children:open:adjoins-item {{
-                image: url(resources/icons/feather_icons/chevron-down.svg) !important;
-                width: 12px !important;
-                height: 12px !important;
-                padding: 2px !important;
-            }}
-
-            /* MetadataTreeView specific styling */
-            MetadataTreeView {{
-                color: {self.colors["table_text"]};
+            /* FileTreeView and MetadataTreeView use custom delegates for
+               hover/selection and text colors; keep only basic background. */
+            FileTreeView {{
                 background-color: {self.colors["table_background"]};
             }}
 
-            MetadataTreeView[placeholder="false"] {{
-                color: {self.colors["table_text"]} !important;
-                background-color: {self.colors["table_background"]} !important;
-            }}
-
-            MetadataTreeView[placeholder="false"]::item {{
-                color: {self.colors["table_text"]} !important;
-                background-color: transparent;
-            }}
-
-            MetadataTreeView[placeholder="false"]::item:hover {{
-                background-color: {self.colors["table_hover_background"]} !important;
-                color: {self.colors["table_text"]} !important;
-                border: none;
-            }}
-
-            MetadataTreeView[placeholder="false"]::item:selected {{
-                background-color: {self.colors["table_selection_background"]} !important;
-                color: {self.colors["table_selection_text"]} !important;
-                border: none;
-            }}
-
-            MetadataTreeView[placeholder="false"]::item:selected:hover {{
-                background-color: {self.colors["highlight_light_blue"]} !important;
-                color: {self.colors["table_selection_text"]} !important;
-                border: none;
-            }}
-
-            MetadataTreeView[placeholder="true"]::item {{
-                color: gray;
-                selection-background-color: transparent;
-                background-color: transparent;
-            }}
-
-            MetadataTreeView[placeholder="true"]::item:hover {{
-                background-color: transparent !important;
-                color: gray !important;
-                border: none !important;
-            }}
-
-            MetadataTreeView[placeholder="true"]::item:selected {{
-                background-color: transparent !important;
-                color: gray !important;
-                border: none !important;
+            MetadataTreeView {{
+                background-color: {self.colors["table_background"]};
             }}
 
             /* RESULTS TABLE DIALOG */

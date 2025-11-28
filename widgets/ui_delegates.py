@@ -324,6 +324,9 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         """Custom paint method with full-row background and custom text colors."""
         tree_view = self.parent()
 
+        # Determine basic row/selection/hover state
+        row = index.row()
+
         hovered = self.hovered_index
         is_hovered = bool(
             hovered
@@ -338,7 +341,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             if sel is not None:
                 is_selected = sel.isSelected(index.sibling(index.row(), 0))
 
-        # Determine background color
+        # Determine background color for hover/selection (Qt handles alt rows automatically)
         bg_color = None
         if is_selected and is_hovered:
             bg_color = get_qcolor("highlight_light_blue")
@@ -348,19 +351,26 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             bg_color = get_qcolor("table_hover_background")
 
         # Paint full-row background first for consistent highlight
+        # This includes both the branch area and the item area
         if isinstance(tree_view, QTreeView) and index.model() is not None:
             try:
-                # Use the cell's rect for background painting to avoid overpainting other columns
-                bg_rect = QRect(option.rect)
-
-                # Extend the background to the right edge of the viewport only for the last column
                 model = index.model()
-                if model and index.column() == model.columnCount(index.parent()) - 1:
-                    if tree_view.viewport():
-                        bg_rect.setRight(tree_view.viewport().rect().right())
-
-                if bg_color:
-                    painter.fillRect(bg_rect, bg_color)
+                # For the first column (column 0), paint from left edge (including branch)
+                if index.column() == 0:
+                    bg_rect = QRect(option.rect)
+                    # Extend to left edge to cover branch area
+                    bg_rect.setLeft(0)
+                    if bg_color:
+                        painter.fillRect(bg_rect, bg_color)
+                else:
+                    # For other columns, use normal rect
+                    bg_rect = QRect(option.rect)
+                    # Extend to right edge for last column
+                    if model and index.column() == model.columnCount(index.parent()) - 1:
+                        if tree_view.viewport():
+                            bg_rect.setRight(tree_view.viewport().rect().right())
+                    if bg_color:
+                        painter.fillRect(bg_rect, bg_color)
             except Exception:
                 pass
 
@@ -368,6 +378,9 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         item_flags = index.flags()
         is_selectable = bool(item_flags & Qt.ItemFlag.ItemIsSelectable)
 
+        # Text color policy:
+        # - Items with custom ForegroundRole (e.g. modified metadata) keep this color in all states.
+        # - Normal items are light text in normal/hover/selected, and dark text only in selected+hover.
         if custom_foreground is not None:
             if isinstance(custom_foreground, QBrush):
                 text_color = custom_foreground.color()
@@ -375,14 +388,14 @@ class TreeViewItemDelegate(QStyledItemDelegate):
                 text_color = custom_foreground
             else:
                 text_color = get_qcolor("combo_text")
-        elif is_selected and is_hovered:
-            text_color = get_qcolor("table_selection_text")
-        elif is_selected:
-            text_color = get_qcolor("table_text")
-        elif not is_selectable:
-            text_color = get_qcolor("text_secondary")
         else:
-            text_color = get_qcolor("combo_text")
+            if is_selected and is_hovered:
+                text_color = get_qcolor("table_selection_text")
+            elif not is_selectable:
+                text_color = get_qcolor("text_secondary")
+            else:
+                # Normal, hover, or selected-only: use light text
+                text_color = get_qcolor("combo_text")
 
         opt = QStyleOptionViewItem(option)
         self.initStyleOption(opt, index)

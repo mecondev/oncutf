@@ -542,19 +542,6 @@ def build_metadata_tree_model(
             )
 
             is_modified = direct_match or suffix_match
-
-            if is_modified:
-                try:
-                    debug_color = METADATA_ICON_COLORS.get("modified", "<missing>")
-                    logger.debug(
-                        "[MetadataTreeModel] Marking key as modified | key=%s | key_path=%s | color=%s",
-                        key,
-                        key_path,
-                        debug_color,
-                    )
-                except Exception:
-                    # Avoid breaking UI if logging fails for any reason
-                    pass
             is_extended = key in extended_keys
 
             if is_modified:
