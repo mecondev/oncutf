@@ -325,8 +325,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         tree_view = self.parent()
 
         # Determine basic row/selection/hover state
-        row = index.row()
-
+        # (use `index.row()` where needed; stray standalone `row` removed)
         hovered = self.hovered_index
         is_hovered = bool(
             hovered

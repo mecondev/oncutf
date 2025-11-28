@@ -6,8 +6,8 @@ Verifies that modified metadata fields are displayed with yellow color and bold 
 
 import pytest
 
-from core.pyqt_imports import QApplication
 from config import METADATA_ICON_COLORS
+from core.pyqt_imports import QApplication
 from utils.build_metadata_tree_model import build_metadata_tree_model
 
 
@@ -22,6 +22,9 @@ def app():
 
 def test_modified_keys_styling(app):
     """Test that modified keys have yellow color and bold font."""
+    # Use fixture for QApplication; not referenced further
+    del app
+
     metadata = {
         'FileName': 'test.jpg',
         'ISO': 100,
@@ -82,6 +85,9 @@ def test_modified_keys_styling(app):
 
 def test_unmodified_keys_normal_styling(app):
     """Test that unmodified keys have normal styling."""
+    # Use fixture for QApplication; not referenced further
+    del app
+
     metadata = {
         'FileName': 'test.jpg',
         'ISOSpeed': 1600,
@@ -123,6 +129,9 @@ def test_empty_modified_keys(app):
         'ISOSpeed': 1600,
     }
 
+    # Use fixture for QApplication; not referenced further
+    del app
+
     # No modified keys
     model = build_metadata_tree_model(metadata, set())
 
@@ -136,6 +145,9 @@ def test_modified_tooltip(app):
         'FileName': 'test.jpg',
         'ISOSpeed': 1600,
     }
+
+    # Use fixture for QApplication; not referenced further
+    del app
 
     modified_keys = {'ISOSpeed'}
     model = build_metadata_tree_model(metadata, modified_keys)

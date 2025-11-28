@@ -53,7 +53,6 @@ class CompanionFilesHelper:
         # Other video formats with subtitle companions
         "mkv": [r"^(.+)\.srt$", r"^(.+)\.vtt$", r"^(.+)\.ass$", r"^(.+)\.ssa$"],
         "avi": [r"^(.+)\.srt$", r"^(.+)\.vtt$", r"^(.+)\.ass$", r"^(.+)\.ssa$"],
-        "mov": [r"^(.+)\.srt$", r"^(.+)\.vtt$", r"^(.+)\.ass$", r"^(.+)\.ssa$"],
         "wmv": [r"^(.+)\.srt$", r"^(.+)\.vtt$", r"^(.+)\.ass$", r"^(.+)\.ssa$"],
 
         # ========================================
