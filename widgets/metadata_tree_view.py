@@ -28,7 +28,7 @@ import os
 import traceback
 from typing import Any
 
-from config import METADATA_TREE_COLUMN_WIDTHS
+from config import METADATA_TREE_COLUMN_WIDTHS, METADATA_TREE_USE_PROXY
 from core.pyqt_imports import (
     QAbstractItemView,
     QAction,
@@ -177,6 +177,13 @@ class MetadataTreeView(QTreeView):
 
         # Track if we're in placeholder mode
         self._is_placeholder_mode: bool = True
+
+        # Toggle for metadata proxy usage (configurable for debugging)
+        self._use_proxy = METADATA_TREE_USE_PROXY
+        if not self._use_proxy:
+            logger.warning(
+                "[MetadataTree] Metadata proxy disabled via config", extra={"dev_only": True}
+            )
 
         # Display level for metadata filtering (load from config)
         # Note: This must be set before any metadata loading
@@ -1835,9 +1842,12 @@ class MetadataTreeView(QTreeView):
         self._placeholder_model = model
         self._current_tree_model = None
 
-        # Use proxy model for consistency
+        # Use proxy model for consistency (unless disabled via config)
         parent_window = self._get_parent_with_file_table()
-        if parent_window and hasattr(parent_window, "metadata_proxy_model"):
+        use_proxy = (
+            self._use_proxy and parent_window and hasattr(parent_window, "metadata_proxy_model")
+        )
+        if use_proxy:
             logger.debug(
                 "[MetadataTree] Setting empty placeholder source model on metadata_proxy_model",
                 extra={"dev_only": True},
@@ -1853,6 +1863,11 @@ class MetadataTreeView(QTreeView):
             )
             self.setModel(parent_window.metadata_proxy_model)
         else:
+            logger.debug(
+                "[MetadataTree] Proxy disabled - setting placeholder model directly",
+                extra={"dev_only": True},
+            )
+            self.setModel(None)
             self.setModel(model)
         self._current_tree_model = self._placeholder_model
 
@@ -2251,7 +2266,10 @@ class MetadataTreeView(QTreeView):
 
             # Use proxy model for filtering instead of setting model directly
             parent_window = self._get_parent_with_file_table()
-            if parent_window and hasattr(parent_window, "metadata_proxy_model"):
+            use_proxy = (
+                self._use_proxy and parent_window and hasattr(parent_window, "metadata_proxy_model")
+            )
+            if use_proxy:
                 # CRITICAL: Disconnect view from model BEFORE changing source model
                 # This prevents Qt internal race conditions during model swap
                 logger.debug(
@@ -2280,7 +2298,12 @@ class MetadataTreeView(QTreeView):
                 )
                 self.setModel(parent_window.metadata_proxy_model)  # Use self.setModel() not super()
             else:
-                # Fallback: set model directly if proxy model is not available
+                # Fallback: set model directly if proxy model is disabled or unavailable
+                logger.debug(
+                    f"[MetadataTree] Proxy disabled/unavailable - setting model directly for file '{filename}'",
+                    extra={"dev_only": True},
+                )
+                self.setModel(None)
                 self.setModel(tree_model)
                 self._current_tree_model = tree_model
 

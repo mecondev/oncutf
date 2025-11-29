@@ -319,6 +319,9 @@ METADATA_TREE_COLUMN_WIDTHS = {
     "VALUE_MIN_WIDTH": 250,
 }
 
+# Toggle metadata proxy usage (set False to bypass proxy for debugging)
+METADATA_TREE_USE_PROXY = False
+
 # Metadata Tree Column Configuration (dictionary-based, similar to FILE_TABLE_COLUMN_CONFIG)
 METADATA_TREE_COLUMN_CONFIG = {
     "key": {
