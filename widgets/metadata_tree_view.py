@@ -2245,6 +2245,14 @@ class MetadataTreeView(QTreeView):
             # Use proxy model for filtering instead of setting model directly
             parent_window = self._get_parent_with_file_table()
             if parent_window and hasattr(parent_window, "metadata_proxy_model"):
+                # CRITICAL: Disconnect view from model BEFORE changing source model
+                # This prevents Qt internal race conditions during model swap
+                logger.debug(
+                    f"[MetadataTree] Disconnecting view before model swap for file '{filename}'",
+                    extra={"dev_only": True},
+                )
+                self.setModel(None)  # Temporarily disconnect view from proxy model
+                
                 # Log and set the source model to the proxy model (debug help for race conditions)
                 logger.debug(
                     f"[MetadataTree] Setting source model on metadata_proxy_model for file '{filename}'",
@@ -2255,9 +2263,10 @@ class MetadataTreeView(QTreeView):
                     extra={"dev_only": True},
                 )
                 parent_window.metadata_proxy_model.setSourceModel(tree_model)
-                # ALWAYS call setModel to trigger mode changes (placeholder vs normal)
+                
+                # Reconnect view to proxy model AFTER source model is set
                 logger.debug(
-                    "[MetadataTree] Calling setModel(self, metadata_proxy_model)",
+                    "[MetadataTree] Reconnecting view (setModel metadata_proxy_model)",
                     extra={"dev_only": True},
                 )
                 self.setModel(parent_window.metadata_proxy_model)  # Use self.setModel() not super()
