@@ -181,6 +181,10 @@ class MetadataTreeView(QTreeView):
         # Display level for metadata filtering (load from config)
         # Note: This must be set before any metadata loading
 
+        # Keep reference to the currently assigned tree model to avoid GC crashes
+        self._current_tree_model: QStandardItemModel | None = None
+        self._placeholder_model: QStandardItemModel | None = None
+
         # Scroll position memory: {file_path: scroll_position}
         self._scroll_positions: dict[str, int] = {}
         self._current_file_path: str | None = None
@@ -1828,6 +1832,8 @@ class MetadataTreeView(QTreeView):
         # Create empty model to trigger placeholder mode
         model = QStandardItemModel()
         model.setHorizontalHeaderLabels(["", ""])
+        self._placeholder_model = model
+        self._current_tree_model = None
 
         # Use proxy model for consistency
         parent_window = self._get_parent_with_file_table()
@@ -1848,6 +1854,7 @@ class MetadataTreeView(QTreeView):
             self.setModel(parent_window.metadata_proxy_model)
         else:
             self.setModel(model)
+        self._current_tree_model = self._placeholder_model
 
         # Update header visibility for placeholder mode
         self._update_header_visibility()
@@ -2252,7 +2259,8 @@ class MetadataTreeView(QTreeView):
                     extra={"dev_only": True},
                 )
                 self.setModel(None)  # Temporarily disconnect view from proxy model
-                
+                self._current_tree_model = None
+
                 # Log and set the source model to the proxy model (debug help for race conditions)
                 logger.debug(
                     f"[MetadataTree] Setting source model on metadata_proxy_model for file '{filename}'",
@@ -2263,7 +2271,8 @@ class MetadataTreeView(QTreeView):
                     extra={"dev_only": True},
                 )
                 parent_window.metadata_proxy_model.setSourceModel(tree_model)
-                
+                self._current_tree_model = tree_model
+
                 # Reconnect view to proxy model AFTER source model is set
                 logger.debug(
                     "[MetadataTree] Reconnecting view (setModel metadata_proxy_model)",
@@ -2273,6 +2282,7 @@ class MetadataTreeView(QTreeView):
             else:
                 # Fallback: set model directly if proxy model is not available
                 self.setModel(tree_model)
+                self._current_tree_model = tree_model
 
             # Always expand all - no collapse functionality
             self.expandAll()
