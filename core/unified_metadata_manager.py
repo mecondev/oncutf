@@ -16,6 +16,7 @@ Features:
 - Unified API for all metadata operations
 """
 
+import contextlib
 import os
 from datetime import datetime
 
@@ -25,6 +26,7 @@ from config import COMPANION_FILES_ENABLED, LOAD_COMPANION_METADATA
 from core.pyqt_imports import QApplication, Qt
 from models.file_item import FileItem
 from utils.companion_files_helper import CompanionFilesHelper
+from utils.cursor_helper import wait_cursor
 from utils.file_status_helpers import (
     get_hash_for_file,
     get_metadata_for_file,
@@ -34,6 +36,7 @@ from utils.file_status_helpers import (
 from utils.logger_factory import get_cached_logger
 from utils.metadata_cache_helper import MetadataCacheHelper
 from utils.path_utils import paths_equal
+from utils.progress_dialog import ProgressDialog
 
 logger = get_cached_logger(__name__)
 
@@ -1450,45 +1453,86 @@ class UnifiedMetadataManager(QObject):
 
         success_count = 0
         failed_files = []
+        _loading_dialog = None
+
+        # Determine save mode based on file count
+        file_count = len(files_to_save)
+        save_mode = "single_file_wait_cursor" if file_count == 1 else "multiple_files_dialog"
+
+        logger.info(
+            f"[UnifiedMetadataManager] Saving metadata for {file_count} file(s) using mode: {save_mode}"
+        )
 
         try:
-            # Process each file
-            for file_item in files_to_save:
-                file_path = file_item.full_path
-
-                # Get modifications for this file - use path matching with normalization
-                modifications = self._get_modified_metadata_for_file(
-                    file_path, all_modifications
+            # Setup progress dialog for multiple files
+            if save_mode == "multiple_files_dialog":
+                _loading_dialog = ProgressDialog(
+                    parent=self.parent_window,
+                    operation_type="metadata_save",
+                    cancel_callback=None,  # No cancellation for save operations
+                    show_enhanced_info=False,
                 )
+                _loading_dialog.set_status("Saving metadata...")
+                _loading_dialog.show()
 
-                if not modifications:
-                    continue
+                # Process events to show dialog
+                QApplication.processEvents()
 
-                try:
-                    # Save using ExifTool
-                    success = self._exiftool_wrapper.write_metadata(file_path, modifications)
+            # Use wait_cursor context manager for single file
+            cursor_context = wait_cursor() if save_mode == "single_file_wait_cursor" else contextlib.nullcontext()
 
-                    if success:
-                        success_count += 1
-                        self._update_file_after_save(file_item, modifications)
-                        logger.debug(
-                            f"[UnifiedMetadataManager] Successfully saved metadata for {file_item.filename}",
-                            extra={"dev_only": True},
-                        )
-                    else:
-                        failed_files.append(file_item.filename)
-                        logger.warning(
-                            f"[UnifiedMetadataManager] Failed to save metadata for {file_item.filename}"
-                        )
+            with cursor_context:
+                # Process each file
+                current_file_index = 0
+                for file_item in files_to_save:
+                    current_file_index += 1
 
-                except Exception as e:
-                    failed_files.append(file_item.filename)
-                    logger.error(
-                        f"[UnifiedMetadataManager] Error saving metadata for {file_item.filename}: {e}"
+                    # Update progress dialog if in batch mode
+                    if _loading_dialog:
+                        _loading_dialog.set_filename(file_item.filename)
+                        _loading_dialog.set_count(current_file_index, file_count)
+                        _loading_dialog.set_progress(current_file_index, file_count)
+                        QApplication.processEvents()
+
+                    file_path = file_item.full_path
+
+                    # Get modifications for this file - use path matching with normalization
+                    modifications = self._get_modified_metadata_for_file(
+                        file_path, all_modifications
                     )
+
+                    if not modifications:
+                        continue
+
+                    try:
+                        # Save using ExifTool
+                        success = self._exiftool_wrapper.write_metadata(file_path, modifications)
+
+                        if success:
+                            success_count += 1
+                            self._update_file_after_save(file_item, modifications)
+                            logger.debug(
+                                f"[UnifiedMetadataManager] Successfully saved metadata for {file_item.filename}",
+                                extra={"dev_only": True},
+                            )
+                        else:
+                            failed_files.append(file_item.filename)
+                            logger.warning(
+                                f"[UnifiedMetadataManager] Failed to save metadata for {file_item.filename}"
+                            )
+
+                    except Exception as e:
+                        failed_files.append(file_item.filename)
+                        logger.error(
+                            f"[UnifiedMetadataManager] Error saving metadata for {file_item.filename}: {e}"
+                        )
 
         except Exception as e:
             logger.error(f"[UnifiedMetadataManager] Error in metadata saving process: {e}")
+        finally:
+            # Close progress dialog if it was created
+            if _loading_dialog:
+                _loading_dialog.close()
 
         # Show results
         self._show_save_results(success_count, failed_files, files_to_save)

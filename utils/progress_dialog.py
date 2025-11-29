@@ -25,6 +25,8 @@ from config import (
     FILE_LOADING_COLOR,
     HASH_CALCULATION_BG_COLOR,
     HASH_CALCULATION_COLOR,
+    SAVE_BG_COLOR,
+    SAVE_COLOR,
 )
 from core.pyqt_imports import QDialog, Qt, QVBoxLayout, QWidget
 from utils.cursor_helper import force_restore_cursor
@@ -56,6 +58,10 @@ class ProgressDialog(QDialog):
         "metadata_extended": {
             "bar_color": EXTENDED_METADATA_COLOR,
             "bar_bg_color": EXTENDED_METADATA_BG_COLOR,
+        },
+        "metadata_save": {
+            "bar_color": SAVE_COLOR,
+            "bar_bg_color": SAVE_BG_COLOR,
         },
         "file_loading": {"bar_color": FILE_LOADING_COLOR, "bar_bg_color": FILE_LOADING_BG_COLOR},
         "hash_calculation": {

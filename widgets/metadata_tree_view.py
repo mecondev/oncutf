@@ -1471,8 +1471,9 @@ class MetadataTreeView(QTreeView):
         """
         self.modified_items.add(key_path)
 
-        # Update the file icon in the file table
-        self._update_file_icon_status()
+        # Defer icon update to avoid race conditions with tree model rebuilds
+        # This ensures file table updates happen after metadata tree is fully updated
+        schedule_ui_update(self._update_file_icon_status, delay=0)
 
         # Update the information label to reflect new modified count
         if hasattr(self, "_current_display_data") and self._current_display_data:
