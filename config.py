@@ -20,7 +20,7 @@ Contains:
 # =====================================
 
 # Database reset - if True, deletes database on startup
-DEBUG_RESET_DATABASE = False
+DEBUG_RESET_DATABASE = True
 
 # Config reset - if True, deletes config.json on startup
 DEBUG_RESET_CONFIG = False
@@ -72,6 +72,17 @@ SHOW_DEV_ONLY_IN_CONSOLE = False
 ENABLE_DEBUG_LOG_FILE = LOG_DEBUG_FILE_ENABLED  # Use new config system
 
 # =====================================
+# EXIFTOOL TIMEOUT SETTINGS
+# =====================================
+
+# ExifTool operation timeouts (in seconds)
+EXIFTOOL_TIMEOUT_FAST = 10  # Fast metadata read (single file, no extended data)
+EXIFTOOL_TIMEOUT_EXTENDED = 120  # Extended metadata read with -ee flag (can be slow for large video files)
+EXIFTOOL_TIMEOUT_WRITE = 10  # Metadata write operations
+EXIFTOOL_TIMEOUT_BATCH_BASE = 60  # Base timeout for batch operations
+EXIFTOOL_TIMEOUT_BATCH_PER_FILE = 0.5  # Additional timeout per file in batch (seconds)
+
+# =====================================
 # HASH CALCULATION PERFORMANCE
 # =====================================
 
@@ -107,7 +118,6 @@ DIALOG_PATHS = {"last_used": ""}
 # Main window geometry and state (will be loaded from config.json)
 MAIN_WINDOW_GEOMETRY = None
 MAIN_WINDOW_STATE = None
-
 
 # =====================================
 # ALLOWED FILE EXTENSIONS
@@ -381,6 +391,9 @@ FILE_LOADING_BG_COLOR = "#0a1a2a"
 
 HASH_CALCULATION_COLOR = "#a256af"
 HASH_CALCULATION_BG_COLOR = "#2a1a2a"
+
+SAVE_COLOR = "#64b5f6"
+SAVE_BG_COLOR = "#0a1a2a"
 
 # =====================================
 # QLABEL TEXT COLORS
@@ -722,7 +735,7 @@ FILE_TABLE_COLUMN_CONFIG = {
         "key": "device_serial_no",
         "default_visible": False,
         "removable": True,
-        "width": 120,
+        "width": 140,
         "alignment": "left",
         "min_width": 100,
     },

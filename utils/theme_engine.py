@@ -738,7 +738,7 @@ class ThemeEngine:
                 image: none;
             }}
 
-            /* Closed/Open states: icons only on adjoined branch */
+            /* Closed/Open states: icons only on adjoined branch for all states */
             QTreeView::branch:has-children:closed:adjoins-item {{
                 image: url(resources/icons/feather_icons/chevron-right.svg);
                 width: 12px;
@@ -764,7 +764,22 @@ class ThemeEngine:
                 padding: 2px;
             }}
 
-            /* Hover states for branch indicators - only on adjoined branch */
+            /* Selected states - chevrons visible */
+            QTreeView::branch:selected:has-children:closed:adjoins-item {{
+                image: url(resources/icons/feather_icons/chevron-right.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+            }}
+
+            QTreeView::branch:selected:has-children:open:adjoins-item {{
+                image: url(resources/icons/feather_icons/chevron-down.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+            }}
+
+            /* Hover states - chevrons visible */
             QTreeView::branch:hover:has-children:closed:adjoins-item {{
                 image: url(resources/icons/feather_icons/chevron-right.svg);
                 width: 12px;
@@ -778,8 +793,29 @@ class ThemeEngine:
                 height: 12px;
                 padding: 2px;
             }}
-            /* No hover icons on non-adjoined branches */
+
+            /* Selected + Hover states - chevrons visible */
+            QTreeView::branch:selected:hover:has-children:closed:adjoins-item {{
+                image: url(resources/icons/feather_icons/chevron-right.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+            }}
+
+            QTreeView::branch:selected:hover:has-children:open:adjoins-item {{
+                image: url(resources/icons/feather_icons/chevron-down.svg);
+                width: 12px;
+                height: 12px;
+                padding: 2px;
+            }}
+
+            /* No icons on non-adjoined branches */
             QTreeView::branch:hover:!adjoins-item {{
+                image: none;
+                padding: 2px;
+            }}
+
+            QTreeView::branch:selected:!adjoins-item {{
                 image: none;
                 padding: 2px;
             }}

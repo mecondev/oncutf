@@ -198,6 +198,10 @@ class ParallelMetadataLoader:
             Metadata dictionary (empty dict on error)
         """
         try:
+            logger.info(
+                f"[ParallelMetadataLoader] Loading {item.filename}: use_extended={use_extended}"
+            )
+            
             metadata = self._exiftool_wrapper.get_metadata(
                 item.full_path,
                 use_extended=use_extended

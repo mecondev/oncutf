@@ -354,22 +354,15 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         if isinstance(tree_view, QTreeView) and index.model() is not None:
             try:
                 model = index.model()
-                # For the first column (column 0), paint from left edge (including branch)
-                if index.column() == 0:
-                    bg_rect = QRect(option.rect)
-                    # Extend to left edge to cover branch area
-                    bg_rect.setLeft(0)
-                    if bg_color:
-                        painter.fillRect(bg_rect, bg_color)
-                else:
-                    # For other columns, use normal rect
-                    bg_rect = QRect(option.rect)
-                    # Extend to right edge for last column
-                    if model and index.column() == model.columnCount(index.parent()) - 1:
-                        if tree_view.viewport():
-                            bg_rect.setRight(tree_view.viewport().rect().right())
-                    if bg_color:
-                        painter.fillRect(bg_rect, bg_color)
+                bg_rect = QRect(option.rect)
+
+                # Extend background to viewport right edge for the last column
+                if model and index.column() == model.columnCount(index.parent()) - 1:
+                    if tree_view.viewport():
+                        bg_rect.setRight(tree_view.viewport().rect().right())
+
+                if bg_color:
+                    painter.fillRect(bg_rect, bg_color)
             except Exception:
                 pass
 

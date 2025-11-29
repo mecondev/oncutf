@@ -1256,6 +1256,28 @@ class MetadataTreeView(QTreeView):
         # Use cache helper for unified access
         return cache_helper.get_metadata_value(file_item, key_path)
 
+    def _get_original_metadata_value(self, key_path: str) -> Any | None:
+        """
+        Get the ORIGINAL metadata value (not staged) for comparison.
+        Used by smart_mark_modified to check against actual original values.
+        """
+        selected_files = self._get_current_selection()
+        if not selected_files:
+            return None
+
+        file_item = selected_files[0]
+        cache_helper = self._get_cache_helper()
+        if not cache_helper:
+            return None
+
+        # Get original metadata entry (not staged version)
+        metadata_entry = cache_helper.get_cache_entry_for_file(file_item)
+        if not metadata_entry or not hasattr(metadata_entry, 'data'):
+            return None
+
+        # Extract value from original metadata dict
+        return self._get_value_from_metadata_dict(metadata_entry.data, key_path)
+
     def _get_value_from_metadata_dict(self, metadata: dict[str, Any], key_path: str) -> Any | None:
         """
         Extract a value from metadata dictionary using key path.
@@ -1461,7 +1483,8 @@ class MetadataTreeView(QTreeView):
 
     def smart_mark_modified(self, key_path: str, new_value: Any) -> None:
         """Mark a field as modified only if it differs from the original value."""
-        original_value = self._get_original_value_from_cache(key_path)
+        # Get original value from ORIGINAL metadata cache, not staging
+        original_value = self._get_original_metadata_value(key_path)
 
         # Convert values to strings for comparison
         new_str = str(new_value) if new_value is not None else ""

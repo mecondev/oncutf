@@ -72,12 +72,14 @@ class ExifToolWrapper:
 
     def _get_metadata_with_exiftool(self, file_path: str, use_extended: bool = False) -> dict:
         """Execute exiftool command and parse results."""
+        logger.info(
+            f"[ExifToolWrapper] _get_metadata_with_exiftool: use_extended={use_extended} for {os.path.basename(file_path)}"
+        )
+
         if use_extended:
             result = self._get_metadata_extended(file_path)
         else:
-            result = self._get_metadata_fast(file_path)
-
-        # Convert None to empty dict for consistency
+            result = self._get_metadata_fast(file_path)        # Convert None to empty dict for consistency
         return result if result is not None else {}
 
     def _get_metadata_fast(self, file_path: str) -> dict | None:
@@ -94,6 +96,8 @@ class ExifToolWrapper:
             return None
 
         # Use UTF-8 charset for filename encoding (critical for Windows)
+        from config import EXIFTOOL_TIMEOUT_FAST
+
         cmd = ["exiftool", "-json", "-charset", "filename=UTF8", file_path]
 
         try:
@@ -102,7 +106,7 @@ class ExifToolWrapper:
                 capture_output=True,
                 text=True,
                 check=False,
-                timeout=10,
+                timeout=EXIFTOOL_TIMEOUT_FAST,
                 encoding="utf-8",
                 errors="replace",
             )
@@ -174,11 +178,18 @@ class ExifToolWrapper:
                 cmd.append("-a")  # All tags for extended mode
             cmd.extend(file_paths)
 
+            from config import EXIFTOOL_TIMEOUT_BATCH_BASE, EXIFTOOL_TIMEOUT_BATCH_PER_FILE
+
+            dynamic_timeout = max(
+                EXIFTOOL_TIMEOUT_BATCH_BASE,
+                len(file_paths) * EXIFTOOL_TIMEOUT_BATCH_PER_FILE
+            )
+
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=max(60, len(file_paths) * 0.5),  # Dynamic timeout based on file count
+                timeout=dynamic_timeout,  # Dynamic timeout based on file count
                 encoding="utf-8",
                 errors="replace",
             )
@@ -215,6 +226,7 @@ class ExifToolWrapper:
         Parses and merges embedded entries, marks result as extended.
         """
         # Normalize path for Windows compatibility
+        from config import EXIFTOOL_TIMEOUT_EXTENDED
         from utils.path_normalizer import normalize_path
 
         file_path = normalize_path(file_path)
@@ -223,12 +235,16 @@ class ExifToolWrapper:
             logger.warning(f"[ExtendedReader] File does not exist: {file_path}")
             return None
 
+        # Construct command with -ee flag for extended metadata and -api largefilesupport=1 for large files
+        cmd = ["exiftool", "-api", "largefilesupport=1", "-j", "-ee", file_path]
+        logger.info(f"[ExtendedReader] Running command: {' '.join(cmd)}")
+
         try:
             result = subprocess.run(
-                ["exiftool", "-j", "-ee", file_path],
+                cmd,
                 capture_output=True,
                 text=True,
-                timeout=15,
+                timeout=EXIFTOOL_TIMEOUT_EXTENDED,
                 encoding="utf-8",
                 errors="replace",
             )
@@ -238,15 +254,19 @@ class ExifToolWrapper:
                 logger.warning("[ExtendedReader] No metadata returned.")
                 return None
 
-            logger.debug(
-                f"[ExtendedReader] JSON object count: {len(data)}", extra={"dev_only": True}
+            logger.info(
+                f"[ExtendedReader] JSON object count: {len(data)}"
             )
-            logger.debug(
-                f"[ExtendedReader] Top-level keys: {list(data[0].keys())[:10]}",
-                extra={"dev_only": True},
+            logger.info(
+                f"[ExtendedReader] Top-level keys: {list(data[0].keys())[:10]}"
             )
 
             result_dict = data[0]
+
+            logger.info(
+                f"[ExtendedReader] Initial field count: {len(result_dict)}"
+            )
+
             if len(data) > 1:
                 for i, extra in enumerate(data[1:], start=1):
                     for key, value in extra.items():
@@ -275,8 +295,16 @@ class ExifToolWrapper:
 
             return result_dict
 
+        except subprocess.TimeoutExpired:
+            # Timeout is expected for large video files - log as warning, not error
+            filename = os.path.basename(file_path)
+            logger.warning(
+                f"[ExtendedReader] Timeout reading extended metadata for {filename} "
+                f"(exceeded {EXIFTOOL_TIMEOUT_EXTENDED}s). This is normal for large files."
+            )
+            return None
         except Exception as e:
-            logger.error(f"[ExtendedReader] Failed to read extended metadata: {e}", exc_info=True)
+            logger.error(f"[ExtendedReader] Failed to read extended metadata: {e}")
             return None
 
     def write_metadata(self, file_path: str, metadata_changes: dict) -> bool:
@@ -334,8 +362,10 @@ class ExifToolWrapper:
             )
 
             # Execute the command
+            from config import EXIFTOOL_TIMEOUT_WRITE
+
             result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=10, encoding="utf-8", errors="replace"
+                cmd, capture_output=True, text=True, timeout=EXIFTOOL_TIMEOUT_WRITE, encoding="utf-8", errors="replace"
             )
 
             if result.returncode == 0:

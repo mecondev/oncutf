@@ -211,9 +211,11 @@ class EditMetadataFieldCommand(MetadataCommand):
             # Update tree view display
             self.metadata_tree_view._update_tree_item_value(field_path, str(value))
 
-            # Mark as modified
-            if hasattr(self.metadata_tree_view, 'mark_as_modified'):
-                self.metadata_tree_view.mark_as_modified(field_path)
+            # Smart mark: checks if value differs from original
+            if hasattr(self.metadata_tree_view, 'smart_mark_modified'):
+                self.metadata_tree_view.smart_mark_modified(field_path, value)
+            elif hasattr(self.metadata_tree_view, 'mark_as_modified'):
+                self.metadata_tree_view.mark_as_modified(field_path)  # Fallback
 
             # Update file icon status
             self.metadata_tree_view._update_file_icon_status()
