@@ -148,6 +148,8 @@ class MetadataTreeView(QTreeView):
     value_copied = pyqtSignal(str)
     value_edited = pyqtSignal(str, str, str)
     value_reset = pyqtSignal(str)
+    # Signal for queued metadata tree rebuilds (thread-safe via Qt event queue)
+    rebuild_requested = pyqtSignal(dict, str)  # metadata, context
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -210,6 +212,17 @@ class MetadataTreeView(QTreeView):
         # Initialize direct metadata loader
         self._direct_loader = None
         self._initialize_direct_loader()
+
+        # Connect rebuild signal with QueuedConnection for thread-safe model operations
+        # This ensures all rebuilds go through Qt event queue and execute in main thread
+        self.rebuild_requested.connect(
+            self._render_metadata_view_impl,
+            Qt.QueuedConnection
+        )
+        logger.debug(
+            "[MetadataTree] QueuedConnection established for rebuild_requested signal",
+            extra={"dev_only": True},
+        )
 
         # Setup local keyboard shortcuts for undo/redo
         self._setup_shortcuts()
@@ -2127,12 +2140,29 @@ class MetadataTreeView(QTreeView):
 
     def _render_metadata_view(self, metadata: dict[str, Any], context: str = "") -> None:
         """
+        Public interface for metadata tree rebuild.
+        Emits rebuild_requested signal which is processed via QueuedConnection.
+        This ensures all model operations happen in the main thread via Qt event queue.
+        """
+        logger.debug(
+            f"[MetadataTree] Emitting rebuild_requested signal (context={context})",
+            extra={"dev_only": True},
+        )
+        self.rebuild_requested.emit(metadata, context)
+
+    def _render_metadata_view_impl(self, metadata: dict[str, Any], context: str = "") -> None:
+        """
         Actually builds the metadata tree and displays it.
+        Called via QueuedConnection from rebuild_requested signal.
         Assumes metadata is a non-empty dict.
 
         Includes fallback protection in case called with invalid metadata.
         Uses rebuild lock to prevent concurrent model swaps that cause segfaults.
         """
+        logger.debug(
+            f"[MetadataTree] Processing queued rebuild request (context={context})",
+            extra={"dev_only": True},
+        )
 
         # Check if a rebuild is already in progress
         if self._rebuild_in_progress:
@@ -2269,13 +2299,11 @@ class MetadataTreeView(QTreeView):
                 pending_metadata, pending_context = self._pending_rebuild_request
                 self._pending_rebuild_request = None
                 logger.debug(
-                    f"[MetadataTree] Processing deferred rebuild request (context={pending_context})",
+                    f"[MetadataTree] Emitting deferred rebuild signal (context={pending_context})",
                     extra={"dev_only": True},
                 )
-                # Schedule the pending rebuild with a small delay to avoid immediate recursion
-                schedule_ui_update(
-                    lambda: self._render_metadata_view(pending_metadata, pending_context), delay=10
-                )
+                # Emit signal - it will be queued automatically via QueuedConnection
+                self.rebuild_requested.emit(pending_metadata, pending_context)
 
     def _update_information_label(self, display_data: dict[str, Any]) -> None:
         """Update the information label with metadata statistics."""
