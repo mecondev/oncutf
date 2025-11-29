@@ -18,6 +18,7 @@ Features:
 
 import contextlib
 import os
+import traceback
 from datetime import datetime
 
 from PyQt5.QtCore import QObject, pyqtSignal
@@ -818,6 +819,14 @@ class UnifiedMetadataManager(QObject):
                                     bottom_right = self.parent_window.file_model.index(
                                         i, self.parent_window.file_model.columnCount() - 1
                                     )
+                                    logger.debug(
+                                        f"[UnifiedMetadataManager] Emitting dataChanged for file '{file_item.filename}' at row {i}",
+                                        extra={"dev_only": True},
+                                    )
+                                    logger.debug(
+                                        "[UnifiedMetadataManager] dataChanged stack:\n" + "".join(traceback.format_stack(limit=8)),
+                                        extra={"dev_only": True},
+                                    )
                                     self.parent_window.file_model.dataChanged.emit(
                                         top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]
                                     )
@@ -927,14 +936,22 @@ class UnifiedMetadataManager(QObject):
                         try:
                             for j, file in enumerate(self.parent_window.file_model.files):
                                 if paths_equal(file.full_path, item.full_path):
-                                    top_left = self.parent_window.file_model.index(j, 0)
-                                    bottom_right = self.parent_window.file_model.index(
-                                        j, self.parent_window.file_model.columnCount() - 1
-                                    )
-                                    self.parent_window.file_model.dataChanged.emit(
-                                        top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]
-                                    )
-                                    break
+                                            top_left = self.parent_window.file_model.index(j, 0)
+                                            bottom_right = self.parent_window.file_model.index(
+                                                j, self.parent_window.file_model.columnCount() - 1
+                                            )
+                                            logger.debug(
+                                                f"[UnifiedMetadataManager] Emitting progressive dataChanged for file '{item.filename}' at row {j}",
+                                                extra={"dev_only": True},
+                                            )
+                                            logger.debug(
+                                                "[UnifiedMetadataManager] progressive dataChanged stack:\n" + "".join(traceback.format_stack(limit=8)),
+                                                extra={"dev_only": True},
+                                            )
+                                            self.parent_window.file_model.dataChanged.emit(
+                                                top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]
+                                            )
+                                            break
                         except Exception as e:
                             logger.warning(
                                 f"[UnifiedMetadataManager] Failed to emit dataChanged for {item.filename}: {e}"

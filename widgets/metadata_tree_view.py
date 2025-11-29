@@ -25,6 +25,7 @@ Date: 2025-05-31
 
 import contextlib
 import os
+import traceback
 from typing import Any
 
 from config import METADATA_TREE_COLUMN_WIDTHS
@@ -162,6 +163,10 @@ class MetadataTreeView(QTreeView):
         # Modified metadata items per file
         self.modified_items_per_file: dict[str, set[str]] = {}
         self.modified_items: set[str] = set()
+
+        # Rebuild lock to prevent concurrent model swaps (race condition protection)
+        self._rebuild_in_progress = False
+        self._pending_rebuild_request: tuple | None = None  # (metadata, context)
 
         # Context menu setup
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -1448,22 +1453,30 @@ class MetadataTreeView(QTreeView):
         Update the display value of a tree item to reflect changes.
         This forces a refresh of the metadata display with modification context.
         """
-        # Get current metadata and force refresh with modification context
-        selected_files = self._get_current_selection()
-        cache_helper = self._get_cache_helper()
+        # Debounce/defers the actual tree rebuild to the UI scheduler to avoid
+        # race conditions with other UI updates (e.g. file table dataChanged emits
+        # and proxy model source swaps). This makes updates sequential and safe.
+        def _do_update():
+            # Get current metadata and force refresh with modification context
+            selected_files = self._get_current_selection()
+            cache_helper = self._get_cache_helper()
 
-        if selected_files and cache_helper and len(selected_files) == 1:
-            file_item = selected_files[0]
-            metadata = cache_helper.get_metadata_for_file(file_item)
-            if isinstance(metadata, dict) and metadata:
-                display_metadata = dict(metadata)
-                display_metadata["FileName"] = file_item.filename
-                # Use modification context to force reload
-                self.display_metadata(display_metadata, context="modification")
-                return
+            if selected_files and cache_helper and len(selected_files) == 1:
+                file_item = selected_files[0]
+                metadata = cache_helper.get_metadata_for_file(file_item)
+                if isinstance(metadata, dict) and metadata:
+                    display_metadata = dict(metadata)
+                    display_metadata["FileName"] = file_item.filename
+                    # Use modification context to force reload
+                    self.display_metadata(display_metadata, context="modification")
+                    return
 
-        # Fallback to normal update if we can't get metadata
-        self.update_from_parent_selection()
+            # Fallback to normal update if we can't get metadata
+            self.update_from_parent_selection()
+
+        # Schedule the update on the UI scheduler with minimal delay so that
+        # other pending UI operations complete first.
+        schedule_ui_update(_do_update, delay=0)
 
     def mark_as_modified(self, key_path: str) -> None:
         """
@@ -1806,7 +1819,19 @@ class MetadataTreeView(QTreeView):
         # Use proxy model for consistency
         parent_window = self._get_parent_with_file_table()
         if parent_window and hasattr(parent_window, "metadata_proxy_model"):
+            logger.debug(
+                "[MetadataTree] Setting empty placeholder source model on metadata_proxy_model",
+                extra={"dev_only": True},
+            )
+            logger.debug(
+                "[MetadataTree] setSourceModel (placeholder) stack:\n" + "".join(traceback.format_stack(limit=8)),
+                extra={"dev_only": True},
+            )
             parent_window.metadata_proxy_model.setSourceModel(model)
+            logger.debug(
+                "[MetadataTree] Calling setModel(self, metadata_proxy_model) for placeholder",
+                extra={"dev_only": True},
+            )
             self.setModel(parent_window.metadata_proxy_model)
         else:
             self.setModel(model)
@@ -1845,7 +1870,7 @@ class MetadataTreeView(QTreeView):
 
         try:
             # Render the metadata view
-            self._render_metadata_view(metadata)
+            self._render_metadata_view(metadata, context=context)
 
             # Update information label
             self._update_information_label(metadata)
@@ -2100,13 +2125,24 @@ class MetadataTreeView(QTreeView):
 
         return []
 
-    def _render_metadata_view(self, metadata: dict[str, Any]) -> None:
+    def _render_metadata_view(self, metadata: dict[str, Any], context: str = "") -> None:
         """
         Actually builds the metadata tree and displays it.
         Assumes metadata is a non-empty dict.
 
         Includes fallback protection in case called with invalid metadata.
+        Uses rebuild lock to prevent concurrent model swaps that cause segfaults.
         """
+
+        # Check if a rebuild is already in progress
+        if self._rebuild_in_progress:
+            logger.debug(
+                f"[MetadataTree] Rebuild already in progress, deferring request (context={context})",
+                extra={"dev_only": True},
+            )
+            # Store the pending request to process after current rebuild finishes
+            self._pending_rebuild_request = (metadata, context)
+            return
 
         if not isinstance(metadata, dict):
             logger.error(
@@ -2165,6 +2201,13 @@ class MetadataTreeView(QTreeView):
                 staged_changes = staging_manager.get_staged_changes(self._current_file_path)
                 modified_keys = set(staged_changes.keys())
 
+            # Set rebuild lock BEFORE model operations
+            self._rebuild_in_progress = True
+            logger.debug(
+                f"[MetadataTree] Rebuild lock acquired (context={context})",
+                extra={"dev_only": True},
+            )
+
             tree_model = build_metadata_tree_model(
                 display_data, modified_keys, extended_keys, "all"
             )
@@ -2172,9 +2215,21 @@ class MetadataTreeView(QTreeView):
             # Use proxy model for filtering instead of setting model directly
             parent_window = self._get_parent_with_file_table()
             if parent_window and hasattr(parent_window, "metadata_proxy_model"):
-                # Set the source model to the proxy model
+                # Log and set the source model to the proxy model (debug help for race conditions)
+                logger.debug(
+                    f"[MetadataTree] Setting source model on metadata_proxy_model for file '{filename}'",
+                    extra={"dev_only": True},
+                )
+                logger.debug(
+                    "[MetadataTree] setSourceModel stack:\n" + "".join(traceback.format_stack(limit=8)),
+                    extra={"dev_only": True},
+                )
                 parent_window.metadata_proxy_model.setSourceModel(tree_model)
                 # ALWAYS call setModel to trigger mode changes (placeholder vs normal)
+                logger.debug(
+                    "[MetadataTree] Calling setModel(self, metadata_proxy_model)",
+                    extra={"dev_only": True},
+                )
                 self.setModel(parent_window.metadata_proxy_model)  # Use self.setModel() not super()
             else:
                 # Fallback: set model directly if proxy model is not available
@@ -2201,6 +2256,26 @@ class MetadataTreeView(QTreeView):
         except Exception as e:
             logger.exception(f"[render_metadata_view] Unexpected error while rendering: {e}")
             self.clear_view()
+        finally:
+            # ALWAYS release rebuild lock, even on error
+            self._rebuild_in_progress = False
+            logger.debug(
+                f"[MetadataTree] Rebuild lock released (context={context})",
+                extra={"dev_only": True},
+            )
+
+            # Process any pending rebuild request
+            if self._pending_rebuild_request:
+                pending_metadata, pending_context = self._pending_rebuild_request
+                self._pending_rebuild_request = None
+                logger.debug(
+                    f"[MetadataTree] Processing deferred rebuild request (context={pending_context})",
+                    extra={"dev_only": True},
+                )
+                # Schedule the pending rebuild with a small delay to avoid immediate recursion
+                schedule_ui_update(
+                    lambda: self._render_metadata_view(pending_metadata, pending_context), delay=10
+                )
 
     def _update_information_label(self, display_data: dict[str, Any]) -> None:
         """Update the information label with metadata statistics."""

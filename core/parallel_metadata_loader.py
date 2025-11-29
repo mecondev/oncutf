@@ -22,6 +22,7 @@ from models.file_item import FileItem
 from utils.exiftool_wrapper import ExifToolWrapper
 from utils.logger_factory import get_cached_logger
 from utils.path_utils import paths_equal
+import traceback
 
 logger = get_cached_logger(__name__)
 
@@ -300,6 +301,14 @@ def update_file_item_metadata(
                     top_left = parent_window.file_model.index(i, 0)
                     bottom_right = parent_window.file_model.index(
                         i, parent_window.file_model.columnCount() - 1
+                    )
+                    logger.debug(
+                        f"[ParallelMetadataLoader] Emitting dataChanged for file '{item.filename}' at row {i}",
+                        extra={"dev_only": True},
+                    )
+                    logger.debug(
+                        "[ParallelMetadataLoader] dataChanged stack:\n" + "".join(traceback.format_stack(limit=8)),
+                        extra={"dev_only": True},
                     )
                     parent_window.file_model.dataChanged.emit(
                         top_left, bottom_right, [Qt.DecorationRole, Qt.ToolTipRole]
