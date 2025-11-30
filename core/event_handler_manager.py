@@ -444,14 +444,6 @@ class EventHandlerManager:
         elif action == action_deselect_all:
             self.parent_window.clear_all_selection()
 
-        elif action == action_save_metadata:
-            # Save modified metadata for selected files
-            try:
-                metadata_mgr = self.parent_window.context.get_manager('metadata')
-                metadata_mgr.save_metadata_for_selected()
-            except KeyError:
-                logger.warning("[EventHandler] No metadata manager available for save")
-
         elif action == action_save_all_modified:
             # Save ALL modified metadata regardless of selection
             try:
