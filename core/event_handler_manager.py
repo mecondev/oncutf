@@ -318,7 +318,7 @@ class EventHandlerManager:
         else:
             action_save_all_modified.setToolTip("No modified metadata to save")
 
-        action_save_all_modified.triggered.connect(self._handle_save_all_metadata)
+        action_save_all_modified.triggered.connect(self.parent_window.shortcut_save_all_metadata)
 
         menu.addSeparator()
 
