@@ -15,6 +15,7 @@ Features:
 - Error handling per file (failures don't stop the batch)
 """
 
+import traceback
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -22,7 +23,6 @@ from models.file_item import FileItem
 from utils.exiftool_wrapper import ExifToolWrapper
 from utils.logger_factory import get_cached_logger
 from utils.path_utils import paths_equal
-import traceback
 
 logger = get_cached_logger(__name__)
 

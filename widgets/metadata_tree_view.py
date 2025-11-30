@@ -33,6 +33,7 @@ from core.pyqt_imports import (
     QAbstractItemView,
     QAction,
     QApplication,
+    QCursor,
     QDragEnterEvent,
     QDragMoveEvent,
     QDropEvent,
@@ -254,6 +255,26 @@ class MetadataTreeView(QTreeView):
         self.redo_shortcut.activated.connect(self._redo_metadata_operation)
 
         logger.debug("[MetadataTree] Local shortcuts initialized (Ctrl+Z, Ctrl+R)", extra={"dev_only": True})
+
+    def wheelEvent(self, event) -> None:
+        """Update hover state after scroll to track cursor position smoothly."""
+        super().wheelEvent(event)
+
+        # Update hover after scroll to reflect current cursor position
+        delegate = self.itemDelegate()
+        if delegate and hasattr(delegate, "hovered_index"):
+            pos = self.viewport().mapFromGlobal(QCursor.pos())
+            new_index = self.indexAt(pos)
+            old_index = delegate.hovered_index
+
+            # Only update if hover changed
+            if new_index != old_index:
+                delegate.hovered_index = new_index if new_index.isValid() else None
+                # Repaint both old and new hover areas
+                if old_index and old_index.isValid():
+                    self.viewport().update(self.visualRect(old_index))
+                if new_index.isValid():
+                    self.viewport().update(self.visualRect(new_index))
 
     def _initialize_cache_helper(self) -> None:
         """Initialize the metadata cache helper."""

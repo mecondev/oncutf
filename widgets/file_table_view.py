@@ -2043,24 +2043,25 @@ class FileTableView(QTableView):
         super().enterEvent(event)
 
     def wheelEvent(self, event) -> None:
+        """Update hover state after scroll to track cursor position smoothly."""
         super().wheelEvent(event)
-        # Update hover after scroll
+
+        # Update hover after scroll completes to reflect current cursor position
         pos = self.viewport().mapFromGlobal(QCursor.pos())
         index = self.indexAt(pos)
         hovered_row = index.row() if index.isValid() else -1
 
         if hasattr(self, "hover_delegate"):
             old_row = self.hover_delegate.hovered_row
-            self.hover_delegate.update_hover_row(hovered_row)
             if old_row != hovered_row:
+                self.hover_delegate.update_hover_row(hovered_row)
+                # Update both old and new rows
                 for r in (old_row, hovered_row):
                     if r >= 0:
                         left = self.model().index(r, 0)  # type: ignore
                         right = self.model().index(r, self.model().columnCount() - 1)  # type: ignore
                         row_rect = self.visualRect(left).united(self.visualRect(right))
-                        self.viewport().update(row_rect)  # type: ignore
-
-        # Note: Vertical scrollbar handling is now integrated into _calculate_filename_width
+                        self.viewport().update(row_rect)
 
     def scrollTo(self, index, hint=None) -> None:
         """

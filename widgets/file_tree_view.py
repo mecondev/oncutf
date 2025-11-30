@@ -860,6 +860,27 @@ class FileTreeView(QTreeView):
         """Override to ensure optimal scrolling behavior"""
         super().scrollTo(index, hint or QAbstractItemView.EnsureVisible)
 
+    def wheelEvent(self, event) -> None:
+        """Update hover state after scroll to track cursor position smoothly."""
+        super().wheelEvent(event)
+
+        # Update hover after scroll to reflect current cursor position
+        if hasattr(self, "_delegate") and self._delegate:
+            delegate = self._delegate
+            if hasattr(delegate, "hovered_index"):
+                pos = self.viewport().mapFromGlobal(QCursor.pos())
+                new_index = self.indexAt(pos)
+                old_index = delegate.hovered_index
+
+                # Only update if hover changed
+                if new_index != old_index:
+                    delegate.hovered_index = new_index if new_index.isValid() else None
+                    # Repaint both old and new hover areas
+                    if old_index and old_index.isValid():
+                        self.viewport().update(self.visualRect(old_index))
+                    if new_index.isValid():
+                        self.viewport().update(self.visualRect(new_index))
+
     def event(self, event):
         """Override event handling to block hover events during drag"""
         # Block hover events during drag or drag preparation (with safe attribute check)
