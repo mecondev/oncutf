@@ -78,6 +78,10 @@ class MainWindow(QMainWindow):
         """Save selected metadata via Application Service."""
         self.app_service.save_selected_metadata()
 
+    def shortcut_save_all_metadata(self) -> None:
+        """Save all modified metadata via Application Service."""
+        self.app_service.save_all_metadata()
+
     def shortcut_calculate_hash_selected(self) -> None:
         """Calculate hash for selected files via Application Service."""
         self.app_service.calculate_hash_selected()

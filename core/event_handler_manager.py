@@ -300,14 +300,10 @@ class EventHandlerManager:
         menu.addSeparator()
 
         # === SAVE OPERATIONS ===
-        action_save_metadata = create_action_with_shortcut(
-            get_menu_icon("save"), "Save Metadata", "Ctrl+S"
-        )
         action_save_all_modified = create_action_with_shortcut(
-            get_menu_icon("save"), "Save ALL Modified Metadata", ""
+            get_menu_icon("save"), "Save Modified Metadata", "Ctrl+S"
         )
 
-        menu.addAction(action_save_metadata)
         menu.addAction(action_save_all_modified)
 
         # Simple check for modifications
@@ -315,22 +311,14 @@ class EventHandlerManager:
         if hasattr(self.parent_window, "metadata_tree_view"):
             has_modifications = bool(self.parent_window.metadata_tree_view.modified_items)
 
-        action_save_metadata.setEnabled(has_selection and has_modifications)
         action_save_all_modified.setEnabled(has_modifications)
 
-        # Smart tooltips for save actions
-        if has_selection and has_modifications:
-            sel_count = len(selected_files)
-            action_save_metadata.setToolTip(f"Save modified metadata for {sel_count} selected file(s)")
-        elif has_selection:
-            action_save_metadata.setToolTip("No modified metadata in selected files")
-        else:
-            action_save_metadata.setToolTip("Select files first (Ctrl+A to select all)")
-
         if has_modifications:
-            action_save_all_modified.setToolTip("Save all modified metadata regardless of selection")
+            action_save_all_modified.setToolTip("Save all modified metadata (Ctrl+S)")
         else:
             action_save_all_modified.setToolTip("No modified metadata to save")
+
+        action_save_all_modified.triggered.connect(self._handle_save_all_metadata)
 
         menu.addSeparator()
 

@@ -698,7 +698,7 @@ class UIManager:
             ("Ctrl+M", self.parent_window.shortcut_load_metadata),
             ("Ctrl+E", self.parent_window.shortcut_load_extended_metadata),
             ("Ctrl+H", self.parent_window.shortcut_calculate_hash_selected),
-            ("Ctrl+S", self.parent_window.shortcut_save_selected_metadata),
+            ("Ctrl+S", self.parent_window.shortcut_save_all_metadata),
         ]
         for key, handler in file_table_shortcuts:
             shortcut = QShortcut(QKeySequence(key), self.parent_window.file_table_view)
