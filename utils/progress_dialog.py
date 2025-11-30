@@ -137,15 +137,15 @@ class ProgressDialog(QDialog):
         setup_dialog_size_and_center(self, self.waiting_widget)
 
     def _setup_wait_cursor(self) -> None:
-        """Setup wait cursor for the parent window only, not the dialog."""
+        """Setup wait cursor for both parent window and dialog."""
         # Set wait cursor on parent if available (main window)
         if self.parent():
             self.parent().setCursor(Qt.WaitCursor)  # type: ignore
 
-        # Set normal cursor on the dialog itself to avoid wait cursor on dialog
-        self.setCursor(Qt.ArrowCursor)  # type: ignore
+        # Set wait cursor on the dialog as well
+        self.setCursor(Qt.WaitCursor)  # type: ignore
 
-        logger.debug("[ProgressDialog] Wait cursor set on parent, normal cursor on dialog")
+        logger.debug("[ProgressDialog] Wait cursor set on parent and dialog")
 
     def _restore_cursors(self) -> None:
         """Restore normal cursors on parent window and dialog."""

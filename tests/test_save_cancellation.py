@@ -78,17 +78,17 @@ class TestSaveCancellation:
         manager.parent_window = MagicMock()
         manager.parent_window.status_bar = MagicMock()
 
-        # Mock QMessageBox from pyqt_imports
-        with patch("core.pyqt_imports.QMessageBox") as mock_msgbox:
+        # Mock CustomMessageDialog from widgets
+        with patch("widgets.custom_message_dialog.CustomMessageDialog") as mock_dialog_class:
             # Test cancellation with some successful saves
             files_to_save = [MagicMock() for _ in range(10)]
             manager._show_save_results(
                 success_count=5, failed_files=[], files_to_save=files_to_save, was_cancelled=True
             )
 
-            # Verify info dialog was shown (not warning)
-            mock_msgbox.information.assert_called_once()
-            args = mock_msgbox.information.call_args
+            # Verify info dialog was shown
+            mock_dialog_class.information.assert_called_once()
+            args = mock_dialog_class.information.call_args
             assert "cancelled" in args[0][2].lower()
             assert "5" in args[0][2]  # Should show success count
 
@@ -102,16 +102,21 @@ class TestSaveCancellation:
         manager.parent_window = MagicMock()
         manager.parent_window.status_bar = MagicMock()
 
-        with patch("core.pyqt_imports.QMessageBox") as mock_msgbox:
+        # Mock both CustomMessageDialog and QMessageBox
+        with (
+            patch("widgets.custom_message_dialog.CustomMessageDialog") as mock_custom_dialog,
+            patch("core.pyqt_imports.QMessageBox") as mock_msgbox,
+        ):
             files_to_save = [MagicMock() for _ in range(10)]
 
-            # Test cancelled operation
+            # Test cancelled operation (uses CustomMessageDialog)
             manager._show_save_results(
                 success_count=5, failed_files=[], files_to_save=files_to_save, was_cancelled=True
             )
-            cancelled_call = mock_msgbox.information.call_args
+            cancelled_call = mock_custom_dialog.information.call_args
 
-            # Test failed operation (not cancelled)
+            # Test failed operation (uses QMessageBox)
+            mock_custom_dialog.reset_mock()
             mock_msgbox.reset_mock()
             manager._show_save_results(
                 success_count=5,
@@ -209,15 +214,18 @@ class TestSaveCancellation:
         manager._exiftool_wrapper.write_metadata = mock_write_metadata
 
         # Mock progress dialog and other dependencies
-        with patch("core.unified_metadata_manager.ProgressDialog") as mock_dialog_class:
+        with (
+            patch("core.unified_metadata_manager.ProgressDialog") as mock_dialog_class,
+            patch("widgets.custom_message_dialog.CustomMessageDialog"),
+            patch("core.pyqt_imports.QMessageBox"),
+        ):
             mock_dialog = MagicMock()
             mock_dialog_class.return_value = mock_dialog
 
-            with patch("core.pyqt_imports.QMessageBox"):
-                # Call the save method
-                manager._save_metadata_files(
-                    mock_files, mock_staging.get_all_staged_changes(), is_exit_save=False
-                )
+            # Call the save method
+            manager._save_metadata_files(
+                mock_files, mock_staging.get_all_staged_changes(), is_exit_save=False
+            )
 
         # Verify that only 2 files were processed before cancellation
         assert len(processed_files) == 2, f"Expected 2 files processed, got {len(processed_files)}"

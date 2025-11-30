@@ -1558,6 +1558,12 @@ class UnifiedMetadataManager(QObject):
                         if success:
                             success_count += 1
                             self._update_file_after_save(file_item, modifications)
+
+                            # Immediately update file table to reflect saved status
+                            if hasattr(self.parent_window, "table_manager"):
+                                self.parent_window.table_manager.update_single_row(file_item)
+                                QApplication.processEvents()  # Process UI updates immediately
+
                             logger.debug(
                                 f"[UnifiedMetadataManager] Successfully saved metadata for {file_item.filename}",
                                 extra={"dev_only": True},
@@ -1825,7 +1831,7 @@ class UnifiedMetadataManager(QObject):
 
             # Show info dialog about cancellation
             if self.parent_window:
-                from core.pyqt_imports import QMessageBox
+                from widgets.custom_message_dialog import CustomMessageDialog
 
                 msg_parts = ["Save operation cancelled by user."]
 
@@ -1838,7 +1844,7 @@ class UnifiedMetadataManager(QObject):
                 if skipped_count > 0:
                     msg_parts.append(f"Skipped: {skipped_count} files")
 
-                QMessageBox.information(
+                CustomMessageDialog.information(
                     self.parent_window,
                     "Save Cancelled",
                     "\n".join(msg_parts)
