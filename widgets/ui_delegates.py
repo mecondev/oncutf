@@ -290,6 +290,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
         self.theme = theme
         self.hovered_index: QModelIndex | None = None
         self._tree_view: QTreeView | None = None
+        self._guard_warning_logged = False
         logger.debug("[TreeViewItemDelegate] Initialized")
 
     def install_event_filter(self, tree_view: QTreeView) -> None:
@@ -320,99 +321,134 @@ class TreeViewItemDelegate(QStyledItemDelegate):
     def update_hover_row(self, row: int) -> None:
         """Deprecated method, kept for compatibility."""
 
+    def _log_guard_warning(self, message: str) -> None:
+        """Log guard-triggered warnings only once per delegate instance."""
+        if not self._guard_warning_logged:
+            logger.debug(f"[TreeViewItemDelegate] Paint guard triggered: {message}", extra={"dev_only": True})
+            self._guard_warning_logged = True
+
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex) -> None:
         """Custom paint method with full-row background and custom text colors."""
         tree_view = self.parent()
 
+        if not isinstance(tree_view, QTreeView):
+            super().paint(painter, option, index)
+            return
+
+        if not index.isValid():
+            self._log_guard_warning("Invalid QModelIndex")
+            return
+
+        if tree_view.model() is None:
+            self._log_guard_warning("Tree view has no model during paint")
+            return
+
+        # Verify that index belongs to the current model (catches stale indices after model swap)
+        if index.model() != tree_view.model():
+            self._log_guard_warning("Index belongs to old/detached model")
+            return
+
         # Determine basic row/selection/hover state
         # (use `index.row()` where needed; stray standalone `row` removed)
-        hovered = self.hovered_index
-        is_hovered = bool(
-            hovered
-            and hovered.isValid()
-            and index.row() == hovered.row()
-            and index.parent() == hovered.parent()
-        )
+        try:
+            # Snapshot hover state and clean up stale hover (defensive copy for thread-safety)
+            hovered = self.hovered_index
+            if hovered and not hovered.isValid():
+                hovered = None
+                self.hovered_index = None  # Clean up stale hover reference
 
-        is_selected = False
-        if isinstance(tree_view, QTreeView):
+            is_hovered = bool(
+                hovered
+                and hovered.isValid()
+                and index.row() == hovered.row()
+                and index.parent() == hovered.parent()
+            )
+
+            is_selected = False
             sel = tree_view.selectionModel()
             if sel is not None:
                 is_selected = sel.isSelected(index.sibling(index.row(), 0))
 
-        # Determine background color for hover/selection (Qt handles alt rows automatically)
-        bg_color = None
-        if is_selected and is_hovered:
-            bg_color = get_qcolor("highlight_light_blue")
-        elif is_selected:
-            bg_color = get_qcolor("table_selection_background")
-        elif is_hovered:
-            bg_color = get_qcolor("table_hover_background")
-
-        # Paint full-row background first for consistent highlight
-        # This includes both the branch area and the item area
-        if isinstance(tree_view, QTreeView) and index.model() is not None:
-            try:
-                model = index.model()
-                bg_rect = QRect(option.rect)
-
-                # Extend background to viewport right edge for the last column
-                if model and index.column() == model.columnCount(index.parent()) - 1:
-                    if tree_view.viewport():
-                        bg_rect.setRight(tree_view.viewport().rect().right())
-
-                if bg_color:
-                    painter.fillRect(bg_rect, bg_color)
-            except Exception:
-                pass
-
-        custom_foreground = index.data(Qt.ItemDataRole.ForegroundRole)
-        item_flags = index.flags()
-        is_selectable = bool(item_flags & Qt.ItemFlag.ItemIsSelectable)
-
-        # Text color policy:
-        # - Items with custom ForegroundRole (e.g. modified metadata) keep this color in all states.
-        # - Normal items are light text in normal/hover/selected, and dark text only in selected+hover.
-        if custom_foreground is not None:
-            if isinstance(custom_foreground, QBrush):
-                text_color = custom_foreground.color()
-            elif isinstance(custom_foreground, QColor):
-                text_color = custom_foreground
-            else:
-                text_color = get_qcolor("combo_text")
-        else:
+            # Determine background color for hover/selection (Qt handles alt rows automatically)
+            bg_color = None
             if is_selected and is_hovered:
-                text_color = get_qcolor("table_selection_text")
-            elif not is_selectable:
-                text_color = get_qcolor("text_secondary")
+                bg_color = get_qcolor("highlight_light_blue")
+            elif is_selected:
+                bg_color = get_qcolor("table_selection_background")
+            elif is_hovered:
+                bg_color = get_qcolor("table_hover_background")
+
+            # Paint full-row background first for consistent highlight
+            # This includes both the branch area and the item area
+            model = index.model()
+            if model is None:
+                self._log_guard_warning("Index has no model")
+                return
+
+            bg_rect = QRect(option.rect)
+
+            # Extend background to viewport right edge for the last column
+            if index.column() == model.columnCount(index.parent()) - 1:
+                viewport = tree_view.viewport()
+                if viewport:
+                    bg_rect.setRight(viewport.rect().right())
+
+            if bg_color:
+                painter.fillRect(bg_rect, bg_color)
+
+            custom_foreground = index.data(Qt.ItemDataRole.ForegroundRole)
+            item_flags = index.flags()
+            is_selectable = bool(item_flags & Qt.ItemFlag.ItemIsSelectable)
+
+            # Text color policy:
+            # - Items with custom ForegroundRole (e.g. modified metadata) keep this color in all states.
+            # - Normal items are light text in normal/hover/selected, and dark text only in selected+hover.
+            if custom_foreground is not None:
+                if isinstance(custom_foreground, QBrush):
+                    text_color = custom_foreground.color()
+                elif isinstance(custom_foreground, QColor):
+                    text_color = custom_foreground
+                else:
+                    text_color = get_qcolor("combo_text")
             else:
-                # Normal, hover, or selected-only: use light text
-                text_color = get_qcolor("combo_text")
+                if is_selected and is_hovered:
+                    text_color = get_qcolor("table_selection_text")
+                elif not is_selectable:
+                    text_color = get_qcolor("text_secondary")
+                else:
+                    # Normal, hover, or selected-only: use light text
+                    text_color = get_qcolor("combo_text")
 
-        opt = QStyleOptionViewItem(option)
-        self.initStyleOption(opt, index)
+            opt = QStyleOptionViewItem(option)
+            self.initStyleOption(opt, index)
 
-        # Remove default hover/selection paints (we already drew backgrounds)
-        opt.state &= ~QStyle.StateFlag.State_Selected
-        opt.state &= ~QStyle.StateFlag.State_MouseOver
+            # Remove default hover/selection paints (we already drew backgrounds)
+            opt.state &= ~QStyle.StateFlag.State_Selected
+            opt.state &= ~QStyle.StateFlag.State_MouseOver
 
-        # Force the delegate to use our background color as the base background
-        # This ensures that if the delegate draws a background, it matches ours
-        # and doesn't overwrite our custom painting with the default background
-        if bg_color:
-            opt.palette.setColor(QPalette.ColorRole.Base, bg_color)
-            opt.palette.setColor(QPalette.ColorRole.Window, bg_color)
-            opt.palette.setColor(QPalette.ColorRole.Highlight, bg_color)
+            # Force the delegate to use our background color as the base background
+            # This ensures that if the delegate draws a background, it matches ours
+            # and doesn't overwrite our custom painting with the default background
+            if bg_color:
+                opt.palette.setColor(QPalette.ColorRole.Base, bg_color)
+                opt.palette.setColor(QPalette.ColorRole.Window, bg_color)
+                opt.palette.setColor(QPalette.ColorRole.Highlight, bg_color)
 
-        # Ensure palette uses our text color in every state
-        for group in (QPalette.ColorGroup.Active, QPalette.ColorGroup.Inactive, QPalette.ColorGroup.Disabled):
-            opt.palette.setColor(group, QPalette.ColorRole.Text, text_color)
-            opt.palette.setColor(group, QPalette.ColorRole.WindowText, text_color)
-            opt.palette.setColor(group, QPalette.ColorRole.ButtonText, text_color)
-            opt.palette.setColor(group, QPalette.ColorRole.HighlightedText, text_color)
+            # Ensure palette uses our text color in every state
+            for group in (
+                QPalette.ColorGroup.Active,
+                QPalette.ColorGroup.Inactive,
+                QPalette.ColorGroup.Disabled,
+            ):
+                opt.palette.setColor(group, QPalette.ColorRole.Text, text_color)
+                opt.palette.setColor(group, QPalette.ColorRole.WindowText, text_color)
+                opt.palette.setColor(group, QPalette.ColorRole.ButtonText, text_color)
+                opt.palette.setColor(group, QPalette.ColorRole.HighlightedText, text_color)
 
-        # Let Qt handle icon/text/branch painting with the modified palette
-        QStyledItemDelegate.paint(self, painter, opt, index)
+            # Let Qt handle icon/text/branch painting with the modified palette
+            QStyledItemDelegate.paint(self, painter, opt, index)
+        except (RuntimeError, ReferenceError) as exc:
+            self._log_guard_warning(f"Runtime error during paint: {exc}")
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex):
         """Return size hint for items - make them same height as context menu items."""

@@ -2276,6 +2276,10 @@ class MetadataTreeView(QTreeView):
                     f"[MetadataTree] Disconnecting view before model swap for file '{filename}'",
                     extra={"dev_only": True},
                 )
+                # Clear delegate hover state when model changes to prevent stale index references
+                delegate = self.itemDelegate()
+                if delegate and hasattr(delegate, 'hovered_index'):
+                    delegate.hovered_index = None
                 self.setModel(None)  # Temporarily disconnect view from proxy model
                 self._current_tree_model = None
 
@@ -2303,6 +2307,10 @@ class MetadataTreeView(QTreeView):
                     f"[MetadataTree] Proxy disabled/unavailable - setting model directly for file '{filename}'",
                     extra={"dev_only": True},
                 )
+                # Clear delegate hover state when model changes to prevent stale index references
+                delegate = self.itemDelegate()
+                if delegate and hasattr(delegate, 'hovered_index'):
+                    delegate.hovered_index = None
                 self.setModel(None)
                 self.setModel(tree_model)
                 self._current_tree_model = tree_model

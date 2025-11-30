@@ -320,7 +320,10 @@ METADATA_TREE_COLUMN_WIDTHS = {
 }
 
 # Toggle metadata proxy usage (set False to bypass proxy for debugging)
-METADATA_TREE_USE_PROXY = False
+METADATA_TREE_USE_PROXY = True
+
+# Toggle custom delegate for metadata tree (set False to use default delegate)
+METADATA_TREE_USE_CUSTOM_DELEGATE = True
 
 # Metadata Tree Column Configuration (dictionary-based, similar to FILE_TABLE_COLUMN_CONFIG)
 METADATA_TREE_COLUMN_CONFIG = {
