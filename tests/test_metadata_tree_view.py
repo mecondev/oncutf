@@ -257,3 +257,216 @@ class TestMetadataTreeViewLogic:
         assert generate_path("", "EXIF") == "EXIF"
         assert generate_path("EXIF", "Camera Make") == "EXIF/Camera Make"
         assert generate_path("EXIF/GPS", "Latitude") == "EXIF/GPS/Latitude"
+
+
+@pytest.mark.gui
+@pytest.mark.skipif(not PYQT5_AVAILABLE, reason="PyQt5 not available")
+@pytest.mark.skipif("CI" in os.environ, reason="GUI tests don't work on CI")
+class TestMetadataTreeViewRotation:
+    """Test suite for MetadataTreeView rotation functionality."""
+
+    @pytest.fixture(scope="session")
+    def qapp(self):
+        """Create QApplication instance for widget testing."""
+        if not QApplication.instance():
+            app = QApplication([])
+            yield app
+            app.quit()
+        else:
+            yield QApplication.instance()
+
+    @pytest.fixture
+    def mock_file_item(self):
+        """Create a mock FileItem for testing."""
+        from unittest.mock import MagicMock
+
+        file_item = MagicMock()
+        file_item.filename = "test_image.jpg"
+        file_item.full_path = "/path/to/test_image.jpg"
+        file_item.metadata_status = "clean"
+        return file_item
+
+    @pytest.fixture
+    def tree_view(self, qapp):
+        """Create a MetadataTreeView for testing."""
+        tree = MetadataTreeView()
+        yield tree
+        tree.setModel(None)
+        tree.deleteLater()
+        if qapp:
+            from PyQt5.QtCore import QCoreApplication
+
+            QCoreApplication.processEvents()
+
+    def test_set_rotation_to_zero_with_existing_value(self, tree_view, mock_file_item):
+        """Test setting rotation to 0 when a rotation value exists."""
+        from unittest.mock import MagicMock
+
+        # Setup mock metadata cache with existing rotation value
+        mock_metadata = {"EXIF:Orientation": "3"}  # 180 degrees rotation
+
+        # Mock the necessary methods
+        tree_view._get_metadata_cache = MagicMock(return_value=mock_metadata)
+        tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
+
+        # Mock direct loader
+        mock_direct_loader = MagicMock()
+        tree_view._direct_loader = mock_direct_loader
+
+        # Mock update methods
+        tree_view._update_tree_item_value = MagicMock()
+        tree_view.mark_as_modified = MagicMock()
+
+        # Mock signal
+        tree_view.value_edited = MagicMock()
+        tree_view.value_edited.emit = MagicMock()
+
+        # Call the method
+        tree_view.set_rotation_to_zero("EXIF:Orientation")
+
+        # Verify direct loader was called
+        mock_direct_loader.set_metadata_value.assert_called_once_with(
+            mock_file_item.full_path, "EXIF:Orientation", "0"
+        )
+
+        # Verify tree was updated
+        tree_view._update_tree_item_value.assert_called_once_with("EXIF:Orientation", "0")
+
+        # Verify modified state was set
+        tree_view.mark_as_modified.assert_called_once_with("EXIF:Orientation")
+
+        # Verify signal was emitted with old value
+        tree_view.value_edited.emit.assert_called_once_with("EXIF:Orientation", "0", "3")
+
+    def test_set_rotation_to_zero_without_existing_value(self, tree_view, mock_file_item):
+        """Test setting rotation to 0 when no rotation value exists in metadata."""
+        from unittest.mock import MagicMock
+
+        # Setup mock metadata cache without rotation value
+        mock_metadata = {"EXIF:CameraMake": "Canon"}  # No orientation key
+
+        # Mock the necessary methods
+        tree_view._get_metadata_cache = MagicMock(return_value=mock_metadata)
+        tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
+
+        # Mock direct loader
+        mock_direct_loader = MagicMock()
+        tree_view._direct_loader = mock_direct_loader
+
+        # Mock update methods
+        tree_view._update_tree_item_value = MagicMock()
+        tree_view.mark_as_modified = MagicMock()
+
+        # Mock signal
+        tree_view.value_edited = MagicMock()
+        tree_view.value_edited.emit = MagicMock()
+
+        # Call the method
+        tree_view.set_rotation_to_zero("EXIF:Orientation")
+
+        # Verify direct loader was called
+        mock_direct_loader.set_metadata_value.assert_called_once_with(
+            mock_file_item.full_path, "EXIF:Orientation", "0"
+        )
+
+        # Verify signal was emitted with empty string (no previous value)
+        tree_view.value_edited.emit.assert_called_once_with("EXIF:Orientation", "0", "")
+
+    def test_set_rotation_to_zero_already_zero(self, tree_view, mock_file_item):
+        """Test setting rotation to 0 when rotation is already 0."""
+        from unittest.mock import MagicMock
+
+        # Setup mock metadata cache with rotation already at 0
+        mock_metadata = {"EXIF:Orientation": "0"}
+
+        # Mock the necessary methods
+        tree_view._get_metadata_cache = MagicMock(return_value=mock_metadata)
+        tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
+
+        # Mock direct loader (should not be called)
+        mock_direct_loader = MagicMock()
+        tree_view._direct_loader = mock_direct_loader
+
+        # Call the method
+        tree_view.set_rotation_to_zero("EXIF:Orientation")
+
+        # Verify direct loader was NOT called (early return)
+        mock_direct_loader.set_metadata_value.assert_not_called()
+
+    def test_set_rotation_to_zero_fallback_path(self, tree_view, mock_file_item):
+        """Test fallback path when direct loader fails or is unavailable."""
+        from unittest.mock import MagicMock
+
+        # Setup mock metadata cache
+        mock_metadata = {"EXIF:Orientation": "3"}
+
+        # Mock the necessary methods
+        tree_view._get_metadata_cache = MagicMock(return_value=mock_metadata)
+        tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
+
+        # Make direct loader fail
+        mock_direct_loader = MagicMock()
+        mock_direct_loader.set_metadata_value.side_effect = Exception("Direct loader failed")
+        tree_view._direct_loader = mock_direct_loader
+
+        # Mock fallback method
+        tree_view._fallback_set_rotation_to_zero = MagicMock()
+
+        # Call the method
+        tree_view.set_rotation_to_zero("EXIF:Orientation")
+
+        # Verify fallback was called with current value
+        tree_view._fallback_set_rotation_to_zero.assert_called_once_with(
+            "EXIF:Orientation", "0", "3"
+        )
+
+    def test_set_rotation_to_zero_empty_metadata_cache(self, tree_view, mock_file_item):
+        """Test setting rotation to 0 when metadata cache is None or empty."""
+        from unittest.mock import MagicMock
+
+        # Setup empty metadata cache
+        tree_view._get_metadata_cache = MagicMock(return_value=None)
+        tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
+
+        # Mock direct loader
+        mock_direct_loader = MagicMock()
+        tree_view._direct_loader = mock_direct_loader
+
+        # Mock update methods
+        tree_view._update_tree_item_value = MagicMock()
+        tree_view.mark_as_modified = MagicMock()
+
+        # Mock signal
+        tree_view.value_edited = MagicMock()
+        tree_view.value_edited.emit = MagicMock()
+
+        # Call the method (should not crash with UnboundLocalError)
+        tree_view.set_rotation_to_zero("EXIF:Orientation")
+
+        # Verify signal was emitted with empty string (no previous value)
+        tree_view.value_edited.emit.assert_called_once_with("EXIF:Orientation", "0", "")
+
+    def test_set_rotation_to_zero_no_direct_loader(self, tree_view, mock_file_item):
+        """Test setting rotation to 0 when direct loader is not available."""
+        from unittest.mock import MagicMock
+
+        # Setup mock metadata cache
+        mock_metadata = {"EXIF:Orientation": "3"}
+
+        # Mock the necessary methods
+        tree_view._get_metadata_cache = MagicMock(return_value=mock_metadata)
+        tree_view._get_current_selection = MagicMock(return_value=[mock_file_item])
+
+        # No direct loader
+        tree_view._direct_loader = None
+
+        # Mock fallback method
+        tree_view._fallback_set_rotation_to_zero = MagicMock()
+
+        # Call the method
+        tree_view.set_rotation_to_zero("EXIF:Orientation")
+
+        # Verify fallback was called
+        tree_view._fallback_set_rotation_to_zero.assert_called_once_with(
+            "EXIF:Orientation", "0", "3"
+        )

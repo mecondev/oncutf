@@ -385,6 +385,14 @@ PREVIEW_INDICATOR_BORDER = {"color": "#222222", "thickness": 1}
 # PROGRESS DIALOG COLORS
 # =====================================
 
+# Save Operation Settings
+SAVE_OPERATION_SETTINGS = {
+    # Allow ESC to cancel normal/manual saves (NOT for exit saves)
+    # WARNING: Enabling this may result in incomplete save operations
+    # Exit saves (save-on-quit) are ALWAYS protected and cannot be cancelled
+    "ALLOW_CANCEL_NORMAL_SAVE": False,  # Default: disabled for data safety
+}
+
 # Progress Dialog Colors
 FAST_METADATA_COLOR = "#64b5f6"
 FAST_METADATA_BG_COLOR = "#0a1a2a"

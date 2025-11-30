@@ -1413,8 +1413,13 @@ class UnifiedMetadataManager(QObject):
         )
         self._save_metadata_files(files_to_save, all_staged_changes)
 
-    def save_all_modified_metadata(self) -> None:
-        """Save all modified metadata across all files."""
+    def save_all_modified_metadata(self, is_exit_save: bool = False) -> None:
+        """Save all modified metadata across all files.
+
+        Args:
+            is_exit_save: If True, indicates this is a save-on-exit operation.
+                         ESC will be blocked to prevent incomplete saves.
+        """
         if not self.parent_window:
             return
 
@@ -1459,12 +1464,18 @@ class UnifiedMetadataManager(QObject):
             return
 
         logger.info(
-            f"[UnifiedMetadataManager] Saving metadata for {len(files_to_save)} files with modifications"
+            f"[UnifiedMetadataManager] Saving metadata for {len(files_to_save)} files with modifications (exit_save: {is_exit_save})"
         )
-        self._save_metadata_files(files_to_save, all_staged_changes)
+        self._save_metadata_files(files_to_save, all_staged_changes, is_exit_save=is_exit_save)
 
-    def _save_metadata_files(self, files_to_save: list, all_modifications: dict) -> None:
-        """Save metadata files using ExifTool."""
+    def _save_metadata_files(self, files_to_save: list, all_modifications: dict, is_exit_save: bool = False) -> None:
+        """Save metadata files using ExifTool.
+
+        Args:
+            files_to_save: List of FileItem objects to save
+            all_modifications: Dictionary of all staged modifications
+            is_exit_save: If True, ESC will be blocked in progress dialog
+        """
         if not files_to_save:
             return
 
@@ -1488,6 +1499,7 @@ class UnifiedMetadataManager(QObject):
                     operation_type="metadata_save",
                     cancel_callback=None,  # No cancellation for save operations
                     show_enhanced_info=False,
+                    is_exit_save=is_exit_save,  # Pass exit save flag
                 )
                 _loading_dialog.set_status("Saving metadata...")
                 _loading_dialog.show()

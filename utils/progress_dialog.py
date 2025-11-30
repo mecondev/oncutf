@@ -76,6 +76,7 @@ class ProgressDialog(QDialog):
         operation_type: str = "metadata_basic",
         cancel_callback: Callable | None = None,
         show_enhanced_info: bool = True,
+        is_exit_save: bool = False,
     ) -> None:
         """
         Initialize the progress dialog.
@@ -86,19 +87,21 @@ class ProgressDialog(QDialog):
                           'metadata_save', 'file_loading', 'hash_calculation')
             cancel_callback: Function to call when user cancels operation
             show_enhanced_info: Whether to show enhanced size/time tracking
+            is_exit_save: If True, ESC is always blocked (save on exit scenario)
         """
         super().__init__(parent)
         self.cancel_callback = cancel_callback
         self.operation_type = operation_type
         self.show_enhanced_info = show_enhanced_info
         self._is_cancelling = False
+        self.is_exit_save = is_exit_save
 
         # Setup the dialog
         self._setup_dialog()
         self._setup_wait_cursor()
 
         logger.debug(
-            f"[ProgressDialog] Created for operation: {operation_type} (enhanced: {show_enhanced_info})"
+            f"[ProgressDialog] Created for operation: {operation_type} (enhanced: {show_enhanced_info}, exit_save: {is_exit_save})"
         )
 
     def _setup_dialog(self) -> None:
@@ -157,11 +160,35 @@ class ProgressDialog(QDialog):
         logger.debug("[ProgressDialog] Cursors restored on parent and dialog")
 
     def keyPressEvent(self, event) -> None:
-        """Handle ESC key for cancellation with improved responsiveness."""
+        """Handle ESC key for cancellation with improved responsiveness and save protection."""
         if event.key() == Qt.Key_Escape and not self._is_cancelling:  # type: ignore
+            # Check if ESC should be blocked for this operation
+            if self._should_block_esc():
+                logger.debug(
+                    f"[ProgressDialog] ESC blocked for {self.operation_type} (exit_save: {self.is_exit_save})"
+                )
+                event.ignore()
+                return
+
             self._handle_cancellation()
         else:
             super().keyPressEvent(event)
+
+    def _should_block_esc(self) -> bool:
+        """Determine if ESC should be blocked based on operation type and config."""
+        # Always block ESC for exit saves (critical data safety)
+        if self.is_exit_save:
+            return True
+
+        # For save operations, check config flag
+        if self.operation_type == "metadata_save":
+            from config import SAVE_OPERATION_SETTINGS
+
+            allow_cancel = SAVE_OPERATION_SETTINGS.get("ALLOW_CANCEL_NORMAL_SAVE", False)
+            return not allow_cancel  # Block if NOT allowed
+
+        # Allow ESC for non-save operations (metadata loading, hash calc, etc.)
+        return False
 
     def _handle_cancellation(self) -> None:
         """Handle user cancellation with proper cleanup."""

@@ -729,10 +729,10 @@ class MainWindow(QMainWindow):
             elif reply == "save_and_close":
                 # User wants to save changes before closing
                 try:
-                    # Save all modified metadata
+                    # Save all modified metadata with exit save flag
                     if hasattr(self, "metadata_manager") and self.metadata_manager:
                         if hasattr(self.metadata_manager, "save_all_modified_metadata"):
-                            self.metadata_manager.save_all_modified_metadata()
+                            self.metadata_manager.save_all_modified_metadata(is_exit_save=True)
                             logger.info("[CloseEvent] Saved all metadata changes before closing")
                         else:
                             logger.warning(

@@ -1358,6 +1358,7 @@ class MetadataTreeView(QTreeView):
             return
 
         # Check if already 0
+        current_value = None
         metadata = self._get_metadata_cache()
         if metadata and key_path in metadata:
             current_value = metadata[key_path]
@@ -1386,7 +1387,7 @@ class MetadataTreeView(QTreeView):
                 )
 
                 # Emit signal
-                self.value_edited.emit(key_path, "0", str(current_value))
+                self.value_edited.emit(key_path, "0", str(current_value) if current_value else "")
 
                 return
             except Exception as e:
@@ -1395,7 +1396,7 @@ class MetadataTreeView(QTreeView):
                 )
 
         # Fallback to manual method
-        self._fallback_set_rotation_to_zero(key_path, "0", current_value)
+        self._fallback_set_rotation_to_zero(key_path, "0", current_value if current_value else "")
 
     def _fallback_set_rotation_to_zero(
         self, key_path: str, new_value: str, _current_value: Any
