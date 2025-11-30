@@ -667,6 +667,7 @@ class EventHandlerManager:
     def _handle_bulk_rotation(self, selected_files: list) -> None:
         """
         Handle bulk rotation setting to 0° for selected files.
+        Analyzes metadata availability and prompts user to load if needed.
 
         Args:
             selected_files: List of FileItem objects to process
@@ -677,29 +678,74 @@ class EventHandlerManager:
 
         logger.info(f"[BulkRotation] Starting bulk rotation for {len(selected_files)} files")
 
+        # Analyze which files have metadata loaded
+        files_with_metadata = []
+        files_without_metadata = []
+
+        for file_item in selected_files:
+            if self._has_metadata_loaded(file_item):
+                files_with_metadata.append(file_item)
+            else:
+                files_without_metadata.append(file_item)
+
+        logger.debug(
+            f"[BulkRotation] Metadata analysis: {len(files_with_metadata)} with metadata, "
+            f"{len(files_without_metadata)} without metadata",
+            extra={"dev_only": True}
+        )
+
+        # If files without metadata exist, prompt user
+        files_to_process = selected_files
+        if files_without_metadata:
+            choice = self._show_load_metadata_prompt(
+                len(files_with_metadata),
+                len(files_without_metadata)
+            )
+
+            if choice == "load":
+                # Load metadata for files that don't have it
+                logger.info(
+                    f"[BulkRotation] Loading metadata for {len(files_without_metadata)} files"
+                )
+                self.parent_window.load_metadata_for_items(
+                    files_without_metadata,
+                    use_extended=False,
+                    source="rotation_prep"
+                )
+                # After load, all files should have metadata
+                files_to_process = selected_files
+            elif choice == "skip":
+                # Only process files that already have metadata
+                if not files_with_metadata:
+                    logger.info("[BulkRotation] No files with metadata to process")
+                    return
+                files_to_process = files_with_metadata
+                logger.info(
+                    f"[BulkRotation] Skipping {len(files_without_metadata)} files without metadata"
+                )
+            else:  # cancel
+                logger.debug("[BulkRotation] User cancelled operation", extra={"dev_only": True})
+                return
+
         try:
             from widgets.bulk_rotation_dialog import BulkRotationDialog
 
             # Show dialog and get user choices
-            files_to_process = BulkRotationDialog.get_bulk_rotation_choice(
-                self.parent_window, selected_files, self.parent_window.metadata_cache
+            final_files = BulkRotationDialog.get_bulk_rotation_choice(
+                self.parent_window, files_to_process, self.parent_window.metadata_cache
             )
 
-            if not files_to_process:
+            if not final_files:
                 logger.debug(
                     "[BulkRotation] User cancelled bulk rotation or no files selected",
                     extra={"dev_only": True},
                 )
                 return
 
-            if not files_to_process:
-                logger.info("[BulkRotation] No files selected for processing")
-                return
-
-            logger.info(f"[BulkRotation] Processing {len(files_to_process)} files")
+            logger.info(f"[BulkRotation] Processing {len(final_files)} files")
 
             # Apply rotation directly
-            self._apply_bulk_rotation(files_to_process)
+            self._apply_bulk_rotation(final_files)
 
         except ImportError as e:
             logger.error(f"[BulkRotation] Failed to import BulkRotationDialog: {e}")
@@ -717,6 +763,132 @@ class EventHandlerManager:
             show_error_message(
                 self.parent_window, "Error", f"An error occurred during bulk rotation: {str(e)}"
             )
+
+    def _has_metadata_loaded(self, file_item) -> bool:
+        """
+        Check if a file has metadata loaded in cache.
+
+        Args:
+            file_item: FileItem to check
+
+        Returns:
+            True if file has metadata loaded, False otherwise
+        """
+        if not self.parent_window or not hasattr(self.parent_window, "metadata_cache"):
+            return False
+
+        metadata_entry = self.parent_window.metadata_cache.get_entry(file_item.full_path)
+        if metadata_entry and hasattr(metadata_entry, "data") and metadata_entry.data:
+            return True
+
+        # Fallback: check file_item.metadata
+        return hasattr(file_item, "metadata") and bool(file_item.metadata)
+
+    def _show_load_metadata_prompt(self, with_metadata_count: int, without_metadata_count: int) -> str:
+        """
+        Show prompt asking user whether to load metadata for files that don't have it.
+
+        Args:
+            with_metadata_count: Number of files that have metadata
+            without_metadata_count: Number of files without metadata
+
+        Returns:
+            'load': Load metadata and continue
+            'skip': Skip files without metadata
+            'cancel': Cancel operation
+        """
+        from widgets.custom_message_dialog import CustomMessageDialog
+
+        with_metadata_count + without_metadata_count
+
+        message_parts = []
+        if with_metadata_count > 0:
+            message_parts.append(f"{with_metadata_count} file(s) have metadata and can be processed")
+
+        message_parts.append(
+            f"{without_metadata_count} file(s) don't have metadata loaded yet"
+        )
+        message_parts.append("\nLoad metadata for these files first?")
+        message_parts.append("(This ensures rotation changes can be saved properly)")
+
+        message = "\n".join(message_parts)
+
+        buttons = ["Load & Continue", "Skip", "Cancel"]
+        dlg = CustomMessageDialog("Load Metadata First?", message, buttons, self.parent_window)
+
+        # Ensure proper positioning
+        if self.parent_window:
+            from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+            ensure_dialog_on_parent_screen(dlg, self.parent_window)
+
+        dlg.exec_()
+
+        # Map button text to return values
+        button_map = {
+            "Load & Continue": "load",
+            "Skip": "skip",
+            "Cancel": "cancel",
+        }
+
+        return button_map.get(dlg.selected, "cancel")
+
+    def _show_load_metadata_choice_dialog(
+        self, files_with_metadata: int, files_without_metadata: int
+    ) -> str:
+        """
+        Show dialog asking user what to do about files without metadata.
+
+        Args:
+            files_with_metadata: Count of files that have metadata
+            files_without_metadata: Count of files that don't have metadata
+
+        Returns:
+            str: One of 'load', 'skip', or 'cancel'
+        """
+        from widgets.custom_message_dialog import CustomMessageDialog
+
+        # Build message
+        message_parts = []
+
+        if files_with_metadata > 0:
+            message_parts.append(
+                f"{files_with_metadata} file(s) have metadata and can be processed."
+            )
+
+        message_parts.append(
+            f"{files_without_metadata} file(s) don't have metadata loaded yet."
+        )
+        message_parts.append("")
+        message_parts.append(
+            "Load metadata for these files first? This ensures rotation changes can be saved."
+        )
+
+        message = "\n".join(message_parts)
+
+        # Show 3-button dialog
+        buttons = ["Load & Continue", "Skip These Files", "Cancel"]
+        dlg = CustomMessageDialog(
+            "Load Metadata First?",
+            message,
+            buttons,
+            self.parent_window
+        )
+
+        # Ensure proper positioning
+        if self.parent_window:
+            from utils.multiscreen_helper import ensure_dialog_on_parent_screen
+            ensure_dialog_on_parent_screen(dlg, self.parent_window)
+
+        dlg.exec_()
+
+        # Map button text to return values
+        button_map = {
+            "Load & Continue": "load",
+            "Skip These Files": "skip",
+            "Cancel": "cancel",
+        }
+
+        return button_map.get(dlg.selected, "cancel")
 
     def _apply_bulk_rotation(self, files_to_process: list) -> None:
         """
