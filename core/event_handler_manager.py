@@ -187,55 +187,15 @@ class EventHandlerManager:
         # Smart Metadata actions - only analyze selected files for speed
         selected_analysis = self._analyze_metadata_state(selected_files)
 
-        # Use simple analysis for all files to avoid performance issues
-        # all_files_analysis = self._get_simple_metadata_analysis()
-
-        # Create actions with smart labels and tooltips
-        action_load_sel = create_action_with_shortcut(
-            get_menu_icon("file"), f"{selected_analysis['fast_label']} for selection", "Ctrl+M"
-        )
-        action_load_all = create_action_with_shortcut(
-            get_menu_icon("folder"), "Load Fast Metadata for all files", "Shift+Ctrl+M"
-        )
-        action_load_ext_sel = create_action_with_shortcut(
-            get_menu_icon("file-plus"),
-            f"{selected_analysis['extended_label']} for selection",
-            "Ctrl+E",
-        )
-        action_load_ext_all = create_action_with_shortcut(
-            get_menu_icon("folder-plus"), "Load Extended Metadata for all files", "Shift+Ctrl+E"
-        )
-
-        menu.addAction(action_load_sel)
-        menu.addAction(action_load_all)
-        menu.addAction(action_load_ext_sel)
-        menu.addAction(action_load_ext_all)
-
-        # Smart enable/disable logic based on analysis
-        action_load_sel.setEnabled(has_selection and selected_analysis["enable_fast_selected"])
-        action_load_ext_sel.setEnabled(
-            has_selection and selected_analysis["enable_extended_selected"]
-        )
-        action_load_all.setEnabled(total_files > 0)
-        action_load_ext_all.setEnabled(total_files > 0)
-
-        # Set smart tooltips
-        action_load_sel.setToolTip(selected_analysis["fast_tooltip"])
-        action_load_ext_sel.setToolTip(selected_analysis["extended_tooltip"])
-        action_load_all.setToolTip(f"Load fast metadata for {total_files} file(s)")
-        action_load_ext_all.setToolTip(f"Load extended metadata for {total_files} file(s)")
-
-        menu.addSeparator()
-
-        # Selection actions
+        # === SELECTION ACTIONS (First in menu) ===
         action_select_all = create_action_with_shortcut(
-            get_menu_icon("check-square"), "Select all", "Ctrl+A"
+            get_menu_icon("check-square"), "Select All", "Ctrl+A"
         )
         action_invert = create_action_with_shortcut(
-            get_menu_icon("refresh-cw"), "Invert selection", "Ctrl+I"
+            get_menu_icon("refresh-cw"), "Invert Selection", "Ctrl+I"
         )
         action_deselect_all = create_action_with_shortcut(
-            get_menu_icon("square"), "Deselect all", "Ctrl+Shift+A"
+            get_menu_icon("square"), "Deselect All", "Ctrl+Shift+A"
         )
 
         menu.addAction(action_select_all)
@@ -244,12 +204,51 @@ class EventHandlerManager:
 
         menu.addSeparator()
 
-        # Other actions
+        # === METADATA OPERATIONS (Selection-only) ===
+        # Use simple analysis for all files to avoid performance issues
+        # all_files_analysis = self._get_simple_metadata_analysis()
+
+        # Create actions with clean labels (selection-only pattern)
+        action_load_fast = create_action_with_shortcut(
+            get_menu_icon("file"), "Load Fast Metadata", "Ctrl+M"
+        )
+        action_load_extended = create_action_with_shortcut(
+            get_menu_icon("file-plus"), "Load Extended Metadata", "Ctrl+E"
+        )
+
+        menu.addAction(action_load_fast)
+        menu.addAction(action_load_extended)
+
+        # Smart enable/disable logic based on analysis
+        action_load_fast.setEnabled(has_selection and selected_analysis["enable_fast_selected"])
+        action_load_extended.setEnabled(
+            has_selection and selected_analysis["enable_extended_selected"]
+        )
+
+        # Set smart tooltips with selection context
+        if has_selection:
+            sel_count = len(selected_files)
+            load_fast_tip = selected_analysis["fast_tooltip"]
+            if sel_count < total_files:
+                load_fast_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
+            action_load_fast.setToolTip(load_fast_tip)
+
+            load_ext_tip = selected_analysis["extended_tooltip"]
+            if sel_count < total_files:
+                load_ext_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
+            action_load_extended.setToolTip(load_ext_tip)
+        else:
+            action_load_fast.setToolTip("Select files first (Ctrl+A to select all)")
+            action_load_extended.setToolTip("Select files first (Ctrl+A to select all)")
+
+        menu.addSeparator()
+
+        # === OTHER ACTIONS ===
         action_reload = create_action_with_shortcut(
-            get_menu_icon("refresh-cw"), "Reload folder", "F5"
+            get_menu_icon("refresh-cw"), "Reload Folder", "F5"
         )
         action_clear_table = create_action_with_shortcut(
-            get_menu_icon("x"), "Clear file table", "Shift+Esc"
+            get_menu_icon("x"), "Clear File Table", "Shift+Esc"
         )
 
         menu.addAction(action_reload)
@@ -257,36 +256,30 @@ class EventHandlerManager:
 
         menu.addSeparator()
 
-        # Hash actions
+        # === HASH OPERATIONS (Selection-only) ===
         action_calculate_hashes = create_action_with_shortcut(
-            get_menu_icon("hash"), "Calculate checksums for selected", "Ctrl+H"
-        )
-        action_calculate_hashes_all = create_action_with_shortcut(
-            get_menu_icon("hash"), "Calculate checksums for all files", "Shift+Ctrl+H"
+            get_menu_icon("hash"), "Calculate Checksums", "Ctrl+H"
         )
 
         # Smart hash state analysis - only analyze selected files for speed
         selected_hash_analysis = self._analyze_hash_state(selected_files)
 
-        # Use simple analysis for all files to avoid performance issues
-        # all_files_hash_analysis = self._get_simple_hash_analysis()
-
-        # Update hash actions with smart logic
-        action_calculate_hashes.setText(selected_hash_analysis["selected_label"] + "\tCtrl+H")
-        action_calculate_hashes_all.setText("Calculate checksums for all files\tShift+Ctrl+H")
-
         menu.addAction(action_calculate_hashes)
-        menu.addAction(action_calculate_hashes_all)
 
         # Smart enable/disable for hash actions
         action_calculate_hashes.setEnabled(
             has_selection and selected_hash_analysis["enable_selected"]
         )
-        action_calculate_hashes_all.setEnabled(total_files > 0)
 
-        # Set smart tooltips for hash actions
-        action_calculate_hashes.setToolTip(selected_hash_analysis["selected_tooltip"])
-        action_calculate_hashes_all.setToolTip(f"Calculate checksums for {total_files} file(s)")
+        # Set smart tooltips with selection context
+        if has_selection:
+            sel_count = len(selected_files)
+            hash_tip = selected_hash_analysis["selected_tooltip"]
+            if sel_count < total_files:
+                hash_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
+            action_calculate_hashes.setToolTip(hash_tip)
+        else:
+            action_calculate_hashes.setToolTip("Select files first (Ctrl+A to select all)")
 
         # Show results hash list action
         action_show_hash_results = create_action_with_shortcut(
@@ -306,48 +299,66 @@ class EventHandlerManager:
 
         menu.addSeparator()
 
-        # Save actions
-        action_save_sel = create_action_with_shortcut(
-            get_menu_icon("save"), "Save metadata for selection", "Ctrl+S"
+        # === SAVE OPERATIONS ===
+        action_save_metadata = create_action_with_shortcut(
+            get_menu_icon("save"), "Save Metadata", "Ctrl+S"
         )
-        action_save_all = create_action_with_shortcut(
-            get_menu_icon("save"), "Save ALL modified metadata", "Ctrl+Shift+S"
+        action_save_all_modified = create_action_with_shortcut(
+            get_menu_icon("save"), "Save ALL Modified Metadata", "Ctrl+Shift+S"
         )
 
-        menu.addAction(action_save_sel)
-        menu.addAction(action_save_all)
+        menu.addAction(action_save_metadata)
+        menu.addAction(action_save_all_modified)
 
         # Simple check for modifications
         has_modifications = False
         if hasattr(self.parent_window, "metadata_tree_view"):
             has_modifications = bool(self.parent_window.metadata_tree_view.modified_items)
 
-        action_save_sel.setEnabled(has_selection and has_modifications)
-        action_save_all.setEnabled(has_modifications)
+        action_save_metadata.setEnabled(has_selection and has_modifications)
+        action_save_all_modified.setEnabled(has_modifications)
 
-        menu.addSeparator()
-
-        # Bulk rotation action - simplified for performance
-        action_bulk_rotation = create_action_with_shortcut(
-            get_menu_icon("rotate-ccw"), "Set All Files to 0° Rotation...", None
-        )
-        menu.addAction(action_bulk_rotation)
-        action_bulk_rotation.setEnabled(len(selected_files) > 0)
-        if len(selected_files) > 0:
-            action_bulk_rotation.setToolTip(
-                f"Reset rotation to 0° for {len(selected_files)} selected file(s)"
-            )
+        # Smart tooltips for save actions
+        if has_selection and has_modifications:
+            sel_count = len(selected_files)
+            action_save_metadata.setToolTip(f"Save modified metadata for {sel_count} selected file(s)")
+        elif has_selection:
+            action_save_metadata.setToolTip("No modified metadata in selected files")
         else:
-            action_bulk_rotation.setToolTip("Select files first to reset their rotation")
+            action_save_metadata.setToolTip("Select files first (Ctrl+A to select all)")
+
+        if has_modifications:
+            action_save_all_modified.setToolTip("Save all modified metadata regardless of selection")
+        else:
+            action_save_all_modified.setToolTip("No modified metadata to save")
 
         menu.addSeparator()
 
-        # Hash & Comparison actions
+        # === ROTATION OPERATION (Selection-only) ===
+        action_set_rotation = create_action_with_shortcut(
+            get_menu_icon("rotate-ccw"), "Set Rotation to 0°", None
+        )
+        menu.addAction(action_set_rotation)
+        action_set_rotation.setEnabled(has_selection)
+
+        if has_selection:
+            sel_count = len(selected_files)
+            rotation_tip = f"Reset rotation to 0° for {sel_count} selected file(s)"
+            if sel_count < total_files:
+                rotation_tip += f" (Tip: Ctrl+A to select all {total_files} files)"
+            action_set_rotation.setToolTip(rotation_tip)
+        else:
+            action_set_rotation.setToolTip("Select files first (Ctrl+A to select all)")
+
+        menu.addSeparator()
+
+        # === HASH COMPARISON ACTIONS (Selection-only + All) ===
+        # Note: These keep separate Selected/All variants for different use cases
         action_find_duplicates_sel = create_action_with_shortcut(
-            get_menu_icon("copy"), "Find duplicates in selected files", None
+            get_menu_icon("copy"), "Find Duplicates in Selection", None
         )
         action_find_duplicates_all = create_action_with_shortcut(
-            get_menu_icon("layers"), "Find duplicates in all files", None
+            get_menu_icon("layers"), "Find Duplicates in All Files", None
         )
         action_compare_external = create_action_with_shortcut(
             get_menu_icon("folder"), "Compare with external folder...", None
@@ -359,12 +370,13 @@ class EventHandlerManager:
 
         menu.addSeparator()
 
-        # Export actions
+        # === EXPORT ACTIONS (Selection-only + All) ===
+        # Note: These keep separate Selected/All variants for different export scopes
         action_export_sel = create_action_with_shortcut(
-            get_menu_icon("download"), "Export metadata for selection", None
+            get_menu_icon("download"), "Export Metadata (Selection)", None
         )
         action_export_all = create_action_with_shortcut(
-            get_menu_icon("download"), "Export metadata for all files", None
+            get_menu_icon("download"), "Export Metadata (All Files)", None
         )
 
         menu.addAction(action_export_sel)
@@ -374,16 +386,18 @@ class EventHandlerManager:
         action_export_sel.setEnabled(has_selection)
         action_export_all.setEnabled(total_files > 0)
 
-        # Update tooltips
+        # Smart tooltips
         if has_selection:
-            action_export_sel.setToolTip(
-                f"Export metadata for {len(selected_files)} selected file(s)"
-            )
+            sel_count = len(selected_files)
+            export_tip = f"Export metadata for {sel_count} selected file(s)"
+            if sel_count < total_files:
+                export_tip += f" (Tip: Ctrl+A to export all {total_files} files)"
+            action_export_sel.setToolTip(export_tip)
         else:
-            action_export_sel.setToolTip("Select files first to export their metadata")
+            action_export_sel.setToolTip("Select files first (Ctrl+A to select all)")
 
         if total_files > 0:
-            action_export_all.setToolTip("Export metadata for all files in folder")
+            action_export_all.setToolTip(f"Export metadata for all {total_files} files in folder")
         else:
             action_export_all.setToolTip("No files have metadata to export")
 
@@ -393,33 +407,18 @@ class EventHandlerManager:
             extra={"dev_only": True},
         )
 
-        # Only handle non-metadata selection actions here
+        # Enable/disable logic for non-operation actions
         action_invert.setEnabled(total_files > 0 and has_selection)
         action_select_all.setEnabled(total_files > 0)
         action_reload.setEnabled(total_files > 0)
         action_clear_table.setEnabled(total_files > 0)
 
-        # Hash actions enable/disable logic with smart behavior
+        # Hash comparison actions enable/disable logic
         action_find_duplicates_sel.setEnabled(
             len(selected_files) >= 2
         )  # Need at least 2 files to find duplicates
         action_find_duplicates_all.setEnabled(total_files >= 2)
         action_compare_external.setEnabled(has_selection)  # Need selection to compare
-        action_calculate_hashes.setEnabled(
-            has_selection and selected_hash_analysis["enable_selected"]
-        )
-        action_calculate_hashes_all.setEnabled(total_files > 0)
-
-        # Update hash tooltip
-        if has_selection:
-            action_calculate_hashes.setToolTip(selected_hash_analysis["selected_tooltip"])
-        else:
-            action_calculate_hashes.setToolTip("Select files first to calculate their checksums")
-
-        if total_files > 0:
-            action_calculate_hashes_all.setToolTip(f"Calculate checksums for {total_files} file(s)")
-        else:
-            action_calculate_hashes_all.setToolTip("No files available to calculate checksums")
 
         # Show menu and get chosen action
         action = menu.exec_(self.parent_window.file_table_view.viewport().mapToGlobal(position))
@@ -430,28 +429,16 @@ class EventHandlerManager:
         # self.parent_window.file_table_view.update()
 
         # === Handlers ===
-        if action == action_load_sel:
+        if action == action_load_fast:
             # Use intelligent loading with cache checking and smart UX
             self.parent_window.load_metadata_for_items(
                 selected_files, use_extended=False, source="context_menu"
             )
 
-        elif action == action_load_ext_sel:
+        elif action == action_load_extended:
             # Use intelligent loading with cache checking and smart UX
             self.parent_window.load_metadata_for_items(
                 selected_files, use_extended=True, source="context_menu"
-            )
-
-        elif action == action_load_all:
-            # Use intelligent loading with cache checking and smart UX
-            self.parent_window.load_metadata_for_items(
-                self.parent_window.file_model.files, use_extended=False, source="context_menu_all"
-            )
-
-        elif action == action_load_ext_all:
-            # Use intelligent loading with cache checking and smart UX
-            self.parent_window.load_metadata_for_items(
-                self.parent_window.file_model.files, use_extended=True, source="context_menu_all"
             )
 
         elif action == action_invert:
@@ -469,7 +456,7 @@ class EventHandlerManager:
         elif action == action_deselect_all:
             self.parent_window.clear_all_selection()
 
-        elif action == action_save_sel:
+        elif action == action_save_metadata:
             # Save modified metadata for selected files
             try:
                 metadata_mgr = self.parent_window.context.get_manager('metadata')
@@ -477,7 +464,7 @@ class EventHandlerManager:
             except KeyError:
                 logger.warning("[EventHandler] No metadata manager available for save")
 
-        elif action == action_save_all:
+        elif action == action_save_all_modified:
             # Save ALL modified metadata regardless of selection
             try:
                 metadata_mgr = self.parent_window.context.get_manager('metadata')
@@ -485,8 +472,8 @@ class EventHandlerManager:
             except KeyError:
                 logger.warning("[EventHandler] No metadata manager available for save all")
 
-        elif action == action_bulk_rotation:
-            # Handle bulk rotation to 0°
+        elif action == action_set_rotation:
+            # Handle rotation reset to 0° for selected files
             self._handle_bulk_rotation(selected_files)
 
         elif action == action_find_duplicates_sel:
@@ -504,11 +491,6 @@ class EventHandlerManager:
         elif action == action_calculate_hashes:
             # Calculate checksums for selected files
             self.hash_ops.handle_calculate_hashes(selected_files)
-
-        elif action == action_calculate_hashes_all:
-            # Calculate checksums for all files
-            all_files = self.parent_window.file_table_model.get_all_file_items() if hasattr(self.parent_window, "file_table_model") and self.parent_window.file_table_model else []
-            self.hash_ops.handle_calculate_hashes(all_files)
 
         elif action == action_export_sel:
             # Handle metadata export for selected files
