@@ -304,7 +304,7 @@ class EventHandlerManager:
             get_menu_icon("save"), "Save Metadata", "Ctrl+S"
         )
         action_save_all_modified = create_action_with_shortcut(
-            get_menu_icon("save"), "Save ALL Modified Metadata", "Ctrl+Shift+S"
+            get_menu_icon("save"), "Save ALL Modified Metadata", ""
         )
 
         menu.addAction(action_save_metadata)
