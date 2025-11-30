@@ -74,6 +74,7 @@ class UnifiedMetadataManager(QObject):
         # State tracking
         self.force_extended_metadata = False
         self._metadata_cancelled = False  # Cancellation flag for metadata loading
+        self._save_cancelled = False  # Cancellation flag for save operations
 
         # Structured metadata system (lazy-initialized)
         self._structured_manager = None
@@ -1187,6 +1188,11 @@ class UnifiedMetadataManager(QObject):
 
         logger.info("[UnifiedMetadataManager] Loading operation cancelled")
 
+    def request_save_cancel(self) -> None:
+        """Request cancellation of current save operation."""
+        self._save_cancelled = True
+        logger.info("[UnifiedMetadataManager] Save cancellation requested by user")
+
     # =====================================
     # Completion Handlers
     # =====================================
@@ -1466,6 +1472,8 @@ class UnifiedMetadataManager(QObject):
         logger.info(
             f"[UnifiedMetadataManager] Saving metadata for {len(files_to_save)} files with modifications (exit_save: {is_exit_save})"
         )
+        # Reset cancellation flag before starting save
+        self._save_cancelled = False
         self._save_metadata_files(files_to_save, all_staged_changes, is_exit_save=is_exit_save)
 
     def _save_metadata_files(self, files_to_save: list, all_modifications: dict, is_exit_save: bool = False) -> None:
@@ -1494,10 +1502,13 @@ class UnifiedMetadataManager(QObject):
         try:
             # Setup progress dialog for multiple files
             if save_mode == "multiple_files_dialog":
+                # Only allow cancellation for normal saves when enabled in config
+                cancel_callback = self.request_save_cancel if not is_exit_save else None
+
                 _loading_dialog = ProgressDialog(
                     parent=self.parent_window,
                     operation_type="metadata_save",
-                    cancel_callback=None,  # No cancellation for save operations
+                    cancel_callback=cancel_callback,
                     show_enhanced_info=False,
                     is_exit_save=is_exit_save,  # Pass exit save flag
                 )
@@ -1514,6 +1525,13 @@ class UnifiedMetadataManager(QObject):
                 # Process each file
                 current_file_index = 0
                 for file_item in files_to_save:
+                    # Check for cancellation before processing each file
+                    if self._save_cancelled:
+                        logger.info(
+                            f"[UnifiedMetadataManager] Save operation cancelled by user after {success_count}/{file_count} files"
+                        )
+                        break
+
                     current_file_index += 1
 
                     # Update progress dialog if in batch mode
@@ -1564,7 +1582,8 @@ class UnifiedMetadataManager(QObject):
                 _loading_dialog.close()
 
         # Show results
-        self._show_save_results(success_count, failed_files, files_to_save)
+        was_cancelled = self._save_cancelled
+        self._show_save_results(success_count, failed_files, files_to_save, was_cancelled)
 
         # Record save operation in command system for undo/redo
         if success_count > 0:
@@ -1776,8 +1795,57 @@ class UnifiedMetadataManager(QObject):
                         display_data, context="after_save"
                     )
 
-    def _show_save_results(self, success_count, failed_files, _files_to_save):
-        """Show results of metadata save operation."""
+    def _show_save_results(self, success_count, failed_files, files_to_save, was_cancelled=False):
+        """Show results of metadata save operation.
+
+        Args:
+            success_count: Number of files successfully saved
+            failed_files: List of filenames that failed to save
+            files_to_save: Original list of files to save
+            was_cancelled: Whether the operation was cancelled by user
+        """
+        total_files = len(files_to_save)
+
+        # Handle cancellation case
+        if was_cancelled:
+            skipped_count = total_files - success_count - len(failed_files)
+
+            if success_count > 0:
+                message = f"Save cancelled after {success_count}/{total_files} files"
+                logger.info(f"[UnifiedMetadataManager] {message}")
+
+                if self.parent_window and hasattr(self.parent_window, "status_bar"):
+                    self.parent_window.status_bar.showMessage(message, 5000)
+            else:
+                message = "Save operation cancelled"
+                logger.info(f"[UnifiedMetadataManager] {message}")
+
+                if self.parent_window and hasattr(self.parent_window, "status_bar"):
+                    self.parent_window.status_bar.showMessage(message, 3000)
+
+            # Show info dialog about cancellation
+            if self.parent_window:
+                from core.pyqt_imports import QMessageBox
+
+                msg_parts = ["Save operation cancelled by user."]
+
+                if success_count > 0:
+                    msg_parts.append(f"\nSuccessfully saved: {success_count} files")
+
+                if failed_files:
+                    msg_parts.append(f"Failed: {len(failed_files)} files")
+
+                if skipped_count > 0:
+                    msg_parts.append(f"Skipped: {skipped_count} files")
+
+                QMessageBox.information(
+                    self.parent_window,
+                    "Save Cancelled",
+                    "\n".join(msg_parts)
+                )
+            return
+
+        # Normal completion (not cancelled)
         if success_count > 0:
             logger.info(
                 f"[UnifiedMetadataManager] Successfully saved metadata for {success_count} files"

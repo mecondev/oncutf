@@ -221,7 +221,8 @@ class TestSaveCancelIntegration:
         from config import SAVE_OPERATION_SETTINGS
 
         assert "ALLOW_CANCEL_NORMAL_SAVE" in SAVE_OPERATION_SETTINGS
-        assert SAVE_OPERATION_SETTINGS["ALLOW_CANCEL_NORMAL_SAVE"] is False
+        # Default is now True (cancellation enabled) - updated for user convenience
+        assert SAVE_OPERATION_SETTINGS["ALLOW_CANCEL_NORMAL_SAVE"] is True
 
 
 if __name__ == "__main__":

@@ -390,7 +390,7 @@ SAVE_OPERATION_SETTINGS = {
     # Allow ESC to cancel normal/manual saves (NOT for exit saves)
     # WARNING: Enabling this may result in incomplete save operations
     # Exit saves (save-on-quit) are ALWAYS protected and cannot be cancelled
-    "ALLOW_CANCEL_NORMAL_SAVE": False,  # Default: disabled for data safety
+    "ALLOW_CANCEL_NORMAL_SAVE": True,  # Default: disabled for data safety
 }
 
 # Progress Dialog Colors
