@@ -11,9 +11,9 @@ Handles browse, folder import, table interactions, context menus, and user actio
 import os
 import time
 
-from config import STATUS_COLORS, CONTEXT_MENU_COLORS
-from core.modifier_handler import decode_modifiers_to_flags
+from config import STATUS_COLORS
 from core.pyqt_imports import QAction, QApplication, QMenu, QModelIndex, Qt
+from core.theme_manager import get_theme_manager
 from utils.cursor_helper import wait_cursor
 from utils.file_status_helpers import (
     has_hash,
@@ -145,12 +145,15 @@ class EventHandlerManager:
 
         menu = QMenu(self.parent_window)
 
+        # Get theme colors from ThemeManager
+        theme = get_theme_manager()
+
         # Enhanced styling for better appearance and spacing
         menu.setStyleSheet(
             f"""
             QMenu {{
-                background-color: {CONTEXT_MENU_COLORS['background']};
-                color: {CONTEXT_MENU_COLORS['text']};
+                background-color: {theme.get_color('menu_background')};
+                color: {theme.get_color('menu_text')};
                 border: none;
                 border-radius: 8px;
                 font-family: "Inter", "Segoe UI", Arial, sans-serif;
@@ -166,18 +169,18 @@ class EventHandlerManager:
                 icon-size: 16px;
             }}
             QMenu::item:selected {{
-                background-color: {CONTEXT_MENU_COLORS['selected_bg']};
-                color: {CONTEXT_MENU_COLORS['selected_text']};
+                background-color: {theme.get_color('menu_selected_bg')};
+                color: {theme.get_color('menu_selected_text')};
             }}
             QMenu::item:disabled {{
-                color: {CONTEXT_MENU_COLORS['disabled_text']};
+                color: {theme.get_color('menu_disabled_text')};
             }}
             QMenu::icon {{
                 padding-left: 6px;
                 padding-right: 6px;
             }}
             QMenu::separator {{
-                background-color: {CONTEXT_MENU_COLORS['separator']};
+                background-color: {theme.get_color('separator')};
                 height: 1px;
                 margin: 4px 8px;
             }}

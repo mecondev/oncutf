@@ -37,6 +37,7 @@ from PyQt5.QtWidgets import (
 from config import UNDO_REDO_SETTINGS
 from core.metadata_command_manager import get_metadata_command_manager
 from core.rename_history_manager import get_rename_history_manager
+from core.theme_manager import get_theme_manager
 from utils.logger_factory import get_cached_logger
 from utils.tooltip_helper import TooltipType, setup_tooltip
 
@@ -94,10 +95,13 @@ class MetadataHistoryDialog(QDialog):
         layout.addWidget(title_label)
 
         # Info label
+        theme = get_theme_manager()
         info_label = QLabel(
             "Recent metadata and rename operations. Use Ctrl+Z/Ctrl+Shift+Z for quick undo/redo."
         )
-        info_label.setStyleSheet("color: #888888; font-size: 11px; margin-bottom: 10px;")
+        info_label.setStyleSheet(
+            f"color: {theme.get_color('text_muted')}; font-size: 11px; margin-bottom: 10px;"
+        )
         layout.addWidget(info_label)
 
         # Main splitter

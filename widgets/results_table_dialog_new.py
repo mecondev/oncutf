@@ -27,8 +27,6 @@ from config import (
     HASH_LIST_WINDOW_DEFAULT_WIDTH,
     HASH_LIST_WINDOW_MAX_HEIGHT,
     HASH_LIST_WINDOW_MIN_HEIGHT,
-    QLABEL_BORDER_GRAY,
-    QLABEL_PRIMARY_TEXT,
     RESULTS_TABLE_DEFAULT_HEIGHT,
     RESULTS_TABLE_DEFAULT_WIDTH,
     RESULTS_TABLE_LEFT_COLUMN_WIDTH,
@@ -49,6 +47,7 @@ from core.pyqt_imports import (
     QTableView,
     QVBoxLayout,
 )
+from core.theme_manager import get_theme_manager
 from models.results_table_model import ResultsTableModel
 from utils.logger_factory import get_cached_logger
 
@@ -180,25 +179,27 @@ class ResultsTableDialog(QDialog):
 
     def _apply_styling(self):
         """Apply dark theme styling matching file_table_view."""
+        theme = get_theme_manager()
+        
         style = f"""
         QDialog {{
-            background-color: #1e1e1e;
+            background-color: {theme.get_color('dialog_background')};
         }}
 
         QLabel#title_label {{
-            color: {QLABEL_PRIMARY_TEXT};
+            color: {theme.get_color('text')};
             font-size: 13px;
             font-weight: 500;
             margin-bottom: 4px;
         }}
 
         QTableView {{
-            background-color: #252525;
-            alternate-background-color: #2a2a2a;
-            color: {QLABEL_PRIMARY_TEXT};
-            border: 1px solid {QLABEL_BORDER_GRAY};
-            gridline-color: {QLABEL_BORDER_GRAY};
-            selection-background-color: #3a3a3a;
+            background-color: {theme.get_color('table_background')};
+            alternate-background-color: {theme.get_color('table_alternate')};
+            color: {theme.get_color('text')};
+            border: 1px solid {theme.get_color('border')};
+            gridline-color: {theme.get_color('table_grid')};
+            selection-background-color: {theme.get_color('table_selection_bg')};
             font-size: 11px;
         }}
 
@@ -207,29 +208,29 @@ class ResultsTableDialog(QDialog):
         }}
 
         QHeaderView::section {{
-            background-color: #2d2d2d;
-            color: {QLABEL_PRIMARY_TEXT};
-            border: 1px solid {QLABEL_BORDER_GRAY};
+            background-color: {theme.get_color('results_header_bg')};
+            color: {theme.get_color('text')};
+            border: 1px solid {theme.get_color('border')};
             padding: 6px 8px;
             font-weight: 600;
             font-size: 11px;
         }}
 
         QPushButton {{
-            background-color: #3a3a3a;
-            color: {QLABEL_PRIMARY_TEXT};
-            border: 1px solid {QLABEL_BORDER_GRAY};
+            background-color: {theme.get_color('button_bg')};
+            color: {theme.get_color('text')};
+            border: 1px solid {theme.get_color('border')};
             border-radius: 4px;
             padding: 6px 16px;
             font-size: 12px;
         }}
 
         QPushButton:hover {{
-            background-color: #4a4a4a;
+            background-color: {theme.get_color('button_hover_bg')};
         }}
 
         QPushButton:pressed {{
-            background-color: #2a2a2a;
+            background-color: {theme.get_color('pressed')};
         }}
         """
         self.setStyleSheet(style)

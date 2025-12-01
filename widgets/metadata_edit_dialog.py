@@ -18,6 +18,7 @@ from core.pyqt_imports import (
     Qt,
     QVBoxLayout,
 )
+from core.theme_manager import get_theme_manager
 from utils.logger_factory import get_cached_logger
 from utils.metadata_field_validators import MetadataFieldValidator
 from widgets.metadata_validated_input import create_metadata_input_widget
@@ -363,7 +364,8 @@ class MetadataEditDialog(QDialog):
                 error_message = self.input_field.get_validation_error_message()
                 if error_message:
                     self.info_label.setText(f"Error: {error_message}")
-                    self._apply_info_label_style("#ff6b6b")
+                    theme = get_theme_manager()
+                    self._apply_info_label_style(theme.get_color('error'))
                     return
 
         # Reset to normal validation info if valid
@@ -396,7 +398,8 @@ class MetadataEditDialog(QDialog):
                 error_message = self.input_field.get_validation_error_message()
                 if error_message:
                     self.info_label.setText(f"Error: {error_message}")
-                    self._apply_info_label_style("#ff6b6b")
+                    theme = get_theme_manager()
+                    self._apply_info_label_style(theme.get_color('error'))
                     return
 
         # Additional validation using MetadataFieldValidator
@@ -405,7 +408,8 @@ class MetadataEditDialog(QDialog):
         if not is_valid:
             # Show error in info label
             self.info_label.setText(f"Error: {error_message}")
-            self._apply_info_label_style("#ff6b6b")
+            theme = get_theme_manager()
+            self._apply_info_label_style(theme.get_color('error'))
             return
 
         # Store the validated value
