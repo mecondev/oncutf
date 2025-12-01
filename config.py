@@ -568,6 +568,131 @@ CONTEXT_MENU_COLORS = {
 }
 
 # =====================================
+# CENTRALIZED THEME TOKENS
+# =====================================
+
+# Complete theme color token definitions for dark and light themes
+# Used by ThemeManager for centralized color management and theme switching
+# Tokens organized by category for easy maintenance
+THEME_TOKENS = {
+    "dark": {
+        # ===== Base Colors =====
+        "background": "#181818",
+        "background_alternate": "#232323",
+        "background_lighter": "#2a2a2a",
+        "background_elevated": "#1e1e1e",  # Dialogs, elevated surfaces
+        "text": "#f0ebd8",
+        "text_secondary": "#888888",
+        "text_tertiary": "#666666",
+        "text_disabled": "#555555",
+
+        # ===== Interactive States =====
+        "hover": "#3e5c76",
+        "selected": "#748cab",
+        "selected_text": "#0d1321",
+        "selected_hover": "#8a9bb4",  # Slightly lighter than selected
+        "pressed": "#5a7fa0",
+
+        # ===== Borders & Separators =====
+        "border": "#3a3b40",
+        "border_light": "#4a4b50",
+        "separator": "#5a5a5a",
+        "outline": "#748cab",
+
+        # ===== Semantic/Status Colors =====
+        "success": "#4ade80",
+        "warning": "#fbbf24",
+        "error": "#ff6b6b",
+        "info": "#60a5fa",
+        "neutral": "#94a3b8",
+
+        # ===== Component-Specific: Menus =====
+        "menu_background": "#232323",
+        "menu_text": "#f0ebd8",
+        "menu_selected_bg": "#748cab",
+        "menu_selected_text": "#0d1321",
+        "menu_disabled_text": "#888888",
+        "menu_separator": "#5a5a5a",
+
+        # ===== Component-Specific: Tables =====
+        "table_background": "#181818",
+        "table_alternate": "#232323",
+        "table_header_bg": "#2a2a2a",
+        "table_header_text": "#f0ebd8",
+        "table_selection_bg": "#748cab",
+        "table_selection_text": "#0d1321",
+        "table_hover_bg": "#3e5c76",
+        "table_grid": "#3a3b40",
+
+        # ===== Component-Specific: Dialogs =====
+        "dialog_background": "#1e1e1e",
+        "dialog_title_bg": "#252525",
+        "dialog_border": "#3a3b40",
+
+        # ===== Component-Specific: Buttons =====
+        "button_bg": "#2a2a2a",
+        "button_text": "#f0ebd8",
+        "button_hover_bg": "#4a6fa5",
+        "button_hover_text": "#ffffff",
+        "button_pressed_bg": "#5a7fa0",
+        "button_disabled_bg": "#1a1a1a",
+        "button_disabled_text": "#555555",
+
+        # ===== Component-Specific: Inputs =====
+        "input_bg": "#2a2a2a",
+        "input_text": "#f0ebd8",
+        "input_border": "#3a3b40",
+        "input_focus_border": "#748cab",
+        "input_placeholder": "#666666",
+
+        # ===== Component-Specific: Scrollbars =====
+        "scrollbar_bg": "#1e1e1e",
+        "scrollbar_handle": "#4a4a4a",
+        "scrollbar_handle_hover": "#5a5a5a",
+
+        # ===== Component-Specific: TreeView =====
+        "tree_branch": "#3a3b40",
+        "tree_indicator": "#748cab",
+
+        # ===== Component-Specific: Results & Hash List =====
+        "results_header_bg": "#2d2d2d",
+        "results_row_hover": "#3a3a3a",
+        "results_footer_bg": "#2a2a2a",
+
+        # ===== Component-Specific: Preview =====
+        "preview_bg": "#232323",
+        "preview_border": "#3a3b40",
+
+        # ===== Component-Specific: Rename Modules =====
+        "module_plate_bg": "#2a2a2a",
+        "module_plate_border": "#3a3b40",
+        "module_drag_handle": "#4a4a4a",
+        "module_drag_hover": "#748cab",
+
+        # ===== Component-Specific: Companion Files =====
+        "companion_info_text": "#888888",
+        "companion_note_text": "#888888",
+
+        # ===== Component-Specific: Metadata Edit =====
+        "edit_info_text": "#888888",
+        "edit_error_text": "#ff6b6b",
+
+        # ===== Component-Specific: History Dialog =====
+        "history_title_text": "#f0ebd8",
+        "history_info_text": "#888888",
+    },
+    "light": {
+        # Placeholder for light theme - to be implemented later
+        # Mirror structure of dark theme with appropriate light colors
+        "background": "#ffffff",
+        "background_alternate": "#f8f8f8",
+        "text": "#212121",
+        "text_secondary": "#666666",
+        # ... (rest will be filled when implementing light theme)
+    },
+}
+
+# =====================================
 # TOOLTIP SETTINGS
 # =====================================
 
