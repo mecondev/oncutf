@@ -29,6 +29,7 @@ if project_root not in sys.path:
 
 from config import SPLASH_SCREEN_DURATION
 from core.pyqt_imports import QApplication, QStyleFactory, Qt
+from core.theme_manager import get_theme_manager
 from main_window import MainWindow
 from utils.fonts import _get_inter_fonts
 from utils.logger_setup import ConfigureLogger
@@ -179,7 +180,14 @@ def main() -> int:
         logger.debug("Initializing Inter fonts...", extra={"dev_only": True})
         _get_inter_fonts()
 
-        # Initialize theme engine
+        # Initialize theme manager (new token-based system)
+        theme_mgr = get_theme_manager()
+        logger.debug(
+            f"ThemeManager initialized with theme: {theme_mgr.get_current_theme()}",
+            extra={"dev_only": True}
+        )
+
+        # Initialize theme engine (legacy global stylesheet system)
         theme_manager = ThemeEngine()
 
         # Create custom splash screen
@@ -207,8 +215,19 @@ def main() -> int:
             # Initialize app
             window = MainWindow()
 
-            # Apply programmatic theme to the entire application
+            # Apply programmatic theme to the entire application (legacy system)
             theme_manager.apply_complete_theme(app, window)
+
+            # Apply ThemeManager QSS template on top (new token-based system)
+            # This allows widget-specific styling to override global styles
+            qss_content = theme_mgr.get_qss()
+            current_style = app.styleSheet()
+            combined_style = current_style + "\n\n/* ThemeManager Token-Based Styles */\n" + qss_content
+            app.setStyleSheet(combined_style)
+            logger.debug(
+                f"Applied ThemeManager QSS ({len(qss_content)} chars) on top of ThemeEngine",
+                extra={"dev_only": True}
+            )
 
             # Show main window and close splash
             def show_main():
