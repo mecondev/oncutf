@@ -553,6 +553,21 @@ THEME_COLORS = {
 }
 
 # =====================================
+# CONTEXT MENU COLORS
+# =====================================
+
+# Context Menu Colors (Dark Theme)
+# Used for styling QMenu in file table context menu and other context menus
+CONTEXT_MENU_COLORS = {
+    "background": "#232323",
+    "text": "#f0ebd8",
+    "selected_bg": "#748cab",
+    "selected_text": "#0d1321",
+    "disabled_text": "#888888",
+    "separator": "#5a5a5a",
+}
+
+# =====================================
 # TOOLTIP SETTINGS
 # =====================================
 

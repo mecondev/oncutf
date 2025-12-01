@@ -11,7 +11,7 @@ Handles browse, folder import, table interactions, context menus, and user actio
 import os
 import time
 
-from config import STATUS_COLORS
+from config import STATUS_COLORS, CONTEXT_MENU_COLORS
 from core.modifier_handler import decode_modifiers_to_flags
 from core.pyqt_imports import QAction, QApplication, QMenu, QModelIndex, Qt
 from utils.cursor_helper import wait_cursor
@@ -147,40 +147,40 @@ class EventHandlerManager:
 
         # Enhanced styling for better appearance and spacing
         menu.setStyleSheet(
-            """
-            QMenu {
-                background-color: #232323;
-                color: #f0ebd8;
+            f"""
+            QMenu {{
+                background-color: {CONTEXT_MENU_COLORS['background']};
+                color: {CONTEXT_MENU_COLORS['text']};
                 border: none;
                 border-radius: 8px;
                 font-family: "Inter", "Segoe UI", Arial, sans-serif;
                 font-size: 9pt;
                 padding: 6px 4px;
-            }
-            QMenu::item {
+            }}
+            QMenu::item {{
                 background-color: transparent;
                 padding: 3px 16px 3px 8px;
                 margin: 1px 2px;
                 border-radius: 4px;
                 min-height: 16px;
                 icon-size: 16px;
-            }
-            QMenu::item:selected {
-                background-color: #748cab;
-                color: #0d1321;
-            }
-            QMenu::item:disabled {
-                color: #888888;
-            }
-            QMenu::icon {
+            }}
+            QMenu::item:selected {{
+                background-color: {CONTEXT_MENU_COLORS['selected_bg']};
+                color: {CONTEXT_MENU_COLORS['selected_text']};
+            }}
+            QMenu::item:disabled {{
+                color: {CONTEXT_MENU_COLORS['disabled_text']};
+            }}
+            QMenu::icon {{
                 padding-left: 6px;
                 padding-right: 6px;
-            }
-            QMenu::separator {
-                background-color: #5a5a5a;
+            }}
+            QMenu::separator {{
+                background-color: {CONTEXT_MENU_COLORS['separator']};
                 height: 1px;
                 margin: 4px 8px;
-            }
+            }}
         """
         )
 
