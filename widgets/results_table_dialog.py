@@ -198,7 +198,7 @@ class ResultsTableDialog(QDialog):
             alternate-background-color: {theme.get_color('table_alternate')};
             color: {theme.get_color('text')};
             border: 1px solid {theme.get_color('border')};
-            gridline-color: {theme.get_color('table_grid')};
+            gridline-color: transparent;
             selection-background-color: {theme.get_color('table_selection_bg')};
             font-size: 11px;
         }}
@@ -211,7 +211,7 @@ class ResultsTableDialog(QDialog):
             background-color: {theme.get_color('results_header_bg')};
             color: {theme.get_color('text')};
             border: 1px solid {theme.get_color('border')};
-            padding: 6px 8px;
+            padding: 0px 8px;
             font-weight: 600;
             font-size: 11px;
         }}
@@ -373,23 +373,20 @@ class ResultsTableDialog(QDialog):
                 extra={"dev_only": True})
 
     def _on_table_context_menu(self, pos):
-        """Show context menu for copying values."""
+        """Show context menu for copying values - works on entire row."""
         idx = self.table.indexAt(pos)
         if not idx.isValid():
             return
 
         row = idx.row()
-        col = idx.column()
-
-        # Only copy from right column (value column)
-        if col != 1:
-            return
+        # Get value from right column (column 1) regardless of where click was
+        value_idx = self.model.index(row, 1)
 
         menu = QMenu(self)
-        action_copy = QAction("Copy value", self)
+        action_copy = QAction("Copy hash value", self)
 
         def do_copy():
-            value = self.model.data(self.model.index(row, col), Qt.DisplayRole)
+            value = self.model.data(value_idx, Qt.DisplayRole)
             if value:
                 QApplication.clipboard().setText(str(value))
 
