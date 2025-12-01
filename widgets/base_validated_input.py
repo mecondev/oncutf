@@ -19,6 +19,7 @@ from config import (
     QLABEL_INFO_TEXT,
 )
 from core.pyqt_imports import QKeyEvent
+from core.theme_manager import get_theme_manager
 from utils.tooltip_helper import show_error_tooltip
 
 logger = logging.getLogger(__name__)
@@ -233,11 +234,12 @@ class BaseValidatedInput:
             text: Current text content
         """
         try:
+            theme = get_theme_manager()
             # Determine styling based on state
             if not self._is_valid:
                 # Invalid state - red border only, normal background
                 style = f"""
-                    border: 2px solid #ff4444;
+                    border: 2px solid {theme.get_color('error')};
                     background-color: {QLABEL_DARK_BG};
                     color: {QLABEL_INFO_TEXT};
                     font-weight: normal;
@@ -245,7 +247,7 @@ class BaseValidatedInput:
             elif not text and self._has_had_content:
                 # Empty after having content - orange/warning styling
                 style = f"""
-                    border: 2px solid #FFA500;
+                    border: 2px solid {theme.get_color('warning')};
                     background-color: {QLABEL_DARK_BG};
                     color: {QLABEL_INFO_TEXT};
                     font-weight: normal;
@@ -253,7 +255,7 @@ class BaseValidatedInput:
             elif self.maxLength() > 0 and len(text) >= self.maxLength():
                 # At character limit - gray styling
                 style = f"""
-                    border: 2px solid #808080;
+                    border: 2px solid {theme.get_color('border_muted')};
                     background-color: {QLABEL_DARK_BG};
                     color: {QLABEL_INFO_TEXT};
                     font-weight: normal;
@@ -278,8 +280,9 @@ class BaseValidatedInput:
             from utils.timer_manager import schedule_ui_update
 
             # Apply error style immediately - red border only
+            theme = get_theme_manager()
             error_style = f"""
-                border: 2px solid #ff4444;
+                border: 2px solid {theme.get_color('error')};
                 background-color: {QLABEL_DARK_BG};
                 color: {QLABEL_INFO_TEXT};
                 font-weight: normal;

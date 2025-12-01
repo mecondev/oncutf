@@ -180,7 +180,7 @@ class ResultsTableDialog(QDialog):
     def _apply_styling(self):
         """Apply dark theme styling matching file_table_view."""
         theme = get_theme_manager()
-        
+
         style = f"""
         QDialog {{
             background-color: {theme.get_color('dialog_background')};

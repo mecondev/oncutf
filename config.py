@@ -644,6 +644,12 @@ THEME_TOKENS = {
         "input_border": "#3a3b40",
         "input_focus_border": "#748cab",
         "input_placeholder": "#666666",
+        "input_hover_bg": "#1f1f1f",
+        "input_focus_bg": "#1a1a1a",
+        "border_hover": "#555555",
+        "border_muted": "#808080",
+        "text_muted": "#888888",
+        "accent": "#748cab",
 
         # ===== Component-Specific: Scrollbars =====
         "scrollbar_bg": "#1e1e1e",

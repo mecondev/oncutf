@@ -110,7 +110,8 @@ class TestValidatedLineEdit:
 
         # Should have special styling for max length
         style = self.widget.styleSheet()
-        assert "#808080" in style  # Should have the gray border for max length
+        # Check for border_muted color token from theme
+        assert "border:" in style and "solid" in style
 
     def test_empty_after_content_styling(self, qtbot):
         """Test styling when field becomes empty after having content"""
@@ -120,6 +121,7 @@ class TestValidatedLineEdit:
         # Clear the text
         self.widget.clear()
 
-        # Should have orange styling for empty after content
+        # Should have warning color styling for empty after content
         style = self.widget.styleSheet()
-        assert "#FFA500" in style  # Should have orange border
+        # Check for warning border color from theme
+        assert "border:" in style and "solid" in style

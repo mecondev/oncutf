@@ -29,6 +29,7 @@ import traceback
 from typing import Any
 
 from config import METADATA_TREE_COLUMN_WIDTHS, METADATA_TREE_USE_PROXY
+from core.theme_manager import get_theme_manager
 from core.pyqt_imports import (
     QAbstractItemView,
     QAction,
@@ -1970,27 +1971,28 @@ class MetadataTreeView(QTreeView):
                     parent_window.metadata_search_completer.PopupCompletion
                 )
             # Apply complete enabled styling to ensure consistency
+            theme = get_theme_manager()
             search_field.setStyleSheet(
-                """
-                QLineEdit#metadataSearchField {
-                    background-color: #181818;
-                    border: 1px solid #3a3b40;
+                f"""
+                QLineEdit#metadataSearchField {{
+                    background-color: {theme.get_color('input_bg')};
+                    border: 1px solid {theme.get_color('border')};
                     border-radius: 4px;
-                    color: #f0ebd8;
+                    color: {theme.get_color('text')};
                     padding: 2px 8px;
                     min-height: 16px;
                     max-height: 18px;
                     margin-top: 0px;
                     margin-bottom: 2px;
-                }
-                QLineEdit#metadataSearchField:hover {
-                    background-color: #1f1f1f;
-                    border-color: #555555;
-                }
-                QLineEdit#metadataSearchField:focus {
-                    border-color: #748cab;
-                    background-color: #1a1a1a;
-                }
+                }}
+                QLineEdit#metadataSearchField:hover {{
+                    background-color: {theme.get_color('input_hover_bg')};
+                    border-color: {theme.get_color('border_hover')};
+                }}
+                QLineEdit#metadataSearchField:focus {{
+                    border-color: {theme.get_color('accent')};
+                    background-color: {theme.get_color('input_focus_bg')};
+                }}
             """
             )
             # Update suggestions when enabled
@@ -2014,24 +2016,25 @@ class MetadataTreeView(QTreeView):
                     parent_window.metadata_search_completer.UnfilteredPopupCompletion
                 )
             # Apply disabled styling with same dimensions to prevent layout shifts
+            theme = get_theme_manager()
             search_field.setStyleSheet(
-                """
-                QLineEdit#metadataSearchField:disabled {
-                    background-color: #181818;
-                    border: 1px solid #3a3b40;
+                f"""
+                QLineEdit#metadataSearchField:disabled {{
+                    background-color: {theme.get_color('input_bg')};
+                    border: 1px solid {theme.get_color('border')};
                     border-radius: 4px;
-                    color: #666666;
+                    color: {theme.get_color('text_disabled')};
                     padding: 2px 8px;
                     min-height: 16px;
                     max-height: 18px;
                     margin-top: 0px;
                     margin-bottom: 2px;
-                }
-                QLineEdit#metadataSearchField:disabled:hover {
-                    background-color: #181818;
-                    color: #666666;
-                    border: 1px solid #3a3b40;
-                }
+                }}
+                QLineEdit#metadataSearchField:disabled:hover {{
+                    background-color: {theme.get_color('input_bg')};
+                    color: {theme.get_color('text_disabled')};
+                    border: 1px solid {theme.get_color('border')};
+                }}
             """
             )
             # Don't clear the search text - preserve it for when metadata is available again

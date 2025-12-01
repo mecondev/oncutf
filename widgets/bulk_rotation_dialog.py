@@ -11,6 +11,7 @@ Dialog for bulk rotation operations.
 from pathlib import Path
 
 from config import QLABEL_MUTED_TEXT
+from core.theme_manager import get_theme_manager
 from core.pyqt_imports import (
     QCheckBox,
     QDialog,
@@ -43,50 +44,51 @@ class BulkRotationDialog(QDialog):
         self.setModal(True)
         self.setFixedSize(600, 450)
 
+        theme = get_theme_manager()
         self.setStyleSheet(
-            """
-            QDialog {
-                background-color: #212121;
-                color: #f0ebd8;
+            f"""
+            QDialog {{
+                background-color: {theme.get_color('dialog_background')};
+                color: {theme.get_color('text')};
                 font-size: 9pt; font-family: "Inter", "Segoe UI", Arial, sans-serif; font-weight: 500;
                 border-radius: 8px;
-            }
+            }}
             QLabel {{
                 background-color: transparent;
-                color: {QLABEL_PRIMARY_TEXT};
+                color: {theme.get_color('text')};
                 font-size: 9pt; font-family: "Inter", "Segoe UI", Arial, sans-serif; font-weight: 500;
                 border: none;
                 padding: 2px;
             }}
-            QCheckBox {
-                color: #f0ebd8;
+            QCheckBox {{
+                color: {theme.get_color('text')};
                 font-size: 9pt; font-family: "Inter", "Segoe UI", Arial, sans-serif; font-weight: 500;
                 spacing: 8px;
-            }
-            QCheckBox::indicator {
+            }}
+            QCheckBox::indicator {{
                 width: 16px;
                 height: 16px;
-                border: 1px solid #555555;
+                border: 1px solid {theme.get_color('border')};
                 border-radius: 3px;
-                background-color: #2c2c2c;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #748cab;
-                border-color: #748cab;
-            }
-            QFrame {
-                background-color: #181818;
-                border: 1px solid #444444;
+                background-color: {theme.get_color('input_bg')};
+            }}
+            QCheckBox::indicator:checked {{
+                background-color: {theme.get_color('selected')};
+                border-color: {theme.get_color('selected')};
+            }}
+            QFrame {{
+                background-color: {theme.get_color('background')};
+                border: 1px solid {theme.get_color('border')};
                 border-radius: 8px;
-            }
-            QScrollArea {
-                background-color: #181818;
-                border: 1px solid #444444;
+            }}
+            QScrollArea {{
+                background-color: {theme.get_color('background')};
+                border: 1px solid {theme.get_color('border')};
                 border-radius: 8px;
-            }
-            QScrollArea QWidget {
+            }}
+            QScrollArea QWidget {{
                 background-color: transparent;
-            }
+            }}
         """
         )
 
@@ -155,23 +157,24 @@ class BulkRotationDialog(QDialog):
         self.cancel_button.setFocus()
         self.cancel_button.clicked.connect(self.reject)
 
+        theme = get_theme_manager()
         self.cancel_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #2a2a2a;
-                color: #f0ebd8;
+            f"""
+            QPushButton {{
+                background-color: {theme.get_color('button_bg')};
+                color: {theme.get_color('text')};
                 font-size: 9pt; font-family: "Inter", "Segoe UI", Arial, sans-serif; font-weight: 500;
                 border: none;
                 border-radius: 8px;
                 padding: 4px 12px 4px 8px;
                 min-width: 70px;
-            }
-            QPushButton:hover {
-                background-color: #3a3a3a;
-            }
-            QPushButton:pressed {
-                background-color: #1a1a1a;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {theme.get_color('button_hover_bg')};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.get_color('pressed')};
+            }}
         """
         )
 
@@ -179,23 +182,24 @@ class BulkRotationDialog(QDialog):
         self.apply_button = QPushButton("Apply")
         self.apply_button.clicked.connect(self.accept)
 
+        theme = get_theme_manager()
         self.apply_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #2a2a2a;
-                color: #f0ebd8;
+            f"""
+            QPushButton {{
+                background-color: {theme.get_color('button_bg')};
+                color: {theme.get_color('text')};
                 font-size: 9pt; font-family: "Inter", "Segoe UI", Arial, sans-serif; font-weight: 500;
                 border: none;
                 border-radius: 8px;
                 padding: 4px 12px 4px 8px;
                 min-width: 70px;
-            }
-            QPushButton:hover {
-                background-color: #748cab;
-            }
-            QPushButton:pressed {
-                background-color: #5a6b7a;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {theme.get_color('selected')};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme.get_color('pressed')};
+            }}
         """
         )
 

@@ -969,14 +969,15 @@ class MetadataWidget(QWidget):
 
         if not selected_files:
             # Disable Hash and EXIF when no files are selected
+            theme = get_theme_manager()
             hash_item = self.category_model.item(1)
             metadata_item = self.category_model.item(2)
 
             hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
-            hash_item.setForeground(QColor("#888888"))  # type: ignore
+            hash_item.setForeground(QColor(theme.get_color('text_muted')))  # type: ignore
 
             metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
-            metadata_item.setForeground(QColor("#888888"))  # type: ignore
+            metadata_item.setForeground(QColor(theme.get_color('text_muted')))  # type: ignore
 
             # Apply normal styling - disabled items will be gray via QAbstractItemView styling
             self._apply_category_styling()
@@ -1002,6 +1003,7 @@ class MetadataWidget(QWidget):
         else:
             # Check if files have hash data
             has_hash_data = self._check_files_have_hash(selected_files)
+            theme = get_theme_manager()
             hash_item = self.category_model.item(1)
 
             if has_hash_data:
@@ -1009,7 +1011,7 @@ class MetadataWidget(QWidget):
                 hash_item.setForeground(QColor())  # type: ignore # Reset to default color
             else:
                 hash_item.setFlags(hash_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
-                hash_item.setForeground(QColor("#888888"))  # type: ignore
+                hash_item.setForeground(QColor(theme.get_color('text_muted')))  # type: ignore
 
                 # If current category is hash and is disabled, apply disabled styling
                 if self.category_combo.currentData() == "hash":
@@ -1027,6 +1029,7 @@ class MetadataWidget(QWidget):
 
             # Check if files have EXIF/metadata data
             has_metadata_data = self._check_files_have_metadata(selected_files)
+            theme = get_theme_manager()
             metadata_item = self.category_model.item(2)
 
             if has_metadata_data:
@@ -1034,7 +1037,7 @@ class MetadataWidget(QWidget):
                 metadata_item.setForeground(QColor())  # type: ignore # Reset to default color
             else:
                 metadata_item.setFlags(metadata_item.flags() & ~Qt.ItemIsEnabled)  # type: ignore
-                metadata_item.setForeground(QColor("#888888"))  # type: ignore
+                metadata_item.setForeground(QColor(theme.get_color('text_muted')))  # type: ignore
 
             # Apply styling to category combo based on state
             self._apply_category_styling()
