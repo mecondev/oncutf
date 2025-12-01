@@ -68,7 +68,7 @@ class FinalTransformContainer(QWidget):
     def _setup_ui(self):
         """Setup the UI with grid layout for better alignment."""
         main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(6, 6, 6, 6)
+        main_layout.setContentsMargins(4, 4, 4, 4)
         main_layout.setSpacing(0)  # Remove spacing since we removed the title
 
         # Greeklish row (alone, touching left)

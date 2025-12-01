@@ -46,8 +46,8 @@ class SpecifiedTextModule(BaseRenameModule):
         self._current_file = None
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(6, 6, 6, 6)  # Match final transformer margins
-        layout.setSpacing(0)  # Match final transformer spacing
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(0)
 
         self.text_input = ValidatedLineEdit()
         self.text_input.setPlaceholderText("Enter custom text")

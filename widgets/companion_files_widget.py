@@ -29,6 +29,7 @@ from config import (
     SHOW_COMPANION_FILES_IN_TABLE,
     CompanionFileMode,
 )
+from core.theme_manager import get_theme_manager
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
@@ -88,7 +89,8 @@ class CompanionFilesWidget(QWidget):
 
         # Add note about grouped mode
         grouped_note = QLabel("(Grouped display is planned for a future version)")
-        grouped_note.setStyleSheet("color: #888; font-style: italic; font-size: 10px;")
+        theme = get_theme_manager()
+        grouped_note.setStyleSheet(f"color: {theme.get_color('text_muted')}; font-style: italic; font-size: 10px;")
         display_layout.addWidget(grouped_note)
 
         self.display_button_group.buttonToggled.connect(self._on_settings_changed)
@@ -128,7 +130,8 @@ class CompanionFilesWidget(QWidget):
             "synchronized with your main files."
         )
         info_text.setWordWrap(True)
-        info_text.setStyleSheet("color: #666; font-size: 11px; padding: 8px;")
+        theme = get_theme_manager()
+        info_text.setStyleSheet(f"color: {theme.get_color('text_muted')}; font-size: 11px; padding: 8px;")
         info_layout.addWidget(info_text)
 
         layout.addWidget(info_group)

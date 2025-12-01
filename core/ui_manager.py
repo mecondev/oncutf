@@ -227,21 +227,26 @@ class UIManager:
         self.parent_window.folder_tree.setExpandsOnDoubleClick(True)
 
         btn_layout = QHBoxLayout()
+        btn_layout.setContentsMargins(0, 0, 0, 0)
+        btn_layout.setSpacing(4)  # Tight spacing between buttons
+
         self.parent_window.select_folder_button = QPushButton("  Import")
         self.parent_window.select_folder_button.setIcon(get_menu_icon("folder"))
-        self.parent_window.select_folder_button.setFixedWidth(100)
+        self.parent_window.select_folder_button.setFixedHeight(24)  # Thin button
+        self.parent_window.select_folder_button.setFixedWidth(90)
+        
         self.parent_window.browse_folder_button = QPushButton("  Browse")
         self.parent_window.browse_folder_button.setIcon(get_menu_icon("folder-plus"))
-        self.parent_window.browse_folder_button.setFixedWidth(100)
+        self.parent_window.browse_folder_button.setFixedHeight(24)  # Thin button
+        self.parent_window.browse_folder_button.setFixedWidth(90)
         setup_tooltip(
             self.parent_window.browse_folder_button, "Browse folder (Ctrl+O)", TooltipType.INFO
         )
 
-        # Add buttons with fixed positioning - no stretching
+        # Add buttons aligned to right
+        btn_layout.addStretch()  # Push buttons to right
         btn_layout.addWidget(self.parent_window.select_folder_button)
-        btn_layout.addSpacing(4)  # 4px spacing between buttons
         btn_layout.addWidget(self.parent_window.browse_folder_button)
-        btn_layout.addStretch()  # Push buttons to left, allow empty space on right
         left_layout.addLayout(btn_layout)
 
         self.parent_window.dir_model = CustomFileSystemModel()

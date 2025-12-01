@@ -66,7 +66,7 @@ QTableView::item:selected {
 QHeaderView::section {
     background-color: {{table_header_bg}};
     color: {{table_header_text}};
-    padding: 4px 8px;
+    padding: 0px 8px;
     border: none;
     border-right: 1px solid {{border}};
     border-bottom: 1px solid {{border}};
@@ -115,8 +115,7 @@ QPushButton {
     color: {{button_text}};
     border: 1px solid {{border}};
     border-radius: 4px;
-    padding: 6px 12px;
-    min-height: 24px;
+    padding: 2px 8px;
 }
 
 QPushButton:hover {
@@ -127,6 +126,7 @@ QPushButton:hover {
 
 QPushButton:pressed {
     background-color: {{button_pressed_bg}};
+    color: {{button_pressed_text}};
 }
 
 QPushButton:disabled {
@@ -146,7 +146,7 @@ QLineEdit, QTextEdit, QPlainTextEdit {
     color: {{input_text}};
     border: 1px solid {{input_border}};
     border-radius: 4px;
-    padding: 4px 8px;
+    padding: 2px 6px;
     selection-background-color: {{selected}};
     selection-color: {{selected_text}};
 }
@@ -171,8 +171,7 @@ QComboBox {
     color: {{text}};
     border: 1px solid {{input_border}};
     border-radius: 4px;
-    padding: 4px 8px;
-    min-height: 24px;
+    padding: 2px 6px;
 }
 
 QComboBox:hover {

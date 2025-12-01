@@ -1197,8 +1197,106 @@ class MetadataTreeView(QTreeView):
     # Metadata Editing Methods
     # =====================================
 
+    def _get_item_path(self, index: QModelIndex) -> list[str]:
+        """Get the path from root to the given index as a list of display texts.
+        
+        Returns:
+            List of strings representing the path, e.g. ["File Info", "File Name"]
+        """
+        path = []
+        current = index
+        while current.isValid():
+            path.insert(0, current.data(Qt.ItemDataRole.DisplayRole))
+            current = current.parent()
+        return path
+
+    def _find_item_by_path(self, path: list[str]) -> QModelIndex | None:
+        """Find an item in the tree by its path from root.
+        
+        Args:
+            path: List of display texts from root to target item
+            
+        Returns:
+            QModelIndex if found, None otherwise
+        """
+        if not path:
+            return None
+            
+        model = self.model()
+        if not model:
+            return None
+            
+        # Start from root
+        current_index = QModelIndex()
+        
+        for text in path:
+            found = False
+            row_count = model.rowCount(current_index)
+            
+            for row in range(row_count):
+                child_index = model.index(row, 0, current_index)
+                if child_index.data(Qt.ItemDataRole.DisplayRole) == text:
+                    current_index = child_index
+                    found = True
+                    break
+                    
+            if not found:
+                logger.debug(f"[MetadataTree] Path item not found: {text}")
+                return None
+                
+        return current_index
+
+    def _find_path_by_key(self, key_path: str) -> list[str] | None:
+        """Find the tree path (display names) for a given metadata key path.
+        
+        Args:
+            key_path: Metadata key like "File:FileName" or "EXIF:Make"
+            
+        Returns:
+            List of display names from root to item, e.g. ["File Info", "File Name"]
+            None if not found
+        """
+        model = self.model()
+        if not model:
+            return None
+            
+        # Search recursively through the tree
+        def search_tree(parent_index: QModelIndex, target_key: str) -> list[str] | None:
+            row_count = model.rowCount(parent_index)
+            for row in range(row_count):
+                index = model.index(row, 0, parent_index)
+                
+                # Check if this item's key matches
+                item_data = index.data(Qt.ItemDataRole.UserRole)
+                if item_data and isinstance(item_data, dict):
+                    item_key = item_data.get("key", "")
+                    if item_key == target_key:
+                        # Found it! Build the path
+                        return self._get_item_path(index)
+                
+                # Search children recursively
+                child_path = search_tree(index, target_key)
+                if child_path:
+                    return child_path
+                    
+            return None
+        
+        return search_tree(QModelIndex(), key_path)
+
     def edit_value(self, key_path: str, current_value: Any) -> None:
         """Open a dialog to edit the value of a metadata field."""
+        # Save current selection path before opening dialog
+        current_index = self.currentIndex()
+        saved_path = self._get_item_path(current_index) if current_index.isValid() else None
+        
+        # Fallback: if no current selection, try to find the item by key_path
+        # This handles cases where the tree loses focus between edits
+        if not saved_path and key_path:
+            # Try to find the item by its key path
+            saved_path = self._find_path_by_key(key_path)
+            if saved_path:
+                logger.debug(f"[MetadataTree] Using fallback path from key_path: {key_path}")
+        
         # Get selected files and metadata cache
         selected_files = self._get_current_selection()
         metadata_cache = self._get_metadata_cache()
@@ -1251,6 +1349,25 @@ class MetadataTreeView(QTreeView):
 
             # Emit signal for external listeners
             self.value_edited.emit(normalized_key_path, str(current_value), new_value)
+            
+            # Restore selection AFTER tree has been updated
+            # Use custom timer with longer delay to ensure tree refresh completes
+            if saved_path:
+                schedule_ui_update(lambda: self._restore_selection(saved_path), delay=150)
+        else:
+            # For cancelled edits, restore immediately
+            if saved_path:
+                self._restore_selection(saved_path)
+
+    def _restore_selection(self, path: list[str]) -> None:
+        """Restore selection to the given path."""
+        restored_index = self._find_item_by_path(path)
+        if restored_index and restored_index.isValid():
+            self.setCurrentIndex(restored_index)
+            self.scrollTo(restored_index)
+            logger.debug(f"[MetadataTree] Restored selection to: {' > '.join(path)}")
+        else:
+            logger.debug(f"[MetadataTree] Could not restore selection, path not found")
 
     def _fallback_edit_value(
         self, key_path: str, new_value: str, _old_value: str, files_to_modify: list

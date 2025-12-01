@@ -20,6 +20,9 @@ from pathlib import Path
 
 from config import (
     HASH_LIST_CONTENT_MARGINS,
+    HASH_LIST_FONT_SIZE,
+    HASH_LIST_LABEL_BACKGROUND,
+    HASH_LIST_ROW_HEIGHT,
     HASH_LIST_WINDOW_DEFAULT_HEIGHT,
     HASH_LIST_WINDOW_DEFAULT_WIDTH,
     HASH_LIST_WINDOW_MAX_HEIGHT,
@@ -44,10 +47,9 @@ from core.pyqt_imports import (
     QTableView,
     QVBoxLayout,
 )
+from core.theme_manager import get_theme_manager
 from models.results_table_model import ResultsTableModel
-from utils.icons_loader import get_menu_icon
 from utils.logger_factory import get_cached_logger
-from utils.timer_manager import get_timer_manager
 
 logger = get_cached_logger(__name__)
 
@@ -81,21 +83,15 @@ class ResultsTableDialog(QDialog):
         self.right_header = right_header
         self.data = data or {}
         self._suspend_column_save = False
-        self._columns_changed = False  # Track if user resized columns
 
         self.setWindowTitle(title)
         self.setModal(True)
 
-        # Ensure dialog can receive keyboard events
-        self.setFocusPolicy(Qt.StrongFocus)
-
         # Setup UI
         self._setup_ui()
+        self._apply_styling()
         self._load_geometry()
         self._populate_data()
-
-        # Set focus to dialog after setup
-        self.setFocus()
 
         logger.debug(f"[ResultsTableDialog] Created with {len(self.data)} rows")
 
@@ -133,25 +129,20 @@ class ResultsTableDialog(QDialog):
         self.table.setEditTriggers(QTableView.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
         self.table.verticalHeader().setVisible(False)
-                # Install event filter on table to forward Ctrl+T shortcuts to dialog
-        self.table.installEventFilter(self)
 
-        # Configure row height from theme engine
-        from utils.theme_engine import ThemeEngine
-        theme = ThemeEngine()
-        row_height = theme.get_constant("table_row_height")
-        self.table.verticalHeader().setDefaultSectionSize(row_height)
-        self.table.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
+        # Configure row height
+        if HASH_LIST_ROW_HEIGHT:
+            row_height = int(HASH_LIST_ROW_HEIGHT)
+            self.table.verticalHeader().setDefaultSectionSize(row_height)
+            self.table.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
 
         # Configure columns
         header = self.table.horizontalHeader()
         header.setStretchLastSection(False)
-        header.setSectionsClickable(False)  # Disable click/hover like file_table
-        header.setHighlightSections(False)   # Disable hover highlight
         header.setSectionResizeMode(0, QHeaderView.Interactive)
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
 
-        # Connect header resize signal (batched save on close, not immediate)
+        # Connect header resize signal
         header.sectionResized.connect(self._on_column_resized)
 
         # Context menu for copying values
@@ -160,109 +151,106 @@ class ResultsTableDialog(QDialog):
 
         # Scrollbars
         self.table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        # Use manual control for horizontal scrollbar to match FileTableView behavior
         self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
         layout.addWidget(self.table)
 
         # Button bar
         button_layout = QHBoxLayout()
-
-        # Status label (bottom left)
-        self.status_label = QLabel("")
-        self.status_label.setObjectName("status_label")
-        # Apply styling for status (brighter than disabled text, no italic)
-        from utils.theme_engine import ThemeEngine
-        theme = ThemeEngine()
-        status_color = theme.colors["app_text"]  # Use main text color but with slight transparency
-        self.status_label.setStyleSheet(f"color: {status_color}; opacity: 0.7;")
-        button_layout.addWidget(self.status_label)
-
         button_layout.addStretch()
 
         self.close_button = QPushButton("Close")
         self.close_button.clicked.connect(self.accept)
         self.close_button.setObjectName("dialog_action_button")
-        # Add icon to close button
-        try:
-            self.close_button.setIcon(get_menu_icon("x"))
-        except Exception as e:
-            logger.debug(f"Could not load close icon: {e}")
-        self.close_button.setFixedHeight(theme.get_constant("button_height"))
+        self.close_button.setFixedHeight(24)
         button_layout.addWidget(self.close_button)
 
         # Export button
         try:
             self.export_button = QPushButton("Export")
             self.export_button.setObjectName("dialog_action_button")
-            # Add icon to export button
-            self.export_button.setIcon(get_menu_icon("download"))
-            self.export_button.setFixedHeight(theme.get_constant("button_height"))
+            self.export_button.setFixedHeight(24)
             button_layout.insertWidget(button_layout.count() - 1, self.export_button)
-        except Exception as e:
-            logger.debug(f"Could not create export button: {e}")
+        except Exception:
+            pass
 
         layout.addLayout(button_layout)
         self.setLayout(layout)
 
-        # Initial scrollbar update
-        self._update_scrollbar_visibility()
+    def _apply_styling(self):
+        """Apply dark theme styling matching file_table_view."""
+        theme = get_theme_manager()
 
-    def resizeEvent(self, event):
-        """Handle resize events to update scrollbar visibility."""
-        super().resizeEvent(event)
-        self._update_scrollbar_visibility()
+        style = f"""
+        QDialog {{
+            background-color: {theme.get_color('dialog_background')};
+        }}
 
-    def _update_scrollbar_visibility(self) -> None:
-        """Update scrollbar visibility based on table content and column widths.
+        QLabel#title_label {{
+            color: {theme.get_color('text')};
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }}
 
-        Matches behavior of FileTableView to prevent unnecessary scrollbars.
+        QTableView {{
+            background-color: {theme.get_color('table_background')};
+            alternate-background-color: {theme.get_color('table_alternate')};
+            color: {theme.get_color('text')};
+            border: 1px solid {theme.get_color('border')};
+            gridline-color: {theme.get_color('table_grid')};
+            selection-background-color: {theme.get_color('table_selection_bg')};
+            font-size: 11px;
+        }}
+
+        QTableView::item {{
+            padding: 4px 8px;
+        }}
+
+        QHeaderView::section {{
+            background-color: {theme.get_color('results_header_bg')};
+            color: {theme.get_color('text')};
+            border: 1px solid {theme.get_color('border')};
+            padding: 6px 8px;
+            font-weight: 600;
+            font-size: 11px;
+        }}
+
+        QPushButton {{
+            background-color: {theme.get_color('button_bg')};
+            color: {theme.get_color('text')};
+            border: 1px solid {theme.get_color('border')};
+            border-radius: 4px;
+            padding: 6px 16px;
+            font-size: 12px;
+        }}
+
+        QPushButton:hover {{
+            background-color: {theme.get_color('button_hover_bg')};
+        }}
+
+        QPushButton:pressed {{
+            background-color: {theme.get_color('pressed')};
+        }}
         """
-        if not hasattr(self, "table") or not self.table.model():
-            return
+        self.setStyleSheet(style)
 
-        try:
-            # Store current scrollbar position to preserve user's scroll position
-            hbar = self.table.horizontalScrollBar()
-            current_scroll_position = hbar.value() if hbar else 0
-
-            # Force complete geometry recalculation
-            self.table.updateGeometries()
-
-            # Force layout recalculation to update elided text
-            if self.table.model():
-                self.table.model().layoutChanged.emit()
-
-            # Update viewport to refresh display
-            self.table.viewport().update()
-
-            # Calculate total column width
-            total_width = 0
-            header = self.table.horizontalHeader()
-            for i in range(header.count()):
-                if not header.isSectionHidden(i):
-                    total_width += self.table.columnWidth(i)
-
-            # Get viewport width
-            viewport_width = self.table.viewport().width()
-
-            # Simple logic: show scrollbar if content is wider than viewport
-            if total_width > viewport_width:
-                self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-
-                # Restore scrollbar position if it's still valid
-                if hbar and hbar.maximum() > 0:
-                    if current_scroll_position <= hbar.maximum():
-                        hbar.setValue(current_scroll_position)
-                    else:
-                        hbar.setValue(hbar.maximum())
+        # Runtime overrides from config
+        from contextlib import suppress
+        with suppress(Exception):
+            if HASH_LIST_LABEL_BACKGROUND == "":
+                self.title_label.setStyleSheet("background-color: transparent;")
             else:
-                self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-                if hbar:
-                    hbar.setValue(0)
+                self.title_label.setStyleSheet(f"background-color: {HASH_LIST_LABEL_BACKGROUND};")
 
-        except Exception as e:
-            logger.warning(f"[ResultsTableDialog] Error updating scrollbar visibility: {e}")
+            if HASH_LIST_FONT_SIZE:
+                fs = int(HASH_LIST_FONT_SIZE)
+                font = self.table.font()
+                font.setPointSize(fs)
+                self.table.setFont(font)
+                tfont = self.title_label.font()
+                tfont.setPointSize(max(fs, 12))
+                self.title_label.setFont(tfont)
 
     def _populate_data(self):
         """Populate the table with data."""
@@ -277,19 +265,14 @@ class ResultsTableDialog(QDialog):
         config_manager = get_app_config_manager()
         dialogs_config = config_manager.get_category("dialogs", create_if_not_exists=True)
 
-        logger.info(f"[ResultsTableDialog] Loading config for key: {self.config_key}")
-        logger.info(f"[ResultsTableDialog] Dialogs config keys: {list(dialogs_config._data.keys()) if hasattr(dialogs_config, '_data') else 'N/A'}")
-
         # Load window geometry
         geometry_key = f"{self.config_key}_geometry"
         geometry = dialogs_config.get(geometry_key)
-        logger.info(f"[ResultsTableDialog] Loaded geometry from '{geometry_key}': {geometry}")
-
-        if geometry and len(geometry) == 4:
+        if geometry:
             try:
                 x, y, width, height = geometry
                 self.setGeometry(x, y, width, height)
-                logger.info(f"[ResultsTableDialog] [OK] Applied geometry: {width}x{height} at ({x}, {y})")
+                logger.debug(f"[ResultsTableDialog] Loaded geometry: {geometry}")
 
                 # Enforce min/max
                 if getattr(self, "config_key", "").startswith("hash"):
@@ -310,23 +293,19 @@ class ResultsTableDialog(QDialog):
                 logger.warning(f"[ResultsTableDialog] Failed to restore geometry: {e}")
                 self._set_default_geometry()
         else:
-            logger.info(f"[ResultsTableDialog] No saved geometry found (got: {geometry}), using defaults")
             self._set_default_geometry()
 
-        # Load column widths (always, regardless of geometry loading)
+        # Load column widths
         column_widths_key = f"{self.config_key}_column_widths"
         column_widths = dialogs_config.get(column_widths_key)
-        logger.info(f"[ResultsTableDialog] Loaded column widths from '{column_widths_key}': {column_widths}")
-
         if column_widths and len(column_widths) == 2:
             try:
                 self.table.setColumnWidth(0, column_widths[0])
-                logger.info(f"[ResultsTableDialog] [OK] Applied column widths: {column_widths}")
+                logger.debug(f"[ResultsTableDialog] Loaded column widths: {column_widths}")
             except Exception as e:
                 logger.warning(f"[ResultsTableDialog] Failed to restore column widths: {e}")
                 self._set_default_column_widths()
         else:
-            logger.info(f"[ResultsTableDialog] No saved column widths found (got: {column_widths}), using defaults")
             self._set_default_column_widths()
 
     def _set_default_geometry(self):
@@ -373,31 +352,25 @@ class ResultsTableDialog(QDialog):
         self.table.setColumnWidth(0, left_width)
         logger.debug(f"[ResultsTableDialog] Set default column width: {left_width}")
 
-    def _on_column_resized(self, _logical_index: int, _old_size: int, _new_size: int):
-        """Track column resize (save batched on close, not immediate)."""
+    def _on_column_resized(self, logical_index: int, _old_size: int, new_size: int):
+        """Handle column resize and persist to config."""
         if getattr(self, "_suspend_column_save", False):
             return
-        # Just mark that columns changed - actual save happens in closeEvent
-        self._columns_changed = True
 
-        # Update scrollbar visibility
-        self._update_scrollbar_visibility()
+        if logical_index == 0:
+            from utils.json_config_manager import get_app_config_manager
 
-        # Force immediate scrollbar and viewport update
-        self.table.updateGeometry()
-        self.table.viewport().update()
+            config_manager = get_app_config_manager()
+            dialogs_config = config_manager.get_category("dialogs", create_if_not_exists=True)
+            column_widths_key = f"{self.config_key}_column_widths"
 
-    def show_status_message(self, message: str, duration: int = 3000):
-        """Show a temporary status message in the bottom left label."""
-        if hasattr(self, "status_label"):
-            self.status_label.setText(message)
-            # Clear after duration using timer manager
-            timer_mgr = get_timer_manager()
-            timer_mgr.schedule(
-                lambda: self.status_label.setText(""),
-                delay=duration,
-                timer_id=f"status_clear_{id(self)}"
-            )
+            left_width = new_size
+            right_width = self.table.columnWidth(1)
+
+            dialogs_config.set(column_widths_key, [left_width, right_width])
+            config_manager.mark_dirty()
+            logger.debug(f"[ResultsTableDialog] Marked column widths dirty: [{left_width}, {right_width}]",
+                extra={"dev_only": True})
 
     def _on_table_context_menu(self, pos):
         """Show context menu for copying values."""
@@ -413,144 +386,34 @@ class ResultsTableDialog(QDialog):
             return
 
         menu = QMenu(self)
-        # Apply theme styling
-        from utils.theme_engine import ThemeEngine
-        theme = ThemeEngine()
-        menu.setStyleSheet(theme.get_context_menu_stylesheet())
-
-        action_copy = QAction("Copy", menu)
-        action_copy.setIcon(get_menu_icon("copy"))
+        action_copy = QAction("Copy value", self)
 
         def do_copy():
             value = self.model.data(self.model.index(row, col), Qt.DisplayRole)
             if value:
                 QApplication.clipboard().setText(str(value))
-                self.show_status_message("Value copied")
 
         action_copy.triggered.connect(do_copy)
         menu.addAction(action_copy)
         menu.exec_(self.table.viewport().mapToGlobal(pos))
 
-    def keyPressEvent(self, event):
-        """Handle keyboard shortcuts (Ctrl+T for auto-fit, Ctrl+Shift+T for reset)."""
-        logger.debug(f"[ResultsTableDialog] keyPressEvent: key={event.key()}, modifiers={event.modifiers()}")
-
-        # Ctrl+T: Auto-fit columns to content
-        if event.key() == Qt.Key_T and event.modifiers() == Qt.ControlModifier:
-            logger.debug("[ResultsTableDialog] Ctrl+T pressed - auto-fitting columns")
-            self._auto_fit_columns_to_content()
-            event.accept()
-            return
-
-        # Ctrl+Shift+T: Reset column widths to default
-        if event.key() == Qt.Key_T and event.modifiers() == (Qt.ControlModifier | Qt.ShiftModifier):
-            logger.debug("[ResultsTableDialog] Ctrl+Shift+T pressed - resetting columns")
-            self._reset_columns_to_default()
-            event.accept()
-            return
-
-        super().keyPressEvent(event)
-
-    def eventFilter(self, obj, event):
-        """Forward keyboard events from table to dialog for shortcuts."""
-        if obj == self.table and event.type() == event.KeyPress:
-            # Forward Ctrl+T and Ctrl+Shift+T to dialog's keyPressEvent
-            if event.key() == Qt.Key_T and (event.modifiers() & Qt.ControlModifier):
-                self.keyPressEvent(event)
-                if event.isAccepted():
-                    return True
-        return super().eventFilter(obj, event)
-
-    def _reset_columns_to_default(self):
-        """Reset column widths to default values (Ctrl+Shift+T)."""
-        self._suspend_column_save = True
-        try:
-            left_width = RESULTS_TABLE_LEFT_COLUMN_WIDTH
-            self.table.setColumnWidth(0, left_width)
-            # Right column auto-sizes
-            logger.debug(f"[ResultsTableDialog] Reset columns to default: {left_width}")
-        finally:
-            self._suspend_column_save = False
-            # Mark config as dirty to save the new widths
-            self._columns_changed = True
-            self._update_scrollbar_visibility()
-
-    def _auto_fit_columns_to_content(self):
-        """Auto-fit column widths to content (Ctrl+T).
-
-        Resizes column 1 to content, and column 0 to fill remaining space
-        (or fit content if larger).
-        """
-        self._suspend_column_save = True
-        try:
-            # 1. Resize right column (Value/Checksum) to content
-            self.table.resizeColumnToContents(1)
-            col1_width = self.table.columnWidth(1)
-
-            # 2. Get viewport width (available space)
-            viewport_width = self.table.viewport().width()
-
-            # 3. Calculate remaining space for column 0
-            available_for_col0 = viewport_width - col1_width
-
-            # 4. Resize column 0 to content to get its minimum needed width
-            self.table.resizeColumnToContents(0)
-            col0_content_width = self.table.columnWidth(0)
-
-            # 5. Set column 0 width to fill space, but at least fit content
-            # This ensures we don't truncate text if possible, but fill empty space
-            final_col0_width = max(col0_content_width, available_for_col0)
-
-            self.table.setColumnWidth(0, final_col0_width)
-
-            logger.info(f"[ResultsTableDialog] Auto-fit columns: [{final_col0_width}, {col1_width}] (Viewport: {viewport_width})")
-        finally:
-            self._suspend_column_save = False
-            # Mark config as dirty to save the new widths
-            self._columns_changed = True
-            self._update_scrollbar_visibility()
-
     def closeEvent(self, event):
-        """Save geometry and column widths when dialog closes (single batch save)."""
-        self._save_config()
-        super().closeEvent(event)
-
-    def accept(self):
-        """Override accept() to save config before closing (called by Close button)."""
-        self._save_config()
-        super().accept()
-
-    def _save_config(self):
-        """Save dialog geometry and column widths to config."""
+        """Save geometry when dialog closes."""
         from utils.json_config_manager import get_app_config_manager
 
         config_manager = get_app_config_manager()
         dialogs_config = config_manager.get_category("dialogs", create_if_not_exists=True)
-
-        logger.info(f"[ResultsTableDialog] Saving config for key: {self.config_key}")
-
-        # Save geometry
         geometry_key = f"{self.config_key}_geometry"
+
         geo = self.geometry()
         geometry = [geo.x(), geo.y(), geo.width(), geo.height()]
         dialogs_config.set(geometry_key, geometry)
-        logger.info(f"[ResultsTableDialog] Set '{geometry_key}' = {geometry}")
-
-        # Save column widths
-        column_widths_key = f"{self.config_key}_column_widths"
-        left_width = self.table.columnWidth(0)
-        right_width = self.table.columnWidth(1)
-        dialogs_config.set(column_widths_key, [left_width, right_width])
-        logger.info(f"[ResultsTableDialog] Set '{column_widths_key}' = [{left_width}, {right_width}]")
-
-        # Single save for both
         config_manager.save_immediate()
-        logger.info("[ResultsTableDialog] [OK] Config saved to disk")
 
-        # Verify it was saved
-        verify_geo = dialogs_config.get(geometry_key)
-        verify_cols = dialogs_config.get(column_widths_key)
-        logger.info(f"[ResultsTableDialog] Verification - geometry: {verify_geo}, columns: {verify_cols}")
+        logger.debug(f"[ResultsTableDialog] Saved geometry immediately: {geometry}",
+            extra={"dev_only": True})
+
+        super().closeEvent(event)
 
     @classmethod
     def show_hash_results(

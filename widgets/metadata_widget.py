@@ -13,6 +13,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QStandardItem, QStandardItemModel
 
 from core.pyqt_imports import QComboBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from core.theme_manager import get_theme_manager
 from utils.file_status_helpers import (
     batch_hash_status,
     batch_metadata_status,

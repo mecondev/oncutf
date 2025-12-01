@@ -581,10 +581,12 @@ THEME_TOKENS = {
         "background_alternate": "#232323",
         "background_lighter": "#2a2a2a",
         "background_elevated": "#1e1e1e",  # Dialogs, elevated surfaces
-        "text": "#f0ebd8",
+        "text": "#f0ebd8",  # Main text color
         "text_secondary": "#888888",
         "text_tertiary": "#666666",
         "text_disabled": "#555555",
+        "text_muted": "#888888",  # Muted UI text (companion files, etc.)
+        "metadata_group_text": "#ddd6ba",  # Metadata tree root group headers (dimmed for hierarchy)
 
         # ===== Interactive States =====
         "hover": "#3e5c76",
@@ -632,9 +634,10 @@ THEME_TOKENS = {
         # ===== Component-Specific: Buttons =====
         "button_bg": "#2a2a2a",
         "button_text": "#f0ebd8",
-        "button_hover_bg": "#4a6fa5",
-        "button_hover_text": "#ffffff",
-        "button_pressed_bg": "#5a7fa0",
+        "button_hover_bg": "#3e5c76",  # Match ThemeEngine button_background_hover
+        "button_hover_text": "#f0ebd8",  # Keep text color consistent
+        "button_pressed_bg": "#748cab",  # Match ThemeEngine button_background_pressed
+        "button_pressed_text": "#0d1321",  # Match ThemeEngine button_text_pressed
         "button_disabled_bg": "#1a1a1a",
         "button_disabled_text": "#555555",
 
@@ -694,6 +697,8 @@ THEME_TOKENS = {
         "background_alternate": "#f8f8f8",
         "text": "#212121",
         "text_secondary": "#666666",
+        "text_muted": "#999999",  # Muted UI text for light theme
+        "metadata_group_text": "#6b6b6b",  # Metadata tree root groups (darker for light theme hierarchy)
         # ... (rest will be filled when implementing light theme)
     },
 }

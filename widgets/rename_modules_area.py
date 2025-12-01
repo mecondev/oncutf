@@ -332,17 +332,23 @@ class RenameModulesArea(QWidget):
         indicator = QFrame()
         indicator.setObjectName("drop_indicator")
         indicator.setFixedHeight(4)  # Slightly thinner
+        
+        # Get hover color from theme and convert to rgba for alpha channel
+        from utils.theme_engine import ThemeEngine
+        theme = ThemeEngine()
+        hover_color = theme.colors.get("button_background_hover", "#3e5c76")
+        
         indicator.setStyleSheet(
-            """
-            QFrame#drop_indicator {
-                background-color: rgba(62, 92, 118, 0.8);
-                border: 1px solid rgba(62, 92, 118, 1.0);
+            f"""
+            QFrame#drop_indicator {{
+                background-color: {hover_color}CC;
+                border: 1px solid {hover_color};
                 border-radius: 2px;
                 margin: 1px 8px;
-            }
-            QFrame#drop_indicator:hover {
-                background-color: rgba(62, 92, 118, 1.0);
-            }
+            }}
+            QFrame#drop_indicator:hover {{
+                background-color: {hover_color};
+            }}
         """
         )
         indicator.hide()  # Initially hidden
@@ -465,14 +471,20 @@ class RenameModulesArea(QWidget):
         placeholder = QFrame()
         placeholder.setObjectName("drag_placeholder")
         placeholder.setFixedHeight(module.height())
+        
+        # Get pressed color from theme for placeholder (lighter appearance)
+        from utils.theme_engine import ThemeEngine
+        theme = ThemeEngine()
+        pressed_color = theme.colors.get("button_background_pressed", "#748cab")
+        
         placeholder.setStyleSheet(
-            """
-            QFrame#drag_placeholder {
-                background-color: rgba(116, 140, 171, 0.12);
-                border: 1px dashed rgba(116, 140, 171, 0.6);
+            f"""
+            QFrame#drag_placeholder {{
+                background-color: {pressed_color}1F;
+                border: 1px dashed {pressed_color}99;
                 border-radius: 8px;
                 margin: 2px 2px;
-            }
+            }}
             """
         )
         self._drag_placeholder = placeholder

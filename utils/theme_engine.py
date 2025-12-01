@@ -905,7 +905,19 @@ class ThemeEngine:
                 color: {self.colors["table_text"]};
                 border: none;
                 border-right: 1px solid {self.colors["border_color"]};
-                padding: 4px 8px;
+                padding: 0px 8px;
+                font-size: {self.fonts["interface_size"]};
+                font-weight: {self.fonts["medium_weight"]};
+                text-align: left;
+            }}
+
+            /* MetadataTreeView - dimmed group headers for better visual hierarchy */
+            MetadataTreeView QHeaderView::section {{
+                background-color: {self.colors["table_header_background"]};
+                color: #b4b4b4;
+                border: none;
+                border-right: 1px solid {self.colors["border_color"]};
+                padding: 0px 8px;
                 font-size: {self.fonts["interface_size"]};
                 font-weight: {self.fonts["medium_weight"]};
                 text-align: left;
@@ -974,16 +986,6 @@ class ThemeEngine:
                 min-height: 22px;
                 border: none;
                 background-color: transparent;
-            }}
-
-            ResultsTableDialog QHeaderView::section {{
-                background-color: {self.colors["table_header_background"]};
-                color: {self.colors["table_text"]};
-                border: none;
-                border-right: 1px solid {self.colors["border_color"]};
-                padding: 6px 8px;
-                font-size: {self.fonts["interface_size"]};
-                font-weight: {self.fonts["medium_weight"]};
             }}
 
             ResultsTableDialog QPushButton {{

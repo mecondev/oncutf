@@ -471,6 +471,7 @@ class MetadataTreeItemDelegate(TreeViewItemDelegate):
     Features:
     - Full-row hover/selection backgrounds
     - Respects ForegroundRole for modified keys (yellow #ffe343 + bold)
+    - Dimmed text for root group headers (from theme token)
     - Text visible in all states (normal, hover, selected)
     """
 
@@ -483,6 +484,13 @@ class MetadataTreeItemDelegate(TreeViewItemDelegate):
         custom_fg = index.data(Qt.ItemDataRole.ForegroundRole)
         if custom_fg is not None:
             option.font.setBold(True)
+        elif not index.parent().isValid():
+            # Root-level group headers only: use dimmed color from theme
+            from PyQt5.QtGui import QColor, QPalette
+            from core.theme_manager import ThemeManager
+            theme = ThemeManager()
+            group_color = theme.get_color("metadata_group_text")
+            option.palette.setColor(QPalette.ColorRole.Text, QColor(group_color))
 
         # Set vertical alignment to center for all items
         option.displayAlignment = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter

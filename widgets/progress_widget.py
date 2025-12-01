@@ -72,8 +72,8 @@ class ProgressWidget(QWidget):
     def __init__(
         self,
         parent: QWidget | None = None,
-        bar_color: str = "#64b5f6",
-        bar_bg_color: str = "#0a1a2a",
+        bar_color: str | None = None,
+        bar_bg_color: str | None = None,
         show_size_info: bool = False,
         show_time_info: bool = False,
         fixed_width: int = 400,
@@ -84,8 +84,8 @@ class ProgressWidget(QWidget):
 
         Args:
             parent: Parent widget
-            bar_color: Progress bar color
-            bar_bg_color: Progress bar background color
+            bar_color: Progress bar color (defaults to theme accent)
+            bar_bg_color: Progress bar background color (defaults to theme background_lighter)
             show_size_info: Whether to show size information
             show_time_info: Whether to show time information
             fixed_width: Fixed width for the widget
@@ -93,6 +93,13 @@ class ProgressWidget(QWidget):
         """
         super().__init__(parent)
         self.setFixedWidth(fixed_width)
+
+        # Get default colors from theme if not provided
+        if bar_color is None or bar_bg_color is None:
+            from utils.theme_engine import ThemeEngine
+            theme = ThemeEngine()
+            bar_color = bar_color or theme.colors.get("accent_color", "#748cab")
+            bar_bg_color = bar_bg_color or theme.colors.get("disabled_background", "#181818")
 
         # Configuration
         self.show_size_info = show_size_info

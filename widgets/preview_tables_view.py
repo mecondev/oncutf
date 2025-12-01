@@ -536,15 +536,19 @@ class PreviewTablesView(QWidget):
         # Get icon size from config
         icon_width, icon_height = PREVIEW_INDICATOR_SIZE
 
+        # Get muted text color from theme
+        from utils.theme import get_theme_color
+        muted_color = get_theme_color('text_muted')
+
         status_msg = (
             f"<img src='{icon_paths['valid']}' width='{icon_width}' height='{icon_height}' style='vertical-align: middle';/>"
-            f"<span style='color:#ccc;'> Valid: {stats['valid']}</span>&nbsp;&nbsp;&nbsp;"
+            f"<span style='color:{muted_color};'> Valid: {stats['valid']}</span>&nbsp;&nbsp;&nbsp;"
             f"<img src='{icon_paths['unchanged']}' width='{icon_width}' height='{icon_height}' style='vertical-align: middle';/>"
-            f"<span style='color:#ccc;'> Unchanged: {stats['unchanged']}</span>&nbsp;&nbsp;&nbsp;"
+            f"<span style='color:{muted_color};'> Unchanged: {stats['unchanged']}</span>&nbsp;&nbsp;&nbsp;"
             f"<img src='{icon_paths['invalid']}' width='{icon_width}' height='{icon_height}' style='vertical-align: middle';/>"
-            f"<span style='color:#ccc;'> Invalid: {stats['invalid']}</span>&nbsp;&nbsp;&nbsp;"
+            f"<span style='color:{muted_color};'> Invalid: {stats['invalid']}</span>&nbsp;&nbsp;&nbsp;"
             f"<img src='{icon_paths['duplicate']}' width='{icon_width}' height='{icon_height}' style='vertical-align: middle';/>"
-            f"<span style='color:#ccc;'> Duplicates: {stats['duplicate']}</span>"
+            f"<span style='color:{muted_color};'> Duplicates: {stats['duplicate']}</span>"
         )
         self.status_updated.emit(status_msg)
 

@@ -54,7 +54,7 @@ class TextRemovalModule(BaseRenameModule):
         # First row: Text to remove
         text_row = QHBoxLayout()
         text_row.setContentsMargins(0, 0, 0, 0)
-        text_row.setSpacing(8)
+        text_row.setSpacing(6)
 
         text_label = QLabel("Remove:")
         text_label.setFixedWidth(80)
@@ -69,7 +69,7 @@ class TextRemovalModule(BaseRenameModule):
         # Second row: Position and case sensitivity
         options_row = QHBoxLayout()
         options_row.setContentsMargins(0, 0, 0, 0)
-        options_row.setSpacing(8)
+        options_row.setSpacing(6)
 
         position_label = QLabel("From:")
         position_label.setFixedWidth(80)
@@ -78,6 +78,14 @@ class TextRemovalModule(BaseRenameModule):
             ["End of name", "Start of name", "Anywhere (first)", "Anywhere (all)"]
         )
         self.position_combo.setCurrentText("End of name")
+        
+        # Apply theme styling
+        from utils.theme_engine import ThemeEngine
+        from widgets.ui_delegates import ComboBoxItemDelegate
+        theme = ThemeEngine()
+        self.position_combo.setFixedHeight(theme.get_constant("combo_height"))
+        self.position_combo.setItemDelegate(ComboBoxItemDelegate(self.position_combo, theme))
+        
         # Ensure combo box drops down instead of popping up
         self.position_combo.view().window().setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
         self.position_combo.currentTextChanged.connect(self.on_position_changed)

@@ -24,6 +24,7 @@ from core.pyqt_imports import (
 )
 from modules.base_module import BaseRenameModule
 from utils.icons_loader import get_menu_icon
+from utils.theme_engine import ThemeEngine
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
@@ -47,8 +48,8 @@ class CounterModule(BaseRenameModule):
         self.setProperty("module", True)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(6, 6, 6, 6)  # Match final transformer margins
-        layout.setSpacing(2)  # Increased spacing between rows by 2px
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(0)
 
         # Row 1: Start Number
         self.start_input, row1 = self._create_row("Start Number", initial_value=1, min_val=0)
@@ -98,12 +99,15 @@ class CounterModule(BaseRenameModule):
         input_field.setValidator(validator)
 
         # Buttons with icons
+        theme = ThemeEngine()
+        button_size = theme.get_constant("button_height")
+        
         btn_minus = QPushButton()
         btn_plus = QPushButton()
         btn_minus.setIcon(get_menu_icon("minus"))
         btn_plus.setIcon(get_menu_icon("plus"))
-        btn_minus.setFixedSize(24, 24)  # Reduced by 2px (1px each side)
-        btn_plus.setFixedSize(24, 24)  # Reduced by 2px (1px each side)
+        btn_minus.setFixedSize(button_size, button_size)
+        btn_plus.setFixedSize(button_size, button_size)
         btn_minus.setIconSize(
             QSize(ICON_SIZES["SMALL"], ICON_SIZES["SMALL"])
         )  # Small icons for buttons
@@ -140,8 +144,8 @@ class CounterModule(BaseRenameModule):
 
         # Build row layout
         row_layout = QHBoxLayout()
-        row_layout.setContentsMargins(4, 4, 4, 4)  # Increased vertical padding by 1px
-        row_layout.setSpacing(8)  # Increased spacing between elements
+        row_layout.setContentsMargins(2, 2, 2, 2)
+        row_layout.setSpacing(6)
         row_layout.addWidget(label, 0, Qt.AlignVCenter)  # type: ignore
         row_layout.addWidget(input_field, 0, Qt.AlignVCenter)  # type: ignore
         row_layout.addSpacing(4)  # Extra space before buttons
