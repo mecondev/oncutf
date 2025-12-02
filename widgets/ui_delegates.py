@@ -371,7 +371,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
 
             # Determine background color: selection/hover override alternating
             bg_color = None
-            
+
             if is_selected and is_hovered:
                 bg_color = get_qcolor("highlight_light_blue")
             elif is_selected:
@@ -393,7 +393,7 @@ class TreeViewItemDelegate(QStyledItemDelegate):
 
             # Paint background for each column's rect
             bg_rect = QRect(option.rect)
-            
+
             # Extend to viewport right edge for the last column
             if index.column() == model.columnCount(index.parent()) - 1:
                 viewport = tree_view.viewport()
@@ -495,6 +495,7 @@ class MetadataTreeItemDelegate(TreeViewItemDelegate):
         elif not index.parent().isValid():
             # Root-level group headers only: use dimmed color from theme
             from PyQt5.QtGui import QColor, QPalette
+
             from core.theme_manager import ThemeManager
             theme = ThemeManager()
             group_color = theme.get_color("metadata_group_text")

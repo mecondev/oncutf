@@ -13,6 +13,8 @@ Groups related Qt classes together for better organization.
 from PyQt5.QtCore import (
     QAbstractTableModel,
     QByteArray,
+    QDate,
+    QDateTime,
     QDir,
     QEasingCurve,
     QElapsedTimer,
@@ -87,6 +89,7 @@ from PyQt5.QtWidgets import (
     QCheckBox,
     QComboBox,
     QCompleter,
+    QDateTimeEdit,
     QDialog,
     QDialogButtonBox,
     QFileDialog,
@@ -134,6 +137,8 @@ __all__ = [
     # Core
     "QAbstractTableModel",
     "QByteArray",
+    "QDate",
+    "QDateTime",
     "QDir",
     "QEasingCurve",
     "QElapsedTimer",
@@ -197,6 +202,7 @@ __all__ = [
     "QCheckBox",
     "QComboBox",
     "QCompleter",
+    "QDateTimeEdit",
     "QDialog",
     "QDialogButtonBox",
     "QFileDialog",

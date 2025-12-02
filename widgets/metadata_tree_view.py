@@ -29,7 +29,6 @@ import traceback
 from typing import Any
 
 from config import METADATA_TREE_COLUMN_WIDTHS, METADATA_TREE_USE_PROXY
-from core.theme_manager import get_theme_manager
 from core.pyqt_imports import (
     QAbstractItemView,
     QAction,
@@ -50,11 +49,13 @@ from core.pyqt_imports import (
     QWidget,
     pyqtSignal,
 )
+from core.theme_manager import get_theme_manager
 from utils.logger_factory import get_cached_logger
 from utils.metadata_cache_helper import MetadataCacheHelper
 from utils.path_utils import find_parent_with_attribute, paths_equal
 from utils.placeholder_helper import create_placeholder_helper
 from utils.timer_manager import schedule_drag_cleanup, schedule_scroll_adjust, schedule_ui_update
+from widgets.datetime_edit_dialog import DateTimeEditDialog
 from widgets.metadata_edit_dialog import MetadataEditDialog
 
 # ApplicationContext integration
@@ -1002,6 +1003,25 @@ class MetadataTreeView(QTreeView):
 
             menu.addAction(set_zero_action)
 
+        # Special action for date/time fields - Edit Date
+        is_date_field = self._is_date_time_field(key_path)
+        if is_date_field:
+            # Determine date type from field name
+            date_type = self._get_date_type_from_field(key_path)
+            
+            edit_date_action = QAction(f"Edit {date_type.title()} Date", menu)
+            edit_date_action.setIcon(self._get_menu_icon("calendar"))
+            edit_date_action.triggered.connect(lambda: self.edit_date_value(key_path, date_type))
+            
+            # Enable only for single selection
+            edit_date_action.setEnabled(not has_multiple_selection)
+            if has_multiple_selection:
+                edit_date_action.setToolTip("Single file selection required")
+            else:
+                edit_date_action.setToolTip(f"Edit {date_type} date for selected file")
+            
+            menu.addAction(edit_date_action)
+
         menu.addSeparator()
 
         # Add/Remove to File View toggle action
@@ -1099,6 +1119,32 @@ class MetadataTreeView(QTreeView):
             return get_menu_icon(icon_name)
         except ImportError:
             return None
+
+    def _is_date_time_field(self, key_path: str) -> bool:
+        """Check if a metadata field is a date/time field."""
+        key_lower = key_path.lower()
+        date_keywords = [
+            "date", "time", "datetime", "timestamp",
+            "created", "modified", "accessed",
+            "filemodifydate", "filecreatedate", "createdate", "modifydate",
+            "datetimeoriginal", "datetimedigitized"
+        ]
+        return any(keyword in key_lower for keyword in date_keywords)
+
+    def _get_date_type_from_field(self, key_path: str) -> str:
+        """Determine date type (created/modified) from field name."""
+        key_lower = key_path.lower()
+        
+        # Check for creation date patterns
+        if any(keyword in key_lower for keyword in ["create", "dateoriginal", "digitized"]):
+            return "created"
+        
+        # Check for modification date patterns
+        if any(keyword in key_lower for keyword in ["modify", "modified", "change", "changed"]):
+            return "modified"
+        
+        # Default to modified for generic date/time fields
+        return "modified"
 
     def _is_editable_metadata_field(self, key_path: str) -> bool:
         """Check if a metadata field can be edited directly."""
@@ -1200,7 +1246,7 @@ class MetadataTreeView(QTreeView):
 
     def _get_item_path(self, index: QModelIndex) -> list[str]:
         """Get the path from root to the given index as a list of display texts.
-        
+
         Returns:
             List of strings representing the path, e.g. ["File Info", "File Name"]
         """
@@ -1213,46 +1259,46 @@ class MetadataTreeView(QTreeView):
 
     def _find_item_by_path(self, path: list[str]) -> QModelIndex | None:
         """Find an item in the tree by its path from root.
-        
+
         Args:
             path: List of display texts from root to target item
-            
+
         Returns:
             QModelIndex if found, None otherwise
         """
         if not path:
             return None
-            
+
         model = self.model()
         if not model:
             return None
-            
+
         # Start from root
         current_index = QModelIndex()
-        
+
         for text in path:
             found = False
             row_count = model.rowCount(current_index)
-            
+
             for row in range(row_count):
                 child_index = model.index(row, 0, current_index)
                 if child_index.data(Qt.ItemDataRole.DisplayRole) == text:
                     current_index = child_index
                     found = True
                     break
-                    
+
             if not found:
                 logger.debug(f"[MetadataTree] Path item not found: {text}")
                 return None
-                
+
         return current_index
 
     def _find_path_by_key(self, key_path: str) -> list[str] | None:
         """Find the tree path (display names) for a given metadata key path.
-        
+
         Args:
             key_path: Metadata key like "File:FileName" or "EXIF:Make"
-            
+
         Returns:
             List of display names from root to item, e.g. ["File Info", "File Name"]
             None if not found
@@ -1260,13 +1306,13 @@ class MetadataTreeView(QTreeView):
         model = self.model()
         if not model:
             return None
-            
+
         # Search recursively through the tree
         def search_tree(parent_index: QModelIndex, target_key: str) -> list[str] | None:
             row_count = model.rowCount(parent_index)
             for row in range(row_count):
                 index = model.index(row, 0, parent_index)
-                
+
                 # Check if this item's key matches
                 item_data = index.data(Qt.ItemDataRole.UserRole)
                 if item_data and isinstance(item_data, dict):
@@ -1274,14 +1320,14 @@ class MetadataTreeView(QTreeView):
                     if item_key == target_key:
                         # Found it! Build the path
                         return self._get_item_path(index)
-                
+
                 # Search children recursively
                 child_path = search_tree(index, target_key)
                 if child_path:
                     return child_path
-                    
+
             return None
-        
+
         return search_tree(QModelIndex(), key_path)
 
     def edit_value(self, key_path: str, current_value: Any) -> None:
@@ -1289,7 +1335,7 @@ class MetadataTreeView(QTreeView):
         # Save current selection path before opening dialog
         current_index = self.currentIndex()
         saved_path = self._get_item_path(current_index) if current_index.isValid() else None
-        
+
         # Fallback: if no current selection, try to find the item by key_path
         # This handles cases where the tree loses focus between edits
         if not saved_path and key_path:
@@ -1297,7 +1343,7 @@ class MetadataTreeView(QTreeView):
             saved_path = self._find_path_by_key(key_path)
             if saved_path:
                 logger.debug(f"[MetadataTree] Using fallback path from key_path: {key_path}")
-        
+
         # Get selected files and metadata cache
         selected_files = self._get_current_selection()
         metadata_cache = self._get_metadata_cache()
@@ -1350,7 +1396,7 @@ class MetadataTreeView(QTreeView):
 
             # Emit signal for external listeners
             self.value_edited.emit(normalized_key_path, str(current_value), new_value)
-            
+
             # Restore selection AFTER tree has been updated
             # Use custom timer with longer delay to ensure tree refresh completes
             if saved_path:
@@ -1368,7 +1414,7 @@ class MetadataTreeView(QTreeView):
             self.scrollTo(restored_index)
             logger.debug(f"[MetadataTree] Restored selection to: {' > '.join(path)}")
         else:
-            logger.debug(f"[MetadataTree] Could not restore selection, path not found")
+            logger.debug("[MetadataTree] Could not restore selection, path not found")
 
     def _fallback_edit_value(
         self, key_path: str, new_value: str, _old_value: str, files_to_modify: list
@@ -1463,6 +1509,70 @@ class MetadataTreeView(QTreeView):
                 return metadata[group].get(key)
 
         return None
+
+    def edit_date_value(self, key_path: str, date_type: str) -> None:
+        """Open DateTimeEditDialog to edit a date/time field."""
+        # Get selected files
+        selected_files = self._get_current_selection()
+        if not selected_files:
+            logger.warning("[MetadataTree] No files selected for date editing")
+            return
+        
+        # Convert file items to paths
+        file_paths = [f.full_path for f in selected_files]
+        
+        # Open DateTimeEditDialog
+        result_files, new_datetime = DateTimeEditDialog.get_datetime_edit_choice(
+            parent=self,
+            selected_files=file_paths,
+            date_type=date_type
+        )
+        
+        if result_files and new_datetime:
+            # Format datetime as string for metadata
+            datetime_str = new_datetime.toString("yyyy:MM:dd HH:mm:ss")
+            
+            logger.info(
+                f"[MetadataTree] Editing {date_type} date for {len(result_files)} files to {datetime_str}"
+            )
+            
+            # Use command system for undo/redo support
+            command_manager = get_metadata_command_manager()
+            if command_manager and EditMetadataFieldCommand:
+                # Get original values for undo
+                metadata_cache = self._get_metadata_cache()
+                
+                # Create command for each selected file
+                for file_path in result_files:
+                    # Find the file item
+                    file_item = next((f for f in selected_files if f.full_path == file_path), None)
+                    if not file_item:
+                        continue
+                    
+                    # Get current value from metadata
+                    current_value = ""
+                    if metadata_cache and key_path in metadata_cache:
+                        current_value = str(metadata_cache[key_path])
+                    
+                    # Create and execute command
+                    command = EditMetadataFieldCommand(
+                        file_path=file_path,
+                        field_path=key_path,
+                        new_value=datetime_str,
+                        old_value=current_value,
+                        metadata_tree_view=self,
+                    )
+                    
+                    if command_manager.execute_command(command, group_with_previous=True):
+                        logger.debug(f"[MetadataTree] Executed date edit command for {file_item.filename}")
+                    else:
+                        logger.warning(
+                            f"[MetadataTree] Failed to execute date edit command for {file_item.filename}"
+                        )
+            else:
+                logger.warning("[MetadataTree] Command system not available for date editing")
+        else:
+            logger.debug("[MetadataTree] Date edit cancelled")
 
     def set_rotation_to_zero(self, key_path: str) -> None:
         """Set rotation metadata to 0 degrees."""
@@ -1962,7 +2072,7 @@ class MetadataTreeView(QTreeView):
     def drawBranches(self, painter, rect, index):
         """
         Override to paint alternating row background in branch area before branches.
-        
+
         This ensures that the branch indicators (chevrons) are visible on top of
         the alternating row background, fixing the Windows-specific rendering issue
         where the branch area did not receive alternating colors.
@@ -1973,9 +2083,9 @@ class MetadataTreeView(QTreeView):
                 bg_color = self.palette().color(QPalette.ColorRole.AlternateBase)
             else:
                 bg_color = self.palette().color(QPalette.ColorRole.Base)
-            
+
             painter.fillRect(rect, bg_color)
-        
+
         # Call base implementation to draw branch indicators (chevrons)
         super().drawBranches(painter, rect, index)
 

@@ -332,12 +332,12 @@ class RenameModulesArea(QWidget):
         indicator = QFrame()
         indicator.setObjectName("drop_indicator")
         indicator.setFixedHeight(4)  # Slightly thinner
-        
+
         # Get hover color from theme and convert to rgba for alpha channel
         from utils.theme_engine import ThemeEngine
         theme = ThemeEngine()
         hover_color = theme.colors.get("button_background_hover", "#3e5c76")
-        
+
         indicator.setStyleSheet(
             f"""
             QFrame#drop_indicator {{
@@ -471,12 +471,12 @@ class RenameModulesArea(QWidget):
         placeholder = QFrame()
         placeholder.setObjectName("drag_placeholder")
         placeholder.setFixedHeight(module.height())
-        
+
         # Get pressed color from theme for placeholder (lighter appearance)
         from utils.theme_engine import ThemeEngine
         theme = ThemeEngine()
         pressed_color = theme.colors.get("button_background_pressed", "#748cab")
-        
+
         placeholder.setStyleSheet(
             f"""
             QFrame#drag_placeholder {{

@@ -13,6 +13,7 @@ from .bulk_rotation_dialog import BulkRotationDialog
 from .custom_file_system_model import CustomFileSystemModel
 from .custom_message_dialog import CustomMessageDialog
 from .custom_splash_screen import CustomSplashScreen
+from .datetime_edit_dialog import DateTimeEditDialog
 from .file_table_view import FileTableView
 from .file_tree_view import FileTreeView
 from .final_transform_container import FinalTransformContainer
@@ -49,6 +50,7 @@ __all__ = [
     "MetadataWidget",
     "MetadataEditDialog",
     "BulkRotationDialog",
+    "DateTimeEditDialog",
     "RenameHistoryDialog",
     "MetadataWaitingDialog",
     "CustomFileSystemModel",

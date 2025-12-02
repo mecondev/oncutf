@@ -409,7 +409,7 @@ class FileTreeView(QTreeView):
     def drawBranches(self, painter, rect, index):
         """
         Override to paint alternating row background in branch area before branches.
-        
+
         This ensures that the branch indicators (chevrons) are visible on top of
         the alternating row background, fixing the Windows-specific rendering issue
         where the branch area did not receive alternating colors.
@@ -420,9 +420,9 @@ class FileTreeView(QTreeView):
                 bg_color = self.palette().color(QPalette.ColorRole.AlternateBase)
             else:
                 bg_color = self.palette().color(QPalette.ColorRole.Base)
-            
+
             painter.fillRect(rect, bg_color)
-        
+
         # Call base implementation to draw branch indicators (chevrons)
         super().drawBranches(painter, rect, index)
 

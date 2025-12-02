@@ -234,7 +234,7 @@ class UIManager:
         self.parent_window.select_folder_button.setIcon(get_menu_icon("folder"))
         self.parent_window.select_folder_button.setFixedHeight(24)  # Thin button
         self.parent_window.select_folder_button.setFixedWidth(90)
-        
+
         self.parent_window.browse_folder_button = QPushButton("  Browse")
         self.parent_window.browse_folder_button.setIcon(get_menu_icon("folder-plus"))
         self.parent_window.browse_folder_button.setFixedHeight(24)  # Thin button

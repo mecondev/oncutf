@@ -24,10 +24,10 @@ from core.pyqt_imports import (
 )
 from modules.base_module import BaseRenameModule
 from utils.icons_loader import get_menu_icon
-from utils.theme_engine import ThemeEngine
 
 # initialize logger
 from utils.logger_factory import get_cached_logger
+from utils.theme_engine import ThemeEngine
 from utils.tooltip_helper import TooltipType, setup_tooltip
 
 logger = get_cached_logger(__name__)
@@ -101,7 +101,7 @@ class CounterModule(BaseRenameModule):
         # Buttons with icons
         theme = ThemeEngine()
         button_size = theme.get_constant("button_height")
-        
+
         btn_minus = QPushButton()
         btn_plus = QPushButton()
         btn_minus.setIcon(get_menu_icon("minus"))

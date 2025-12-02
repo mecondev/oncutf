@@ -11,9 +11,10 @@ Applies all styling globally to handle dynamically created widgets.
 import logging
 import platform
 
+from PyQt5.QtGui import QColor, QPalette
+
 import config
 from core.pyqt_imports import QApplication, QMainWindow
-from PyQt5.QtGui import QColor, QPalette
 
 logger = logging.getLogger(__name__)
 

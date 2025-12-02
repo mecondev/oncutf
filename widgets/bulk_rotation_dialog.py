@@ -11,7 +11,6 @@ Dialog for bulk rotation operations.
 from pathlib import Path
 
 from config import QLABEL_MUTED_TEXT
-from core.theme_manager import get_theme_manager
 from core.pyqt_imports import (
     QCheckBox,
     QDialog,
@@ -25,6 +24,7 @@ from core.pyqt_imports import (
     QVBoxLayout,
     QWidget,
 )
+from core.theme_manager import get_theme_manager
 from utils.logger_factory import get_cached_logger
 
 logger = get_cached_logger(__name__)
