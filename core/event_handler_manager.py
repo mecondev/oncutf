@@ -12,6 +12,7 @@ import os
 import time
 
 from config import STATUS_COLORS
+from core.modifier_handler import decode_modifiers_to_flags
 from core.pyqt_imports import QAction, QApplication, QMenu, QModelIndex, Qt
 from core.theme_manager import get_theme_manager
 from utils.cursor_helper import wait_cursor
