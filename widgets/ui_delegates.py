@@ -369,8 +369,16 @@ class TreeViewItemDelegate(QStyledItemDelegate):
             if sel is not None:
                 is_selected = sel.isSelected(index.sibling(index.row(), 0))
 
-            # Determine background color for hover/selection (Qt handles alt rows automatically)
+            # Determine background color for hover/selection/alternating
             bg_color = None
+            
+            # First, check for alternating row colors (if enabled and no selection/hover)
+            if tree_view.alternatingRowColors() and not is_selected and not is_hovered:
+                # Get alternating color from palette
+                if index.row() % 2 == 1:
+                    bg_color = tree_view.palette().color(QPalette.ColorRole.AlternateBase)
+            
+            # Override with selection/hover colors
             if is_selected and is_hovered:
                 bg_color = get_qcolor("highlight_light_blue")
             elif is_selected:
@@ -379,22 +387,31 @@ class TreeViewItemDelegate(QStyledItemDelegate):
                 bg_color = get_qcolor("table_hover_background")
 
             # Paint full-row background first for consistent highlight
-            # This includes both the branch area and the item area
             model = index.model()
             if model is None:
                 self._log_guard_warning("Index has no model")
                 return
 
+            # Paint background for each column's rect (don't extend to left edge)
+            # This preserves the branch indicators which are painted by Qt
             bg_rect = QRect(option.rect)
-
-            # Extend background to viewport right edge for the last column
+            
+            # Extend to viewport right edge for the last column
             if index.column() == model.columnCount(index.parent()) - 1:
                 viewport = tree_view.viewport()
                 if viewport:
                     bg_rect.setRight(viewport.rect().right())
 
+            # Paint background (alternating, selection, or hover)
             if bg_color:
                 painter.fillRect(bg_rect, bg_color)
+            elif tree_view.alternatingRowColors():
+                # Paint alternating row color for each cell
+                base_color = tree_view.palette().color(
+                    QPalette.ColorRole.AlternateBase if index.row() % 2 == 1 
+                    else QPalette.ColorRole.Base
+                )
+                painter.fillRect(bg_rect, base_color)
 
             custom_foreground = index.data(Qt.ItemDataRole.ForegroundRole)
             item_flags = index.flags()

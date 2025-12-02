@@ -13,6 +13,7 @@ import platform
 
 import config
 from core.pyqt_imports import QApplication, QMainWindow
+from PyQt5.QtGui import QColor, QPalette
 
 logger = logging.getLogger(__name__)
 
@@ -157,6 +158,12 @@ class ThemeEngine:
 
         # Apply the complete stylesheet globally
         app.setStyleSheet(global_style)
+
+        # Set palette colors for alternating row backgrounds
+        palette = app.palette()
+        palette.setColor(QPalette.ColorRole.Base, QColor(self.colors["table_background"]))
+        palette.setColor(QPalette.ColorRole.AlternateBase, QColor(self.colors["table_alternate_background"]))
+        app.setPalette(palette)
 
         # Apply Windows-specific ComboBox fixes if on Windows
         if self.is_windows:
