@@ -113,8 +113,10 @@ class ResultsTableDialog(QDialog):
 
         layout.setSpacing(10)
 
-        # Title label
-        self.title_label = QLabel(f"{len(self.data)} items")
+        # Title label with descriptive text
+        item_count = len(self.data)
+        count_text = f"checksum for {item_count} selected {'item' if item_count == 1 else 'items'}"
+        self.title_label = QLabel(count_text)
         self.title_label.setObjectName("title_label")
         layout.addWidget(self.title_label)
 
@@ -159,18 +161,19 @@ class ResultsTableDialog(QDialog):
         button_layout = QHBoxLayout()
         button_layout.addStretch()
 
-        self.close_button = QPushButton("Close")
-        self.close_button.clicked.connect(self.accept)
+        # Cancel button (index 1) - with focus
+        self.close_button = QPushButton("Cancel")
+        self.close_button.clicked.connect(self.reject)
         self.close_button.setObjectName("dialog_action_button")
-        self.close_button.setFixedHeight(24)
+        self.close_button.setFocus()
+        self.close_button.setDefault(True)
         button_layout.addWidget(self.close_button)
 
-        # Export button
+        # Export button (index 2)
         try:
             self.export_button = QPushButton("Export")
             self.export_button.setObjectName("dialog_action_button")
-            self.export_button.setFixedHeight(24)
-            button_layout.insertWidget(button_layout.count() - 1, self.export_button)
+            button_layout.addWidget(self.export_button)
         except Exception:
             pass
 
@@ -191,6 +194,7 @@ class ResultsTableDialog(QDialog):
             font-size: 13px;
             font-weight: 500;
             margin-bottom: 4px;
+            margin-left: 8px;
         }}
 
         QTableView {{
@@ -216,21 +220,8 @@ class ResultsTableDialog(QDialog):
             font-size: 11px;
         }}
 
-        QPushButton {{
-            background-color: {theme.get_color('button_bg')};
-            color: {theme.get_color('text')};
-            border: 1px solid {theme.get_color('border')};
-            border-radius: 4px;
-            padding: 6px 16px;
-            font-size: 12px;
-        }}
-
-        QPushButton:hover {{
-            background-color: {theme.get_color('button_hover_bg')};
-        }}
-
-        QPushButton:pressed {{
-            background-color: {theme.get_color('pressed')};
+        QHeaderView::section:hover {{
+            background-color: {theme.get_color('results_header_bg')};
         }}
         """
         self.setStyleSheet(style)

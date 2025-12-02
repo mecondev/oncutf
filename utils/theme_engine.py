@@ -296,6 +296,8 @@ class ThemeEngine:
                 border-radius: 8px;
                 color: {self.colors["button_text"]};
                 padding: 4px 12px 4px 8px;
+                min-height: 28px;
+                max-height: 28px;
                 font-size: {self.fonts["interface_size"]};
                 font-weight: {self.fonts["medium_weight"]};
             }}
@@ -307,6 +309,11 @@ class ThemeEngine:
             QPushButton:pressed {{
                 background-color: {self.colors["button_background_pressed"]};
                 color: {self.colors["button_text_pressed"]};
+            }}
+
+            QPushButton:focus {{
+                border: 2px solid {self.colors["input_border_focus"]};
+                outline: none;
             }}
 
             QPushButton:disabled {{
@@ -995,23 +1002,37 @@ class ThemeEngine:
                 background-color: transparent;
             }}
 
+            ResultsTableDialog QTableView::item:hover {{
+                background-color: transparent;
+            }}
+
             ResultsTableDialog QPushButton {{
                 background-color: {self.colors["button_background"]};
-                border: none;
+                border: 1px solid transparent;
                 border-radius: 8px;
                 color: {self.colors["button_text"]};
-                padding: 4px 12px;
+                padding: 4px 16px;
+                min-width: 80px;
+                min-height: 28px;
+                max-height: 28px;
                 font-size: {self.fonts["interface_size"]};
                 font-weight: {self.fonts["medium_weight"]};
             }}
 
             ResultsTableDialog QPushButton:hover {{
                 background-color: {self.colors["button_background_hover"]};
+                border: 1px solid transparent;
             }}
 
             ResultsTableDialog QPushButton:pressed {{
                 background-color: {self.colors["button_background_pressed"]};
                 color: {self.colors["button_text_pressed"]};
+                border: 1px solid transparent;
+            }}
+
+            ResultsTableDialog QPushButton:focus {{
+                border: 1px solid {self.colors["input_border_focus"]};
+                outline: none;
             }}
 
             ResultsTableDialog QLabel {{

@@ -28,7 +28,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from config import SPLASH_SCREEN_DURATION
-from core.pyqt_imports import QApplication, QStyleFactory, Qt
+from core.pyqt_imports import QApplication, Qt
 from core.theme_manager import get_theme_manager
 from main_window import MainWindow
 from utils.fonts import _get_inter_fonts
@@ -163,18 +163,10 @@ def main() -> int:
         except ImportError:
             logger.warning("Could not get font sizes - DPI helper not available")
 
-        # Set native style for better system integration
-        system = platform.system()
-        if system == "Windows":
-            available_styles = QStyleFactory.keys()
-            if "windowsvista" in available_styles:
-                app.setStyle("windowsvista")
-        elif system == "Linux":
-            available_styles = QStyleFactory.keys()
-            for style in available_styles:
-                if "gtk" in style.lower():
-                    app.setStyle(style)
-                    break
+        # Set Fusion style for consistent cross-platform rendering
+        # This ensures proper alternating row colors and theme consistency
+        app.setStyle("Fusion")
+        logger.debug("Applied Fusion style for cross-platform consistency", extra={"dev_only": True})
 
         # Load Inter fonts
         logger.debug("Initializing Inter fonts...", extra={"dev_only": True})
